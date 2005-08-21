@@ -20,7 +20,7 @@ signature TEXT_IO_1997 =
       val openIn: string -> instream 
       val print: string -> unit
       val scanStream:
-          ((Char.char, StreamIO.instream) StringCvt.reader
+         ((Char.char, StreamIO.instream) StringCvt.reader
           -> ('a, StreamIO.instream) StringCvt.reader)
          -> instream -> 'a option
       val setInstream: (instream * StreamIO.instream) -> unit

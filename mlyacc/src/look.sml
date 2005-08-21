@@ -90,10 +90,10 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 
     fun scanRhs addSymbol =
         let fun f (nil,result) = result
-                    | f ((sym as NONTERM nt) :: rest,result) =
+              | f ((sym as NONTERM nt) :: rest,result) =
                 if nullable nt then f (rest,addSymbol(sym,result))
                 else addSymbol(sym,result)
-                    | f ((sym as TERM _) :: _,result) = addSymbol(sym,result)
+              | f ((sym as TERM _) :: _,result) = addSymbol(sym,result)
         in f 
         end
 
@@ -138,7 +138,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 
       fun first nt =
              List.foldr (fn (a,r) => TermSet.union(r,first1 a))
-                [] (NontermSet.closure (NontermSet.singleton nt, starters1))
+               [] (NontermSet.closure (NontermSet.singleton nt, starters1))
 
       val first = nontermMemo(first)
 

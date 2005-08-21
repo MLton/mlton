@@ -23,7 +23,7 @@ structure Regexp =
       val SP = char #" "
       val HT = char #"\t"
       val CRLF = string "\r\n"
-      (* #"\n" is not in the spec for CRLF, but Netscape generates it. *)         
+      (* #"\n" is not in the spec for CRLF, but Netscape generates it. *)        
       val CRLF = or [CRLF, char #"\n"]
       val LWS = seq [optional CRLF, oneOrMore (or [SP, HT])]
       val TEXT = isNotChar Char.isCntrl
@@ -49,10 +49,10 @@ structure Regexp =
                 not (Char.isCntrl c)
                 andalso not (c = #"(")
                 andalso not (c = #")"))
-      (*          val comment =
-       *             seq [char #"(",
-       *                 star (or [ctext, quoted-pair, comment]),
-       *                 char #")"]
+      (*         val comment =
+       *            seq [char #"(",
+       *                star (or [ctext, quoted-pair, comment]),
+       *                char #")"]
        *)
       val major' = Save.new ()
       val minor' = Save.new ()

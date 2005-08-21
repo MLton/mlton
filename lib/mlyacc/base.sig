@@ -188,7 +188,7 @@ signature PARSER_DATA =
         type svalue
 
          (* the type of the user-supplied argument to the parser *)
-         type arg
+        type arg
  
         (* the intended type of the result of the parser.  This value is
            produced by applying extract from the structure Actions to the
@@ -223,7 +223,7 @@ signature PARSER_DATA =
            sig
              val is_keyword : LrTable.term -> bool
              val noShift : LrTable.term -> bool
-              val preferred_change : (LrTable.term list * LrTable.term list) list
+             val preferred_change : (LrTable.term list * LrTable.term list) list
              val errtermvalue : LrTable.term -> svalue
              val showTerminal : LrTable.term -> string
              val terms: LrTable.term list
@@ -253,7 +253,7 @@ signature PARSER =
         type result
 
          (* the type of the user-supplied argument to the parser *)
-         type arg
+        type arg
         
         (* type svalue is the type of semantic values for the semantic value
            stack

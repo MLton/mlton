@@ -527,8 +527,8 @@ fun dominators (graph, {root}) =
           end)
       val _ = idom' root := root
 (*       val _ = Assert.assert ("dominators", fn () =>
- *                               validDominators (graph, {root = root,
- *                                                        idom = idom}))
+ *                           validDominators (graph, {root = root,
+ *                                                    idom = idom}))
  *)
       val {get = idomFinal, set = setIdom, ...} =
          Property.getSetOnce (Node.plist, Property.initConst Unreachable)

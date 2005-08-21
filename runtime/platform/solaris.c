@@ -30,7 +30,7 @@ int fegetround () {
         switch (mode) {
         case FP_RN: mode = 0; break;
         case FP_RM: mode = 1; break;
-         case FP_RP: mode = 2; break;
+        case FP_RP: mode = 2; break;
         case FP_RZ: mode = 3; break;
         }
         return mode;

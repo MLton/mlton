@@ -68,7 +68,7 @@ fun last (s) =
 fun isEmpty (s) =
    case force (s) of
       NONE => true
-    | SOME _ => false         
+    | SOME _ => false    
 
 fun layout f s = List.layout f (toList s)
 

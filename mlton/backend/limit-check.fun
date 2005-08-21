@@ -8,15 +8,15 @@
 
 (*
  * The goal of limit check insertion is to ensure that
- *         1. At any allocation of b bytes, frontier + b <= base + heapSize
- *         2. At entry to each function, stackTop <= stackLimit
+ *      1. At any allocation of b bytes, frontier + b <= base + heapSize
+ *      2. At entry to each function, stackTop <= stackLimit
  * 
  * It assumes that runtime provides several operands to help with this.
- *         Frontier
- *         Limit
- *         LimitPlusSlop
- *         StackLimit
- *         StackTop
+ *      Frontier
+ *      Limit
+ *      LimitPlusSlop
+ *      StackLimit
+ *      StackTop
  * 
  * There are three different kinds of checks inserted, depending on the
  * amount being allocated and whether or not the program uses signal
@@ -24,11 +24,11 @@
  * 
  * 1. If b <= LIMIT_SLOP, then continue (don't GC) if
  * 
- *         frontier <= limit
+ *      frontier <= limit
  * 
  *    The reason this works is that if frontier <= limit and b <=
  *    LIMIT_SLOP, then 
- *         frontier + b <= limit + LIMIT_SLOP 
+ *      frontier + b <= limit + LIMIT_SLOP 
  *                       = limitPlusSlop
  *                       = base + heapSize
  *    This works even if the program uses signal handlers, which set
@@ -37,11 +37,11 @@
  * 2. If b > LIMIT_SLOP and if the program doesn't use signal handlers,
  *    then continue (don't GC) if
  * 
- *         b <= limitPlusSlop - frontier
+ *      b <= limitPlusSlop - frontier
  * 
  *    The reason this works is that the condition is equivalent to
- *         
- *         b + frontier <= limitPlusSlop = base + heapSize
+ *      
+ *      b + frontier <= limitPlusSlop = base + heapSize
  * 
  *    We write the condition the way we do instead of the more obvious way
  *    because "b + frontier" may overflow, while limitPlusSlop - frontier
@@ -50,8 +50,8 @@
  * 3. If b > LIMIT_SLOP and if the program uses signal handlers, then
  *    continue (don't GC) if
  * 
- *         limit > 0
- *         and b <= limitPlusSlop - frontier
+ *      limit > 0
+ *      and b <= limitPlusSlop - frontier
  * 
  *    This is like case (2), except that because the program uses signal
  *    handlers, the runtime may have set limit to zero to indicate that a

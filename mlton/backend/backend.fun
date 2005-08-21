@@ -562,7 +562,7 @@ let
                        prim = Prim.wordSub WordSize.default})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(uint* )(stackTop + offset);        *)
+                  (* ExnStack = *(uint* )(stackTop + offset);   *)
                   Vector.new1
                   (M.Statement.move
                    {dst = exnStackOp,
@@ -908,7 +908,7 @@ let
                      Vector.concatV
                      (Vector.map (statements, fn s =>
                                   genStatement (s, handlerLinkOffset)))
-                  val (preTransfer, transfer) = genTransfer (transfer, chunk)        
+                  val (preTransfer, transfer) = genTransfer (transfer, chunk)   
                   val (kind, live, pre) =
                      case kind of
                         R.Kind.Cont _ =>

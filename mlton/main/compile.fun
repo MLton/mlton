@@ -438,7 +438,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val coreML = CoreML.Program.T {decs = decs}
 (*
       val _ = Control.message (Control.Detail, fn () =>
-                                CoreML.Program.layoutStats coreML)
+                               CoreML.Program.layoutStats coreML)
 *)
       (* Set GC_state offsets. *)
       val _ =

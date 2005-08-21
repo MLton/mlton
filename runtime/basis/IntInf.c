@@ -19,12 +19,12 @@ extern struct GC_state gcState;
  * Layout of strings.  Note, the value passed around is a pointer to
  * the chars member.
  */
-typedef struct        strng {
-        uint        counter,        /* used by GC. */
-                card,                /* number of chars */
-                magic;                /* STRMAGIC */
-        char        chars[0];        /* actual chars */
-}        strng;
+typedef struct  strng {
+        uint    counter,        /* used by GC. */
+                card,           /* number of chars */
+                magic;          /* STRMAGIC */
+        char    chars[0];       /* actual chars */
+}       strng;
 
 /*
  * Test if a intInf is a fixnum.
@@ -45,7 +45,7 @@ static inline uint areSmall (pointer arg1, pointer arg2) {
  * Convert a bignum intInf to a bignum pointer.
  */
 static inline bignum * toBignum (pointer arg) {
-        bignum        *bp;
+        bignum  *bp;
 
         assert(not isSmall(arg));
         bp = (bignum *)((uint)arg - offsetof(struct bignum, isneg));
@@ -60,7 +60,7 @@ static inline bignum * toBignum (pointer arg) {
  * to contain 2 limbs, fill in the __mpz_struct.
  */
 static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
-        bignum        *bp;
+        bignum  *bp;
 
         if (DEBUG_INT_INF)
                 fprintf (stderr, "fill (0x%08x, 0x%08x, 0x%08x)\n",
@@ -106,7 +106,7 @@ static inline void initRes (__mpz_struct *mpzp, uint bytes) {
  * This MUST be replaced with assembler.
  */
 static inline uint leadingZeros (mp_limb_t word) {
-        uint        res;
+        uint    res;
 
         assert(word != 0);
         res = 0;
@@ -134,8 +134,8 @@ static inline void setFrontier (pointer p, uint bytes) {
  * the array size and roll the frontier slightly back.
  */
 static pointer answer (__mpz_struct *ans, uint bytes) {
-        bignum                        *bp;
-        int                        size;
+        bignum                  *bp;
+        int                     size;
 
         bp = (bignum *)((pointer)ans->_mp_d - offsetof(struct bignum, limbs));
         assert(ans->_mp_d == bp->limbs);
@@ -146,7 +146,7 @@ static pointer answer (__mpz_struct *ans, uint bytes) {
         } else
                 bp->isneg = FALSE;
         if (size <= 1) {
-                uint        val,
+                uint    val,
                         ans;
 
                 if (size == 0)
@@ -179,10 +179,10 @@ static inline pointer binary (pointer lhs, pointer rhs, uint bytes,
                                 void(*binop)(__mpz_struct *resmpz, 
                                         __gmp_const __mpz_struct *lhsspace,
                                         __gmp_const __mpz_struct *rhsspace)) {
-        __mpz_struct        lhsmpz,
+        __mpz_struct    lhsmpz,
                         rhsmpz,
                         resmpz;
-        mp_limb_t        lhsspace[2],
+        mp_limb_t       lhsspace[2],
                         rhsspace[2];
 
         initRes (&resmpz, bytes);
@@ -246,9 +246,9 @@ unary(pointer arg, uint bytes,
       void(*unop)(__mpz_struct *resmpz, 
                   __gmp_const __mpz_struct *argspace))
 {
-        __mpz_struct        argmpz,
+        __mpz_struct    argmpz,
                         resmpz;
-        mp_limb_t        argspace[2];
+        mp_limb_t       argspace[2];
 
         initRes(&resmpz, bytes);
         fill(arg, &argmpz, argspace);
@@ -276,9 +276,9 @@ shary(pointer arg, uint shift, uint bytes,
                   __gmp_const __mpz_struct *argspace,
                   ulong shift))
 {
-        __mpz_struct        argmpz,
+        __mpz_struct    argmpz,
                         resmpz;
-        mp_limb_t        argspace[2];
+        mp_limb_t       argspace[2];
 
         initRes(&resmpz, bytes);
         fill(arg, &argmpz, argspace);
@@ -303,7 +303,7 @@ pointer IntInf_lshift(pointer arg, uint shift, uint bytes) {
 Word
 IntInf_smallMul(Word lhs, Word rhs, pointer carry)
 {
-        llong        prod;
+        llong   prod;
 
         prod = (llong)(int)lhs * (int)rhs;
         *(uint *)carry = (ullong)prod >> 32;
@@ -315,9 +315,9 @@ IntInf_smallMul(Word lhs, Word rhs, pointer carry)
  * to each other.
  */
 Int IntInf_compare (pointer lhs, pointer rhs) {
-        __mpz_struct                lhsmpz,
+        __mpz_struct            lhsmpz,
                                 rhsmpz;
-        mp_limb_t                lhsspace[2],
+        mp_limb_t               lhsspace[2],
                                 rhsspace[2];
 
         if (DEBUG_INT_INF)
@@ -346,13 +346,13 @@ Bool IntInf_equal (pointer lhs, pointer rhs) {
  * string (mutable) which is large enough.
  */
 pointer IntInf_toString (pointer arg, int base, uint bytes) {
-        strng                *sp;
-        __mpz_struct        argmpz;
-        mp_limb_t        argspace[2];
-        char                *str;
-        uint                size;
-        int                i;
-        char                c;
+        strng           *sp;
+        __mpz_struct    argmpz;
+        mp_limb_t       argspace[2];
+        char            *str;
+        uint            size;
+        int             i;
+        char            c;
 
         if (DEBUG_INT_INF)
                 fprintf (stderr, "IntInf_toString (0x%08x, %d, %u)\n",
@@ -381,30 +381,30 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
 /*
  * Quotient (round towards 0, remainder is returned by IntInf_rem).
  * space is a word array with enough space for the quotient
- *        num limbs + 1 - den limbs
+ *      num limbs + 1 - den limbs
  * shifted numerator
- *        num limbs + 1
+ *      num limbs + 1
  * and shifted denominator
- *        den limbs
+ *      den limbs
  * and the isNeg word.
  * It must be the last thing allocated.
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
 pointer IntInf_quot (pointer num, pointer den, uint bytes) {
-        __mpz_struct        resmpz,
+        __mpz_struct    resmpz,
                         nmpz,
                         dmpz;
-        mp_limb_t        nss[2],
+        mp_limb_t       nss[2],
                         dss[2],
                         carry,
                         *np,
                         *dp;
-        int                nsize,
+        int             nsize,
                         dsize,
                         qsize;
-        bool                resIsNeg;
-        uint                shift;
+        bool            resIsNeg;
+        uint            shift;
 
         initRes(&resmpz, bytes);
         fill(num, &nmpz, nss);
@@ -467,28 +467,28 @@ pointer IntInf_quot (pointer num, pointer den, uint bytes) {
 /*
  * Remainder (sign taken from numerator, quotient is returned by IntInf_quot).
  * space is a word array with enough space for the remainder
- *        den limbs
+ *      den limbs
  * shifted numerator
- *        num limbs + 1
+ *      num limbs + 1
  * and shifted denominator
- *        den limbs
+ *      den limbs
  * and the isNeg word.
  * It must be the last thing allocated.
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
 pointer IntInf_rem (pointer num, pointer den, uint bytes) {
-        __mpz_struct        resmpz,
+        __mpz_struct    resmpz,
                         nmpz,
                         dmpz;
-        mp_limb_t        nss[2],
+        mp_limb_t       nss[2],
                         dss[2],
                         carry,
                         *dp;
-        int                nsize,
+        int             nsize,
                         dsize;
-        bool                resIsNeg;
-        uint                shift;
+        bool            resIsNeg;
+        uint            shift;
 
         initRes(&resmpz, bytes);
         fill(num, &nmpz, nss);

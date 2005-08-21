@@ -11,9 +11,9 @@ val eof = fn () => EOF(!lineNum,!lineNum)
 
 
 structure KeyWord : sig
-                             val find : string ->
+                        val find : string ->
                                  (int * int -> (svalue,int) token) option
-                      end =
+                    end =
   struct
 
         val TableSize = 211
@@ -97,8 +97,8 @@ exp=(e|E){optsign}{digit}+;
 octdigit=[0-7];
 ws = [\ \t];
 %%
-<INITIAL>{ws}+        => (lex());
-<INITIAL>\n+        => (lineNum := (!lineNum) + (String.size yytext); lex());
+<INITIAL>{ws}+  => (lex());
+<INITIAL>\n+    => (lineNum := (!lineNum) + (String.size yytext); lex());
 <INITIAL>{alpha}+ => (case find yytext of SOME v => v(!lineNum,!lineNum)
                                                   | _ => YID(!lineNum,!lineNum));
 <INITIAL>{alpha}({alpha}|{digit})*  => (YID(!lineNum,!lineNum));
@@ -107,33 +107,33 @@ ws = [\ \t];
 <INITIAL>{octdigit}+(b|B) => (YBINT(!lineNum,!lineNum));
 <INITIAL>"'"([^']|"''")*"'" => (YSTRING(!lineNum,!lineNum));
 <INITIAL>"(*" =>   (YYBEGIN C; lex());
-<INITIAL>".."        => (YDOTDOT(!lineNum,!lineNum));
-<INITIAL>"."        => (YDOT(!lineNum,!lineNum));
-<INITIAL>"("        => (YLPAR(!lineNum,!lineNum));
-<INITIAL>")"        => (YRPAR(!lineNum,!lineNum));
-<INITIAL>";"        => (YSEMI(!lineNum,!lineNum));
-<INITIAL>","        => (YCOMMA(!lineNum,!lineNum));
-<INITIAL>":"        => (YCOLON(!lineNum,!lineNum));
-<INITIAL>"^"        => (YCARET(!lineNum,!lineNum));
-<INITIAL>"["        => (YLBRA(!lineNum,!lineNum));
-<INITIAL>"]"        => (YRBRA(!lineNum,!lineNum));
-<INITIAL>"~"        => (YTILDE(!lineNum,!lineNum));
-<INITIAL>"<"        => (YLESS(!lineNum,!lineNum));
-<INITIAL>"="        => (YEQUAL(!lineNum,!lineNum));
-<INITIAL>">"        => (YGREATER(!lineNum,!lineNum));
-<INITIAL>"+"        => (YPLUS(!lineNum,!lineNum));
-<INITIAL>"-"        => (YMINUS(!lineNum,!lineNum));
-<INITIAL>"|"        => (YBAR(!lineNum,!lineNum));
-<INITIAL>"*"        => (YSTAR(!lineNum,!lineNum));
-<INITIAL>"/"        => (YSLASH(!lineNum,!lineNum));
-<INITIAL>"{"        => (YYBEGIN B; lex());
-<INITIAL>.        => (YILLCH(!lineNum,!lineNum));
-<C>\n+                => (lineNum := (!lineNum) + (String.size yytext); lex());
-<C>[^()*\n]+        => (lex());
-<C>"(*"                => (lex());
-<C>"*)"                => (YYBEGIN INITIAL; lex());
+<INITIAL>".."   => (YDOTDOT(!lineNum,!lineNum));
+<INITIAL>"."    => (YDOT(!lineNum,!lineNum));
+<INITIAL>"("    => (YLPAR(!lineNum,!lineNum));
+<INITIAL>")"    => (YRPAR(!lineNum,!lineNum));
+<INITIAL>";"    => (YSEMI(!lineNum,!lineNum));
+<INITIAL>","    => (YCOMMA(!lineNum,!lineNum));
+<INITIAL>":"    => (YCOLON(!lineNum,!lineNum));
+<INITIAL>"^"    => (YCARET(!lineNum,!lineNum));
+<INITIAL>"["    => (YLBRA(!lineNum,!lineNum));
+<INITIAL>"]"    => (YRBRA(!lineNum,!lineNum));
+<INITIAL>"~"    => (YTILDE(!lineNum,!lineNum));
+<INITIAL>"<"    => (YLESS(!lineNum,!lineNum));
+<INITIAL>"="    => (YEQUAL(!lineNum,!lineNum));
+<INITIAL>">"    => (YGREATER(!lineNum,!lineNum));
+<INITIAL>"+"    => (YPLUS(!lineNum,!lineNum));
+<INITIAL>"-"    => (YMINUS(!lineNum,!lineNum));
+<INITIAL>"|"    => (YBAR(!lineNum,!lineNum));
+<INITIAL>"*"    => (YSTAR(!lineNum,!lineNum));
+<INITIAL>"/"    => (YSLASH(!lineNum,!lineNum));
+<INITIAL>"{"    => (YYBEGIN B; lex());
+<INITIAL>.      => (YILLCH(!lineNum,!lineNum));
+<C>\n+          => (lineNum := (!lineNum) + (String.size yytext); lex());
+<C>[^()*\n]+    => (lex());
+<C>"(*"         => (lex());
+<C>"*)"         => (YYBEGIN INITIAL; lex());
 <C>[*()]        => (lex());
-<B>\n+                => (lineNum := (!lineNum) + (String.size yytext); lex());
-<B>[^{}\n]+        => (lex());
-<B>"{"                => (lex());
-<B>"}"                => (YYBEGIN INITIAL; lex());
+<B>\n+          => (lineNum := (!lineNum) + (String.size yytext); lex());
+<B>[^{}\n]+     => (lex());
+<B>"{"          => (lex());
+<B>"}"          => (YYBEGIN INITIAL; lex());

@@ -182,7 +182,7 @@ val test15a =
     tst' "test15a" (fn _ => 
            fileId "." = fileId "."
            andalso fileId "testlink" = fileId "README"
-            andalso fileId "." <> fileId "README");
+           andalso fileId "." <> fileId "README");
 val test15b = 
     tst' "test15b" (fn _ => compare(fileId ".", fileId ".") = EQUAL)
 val test15b1 =

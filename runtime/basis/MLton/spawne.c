@@ -2,14 +2,14 @@
 
 #if HAS_SPAWN
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
-        char        *path;
-        char        *asaved;
-        char        *esaved;
-        char        **args;
-        char         **env;
-        int        an;
-        int        en;
-        int        result;
+        char    *path;
+        char    *asaved;
+        char    *esaved;
+        char    **args;
+        char    **env;
+        int     an;
+        int     en;
+        int     result;
 
         path = (char *) p;
         args = (char **) a;

@@ -10,6 +10,6 @@ void Itimer_set (Int which,
         v.it_interval.tv_usec = interval_tv_usec;
         v.it_value.tv_sec = value_tv_sec;
         v.it_value.tv_usec = value_tv_usec;
-               i = setitimer (which, &v, (struct itimerval *)NULL);
+        i = setitimer (which, &v, (struct itimerval *)NULL);
         assert(i == 0);
 }

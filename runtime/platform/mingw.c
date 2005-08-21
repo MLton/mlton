@@ -100,7 +100,7 @@ static struct rlimit rlimits[RLIM_NLIMITS];
 
 static void initRlimits () {
         static int done = FALSE;
-         int lim;
+        int lim;
 
         if (done)
                 return;
@@ -182,7 +182,7 @@ static void GetWin32FileName (int fd, char* fname) {
             }
             CloseHandle (fhmap);
         }
-        return;        
+        return; 
 }
 #endif
 
@@ -192,10 +192,10 @@ int chown (const char *path, uid_t owner, gid_t group) {
 
 int fchmod (int filedes, mode_t mode) {
         die ("chown not implemented");
-//        char fname[MAX_PATH + 1];
+//      char fname[MAX_PATH + 1];
 //
-//        GetWin32FileName (filedes, fname);
-//        return _chmod (fname, mode);
+//      GetWin32FileName (filedes, fname);
+//      return _chmod (fname, mode);
 }
 
 int fchown (int fd, uid_t owner, gid_t group) {
@@ -272,10 +272,10 @@ int pipe (int filedes[2]) {
         if (filedes[0] == -1 or filedes[1] == -1) {
                 if (filedes[0] == -1) 
                         CloseHandle(read); 
-                else        close(filedes[0]);
+                else    close(filedes[0]);
                 if (filedes[1] == -1) 
                         CloseHandle(write);
-                else        close(filedes[1]);
+                else    close(filedes[1]);
                 
                 errno = ENFILE;
                 return -1;
@@ -394,17 +394,17 @@ static void setSysname (struct utsname *buf) {
         switch (osv.dwPlatformId) {
         case VER_PLATFORM_WIN32_NT:
                 if (osv.dwMinorVersion == 0) {
-                        if (osv.dwMajorVersion <= 4)        os = "NT";
-                        else                                os = "2000";
-                } else if (osv.dwMinorVersion <= 1)        os = "XP";
-                else if (osv.dwMinorVersion <= 2)        os = "2003";
-                else                                        os = "NTx";
+                        if (osv.dwMajorVersion <= 4)    os = "NT";
+                        else                            os = "2000";
+                } else if (osv.dwMinorVersion <= 1)     os = "XP";
+                else if (osv.dwMinorVersion <= 2)       os = "2003";
+                else                                    os = "NTx";
                 break;
         case VER_PLATFORM_WIN32_WINDOWS:
-                if (osv.dwMinorVersion == 0)                os = "95";
-                else if (osv.dwMinorVersion < 90)        os = "98";
-                else if (osv.dwMinorVersion == 90)        os = "Me";
-                else                                        os = "9X";
+                if (osv.dwMinorVersion == 0)            os = "95";
+                else if (osv.dwMinorVersion < 90)       os = "98";
+                else if (osv.dwMinorVersion == 90)      os = "Me";
+                else                                    os = "9X";
                 break;
         case VER_PLATFORM_WIN32s:
                 os = "31"; /* aka DOS + Windows 3.1 */
@@ -445,7 +445,7 @@ VOID CALLBACK alarm_signalled(HWND window, UINT message,
 int alarm (int secs) {
         LARGE_INTEGER timer_end_val, frequency;
         int remaining = 0;
-        long elapse = secs * 1000;        /* win32 uses usecs */
+        long elapse = secs * 1000;      /* win32 uses usecs */
     
         /* Unsetting the alarm */
         if (secs == 0 && curr_timer == 0) {
@@ -633,10 +633,10 @@ struct group *getgrnam (const char *name) {
 
 struct passwd *getpwnam (const char *name) {
         return NULL;
-//        unless (NERR_Success == 
-//                        NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
-//                                        (LPBYTE*)&usrData))
-//                return NULL;
+//      unless (NERR_Success == 
+//                      NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
+//                                      (LPBYTE*)&usrData))
+//              return NULL;
         passwd.pw_dir = (char*)usrData->usri3_home_dir;
         passwd.pw_gid = usrData->usri3_primary_group_id;
         passwd.pw_name = (char*)usrData->usri3_name;

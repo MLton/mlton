@@ -731,13 +731,13 @@ structure DirectExp =
       fun vall {var, exp}: Dec.t list =
          let val t = ref Type.unit
             val Exp {decs, result} =
-               sendName (exp, fn (x, t') => (t := t';                         
+               sendName (exp, fn (x, t') => (t := t';                    
                                              Exp {decs = [], result = x}))
          in decs @ [MonoVal {var = var, ty = !t, exp = Var result}]
          end
 
       fun sequence es =
-             converts (es, fn xs => let val (x, t) = Vector.last xs
+         converts (es, fn xs => let val (x, t) = Vector.last xs
                                 in (Var x, t)
                                 end)
 

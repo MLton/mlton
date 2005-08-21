@@ -1538,7 +1538,7 @@ structure Encoding : Encoding =
 
       val encDict = makeDict("encoding",6,NOENC)
       val encAliases = 
-         [(ASCII,["ANSI_X3.4-1968","ANSI_X3.4-1986","ASCII","US-ASCII","US",                       
+         [(ASCII,["ANSI_X3.4-1968","ANSI_X3.4-1986","ASCII","US-ASCII","US",                   
                     "ISO646-US","ISO-IR-6","ISO_646.IRV:1991","IBM367","CP367"]),
           (EBCDIC,["EBCDIC"]),                 
           (LATIN1,["ISO_8859-1:1987","ISO-8859-1","ISO_8859-1",
@@ -1764,7 +1764,7 @@ structure EncodeMisc : EncodeMisc =
       fun validCharLatin1 (c : Char) = c<0wx100
       fun writeCharLatin1(c,f) = 
          if c<0wx100 then writeByte(f,Char2Byte c)
-          else raise EncodeError(f,ERR_ILLEGAL_CHAR(c,"LATIN-1"))
+         else raise EncodeError(f,ERR_ILLEGAL_CHAR(c,"LATIN-1"))
 
       (*---------------------------------------------------------------------*)
       (* UCS-4                                                               *)
@@ -2715,7 +2715,7 @@ structure UniRanges =
           ] : CharClasses.CharRange 
 
       val encRange =       
-               [(0wx002D,0wx002E), (* -.  *)
+         [(0wx002D,0wx002E), (* -.  *)
           (0wx0030,0wx0039), (* 0-9 *)
           (0wx0041,0wx005A), (* A-Z *)
           (0wx005F,0wx005F), (* _   *)
@@ -3571,7 +3571,7 @@ functor DfaOptions () : DfaOptions =
 
       val dfaUsage = 
          [U_ITEM(["--dfa-initial-size=n"],"Initial size of DFA transition tables (16)"),
-             U_ITEM(["--dfa-initial-width=n"],"Same as --dfa-initial-size=2^n (4)"),
+          U_ITEM(["--dfa-initial-width=n"],"Same as --dfa-initial-size=2^n (4)"),
           U_ITEM(["--dfa-max-size=n"],"Maximal size of DFAs for ambiguous content models (256)"),
           U_ITEM(["--dfa-warn-size[=(yes|no)]"],"Warn about too large DFAs (yes)")
           ]
@@ -3984,7 +3984,7 @@ structure IntLists : IntLists =
       val hashIntList = hashList hashInt
 
       val IntList2String = List2String Int.toString 
-   end                              
+   end                        
 (* stop of ../../Util/intLists.sml *)
 (* start of ../../Unicode/Chars/dataDict.sml *)
 
@@ -5217,7 +5217,7 @@ structure ErrorData =
         | IT_DATA of UniChar.Data
         | IT_DECL
         | IT_DTD
-         | IT_ELEM
+        | IT_ELEM
         | IT_ENT_NAME
         | IT_ETAG
         | IT_GEN_ENT
@@ -5285,7 +5285,7 @@ structure ErrorData =
         | ERR_DECL_ENT_NESTING of Location
         | ERR_EE_INT_SUBSET 
         | ERR_GROUP_ENT_NESTING of Location
-         | ERR_NO_DTD
+        | ERR_NO_DTD
         | ERR_STANDALONE_DEF of UniChar.Data
         | ERR_STANDALONE_ELEM of UniChar.Data
         | ERR_STANDALONE_ENT of EntityClass *UniChar.Data
@@ -5541,14 +5541,14 @@ structure ErrorMessage : ErrorMessage =
            of ERR_EMPTY loc => ["Empty",Location2String loc]
             | ERR_ENDED_BY_EE loc => [toUpperFirst (Location2String loc),"ended by entity end"]
             | ERR_EXPECTED (exp,found) => 
-              ["Expected",Expected2String exp,"but found",Found2String found]              
+              ["Expected",Expected2String exp,"but found",Found2String found]         
             | ERR_MISSING_WHITE => ["Missing white space"]
             | ERR_NON_XML_CHAR c => ["Non-XML character",quoteChar0 c]
             | ERR_NON_XML_CHARREF c => ["Reference to non-XML character",quoteChar0 c]
 
             (* other well-formedness errors *)
             | ERR_CANT_PARSE loc => ["Cannot parse",Location2String loc]
-            | ERR_ELEM_ENT_NESTING elem =>                
+            | ERR_ELEM_ENT_NESTING elem =>             
               ["The first and last character of element",quoteData elem,
                "are in different entities"]  
             | ERR_ELEM_TYPE_MATCH (elem,other) => 
@@ -5606,7 +5606,7 @@ structure ErrorMessage : ErrorMessage =
                "in the content of element",quoteData curr] 
             | ERR_ELEM_CONTENT what => 
               [toUpperFirst (AnItem2String what),"is not allowed in element content"] 
-            | ERR_EMPTY_TAG elem =>          
+            | ERR_EMPTY_TAG elem =>      
               ["Empty-element tag for element type",quoteData elem,
                "whose content model requires non-empty content"]
             | ERR_ENDED_EARLY elem =>
@@ -5770,35 +5770,35 @@ structure ErrorUtil : ErrorUtil =
       fun isValidityError err = 
          case err
            of ERR_AT_LEAST_ONE _      => true
-            | ERR_AT_MOST_ONE _              => true
-            | ERR_ATT_IS_NOT _              => true
+            | ERR_AT_MOST_ONE _       => true
+            | ERR_ATT_IS_NOT _        => true
             | ERR_EXACTLY_ONE _       => true
             | ERR_FIXED_VALUE _       => true
-            | ERR_ID_DEFAULT                 => true
+            | ERR_ID_DEFAULT          => true
             | ERR_MISSING_ATT _       => true
             | ERR_MULT_ID_ELEM _      => true
             | ERR_MUST_BE_AMONG _     => true
             | ERR_MUST_BE_UNPARSED _  => true
             | ERR_REPEATED_ID _       => true
             | ERR_UNDECL_ATT _        => true
-            | ERR_UNDECL_ID _               => true
-            | ERR_BAD_ELEM _               => true
+            | ERR_UNDECL_ID _         => true
+            | ERR_BAD_ELEM _          => true
             | ERR_ELEM_CONTENT _      => true
-            | ERR_EMPTY_TAG _               => true
-            | ERR_ENDED_EARLY _              => true
-            | ERR_MULT_MIXED _               => true
-            | ERR_NONEMPTY _               => true
-            | ERR_REDEC_ELEM _              => true
-            | ERR_ROOT_ELEM _              => true
+            | ERR_EMPTY_TAG _         => true
+            | ERR_ENDED_EARLY _       => true
+            | ERR_MULT_MIXED _        => true
+            | ERR_NONEMPTY _          => true
+            | ERR_REDEC_ELEM _        => true
+            | ERR_ROOT_ELEM _         => true
             | ERR_DECL_ENT_NESTING _  => true
             | ERR_EE_INT_SUBSET       => true
             | ERR_GROUP_ENT_NESTING _ => true
-            | ERR_NO_DTD               => true
+            | ERR_NO_DTD              => true
             | ERR_STANDALONE_DEF _    => true
             | ERR_STANDALONE_ELEM _   => true
             | ERR_STANDALONE_ENT _    => true
             | ERR_STANDALONE_NORM _   => true
-            | ERR_UNDECLARED _              => true
+            | ERR_UNDECLARED _        => true
             | _                       => false
    end
 (* stop of ../../Parser/Error/errorUtil.sml *)
@@ -6261,31 +6261,31 @@ structure Base =
 (*   Element2Index       : none                                             *)
 (*   GenEnt2Index        : none                                             *)
 (*   Id2Index            : none                                             *)
-(*   Index2AttNot        : NoSuchIndex                                            *)
-(*   Index2Element       : NoSuchIndex                                            *)
+(*   Index2AttNot        : NoSuchIndex                                      *)
+(*   Index2Element       : NoSuchIndex                                      *)
 (*   Index2GenEnt        : NoSuchIndex                                      *)
-(*   Index2Id            : NoSuchIndex                                            *)
+(*   Index2Id            : NoSuchIndex                                      *)
 (*   Index2ParEnt        : NoSuchIndex                                      *)
 (*   ParEnt2Index        : none                                             *)
 (*   entitiesWellformed  : none                                             *)
-(*   getElement          : NoSuchIndex                                            *)
+(*   getElement          : NoSuchIndex                                      *)
 (*   getGenEnt           : NoSuchIndex                                      *)
-(*   getId               : NoSuchIndex                                            *)
-(*   getNotation         : NoSuchIndex                                            *)
+(*   getId               : NoSuchIndex                                      *)
+(*   getNotation         : NoSuchIndex                                      *)
 (*   getParEnt           : NoSuchIndex                                      *)
-(*   hasNotation         : NoSuchIndex                                            *)
+(*   hasNotation         : NoSuchIndex                                      *)
 (*   initDtdTables       : none                                             *)
 (*   maxUsedElem         : none                                             *)
 (*   maxUsedId           : none                                             *)
-(*   printAttNotTable    : none                                                    *)
-(*   printIdTable        : none                                                    *)
+(*   printAttNotTable    : none                                             *)
+(*   printIdTable        : none                                             *)
 (*   printParEntTable    : none                                             *)
-(*   printxElementTable  : none                                                    *)
+(*   printxElementTable  : none                                             *)
 (*   printxGenEntTable   : none                                             *)
-(*   setElement          : NoSuchIndex                                            *)
+(*   setElement          : NoSuchIndex                                      *)
 (*   setGenEnt           : NoSuchIndex                                      *)
-(*   setId               : NoSuchIndex                                            *)
-(*   setNotation         : NoSuchIndex                                            *)
+(*   setId               : NoSuchIndex                                      *)
+(*   setNotation         : NoSuchIndex                                      *)
 (*   setParEnt           : NoSuchIndex                                      *)
 (*--------------------------------------------------------------------------*)
 signature Dtd = 
@@ -6548,7 +6548,7 @@ structure Dtd :> Dtd =
             val _ = initStandalone dtd
          in dtd
          end
-                                      
+                                    
       local 
          val dtd = initDtdTables() 
       in 
@@ -7005,7 +7005,7 @@ structure IntSets : IntSets =
            of 0 => 0w0 
             | 1 => Word.fromInt(W.toInt(W.>>(Vector.sub(vec,0),intShift)))
             | l => Word.fromInt(W.toInt(W.>>(Vector.sub(vec,0)+Vector.sub(vec,l-1),intShift)))
-   end                              
+   end                        
 (* stop of ../../Util/intSets.sml *)
 (* start of ../../Util/SymDict/intSetDict.sml *)
 
@@ -7312,24 +7312,24 @@ structure DfaPassTwo : DfaPassTwo =
       (* compute Follow and Fin foreach node, and generate the transition   *)
       (* row if node is a leaf. Follow and Fin are computed top-down:       *)
       (*                                                                    *)
-      (* (Top-Level):                                                            *)
+      (* (Top-Level):                                                       *)
       (* Follow e = {}, Fin e = true                                        *)
-      (*                                                                     *)
-      (* (e=e1?):                                                            *)
-      (* Follow e1 = Follow e, Fin e1 = Fin e                                    *)
-      (*                                                                     *)
-      (* (e=e1*, e=e1+)                                                            *)
-      (* Follow e1 = Follow e1 ++ First e1, Fin e1 = Fin e                    *)
       (*                                                                    *)
-      (* (e=e1|...|eN) =                                                     *)
-      (* Follow eI = Follow e, Fin eI = Fin e for i=0...n                    *)
+      (* (e=e1?):                                                           *)
+      (* Follow e1 = Follow e, Fin e1 = Fin e                               *)
       (*                                                                    *)
-      (* (e=e1,...,eN) =                                                     *)
-      (* Follow eN = Follow e, Fin eN = Fin e                                    *)
+      (* (e=e1*, e=e1+)                                                     *)
+      (* Follow e1 = Follow e1 ++ First e1, Fin e1 = Fin e                  *)
+      (*                                                                    *)
+      (* (e=e1|...|eN) =                                                    *)
+      (* Follow eI = Follow e, Fin eI = Fin e for i=0...n                   *)
+      (*                                                                    *)
+      (* (e=e1,...,eN) =                                                    *)
+      (* Follow eN = Follow e, Fin eN = Fin e                               *)
       (* Follow eI = First eI+1,                if Empty eI+1 = false, i<n  *)
       (*             First eI+1 ++ Follow eI+1, if Empty eI+1 = true,  i<n  *)
-      (* Fin eI = false,    if Empty eI+1 = false, i<n                            *)
-      (*          Fin eI+1, if Empty eI+1 = true,  i<n                            *)
+      (* Fin eI = false,    if Empty eI+1 = false, i<n                      *)
+      (*          Fin eI+1, if Empty eI+1 = true,  i<n                      *)
       (*                                                                    *)
       (* F1++F2 = F1 U F2, if a2<>a1 forall (q1,a1) in F1, (q1,a1) in F1}   *)
       (*          error,   if exist (q1,a) in F1, (q2,a) in F2              *)
@@ -7338,7 +7338,7 @@ structure DfaPassTwo : DfaPassTwo =
       fun passTwo nondet (cmi as (_,(n,mt,fst))) =                                   
          let 
             val table = Array.array(n+1,(nil,false))
-                           
+                    
             val _ = Array.update(table,0,(fst,mt))
 
             fun do_cm (ff as (flw,fin)) (cm,(q,mt,fst)) =
@@ -7413,7 +7413,7 @@ signature Dfa =
    end
 
 functor Dfa (structure DfaOptions : DfaOptions) : Dfa =
-   struct        
+   struct       
       structure DfaPassThree = DfaPassThree (structure DfaOptions = DfaOptions) 
 
       open 
@@ -8920,14 +8920,14 @@ functor DtdAttributes (structure Dtd           : Dtd
 (*                                                                          *)
 (* Exceptions raised by functions in this structure:                        *)
 (*   initDtdTables     : none                                               *)
-(*   AttIdx2String     : NoSuchSymbol                                            *)
+(*   AttIdx2String     : NoSuchSymbol                                       *)
 (*   ElemIdx2String    : NoSuchIndex                                        *)         
-(*   GenEntIdx2String  : NoSuchIndex                                            *)
-(*   IdIdx2String      : NoSuchIndex                                            *)
-(*   NotIdx2String     : NoSuchIndex                                             *)
-(*   GenEntity2String  : NoSuchIndex                                            *)
+(*   GenEntIdx2String  : NoSuchIndex                                        *)
+(*   IdIdx2String      : NoSuchIndex                                        *)
+(*   NotIdx2String     : NoSuchIndex                                        *)
+(*   GenEntity2String  : NoSuchIndex                                        *)
 (*   ElemInfo2String   : NoSuchIndex NoSuchSymbol                           *)
-(*   printGenEntTable  : NoSuchIndex                                            *)
+(*   printGenEntTable  : NoSuchIndex                                        *)
 (*   printElementTable : NoSuchIndex NoSuchSymbol                           *)
 (*   printDtdTables    : NoSuchIndex NoSuchSymbol                           *)
 (*--------------------------------------------------------------------------*)
@@ -8973,7 +8973,7 @@ functor DtdManager (structure Dtd           : Dtd
       structure Entities      = Entities      (structure Hooks = Hooks)
       structure DtdAttributes = DtdAttributes (structure Dtd = Dtd
                                                structure Entities = Entities
-                                               structure ParserOptions = ParserOptions)         
+                                               structure ParserOptions = ParserOptions)  
       open 
          Dtd
          DtdAttributes
@@ -9679,7 +9679,7 @@ struct
            of 0wx22 (* '""' *) => parseVersionNum c1 (a1,q1) 
             | 0wx27 (* "'" *)  => parseVersionNum c1 (a1,q1) 
             | _ => let val a2 = hookError(a1,(getPos q1,ERR_EXPECTED(expLitQuote,[c1])))
-                   in raise SyntaxError(c1,a2,q1)        
+                   in raise SyntaxError(c1,a2,q1)       
                    end
       end   
 
@@ -9758,7 +9758,7 @@ struct
            of 0wx22 (* '""' *) => parseEncName c1 (a1,q1) 
             | 0wx27 (* "'" *)  => parseEncName c1 (a1,q1) 
             | _ => let val a2 = hookError(a1,(getPos q1,ERR_EXPECTED(expLitQuote,[c1])))
-                   in raise SyntaxError(c1,a2,q1)        
+                   in raise SyntaxError(c1,a2,q1)       
                    end
       end
 
@@ -9796,7 +9796,7 @@ struct
               of 0wx22 (* '""' *) => (getChar (a,q))
                | 0wx27 (* "'" *)  => (getChar (a,q))
                | _ => let val a1 = hookError(a,(getPos q,ERR_EXPECTED(expLitQuote,[quote])))
-                      in raise SyntaxError(quote,a1,q)        
+                      in raise SyntaxError(quote,a1,q)  
                       end
          val (text,caq2) = doit nil caq1
       in 
@@ -10551,7 +10551,7 @@ struct
                     end
             else a1
 
-      in ((idx,ent),(a2,q1))            
+      in ((idx,ent),(a2,q1))        
       end
    fun parseGenRefLit dtd cs (caq as (_,_,q)) = 
       let 
@@ -10682,7 +10682,7 @@ struct
                               in raise NoSuchEntity (a2,q1)
                               end
                       else ()
-      in ((idx,ent),(a1,q1))         
+      in ((idx,ent),(a1,q1))     
       end
    fun parseParRefLit dtd cs (caq as (_,_,q)) = 
       let 
@@ -10745,7 +10745,7 @@ struct
       end
    handle NotFound (c,a,q) => let val err = ERR_EXPECTED(expAnEntName,[c])
                                   val a1 = hookError(a,(getPos q,err))
-                              in (c,a1,q)            
+                              in (c,a1,q)           
                               end
 
    (*--------------------------------------------------------------------*)
@@ -11617,12 +11617,12 @@ struct
             
          val hscaq2 = parseSmay nil (c1,a1',q1)
                
-         (*--------------------------------------------------------------*)               
+         (*--------------------------------------------------------------*)            
          (* yet are the indices of attributes encountered yet, old are   *)
          (* the valid attributes specified yet, and todo are the defs of *)
          (* attributes yet to be specified. hadS indicates whether white *)
          (* space preceded.                                              *)
-         (*--------------------------------------------------------------*)               
+         (*--------------------------------------------------------------*)            
          fun doit (yet,old,todo) (hadS,(sp,(c,a,q))) = 
             case c 
               of 0wx3E (* #">" *) => (old,todo,sp,false,q,getChar(a,q))
@@ -13794,7 +13794,7 @@ struct
              (*-------------------------------------------------------*)
           handle SyntaxError caq => caq
                | NoSuchEntity aq => getChar aq
-                                          
+                                    
          (*--------------------------------------------------------------*)
          (* handle an end-tag. finish the element in the user data and   *)
          (* return.                                                      *)
@@ -13914,7 +13914,7 @@ struct
                | 0wx26 (* #"&" *) => do_elem (p,do_ref (q,getChar(a,q)))
                | 0wx3C (* #"<" *) => do_lt (p,q,getChar(a,q))
                | _ => do_elem (p,do_char_elem (c,a,q))
-                                               
+                                              
          (*--------------------------------------------------------------*)
          (* do empty content. if the first thing to come is the current  *)
          (* element's end-tag, finish it. Otherwise print an error and   *)
@@ -14139,7 +14139,7 @@ struct
              (*-------------------------------------------------------*)
           handle SyntaxError caq => caq
                | NoSuchEntity aq => getChar aq 
-                                          
+                                    
          (*--------------------------------------------------------------*)
          (* handle an end-tag. finish the element in the user data and   *)
          (* return.                                                      *)
@@ -14545,7 +14545,7 @@ struct
                       end
       in 
          doit PROLOG caq
-      end               
+      end              
 
    (* to false. (cf. 2.9)                                                *)
    (*                                                                    *) 
@@ -15365,7 +15365,7 @@ functor CatParse (structure Params : CatParams) : CatParse =
       fun parseCatalog uri = 
          let val suffix = uriSuffix uri
          in if isSocatSuffix suffix then parseSoCat uri 
-             else (if isXmlSuffix suffix then parseXmlCat uri
+            else (if isXmlSuffix suffix then parseXmlCat uri
                   else (if !O_PREFER_SOCAT then parseSoCat uri 
                         else parseXmlCat uri))
          end
@@ -15653,7 +15653,7 @@ functor CatOptions () : CatOptions =
                         | _ => let val _ = doError (mustHave "-C")
                                in doit opts
                                end)
-                    | cs => 
+                  | cs => 
                     let val cs1 = List.filter
                        (fn c => if #"C"<>c then true
                                 else false before doError (mustHave "-C")) cs

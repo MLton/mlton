@@ -895,9 +895,9 @@ Here are the changes from version 20011006 to version 20020410.
 
 * 2002-03-27
   - Regularization of options
-        -g        -->        -degug {false|true}
-        -h n        -->         -fixed-heap n
-        -p         -->         -profile {false|true}
+        -g      -->     -degug {false|true}
+        -h n    -->     -fixed-heap n
+        -p      -->     -profile {false|true}
 
 * 2002-03-22
   - Set up the stubs so that MLton can be compiled in the standard basis
@@ -1181,7 +1181,7 @@ Summary:
     to the same label is turned into a direct jump.
   - Improved CPS shrinker (Prim.apply) to handle constructors
         A = A --> true
-         A = B --> false
+        A = B --> false
         A x = B y --> false
   - Rewrote a lot of loops in the basis library to use inequalities instead of
     equality for the loop termination test so that the (forthcoming) overflow

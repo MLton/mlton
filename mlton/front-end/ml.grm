@@ -601,8 +601,8 @@ sigexp' : sigexp'node (Sigexp.makeRegion' (sigexp'node,
                                           sigexp'nodeleft,
                                           sigexp'noderight))
 
-sigexp'node : sigid                         (Sigexp.Var sigid)
-            | SIG specs END                 (Sigexp.Spec specs)
+sigexp'node : sigid                      (Sigexp.Var sigid)
+            | SIG specs END              (Sigexp.Spec specs)
 
 sigbinds':                             (([], defaultPos, []))
          | AND sigbinds                (([], defaultPos, sigbinds))
@@ -625,13 +625,13 @@ specs  :                   (Spec.makeRegion (Spec.Empty, Region.bogus))
                                 
 spec : specnode (Spec.makeRegion' (specnode, specnodeleft, specnoderight))
 
-specnode : VAL valdescs                (Spec.Val (Vector.fromList valdescs))
+specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
          | TYPE typdescs        (Spec.Type (Vector.fromList typdescs))
-         | TYPE typBind           (Spec.TypeDefs typBind)
-         | EQTYPE typdescs        (Spec.Eqtype (Vector.fromList typdescs))
+         | TYPE typBind         (Spec.TypeDefs typBind)
+         | EQTYPE typdescs      (Spec.Eqtype (Vector.fromList typdescs))
          | DATATYPE datatypeRhsNoWithtype (Spec.Datatype datatypeRhsNoWithtype)
-         | EXCEPTION exndescs        (Spec.Exception (Vector.fromList exndescs))
-         | STRUCTURE strdescs        (Spec.Structure (Vector.fromList strdescs))
+         | EXCEPTION exndescs   (Spec.Exception (Vector.fromList exndescs))
+         | STRUCTURE strdescs   (Spec.Structure (Vector.fromList strdescs))
          | INCLUDE sigexp       (Spec.IncludeSigexp sigexp)
          | INCLUDE sigid sigids (* p. 59 *)
            (Spec.IncludeSigids (Vector.fromList (sigid :: sigids)) )
@@ -665,17 +665,17 @@ strdescs'' : strdescs'                 (strdescs')
 typdescs : typdesc               ([typdesc])
          | typdesc AND typdescs  (typdesc :: typdescs)
            
-typdesc        : tyvars tycon ({tyvars = tyvars,
+typdesc : tyvars tycon ({tyvars = tyvars,
                          tycon = tycon})
 
 valdescs : valdesc                ([valdesc])
-         | valdesc AND valdescs          (valdesc :: valdescs)
+         | valdesc AND valdescs   (valdesc :: valdescs)
              
-valdesc        : var COLON ty  (Con.ensureSpecify (Vid.toCon (Vid.fromVar var))
+valdesc : var COLON ty  (Con.ensureSpecify (Vid.toCon (Vid.fromVar var))
                          ; (var, ty))
 
 exndescs : exndesc                ([exndesc])
-         | exndesc AND exndescs          (exndesc :: exndescs)
+         | exndesc AND exndescs   (exndesc :: exndescs)
 
 exndesc : con tyOpt  (Con.ensureSpecify con; (con, tyOpt))
 
@@ -714,10 +714,10 @@ fctarg : strid COLON sigexp  (FctArg.Structure (strid, sigexp))
 (*                   Declarations                    *)
 (*---------------------------------------------------*)
           
-decs :                         (Dec.makeRegion' (Dec.SeqDec (Vector.new0 ()),
+decs :                  (Dec.makeRegion' (Dec.SeqDec (Vector.new0 ()),
                                           defaultPos, defaultPos))
      | dec decs         (Dec.sequence (dec,decs))
-     | SEMICOLON decs        (decs)
+     | SEMICOLON decs   (decs)
 
 dec : decnode (Dec.makeRegion' (decnode, decnodeleft, decnoderight))
 
@@ -731,16 +731,16 @@ decnolocal
         | VAL tyvarseq valbindTop  (Dec.Val {tyvars = tyvarseq,
                                              vbs = #1 valbindTop,
                                              rvbs = #2 valbindTop})
-        | FUN funs                (Dec.Fun (Vector.new0 (), Vector.fromList funs))
-        | FUN tyvarseq funs        (Dec.Fun (tyvarseq, Vector.fromList funs))
-        | TYPE typBind                (Dec.Type typBind)
+        | FUN funs              (Dec.Fun (Vector.new0 (), Vector.fromList funs))
+        | FUN tyvarseq funs     (Dec.Fun (tyvarseq, Vector.fromList funs))
+        | TYPE typBind          (Dec.Type typBind)
         | DATATYPE datatypeRhs  (Dec.Datatype datatypeRhs)
         | ABSTYPE datBind WITH decs END   (Dec.Abstype {datBind = datBind,
                                                         body = decs})
         | EXCEPTION ebs
           (Dec.Exception (Vector.fromList ebs))
-        | OPEN longstrids        (Dec.Open (Vector.fromList longstrids))
-        | fixity vids                (Dec.Fix {fixity = fixity,
+        | OPEN longstrids       (Dec.Open (Vector.fromList longstrids))
+        | fixity vids           (Dec.Fix {fixity = fixity,
                                           ops = Vector.fromList vids})
         | OVERLOAD priority var COLON ty AS longvarands
                                 (Dec.Overload (priority, 
@@ -756,7 +756,7 @@ valbindTop : valbind (let
                           Vector.fromList rvbs)
                       end)
 
-valbind        : pat EQUALOP exp valbindRest
+valbind : pat EQUALOP exp valbindRest
           (let
               val (vbs, rvbs) = valbindRest
            in
@@ -776,18 +776,18 @@ rvalbind : REC rvalbind                (rvalbind)
 rvalbindRest :               ([])
              | AND rvalbind  (rvalbind)
 
-constraint :                         (NONE)
-           | COLON ty                 (SOME ty)
+constraint :                    (NONE)
+           | COLON ty           (SOME ty)
 
-funs        : clausesTop               ([clausesTop])
-        | clausesTop AND funs           (clausesTop :: funs)
+funs    : clausesTop               ([clausesTop])
+        | clausesTop AND funs      (clausesTop :: funs)
 
 clausesTop: clauses (Vector.fromList clauses)
 
-clauses        : clause                ([clause])
-        | clause BAR clauses        (clause :: clauses)
+clauses : clause                ([clause])
+        | clause BAR clauses    (clause :: clauses)
 
-clause        : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
+clause  : apats constraint EQUALOP exp  ({pats = Vector.fromList apats,
                                           resultType = constraint,
                                           body = exp})
 
@@ -808,10 +808,10 @@ typBind'' :               ([])
           | AND typBind'  (typBind')
 
 
-tyvars        : tyvarseq (tyvarseq)
+tyvars  : tyvarseq (tyvarseq)
         |          (Vector.new0 ())
 
-tyvarseq: tyvar                          (Vector.new1 tyvar)
+tyvarseq: tyvar                   (Vector.new1 tyvar)
         | LPAREN tyvar_pc RPAREN
           (let
               val v = Vector.fromList tyvar_pc
@@ -831,10 +831,10 @@ tyvar_pc: tyvar                ([tyvar])
         | tyvar COMMA tyvar_pc (tyvar :: tyvar_pc)
 
 constrs : constr                ([constr])
-        | constr BAR constrs        (constr :: constrs)
+        | constr BAR constrs    (constr :: constrs)
 
-constr        : opcon                (opcon, NONE)
-        | opcon OF ty        (opcon, SOME ty)
+constr  : opcon         (opcon, NONE)
+        | opcon OF ty   (opcon, SOME ty)
 
 opcon   : con           (con)
         | OP con        (con)
@@ -842,7 +842,7 @@ opcon   : con           (con)
 ebs     : eb              ([eb])
         | eb AND ebs      (eb::ebs)
 
-eb        : opcon ebrhs          (Con.ensureRedefine opcon; (opcon, ebrhs))
+eb      : opcon ebrhs     (Con.ensureRedefine opcon; (opcon, ebrhs))
 
 ebrhs : ebrhsnode (EbRhs.makeRegion' (ebrhsnode,
                                      ebrhsnodeleft, ebrhsnoderight))
@@ -852,13 +852,13 @@ ebrhsnode   :                    (EbRhs.Gen NONE)
             | EQUALOP longcon    (EbRhs.Def longcon)
             | EQUALOP OP longcon (EbRhs.Def longcon)
 
-fixity        : INFIX                        (Fixity.Infix NONE)
-        | INFIX digit                (Fixity.Infix (SOME digit))
+fixity  : INFIX                 (Fixity.Infix NONE)
+        | INFIX digit           (Fixity.Infix (SOME digit))
         | INFIXR                (Fixity.Infixr NONE)
-        | INFIXR digit                (Fixity.Infixr (SOME digit))
+        | INFIXR digit          (Fixity.Infixr (SOME digit))
         | NONFIX                (Fixity.Nonfix)
 
-priority :                        (Priority.T NONE)
+priority :                      (Priority.T NONE)
          | digit                (Priority.T (SOME digit))
 
 int : INT
@@ -958,30 +958,30 @@ match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
 rules : rule            ([rule])
       | rule BAR rules  (rule :: rules)
 
-rule        : pat DARROW exp        ((pat,exp))
+rule    : pat DARROW exp        ((pat,exp))
 
-elabel        : field EQUALOP exp        (field,exp)
+elabel  : field EQUALOP exp     (field,exp)
 
-elabels : elabel COMMA elabels        (elabel :: elabels)
+elabels : elabel COMMA elabels  (elabel :: elabels)
         | elabel                ([elabel])
 
-exp_ps        : exp SEMICOLON exp     ([exp1, exp2])
-        | exp SEMICOLON exp_ps        (exp :: exp_ps)
+exp_ps  : exp SEMICOLON exp     ([exp1, exp2])
+        | exp SEMICOLON exp_ps  (exp :: exp_ps)
 
 exp : expnode (Exp.makeRegion' (expnode, expnodeleft, expnoderight))
 
-expnode        : exp HANDLE match        (Exp.Handle (exp, match))
+expnode : exp HANDLE match      (Exp.Handle (exp, match))
         | exp ORELSE exp        (Exp.Orelse (exp1, exp2))
         | exp ANDALSO exp       (Exp.Andalso (exp1, exp2))
-        | exp COLON ty                (Exp.Constraint (exp, ty))
-        | app_exp                (Exp.FlatApp (Vector.fromList app_exp))
-        | FN match                (Exp.Fn match)
-        | CASE exp OF match        (Exp.Case (exp, match))
-        | WHILE exp DO exp        (Exp.While {test = exp1, expr = exp2})
+        | exp COLON ty          (Exp.Constraint (exp, ty))
+        | app_exp               (Exp.FlatApp (Vector.fromList app_exp))
+        | FN match              (Exp.Fn match)
+        | CASE exp OF match     (Exp.Case (exp, match))
+        | WHILE exp DO exp      (Exp.While {test = exp1, expr = exp2})
         | IF exp THEN exp ELSE exp (Exp.If (exp1, exp2, exp3))
-        | RAISE exp                (Exp.Raise exp)
+        | RAISE exp             (Exp.Raise exp)
 
-app_exp        : aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
+app_exp : aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
                              :: app_exp1)
         | longvid app_exp1  (Exp.makeRegion' (Exp.Var {name = longvid,
                                                        fixop = Fixop.None},
@@ -991,17 +991,17 @@ app_exp        : aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
 app_exp1 :         ([])
          | app_exp (app_exp)
 
-aexp        : OP vid                (Exp.Var {name = Longvid.short vid,
+aexp    : OP vid                (Exp.Var {name = Longvid.short vid,
                                          fixop = Fixop.Op})
         | const                 (Exp.Const const)
-        | HASH field                (Exp.Selector field)
+        | HASH field            (Exp.Selector field)
         | LBRACE elabels RBRACE
           (Exp.Record (Record.fromVector (Vector.fromList elabels)))
-        | LBRACE RBRACE                (Exp.unit)
-        | LPAREN RPAREN                (Exp.unit)
+        | LBRACE RBRACE         (Exp.unit)
+        | LPAREN RPAREN         (Exp.unit)
         | LPAREN expnode RPAREN (expnode)
-        | LPAREN exp_ps RPAREN        (Exp.Seq (Vector.fromList exp_ps))
-        | LPAREN exp_2c RPAREN        (Exp.tuple (Vector.fromList exp_2c))
+        | LPAREN exp_ps RPAREN  (Exp.Seq (Vector.fromList exp_ps))
+        | LPAREN exp_2c RPAREN  (Exp.tuple (Vector.fromList exp_2c))
         | LBRACKET exp_list RBRACKET  (Exp.List (Vector.fromList exp_list))
         | LBRACKET RBRACKET           (Exp.List (Vector.new0 ()))
         | LET decs IN exp END   (Exp.Let (decs, exp))
@@ -1068,11 +1068,11 @@ symattributes
                   ; symattributes)
       end)
 
-exp_2c        : exp COMMA exp_2c        (exp :: exp_2c)
-        | exp COMMA exp                ([exp1, exp2])
+exp_2c  : exp COMMA exp_2c      (exp :: exp_2c)
+        | exp COMMA exp         ([exp1, exp2])
 
-exp_list : exp                        ([exp])
-         | exp COMMA exp_list        (exp :: exp_list)
+exp_list : exp                  ([exp])
+         | exp COMMA exp_list   (exp :: exp_list)
 
 (*---------------------------------------------------*)
 (*                     Patterns                      *)
@@ -1080,12 +1080,12 @@ exp_list : exp                        ([exp])
 
 pat : patnode (Pat.makeRegion' (patnode, patnodeleft, patnoderight))
 
-patnode        : pat AS pat    (Pat.makeAs (pat1, pat2))
+patnode : pat AS pat    (Pat.makeAs (pat1, pat2))
         | pat COLON ty  (Pat.Constraint (pat, ty))
         | apats         (Pat.FlatApp (Vector.fromList apats))
 
-apats        : apat                        ([apat])
-        | apat apats                (apat :: apats)
+apats   : apat                  ([apat])
+        | apat apats            (apat :: apats)
 
 apat : apatnode (Pat.makeRegion' (apatnode, apatnodeleft, apatnoderight))
 
@@ -1111,7 +1111,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
            in
               Pat.Const const
            end)
-        | WILD                         (Pat.Wild)
+        | WILD                   (Pat.Wild)
         | LPAREN pats RPAREN     (Pat.tuple (Vector.fromList pats))
         | LBRACKET pats RBRACKET (Pat.List (Vector.fromList pats))
         | LBRACE RBRACE          (Pat.unit)
@@ -1132,8 +1132,8 @@ commapats : ([])
 patitems : patitem COMMA patitems  (let val (items, f) = patitems
                                     in (patitem :: items, f)
                                     end)
-         | patitem                ([patitem], false)
-         | DOTDOTDOT                ([], true)
+         | patitem              ([patitem], false)
+         | DOTDOTDOT            ([], true)
 
 patitem
    : field EQUALOP pat
@@ -1151,34 +1151,34 @@ opaspat :         (NONE)
 
 ty : tynode (Type.makeRegion' (tynode, tynodeleft, tynoderight))
 
-tynode        : tuple_ty        (Type.tuple (Vector.fromList tuple_ty))
-        | ty ARROW ty        (Type.arrow (ty1, ty2))
+tynode  : tuple_ty      (Type.tuple (Vector.fromList tuple_ty))
+        | ty ARROW ty   (Type.arrow (ty1, ty2))
         | ty'node       (ty'node)
 
 ty' : ty'node (Type.makeRegion' (ty'node, ty'nodeleft, ty'noderight))
 
-ty'node        : tyvar                                  (Type.Var tyvar)
+ty'node : tyvar                           (Type.Var tyvar)
         | LBRACE tlabels RBRACE
           (Type.Record (Srecord.fromVector (Vector.fromList tlabels)))
-        | LBRACE RBRACE                          (Type.unit)
+        | LBRACE RBRACE                   (Type.unit)
         | LPAREN ty0_pc RPAREN longtycon  (Type.Con (longtycon,
                                                      Vector.fromList ty0_pc))
-        | LPAREN ty RPAREN                  (Type.node ty)
-        | ty' longtycon                          (Type.Con (longtycon,
+        | LPAREN ty RPAREN                (Type.node ty)
+        | ty' longtycon                   (Type.Con (longtycon,
                                                      Vector.new1 ty'))
         | longtycon                       (Type.Con (longtycon,
                                                      Vector.new0 ()))
 
-tlabel        : field COLON ty        (field, ty)
+tlabel  : field COLON ty        (field, ty)
 
-tlabels : tlabel COMMA tlabels        (tlabel :: tlabels)
+tlabels : tlabel COMMA tlabels  (tlabel :: tlabels)
         | tlabel                ([tlabel])
           
-tuple_ty : ty' ASTERISK tuple_ty         (ty' :: tuple_ty)
-         | ty' ASTERISK ty'                 ([ty'1, ty'2])
+tuple_ty : ty' ASTERISK tuple_ty        (ty' :: tuple_ty)
+         | ty' ASTERISK ty'             ([ty'1, ty'2])
 
-ty0_pc        : ty COMMA ty                ([ty1, ty2])
-        | ty COMMA ty0_pc         (ty :: ty0_pc)
+ty0_pc  : ty COMMA ty           ([ty1, ty2])
+        | ty COMMA ty0_pc       (ty :: ty0_pc)
 
 (*---------------------------------------------------*)
 (*                       Atoms                       *)
@@ -1188,7 +1188,7 @@ constOrBool
    : const (const)
    | id (let
             fun ok b = Const.makeRegion (Const.Bool b, reg (idleft, idright))
-         in               
+         in            
             case Symbol.toString (#1 id) of
                "false" => ok false
              | "true" => ok true
@@ -1196,14 +1196,14 @@ constOrBool
                      ; ok false)
          end)
           
-const        : const'                (Const.makeRegion
+const   : const'                (Const.makeRegion
                                  (const', reg (const'left, const'right)))
 
-const'  : int                        (Const.Int int)
-        | word                        (Const.Word word)
-        | REAL                        (Const.Real REAL)
+const'  : int                   (Const.Int int)
+        | word                  (Const.Word word)
+        | REAL                  (Const.Real REAL)
         | STRING                (Const.String STRING)
-        | CHAR                         (Const.Char CHAR)
+        | CHAR                  (Const.Char CHAR)
 
 string : STRING  (CharVector.tabulate
                   (Vector.length STRING, fn i =>
@@ -1237,12 +1237,12 @@ vidNoEqual : id                (Vid.fromSymbol id)
 vids : vid                     ([vid])
      | vid vids                (vid::vids)
 var : idEqual                  (Var.fromSymbol idEqual)
-con : id                        (Con.fromSymbol id)
-tycon : idNoAsterisk                (Tycon.fromSymbol idNoAsterisk)
-tyvar : TYVAR                        (Tyvar.newString (TYVAR, {left = TYVARleft,
+con : id                       (Con.fromSymbol id)
+tycon : idNoAsterisk           (Tycon.fromSymbol idNoAsterisk)
+tyvar : TYVAR                  (Tyvar.newString (TYVAR, {left = TYVARleft,
                                                          right = TYVARright}))
-field : id                         (Field.Symbol (#1 id))
-      | int                        (let
+field : id                     (Field.Symbol (#1 id))
+      | int                    (let
                                    val int =
                                       IntInf.toInt int
                                       handle Exn.Overflow =>
@@ -1259,11 +1259,11 @@ field : id                         (Field.Symbol (#1 id))
                                        int - 1)
                                 end) (* int - 1 because fields are 0-based *)
 
-strid : id                        (Strid.fromSymbol id)
-sigid : id                        (Sigid.fromSymbol id)
-sigids : sigid                        ([sigid])
-       | sigid sigids                 (sigid :: sigids)
-fctid : id                        (Fctid.fromSymbol id)
+strid : id                     (Strid.fromSymbol id)
+sigid : id                     (Sigid.fromSymbol id)
+sigids : sigid                 ([sigid])
+       | sigid sigids          (sigid :: sigids)
+fctid : id                     (Fctid.fromSymbol id)
 
 longtycon : longidNoAsterisk (Longtycon.fromSymbols longidNoAsterisk)
 longvar : longidEqual      (Longvar.fromSymbols longidEqual)

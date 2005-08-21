@@ -122,10 +122,10 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                               in  f (n, r)
                               end
                              
-                         val check_rule = fn (rule as RULE {num,...}) =>
+                        val check_rule = fn (rule as RULE {num,...}) =>
                             let val pos = rule_pos rule
                             in (print "look_pos: ";
-                                 prRule rule;
+                                prRule rule;
                                 print " = ";
                                 printInt pos;
                                 print "\n";
@@ -197,7 +197,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                   fn (rule as RULE {rhs=nil,...}) => 
                          [findRef(state,ITEM{rule=rule,dot=0,rhsAfter=nil})]
                    | (rule as RULE {rhs=sym::rest,...}) =>
-                   let        val pos = Int.max(look_pos rule,1)
+                   let  val pos = Int.max(look_pos rule,1)
                         fun scan'(state,nil,pos,result) =
                                 findRef(state,ITEM{rule=rule,
                                                    dot=pos,
@@ -416,7 +416,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
    have a derivation S =+=> .C x, where x is nullable *)
 
                        if dot >= (look_pos rule) then
-                                 case item
+                          case item
                           of ITEM{rhsAfter=NONTERM b :: _,...} =>
                              (case add_nonterm_lookahead(b,state)
                               of nil => ()

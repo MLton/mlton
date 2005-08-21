@@ -1,11 +1,11 @@
 #include "platform.h"
 
 Int Posix_Process_execp (NullString f, Pointer a) {
-        char                *file;
-        char                *saved;
-         char                **args;
+        char            *file;
+        char            *saved;
+        char            **args;
         int             n;
-        int                 result;
+        int             result;
 
         file = (char *) f;
         args = (char **) a;

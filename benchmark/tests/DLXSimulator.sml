@@ -482,7 +482,7 @@ structure ImmArray2 : IMMARRAY2
       fun update (IA2 ia2, r, c, x)
           = IA2 (ImmArray.update (ia2, r, 
                                   ImmArray.update (ImmArray.sub (ia2, r), 
-                                                   c, x)));          
+                                                   c, x)));       
 
       (* val extract : 'a immarray2 * int * int * 
        *               int option * int option -> 'a immarray2
@@ -821,7 +821,7 @@ structure ALU : ALU
            (* 
             * This handle will handle all ALU errors, most
             * notably overflow and division by zero, and will
-            * print an error message and return 0.                  
+            * print an error message and return 0.                
             *)
            handle _ => 
              (print "Error : ALU returning 0\n";
@@ -950,7 +950,7 @@ structure Memory : MEMORY
             end;
 
       fun Store ((mem, (reads, writes)), address, data)
-           = let
+          = let
               val aligned_address = AlignWAddress address;
               val use_address = Word32.>> (aligned_address, 0wx0002);
             in
@@ -971,7 +971,7 @@ structure Memory : MEMORY
             end;
             
       fun StoreWord (mem, address, data)
-           = let
+          = let
               val aligned_address
                   = if address = AlignWAddress address
                       then address
@@ -1024,7 +1024,7 @@ structure Memory : MEMORY
             end;
             
       fun StoreHWord (mem, address, data)
-           = let
+          = let
               val aligned_address
                   = if address = AlignHWAddress address
                       then address
@@ -1108,7 +1108,7 @@ structure Memory : MEMORY
             end;
             
       fun StoreByte (mem, address, data)
-           = let
+          = let
               val aligned_address = address;
               val (_, s_word) = Load(mem, aligned_address);
             in
@@ -1374,7 +1374,7 @@ functor CachedMemory (structure CS : CACHESPEC;
        * stored at address in the cache.
        *)
       fun ReadCache_aux_entry ((valid, dirty, tag, block), address) 
-           = ImmArray.sub (block, 
+          = ImmArray.sub (block, 
                           Word32.toInt (Word32.>> (GetBlockOffset address, 
                                                    0wx0002)));
         
@@ -1616,7 +1616,7 @@ functor CachedMemory (structure CS : CACHESPEC;
             end;
             
       fun StoreWord (mem, address, data)
-           = let
+          = let
               val aligned_address
                   = if address = AlignWAddress address
                       then address
@@ -1669,7 +1669,7 @@ functor CachedMemory (structure CS : CACHESPEC;
             end;
             
       fun StoreHWord (mem, address, data)
-           = let
+          = let
               val aligned_address
                   = if address = AlignHWAddress address
                       then address
@@ -1753,7 +1753,7 @@ functor CachedMemory (structure CS : CACHESPEC;
             end;
             
       fun StoreByte (mem, address, data)
-           = let
+          = let
               val aligned_address = address;
               val (_, s_word) = Load(mem, aligned_address);
             in
@@ -2584,7 +2584,7 @@ functor DLXSimulatorFun (structure RF : REGISTERFILE;
       fun LoadProgAux ([], mem, address)
           = mem
         | LoadProgAux (instrs::instr_list, mem, address)
-            = let
+          = let
               val instro = Word32.fromString instrs;
               val instr = if isSome instro
                             then valOf instro

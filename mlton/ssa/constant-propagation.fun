@@ -346,7 +346,7 @@ structure Value =
       fun equals (T s, T s') = Set.equals (s, s')
 
       val equals =
-          Trace.trace2 
+         Trace.trace2 
          ("ConstantPropagation.Value.equals", 
           layout, layout, Bool.layout) 
          equals
@@ -654,8 +654,8 @@ fun simplify (program: Program.t): Program.t =
       local
          open Value
       in
-          val traceCoerce =
-             Trace.trace ("ConstantPropagation.Value.coerce",
+         val traceCoerce =
+            Trace.trace ("ConstantPropagation.Value.coerce",
                          fn {from, to} => Layout.record [("from", layout from),
                                                          ("to", layout to)],
                          Unit.layout)

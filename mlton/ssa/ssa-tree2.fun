@@ -793,7 +793,7 @@ structure Statement =
                                           str " = "]],
                        Exp.layout' (exp, layoutVar)]
              | Profile p => ProfileExp.layout p
-                   | Update {base, offset, value} =>
+             | Update {base, offset, value} =>
                   seq [(if 0 = offset
                            then empty
                         else seq [str "#", Int.layout offset, str " "]),
@@ -1429,7 +1429,7 @@ structure Function =
       in
          fun determineControlFlow ({blocks, start, ...}: dest) =
             let
-                   open Dot
+               open Dot
                val g = Graph.new ()
                fun newNode () = Graph.newNode g
                val {get = labelNode, ...} =
@@ -1660,7 +1660,7 @@ structure Function =
             val {args, blocks, ...} = dest
             val _ = (Vector.foreach (args, Var.clear o #1)
                      ; Vector.foreach (blocks, Block.clear))
-                  val _ = CPromise.clear controlFlow
+            val _ = CPromise.clear controlFlow
          in
             ()
          end

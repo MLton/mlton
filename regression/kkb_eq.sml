@@ -60,7 +60,7 @@ structure Main : KB =
             | map_rec (a::L) = f a :: map_rec L
           in
             map_rec
-            end
+          end
 
 (******* Quelques definitions du prelude CAML **************)
 

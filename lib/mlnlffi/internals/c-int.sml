@@ -66,7 +66,7 @@ structure C :> C_INT = struct
         val ~~ = MLRep.Int.Unsigned.notb
     in
 
-    type ('t, 'c) obj  = addr * 't objt        (* RTTI for stored value *)
+    type ('t, 'c) obj  = addr * 't objt (* RTTI for stored value *)
     type ('t, 'c) obj' = addr
     type ro = unit
     type rw = unit
@@ -534,7 +534,7 @@ structure C :> C_INT = struct
 
         fun sub' t (p, i) = |*! (|+! t (p, i))
 
-         val convert : (('st, 'sc) obj ptr, ('tt, 'tc) obj ptr) W.witness ->
+        val convert : (('st, 'sc) obj ptr, ('tt, 'tc) obj ptr) W.witness ->
                       ('st, 'sc) obj ptr -> ('tt, 'tc) obj ptr =
            fn w => fn x => w x
         val convert' : (('st, 'sc) obj ptr, ('tt, 'tc) obj ptr) W.witness ->

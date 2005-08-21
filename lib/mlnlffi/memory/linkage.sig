@@ -18,10 +18,10 @@ signature DYN_LINKAGE = sig
 
     exception DynLinkError of string
 
-    type lib_handle                (* handle on dynamically linked library (DL) *)
-    type addr_handle                (* handle on address obtained from a DL *)
+    type lib_handle             (* handle on dynamically linked library (DL) *)
+    type addr_handle            (* handle on address obtained from a DL *)
 
-    val main_lib : lib_handle        (* the runtime system itself *)
+    val main_lib : lib_handle   (* the runtime system itself *)
 
     (* link new library and return its handle *)
     val open_lib : { name: string, lazy: bool, global: bool } -> lib_handle

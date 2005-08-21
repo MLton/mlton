@@ -2,8 +2,8 @@
 
 (* quicksort-random.sml
  *
- * Input....:        Random list (pseudo-random integers)
- * Optimised:        'arg as ...' in quickSort'() and  partition(). 
+ * Input....:   Random list (pseudo-random integers)
+ * Optimised:   'arg as ...' in quickSort'() and  partition(). 
  *              Copying left-parts after partitioning inside quickSort'().
  *              `Bertelsen transformation' of argument to tail-recursive
  *              call to quickSort'().
@@ -52,7 +52,7 @@ fun app f [] = ()
     | quickSort' ([a], sorted) = ([], a::sorted)
     | quickSort' (a::bs, sorted) =  (* "a" is the pivot *)
         let 
-            fun partition (arg as (_, _, []: elem list)) = arg
+          fun partition (arg as (_, _, []: elem list)) = arg
             | partition (left, right, x::xr) =
                 if x<=a then partition(x::left, right, xr)
                         else partition(left, x::right, xr)

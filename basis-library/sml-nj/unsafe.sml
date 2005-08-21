@@ -35,7 +35,7 @@ structure Unsafe: UNSAFE =
       structure CharVector = UnsafeMonoVector (CharVector)
       structure Real64Array = UnsafeMonoArray (Real64Array)
       structure Vector =
-               struct
+         struct
             val sub = Vector.unsafeSub
          end
       structure Word8Array = UnsafeMonoArray (Word8Array)

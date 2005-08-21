@@ -120,7 +120,7 @@ datatype 'a t =
  | Real_mul of RealSize.t (* codegen *)
  | Real_muladd of RealSize.t (* codegen *)
  | Real_mulsub of RealSize.t (* codegen *)
- | Real_neg of RealSize.t          (* codegen *)
+ | Real_neg of RealSize.t         (* codegen *)
  | Real_qequal of RealSize.t (* codegen *)
  | Real_round of RealSize.t (* codegen *)
  | Real_sub of RealSize.t (* codegen *)
@@ -1178,8 +1178,8 @@ fun ('a, 'b) apply (p: 'a t,
             wordOrOverflow (s, sg, f (conv w, conv w'))
          end
       val eq =
-          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
-           | _ => ApplyResult.Unknown
+         fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
+          | _ => ApplyResult.Unknown
       val equal =
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))

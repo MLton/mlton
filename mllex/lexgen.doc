@@ -149,14 +149,14 @@ to the most weakly-binding):
         but first; to include - literally in a set, put it first or last.
 
         The dot . character stands for any character except newline,
-        i.e. the same as [^\n]        
+        i.e. the same as [^\n]  
 
         The following special escape sequences are available, inside
         or outside of square-brackets:
                 \b      - backspace
                 \n      - newline
                 \t      - tab
-                \h        - stands for all characters with codes >127,
+                \h      - stands for all characters with codes >127,
                                   when 7-bit characters are used.
                 \ddd    - where ddd is a 3 digit decimal escape.
 
@@ -215,14 +215,14 @@ Here are some examples of regular expressions, and descriptions of the
 set of strings they denote:
 
         0 | 1 | 2 | 3           A single digit between 0 and 3
-        [0123]                        A single digit between 0 and 3
+        [0123]                  A single digit between 0 and 3
         0123                    The string "0123"
         0*                      All strings of 0 or more 0's
         00*                     All strings of 1  or more 0's
         0+                      All strings of 1  or more 0's
         [0-9]{3}                Any three-digit decimal number.
-        \\[ntb]                        The strings "\n" "\t" "\b"
-        (00)*                        Any string with an even number of 0's.
+        \\[ntb]                 The strings "\n" "\t" "\b"
+        (00)*                   Any string with an even number of 0's.
 
 IV. ML-Lex syntax summary
 
@@ -326,7 +326,7 @@ command is in the ML-Lex definitions sections:
                                         possible prefix of this string,
                                         is used instead.
                                 
-        yypos                                Current character position from
+        yypos                           Current character position from
                                         beginning of file.
 
         yylineno        %count          Current line number
@@ -376,7 +376,7 @@ return any non-zero number of characters.  For example,
              let val c = input (f,1)
                  val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-                     String.implode (rev result)
+                   String.implode (rev result)
                  else loop result
              end
           in loop nil
@@ -478,7 +478,7 @@ structure Calc =
              let val c = input (f,1)
                  val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-                     String.implode (rev result)
+                   String.implode (rev result)
                  else loop result
              end
           in loop nil

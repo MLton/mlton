@@ -9,7 +9,7 @@
 structure Char: CHAR_EXTRA =
    struct
       open Char0
-                        
+                       
       fun control reader state =
          case reader state of
             NONE => NONE

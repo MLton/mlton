@@ -20,7 +20,7 @@ Int Posix_Signal_default (Int signum) {
         sigdelset (&gcState.signalsHandled, signum);
         memset (&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_DFL;
-         sa.sa_flags = SA_FLAGS;
+        sa.sa_flags = SA_FLAGS;
         return sigaction (signum, &sa, NULL);
 }
 
@@ -31,7 +31,7 @@ bool Posix_Signal_isGCPending () {
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "%s = Posix_Signal_isGCPending ()\n",
                                 boolToString (res));
-         return res;
+        return res;
 }
 
 Bool Posix_Signal_isPending (Int signum) {
@@ -48,7 +48,7 @@ Int Posix_Signal_handle (Int signum) {
          */
         sigfillset (&sa.sa_mask);
         sa.sa_handler = handler;
-         sa.sa_flags = SA_FLAGS;
+        sa.sa_flags = SA_FLAGS;
         return sigaction (signum, &sa, NULL);
 }
 
@@ -62,7 +62,7 @@ Int Posix_Signal_ignore (Int signum) {
         sigdelset (&gcState.signalsHandled, signum);
         memset (&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_IGN;
-         sa.sa_flags = SA_FLAGS;
+        sa.sa_flags = SA_FLAGS;
         return sigaction (signum, &sa, NULL);
 }
 
@@ -70,7 +70,7 @@ Int Posix_Signal_isDefault (Int signum, Bool *isDef) {
         Int res;
         struct sigaction sa;
 
-         sa.sa_flags = SA_FLAGS;
+        sa.sa_flags = SA_FLAGS;
         res = sigaction (signum, NULL, &sa);
         *isDef = sa.sa_handler == SIG_DFL;
         return res;

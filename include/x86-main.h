@@ -61,62 +61,62 @@ static Word32 returnAddressToFrameIndex (Word32 w) {
         return *((Word32*)(w - sizeof(Word32)));
 }
 
-#define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                        \
-void MLton_jumpToSML (pointer jump) {                                        \
-        Word lc_stackP;                                                        \
-                                                                               \
-        if (DEBUG_X86CODEGEN)                                                \
+#define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                  \
+void MLton_jumpToSML (pointer jump) {                                   \
+        Word lc_stackP;                                                 \
+                                                                        \
+        if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \
-        lc_stackP = c_stackP;                                                \
-        if (reserveEsp)                                                        \
-                __asm__ __volatile__                                        \
+        lc_stackP = c_stackP;                                           \
+        if (reserveEsp)                                                 \
+                __asm__ __volatile__                                    \
                 ("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%edi\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
-                : "=o" (c_stackP)                                        \
+                : "=o" (c_stackP)                                       \
                 : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                        \
-        else                                                                \
-                __asm__ __volatile__                                         \
+                );                                                      \
+        else                                                            \
+                __asm__ __volatile__                                    \
                 ("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
-                : "=o" (c_stackP)                                        \
+                : "=o" (c_stackP)                                       \
                 : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                        \
-        c_stackP = lc_stackP;                                                \
-        if (DEBUG_X86CODEGEN)                                                \
+                );                                                      \
+        c_stackP = lc_stackP;                                           \
+        if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (uint)jump); \
-        return;                                                                \
-}                                                                        \
-void MLton_callFromC () {                                                \
-        pointer jump;                                                        \
-        GC_state s;                                                        \
+        return;                                                         \
+}                                                                       \
+void MLton_callFromC () {                                               \
+        pointer jump;                                                   \
+        GC_state s;                                                     \
                                                                         \
-        if (DEBUG_X86CODEGEN)                                                \
-                fprintf (stderr, "MLton_callFromC() starting\n");        \
-        s = &gcState;                                                        \
-        s->savedThread = s->currentThread;                                \
-        s->canHandle += 3;                                                \
-        /* Return to the C Handler thread. */                                \
-        GC_switchToThread (s, s->callFromCHandler, 0);                        \
-        jump = *(pointer*)(s->stackTop - WORD_SIZE);                        \
-        MLton_jumpToSML(jump);                                                \
-        GC_switchToThread (s, s->savedThread, 0);                              \
-        s->savedThread = BOGUS_THREAD;                                        \
-        if (DEBUG_X86CODEGEN)                                                \
-                fprintf (stderr, "MLton_callFromC() done\n");                \
-        return;                                                                \
-}                                                                        \
-int main (int argc, char **argv) {                                        \
-        pointer jump;                                                          \
-        extern pointer ml;                                                \
+        if (DEBUG_X86CODEGEN)                                           \
+                fprintf (stderr, "MLton_callFromC() starting\n");       \
+        s = &gcState;                                                   \
+        s->savedThread = s->currentThread;                              \
+        s->canHandle += 3;                                              \
+        /* Return to the C Handler thread. */                           \
+        GC_switchToThread (s, s->callFromCHandler, 0);                  \
+        jump = *(pointer*)(s->stackTop - WORD_SIZE);                    \
+        MLton_jumpToSML(jump);                                          \
+        GC_switchToThread (s, s->savedThread, 0);                       \
+        s->savedThread = BOGUS_THREAD;                                  \
+        if (DEBUG_X86CODEGEN)                                           \
+                fprintf (stderr, "MLton_callFromC() done\n");           \
+        return;                                                         \
+}                                                                       \
+int main (int argc, char **argv) {                                      \
+        pointer jump;                                                   \
+        extern pointer ml;                                              \
                                                                         \
-        Initialize (al, mg, mfs, mmc, pk, ps);                                \
-        if (gcState.isOriginal) {                                        \
-                real_Init();                                                \
-                jump = (pointer)&ml;                                           \
-        } else {                                                               \
-                jump = *(pointer*)(gcState.stackTop - WORD_SIZE);         \
-        }                                                                \
-        MLton_jumpToSML(jump);                                                \
-        return 1;                                                        \
+        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        if (gcState.isOriginal) {                                       \
+                real_Init();                                            \
+                jump = (pointer)&ml;                                    \
+        } else {                                                        \
+                jump = *(pointer*)(gcState.stackTop - WORD_SIZE);       \
+        }                                                               \
+        MLton_jumpToSML(jump);                                          \
+        return 1;                                                       \
 }
 
 #endif /* #ifndef _X86_MAIN_H_ */

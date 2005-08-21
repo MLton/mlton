@@ -109,10 +109,10 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                | _ => Type.error ("constructor pattern mismatch", Pat.layout p)
          end
       val traceCheckExp =
-          Trace.trace ("Xml.TypeCheck.checkExp", Exp.layout, Type.layout)
+         Trace.trace ("Xml.TypeCheck.checkExp", Exp.layout, Type.layout)
       val traceCheckPrimExp = 
-          Trace.trace2
-          ("Xml.TypeCheck.checkPrimExp", PrimExp.layout, Type.layout, Type.layout)
+         Trace.trace2
+         ("Xml.TypeCheck.checkPrimExp", PrimExp.layout, Type.layout, Type.layout)
       local
          val exnType = ref NONE
       in

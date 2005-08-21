@@ -143,7 +143,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
             (x', monoType t)
          end
       val renameMono =
-               Trace.trace2 
+         Trace.trace2 
          ("Monomorphise.renameMono", 
           Var.layout, Xtype.layout, Layout.tuple2 (Var.layout, Stype.layout)) 
          renameMono
@@ -260,7 +260,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       fun monoVarExp (XvarExp.T {var, targs}) =
          getVar var (monoTypes targs)
       val monoVarExp =
-                Trace.trace 
+         Trace.trace 
          ("Monomorphise.monoVarExp", XvarExp.layout, SvarExp.layout) 
          monoVarExp
       fun monoVarExps xs = Vector.map (xs, monoVarExp)

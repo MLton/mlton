@@ -90,15 +90,15 @@ fun bounds1(_,b) = b
  *)
 val grid_size = ((2,grid_max), (2,grid_max))
 
-fun north (k,l) = (k-1,l)        
-fun south (k,l) = (k+1,l)                
+fun north (k,l) = (k-1,l)       
+fun south (k,l) = (k+1,l)               
 
 fun east (k,l) = (k,l+1)
 fun west (k,l) = (k,l-1)
 
 val northeast = north o east
 val southeast = south o east
-val northwest = north o west                
+val northwest = north o west            
 val southwest = south o west
 
 fun farnorth x = (north o north ) x
@@ -109,7 +109,7 @@ fun farwest x = (west o west) x
 fun zone_A(k,l) = (k,l)
 fun zone_B(k,l) = (k+1,l)
 
-fun zone_C(k,l) = (k+1,l+1)                
+fun zone_C(k,l) = (k+1,l+1)             
 fun zone_D(k,l) = (k,l+1)
 
 val  zone_corner_northeast = north   
@@ -117,23 +117,23 @@ val  zone_corner_northwest = northwest
 fun  zone_corner_southeast zone = zone
 val  zone_corner_southwest = west
 
-val ((kmin,kmax),(lmin,lmax))         = grid_size
-val dimension_all_nodes           = ((kmin-1,kmax+1),(lmin-1,lmax+1))
+val ((kmin,kmax),(lmin,lmax))   = grid_size
+val dimension_all_nodes         = ((kmin-1,kmax+1),(lmin-1,lmax+1))
 fun for_all_nodes f =
     for {from=kmin-1, step=1, to=kmax+1} (fn k =>
        for {from=lmin-1, step=1, to=lmax+1} (fn l => f k l))
 
-val dimension_interior_nodes          = ((kmin,kmax),(lmin,lmax))
+val dimension_interior_nodes    = ((kmin,kmax),(lmin,lmax))
 fun for_interior_nodes f =
     for {from=kmin, step=1, to=kmax} (fn k =>
        for {from=lmin, step=1, to=lmax} (fn l => f k l))
 
-val dimension_all_zones          = ((kmin,kmax+1),(lmin,lmax+1))
+val dimension_all_zones         = ((kmin,kmax+1),(lmin,lmax+1))
 fun for_all_zones f =
     for {from=kmin, step=1, to=kmax+1} (fn k =>
        for {from=lmin, step=1, to=lmax+1} (fn l => f (k,l)))
 
-val dimension_interior_zones          = ((kmin+1,kmax),(lmin+1,lmax))
+val dimension_interior_zones    = ((kmin+1,kmax),(lmin+1,lmax))
 fun for_interior_zones f =
     for {from=kmin+1, step=1, to=kmax} (fn k =>
        for {from=lmin+1, step=1, to=lmax} (fn l => f (k,l)))
@@ -250,8 +250,8 @@ fun make_position_matrix interior_function =
             let val (rax, zax)  =  (ra - rx, za - zx)
                 val (ryx, zyx)  =  (ry - rx, zy - zx)
                 val omega       =  2.0*(rax*ryx + zax*zyx)/(ryx*ryx + zyx*zyx)
-                val rb                     =  rx - rax + omega*ryx
-                val zb                     =  zx - zax + omega*zyx
+                val rb          =  rx - rax + omega*ryx
+                val zb          =  zx - zax + omega*zyx
             in (rb, zb)
             end
         
@@ -318,7 +318,7 @@ fun zone_area_vol ((r,z), zone) =
  *)
 fun make_velocity((u,w),(r,z),p,q,alpha,rho,delta_t) =
     let fun line_integral (p,z,node) : real =
-             sub2(p,zone_A node)*(sub2(z,west node) - sub2(z,north node)) +
+            sub2(p,zone_A node)*(sub2(z,west node) - sub2(z,north node)) +
             sub2(p,zone_B node)*(sub2(z,south node) - sub2(z,west node)) +
             sub2(p,zone_C node)*(sub2(z,east node) - sub2(z,south node)) +
             sub2(p,zone_D node)*(sub2(z,north node) - sub2(z,east node))
@@ -359,7 +359,7 @@ fun make_area_density_volume(rho, s, x') =
         val s' = array2(dimension_all_zones, 0.0)
         val rho' = array2(dimension_all_zones, 0.0)
         fun interior_area zone = 
-             let val (area, vol) = zone_area_vol (x', zone)
+            let val (area, vol) = zone_area_vol (x', zone)
                 val density =  sub2(rho,zone)*sub2(s,zone) / vol
             in (area,vol,density)
             end
@@ -386,7 +386,7 @@ fun make_area_density_volume(rho, s, x') =
  * Artifical Viscosity (page 11)
  *)
 fun make_viscosity(p,(u',w'),(r',z'), alpha',rho') = 
-    let        fun interior_viscosity zone =
+    let fun interior_viscosity zone =
         let fun upper_del f = 
             0.5 * ((sub2(f,zone_corner_southeast zone) - 
                     sub2(f,zone_corner_northeast zone)) +
@@ -397,7 +397,7 @@ fun make_viscosity(p,(u',w'),(r',z'), alpha',rho') =
                         sub2(f,zone_corner_southwest zone)) +
                        (sub2(f,zone_corner_northeast zone) - 
                         sub2(f,zone_corner_northwest zone)))
-            val xi         = pow(upper_del   r',2) + pow(upper_del   z',2)
+            val xi      = pow(upper_del   r',2) + pow(upper_del   z',2)
             val eta = pow(lower_del   r',2) + pow(lower_del   z',2)
             val upper_disc =  (upper_del r')*(lower_del w') - 
                               (upper_del z')*(lower_del u')
@@ -464,7 +464,7 @@ fun zonal_pressure  (rho_value:real,  theta_value:real)  =
 
 fun zonal_energy (rho_value, theta_value) = 
     let val (G, degree, rho_table, theta_table) = 
-                               extract_energy_tables_from_constants
+                            extract_energy_tables_from_constants
     in polynomial(G, degree, rho_table, theta_table, rho_value, theta_value)
     end
 val dx =   0.000001
@@ -472,7 +472,7 @@ val tiny = 0.000001
 
 
 fun newton_raphson (f,x) =
-    let        fun iter (x,fx) =
+    let fun iter (x,fx) =
             if fx > tiny then 
                 let val fxdx = f(x+dx)
                     val denom = fxdx - fx
@@ -554,7 +554,7 @@ fun make_sigma(deltat, rho_prime, alpha_prime) =
     in  if !Control.trace 
         then print ("\t\tmake_sigma:deltat = " ^ Real.toString deltat ^ "\n")
         else ();
-(***        for_interior_zones(fn zone => update2(M,zone, interior_sigma zone)) **)
+(***    for_interior_zones(fn zone => update2(M,zone, interior_sigma zone)) **)
         for_interior_zones(fn zone => (update2(M,zone, interior_sigma zone)
                                        handle Overflow => ohandle zone));
         M
@@ -574,14 +574,14 @@ fun make_gamma  ((r_prime,z_prime), cc, succeeding, adjacent) =
         val M = array2(dimension_all_zones, 0.0)
     in
         for_interior_zones(fn zone => update2(M,zone,interior_gamma zone));
-         M
+        M
     end
 
 fun make_ab(theta, sigma, Gamma, preceding) =
     let val a = array2(dimension_all_zones, 0.0)
         val b = array2(dimension_all_zones, 0.0)
         fun interior_ab   zone =
-              let val denom = sub2(sigma, zone) + sub2(Gamma, zone) +
+            let val denom = sub2(sigma, zone) + sub2(Gamma, zone) +
                             sub2(Gamma, preceding zone) * 
                             (1.0 - sub2(a, preceding zone))
                 val nume1 = sub2(Gamma,zone)
@@ -612,28 +612,28 @@ fun make_theta (a, b, succeeding, int_zones) =
     end
 
 fun compute_heat_conduction(theta_hat, deltat, x', alpha', rho') =
-    let val sigma         = make_sigma(deltat,  rho',  alpha')
+    let val sigma       = make_sigma(deltat,  rho',  alpha')
         val _ = if !Control.trace then print "\tdone make_sigma\n" else ()
 
-        val cc                 = make_cc(alpha',  theta_hat)
+        val cc          = make_cc(alpha',  theta_hat)
         val _ = if !Control.trace then print "\tdone make_cc\n" else ()
 
-        val Gamma_k          = make_gamma(  x', cc, north, east)
+        val Gamma_k     = make_gamma(  x', cc, north, east)
         val _ = if !Control.trace then print "\tdone make_gamma\n" else ()
 
-        val (a_k,b_k)          = make_ab(theta_hat, sigma, Gamma_k, north)
+        val (a_k,b_k)   = make_ab(theta_hat, sigma, Gamma_k, north)
         val _ = if !Control.trace then print "\tdone make_ab\n" else ()
 
-        val theta_k          = make_theta(a_k,b_k,south,for_north_ward_interior_zones)
+        val theta_k     = make_theta(a_k,b_k,south,for_north_ward_interior_zones)
         val _ = if !Control.trace then print "\tdone make_theta\n" else ()
 
-        val Gamma_l          = make_gamma(x', cc, west, south)
+        val Gamma_l     = make_gamma(x', cc, west, south)
         val _ = if !Control.trace then print "\tdone make_gamma\n" else ()
 
-        val (a_l,b_l)         = make_ab(theta_k, sigma, Gamma_l, west)
+        val (a_l,b_l)   = make_ab(theta_k, sigma, Gamma_l, west)
         val _ = if !Control.trace then print "\tdone make_ab\n" else ()
 
-        val theta_l          = make_theta(a_l,b_l,east,for_west_ward_interior_zones)
+        val theta_l     = make_theta(a_l,b_l,east,for_west_ward_interior_zones)
         val _ = if !Control.trace then print "\tdone make_theta\n" else ()
     in  (theta_l, Gamma_k, Gamma_l)
     end

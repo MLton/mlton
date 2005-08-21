@@ -11,9 +11,9 @@ structure Grammar : GRAMMAR =
                 datatype symbol = TERM of term | NONTERM of nonterm
                 datatype grammar = GRAMMAR of
                                 {rules: {lhs: nonterm,
-                                          rhs: symbol list, 
-                                          precedence: int option,
-                                          rulenum: int} list,
+                                         rhs: symbol list, 
+                                         precedence: int option,
+                                         rulenum: int} list,
                                 noshift : term list,
                                 eop : term list,
                                 terms: int,
@@ -30,7 +30,7 @@ structure IntGrammar : INTGRAMMAR =
                 open Grammar
 
                 datatype rule = RULE of
-                                 {lhs: nonterm,
+                                {lhs: nonterm,
                                  rhs: symbol list,
                                  num: int,(* internal # assigned by coreutils *)
                                  rulenum: int,
@@ -85,7 +85,7 @@ structure IntGrammar : INTGRAMMAR =
                  let val printRule =
                         let val prRule = prRule a
                         in  fn {lhs,rhs,precedence,rulenum} =>
-                                (prRule (RULE {lhs=lhs,rhs=rhs,num=0,
+                             (prRule (RULE {lhs=lhs,rhs=rhs,num=0,
                                       rulenum=rulenum, precedence=precedence});
                               print "\n")
                         end

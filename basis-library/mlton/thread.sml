@@ -111,7 +111,7 @@ in
             fun fail e = (t := Dead
                           ; switching := false
                           ; atomicEnd ()
-                          ; raise e)        
+                          ; raise e)    
             val (T t': Runnable.t) = f (T t) handle e => fail e
             val primThread =
                case !t' before t' := Dead of

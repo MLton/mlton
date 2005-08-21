@@ -243,7 +243,7 @@ val test37 =
         fun chk c = Char.fromString(Char.toString c) = SOME c
     in tst' "test37" (fn _ => List.all chk chars) end
 
-val test38 =                        
+val test38 =                 
     let fun chkFromString (arg, res) = Char.fromString arg = SOME res
         val argResList = 
             [("A", #"A"),

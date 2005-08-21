@@ -112,7 +112,7 @@ structure LambdaNode:
                  else (List.push (coercedTo, to)
                        ; send (to, !me))
               end
-                                 
+                              
       fun update (c, h, diff) =
          if Lambdas.isEmpty diff
             then ()
@@ -148,10 +148,10 @@ structure LambdaNode:
 
 (*
       val unify =
-          Trace.trace2 
+         Trace.trace2 
          ("AbstractValue.LambdaNode.unify", layout, layout, Unit.layout) 
          unify
-*)         
+*)       
    end
 
 structure UnaryTycon =

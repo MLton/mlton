@@ -179,9 +179,9 @@ signature SOCKET_EXTRA =
           type optname = int
           type request = int
 
-(*          val getSockOptWord: level * optname -> ('af, 'sock_type) sock -> word *)
-(*           val setSockOptWord:
- *              level * optname -> ('af, 'sock_type) sock * word -> unit
+(*        val getSockOptWord: level * optname -> ('af, 'sock_type) sock -> word *)
+(*        val setSockOptWord:
+ *           level * optname -> ('af, 'sock_type) sock * word -> unit
  *)
           val getERROR:
              ('af, 'sock_type) sock
@@ -193,11 +193,11 @@ signature SOCKET_EXTRA =
           val setSockOptBool:
              level * optname -> ('af, 'sock_type) sock * bool -> unit
 
-(*          val getIOCtlWord: request -> ('af, 'sock_type) sock -> word *)
-(*          val setIOCtlWord: request -> ('af, 'sock_type) sock * word -> unit *)
+(*        val getIOCtlWord: request -> ('af, 'sock_type) sock -> word *)
+(*        val setIOCtlWord: request -> ('af, 'sock_type) sock * word -> unit *)
           val getIOCtlInt: request -> ('af, 'sock_type) sock -> int
-(*          val setIOCtlInt: request -> ('af, 'sock_type) sock * int -> unit *)
+(*        val setIOCtlInt: request -> ('af, 'sock_type) sock * int -> unit *)
           val getIOCtlBool: request -> ('af, 'sock_type) sock -> bool
-(*          val setIOCtlBool: request -> ('af, 'sock_type) sock * bool -> unit *)
+(*        val setIOCtlBool: request -> ('af, 'sock_type) sock * bool -> unit *)
        end
   end

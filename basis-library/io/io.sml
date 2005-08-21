@@ -21,7 +21,7 @@ structure IO: IO =
          (fn e =>
           case e of
              Io {cause, function, name, ...} => 
-                   SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
+                SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
                               exnMessage cause])
            | _ => NONE)
       

@@ -342,7 +342,7 @@ struct
                    setLayoutInfo(label, SOME block)
                  end)
 
-         val {get = getProfileLabel : Label.t -> ProfileLabel.t option,
+        val {get = getProfileLabel : Label.t -> ProfileLabel.t option,
              set = setProfileLabel,
              destroy = destProfileLabel}
           = Property.destGetSetOnce
@@ -358,7 +358,7 @@ struct
                    setProfileLabel(label, profileLabel)
                  end)
 
-        local        
+        local   
           val stack = ref []
           val queue = ref (Queue.empty ())
         in
@@ -532,7 +532,7 @@ struct
                                             = fi
                                           val finish
                                             = AppendList.appends
-                                              [let        
+                                              [let      
                                                  val stackTop 
                                                    = x86MLton.gcState_stackTopContentsOperand ()
                                                  val bytes 
@@ -1108,7 +1108,7 @@ struct
                           (AppendList.append
                            (if Size.eq (size, Size.DBLE)
                               then AppendList.fromList
-                                      [Assembly.instruction_binal
+                                   [Assembly.instruction_binal
                                     {oper = Instruction.SUB,
                                      dst = c_stackP,
                                      src = Operand.immediate_const_int 8,
@@ -1119,7 +1119,7 @@ struct
                                      size = size}]
                             else if Size.eq (size, Size.SNGL)
                               then AppendList.fromList
-                                      [Assembly.instruction_binal
+                                   [Assembly.instruction_binal
                                     {oper = Instruction.SUB,
                                      dst = c_stackP,
                                      src = Operand.immediate_const_int 4,
@@ -1789,7 +1789,7 @@ struct
 
         and fallDefault (gef as GEF {generate,...})
                         {label, live} : Assembly.t AppendList.t
-          = let        
+          = let 
               datatype z = datatype x86JumpInfo.status
               val liveRegsTransfer = getLiveRegsTransfers
                                      (liveTransfers, label)

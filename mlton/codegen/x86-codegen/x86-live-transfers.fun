@@ -733,7 +733,7 @@ struct
                                  of SOME (_,register',_)
                                  => (memloc,weight,SOME register')
                                  | NONE 
-                                 => (memloc,weight,NONE))                  
+                                 => (memloc,weight,NONE))                 
 
                       val rec doitRegs
                         = fn ([],_,liveTransfers) => liveTransfers

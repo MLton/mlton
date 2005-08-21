@@ -22,7 +22,7 @@ val lexAndParseProgOrMLBRef: (File.t * Region.t -> Ast.Basdec.node) ref =
 val lexAndParseProgOrMLB = fn f => !lexAndParseProgOrMLBRef f
 
 structure LrVals = MLBLrValsFun (structure Token = LrParser.Token
-                                  structure Ast = Ast
+                                 structure Ast = Ast
                                  val lexAndParseProgOrMLB = lexAndParseProgOrMLB)
 structure Lex = MLBLexFun (structure Tokens = LrVals.Tokens)
 structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
@@ -175,7 +175,7 @@ val lexAndParseString =
       fun regularize {fileOrig, cwd, region, relativize} =
          let
             val fileExp = expandPathVars (fileOrig, [], region)
-             val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
+            val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
             val fileAbs = OS.Path.mkCanonical fileAbs
             val relativize =
                if OS.Path.isAbsolute fileExp

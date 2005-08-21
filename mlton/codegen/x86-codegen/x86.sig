@@ -138,7 +138,7 @@ signature X86 =
           | ShiftLeft
           | ShiftRight
           | BitOr
-            | BitAnd
+          | BitAnd
           | BitXor
           | BitOrNot
           | Addition
@@ -445,7 +445,7 @@ signature X86 =
           | IMUL2 of {src: Operand.t,
                       dst: Operand.t, 
                       size: Size.t}
-            (* Integer unary arithmetic/logic instructions.
+          (* Integer unary arithmetic/logic instructions.
            *)
           | UnAL of {oper: unal,
                      dst: Operand.t,
@@ -565,7 +565,7 @@ signature X86 =
                       size: Size.t}
           (* Pseudo floating-point move from integer.
            *)
-            | pFMOVFI of {src: Operand.t,
+          | pFMOVFI of {src: Operand.t,
                         dst: Operand.t,
                         srcsize: Size.t,
                         dstsize: Size.t}
@@ -574,7 +574,7 @@ signature X86 =
           | pFMOVTI of {src: Operand.t,
                         dst: Operand.t,
                         srcsize: Size.t,
-                          dstsize: Size.t}
+                        dstsize: Size.t}
           (* Pseudo floating-point compare.
            *)
           | pFCOM of {src1: Operand.t,
@@ -643,7 +643,7 @@ signature X86 =
            *)
           | FSTCW of {dst: Operand.t,
                       check: bool}
-            (* Floating-point store status word.
+          (* Floating-point store status word.
            *)
           | FSTSW of {dst: Operand.t,
                       check: bool}
@@ -757,7 +757,7 @@ signature X86 =
              * used at bot of basic blocks to establish passing convention,
              *)
           | ClearFlt
-              (* Save the register allocation in id and
+            (* Save the register allocation in id and
              *  assert that live are used at this point;
              * used at bot of basic blocks to delay establishment
              *  of passing convention to compensation block
@@ -817,7 +817,7 @@ signature X86 =
           | Balign of Immediate.t * Immediate.t option * Immediate.t option
           | P2align of Immediate.t * Immediate.t option * Immediate.t option
           | Space of Immediate.t * Immediate.t
-            | Byte of Immediate.t list
+          | Byte of Immediate.t list
           | Word of Immediate.t list
           | Long of Immediate.t list
           | String of string list

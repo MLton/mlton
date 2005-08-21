@@ -8,7 +8,7 @@ Real32 PackReal32_subVec (Pointer v, Int offset) {
 
         for (i = 0; i < 4; ++i)
                 p[i] = s[i];
-         return r;
+        return r;
 }
 
 Real32 PackReal32_subVecRev (Pointer v, Int offset) {
@@ -19,7 +19,7 @@ Real32 PackReal32_subVecRev (Pointer v, Int offset) {
 
         for (i = 0; i < 4; ++i)
                 p[i] = s[3 - i];
-         return r;
+        return r;
 }
 
 Real64 PackReal64_subVec (Pointer v, Int offset) {
@@ -30,7 +30,7 @@ Real64 PackReal64_subVec (Pointer v, Int offset) {
 
         for (i = 0; i < 8; ++i)
                 p[i] = s[i];
-         return r;
+        return r;
 }
 
 Real64 PackReal64_subVecRev (Pointer v, Int offset) {
@@ -41,7 +41,7 @@ Real64 PackReal64_subVecRev (Pointer v, Int offset) {
 
         for (i = 0; i < 8; ++i)
                 p[i] = s[7 - i];
-         return r;
+        return r;
 }
 
 void PackReal32_update (Pointer a, Int offset, Real32 r) {

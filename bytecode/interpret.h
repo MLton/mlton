@@ -13,7 +13,7 @@
 #include "assert.h"
 
 #define regs(ty)                                \
-        extern int ty##RegI;                        \
+        extern int ty##RegI;                    \
         extern ty ty##Reg[]
 
 regs(Real32);
@@ -25,14 +25,14 @@ regs(Word64);
 
 #undef regs
 
-#define assertRegsEmpty()                        \
-        do {                                        \
+#define assertRegsEmpty()                       \
+        do {                                    \
                 assert (0 == Word8RegI);        \
-                assert (0 == Word16RegI);        \
-                assert (0 == Word32RegI);        \
-                assert (0 == Word64RegI);        \
-                assert (0 == Real32RegI);        \
-                assert (0 == Real64RegI);        \
+                assert (0 == Word16RegI);       \
+                assert (0 == Word32RegI);       \
+                assert (0 == Word64RegI);       \
+                assert (0 == Real32RegI);       \
+                assert (0 == Real64RegI);       \
         } while (0)
 
 struct NameOffsets {

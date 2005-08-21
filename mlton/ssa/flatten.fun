@@ -157,7 +157,7 @@ fun flatten (Program.T {datatypes, globals, functions, main}) =
                         fun unifyReturns () =
                            case (funcReturns, returns) of
                               (SOME rs, SOME rs') => Rep.unifys (rs, rs')
-                            | _ => ()                
+                            | _ => ()           
                         fun unifyRaises () =
                            case (funcRaises, raises) of
                               (SOME rs, SOME rs') => Rep.unifys (rs, rs')

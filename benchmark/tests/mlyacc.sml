@@ -248,7 +248,7 @@ signature PARSER_DATA =
         type svalue
 
          (* the type of the user-supplied argument to the parser *)
-         type arg
+        type arg
  
         (* the intended type of the result of the parser.  This value is
            produced by applying extract from the structure Actions to the
@@ -283,7 +283,7 @@ signature PARSER_DATA =
            sig
              val is_keyword : LrTable.term -> bool
              val noShift : LrTable.term -> bool
-              val preferred_change : (LrTable.term list * LrTable.term list) list
+             val preferred_change : (LrTable.term list * LrTable.term list) list
              val errtermvalue : LrTable.term -> svalue
              val showTerminal : LrTable.term -> string
              val terms: LrTable.term list
@@ -313,7 +313,7 @@ signature PARSER =
         type result
 
          (* the type of the user-supplied argument to the parser *)
-         type arg
+        type arg
         
         (* type svalue is the type of semantic values for the semantic value
            stack
@@ -483,7 +483,7 @@ signature INTGRAMMAR =
 
         (* internal number of rule - convenient for producing LR graph *)
 
-                 num : int,        
+                 num : int,     
                  rulenum : int,
                  precedence : int option}
 
@@ -606,7 +606,7 @@ signature LRGRAPH =
 
 signature LOOK =
     sig
-         structure Grammar : GRAMMAR
+        structure Grammar : GRAMMAR
         structure IntGrammar : INTGRAMMAR
         sharing Grammar = IntGrammar.Grammar
 
@@ -615,7 +615,7 @@ signature LOOK =
 
         val mkFuncs :  {rules : IntGrammar.rule list, nonterms : int,
                         produces : Grammar.nonterm -> IntGrammar.rule list} ->
-                             {nullable: Grammar.nonterm -> bool,
+                            {nullable: Grammar.nonterm -> bool,
                              first : Grammar.symbol list -> Grammar.term list}
 
         val prLook : (Grammar.term -> string) * (string -> unit) -> 
@@ -732,7 +732,7 @@ signature MAKE_LR_TABLE =
                LrTable.table *
               (LrTable.state -> Errs.err list) *   (* errors in a state *)
               ((string -> unit) -> LrTable.state -> unit) *
-               Errs.err list        (* list of all errors *)
+               Errs.err list    (* list of all errors *)
    end;
 
 (* SHRINK_LR_TABLE: finds unique action entry rows in the  action table
@@ -828,7 +828,7 @@ functor HeaderFun () : HEADER =
         datatype rule = RULE of {lhs : symbol, rhs : symbol list,
                                  code : string, prec : symbol option}
 
-         type parseResult = string * declData * rule list
+        type parseResult = string * declData * rule list
         val getResult = fn p => p
 
         fun join_decls
@@ -847,7 +847,7 @@ functor HeaderFun () : HEADER =
               fun mergeControl (nil,a) = [a]
                 | mergeControl (l as h::t,a) =
                      case (h,a)
-                       of (PARSER_NAME _,PARSER_NAME n1) => (ignore "%name"; l)
+                     of (PARSER_NAME _,PARSER_NAME n1) => (ignore "%name"; l)
                       | (FUNCTOR _,FUNCTOR _) => (ignore "%header"; l)
                       | (PARSE_ARG _,PARSE_ARG _) => (ignore "%arg"; l)
                       | (START_SYM _,START_SYM s) => (ignore "%start"; l)
@@ -1387,7 +1387,7 @@ _ => let val ID_LIST as ID_LIST1=ID_LIST1 ()
  in (
 DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,
                 eop=ID_LIST, change=nil,keyword=nil,
-                 value=nil}
+                value=nil}
 ) end
 )
  in (LrTable.NT 4,(result,PERCENT_EOP1left,ID_LIST1right),rest671) end
@@ -1397,7 +1397,7 @@ KEYWORD1left,_))::rest671) => let val result=MlyValue.MPC_DECL(fn _
  in (
 DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
                 change=nil,keyword=ID_LIST,
-                 value=nil}
+                value=nil}
 ) end
 )
  in (LrTable.NT 4,(result,KEYWORD1left,ID_LIST1right),rest671) end
@@ -1600,7 +1600,7 @@ MlyValue.G_RULE(fn _ => let val ID as ID1=ID1 ()
 val RHS_LIST as RHS_LIST1=RHS_LIST1 ()
  in (
 map (fn {rhs,code,prec} =>
-                      Hdr.RULE {lhs=symbolMake ID,rhs=rhs,
+                  Hdr.RULE {lhs=symbolMake ID,rhs=rhs,
                                code=code,prec=prec})
          RHS_LIST
 ) end
@@ -2066,7 +2066,7 @@ structure LrParser :> LR_PARSER =
           fun get(a::x, y) = (a, (x,y))
             | get(nil, nil) = raise Empty
             | get(nil, y) = get(rev y, nil)
-           fun put(a,(x,y)) = (x,a::y)
+          fun put(a,(x,y)) = (x,a::y)
         end
 
       type ('a,'b) elem = (state * ('a * 'b * 'b))
@@ -2111,7 +2111,7 @@ structure LrParser :> LR_PARSER =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
-                         ^ showState state        
+                         ^ showState state      
                          ^ " next="
                          ^ showTerminal term
                          ^ " action="
@@ -3143,12 +3143,12 @@ end
 
 fun makeLexer yyinput = 
 let 
-        val yyb = ref "\n"                 (* buffer *)
+        val yyb = ref "\n"              (* buffer *)
         val yybl = ref 1                (*buffer length *)
-        val yybufpos = ref 1                (* location of next character to use *)
-        val yygone = ref 1                (* position in file of beginning of buffer *)
-        val yydone = ref false                (* eof found yet? *)
-        val yybegin = ref 1                (*Current 'start state' for lexer *)
+        val yybufpos = ref 1            (* location of next character to use *)
+        val yygone = ref 1              (* position in file of beginning of buffer *)
+        val yydone = ref false          (* eof found yet? *)
+        val yybegin = ref 1             (*Current 'start state' for lexer *)
 
         val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
                  yybegin := x
@@ -3188,13 +3188,13 @@ let fun continue() : Internal.result =
 | 127 => (Add yytext; YYBEGIN CODE; continue())
 | 129 => (Add yytext; continue())
 | 131 => (Add yytext; error inputSource (!lineno) "unclosed string";
-                     inc lineno; YYBEGIN CODE; continue())
+                    inc lineno; YYBEGIN CODE; continue())
 | 134 => (Add yytext; continue())
 | 137 => (Add yytext; continue())
 | 14 => (YYBEGIN A; HEADER (concat (rev (!text)),!lineno,!lineno))
 | 140 => (Add yytext;
                         if substring(yytext,1,1)="\n" then inc lineno else ();
-                             YYBEGIN F; continue())
+                        YYBEGIN F; continue())
 | 143 => (Add yytext; continue())
 | 145 => (Add yytext; YYBEGIN STRING; continue())
 | 147 => (Add yytext; error inputSource (!lineno) "unclosed string";
@@ -3243,7 +3243,7 @@ let fun continue() : Internal.result =
         in if l = !yybl then
              if trans = #trans(Vector.sub(Internal.tab,0))
                then action(l,NewAcceptingLeaves
-) else            let val newchars= if !yydone then "" else yyinput 1024
+) else      let val newchars= if !yydone then "" else yyinput 1024
             in if (size newchars)=0
                   then (yydone := true;
                         if (l=i0) then UserDeclarations.eof yyarg
@@ -3450,7 +3450,7 @@ functor ParseGenParserFun(S : sig
 *)
 
 functor ListOrdSet(B : sig type elem
-                          val gt : elem * elem -> bool
+                        val gt : elem * elem -> bool
                         val eq : elem * elem -> bool
                     end ) : ORDSET =
 
@@ -3468,17 +3468,17 @@ struct
                  if elem_gt(key,h) then h::(f t)
                  else if elem_eq(key,h) then key::t
                  else key::l
-               | f nil = [key]
+              | f nil = [key]
         in f s
         end
                 
  val select_arb = fn nil => raise Select_arb
-                    | a::b => a
+                   | a::b => a
 
  val exists = fn (key,s) =>
         let fun f (h::t) = if elem_gt(key,h) then f t
                            else elem_eq(h,key) 
-               | f nil = false
+              | f nil = false
         in f s
         end
 
@@ -3486,7 +3486,7 @@ struct
         let fun f (h::t) = if elem_gt(key,h) then f t
                            else if elem_eq(h,key) then SOME h
                            else NONE
-               | f nil = NONE
+              | f nil = NONE
         in f s
         end
    
@@ -3594,7 +3594,7 @@ end
 
 functor RbOrdSet (B : sig type elem
                          val eq : (elem*elem) -> bool
-                          val gt : (elem*elem) -> bool
+                         val gt : (elem*elem) -> bool
                      end
                 ) : ORDSET =
 struct
@@ -4006,7 +4006,7 @@ functor mkCore(structure IntGrammar : INTGRAMMAR) : CORE =
                    in fn (ITEM {rule=RULE {lhs,rhs,rulenum,num,...},
                                 dot,rhsAfter,...}) =>
                         (prNonterm lhs; print " : "; showRhs(rhs,dot);
-                          case rhsAfter 
+                         case rhsAfter 
                          of nil => (print " (reduce by rule "; 
                                     printInt rulenum;
                                     print ")")
@@ -4021,8 +4021,8 @@ functor mkCore(structure IntGrammar : INTGRAMMAR) : CORE =
                     in fn (CORE (items,state)) =>
                           (print "state ";
                            print (Int.toString state);
-                              print ":\n\n";
-                              app (fn i => (print "\t";
+                           print ":\n\n";
+                           app (fn i => (print "\t";
                                          prItem i; print "\n")) items;
                            print "\n")
                     end
@@ -4150,8 +4150,8 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
                  let fun add_item (a as RULE{rhs=symbol::rest,...},r) =
                        let val item = ITEM{rule=a,dot=1,rhsAfter=rest}
                        in Assoc.insert((symbol,case Assoc.find (symbol,r)
-                                                  of SOME l => item::l
-                                                    | NONE => [item]),r)
+                                                of SOME l => item::l
+                                                 | NONE => [item]),r)
                        end
                        | add_item (_,r) = r
                  in List.foldr add_item Assoc.empty (produces nt)
@@ -4172,7 +4172,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
    order *)
                 fun closureNonterms a =
                         let val nonterms = getNonterms a
-                         in List.foldr (fn (nt,r) =>
+                        in List.foldr (fn (nt,r) =>
                                    NtList.union(nontermClosure nt,r))
                            nonterms nonterms
                         end
@@ -4345,12 +4345,12 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
                             in {nodes=nodes,
                                 edges=Array.fromList (rev edge_list),
                                 nodeArray = Array.fromList nodes
-                                 }
+                                }
                             end
                          | f (nodes,node_list,edge_list,nil,y,num) =
                                 f (nodes,node_list,edge_list,rev y,nil,num)
                          | f (nodes,node_list,edge_list,h::t,y,num) =
-                                 let val (nodes,edges,future,num) =
+                                let val (nodes,edges,future,num) =
                                    List.foldr add_goto (nodes,[],y,num) (shifts h)
                                 in f (nodes,h::node_list,
                                        edges::edge_list,t,future,num)
@@ -4361,7 +4361,7 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
                         val initialItemList = map makeItem (produces start)
                         val orderedItemList =
                            List.foldr Core.insert [] initialItemList
-                         val initial = CORE (orderedItemList,0)
+                        val initial = CORE (orderedItemList,0)
                    in f(empty,nil,nil,[initial],nil,1)
                    end,
                    produces=produces,
@@ -4462,7 +4462,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
               val items = List.foldr add_rule [] rules
               val nullable = array(nonterms,false)
               val f = fn ((NT i,nil),(l,_)) => (update(nullable,i,true);
-                                                (l,true))
+                                               (l,true))
                        | (a as (lhs,(h::t)),(l,change)) =>
                                 case (nullable sub h) 
                                   of false => (a::l,change)
@@ -4477,10 +4477,10 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 
     fun scanRhs addSymbol =
         let fun f (nil,result) = result
-                    | f ((sym as NONTERM nt) :: rest,result) =
+              | f ((sym as NONTERM nt) :: rest,result) =
                 if nullable nt then f (rest,addSymbol(sym,result))
                 else addSymbol(sym,result)
-                    | f ((sym as TERM _) :: _,result) = addSymbol(sym,result)
+              | f ((sym as TERM _) :: _,result) = addSymbol(sym,result)
         in f 
         end
 
@@ -4525,7 +4525,7 @@ functor mkLook (structure IntGrammar : INTGRAMMAR) : LOOK =
 
       fun first nt =
              List.foldr (fn (a,r) => TermSet.union(r,first1 a))
-                [] (NontermSet.closure (NontermSet.singleton nt, starters1))
+               [] (NontermSet.closure (NontermSet.singleton nt, starters1))
 
       val first = nontermMemo(first)
 
@@ -4692,10 +4692,10 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                               in  f l
                               end
                              
-                         val check_rule = fn (rule as RULE {num,...}) =>
+                        val check_rule = fn (rule as RULE {num,...}) =>
                             let val pos = rule_pos rule
                             in (print "look_pos: ";
-                                 prRule rule;
+                                prRule rule;
                                 print " = ";
                                 printInt pos;
                                 print "\n";
@@ -4767,7 +4767,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
                   fn (rule as RULE {rhs=nil,...}) => 
                          [findRef(state,ITEM{rule=rule,dot=0,rhsAfter=nil})]
                    | (rule as RULE {rhs=sym::rest,...}) =>
-                   let        val pos = Int.max(look_pos rule,1)
+                   let  val pos = Int.max(look_pos rule,1)
                         fun scan'(state,nil,pos,result) =
                                 findRef(state,ITEM{rule=rule,
                                                    dot=pos,
@@ -4986,7 +4986,7 @@ functor mkLalr ( structure IntGrammar : INTGRAMMAR
    have a derivation S =+=> .C x, where x is nullable *)
 
                        if dot >= (look_pos rule) then
-                                 case item
+                          case item
                           of ITEM{rhsAfter=NONTERM b :: _,...} =>
                              (case add_nonterm_lookahead(b,state)
                               of nil => ()
@@ -5058,10 +5058,10 @@ functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
         infix 9 sub
         structure Core = mkCore(structure IntGrammar = IntGrammar)
         structure CoreUtils = mkCoreUtils(structure IntGrammar = IntGrammar
-                                            structure Core = Core)
+                                          structure Core = Core)
         structure Graph = mkGraph(structure IntGrammar = IntGrammar
-                                    structure Core = Core
-                                    structure CoreUtils = CoreUtils)
+                                  structure Core = Core
+                                  structure CoreUtils = CoreUtils)
         structure Look = mkLook(structure IntGrammar = IntGrammar)
         structure Lalr = mkLalr(structure IntGrammar = IntGrammar
                                 structure Core = Core
@@ -5197,7 +5197,7 @@ is true.
         let val merge = fn state =>
           let fun f (j as (pair1 as (T t1,action1)) :: r1,
                      k as (pair2 as (T t2,action2)) :: r2,result,errs) =
-                      if t1 < t2 then f(r1,k,pair1::result,errs)
+                    if t1 < t2 then f(r1,k,pair1::result,errs)
                     else if t1 > t2 then f(j,r2,pair2::result,errs)
                     else let val REDUCE num1 = action1
                              val REDUCE num2 = action2
@@ -5248,11 +5248,11 @@ is true.
                            f(r1,r2,pair1 :: result,
                              SR (term1,state,rulenum)::errs)
                      end
-                   | f (nil,nil,result,errs) = (rev result,errs)
-                   | f (nil,h::t,result,errs) =
-                           f (nil,t,h::result,errs)
-                   | f (h::t,nil,result,errs) = 
-                           f (t,nil,h::result,errs)
+                | f (nil,nil,result,errs) = (rev result,errs)
+                | f (nil,h::t,result,errs) =
+                        f (nil,t,h::result,errs)
+                | f (h::t,nil,result,errs) = 
+                        f (t,nil,h::result,errs)
           in f(shifts,reduces,nil,nil)
           end
 
@@ -5306,10 +5306,10 @@ is true.
                          List.foldr (mergeReduces tableState) (nil,nil) l
                       val (actions,errs2) =
                          mergeShifts(tableState,shifts,reduces)
-                       in ((pruneError actions,ERROR),gotos,errs1@errs2)
+                  in ((pruneError actions,ERROR),gotos,errs1@errs2)
                   end
          end
-   end                        
+   end                  
 
         val mkTable = fn (grammar as GRAMMAR{rules,terms,nonterms,start,
                                   precedence,termToString,noshift,
@@ -5366,14 +5366,14 @@ is true.
                         end 
 
                 val startErrs =
-                   List.foldr (fn (RULE {rhs,rulenum,...},r) =>
+                  List.foldr (fn (RULE {rhs,rulenum,...},r) =>
                         if (exists (fn NONTERM a => a=start
                                      | _ => false) rhs)
                           then START rulenum :: r
                           else r) [] rules
 
                 val nonshiftErrs =
-                   List.foldr (fn (RULE {rhs,rulenum,...},r) =>
+                  List.foldr (fn (RULE {rhs,rulenum,...},r) =>
                           (List.foldr (fn (nonshift,r) =>
                            if (exists (fn TERM a => a=nonshift
                                      | _ => false) rhs)
@@ -5395,7 +5395,7 @@ is true.
                                         else NOT_REDUCED i :: r)
                         else r
                   in scan(Array.length ruleReduced-1,nil)
-                      end handle Subscript =>
+                  end handle Subscript =>
                         (if DEBUG then
                                 print "rules not numbered correctly!"
                          else (); nil)
@@ -5420,7 +5420,7 @@ is true.
                   end,
 
                   fn print =>
-                     let val printCore =
+                    let val printCore =
                           prCore(symbolToString,nontermToString,print)
                         val core = Graph.core graph
                     in fn STATE state =>
@@ -5455,9 +5455,9 @@ structure Grammar : GRAMMAR =
                 datatype symbol = TERM of term | NONTERM of nonterm
                 datatype grammar = GRAMMAR of
                                 {rules: {lhs: nonterm,
-                                          rhs: symbol list, 
-                                          precedence: int option,
-                                          rulenum: int} list,
+                                         rhs: symbol list, 
+                                         precedence: int option,
+                                         rulenum: int} list,
                                 noshift : term list,
                                 eop : term list,
                                 terms: int,
@@ -5474,7 +5474,7 @@ structure IntGrammar : INTGRAMMAR =
                 open Grammar
 
                 datatype rule = RULE of
-                                 {lhs: nonterm,
+                                {lhs: nonterm,
                                  rhs: symbol list,
                                  num: int,(* internal # assigned by coreutils *)
                                  rulenum: int,
@@ -5528,7 +5528,7 @@ structure IntGrammar : INTGRAMMAR =
                  let val printRule =
                         let val prRule = prRule a
                         in  fn {lhs,rhs,precedence,rulenum} =>
-                                (prRule (RULE {lhs=lhs,rhs=rhs,num=0,
+                             (prRule (RULE {lhs=lhs,rhs=rhs,num=0,
                                       rulenum=rulenum, precedence=precedence});
                               print "\n")
                         end
@@ -5563,12 +5563,12 @@ struct
         let val printInt = print o (Int.toString : int -> string)
         in fn (SHIFT (STATE i)) =>
                         (print "\tshift ";
-                          printInt i;
-                         print "\n")
+                         printInt i;
+                        print "\n")
              | (REDUCE rulenum) =>
                         (print "\treduce by rule ";
-                          printInt rulenum;
-                          print "\n")
+                         printInt rulenum;
+                         print "\n")
              | ACCEPT => print "\taccept\n"
              | ERROR => print "\terror\n"
         end
@@ -5583,7 +5583,7 @@ struct
       end
 
    val mkPrintTermAction = fn (printTerm,print) =>
-         let val printAction = mkPrintAction print
+        let val printAction = mkPrintAction print
         in fn (term,action) =>
                 (print "\t";
                  printTerm term;
@@ -6030,14 +6030,14 @@ functor EquivFun(A : EQUIV_ARG) : EQUIV =
 
          We then return the length of R, R, and the list that results from
          permuting SE by P.
-     *)        
+     *) 
 
        type entry = A.entry
              
        val gt = fn ((a,_),(b,_)) => A.gt(a,b)
 
        structure Sort = MergeSortFun(type entry = A.entry * int
-                                          val gt = gt)
+                                     val gt = gt)
        val assignIndex =
           fn l =>
              let fun loop (index,nil) = nil
@@ -6218,7 +6218,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER where type Heade
     val lineLength = 70
 
     (* record type describing names of structures in the program being
-         generated *)
+        generated *)
 
     datatype names = NAMES 
                         of {miscStruct : string,  (* Misc{n} struct name *)
@@ -6234,7 +6234,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER where type Heade
                                                 (* which holds parser data *)
                             dataSig:string (* signature for this structure *)
                                         
-                             }
+                            }
 
     val DEBUG = true
     exception Semantic
@@ -6266,7 +6266,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER where type Heade
                           terms : Grammar.term list}
                           
     structure SymbolHash = Hash(type elem = string
-                                    val gt = (op >) : string*string -> bool)
+                                val gt = (op >) : string*string -> bool)
 
     structure TermTable = Table(type key = Grammar.term
                                 val gt = fn (T i,T j) => i > j)
@@ -6490,7 +6490,7 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
                                    PAPP(valueStruct^"."^ntvoid,
                                         PVAR symNum)
                               else WILD)
-                           else        
+                           else 
                                PAPP(valueStruct^"."^symString,
                                  if num=1 andalso pureActions
                                      then AS(PVAR symNum,PVAR symString)
@@ -6571,7 +6571,7 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
                    (printCase(rulenum,rule); say "| ")) rules;
              sayln "_ => raise (mlyAction i392)")
 
-           in say "structure ";
+        in say "structure ";
            say actionsStruct;
            sayln " =";
            sayln "struct ";
@@ -6941,7 +6941,7 @@ precedences of the rule and the terminal are equal.
         val entries = ref 0 (* save number of action table entries here *)
         
     in  let val result = TextIO.openOut (spec ^ ".sml")
-             val sigs = TextIO.openOut (spec ^ ".sig")
+            val sigs = TextIO.openOut (spec ^ ".sig")
             val pos = ref 0
             val pr = fn s => TextIO.output(result,s)
             val say = fn s => let val l = String.size s
@@ -6963,7 +6963,7 @@ precedences of the rule and the terminal are equal.
                         in f 0
                         end
             val values = VALS {say=say,sayln=sayln,saydot=saydot,
-                                termvoid=termvoid, ntvoid = ntvoid,
+                               termvoid=termvoid, ntvoid = ntvoid,
                                hasType=hasType, pos_type = pos_type,
                                arg_type = #2 arg_decl,
                                start=start,pureActions=pureActions,

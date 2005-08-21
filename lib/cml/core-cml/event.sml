@@ -12,20 +12,20 @@
  *
  * Some important requirements on the implementation of base event values:
  *
- *  1)        The pollFn, doitFn, and blockFn are always called from inside
- *        atomic regions.
+ *  1)  The pollFn, doitFn, and blockFn are always called from inside
+ *      atomic regions.
  *
- *  2)        The pollFn returns an integer priority: this is 0 when not enabled,
- *        ~1 for fixed priority, and a positive value for dynamic priority.
- *        The standard scheme is to associate a counter with the underlying
- *        synchronization object, and to increase it by one for each
- *        synchronization attempt.
+ *  2)  The pollFn returns an integer priority: this is 0 when not enabled,
+ *      ~1 for fixed priority, and a positive value for dynamic priority.
+ *      The standard scheme is to associate a counter with the underlying
+ *      synchronization object, and to increase it by one for each
+ *      synchronization attempt.
  *
  *  3)  The blockFn is responsible for exiting the atomic region; the doitFns
- *        should NOT leave the atomic region.
+ *      should NOT leave the atomic region.
  *
  *  4)  The blockFn is responsible for executing the "cleanUp" action
- *        prior to leaving the atomic region.
+ *      prior to leaving the atomic region.
  *)
 
 structure Event : EVENT_EXTRA =
@@ -321,10 +321,10 @@ structure Event : EVENT_EXTRA =
 
       fun syncOnBEvt (pollFn : 'a base) : 'a =
          let
-            val () = Assert.assertNonAtomic' "Event.syncOnBEvt"        
+            val () = Assert.assertNonAtomic' "Event.syncOnBEvt" 
             val () = debug' "syncOnBEvt(1)" (* NonAtomic *)
             val () = Assert.assertNonAtomic' "Event.syncOnBEvt(1)"
-            val () = S.atomicBegin ()        
+            val () = S.atomicBegin ()   
             val () = debug' "syncOnBEvt(2)" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("Event.syncOnBEvt(2)", SOME 1)
             val x = 
@@ -359,7 +359,7 @@ structure Event : EVENT_EXTRA =
                   case bevts of
                      [] =>
                         let
-                           val () = debug' "syncOnBEvts(2).ext([])" (* Atomic 1 *)        
+                           val () = debug' "syncOnBEvts(2).ext([])" (* Atomic 1 *)      
                            val () = Assert.assertAtomic' ("Event.syncOnBEvts(2).ext([])", SOME 1)
                         in
                            S.atomicSwitch
@@ -545,7 +545,7 @@ structure Event : EVENT_EXTRA =
                                    ; chkCVars ())
                                fun log blockFns : S.rdy_thread =
                                   let
-                                     val () = debug' "syncOnGrp(2).ext([]).log" (* Atomic 1 *)        
+                                     val () = debug' "syncOnGrp(2).ext([]).log" (* Atomic 1 *)  
                                      val () = Assert.assertAtomic' ("Event.syncOnGrp(2).ext([]).log", SOME 1)
                                   in
                                      case blockFns of
@@ -630,7 +630,7 @@ structure Event : EVENT_EXTRA =
             let
                val gevt =
                   case evt of
-                     BEVT bevts => BASE bevts         
+                     BEVT bevts => BASE bevts   
                    | CHOOSE evts => forceBL (evts, [])
                    | GUARD g => force (g ())
                    | WNACK f =>

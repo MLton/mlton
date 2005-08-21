@@ -46,7 +46,7 @@ struct
         val Locals = new "Locals"
         val Globals = new "Globals"
           
-        val Temp = MemLoc.Class.Temp        
+        val Temp = MemLoc.Class.Temp    
         val StaticTemp = MemLoc.Class.StaticTemp
         val CStack = MemLoc.Class.CStack
         val Code = MemLoc.Class.Code
@@ -69,7 +69,7 @@ struct
 
       fun initClasses ()
         = let
-            val _ = allClasses :=        
+            val _ = allClasses :=       
                     x86.ClassSet.fromList
                     (
                      Heap::

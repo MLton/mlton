@@ -110,7 +110,7 @@ signature PRIM =
              | Real_mul of RealSize.t (* codegen *)
              | Real_muladd of RealSize.t (* codegen *)
              | Real_mulsub of RealSize.t (* codegen *)
-             | Real_neg of RealSize.t          (* codegen *)
+             | Real_neg of RealSize.t     (* codegen *)
              | Real_qequal of RealSize.t (* codegen *)
              | Real_round of RealSize.t (* codegen *)
              | Real_sub of RealSize.t (* codegen *)

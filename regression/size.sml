@@ -19,7 +19,7 @@ val _ =
     ; printSize ("a double array of length 10",
                  92, Array.tabulate (10, fn _ => 0.0))
     ; printSize ("an array of length 10 of 2-ples of ints",
-                  92, Array.tabulate (10, fn i => (i, i + 1)))
+                 92, Array.tabulate (10, fn i => (i, i + 1)))
     ; printSize ("a useless function", 0, fn _ => 13)
     )
 

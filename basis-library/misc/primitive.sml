@@ -868,7 +868,7 @@ structure Primitive =
             open Array
 
             val array = _prim "Array_array": int -> 'a array;
-                  val array =
+            val array =
                fn n => if safe andalso Int.< (n, 0)
                           then raise Size
                        else array n
@@ -895,7 +895,7 @@ structure Primitive =
             val smallMul =
                _import "IntInf_smallMul": word * word * word ref -> word;
             val - = _prim "IntInf_sub": int * int * word -> int; 
-             val toString
+            val toString
                = _prim "IntInf_toString": int * Int.int * word -> string;
             val toVector = _prim "IntInf_toVector": int -> word vector;
             val toWord = _prim "IntInf_toWord": int -> word;
@@ -1153,7 +1153,7 @@ structure Primitive =
          struct
             (* val htonl = _import "Net_htonl": int -> int; *)
             (* val ntohl = _import "Net_ntohl": int -> int; *)
-             val htons = _import "Net_htons": int -> int;
+            val htons = _import "Net_htons": int -> int;
             val ntohs = _import "Net_ntohs": int -> int;
          end
 
@@ -1279,7 +1279,7 @@ structure Primitive =
                _prim "Pointer_setReal32": t * int * Real32.real -> unit;
             val setReal64 =
                _prim "Pointer_setReal64": t * int * Real64.real -> unit;
-              val setWord8 =
+            val setWord8 =
                _prim "Pointer_setWord8": t * int * Word8.word -> unit;
             val setWord16 =
                _prim "Pointer_setWord16": t * int * Word16.word -> unit;

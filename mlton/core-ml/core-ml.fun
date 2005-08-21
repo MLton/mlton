@@ -458,39 +458,39 @@ structure Program =
          Layout.align (Vector.toListMap (decs, Dec.layout))
 
 (*       fun typeCheck (T {decs, ...}) =
- *          let
- *             fun checkExp (e: Exp.t): Ty.t =
- *                let
- *                   val (n, t) = Exp.dest e
- *                   val 
- *                   datatype z = datatype Exp.t
- *                   val t' =
- *                      case n of
- *                         App (e1, e2) =>
- *                            let
- *                               val t1 = checkExp e1
- *                               val t2 = checkExp e2
- *                            in
- *                               case Type.deArrowOpt t1 of
- *                                  NONE => error "application of non-function"
- *                                | SOME (u1, u2) =>
- *                                     if Type.equals (u1, t2)
- *                                        then t2
- *                                     else error "function/argument mismatch"
- *                            end
- *                       | Case {rules, test} =>
- *                            let
- *                               val {pat, exp} = Vector.sub (rules, 0)
- *                            in
- *                               Vector.foreach (rules, fn {pat, exp} =>
- *                                               Type.equals
- *                                               (checkPat pat, 
- *                            end
- *                in
- *                                      
- *                end
- *          in
- *          end
+ *       let
+ *          fun checkExp (e: Exp.t): Ty.t =
+ *             let
+ *                val (n, t) = Exp.dest e
+ *                val 
+ *                datatype z = datatype Exp.t
+ *                val t' =
+ *                   case n of
+ *                      App (e1, e2) =>
+ *                         let
+ *                            val t1 = checkExp e1
+ *                            val t2 = checkExp e2
+ *                         in
+ *                            case Type.deArrowOpt t1 of
+ *                               NONE => error "application of non-function"
+ *                             | SOME (u1, u2) =>
+ *                                  if Type.equals (u1, t2)
+ *                                     then t2
+ *                                  else error "function/argument mismatch"
+ *                         end
+ *                    | Case {rules, test} =>
+ *                         let
+ *                            val {pat, exp} = Vector.sub (rules, 0)
+ *                         in
+ *                            Vector.foreach (rules, fn {pat, exp} =>
+ *                                            Type.equals
+ *                                            (checkPat pat, 
+ *                         end
+ *             in
+ *                                   
+ *             end
+ *       in
+ *       end
  *)
    end
 

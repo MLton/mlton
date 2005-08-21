@@ -223,7 +223,7 @@ val _ = pr_ln "test13a" (concat test13a)
 val test13b = 
     List.map (fn s => case fromString s of NONE => "OK" | _ => "WRONG")
            ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-            "+1", "~1", "-1", "GG"];            
+            "+1", "~1", "-1", "GG"];        
 val _ = pr_ln "test13b" (concat test13b)
 
 val test14a = 
@@ -247,7 +247,7 @@ val test14b =
     List.map (fn s => case StringCvt.scanString (scan StringCvt.DEC) s 
                       of NONE => "OK" | _ => "WRONG")
            ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-            "+1", "~1", "-1", "ff"];            
+            "+1", "~1", "-1", "ff"];        
 val _ = pr_ln "test14b" (concat test14b)
 val test15a = 
     List.map (chkScan StringCvt.BIN)

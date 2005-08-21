@@ -8,7 +8,7 @@
 #include "platform.h"
 #include <stdint.h>
 #include "interpret.h"
-#include "c-chunk.h"        // c-chunk.h must come before opcode.h because it
+#include "c-chunk.h"    // c-chunk.h must come before opcode.h because it
                         // redefines some opcode symbols
 #include "opcode.h"
 
@@ -35,9 +35,9 @@ struct GC_state gcState;
 //----------------------------------------------------------------------
 
 #define regs(ty)                                \
-        int ty##RegI;                                \
-        extern ty global##ty[];                        \
-        static ty ty##VReg[1000];                \
+        int ty##RegI;                           \
+        extern ty global##ty[];                 \
+        static ty ty##VReg[1000];               \
         ty ty##Reg[1000]
 
 extern Pointer globalPointer[];
@@ -59,12 +59,12 @@ regs(Word64);
 
 #define R(ty, i) (ty##VReg [i])
 
-#define quotRem1(qr, size)                                                \
+#define quotRem1(qr, size)                                              \
         Word##size WordS##size##_##qr (Word##size w1, Word##size w2);
-#define quotRem2(qr)                                \
+#define quotRem2(qr)                            \
         quotRem1 (qr, 8)                                \
-        quotRem1 (qr, 16)                                \
-        quotRem1 (qr, 32)                                \
+        quotRem1 (qr, 16)                               \
+        quotRem1 (qr, 32)                               \
         quotRem1 (qr, 64)
 quotRem2 (quot)
 quotRem2 (rem)
@@ -73,16 +73,16 @@ quotRem2 (rem)
 
 //----------------------------------------------------------------------
 
-#define Fetch(t, z)                                                                \
-        do {                                                                        \
-                z = *(t*)pc;                                                        \
-                if (DEBUG or disassemble) {                                        \
-                         if (#z == "label")                                        \
-                                fprintf (stderr, " %s", offsetToLabel[z]);        \
-                        else if (#z != "opc")                                        \
+#define Fetch(t, z)                                                             \
+        do {                                                                    \
+                z = *(t*)pc;                                                    \
+                if (DEBUG or disassemble) {                                     \
+                        if (#z == "label")                                      \
+                                fprintf (stderr, " %s", offsetToLabel[z]);      \
+                        else if (#z != "opc")                                   \
                                 fprintf (stderr, " %d", (int)z);                \
-                }                                                                \
-                 pc += sizeof (t);                                        \
+                }                                                               \
+                pc += sizeof (t);                                       \
         } while (0)
 
 enum {
@@ -94,136 +94,136 @@ enum {
 
 #define StoreReg(t, z) maybe PushReg(t) = z
 
-#define loadStoreGen(mode, t, t2, z)                \
-        switch (MODE_##mode) {                        \
-        case MODE_load:                                \
-                StoreReg (t2, (t2)z);                \
-                break;                                \
+#define loadStoreGen(mode, t, t2, z)            \
+        switch (MODE_##mode) {                  \
+        case MODE_load:                         \
+                StoreReg (t2, (t2)z);           \
+                break;                          \
         case MODE_store:                        \
-                maybe z = (t) (PopReg (t2));        \
-                break;                                \
+                maybe z = (t) (PopReg (t2));    \
+                break;                          \
         }
 
 #define loadStore(mode, t, z)  loadStoreGen(mode, t, t, z)
 
-#define loadStoreArrayOffset(mode, ty)                                                \
-        case opcodeSymOfTy2 (ty, mode##ArrayOffset):                                \
-        {                                                                        \
+#define loadStoreArrayOffset(mode, ty)                                          \
+        case opcodeSymOfTy2 (ty, mode##ArrayOffset):                            \
+        {                                                                       \
                 ArrayOffset arrayOffset;                                        \
-                Pointer base;                                                        \
-                Word32 index;                                                        \
-                Scale scale;                                                        \
-                Fetch (ArrayOffset, arrayOffset);                                \
-                Fetch (Scale, scale);                                                \
-                if (disassemble) goto mainLoop;                                        \
+                Pointer base;                                                   \
+                Word32 index;                                                   \
+                Scale scale;                                                    \
+                Fetch (ArrayOffset, arrayOffset);                               \
+                Fetch (Scale, scale);                                           \
+                if (disassemble) goto mainLoop;                                 \
                 index = PopReg (Word32);                                        \
-                base = (Pointer) (PopReg (Word32));                                \
-                loadStore (mode, ty,                                                \
-                                *(ty*)(base + (index * scale) + arrayOffset));        \
-                goto mainLoop;                                                        \
+                base = (Pointer) (PopReg (Word32));                             \
+                loadStore (mode, ty,                                            \
+                                *(ty*)(base + (index * scale) + arrayOffset));  \
+                goto mainLoop;                                                  \
         }
 
-#define loadStoreContents(mode, ty)                                \
-        case opcodeSymOfTy2 (ty, mode##Contents):                \
-                if (disassemble) goto mainLoop;                        \
-        {                                                        \
-                Pointer base = (Pointer) (PopReg (Word32));        \
-                loadStore (mode, ty, C (ty, base));                \
-                goto mainLoop;                                        \
+#define loadStoreContents(mode, ty)                             \
+        case opcodeSymOfTy2 (ty, mode##Contents):               \
+                if (disassemble) goto mainLoop;                 \
+        {                                                       \
+                Pointer base = (Pointer) (PopReg (Word32));     \
+                loadStore (mode, ty, C (ty, base));             \
+                goto mainLoop;                                  \
         }
 
-#define loadStoreFrontier(mode)                                        \
+#define loadStoreFrontier(mode)                                 \
         case opcodeSym (mode##Frontier):                        \
-                if (disassemble) goto mainLoop;                        \
-                loadStoreGen (mode, Pointer, Word32, Frontier);        \
+                if (disassemble) goto mainLoop;                 \
+                loadStoreGen (mode, Pointer, Word32, Frontier); \
                 goto mainLoop;
 
-#define loadGCState()                                        \
-        case opcodeSym (loadGCState):                        \
-                if (disassemble) goto mainLoop;                \
-                StoreReg (Word32, (Word32)&gcState);        \
+#define loadGCState()                                   \
+        case opcodeSym (loadGCState):                   \
+                if (disassemble) goto mainLoop;         \
+                StoreReg (Word32, (Word32)&gcState);    \
                 goto mainLoop;
 
-#define loadStoreGlobal(mode, ty, ty2)                                        \
-        case opcodeSymOfTy2 (ty, mode##Global):                                \
-        {                                                                \
+#define loadStoreGlobal(mode, ty, ty2)                                  \
+        case opcodeSymOfTy2 (ty, mode##Global):                         \
+        {                                                               \
                 GlobalIndex globalIndex;                                \
-                Fetch (GlobalIndex, globalIndex);                        \
-                if (disassemble) goto mainLoop;                                \
-                loadStoreGen (mode, ty, ty2, G (ty, globalIndex));        \
-                goto mainLoop;                                                \
+                Fetch (GlobalIndex, globalIndex);                       \
+                if (disassemble) goto mainLoop;                         \
+                loadStoreGen (mode, ty, ty2, G (ty, globalIndex));      \
+                goto mainLoop;                                          \
         }
 
-#define loadStoreGPNR(mode)                                                        \
-        case opcodeSym (mode##GPNR):                                                \
-        {                                                                        \
+#define loadStoreGPNR(mode)                                                     \
+        case opcodeSym (mode##GPNR):                                            \
+        {                                                                       \
                 GlobalIndex globalIndex;                                        \
-                Fetch (GlobalIndex, globalIndex);                                \
-                if (disassemble) goto mainLoop;                                        \
-                loadStoreGen (mode, Pointer, Word32, GPNR (globalIndex));        \
-                goto mainLoop;                                                        \
+                Fetch (GlobalIndex, globalIndex);                               \
+                if (disassemble) goto mainLoop;                                 \
+                loadStoreGen (mode, Pointer, Word32, GPNR (globalIndex));       \
+                goto mainLoop;                                                  \
         }
 
-#define loadStoreOffset(mode, ty)                                        \
-        case opcodeSymOfTy2 (ty, mode##Offset):                                \
-        {                                                                \
-                Pointer base;                                                \
-                Offset offset;                                                \
-                Fetch (Offset, offset);                                        \
-                if (disassemble) goto mainLoop;                                \
-                base = (Pointer) (PopReg (Word32));                        \
-                maybe loadStore (mode, ty, O (ty, base, offset));        \
-                goto mainLoop;                                                \
+#define loadStoreOffset(mode, ty)                                       \
+        case opcodeSymOfTy2 (ty, mode##Offset):                         \
+        {                                                               \
+                Pointer base;                                           \
+                Offset offset;                                          \
+                Fetch (Offset, offset);                                 \
+                if (disassemble) goto mainLoop;                         \
+                base = (Pointer) (PopReg (Word32));                     \
+                maybe loadStore (mode, ty, O (ty, base, offset));       \
+                goto mainLoop;                                          \
         }
 
 #define loadStoreRegister(mode, ty, ty2)                        \
-        case opcodeSymOfTy2 (ty, mode##Register):                \
-        {                                                        \
-                RegIndex regIndex;                                \
-                Fetch (RegIndex, regIndex);                        \
-                if (disassemble) goto mainLoop;                        \
-                loadStoreGen (mode, ty, ty2, R (ty, regIndex));        \
-                goto mainLoop;                                        \
+        case opcodeSymOfTy2 (ty, mode##Register):               \
+        {                                                       \
+                RegIndex regIndex;                              \
+                Fetch (RegIndex, regIndex);                     \
+                if (disassemble) goto mainLoop;                 \
+                loadStoreGen (mode, ty, ty2, R (ty, regIndex)); \
+                goto mainLoop;                                  \
         }
 
-#define loadStoreStackOffset(mode, ty)                                \
-        case opcodeSymOfTy2 (ty, mode##StackOffset):                \
-        {                                                        \
+#define loadStoreStackOffset(mode, ty)                          \
+        case opcodeSymOfTy2 (ty, mode##StackOffset):            \
+        {                                                       \
                 StackOffset stackOffset;                        \
-                Fetch (StackOffset, stackOffset);                \
-                if (disassemble) goto mainLoop;                        \
-                loadStore (mode, ty, S (ty, stackOffset));        \
-                goto mainLoop;                                        \
+                Fetch (StackOffset, stackOffset);               \
+                if (disassemble) goto mainLoop;                 \
+                loadStore (mode, ty, S (ty, stackOffset));      \
+                goto mainLoop;                                  \
         }
 
-#define loadStoreStackTop(mode)                                        \
+#define loadStoreStackTop(mode)                                 \
         case opcodeSym (mode##StackTop):                        \
-                if (disassemble) goto mainLoop;                        \
-                loadStoreGen (mode, Pointer, Word32, StackTop);        \
+                if (disassemble) goto mainLoop;                 \
+                loadStoreGen (mode, Pointer, Word32, StackTop); \
                 goto mainLoop;
 
-#define loadWord(size)                                        \
-        case opcodeSymOfTy (Word, size, loadWord):        \
-        {                                                \
-                Word##size t0;                                \
-                Fetch (Word##size, t0);                        \
-                if (disassemble) goto mainLoop;                \
-                loadStore (load, Word##size, t0);        \
-                goto mainLoop;                                \
+#define loadWord(size)                                  \
+        case opcodeSymOfTy (Word, size, loadWord):      \
+        {                                               \
+                Word##size t0;                          \
+                Fetch (Word##size, t0);                 \
+                if (disassemble) goto mainLoop;         \
+                loadStore (load, Word##size, t0);       \
+                goto mainLoop;                          \
         }
 
 #define opcode(ty, size, name) OPCODE_##ty##size##_##name
 
 #define coerceOp(f, t) OPCODE_##f##_to##t
 
-#define binary(ty, f)                                \
-        case opcodeSym (f):                        \
-                if (disassemble) goto mainLoop;        \
-        {                                        \
-                ty t0 = PopReg (ty);                \
-                ty t1 = PopReg (ty);                \
-                PushReg (ty) = f (t0, t1);        \
-                goto mainLoop;                        \
+#define binary(ty, f)                           \
+        case opcodeSym (f):                     \
+                if (disassemble) goto mainLoop; \
+        {                                       \
+                ty t0 = PopReg (ty);            \
+                ty t1 = PopReg (ty);            \
+                PushReg (ty) = f (t0, t1);      \
+                goto mainLoop;                  \
         }
 
 /* The bytecode interpreter relies on the fact that the overflow checking 
@@ -231,124 +231,124 @@ enum {
  * not overflow.  When the result overflow, the interpreter pushes a zero on
  * the stack for the result.
  */
-#define binaryCheck(ty, f)                                        \
-        case opcodeSym (f):                                        \
-                if (disassemble) goto mainLoop;                        \
-        {                                                        \
-                ty t0 = PopReg (ty);                                \
-                ty t1 = PopReg (ty);                                \
-                f (PushReg (ty), t0, t1, f##Overflow);                \
-                overflow = FALSE;                                \
-                goto mainLoop;                                        \
-        f##Overflow:                                                \
-                 PushReg (ty) = 0; /* overflow, push 0 */        \
+#define binaryCheck(ty, f)                                      \
+        case opcodeSym (f):                                     \
+                if (disassemble) goto mainLoop;                 \
+        {                                                       \
+                ty t0 = PopReg (ty);                            \
+                ty t1 = PopReg (ty);                            \
+                f (PushReg (ty), t0, t1, f##Overflow);          \
+                overflow = FALSE;                               \
+                goto mainLoop;                                  \
+        f##Overflow:                                            \
+                PushReg (ty) = 0; /* overflow, push 0 */        \
                 overflow = TRUE;                                \
-                goto mainLoop;                                        \
+                goto mainLoop;                                  \
         }
 
-#define unaryCheck(ty, f)                                        \
-        case opcodeSym (f):                                        \
-                if (disassemble) goto mainLoop;                        \
-        {                                                        \
-                ty t0 = PopReg (ty);                                \
-                f (PushReg (ty), t0, f##Overflow);                \
-                overflow = FALSE;                                \
-                goto mainLoop;                                        \
-        f##Overflow:                                                \
-                 PushReg (ty) = 0; /* overflow, push 0 */        \
+#define unaryCheck(ty, f)                                       \
+        case opcodeSym (f):                                     \
+                if (disassemble) goto mainLoop;                 \
+        {                                                       \
+                ty t0 = PopReg (ty);                            \
+                f (PushReg (ty), t0, f##Overflow);              \
+                overflow = FALSE;                               \
+                goto mainLoop;                                  \
+        f##Overflow:                                            \
+                PushReg (ty) = 0; /* overflow, push 0 */        \
                 overflow = TRUE;                                \
-                goto mainLoop;                                        \
+                goto mainLoop;                                  \
         }
 
-#define coerce(f1, t1, f2, t2)                                \
-        case coerceOp (f2, t2):                                \
-                if (disassemble) goto mainLoop;                \
-        {                                                \
-                f1 t0 = PopReg (f1);                        \
+#define coerce(f1, t1, f2, t2)                          \
+        case coerceOp (f2, t2):                         \
+                if (disassemble) goto mainLoop;         \
+        {                                               \
+                f1 t0 = PopReg (f1);                    \
                 PushReg (t1) = f2##_to##t2 (t0);        \
-                goto mainLoop;                                \
+                goto mainLoop;                          \
         }
 
-#define compare(ty, f)                                \
-        case opcodeSym (f):                        \
-                if (disassemble) goto mainLoop;        \
-        {                                        \
-                ty t0 = PopReg (ty);                \
-                ty t1 = PopReg (ty);                \
-                PushReg (Word32) = f (t0, t1);        \
-                goto mainLoop;                        \
+#define compare(ty, f)                          \
+        case opcodeSym (f):                     \
+                if (disassemble) goto mainLoop; \
+        {                                       \
+                ty t0 = PopReg (ty);            \
+                ty t1 = PopReg (ty);            \
+                PushReg (Word32) = f (t0, t1);  \
+                goto mainLoop;                  \
         }
 
-#define shift(ty, f)                                \
-        case opcodeSym (f):                        \
-                if (disassemble) goto mainLoop;        \
-        {                                        \
-                ty w = PopReg (ty);                \
-                Word32 s = PopReg (Word32);        \
-                ty w2 = f (w, s);                \
-                PushReg (ty) = w2;                \
-                goto mainLoop;                        \
+#define shift(ty, f)                            \
+        case opcodeSym (f):                     \
+                if (disassemble) goto mainLoop; \
+        {                                       \
+                ty w = PopReg (ty);             \
+                Word32 s = PopReg (Word32);     \
+                ty w2 = f (w, s);               \
+                PushReg (ty) = w2;              \
+                goto mainLoop;                  \
         }
 
-#define unary(ty, f)                                \
-        case opcodeSym (f):                        \
-                if (disassemble) goto mainLoop;        \
-        {                                        \
-                ty t0 = PopReg (ty);                \
-                PushReg (ty) = f (t0);                \
-                goto mainLoop;                        \
+#define unary(ty, f)                            \
+        case opcodeSym (f):                     \
+                if (disassemble) goto mainLoop; \
+        {                                       \
+                ty t0 = PopReg (ty);            \
+                PushReg (ty) = f (t0);          \
+                goto mainLoop;                  \
         }
 
-#define Goto(l)                                        \
-        do {                                        \
-                maybe pc = code + l;                \
-                goto mainLoop;                        \
+#define Goto(l)                                 \
+        do {                                    \
+                maybe pc = code + l;            \
+                goto mainLoop;                  \
         } while (0)
 
-#define Switch(size)                                                        \
-        case OPCODE_Switch##size:                                        \
-        {                                                                \
-                Label label;                                                \
+#define Switch(size)                                                    \
+        case OPCODE_Switch##size:                                       \
+        {                                                               \
+                Label label;                                            \
                 ProgramCounter lastCase;                                \
-                Word##size test = 0;                                        \
+                Word##size test = 0;                                    \
                 Word16 numCases;                                        \
                                                                         \
-                Fetch (Word16, numCases);                                \
+                Fetch (Word16, numCases);                               \
                 lastCase = pc + (4 + size/8) * numCases;                \
-                maybe test = PopReg (Word##size);                        \
-                assertRegsEmpty ();                                        \
-                while (pc < lastCase) {                                        \
-                        Word##size caseWord;                                \
-                        if (DEBUG or disassemble)                        \
-                                fprintf (stderr, "\n\t  ");                \
-                        Fetch (Word##size, caseWord);                        \
-                        if (DEBUG or disassemble)                        \
+                maybe test = PopReg (Word##size);                       \
+                assertRegsEmpty ();                                     \
+                while (pc < lastCase) {                                 \
+                        Word##size caseWord;                            \
+                        if (DEBUG or disassemble)                       \
+                                fprintf (stderr, "\n\t  ");             \
+                        Fetch (Word##size, caseWord);                   \
+                        if (DEBUG or disassemble)                       \
                                 fprintf (stderr, " =>");                \
-                        Fetch (Label, label);                                \
-                        if (not disassemble and test == caseWord)        \
-                                Goto (label);                                \
-                }                                                        \
-                goto mainLoop;                                                \
+                        Fetch (Label, label);                           \
+                        if (not disassemble and test == caseWord)       \
+                                Goto (label);                           \
+                }                                                       \
+                goto mainLoop;                                          \
         }
 
 typedef char *String;
 
-#define Cache()                                        \
-        do {                                        \
-                frontier = gcState.frontier;        \
-                stackTop = gcState.stackTop;        \
+#define Cache()                                 \
+        do {                                    \
+                frontier = gcState.frontier;    \
+                stackTop = gcState.stackTop;    \
         } while (0)
 
-#define Flush()                                        \
-        do {                                        \
-                gcState.frontier = frontier;        \
-                gcState.stackTop = stackTop;        \
+#define Flush()                                 \
+        do {                                    \
+                gcState.frontier = frontier;    \
+                gcState.stackTop = stackTop;    \
         } while (0)
 
 
 #define disp(ty)                                                \
-        for (i = 0; i < ty##RegI; ++i)                                \
-                fprintf (stderr, "\n" #ty "Reg[%d] = 0x%08x",        \
+        for (i = 0; i < ty##RegI; ++i)                          \
+                fprintf (stderr, "\n" #ty "Reg[%d] = 0x%08x",   \
                                 i, (uint)(ty##Reg[i]));
 
 void displayRegs () {
@@ -417,19 +417,19 @@ mainLoop:
                         Goto (label);
                 goto mainLoop;
         }
-         case opcodeSym (CallC):
-                 Fetch (CallCIndex, callCIndex);
+        case opcodeSym (CallC):
+                Fetch (CallCIndex, callCIndex);
                 unless (disassemble) {
                         Flush ();
-                         MLton_callC (callCIndex);
+                        MLton_callC (callCIndex);
                         Cache ();
                 }
                 goto mainLoop;
-         case opcodeSym (Goto):
+        case opcodeSym (Goto):
         {
                 Label label;
                 Fetch (Label, label);
-                 Goto (label);
+                Goto (label);
         }
         loadStoreGPNR(load);
         loadStoreGPNR(store);
@@ -441,19 +441,19 @@ mainLoop:
                         Goto (label);
                 goto mainLoop;
         }
-         case opcodeSym (ProfileLabel):
-                 die ("ProfileLabel not implemented");
-         case opcodeSym (Raise):
+        case opcodeSym (ProfileLabel):
+                die ("ProfileLabel not implemented");
+        case opcodeSym (Raise):
                 maybe stackTop = gcState.stackBottom + gcState.exnStack;
                 // fall through to Return.
-         case opcodeSym (Return):
+        case opcodeSym (Return):
                 Goto (*(Label*)(StackTop - sizeof (Label)));
         Switch(8);
         Switch(16);
         Switch(32);
         Switch(64);
-         case opcodeSym (Thread_returnToC):
-                 maybe goto done;
+        case opcodeSym (Thread_returnToC):
+                maybe goto done;
         }
         assert (FALSE);
 done:

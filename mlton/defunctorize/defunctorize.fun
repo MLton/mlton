@@ -163,7 +163,7 @@ fun casee {caseType: Xtype.t,
              | RaiseMatch => raiseExn (fn _ => Xexp.match, true)
          end
       val examples = ref (fn () => Vector.new0 ())
-      fun matchCompile () =                                          
+      fun matchCompile () =                                  
          let
             val testVar = Var.newNoname ()
             val decs = ref []
@@ -535,7 +535,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
       fun loopDec (d: Cdec.t) =
          let
 (*          Use open Cdec instead of the following due to an SML/NJ bug *)
-(*            datatype z = datatype Cdec.t *)
+(*          datatype z = datatype Cdec.t *)
             open Cdec
          in
             case d of
@@ -713,7 +713,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                     var = var}
                 end)
 (* Use open Cdec instead of the following due to an SML/NJ bug *)
-(*            datatype z = datatype Cdec.t *)
+(*          datatype z = datatype Cdec.t *)
             open Cdec
          in
             case d of

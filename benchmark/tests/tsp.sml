@@ -196,20 +196,20 @@ structure TSP : sig
           val (choice, minDist) = choose(4, tToN1+tToN2+p1ToP2, choice, minDist)
           in
             case choice
-             of 1 => (        (* 1:p1,t t,p2 n2,n1 -- reverse 2! *)
+             of 1 => (  (* 1:p1,t t,p2 n2,n1 -- reverse 2! *)
                   reverse n2;
                   link (p1, t);
                   link (t, p2);
                   link (n2, n1))
-              | 2 => (        (* 2:p1,t t,n2 p2,n1 -- OK *)
+              | 2 => (  (* 2:p1,t t,n2 p2,n1 -- OK *)
                   link (p1, t);
                   link (t, n2);
                   link (p2, n1))
-              | 3 => (        (* 3:p2,t t,n1 p1,n2 -- OK *)
+              | 3 => (  (* 3:p2,t t,n1 p1,n2 -- OK *)
                   link (p2, t);
                   link (t, n1);
                   link (p1, n2))
-              | 4 => (        (* 4:n1,t t,n2 p2,p1 -- reverse 1! *)
+              | 4 => (  (* 4:n1,t t,n2 p2,p1 -- reverse 1! *)
                   reverse n1;
                   link (n1, t);
                   link (t, n2);
@@ -358,11 +358,11 @@ structure BuildTree : sig
 
     structure T = Tree
 
-    val m_e        = 2.7182818284590452354
-    val m_e2        = 7.3890560989306502274
-    val m_e3        = 20.08553692318766774179
-    val m_e6        = 403.42879349273512264299
-    val m_e12        = 162754.79141900392083592475
+    val m_e     = 2.7182818284590452354
+    val m_e2    = 7.3890560989306502274
+    val m_e3    = 20.08553692318766774179
+    val m_e6    = 403.42879349273512264299
+    val m_e12   = 162754.79141900392083592475
 
     datatype axis = X_AXIS | Y_AXIS
 

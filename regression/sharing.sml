@@ -9,7 +9,7 @@ sig
     sharing type t = s
 end;
 
-signature T =        (* from SML/NJ doc *)
+signature T =   (* from SML/NJ doc *)
 sig
     type s
     structure A :

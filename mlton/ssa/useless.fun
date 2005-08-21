@@ -791,7 +791,7 @@ fun useless (program: Program.t): Program.t =
           | Var _ => e
           | _ => e
       val doitExp =
-          Trace.trace3 ("Useless.doitExp",
+         Trace.trace3 ("Useless.doitExp",
                        Exp.layout, Layout.ignore, Layout.ignore,
                        Exp.layout) 
          doitExp

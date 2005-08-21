@@ -80,49 +80,49 @@ signature BASIS_2002 =
       val vector : 'a list -> 'a vector
 
       (* Required structures *)
-      structure Array : ARRAY        
+      structure Array : ARRAY   
       structure ArraySlice : ARRAY_SLICE        
-      structure BinIO : BIN_IO        
-      structure BinPrimIO : PRIM_IO        
-      structure Bool : BOOL        
-      structure Byte : BYTE        
-      structure Char : CHAR        
-      structure CharArray : MONO_ARRAY        
-      structure CharArraySlice : MONO_ARRAY_SLICE        
+      structure BinIO : BIN_IO  
+      structure BinPrimIO : PRIM_IO     
+      structure Bool : BOOL     
+      structure Byte : BYTE     
+      structure Char : CHAR     
+      structure CharArray : MONO_ARRAY  
+      structure CharArraySlice : MONO_ARRAY_SLICE       
       structure CharVector : MONO_VECTOR        
-      structure CharVectorSlice : MONO_VECTOR_SLICE        
-      structure CommandLine : COMMAND_LINE        
-      structure Date : DATE        
-      structure General : GENERAL        
-      structure IEEEReal : IEEE_REAL        
-      structure Int : INTEGER        
-      structure IO : IO        
-      structure LargeInt : INTEGER        
+      structure CharVectorSlice : MONO_VECTOR_SLICE     
+      structure CommandLine : COMMAND_LINE      
+      structure Date : DATE     
+      structure General : GENERAL       
+      structure IEEEReal : IEEE_REAL    
+      structure Int : INTEGER   
+      structure IO : IO 
+      structure LargeInt : INTEGER      
       structure LargeReal : REAL        
       structure LargeWord : WORD        
-      structure List : LIST        
-      structure ListPair : LIST_PAIR        
-      structure Math : MATH        
-      structure Option : OPTION        
-      structure OS : OS        
-      structure Position : INTEGER        
-      structure Real : REAL        
-      structure StringCvt : STRING_CVT        
-      structure String : STRING        
-      structure Substring : SUBSTRING        
+      structure List : LIST     
+      structure ListPair : LIST_PAIR    
+      structure Math : MATH     
+      structure Option : OPTION 
+      structure OS : OS 
+      structure Position : INTEGER      
+      structure Real : REAL     
+      structure StringCvt : STRING_CVT  
+      structure String : STRING 
+      structure Substring : SUBSTRING   
       structure TextIO : TEXT_IO        
-      structure TextPrimIO : PRIM_IO        
-      structure Text : TEXT        
-      structure Time : TIME        
-      structure Timer : TIMER        
-      structure VectorSlice : VECTOR_SLICE        
-      structure Vector : VECTOR        
-      structure Word : WORD        
-      structure Word8Array : MONO_ARRAY        
-      structure Word8Array2 : MONO_ARRAY2        
-      structure Word8ArraySlice : MONO_ARRAY_SLICE        
-      structure Word8Vector : MONO_VECTOR        
-      structure Word8VectorSlice : MONO_VECTOR_SLICE        
+      structure TextPrimIO : PRIM_IO    
+      structure Text : TEXT     
+      structure Time : TIME     
+      structure Timer : TIMER   
+      structure VectorSlice : VECTOR_SLICE      
+      structure Vector : VECTOR 
+      structure Word : WORD     
+      structure Word8Array : MONO_ARRAY 
+      structure Word8Array2 : MONO_ARRAY2       
+      structure Word8ArraySlice : MONO_ARRAY_SLICE      
+      structure Word8Vector : MONO_VECTOR       
+      structure Word8VectorSlice : MONO_VECTOR_SLICE    
 
       (* Optional structures *)
       structure Array2 : ARRAY2

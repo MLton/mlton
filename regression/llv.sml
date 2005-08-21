@@ -29,11 +29,11 @@ datatype 'a pgm = PGM of string * 'a tr
     and llvExp(e: mulexp) : mulexp_llv =
       let 
         fun llv_switch(SWITCH(e,branches)) =
-            (* Note: e is trivial *)
-            let val branches' = map (fn (c,e) => (c,llv e)) branches
-            in  
+          (* Note: e is trivial *)
+          let val branches' = map (fn (c,e) => (c,llv e)) branches
+          in  
                SWITCH(llv e, branches')
-            end
+          end
       in
       case e of
        SWITCH_I(switch) => 

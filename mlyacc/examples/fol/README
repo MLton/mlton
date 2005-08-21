@@ -7,10 +7,10 @@ The parser is defined by the files
 
   fol.lex       (* defines lexer *)
   fol.grm       (* defines grammar *)
-  link.sml        (* constructs basic parser structures *)
-  absyn.sml        (* a trivial abstract syntax *)
+  link.sml      (* constructs basic parser structures *)
+  absyn.sml     (* a trivial abstract syntax *)
   interface.sml (* interface to lexer and parser properties *)
-  parse.sml        (* driver functions *)
+  parse.sml     (* driver functions *)
   sources.cm    (* cm description file *)
 
 To compile this example, type

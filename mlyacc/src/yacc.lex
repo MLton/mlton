@@ -74,54 +74,54 @@ id=[A-Za-z]{idchars}*;
 tyvar="'"{idchars}*;
 qualid ={id}".";
 %%
-<INITIAL>"(*"        => (Add yytext; YYBEGIN COMMENT; commentLevel := 1;
+<INITIAL>"(*"   => (Add yytext; YYBEGIN COMMENT; commentLevel := 1;
                     continue() before YYBEGIN INITIAL);
-<A>"(*"                => (YYBEGIN EMPTYCOMMENT; commentLevel := 1; continue());
-<CODE>"(*"        => (Add yytext; YYBEGIN COMMENT; commentLevel := 1;
+<A>"(*"         => (YYBEGIN EMPTYCOMMENT; commentLevel := 1; continue());
+<CODE>"(*"      => (Add yytext; YYBEGIN COMMENT; commentLevel := 1;
                     continue() before YYBEGIN CODE);
 <INITIAL>[^%\013\n]+ => (Add yytext; continue());
-<INITIAL>"%%"         => (YYBEGIN A; HEADER (concat (rev (!text)),!lineno,!lineno));
+<INITIAL>"%%"    => (YYBEGIN A; HEADER (concat (rev (!text)),!lineno,!lineno));
 <INITIAL,CODE,COMMENT,F,EMPTYCOMMENT>{eol}  => (Add yytext; inc lineno; continue());
-<INITIAL>.         => (Add yytext; continue());
+<INITIAL>.       => (Add yytext; continue());
 
 <A>{eol}        => (inc lineno; continue ());
 <A>{ws}+        => (continue());
-<A>of                => (OF(!lineno,!lineno));
-<A>for                => (FOR(!lineno,!lineno));
-<A>"{"                => (LBRACE(!lineno,!lineno));
-<A>"}"                => (RBRACE(!lineno,!lineno));
-<A>","                => (COMMA(!lineno,!lineno));
-<A>"*"                => (ASTERISK(!lineno,!lineno));
-<A>"->"                => (ARROW(!lineno,!lineno));
-<A>"%left"        => (PREC(Hdr.LEFT,!lineno,!lineno));
-<A>"%right"        => (PREC(Hdr.RIGHT,!lineno,!lineno));
-<A>"%nonassoc"         => (PREC(Hdr.NONASSOC,!lineno,!lineno));
-<A>"%"[a-z_]+        => (lookup(yytext,!lineno,!lineno));
-<A>{tyvar}        => (TYVAR(yytext,!lineno,!lineno));
-<A>{qualid}        => (IDDOT(yytext,!lineno,!lineno));
-<A>[0-9]+        => (INT (yytext,!lineno,!lineno));
-<A>"%%"                => (DELIMITER(!lineno,!lineno));
-<A>":"                => (COLON(!lineno,!lineno));
-<A>"|"                => (BAR(!lineno,!lineno));
-<A>{id}                => (ID ((yytext,!lineno),!lineno,!lineno));
-<A>"("                => (pcount := 1; actionstart := (!lineno);
+<A>of           => (OF(!lineno,!lineno));
+<A>for          => (FOR(!lineno,!lineno));
+<A>"{"          => (LBRACE(!lineno,!lineno));
+<A>"}"          => (RBRACE(!lineno,!lineno));
+<A>","          => (COMMA(!lineno,!lineno));
+<A>"*"          => (ASTERISK(!lineno,!lineno));
+<A>"->"         => (ARROW(!lineno,!lineno));
+<A>"%left"      => (PREC(Hdr.LEFT,!lineno,!lineno));
+<A>"%right"     => (PREC(Hdr.RIGHT,!lineno,!lineno));
+<A>"%nonassoc"  => (PREC(Hdr.NONASSOC,!lineno,!lineno));
+<A>"%"[a-z_]+   => (lookup(yytext,!lineno,!lineno));
+<A>{tyvar}      => (TYVAR(yytext,!lineno,!lineno));
+<A>{qualid}     => (IDDOT(yytext,!lineno,!lineno));
+<A>[0-9]+       => (INT (yytext,!lineno,!lineno));
+<A>"%%"         => (DELIMITER(!lineno,!lineno));
+<A>":"          => (COLON(!lineno,!lineno));
+<A>"|"          => (BAR(!lineno,!lineno));
+<A>{id}         => (ID ((yytext,!lineno),!lineno,!lineno));
+<A>"("          => (pcount := 1; actionstart := (!lineno);
                     text := nil; YYBEGIN CODE; continue() before YYBEGIN A);
-<A>.                => (UNKNOWN(yytext,!lineno,!lineno));
-<CODE>"("        => (inc pcount; Add yytext; continue());
-<CODE>")"        => (dec pcount;
+<A>.            => (UNKNOWN(yytext,!lineno,!lineno));
+<CODE>"("       => (inc pcount; Add yytext; continue());
+<CODE>")"       => (dec pcount;
                     if !pcount = 0 then
                          PROG (concat (rev (!text)),!lineno,!lineno)
                     else (Add yytext; continue()));
-<CODE>"\""        => (Add yytext; YYBEGIN STRING; continue());
+<CODE>"\""      => (Add yytext; YYBEGIN STRING; continue());
 <CODE>[^()"\n\013]+ => (Add yytext; continue());
 
-<COMMENT>[(*)]        => (Add yytext; continue());
-<COMMENT>"*)"        => (Add yytext; dec commentLevel;
+<COMMENT>[(*)]  => (Add yytext; continue());
+<COMMENT>"*)"   => (Add yytext; dec commentLevel;
                     if !commentLevel=0
                          then BOGUS_VALUE(!lineno,!lineno)
                          else continue()
                    );
-<COMMENT>"(*"        => (Add yytext; inc commentLevel; continue());
+<COMMENT>"(*"   => (Add yytext; inc commentLevel; continue());
 <COMMENT>[^*()\n\013]+ => (Add yytext; continue());
 
 <EMPTYCOMMENT>[(*)]  => (continue());
@@ -131,17 +131,17 @@ qualid ={id}".";
 <EMPTYCOMMENT>"(*"   => (inc commentLevel; continue());
 <EMPTYCOMMENT>[^*()\n\013]+ => (continue());
 
-<STRING>"\""        => (Add yytext; YYBEGIN CODE; continue());
-<STRING>\\        => (Add yytext; continue());
-<STRING>{eol}        => (Add yytext; error inputSource (!lineno) "unclosed string";
-                     inc lineno; YYBEGIN CODE; continue());
+<STRING>"\""    => (Add yytext; YYBEGIN CODE; continue());
+<STRING>\\      => (Add yytext; continue());
+<STRING>{eol}   => (Add yytext; error inputSource (!lineno) "unclosed string";
+                    inc lineno; YYBEGIN CODE; continue());
 <STRING>[^"\\\n\013]+ => (Add yytext; continue());
-<STRING>\\\"        => (Add yytext; continue());
+<STRING>\\\"    => (Add yytext; continue());
 <STRING>\\{eol} => (Add yytext; inc lineno; YYBEGIN F; continue());
 <STRING>\\[\ \t] => (Add yytext; YYBEGIN F; continue());
 
-<F>{ws}                => (Add yytext; continue());
-<F>\\                => (Add yytext; YYBEGIN STRING; continue());
-<F>.                => (Add yytext; error inputSource (!lineno) "unclosed string";
+<F>{ws}         => (Add yytext; continue());
+<F>\\           => (Add yytext; YYBEGIN STRING; continue());
+<F>.            => (Add yytext; error inputSource (!lineno) "unclosed string";
                     YYBEGIN CODE; continue());
 

@@ -101,7 +101,7 @@ structure PrettyPrint = struct
       | ppType0 s (TUPLE [], _) = PP.string s "unit"
       | ppType0 s (TUPLE [t], c) = ppType0 s (t, c)
       | ppType0 s (TUPLE tl, c) = let
-            fun loop [] = ()        (* cannot happen *)
+            fun loop [] = ()    (* cannot happen *)
               | loop [t] = ppType0 s (t, C_STAR)
               | loop (h :: tl) = (ppType0 s (h, C_STAR);
                                   PP.string s " *";
@@ -122,7 +122,7 @@ structure PrettyPrint = struct
         end
       | ppType0 s (RECORD [], _) = PP.string s "{}"
       | ppType0 s (RECORD tl, _) = let
-            fun loop [] = ()                (* cannot happen *)
+            fun loop [] = ()            (* cannot happen *)
               | loop [(n, t)] = (PP.string s (n ^ " : ");
                                  ppType0 s (t, C_COMMA))
               | loop ((n, t) :: tl) = (PP.string s (n ^ " : ");
@@ -145,7 +145,7 @@ structure PrettyPrint = struct
          PP.string s k;
          PP.closeBox s)
       | ppType0 s (CON (k, tl), _) = let
-            fun loop [] = ()        (* cannot happen *)
+            fun loop [] = ()    (* cannot happen *)
               | loop [t] = ppType0 s (t, C_COMMA)
               | loop (h :: tl) =
                 (ppType0 s (h, C_COMMA); PP.string s ","; PP.space s 1; loop tl)

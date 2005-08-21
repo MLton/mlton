@@ -55,7 +55,7 @@ signature X86_PSEUDO =
           | ShiftLeft
           | ShiftRight
           | BitOr
-            | BitAnd
+          | BitAnd
           | BitXor
           | BitOrNot
           | Addition
@@ -479,7 +479,7 @@ signature X86_PSEUDO =
       end
 
     structure Block :
-      sig        
+      sig       
         type t'
         val mkBlock': {entry: Entry.t option,
                        statements: Assembly.t list,

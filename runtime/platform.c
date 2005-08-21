@@ -8,7 +8,7 @@
 #include "platform.h"
 
 void die (char *fmt, ...) {
-        va_list        args;
+        va_list args;
 
         fflush(stdout);
         va_start(args, fmt);
@@ -19,7 +19,7 @@ void die (char *fmt, ...) {
 }
 
 void diee (char * fmt, ...) {
-        va_list        args;
+        va_list args;
 
         fflush(stdout);
         va_start(args, fmt);
@@ -50,23 +50,23 @@ string intToCommaString (int n) {
         
         if (0 == n)
                 buf[i--] = '0';
-         else if (INT_MIN == n) {
+        else if (INT_MIN == n) {
                 /* must treat INT_MIN specially, because I negate stuff later */
                 strcpy (buf + 1, "-2,147,483,648");
                 i = 0;
         } else {
                 int m;
         
-                 if (n > 0) m = n; else m = -n;
+                if (n > 0) m = n; else m = -n;
         
                 while (m > 0) {
-                         buf[i--] = m % 10 + '0';
+                        buf[i--] = m % 10 + '0';
                         m = m / 10;
-                         if (i % 4 == 0 and m > 0) buf[i--] = ',';
-                 }
-                 if (n < 0) buf[i--] = '-';
-         }
-         return buf + i + 1;
+                        if (i % 4 == 0 and m > 0) buf[i--] = ',';
+                }
+                if (n < 0) buf[i--] = '-';
+        }
+        return buf + i + 1;
 }
 
 void *scalloc (size_t nmemb, size_t size) {
@@ -171,12 +171,12 @@ string uintToCommaString (uint n) {
                 buf[i--] = '0';
         else {
                 while (n > 0) {
-                         buf[i--] = n % 10 + '0';
+                        buf[i--] = n % 10 + '0';
                         n = n / 10;
-                         if (i % 4 == 0 and n > 0) buf[i--] = ',';
-                 }
-         }
-         return buf + i + 1;
+                        if (i % 4 == 0 and n > 0) buf[i--] = ',';
+                }
+        }
+        return buf + i + 1;
 }
 
 string ullongToCommaString (ullong n) {
@@ -190,11 +190,11 @@ string ullongToCommaString (ullong n) {
                 buf[i--] = '0';
         else {
                 while (n > 0) {
-                         buf[i--] = n % 10 + '0';
+                        buf[i--] = n % 10 + '0';
                         n = n / 10;
-                         if (i % 4 == 0 and n > 0) buf[i--] = ',';
-                 }
-         }
-         return buf + i + 1;
+                        if (i % 4 == 0 and n > 0) buf[i--] = ',';
+                }
+        }
+        return buf + i + 1;
 }
 

@@ -37,7 +37,7 @@ structure Ring : RING =
       local
          fun make sel (x,y) = extract sel (ringOf x) (x,y)
       in
-            val op * = make(# * )
+         val op * = make(# * )
          val op + = make(# +)
       end
 

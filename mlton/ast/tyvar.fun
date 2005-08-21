@@ -63,7 +63,7 @@ fun newString (s, {left, right}) =
               Region.make {left = left, right = right})
 
 (*val make = Trace.trace2 ("Tyvar.make", String.layout, Bool.layout,
- *                        layout) make
+ *                      layout) make
  *)
 
 local val c = Counter.new 0

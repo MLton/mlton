@@ -121,7 +121,7 @@ structure Loop =
                 ()
     end
 (*
-  INDEX                -Signature-
+  INDEX         -Signature-
 
   Indices are a enumerable finite set of data with an order and a map
   to a continous nonnegative interval of integers.  In the sample
@@ -465,7 +465,7 @@ structure Index : INDEX =
 *)
 
 (*
- TENSOR                - Signature -
+ TENSOR         - Signature -
 
  Polymorphic tensors of any type. With 'tensor' we denote a (mutable)
  array of any rank, with as many indices as one wishes, and that may
@@ -713,7 +713,7 @@ structure Tensor : TENSOR =
 *)
 
 (*
- MONO_TENSOR                - signature -
+ MONO_TENSOR            - signature -
 
  Monomorphic tensor of arbitrary data (not only numbers). Operations
  should be provided to run the data in several ways, according to one
@@ -814,7 +814,7 @@ signature MONO_TENSOR =
     end
 
 (*
- NUMBER                - Signature -
+ NUMBER         - Signature -
 
  Guarantees a structure with a minimal number of mathematical operations
  so as to build an algebraic structure named Tensor.
@@ -1018,7 +1018,7 @@ structure RNumber : REAL_NUMBER =
 
     end
 (*
- Complex(R)        - Functor -
+ Complex(R)     - Functor -
 
  Provides support for complex numbers based on tuples. Should be
  highly efficient as most operations can be inlined.
@@ -1489,7 +1489,7 @@ structure RNumber : REAL_NUMBER =
         fun atanh x = ln ((1.0 + x) / sqrt(1.0 - x * x))
     end
 (*
- Complex(R)        - Functor -
+ Complex(R)     - Functor -
  Provides support for complex numbers based on tuples. Should be
  highly efficient as most operations can be inlined.
  *)
@@ -2084,7 +2084,7 @@ structure MonoTensor  =
          li = i2*...*in
          lj = j2*...*jn
          *)
-         fun do_fold_first a b c lk lj li =
+        fun do_fold_first a b c lk lj li =
             let fun loopk (0, _,  _,  accum) = accum
                   | loopk (k, ia, ib, accum) =
                     let val delta = Number.*(Array.sub(a,ia),Array.sub(b,ib))
@@ -2369,7 +2369,7 @@ structure MonoTensor  =
          li = i2*...*in
          lj = j2*...*jn
          *)
-         fun do_fold_first a b c lk lj li =
+        fun do_fold_first a b c lk lj li =
             let fun loopk (0, _,  _,  accum) = accum
                   | loopk (k, ia, ib, accum) =
                     let val delta = Number.*(Array.sub(a,ia),Array.sub(b,ib))

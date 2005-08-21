@@ -7,7 +7,7 @@ functor f() = struct type a = int
                      val a = 232
                      val pr = Int.toString 
               end :> sig type a
-                         val a : a                           
+                         val a : a                         
                          val pr : a -> string
                      end
 

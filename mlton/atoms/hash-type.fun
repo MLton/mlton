@@ -168,17 +168,17 @@ fun substitute (ty, v) =
 
 (* val substitute =
  *    Trace.trace2 ("HashType.substitute", layout,
- *                 List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
- *                 layout) substitute                
+ *              List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
+ *              layout) substitute              
  *)
 
 (* fun equalss (ts: t list): t option =
  *    case ts of
  *       t :: ts =>
- *          let fun loop [] = SOME t
- *                | loop (t' :: ts) = if equals (t, t') then loop ts else NONE
- *          in loop ts
- *          end
+ *       let fun loop [] = SOME t
+ *             | loop (t' :: ts) = if equals (t, t') then loop ts else NONE
+ *       in loop ts
+ *       end
  *     | [] => Error.bug "HashType.equals"
  *)
 

@@ -57,7 +57,7 @@ in
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
-end         
+end      
 
 val toString = Layout.toString o layout
 

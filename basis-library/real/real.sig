@@ -44,7 +44,7 @@ signature PRE_REAL =
       val signBit: real -> bool
       val strto: NullString.t -> real
       val toInt: real -> int
-      val toLarge: real -> LargeReal.real         
+      val toLarge: real -> LargeReal.real        
   end
 
 signature REAL_GLOBAL =

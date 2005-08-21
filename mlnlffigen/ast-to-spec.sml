@@ -453,7 +453,7 @@ structure AstToSpec = struct
             (* Spec.SINT is an arbitrary choice; the value gets
              * ignored anyway *)
             (ignore (typeref (tid, fn _ => Spec.BASIC Spec.SINT, tl_context))
-             handle VoidType => ())        (* ignore type aliases for void *)
+             handle VoidType => ())     (* ignore type aliases for void *)
 
         fun declaration (A.TypeDecl { tid, ... }) = dotid tid
           | declaration (A.VarDecl (v, _)) = varDecl v

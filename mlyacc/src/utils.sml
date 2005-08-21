@@ -40,7 +40,7 @@ type int = Int.int
 *)
 
 functor ListOrdSet(B : sig type elem
-                          val gt : elem * elem -> bool
+                        val gt : elem * elem -> bool
                         val eq : elem * elem -> bool
                     end ) : ORDSET =
 
@@ -58,17 +58,17 @@ struct
                  if elem_gt(key,h) then h::(f t)
                  else if elem_eq(key,h) then key::t
                  else key::l
-               | f nil = [key]
+              | f nil = [key]
         in f s
         end
                 
  val select_arb = fn nil => raise Select_arb
-                    | a::b => a
+                   | a::b => a
 
  val exists = fn (key,s) =>
         let fun f (h::t) = if elem_gt(key,h) then f t
                            else elem_eq(h,key) 
-               | f nil = false
+              | f nil = false
         in f s
         end
 
@@ -76,7 +76,7 @@ struct
         let fun f (h::t) = if elem_gt(key,h) then f t
                            else if elem_eq(h,key) then SOME h
                            else NONE
-               | f nil = NONE
+              | f nil = NONE
         in f s
         end
    
@@ -184,7 +184,7 @@ end
 
 functor RbOrdSet (B : sig type elem
                          val eq : (elem*elem) -> bool
-                          val gt : (elem*elem) -> bool
+                         val gt : (elem*elem) -> bool
                      end
                 ) : ORDSET =
 struct

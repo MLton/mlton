@@ -1,4 +1,4 @@
-signature T =        
+signature T =   
    sig
       eqtype s
       structure V:
@@ -59,7 +59,7 @@ functor F (eqtype v
       fun f (x: S.u) = x = x
    end
 
-signature T =        
+signature T =   
    sig
       eqtype s
       structure U:

@@ -113,7 +113,7 @@ structure RunCML : RUN_CML =
                S.switchToNext
                (fn thrd => 
                 let
-                   val () = R.isRunning := true        
+                   val () = R.isRunning := true 
                    val () = reset true
                    val () = SH.shutdownHook := S.prepend (thrd, fn arg => (S.atomicBegin (); arg))
                    val () = SH.pauseHook := pauseHook

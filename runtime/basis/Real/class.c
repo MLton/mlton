@@ -31,7 +31,7 @@ Int Real32_class (Real32 f) {
                 else
                         res = FP_INFINITE;
         } else if (word0 & EXPONENT_MASK32)
-                 res = FP_NORMAL;
+                res = FP_NORMAL;
         else if (word0 & MANTISSA_MASK32)
                 res = FP_SUBNORMAL;
         else
@@ -98,7 +98,7 @@ Int Real64_class (Real64 d) {
         word1 = ((Word *)&d)[1];
         if ((word1 & EXPONENT_MASK64) == EXPONENT_MASK64) {
                 if (word0 or (word1 & MANTISSA_MASK64))
-                               res = FP_NAN;
+                        res = FP_NAN;
                 else
                         res = FP_INFINITE;
         } else if (word1 & EXPONENT_MASK64)

@@ -129,7 +129,7 @@ fun load (ins: In.t, commandLineConstants)
                   (concat ["LookupConstants.load: strange constants line: ", l]))
       fun lookupConstant ({default, name}, ty: ConstType.t): Const.t =
          let
-             val {value, ...} =
+            val {value, ...} =
                let
                   val hash = String.hash name
                in

@@ -2851,7 +2851,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                 seq [str "variable type in structure disagrees with ",
                                      str sign],
                                 align [seq [str "variable: ",
-                                            Longvid.layout        
+                                            Longvid.layout      
                                             (Longvid.long (rev strids, name))],
                                        rest])
                             end

@@ -582,7 +582,7 @@ structure MSpeed =
                          (fn () =>
                           let val sum   = F.array(ny,nx, 0.0)
                              val rpart = F.array(ny,nx, 0.0)
-                             val ipart = F.array(ny,nx, 0.0)                        
+                             val ipart = F.array(ny,nx, 0.0)                
                              val coefs = collect ncoefs (fn(x) => real(1 + x))
                              val zerns =
                                 collect ncoefs

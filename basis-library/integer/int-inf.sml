@@ -232,7 +232,7 @@ structure IntInf: INT_INF_EXTRA =
                       else if w2 = 0wx80000000
                               then if w1 = 0w0 andalso sign = 0w1
                                       then valOf Int64.minInt
-                                   else raise Overflow                                      
+                                   else raise Overflow                                
                            else
                               let
                                  val n =
@@ -807,7 +807,7 @@ structure IntInf: INT_INF_EXTRA =
             fun octReader z = reader (0w8, 9, octDig) z
             fun decReader z = reader (0w10, 9, decDig) z
             fun hexReader z = reader (0w16, 7, hexDig) z
-         end         
+         end     
       in
          
          local fun stringReader (pos, str) =

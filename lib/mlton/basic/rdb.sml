@@ -64,7 +64,7 @@ structure Domain =
                                just = Justify.Right,
                                toString =
                                fn r => Real.format (r, Real.Format.fix (SOME 1))}
-(*                               Real.toString *)
+(*                             Real.toString *)
 
       val (string, stringV) = new {compare = String.compare,
                                    just = Justify.Left,

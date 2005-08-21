@@ -34,7 +34,7 @@ local
     infix 7 quot rem
     fun divmod s (i, d, q, r)  = tst s (i div d = q andalso i mod d = r);
     fun quotrem s (i, d, q, r) = tst s (i quot d = q andalso i rem d = r);
-in        
+in      
 
 val test1a = divmod "test1a" (10, 3, 3, 1);
 val test1b = divmod "test1b" (~10, 3, ~4, 2);
@@ -88,7 +88,7 @@ val test13a =
 val test13b = 
     List.map (fn s => tst0 "test13b" (case fromString s of NONE => "OK" | _ => "WRONG"))
            ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-            "+ 1", "~ 1", "- 1", "ff"];            
+            "+ 1", "~ 1", "- 1", "ff"];     
 
 val test14a = 
     List.map (chkScan StringCvt.DEC)
@@ -111,7 +111,7 @@ val test14b =
     List.map (fn s => tst0 "test14b" (case StringCvt.scanString (scan StringCvt.DEC) s 
                       of NONE => "OK" | _ => "WRONG"))
            ["", "-", "~", "+", " \n\t", " \n\t-", " \n\t~", " \n\t+", 
-            "+ 1", "~ 1", "- 1", "ff"];            
+            "+ 1", "~ 1", "- 1", "ff"];     
 
 val test15a = 
     List.map (chkScan StringCvt.BIN)

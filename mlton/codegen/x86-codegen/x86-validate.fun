@@ -126,7 +126,7 @@ struct
                              => if srcsize = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: BinAL, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -209,7 +209,7 @@ struct
                              => if srcsize = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: IMUL2, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -250,7 +250,7 @@ struct
                   val _ = if Size.class size = Size.INT
                             then ()
                             else Error.bug "x86Validate.Instruction.validate: UnAL, size"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -285,11 +285,11 @@ struct
                 *
                 * Require size modifier class as follows: INT
                 *)
-             => let        
+             => let     
                   val _ = if Size.class size = Size.INT
                             then ()
                             else Error.bug "x86Validate.Instruction.validate: SRAL, size"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -347,7 +347,7 @@ struct
                              => if src1size = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: CMP, src1size"
-                   val _ = case Operand.size src2
+                  val _ = case Operand.size src2
                             of NONE => ()
                              | SOME src2size 
                              => if src2size = size
@@ -397,7 +397,7 @@ struct
                              => if src1size = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: TEST, src1size"
-                   val _ = case Operand.size src2
+                  val _ = case Operand.size src2
                             of NONE => ()
                              | SOME src2size 
                              => if src2size = size
@@ -412,7 +412,7 @@ struct
                      | (Operand.FltRegister _, _)
                      => Error.bug "x86Validate.Instruction.validate: TEST, src1: FltRegister"
                      | (Operand.Immediate _, _)
-                     => Error.bug "x86Validate.Instruction.validate: TEST, src1:Immediate"        
+                     => Error.bug "x86Validate.Instruction.validate: TEST, src1:Immediate"      
                      | (Operand.Label _, _)
                      => Error.bug "x86Validate.Instruction.validate: TEST, src1:Label"
                      | (_, Operand.FltRegister _)
@@ -559,7 +559,7 @@ struct
                              => if srcsize = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: MOV, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -610,7 +610,7 @@ struct
                              => if srcsize = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: CMOVcc, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -627,7 +627,7 @@ struct
                      | (Operand.Immediate _, _)
                      => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:Immediate"
                      | (Operand.Label _, _)
-                     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:Label"        
+                     => Error.bug "x86Validate.Instruction.validate: CMOVcc, src:Label" 
                      | (_, Operand.FltRegister _)
                      => Error.bug "x86Validate.Instruction.validate: CMOVcc, dst:FltRegister"
                      | (_, Operand.Immediate _)
@@ -640,7 +640,7 @@ struct
                             (Operand.validate {operand = dst})
                 end
              | XCHG {src, dst, size}
-                      (* Exchange register/memory with register; p. 754
+               (* Exchange register/memory with register; p. 754
                 * Require src/dst operands as follows:
                 *
                 *              dst
@@ -662,7 +662,7 @@ struct
                              => if srcsize = size
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: XCHG, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -707,7 +707,7 @@ struct
                             of Size.WORD => ()
                              | Size.LONG => ()
                              | _ => Error.bug "x86Validate.Instruction.validate: PUSH, size"
-                   val _ = case Operand.size src
+                  val _ = case Operand.size src
                             of NONE => ()
                              | SOME srcsize 
                              => if srcsize = size
@@ -743,7 +743,7 @@ struct
                             of Size.WORD => ()
                              | Size.LONG => ()
                              | _ => Error.bug "x86Validate.Instruction.validate: POP, size"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize 
                              => if dstsize = size
@@ -798,7 +798,7 @@ struct
                              => if srcsize' = srcsize
                                   then ()
                                   else Error.bug "x86Validate.Instruction.validate: MOVX, srcsize"
-                   val _ = case Operand.size dst
+                  val _ = case Operand.size dst
                             of NONE => ()
                              | SOME dstsize' 
                              => if dstsize' = dstsize
@@ -883,7 +883,7 @@ struct
                 *            X     X
                 *
                 * Require size modifier class as follows: FLT
-                *)                
+                *)              
              => let
                   val _ = if Size.class size = Size.FLT
                             then ()
@@ -943,7 +943,7 @@ struct
                 *                  X
                 *
                 * Require size modifier class as follows: FPI
-                *)                
+                *)              
              => let
                   val _ = if Size.class size = Size.FPI
                             then ()
@@ -971,7 +971,7 @@ struct
                 *                  X
                 *
                 * Require size modifier class as follows: FPI
-                *)                
+                *)              
              => let
                   val _ = if Size.class size = Size.FPI
                             then ()
@@ -1023,7 +1023,7 @@ struct
                 *          reg imm lab add 
                 *                       X
                 *)
-             => let                   
+             => let                
                 in
                   case src
                     of Operand.MemLoc _
@@ -1046,7 +1046,7 @@ struct
                 *          reg imm lab add 
                 *                       X
                 *)
-             => let                   
+             => let                
                 in
                   case dst
                     of Operand.MemLoc _
@@ -1070,7 +1070,7 @@ struct
                 *           *           X
                 *   * only register %ax
                 *)
-             => let                   
+             => let                
                 in
                   case dst
                     of Operand.MemLoc _
@@ -1180,7 +1180,7 @@ struct
                 * Require size modifier class as follows: FLT*
                 *   * FLT(SNGL,DBLE)       if src add
                 *   * FLT(SNGL,DBLE,EXTD)
-                *)                
+                *)              
              => let
                   val _ = if Size.class size = Size.FLT
                             then case src
@@ -1254,7 +1254,7 @@ struct
       open x86.Assembly
 
       fun validate {assembly: t list} : bool
-         = List.fold(assembly,
+        = List.fold(assembly,
                     true,
                     fn (Comment _, b)
                      => b

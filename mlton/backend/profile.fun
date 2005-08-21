@@ -526,7 +526,7 @@ fun profile program =
                         {args = args,
                          kind = kind,
                          label = label}
-               in                       
+               in                      
                   List.push (blocks,
                              Block.T {args = args,
                                       kind = kind,

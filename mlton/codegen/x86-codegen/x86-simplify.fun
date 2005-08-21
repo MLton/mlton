@@ -395,7 +395,7 @@ struct
                                      {src = Operand.Immediate _,
                                       ...})
              => true
-             | _ => false                                     
+             | _ => false                                    
 
         val isInstructionBinALMD_operCommute : statement_type -> bool
           = fn Assembly.Instruction (Instruction.BinAL
@@ -753,7 +753,7 @@ struct
              | _ => NONE
 
         val isInstructionMULorDIV_srcImmediatePow2 : statement_type -> bool
-          = fn Assembly.Instruction (Instruction.pMD 
+         = fn Assembly.Instruction (Instruction.pMD 
                                     {oper,
                                      src = Operand.Immediate immediate,
                                      ...})
@@ -765,7 +765,7 @@ struct
                    | _ => false)
                andalso
                isImmediatePow2 (Immediate.destruct immediate)
-             | Assembly.Instruction (Instruction.IMUL2
+            | Assembly.Instruction (Instruction.IMUL2
                                     {src = Operand.Immediate immediate,
                                      ...})
             => isImmediatePow2 (Immediate.destruct immediate)
@@ -1348,7 +1348,7 @@ struct
                                        transfer = transfer})
                               end
                          else NONE)
-              | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2"
+             | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2"
 
         val (callback,elimMDPow2_msg) 
           = make_callback_msg "elimMDPow2"
@@ -1618,16 +1618,16 @@ struct
       local
         val optimizations_pre
           = commuteBinALMD::
-(*            elimBinAL0L:: *)
-(*            elimBinAL0R:: *)
+(*          elimBinAL0L:: *)
+(*          elimBinAL0R:: *)
             elimAddSub1::
             elimMDPow2::
             elimCMPTEST::
             nil
         val optimizations_pre_msg
           = commuteBinALMD_msg::
-(*            elimBinAL0L_msg:: *)
-(*            elimBinAL0R_msg:: *)
+(*          elimBinAL0L_msg:: *)
+(*          elimBinAL0R_msg:: *)
             elimAddSub1_msg::
             elimMDPow2_msg::
             nil
@@ -1852,13 +1852,13 @@ struct
                                     Transfer.iff {condition = Instruction.E,
                                                   truee = target,
                                                   falsee = default})
-                                 end                                    
+                                 end                                
                           else (statements,
                                 Transfer.switch {test = test,
                                                  cases = cases,
                                                  default = default})
                     in 
-                      SOME (Block.T {entry = entry,        
+                      SOME (Block.T {entry = entry,     
                                      profileLabel = profileLabel,
                                      statements = statements,
                                      transfer = transfer})
@@ -3189,7 +3189,7 @@ struct
                                {entry = entry,
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | _ => Error.bug "x86Simplify.PeeholeBlock: elimALCopy"
@@ -3390,10 +3390,10 @@ struct
                                        op ::)
                        in
                          SOME (LivenessBlock.T
-                               {entry = entry,        
+                               {entry = entry,  
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | {entry,
@@ -3475,7 +3475,7 @@ struct
                                {entry = entry,
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | {entry,
@@ -3555,7 +3555,7 @@ struct
                                {entry = entry,
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | _ => Error.bug "x86Simplify.PeeholeBlock: commuteBinALMD"
@@ -3743,7 +3743,7 @@ struct
                                {entry = entry,
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltACopy"
@@ -3908,10 +3908,10 @@ struct
                                        op ::)
                        in
                          SOME (LivenessBlock.T
-                               {entry = entry,        
+                               {entry = entry,  
                                 profileLabel = profileLabel,
                                 statements = statements,
-                                transfer = transfer})                 
+                                transfer = transfer})            
                        end
                   else NONE
              | _ => Error.bug "x86Simplify.PeeholeBlock: commuteFltBinA"
@@ -4327,7 +4327,7 @@ struct
                         changed = changed',
                         msg = "ElimGoto.elimGoto:"}
                val chunk = chunk'
-               val changed = changed orelse changed'                 
+               val changed = changed orelse changed'             
 
                (**************************************************************)
                (* peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate*)

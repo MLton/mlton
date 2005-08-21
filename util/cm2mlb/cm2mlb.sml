@@ -12,7 +12,7 @@
  * CM2MLB.cm2mlb {defines = ["MLton"],
  *                maps = [],
  *                sources = "sources.cm",
- *                  out = TextIO.stdOut}
+ *                out = TextIO.stdOut}
  *
  * Before using from the shell, you must do the following, where <smlnj> is
  * the root directory of the SML/NJ installation.  You may need to be root in

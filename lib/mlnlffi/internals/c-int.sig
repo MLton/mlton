@@ -87,7 +87,7 @@ signature C_INT = sig
     val fcast : addr -> 'f fptr'
 
     (* unsafe low-level array subscript that does not require RTTI *)
-    val unsafe_sub : int ->                (* element size *)
+    val unsafe_sub : int ->             (* element size *)
                      (('t, 'n) arr, 'c) obj' * int ->
                      ('t, 'n) obj'
 end

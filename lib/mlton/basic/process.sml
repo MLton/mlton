@@ -400,8 +400,8 @@ fun callWithOut (name, args, f: Out.t -> 'a) =
    end
 
 (*
- * text           data            bss            dec            hex        filename
- * 3272995         818052          24120        4115167         3ecadf        mlton
+ * text    data     bss     dec     hex filename
+ * 3272995       818052   24120 4115167  3ecadf mlton
  *)
 fun size (f: File.t): {text: int, data: int, bss: int}  =
    let

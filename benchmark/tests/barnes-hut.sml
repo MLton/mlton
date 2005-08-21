@@ -10,7 +10,7 @@ signature VECTOR =
   sig
     type 'a vec
 
-    val dim : int        (* dimension of the vectors *)
+    val dim : int       (* dimension of the vectors *)
 
     val tabulate : (int -> 'a) -> 'a vec
 
@@ -77,7 +77,7 @@ signature SPACE =
         root : node
       }
 
-    val nsub : int        (* number of sub cells / cell (2 ^ V.dim) *)
+    val nsub : int      (* number of sub cells / cell (2 ^ V.dim) *)
 
     val putCell : (cell * int * node) -> unit
     val getCell : (cell * int) -> node
@@ -616,12 +616,12 @@ functor DataIO (S : SPACE) : DATA_IO =
   (* compute set of dynamical diagnostics. *)
     fun diagnostics bodies = let
           fun loop ([], arg) = {
-                  mtot = #totM arg,                (* total mass *)
-                  totKE = #totKE arg,                (* total kinetic energy *)
-                  totPE = #totPE arg,                (* total potential energy *)
-                  cOfMPos = #cOfMPos arg,        (* center of mass: position *)
-                  cOfMVel = #cOfMVel arg,        (* center of mass: velocity *)
-                  amVec = #amVec arg                (* angular momentum vector *)
+                  mtot = #totM arg,             (* total mass *)
+                  totKE = #totKE arg,           (* total kinetic energy *)
+                  totPE = #totPE arg,           (* total potential energy *)
+                  cOfMPos = #cOfMPos arg,       (* center of mass: position *)
+                  cOfMVel = #cOfMVel arg,       (* center of mass: velocity *)
+                  amVec = #amVec arg            (* angular momentum vector *)
                 }
             | loop (S.Body{
                   mass, pos=ref pos, vel=ref vel, acc=ref acc, phi=ref phi
@@ -930,24 +930,24 @@ functor Main (V : VECTOR) : sig
   (* default parameter values *)
     val defaults = [
           (* file names for input/output                                *)
-            "in=",              (* snapshot of initial conditions        *)
-            "out=",             (* stream of output snapshots                *)
+            "in=",              (* snapshot of initial conditions       *)
+            "out=",             (* stream of output snapshots           *)
 
           (* params, used if no input specified, to make a Plummer Model*)
-            "nbody=128",        (* number of particles to generate        *)
-            "seed=123",         (* random number generator seed                *)
+            "nbody=128",        (* number of particles to generate      *)
+            "seed=123",         (* random number generator seed         *)
 
-          (* params to control N-body integration                        *)
-            "dtime=0.025",        (* integration time-step                *)
-            "eps=0.05",         (* usual potential softening                *)
-            "tol=1.0",          (* cell subdivision tolerence                *)
-            "fcells=0.75",      (* cell allocation parameter                *)
+          (* params to control N-body integration                       *)
+            "dtime=0.025",      (* integration time-step                *)
+            "eps=0.05",         (* usual potential softening            *)
+            "tol=1.0",          (* cell subdivision tolerence           *)
+            "fcells=0.75",      (* cell allocation parameter            *)
 
-            "tstop=2.0",        (* time to stop integration                *)
-            "dtout=0.25",       (* data-output interval                        *)
+            "tstop=2.0",        (* time to stop integration             *)
+            "dtout=0.25",       (* data-output interval                 *)
 
-            "debug=false",      (* turn on debugging messages                *)
-            "VERSION=1.0"        (* JEB  06 March 1988                        *)
+            "debug=false",      (* turn on debugging messages           *)
+            "VERSION=1.0"       (* JEB  06 March 1988                   *)
           ]
 
   (* pick a random point on a sphere of specified radius. *)
@@ -990,7 +990,7 @@ functor Main (V : VECTOR) : sig
             | mkBodies (i, cmr, cmv, l) = let
                 val r = 1.0 / Math.sqrt (pow(xrand(0.0, mfrac), ~2.0/3.0) - 1.0)
                 val pos = pickshell (rsc * r)
-                fun vN () = let                (* von Neumann technique *)
+                fun vN () = let         (* von Neumann technique *)
                       val x = xrand(0.0,1.0)
                       val y = xrand(0.0,0.1)
                       in

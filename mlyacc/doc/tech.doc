@@ -105,7 +105,7 @@ Lookaheads are attached to an item when
             advantage, as we can represent a closure using just the
             nonterminal.
 
-                This can be divided into two cases:
+            This can be divided into two cases:
 
                 (a) A -> 'a .B 'c , where 'c derives epsilon,
                 (b) A -> 'a .B 'c , where 'c does not derive epsilon
@@ -128,7 +128,7 @@ Lookaheads are attached to an item when
                                           lookahead ref for the resulting
                                           shift/goto item in another core.
 
-             closure items:
+          closure items:
                 for each nonterminal:
                    (1) lookahead ref
                    (2) a list of item * lookahead ref for the
@@ -229,7 +229,7 @@ This algorithm computes the lookahead for each item:
   for each state,
         for each item of the form A -> u .B v in the state, where u may be
         nullable,
-           let        first_v = first(v)
+           let  first_v = first(v)
                 l-ref  = ref for A -> u .B v
                 s = the set of nonterminals added through the closure of B.
 

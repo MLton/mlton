@@ -32,7 +32,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
                       Property.initConst {args = Vector.new1 Type.unit,
                                           result = Type.unit})
 
-    fun getResultType(exp) =                                                        
+    fun getResultType(exp) =                                                    
       let 
         val {decs,result} = Exp.dest(exp)
       in 
@@ -521,7 +521,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
     (body, fn e =>
      let 
        val {decs,result} = Exp.dest(e)
-     in        
+     in 
        List.foreach
        (decs, fn d =>
         case d of

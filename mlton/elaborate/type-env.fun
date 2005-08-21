@@ -776,9 +776,9 @@ structure Type =
 
       fun isCharX t =
          case toType t of
-             Con (c, _) => Tycon.isCharX c
+            Con (c, _) => Tycon.isCharX c
           | Overload Overload.Char => true
-           | _ => false
+          | _ => false
 
       fun isExn t =
          case toType t of

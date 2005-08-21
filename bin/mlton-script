@@ -30,7 +30,7 @@ case "$1" in
         done
         if [ "$#" -gt 0 -a "$1" == "--" ]; then
                 shift
-        else        
+        else    
                 echo '@MLton missing --'
                 exit 1
         fi
@@ -64,24 +64,24 @@ if [ -d '/sw/lib' ]; then
 fi
 
 doit "$lib" \
-        -cc "$gcc"                                                \
+        -cc "$gcc"                                              \
         -cc-opt "-I$lib/include"                                \
-        -cc-opt '-O1'                                                \
-        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'        \
-        -target-as-opt amd64                                        \
+        -cc-opt '-O1'                                           \
+        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'  \
+        -target-as-opt amd64                                    \
                 '-m32
-                -mtune=opteron'                                  \
-        -target-cc-opt amd64                                        \
+                -mtune=opteron'                                 \
+        -target-cc-opt amd64                                    \
                 '-m32
-                -mtune=opteron'                                  \
-        -target-cc-opt darwin '-I/sw/include'                        \
-        -target-cc-opt solaris                                         \
+                -mtune=opteron'                                 \
+        -target-cc-opt darwin '-I/sw/include'                   \
+        -target-cc-opt solaris                                  \
                 '-Wa,-xarch=v8plusa
                 -fcall-used-g5
                 -fcall-used-g7
-                -mcpu=ultrasparc'                                \
+                -mcpu=ultrasparc'                               \
         -target-cc-opt sparc '-mv8 -m32'                        \
-        -target-cc-opt x86                                        \
+        -target-cc-opt x86                                      \
                 '-fno-strength-reduce
                 -fschedule-insns
                 -fschedule-insns2
@@ -89,16 +89,16 @@ doit "$lib" \
                 -malign-jumps=2
                 -malign-loops=2'                                \
         -target-link-opt amd64 '-m32'                           \
-        -target-link-opt cygwin '-lgmp'                                \
-        -target-link-opt darwin "$darwinLinkOpts -lgmp"                \
-        -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'        \
-        -target-link-opt linux '-lgmp'                                \
-        -target-link-opt mingw                                         \
-                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'        \
-        -target-link-opt netbsd                                        \
-                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'        \
-        -target-link-opt openbsd '-L/usr/local/lib/ -lgmp'        \
-        -target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'        \
-        -link-opt '-lgdtoa -lm'                                        \
-        -profile-exclude '<basis>'                                \
+        -target-link-opt cygwin '-lgmp'                         \
+        -target-link-opt darwin "$darwinLinkOpts -lgmp"         \
+        -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'      \
+        -target-link-opt linux '-lgmp'                          \
+        -target-link-opt mingw                                  \
+                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'  \
+        -target-link-opt netbsd                                 \
+                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'    \
+        -target-link-opt openbsd '-L/usr/local/lib/ -lgmp'      \
+        -target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'    \
+        -link-opt '-lgdtoa -lm'                                 \
+        -profile-exclude '<basis>'                              \
         "$@"

@@ -95,7 +95,7 @@ structure Util = struct
     fun arrayoflists [] = arrayoflist []
       | arrayoflists ([]::ls) = arrayoflists ls
       | arrayoflists [l] = arrayoflist l
-      | arrayoflists (ls as (obj0::_)::_) = let         
+      | arrayoflists (ls as (obj0::_)::_) = let  
           val a = array1(revfold (fn (l,n) => length l + n) ls 0,obj0)
           fun ins (i,[]) = i | ins (i,x::l) = (update1(a,i,x); ins(i+1,l))
           fun insert (i,[]) = a | insert (i,l::ll) = insert(ins(i,l),ll)
@@ -159,7 +159,7 @@ structure F = struct
            * then when 1 = a = a1 n + a2 p, have a1 = inverse of n mod p
            * note that it is not necessary to keep a2, b2 around.
            *)
-           fun gcd ((a,a1),(b,b1)) =
+          fun gcd ((a,a1),(b,b1)) =
               if b=1 then (* by continued fraction expansion, 0<|b1|<p *)
                  if b1<0 then F(p+b1) else F b1
               else let val q = a smlnj_div b
@@ -199,7 +199,7 @@ structure M = struct (* MONO *)
     local
         val andb = op &&
         infix sub << >> andb
-(*        val op << = Bits.lshift and op >> = Bits.rshift and op andb = Bits.andb
+(*      val op << = Bits.lshift and op >> = Bits.rshift and op andb = Bits.andb
 *)
     in
 
@@ -270,9 +270,9 @@ structure M = struct (* MONO *)
             | lcm (m,[]) = m
             | lcm (u::us, v::vs) =
                 if u>=v then if (u andb ~65536)<v then u::lcm(us,vs)
-                                                         else u::lcm(us,v::vs)
+                                                    else u::lcm(us,v::vs)
                         else if (v andb ~65536)<u then v::lcm(us,vs)
-                                                         else v::lcm(u::us,vs)
+                                                    else v::lcm(u::us,vs)
           in fn (M m,M m') => M (lcm (m,m')) end
     val tryDivide = let
           fun rev([],l) = l | rev(x::xs,l)=rev(xs,x::l)
@@ -436,7 +436,7 @@ fun getCounts () =
 structure P = struct
 
     datatype poly = P of (F.field*M.mono) list (* descending mono order *)
-(*        
+(*      
     fun show (P x) = (print "[ "; 
                       app (fn (f, m) =>
                            (print "("; F.show f; print ","; M.show m; print ") ")) x;
@@ -463,7 +463,7 @@ local
             Util.Less => (b,n) :: plus ((a,m)::ms,ns)
           | Util.Greater => (a,m) :: plus (ms,(b,n)::ns)
           | Util.Equal => let val c = F.add(a,b)
-                                    in if F.isZero c then plus(ms,ns)
+                             in if F.isZero c then plus(ms,ns)
                                 else (c,m)::plus(ms,ns)
                              end
     fun minus ([],p2) = neg p2
@@ -472,7 +472,7 @@ local
             Util.Less => (F.negate b,n) :: minus ((a,m)::ms,ns)
           | Util.Greater => (a,m) :: minus (ms,(b,n)::ns)
           | Util.Equal => let val c = F.subtract(a,b)
-                                    in if F.isZero c then minus(ms,ns)
+                             in if F.isZero c then minus(ms,ns)
                                 else (c,m)::minus(ms,ns)
                              end
     fun termMult (a,m,p) =
@@ -565,7 +565,7 @@ end
           fun dsp (a,m) = let
                 val s = 
                       if M.deg m = 0 then F.display a
-                       else if F.equal(F.one,F.negate a) then "-" ^ M.display m
+                      else if F.equal(F.one,F.negate a) then "-" ^ M.display m
                       else if F.equal(F.one,a) then M.display m
                       else F.display a ^ M.display m
                 in if substring(s,0,1)="-" then s else "+" ^ s end
@@ -662,7 +662,7 @@ structure G = struct
                 else (inc usedPairs;
                       Util.insert(P.cons((F.one,m'),g'),M.deg mm+d,arr))
           val buckets = MI.fold insert (MI.mkIdeal (MI.fold tag mi []))
-                                             (array1(0,[]))
+                                       (array1(0,[]))
           fun ins (~1,pairs) = pairs
             | ins (i,pairs) = case sub1(buckets,i) of
                     [] => ins(i-1,pairs)
@@ -672,7 +672,7 @@ structure G = struct
     fun grobner fs = let
          fun pr l = print (String.concat (l@["\n"]))
           val fs = revfold (fn (f,fs) => Util.insert(f,P.deg f,fs))
-                                 fs (array1(0,[]))
+                           fs (array1(0,[]))
           (* pairs at least as long as fs, so done when done w/ all pairs *)
           val pairs = ref(array1(length1 fs,[]))
           val mi = MI.mkEmpty()
@@ -792,7 +792,7 @@ local
     fun term l = let
           val (n,l) = case l of (Dig d::l) => nat(d,l) | _ => (1,l)
           val (m,l) = mono(M.one,l)
-              in ((F.coerceInt n,m),l) end
+          in ((F.coerceInt n,m),l) end
     fun poly (p,[]) = p
       | poly (p,l) = let
           val (s,l) = case l of Sign s::l => (F.coerceInt s,l) | _ => (F.one,l)
@@ -975,7 +975,7 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 
 
 (* val u5 = map G.parsePoly ["abcde-f5","a+b+c+d+e","ab+bc+cd+de+ea",
- *                           "abc+bcd+cde+dea+eab","abcd+bcde+cdea+deab+eabc"]
+ *                        "abc+bcd+cde+dea+eab","abcd+bcde+cdea+deab+eabc"]
  * 
  * val u4 = map G.parsePoly ["abcd-e4","a+b+c+d","ab+bc+cd+da","abc+bcd+cda+dab"]
  * 
@@ -984,13 +984,13 @@ fun report (e as Tabulate) = (print "exn: Tabulate\n"; raise e)
 (* fun runit () = 
  *   let
  *     val _ = (print "Enter fs, u7, u6, u5, or u4: "; 
- *              TextIO.flushOut TextIO.stdOut)
+ *           TextIO.flushOut TextIO.stdOut)
  *     val s = TextIO.inputN(TextIO.stdIn,2)
  *     val data = 
  *       if (s = "fs") then fs else if (s = "u7") then u7 
  *       else if (s = "u6") then u6 else if (s = "u5") then u5 
  *       else if (s = "u4") then u4 else 
- *         (print "no such data\n"; raise (Util.Impossible "no such data"))
+ *      (print "no such data\n"; raise (Util.Impossible "no such data"))
  *   in
  *     gb data handle e => report e
  *   end

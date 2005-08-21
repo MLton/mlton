@@ -76,7 +76,7 @@ struct
 
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
          fn ArrayOffset {base, index, offset, scale, ty}
-             => let
+            => let
                   val base = toX86Operand base
                   val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
                                         fn () => Vector.length base = 1)
@@ -153,7 +153,7 @@ struct
                       | _ => Error.bug (concat
                                         ["x86Translate.Operand.toX86Operand: ",
                                          "strange Contents: base: ",
-                                         x86.Operand.toString base])        
+                                         x86.Operand.toString base])    
                   val sizes = x86.Size.fromCType ty
                in
                   (#1 o Vector.mapAndFold)
@@ -456,7 +456,7 @@ struct
                     comment_end]
                  end 
               | PrimApp {dst, prim, args}
-                 => let
+              => let
                    val (comment_begin, comment_end) = comments statement
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toX86Operand)
@@ -619,7 +619,7 @@ struct
                               (args, Operand.toX86Operand)
                  in
                    AppendList.append
-                   (comments transfer,        
+                   (comments transfer,  
                     x86MLton.ccall {args = args,
                                     frameInfo = (Option.map
                                                  (frameInfo, frameInfoToX86)),
@@ -649,7 +649,7 @@ struct
                                  case x86.Operand.deMemloc operand of
                                     SOME memloc => x86.MemLocSet.add(live, memloc)
                                   | NONE => live))})}))
-                | Raise
+              | Raise
               => AppendList.append
                  (comments transfer,
                   AppendList.single

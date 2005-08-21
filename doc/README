@@ -29,13 +29,13 @@ For general MLton discussion, send mail to MLton-user@mlton.org.  To
 send mail to the MLton developers, use MLton@mlton.org.
 
 doc directory contents:
-        README                        this file
-        changelog                changelog
-        cm2mlb/                        a utility for producing ML Basis programs in SML/NJ
-        cmcat/                        a utility for producing whole programs in SML/NJ
-        examples/                example SML programs
+        README                  this file
+        changelog               changelog
+        cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
+        cmcat/                  a utility for producing whole programs in SML/NJ
+        examples/               example SML programs
         license/                license information
-        mllex.ps.gz                user guide for mllex lexer generator
-        mlyacc.ps.gz                user guide for mlyacc parser generator
-        user-guide/                html user guide
+        mllex.ps.gz             user guide for mllex lexer generator
+        mlyacc.ps.gz            user guide for mlyacc parser generator
+        user-guide/             html user guide
         user-guide.ps.gz        user guide for MLton

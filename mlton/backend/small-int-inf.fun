@@ -33,8 +33,8 @@ fun fromString (str: string): t option =
 
 (* val fromString =
  *    Trace.trace("SmallIntInf.fromString",
- *                String.layout,
- *                Option.layout layout) fromString
+ *             String.layout,
+ *             Option.layout layout) fromString
  *)
 
 (*

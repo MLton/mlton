@@ -17,7 +17,7 @@ signature TYCON_STRUCTS =
 signature TYCON =
    sig
       include ID
-      include PRIM_TYCONS         
+      include PRIM_TYCONS        
       sharing type t = tycon
 
       val stats: unit -> Layout.t

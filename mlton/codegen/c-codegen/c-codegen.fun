@@ -218,12 +218,12 @@ fun declareGlobals (prefix: string, print) =
          (CType.all, fn t =>
           let
              val s = CType.toString t
-          in                
+          in            
              print (concat [prefix, s, " global", s,
                             " [", C.int (Global.numberOfType t), "];\n"])
              ; print (concat [prefix, s, " CReturn", CType.name t, ";\n"])
           end)
-      val _ =                                           
+      val _ =                               
          print (concat [prefix, "Pointer globalPointerNonRoot [",
                         C.int (Global.numberOfNonRoot ()),
                         "];\n"])
@@ -587,7 +587,7 @@ fun output {program as Machine.Program.T {chunks,
          else concat [dst, " = ", src, ";\n"]
       local
          datatype z = datatype Operand.t
-               fun toString (z: Operand.t): string =
+         fun toString (z: Operand.t): string =
             case z of
                ArrayOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
@@ -993,7 +993,7 @@ fun output {program as Machine.Program.T {chunks,
                                        C.call (name, args, print)
                                     end
                            val _ = afterCall ()
-                            val _ =
+                           val _ =
                               if modifiesFrontier
                                  then print "\tCacheFrontier();\n"
                               else ()

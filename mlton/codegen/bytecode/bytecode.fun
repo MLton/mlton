@@ -357,7 +357,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       in
          val arrayOffset = make ("ArrayOffset", false)
          val contents = make ("Contents", false)
-            val global = make ("Global", true)
+         val global = make ("Global", true)
          val offsetOp = make ("Offset", false)
          val register = make ("Register", true)
          val stackOffset = make ("StackOffset", false)
@@ -369,7 +369,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
          fun make name (ls: LoadStore.t): Opcode.t =
             opcode (concat [LoadStore.toString ls, name])
       in
-            val frontier = make "Frontier"
+         val frontier = make "Frontier"
          val gcState = make "GCState"
          val stackTop = make "StackTop"
       end

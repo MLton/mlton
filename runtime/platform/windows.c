@@ -88,12 +88,12 @@ static HANDLE dupHandle (int fd) {
          * It's interesting that you can open files for/from other processes...
          */
         unless (DuplicateHandle (
-         GetCurrentProcess(),        /* source process */
-         raw,                        /* source handle */
-         GetCurrentProcess(),        /* target process */
-         &dupd,                        /* target handle - valid in target proc */
-         0,                        /* ignored b/c DUPLICATE_SAME_ACCESS used */
-         TRUE,                        /* this can be inherited by children */
+         GetCurrentProcess(),   /* source process */
+         raw,                   /* source handle */
+         GetCurrentProcess(),   /* target process */
+         &dupd,                 /* target handle - valid in target proc */
+         0,                     /* ignored b/c DUPLICATE_SAME_ACCESS used */
+         TRUE,                  /* this can be inherited by children */
          DUPLICATE_SAME_ACCESS))/* keep the same permissions */
         {
                 errno = ENOMEM;
@@ -123,10 +123,10 @@ static inline void Windows_release (void *base) {
 
 Pid Windows_Process_create (NullString cmds, NullString args, NullString envs,
                                 Fd in, Fd out, Fd err) {
-        char        *cmd;
-        char        *arg;
-        char        *env;
-        int        result;
+        char    *cmd;
+        char    *arg;
+        char    *env;
+        int     result;
         STARTUPINFO si;
         PROCESS_INFORMATION proc;
         
@@ -148,15 +148,15 @@ Pid Windows_Process_create (NullString cmds, NullString args, NullString envs,
                 return -1;
         }
         result = CreateProcess (
-                 cmd,                /* The executable as a windows path */
-                 arg,                /* Command-line as a string */
-                 0,                /* Process inherits security params */
-                 0,                /* Initial thread inherits security params */
-                 TRUE,                /* Inherit HANDLEs set as inherit */
-                 0,                /* Normal priority + no special flags */
-                 env,                 /* Environment as a string {n=v\0}\0 */
-                 0,                /* Current directory = parent's */
-                 &si,                /* Start info from above */
+                 cmd,           /* The executable as a windows path */
+                 arg,           /* Command-line as a string */
+                 0,             /* Process inherits security params */
+                 0,             /* Initial thread inherits security params */
+                 TRUE,          /* Inherit HANDLEs set as inherit */
+                 0,             /* Normal priority + no special flags */
+                 env,           /* Environment as a string {n=v\0}\0 */
+                 0,             /* Current directory = parent's */
+                 &si,           /* Start info from above */
                  &proc);        /* returned handle */
         if (0 == result) {
                 errno = ENOENT; /* probably does not exist (aka ENOFILE)*/

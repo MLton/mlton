@@ -8,7 +8,7 @@
 
 Int Posix_ProcEnv_getgroups (Pointer groups) {
         int             i;
-        int                 result;
+        int             result;
         gid_t           groupList[Posix_ProcEnv_numgroups];
 
         result = getgroups (Posix_ProcEnv_numgroups, groupList);

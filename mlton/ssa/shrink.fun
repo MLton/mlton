@@ -192,7 +192,7 @@ fun shrinkFunction {globals: Statement.t vector} =
       val {get = varInfo: Var.t -> VarInfo.t, set = setVarInfo, ...} =
          Property.getSet (Var.plist, 
                           Property.initFun (fn x => VarInfo.new (x, NONE)))
-(*         Property.getSet (Var.plist, Property.initFun VarInfo.new) *)
+(*       Property.getSet (Var.plist, Property.initFun VarInfo.new) *)
       val setVarInfo =
          Trace.trace2 ("Ssa.Shrink.setVarInfo",
                        Var.layout, VarInfo.layout, Unit.layout)
@@ -678,7 +678,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                      (prim, Vector.toList args', VarInfo.equals)
                   end
          (* Another DFS, this time accumulating the new blocks. *)
-               val traceForceMeaningBlock =
+         val traceForceMeaningBlock =
             Trace.trace ("Ssa.Shrink.forceMeaningBlock",
                         layoutLabelMeaning, Unit.layout)
          val traceSimplifyBlock =
@@ -822,7 +822,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                            overflow = simplifyLabel overflow,
                                            success = simplifyLabel success,
                                            ty = ty})
-                            end                                        
+                            end                                 
                        | _ =>
                             ([], Arith {prim = prim,
                                         args = uses args,
@@ -1239,7 +1239,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                           raises = raises,
                           returns = returns,
                           start = meaningLabel start}
-(*         val _ = save (f, "post") *)
+(*       val _ = save (f, "post") *)
          val _ = Function.clear f
       in
          f

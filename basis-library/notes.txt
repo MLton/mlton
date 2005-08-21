@@ -486,7 +486,7 @@ useful or because they would make the library more regular.
         datatype ref = datatype ref
         val ! : 'a ref -> 'a
         val := : 'a ref * 'a -> unit
-        val swap : 'a ref * 'a ref -> unit        (* or :=: ? *)
+        val swap : 'a ref * 'a ref -> unit      (* or :=: ? *)
         val map : ('a -> 'a) -> 'a ref -> 'a ref
   You might then consider removing ! and := from GENERAL.
 

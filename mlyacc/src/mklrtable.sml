@@ -18,10 +18,10 @@ functor mkMakeLrTable (structure IntGrammar : INTGRAMMAR
         infix 9 sub
         structure Core = mkCore(structure IntGrammar = IntGrammar)
         structure CoreUtils = mkCoreUtils(structure IntGrammar = IntGrammar
-                                            structure Core = Core)
+                                          structure Core = Core)
         structure Graph = mkGraph(structure IntGrammar = IntGrammar
-                                    structure Core = Core
-                                    structure CoreUtils = CoreUtils)
+                                  structure Core = Core
+                                  structure CoreUtils = CoreUtils)
         structure Look = mkLook(structure IntGrammar = IntGrammar)
         structure Lalr = mkLalr(structure IntGrammar = IntGrammar
                                 structure Core = Core
@@ -160,7 +160,7 @@ is true.
         let val merge = fn state =>
           let fun f (j as (pair1 as (T t1,action1)) :: r1,
                      k as (pair2 as (T t2,action2)) :: r2,result,errs) =
-                      if t1 < t2 then f(r1,k,pair1::result,errs)
+                    if t1 < t2 then f(r1,k,pair1::result,errs)
                     else if t1 > t2 then f(j,r2,pair2::result,errs)
                     else let val num1 = unREDUCE action1
                              val num2 = unREDUCE action2
@@ -211,11 +211,11 @@ is true.
                            f(r1,r2,pair1 :: result,
                              SR (term1,state,rulenum)::errs)
                      end
-                   | f (nil,nil,result,errs) = (rev result,errs)
-                   | f (nil,h::t,result,errs) =
-                           f (nil,t,h::result,errs)
-                   | f (h::t,nil,result,errs) = 
-                           f (t,nil,h::result,errs)
+                | f (nil,nil,result,errs) = (rev result,errs)
+                | f (nil,h::t,result,errs) =
+                        f (nil,t,h::result,errs)
+                | f (h::t,nil,result,errs) = 
+                        f (t,nil,h::result,errs)
           in f(shifts,reduces,nil,nil)
           end
 
@@ -269,10 +269,10 @@ is true.
                          List.foldr (mergeReduces tableState) (nil,nil) l
                       val (actions,errs2) =
                          mergeShifts(tableState,shifts,reduces)
-                       in ((pruneError actions,ERROR),gotos,errs1@errs2)
+                  in ((pruneError actions,ERROR),gotos,errs1@errs2)
                   end
          end
-   end                        
+   end                  
 
         val mkTable = fn (grammar as GRAMMAR{rules,terms,nonterms,start,
                                   precedence,termToString,noshift,
@@ -329,14 +329,14 @@ is true.
                         end 
 
                 val startErrs =
-                   List.foldr (fn (RULE {rhs,rulenum,...},r) =>
+                  List.foldr (fn (RULE {rhs,rulenum,...},r) =>
                         if (exists (fn NONTERM a => a=start
                                      | _ => false) rhs)
                           then START rulenum :: r
                           else r) [] rules
 
                 val nonshiftErrs =
-                   List.foldr (fn (RULE {rhs,rulenum,...},r) =>
+                  List.foldr (fn (RULE {rhs,rulenum,...},r) =>
                           (List.foldr (fn (nonshift,r) =>
                            if (exists (fn TERM a => a=nonshift
                                      | _ => false) rhs)
@@ -358,7 +358,7 @@ is true.
                                         else NOT_REDUCED i :: r)
                         else r
                   in scan(Array.length ruleReduced-1,nil)
-                      end handle Subscript =>
+                  end handle Subscript =>
                         (if DEBUG then
                                 print "rules not numbered correctly!"
                          else (); nil)
@@ -383,7 +383,7 @@ is true.
                   end,
 
                   fn print =>
-                     let val printCore =
+                    let val printCore =
                           prCore(symbolToString,nontermToString,print)
                         val core = Graph.core graph
                     in fn STATE state =>

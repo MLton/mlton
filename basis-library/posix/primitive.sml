@@ -200,7 +200,7 @@ structure PosixPrimitive =
             val nanosleep =
                _import "Posix_Process_nanosleep": int ref * int ref -> int;
             val pause = _import "Posix_Process_pause": unit -> int;
-(*            val sleep = _import "Posix_Process_sleep": int -> int; *)
+(*          val sleep = _import "Posix_Process_sleep": int -> int; *)
             val stopSig = _import "Posix_Process_stopSig": Status.t -> Signal.t;
             val system =
                _import "Posix_Process_system": NullString.t -> Status.t;
@@ -320,13 +320,13 @@ structure PosixPrimitive =
             structure S =
                struct
                   type mode = word
-(*                  val ifsock = _const "Posix_FileSys_S_ifsock": mode; *)
-(*                  val iflnk = _const "Posix_FileSys_S_iflnk": mode; *)
-(*                  val ifreg = _const "Posix_FileSys_S_ifreg": mode; *)
-(*                  val ifblk = _const "Posix_FileSys_S_ifblk": mode; *)
-(*                  val ifdir = _const "Posix_FileSys_S_ifdir": mode; *)
-(*                  val ifchr = _const "Posix_FileSys_S_ifchr": mode; *)
-(*                  val ififo = _const "Posix_FileSys_S_ififo": mode; *)
+(*                val ifsock = _const "Posix_FileSys_S_ifsock": mode; *)
+(*                val iflnk = _const "Posix_FileSys_S_iflnk": mode; *)
+(*                val ifreg = _const "Posix_FileSys_S_ifreg": mode; *)
+(*                val ifblk = _const "Posix_FileSys_S_ifblk": mode; *)
+(*                val ifdir = _const "Posix_FileSys_S_ifdir": mode; *)
+(*                val ifchr = _const "Posix_FileSys_S_ifchr": mode; *)
+(*                val ififo = _const "Posix_FileSys_S_ififo": mode; *)
                   val irwxu = _const "Posix_FileSys_S_irwxu": mode;
                   val irusr = _const "Posix_FileSys_S_irusr": mode;
                   val iwusr = _const "Posix_FileSys_S_iwusr": mode;
@@ -499,8 +499,8 @@ structure PosixPrimitive =
             val F_WRLCK = _const "Posix_IO_F_WRLCK": int;
             val F_UNLCK = _const "Posix_IO_F_UNLCK": int;
             val F_SETLKW = _const "Posix_IO_F_SETLKW": int;
-(*            val F_GETOWN = _const "Posix_IO_F_GETOWN": int; *)
-(*            val F_SETOWN = _const "Posix_IO_F_SETOWN": int; *)
+(*          val F_GETOWN = _const "Posix_IO_F_GETOWN": int; *)
+(*          val F_SETOWN = _const "Posix_IO_F_SETOWN": int; *)
             val O_ACCMODE = _const "Posix_IO_O_ACCMODE": word;
             val SEEK_SET = _const "Posix_IO_SEEK_SET": int;
             val SEEK_CUR = _const "Posix_IO_SEEK_CUR": int;
@@ -531,7 +531,7 @@ structure PosixPrimitive =
                      _import "Posix_IO_FLock_setStart": Position.int -> unit;
                   val setLen =
                      _import "Posix_IO_FLock_setLen": Position.int -> unit;
-(*                  val setPid = _import "Posix_IO_FLock_setPid": Pid.t -> unit; *)
+(*                val setPid = _import "Posix_IO_FLock_setPid": Pid.t -> unit; *)
                end
             
             val close = _import "Posix_IO_close": fd -> int;
@@ -575,7 +575,7 @@ structure PosixPrimitive =
                _import "Posix_IO_write": fd * word8 array * int * size -> ssize;
             val writeWord8Vec =
                _import "Posix_IO_write": fd * word8 vector * int * size -> ssize;
-         end               
+         end           
 
       structure SysDB =
          struct
@@ -717,7 +717,7 @@ structure PosixPrimitive =
                   val iflush = _const "Posix_TTY_TC_iflush": queue_sel;
                   val ioflush = _const "Posix_TTY_TC_ioflush": queue_sel;
                   val oflush = _const "Posix_TTY_TC_oflush": queue_sel;
-               end                  
+               end                
 
             structure Termios =
                struct

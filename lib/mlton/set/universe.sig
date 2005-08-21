@@ -26,7 +26,7 @@ signature UNIVERSE =
       val project2: t -> t
          
       val Union: t -> t
-   (*        val Cross: t -> t *)
+   (*   val Cross: t -> t *)
          
       val lookup: t * E.t -> E.t option
       val update: t * E.t * E.t -> t

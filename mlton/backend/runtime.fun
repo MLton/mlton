@@ -29,18 +29,18 @@ structure GCField =
       val equals: t * t -> bool = op =
          
 (*       val ty =
- *          fn CanHandle => CType.defaultInt
- *           | CardMap => CType.pointer
- *           | CurrentThread => CType.pointer
- *           | ExnStack => CType.defaultWord
- *           | Frontier => CType.pointer
- *           | Limit => CType.pointer
- *           | LimitPlusSlop => CType.pointer
- *           | MaxFrameSize => CType.defaultWord
- *           | SignalIsPending => CType.defaultInt
- *           | StackBottom => CType.pointer
- *           | StackLimit => CType.pointer
- *           | StackTop => CType.pointer
+ *       fn CanHandle => CType.defaultInt
+ *        | CardMap => CType.pointer
+ *        | CurrentThread => CType.pointer
+ *        | ExnStack => CType.defaultWord
+ *        | Frontier => CType.pointer
+ *        | Limit => CType.pointer
+ *        | LimitPlusSlop => CType.pointer
+ *        | MaxFrameSize => CType.defaultWord
+ *        | SignalIsPending => CType.defaultInt
+ *        | StackBottom => CType.pointer
+ *        | StackLimit => CType.pointer
+ *        | StackTop => CType.pointer
  *)
 
       val canHandleOffset: Bytes.t ref = ref Bytes.zero

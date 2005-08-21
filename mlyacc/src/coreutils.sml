@@ -115,8 +115,8 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
                  let fun add_item (a as RULE{rhs=symbol::rest,...},r) =
                        let val item = ITEM{rule=a,dot=1,rhsAfter=rest}
                        in Assoc.insert((symbol,case Assoc.find (symbol,r)
-                                                  of SOME l => item::l
-                                                    | NONE => [item]),r)
+                                                of SOME l => item::l
+                                                 | NONE => [item]),r)
                        end
                        | add_item (_,r) = r
                  in List.foldr add_item Assoc.empty (produces nt)
@@ -137,7 +137,7 @@ functor mkCoreUtils(structure Core : CORE) : CORE_UTILS =
    order *)
                 fun closureNonterms a =
                         let val nonterms = getNonterms a
-                         in List.foldr (fn (nt,r) =>
+                        in List.foldr (fn (nt,r) =>
                                    NtList.union(nontermClosure nt,r))
                            nonterms nonterms
                         end

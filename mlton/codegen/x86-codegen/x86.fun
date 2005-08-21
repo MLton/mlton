@@ -1169,7 +1169,7 @@ struct
                          size = size,
                          class = class})
       val shift = fn {origin, disp, scale, size} 
-        => let        
+        => let  
               val disp =
                  Immediate.binexp
                  {oper = Immediate.Multiplication,
@@ -1280,7 +1280,7 @@ struct
   local 
     structure MemLocElement =
       struct
-        type t = MemLoc.t        
+        type t = MemLoc.t       
         val equals = MemLoc.eq
         val layout = MemLoc.layout
 (*
@@ -2043,7 +2043,7 @@ struct
                      str " ",
                      Operand.layout target]
              | CALL {target, absolute}
-              => seq [str "call ", 
+             => seq [str "call ", 
                      if absolute then str "*" else empty, 
                      Operand.layout target]
              | RET {src}
@@ -2165,7 +2165,7 @@ struct
                      Operand.layout src,
                      Operand.layout dst)
              | pFUnA {oper, dst, size}
-              => un (funa_layout oper,
+             => un (funa_layout oper,
                     Size.layout size,
                     Operand.layout dst)
              | pFPTAN {dst, size}
@@ -4006,7 +4006,7 @@ struct
                        ", "),
                       "]"]
            | Raise {live}
-           => concat ["RAISE",        
+           => concat ["RAISE",  
                       " [",
                       (concat o List.separate)
                       (MemLocSet.fold

@@ -36,10 +36,10 @@ signature REGION =
             val node: 'a t -> 'a
             val makeRegion: 'a * region -> 'a t
             val makeRegion':  'a * SourcePos.t * SourcePos.t -> 'a t
-(*            val make: 'a -> 'a t *)
+(*          val make: 'a -> 'a t *)
             val dest: 'a t -> 'a * region
-(*            val left: 'a t -> int *)
-(*            val right: 'a t -> int *)
+(*          val left: 'a t -> int *)
+(*          val right: 'a t -> int *)
          end
       sharing type Wrap.region = t
    end

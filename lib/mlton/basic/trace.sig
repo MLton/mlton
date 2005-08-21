@@ -114,17 +114,17 @@ signature TRACE =
 (*       type ('a, 'b) check = ('a -> Layout.t) * ('a -> bool * 'b)
  * 
  *       type ('a, 'b) z =
- *          'a -> ((unit -> Layout.t)
- *                 * (unit -> bool)
- *                 * 'a
- *                 * 'b)
- *          
+ *       'a -> ((unit -> Layout.t)
+ *              * (unit -> bool)
+ *              * 'a
+ *              * 'b)
+ *       
  *       val traceInfo:
- *          info
- *          * ('a, ('b, unit) check) check
- *          -> ('a -> 'b)
- *          -> 'a
- *          -> 'b
+ *       info
+ *       * ('a, ('b, unit) check) check
+ *       -> ('a -> 'b)
+ *       -> 'a
+ *       -> 'b
  *)
 
       val assertTrue: 'a -> (bool * ('b -> bool))

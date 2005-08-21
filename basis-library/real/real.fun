@@ -351,7 +351,7 @@ functor Real (R: PRE_REAL): REAL =
                      if Int.< (exp, 0)
                         then concat ["-", Int.toString (Int.~ exp)]
                      else Int.toString exp
-(*                  val x = concat ["0.", digits, "E", exp, "\000"] *)
+(*                val x = concat ["0.", digits, "E", exp, "\000"] *)
                   val n  =
                      Int.+ (4, Int.+ (List.length digits, String.size exp))
                   val a = Array.rawArray n
@@ -638,7 +638,7 @@ functor Real (R: PRE_REAL): REAL =
                val x = Prim.strto (NullString.fromString
                                    (concat [LargeInt.toString i, "\000"]))
             in
-               if sign then ~ x else x                   
+               if sign then ~ x else x             
             end
          
       val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =

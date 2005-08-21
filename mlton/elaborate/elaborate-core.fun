@@ -77,7 +77,7 @@ in
    structure CFunction = CFunction
    structure CType = CType
    structure CharSize = CharSize
-   structure Convention         = CFunction.Convention        
+   structure Convention  = CFunction.Convention 
    structure Con = Con
    structure Const = Const
    structure ConstType = Const.ConstType
@@ -1782,7 +1782,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                            approximate
                                            (seq
                                             (separate
-                                              (Vector.toListMap
+                                             (Vector.toListMap
                                               (clauses, fn {lay, ...} => lay ()),
                                               " | ")))]
                                    end

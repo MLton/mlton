@@ -95,7 +95,7 @@ fun resize (T {buckets, hash, mask, ...}, size: int, newMask: word): unit =
       ; buckets := newBuckets
       ; mask := newMask
    end
-                  
+               
 fun maybeGrow (s as T {buckets, mask, numItems, ...}): unit =
    let
       val n = Array.length (!buckets)
@@ -140,9 +140,9 @@ fun peek (t, w, p) = peekGen (t, w, p, fn _ => NONE, SOME)
  *    let
  *       val j = index (hash a, !mask)
  *       val _ =
- *          Array.update (buckets, j,
- *                        a :: (List.remove (Array.sub (buckets, j),
- *                                           fn a' => equals (a, a'))))
+ *       Array.update (buckets, j,
+ *                     a :: (List.remove (Array.sub (buckets, j),
+ *                                        fn a' => equals (a, a'))))
  *    in ()
  *    end
  *)

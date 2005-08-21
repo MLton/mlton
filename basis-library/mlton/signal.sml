@@ -86,7 +86,7 @@ structure Mask =
             if Array.sub (validSignals, toInt s)
                then case mask of
                        AllBut sigs => not (member (sigs, s))
-                     | Some sigs => member (sigs, s)                  
+                     | Some sigs => member (sigs, s)              
                else raiseInval ()
       end
    end

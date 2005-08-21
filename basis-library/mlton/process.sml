@@ -354,7 +354,7 @@ structure MLtonProcess =
                    in (Pid.toInt pid, fn () => pid)
                    end)
                end
-         else         
+         else    
             case Posix.Process.fork () of
                NONE => Posix.Process.execp (file, args)
              | SOME pid => pid

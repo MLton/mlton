@@ -24,7 +24,7 @@ local
    local
       val validCharsString =
          "\n\t@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ()[]<>!?-&#;'/=\"$.\\"
-   in         
+   in    
       val validChars =
          Vector.tabulate (numChars, fn i =>
                           String.contains (validCharsString, Char.fromInt i))
@@ -218,7 +218,7 @@ local
             end
 
          fun funs (T {matches, ...}) =
-            let         
+            let  
                fun peek (s: Save.t): Substring.t option =
                   Option.map (Array.peek (matches, fn (s', _) =>
                                           Save.equals (s, s')),
@@ -1268,126 +1268,126 @@ local
           * It repeatedly refines an equivalence relation, represented by a list
           * of classes, where each class is a list of states.
           *)
-(*          fun minimize (dfa as T {anchorStart, charClass, final,
- *                                  start, next, ...}): t =
- *             let
- *                val numStates = numStates dfa
- *                val numCharClasses = numCharClasses dfa
- *                type class = int list
- *                type classes = class list
- *                val repCounter = ref ~1
- *                val change = ref false
- *                fun newRep () = (change := true; ++ repCounter)
- *                val finRep = newRep ()
- *                val nonfinRep = newRep ()
- *                val r = Array.tabulate (numStates, fn i =>
- *                                        if Array.sub (final, i)
- *                                           then finRep
- *                                        else nonfinRep)
- *                fun rep s = Array.sub (r, s)
- *                fun trans (s, c) = rep (Array2.sub (next, s, c))
- *                fun refine (class: class, ac: classes): classes =
- *                   let
- *                      val r =
- *                         List.fold
- *                         (class, [], fn (state, classes) =>
- *                          let
- *                             fun loop (classes, ac) =
- *                                case classes of
- *                                   [] =>
- *                                      (case ac of
- *                                          [] => [{class = [state],
- *                                                  old = state}]
- *                                        | _ => 
- *                                             let
- *                                                val s = newRep ()
- *                                                val _ = Array.update (r, state, s)
- *                                             in {class = [state],
- *                                                 old = state} :: ac
- *                                             end)
- *                                 | (z as {class, old}) :: classes =>
- *                                      if Int.forall
- *                                         (0, numCharClasses, fn c =>
- *                                          trans (old, c) = trans (state, c))
- *                                         then
- *                                            (Array.update (r, state, rep old)
- *                                             ; {class = state :: class,
- *                                                old = old} :: (List.appendRev
- *                                                               (classes, ac)))
- *                                      else loop (classes, z :: ac)
- *                          in loop (classes, [])
- *                          end)
- *                   in List.fold (r, ac, fn ({class, ...}, ac) =>
- *                                 case class of
- *                                    [_] => ac
- *                                  | _ => class :: ac)
- *                   end
- *                val refine =
- *                   Trace.trace ("refine",
- *                                (List.layout Int.layout o #1),
- *                                Layout.ignore)
- *                   refine
- *                fun refineAll (classes: classes): unit =
- *                   case classes of
- *                      [] => ()
- *                    | _ =>
- *                         let
- *                            val _ = change := false
- *                            val classes =
- *                               List.fold (classes, [], fn (class, ac) =>
- *                                          case class of
- *                                             [_] => ac
- *                                           | _ => refine (class, ac))
- *                         in if !change
- *                               then refineAll classes
- *                            else ()
- *                         end
- *                val (fin, nonfin) =
- *                   Int.fold (0, numStates, ([], []), fn (i, (f, n)) =>
- *                             if Array.sub (final, i)
- *                                then (i :: f, n)
- *                             else (f, i :: n))
- *                val _ = refineAll [fin, nonfin]
- *                val numStates' = 1 + !repCounter
- *                (* Compute reachable states. *)
- *                val reached = Array.new (numStates', false)
- *                fun visit (s: int (* an old state *)): unit =
- *                   let
- *                      val s' = rep s
- *                   in
- *                      if Array.sub (reached, s')
- *                         then ()
- *                      else (Array.update (reached, s', true)
- *                            ; Int.for (0, numCharClasses, fn c =>
- *                                       visit (Array2.sub (next, s, c))))
- *                   end
- *                val _ = visit start
- *                val _ = visit anchorStart
- *                (* Compute new representatives. *)
- *                val c = ref ~1
- *                val newR = Array.tabulate (numStates', fn s =>
- *                                           if Array.sub (reached, s)
- *                                              then ++ c
- *                                           else ~1)
- *                val numStates' = 1 + !c
- *                val _ = Array.modify (r, fn s => Array.sub (newR, s))
- *                val next' = Array2.new (numStates', numCharClasses, ~1)
- *                val _ =
- *                   Array2.foreachi
- *                   (next, fn (s, c, s') =>
- *                    Array2.update (next', rep s, c, rep s'))
- *                val final' = Array.array (numStates', false)
- *                val _ =
- *                   Array.foreachi
- *                   (final, fn (i, b) =>
- *                    if b then Array.update (final', rep i, true) else ())
- *             in T {anchorStart = rep anchorStart,
- *                   charClass = charClass,
- *                   dead = dead (numStates', numCharClasses, final', next'),
- *                   final = final',
- *                   start = rep start,
- *                   next = next'}
- *             end
+(*       fun minimize (dfa as T {anchorStart, charClass, final,
+ *                               start, next, ...}): t =
+ *          let
+ *             val numStates = numStates dfa
+ *             val numCharClasses = numCharClasses dfa
+ *             type class = int list
+ *             type classes = class list
+ *             val repCounter = ref ~1
+ *             val change = ref false
+ *             fun newRep () = (change := true; ++ repCounter)
+ *             val finRep = newRep ()
+ *             val nonfinRep = newRep ()
+ *             val r = Array.tabulate (numStates, fn i =>
+ *                                     if Array.sub (final, i)
+ *                                        then finRep
+ *                                     else nonfinRep)
+ *             fun rep s = Array.sub (r, s)
+ *             fun trans (s, c) = rep (Array2.sub (next, s, c))
+ *             fun refine (class: class, ac: classes): classes =
+ *                let
+ *                   val r =
+ *                      List.fold
+ *                      (class, [], fn (state, classes) =>
+ *                       let
+ *                          fun loop (classes, ac) =
+ *                             case classes of
+ *                                [] =>
+ *                                   (case ac of
+ *                                       [] => [{class = [state],
+ *                                               old = state}]
+ *                                     | _ => 
+ *                                          let
+ *                                             val s = newRep ()
+ *                                             val _ = Array.update (r, state, s)
+ *                                          in {class = [state],
+ *                                              old = state} :: ac
+ *                                          end)
+ *                              | (z as {class, old}) :: classes =>
+ *                                   if Int.forall
+ *                                      (0, numCharClasses, fn c =>
+ *                                       trans (old, c) = trans (state, c))
+ *                                      then
+ *                                         (Array.update (r, state, rep old)
+ *                                          ; {class = state :: class,
+ *                                             old = old} :: (List.appendRev
+ *                                                            (classes, ac)))
+ *                                   else loop (classes, z :: ac)
+ *                       in loop (classes, [])
+ *                       end)
+ *                in List.fold (r, ac, fn ({class, ...}, ac) =>
+ *                              case class of
+ *                                 [_] => ac
+ *                               | _ => class :: ac)
+ *                end
+ *             val refine =
+ *                Trace.trace ("refine",
+ *                             (List.layout Int.layout o #1),
+ *                             Layout.ignore)
+ *                refine
+ *             fun refineAll (classes: classes): unit =
+ *                case classes of
+ *                   [] => ()
+ *                 | _ =>
+ *                      let
+ *                         val _ = change := false
+ *                         val classes =
+ *                            List.fold (classes, [], fn (class, ac) =>
+ *                                       case class of
+ *                                          [_] => ac
+ *                                        | _ => refine (class, ac))
+ *                      in if !change
+ *                            then refineAll classes
+ *                         else ()
+ *                      end
+ *             val (fin, nonfin) =
+ *                Int.fold (0, numStates, ([], []), fn (i, (f, n)) =>
+ *                          if Array.sub (final, i)
+ *                             then (i :: f, n)
+ *                          else (f, i :: n))
+ *             val _ = refineAll [fin, nonfin]
+ *             val numStates' = 1 + !repCounter
+ *             (* Compute reachable states. *)
+ *             val reached = Array.new (numStates', false)
+ *             fun visit (s: int (* an old state *)): unit =
+ *                let
+ *                   val s' = rep s
+ *                in
+ *                   if Array.sub (reached, s')
+ *                      then ()
+ *                   else (Array.update (reached, s', true)
+ *                         ; Int.for (0, numCharClasses, fn c =>
+ *                                    visit (Array2.sub (next, s, c))))
+ *                end
+ *             val _ = visit start
+ *             val _ = visit anchorStart
+ *             (* Compute new representatives. *)
+ *             val c = ref ~1
+ *             val newR = Array.tabulate (numStates', fn s =>
+ *                                        if Array.sub (reached, s)
+ *                                           then ++ c
+ *                                        else ~1)
+ *             val numStates' = 1 + !c
+ *             val _ = Array.modify (r, fn s => Array.sub (newR, s))
+ *             val next' = Array2.new (numStates', numCharClasses, ~1)
+ *             val _ =
+ *                Array2.foreachi
+ *                (next, fn (s, c, s') =>
+ *                 Array2.update (next', rep s, c, rep s'))
+ *             val final' = Array.array (numStates', false)
+ *             val _ =
+ *                Array.foreachi
+ *                (final, fn (i, b) =>
+ *                 if b then Array.update (final', rep i, true) else ())
+ *          in T {anchorStart = rep anchorStart,
+ *                charClass = charClass,
+ *                dead = dead (numStates', numCharClasses, final', next'),
+ *                final = final',
+ *                start = rep start,
+ *                next = next'}
+ *          end
  *)
       end
 in
@@ -1980,12 +1980,12 @@ in
 
 (*    local
  *       val _ =
- *          let open Trace.Immediate
- *          in
- *             flagged()
- *             ; debug := Out Out.error
- *             ; on []
- *          end
+ *       let open Trace.Immediate
+ *       in
+ *          flagged()
+ *          ; debug := Out Out.error
+ *          ; on []
+ *       end
  *       open Regexp
  *       val a = char #"a"
  *       val b = char #"b"
@@ -1999,43 +1999,43 @@ in
  *       val r = or [a, b]
  *       val r = seq [a, b, c, d]
  *       val r = or [seq [a, b, c],
- *                   seq [a, b, d]]
+ *                seq [a, b, d]]
  *       val r =
- *          seq [star (or [a, b]),
- *               a, b, b]
+ *       seq [star (or [a, b]),
+ *            a, b, b]
  *       val d = digit
  *       val eol = char #"#"
  *       val space = oneOf " \t"
  *       val r =
- *          seq [or [anchorStart, notOneOf "0123456789("],
- *               or [seq [char #"(", d, d, d, char #")"],
- *                   seq [d, d, d]],
- *               char #" ",
- *               d, d, d,
- *               oneOf " -",
- *               d, d, d, d,
- *               or [eol, nonDigit]]
+ *       seq [or [anchorStart, notOneOf "0123456789("],
+ *            or [seq [char #"(", d, d, d, char #")"],
+ *                seq [d, d, d]],
+ *            char #" ",
+ *            d, d, d,
+ *            oneOf " -",
+ *            d, d, d, d,
+ *            or [eol, nonDigit]]
  * 
  *       fun doit (name, lay) =
- *          let
- *             val dot = concat ["/tmp/", name, ".dot"]
- *             val ps = concat ["/tmp/", name, ".ps"]
- *             val _ = File.withOut (dot, fn out => Layout.output (lay, out))
- *             val _ = OS.Process.system (concat ["dot ", dot, " >", ps])
- *          in ()
- *          end
+ *       let
+ *          val dot = concat ["/tmp/", name, ".dot"]
+ *          val ps = concat ["/tmp/", name, ".ps"]
+ *          val _ = File.withOut (dot, fn out => Layout.output (lay, out))
+ *          val _ = OS.Process.system (concat ["dot ", dot, " >", ps])
+ *       in ()
+ *       end
  *       val nfa = NFA.fromRegexp r
  *       val _ = doit ("nfa", NFA.layoutDot (nfa, "nfa"))
  *       val _ = Out.output (Out.error,
- *                           concat ["numCharClasses = ",
- *                                   Int.toString (NFA.numCharClasses nfa),
- *                                   "\n"])
+ *                        concat ["numCharClasses = ",
+ *                                Int.toString (NFA.numCharClasses nfa),
+ *                                "\n"])
  *       val dfa = DFA.fromNFA nfa
  *       val _ = doit ("dfa",
- *                     DFA.layoutDot {dfa = dfa, title = "dfa", showDead = false})
+ *                  DFA.layoutDot {dfa = dfa, title = "dfa", showDead = false})
  *       val min = DFA.minimize dfa
  *       val _ = doit ("min",
- *                     DFA.layoutDot {dfa = min, title = "min", showDead = false})
+ *                  DFA.layoutDot {dfa = min, title = "min", showDead = false})
  *    in
  *    end
  *)
@@ -2044,11 +2044,11 @@ end
 (* local
  *    val _ =
  *       let
- *          open Trace.Immediate
+ *       open Trace.Immediate
  *       in
- *          debug := Out Out.error
- *          ; flagged()
- *          ; on ["Regexp.match"]
+ *       debug := Out Out.error
+ *       ; flagged()
+ *       ; on ["Regexp.match"]
  *       end
  *    structure Z = TestRegexp (Regexp)
  * in

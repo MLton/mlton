@@ -1,14 +1,14 @@
 #include "platform.h"
 
 Int Posix_Process_exece (NullString p, Pointer a, Pointer e) {
-        char                *path;
-        char                *asaved;
-        char                 *esaved;
-        char                 **args;
-        char                 **env;
+        char            *path;
+        char            *asaved;
+        char            *esaved;
+        char            **args;
+        char            **env;
         int             an;
-        int                 en;
-        int                 result;
+        int             en;
+        int             result;
 
         path = (char *) p;
         args = (char **) a;

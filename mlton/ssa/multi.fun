@@ -365,7 +365,7 @@ fun multi (p as Program.T {functions, main, ...})
                            end
                       else ())
               else if usesThreadsOrConts
-                     then let        
+                     then let   
                             val _ = MultiThreaded.when
                                     (FuncInfo.multiThreaded fi,
                                      fn () => forceMultiThreadedFunc f)
@@ -388,7 +388,7 @@ fun multi (p as Program.T {functions, main, ...})
                                        visitForceMultiUsedBlock controlFlow
                                        (nodeBlock n)))
                           end
-                     else let        
+                     else let   
                             val _ = MultiUsed.when
                                     (FuncInfo.multiUsed fi,
                                      fn () => forceMultiUsedFunc f)

@@ -302,7 +302,7 @@ Suppose we have a C interface defined in foo.h.
   |CF = foo.cm
   |
   |$(D)/$(CF): $(FILES)
-  |        ml-nlffigen -include $(HF) -libhandle $(H) -dir $(D) -cmfile $(CF) $^
+  |     ml-nlffigen -include $(HF) -libhandle $(H) -dir $(D) -cmfile $(CF) $^
   +----------------------------------------------------------
 
    Suppose the above file is stored as "foo.make".  Running
@@ -394,11 +394,11 @@ Suppose we have a C interface defined in foo.h.
 
   +-------------------------------------------------------------
   |library
-  |        library(FFI/foo.cm)
+  |     library(FFI/foo.cm)
   |is
-  |        $/basis.cm
-  |        $/c.cm
-  |        FFI/foo.cm : make (-f foo.make)
+  |     $/basis.cm
+  |     $/c.cm
+  |     FFI/foo.cm : make (-f foo.make)
   +-------------------------------------------------------------
 
    Now, saying
@@ -417,12 +417,12 @@ Suppose we have a C interface defined in foo.h.
 
   +-------------------------------------------------------------
   |library
-  |        structure Foo_a
-  |        structure Foo_b
+  |     structure Foo_a
+  |     structure Foo_b
   |is
-  |        $/basis.cm
-  |        $/c.cm
-  |        FFI/foo.cm : make (-f foo.make)
-  |        wrapper-foo-a.sml
-  |        wrapper-foo-b.sml
+  |     $/basis.cm
+  |     $/c.cm
+  |     FFI/foo.cm : make (-f foo.make)
+  |     wrapper-foo-a.sml
+  |     wrapper-foo-b.sml
   +-------------------------------------------------------------

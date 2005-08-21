@@ -50,7 +50,7 @@ functor mkCore(structure IntGrammar : INTGRAMMAR) : CORE =
                    in fn (ITEM {rule=RULE {lhs,rhs,rulenum,num,...},
                                 dot,rhsAfter,...}) =>
                         (prNonterm lhs; print " : "; showRhs(rhs,dot);
-                          case rhsAfter 
+                         case rhsAfter 
                          of nil => (print " (reduce by rule "; 
                                     printInt rulenum;
                                     print ")")
@@ -65,8 +65,8 @@ functor mkCore(structure IntGrammar : INTGRAMMAR) : CORE =
                     in fn (CORE (items,state)) =>
                           (print "state ";
                            print (Int.toString state);
-                              print ":\n\n";
-                              app (fn i => (print "\t";
+                           print ":\n\n";
+                           app (fn i => (print "\t";
                                          prItem i; print "\n")) items;
                            print "\n")
                     end

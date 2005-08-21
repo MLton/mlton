@@ -31,7 +31,7 @@ structure Type =
 
 (*
       val isHigherOrder =
-          Trace.trace 
+         Trace.trace 
          ("Polyvariance.isHigherOrder", layout, Bool.layout) 
          isHigherOrder
 *)

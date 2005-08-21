@@ -16,23 +16,23 @@ type ('a, 'b) reader = 'b -> ('a * 'b) option
 (* local
  *    fun make finish p reader state =
  *       let
- *          fun loop (state, token, tokens) =
- *             case reader state of
- *                NONE => SOME (rev (finish (token, tokens)), state)
- *              | SOME (x, state) =>
- *                   let
- *                      val (token, tokens) =
- *                         if p x then ([], finish (token, tokens))
- *                         else (x :: token, tokens)
- *                   in loop (state, token, tokens)
- *                   end
+ *       fun loop (state, token, tokens) =
+ *          case reader state of
+ *             NONE => SOME (rev (finish (token, tokens)), state)
+ *           | SOME (x, state) =>
+ *                let
+ *                   val (token, tokens) =
+ *                      if p x then ([], finish (token, tokens))
+ *                      else (x :: token, tokens)
+ *                in loop (state, token, tokens)
+ *                end
  *       in loop (state, [], [])
  *       end
  * in
  *     fun tokens p = make (fn (token, tokens) =>
- *                         case token of
- *                            [] => tokens
- *                          | _ => (rev token) :: tokens) p
+ *                     case token of
+ *                        [] => tokens
+ *                      | _ => (rev token) :: tokens) p
  *    fun fields p = make (fn (field, fields) => (rev field) :: fields) p
  * end
  *)

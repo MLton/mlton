@@ -142,11 +142,11 @@ structure Interval =
  *    let val v = trace f (s, i)
  *       val v' = alphaBetaNoCache (s, Interval.lower i, Interval.upper i)
  *    in if Value.equals (v, v')
- *          then ()
+ *       then ()
  *       else Misc.bug (let open Layout
- *                     in align [str "v = ", Value.layout v,
- *                              str "v' = ", Value.layout v']
- *                     end);
+ *                  in align [str "v = ", Value.layout v,
+ *                           str "v' = ", Value.layout v']
+ *                  end);
  *       v
  *    end
  * 

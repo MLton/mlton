@@ -153,13 +153,13 @@ order of decreasing precedence (from the most tightly binding operators
 to the most weakly binding):
 
 \begin{itemize}
-\item        An individual character stands for itself, except for the
+\item   An individual character stands for itself, except for the
         reserved characters  \verb@? * + | ( ) ^ $ / ; . = < > [ { " \@
 
-\item[\\]        A backslash followed by one of the reserved characters stands
+\item[\\]       A backslash followed by one of the reserved characters stands
         for that character.
 
-\item        A set of characters enclosed in square brackets [ ] stands
+\item   A set of characters enclosed in square brackets [ ] stands
         for any one of those characters.  Inside the brackets, only
         the symbols  \verb|\ - ^| are reserved.  An initial up-arrow 
         \verb|^| stands
@@ -170,10 +170,10 @@ to the most weakly binding):
         digit.  To include \verb|^| literally in a bracketed set, put it anywhere
         but first; to include \verb|-| literally in a set, put it first or last.
 
-\item[\verb|.|]        The dot \verb|.| character stands for any character except newline,
+\item[\verb|.|] The dot \verb|.| character stands for any character except newline,
         i.e. the same as \verb|[^\n]|
 
-\item        The following special escape sequences are available, inside
+\item   The following special escape sequences are available, inside
         or outside of square-brackets:
 
         \begin{tabular}{ll}
@@ -181,52 +181,52 @@ to the most weakly binding):
         \verb|\n|& newline\\
         \verb|\t|& tab\\
         \verb|\h|& stands for all characters with codes $>127$,\\
-                      &~~~~      when 7-bit characters are used.\\
+                    &~~~~      when 7-bit characters are used.\\
         \verb|\ddd|& where \verb|ddd| is a 3 digit decimal escape.\\
 
         \end{tabular}
 
-\item[\verb|"|]        A sequence of characters will stand for itself (reserved
+\item[\verb|"|] A sequence of characters will stand for itself (reserved
         characters will be taken literally) if it is enclosed in
         double quotes \verb|" "|.
 
-\item[\{\}]        A named regular expression (defined in the ``definitions"
+\item[\{\}]     A named regular expression (defined in the ``definitions"
         section) may be referred to by enclosing its name in
         braces \verb|{ }|.
 
 \item[()] Any regular expression may be enclosed in parentheses \verb|( )|
         for syntactic (but, as usual, not semantic) effect.
 
-\item[\verb|*|]        The postfix operator \verb|*| stands for Kleene closure:
+\item[\verb|*|] The postfix operator \verb|*| stands for Kleene closure:
         zero or more repetitions of the preceding expression.
 
-\item[\verb|+|]        The postfix operator \verb|+| stands for one or more repetitions
+\item[\verb|+|] The postfix operator \verb|+| stands for one or more repetitions
         of the preceding expression.
 
-\item[\verb|?|]        The postfix operator \verb|?| stands for zero or one occurrence of
+\item[\verb|?|] The postfix operator \verb|?| stands for zero or one occurrence of
         the preceding expression.
 
-\item        A postfix repetition range $\{n_1,n_2\}$ where $n_1$ and $n_2$ are small
+\item   A postfix repetition range $\{n_1,n_2\}$ where $n_1$ and $n_2$ are small
         integers stands for any number of repetitions between $n_1$ and $n_2$
         of the preceding expression.  The notation $\{n_1\}$ stands for
         exactly $n_1$ repetitions.
 
-\item        Concatenation of expressions denotes concatenation of strings.
+\item   Concatenation of expressions denotes concatenation of strings.
         The expression $e_1 e_2$ stands for any string that results from
         the concatenation of one string that matches $e_1$ with another
         string that matches $e_2$.
 
-\item\verb-|-        The infix operator \verb-|- stands for alternation.  The expression
+\item\verb-|-   The infix operator \verb-|- stands for alternation.  The expression
         $e_1$~\verb"|"~$e_2$  stands for anything that either $e_1$ or $e_2$ stands for.
     
-\item[\verb|/|]        The infix operator \verb|/| denotes lookahead.  Lookahead is not
+\item[\verb|/|] The infix operator \verb|/| denotes lookahead.  Lookahead is not
         implemented and cannot be used, because there is a bug
         in the algorithm for generating lexers with lookahead.  If
         it could be used, the expression $e_1 / e_2$ would match any string
         that $e_1$ stands for, but only when that string is followed by a
         string that matches $e_2$.
 
-\item        When the up-arrow \verb|^| occurs at the beginning of an expression,
+\item   When the up-arrow \verb|^| occurs at the beginning of an expression,
         that expression will only match strings that occur at the
         beginning of a line (right after a newline character).
 
@@ -240,13 +240,13 @@ set of strings they denote:
 
 \begin{tabular}{ll}
 \verb~0 | 1 | 2 | 3~&           A single digit between 0 and 3\\
-\verb|[0123]|&                        A single digit between 0 and 3\\
+\verb|[0123]|&                  A single digit between 0 and 3\\
 \verb|0123|&                    The string ``0123"\\
 \verb|0*|&                      All strings of 0 or more 0's\\
 \verb|00*|&                     All strings of 1  or more 0's\\
 \verb|0+|&                      All strings of 1  or more 0's\\
 \verb|[0-9]{3}|&                Any three-digit decimal number.\\
-\verb|\\[ntb]|&                        A newline, tab, or backspace.\\
+\verb|\\[ntb]|&                 A newline, tab, or backspace.\\
 \verb|(00)*|& Any string with an even number of 0's.
 \end{tabular}
 
@@ -290,7 +290,7 @@ The following \% commands are also available:
                           as input.
 \item[\tt \%structure \{identifier\}]  name the structure in the output program
                           {identifier} instead of Mlex
-\item[\tt \%header]         use code following it to create header for lexer
+\item[\tt \%header]     use code following it to create header for lexer
                           structure
 \item[\tt \%arg]       extra (curried) formal parameter argument to be
                           passed to the lex functions, and to be passed
@@ -439,7 +439,7 @@ return any non-zero number of characters.  For example,
              let val c = input (f,1)
                  val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-                     String.implode (rev result)
+                   String.implode (rev result)
                  else loop result
              end
           in loop nil
@@ -549,7 +549,7 @@ structure Calc =
              let val c = input (f,1)
                  val result = c :: result
              in if String.size c = 0 orelse c = "\n" then
-                     String.implode (rev result)
+                   String.implode (rev result)
                  else loop result
              end
           in loop nil

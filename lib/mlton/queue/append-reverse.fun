@@ -55,7 +55,7 @@ fun destruct(List l) = (case L.destruct l of
 and force r = (case !r of
                   Rot lra => r := rot lra
                 | _ => ())
-and rot(l, r, a) =                            
+and rot(l, r, a) =                         
    (case (destruct l, L.destruct r) of
        (NONE, SOME(x, _)) => List(L.cons(x, a))
      | (SOME(x, l), SOME(x', r)) =>

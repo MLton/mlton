@@ -224,7 +224,7 @@ structure Channel : CHANNEL_EXTRA =
             val () = Assert.assertAtomic' ("Channel.recv(2)", SOME 1)
             val msg = 
                case cleanAndDeque outQ of
-                  SOME (stxid, st) =>        
+                  SOME (stxid, st) =>   
                      let
                         val () = debug' "Channel.recv(3.1.1)" (* Atomic 1 *)
                         val () = Assert.assertAtomic' ("Channel.recv(3.1.1)", SOME 1)

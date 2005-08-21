@@ -23,7 +23,7 @@
 #endif
 
 #ifndef DEBUG_PROFILE
-#define        DEBUG_PROFILE FALSE
+#define DEBUG_PROFILE FALSE
 #endif
 
 enum {
@@ -64,23 +64,23 @@ typedef enum {
 #define WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
 #define WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
 
-#define SPLIT_HEADER()                                                                \
-        do {                                                                        \
-                int objectTypeIndex;                                                \
-                GC_ObjectType *t;                                                \
+#define SPLIT_HEADER()                                                          \
+        do {                                                                    \
+                int objectTypeIndex;                                            \
+                GC_ObjectType *t;                                               \
                                                                                 \
-                assert (1 == (header & 1));                                        \
-                objectTypeIndex = (header & TYPE_INDEX_MASK) >> 1;                \
-                assert (0 <= objectTypeIndex                                        \
-                                and objectTypeIndex < s->objectTypesSize);        \
-                t = &s->objectTypes [objectTypeIndex];                                \
-                tag = t->tag;                                                        \
-                hasIdentity = t->hasIdentity;                                        \
-                numNonPointers = t->numNonPointers;                                \
-                numPointers = t->numPointers;                                        \
-                if (DEBUG_DETAILED)                                                \
+                assert (1 == (header & 1));                                     \
+                objectTypeIndex = (header & TYPE_INDEX_MASK) >> 1;              \
+                assert (0 <= objectTypeIndex                                    \
+                                and objectTypeIndex < s->objectTypesSize);      \
+                t = &s->objectTypes [objectTypeIndex];                          \
+                tag = t->tag;                                                   \
+                hasIdentity = t->hasIdentity;                                   \
+                numNonPointers = t->numNonPointers;                             \
+                numPointers = t->numPointers;                                   \
+                if (DEBUG_DETAILED)                                             \
                         fprintf (stderr, "SPLIT_HEADER (0x%08x)  numNonPointers = %u  numPointers = %u\n", \
-                                        (uint)header, numNonPointers, numPointers);        \
+                                        (uint)header, numNonPointers, numPointers);     \
         } while (0)
 
 static char* tagToString (GC_ObjectTypeTag t) {
@@ -123,7 +123,7 @@ static inline uint align (uint a, uint b) {
         assert (b >= 1);
         a += b - 1;
         a -= a % b;
-        return a;        
+        return a;       
 }
 
 static inline W64 w64align (W64 a, uint b) {
@@ -223,7 +223,7 @@ static inline void GC_decommit (void *base, size_t length) {
 }
 
 static inline void copy (pointer src, pointer dst, uint size) {
-        uint        *to,
+        uint    *to,
                 *from,
                 *limit;
 
@@ -254,8 +254,8 @@ static inline void rusageZero (struct rusage *ru) {
 static void rusagePlusMax (struct rusage *ru1,
                               struct rusage *ru2,
                               struct rusage *ru) {
-        const int        million = 1000000;
-        time_t                sec,
+        const int       million = 1000000;
+        time_t          sec,
                         usec;
 
         sec = ru1->ru_utime.tv_sec + ru2->ru_utime.tv_sec;
@@ -276,8 +276,8 @@ static void rusagePlusMax (struct rusage *ru1,
 static void rusageMinusMax (struct rusage *ru1,
                                 struct rusage *ru2,
                                 struct rusage *ru) {
-        const int        million = 1000000;
-        time_t                sec,
+        const int       million = 1000000;
+        time_t          sec,
                         usec;
 
         sec = (ru1->ru_utime.tv_sec - ru2->ru_utime.tv_sec) - 1;
@@ -296,7 +296,7 @@ static void rusageMinusMax (struct rusage *ru1,
 }
 
 static uint rusageTime (struct rusage *ru) {
-        uint        result;
+        uint    result;
 
         result = 0;
         result += 1000 * ru->ru_utime.tv_sec;
@@ -308,7 +308,7 @@ static uint rusageTime (struct rusage *ru) {
 
 /* Return time as number of milliseconds. */
 static uint currentTime () {
-        struct rusage        ru;
+        struct rusage   ru;
 
         fixedGetrusage (RUSAGE_SELF, &ru);
         return rusageTime (&ru);
@@ -334,7 +334,7 @@ static uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
 void GC_display (GC_state s, FILE *stream) {
         fprintf (stream, "GC state\n\tcardMap = 0x%08x\n\toldGen = 0x%08x\n\toldGenSize = %s\n\toldGen + oldGenSize = 0x%08x\n\tnursery = 0x%08x\n\tfrontier = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
                         (uint) s->cardMap,
-                           (uint) s->heap.start,
+                        (uint) s->heap.start,
                         uintToCommaString (s->oldGenSize),
                         (uint) s->heap.start + s->oldGenSize,
                         (uint) s->nursery, 
@@ -360,7 +360,7 @@ void GC_display (GC_state s, FILE *stream) {
                         unless (CROSS_MAP_EMPTY == s->crossMap[i])
                                 fprintf (stderr, "\t%u\n", i);
                 fprintf (stderr, "\n");
-        }                
+        }               
 }
 
 static inline uint cardNumToSize (GC_state s, uint n) {
@@ -608,7 +608,7 @@ static inline void maybeCall (GC_pointerFun f, GC_state s, pointer *pp) {
 static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
         int i;
 
-         for (i = 0; i < s->globalsSize; ++i) {
+        for (i = 0; i < s->globalsSize; ++i) {
                 if (DEBUG_DETAILED)
                         fprintf (stderr, "foreachGlobal %u\n", i);
                 maybeCall (f, s, &s->globals [i]);
@@ -722,12 +722,12 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
                 else {
                         max = p + dataBytes;
                         if (0 == numNonPointers)
-                                  /* Array with only pointers. */
+                                /* Array with only pointers. */
                                 for (; p < max; p += POINTER_SIZE)
                                         maybeCall (f, s, (pointer*)p);
                         else {
                                 /* Array with a mix of pointers and non-pointers.
-                                  */
+                                 */
                                 uint numBytesPointers;
                         
                                 numBytesPointers = toBytes (numPointers);
@@ -839,10 +839,10 @@ static inline pointer foreachPointerInRange (GC_state s,
                                 (uint)front, *(uint*)back);
         b = *back;
         assert (front <= b);
-         while (front < b) {
+        while (front < b) {
                 while (front < b) {
                         assert (isAligned ((uint)front, WORD_SIZE));
-                               if (DEBUG_DETAILED)
+                        if (DEBUG_DETAILED)
                                 fprintf (stderr, "front = 0x%08x  *back = 0x%08x\n",
                                                 (uint)front, *(uint*)back);
                         front = foreachPointerInObject 
@@ -887,7 +887,7 @@ static inline bool isInOldGen (GC_state s, pointer p) {
 }
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
-         return (isInOldGen (s, p) or isInNursery (s, p));
+        return (isInOldGen (s, p) or isInNursery (s, p));
 }
 
 static inline void assertIsInFromSpace (GC_state s, pointer *p) {
@@ -902,7 +902,7 @@ static inline void assertIsInFromSpace (GC_state s, pointer *p) {
          */
         if (FALSE and s->mutatorMarksCards 
                 and isInOldGen (s, (pointer)p) 
-                 and isInNursery (s, *p)
+                and isInNursery (s, *p)
                 and not cardIsMarked (s, (pointer)p)) {
                 GC_display (s, stderr);
                 die ("gc.c: intergenerational pointer from 0x%08x to 0x%08x with unmarked card.\n",
@@ -931,14 +931,14 @@ static bool invariant (GC_state s) {
                 layout = &(s->frameLayouts[i]);
                 if (layout->numBytes > 0) {
                         GC_offsets offsets;
-//                        int j;
+//                      int j;
 
                         assert (layout->numBytes <= s->maxFrameSize);
                         offsets = layout->offsets;
 // No longer correct, since handler frames have a "size" (i.e. return address)
 // pointing into the middle of the frame.
-//                        for (j = 0; j < offsets[0]; ++j)
-//                                assert (offsets[j + 1] < layout->numBytes);
+//                      for (j = 0; j < offsets[0]; ++j)
+//                              assert (offsets[j + 1] < layout->numBytes);
                 }
         }
         if (s->mutatorMarksCards) {
@@ -977,10 +977,10 @@ static bool invariant (GC_state s) {
         assert (isAlignedReserved (s, stack->reserved));
         assert (s->stackBottom == stackBottom (s, stack));
         assert (s->stackTop == stackTop (s, stack));
-         assert (s->stackLimit == stackLimit (s, stack));
+        assert (s->stackLimit == stackLimit (s, stack));
         assert (stack->used == currentStackUsed (s));
         assert (stack->used <= stack->reserved);
-         assert (s->stackBottom <= s->stackTop);
+        assert (s->stackBottom <= s->stackTop);
         if (DEBUG)
                 fprintf (stderr, "invariant passed\n");
         return TRUE;
@@ -1182,8 +1182,8 @@ static void setNursery (GC_state s, W32 oldGenBytesRequested,
         s->limitPlusSlop = h->start + h->size;
         s->limit = s->limitPlusSlop - LIMIT_SLOP;
         assert (isAligned (nurserySize, WORD_SIZE));
-        if (        /* The mutator marks cards. */
-                       s->mutatorMarksCards
+        if (    /* The mutator marks cards. */
+                s->mutatorMarksCards
                 /* There is enough space in the nursery. */
                 and (nurseryBytesRequested 
                         <= s->limitPlusSlop
@@ -1295,7 +1295,7 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
         assert (heapIsInit (h));
         if (desiredSize < minSize)
                 desiredSize = minSize;
-         desiredSize = align (desiredSize, s->pageSize);
+        desiredSize = align (desiredSize, s->pageSize);
         assert (0 == h->size and NULL == h->start);
         backoff = (desiredSize - minSize) / 20;
         if (0 == backoff)
@@ -1342,7 +1342,7 @@ static bool heapCreate (GC_state s, GC_heap h, W32 desiredSize, W32 minSize) {
 static inline uint objectSize (GC_state s, pointer p) {
         Bool hasIdentity;
         uint headerBytes, objectBytes;
-               word header;
+        word header;
         uint tag, numPointers, numNonPointers;
 
         header = GC_getHeader (p);
@@ -1447,7 +1447,7 @@ static inline void forward (GC_state s, pointer *pp) {
                 }
                 size = headerBytes + objectBytes;
                 assert (s->back + size + skip <= s->toLimit);
-                  /* Copy the object. */
+                /* Copy the object. */
                 copy (p - headerBytes, s->back, size);
                 /* If the object has a valid weak pointer, link it into the weaks
                  * for update after the copying GC is done.
@@ -1471,7 +1471,7 @@ static inline void forward (GC_state s, pointer *pp) {
                                         fprintf (stderr, "not linking\n");
                         }
                 }
-                 /* Store the forwarding pointer in the old object. */
+                /* Store the forwarding pointer in the old object. */
                 *(word*)(p - WORD_SIZE) = FORWARDED;
                 *(pointer*)p = s->back + headerBytes;
                 /* Update the back of the queue. */
@@ -1530,9 +1530,9 @@ static void cheneyCopy (GC_state s) {
         s->numCopyingGCs++;
         s->toSpace = s->heap2.start;
         s->toLimit = s->heap2.start + s->heap2.size;
-         if (DEBUG or s->messages) {
+        if (DEBUG or s->messages) {
                 fprintf (stderr, "Major copying GC.\n");
-                 fprintf (stderr, "fromSpace = 0x%08x of size %s\n", 
+                fprintf (stderr, "fromSpace = 0x%08x of size %s\n", 
                                 (uint) s->heap.start,
                                 uintToCommaString (s->heap.size));
                 fprintf (stderr, "toSpace = 0x%08x of size %s\n",
@@ -1559,8 +1559,8 @@ static void cheneyCopy (GC_state s) {
         clearCrossMap (s);
         s->lastMajor = GC_COPYING;
         if (detailedGCTime (s))
-                stopTiming (&ru_start, &s->ru_gcCopy);                
-         if (DEBUG or s->messages)
+                stopTiming (&ru_start, &s->ru_gcCopy);          
+        if (DEBUG or s->messages)
                 fprintf (stderr, "Major copying GC done.\n");
 }
 
@@ -1794,7 +1794,7 @@ static void minorGC (GC_state s) {
         bytesAllocated = s->frontier - s->nursery;
         if (bytesAllocated == 0)
                 return;
-         s->bytesAllocated += bytesAllocated;
+        s->bytesAllocated += bytesAllocated;
         if (not s->canMinor) {
                 s->oldGenSize += bytesAllocated;
                 bytesCopied = 0;
@@ -1815,7 +1815,7 @@ static void minorGC (GC_state s) {
                 s->numMinorsSinceLastMajor++;
                 s->back = s->toSpace;
                 /* Forward all globals.  Would like to avoid doing this once all
-                  * the globals have been assigned.
+                 * the globals have been assigned.
                  */
                 foreachGlobal (s, forwardIfInNursery);
                 forwardInterGenerationalPointers (s);
@@ -2003,7 +2003,7 @@ lookNext:
         return e->object;
 }
 
-static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) {        
+static void maybeGrowTable (GC_state s, GC_ObjectHashTable t) { 
         int i;
         GC_ObjectHashElement oldElement;
         struct GC_ObjectHashElement *oldElements;
@@ -2075,7 +2075,7 @@ static Pointer hashCons (GC_state s, Pointer object, Bool countBytesHashConsed) 
         for (p = (word*)object; p < (word*)max; ++p)
                 hash = hash * 31 + *p;
         /* Insert into table. */
-               res = tableInsert (s, t, hash, object, TRUE, header, tag, (Pointer)max);
+        res = tableInsert (s, t, hash, object, TRUE, header, tag, (Pointer)max);
         maybeGrowTable (s, t);
         if (countBytesHashConsed and res != object) {
                 uint amount;
@@ -2102,7 +2102,7 @@ static inline void maybeSharePointer (GC_state s,
         if (DEBUG_SHARE)
                 fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
                                 (uint)pp, (uint)*pp);
-        *pp = hashCons (s, *pp, FALSE);        
+        *pp = hashCons (s, *pp, FALSE); 
 }
 
 /* ---------------------------------------------------------------- */
@@ -2161,7 +2161,7 @@ W32 mark (GC_state s, pointer root, MarkMode mode, Bool shouldHashCons) {
         prev = NULL;
         headerp = GC_getHeaderp (cur);
         header = *(Header*)headerp;
-        goto mark;        
+        goto mark;      
 markNext:
         /* cur is the object that was being marked.
          * prev is the mark stack.
@@ -2223,7 +2223,7 @@ markInNormal:
                 if (not GC_isPointer (next)) {
 markNextInNormal:
                         assert (index < numPointers);
-                               index++;
+                        index++;
                         if (index == numPointers) {
                                 *headerp = header & ~COUNTER_MASK;
                                 goto normalDone;
@@ -2347,7 +2347,7 @@ markInFrame:
                         maybeSharePointer (s, (pointer*)todo, shouldHashCons);
                         goto markInFrame;
                 }
-                ((GC_stack)cur)->markIndex = index;                
+                ((GC_stack)cur)->markIndex = index;             
                 goto markNext;
         }
         assert (FALSE);
@@ -2355,7 +2355,7 @@ ret:
         /* Done marking cur, continue with prev.
          * Need to set the pointer in the prev object that pointed to cur 
          * to point back to prev, and restore prev.
-          */
+         */
         if (DEBUG_MARK_COMPACT)
                 fprintf (stderr, "return  cur = 0x%08x  prev = 0x%08x\n",
                                 (uint)cur, (uint)prev);
@@ -2438,7 +2438,7 @@ static inline void markGlobalFalse (GC_state s, pointer *pp) {
 }
 
 static inline void unmarkGlobal (GC_state s, pointer *pp) {
-               mark (s, *pp, UNMARK_MODE, FALSE);
+        mark (s, *pp, UNMARK_MODE, FALSE);
 }
 
 static inline void threadInternal (GC_state s, pointer *pp) {
@@ -2526,7 +2526,7 @@ thread:
                         maybeClearWeak (s, p);
                         size = objectSize (s, p);
                         if (DEBUG_MARK_COMPACT)
-                                       fprintf (stderr, "threading 0x%08x of size %u\n", 
+                                fprintf (stderr, "threading 0x%08x of size %u\n", 
                                                 (uint)p, size);
                         if (front - endOfLastMarked >= 4 * WORD_SIZE) {
                                 /* Compress all of the unmarked into one string.
@@ -2787,7 +2787,7 @@ static void growHeap (GC_state s, W32 desired, W32 minSize) {
                 fprintf (stderr, "Growing heap at 0x%08x of size %s to %s bytes.\n",
                                 (uint)h->start,
                                 uintToCommaString (h->size),
-                                       uintToCommaString (desired));
+                                uintToCommaString (desired));
         old = s->heap.start;
         size = s->oldGenSize;
         assert (size <= h->size);
@@ -2804,7 +2804,7 @@ static void growHeap (GC_state s, W32 desired, W32 minSize) {
                 from = old + size;
                 to = h2.start + size;
                 remaining = size;
-copy:                        
+copy:                   
                 assert (remaining == from - old 
                                 and from >= old and to >= h2.start);
                 if (remaining < COPY_CHUNK_SIZE) {
@@ -2981,7 +2981,7 @@ static void majorGC (GC_state s, W32 bytesRequested, bool mayResize) {
                 s->hashConsDuringGC = TRUE;
         if ((not FORCE_MARK_COMPACT)
                 and not s->hashConsDuringGC // only markCompact can hash cons
-                 and s->heap.size < s->ram
+                and s->heap.size < s->ram
                 and (not heapIsInit (&s->heap2)
                         or heapAllocateSecondSemi (s, heapDesiredSize (s, (W64)s->bytesLive + bytesRequested, 0))))
                 cheneyCopy (s);
@@ -3006,7 +3006,7 @@ static inline void enterGC (GC_state s) {
                 /* We don't need to profileEnter for count profiling because it
                  * has already bumped the counter.  If we did allow the bump,
                  * then the count would look like function(s) had run an extra
-                  * time.
+                 * time.
                  */  
                 if (s->profileStack and not (PROFILE_COUNT == s->profileKind))
                         GC_profileEnter (s);
@@ -3144,7 +3144,7 @@ void GC_startHandler (GC_state s) {
          * the signal handler will then run atomically and will finish by
          * switching to the thread to continue with, which will decrement
          * s->canHandle to 0.
-          */
+         */
         s->canHandle = 2;
 }
 
@@ -3164,7 +3164,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
                  * check on every thread switch.
                  * So, we'll stick with the else branch for now.
                  */
-                 enter (s);
+                enter (s);
                 s->currentThread->bytesNeeded = ensureBytesFree;
                 switchToThread (s, t);
                 s->canHandle--;
@@ -3172,7 +3172,7 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
                 ensureMutatorInvariant (s, FALSE);
                 assert (mutatorFrontierInvariant(s));
                 assert (mutatorStackInvariant(s));
-                 leave (s);
+                leave (s);
         } else {
                 /* BEGIN: enter(s); */
                 s->currentThread->stack->used = currentStackUsed (s);
@@ -3190,8 +3190,8 @@ void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) {
                         doGC (s, 0, s->currentThread->bytesNeeded, FALSE, TRUE);
                 } 
                 /* END: ensureMutatorInvariant */
-                       /* BEGIN: leave(s); */
-                       atomicEnd (s);
+                /* BEGIN: leave(s); */
+                atomicEnd (s);
                 /* END: leave(s); */
         }
         assert (mutatorFrontierInvariant(s));
@@ -3209,7 +3209,7 @@ void GC_gc (GC_state s, uint bytesRequested, bool force,
         if (0 == bytesRequested)
                 bytesRequested = LIMIT_SLOP;
         s->currentThread->bytesNeeded = bytesRequested;
-         maybeSwitchToHandler (s);
+        maybeSwitchToHandler (s);
         ensureMutatorInvariant (s, force);
         assert (mutatorFrontierInvariant(s));
         assert (mutatorStackInvariant(s));
@@ -3248,7 +3248,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
         arraySize = (W32)arraySize64;
         if (arraySize < GC_ARRAY_HEADER_SIZE + WORD_SIZE)
                 /* Create space for forwarding pointer. */
-                 arraySize = GC_ARRAY_HEADER_SIZE + WORD_SIZE;
+                arraySize = GC_ARRAY_HEADER_SIZE + WORD_SIZE;
         if (DEBUG_ARRAY)
                 fprintf (stderr, "array with %s elts of size %u and total size %s.  Ensure %s bytes free.\n",
                         uintToCommaString (numElts), 
@@ -3300,7 +3300,7 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
                                 while (p < next) {
                                         *(Pointer*)p = (Pointer)BOGUS_POINTER;
                                         p += POINTER_SIZE;
-                                }        
+                                }       
                         }
         }
         GC_profileAllocInc (s, arraySize);
@@ -3311,11 +3311,11 @@ pointer GC_arrayAllocate (GC_state s, W32 ensureBytesFree, W32 numElts,
         }
         assert (ensureBytesFree <= s->limitPlusSlop - s->frontier);
         /* Unfortunately, the invariant isn't quite true here, because unless we
-          * did the GC, we never set s->currentThread->stack->used to reflect
+         * did the GC, we never set s->currentThread->stack->used to reflect
          * what the mutator did with stackTop.
-          */
+         */
         return res;
-}        
+}       
 
 /* ---------------------------------------------------------------- */
 /*                             Threads                              */
@@ -3326,7 +3326,7 @@ static inline uint threadBytes (GC_state s) {
 
         res = GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread);
         /* The following assert depends on struct GC_thread being the right
-          * size.  Right now, it happens that res = 16, which is aligned mod 4
+         * size.  Right now, it happens that res = 16, which is aligned mod 4
          * and mod 8, which is all that we need.  If the struct every changes
          * (possible) or we need more alignment (doubtful), we may need to put
          * some padding at the beginning.
@@ -3360,7 +3360,7 @@ static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
          * Hence we need to stash from where the GC can find it.
          */
         s->savedThread = from;
-        to = newThreadOfSize (s, size);        
+        to = newThreadOfSize (s, size); 
         from = s->savedThread;
         s->savedThread = BOGUS_THREAD;
         if (DEBUG_THREADS) {
@@ -3386,7 +3386,7 @@ void GC_copyCurrentThread (GC_state s) {
 /* The following assert is no longer true, since alignment restrictions can force
  * the reserved to be slightly larger than the used.
  */
-/*        assert (res->stack->reserved == res->stack->used); */
+/*      assert (res->stack->reserved == res->stack->used); */
         assert (res->stack->reserved >= res->stack->used);
         leave (s);
         if (DEBUG_THREADS)
@@ -3405,13 +3405,13 @@ pointer GC_copyThread (GC_state s, pointer thread) {
 /* The following assert is no longer true, since alignment restrictions can force
  * the reserved to be slightly larger than the used.
  */
-/*        assert (t->stack->reserved == t->stack->used); */
+/*      assert (t->stack->reserved == t->stack->used); */
         assert (t->stack->reserved >= t->stack->used);
         res = copyThread (s, t, t->stack->used);
 /* The following assert is no longer true, since alignment restrictions can force
  * the reserved to be slightly larger than the used.
  */
-/*        assert (res->stack->reserved == res->stack->used); */
+/*      assert (res->stack->reserved == res->stack->used); */
         assert (res->stack->reserved >= res->stack->used);
         leave (s);
         if (DEBUG_THREADS)
@@ -3870,7 +3870,7 @@ void GC_handleSigProf (pointer pc) {
                         else {
                                 if (DEBUG_PROFILE)
                                         fprintf (stderr, "pc out of bounds\n");
-                                       sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+                                sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
                         }
                 }
         }
@@ -3929,7 +3929,7 @@ static void profileTimeInit (GC_state s) {
         }
         for ( ; p < s->textEnd; ++p)
                 s->textSources[p - s->textStart] = sourceSeqsIndex;
-         /*
+        /*
          * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
          * 
          * One thing I should point out that I discovered the hard way: If
@@ -4072,7 +4072,7 @@ static void setInitialBytesLive (GC_state s) {
 /*
  * For each entry { globalIndex, mlstr } in the inits array (which is terminated
  * by one with an mlstr of NULL), set
- *        state->globals[globalIndex]
+ *      state->globals[globalIndex]
  * to the corresponding IntInf.int value.
  * On exit, the GC_state pointed to by s is adjusted to account for any
  * space used.
@@ -4080,16 +4080,16 @@ static void setInitialBytesLive (GC_state s) {
 static void initIntInfs (GC_state s) {
         struct GC_intInfInit *inits;
         pointer frontier;
-        char        *str;
-        uint        slen,
+        char    *str;
+        uint    slen,
                 llen,
                 alen,
                 i,
                 index;
-        bool        neg,
+        bool    neg,
                 hex;
-        bignum        *bp;
-        uchar        *cp;
+        bignum  *bp;
+        uchar   *cp;
 
         assert (isAlignedFrontier (s, s->frontier));
         frontier = s->frontier;
@@ -4123,7 +4123,7 @@ static void initIntInfs (GC_state s) {
                 alen = mpn_set_str (bp->limbs, cp, slen, hex ? 0x10 : 10);
                 assert (alen <= llen);
                 if (alen <= 1) {
-                        uint        val,
+                        uint    val,
                                 ans;
 
                         if (alen == 0)
@@ -4262,7 +4262,7 @@ static void loadWorld (GC_state s, char *fileName) {
         s->canHandle = sfreadUint (file);
         s->currentThread = (GC_thread) sfreadUint (file);
         s->signalHandler = (GC_thread) sfreadUint (file);
-               heapCreate (s, &s->heap, heapDesiredSize (s, s->oldGenSize, 0),
+        heapCreate (s, &s->heap, heapDesiredSize (s, s->oldGenSize, 0),
                         s->oldGenSize);
         createCardMapAndCrossMap (s);
         sfread (s->heap.start, 1, s->oldGenSize, file);
@@ -4430,7 +4430,7 @@ int GC_init (GC_state s, int argc, char **argv) {
                                 s->alignment));
         assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak),
                                 s->alignment));
-         MLton_Platform_CygwinUseMmap = FALSE;
+        MLton_Platform_CygwinUseMmap = FALSE;
         s->amInGC = TRUE;
         s->amInMinorGC = FALSE;
         s->bytesAllocated = 0;
@@ -4638,7 +4638,7 @@ void GC_done (GC_state s) {
                 fprintf (out, "max pause: %s ms\n",
                                 uintToCommaString (s->maxPause));
                 fprintf (out, "total allocated: %s bytes\n",
-                                 ullongToCommaString (s->bytesAllocated));
+                                ullongToCommaString (s->bytesAllocated));
                 fprintf (out, "max live: %s bytes\n",
                                 uintToCommaString (s->maxBytesLive));
                 fprintf (out, "max semispace: %s bytes\n", 
@@ -4660,7 +4660,7 @@ void GC_finishHandler (GC_state s) {
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "GC_finishHandler ()\n");
         assert (s->canHandle == 1);
-        s->inSignalHandler = FALSE;        
+        s->inSignalHandler = FALSE;     
 }
 
 /* GC_handler sets s->limit = 0 so that the next limit check will fail. 
@@ -4709,13 +4709,13 @@ void GC_saveWorld (GC_state s, int fd) {
         swriteUint (fd, (uint)s->oldGenSize);
         swriteUint (fd, (uint)s->callFromCHandler);
         /* canHandle must be saved in the heap, because the saveWorld may be
-         * run in the context of a critical section, which will expect to be in        
+         * run in the context of a critical section, which will expect to be in 
          * the same context when it is restored.
          */
         swriteUint (fd, s->canHandle);
         swriteUint (fd, (uint)s->currentThread);
         swriteUint (fd, (uint)s->signalHandler);
-         swrite (fd, s->heap.start, s->oldGenSize);
+        swrite (fd, s->heap.start, s->oldGenSize);
         (*s->saveGlobals) (fd);
         leave (s);
 }
@@ -4730,7 +4730,7 @@ void GC_pack (GC_state s) {
         /* Could put some code here to skip the GC if there hasn't been much
          * allocated since the last collection.  But you would still need to 
          * do a minor GC to make all objects contiguous.
-          */
+         */
         doGC (s, 0, 0, TRUE, FALSE);
         keep = s->oldGenSize * 1.1;
         if (keep <= s->heap.size) {
@@ -4752,7 +4752,7 @@ void GC_unpack (GC_state s) {
                                 uintToCommaString (s->heap.size));
         /* The enterGC is needed here because minorGC and resizeHeap might move
          * the stack, and the SIGPROF catcher would then see a bogus stack.  The
-          * leaveGC has to happen after the setStack.
+         * leaveGC has to happen after the setStack.
          */
         enterGC (s);
         minorGC (s);

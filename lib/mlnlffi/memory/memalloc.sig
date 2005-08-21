@@ -17,6 +17,6 @@ signature CMEMALLOC = sig
 
     eqtype addr'                (* to avoid clash with addr from CMEMACCESS *)
 
-    val alloc : word -> addr'        (* may raise OutOfMemory *)
+    val alloc : word -> addr'   (* may raise OutOfMemory *)
     val free : addr' -> unit
 end

@@ -23,16 +23,16 @@ local
     val all = full
     fun base2 (a, b) = (base a, base b)
 
-    val s1 = ""                                (* String.size s1 =  0 *)
-    and s2 = "ABCDE\tFGHI";                (* String.size s2 = 10 *)
-    val ss1 = all s1                        (* size s1 =  0 *)
-    and ss2 = all s2;                        (* size s2 = 10 *)
+    val s1 = ""                         (* String.size s1 =  0 *)
+    and s2 = "ABCDE\tFGHI";             (* String.size s2 = 10 *)
+    val ss1 = all s1                    (* size s1 =  0 *)
+    and ss2 = all s2;                   (* size s2 = 10 *)
 
-    val sa = "AAAAaAbAABBBB";                (* String.size sa = 14 *)
+    val sa = "AAAAaAbAABBBB";           (* String.size sa = 14 *)
     (*            45678      *)
 
-    val ssa1 = extract(sa, 4, SOME 0)        (* size ssa1 = 0 *)
-    val ssa2 = extract(sa, 4, SOME 5)        (* size ssa2 = 5 *)
+    val ssa1 = extract(sa, 4, SOME 0)   (* size ssa1 = 0 *)
+    val ssa2 = extract(sa, 4, SOME 5)   (* size ssa2 = 5 *)
 
     val ss3 = extract("junk this is a   (clear)textjunk", 4, SOME 24);
     (*                       456789012345678901234567        *)

@@ -126,7 +126,7 @@ for f in `ls *.sml`; do
                         echo "\$(SML_LIB)/basis/basis.mlb
                                 \$(SML_LIB)/basis/mlton.mlb
                                 \$(SML_LIB)/basis/sml-nj.mlb
-                                 ann 
+                                ann 
                                         \"allowFFI true\"
                                         \"allowOverload true\"
                                         \"nonexhaustiveMatch ignore\"
@@ -162,9 +162,9 @@ for f in `ls *.sml`; do
                                 files="$files $f.[0-9][0-9].[cS]"
                         fi
                         gcc -o $f -w -O1                                \
-                                -I "../build/lib/include"                \
-                                -L"../build/lib/$crossTarget"                \
-                                -L/usr/pkg/lib                                \
+                                -I "../build/lib/include"               \
+                                -L"../build/lib/$crossTarget"           \
+                                -L/usr/pkg/lib                          \
                                 -L/usr/local/lib                        \
                                 $files $libs
                 ;;
@@ -196,7 +196,7 @@ for f in `ls *.sml`; do
         esac
 done
 if [ "$cross" = 'yes' -o "$runOnly" = 'yes' -o "$short" = 'yes' ]; then
-         exit 0
+        exit 0
 fi
 mmake clean >/dev/null
 cd $src/benchmark/tests
@@ -210,9 +210,9 @@ for f in `ls *.sml`; do
         *)
                         echo "testing $f"
                 echo "val _ = Main.doit 0" | cat $f.sml - > $tmpf.sml
-                $mlton -output $tmpf $flags                         \
+                $mlton -output $tmpf $flags                     \
                         -default-ann 'nonexhaustiveMatch ignore'\
-                        -default-ann 'redundantMatch ignore'        \
+                        -default-ann 'redundantMatch ignore'    \
                         $tmpf.sml
                 if [ $? -ne 0 ]; then
                         compFail $f

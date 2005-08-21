@@ -126,17 +126,17 @@ local
                   | ( xover, x3, x2, x1, (a::x)) =>
                      if member eq_int_pair_curry xover a then f( xover, x3, x2, x1, x) else
                      if member eq_int_pair_curry x3 a then f ((a::xover), x3, x2, x1, x) else
-                     if member eq_int_pair_curry x2 a then f (xover, (a::x3), x2, x1, x) else
+                   if member eq_int_pair_curry x2 a then f (xover, (a::x3), x2, x1, x) else
                      if member eq_int_pair_curry x1 a then f (xover, x3, (a::x2), x1, x) else
-                                         f (xover, x3, x2, (a::x1), x)
+                                       f (xover, x3, x2, (a::x1), x)
                 fun diff x y = filter (fn x => not(member eq_int_pair_curry y x)) x  (* unfolded o *)
                 val (xover, x3, _, _, _) = f ([],[],[],[],x)
              in diff x3 xover end
   
   
   fun neighbours (i,j) = [(i-1,j-1),(i-1,j),(i-1,j+1),
-                              (i,j-1),(i,j+1),
-                              (i+1,j-1),(i+1,j),(i+1,j+1)]
+                            (i,j-1),(i,j+1),
+                            (i+1,j-1),(i+1,j),(i+1,j+1)]
   
   infix footnote
   fun x footnote y = x

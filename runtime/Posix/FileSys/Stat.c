@@ -54,6 +54,6 @@ Int Posix_FileSys_Stat_lstat (NullString f) {
         return lstat ((char*)f, &statbuf);
 }
 
-Int Posix_FileSys_Stat_stat (NullString f) {        
+Int Posix_FileSys_Stat_stat (NullString f) {    
         return stat ((char*)f, &statbuf);
 }

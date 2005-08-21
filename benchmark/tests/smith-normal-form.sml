@@ -382,7 +382,7 @@ structure Main =
          let val dim = 35
             val big = Matrix.map (Matrix.make (dim, dim, f), IntInf.fromInt)
             val entry = Matrix.fetch(smithNormalForm big, dim - 1, dim - 1)
-(*            val _ = print (concat [IntInf.toString entry, "\n"]) *)
+(*          val _ = print (concat [IntInf.toString entry, "\n"]) *)
          in if entry = valOf (IntInf.fromString
                               "~1027954043102083189860753402541358641712697245")
                then ()

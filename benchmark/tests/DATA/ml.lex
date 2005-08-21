@@ -15,9 +15,9 @@ val eof = fn ({comLevel,err,linePos,stringstart,lineNum,charlist}:lexarg) =>
            let val pos = Integer.max(!stringstart+2, hd(!linePos))
             in if !comLevel>0 then err (!stringstart,pos) COMPLAIN
                                          "unclosed comment" 
-                                else ();
+                              else ();
                Tokens.EOF(pos,pos)
-           end        
+           end  
 fun addString (charlist,s:string) = charlist := s :: (!charlist)
 fun makeString charlist = (implode(rev(!charlist)) before charlist := nil)
 fun makeHexInt sign s = let
@@ -42,81 +42,81 @@ exp="E"(~?){num};
 real=(~?)(({num}{frac}?{exp})|({num}{frac}{exp}?));
 hexnum=[0-9a-fA-F]+;
 %%
-<INITIAL>{ws}        => (continue());
-<INITIAL>\n        => (inc lineNum; linePos := yypos :: !linePos; continue());
-<INITIAL>"*"        => (Tokens.ASTERISK(yypos,yypos+1));
-<INITIAL>"|"        => (Tokens.BAR(yypos,yypos+1));
-<INITIAL>":"        => (Tokens.COLON(yypos,yypos+1));
-<INITIAL>"="        => (Tokens.EQUAL(yypos,yypos+1));
-<INITIAL>"_"        => (Tokens.WILD(yypos,yypos+1));
-<INITIAL>"#"        => (Tokens.HASH(yypos,yypos+1));
-<INITIAL>","        => (Tokens.COMMA(yypos,yypos+1));
-<INITIAL>"{"        => (Tokens.LBRACE(yypos,yypos+1));
-<INITIAL>"}"        => (Tokens.RBRACE(yypos,yypos+1));
-<INITIAL>"["        => (Tokens.LBRACKET(yypos,yypos+1));
-<INITIAL>"]"        => (Tokens.RBRACKET(yypos,yypos+1));
-<INITIAL>";"        => (Tokens.SEMICOLON(yypos,yypos+1));
-<INITIAL>"("        => (Tokens.LPAREN(yypos,yypos+1));
-<INITIAL>")"        => (Tokens.RPAREN(yypos,yypos+1));
-<INITIAL>"and"        => (Tokens.AND(yypos,yypos+3));
-<INITIAL>"abstraction"        => (Tokens.ABSTRACTION(yypos,yypos+11));
-<INITIAL>"abstype"        => (Tokens.ABSTYPE(yypos,yypos+7));
-<INITIAL>"->"                => (Tokens.ARROW(yypos,yypos+2));
-<INITIAL>"as"                => (Tokens.AS(yypos,yypos+2));
-<INITIAL>"case"                => (Tokens.CASE(yypos,yypos+4));
-<INITIAL>"datatype"        => (Tokens.DATATYPE(yypos,yypos+8));
-<INITIAL>"."                => (Tokens.DOT(yypos,yypos+1));
-<INITIAL>"..."                => (Tokens.DOTDOTDOT(yypos,yypos+3));
-<INITIAL>"else"                => (Tokens.ELSE(yypos,yypos+4));
-<INITIAL>"end"                => (Tokens.END(yypos,yypos+3));
-<INITIAL>"eqtype"        => (Tokens.EQTYPE(yypos,yypos+6));
-<INITIAL>"exception"        => (Tokens.EXCEPTION(yypos,yypos+9));
-<INITIAL>"do"                => (Tokens.DO(yypos,yypos+2));
-<INITIAL>"=>"                => (Tokens.DARROW(yypos,yypos+2));
-<INITIAL>"fn"                => (Tokens.FN(yypos,yypos+2));
-<INITIAL>"fun"                => (Tokens.FUN(yypos,yypos+3));
-<INITIAL>"functor"        => (Tokens.FUNCTOR(yypos,yypos+7));
-<INITIAL>"handle"        => (Tokens.HANDLE(yypos,yypos+6));
-<INITIAL>"if"                => (Tokens.IF(yypos,yypos+2));
-<INITIAL>"in"                => (Tokens.IN(yypos,yypos+2));
-<INITIAL>"include"        => (Tokens.INCLUDE(yypos,yypos+7));
+<INITIAL>{ws}   => (continue());
+<INITIAL>\n     => (inc lineNum; linePos := yypos :: !linePos; continue());
+<INITIAL>"*"    => (Tokens.ASTERISK(yypos,yypos+1));
+<INITIAL>"|"    => (Tokens.BAR(yypos,yypos+1));
+<INITIAL>":"    => (Tokens.COLON(yypos,yypos+1));
+<INITIAL>"="    => (Tokens.EQUAL(yypos,yypos+1));
+<INITIAL>"_"    => (Tokens.WILD(yypos,yypos+1));
+<INITIAL>"#"    => (Tokens.HASH(yypos,yypos+1));
+<INITIAL>","    => (Tokens.COMMA(yypos,yypos+1));
+<INITIAL>"{"    => (Tokens.LBRACE(yypos,yypos+1));
+<INITIAL>"}"    => (Tokens.RBRACE(yypos,yypos+1));
+<INITIAL>"["    => (Tokens.LBRACKET(yypos,yypos+1));
+<INITIAL>"]"    => (Tokens.RBRACKET(yypos,yypos+1));
+<INITIAL>";"    => (Tokens.SEMICOLON(yypos,yypos+1));
+<INITIAL>"("    => (Tokens.LPAREN(yypos,yypos+1));
+<INITIAL>")"    => (Tokens.RPAREN(yypos,yypos+1));
+<INITIAL>"and"  => (Tokens.AND(yypos,yypos+3));
+<INITIAL>"abstraction"  => (Tokens.ABSTRACTION(yypos,yypos+11));
+<INITIAL>"abstype"      => (Tokens.ABSTYPE(yypos,yypos+7));
+<INITIAL>"->"           => (Tokens.ARROW(yypos,yypos+2));
+<INITIAL>"as"           => (Tokens.AS(yypos,yypos+2));
+<INITIAL>"case"         => (Tokens.CASE(yypos,yypos+4));
+<INITIAL>"datatype"     => (Tokens.DATATYPE(yypos,yypos+8));
+<INITIAL>"."            => (Tokens.DOT(yypos,yypos+1));
+<INITIAL>"..."          => (Tokens.DOTDOTDOT(yypos,yypos+3));
+<INITIAL>"else"         => (Tokens.ELSE(yypos,yypos+4));
+<INITIAL>"end"          => (Tokens.END(yypos,yypos+3));
+<INITIAL>"eqtype"       => (Tokens.EQTYPE(yypos,yypos+6));
+<INITIAL>"exception"    => (Tokens.EXCEPTION(yypos,yypos+9));
+<INITIAL>"do"           => (Tokens.DO(yypos,yypos+2));
+<INITIAL>"=>"           => (Tokens.DARROW(yypos,yypos+2));
+<INITIAL>"fn"           => (Tokens.FN(yypos,yypos+2));
+<INITIAL>"fun"          => (Tokens.FUN(yypos,yypos+3));
+<INITIAL>"functor"      => (Tokens.FUNCTOR(yypos,yypos+7));
+<INITIAL>"handle"       => (Tokens.HANDLE(yypos,yypos+6));
+<INITIAL>"if"           => (Tokens.IF(yypos,yypos+2));
+<INITIAL>"in"           => (Tokens.IN(yypos,yypos+2));
+<INITIAL>"include"      => (Tokens.INCLUDE(yypos,yypos+7));
 <INITIAL>"infix"        => (Tokens.INFIX(yypos,yypos+5));
-<INITIAL>"infixr"        => (Tokens.INFIXR(yypos,yypos+6));
-<INITIAL>"let"                => (Tokens.LET(yypos,yypos+3));
+<INITIAL>"infixr"       => (Tokens.INFIXR(yypos,yypos+6));
+<INITIAL>"let"          => (Tokens.LET(yypos,yypos+3));
 <INITIAL>"local"        => (Tokens.LOCAL(yypos,yypos+5));
-<INITIAL>"nonfix"        => (Tokens.NONFIX(yypos,yypos+6));
-<INITIAL>"of"                => (Tokens.OF(yypos,yypos+2));
-<INITIAL>"op"                => (Tokens.OP(yypos,yypos+2));
-<INITIAL>"open"                => (Tokens.OPEN(yypos,yypos+4));
-<INITIAL>"overload"        => (Tokens.OVERLOAD(yypos,yypos+8));
+<INITIAL>"nonfix"       => (Tokens.NONFIX(yypos,yypos+6));
+<INITIAL>"of"           => (Tokens.OF(yypos,yypos+2));
+<INITIAL>"op"           => (Tokens.OP(yypos,yypos+2));
+<INITIAL>"open"         => (Tokens.OPEN(yypos,yypos+4));
+<INITIAL>"overload"     => (Tokens.OVERLOAD(yypos,yypos+8));
 <INITIAL>"raise"        => (Tokens.RAISE(yypos,yypos+5));
-<INITIAL>"rec"                => (Tokens.REC(yypos,yypos+3));
-<INITIAL>"sharing"        => (Tokens.SHARING(yypos,yypos+7));
-<INITIAL>"sig"                => (Tokens.SIG(yypos,yypos+3));
-<INITIAL>"signature"        => (Tokens.SIGNATURE(yypos,yypos+9));
-<INITIAL>"struct"        => (Tokens.STRUCT(yypos,yypos+6));
-<INITIAL>"structure"        => (Tokens.STRUCTURE(yypos,yypos+9));
-<INITIAL>"then"                => (Tokens.THEN(yypos,yypos+4));
-<INITIAL>"type"                => (Tokens.TYPE(yypos,yypos+4));
-<INITIAL>"val"                => (Tokens.VAL(yypos,yypos+3));
+<INITIAL>"rec"          => (Tokens.REC(yypos,yypos+3));
+<INITIAL>"sharing"      => (Tokens.SHARING(yypos,yypos+7));
+<INITIAL>"sig"          => (Tokens.SIG(yypos,yypos+3));
+<INITIAL>"signature"    => (Tokens.SIGNATURE(yypos,yypos+9));
+<INITIAL>"struct"       => (Tokens.STRUCT(yypos,yypos+6));
+<INITIAL>"structure"    => (Tokens.STRUCTURE(yypos,yypos+9));
+<INITIAL>"then"         => (Tokens.THEN(yypos,yypos+4));
+<INITIAL>"type"         => (Tokens.TYPE(yypos,yypos+4));
+<INITIAL>"val"          => (Tokens.VAL(yypos,yypos+3));
 <INITIAL>"while"        => (Tokens.WHILE(yypos,yypos+5));
-<INITIAL>"with"                => (Tokens.WITH(yypos,yypos+4));
-<INITIAL>"withtype"        => (Tokens.WITHTYPE(yypos,yypos+8));
-<INITIAL>"orelse"        => (Tokens.ORELSE(yypos,yypos+6));
-<INITIAL>"andalso"        => (Tokens.ANDALSO(yypos,yypos+7));
-<INITIAL>"import"        => (Tokens.IMPORT(yypos,yypos+6));
-<INITIAL>"'"{idchars}*        => (Tokens.TYVAR(yytext, yypos, yypos+size yytext));
-<INITIAL>({sym}+|{id})        => (Tokens.ID(yytext, yypos, yypos+size yytext));
-<INITIAL>{real}        => (Tokens.REAL(yytext,yypos,yypos+size yytext));
+<INITIAL>"with"         => (Tokens.WITH(yypos,yypos+4));
+<INITIAL>"withtype"     => (Tokens.WITHTYPE(yypos,yypos+8));
+<INITIAL>"orelse"       => (Tokens.ORELSE(yypos,yypos+6));
+<INITIAL>"andalso"      => (Tokens.ANDALSO(yypos,yypos+7));
+<INITIAL>"import"       => (Tokens.IMPORT(yypos,yypos+6));
+<INITIAL>"'"{idchars}*  => (Tokens.TYVAR(yytext, yypos, yypos+size yytext));
+<INITIAL>({sym}+|{id})  => (Tokens.ID(yytext, yypos, yypos+size yytext));
+<INITIAL>{real} => (Tokens.REAL(yytext,yypos,yypos+size yytext));
 <INITIAL>[1-9][0-9]* => (Tokens.INT(makeInt (op +) yytext
                     handle Overflow => (err (yypos,yypos+size yytext)
                                           COMPLAIN "integer too large"; 1),
                         yypos,yypos+size yytext));
-<INITIAL>{num}        => (Tokens.INT0(makeInt (op +) yytext
+<INITIAL>{num}  => (Tokens.INT0(makeInt (op +) yytext
                     handle Overflow => (err (yypos,yypos+size yytext)
                                           COMPLAIN "integer too large"; 0),
                         yypos,yypos+size yytext));
-<INITIAL>~{num}        => (Tokens.INT0(makeInt (op -)
+<INITIAL>~{num} => (Tokens.INT0(makeInt (op -)
                                         (substring(yytext,1,size(yytext)-1))
                     handle Overflow => (err (yypos,yypos+size yytext)
                                          COMPLAIN "integer too large"; 0),
@@ -131,35 +131,35 @@ hexnum=[0-9a-fA-F]+;
                         handle Overflow => (err (yypos,yypos+size yytext)
                                             COMPLAIN "integer too large"; 0),
                       yypos, yypos+size yytext));
-<INITIAL>\"        => (charlist := [""]; stringstart := yypos;
+<INITIAL>\"     => (charlist := [""]; stringstart := yypos;
                         YYBEGIN S; continue());
-<INITIAL>"(*"        => (YYBEGIN A; stringstart := yypos; comLevel := 1; continue());
-<INITIAL>\h        => (err (yypos,yypos) COMPLAIN "non-Ascii character"; continue());
-<INITIAL>.        => (err (yypos,yypos) COMPLAIN "illegal token"; continue());
-<A>"(*"                => (inc comLevel; continue());
-<A>\n                => (inc lineNum; linePos := yypos :: !linePos; continue());
+<INITIAL>"(*"   => (YYBEGIN A; stringstart := yypos; comLevel := 1; continue());
+<INITIAL>\h     => (err (yypos,yypos) COMPLAIN "non-Ascii character"; continue());
+<INITIAL>.      => (err (yypos,yypos) COMPLAIN "illegal token"; continue());
+<A>"(*"         => (inc comLevel; continue());
+<A>\n           => (inc lineNum; linePos := yypos :: !linePos; continue());
 <A>"*)" => (dec comLevel; if !comLevel=0 then YYBEGIN INITIAL else (); continue());
-<A>.                => (continue());
-<S>\"                => (YYBEGIN INITIAL; Tokens.STRING(makeString charlist,
+<A>.            => (continue());
+<S>\"           => (YYBEGIN INITIAL; Tokens.STRING(makeString charlist,
                                 !stringstart,yypos+1));
-<S>\n                => (err (!stringstart,yypos) COMPLAIN "unclosed string";
+<S>\n           => (err (!stringstart,yypos) COMPLAIN "unclosed string";
                     inc lineNum; linePos := yypos :: !linePos;
                     YYBEGIN INITIAL; Tokens.STRING(makeString charlist,!stringstart,yypos));
-<S>[^"\\\n]*        => (addString(charlist,yytext); continue());
-<S>\\\n                       => (inc lineNum; linePos := yypos :: !linePos;
+<S>[^"\\\n]*    => (addString(charlist,yytext); continue());
+<S>\\\n         => (inc lineNum; linePos := yypos :: !linePos;
                     YYBEGIN F; continue());
-<S>\\[\ \t]           => (YYBEGIN F; continue());
-<F>\n                => (inc lineNum; linePos := yypos :: !linePos; continue());
-<F>{ws}                => (continue());
-<F>\\                => (YYBEGIN S; stringstart := yypos; continue());
-<F>.                => (err (!stringstart,yypos) COMPLAIN "unclosed string"; 
+<S>\\[\ \t]     => (YYBEGIN F; continue());
+<F>\n           => (inc lineNum; linePos := yypos :: !linePos; continue());
+<F>{ws}         => (continue());
+<F>\\           => (YYBEGIN S; stringstart := yypos; continue());
+<F>.            => (err (!stringstart,yypos) COMPLAIN "unclosed string"; 
                     YYBEGIN INITIAL; Tokens.STRING(makeString charlist,!stringstart,yypos+1));
-<S>\\t                => (addString(charlist,"\t"); continue());
-<S>\\n                => (addString(charlist,"\n"); continue());
-<S>\\\\                => (addString(charlist,"\\"); continue());
-<S>\\\"                => (addString(charlist,chr(Ascii.dquote)); continue());
-<S>\\\^[@-_]        => (addString(charlist,chr(ordof(yytext,2)-ord("@"))); continue());
-<S>\\[0-9]{3}        =>
+<S>\\t          => (addString(charlist,"\t"); continue());
+<S>\\n          => (addString(charlist,"\n"); continue());
+<S>\\\\         => (addString(charlist,"\\"); continue());
+<S>\\\"         => (addString(charlist,chr(Ascii.dquote)); continue());
+<S>\\\^[@-_]    => (addString(charlist,chr(ordof(yytext,2)-ord("@"))); continue());
+<S>\\[0-9]{3}   =>
  (let val x = ordof(yytext,1)*100
              +ordof(yytext,2)*10
              +ordof(yytext,3)
@@ -169,5 +169,5 @@ hexnum=[0-9a-fA-F]+;
       else addString(charlist,chr x);
       continue())
   end);
-<S>\\                => (err (yypos,yypos+1) COMPLAIN "illegal string escape"; 
+<S>\\           => (err (yypos,yypos+1) COMPLAIN "illegal string escape"; 
                     continue());

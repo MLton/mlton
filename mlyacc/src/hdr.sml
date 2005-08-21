@@ -74,7 +74,7 @@ functor HeaderFun () : HEADER =
         datatype rule = RULE of {lhs : symbol, rhs : symbol list,
                                  code : string, prec : symbol option}
 
-         type parseResult = string * declData * rule list
+        type parseResult = string * declData * rule list
         val getResult = fn p => p
 
         fun join_decls
@@ -93,7 +93,7 @@ functor HeaderFun () : HEADER =
               fun mergeControl (nil,a) = [a]
                 | mergeControl (l as h::t,a) =
                      case (h,a)
-                       of (PARSER_NAME _,PARSER_NAME n1) => (ignore "%name"; l)
+                     of (PARSER_NAME _,PARSER_NAME n1) => (ignore "%name"; l)
                       | (FUNCTOR _,FUNCTOR _) => (ignore "%header"; l)
                       | (PARSE_ARG _,PARSE_ARG _) => (ignore "%arg"; l)
                       | (START_SYM _,START_SYM s) => (ignore "%start"; l)

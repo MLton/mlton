@@ -145,7 +145,7 @@ functor RedBlack(B : sig type key
                 val empty : tree
                 val insert : key * tree -> tree
                 val lookup : key * tree -> key
-                 exception notfound of key
+                exception notfound of key
             end =
 struct
  open B
@@ -234,7 +234,7 @@ structure LexGen: LEXGEN =
    (* flags describing input Lex spec. - unnecessary code is omitted *)
    (* if possible *)
 
-   val CharFormat = ref false;        
+   val CharFormat = ref false;  
    val UsesTrailingContext = ref false;
    val UsesPrevNewLine = ref false;
    
@@ -456,7 +456,7 @@ fun AdvanceTok () : unit = let
                           in
                             if isDigit ch
                               then f(n*10+(cvt ch), c+1, ch::t)
-                                else err t
+                              else err t
                           end
                   in
                     if isDigit x then f(cvt x, 1, [x]) else x
@@ -474,7 +474,7 @@ fun AdvanceTok () : unit = let
                 case skipws()
                         (* Lex % operators *)
                  of #"%" => (case nextch() of 
-                            #"%" => LEXMARK
+                          #"%" => LEXMARK
                         | a => let fun f s =
                                     let val a = nextch()
                                     in if isLetter a then f(a::s)
@@ -621,7 +621,7 @@ fun AdvanceTok () : unit = let
                         fun GetAct (lpct,x) = (case getch(!LexBuf)
                                of #"(" => GetAct (lpct+1, #"("::x)
                                 | #")" => if lpct = 0 then (implode (rev x))
-                                                       else GetAct(lpct-1, #")"::x)
+                                                      else GetAct(lpct-1, #")"::x)
                                 | y => GetAct(lpct,y::x)
                               (* end case *))
                         in ACTION (GetAct (0,nil))
@@ -699,7 +699,7 @@ fun GetExp () : exp =
                 | LP => exp2(CAT(e1,e2),exp0())
                 | RP => CAT(e1,e2)
                 | t => (AdvanceTok(); case t of
-                            QMARK => exp1(CAT(e1,optional(e2)))
+                          QMARK => exp1(CAT(e1,optional(e2)))
                         | STAR => exp1(CAT(e1,CLOSURE(e2)))
                         | PLUS => exp1(CAT(e1,closure1(e2)))
                         | CHARS(c) => exp2(CAT(e1,e2),CLASS(c,0))
@@ -720,7 +720,7 @@ val StateNum = ref 0;
 fun GetStates () : int list =
 
    let fun add nil sl = sl
-            | add (x::y) sl = add y (union ([lookup (!StateTab)(x)
+          | add (x::y) sl = add y (union ([lookup (!StateTab)(x)
                                            handle LOOKUP =>
                                               prErr ("bad state name: "^x)
                                           ],sl))
@@ -733,7 +733,7 @@ fun GetStates () : int list =
           | incall nil = nil
 
         fun addincs nil = nil
-            | addincs (x::y) = x::(x+1)::addincs y
+          | addincs (x::y) = x::(x+1)::addincs y
 
         val state_list =
            case !NextTok of 
@@ -766,7 +766,7 @@ fun parse() : (string * (int list * exp) list * ((string,string) dictionary)) =
         let val Accept = ref (create String.<=) : (string,string) dictionary ref
         val rec ParseRtns = fn l => case getch(!LexBuf) of
                   #"%" => let val c = getch(!LexBuf) in
-                               if c = #"%" then (implode (rev l))
+                           if c = #"%" then (implode (rev l))
                            else ParseRtns(c :: #"%" :: l)
                         end
                 | c => ParseRtns(c::l)
@@ -885,7 +885,7 @@ fun maketable (fins:(int * (int list)) list,
        val _ = (if length(trans)<256 then CharFormat := true
                  else CharFormat := false;
                  if !UsesTrailingContext then
-                         (say "\ndatatype yyfinstate = N of int | \
+                     (say "\ndatatype yyfinstate = N of int | \
                            \ T of int | D of int\n")
                  else say "\ndatatype yyfinstate = N of int";
                  say "\ntype statedata = {fin : yyfinstate list, trans: ";
@@ -943,8 +943,8 @@ fun maketable (fins:(int * (int list)) list,
                      val s = StringCvt.padLeft #"0" 3 (Int.toString x)
                      in
                        case pos
-                         of 16        => (say "\\\n\\\\"; say s; 1)
-                          | _        => (say "\\"; say s; pos+1)
+                         of 16  => (say "\\\n\\\\"; say s; 1)
+                          | _   => (say "\\"; say s; pos+1)
                      end
                    fun emit16(x, pos) =
                      let val hi8 = x div 256
@@ -968,7 +968,7 @@ fun maketable (fins:(int * (int list)) list,
                       end handle notfound _ => (count := !count+1;
                          say "val "; say name; makeItems x;
                           makeEntry(y,(name::rs),(insert ((x,name),t))))
-                     end
+                  end
         in (makeEntry(trans,nil,empty))
         end
 
@@ -1121,8 +1121,8 @@ and gettrans (state) =
 and startstates() =
         let val startarray = array(!StateNum + 1, nil);
             fun listofarray(a,n) =
-                  let fun f i l = if i >= 0 then  f (i-1) ((a sub i)::l) else l
-                 in f (n-1) nil end
+                let fun f i l = if i >= 0 then  f (i-1) ((a sub i)::l) else l
+                in f (n-1) nil end
         val rec makess = fn
                   nil => ()
                 | (startlist,e)::tl => (fix(startlist,firstpos(e));makess(tl))
@@ -1183,13 +1183,13 @@ fun lexGen(infile) =
                \\t\t\t     val yypos = i0+ !yygone";
          if !CountNewLines 
             then (sayln "\t\t\tval _ = yylineno := CharVector.foldl";
-                    sayln "\t\t\t\t(fn (#\"\\n\", n) => n+1 | (_, n) => n) (!yylineno) yytext")
+                  sayln "\t\t\t\t(fn (#\"\\n\", n) => n+1 | (_, n) => n) (!yylineno) yytext")
             else ();
          if !HaveReject
              then (say "\t\t\tfun REJECT() = action(i,acts::l";
                    if !UsesTrailingContext
                        then sayln ",rs)" else sayln ")")
-             else ();         
+             else ();    
          sayln "\t\t\topen UserDeclarations Internal.StartStates";
          sayln " in (yybufpos := i; case yyk of ";
          sayln "";
@@ -1259,7 +1259,7 @@ fun lexGen(infile) =
         let
            val (user_code,rules,ends) =
                parse() handle x =>
-                         (close_ibuf(!LexBuf);
+                  (close_ibuf(!LexBuf);
                    TextIO.closeOut(!LexOut);
                    raise x)
            val (fins,trans,tctab,tcpairs) = makedfa(rules)
@@ -1297,7 +1297,7 @@ fun lexGen(infile) =
           \\tval yygone = ref 1\t\t(* position in file of beginning of buffer *)\n\
           \\tval yydone = ref false\t\t(* eof found yet? *)\n\
           \\tval yybegin = ref 1\t\t(*Current 'start state' for lexer *)\n\
-            \\n\tval YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>\n\
+          \\n\tval YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>\n\
           \\t\t yybegin := x\n\n";
           PrintLexer(ends);
           close_ibuf(!LexBuf);

@@ -95,8 +95,8 @@ structure Node =
          else false
 
    (*       fun removeSuccessor (Node {successors, ...}, n) =
-    *          successors := List.removeFirst (!successors, fn Edge.Edge {to, ...} =>
-    *                                         equals (n, to))
+    *    successors := List.removeFirst (!successors, fn Edge.Edge {to, ...} =>
+    *                                   equals (n, to))
     *)
    end
 
@@ -294,24 +294,24 @@ fun foreachDescendent (g, n, f) =
  *    let
  *       val discoverTime = Counter.new 0
  *       val {get, destroy, ...} =
- *          Property.newDest
- *          (Node.plist, Property.initFun (fn _ => {time = Counter.next discoverTime,
- *                                                 alive = ref true}))
+ *       Property.newDest
+ *       (Node.plist, Property.initFun (fn _ => {time = Counter.next discoverTime,
+ *                                              alive = ref true}))
  *       val ignore = DfsParam.ignore
  *    in dfs
  *       (g, {startNode = fn n => (get n; ()),
- *            finishNode = fn n => #alive (get n) := false,
- *            handleNonTreeEdge =
- *            fn e as Edge.Edge {from, to, ...} =>
- *            let val {alive, time} = get to
- *            in if !alive andalso time < #time (get from)
- *                  then removeEdge (g, e)
- *               else ()
- *            end,
- *            handleTreeEdge = ignore,
- *            startTree = ignore,
- *            finishTree = ignore,
- *            finishDfs = ignore})
+ *         finishNode = fn n => #alive (get n) := false,
+ *         handleNonTreeEdge =
+ *         fn e as Edge.Edge {from, to, ...} =>
+ *         let val {alive, time} = get to
+ *         in if !alive andalso time < #time (get from)
+ *               then removeEdge (g, e)
+ *            else ()
+ *         end,
+ *         handleTreeEdge = ignore,
+ *         startTree = ignore,
+ *         finishTree = ignore,
+ *         finishDfs = ignore})
  *    end
  *)
 

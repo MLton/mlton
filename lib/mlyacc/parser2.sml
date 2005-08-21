@@ -132,7 +132,7 @@ structure LrParser :> LR_PARSER =
           fun get(a::x, y) = (a, (x,y))
             | get(nil, nil) = raise Empty
             | get(nil, y) = get(rev y, nil)
-           fun put(a,(x,y)) = (x,a::y)
+          fun put(a,(x,y)) = (x,a::y)
         end
 
       type ('a,'b) elem = (state * ('a * 'b * 'b))
@@ -177,7 +177,7 @@ structure LrParser :> LR_PARSER =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
-                         ^ showState state        
+                         ^ showState state      
                          ^ " next="
                          ^ showTerminal term
                          ^ " action="

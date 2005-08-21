@@ -223,7 +223,7 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
                                      if !inDeg = 1
                                         then List.push (facts, f)
                                      else ()
-                                  end                
+                                  end           
                                fun falseTrue () =
                                   case cases of
                                      Cases.Con v =>

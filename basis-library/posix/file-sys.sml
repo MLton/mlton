@@ -234,7 +234,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
          val fchown = wrap Prim.fchown
          val ftruncate = wrapRestart Prim.ftruncate
-      end            
+      end           
 
       local
          val size: int = 1024

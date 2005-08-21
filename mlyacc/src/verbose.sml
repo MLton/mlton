@@ -16,12 +16,12 @@ struct
         let val printInt = print o (Int.toString : int -> string)
         in fn (SHIFT (STATE i)) =>
                         (print "\tshift ";
-                          printInt i;
-                         print "\n")
+                         printInt i;
+                        print "\n")
              | (REDUCE rulenum) =>
                         (print "\treduce by rule ";
-                          printInt rulenum;
-                          print "\n")
+                         printInt rulenum;
+                         print "\n")
              | ACCEPT => print "\taccept\n"
              | ERROR => print "\terror\n"
         end
@@ -36,7 +36,7 @@ struct
       end
 
    val mkPrintTermAction = fn (printTerm,print) =>
-         let val printAction = mkPrintAction print
+        let val printAction = mkPrintAction print
         in fn (term,action) =>
                 (print "\t";
                  printTerm term;

@@ -92,7 +92,7 @@ fun fold2 (l1, l2, b, f) =
    let
       fun loop (l1, l2, b) =
          case (l1,       l2)       of
-                ([],       [])       => b
+              ([],       [])       => b
             | (x1 :: l1, x2 :: l2) => loop (l1, l2, f (x1, x2, b))
             | _                    => Error.bug "fold2"
    in loop (l1, l2, b)
@@ -102,7 +102,7 @@ fun fold3 (l1, l2, l3, b, f) =
    let
       fun loop (l1, l2, l3, b) =
          case (l1,       l2,       l3)       of
-                ([],       [],       [])       => b
+              ([],       [],       [])       => b
             | (x1 :: l1, x2 :: l2, x3 :: l3) =>
                  loop (l1, l2, l3, f (x1, x2, x3, b))
             | _                    => Error.bug "fold3"

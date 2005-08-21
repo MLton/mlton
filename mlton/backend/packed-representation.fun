@@ -401,8 +401,8 @@ structure Unpack =
             val (src, ss2) = Statement.resize (src, w')
             val (src, ss3) = 
                if Bits.equals (w, w')
-(*                   orelse Type.isZero (Type.dropPrefix (Operand.ty src,
- *                                                        WordSize.bits s))
+(*                orelse Type.isZero (Type.dropPrefix (Operand.ty src,
+ *                                                     WordSize.bits s))
  *)
                   then (src, [])
                else
@@ -761,7 +761,7 @@ structure PointerRep =
                         if 0 = Vector.length pointers
                            then Bytes.toWords width
                         else #offset (Vector.sub (pointers, 0))
-                     val pad =                              
+                     val pad =                        
                         {component = Component.padToWidth (Component.unit,
                                                            Bits.inWord),
                          offset = padOffset}

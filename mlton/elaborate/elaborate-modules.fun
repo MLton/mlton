@@ -84,7 +84,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                SigConst.None => (Decs.empty, S)
              | SigConst.Opaque sigexp => s (sigexp, true)
              | SigConst.Transparent sigexp => s (sigexp, false)
-         end         
+         end     
       fun elabStrdec (arg: Strdec.t * string list): Decs.t =
          Trace.traceInfo' (elabStrdecInfo,
                            Layout.tuple2 (Strdec.layout,

@@ -338,7 +338,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
              Vector.foreach
              (blocks, fn b =>
               let
-                 val l = Block.label b                 
+                 val l = Block.label b           
                  val {begin, beginNoFormals, handler, link} = labelLive l
               in
                  display

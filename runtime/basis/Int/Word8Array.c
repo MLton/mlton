@@ -10,7 +10,7 @@ Word32 Word8Array_subWord32Rev (Pointer v, Int offset) {
         s = v + (offset * 4);
         for (i = 0; i < 4; ++i)
                 p[i] = s[3 - i];
-         return w;
+        return w;
 }
 
 void Word8Array_updateWord32Rev (Pointer a, Int offset, Word32 w) {

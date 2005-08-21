@@ -498,7 +498,7 @@ structure Transform =
       = let
           datatype z = datatype Areturn.t
 
-              (* For functions turned into continuations,
+          (* For functions turned into continuations,
            *  record their args, blocks, and new name.
            *)
           val _ 

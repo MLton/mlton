@@ -337,7 +337,7 @@ struct
   datatype opcode =
       FETCH of {immutable: bool, offset: int, ptr: reg, dst: reg}
                 (* dst := M[ptr+offset]
-                    if immutable then unaffected by any STORE
+                   if immutable then unaffected by any STORE
                    other than through the allocptr *)
     | STORE of {offset: int, src: reg, ptr: reg}
                 (* M[ptr+offset] := src *)
@@ -1537,7 +1537,7 @@ fun checkPredSuccInfo(from, P as (ns, n0, F)) =
                 val s = Set.set(xsuccN(P, n))
                     handle NAMESETTONODESET =>
                         fail "NAMESETTONODESET"
-                    fun cs x = Set.member(xpred x, name_of n)
+                fun cs x = Set.member(xpred x, name_of n)
                 fun fs (x, b) = b andalso cs x
             in
                 fold fs s true
@@ -1869,7 +1869,7 @@ fun can_move_test(P as (ns, n0, F):program, x:test, n:node, m:node) =
     end
 
 fun move_test (P as (ns, n0, F):program, x:test, n:node, m:node) =
-    if not (can_move_test(P, x, n, m))        then P
+    if not (can_move_test(P, x, n, m))  then P
     else
         let val foo =
             mt_debug (fn () => "move_test" ^ name_of n ^ " " ^ name_of m)
@@ -1934,7 +1934,7 @@ fun move_test (P as (ns, n0, F):program, x:test, n:node, m:node) =
                 fold updtl ([rmPredNode(n, name_of m), new_m] @ upt @ upf) P
             val answer = np
             val foo = mt_debug (fn () => "mtst done")
-            val foo = cpsi("move_test leave", answer)                
+            val foo = cpsi("move_test leave", answer)           
         in
             answer
         end
@@ -2245,7 +2245,7 @@ fun cpress(window, P, fence_set, everin_fence_set) =
     end
 
 fun clean_up (P as (ns, n0, F):program) =
-    let        val foo = debug (fn () => "cleanup")
+    let val foo = debug (fn () => "cleanup")
         val clos = closure(P, n0)
         val (ns, n0, F) = clos
         val l = (map name_of (Stringmap.extract ns))
@@ -2626,7 +2626,7 @@ fun progMap(p as (ns, n0, F)) =
         val n0nm = Node.name_of n0
         val nFnm = Node.name_of F
         fun f n =
-            let        val s = Set.set (Node.succ(p, n))
+            let val s = Set.set (Node.succ(p, n))
                 val nm = Node.name_of n
                 val pre = if nm = n0nm then "->\t"
                           else "\t"
@@ -2926,11 +2926,11 @@ struct
       exec(MOVE{src=(s,_),dst=(d,_)})=
         update((!Reg),d, (!Reg) sub s )                        |
       exec(LABEL {...})= 
-        ()                                                       |
+        ()                                                     |
       exec(LABWORD {...}) = 
-        ()                                                       |
+        ()                                                     |
       exec(WORD{...})=
-        ()                                                       |
+        ()                                                     |
       exec(JUMP {dst=(d,_),...})=
         execjmp((!Reg) sub d)                                  |
       exec(ARITH {oper=opn,src1=(s1,_),src2=(s2,_),dst=(d,_)})= 
@@ -3251,7 +3251,7 @@ struct
                      dst=(labnum,_),...}::t,vt)=
         if compare(comp,(!Reg) sub s1,(!Reg) sub s2) 
         then (IP:= !(findjmp_place(labnum)); flag:=false; dowr(t,vt) )
-        else dowr(t,vt)                                                          |
+        else dowr(t,vt)                                                   |
       dowr(h::t,vt)=dowr(t,vt)                                            
       ;
 

@@ -44,7 +44,7 @@ fun naturalAll (limit, ok) =
  * Fold over all permutations.
  * Universe is a list of all the items to be permuted.
  * pFolder is used to build up the permutation.  It is called via
- *        pFolder (next, pState, state, accross)
+ *      pFolder (next, pState, state, accross)
  * where next is the next item in the permutation, pState is the
  * partially constructed permutation and state is the current fold
  * state over permutations that have already been considered.
@@ -55,7 +55,7 @@ fun naturalAll (limit, ok) =
  * return (newPState, newState).
  * When a permutation has been completely constructed, folder is called
  * via
- *        folder (pState, state)
+ *      folder (pState, state)
  * where pState is the final pState and state is the current state.
  * It should return the new state.
  *)
@@ -95,7 +95,7 @@ fun 'a foldOverPermutations (universe, pFolder, pState, folder, state: 'a) =
  * Universe is a list of lists of items, with equivalent items in the
  * same list.
  * pFolder is used to build up the permutation.  It is called via
- *        pFolder (next, pState, state, accross)
+ *      pFolder (next, pState, state, accross)
  * where next is the next item in the permutation, pState is the
  * partially constructed permutation and state is the current fold
  * state over permutations that have already been considered.
@@ -106,7 +106,7 @@ fun 'a foldOverPermutations (universe, pFolder, pState, folder, state: 'a) =
  * return (newPState, newState).
  * When a permutation has been completely constructed, folder is called
  * via
- *        folder (pState, state)
+ *      folder (pState, state)
  * where pState is the final pState and state is the current state.
  * It should return the new state.
  *)
@@ -151,16 +151,16 @@ fun 'a foldOverBagPerms (universe, pFolder, pState, folder, state: 'a) =
  * is in the subset, etc.
  * eFolder is called to build up the subset given a decision on wether
  * or not a given element is in it or not.  It is called via
- *        eFolder (elem, isinc, eState, state, fini)
+ *      eFolder (elem, isinc, eState, state, fini)
  * If this determines the result of folding over all the subsets consistant
  * with the choice so far, then eFolder should raise the exception
- *        fini newState
+ *      fini newState
  * If we need to proceed deeper in the tree, then eFolder should return
  * the tuple
- *        (newEState, newState)
+ *      (newEState, newState)
  * folder is called to buld up the final state, folding over subsets
  * (represented as the terminal eStates).  It is called via
- *        folder (eState, state)
+ *      folder (eState, state)
  * It returns the new state.
  * Note, the order in which elements are folded (via eFolder) is the same
  * as the order in universe.
@@ -205,7 +205,7 @@ fun f universe =
  * In the result, two equivalent vertices in [0, size) remain equivalent
  * iff they are either both connected or neither is connected to size.
  * The vertex size is equivalent to a vertex x in [0, size) iff
- *        connected (size, y) = connected (x, if y = x then size else y)
+ *      connected (size, y) = connected (x, if y = x then size else y)
  * for all y in [0, size).
  *)
 fun refine (size: int,
@@ -252,16 +252,16 @@ fun refine (size: int,
  * two distinct vertices, returns a bool indicating if there is an edge
  * connecting them, check if the graph is minimal.
  * If it is, return
- *        SOME how-many-clones-we-walked-through
+ *      SOME how-many-clones-we-walked-through
  * If not, return NONE.
  * A graph is minimal iff its connection matrix is (weakly) smaller
  * then all its permuted friends, where true is less than false, and
  * the entries are compared lexicographically in the following order:
- *        -
- *        0 -
- *        1 2 -
- *        3 4 5 -
- *        ...
+ *      -
+ *      0 -
+ *      1 2 -
+ *      3 4 5 -
+ *      ...
  * Note, the vertices are the integers in [0, nverts).
  *)
 fun minimal (nverts: int,
@@ -300,7 +300,7 @@ fun minimal (nverts: int,
  * Fold over the tree of graphs.
  *
  * eFolder is used to fold over the choice of edges via
- *        eFolder (from, to, isinc, eState, state, accross)
+ *      eFolder (from, to, isinc, eState, state, accross)
  * with from > to.
  *
  * If eFolder knows the result of folding over all graphs which agree
@@ -308,11 +308,11 @@ fun minimal (nverts: int,
  * exception carrying the resulting state as a value.
  *
  * To continue normally, it should return the tuple
- *        (newEState, newState)
+ *      (newEState, newState)
  *
  * When all decisions are made with regards to edges from `from', folder
  * is called via
- *        folder (size, eState, state, accross)
+ *      folder (size, eState, state, accross)
  * where size is the number of vertices in the graph (the last from+1) and
  * eState is the final eState for edges from `from'.
  *
@@ -365,7 +365,7 @@ fun ('a, 'b) foldOverGraphs (eFolder, eState: 'a, folder, state: 'b) =
 (*
  * Given the size of a graph, a list of the vertices (the integers in
  * [0, size)), and the connected function, check if for all full subgraphs,
- *        3*V - 4 - 2*E >= 0 or V <= 1
+ *      3*V - 4 - 2*E >= 0 or V <= 1
  * where V is the number of vertices and E is the number of edges.
  *)
 local fun short lst =

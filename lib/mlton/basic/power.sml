@@ -12,7 +12,7 @@ structure Types =
           one: 'a,
           times: 'a * 'a -> 'a}
          -> 'a * 'b
-         -> 'a         
+         -> 'a   
 
       type ('a, 'b) simultaneous =
          {layout: 'a -> Layout.t,

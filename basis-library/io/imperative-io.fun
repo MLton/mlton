@@ -740,15 +740,15 @@ signature IMPERATIVE_IO_ARG =
 (*      sharing type Array.array = ArraySlice.array *)
       sharing type
          Array.elem
-(*         = ArraySlice.elem *)
+(*       = ArraySlice.elem *)
          = StreamIO.elem
          = Vector.elem
-(*         = VectorSlice.elem *)
+(*       = VectorSlice.elem *)
       sharing type
          Array.vector
-(*         = ArraySlice.vector *)
+(*       = ArraySlice.vector *)
          = Vector.vector
-(*         = VectorSlice.vector *)
+(*       = VectorSlice.vector *)
 (*      sharing type ArraySlice.vector_slice = VectorSlice.slice *)
    end
 

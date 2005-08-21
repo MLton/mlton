@@ -276,7 +276,7 @@ fun search () =
             handle Inconsistent => ()
                  | Continue f => f ()
          end
-      val _ =          loop () handle Done => ()
+      val _ =    loop () handle Done => ()
       val _ = if 3342 = !num
                  then ()
               else raise Fail "bug"

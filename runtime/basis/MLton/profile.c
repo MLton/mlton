@@ -1,7 +1,7 @@
 #include "platform.h"
 
 #ifndef DEBUG_PROFILE
-#define        DEBUG_PROFILE FALSE
+#define DEBUG_PROFILE FALSE
 #endif
 
 extern struct GC_state gcState;

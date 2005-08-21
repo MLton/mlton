@@ -118,9 +118,9 @@ fun scan getc src =
          else case getc src of
             NONE           => SOME (mkTime sign intv fracv decs, src)
           | SOME (c, rest) =>
-                (case charToDigit c of
-                    NONE   => SOME (mkTime sign intv fracv decs, src)
-                  | SOME d => frac' sign intv (10 * fracv + d) (decs + 1) rest)
+               (case charToDigit c of
+                   NONE   => SOME (mkTime sign intv fracv decs, src)
+                 | SOME d => frac' sign intv (10 * fracv + d) (decs + 1) rest)
       fun frac sign intv src =
          case getc src of
             NONE           => NONE

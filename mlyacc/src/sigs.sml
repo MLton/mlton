@@ -114,7 +114,7 @@ signature INTGRAMMAR =
 
         (* internal number of rule - convenient for producing LR graph *)
 
-                 num : int,        
+                 num : int,     
                  rulenum : int,
                  precedence : int option}
 
@@ -237,7 +237,7 @@ signature LRGRAPH =
 
 signature LOOK =
     sig
-         structure Grammar : GRAMMAR
+        structure Grammar : GRAMMAR
         structure IntGrammar : INTGRAMMAR
         sharing Grammar = IntGrammar.Grammar
 
@@ -246,7 +246,7 @@ signature LOOK =
 
         val mkFuncs :  {rules : IntGrammar.rule list, nonterms : int,
                         produces : Grammar.nonterm -> IntGrammar.rule list} ->
-                             {nullable: Grammar.nonterm -> bool,
+                            {nullable: Grammar.nonterm -> bool,
                              first : Grammar.symbol list -> Grammar.term list}
 
         val prLook : (Grammar.term -> string) * (string -> unit) -> 
@@ -363,7 +363,7 @@ signature MAKE_LR_TABLE =
                LrTable.table *
               (LrTable.state -> Errs.err list) *   (* errors in a state *)
               ((string -> unit) -> LrTable.state -> unit) *
-               Errs.err list        (* list of all errors *)
+               Errs.err list    (* list of all errors *)
    end;
 
 (* SHRINK_LR_TABLE: finds unique action entry rows in the  action table

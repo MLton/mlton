@@ -460,7 +460,7 @@ structure NodePred =
                   fun parse (s: Sexp.t): t =
                      let
                         fun err () = Error.bug (Sexp.toString s)
-                     in                           
+                     in                    
                         case s of
                            Sexp.Atom s =>
                               (case s of

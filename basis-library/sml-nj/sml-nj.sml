@@ -16,7 +16,7 @@ structure SMLofNJ: SML_OF_NJ =
             val callcc = C.callcc
             fun throw k v = C.throw (k, v)
          end
-               
+         
       structure SysInfo =
          struct
             exception UNKNOWN

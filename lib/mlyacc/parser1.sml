@@ -56,7 +56,7 @@ structure LrParser :> LR_PARSER =
              (println "Parse: state stack:";
               printStack(stack, 0);
               print("       state="
-                         ^ showState state        
+                         ^ showState state      
                          ^ " next="
                          ^ showTerminal term
                          ^ " action="
@@ -87,7 +87,7 @@ structure LrParser :> LR_PARSER =
                           in error("syntax error\n",leftPos,rightPos);
                              raise ParseError
                           end
-                 | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
+               | ACCEPT => let val (_,(topvalue,_,_)) :: _ = stack
                                val (token,restLexer) = next
                            in (topvalue,Stream.cons(token,lexer))
                            end

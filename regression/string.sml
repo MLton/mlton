@@ -34,8 +34,8 @@ local
     open Char String
     val map = map'
 
-    val s1 = ""                                (* size s1 =  0 *)
-    and s2 = "ABCDE\tFGHI";                (* size s2 = 10 *)
+    val s1 = ""                         (* size s1 =  0 *)
+    and s2 = "ABCDE\tFGHI";             (* size s2 = 10 *)
     val ABCDE = List.map chr [65,66,67,68,69];  
 in
 
@@ -196,7 +196,7 @@ val test18 =
         val chars = implode l
     in tst' "test18" (fn _ => fromString(toString chars) = SOME chars) end
 
-val test19 =                        
+val test19 =                 
     let fun chkFromString (arg, res) = fromString arg = SOME (str res)
         val argResList = 
             [("A", #"A"),

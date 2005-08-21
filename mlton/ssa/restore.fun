@@ -308,7 +308,7 @@ fun restoreFunction {globals: Statement.t vector}
                              Array.update (uses, index, false)
                            end
                       else ()
-                  end        
+                  end   
               fun addUse x
                 = let 
                     val vi = varInfo x

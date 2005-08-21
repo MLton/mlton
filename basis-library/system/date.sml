@@ -60,7 +60,7 @@ structure Date :> DATE =
     (* 86400 = 24*60*6 is the number of seconds per day *)
 
     type tmoz = {tm_hour   : int,
-                 tm_isdst  : int,        (* 0 = no, 1 = yes, ~1 = don't know *)
+                 tm_isdst  : int,       (* 0 = no, 1 = yes, ~1 = don't know *)
                  tm_mday   : int,
                  tm_min    : int,
                  tm_mon    : int,
@@ -235,7 +235,7 @@ structure Date :> DATE =
                 (year-1, Dec, 31)
             else
                 loop 0 day 
-        end            
+        end         
 
     (* -------------------------------------------------- *)
 
@@ -312,7 +312,7 @@ structure Date :> DATE =
               Array.update (a, Char.ord (String.sub (validChars, i)), true));
              fn c => Array.sub (a, Char.ord c)
           end
-    in           
+    in     
        fun fmt fmtStr d =
           let
              val _ = setTmBuf (dateToTmoz d)
@@ -511,7 +511,7 @@ structure Date :> DATE =
         in 
             cmp (y1, y2, 
             fn _ => cmp (frommonth mo1, frommonth mo2, 
-            fn _ => cmp (d1, d2,                 
+            fn _ => cmp (d1, d2,                
             fn _ => cmp (h1, h2,
             fn _ => cmp (mi1, mi2,
             fn _ => cmp (s1, s2,

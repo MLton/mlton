@@ -498,7 +498,7 @@ fun closureConvert
                end
           | SOME t => t
       fun valueLambdasInfo v =
-          case Value.dest v of
+         case Value.dest v of
             Value.Lambdas l => lambdasInfo l
           | _ => Error.bug "ClosureConvert.valueLambdasInfo: non-lambda"
       val varLambdasInfo = valueLambdasInfo o value
@@ -540,10 +540,10 @@ fun closureConvert
          ("ClosureConvert.coerce", 
           Dexp.layout, Value.layout, Value.layout, Dexp.layout)
       (*       val traceCoerceTuple =
-       *          let val layoutValues = List.layout (", ", Value.layout)
-       *          in Trace.trace3 ("ClosureConvert.coerceTuple", Dexp.layout,
-       *                          layoutValues, layoutValues, Dexp.layout)
-       *          end
+       *         let val layoutValues = List.layout (", ", Value.layout)
+       *         in Trace.trace3 ("ClosureConvert.coerceTuple", Dexp.layout,
+       *                         layoutValues, layoutValues, Dexp.layout)
+       *         end
        *)
       fun coerce arg: Dexp.t =
          traceCoerce
@@ -595,7 +595,7 @@ fun closureConvert
                       end
               | _ => Error.bug "ClosureConvert.coerce") arg
       and coerceTuple arg =
-         (*         traceCoerceTuple *)
+         (*      traceCoerceTuple *)
          (fn (e: Dexp.t,
               ty: Type.t, vs: Value.t vector,
               ty': Type.t, vs': Value.t vector) =>
@@ -621,7 +621,7 @@ fun closureConvert
                        case Prim.name p of
                           Prim.Name.MLton_installSignalHandler => true
                         | _ => false)
-      (*------------------------------------*)                     
+      (*------------------------------------*)                 
       (*               apply                *)
       (*------------------------------------*)
       fun apply {func, arg, resultVal}: Dexp.t =

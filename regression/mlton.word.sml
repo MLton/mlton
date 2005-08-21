@@ -63,7 +63,7 @@ structure Z = F (open Word8 MLton.Word8
  *    (fn (w, w') =>
  *     let
  *        val _ = print (concat ["0x", Word.toString w, " ", name, " ",
- *                               "0x", Word.toString w'])
+ *                            "0x", Word.toString w'])
  *        val res = f (w, w')
  *        val _ = print (concat [" = ", Word.toString res, "\n"])
  *     in
@@ -72,14 +72,14 @@ structure Z = F (open Word8 MLton.Word8
  *    all
  * 
  * val _ = doit ("+", MLton.Word.addCheck,
- *               [(0wx7FFFFFFF, 0wx1),
- *                (0wxFFFFFFFE, 0wx1),
- *                (0wxFFFFFFFD, 0wx2),
- *                (0wxFFFFFFFF, 0wx1)])
+ *            [(0wx7FFFFFFF, 0wx1),
+ *             (0wxFFFFFFFE, 0wx1),
+ *             (0wxFFFFFFFD, 0wx2),
+ *             (0wxFFFFFFFF, 0wx1)])
  * 
  * val _ = doit ("*", MLton.Word.mulCheck,
- *               [(0wxFFFFFFFF, 0wx1),
- *                (0wx7FFFFFFF, 0wx2),
- *                (0wx80000000, 0wx2),
- *                (0wxFFFFFFFF, 0wx2)])
+ *            [(0wxFFFFFFFF, 0wx1),
+ *             (0wx7FFFFFFF, 0wx2),
+ *             (0wx80000000, 0wx2),
+ *             (0wxFFFFFFFF, 0wx2)])
  *)

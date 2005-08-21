@@ -31,7 +31,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
     val lineLength : int = 70
 
     (* record type describing names of structures in the program being
-         generated *)
+        generated *)
 
     datatype names = NAMES 
                         of {miscStruct : string,  (* Misc{n} struct name *)
@@ -47,7 +47,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                                                 (* which holds parser data *)
                             dataSig:string (* signature for this structure *)
                                         
-                             }
+                            }
 
     val DEBUG = true
     exception Semantic
@@ -83,7 +83,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                           tokenInfo : string option}
                           
     structure SymbolHash = Hash(type elem = string
-                                    val gt = (op >) : string*string -> bool)
+                                val gt = (op >) : string*string -> bool)
 
     structure TermTable = Table(type key = Grammar.term
                                 val gt = fn (T i,T j) => i > j)
@@ -315,7 +315,7 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
                                    PAPP(valueStruct^"."^ntvoid,
                                         PVAR symNum)
                               else WILD)
-                           else        
+                           else 
                                PAPP(valueStruct^"."^symString,
                                  if num=1 andalso pureActions
                                      then AS(symNum,PVAR symString)
@@ -396,7 +396,7 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
                    (printCase(rulenum,rule); say "| ")) rules;
              sayln "_ => raise (mlyAction i392)")
 
-           in say "structure ";
+        in say "structure ";
            say actionsStruct;
            sayln " =";
            sayln "struct ";
@@ -797,7 +797,7 @@ precedences of the rule and the terminal are equal.
         val entries = ref 0 (* save number of action table entries here *)
         
     in  let val result = TextIO.openOut (spec ^ ".sml")
-             val sigs = TextIO.openOut (spec ^ ".sig")
+            val sigs = TextIO.openOut (spec ^ ".sig")
             val pos = ref 0
             val pr = fn s => TextIO.output(result,s)
             val say = fn s => let val l = String.size s
@@ -819,7 +819,7 @@ precedences of the rule and the terminal are equal.
                         in f 0
                         end
             val values = VALS {say=say,sayln=sayln,saydot=saydot,
-                                termvoid=termvoid, ntvoid = ntvoid,
+                               termvoid=termvoid, ntvoid = ntvoid,
                                hasType=hasType, pos_type = pos_type,
                                arg_type = #2 arg_decl,
                                start=start,pureActions=pureActions,

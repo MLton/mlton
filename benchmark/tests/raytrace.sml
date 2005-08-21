@@ -632,13 +632,13 @@ end
 
 type int = Int.int
 fun makeLexer (yyinput: int -> string) =
-let        val yygone0:int=1
-        val yyb = ref "\n"                 (* buffer *)
-        val yybl: int ref = ref 1                (*buffer length *)
-        val yybufpos: int ref = ref 1                (* location of next character to use *)
-        val yygone: int ref = ref yygone0        (* position in file of beginning of buffer *)
-        val yydone = ref false                (* eof found yet? *)
-        val yybegin: int ref = ref 1                (*Current 'start state' for lexer *)
+let     val yygone0:int=1
+        val yyb = ref "\n"              (* buffer *)
+        val yybl: int ref = ref 1               (*buffer length *)
+        val yybufpos: int ref = ref 1           (* location of next character to use *)
+        val yygone: int ref = ref yygone0       (* position in file of beginning of buffer *)
+        val yydone = ref false          (* eof found yet? *)
+        val yybegin: int ref = ref 1            (*Current 'start state' for lexer *)
 
         val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
                  yybegin := x
@@ -693,7 +693,7 @@ let fun continue() : Internal.result =
         in if l = !yybl then
              if trans = #trans(Vector.sub(Internal.tab,0))
                then action(l,NewAcceptingLeaves
-) else            let val newchars= if !yydone then "" else yyinput 1024
+) else      let val newchars= if !yydone then "" else yyinput 1024
             in if (String.size newchars)=0
                   then (yydone := true;
                         if (l=i0) then UserDeclarations.eof yyarg
@@ -1920,7 +1920,7 @@ fun normal (kind, m, x', x) =
          orelse abs_float (#3 x') - 1.0 < epsilon
          then nz
       else if abs_float (#1 x') < epsilon
-               orelse abs_float (#1 x') - 1.0 < epsilon
+              orelse abs_float (#1 x') - 1.0 < epsilon
               then nx
            else ny
   | SPlane (_, n) =>

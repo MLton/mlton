@@ -50,7 +50,7 @@ associated with each accepting state passed through.
                     executes the action function.
                         (a) - if it is past the end of the buffer, it 
                                 (1) checks if it as at end eof.  If it is then:
-                                         It checks to see if it has made any
+                                        It checks to see if it has made any
                                         transitions since it was first called -
                                         (l>i0 when this is true.)  If it hasn't
                                         this implies that scan was called at
@@ -69,7 +69,7 @@ associated with each accepting state passed through.
                                     applications, the buffer update operation
                                     will be fine.
 
-                                      This buffer update operation requires
+                                    This buffer update operation requires
                                     O(n^2/1024) char. copies for lexemes > 1024
                                     characters in length, and O(n) char. copies 
                                     for lexemes <= 1024 characters in length.

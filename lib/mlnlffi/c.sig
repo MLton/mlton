@@ -54,8 +54,8 @@ signature C = sig
      *     look like in practice)
      *)
     (* pointer to 'o *)
-    type 'o ptr        
-    (* light-weight alternative *)                        
+    type 'o ptr 
+    (* light-weight alternative *)                      
     eqtype 'o ptr'
 
     (* 'n-sized array with 't elements *)

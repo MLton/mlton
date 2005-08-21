@@ -131,7 +131,7 @@ val g = array(203, 9999999);
 val _ = copy{src=e, si=0, dst=g, di=0, len=NONE};
 
 val test10a = tst' "test10a" (fn () => ev = extract(e, 0, SOME (length e)) 
-                       andalso ev = extract(e, 0, NONE));
+                      andalso ev = extract(e, 0, NONE));
 val test10b = tst' "test10b" (fn () => ev = extract(g, 0, SOME (length g))
                       andalso ev = extract(g, 0, NONE));
 

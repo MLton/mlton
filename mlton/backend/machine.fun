@@ -541,14 +541,14 @@ structure Transfer =
          end
 
        fun foldOperands (t, ac, f) =
-          case t of
-             Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
-           | CCall {args, ...} => Vector.fold (args, ac, f)
-           | Switch s =>
+         case t of
+            Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
+          | CCall {args, ...} => Vector.fold (args, ac, f)
+          | Switch s =>
                Switch.foldLabelUse
                (s, ac, {label = fn (_, a) => a,
                         use = f})
-           | _ => ac
+          | _ => ac
 
        fun foldDefs (t, a, f) =
          case t of

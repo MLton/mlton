@@ -761,7 +761,7 @@ val _ =
    for (fn r =>
         let
            val {whole, frac} = split r
-            val _ =
+           val _ =
               if false
                  then
                     print (concat ["split ", exact r, " = {whole = ",

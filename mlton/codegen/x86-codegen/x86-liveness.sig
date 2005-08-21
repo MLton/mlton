@@ -95,7 +95,7 @@ signature X86_LIVENESS =
         val verifyLivenessBlock : {block: t,
                                    liveInfo: LiveInfo.t} -> bool
         val verifyLivenessBlock_msg : unit -> unit
-        val toBlock : {block: t} -> x86.Block.t          
+        val toBlock : {block: t} -> x86.Block.t   
         val toBlock_msg : unit -> unit
       end
   end

@@ -55,7 +55,7 @@ structure Thread:
             val unlock: t -> unit
          end
       structure Condition:
-               sig
+         sig
             type t
                
             val new: unit -> t

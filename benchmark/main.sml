@@ -518,7 +518,7 @@ fun main args =
                               else
                                  let
                                     val rows = rows toStringHtml
-                                 in                                          
+                                 in                                       
                                     prow (hd rows)
                                     ; (List.foreach
                                        (tl rows,

@@ -858,7 +858,7 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
       val openOutstreams : (outstream * {close: bool}) list ref = ref []
 
       val mkOutstream'' =
-         let        
+         let    
             val _ = Cleaner.addNew
                (Cleaner.atExit, fn () =>
                 List.app (fn (os, {close}) =>

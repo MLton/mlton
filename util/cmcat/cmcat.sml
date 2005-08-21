@@ -13,7 +13,7 @@
  * CMcat.cmcat {comments = true,
  *              defines = [],
  *              sources = "sources.cm",
- *                out = TextIO.stdOut}
+ *              out = TextIO.stdOut}
  *
  * Before using from the shell, you must do the following, where <smlnj> is
  * the root directory of the SML/NJ installation.  You may need to be root in
@@ -414,7 +414,7 @@ struct
                                                env = env') of
                                             NONE => raise Fail (concat ["lhs: ", lhs, " violates ENV_TYPE"])
                                           | SOME (T {syms, ...}) => syms
-                                      end        
+                                      end       
                                    val symsSyms =
                                       let val hash = String.hash syms
                                       in
@@ -503,7 +503,7 @@ struct
                                       T {hash = hash,
                                          lhs = (srcdescr, lhs),
                                          syms = syms}
-                                in        
+                                in      
                                    HashSet.insertIfNew
                                    (symsNodesDefs, hash, fn T {lhs = (srcdescr',lhs'), ...} =>
                                     SrcDescr.equals(srcdescr, srcdescr') andalso

@@ -60,12 +60,12 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
                             in {nodes=nodes,
                                 edges=Array.fromList (rev edge_list),
                                 nodeArray = Array.fromList nodes
-                                 }
+                                }
                             end
                          | f (nodes,node_list,edge_list,nil,y,num) =
                                 f (nodes,node_list,edge_list,rev y,nil,num)
                          | f (nodes,node_list,edge_list,h::t,y,num) =
-                                 let val (nodes,edges,future,num) =
+                                let val (nodes,edges,future,num) =
                                    List.foldr add_goto (nodes,[],y,num) (shifts h)
                                 in f (nodes,h::node_list,
                                        edges::edge_list,t,future,num)
@@ -76,7 +76,7 @@ functor mkGraph(structure IntGrammar : INTGRAMMAR
                         val initialItemList = map makeItem (produces start)
                         val orderedItemList =
                            List.foldr Core.insert [] initialItemList
-                         val initial = CORE (orderedItemList,0)
+                        val initial = CORE (orderedItemList,0)
                    in f(empty,nil,nil,[initial],nil,1)
                    end,
                    produces=produces,

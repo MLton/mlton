@@ -102,7 +102,7 @@ struct
                      else (print "verifyJumpInfo: ";
                            print (Label.toString label);
                            print "\n";
-                           print "jumpInfo: ";        
+                           print "jumpInfo: ";  
                            print (status_toString (getNear(jumpInfo, label)));
                            print "\n";
                            print "jumpInfo': ";

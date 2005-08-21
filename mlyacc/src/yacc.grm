@@ -12,7 +12,7 @@ open Hdr
 %left  ASTERISK
 %pos int
 
-%term        ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON | 
+%term   ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON | 
         COMMA | DELIMITER | EOF | FOR |
         HEADER of string | ID of string*int | IDDOT of string |
         PERCENT_HEADER | INT of string | KEYWORD | LBRACE | LPAREN |
@@ -28,8 +28,8 @@ open Hdr
         BEGIN of string * Hdr.declData * (Hdr.rule list) |
         CONSTR_LIST of (Hdr.symbol * Hdr.ty option) list |
         ID_LIST of Hdr.symbol list |
-         LABEL of string |
-         MPC_DECL of Hdr.declData |
+        LABEL of string |
+        MPC_DECL of Hdr.declData |
         MPC_DECLS of Hdr.declData |
         QUAL_ID of string |
         RECORD_LIST of string |
@@ -42,7 +42,7 @@ open Hdr
         SUBST_DEC of (Hdr.symbol list * Hdr.symbol list) |
         CHANGE_DECL of (Hdr.symbol list * Hdr.symbol list) list |
         CHANGE_DEC of (Hdr.symbol list * Hdr.symbol list) |
-         TY of string
+        TY of string
 %header (
 functor MlyaccLrValsFun(structure Hdr : HEADER
                           where type prec = Header.prec
@@ -85,12 +85,12 @@ MPC_DECL: TERM CONSTR_LIST
         | PERCENT_EOP ID_LIST
              (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,
                 eop=ID_LIST, change=nil,keyword=nil,
-                 value=nil})
+                value=nil})
 
         | KEYWORD ID_LIST
              (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
                 change=nil,keyword=ID_LIST,
-                 value=nil})
+                value=nil})
 
         | PREFER ID_LIST
              (DECL {prec=nil,control=nil,nonterm=NONE,term=NONE,eop=nil,
@@ -182,15 +182,15 @@ CONSTR_LIST : CONSTR_LIST BAR ID OF TY
 
 G_RULE : ID COLON RHS_LIST
         (map (fn {rhs,code,prec} =>
-                      Hdr.RULE {lhs=symbolMake ID,rhs=rhs,
+                  Hdr.RULE {lhs=symbolMake ID,rhs=rhs,
                                code=code,prec=prec})
          RHS_LIST)
 
 G_RULE_LIST:  G_RULE_LIST G_RULE (G_RULE@G_RULE_LIST)
-        |   G_RULE         (G_RULE)
+        |   G_RULE       (G_RULE)
 
 ID_LIST : ID ID_LIST (symbolMake ID :: ID_LIST)
-        |          (nil)
+        |        (nil)
 
 RHS_LIST : ID_LIST G_RULE_PREC PROG
             ([{rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}])
@@ -199,7 +199,7 @@ RHS_LIST : ID_LIST G_RULE_PREC PROG
             ({rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}::RHS_LIST)
 
 TY : TYVAR
-         (TYVAR)
+        (TYVAR)
    | LBRACE RECORD_LIST RBRACE
         ("{ "^RECORD_LIST^" } ")
    | LBRACE RBRACE
@@ -220,7 +220,7 @@ RECORD_LIST : RECORD_LIST COMMA LABEL COLON TY
            | LABEL COLON TY
                 (LABEL^":"^TY)
 
-QUAL_ID : ID        ((fn (a,_) => a) ID)
+QUAL_ID : ID    ((fn (a,_) => a) ID)
        | IDDOT QUAL_ID (IDDOT^QUAL_ID)
          
 LABEL : ID  ((fn (a,_) => a) ID)

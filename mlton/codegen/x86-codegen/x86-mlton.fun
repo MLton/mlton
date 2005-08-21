@@ -546,7 +546,7 @@ struct
                                transfer = NONE}]
                  | NONE => AppendList.fromList
                            [Block.mkBlock'
-                            {entry = NONE,        
+                            {entry = NONE,      
                              statements
                              = [Assembly.instruction_cmp
                                 {src1 = src1,
@@ -664,7 +664,7 @@ struct
                 = Assert.assert
                   ("x86MLton.prim: flogarithm, dstsize/srcsize",
                    fn () => srcsize = dstsize)
-            in        
+            in  
               AppendList.fromList
               [Block.mkBlock'
                {entry = NONE,
@@ -730,7 +730,7 @@ struct
         [comment_begin,
          (case Prim.name prim of
              FFI_Symbol {name, ...}
-             => let        
+             => let     
                    val (dst,dstsize) = getDst1 ()
                 in
                    AppendList.fromList
@@ -957,7 +957,7 @@ struct
                         size = dstsize}],
                     transfer = NONE}]
                 end
-              | Real_Math_ln _ => flogarithm Instruction.LN2
+             | Real_Math_ln _ => flogarithm Instruction.LN2
              | Real_Math_log10 _ => flogarithm Instruction.LG2
              | Real_Math_sin _ => funa Instruction.FSIN
              | Real_Math_sqrt _ => funa Instruction.FSQRT
@@ -1155,7 +1155,7 @@ struct
                            srcsize = srcsize,
                            dstsize = dstsize}],
                        transfer = NONE}]
-                in        
+                in      
                    case (s, s') of
                       (R64, R64) => mov ()
                     | (R64, R32) => xvom ()
@@ -1475,7 +1475,7 @@ struct
         fun check (statements, condition)
           = AppendList.single
             (x86.Block.mkBlock'
-             {entry = NONE,        
+             {entry = NONE,     
               statements = statements,
               transfer = SOME (x86.Transfer.iff
                                {condition = condition,
@@ -1566,30 +1566,30 @@ struct
                        size = dst2size}],
                      condition)
             end
-         fun pmd (oper: x86.Instruction.md, condition)
-            = let
+        fun pmd (oper: x86.Instruction.md, condition)
+          = let
               val (dst, dstsize) = getDst1 ()
               val ((src1, src1size), (src2, src2size)) = getSrc2 ()
               val _ = Assert.assert
                       ("x86MLton.arith: pmd, dstsize/src1size/src2size",
                        fn () => src1size = dstsize andalso src2size = dstsize)
-               (* Reverse src1/src2 when src1 and src2 are
-                * temporaries and the oper is commutative. 
-                *)
-               val (src1, src2)
-                 = if oper = x86.Instruction.MUL
-                     then case (x86.Operand.deMemloc src1,
-                                x86.Operand.deMemloc src2)
-                            of (SOME memloc_src1, SOME memloc_src2)
-                             => if x86Liveness.track memloc_src1
-                                   andalso
-                                   x86Liveness.track memloc_src2
-                                  then (src2,src1)
-                                  else (src1,src2)
-                             | _ => (src1,src2)
-                     else (src1,src2)
-             in
-               check ([Assembly.instruction_mov
+              (* Reverse src1/src2 when src1 and src2 are
+               * temporaries and the oper is commutative. 
+               *)
+              val (src1, src2)
+                = if oper = x86.Instruction.MUL
+                    then case (x86.Operand.deMemloc src1,
+                               x86.Operand.deMemloc src2)
+                           of (SOME memloc_src1, SOME memloc_src2)
+                            => if x86Liveness.track memloc_src1
+                                  andalso
+                                  x86Liveness.track memloc_src2
+                                 then (src2,src1)
+                                 else (src1,src2)
+                            | _ => (src1,src2)
+                    else (src1,src2)
+            in
+              check ([Assembly.instruction_mov
                       {dst = dst,
                        src = src1,
                        size = dstsize},
@@ -1599,7 +1599,7 @@ struct
                        src = src2,
                        size = dstsize}],
                      condition)
-             end
+            end
         fun unal (oper: x86.Instruction.unal, condition)
           = let
               val (dst, dstsize) = getDst1 ()

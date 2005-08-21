@@ -19,10 +19,10 @@ typedef W32 Header;
 
 /*
  * Header word bits look as follows:
- * 31                mark bit
- * 30 - 20        counter bits
- * 19 - 1        type index bits
- * 0                1
+ * 31           mark bit
+ * 30 - 20      counter bits
+ * 19 - 1       type index bits
+ * 0            1
  *
  * The mark bit is used by the mark compact GC and GC_size to mark an object
  * as reachable.  The counter bits are used during the mark phase in conjunction
@@ -54,27 +54,27 @@ typedef W32 Header;
 /* Sizes are (almost) always measured in bytes. */
 enum {
         BOGUS_POINTER =         0x1,
-        WORD_SIZE =                 4,
-        COUNTER_MASK =                0x7FF00000,
-        COUNTER_SHIFT =                20,
-        GC_ARRAY_HEADER_SIZE =         3 * WORD_SIZE,
-        GC_NORMAL_HEADER_SIZE =        WORD_SIZE,
-        TYPE_INDEX_BITS =        19,
-        TYPE_INDEX_MASK =        0x000FFFFE,
-        LIMIT_SLOP =                 512,
-        MARK_MASK =                0x80000000,
-        POINTER_SIZE =                WORD_SIZE,
+        WORD_SIZE =             4,
+        COUNTER_MASK =          0x7FF00000,
+        COUNTER_SHIFT =         20,
+        GC_ARRAY_HEADER_SIZE =  3 * WORD_SIZE,
+        GC_NORMAL_HEADER_SIZE = WORD_SIZE,
+        TYPE_INDEX_BITS =       19,
+        TYPE_INDEX_MASK =       0x000FFFFE,
+        LIMIT_SLOP =            512,
+        MARK_MASK =             0x80000000,
+        POINTER_SIZE =          WORD_SIZE,
         SOURCES_INDEX_UNKNOWN = 0,
-        SOURCES_INDEX_GC =        1,
+        SOURCES_INDEX_GC =      1,
         SOURCE_SEQ_GC =         1,
-        SOURCE_SEQ_UNKNOWN =         0,
+        SOURCE_SEQ_UNKNOWN =    0,
         /* The type indices here must agree with those in
          * backend/rep-type.fun.
          */
-        STACK_TYPE_INDEX =        0,
-        STRING_TYPE_INDEX =         1,
-        THREAD_TYPE_INDEX =        2,
-        WEAK_GONE_TYPE_INDEX =         3,
+        STACK_TYPE_INDEX =      0,
+        STRING_TYPE_INDEX =     1,
+        THREAD_TYPE_INDEX =     2,
+        WEAK_GONE_TYPE_INDEX =  3,
         WORD8_VECTOR_TYPE_INDEX = STRING_TYPE_INDEX,
         WORD32_VECTOR_TYPE_INDEX = 4,
         WORD16_VECTOR_TYPE_INDEX = 5,
@@ -125,14 +125,14 @@ typedef enum {
  * IntInf.int whose value corresponds to the mlstr string.
  *
  * The strings pointed to by the mlstr fields consist of
- *        an optional ~
- *        either one or more of [0-9] or
- *                0x followed by one or more of [0-9a-fA-F]
- *        a trailing EOS
+ *      an optional ~
+ *      either one or more of [0-9] or
+ *              0x followed by one or more of [0-9a-fA-F]
+ *      a trailing EOS
  */
 struct GC_intInfInit {
-        uint        globalIndex;
-        char        *mlstr;
+        uint    globalIndex;
+        char    *mlstr;
 };
 
 /* GC_init allocates a collection of arrays/vectors in the heap. */
@@ -185,7 +185,7 @@ typedef struct GC_ObjectHashTable {
 /*                     GC_stack                      */
 /* ------------------------------------------------- */
 
-typedef struct GC_stack {        
+typedef struct GC_stack {       
         /* markTop and markIndex are only used during marking.  They record the
          * current pointer in the stack that is being followed.  markTop points
          * to the top of the stack frame containing the pointer and markI is the
@@ -202,7 +202,7 @@ typedef struct GC_stack {
         /* used is the number of bytes in use by the stack.  
          * Stacks with used == reserved are continuations.
          */
-        uint used;        
+        uint used;      
         /* The next address is the bottom of the stack, and the following
          * reserved bytes hold space for the stack.
          */
@@ -219,13 +219,13 @@ typedef struct GC_thread {
          * Furthermore, the exnStack field must be first, because the native
          * codegen depends on this (which is bad and should be fixed).
          */
-        uint exnStack;            /* An offset added to stackBottom that specifies 
+        uint exnStack;          /* An offset added to stackBottom that specifies 
                                  * where the top of the exnStack is.
                                  */
         uint bytesNeeded;       /* The number of bytes needed when returning
                                  * to this thread.
                                  */
-        GC_stack stack;                /* The stack for this thread. */
+        GC_stack stack;         /* The stack for this thread. */
 } *GC_thread;
 
 /* ------------------------------------------------- */
@@ -319,7 +319,7 @@ typedef struct GC_profile {
 
 typedef struct GC_heap {
         uint size;
-        pointer start;                /* start of memory area */
+        pointer start;          /* start of memory area */
 } *GC_heap;
 
 /* ------------------------------------------------- */
@@ -338,22 +338,22 @@ typedef struct GC_state {
         /* These fields are at the front because they are the most commonly
          * referenced, and having them at smaller offsets may decrease code size.
          */
-        pointer frontier;         /* base <= frontier < limit */
-        pointer limit;                 /* end of from space */
+        pointer frontier;       /* base <= frontier < limit */
+        pointer limit;          /* end of from space */
         pointer stackTop;
-        pointer stackLimit;        /* stackBottom + stackSize - maxFrameSize */
+        pointer stackLimit;     /* stackBottom + stackSize - maxFrameSize */
         uint exnStack;
 
-        uint alignment;                /* Either WORD_SIZE or 2 * WORD_SIZE. */
+        uint alignment;         /* Either WORD_SIZE or 2 * WORD_SIZE. */
         bool amInGC;
         bool amInMinorGC;
-        string *atMLtons;        /* Initial @MLton args, processed before command
+        string *atMLtons;       /* Initial @MLton args, processed before command
                                  * line.
                                  */
         int atMLtonsSize;
-        pointer back;             /* Points at next available word in toSpace. */
+        pointer back;           /* Points at next available word in toSpace. */
         ullong bytesAllocated;
-         ullong bytesCopied;
+        ullong bytesCopied;
         ullong bytesCopiedMinor;
         ullong bytesHashConsed;
         int bytesLive; /* Number of bytes live at most recent major GC. */
@@ -366,7 +366,7 @@ typedef struct GC_state {
         uint cardSize;
         uint cardSizeLog2;
         /* Only use generational GC with copying collection if the ratio of 
-          * semispace size to live data size is below copyGenerationalRatio.
+         * semispace size to live data size is below copyGenerationalRatio.
          */
         float copyGenerationalRatio;
         float copyRatio;        /* Minimum live ratio to use copying GC. */
@@ -377,7 +377,7 @@ typedef struct GC_state {
          */
         uint crossMapValidSize;
         GC_thread currentThread; /* This points to a thread in the heap. */
-        uint fixedHeap;        /* If 0, then no fixed heap. */
+        uint fixedHeap; /* If 0, then no fixed heap. */
         GC_frameLayout *frameLayouts;
         uint frameLayoutsSize;
         /* frameSources is an array of length frameLayoutsSize that for each
@@ -394,12 +394,12 @@ typedef struct GC_state {
         Bool hashConsDuringGC;
         float hashConsFrequency;  /* What fraction of GC's should hash cons. */
         struct GC_heap heap;
-        struct GC_heap heap2;        /* Used for major copying collection. */
-        bool inSignalHandler;         /* TRUE iff a signal handler is running. */
+        struct GC_heap heap2;   /* Used for major copying collection. */
+        bool inSignalHandler;   /* TRUE iff a signal handler is running. */
         struct GC_intInfInit *intInfInits;
         uint intInfInitsSize;
         /* canHandle == 0 iff GC may switch to the signal handler
-          * thread.  This is used to implement critical sections.
+         * thread.  This is used to implement critical sections.
          */
         volatile int canHandle;
         bool isOriginal;
@@ -413,14 +413,14 @@ typedef struct GC_state {
         float markCompactRatio; 
         ullong markedCards; /* Number of marked cards seen during minor GCs. */
         /* Only use generational GC with mark-compact collection if the ratio of 
-          * heap size to live data size is below markCompactGenerationalRatio.
+         * heap size to live data size is below markCompactGenerationalRatio.
          */
         float markCompactGenerationalRatio;
         uint maxBytesLive;
         uint maxFrameSize;
         uint maxHeap; /* if zero, then unlimited, else limit total heap */
         uint maxHeapSizeSeen;
-        uint maxPause;                /* max time spent in any gc in milliseconds. */
+        uint maxPause;          /* max time spent in any gc in milliseconds. */
         uint maxStackSizeSeen;
         bool mayLoadWorld;
         bool mayProcessAtMLton;
@@ -429,9 +429,9 @@ typedef struct GC_state {
         ullong minorBytesSkipped;
         bool mutatorMarksCards;
         uint numCopyingGCs;
-         ullong numLCs;
+        ullong numLCs;
         uint numHashConsGCs;
-         uint numMarkCompactGCs;
+        uint numMarkCompactGCs;
         uint numMinorGCs;
         uint numMinorsSinceLastMajor;
         /* As long as the ratio of bytes live to nursery size is greater than
@@ -449,14 +449,14 @@ typedef struct GC_state {
         uint oldGenSize;
         uint pageSize; /* bytes */
         GC_profile profile;
-         ProfileKind profileKind;
+        ProfileKind profileKind;
         bool profileStack;
         bool profilingIsOn;
         W32 ram;                /* ramSlop * totalRam */
         W32 (*returnAddressToFrameIndex) (W32 w);
         float ramSlop;
         bool rusageIsEnabled;
-         struct rusage ru_gc; /* total resource usage spent in gc */
+        struct rusage ru_gc; /* total resource usage spent in gc */
         struct rusage ru_gcCopy; /* resource usage in major copying gcs. */
         struct rusage ru_gcMarkCompact; /* resource usage in mark-compact gcs. */
         struct rusage ru_gcMinor; /* resource usage in minor gcs. */
@@ -498,7 +498,7 @@ typedef struct GC_state {
         struct GC_source *sources;
         uint sourcesSize;
         pointer stackBottom; /* The bottom of the stack in the current thread. */
-         uint startTime; /* The time when GC_init or GC_loadWorld was called. */
+        uint startTime; /* The time when GC_init or GC_loadWorld was called. */
         /* If summary is TRUE, then print a summary of gc info when the program 
          * is done .
          */
@@ -512,16 +512,16 @@ typedef struct GC_state {
         float threadShrinkRatio;
         pointer toSpace;        /* used during copying */
         pointer toLimit;        /* used during copying */
-        uint totalRam;                /* bytes */
-        uint translateDiff;        /* used by translateHeap */
-         bool translateUp;        /* used by translateHeap */
+        uint totalRam;          /* bytes */
+        uint translateDiff;     /* used by translateHeap */
+        bool translateUp;       /* used by translateHeap */
         struct GC_vectorInit *vectorInits;
         uint vectorInitsSize;
         GC_weak weaks;
 } *GC_state;
 
 static inline uint wordAlign(uint p) {
-         return ((p + 3) & ~ 3);
+        return ((p + 3) & ~ 3);
 }
 
 static inline bool isWordAligned(uint x) {

@@ -10,7 +10,7 @@ type word = Word.t
 
 functor BitVectorSet (Element : sig 
                                   include T
-                                     val fromInt: int -> t
+                                  val fromInt: int -> t
                                   val size: int
                                   val toInt: t -> int
                                 end) : SET =

@@ -39,5 +39,5 @@ Cstring Posix_FileSys_Dirstream_readdir (Cpointer d) {
 void Posix_FileSys_Dirstream_rewinddir (Cpointer p) {
         if (DEBUG_DIRSTREAM)
                 fprintf (stderr, "rewinddir (0x%08x)\n", (uint)p);
-               rewinddir ((DIR *) p);
+        rewinddir ((DIR *) p);
 }

@@ -55,7 +55,7 @@ end = struct
         val to   = W.fromLargeInt o I.toLarge
         val from = I.fromLarge o W.toLargeIntX
         fun bop f (x, y) = from (f (to x, to y)) (* binary op *)
-        fun uop f x = from (f (to x))                 (* unary op *)
+        fun uop f x = from (f (to x))            (* unary op *)
         fun sop f (x, y) = from (f (to x, y))    (* shift-like op *)
         fun cop f (x, y) = f (to x, to y)        (* comparison-like op *)
     in

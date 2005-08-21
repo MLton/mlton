@@ -31,5 +31,5 @@ modules/
         contains tests of the module system.
 
 nonterminate/
-         contains tests that should compile, but when run, should not terminate.
+        contains tests that should compile, but when run, should not terminate.
 

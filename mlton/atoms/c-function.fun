@@ -183,7 +183,7 @@ fun cPointerType (T {convention, prototype = (args, return), ...}) =
    in
       concat
       ["(", return, attributes, 
-       "(*)(",              
+       "(*)(",       
        concat (List.separate (Vector.toListMap (args, arg), ", ")),
        "))"]
    end

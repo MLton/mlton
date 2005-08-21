@@ -1578,7 +1578,7 @@ struct
                              then {register = register,
                                    memloc = memloc,
                                    weight = weight,
-                                   sync = sync,                                   
+                                   sync = sync,                            
                                    commit = REMOVE 0}
                              else value,
                  registerAllocation = registerAllocation}
@@ -4918,7 +4918,7 @@ struct
                           fltrename,
                           registerAllocation}
                        = allocateFltStackOperands'
-                           {fltregister_top = fltregister_top,
+                         {fltregister_top = fltregister_top,
                           fltregister_one = fltregister_one,
                           registerAllocation = registerAllocation}
                    in
@@ -6266,7 +6266,7 @@ struct
                                     assembly_src],
                                  registerAllocation = registerAllocation}
                               end
-                          else let
+                         else let
                                 val {operand = final_src, 
                                      assembly = assembly_src,
                                      registerAllocation}
@@ -6568,7 +6568,7 @@ struct
                     {assembly 
                      = AppendList.appends
                        [assembly_pre,
-                        assembly_src,        
+                        assembly_src,   
                         assembly_dst,
                         AppendList.single
                         (Assembly.instruction instruction),
@@ -8250,7 +8250,7 @@ struct
                    registerAllocation = registerAllocation}
                 end
              | XCHG {src, dst, size}
-                      (* Exchange register/memory with register; p. 754
+               (* Exchange register/memory with register; p. 754
                 * Require src/dst operands as follows:
                 *
                 *              dst
@@ -8313,7 +8313,7 @@ struct
                    registerAllocation = registerAllocation}
                 end
              | pPUSH {src, base, size}
-                 (* Pseudo push a value onto the stack; p. 621
+               (* Pseudo push a value onto the stack; p. 621
                 * Require src operand as follows:
                 *
                 *               src
@@ -8703,7 +8703,7 @@ struct
                    = AppendList.appends 
                      [assembly_pre,
                       assembly_src,
-                      assembly_dst,        
+                      assembly_dst,     
                       AppendList.single
                       (Assembly.instruction instruction),
                       assembly_post],
@@ -8758,7 +8758,7 @@ struct
                                                      address = false},
                                           info = info,
                                           size = size,
-                                          move = false,        
+                                          move = false, 
                                           supports = [],
                                           saves = [src,final_src],
                                           force = [],
@@ -8889,7 +8889,7 @@ struct
                                                      address = true},
                                           info = info,
                                           size = srcsize,
-                                          move = true,        
+                                          move = true,  
                                           supports = [dst],
                                           saves = [],
                                           force = [],
@@ -8904,7 +8904,7 @@ struct
                                                         address = false},
                                              info = info,
                                              size = dstsize,
-                                             move = false,        
+                                             move = false,      
                                              supports = [],
                                              saves = [src,final_src],
                                              top = NONE,
@@ -9206,7 +9206,7 @@ struct
                                                    address = false},
                                         info = info,
                                         size = size,
-                                        move = true,        
+                                        move = true,    
                                         supports = [],
                                         saves = [src2,final_src2],
                                         top = SOME true,
@@ -9444,7 +9444,7 @@ struct
                                                    address = false},
                                         info = info,
                                         size = size,
-                                        move = true,        
+                                        move = true,    
                                         supports = [],
                                         saves = [src2,final_src2],
                                         top = SOME true,
@@ -9621,7 +9621,7 @@ struct
                 *   * one of src,dst must be st(0)
                 *
                 * Require size modifier class as follows: FLT
-                *)                
+                *)              
              => let
                   val {uses,defs,kills} 
                     = Instruction.uses_defs_kills instruction
@@ -9680,7 +9680,7 @@ struct
                                                      address = true},
                                           info = info,
                                           size = size,
-                                          move = true,        
+                                          move = true,  
                                           supports = [dst],
                                           saves = [],
                                           top = SOME false,
@@ -9728,7 +9728,7 @@ struct
                                                           address = false},
                                                        info = info,
                                                        size = size,
-                                                       move = true,        
+                                                       move = true,     
                                                        supports = [],
                                                        saves = [src,final_src],
                                                        top = SOME true,
@@ -9783,7 +9783,7 @@ struct
                                                      address = false},
                                           info = info,
                                           size = size,
-                                          move = true,        
+                                          move = true,  
                                           supports = [],
                                           saves = [dst,final_dst],
                                           top = SOME true,
@@ -9835,7 +9835,7 @@ struct
                                                      address = false},
                                           info = info,
                                           size = size,
-                                          move = true,        
+                                          move = true,  
                                           supports = [],
                                           saves = [dst,final_dst],
                                           top = SOME false,
@@ -9911,7 +9911,7 @@ struct
                                                      address = false},
                                           info = info,
                                           size = size,
-                                          move = true,        
+                                          move = true,  
                                           supports = [],
                                           saves = [dst,final_dst],
                                           top = SOME true,
@@ -10085,7 +10085,7 @@ struct
                 *   * only st(0)
                 *
                 * Require size modifier class as follows: FLT
-                *)                
+                *)              
              => let
                   val {uses,defs,kills} 
                     = Instruction.uses_defs_kills instruction
@@ -10151,7 +10151,7 @@ struct
                 *
                 * Require size modifier class as follows: FLT
                 * Automatically pushes 1.0 onto stack.
-                *)                
+                *)              
              => let
                   val {uses,defs,kills} 
                     = Instruction.uses_defs_kills instruction
@@ -10238,7 +10238,7 @@ struct
                 *   * only st(0)
                 *
                 * Require size modifier class as follows: FLT
-                *)                
+                *)              
              => let
                   val {uses,defs,kills} 
                     = Instruction.uses_defs_kills instruction
@@ -10310,7 +10310,7 @@ struct
                 *   * only st(1)
                 *
                 * Require size modifier class as follows: FLT
-                *)                
+                *)              
              => let
                   val {uses,defs,kills} 
                     = Instruction.uses_defs_kills instruction
@@ -10331,7 +10331,7 @@ struct
                        operand_one = dst,
                        move_one = true,
                        size_one = size,
-                       info = info,        
+                       info = info,     
                        supports = [],
                        saves = [],
                        registerAllocation = registerAllocation}
@@ -10671,7 +10671,7 @@ struct
 
       fun allocateRegisters {assembly: (t * Liveness.t) list,
                              registerAllocation: RegisterAllocation.t}
-         = let
+        = let
             val {assembly, registerAllocation}
               = List.fold
                 (assembly,

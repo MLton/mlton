@@ -454,8 +454,8 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
             | _ => t
            end))
       val simplifyType =
-          Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
-          simplifyType
+         Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
+         simplifyType
       fun simplifyTypes ts = Vector.map (ts, simplifyType)
       val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
       (* Simplify constructor argument types. *)
@@ -644,7 +644,7 @@ fun simplify (Program.T {datatypes, globals, functions, main}) =
          simplifyTransfer
       fun simplifyStatement (Statement.T {var, ty, exp}) =
          let
-            val ty = simplifyMaybeVarType (var, ty)         
+            val ty = simplifyMaybeVarType (var, ty)      
          in
             (* It is wrong to omit calling simplifyExp when var = NONE because
              * targs in a PrimApp may still need to be simplified.

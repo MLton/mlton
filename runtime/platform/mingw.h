@@ -60,7 +60,7 @@ int mkstemp (char *template);
 
 #define MSG_DONTWAIT 0
 
-#define SHUT_RD        SD_RECEIVE
+#define SHUT_RD SD_RECEIVE
 #define SHUT_WR SD_SEND
 #define SHUT_RDWR SD_BOTH
 
@@ -115,8 +115,8 @@ int setitimer (int which,
 typedef unsigned long rlim_t;
 
 struct rlimit {
-        rlim_t        rlim_cur;
-        rlim_t        rlim_max;
+        rlim_t  rlim_cur;
+        rlim_t  rlim_max;
 };
 
 int getrlimit (int resource, struct rlimit *rlim);
@@ -141,9 +141,9 @@ int getrusage (int who, struct rusage *usage);
 /* ------------------------------------------------- */
 
 struct pollfd {
-         short events;
+        short events;
         int fd;
-         short revents;
+        short revents;
 };
 
 int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
@@ -327,20 +327,20 @@ pid_t waitpid (pid_t pid, int *status, int options);
 #define SIGCONT 25
 #define SIGUSR1 25
 #define SIGUSR2 26
-#define SIGVTALRM 26        /* virtual time alarm */
-#define SIGPROF 27        /* profiling time alarm */
+#define SIGVTALRM 26    /* virtual time alarm */
+#define SIGPROF 27      /* profiling time alarm */
 
 #define _NSIG 32
 
 typedef void (*_sig_func_ptr)();
 
 struct sigaction {
-        int                sa_flags;
+        int             sa_flags;
         sigset_t        sa_mask;
-        _sig_func_ptr        sa_handler;
+        _sig_func_ptr   sa_handler;
 };
 
-#define SIGTOMASK(sn)        (1 << ((sn)-1))
+#define SIGTOMASK(sn)   (1 << ((sn)-1))
 
 int sigaction (int signum, 
                         const struct sigaction *act, 
@@ -359,9 +359,9 @@ int sigsuspend (const sigset_t *mask);
 /* ------------------------------------------------- */
 
 struct group {
-         gid_t   gr_gid;
+        gid_t   gr_gid;
         char    **gr_mem;
-         char    *gr_name;
+        char    *gr_name;
         char    *gr_passwd;
 };
 
@@ -477,9 +477,9 @@ struct passwd *getpwuid (uid_t uid);
 #define TCSADRAIN       3
 #define TCSADFLUSH      4
 
-typedef unsigned char        cc_t;
-typedef unsigned int        speed_t;
-typedef unsigned int        tcflag_t;
+typedef unsigned char   cc_t;
+typedef unsigned int    speed_t;
+typedef unsigned int    tcflag_t;
 
 struct termios {
         cc_t c_cc[NCCS];
@@ -507,9 +507,9 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /* ------------------------------------------------- */
 
 #define MSG_DONTWAIT 0
-#define UNIX_PATH_MAX        108
+#define UNIX_PATH_MAX   108
 
-typedef unsigned short        sa_family_t;
+typedef unsigned short  sa_family_t;
 
 struct sockaddr_un {
         sa_family_t sun_family;

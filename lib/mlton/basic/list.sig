@@ -83,16 +83,16 @@ signature LIST =
       val nth: 'a t * int -> 'a
       val nthTail: 'a t * int -> 'a t
 (*       val ordered :
- *          {< : 'a * 'a -> bool}
- *          -> {insert: 'a t * 'a -> 'a t,
- *              insertionSort: 'a t  -> 'a t,
- *              median: 'a t -> 'a,
- *              orderStatistic: 'a t * int -> 'a,
- *              partition: 'a t * 'a -> 'a t * 'a t,
- *              max: 'a t -> 'a,
- *              min: 'a t -> 'a,
- *              largest: 'a t * int -> 'a t,
- *              smallest: 'a t * int -> 'a t}
+ *       {< : 'a * 'a -> bool}
+ *       -> {insert: 'a t * 'a -> 'a t,
+ *           insertionSort: 'a t  -> 'a t,
+ *           median: 'a t -> 'a,
+ *           orderStatistic: 'a t * int -> 'a,
+ *           partition: 'a t * 'a -> 'a t * 'a t,
+ *           max: 'a t -> 'a,
+ *           min: 'a t -> 'a,
+ *           largest: 'a t * int -> 'a t,
+ *           smallest: 'a t * int -> 'a t}
  *)
       (* partition ([1, 2, 3, 4], isOdd) = {no = [4, 2], yes = [3, 1]} *)
       val partition: 'a t * ('a -> bool) -> {no: 'a t, yes: 'a t}

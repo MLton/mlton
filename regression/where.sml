@@ -9,7 +9,7 @@ sig
 end where type s = int;
 
 (* Due to Martin Elsman, also see SML/NJ bug 1330. *)
-signature T =        
+signature T =   
    sig
       type s
       structure U :

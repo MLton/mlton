@@ -388,7 +388,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
                       * of constructors as patterns.
                       *)
                      => decon (Vector.sub (targs, 0))
-(*                     | (Prim.Name.MLton_size, 1) => decon (Vector.sub (targs, 0)) *)
+(*                   | (Prim.Name.MLton_size, 1) => decon (Vector.sub (targs, 0)) *)
                      | _ => ()
                 end
              | Select {tuple, ...} => visitVar tuple

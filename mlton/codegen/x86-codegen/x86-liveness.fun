@@ -142,7 +142,7 @@ struct
                  dead = dead2})
         = LiveSet.equals(liveIn1, liveIn2) andalso
           LiveSet.equals(liveOut1, liveOut2) andalso
-          LiveSet.equals(dead1, dead2)              
+          LiveSet.equals(dead1, dead2)        
 
       fun liveness ({uses : LiveSet.t,
                      defs : LiveSet.t,
@@ -390,7 +390,7 @@ struct
             fun doit ()
               = (case get_todo ()
                    of NONE => ()
-                     | SOME label
+                    | SOME label
                     => let
                          val {pred, block, ...} = getBlockInfo label
                          val block = valOf (!block)
@@ -417,8 +417,8 @@ struct
                                   print "\n";
                                   if true
                                     then (print "old: ";
-                                           LiveSet.foreach
-                                           (live', fn m => 
+                                          LiveSet.foreach
+                                          (live', fn m => 
                                            (print (MemLoc.toString m);
                                             print " "));
                                           print "\n";

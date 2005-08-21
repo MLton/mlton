@@ -7,5 +7,5 @@ W32 totalRam (GC_state s) {
         len = sizeof(mem);
         if (-1 == sysctl (mib, 2, &mem, &len, NULL, 0))
                 diee ("sysctl failed");
-         return mem;
+        return mem;
 }

@@ -79,40 +79,40 @@
 #endif
 
 #ifndef bool
-#define        bool        int                        /* boolean type */
+#define bool    int                     /* boolean type */
 #endif
-#define        uint        unsigned int                /* short names for unsigned types */
-#define        ulong        unsigned long
-#define        ullong        unsigned long long        /* GCC extension */
-#define        llong        long long                /* GCC extension */
-#define        uchar        unsigned char
-#define        ushort        unsigned short int
-#define        not        !                        /* logical negation operator */
-#define        and        &&                        /* logical conjunction */
-#define        or        ||                        /* logical disjunction */
+#define uint    unsigned int            /* short names for unsigned types */
+#define ulong   unsigned long
+#define ullong  unsigned long long      /* GCC extension */
+#define llong   long long               /* GCC extension */
+#define uchar   unsigned char
+#define ushort  unsigned short int
+#define not     !                       /* logical negation operator */
+#define and     &&                      /* logical conjunction */
+#define or      ||                      /* logical disjunction */
 #ifndef TRUE
-#define        TRUE        (0 == 0)
+#define TRUE    (0 == 0)
 #endif
 #ifndef FALSE
-#define        FALSE        (not TRUE)
+#define FALSE   (not TRUE)
 #endif
-#define        loop        while (TRUE)                /* loop until break */
-#define        EOS        '\0'                        /* end-of-string char */
-#ifndef        NULL
-#define        NULL        0                        /* invalid pointer */
+#define loop    while (TRUE)            /* loop until break */
+#define EOS     '\0'                    /* end-of-string char */
+#ifndef NULL
+#define NULL    0                       /* invalid pointer */
 #endif
 
-#define NEW(t, x)                x = (t)(smalloc (sizeof(*x)))
-#define ARRAY(t, a, s)        a = (t)(scalloc (s, sizeof(*a)))
-#define ARRAY_UNSAFE(t, a, s)        a = (t)(calloc (s, sizeof(*a)))
+#define NEW(t, x)               x = (t)(smalloc (sizeof(*x)))
+#define ARRAY(t, a, s)  a = (t)(scalloc (s, sizeof(*a)))
+#define ARRAY_UNSAFE(t, a, s)   a = (t)(calloc (s, sizeof(*a)))
 
 #define string char*
 
-#define        unless(p)        if (not (p))
-#define        until(p)        while (not (p))
-#define        cardof(a)        (sizeof(a) / sizeof(*(a)))
-#define        endof(a)        ((a) + cardof(a))
-#define        bitsof(a)        (sizeof(a) * 8)
+#define unless(p)       if (not (p))
+#define until(p)        while (not (p))
+#define cardof(a)       (sizeof(a) / sizeof(*(a)))
+#define endof(a)        ((a) + cardof(a))
+#define bitsof(a)       (sizeof(a) * 8)
 
 #ifndef max
 #define max(a, b) ((a)>(b)?(a):(b))
@@ -193,7 +193,7 @@ void *getTextEnd ();
 #define INT_MIN ((int)0x80000000)
 #endif
 #ifndef INT_MAX
-#define        INT_MAX ((int)0x7FFFFFFF)
+#define INT_MAX ((int)0x7FFFFFFF)
 #endif
 
 enum {
@@ -362,20 +362,20 @@ Int IEEEReal_getRoundingMode ();
 /*
  * Third header word for bignums and strings.
  */
-#define        BIGMAGIC        GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
-#define        STRMAGIC        GC_objectHeader (STRING_TYPE_INDEX)
+#define BIGMAGIC        GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
+#define STRMAGIC        GC_objectHeader (STRING_TYPE_INDEX)
 
 /*
  * Layout of bignums.  Note, the value passed around is a pointer to
  * the isneg member.
  */
-typedef struct        bignum {
-        uint        counter,        /* used by GC. */
-                card,                /* one more than the number of limbs */
-                magic,                /* BIGMAGIC */
-                isneg;                /* iff bignum is negative */
-        ulong        limbs[0];        /* big digits, least significant first */
-}        bignum;
+typedef struct  bignum {
+        uint    counter,        /* used by GC. */
+                card,           /* one more than the number of limbs */
+                magic,          /* BIGMAGIC */
+                isneg;          /* iff bignum is negative */
+        ulong   limbs[0];       /* big digits, least significant first */
+}       bignum;
 
 /* All of these routines modify the frontier in gcState.  They assume that 
  * there are bytes bytes free, and allocate an array to store the result

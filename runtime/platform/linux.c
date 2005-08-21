@@ -10,7 +10,7 @@
 #include "use-mmap.c"
 
 #ifndef EIP
-#define EIP        14
+#define EIP     14
 #endif
 
 /* potentially correct for other archs:
@@ -57,12 +57,12 @@ void setSigProfHandler (struct sigaction *sa) {
 /* Work around Linux kernel bugs associated with the user and system times. */
 
 int fixedGetrusage (int who, struct rusage *rup) {
-        struct tms        tbuff;
-        int                res;
-        clock_t                user,
+        struct tms      tbuff;
+        int             res;
+        clock_t         user,
                         sys;
-        static bool        first = TRUE;
-        static long        hz;
+        static bool     first = TRUE;
+        static long     hz;
 
         if (first) {
                 first = FALSE;
