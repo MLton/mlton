@@ -164,10 +164,11 @@ the name of the MLB file."
                                     (esml-split-string s "[ \t]*[{}|][ \t]*")))
                                  (esml-split-string
                                   (with-temp-buffer
-                                    (shell-command
-                                     esml-mlb-show-annotations-command
-                                     (current-buffer))
-                                    (buffer-string))
+                                    (save-window-excursion
+                                      (shell-command
+                                       esml-mlb-show-annotations-command
+                                       (current-buffer))
+                                      (buffer-string)))
                                   "[ \t]*\n+[ \t]*"))))
                (function
                 (lambda (a b)
