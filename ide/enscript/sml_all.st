@@ -233,17 +233,17 @@ sml_exp_re  = regexp(sml_exp_str);
 real       = ({decint}"."{digit}+ ({exp}{decint})?) | ({decint}{exp}{decint});
 */
 sml_real_str = sprintf("((%s)\\.(%s)+((%s)(%s))?)|((%s)(%s)(%s))",
-		       sml_decint_str,sml_digit_str,sml_exp_str,sml_decint_str,
-		       sml_decint_str,sml_exp_str,sml_decint_str);
+                       sml_decint_str,sml_digit_str,sml_exp_str,sml_decint_str,
+                       sml_decint_str,sml_exp_str,sml_decint_str);
 sml_real_re  = regexp(sml_real_str);
 
 /*
 scon_num = {decint} | {hexint} | {decword} | {hexword} | {real}
 */
 sml_scon_num_str = sprintf("\\b((%s)|(%s)|(%s)|(%s)|(%s))\\b",
-			   sml_decint_str,sml_hexint_str,
-			   sml_decword_str,sml_hexword_str,
-			   sml_real_str);
+                           sml_decint_str,sml_hexint_str,
+                           sml_decword_str,sml_hexword_str,
+                           sml_real_str);
 sml_scon_num_re = regexp(sml_scon_num_str);
 
 /*
@@ -255,7 +255,7 @@ sml_numericlab_re  = regexp(sml_numericlab_str);
 alphanumid = {letter}({letter} | {digit} | [_'])*;
 */
 sml_alphanumid_str = sprintf("(%s)((%s)|(%s)|[_'])*",
-			     sml_letter_str,sml_letter_str,sml_digit_str);
+                             sml_letter_str,sml_letter_str,sml_digit_str);
 /*
 symbolicid = {symbol}+;
 */
@@ -515,10 +515,10 @@ sub sml_local_level () {
     return TRUE;
   while (length(scopes) == 2) {
     if (strcmp(scopes[0][0],"local") == 0 &&
-	scopes[0][1] == SML_MODULES_LEVEL) 
+        scopes[0][1] == SML_MODULES_LEVEL) 
       scopes = scopes[1];
     else if (strcmp(scopes[0][0],"let") == 0 &&
-	     scopes[0][1] == SML_MODULES_LEVEL) 
+             scopes[0][1] == SML_MODULES_LEVEL) 
       return TRUE;
     else 
       return FALSE;
@@ -618,15 +618,15 @@ state sml_fancy /* extends sml_verbose */
       language_print ($0);
       type_face (true);
       if (sml_typctxt_expected_eqs == 0) {
-	sml_finish_typctxt ();
+        sml_finish_typctxt ();
       } else {
-	sml_typctxt_expected_eqs--;
-	if (sml_datbind == SML_DATBIND_UNKNOWN) {
-	  sml_conbind = TRUE;
-	}
-	if (sml_exbind) {
-	  sml_conbind = TRUE;
-	}
+        sml_typctxt_expected_eqs--;
+        if (sml_datbind == SML_DATBIND_UNKNOWN) {
+          sml_conbind = TRUE;
+        }
+        if (sml_exbind) {
+          sml_conbind = TRUE;
+        }
       }
     } else {
       language_print ($0);
@@ -913,7 +913,7 @@ state sml_fancy /* extends sml_verbose */
   sml_id_re {
     if (sml_conbind) {
       if (sml_datbind == SML_DATBIND_UNKNOWN)
-	sml_datbind = SML_DATBIND_DECL;
+        sml_datbind = SML_DATBIND_DECL;
       sml_conbind = FALSE;
       variable_name_face (true);
       language_print ($0);
@@ -1038,12 +1038,12 @@ state sml_gaudy /* extends sml_fancy */
   }
   /:/ {
     if (sml_andbind[0] == SML_AND_STRBIND ||
-	sml_andbind[0] == SML_AND_FUNBIND) {
+        sml_andbind[0] == SML_AND_FUNBIND) {
       language_print ($0);
     } else {
       language_print ($0);
       if (sml_typctxt == -1)
-	sml_start_typctxt (0);
+        sml_start_typctxt (0);
     }
   }
 
@@ -1084,15 +1084,15 @@ state sml_gaudy /* extends sml_fancy */
       language_print ($0);
       type_face (true);
       if (sml_typctxt_expected_eqs == 0) {
-	sml_finish_typctxt ();
+        sml_finish_typctxt ();
       } else {
-	sml_typctxt_expected_eqs--;
-	if (sml_datbind == SML_DATBIND_UNKNOWN) {
-	  sml_conbind = TRUE;
-	}
-	if (sml_exbind) {
-	  sml_conbind = TRUE;
-	}
+        sml_typctxt_expected_eqs--;
+        if (sml_datbind == SML_DATBIND_UNKNOWN) {
+          sml_conbind = TRUE;
+        }
+        if (sml_exbind) {
+          sml_conbind = TRUE;
+        }
       }
     } else {
       language_print ($0);
@@ -1379,7 +1379,7 @@ state sml_gaudy /* extends sml_fancy */
   sml_id_re {
     if (sml_conbind) {
       if (sml_datbind == SML_DATBIND_UNKNOWN)
-	sml_datbind = SML_DATBIND_DECL;
+        sml_datbind = SML_DATBIND_DECL;
       sml_conbind = FALSE;
       variable_name_face (true);
       language_print ($0);

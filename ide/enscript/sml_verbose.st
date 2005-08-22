@@ -94,17 +94,17 @@ sml_exp_re  = regexp(sml_exp_str);
 real       = ({decint}"."{digit}+ ({exp}{decint})?) | ({decint}{exp}{decint});
 */
 sml_real_str = sprintf("((%s)\\.(%s)+((%s)(%s))?)|((%s)(%s)(%s))",
-		       sml_decint_str,sml_digit_str,sml_exp_str,sml_decint_str,
-		       sml_decint_str,sml_exp_str,sml_decint_str);
+                       sml_decint_str,sml_digit_str,sml_exp_str,sml_decint_str,
+                       sml_decint_str,sml_exp_str,sml_decint_str);
 sml_real_re  = regexp(sml_real_str);
 
 /*
 scon_num = {decint} | {hexint} | {decword} | {hexword} | {real}
 */
 sml_scon_num_str = sprintf("\\b((%s)|(%s)|(%s)|(%s)|(%s))\\b",
-			   sml_decint_str,sml_hexint_str,
-			   sml_decword_str,sml_hexword_str,
-			   sml_real_str);
+                           sml_decint_str,sml_hexint_str,
+                           sml_decword_str,sml_hexword_str,
+                           sml_real_str);
 sml_scon_num_re = regexp(sml_scon_num_str);
 
 /*
@@ -116,7 +116,7 @@ sml_numericlab_re  = regexp(sml_numericlab_str);
 alphanumid = {letter}({letter} | {digit} | [_'])*;
 */
 sml_alphanumid_str = sprintf("(%s)((%s)|(%s)|[_'])*",
-			     sml_letter_str,sml_letter_str,sml_digit_str);
+                             sml_letter_str,sml_letter_str,sml_digit_str);
 /*
 symbolicid = {symbol}+;
 */

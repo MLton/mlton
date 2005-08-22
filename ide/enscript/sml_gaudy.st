@@ -29,12 +29,12 @@ state sml_gaudy extends sml_fancy
   }
   /:/ {
     if (sml_andbind[0] == SML_AND_STRBIND ||
-	sml_andbind[0] == SML_AND_FUNBIND) {
+        sml_andbind[0] == SML_AND_FUNBIND) {
       language_print ($0);
     } else {
       language_print ($0);
       if (sml_typctxt == -1)
-	sml_start_typctxt (0);
+        sml_start_typctxt (0);
     }
   }
 }

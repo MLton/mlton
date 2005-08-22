@@ -97,10 +97,10 @@ sub sml_local_level () {
     return TRUE;
   while (length(scopes) == 2) {
     if (strcmp(scopes[0][0],"local") == 0 &&
-	scopes[0][1] == SML_MODULES_LEVEL) 
+        scopes[0][1] == SML_MODULES_LEVEL) 
       scopes = scopes[1];
     else if (strcmp(scopes[0][0],"let") == 0 &&
-	     scopes[0][1] == SML_MODULES_LEVEL) 
+             scopes[0][1] == SML_MODULES_LEVEL) 
       return TRUE;
     else 
       return FALSE;
@@ -203,15 +203,15 @@ state sml_fancy extends sml_verbose
       language_print ($0);
       type_face (true);
       if (sml_typctxt_expected_eqs == 0) {
-	sml_finish_typctxt ();
+        sml_finish_typctxt ();
       } else {
-	sml_typctxt_expected_eqs--;
-	if (sml_datbind == SML_DATBIND_UNKNOWN) {
-	  sml_conbind = TRUE;
-	}
-	if (sml_exbind) {
-	  sml_conbind = TRUE;
-	}
+        sml_typctxt_expected_eqs--;
+        if (sml_datbind == SML_DATBIND_UNKNOWN) {
+          sml_conbind = TRUE;
+        }
+        if (sml_exbind) {
+          sml_conbind = TRUE;
+        }
       }
     } else {
       language_print ($0);
@@ -498,7 +498,7 @@ state sml_fancy extends sml_verbose
   sml_id_re {
     if (sml_conbind) {
       if (sml_datbind == SML_DATBIND_UNKNOWN)
-	sml_datbind = SML_DATBIND_DECL;
+        sml_datbind = SML_DATBIND_DECL;
       sml_conbind = FALSE;
       variable_name_face (true);
       language_print ($0);
