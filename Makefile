@@ -105,7 +105,7 @@ constants:
 DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-svn version
+	$(MAKE) clean clean-svn version deb-change
 	mv package/debian .
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
