@@ -93,11 +93,6 @@ specified by `esml-mlb-mlb-path-map-files'."
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
-(defcustom esml-mlb-allow-completion t
-  "Allow tab-completion if non-nil."
-  :type 'boolean
-  :group 'esml-mlb)
-
 (defcustom esml-mlb-completion-ignored-files-regexp "\\.[^.].*\\|CVS/"
   "Completion ignores files (and directories) whose names match this
 regexp."
@@ -107,6 +102,21 @@ regexp."
 (defcustom esml-mlb-indentation-offset 3
   "Basic offset for indentation."
   :type 'integer
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-key-bindings
+  '(("[tab]"
+     . esml-mlb-indent-line-or-complete)
+    ("[(control c) (control f)]"
+     . esml-mlb-find-file-at-point)
+    ("[(control c) (control s)]"
+     . esml-mlb-show-basis))
+  "Key bindings for the ML Basis mode. The key specifications must be in a
+format accepted by the function `define-key'. Hint: You might want to type
+`M-x describe-function esml-mlb <TAB>' to see the available commands."
+  :type '(repeat (cons :tag "Key Binding"
+                       (string :tag "Key")
+                       (function :tag "Command")))
   :group 'esml-mlb)
 
 (defcustom esml-mlb-mlb-path-map-files
@@ -229,8 +239,14 @@ by `esml-mlb-update'.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
 
-(defconst esml-mlb-str-chr-regexp "\\([^\n\"\\]\\|\\\\.\\)")
-(defconst esml-mlb-string-regexp (concat "\"" esml-mlb-str-chr-regexp "+\""))
+(defconst esml-mlb-string-continue-regexp "\\(\\\\[ \t\n]+\\\\\\)")
+(defconst esml-mlb-string-char-regexp
+  (concat "\\(" esml-mlb-string-continue-regexp
+          "*\\([^\n\"\\]\\|\\\\[^ \t\n]\\)\\)"))
+(defconst esml-mlb-inside-string-regexp
+  (concat "\"" esml-mlb-string-char-regexp "*"
+          esml-mlb-string-continue-regexp "*"))
+(defconst esml-mlb-string-regexp (concat esml-mlb-inside-string-regexp "\""))
 (defconst esml-mlb-inside-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*")
 (defconst esml-mlb-comment-regexp (concat esml-mlb-inside-comment-regexp "\\*)"))
 (defconst esml-mlb-path-var-chars "A-Za-z0-9_")
@@ -283,19 +299,19 @@ by a space.")
   "Builds the font-lock table for ML Basis mode."
   (setq esml-mlb-font-lock-table
         `(;; quoted path names
-          (,(concat "\"" esml-mlb-str-chr-regexp "*\\.\\(" esml-mlb-path-suffix-regexp "\\)\"")
+          (,(concat esml-mlb-inside-string-regexp "\\.\\(" esml-mlb-path-suffix-regexp "\\)\"")
            . font-lock-constant-face)
           ;; annotations
           (,(apply
              'concat
-             "\"[ \t\n]*\\("
+             "\"[ \t]*\\("
              (reduce
               (function
                (lambda (regexps name-values)
                  (if (cdr regexps)
                      (push "\\|" regexps))
                  (cons (if (cdr name-values)
-                           (concat (car name-values) "[ \t\n]+\\("
+                           (concat (car name-values) "[ \t]+\\("
                                    (reduce (function
                                             (lambda (r s)
                                               (concat r "\\|\\("
@@ -310,9 +326,9 @@ by a space.")
                          (car name-values))
                        regexps)))
               esml-mlb-annotations
-              :initial-value '("\\)[ \t\n]*\"")))
+              :initial-value '("\\)[ \t]*\"")))
            . font-lock-string-face)
-          (,(concat "\"" esml-mlb-str-chr-regexp "*\"")
+          (,esml-mlb-string-regexp
            . font-lock-warning-face)
           ;; path variables
           (,(concat "\\$(\\(" (regexp-opt (mapcar 'car esml-mlb-path-variables)) "\\))")
@@ -327,7 +343,7 @@ by a space.")
           ;; keywords
           (,(concat "\\<\\(" (regexp-opt esml-mlb-keywords) "\\)\\>")
            . font-lock-keyword-face)
-          ;; variables
+          ;; basids
           ("[A-Za-z][A-Za-z0-9_']*"
            . font-lock-interface-def-face))))
 
@@ -373,6 +389,7 @@ by a space.")
 
 (defun esml-mlb-indent-line ()
   "Indent current line as ML Basis code."
+  (interactive)
   (let* ((indent-evidence (esml-mlb-previous-indentation))
          (indent (car indent-evidence))
          (evidence (cdr indent-evidence)))
@@ -443,7 +460,7 @@ name completions."
                                (string-match valid-suffices-regexp ext)))))))))))
 
 (defun esml-mlb-complete ()
-  "Performs context sensitive completion."
+  "Performs context sensitive completion at point."
   (interactive)
   (cond
    ;; no completion inside comments
@@ -452,7 +469,7 @@ name completions."
    ;; annotation values
    ((esml-point-preceded-by (concat "\"[ \t\n]*\\("
                                     (regexp-opt (mapcar 'car esml-mlb-annotations))
-                                    "\\)[ \t\n]+\\(" esml-mlb-str-chr-regexp "*\\)"))
+                                    "\\)[ \t\n]+\\(" esml-mlb-string-char-regexp "*\\)"))
     (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
            (all-values (cdr annot))
            (values (remove* nil all-values
@@ -476,7 +493,7 @@ name completions."
           (concat "\\<ann[ \t\n]+\\([ \t\n]+\\|" esml-mlb-string-regexp
                   "\\|" esml-mlb-comment-regexp "\\)*\"[^\"]*"))
          (esml-point-preceded-by
-          (concat "\"[ \t\n]*\\(" esml-mlb-str-chr-regexp "*\\)")))
+          (concat "\"[ \t\n]*\\(" esml-mlb-string-char-regexp "*\\)")))
     (let* ((name-prefix (match-string 1))
            (name-completion (try-completion name-prefix esml-mlb-annotations))
            (name (if (eq t name-completion) name-prefix name-completion)))
@@ -516,7 +533,7 @@ name completions."
 
    ;; filenames and keywords
    ((or (esml-point-preceded-by
-         (concat "\\(\"\\)\\(" esml-mlb-str-chr-regexp "+\\)"))
+         (concat "\\(\"\\)\\(" esml-mlb-string-char-regexp "+\\)"))
         (esml-point-preceded-by
          (concat "\\([ \t\n]\\|^\\)\\([" esml-mlb-unquoted-path-or-ref-chars "]+\\)")))
     ;; TBD: escape sequences in quoted pathnames
@@ -575,14 +592,13 @@ name completions."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Commands
 
-(defun esml-mlb-indent-or-complete ()
+(defun esml-mlb-indent-line-or-complete ()
   "Indents the current line. If indentation does not change, attempts to
-perform context sensitive completion."
+perform context sensitive completion. This command is not idempotent."
   (interactive)
   (let ((old-indentation (current-indentation)))
     (esml-mlb-indent-line)
-    (when (and esml-mlb-allow-completion
-               (= old-indentation (current-indentation)))
+    (when (= old-indentation (current-indentation))
       (esml-mlb-complete))))
 
 (defun esml-mlb-find-file-at-point ()
@@ -652,25 +668,28 @@ perform context sensitive completion."
     (message "show-basis running...")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Key Map
+
+(defvar esml-mlb-mode-map (make-sparse-keymap)
+  "Keymap for ML Basis mode. This variable is updated by
+`esml-mlb-update'.")
+
+(defun esml-mlb-build-mode-map ()
+  "Builds the key map for ML Basis mode."
+  (let ((result (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key result
+               (read (car key-command))
+               (cdr key-command))))
+          esml-mlb-key-bindings)
+    (setq esml-mlb-mode-map result)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Define mode
 
 (defvar esml-mlb-mode-hook nil
   "Hook run when entering ML Basis mode.")
-
-(defvar esml-mlb-mode-map
-  (let ((esml-mlb-mode-map (make-sparse-keymap)))
-    (mapc (function
-           (lambda (key-command)
-             (define-key esml-mlb-mode-map
-               (car key-command) (cdr key-command))))
-          '(([tab]
-             . esml-mlb-indent-or-complete)
-            ([(control c) (control f)]
-             . esml-mlb-find-file-at-point)
-            ([(control c) (control s)]
-             . esml-mlb-show-basis)))
-    esml-mlb-mode-map)
-  "Keymap for ML Basis mode.")
 
 (define-derived-mode esml-mlb-mode fundamental-mode "MLB"
   "Major mode for editing ML Basis files. Provides syntax highlighting,
@@ -694,7 +713,8 @@ See the customization group `esml-mlb'."
   ;; Warning: order dependencies
   (esml-mlb-parse-path-variables)
   (esml-mlb-parse-annotations)
-  (esml-mlb-build-font-lock-table))
+  (esml-mlb-build-font-lock-table)
+  (esml-mlb-build-mode-map))
 
 ;; We are finally ready to update everything the first time.
 (esml-mlb-update)
