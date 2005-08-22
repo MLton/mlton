@@ -10,9 +10,10 @@ SML/NJ          NJ-LICENSE (BSD-style)          front-end mllex specification
                                                 mllex
                                                 mlyacc and MLYacc Library
                                                 Concurrent ML Library
-                                                SML/NJ Library
                                                 CKit Library
                                                 mlnlffigen and MLNLFFI Library
+
+SML/NJ Lib	SMLNJ-LIB-LICENSE (BSD-style) 	SML/NJ Library
 
 ML Kit          MLKit-LICENSE (MIT)             Path, Time, Date
 
