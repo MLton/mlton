@@ -35,8 +35,9 @@ binary-indep: build install
 binary-arch: build install
 	# dh_installdeb
 	mkdir -p $(BUILDDIR)/DEBIAN
-	for f in postinst prerm; do \
-		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f; \
+	for f in postinst prerm; do 				\
+		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f;	\
+		chown root.root $(BUILDDIR)/DEBIAN/$$f;		\
 	done
 	# dh_shlibdeps
 	dpkg-shlibdeps \

@@ -432,3 +432,4 @@ post-install-debian:
 		$(CP) $(SRC)/debian/$$f.doc-base $(TDOCBASE)/$$f; \
 	done
 	cd $(TDOC)/ && $(GZIP) changelog changelog.Debian
+	chown -R root.root $(TDOC)
