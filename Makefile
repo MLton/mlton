@@ -377,7 +377,7 @@ install-no-docs:
 	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
 		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod a+x $(TBIN)/mlton
-	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
+	cd $(BIN) && $(CP) $(LEX) $(NLFFIGEN) $(PROF) $(YACC) $(TBIN)/
 	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
 	if $(GZIP_MAN); then						\
