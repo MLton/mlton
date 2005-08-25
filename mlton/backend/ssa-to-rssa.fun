@@ -1189,8 +1189,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | MLton_size =>
                                     simpleCCall
                                     (CFunction.size (Operand.ty (a 0)))
-                               | MLton_touch => none ()
                                | Pointer_getPointer => pointerGet ()
+                               | MLton_touch => primApp prim
                                | Pointer_getReal _ => pointerGet ()
                                | Pointer_getWord _ => pointerGet ()
                                | Pointer_setPointer => pointerSet ()

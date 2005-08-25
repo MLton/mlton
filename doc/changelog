@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-08-25
+  - Fixed bug in MLton.Finalizable.touch, which was not keeping alive
+    finalizable values in all cases.
+
 * 2005-08-18
   - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to 
     standard distribution.
