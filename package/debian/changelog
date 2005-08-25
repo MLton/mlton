@@ -1,3 +1,11 @@
+mlton (20050825-2) unstable; urgency=low
+
+  * new upstream version
+  * Fixed broken $lib in mlton script.  The previous package didn't
+    work at all.
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 25 Aug 2005 13:33:41 -0700
+
 mlton (20050825-1) unstable; urgency=low
 
   * new upstream version
