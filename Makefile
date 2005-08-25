@@ -392,8 +392,8 @@ install-no-docs:
 	darwin|solaris)							\
 	;;								\
 	*)								\
-		for f in $(TLIB)/$(AOUT) 				\
-			$(TBIN)/$(LEX) $(TBIN)/$(PROF)			\
+		for f in $(TLIB)/$(AOUT) $(TBIN)/$(LEX)			\
+			$(TBIN)/$(NLFFIGEN) $(TBIN)/$(PROF)		\
 			$(TBIN)/$(YACC); do 				\
 			strip --remove-section=.comment			\
 				--remove-section=.note $$f; 		\
