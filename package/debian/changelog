@@ -1,3 +1,16 @@
+mlton (20050824-1) unstable; urgency=low
+
+  * new upstream version
+  * built statically, closes: #324859
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Wed, 24 Aug 2005 15:13:19 -0700
+
+mlton (20050823-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Tue, 23 Aug 2005 14:56:59 -0700
+
 mlton (20050822-1) unstable; urgency=low
 
   * new upstream version
