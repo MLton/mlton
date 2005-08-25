@@ -1475,7 +1475,7 @@ let
          line "local ann \"allowFFI true\" in";
          VBox 4;
          app line ["$(SML_LIB)/basis/basis.mlb",
-                   "$(SML_LIB)/mlnlffi-lib/internals/c-int."^targetName^".mlb"];
+                   "$(SML_LIB)/mlnlffi-lib/internals/c-int.mlb"];
          app line (rev extramembers);
          app line (rev (!files));
          endBox ();
