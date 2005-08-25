@@ -378,11 +378,10 @@ install-no-docs:
 		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod a+x $(TBIN)/mlton
 	cd $(BIN) && $(CP) $(LEX) $(NLFFIGEN) $(PROF) $(YACC) $(TBIN)/
-	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
+	( cd $(SRC)/man && tar cf - mllex.1 mlnlffigen.1 mlprof.1 mlton.1 mlyacc.1 ) | \
 		( cd $(TMAN)/ && tar xf - )
 	if $(GZIP_MAN); then						\
-		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
-			mlyacc.1;					\
+		cd $(TMAN) && $(GZIP) mllex.1 mlnlffigen.1 mlprof.1 mlton.1 mlyacc.1; \
 	fi
 	case "$(TARGET_OS)" in						\
 	darwin|solaris)							\
