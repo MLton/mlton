@@ -289,9 +289,7 @@ runtime:
 
 .PHONY: script
 script:
-	@echo 'Setting lib in mlton script.'
-	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" 	\
-		<bin/mlton-script >$(MLTON)
+	$(CP) bin/mlton-script $(MLTON)
 	chmod a+x $(MLTON)
 	$(CP) $(SRC)/bin/platform $(LIB)
 
@@ -369,19 +367,26 @@ endif
 .PHONY: install
 install: install-docs install-no-docs
 
+MAN_PAGES =  \
+	mllex.1 \
+	mlnlffigen.1 \
+	mlprof.1 \
+	mlton.1 \
+	mlyacc.1
+
 .PHONY: install-no-docs
 install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
 	rm -f $(TLIB)/self/libmlton-gdb.a
-	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
+	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
 		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod a+x $(TBIN)/mlton
 	cd $(BIN) && $(CP) $(LEX) $(NLFFIGEN) $(PROF) $(YACC) $(TBIN)/
-	( cd $(SRC)/man && tar cf - mllex.1 mlnlffigen.1 mlprof.1 mlton.1 mlyacc.1 ) | \
+	( cd $(SRC)/man && tar cf - $(MAN_PAGES)) | \
 		( cd $(TMAN)/ && tar xf - )
 	if $(GZIP_MAN); then						\
-		cd $(TMAN) && $(GZIP) mllex.1 mlnlffigen.1 mlprof.1 mlton.1 mlyacc.1; \
+		cd $(TMAN) && $(GZIP) $(MAN_PAGES);			\
 	fi
 	case "$(TARGET_OS)" in						\
 	darwin|solaris)							\
