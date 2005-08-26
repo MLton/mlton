@@ -42,6 +42,7 @@ binary-arch: build install
 	# dh_shlibdeps
 	dpkg-shlibdeps \
 		-e$(BUILDDIR)/usr/bin/mllex \
+		-e$(BUILDDIR)/usr/bin/mlnlffigen \
 		-e$(BUILDDIR)/usr/bin/mlprof \
 		-e$(BUILDDIR)/usr/bin/mlyacc \
 		-e$(BUILDDIR)/usr/lib/mlton/mlton-compile 
