@@ -1,4 +1,4 @@
-mlton (20050825-2) unstable; urgency=low
+mlton (20050826-1) unstable; urgency=low
 
   * new upstream version
   * Fixed broken $lib in mlton script.  The previous package didn't
