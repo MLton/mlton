@@ -1,0 +1,11 @@
+before test 5
+before GC 5
+after GC 5
+before GC 5a
+after GC 5a
+invoking touch
+before GC 5b
+test 5: finalizer
+after GC 5b
+before GC 5c
+after GC 5c
