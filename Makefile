@@ -316,7 +316,7 @@ version:
 		package/debian/changelog				\
 		package/rpm/mlton.spec					\
 		package/freebsd/Makefile				\
-		mlton/control/control.sml; 				\
+		mlton/control/control-flags.sml;			\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
 		mv z $$f;						\
