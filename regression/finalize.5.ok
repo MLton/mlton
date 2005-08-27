@@ -1,0 +1,6 @@
+before test 6
+before GC 6
+after GC 6
+before GC 6a
+test 6: finalizer
+after GC 6a
