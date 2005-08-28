@@ -17,7 +17,7 @@ esac
 
 ignore='.ignore'
 doit () {
-        rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out
+        rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
         if [ -r $ignore ]; then
                 for f in `cat $ignore`; do rm -rf $f; done
         fi
