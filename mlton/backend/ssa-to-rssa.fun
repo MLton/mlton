@@ -1190,9 +1190,17 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     simpleCCall
                                     (CFunction.size (Operand.ty (a 0)))
                                | MLton_touch =>
-                                    if isSome (toRtype (varType (arg 0))) then
-                                       primApp prim
-                                    else none ()
+                                    let
+                                       val a = arg 0
+                                       val args = 
+                                          if isSome (toRtype (varType a))
+                                             then Vector.new1 (varOp a)
+                                          else Vector.new0 ()
+                                    in
+                                       add (PrimApp {args = args,
+                                                     dst = NONE,
+                                                     prim = prim})
+                                    end
                                | Pointer_getPointer => pointerGet ()
                                | Pointer_getReal _ => pointerGet ()
                                | Pointer_getWord _ => pointerGet ()
