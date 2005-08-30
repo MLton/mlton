@@ -876,20 +876,20 @@ structure Structure =
                                             ", "))),
                                str " "]
                      val t =
-                        case TypeStr.node s of
-                           TypeStr.Datatype _ => "datatype"
-                         | _ =>
-                              if isWhere
-                                 then "type"
-                              else
-                                 let
-                                    datatype z = datatype AdmitsEquality.t
-                                 in
-                                    case TypeStr.admitsEquality s of
-                                       Always => "eqtype"
-                                     | Never => "type"
-                                     | Sometimes => "eqtype"   
-                                 end
+                        if isWhere then
+                           "type"
+                        else
+                           (case TypeStr.node s of
+                               TypeStr.Datatype _ => "datatype"
+                             | _ =>
+                                  let
+                                     datatype z = datatype AdmitsEquality.t
+                                  in
+                                     case TypeStr.admitsEquality s of
+                                        Always => "eqtype"
+                                      | Never => "type"
+                                      | Sometimes => "eqtype"   
+                                  end)
                      val def = seq [str t, str " ", args, name, str " = "]
                      val res = 
                         case TypeStr.node s of
