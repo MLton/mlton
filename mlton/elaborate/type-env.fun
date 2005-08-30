@@ -1301,10 +1301,14 @@ structure Type =
             val unit = con (unit, Tycon.tuple, Vector.new0 ())
             val unknown = unit
             fun sortFields (fields: (Field.t * 'a) list) =
-               Array.toVector
-               (QuickSort.sortArray
-                (Array.fromList fields, fn ((f, _), (f', _)) =>
-                 Field.<= (f, f')))
+               let
+                  val a = Array.fromList fields
+                  val () =
+                     QuickSort.sortArray (a, fn ((f, _), (f', _)) =>
+                                          Field.<= (f, f'))
+               in
+                  Array.toVector a
+               end
             fun unsorted (t, fields: (Field.t *  'a) list) =
                let
                   val v = sortFields fields

@@ -1141,10 +1141,9 @@ structure Program =
                                          then offset :: liveOffsets
                                       else liveOffsets
                                  | _ => raise No)
-                            val liveOffsets =
-                               Vector.fromArray
-                               (QuickSort.sortArray
-                                (Array.fromList liveOffsets, Bytes.<=))
+                            val liveOffsets = Array.fromList liveOffsets
+                            val () = QuickSort.sortArray (liveOffsets, Bytes.<=)
+                            val liveOffsets = Vector.fromArray liveOffsets
                             val liveOffsets' =
                                Vector.sub (frameOffsets, frameOffsetsIndex)
                                handle Subscript => raise No

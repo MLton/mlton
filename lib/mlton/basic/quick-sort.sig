@@ -12,7 +12,7 @@ signature QUICK_SORT =
        * This is necessary to handle duplicate elements.
        *)
       (* sortArray mutates the array it is passed and returns the same array *)
-      val sortArray: 'a array * ('a * 'a -> bool) -> 'a array
+      val sortArray: 'a array * ('a * 'a -> bool) -> unit
       val sortList: 'a list * ('a * 'a -> bool) -> 'a list
       val sortVector: 'a vector * ('a * 'a -> bool) -> 'a vector
    end

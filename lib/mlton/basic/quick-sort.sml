@@ -21,9 +21,9 @@ fun randInt (lo, hi) = lo + Int.mod (rand(), hi - lo + 1)
  * Then, it does an insertion sort over the whole array to fix up the unsorted
  * segments.
  *)
-fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): 'a array =
+fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): unit =
    if 0 = Array.length a
-      then a
+      then ()
    else
       let
          fun x i = sub (a, i)
@@ -41,7 +41,7 @@ fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): 'a array =
                then ()
             else
                let
-                  val _ = swap (l, randInt (l, u))
+                  val () = swap (l, randInt (l, u))
                   val t = x l
                   (* Partition based on page 115. *)
                   fun loop (i, j) =
@@ -86,16 +86,23 @@ fun 'a sortArray (a: 'a array, op <= : 'a * 'a -> bool): 'a array =
              else (i, xi))
          val last = length a - 1
          val () = swap (m, last)
-         val _ = qsort (0, last - 1)
-         val _ = InsertionSort.sort (a, op <=)
+         val () = qsort (0, last - 1)
+         val () = InsertionSort.sort (a, op <=)
       in
-         a
+         ()
       end
 
-fun sortList (l, f) =
-   Array.toList (sortArray (Array.fromList l, f))
-
-fun sortVector (v, f) =
-   Array.toVector (sortArray (Array.fromVector v, f))
+local
+   fun make (from, to) (l, f) =
+      let
+         val a = from l
+         val () = sortArray (a, f)
+      in
+         to a
+      end
+in
+   val sortList = fn z => make (Array.fromList, Array.toList) z
+   val sortVector = fn z => make (Array.fromVector, Array.toVector) z
+end
    
 end

@@ -1181,10 +1181,10 @@ structure NameSpace =
                                    uses = uses}
                                end)
                val _ = current := old
-               val a =
+               val a = Array.fromList elts
+               val () =
                   QuickSort.sortArray
-                  (Array.fromList elts,
-                   fn ({domain = d, ...}, {domain = d', ...}) =>
+                  (a, fn ({domain = d, ...}, {domain = d', ...}) =>
                    Symbol.<= (toSymbol d, toSymbol d'))
             in
                Info.T a
@@ -1383,12 +1383,17 @@ fun collect (E,
                                    types = doit types,
                                    vals = doit vals})
       fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) =
-         QuickSort.sortArray
-         (Array.fromList (!r),
-          fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
-              {domain = d', time = t',...}: ('a, 'b) Values.value) =>
-          le ({domain = toSymbol d, time = t},
-              {domain = toSymbol d', time = t'}))
+         let
+            val a = Array.fromList (!r)
+            val () =
+               QuickSort.sortArray
+               (a, fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
+                       {domain = d', time = t',...}: ('a, 'b) Values.value) =>
+                le ({domain = toSymbol d, time = t},
+                    {domain = toSymbol d', time = t'}))
+         in
+            a
+         end
    in
       {bass = finish (bass, Basid.toSymbol),
        fcts = finish (fcts, Fctid.toSymbol),

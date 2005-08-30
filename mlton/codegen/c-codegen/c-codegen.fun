@@ -529,12 +529,9 @@ fun output {program as Machine.Program.T {chunks,
                                     layedOut = ref false,
                                     status = ref None})
            end))
-      val entryLabels =
-         Vector.map
-         (Vector.fromArray
-          (QuickSort.sortArray
-           (Array.fromList (!entryLabels), fn ((_, i), (_, i')) => i <= i')),
-          #1)
+      val a = Array.fromList (!entryLabels)
+      val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
+      val entryLabels = Vector.map (Vector.fromArray a, #1)
       val labelChunk = #chunkLabel o labelInfo
       val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
          Property.getSet (ChunkLabel.plist,
