@@ -98,6 +98,7 @@ fun setTargetType (target: string, usage): unit =
             ; targetOS := os
             ; (case arch of
                   Sparc => (align := Align8; codegen := CCodegen)
+                | HPPA => (align := Align8; codegen := CCodegen)
                 | X86 => codegen := Native
                 | AMD64 => codegen := Native
                 | _ => codegen := CCodegen)
