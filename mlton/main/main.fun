@@ -122,6 +122,16 @@ fun hasNative () =
 fun makeOptions {usage} = 
    let
       val usage = fn s => (ignore (usage s); raise Fail "unreachable")
+      fun reportAnnotation (s, flag, e) =
+         case e of
+            Control.Elaborate.Bad => 
+               usage (concat ["invalid -", flag, " flag: ", s])
+          | Control.Elaborate.Deprecated ids =>
+               Out.output 
+               (Out.error,
+                concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
+                        List.toString Control.Elaborate.Id.name ids, ".\n"])
+          | Control.Elaborate.Good () => ()
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t
@@ -175,18 +185,14 @@ fun makeOptions {usage} =
         boolRef contifyIntoMain),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
         boolRef debug),
-       (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processDefault s of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -default-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "default-ann"
+       in
+          (Normal, flag, " <ann>", "set annotation default for mlb files",
+           SpaceString
+           (fn s => reportAnnotation (s, flag,
+                                      Control.Elaborate.processDefault s)))
+       end,
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
         SpaceString 
         (fn s =>
@@ -197,18 +203,15 @@ fun makeOptions {usage} =
                                ; List.push (keepPasses, re)
                             end
            | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
-       (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processEnabled (s, false) of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -disable-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "disable-ann"
+       in
+          (Normal, flag, " <ann>", "disable annotation in mlb files",
+           SpaceString 
+           (fn s =>
+            reportAnnotation (s, flag,
+                              Control.Elaborate.processEnabled (s, false))))
+       end,
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
@@ -216,18 +219,15 @@ fun makeOptions {usage} =
                                     in List.push (dropPasses, re)
                                     end
                    | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
-       (Expert, "enable-ann", " <ann>", "globally enable annotation",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processEnabled (s, true) of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -enable-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "enable-ann"
+       in
+          (Expert, flag, " <ann>", "globally enable annotation",
+           SpaceString 
+           (fn s =>
+            reportAnnotation (s, flag,
+                              Control.Elaborate.processEnabled (s, true))))
+       end,
        (Expert, "error-threshhold", " 20", "error threshhold",
         intRef errorThreshhold),
        (Expert, "expert", " {false|true}", "enable expert status",
