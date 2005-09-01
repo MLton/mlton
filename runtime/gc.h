@@ -47,8 +47,8 @@ typedef W32 Header;
  * of all nonpointer data followed by all pointer data.  
  *
  * 19 bits means that there are only 2^19 different different object layouts,
- * which appears to be plenty, since there were < 128 different types required
- * for a self-compile.
+ * which appears to be plenty, since there were < 10,000 different types 
+ * required for a self-compile.
  */
 
 /* Sizes are (almost) always measured in bytes. */
