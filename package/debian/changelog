@@ -1,10 +1,10 @@
-mlton (20050827-1) unstable; urgency=low
+mlton (20050901-1) unstable; urgency=low
 
   * remaking package, linking normally with libgmp.  Thus, the package
     will depend on libgmp3c2, but that is OK for unstable.
-  * Fixed postinst script. closes: #324859
+  * Fixed postinst script. closes: #325850
 
- -- Stephen Weeks <sweeks@sweeks.com>  Fri, 26 Aug 2005 20:13:00 -0700
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 01 Sep 2005 00:20:20 -0700
 
 mlton (20050826-1) unstable; urgency=low
 
