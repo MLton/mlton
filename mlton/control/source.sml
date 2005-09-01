@@ -29,7 +29,12 @@ fun lineDirective (T {file, lineNum, lineStart},
                       
 fun new file = T {file = ref file,
                   lineNum = ref 1,
-                  lineStart = ref 1}
+                  (* mllex file positions start at zero, while we report errors
+                   * starting in column 1, so we need to pretend the first line
+                   * starts at position ~1, which will translate position 0 to
+                   * column 1.
+                   *)
+                  lineStart = ref ~1}
 
 fun newline (T {lineStart, lineNum, ...}, n) =
    (Int.inc lineNum
