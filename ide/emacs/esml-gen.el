@@ -33,7 +33,7 @@
 2.4 of the Definition.")
 
 (defconst esml-sml-alphanumeric-chars
-  "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ0123456789'_"
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'_"
   "A string of all Standard ML alphanumeric characters as defined in
 section 2.4 of the Definition.")
 
