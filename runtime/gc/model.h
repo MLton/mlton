@@ -135,16 +135,46 @@ After some experiments on those, we might be able to find a more
 manageable set for users.
 */
 
-#define GC_MODEL_Z  32
-#define GC_MODEL_S  1
-#define GC_MODEL_B  TRUE
+#define GC_MODEL_G
+
+#if (defined (GC_MODEL_A))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  0
+#define GC_MODEL_USEBASE  FALSE
+#elif (defined (GC_MODEL_AX))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  0
+#define GC_MODEL_USEBASE  TRUE
+#elif (defined (GC_MODEL_B))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  1
+#define GC_MODEL_USEBASE  FALSE
+#elif (defined (GC_MODEL_BX))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  1
+#define GC_MODEL_USEBASE  TRUE
+#elif (defined (GC_MODEL_C))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  2
+#define GC_MODEL_USEBASE  FALSE
+#elif (defined (GC_MODEL_CX))
+#define GC_MODEL_BITSIZE  32
+#define GC_MODEL_SHIFT  2
+#define GC_MODEL_USEBASE  TRUE
+#elif (defined (GC_MODEL_G))
+#define GC_MODEL_BITSIZE  64
+#define GC_MODEL_SHIFT  0
+#define GC_MODEL_USEBASE  FALSE
+#else 
+#error gc model undefined
+#endif
 
 #define OBJPTR_TYPE__(z) uint ## z ## _t
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
-#define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_Z)
+#define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_BITSIZE)
 typedef OBJPTR_TYPE objptr;
 #define OBJPTR_SIZE sizeof(objptr)
 #define PRIxOBJPTR__(z) PRIx ## z
 #define PRIxOBJPTR_(z) PRIxOBJPTR__(z)
-#define PRIxOBJPTR PRIxOBJPTR_(GC_MODEL_Z)
+#define PRIxOBJPTR PRIxOBJPTR_(GC_MODEL_BITSIZE)
 #define FMTOBJPTR "0x%016"PRIxOBJPTR
