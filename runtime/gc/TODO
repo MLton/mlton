@@ -1,0 +1,6 @@
+
+* reorder ZZZ_TYPE_INDEX
+* eliminate STRING_TYPE_INDEX, STRING_TYPE_HEADER in favor or WORD8.
+* fix semantics of numNonPointers for normal objects to mean bytes of
+        non-pointer data, rather than number of 32-bit words of
+        non-pointer data.
