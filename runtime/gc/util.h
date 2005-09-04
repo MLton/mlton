@@ -49,6 +49,6 @@ extern void diee (char *fmt, ...)
                         __attribute__ ((noreturn));
 
 typedef void* pointer;
-#define FMTPTR "0x%08"PRIxPTR
+#define FMTPTR "0x%016"PRIxPTR
 
 #endif /* _UTIL_H_ */

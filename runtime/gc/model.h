@@ -14,8 +14,8 @@ B. 32 bits, with bottom bit zero, shift left by one.
 C. 32 bits, with bottom bit zero, shift left by two.
 D. 32 bits, shift left by two.
 E. 32 bits, shift left by three.
-F. 40 bits.
-G. 64 bits.
+F. 40 bits, with bottom two bits zero.
+G. 64 bits, with bottom two bits zero.
 
 These schemes vary in the number of bits to represent a pointer in an
 object, the time to load a pointer from memory into a register, the
@@ -51,9 +51,9 @@ to which the object pointer corresponds.
 
                              =================================      E
 
-                         ========================================   F
+                         ======================================00   F
 
- ================================================================   G
+ ==============================================================00   G
 
 Algorithmically, we can compute the native pointer (P) from the object
 pointer (O) (with bitsize Z), given a shift (S) and a base (B):
@@ -126,7 +126,6 @@ matters.
 (G) costs the most in space, but has the fastest load time for
 pointers of the schemes that allow access to 4G of memory.
 
-
 A reasonable tradeoff in implementation complexity vs allowing our
 users enough flexibility might be to provide:
 
@@ -139,8 +138,13 @@ manageable set for users.
 #define GC_MODEL_Z  32
 #define GC_MODEL_S  1
 #define GC_MODEL_B  TRUE
+
 #define OBJPTR_TYPE__(z) uint ## z ## _t
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
 #define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_Z)
 typedef OBJPTR_TYPE objptr;
 #define OBJPTR_SIZE sizeof(objptr)
+#define PRIxOBJPTR__(z) PRIx ## z
+#define PRIxOBJPTR_(z) PRIxOBJPTR__(z)
+#define PRIxOBJPTR PRIxOBJPTR_(GC_MODEL_Z)
+#define FMTOBJPTR "0x%016"PRIxOBJPTR
