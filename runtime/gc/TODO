@@ -3,4 +3,9 @@
 * eliminate STRING_TYPE_INDEX, STRING_TYPE_HEADER in favor or WORD8.
 * fix semantics of numNonPointers for normal objects to mean bytes of
         non-pointer data, rather than number of 32-bit words of
-        non-pointer data.
+        non-pointer data.  Rename to sizeNonPointers.
+* the unused field in GC_weak appears to be for alignment; is there a
+        way to have it work well with 64-bits?  Yes -- it requires
+        choosing the representation for Weaks based on the model and
+        the alignment; also, the GC will need to bump the pointer to
+        the word after the header to get GC_weak to overlay properly.

@@ -152,12 +152,12 @@ static void updateWeaks (GC_state s) {
 }
 
 static void swapSemis (GC_state s) {
-        struct GC_heap h;
-
-        h = s->heap2;
-        s->heap2 = s->heap;
-        s->heap = h;
-        setCardMapForMutator (s);
+  struct GC_heap tempHeap;
+  
+  tempHeap = s->secondaryHeap;
+  s->secondaryHeap = s->heap;
+  s->heap = tempHeap;
+  setCardMapForMutator (s);
 }
 
 static inline bool detailedGCTime (GC_state s) {
@@ -172,8 +172,8 @@ static void cheneyCopy (GC_state s) {
         if (detailedGCTime (s))
                 startTiming (&ru_start);
         s->numCopyingGCs++;
-        s->toSpace = s->heap2.start;
-        s->toLimit = s->heap2.start + s->heap2.size;
+        s->toSpace = s->secondaryHeap.start;
+        s->toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
         if (DEBUG or s->messages) {
                 fprintf (stderr, "Major copying GC.\n");
                 fprintf (stderr, "fromSpace = 0x%08x of size %s\n", 

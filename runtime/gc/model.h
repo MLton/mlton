@@ -143,4 +143,4 @@ manageable set for users.
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
 #define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_Z)
 typedef OBJPTR_TYPE objptr;
-#define OBJPTR_SIZE (sizeof(objptr) / 4)
+#define OBJPTR_SIZE sizeof(objptr)

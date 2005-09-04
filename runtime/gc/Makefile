@@ -58,8 +58,12 @@ CFILES = 								\
 HFILES = 								\
 	gc_prefix.h							\
 	util.h								\
-	object.h							\
 	model.h								\
+	object.h							\
+	stack.h								\
+	frame.h								\
+	thread.h							\
+	weak.h								\
 	heap.h								\
 	gc_state.h							\
 	gc_suffix.h

@@ -30,7 +30,7 @@ typedef uint32_t GC_header;
 #define PRIxHDR PRIx32
 #define FMTHDR "0x%08"PRIxHDR
 enum {
-  GC_HEADER_SIZE =   4,
+  GC_HEADER_SIZE =   sizeof(GC_header),
   TYPE_INDEX_BITS =  19,
   TYPE_INDEX_MASK =  0x000FFFFE,
   TYPE_INDEX_SHIFT = 1,
@@ -78,9 +78,9 @@ enum {
   GC_ARRAY_HEADER_SIZE =  GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE,
 };
 
-/* Stack objects are described in stack.h */
+/* Stack objects are described in "stack.h" */
 
-/* Weak objects are described in weak.h */
+/* Weak objects are described in "weak.h" */
 
 
 /* 
