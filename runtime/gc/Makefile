@@ -48,18 +48,27 @@ CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 
+## Order matters, as these are concatenated together to form "gc.c".
 CFILES = 								\
 	gc_prefix.c							\
 	debug.c								\
-	object.c							\
+	pointer.c							\
+	align.c								\
 	model.c								\
+	object.c							\
+	array.c								\
+	foreach.c							\
+	assumptions.c							\
 	gc_suffix.c
 
+## Order matters, as these are concatenated together to form "gc.h".
 HFILES = 								\
 	gc_prefix.h							\
 	util.h								\
+	pointer.h							\
 	model.h								\
 	object.h							\
+	array.h								\
 	stack.h								\
 	frame.h								\
 	thread.h							\

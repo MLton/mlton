@@ -32,17 +32,17 @@ static inline GC_header GC_objectHeader (uint32_t t) {
     t = &s->objectTypes [objectTypeIndex];                                      \
     tag = t->tag;                                                               \
     hasIdentity = t->hasIdentity;                                               \
-    numNonPointers = t->numNonPointers;                                         \
-    numPointers = t->numPointers;                                               \
+    numNonObjptrs = t->numNonObjptrs;                                           \
+    numObjptrs = t->numObjptrs;                                                 \
     if (DEBUG_DETAILED)                                                         \
       fprintf (stderr,                                                          \
                "SPLIT_HEADER ("FMTHDR")"                                        \
                "  tag = %s"                                                     \
                "  hasIdentity = %u"                                             \
-               "  numNonPointers = %"PRIu16                                     \
-               "  numPointers = %"PRIu16"\n",                                   \
+               "  numNonObjptrs = %"PRIu16                                      \
+               "  numObjptrs = %"PRIu16"\n",                                    \
                header,                                                          \
-               tagToString(tag), hasIdenity, numNonPointers, numPointers);      \
+               tagToString(tag), hasIdentity, numNonObjptrs, numObjptrs);       \
   } while (0)
 
 static char* tagToString (GC_objectTypeTag tag) {
@@ -55,6 +55,39 @@ static char* tagToString (GC_objectTypeTag tag) {
     return "STACK";
   case WEAK_TAG:
     return "WEAK";
+  default:
+    die ("bad tag %u", tag);
+  }
+}
+
+/* If p points at the beginning of an object, then toData p returns a
+ * pointer to the start of the object data.
+ */
+static inline pointer toData (GC_state s, pointer p) {
+  GC_header header;
+  pointer res;
+
+  assert (isAlignedFrontier (s, p));
+  header = *(GC_header*)p;
+  if (0 == header)
+    /* Looking at the counter word in an array. */
+    res = p + GC_ARRAY_HEADER_SIZE;
+  else
+    /* Looking at a header word. */
+    res = p + GC_NORMAL_HEADER_SIZE;
+  assert (isAligned ((uintptr_t)res, s->alignment));
+  return res;
+}
+
+static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs, 
+                                           GC_objectTypeTag tag) {
+  switch (tag) {
+  case ARRAY_TAG:
+    return (size_t)(numNonObjptrs);
+  case NORMAL_TAG:
+    return (size_t)(numNonObjptrs) * 4;
+  case WEAK_TAG:
+    return (size_t)(numNonObjptrs) * 4;
   default:
     die ("bad tag %u", tag);
   }

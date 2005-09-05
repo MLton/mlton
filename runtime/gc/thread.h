@@ -21,3 +21,5 @@ typedef struct GC_thread {
                           */
   objptr stack;          /* The stack for this thread. */
 } *GC_thread;
+
+#define BOGUS_THREAD (GC_thread)BOGUS_POINTER

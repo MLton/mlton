@@ -9,3 +9,5 @@
         choosing the representation for Weaks based on the model and
         the alignment; also, the GC will need to bump the pointer to
         the word after the header to get GC_weak to overlay properly.
+* what type should be used for the size field in GC_heap?  I'm using
+        size_t currently, since that is the type needed by malloc.

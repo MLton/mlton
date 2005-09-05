@@ -42,6 +42,22 @@ enum {
   MARK_SHIFT =       31
 };
 
+/* GC_getHeaderp (p)
+ *
+ * Returns a pointer to the header for the object pointed to by p.
+ */
+static inline GC_header* GC_getHeaderp (pointer p) {
+  return (GC_header*)(p - GC_HEADER_SIZE);
+}
+
+/* GC_getHeader (p) 
+ *
+ * Returns the header for the object pointed to by p. 
+ */
+static inline GC_header GC_getHeader (pointer p) {
+  return *(GC_getHeaderp(p));
+}
+
 /*
  * Normal objects have the following layout:
  *
@@ -60,23 +76,7 @@ enum {
   GC_NORMAL_HEADER_SIZE = GC_HEADER_SIZE,
 };
 
-/*
- * Array objects have the following layout:
- * 
- * counter word32 :: 
- * length word32 :: 
- * header word32 :: 
- * ( (non heap-pointers)* :: (heap pointers)* )*
- *
- * The counter word is used by mark compact GC.  The length word is
- * the number of elements in the array.  Array elements have the same
- * individual layout as normal objects, omitting the header word.
- */
-enum {
-  GC_ARRAY_LENGTH_SIZE =  4,
-  GC_ARRAY_COUNTER_SIZE = GC_ARRAY_LENGTH_SIZE,
-  GC_ARRAY_HEADER_SIZE =  GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE,
-};
+/* Array objects are described in "array.h" */
 
 /* Stack objects are described in "stack.h" */
 
@@ -94,22 +94,22 @@ enum {
  * of object types that is emitted for each compiled program.  The
  * hasIdentity field indicates whether or not the object has mutable
  * fields, in which case it may not be hash-cons-ed.  In a normal
- * object, the numNonPointers field indicates the number of 32-bit
- * words of non heap-pointer data, while the numPointers field
+ * object, the numNonObjptrs field indicates the number of 32-bit
+ * words of non heap-pointer data, while the numObjptrs field
  * indicates the number of heap pointers.  In an array object, the
- * numNonPointers field indicates the number of bytes of non
- * heap-pointer data, while the numPointers field indicates the number
- * of heap pointers.  In a stack object, the numNonPointers and
- * numPointers fields are irrelevant.  In a weak object, the
- * numNonPointers and numPointers fields are interpreted as in a
- * normal object (and, hence, must be (0,1) or (0,0)).
+ * numNonObjptrs field indicates the number of bytes of non
+ * heap-pointer data, while the numObjptrs field indicates the number
+ * of heap pointers.  In a stack object, the numNonObjptrs and
+ * numObjptrs fields are irrelevant.  In a weak object, the
+ * numNonObjptrs and numObjptrs fields are interpreted as in a normal
+ * object (and, hence, must be (2,1) or (3,0)).
 */
 typedef struct {
         /* Keep tag first, at zero offset, since it is referenced most often. */
         GC_objectTypeTag tag;
         bool hasIdentity;
-        uint16_t numNonPointers;
-        uint16_t numPointers;
+        uint16_t numNonObjptrs;
+        uint16_t numObjptrs;
 } GC_objectType;
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */

@@ -28,7 +28,7 @@ C       32      slow     16     8
 D       32      slow     16     4
 E       32      slow     32     8
 F       40      slow    256     4
-G       64      fast     4G     8
+G       64      fast     4G     4
 
 Each of the (A-F) has a variant (AX-FX) in which pointers are added to
 some constant base address.  This gives access to any region in the
@@ -139,35 +139,74 @@ manageable set for users.
 
 #if (defined (GC_MODEL_A))
 #define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  0
+#define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  FALSE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #elif (defined (GC_MODEL_AX))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  0
-#define GC_MODEL_USEBASE  TRUE
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   0
+#define GC_MODEL_USEBASE TRUE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #elif (defined (GC_MODEL_B))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  1
-#define GC_MODEL_USEBASE  FALSE
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   1
+#define GC_MODEL_USEBASE FALSE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #elif (defined (GC_MODEL_BX))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  1
-#define GC_MODEL_USEBASE  TRUE
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   1
+#define GC_MODEL_USEBASE TRUE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #elif (defined (GC_MODEL_C))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  2
-#define GC_MODEL_USEBASE  FALSE
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   2
+#define GC_MODEL_USEBASE FALSE
+#define GC_MODEL_MINALIGN_SHIFT 3
 #elif (defined (GC_MODEL_CX))
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   2
+#define GC_MODEL_USEBASE TRUE
+#define GC_MODEL_MINALIGN_SHIFT 3
+#elif (defined (GC_MODEL_D))
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   2
+#define GC_MODEL_USEBASE FALSE
+#define GC_MODEL_MINALIGN_SHIFT 2
+#elif (defined (GC_MODEL_DX))
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   2
+#define GC_MODEL_USEBASE TRUE
+#define GC_MODEL_MINALIGN_SHIFT 2
+#elif (defined (GC_MODEL_E))
+#define GC_MODEL_BITSIZE 32
+#define GC_MODEL_SHIFT   3
+#define GC_MODEL_USEBASE FALSE
+#define GC_MODEL_MINALIGN_SHIFT 3
+#elif (defined (GC_MODEL_EX))
 #define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT  2
+#define GC_MODEL_SHIFT    3
 #define GC_MODEL_USEBASE  TRUE
+#define GC_MODEL_MINALIGN_SHIFT 3
+#elif (defined (GC_MODEL_F))
+#define GC_MODEL_BITSIZE  40
+#define GC_MODEL_SHIFT    0
+#define GC_MODEL_USEBASE  FALSE
+#define GC_MODEL_MINALIGN_SHIFT 2
+#elif (defined (GC_MODEL_EX))
+#define GC_MODEL_BITSIZE  40
+#define GC_MODEL_SHIFT    0
+#define GC_MODEL_USEBASE  TRUE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #elif (defined (GC_MODEL_G))
 #define GC_MODEL_BITSIZE  64
-#define GC_MODEL_SHIFT  0
+#define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  FALSE
+#define GC_MODEL_MINALIGN_SHIFT 2
 #else 
-#error gc model undefined
+#error gc model unknown
 #endif
+#define GC_MODEL_NONPTR ((GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT) > 0)
+#define GC_MODEL_MINALIGN TWOPOWER(GC_MODEL_MINALIGN_SHIFT)
 
 #define OBJPTR_TYPE__(z) uint ## z ## _t
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
@@ -178,3 +217,9 @@ typedef OBJPTR_TYPE objptr;
 #define PRIxOBJPTR_(z) PRIxOBJPTR__(z)
 #define PRIxOBJPTR PRIxOBJPTR_(GC_MODEL_BITSIZE)
 #define FMTOBJPTR "0x%016"PRIxOBJPTR
+
+#if GC_MODEL_NONPTR
+#define BOGUS_OBJPTR 0x1
+#else
+#error gc model does not admit bogus object pointer
+#endif

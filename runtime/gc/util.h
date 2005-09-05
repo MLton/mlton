@@ -5,10 +5,6 @@
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  */
-
-#ifndef _UTIL_H_
-#define _UTIL_H_
-
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
 
@@ -26,6 +22,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <stdlib.h>
+#include <limits.h>
 
 #include "../assert.h"
 
@@ -47,8 +45,3 @@ extern void die (char *fmt, ...)
 extern void diee (char *fmt, ...)
                         __attribute__ ((format(printf, 1, 2)))
                         __attribute__ ((noreturn));
-
-typedef void* pointer;
-#define FMTPTR "0x%016"PRIxPTR
-
-#endif /* _UTIL_H_ */

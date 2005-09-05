@@ -27,7 +27,7 @@ typedef struct GC_stack {
   /* markTop and markIndex are only used during marking.  They record
    * the current pointer in the stack that is being followed.  markTop
    * points to the top of the stack frame containing the pointer and
-   * markI is the index in that frames frameOffsets of the pointer
+   * markIndex is the index in that frames frameOffsets of the pointer
    * slot.  So, when the GC pointer reversal gets back to the stack,
    * it can continue with the next pointer (either in the current
    * frame or the next frame).

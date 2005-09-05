@@ -284,7 +284,7 @@ Thoughts on 64-bits:
    programs compiled on 64-bit architectures are essentially the same
    as those compiled on 32-bit architectures.  In particular, 2^19
    object types should remain viable for some time to come.  Likewise,
-   the 20 counter bits in the header word (used to implement the mark
+   the 10 counter bits in the header word (used to implement the mark
    stack) should continue to be sufficient for the number of heap
    pointers in a normal heap object.  Finally, 16-bits for the
    numNonPointers and numPointers fields of a GC_ObjectType will

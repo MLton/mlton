@@ -18,6 +18,6 @@
 */
 
 typedef struct GC_heap {
-  uint32_t size;
+  size_t size;
   pointer start;          /* start of memory area */
 } *GC_heap;
