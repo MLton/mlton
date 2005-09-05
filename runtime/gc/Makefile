@@ -21,10 +21,12 @@ FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
+MODELS = A
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -mtune=opteron
+MODELS = A AX B BX C CX G
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
@@ -102,6 +104,14 @@ gc.h: $(HFILES)
 			cat $$f;					\
 		done;							\
 	) > gc.h
+
+.PHONY: models
+models: gc.c gc.h
+	(								\
+		for m in $(MODELS); do					\
+			$(CC) $(CFLAGS) -DGC_MODEL_$$m -c -o gc.$$m.o gc.c;	\
+		done;							\
+	)
 
 .PHONY: clean
 clean:
