@@ -135,8 +135,6 @@ After some experiments on those, we might be able to find a more
 manageable set for users.
 */
 
-#define GC_MODEL_G
-
 #if (defined (GC_MODEL_A))
 #define GC_MODEL_BITSIZE  32
 #define GC_MODEL_SHIFT    0

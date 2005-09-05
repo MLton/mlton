@@ -21,12 +21,14 @@ FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
-MODELS = A
+DEFAULT_MODEL = A
+ALL_MODELS = A
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -mtune=opteron
-MODELS = A AX B BX C CX G
+DEFAULT_MODEL = BX
+ALL_MODELS = A AX B BX C CX G
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
@@ -82,10 +84,10 @@ HFILES = 								\
 all: gc.o gc-gdb.o
 
 gc-gdb.o: gc.c gc.h
-	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ gc.c
+	$(CC) $(DEBUGFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -O1 -DASSERT=1 -c -o $@ gc.c
 
 gc.o: gc.c gc.h
-	$(CC) $(CFLAGS) -c -o $@ gc.c
+	$(CC) $(CFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -c -o $@ gc.c
 
 gc.c: $(CFILES)
 	rm -f gc.c
@@ -108,7 +110,7 @@ gc.h: $(HFILES)
 .PHONY: models
 models: gc.c gc.h
 	(								\
-		for m in $(MODELS); do					\
+		for m in $(ALL_MODELS); do				\
 			$(CC) $(CFLAGS) -DGC_MODEL_$$m -c -o gc.$$m.o gc.c;	\
 			$(CC) $(CFLAGS) $(DEBUGFLAGS) -O1 -DASSERT=1 -DGC_MODEL_$$m -c -o gc-gdb.$$m.o gc.c;	\
 		done;							\
@@ -116,4 +118,4 @@ models: gc.c gc.h
 
 .PHONY: clean
 clean:
-	../bin/clean
+	../../bin/clean
