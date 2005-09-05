@@ -110,6 +110,7 @@ models: gc.c gc.h
 	(								\
 		for m in $(MODELS); do					\
 			$(CC) $(CFLAGS) -DGC_MODEL_$$m -c -o gc.$$m.o gc.c;	\
+			$(CC) $(CFLAGS) $(DEBUGFLAGS) -O1 -DASSERT=1 -DGC_MODEL_$$m -c -o gc-gdb.$$m.o gc.c;	\
 		done;							\
 	)
 
