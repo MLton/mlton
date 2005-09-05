@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-09-05
+  - Added -mlb-path-map switch.
+
 * 2005-08-25
   - Fixed bug in MLton.Finalizable.touch, which was not keeping alive
     finalizable values in all cases.

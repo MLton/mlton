@@ -129,6 +129,12 @@ pass an option to the linker, you must use \fBgcc\fP's \fB-Wl,\fP
 syntax, e.g., \fB-link-opt '-Wl,--export-dynamic'\fP.
 
 .TP
+\fB-mlb-path-map \fIfile\fR
+Use file as an MLB path map to define additional MLB path variables.
+Multiple uses of \fB-mlb-path-map\fP are allowed, with variable
+definitions in later path maps taking precendence over earlier ones.
+
+.TP
 \fB-output \fIfile\fR
 Specify the name of the final output file.
 The default name is the input file name with its suffix removed and an

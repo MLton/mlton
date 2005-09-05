@@ -282,6 +282,8 @@ fun makeOptions {usage} =
         boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
         intRef maxFunctionSize),
+       (Normal, "mlb-path-map", " <file>", "additional MLB path map",
+        SpaceString (fn s => mlbPathMaps := !mlbPathMaps @ [s])),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
         intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 

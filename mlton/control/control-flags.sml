@@ -705,6 +705,10 @@ val markCards = control {name = "mark cards",
 val maxFunctionSize = control {name = "max function size",
                                default = 10000,
                                toString = Int.toString}
+
+val mlbPathMaps = control {name = "mlb path maps",
+                           default = [],
+                           toString = List.toString (fn s => s)}
    
 structure Native =
    struct
