@@ -403,15 +403,14 @@ install-no-docs:
 .PHONY: install-docs
 install-docs:
 	mkdir -p $(TDOC)
-	(									\
-		cd $(SRC)/doc &&						\
-		$(CP) changelog examples license README $(TDOC)/		\
+	(								\
+		cd $(SRC)/doc &&					\
+		$(CP) changelog examples guide license README $(TDOC)/	\
 	)
-	(									\
-		cd $(SRC)/util &&						\
-		$(CP) cmcat cm2mlb $(TDOC)/					\
+	(								\
+		cd $(SRC)/util &&					\
+		$(CP) cmcat cm2mlb $(TDOC)/				\
 	)
-	rm -rf $(TDOC)/user-guide
 	for f in callcc command-line hello-world same-fringe signals	\
 			size taut thread1 thread2 thread-switch timeout \
 		; do 							\
