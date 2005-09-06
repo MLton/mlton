@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>SMLofNJStructure - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      SMLofNJStructure
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SML_OF_NJ =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Cont:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a cont
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont -&gt; 'a) -&gt; 'a
+            <B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont -&gt; 'a -&gt; 'b
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> SysInfo:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">UNKNOWN</FONT>
+            </FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> os_kind </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">BEOS</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">MACOS</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">OS2</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">UNIX</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">WIN32</FONT>
+
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> getHostArch: unit -&gt; string
+            <B><FONT COLOR="#A020F0">val</FONT></B> getOSKind: unit -&gt; os_kind
+            <B><FONT COLOR="#A020F0">val</FONT></B> getOSName: unit -&gt; string
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> exnHistory: exn -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> exportFn: string * (string * string list -&gt; OS.Process.status) -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> exportML: string -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> getAllArgs: unit -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> getArgs: unit -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> getCmdName: unit -&gt; string
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+<tt>SMLofNJ</tt> implements a subset of the structure of the same name provided in Standard ML of New Jersey.  It is included to make it easier to port programs between the two systems.  The semantics of these functions may be different than in SML/NJ. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>structure&nbsp;Cont</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  implements continuations. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>SysInfo.getHostArch&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the string for the architecture. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>SysInfo.getOSKind</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the OS kind. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>SysInfo.getOSName&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the string for the host. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>exnHistory</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the same as <tt>MLton.Exn.history</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getCmdName&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the same as <tt>CommandLine.name&nbsp;()</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getArgs&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the same as <tt>CommandLine.arguments&nbsp;()</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getAllArgs&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the same as <tt>getCmdName()::getArgs()</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>exportFn&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  save the state of the computation to a file that will apply <tt>f</tt>   to the command-line arguments upon restart. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>exportML&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  save the state of the computation to file <tt>f</tt> and continue.   Return <tt>true</tt> in the restarted computation and <tt>false</tt> in   the continuing computation. </ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-12-17 01:40:36 by <span title="roam59-224.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

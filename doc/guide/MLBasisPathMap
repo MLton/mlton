@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLBasisPathMap - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLBasisPathMap
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+An <a href="MLBasis">ML Basis</a> <em>path map</em> describes a map from ML Basis path variables (of the form <tt>$(VAR)</tt>) to file system paths.  ML Basis path variables to provide a flexible way to refer to libraries while allowing them to be moved without changing their clients. <p>
+The format of an <tt>mlb-path-map</tt> file is a sequence of lines; each line consists of two, white-space delimited tokens.  The first token is a path variable <tt>VAR</tt> and the second token is the path to which the variable is mapped.  The path may include path variables, which are recursively expanded. 
+</p>
+<p>
+The mapping from path variables to paths is initialized by reading  a system-wide configuration file: <tt>/usr/lib/mlton/mlb-path-map</tt>. Additional path maps can be specified with <tt>-mlb-path-map</tt>. Configuration files are processed from first to last and from top to bottom, later mappings take precedence over earlier mappings. 
+</p>
+<p>
+The system-wide configuration file makes the following path variables available. 
+</p>
+
+<pre>LIB_MLTON_DIR   /usr/lib/mlton
+SML_LIB         $(LIB_MLTON_DIR)/sml
+</pre><h2 id="head-a283e7658f43ceca065ff16e5fc5a2383c955359">Changes since the current public release</h2>
+<p>
+Since the release of MLton 20041109, we have switched from <tt>MLTON_ROOT</tt> to <tt>SML_LIB</tt>, to use a more compiler neutral name, since at least one other SML compiler (the <a href="MLKit">MLKit</a>) is in the process of adding support for MLB files.  You can add an entry like the following to either your personal path map or to the system-wide path map, and begin to migrate to the new name immediately. 
+</p>
+
+<pre>SML_LIB $(MLTON_ROOT)
+</pre></div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-09-05 21:54:46 by <span title="adsl-64-166-225-193.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

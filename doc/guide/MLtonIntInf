@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonIntInf - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonIntInf
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_INT_INF =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> areSmall: t * t -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> gcd: t * t -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> isSmall: t -&gt; bool
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> rep </FONT></B>=<FONT COLOR="#228B22"><B>
+         <FONT COLOR="#B8860B">Big</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> word vector
+       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Small</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> rep: t -&gt; rep
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+MLton represents an arbitrary precision integer either as an unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits representing a small integer in [-2<sup>30</sup>, 2<sup>30</sup>), or as a pointer to a vector of words where the first word indicates the sign and the rest are the limbs of <a href="GnuMP">GnuMP</a> big integer. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>type&nbsp;t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the same as type <tt>IntInf.int</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>areSmall&nbsp;(a,&nbsp;b)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns true iff both <tt>a</tt> and <tt>b</tt> are small. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>gcd&nbsp;(a,&nbsp;b)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  use the GnuMP's fast gcd implementation. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>isSmall&nbsp;a</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns true iff <tt>a</tt> is small. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>datatype&nbsp;rep</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the underlying representation of an <tt>IntInf.int</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>rep&nbsp;i</tt> 
+</p>
+</li>
+
+        <ul>
+
+  return the underlying representation of i. </ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-12-29 20:47:58 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

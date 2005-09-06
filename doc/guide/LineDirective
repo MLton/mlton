@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>LineDirective - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      LineDirective
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+To aid in the debugging of code produced by program generators such as <a class="external" href="http://www.eecs.harvard.edu/~nr/noweb/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Noweb</a>, MLton supports comments with line directives of the form  <tt>&nbsp;(*#line&nbsp;</tt><em>line</em><tt>.</tt><em>col</em><tt>&nbsp;"</tt><em>file</em><tt>"*)</tt>.   Here, <em>line</em> and <em>col</em> are sequences of decimal digits and <em>file</em> is the source file.  A line directive causes the front end to believe that the character following the right parenthesis is at the line and column of the specified file.  A line directive only affects the reporting of error messages and does not affect program semantics (except for functions like <tt>MLton.Exn.history</tt> that report source file positions).  Syntactically invalid line directives are ignored. To prevent incompatibilites with SML, the file name may not contain the character sequence <tt>*)</tt>. </div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-11-28 19:09:52 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

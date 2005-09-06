@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>RunningOnMinGW - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      RunningOnMinGW
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Support for MLton on MinGW is preliminary.  We are still working on resolving the issues below.  If you are interested to help out, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a> and get involved with MLton <a href="Development">Development</a>. 
+    <ul>
+
+    <li>
+<p>
+ Many of the <tt>Posix</tt> functions are unimplemented and  will <tt>raise&nbsp;SysErr</tt>. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>MLton.Itimer</tt> is unimplemented. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ The C function <tt>getrusage</tt> is implemented by a stub   that always sets the time to zero.  Hence  <tt>MLton.Rusage.rusage</tt> will return times of zero.  Also,   the times printed by the runtime system will be zeroes.  
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-24 15:11:09 by <span title="cfs35.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

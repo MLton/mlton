@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>RayRacine - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      RayRacine
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Using SML in some <em>Semantic Web</em> stuff.   Anyone interested in similar, please contact me.  Grey<strong></strong>Lensman on #sml on IRC or rracine at this domain adelphia with a dot here net.  <p>
+Current areas of coding. 
+</p>
+
+    <ol type="1">
+
+    <li>
+<p>
+Pretty solid, high performance Rete implementation - base functionality is complete. 
+</p>
+</li>
+    <li>
+<p>
+N3 parser - mostly complete 
+</p>
+</li>
+    <li>
+<p>
+RDF parser based on fxg - not started. 
+</p>
+</li>
+    <li>
+<p>
+Swerve HTTP server - 1/2 done. 
+</p>
+</li>
+    <li>
+<p>
+SPARQL implementation - not started. 
+</p>
+</li>
+    <li>
+<p>
+Persistent engine based on BerkelyDB - not started. 
+</p>
+</li>
+    <li>
+<p>
+Native implementation of Postgresql protocol - underway, ways to go. 
+</p>
+</li>
+    <li>
+<p>
+I also have a small change to the MLton compiler to add <a class="nonexistent" href="PackWord">PackWord</a>&lt;N&gt; - changes compile but needs some more work, clean-up and unit tests. 
+</p>
+</li>
+</ol>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-11-29 19:56:50 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

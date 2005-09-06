@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>PolyEqual - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      PolyEqual
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<p>
+An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. 
+</p>
+<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+Implements polymorphic equality. 
+</p>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/poly-equal.sig?view=markup">poly-equal.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/poly-equal.fun?view=markup">poly-equal.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+For each datatype, tycon, and vector type, it builds and equality function and translates calls to <tt>MLton_equal</tt> into calls to that function. 
+</p>
+<p>
+Also generates calls to <tt>IntInf_equal</tt> and <tt>Word_equal</tt>. 
+</p>
+<p>
+For tuples, it does the equality test inline; i.e., it does not create a separate equality function for each tuple type. 
+</p>
+<p>
+All equality functions are created if necesary, i.e., if equality is actually used at a type. 
+</p>
+<p>
+Optimizations: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ for datatypes that are enumerations, do not build a case dispatch, just use <tt>MLton_eq</tt>, as the backend will represent these as ints 
+</p>
+</li>
+    <li>
+<p>
+ deep equality always does an <tt>MLton_eq</tt> test first 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:31:13 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

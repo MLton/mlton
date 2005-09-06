@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>LocalRef - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      LocalRef
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<p>
+An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. 
+</p>
+<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+Optimize <tt>ref</tt> cells local to a <a href="SSA">SSA</a> function: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ global <tt>ref</tt>s only used in one function are moved to the function 
+</p>
+</li>
+    <li>
+<p>
+ <tt>ref</tt>s only created, read from, and written to (i.e., don't escape) are converted into function local variables 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+Uses <a href="Multi">Multi</a> and <a href="Restore">Restore</a>. 
+</p>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/local-ref.sig?view=markup">local-ref.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/local-ref.fun?view=markup">local-ref.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+Moving a global <tt>ref</tt> requires the <a href="Multi">Multi</a> analysis, because a global <tt>ref</tt> can only be moved into a function that is executed at most once. 
+</p>
+<p>
+Conversion of non-escaping <tt>ref</tt>s is structured in three phases: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ analysis -- a variable <tt>r&nbsp;=&nbsp;Ref_ref&nbsp;x</tt> escapes if 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <tt>r</tt> is used in any context besides <tt>Ref_assign&nbsp;(r,&nbsp;_)</tt> or <tt>Ref_deref&nbsp;r</tt> 
+</p>
+</li>
+            <li>
+<p>
+ all uses <tt>r</tt> reachable from a (direct or indirect) call to <tt>Thread_copyCurrent</tt> are of the same flavor (either <tt>Ref_assign</tt> or <tt>Ref_deref</tt>); this also requires the <a href="Multi">Multi</a> analysis. 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ transformation  
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ rewrites <tt>r&nbsp;=&nbsp;Ref_ref&nbsp;x</tt> to <tt>r&nbsp;=&nbsp;x</tt> 
+</p>
+</li>
+            <li>
+<p>
+ rewrites <tt>_&nbsp;=&nbsp;Ref_assign&nbsp;(r,&nbsp;y)</tt> to <tt>r&nbsp;=&nbsp;y</tt> 
+</p>
+</li>
+            <li>
+<p>
+ rewrites <tt>z&nbsp;=&nbsp;Ref_deref&nbsp;r</tt> to <tt>z&nbsp;=&nbsp;r</tt>    Note that the resulting program violates the <strong></strong>SSA<strong></strong> condition. 
+</p>
+</li>
+
+            </ul>
+
+
+    <li>
+<p>
+ <a href="Restore">Restore</a> -- restore the <strong></strong>SSA<strong></strong> condition. 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:33:39 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

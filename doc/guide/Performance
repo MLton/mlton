@@ -1,0 +1,2020 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Performance - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="DLXSimulator.sml" href="http://mlton.org/pages/Performance/attachments/DLXSimulator.sml">
+<link rel="Appendix" title="barnes-hut.sml" href="http://mlton.org/pages/Performance/attachments/barnes-hut.sml">
+<link rel="Appendix" title="boyer.sml" href="http://mlton.org/pages/Performance/attachments/boyer.sml">
+<link rel="Appendix" title="checksum.sml" href="http://mlton.org/pages/Performance/attachments/checksum.sml">
+<link rel="Appendix" title="chess.gml" href="http://mlton.org/pages/Performance/attachments/chess.gml">
+<link rel="Appendix" title="count-graphs.sml" href="http://mlton.org/pages/Performance/attachments/count-graphs.sml">
+<link rel="Appendix" title="fft.sml" href="http://mlton.org/pages/Performance/attachments/fft.sml">
+<link rel="Appendix" title="fib.sml" href="http://mlton.org/pages/Performance/attachments/fib.sml">
+<link rel="Appendix" title="flat-array.sml" href="http://mlton.org/pages/Performance/attachments/flat-array.sml">
+<link rel="Appendix" title="fxp.sml" href="http://mlton.org/pages/Performance/attachments/fxp.sml">
+<link rel="Appendix" title="hamlet-input.sml" href="http://mlton.org/pages/Performance/attachments/hamlet-input.sml">
+<link rel="Appendix" title="hamlet.sml" href="http://mlton.org/pages/Performance/attachments/hamlet.sml">
+<link rel="Appendix" title="hello.sml" href="http://mlton.org/pages/Performance/attachments/hello.sml">
+<link rel="Appendix" title="imp-for.sml" href="http://mlton.org/pages/Performance/attachments/imp-for.sml">
+<link rel="Appendix" title="knuth-bendix.sml" href="http://mlton.org/pages/Performance/attachments/knuth-bendix.sml">
+<link rel="Appendix" title="lexgen.sml" href="http://mlton.org/pages/Performance/attachments/lexgen.sml">
+<link rel="Appendix" title="life.sml" href="http://mlton.org/pages/Performance/attachments/life.sml">
+<link rel="Appendix" title="logic.sml" href="http://mlton.org/pages/Performance/attachments/logic.sml">
+<link rel="Appendix" title="mandelbrot.sml" href="http://mlton.org/pages/Performance/attachments/mandelbrot.sml">
+<link rel="Appendix" title="matrix-multiply.sml" href="http://mlton.org/pages/Performance/attachments/matrix-multiply.sml">
+<link rel="Appendix" title="md5.sml" href="http://mlton.org/pages/Performance/attachments/md5.sml">
+<link rel="Appendix" title="merge.sml" href="http://mlton.org/pages/Performance/attachments/merge.sml">
+<link rel="Appendix" title="ml.grm" href="http://mlton.org/pages/Performance/attachments/ml.grm">
+<link rel="Appendix" title="ml.lex" href="http://mlton.org/pages/Performance/attachments/ml.lex">
+<link rel="Appendix" title="mlyacc.sml" href="http://mlton.org/pages/Performance/attachments/mlyacc.sml">
+<link rel="Appendix" title="model-elimination.sml" href="http://mlton.org/pages/Performance/attachments/model-elimination.sml">
+<link rel="Appendix" title="mpuz.sml" href="http://mlton.org/pages/Performance/attachments/mpuz.sml">
+<link rel="Appendix" title="ndotprod.s" href="http://mlton.org/pages/Performance/attachments/ndotprod.s">
+<link rel="Appendix" title="nucleic.sml" href="http://mlton.org/pages/Performance/attachments/nucleic.sml">
+<link rel="Appendix" title="output1.sml" href="http://mlton.org/pages/Performance/attachments/output1.sml">
+<link rel="Appendix" title="peek.sml" href="http://mlton.org/pages/Performance/attachments/peek.sml">
+<link rel="Appendix" title="psdes-random.sml" href="http://mlton.org/pages/Performance/attachments/psdes-random.sml">
+<link rel="Appendix" title="ratio-regions.sml" href="http://mlton.org/pages/Performance/attachments/ratio-regions.sml">
+<link rel="Appendix" title="ray" href="http://mlton.org/pages/Performance/attachments/ray">
+<link rel="Appendix" title="ray.sml" href="http://mlton.org/pages/Performance/attachments/ray.sml">
+<link rel="Appendix" title="raytrace.sml" href="http://mlton.org/pages/Performance/attachments/raytrace.sml">
+<link rel="Appendix" title="simple.sml" href="http://mlton.org/pages/Performance/attachments/simple.sml">
+<link rel="Appendix" title="smith-normal-form.sml" href="http://mlton.org/pages/Performance/attachments/smith-normal-form.sml">
+<link rel="Appendix" title="tailfib.sml" href="http://mlton.org/pages/Performance/attachments/tailfib.sml">
+<link rel="Appendix" title="tak.sml" href="http://mlton.org/pages/Performance/attachments/tak.sml">
+<link rel="Appendix" title="tensor.sml" href="http://mlton.org/pages/Performance/attachments/tensor.sml">
+<link rel="Appendix" title="tsp.sml" href="http://mlton.org/pages/Performance/attachments/tsp.sml">
+<link rel="Appendix" title="tyan.sml" href="http://mlton.org/pages/Performance/attachments/tyan.sml">
+<link rel="Appendix" title="vector-concat.sml" href="http://mlton.org/pages/Performance/attachments/vector-concat.sml">
+<link rel="Appendix" title="vector-rev.sml" href="http://mlton.org/pages/Performance/attachments/vector-rev.sml">
+<link rel="Appendix" title="vliw.sml" href="http://mlton.org/pages/Performance/attachments/vliw.sml">
+<link rel="Appendix" title="wc-input1.sml" href="http://mlton.org/pages/Performance/attachments/wc-input1.sml">
+<link rel="Appendix" title="wc-scanStream.sml" href="http://mlton.org/pages/Performance/attachments/wc-scanStream.sml">
+<link rel="Appendix" title="zebra.sml" href="http://mlton.org/pages/Performance/attachments/zebra.sml">
+<link rel="Appendix" title="zern.sml" href="http://mlton.org/pages/Performance/attachments/zern.sml">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Performance
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+The <a class="external" href="http://shootout.alioth.debian.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Computer Language Shootout</a> has a <a class="external" href="http://shootout.alioth.debian.org/benchmark.php?test=all&amp;lang=all&amp;sort=cpu"><img src="moin-www.png" alt="[WWW]" height="11" width="11">performance comparison</a> of many different languages, including  <a class="external" href="http://shootout.alioth.debian.org/benchmark.php?test=all&amp;lang=mlton&amp;sort=cpu"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton</a>. <p>
+This page compares the performance of the following SML compilers on a range of benchmarks. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Home">MLton</a> 20041109 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MLKit">ML Kit</a> 4.1.1 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MoscowML">Moscow ML</a> 2.00 
+</p>
+</li>
+    <li>
+<p>
+ <a href="PolyML">Poly/ML</a> 4.1.3 
+</p>
+</li>
+    <li>
+<p>
+ <a href="SMLNJ">SML/NJ</a> 110.49 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+There are tables for <a href="#RunTime">run time</a>, <a href="#CompileTime">compile time</a>, and <a href="#CodeSize">code size</a>. 
+</p>
+<h2 id="head-cdd7bb2816b7a8f88bce0e47be39943bc369516b">Setup</h2>
+<p>
+All benchmarks were compiled and run on a 1.6 GHz dual Athlon with 4G of RAM.  The benchmarks were compiled with the default settings for all the compilers, except for Moscow ML, which was passed the <tt>-orthodox&nbsp;-standalone&nbsp;-toplevel</tt> switches.  The Poly/ML executables were produced by <tt>use</tt>ing the file, followed by a <tt>PolyML.commit</tt>.  The SML/NJ executables were produced by wrapping the entire program in a <tt>local</tt> declaration whose body performs an <tt>SMLofNJ.exportFn</tt>. 
+</p>
+<p>
+For more details, or if you want to run the benchmarks yourself, please see the <tt>benchmark</tt> directory of the MLton <a href="Sources">Sources</a>. 
+</p>
+<p>
+All of the benchmarks are available for download from this page.  Some of the benchmarks were obtained from the SML/NJ benchmark suite.  Some of the benchmarks expect certain input files to exist in the <tt>DATA</tt> subdirectory. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Performance/attachments/hamlet.sml">hamlet.sml</a> (<a href="http://mlton.org/pages/Performance/attachments/hamlet-input.sml">hamlet-input.sml</a>) 
+</p>
+</li>
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Performance/attachments/ray.sml">ray.sml</a> (<a href="http://mlton.org/pages/Performance/attachments/ray">ray</a>) 
+</p>
+</li>
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Performance/attachments/raytrace.sml">raytrace.sml</a> (<a href="http://mlton.org/pages/Performance/attachments/chess.gml">chess.gml</a>) 
+</p>
+</li>
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Performance/attachments/vliw.sml">vliw.sml</a> (<a href="http://mlton.org/pages/Performance/attachments/ndotprod.s">ndotprod.s</a>) 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-0d8c3c34477c6b6a2354e16ff6f963d5d82b8d18">Run-time ratio</h2>
+<a id="RunTime"></a> <p>
+The following table gives the ratio of the run time of each benchmark when compiled by another compiler to the run time when compiled by MLton.  That is, the larger the number, the slower the generated code runs.  A number larger than one indicates that the corresponding compiler produces code that runs more slowly than MLton.  If an entry is *, that means that the corresponding compiler failed to compile the benchmark or that the benchmark failed to run. 
+</p>
+
+<div>
+<table>
+<tr>
+<td>
+benchmark</td>
+<td>
+MLton</td>
+<td>
+ML-Kit</td>
+<td>
+Moscow-ML</td>
+<td>
+Poly/ML</td>
+<td>
+SML/NJ</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/barnes-hut.sml">barnes-hut</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1.1</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/boyer.sml">boyer</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+9.0</td>
+<td>
+2.3</td>
+<td>
+3.0</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/checksum.sml">checksum</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/count-graphs.sml">count-graphs</a></td>
+<td>
+1.0</td>
+<td>
+7.6</td>
+<td>
+44.6</td>
+<td>
+7.8</td>
+<td>
+2.9</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/DLXSimulator.sml">DLXSimulator</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fft.sml">fft</a></td>
+<td>
+1.0</td>
+<td>
+2.7</td>
+<td>
+*</td>
+<td>
+46.4</td>
+<td>
+1.0</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fib.sml">fib</a></td>
+<td>
+1.0</td>
+<td>
+1.3</td>
+<td>
+5.4</td>
+<td>
+1.0</td>
+<td>
+1.3</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/flat-array.sml">flat-array</a></td>
+<td>
+1.0</td>
+<td>
+1.4</td>
+<td>
+10.8</td>
+<td>
+130.1</td>
+<td>
+4.2</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/hamlet.sml">hamlet</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+2.2</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/imp-for.sml">imp-for</a></td>
+<td>
+1.0</td>
+<td>
+4.2</td>
+<td>
+66.1</td>
+<td>
+10.7</td>
+<td>
+6.0</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/knuth-bendix.sml">knuth-bendix</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+18.6</td>
+<td>
+8.5</td>
+<td>
+3.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/lexgen.sml">lexgen</a></td>
+<td>
+1.0</td>
+<td>
+2.2</td>
+<td>
+6.2</td>
+<td>
+2.1</td>
+<td>
+1.7</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/life.sml">life</a></td>
+<td>
+1.0</td>
+<td>
+2.8</td>
+<td>
+25.9</td>
+<td>
+10.2</td>
+<td>
+1.5</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/logic.sml">logic</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+6.6</td>
+<td>
+1.5</td>
+<td>
+1.1</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mandelbrot.sml">mandelbrot</a></td>
+<td>
+1.0</td>
+<td>
+13.9</td>
+<td>
+45.5</td>
+<td>
+71.3</td>
+<td>
+1.5</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/matrix-multiply.sml">matrix-multiply</a></td>
+<td>
+1.0</td>
+<td>
+5.3</td>
+<td>
+49.7</td>
+<td>
+16.0</td>
+<td>
+5.2</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/md5.sml">md5</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/merge.sml">merge</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1.5</td>
+<td>
+5.8</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mlyacc.sml">mlyacc</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+6.2</td>
+<td>
+1.3</td>
+<td>
+1.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/model-elimination.sml">model-elimination</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1.7</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mpuz.sml">mpuz</a></td>
+<td>
+1.0</td>
+<td>
+2.5</td>
+<td>
+53.3</td>
+<td>
+5.5</td>
+<td>
+3.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/nucleic.sml">nucleic</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+22.9</td>
+<td>
+0.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/output1.sml">output1</a></td>
+<td>
+1.0</td>
+<td>
+20.9</td>
+<td>
+33.2</td>
+<td>
+3.1</td>
+<td>
+7.2</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/peek.sml">peek</a></td>
+<td>
+1.0</td>
+<td>
+21.5</td>
+<td>
+127.2</td>
+<td>
+20.8</td>
+<td>
+15.7</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/psdes-random.sml">psdes-random</a></td>
+<td>
+1.0</td>
+<td>
+7.7</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+3.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ratio-regions.sml">ratio-regions</a></td>
+<td>
+1.0</td>
+<td>
+2.2</td>
+<td>
+25.7</td>
+<td>
+2.8</td>
+<td>
+4.8</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ray.sml">ray</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+22.4</td>
+<td>
+35.8</td>
+<td>
+1.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/raytrace.sml">raytrace</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+2.8</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/simple.sml">simple</a></td>
+<td>
+1.0</td>
+<td>
+1.9</td>
+<td>
+14.4</td>
+<td>
+7.4</td>
+<td>
+1.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/smith-normal-form.sml">smith-normal-form</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+<a href="#snf-note">&gt;3000</a></td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tailfib.sml">tailfib</a></td>
+<td>
+1.0</td>
+<td>
+1.3</td>
+<td>
+35.5</td>
+<td>
+2.4</td>
+<td>
+2.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tak.sml">tak</a></td>
+<td>
+1.0</td>
+<td>
+2.4</td>
+<td>
+9.6</td>
+<td>
+0.8</td>
+<td>
+1.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tensor.sml">tensor</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+15.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tsp.sml">tsp</a></td>
+<td>
+1.0</td>
+<td>
+3.4</td>
+<td>
+25.9</td>
+<td>
+*</td>
+<td>
+56.7</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tyan.sml">tyan</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+14.0</td>
+<td>
+1.6</td>
+<td>
+0.9</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-concat.sml">vector-concat</a></td>
+<td>
+1.0</td>
+<td>
+1.7</td>
+<td>
+16.4</td>
+<td>
+1.7</td>
+<td>
+9.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-rev.sml">vector-rev</a></td>
+<td>
+1.0</td>
+<td>
+2.1</td>
+<td>
+21.8</td>
+<td>
+3.0</td>
+<td>
+73.0</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vliw.sml">vliw</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1.3</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-input1.sml">wc-input1</a></td>
+<td>
+1.0</td>
+<td>
+14.8</td>
+<td>
+*</td>
+<td>
+6.6</td>
+<td>
+8.7</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-scanStream.sml">wc-scanStream</a></td>
+<td>
+1.0</td>
+<td>
+21.4</td>
+<td>
+*</td>
+<td>
+352.5</td>
+<td>
+9.4</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zebra.sml">zebra</a></td>
+<td>
+1.0</td>
+<td>
+7.0</td>
+<td>
+30.6</td>
+<td>
+7.2</td>
+<td>
+8.6</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zern.sml">zern</a></td>
+<td>
+1.0</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+2.8</td>
+</tr>
+</table>
+</div>
+<p>
+<a id="snf-note"></a> Note: for SML/NJ, the smith-normal-form benchmark was killed after running for over 60,000 seconds. 
+</p>
+<h2 id="head-1e1a89ad1603af312775f4f486bcf8b9d6ef4f76">Compile time</h2>
+<a id="CompileTime"></a> <p>
+The following table gives the compile time of each benchmark in seconds.  A * in an entry means that the compiler failed to compile the benchmark. 
+</p>
+
+<div>
+<table>
+<tr>
+<td>
+benchmark</td>
+<td>
+MLton</td>
+<td>
+ML-Kit</td>
+<td>
+Moscow-ML</td>
+<td>
+Poly/ML</td>
+<td>
+SML/NJ</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/barnes-hut.sml">barnes-hut</a></td>
+<td>
+7.06</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1.09</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/boyer.sml">boyer</a></td>
+<td>
+8.08</td>
+<td>
+9.73</td>
+<td>
+0.39</td>
+<td>
+0.14</td>
+<td>
+3.46</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/checksum.sml">checksum</a></td>
+<td>
+4.96</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/count-graphs.sml">count-graphs</a></td>
+<td>
+5.73</td>
+<td>
+2.17</td>
+<td>
+0.13</td>
+<td>
+0.08</td>
+<td>
+0.72</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/DLXSimulator.sml">DLXSimulator</a></td>
+<td>
+7.67</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fft.sml">fft</a></td>
+<td>
+5.00</td>
+<td>
+1.54</td>
+<td>
+0.12</td>
+<td>
+0.06</td>
+<td>
+0.66</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fib.sml">fib</a></td>
+<td>
+4.67</td>
+<td>
+0.91</td>
+<td>
+0.04</td>
+<td>
+0.03</td>
+<td>
+0.16</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/flat-array.sml">flat-array</a></td>
+<td>
+4.60</td>
+<td>
+0.91</td>
+<td>
+0.03</td>
+<td>
+0.02</td>
+<td>
+0.18</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/hamlet.sml">hamlet</a></td>
+<td>
+46.86</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+53.12</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/imp-for.sml">imp-for</a></td>
+<td>
+4.63</td>
+<td>
+0.99</td>
+<td>
+0.04</td>
+<td>
+0.02</td>
+<td>
+0.19</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/knuth-bendix.sml">knuth-bendix</a></td>
+<td>
+6.12</td>
+<td>
+4.21</td>
+<td>
+0.18</td>
+<td>
+0.15</td>
+<td>
+1.36</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/lexgen.sml">lexgen</a></td>
+<td>
+9.09</td>
+<td>
+6.47</td>
+<td>
+0.38</td>
+<td>
+0.33</td>
+<td>
+3.22</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/life.sml">life</a></td>
+<td>
+5.09</td>
+<td>
+2.43</td>
+<td>
+0.09</td>
+<td>
+0.07</td>
+<td>
+0.53</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/logic.sml">logic</a></td>
+<td>
+6.52</td>
+<td>
+4.77</td>
+<td>
+0.21</td>
+<td>
+0.11</td>
+<td>
+1.43</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mandelbrot.sml">mandelbrot</a></td>
+<td>
+4.63</td>
+<td>
+0.97</td>
+<td>
+0.05</td>
+<td>
+0.03</td>
+<td>
+0.23</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/matrix-multiply.sml">matrix-multiply</a></td>
+<td>
+4.68</td>
+<td>
+1.03</td>
+<td>
+0.06</td>
+<td>
+0.03</td>
+<td>
+0.26</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/md5.sml">md5</a></td>
+<td>
+5.26</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/merge.sml">merge</a></td>
+<td>
+4.64</td>
+<td>
+0.93</td>
+<td>
+0.07</td>
+<td>
+0.01</td>
+<td>
+0.24</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mlyacc.sml">mlyacc</a></td>
+<td>
+22.42</td>
+<td>
+36.94</td>
+<td>
+3.63</td>
+<td>
+1.45</td>
+<td>
+14.63</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/model-elimination.sml">model-elimination</a></td>
+<td>
+23.07</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+24.06</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mpuz.sml">mpuz</a></td>
+<td>
+4.75</td>
+<td>
+1.27</td>
+<td>
+0.06</td>
+<td>
+0.04</td>
+<td>
+0.35</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/nucleic.sml">nucleic</a></td>
+<td>
+65.13</td>
+<td>
+31.26</td>
+<td>
+*</td>
+<td>
+0.48</td>
+<td>
+2.56</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/output1.sml">output1</a></td>
+<td>
+5.28</td>
+<td>
+0.94</td>
+<td>
+0.04</td>
+<td>
+0.02</td>
+<td>
+0.17</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/peek.sml">peek</a></td>
+<td>
+5.19</td>
+<td>
+0.97</td>
+<td>
+0.04</td>
+<td>
+0.03</td>
+<td>
+0.19</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/psdes-random.sml">psdes-random</a></td>
+<td>
+4.65</td>
+<td>
+0.99</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+65.07</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ratio-regions.sml">ratio-regions</a></td>
+<td>
+5.73</td>
+<td>
+3.80</td>
+<td>
+0.19</td>
+<td>
+0.13</td>
+<td>
+1.38</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ray.sml">ray</a></td>
+<td>
+7.94</td>
+<td>
+3.21</td>
+<td>
+0.13</td>
+<td>
+0.10</td>
+<td>
+0.81</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/raytrace.sml">raytrace</a></td>
+<td>
+12.32</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+5.16</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/simple.sml">simple</a></td>
+<td>
+10.03</td>
+<td>
+11.79</td>
+<td>
+0.43</td>
+<td>
+0.27</td>
+<td>
+3.19</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/smith-normal-form.sml">smith-normal-form</a></td>
+<td>
+8.45</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+0.13</td>
+<td>
+2.39</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tailfib.sml">tailfib</a></td>
+<td>
+4.59</td>
+<td>
+0.92</td>
+<td>
+0.04</td>
+<td>
+0.02</td>
+<td>
+0.18</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tak.sml">tak</a></td>
+<td>
+4.60</td>
+<td>
+0.89</td>
+<td>
+0.04</td>
+<td>
+0.01</td>
+<td>
+0.17</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tensor.sml">tensor</a></td>
+<td>
+7.34</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+2.06</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tsp.sml">tsp</a></td>
+<td>
+5.51</td>
+<td>
+2.40</td>
+<td>
+0.14</td>
+<td>
+*</td>
+<td>
+0.51</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tyan.sml">tyan</a></td>
+<td>
+7.38</td>
+<td>
+5.87</td>
+<td>
+0.27</td>
+<td>
+0.20</td>
+<td>
+1.97</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-concat.sml">vector-concat</a></td>
+<td>
+4.66</td>
+<td>
+0.91</td>
+<td>
+0.04</td>
+<td>
+0.03</td>
+<td>
+0.19</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-rev.sml">vector-rev</a></td>
+<td>
+4.62</td>
+<td>
+0.93</td>
+<td>
+0.04</td>
+<td>
+0.02</td>
+<td>
+0.18</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vliw.sml">vliw</a></td>
+<td>
+16.68</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+13.44</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-input1.sml">wc-input1</a></td>
+<td>
+5.86</td>
+<td>
+0.96</td>
+<td>
+0.05</td>
+<td>
+0.02</td>
+<td>
+0.21</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-scanStream.sml">wc-scanStream</a></td>
+<td>
+6.10</td>
+<td>
+0.96</td>
+<td>
+0.05</td>
+<td>
+0.03</td>
+<td>
+0.21</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zebra.sml">zebra</a></td>
+<td>
+7.01</td>
+<td>
+2.57</td>
+<td>
+0.09</td>
+<td>
+0.06</td>
+<td>
+0.64</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zern.sml">zern</a></td>
+<td>
+5.21</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+0.50</td>
+</tr>
+</table>
+</div>
+<h2 id="head-555486354ddf034c3d6b020cb86ba59bc82c76d5">Code size</h2>
+<a id="CodeSize"></a> <p>
+The following table gives the code size of each benchmark in bytes. The size for MLton and the ML Kit is the sum of text and data for the standalone executable as reported by <tt>size</tt>.  The size for Moscow ML is the size in bytes of the executable <tt>a.out</tt>.  The size for Poly/ML is the difference in size of the database before the session start and after the commit.  The size for SML/NJ is the size of the heap file created by <tt>exportFn</tt> and does not include the size of the SML/NJ runtime system (approximately 100K).  A * in an entry means that the compiler failed to compile the benchmark. 
+</p>
+
+<div>
+<table>
+<tr>
+<td>
+benchmark</td>
+<td>
+MLton</td>
+<td>
+ML-Kit</td>
+<td>
+Moscow-ML</td>
+<td>
+Poly/ML</td>
+<td>
+SML/NJ</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/barnes-hut.sml">barnes-hut</a></td>
+<td>
+157,305</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+422,976</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/boyer.sml">boyer</a></td>
+<td>
+154,559</td>
+<td>
+156,737</td>
+<td>
+116,300</td>
+<td>
+122,880</td>
+<td>
+516,136</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/checksum.sml">checksum</a></td>
+<td>
+70,489</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/count-graphs.sml">count-graphs</a></td>
+<td>
+81,555</td>
+<td>
+88,601</td>
+<td>
+84,613</td>
+<td>
+98,304</td>
+<td>
+450,680</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/DLXSimulator.sml">DLXSimulator</a></td>
+<td>
+185,925</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fft.sml">fft</a></td>
+<td>
+79,955</td>
+<td>
+85,433</td>
+<td>
+84,046</td>
+<td>
+65,536</td>
+<td>
+424,016</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/fib.sml">fib</a></td>
+<td>
+64,227</td>
+<td>
+16,101</td>
+<td>
+79,892</td>
+<td>
+49,152</td>
+<td>
+405,248</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/flat-array.sml">flat-array</a></td>
+<td>
+64,271</td>
+<td>
+24,413</td>
+<td>
+80,034</td>
+<td>
+49,152</td>
+<td>
+416,528</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/hamlet.sml">hamlet</a></td>
+<td>
+1,301,021</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1,411,336</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/imp-for.sml">imp-for</a></td>
+<td>
+64,115</td>
+<td>
+16,869</td>
+<td>
+80,040</td>
+<td>
+57,344</td>
+<td>
+390,184</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/knuth-bendix.sml">knuth-bendix</a></td>
+<td>
+160,857</td>
+<td>
+97,177</td>
+<td>
+88,439</td>
+<td>
+180,224</td>
+<td>
+420,904</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/lexgen.sml">lexgen</a></td>
+<td>
+258,994</td>
+<td>
+215,729</td>
+<td>
+104,883</td>
+<td>
+196,608</td>
+<td>
+491,584</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/life.sml">life</a></td>
+<td>
+81,591</td>
+<td>
+79,253</td>
+<td>
+83,390</td>
+<td>
+65,536</td>
+<td>
+404,520</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/logic.sml">logic</a></td>
+<td>
+125,587</td>
+<td>
+115,217</td>
+<td>
+87,251</td>
+<td>
+114,688</td>
+<td>
+430,120</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mandelbrot.sml">mandelbrot</a></td>
+<td>
+64,175</td>
+<td>
+77,905</td>
+<td>
+81,340</td>
+<td>
+57,344</td>
+<td>
+394,280</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/matrix-multiply.sml">matrix-multiply</a></td>
+<td>
+65,435</td>
+<td>
+96,137</td>
+<td>
+82,417</td>
+<td>
+57,344</td>
+<td>
+422,968</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/md5.sml">md5</a></td>
+<td>
+129,249</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/merge.sml">merge</a></td>
+<td>
+65,835</td>
+<td>
+25,601</td>
+<td>
+80,090</td>
+<td>
+49,152</td>
+<td>
+390,192</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mlyacc.sml">mlyacc</a></td>
+<td>
+558,018</td>
+<td>
+502,081</td>
+<td>
+148,286</td>
+<td>
+2,850,816</td>
+<td>
+801,904</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/model-elimination.sml">model-elimination</a></td>
+<td>
+686,584</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+1,028,344</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/mpuz.sml">mpuz</a></td>
+<td>
+66,895</td>
+<td>
+75,925</td>
+<td>
+82,382</td>
+<td>
+81,920</td>
+<td>
+398,376</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/nucleic.sml">nucleic</a></td>
+<td>
+218,271</td>
+<td>
+268,237</td>
+<td>
+*</td>
+<td>
+221,184</td>
+<td>
+477,240</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/output1.sml">output1</a></td>
+<td>
+139,243</td>
+<td>
+61,465</td>
+<td>
+80,187</td>
+<td>
+49,152</td>
+<td>
+405,248</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/peek.sml">peek</a></td>
+<td>
+133,953</td>
+<td>
+60,829</td>
+<td>
+81,621</td>
+<td>
+57,344</td>
+<td>
+409,392</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/psdes-random.sml">psdes-random</a></td>
+<td>
+64,851</td>
+<td>
+25,529</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+411,704</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ratio-regions.sml">ratio-regions</a></td>
+<td>
+89,779</td>
+<td>
+98,489</td>
+<td>
+87,482</td>
+<td>
+73,728</td>
+<td>
+433,208</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/ray.sml">ray</a></td>
+<td>
+239,069</td>
+<td>
+112,309</td>
+<td>
+89,859</td>
+<td>
+147,456</td>
+<td>
+483,472</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/raytrace.sml">raytrace</a></td>
+<td>
+321,782</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+605,360</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/simple.sml">simple</a></td>
+<td>
+276,608</td>
+<td>
+202,561</td>
+<td>
+94,396</td>
+<td>
+475,136</td>
+<td>
+746,600</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/smith-normal-form.sml">smith-normal-form</a></td>
+<td>
+239,321</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+131,072</td>
+<td>
+547,984</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tailfib.sml">tailfib</a></td>
+<td>
+63,899</td>
+<td>
+16,301</td>
+<td>
+79,943</td>
+<td>
+57,344</td>
+<td>
+405,248</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tak.sml">tak</a></td>
+<td>
+64,311</td>
+<td>
+16,093</td>
+<td>
+79,908</td>
+<td>
+57,344</td>
+<td>
+401,152</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tensor.sml">tensor</a></td>
+<td>
+155,108</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+440,432</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tsp.sml">tsp</a></td>
+<td>
+133,549</td>
+<td>
+99,497</td>
+<td>
+86,146</td>
+<td>
+*</td>
+<td>
+414,784</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/tyan.sml">tyan</a></td>
+<td>
+192,229</td>
+<td>
+146,101</td>
+<td>
+91,586</td>
+<td>
+196,608</td>
+<td>
+467,032</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-concat.sml">vector-concat</a></td>
+<td>
+65,483</td>
+<td>
+24,517</td>
+<td>
+80,194</td>
+<td>
+49,152</td>
+<td>
+416,528</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vector-rev.sml">vector-rev</a></td>
+<td>
+64,735</td>
+<td>
+24,697</td>
+<td>
+80,078</td>
+<td>
+57,344</td>
+<td>
+416,528</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/vliw.sml">vliw</a></td>
+<td>
+445,446</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+730,280</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-input1.sml">wc-input1</a></td>
+<td>
+160,129</td>
+<td>
+132,765</td>
+<td>
+85,771</td>
+<td>
+49,152</td>
+<td>
+394,280</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/wc-scanStream.sml">wc-scanStream</a></td>
+<td>
+163,633</td>
+<td>
+133,261</td>
+<td>
+85,947</td>
+<td>
+49,152</td>
+<td>
+407,296</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zebra.sml">zebra</a></td>
+<td>
+176,181</td>
+<td>
+44,741</td>
+<td>
+83,422</td>
+<td>
+90,112</td>
+<td>
+409,656</td>
+</tr>
+<tr>
+<td>
+<a href="http://mlton.org/pages/Performance/attachments/zern.sml">zern</a></td>
+<td>
+146,473</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+*</td>
+<td>
+468,120</td>
+</tr>
+</table>
+</div>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-06 04:28:40 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

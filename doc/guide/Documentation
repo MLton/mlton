@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Documentation - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="mllex.pdf" href="http://mlton.org/pages/Documentation/attachments/mllex.pdf">
+<link rel="Appendix" title="mlyacc.pdf" href="http://mlton.org/pages/Documentation/attachments/mlyacc.pdf">
+<link rel="Appendix" title="user-guide.gz" href="http://mlton.org/pages/Documentation/attachments/user-guide.gz">
+<link rel="Appendix" title="user-guide.pdf" href="http://mlton.org/pages/Documentation/attachments/user-guide.pdf">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Documentation
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Documentation is available on the following topics. 
+    <ul>
+
+    <li>
+<p>
+ <a href="StandardML">Standard ML</a> 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="BasisLibrary"> SML Basis Library</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Libraries"> Additional libraries</a> 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ <a href="Installation">Installing MLton</a> 
+</p>
+</li>
+    <li>
+<p>
+ Using MLton 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="ForeignFunctionInterface"> Foreign function interface (FFI)</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="ManualPage"> Manual Page</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="MLBasis"> ML Basis system</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="MLtonStructure"> MLton structure</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="PlatformSpecificNotes"> Platform specific notes</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Profiling"> Profiling</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="TypeChecking"> Type checking</a> 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ About MLton 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="Credits">Credits</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Drawbacks">Drawbacks</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Features">Features</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="History">History</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="License">License</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Talk">Talk</a> 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ <a class="nonexistent" href="MLLex">MLLex</a> <a href="http://mlton.org/pages/Documentation/attachments/mllex.pdf">pdf</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="nonexistent" href="MLYacc">MLYacc</a> <a href="http://mlton.org/pages/Documentation/attachments/mlyacc.pdf">pdf</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="References">References</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-29 01:32:35 by <span title="adsl-64-170-112-189.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonRlimit - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonRlimit
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RLIMIT =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> rlim </FONT></B>=<FONT COLOR="#228B22"><B> word
+               
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> infinity: rlim
+
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+               
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> coreFileSize: t        <I><FONT COLOR="#B22222">(* CORE    max core file size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> cpuTime: t             <I><FONT COLOR="#B22222">(* CPU     CPU time in seconds *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> dataSize: t            <I><FONT COLOR="#B22222">(* DATA    max data size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> fileSize: t            <I><FONT COLOR="#B22222">(* FSIZE   Maximum filesize *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> lockedInMemorySize: t  <I><FONT COLOR="#B22222">(* MEMLOCK max locked address space *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> numFiles: t            <I><FONT COLOR="#B22222">(* NOFILE  max number of open files *)</FONT></I>  
+      <B><FONT COLOR="#A020F0">val</FONT></B> numProcesses: t        <I><FONT COLOR="#B22222">(* NPROC   max number of processes *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> residentSetSize: t     <I><FONT COLOR="#B22222">(* RSS     max resident set size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> stackSize: t           <I><FONT COLOR="#B22222">(* STACK   max stack size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> virtualMemorySize: t   <I><FONT COLOR="#B22222">(* AS      virtual memory limit *)</FONT></I>
+      
+      <B><FONT COLOR="#A020F0">val</FONT></B> get: t -&gt; {hard: rlim, soft: rlim}
+      <B><FONT COLOR="#A020F0">val</FONT></B> set: t * {hard: rlim, soft: rlim} -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+<tt>MLton.Rlimit</tt> provides a wrapper around the C <tt>getrlimit</tt> and <tt>setrlimit</tt> functions. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>type&nbsp;rlim</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the type of resource limits. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>infinity</tt> 
+</p>
+</li>
+
+        <ul>
+
+  indicates that a resource is unlimited. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the types of resources that can be inspected and modified. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>get&nbsp;r</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the current hard and soft limits for resource <tt>r</tt>. May   raise <tt>OS.SysErr</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>set&nbsp;(r,&nbsp;{hard,&nbsp;soft})</tt> 
+</p>
+</li>
+
+        <ul>
+
+  sets the hard and soft limits for resource <tt>r</tt>.  May raise   <tt>OS.SysErr</tt>.  </ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-11-02 04:28:25 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

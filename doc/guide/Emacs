@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Emacs - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="esml-mlb-mode.el" href="http://mlton.org/pages/Emacs/attachments/esml-mlb-mode.el">
+<link rel="Appendix" title="mlb.el" href="http://mlton.org/pages/Emacs/attachments/mlb.el">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Emacs
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<h2 id="head-2e0730f57444eb865302c3917a4902e6ceae973f">SML Modes</h2>
+<p>
+There are a few Emacs modes for SML. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>sml-mode</tt> 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html">http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="http://www.smlnj.org/doc/Emacs/sml-mode.html">http://www.smlnj.org/doc/Emacs/sml-mode.html</a> 
+</p>
+</li>
+
+        </ul>
+
+
+    <li class="gap">
+<p>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/mlton.el?view=markup">mlton.el</a>
+ contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a href="http://primate.net/~itz/mindent.tar">http://primate.net/~itz/mindent.tar</a>, developed by Ian Zimmerman,  who writes: 
+</p>
+</li>
+
+        <ul>
+
+  Unlike the widespread <tt>sml-mode.el</tt> it doesn't try to indent   code based on ML syntax.  I gradually got sceptical about this   approach after writing the initial indentation support for caml mode   and watching it bloat insanely as the language added new features.   Also, any such attempts that I know of impose a particular coding   style, or at best a choice among a limited set of styles, which I   now oppose.  Instead my mode is based on a generic package which   provides manual bindable commands for common indentation operations   (example: indent the current line under the n-th occurrence of a   particular character in the previous non-blank line). 
+        </ul>
+
+
+
+    </ul>
+
+
+<h3 id="head-ca4c2c588f94359116733bd5a53f0e418c8306bd">MLB modes</h3>
+<p>
+There are a couple of modes for editing <a href="MLBasis"> ML Basis</a> files.  
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-mlb-mode.el?view=markup">esml-mlb-mode.el</a>
+ 
+</p>
+</li>
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Emacs/attachments/mlb.el">mlb.el</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-38a2998cc83b4215b89f0b96917e58d59fdfae52">Error messages</h2>
+<p>
+MLton's error messages are not in the format that the Emacs <tt>next-error</tt> parser natively understands.  There are a couple of ways to fix this.  The easiest way is to add the following to your <tt>.emacs</tt> to cause Emacs to recognize MLton's error messages. 
+</p>
+
+        <ul>
+
+  
+<pre>(require 'compile)
+(add-to-list 'compilation-error-regexp-alist
+             '("^Error: \\([^\t\n]*\\) \\([0-9]+\\)\\.\\([0-9]+\\)\\.$"
+               1 2 3))
+</pre>
+        </ul>
+
+
+<p>
+Alternatively, you could use a sed script to rewrite MLton's errors. Here is one such script: 
+</p>
+
+        <ul>
+
+  
+<pre>sed -e 's/^\([W|E].*\): \([^ ]*\) \([0-9][0-9]*\)\.\([0-9][0-9]*\)\./\2:\3:\1:\4/'
+</pre></ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-06 22:25:50 by <span title="pool-70-22-241-24.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

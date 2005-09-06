@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLNLFFI - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLNLFFI
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<a href = "References#Blume01">ML-NLFFI</a> is a no-longer-foreign-function interface library for SML. <p>
+MLton ???????? has an initial port of ML-NLFFI from SML/NJ to MLton.  All of the ML-NLFFI functionality is present. 
+</p>
+<h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
+
+    <ul>
+
+    <li>
+<p>
+ You can import the MLNLFFI Library by referencing the appropriate <tt>.mlb</tt> file: 
+</p>
+</li>
+
+        <ul>
+
+
+<div>
+<table>
+  <tr>
+<td align="center">
+MLB file</td>
+</tr>
+  <tr>
+<td>
+<tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt></td>
+</tr>
+</table>
+</div>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="MLNLFFIImplementation">MLNLFFIImplementation</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:53:23 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

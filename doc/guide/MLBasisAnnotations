@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLBasisAnnotations - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLBasisAnnotations
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<a href="MLBasis">ML Basis</a> annotations control options that affect the elaboration of SML source files.  Conceptually, a basis file is elaborated in a default annotation environment (just as it is elaborated in an empty basis).  The declaration <tt>ann&nbsp;</tt><tt>"</tt><em>ann</em><tt>"</tt><tt>&nbsp;in&nbsp;</tt><em>basdec</em><tt>&nbsp;end</tt> merges the annotation <em>ann</em> with the "current" annotation environment for the elaboration of <em>basdec</em>. To allow for future expansion, <tt>"</tt><em>ann</em><tt>"</tt> is lexed as  a single SML string constant.  To conveniently specify multiple  annotations, the following derived form is provided: 
+<div>
+<table>
+<tr>
+<td>
+<tt>ann&nbsp;</tt><tt>"</tt><em>ann</em><tt>"</tt><tt>&nbsp;</tt>(<tt>"</tt><em>ann</em><tt>"</tt>)+<tt>&nbsp;in&nbsp;</tt><em>basdec</em><tt>&nbsp;end</tt><tt>&nbsp;==&gt;&nbsp;</tt> <tt>ann&nbsp;</tt><tt>"</tt><em>ann</em><tt>"</tt><tt>&nbsp;in&nbsp;ann&nbsp;</tt>(<tt>"</tt><em>ann</em><tt>"</tt>)+<tt>&nbsp;in&nbsp;</tt><em>basdec</em><tt>&nbsp;end</tt><tt>&nbsp;end</tt></td>
+</tr>
+</table>
+</div>
+<p>
+Here are the available annotations.  In the explanation below, for annotations that take  argument, the first value listed is the default. 
+</p>
+<p>
+<tt>allowFFI&nbsp;{false|true}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  If <tt>true</tt>, allow <tt>_address</tt>,<tt>_export</tt>,<tt>_import</tt>, and   <tt>_symbol</tt> expressions to appear in source files. 
+        </ul>
+
+
+<p>
+<tt>forceUsed&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  Force all identifiers in the basis denoted by the body of the   <tt>ann</tt> to be considered used; use in conjunction with    <tt>warnUnused&nbsp;true</tt>. 
+        </ul>
+
+
+<p>
+<tt>nonexhaustiveExnMatch&nbsp;{default|ignore}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  If <tt>ignore</tt>, suppress errors and warnings about nonexhaustive   matches that arise solely from unmatched exceptions.  If   <tt>default</tt>, follow the behavior of <tt>nonexhaustiveMatch</tt>.  
+        </ul>
+
+
+<p>
+<tt>nonexhaustiveMatch&nbsp;{warn|error|ignore}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  If <tt>error</tt> or <tt>warn</tt>, report nonexhaustive matches.  (An   error will abort a compile, while a warning will not.) 
+        </ul>
+
+
+<p>
+<tt>redundantMatch&nbsp;{warn|error|ignore}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  If <tt>error</tt> or <tt>warn</tt>, report redundant matches.  (An   error will abort a compile, while a warning will not.) 
+        </ul>
+
+
+<p>
+<tt>sequenceNonUnit&nbsp;{ignore|error|warn}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  If <tt>error</tt> or <tt>warn</tt>, report when <tt>e1</tt> is not of type   <tt>unit</tt> in the sequence expression <tt>(e1;&nbsp;e2)</tt>.  This can be   helpful in detecting curried applications that are mistakenly not   fully applied.  To silence spurious messages, you can use    <tt>ignore&nbsp;e1</tt>. 
+        </ul>
+
+
+<p>
+<tt>warnUnused&nbsp;{false|true}&nbsp;</tt> 
+</p>
+
+        <ul>
+
+  Report unused identifiers. 
+        </ul>
+
+
+<h2 id="head-3f170caead65df254d786032a409a6f6d204bca6">Next Steps</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="MLBasisAnnotationExamples">MLBasisAnnotationExamples</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-07 22:07:24 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

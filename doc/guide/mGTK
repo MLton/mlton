@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>mGTK - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      mGTK
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<a class="external" href="http://mgtk.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mGTK</a> is a wrapper for <a class="external" href="http://www.gtk.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GTK+</a>, a GUI toolkit. <p>
+At the <a class="external" href="http://mgtk.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mGTK site</a>, they say that MLton support is "almost ready", however there is a version (0.93) that works with MLton 20041109.  mGTK 0.93 is not listed on the site, but is available at the <a class="external" href="http://sourceforge.net/project/showfiles.php?group_id=23226&amp;package_id=16523"><img src="moin-www.png" alt="[WWW]" height="11" width="11">file release page</a>. To test it, after unpacking, do <tt>cd&nbsp;examples;&nbsp;make&nbsp;mlton</tt>, after which you should be able to run the many examples (<tt>signup-mlton</tt>, <tt>listview-mlton</tt>, ...). 
+</p>
+<p>
+There is an older verision (0.92) of mGTK that works with MLton 20040227. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-13 17:57:57 by <span title="p253.n-dapop04.stsn.com"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

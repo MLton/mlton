@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>SimplifyTypes - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      SimplifyTypes
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+This pass computes a "cardinality" of each datatype, which is an abstraction of the number of values of the datatype. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Zero means the datatype has no values (except for bottom). 
+</p>
+</li>
+    <li>
+<p>
+ One means the datatype has one value (except for bottom). 
+</p>
+</li>
+    <li>
+<p>
+ Many means the datatype has many values. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+This pass removes all datatypes whose cardinality is Zero or One and removes 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ components of tuples 
+</p>
+</li>
+    <li>
+<p>
+ function args 
+</p>
+</li>
+    <li>
+<p>
+ constructor args 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+which are such datatypes. 
+</p>
+<p>
+This pass marks constructors as one of 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Useless: it never appears in a <tt>ConApp</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ Transparent: it is the only variant in its datatype and its argument type does not contain any uses of <tt>array</tt> or <tt>vector</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ Useful: otherwise 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+This pass also removes Useless and Transparent constructors. 
+</p>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/simplify-types.sig?view=markup">simplify-types.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/simplify-types.fun?view=markup">simplify-types.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+This pass must happen before polymorphic equality is implemented becuase 
+</p>
+
+    <ol type="1">
+
+    <li>
+<p>
+it will make polymorphic equality faster because some types are simpler 
+</p>
+</li>
+    <li>
+<p>
+it removes uses of polymorphic equality that must return true 
+</p>
+</li>
+
+    </ol>
+
+
+<p>
+We must keep track of Transparent consturctors whose argument type uses <tt>array</tt> because of datatypes like the following: 
+<pre class=code>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
+</FONT></B></PRE>
+ Such a datatype has Cardinality.Many, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
+</p>
+<p>
+Must do similar things for <tt>vectors</tt>. 
+</p>
+<p>
+Also, to eliminate as many Transparent constructors as possible, for something like the following, 
+<pre class=code>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array
+       </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
+</FONT></B></PRE>
+ we (arbitrarily) expand one of the datatypes first. The result will be something like 
+<pre class=code>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array array
+</FONT></B></PRE>
+ where all uses of <tt>t</tt> are replaced by <tt>u&nbsp;array</tt>. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:25:00 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

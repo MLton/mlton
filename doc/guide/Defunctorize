@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Defunctorize - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Defunctorize
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+A translation pass from the <a href="CoreML">CoreML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+Converts a <a href="CoreML">CoreML</a> program to an <a href="XML">XML</a> program by performing: 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ linearlization 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MatchCompile">MatchCompile</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="nonexistent" href="LookupConstants">LookupConstants</a> 
+</p>
+</li>
+    <li>
+<p>
+ polymorphic <tt>val</tt> dec expansion 
+</p>
+</li>
+    <li>
+<p>
+ <tt>datatype</tt> lifting (to the top-level) 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.sig?view=markup">defunctorize.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.fun?view=markup">defunctorize.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+This pass is grossly misnamed (a consequence of the implementation of an <a href="Elaborate">Elaborate</a> pass that follows the  <a href="DefinitionOfStandardML"> Definition</a> and produces readable error messages). 
+</p>
+<h4 id="head-98226d2b13506c91181c040abfc6bb115b088746">Datatype Lifting</h4>
+<p>
+This pass moves all <tt>datatype</tt> declarations to the top level. 
+</p>
+<p>
+<a href="StandardML">Standard ML</a> <tt>datatype</tt> declarations can contain type variables that are not bound in the declaration itself.  For example, the following program is valid. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> f (x: 'a) =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> 'b t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> y: int t = T (x, <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+   <B><FONT COLOR="#A020F0">in</FONT></B> 
+      <B><FONT COLOR="#5F9EA0">13</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+Unfortunately, the <tt>datatype</tt> declaration can not be immediately moved to the top level, because that would leave <tt>'a</tt> free. 
+<pre>datatype 'b t = T of 'a * 'b
+fun 'a f (x: 'a) =
+   let 
+      val y: int t = T (x, 1)
+   in 
+      13
+   end
+</pre>In order to safely move <tt>datatype</tt>s, this pass must close them, as well as add any free type variables as extra arguments to the type constructor.  For example, the above program would be translated to the following. 
+<pre>datatype ('a, 'b) t = T of 'a * 'b
+fun 'a f (x: 'a) = 
+   let 
+      val y: ('a, int) t = T (x, 1)
+   in 
+      13
+   end
+</pre>
+</p>
+<h2 id="head-53d5b31ac8da1ff19a82453fd040f529e241f6cd">Historical Notes</h2>
+<p>
+The Defunctorize pass originally eliminated  <a href="StandardML">Standard ML</a> functors by duplicating their body at each application.  These duties have been adopted by the <a href="Elaborate">Elaborate</a> pass. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:39:23 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

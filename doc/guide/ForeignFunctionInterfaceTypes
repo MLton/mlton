@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>ForeignFunctionInterfaceTypes - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      ForeignFunctionInterfaceTypes
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> only allows values of certain SML types to be passed between SML and C.  The following types are allowed: <tt>bool</tt>, <tt>char</tt>, <tt>int</tt>, <tt>real</tt>, <tt>word</tt>. All of the different sizes of (fixed-sized) integers, reals, and words are supported as well: <tt>Int8.int</tt>, <tt>Int16.int</tt>, <tt>Int32.int</tt>, <tt>Int64.int</tt>, <tt>Real32.real</tt>, <tt>Real64.real</tt>, <tt>Word8.word</tt>, <tt>Word16.word</tt>, <tt>Word32.word</tt>, <tt>Word64.word</tt>.  There is a special type, <tt>MLton.Pointer.t</tt>, for passing C pointers -- see <a href="MLtonPointer">MLtonPointer</a> for details. <p>
+Arrays, refs, and vectors of the above types are also allowed. Because in MLton monomorphic arrays and vectors are exactly the same as their polymorphic counterpart, these are also allowed.  Hence, <tt>string</tt> (equivalent to <tt>CharVector.vector</tt>) is also allowed. Strings are not null terminated, unless you manually do so from the SML side. 
+</p>
+<p>
+Unfortunately, passing tuples or datatypes is not allowed because that would interfere with representation optimizations. 
+</p>
+<p>
+The C header file that <tt>-export-header</tt> generates includes <tt>typedef</tt>s for the C types corresponding to the SML types.  Here is the mapping between SML types and C types. 
+</p>
+
+<div>
+<table>
+<tr>
+<td>
+ SML type </td>
+<td>
+ C typedef </td>
+<td>
+ C type </td>
+</tr>
+<tr>
+<td>
+ <tt>array</tt> </td>
+<td>
+ <tt>Pointer</tt> </td>
+<td>
+ <tt>char&nbsp;*</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>bool</tt> </td>
+<td>
+ <tt>Int32</tt> </td>
+<td>
+ <tt>long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>char</tt> </td>
+<td>
+ <tt>Int8</tt> </td>
+<td>
+ <tt>char</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Int8.int</tt> </td>
+<td>
+ <tt>Int8</tt> </td>
+<td>
+ <tt>char</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Int16.int</tt> </td>
+<td>
+ <tt>Int16</tt> </td>
+<td>
+ <tt>short</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Int32.int</tt> </td>
+<td>
+ <tt>Int32</tt> </td>
+<td>
+ <tt>long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Int64.int</tt> </td>
+<td>
+ <tt>Int64</tt> </td>
+<td>
+ <tt>long&nbsp;long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>int</tt> </td>
+<td>
+ <tt>Int32</tt> </td>
+<td>
+ <tt>long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>MLton.Pointer.t</tt> </td>
+<td>
+ <tt>Pointer</tt> </td>
+<td>
+ <tt>char&nbsp;*</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Real32.real</tt> </td>
+<td>
+ <tt>Real32</tt> </td>
+<td>
+ <tt>float</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Real64.real</tt> </td>
+<td>
+ <tt>Real64</tt> </td>
+<td>
+ <tt>double</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>real</tt> </td>
+<td>
+ <tt>Real64</tt> </td>
+<td>
+ <tt>double</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>ref</tt> </td>
+<td>
+ <tt>Pointer</tt> </td>
+<td>
+ <tt>char&nbsp;*</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>string</tt> </td>
+<td>
+ <tt>Pointer</tt> </td>
+<td>
+ <tt>char&nbsp;*</tt> <strong>(read-only)</strong></td>
+</tr>
+<tr>
+<td>
+ <tt>vector</tt> </td>
+<td>
+ <tt>Pointer</tt> </td>
+<td>
+ <tt>char&nbsp;*</tt> <strong>(read-only)</strong></td>
+</tr>
+<tr>
+<td>
+ <tt>Word8.word</tt> </td>
+<td>
+ <tt>Word8</tt> </td>
+<td>
+ <tt>unsigned&nbsp;char</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Word16.word</tt> </td>
+<td>
+ <tt>Word16</tt> </td>
+<td>
+ <tt>unsigned&nbsp;short</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Word32.word</tt> </td>
+<td>
+ <tt>Word32</tt> </td>
+<td>
+ <tt>unsigned&nbsp;long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>Word64.word</tt> </td>
+<td>
+ <tt>Word64</tt> </td>
+<td>
+ <tt>unsigned&nbsp;long&nbsp;long</tt> </td>
+</tr>
+<tr>
+<td>
+ <tt>word</tt> </td>
+<td>
+ <tt>Word32</tt> </td>
+<td>
+ <tt>unsigned&nbsp;int</tt> </td>
+</tr>
+</table>
+</div>
+<p>
+Because MLton assumes that vectors and strings are read-only (and will perform optimizations that, for instance, cause them to share space), you must not modify the data pointed to by the <tt>char&nbsp;*</tt> in C code. 
+</p>
+<p>
+Although the C type of an array, ref, or vector is always <tt>Pointer</tt>, in reality, the object has the natural C representation.  Your C code should cast to the appropriate C type if you want to keep the C compiler from complaining. 
+</p>
+<p>
+When calling an <a href="CallingFromSMLToC"> imported C function from SML</a> that returns an array, ref, or vector result or when calling an <a href="CallingFromCToSML"> exported SML function from C</a> that takes an array, ref, or string argument, then the object must be an ML object allocated on the ML heap.  (Although an array, ref, or vector object has the natural C representation, the object also has an additional header used by the SML runtime system.) 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-07 22:18:13 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

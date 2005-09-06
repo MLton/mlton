@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Monomorphise - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Monomorphise
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+A translation pass from the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+Monomorphisation eliminates polymorphic values and datatype declarations by duplicating them for each type at which they are used. 
+</p>
+<p>
+Consider the following <a href="XML">XML</a> program.  
+<pre>datatype 'a t = T of 'a
+fun 'a f (x: 'a) = T x
+val a = f 1
+val b = f 2
+val z = f (3, 4)
+</pre> The result of monorphising this program is the following <a href="SXML">SXML</a> program:  
+<pre>datatype t1 = T1 of int
+datatype t2 = T2 of int * int
+fun f1 (x: t1) = T1 x
+fun f2 (x: t2) = T2 x
+val a = f1 1
+val b = f1 2
+val z = f2 (3, 4)
+</pre>
+</p>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/monomorphise.sig?view=markup">monomorphise.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/monomorphise.fun?view=markup">monomorphise.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+The monomorphiser works by making one pass over the entire program. On the way down, it creates a cache for each variable declared in a polymorphic declaration that maps a lists of type arguments to a new variable name.  At a variable reference, it consults the cache (based on the types the variable is applied to).  If there is already an entry in the cache, it is used.  If not, a new entry is created.  On the way up, the monomorphiser duplicates a variable declaration for each entry in the cache. 
+</p>
+<p>
+As with variables, the monomorphiser records all of the type at which constructors are used.  After the entire program is processed, the monomorphiser duplicates each datatype declaration and its associated constructors. 
+</p>
+<p>
+The monomorphiser duplicates all of the functions declared in a <tt>fun</tt> declaration as a unit.  Consider the following program 
+<pre>fun 'a f (x: 'a) = g x
+and g (y: 'a) = f y
+val a = f 13
+val b = g 14
+val c = f (1, 2)</pre>and its monomorphisation 
+<pre>fun f1 (x: int) = g1 x
+and g1 (y: int) = f1 y
+fun f2 (x : int * int) = g2 x
+and g2 (y : int * int) = f2 y
+val a = f1 13
+val b = g1 14
+val c = f2 (1, 2)
+</pre>
+</p>
+<h2 id="head-d9df837d9182159c3848b74ca46f0a57ec960cdb">Pathological datatype declarations</h2>
+<p>
+SML allows a pathological polymorphic datatype declaration in which recursive uses of the defined type constructor are applied to different type arguments than the definition.  This has been disallowed by others on type theoretic grounds.  A canonical example is the following. 
+<pre>datatype 'a t = A of 'a | B of ('a * 'a) t
+val z : int t = B (B (A ((1, 2), (3, 4))))
+</pre>The presence of the recursion in the datatype declaration might appear to cause the need for the monomorphiser to create an infinite number of types.  However, due to the absence of polymorphic recursion in SML, there are in fact only a finite number of instances of such types in any given program.  The monomorphiser translates the above program to the following one. 
+<pre>datatype t1 = B1 of t2
+datatype t2 = B2 of t3
+datatype t3 = A3 of (int * int) * (int * int)
+val z : int t = B1 (B2 (A3 ((1, 2), (3, 4))))
+</pre>It is crucial that the monomorphiser be allowed to drop unused constructors from datatype declarations in order for the translation to terminate. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:32:32 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>
