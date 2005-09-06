@@ -1,3 +1,9 @@
+mlton (20050906-1) unstable; urgency=low
+
+  * Replaces -mv8 with -mcpu=v8 for Sparc.
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Tue, 06 Sep 2005 14:57:46 -0700
+
 mlton (20050901-1) unstable; urgency=low
 
   * remaking package, linking normally with libgmp.  Thus, the package
