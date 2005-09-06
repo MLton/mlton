@@ -90,7 +90,7 @@ Ground types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt> may be compared
 The one ground type that can not be compared is <tt>real</tt>.  So, <tt>13.0&nbsp;=&nbsp;14.0</tt> is not type correct.  One can use <tt>Real.==</tt> to compare reals for equality, but beware that this has different algebraic properties than polymorphic equality. 
 </p>
 <p>
-See <a href="http://mlton.org/basis/real.html">http://mlton.org/basis/real.html</a> for a discussion of why <tt>real</tt> is not an equality type. 
+See <a href="http://mlton.org/basis/real.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/basis/real.html</a> for a discussion of why <tt>real</tt> is not an equality type. 
 </p>
 <h2 id="head-16f64cbf7b943934e1a83e690a579efe57383553">Equality of functions</h2>
 <p>

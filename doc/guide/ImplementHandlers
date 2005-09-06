@@ -55,9 +55,9 @@ Implements (threaded) exception handler stack.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/implement-handlers.sig?view=markup">implement-handlers.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/implement-handlers.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-handlers.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/implement-handlers.fun?view=markup">implement-handlers.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/implement-handlers.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-handlers.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 

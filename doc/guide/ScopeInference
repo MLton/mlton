@@ -55,9 +55,9 @@ Add free type variables to the <tt>val</tt> or <tt>fun</tt> declaration where th
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/scope.sig?view=markup">scope.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/scope.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/scope.fun?view=markup">scope.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/scope.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 Scope inference determines for each type variable, the declaration where it is bound.  Scope inference is a direct implementation of the specification given in section 4.6 of the [:DefinitionOfStandardML: Definition].  Recall that a free occurrence of a type variable <tt>'a</tt> in a declaration <tt>d</tt> is <em>unguarded</em> in <tt>d</tt> if <tt>'a</tt> is not part of a smaller declaration.  A type variable <tt>'a</tt> is implicitly scoped at <tt>d</tt> if <tt>'a</tt> is unguarded in <tt>d</tt> and <tt>'a</tt> does not occur unguarded in any declaration containing <tt>d</tt>. 

@@ -62,9 +62,9 @@ Flatten a <tt>ref</tt> cell into its containing object. The idea is to replace, 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.sig?view=markup">ref-flatten.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.fun?view=markup">ref-flatten.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The savings is obvious, I hope.  We avoid an extra heap-allocated object for the <tt>ref</tt>, which in the above case saves two words.  We also save the time and code for the extra indirection at each get and set.  There are lots of useful data structures (singly-linked and doubly-linked lists, union-find, fibonacci heaps, ...) that I believe we are paying through the nose right now because of the absence of ref flattening. 

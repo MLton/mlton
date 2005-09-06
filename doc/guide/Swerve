@@ -51,7 +51,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 <a class="external" href="http://web.access.net.au/felixadv/files/output/book/c3253.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Swerve</a> is an HTTP server written in SML, originally developed with SML/NJ. <a href="RayRacine">RayRacine</a> ported Swerve to MLton in January 2005.   <p>
-<a href="http://mlton.org/pages/Swerve/attachments/swerve.tar.bz2">download the port</a> 
+<a href="http://mlton.org/pages/Swerve/attachments/swerve.tar.bz2"><img src="moin-www.png" alt="[WWW]" height="11" width="11">download the port</a> 
 </p>
 <p>
 Excerpt from the included <tt>README</tt>: 

@@ -65,7 +65,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 <p>
-This page is for experimental releases of MLton.  These versions are not as well tested as our <a href="http://mlton.org/Download">public releases</a>, and may not be available for our all our usual platforms. 
+This page is for experimental releases of MLton.  These versions are not as well tested as our <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">public releases</a>, and may not be available for our all our usual platforms. 
 </p>
 <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
 
@@ -119,7 +119,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-freebsd.tgz">FreeBSD</a> 5.4 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-freebsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 5.4 
 </p>
 </li>
         <li>
@@ -132,17 +132,17 @@ This page is for experimental releases of MLton.  These versions are not as well
 
             <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1_i386.deb">Debian</a> testing 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1_i386.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> testing 
 </p>
 </li>
             <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386.rpm">RedHat</a> 7.1 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RedHat</a> 7.1 
 </p>
 </li>
             <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-linux.tgz">tgz</a> for other distributions (glibc 2.3) 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tgz</a> for other distributions (glibc 2.3) 
 </p>
 </li>
 
@@ -151,12 +151,12 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-netbsd.tgz">NetBSD</a> 2.0.2 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-netbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 2.0.2 
 </p>
 </li>
         <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-openbsd.tgz">OpenBSD</a> 3.7 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.i386-openbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 3.7 
 </p>
 </li>
 
@@ -173,7 +173,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.powerpc-darwin.tgz">Darwin</a> 7.0.0 (Mac OS X) 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 7.0.0 (Mac OS X) 
 </p>
 </li>
 
@@ -190,7 +190,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.sparc-solaris.tgz">Solaris</a> 8 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.sparc-solaris.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Solaris</a> 8 
 </p>
 </li>
 
@@ -207,17 +207,17 @@ This page is for experimental releases of MLton.  These versions are not as well
 
     <li>
 <p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.tgz">source tgz</a> 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source tgz</a> 
 </p>
 </li>
     <li>
 <p>
- Debian <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.dsc">dsc</a>,   <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.diff.gz">diff.gz</a>,  <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731.orig.tar.gz">orig.tar.gz</a> 
+ Debian <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.dsc"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dsc</a>,   <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.diff.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">diff.gz</a>,  <a href="http://mlton.org/pages/Experimental/attachments/mlton_20050731.orig.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">orig.tar.gz</a> 
 </p>
 </li>
     <li>
 <p>
- R<strong></strong>edHat <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.rpm">source rpm</a> 
+ R<strong></strong>edHat <a href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source rpm</a> 
 </p>
 </li>
 </ul>

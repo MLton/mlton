@@ -55,7 +55,7 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
     <li>
 <p>
  <a href="MikeThomas">MikeThomas</a> built a low-level interface, directly translating many  of the functions, covering GL, GLU, and GLUT.  This is available in  the MLton <a href="Sources">Sources</a>: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/opengl">opengl</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/opengl"><img src="moin-www.png" alt="[WWW]" height="11" width="11">opengl</a>
 .  The code contains a  number of small, standard OpenGL examples translated to SML. 
 </p>
 </li>
@@ -67,7 +67,7 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
 
             <ul>
 
-   <a href="http://mlton.org/pipermail/mlton/2005-January/026669.html">http://mlton.org/pipermail/mlton/2005-January/026669.html</a> 
+   <a href="http://mlton.org/pipermail/mlton/2005-January/026669.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2005-January/026669.html</a> 
             </ul>
 
 

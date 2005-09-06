@@ -87,9 +87,9 @@ Converts a <a href="CoreML">CoreML</a> program to an <a href="XML">XML</a> progr
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.sig?view=markup">defunctorize.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.fun?view=markup">defunctorize.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 This pass is grossly misnamed (a consequence of the implementation of an <a href="Elaborate">Elaborate</a> pass that follows the  <a href="DefinitionOfStandardML"> Definition</a> and produces readable error messages). 

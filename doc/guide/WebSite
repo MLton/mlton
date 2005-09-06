@@ -103,7 +103,7 @@ This web site is a Wiki and is implemented using <a href="MoinMoin">MoinMoin</a>
 </li>
     <li class="gap">
 <p>
- <a href="http://mlton.org/OldPages">OldPages</a>.  Pages with the oldest modification times. 
+ <a href="http://mlton.org/OldPages"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OldPages</a>.  Pages with the oldest modification times. 
 </p>
 </li>
     <li class="gap">
@@ -113,7 +113,7 @@ This web site is a Wiki and is implemented using <a href="MoinMoin">MoinMoin</a>
 </li>
     <li class="gap">
 <p>
- <a href="http://mlton.org/RecentChanges">RecentChanges</a>.  Pages that have been changed recently. 
+ <a href="http://mlton.org/RecentChanges"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RecentChanges</a>.  Pages that have been changed recently. 
 </p>
 </li>
 

@@ -100,9 +100,9 @@ In theory every strictly conforming Standard ML program should run on MLton.  Ho
         <li>
 <p>
  The internal MLton library has a regexp module which we hope to   cleanup and make more accessible someday.   See 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/mlton/basic/regexp.sig?view=markup">regexp.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/mlton/basic/regexp.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sig</a>
    
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/mlton/basic/regexp.sml?view=markup">regexp.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/mlton/basic/regexp.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sml</a>
  
 </p>
 </li>
@@ -193,12 +193,12 @@ More projects using MLton can be seen on the <a href="Users">Users</a> page.
 
         <li>
 <p>
- Moscow ML: <a href="http://www.dina.kvl.dk/~sestoft/mosmllib/Postgres.html">http://www.dina.kvl.dk/~sestoft/mosmllib/Postgres.html</a> 
+ Moscow ML: <a class="external" href="http://www.dina.kvl.dk/~sestoft/mosmllib/Postgres.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.dina.kvl.dk/~sestoft/mosmllib/Postgres.html</a> 
 </p>
 </li>
         <li>
 <p>
- SML/NJ NLFFI: <a href="http://smlweb.sourceforge.net/smlsql/">http://smlweb.sourceforge.net/smlsql/</a> 
+ SML/NJ NLFFI: <a class="external" href="http://smlweb.sourceforge.net/smlsql/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://smlweb.sourceforge.net/smlsql/</a> 
 </p>
 </li>
 
@@ -238,5 +238,5 @@ More projects using MLton can be seen on the <a href="Users">Users</a> page.
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:53:41 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 11:42:21 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -83,7 +83,7 @@ There are a few Emacs modes for SML.
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/mlton.el?view=markup">mlton.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
  contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
 </p>
 </li>
@@ -113,13 +113,13 @@ There are a couple of modes for editing <a href="MLBasis"> ML Basis</a> files.
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-mlb-mode.el?view=markup">esml-mlb-mode.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
  
 </p>
 </li>
     <li>
 <p>
- <a href="http://mlton.org/pages/Emacs/attachments/mlb.el">mlb.el</a> 
+ <a href="http://mlton.org/pages/Emacs/attachments/mlb.el"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlb.el</a> 
 </p>
 </li>
 

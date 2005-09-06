@@ -58,9 +58,9 @@ Implements exceptions.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-exceptions.sig?view=markup">implement-exceptions.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-exceptions.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-exceptions.fun?view=markup">implement-exceptions.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-exceptions.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 

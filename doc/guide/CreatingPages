@@ -50,7 +50,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 To create a page, edit an existing page, and add the name of the new page, like <tt>FooBar</tt>, to the page contents.  When you view the new version of the existing page, a link will have been automatically created, and if you click on it, you will be given the option to create the new page. <p>
-You can also go directly to a new page by entering the page name as a URL into your browser, like <tt>http://www.mlton.org/FooBar</tt>. 
+You can also go directly to a new page by entering the page name as a URL into your browser, like <tt>http://mlton.org/FooBar</tt>. 
 </p>
 <p>
 You can also type in the page name here to go directly to that page. 
@@ -66,5 +66,5 @@ You can also type in the page name here to go directly to that page.
 
 <p>
 <hr>
-Last edited on 2004-10-28 22:37:02 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 17:36:53 by <span title="adsl-64-166-225-193.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

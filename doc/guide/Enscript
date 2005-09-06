@@ -55,7 +55,7 @@
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_simple.st?view=markup">sml_simple.st</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_simple.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_simple.st</a>
  -- Provides highlighting of keywords, string and character constants, and (nested) comments.  
 <pre class=code>
 <I><FONT COLOR="#B22222">(* Comments (* can be nested *) *)</FONT></I>
@@ -69,7 +69,7 @@
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_verbose.st?view=markup">sml_verbose.st</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_verbose.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_verbose.st</a>
  -- Supersedes the above, adding  highlighting of numeric constants.  Due to the limited parsing  available, numeric record labels are highlighted as numeric  constants, in all contexts.  Likewise, a binding precedence separated  from <tt>infix</tt> or <tt>infixr</tt> by a newline is highlighted as a  numeric constant and a numeric record label selector separated from  <tt>#</tt> by a newline is highlighted as a numeric constant.  
 </p>
  
@@ -93,7 +93,7 @@
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_fancy.st?view=markup">sml_fancy.st</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_fancy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_fancy.st</a>
  -- Supersedes the above, adding  highlighting of type and constructor bindings, highlighting of  explicit binding of type variables at <tt>val</tt> and <tt>fun</tt> declarations, and  separate highlighting of core and modules level keywords.  Due to the  limited parsing available, it is assumed that the input is a  syntactically correct, top-level declaration.  
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B>
@@ -116,7 +116,7 @@
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_gaudy.st?view=markup">sml_gaudy.st</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_gaudy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_gaudy.st</a>
  -- Supersedes the above, adding  highlighting of type annotations, in both expressions and signatures.  Due to the limited parsing available, it is assumed that the input is  a syntactically correct, top-level declaration.   
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> S = <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -175,7 +175,7 @@
             <li>
 <p>
  Append 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_all.st?view=markup">sml_all.st</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/enscript/sml_all.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_all.st</a>
  to <tt>/usr/share/enscript/enscript.st</tt> 
 </p>
 </li>

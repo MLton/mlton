@@ -61,7 +61,7 @@ MLton's copying collector is a simple, two-space, breadth-first, Cheney-style co
 
     <li>
 <p>
- <a href="http://mlton.org/pipermail/mlton/2002-May/012420.html">http://mlton.org/pipermail/mlton/2002-May/012420.html</a>  <br>
+ <a href="http://mlton.org/pipermail/mlton/2002-May/012420.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-May/012420.html</a>  <br>
  object layout and header word design 
 </p>
 </li>

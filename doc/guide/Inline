@@ -58,9 +58,9 @@ Inline <a href="SSA">SSA</a> functions with a size-based metric.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/inline.sig?view=markup">inline.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/inline.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">inline.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/inline.fun?view=markup">inline.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/inline.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">inline.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The Inline pass can be invoked to use one of three metrics: 

@@ -58,9 +58,9 @@ Uses <a href="AllocateRegisters">AllocateRegisters</a>, <a href="Chunkify">Chunk
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/backend.sig?view=markup">backend.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/backend.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">backend.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/backend.fun?view=markup">backend.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/backend.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">backend.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 Because the MLton runtime system is shared by all codegens, it is most convenient to decide on stack layout <em>before</em> any codegen takes over.  In particular, we compute all the stack frame info for each <a href="RSSA">RSSA</a> function, including stack size, <a class="nonexistent" href="GarbageCollector">GarbageCollector</a> masks for each frame, etc.  To do so, the <a href="Machine">Machine</a> <a href="IntermediateLanguage">IntermediateLanguage</a> imagines an abstract machine with an infinite number of (pseudo-)registers of every size.  A liveness analysis determines, for each variable, whether or not it is live across a point where the runtime system might take over (for example, any garbage collection point) or a non-tail call to another <a href="RSSA">RSSA</a> function.  Those that are live go on the stack, while those that aren't live go into psuedo-registers.  From this information, we know all we need to about each stack frame.  On the downside, nothing further on is allowed to change this stack info; it is set in stone. 

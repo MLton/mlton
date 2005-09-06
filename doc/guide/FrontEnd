@@ -55,18 +55,18 @@ Peforms lexing and parsing to produce an abstract syntax tree.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.sig?view=markup">front-end.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">front-end.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.fun?view=markup">front-end.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">front-end.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The lexer is produced by <a class="nonexistent" href="MLLex">MLLex</a> from 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.lex?view=markup">ml.lex</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.lex?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ml.lex</a>
 . 
 </p>
 <p>
 The parser is produced by <a class="nonexistent" href="MLYacc">MLYacc</a> from 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.grm?view=markup">ml.grm</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.grm?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ml.grm</a>
 . 
 </p>
 <p>

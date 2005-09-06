@@ -217,7 +217,7 @@ With this approach, changing a field name only requires changing the name in the
 </p>
 <p>
 The MLton SVN contains Emacs functions in 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-gen.el?view=markup">esml-gen.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-gen.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-gen.el</a>
  to generate functional tuple update functions and functional record update functions. For example, to generate a <tt>set</tt> function for the record <tt>{a,&nbsp;b,&nbsp;c</tt>} it is sufficient to type <tt>M&nbsp;x&nbsp;esml-gen-fru-setter&nbsp;a&nbsp;b&nbsp;c</tt>. 
 </p>
 <h2 id="head-12c4ffe1d987164a4bedf6ab2aac597a113e181c">Efficiency</h2>

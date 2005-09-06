@@ -55,9 +55,9 @@ Rewrites <a href="AST">AST</a> function clauses, expressions, and patterns to re
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/precedence-parse.sig?view=markup">precedence-parse.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/precedence-parse.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/precedence-parse.fun?view=markup">precedence-parse.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/precedence-parse.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 

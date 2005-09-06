@@ -50,7 +50,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 The single optimization pass for the <a href="CoreML">CoreML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> is controlled by the <tt>Compile</tt> functor (
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main/compile.fun?view=markup">compile.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main/compile.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">compile.fun</a>
 ). <p>
 The following optimization pass is implemented: 
 </p>

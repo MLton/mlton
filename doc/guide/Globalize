@@ -55,9 +55,9 @@ Mark values that are constant, allowing <a href="ClosureConvert">ClosureConvert<
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/globalize.sig?view=markup">globalize.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/globalize.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">globalize.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/globalize.fun?view=markup">globalize.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/globalize.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">globalize.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 

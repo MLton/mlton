@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -x
 
 name=`basename $0`
 dir=`dirname $0`
@@ -39,6 +38,7 @@ rm -f *
 
 drop='\(Download\|.*MoinEditorBackup\|OldPages\|Preferences\|RecentChanges\|TemporaryBugExamples\|TemporaryUpload\|WikiSandBox\)'
 
+#if true; then (cd $HOME/mlton/guide-in && tar.write .) | tar.read; else
 echo "Getting index:" 
 lynx -dump "$base/Index?action=titleindex" | \
     grep -v >$index -e '^$' -e "^$drop$"
@@ -55,12 +55,15 @@ echo "Getting images:"
 for f in bottom email ftp top www; do
 	wget -c $base/wiki/mlton/img/moin-$f.png
 done
+#fi
 
 echo "Fixing pages:" 
 
 # Eliminate ungrabbed pages from Index.
 grep -v "$drop" Index >$tmp
 mv $tmp Index
+
+wwwImg='<img src="moin-www.png" alt="[WWW]" height="11" width="11">'
 
 # Write sed script to file.
 cat >$script <<EOF
@@ -83,6 +86,7 @@ s; \(href\|src\) *= *"/\([^"]\+\)"; \1="\2";g
 s; href *= *"/"; href="Home";g
 s; href *= *"$drop"; href="$base/\1";g
 s; \(href\|src\) *= *"wiki/mlton/[^/]\+/\([^"]*\)"; \1="\2";g
+s;\(<a href *= *"http://mlton.org[^>]*>\);\1$wwwImg;g
 EOF
 
 for f in $(cat $index); do

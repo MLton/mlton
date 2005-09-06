@@ -101,7 +101,7 @@ Also, please <a href="Contact">Contact</a> us to let us know the problem to help
 </p>
 <h2 id="head-5da60bc9034a764c34c1be37aa3017ce70bc131e">How do I see what has changed recently in the wiki?</h2>
 <p>
-<a href="http://mlton.org/RecentChanges">RecentChanges</a> 
+<a href="http://mlton.org/RecentChanges"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RecentChanges</a> 
 </p>
 <h2 id="head-756d1bccf1783a78c8c7af9ff6aadb9dee01b567">How portable is SML code across SML compilers?</h2>
 <p>

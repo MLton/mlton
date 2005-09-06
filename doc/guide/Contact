@@ -84,7 +84,7 @@ In addition to the pipermail archive on this site, there are archives of both  <
 </li>
     <li class="gap">
 <p>
- Large messages (over 512K) should not be sent.  Rather, please send  an email containing the discussion text and a link to any large  files.  You may use our <a href="http://mlton.org/TemporaryUpload">TemporaryUpload</a> page for uploading these files. 
+ Large messages (over 512K) should not be sent.  Rather, please send  an email containing the discussion text and a link to any large  files.  You may use our <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> page for uploading these files. 
 </p>
 </li>
     <li class="gap">
