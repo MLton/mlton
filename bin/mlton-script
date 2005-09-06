@@ -80,7 +80,7 @@ doit "$lib" \
                 -fcall-used-g5
                 -fcall-used-g7
                 -mcpu=ultrasparc'                               \
-        -target-cc-opt sparc '-mv8 -m32'                        \
+        -target-cc-opt sparc '-mcpu=v8 -m32'                    \
         -target-cc-opt x86                                      \
                 '-fno-strength-reduce
                 -fschedule-insns
