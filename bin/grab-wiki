@@ -52,7 +52,7 @@ for f in common screen print; do
 done
 
 echo "Getting images:"
-for f in bottom email ftp top www; do
+for f in bottom email ftp news top www; do
 	wget -c $base/wiki/mlton/img/moin-$f.png
 done
 #fi
