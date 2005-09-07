@@ -48,7 +48,7 @@ functor Real (R: PRE_REAL): REAL =
          val minPos = minPos
          val precision = precision
          val radix = radix
-         val signBit = signBit
+         val signBit = fn r => signBit r <> 0
          val toLarge = toLarge
       end
 
