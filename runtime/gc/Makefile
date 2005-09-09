@@ -56,14 +56,16 @@ DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 CFILES = 								\
 	gc_prefix.c							\
 	debug.c								\
-	pointer.c							\
 	align.c								\
+	pointer.c							\
 	model.c								\
 	object.c							\
 	array.c								\
 	frame.c								\
 	stack.c								\
+	thread.c							\
 	foreach.c							\
+	cheney-copy.c							\
 	assumptions.c							\
 	gc_suffix.c
 

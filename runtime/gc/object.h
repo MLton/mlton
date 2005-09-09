@@ -50,7 +50,7 @@ static inline GC_header* getHeaderp (pointer p) {
   return (GC_header*)(p - GC_HEADER_SIZE);
 }
 
-/* GC_getHeader (p) 
+/* getHeader (p) 
  *
  * Returns the header for the object pointed to by p. 
  */

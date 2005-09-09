@@ -36,6 +36,7 @@
 #define FALSE   (not TRUE)
 #endif
 #define unless(p)       if (not (p))
+#define until(p)        while (not (p))
 
 /* issue error message and exit */
 extern void die (char *fmt, ...)

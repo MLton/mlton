@@ -29,5 +29,5 @@
 typedef struct GC_weak {
   uint32_t unused;
   struct GC_weak *link;
-  objptr object;
+  objptr objptr;
 } *GC_weak;

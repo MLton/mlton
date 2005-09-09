@@ -6,18 +6,20 @@
  * See the file MLton-LICENSE for details.
  */
 
-typedef void (*GC_pointerFun) (GC_state s, objptr *pp);
+typedef void (*GC_foreachObjptrFun) (GC_state s, objptr *opp);
 
-static inline void maybeCall (GC_pointerFun f, GC_state s, objptr *pp) {
-  if (isObjptr (*pp))
-    f (s, pp);
+static inline void maybeCall (GC_foreachObjptrFun f, 
+                              GC_state s, objptr *opp) {
+  if (isObjptr (*opp))
+    f (s, opp);
 }
 
 /* foreachGlobalObjptr (s, f)
  * 
  * Apply f to each global object pointer into the heap. 
  */
-static inline void foreachGlobalObjptr (GC_state s, GC_pointerFun f) {
+static inline void foreachGlobalObjptr (GC_state s, 
+                                        GC_foreachObjptrFun f) {
   for (unsigned int i = 0; i < s->globalsSize; ++i) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "foreachGlobal %u\n", i);
@@ -42,7 +44,7 @@ static inline void foreachGlobalObjptr (GC_state s, GC_pointerFun f) {
 static inline pointer foreachObjptrInObject (GC_state s, 
                                              pointer p,
                                              bool skipWeaks,
-                                             GC_pointerFun f) {
+                                             GC_foreachObjptrFun f) {
   bool hasIdentity;
   GC_header header;
   uint16_t numNonObjptrs;
@@ -183,7 +185,7 @@ static inline pointer foreachObjptrInRange (GC_state s,
                                             pointer front, 
                                             pointer *back,
                                             bool skipWeaks,
-                                            GC_pointerFun f) {
+                                            GC_foreachObjptrFun f) {
   pointer b;
 
   assert (isAlignedFrontier (s, front));

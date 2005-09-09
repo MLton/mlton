@@ -1,6 +1,8 @@
 
 typedef struct GC_state {
   size_t alignment; /* */
+  bool amInGC;
+  bool amInMinorGC;
   objptr callFromCHandler; /* Handler for exported C calls (in heap). */
   objptr currentThread; /* Currently executing thread (in heap). */
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
@@ -8,6 +10,7 @@ typedef struct GC_state {
   objptr *globals;
   uint32_t globalsSize;
   struct GC_heap heap;
+  uint32_t maxFrameSize;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesSize; /* Cardinality of objectTypes array. */
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
@@ -16,6 +19,9 @@ typedef struct GC_state {
                        */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandler; /* Handler for signals (in heap). */
+  pointer stackBottom; /* Bottom of stack in current thread. */
+  pointer stackTop; /* Top of stack in current thread. */
   /*Bool*/bool summary; /* Print a summary of gc info when program exits. */
+  float threadShrinkRatio;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 } *GC_state;

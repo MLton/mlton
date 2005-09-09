@@ -10,200 +10,212 @@
 /*                    Cheney Copying Collection                     */
 /* ---------------------------------------------------------------- */
 
-/* forward (s, pp) forwards the object pointed to by *pp and updates *pp to 
- * point to the new object. 
+#define GC_FORWARDED ~((GC_header)0)
+
+/* forward (s, opp) 
+ * Forwards the object pointed to by *opp and updates *opp to point to
+ * the new object.  
  * It also updates the crossMap.
  */
-static inline void forward (GC_state s, pointer *pp) {
+struct forwardState {
+  pointer back;
+  pointer fromBase;
+  pointer toBase;
+  pointer toLimit;
+};
+static struct forwardState forwardState;
+
+static inline void forward (GC_state s, objptr *opp) {
+  objptr op;
   pointer p;
-  GC_ObjectHeader header;
-  GC_ObjectTypeTag tag;
+  GC_header header;
+  GC_objectTypeTag tag;
 
+  op = *opp;
+  p = objptrToPointer (op, forwardState.fromBase);
   if (DEBUG_DETAILED)
-    fprintf (stderr, 
-             "forward  pp = 0x"PRIxPTR"  *pp = 0x"PRIxPTR"\n", 
-             pp, *pp);
-  assert (isInFromSpace (s, *pp));
-  p = *pp;
-  header = GC_getHeader (p);
-        if (DEBUG_DETAILED and FORWARDED == header)
-                fprintf (stderr, "already FORWARDED\n");
-        if (header != FORWARDED) { /* forward the object */
-                Bool hasIdentity;
-                uint headerBytes, objectBytes, size, skip;
-                uint numPointers, numNonPointers;
+    fprintf (stderr,
+             "forward  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             (uintptr_t)opp, op, (uintptr_t)p);
+  // assert (isInFromSpace (s, *pp));
+  header = getHeader (p);
+  if (DEBUG_DETAILED and header == GC_FORWARDED)
+    fprintf (stderr, "  already FORWARDED\n");
+  if (header != GC_FORWARDED) { /* forward the object */
+    bool hasIdentity;
+    uint16_t numNonObjptrs, numObjptrs;
+    size_t headerBytes, objectBytes, size, skip;
 
-                /* Compute the space taken by the header and object body. */
-                SPLIT_HEADER();
-                if (NORMAL_TAG == tag) { /* Fixed size object. */
-                        headerBytes = GC_NORMAL_HEADER_SIZE;
-                        objectBytes = toBytes (numPointers + numNonPointers);
-                        skip = 0;
-                } else if (ARRAY_TAG == tag) {
-                        headerBytes = GC_ARRAY_HEADER_SIZE;
-                        objectBytes = arrayNumBytes (s, p, numPointers,
-                                                        numNonPointers);
-                        skip = 0;
-                } else if (WEAK_TAG == tag) {
-                        headerBytes = GC_NORMAL_HEADER_SIZE;
-                        objectBytes = sizeof (struct GC_weak);
-                        skip = 0;
-                } else { /* Stack. */
-                        GC_stack stack;
+    /* Compute the space taken by the header and object body. */
+    SPLIT_HEADER();
+    if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
+      headerBytes = GC_NORMAL_HEADER_SIZE;
+      objectBytes = 
+        numNonObjptrsToBytes(numNonObjptrs, NORMAL_TAG)
+        + (numObjptrs * OBJPTR_SIZE);
+      skip = 0;
+    } else if (ARRAY_TAG == tag) {
+      headerBytes = GC_ARRAY_HEADER_SIZE;
+      objectBytes = arrayNumBytes (s, p, numObjptrs, numNonObjptrs);
+      skip = 0;
+    } else { /* Stack. */
+      GC_stack stack;
 
-                        assert (STACK_TAG == tag);
-                        headerBytes = STACK_HEADER_SIZE;
-                        stack = (GC_stack)p;
+      assert (STACK_TAG == tag);
+      headerBytes = GC_STACK_HEADER_SIZE;
+      stack = (GC_stack)p;
 
-                        if (s->currentThread->stack == stack) {
-                                /* Shrink stacks that don't use a lot 
-                                 * of their reserved space;
-                                 * but don't violate the stack invariant.
-                                 */
-                                if (stack->used <= stack->reserved / 4) {
-                                        uint new = stackReserved (s, max (stack->reserved / 2,
-                                                                                stackNeedsReserved (s, stack)));
-                                        /* It's possible that new > stack->reserved if
-                                         * the stack invariant is violated. In that case, 
-                                         * we want to leave the stack alone, because some 
-                                         * other part of the gc will grow the stack.  We 
-                                         * cannot do any growing here because we may run 
-                                         * out of to space.
-                                         */
-                                        if (new <= stack->reserved) {
-                                                stack->reserved = new;
-                                                if (DEBUG_STACKS)
-                                                        fprintf (stderr, "Shrinking stack to size %s.\n",
-                                                                        uintToCommaString (stack->reserved));
-                                        }
-                                }
-                        } else {
-                                /* Shrink heap stacks.
-                                 */
-                                stack->reserved = stackReserved (s, max(s->threadShrinkRatio * stack->reserved, 
-                                                                        stack->used));
-                                if (DEBUG_STACKS)
-                                        fprintf (stderr, "Shrinking stack to size %s.\n",
-                                                        uintToCommaString (stack->reserved));
-                        }
-                        objectBytes = sizeof (struct GC_stack) + stack->used;
-                        skip = stack->reserved - stack->used;
-                }
-                size = headerBytes + objectBytes;
-                assert (s->back + size + skip <= s->toLimit);
-                /* Copy the object. */
-                copy (p - headerBytes, s->back, size);
-                /* If the object has a valid weak pointer, link it into the weaks
-                 * for update after the copying GC is done.
-                 */
-                if (WEAK_TAG == tag and 1 == numPointers) {
-                        GC_weak w;
-
-                        w = (GC_weak)(s->back + GC_NORMAL_HEADER_SIZE);
-                        if (DEBUG_WEAK)
-                                fprintf (stderr, "forwarding weak 0x%08x ",
-                                                (uint)w);
-                        if (GC_isPointer (w->object)
-                                and (not s->amInMinorGC
-                                        or isInNursery (s, w->object))) {
-                                if (DEBUG_WEAK)
-                                        fprintf (stderr, "linking\n");
-                                w->link = s->weaks;
-                                s->weaks = w;
-                        } else {
-                                if (DEBUG_WEAK)
-                                        fprintf (stderr, "not linking\n");
-                        }
-                }
-                /* Store the forwarding pointer in the old object. */
-                *(word*)(p - WORD_SIZE) = FORWARDED;
-                *(pointer*)p = s->back + headerBytes;
-                /* Update the back of the queue. */
-                s->back += size + skip;
-                assert (isAligned ((uint)s->back + GC_NORMAL_HEADER_SIZE,
-                                        s->alignment));
+      if (currentThreadStack(s) == op) {
+        /* Shrink stacks that don't use a lot of their reserved space;
+         * but don't violate the stack invariant.
+         */
+        if (stack->used <= stack->reserved / 4) {
+          size_t new = 
+            stackReserved (s, maxZ (stack->reserved / 2,
+                                    stackNeedsReserved (s, stack)));
+          /* It's possible that new > stack->reserved if the stack
+           * invariant is violated. In that case, we want to leave the
+           * stack alone, because some other part of the gc will grow
+           * the stack.  We cannot do any growing here because we may
+           * run out of to space.
+           */
+          if (new <= stack->reserved) {
+            stack->reserved = new;
+            if (DEBUG_STACKS)
+              fprintf (stderr, "Shrinking stack to size %"PRId32".\n",
+                       /*uintToCommaString*/(stack->reserved));
+          }
         }
-        *pp = *(pointer*)p;
-        assert (isInToSpace (s, *pp));
+      } else {
+        /* Shrink heap stacks.
+         */
+        stack->reserved = 
+          stackReserved (s, maxZ(s->threadShrinkRatio * stack->reserved,
+                                 stack->used));
+        if (DEBUG_STACKS)
+          fprintf (stderr, "Shrinking stack to size %"PRId32".\n",
+                   /*uintToCommaString*/(stack->reserved));
+      }
+      objectBytes = sizeof (struct GC_stack) + stack->used;
+      skip = stack->reserved - stack->used;
+    }
+    size = headerBytes + objectBytes;
+    assert (forwardState.back + size + skip <= forwardState.toLimit);
+    /* Copy the object. */
+    copy (p - headerBytes, forwardState.back, size);
+    /* If the object has a valid weak pointer, link it into the weaks
+     * for update after the copying GC is done.
+     */
+    if (WEAK_TAG == tag and numObjptrs == 1) {
+      GC_weak w;
+      
+      w = (GC_weak)(forwardState.back + GC_NORMAL_HEADER_SIZE);
+      if (DEBUG_WEAK)
+        fprintf (stderr, "forwarding weak "FMTPTR" ",
+                 (uintptr_t)w);
+      if (isObjptr (w->objptr)
+          and (not s->amInMinorGC
+               or isInNursery (s, w->objptr))) {
+        if (DEBUG_WEAK)
+          fprintf (stderr, "linking\n");
+        w->link = s->weaks;
+        s->weaks = w;
+      } else {
+        if (DEBUG_WEAK)
+          fprintf (stderr, "not linking\n");
+      }
+    }
+    /* Store the forwarding pointer in the old object. */
+    *(GC_header*)(p - GC_HEADER_SIZE) = GC_FORWARDED;
+    *(objptr*)p = pointerToObjptr(forwardState.back + headerBytes, forwardState.toBase);
+    /* Update the back of the queue. */
+    forwardState.back += size + skip;
+    assert (isAligned ((uintptr_t)forwardState.back + GC_NORMAL_HEADER_SIZE, 
+                       s->alignment));
+  }
+  *opp = *(objptr*)p;
+  // assert (isInToSpace (s, *opp));
 }
 
-static void updateWeaks (GC_state s) {
-        GC_weak w;
+static inline void updateWeaks (GC_state s) {
+  pointer p;
+  GC_weak w;
 
-        for (w = s->weaks; w != NULL; w = w->link) {
-                assert ((pointer)BOGUS_POINTER != w->object);
+  for (w = s->weaks; w != NULL; w = w->link) {
+    assert (BOGUS_OBJPTR != w->objptr);
 
-                if (DEBUG_WEAK)
-                        fprintf (stderr, "updateWeaks  w = 0x%08x  ", (uint)w);
-                if (FORWARDED == GC_getHeader ((pointer)w->object)) {
-                        if (DEBUG_WEAK)
-                                fprintf (stderr, "forwarded from 0x%08x to 0x%08x\n",
-                                                (uint)w->object,
-                                                (uint)*(pointer*)w->object);
-                        w->object = *(pointer*)w->object;
-                } else {
-                        if (DEBUG_WEAK)
-                                fprintf (stderr, "cleared\n");
-                        *(GC_getHeaderp((pointer)w)) = WEAK_GONE_HEADER;
-                        w->object = (pointer)BOGUS_POINTER;
-                }
-        }
-        s->weaks = NULL;
+    if (DEBUG_WEAK)
+      fprintf (stderr, "updateWeaks  w = "FMTPTR"  ", (uintptr_t)w);
+    p = objptrToPointer (w->objptr, forwardState.fromBase);
+    if (GC_FORWARDED == getHeader (p)) {
+      if (DEBUG_WEAK)
+        fprintf (stderr, "forwarded from "FMTOBJPTR" to "FMTOBJPTR"\n",
+                 w->objptr,
+                 *(objptr*)p);
+      w->objptr = *(objptr*)p;
+    } else {
+      if (DEBUG_WEAK)
+        fprintf (stderr, "cleared\n");
+      *(getHeaderp(p)) = WEAK_GONE_HEADER;
+      w->objptr = BOGUS_OBJPTR;
+    }
+  }
+  s->weaks = NULL;
 }
 
-static void swapSemis (GC_state s) {
+static inline void swapSemis (GC_state s) {
   struct GC_heap tempHeap;
   
   tempHeap = s->secondaryHeap;
   s->secondaryHeap = s->heap;
   s->heap = tempHeap;
-  setCardMapForMutator (s);
+  // setCardMapForMutator (s);
 }
 
-static inline bool detailedGCTime (GC_state s) {
-        return s->summary;
-}
+/* static inline bool detailedGCTime (GC_state s) { */
+/*         return s->summary; */
+/* } */
 
-static void cheneyCopy (GC_state s) {
-        struct rusage ru_start;
-        pointer toStart;
+/* static void cheneyCopy (GC_state s) { */
+/*         struct rusage ru_start; */
+/*         pointer toStart; */
 
-        assert (s->heap2.size >= s->oldGenSize);
-        if (detailedGCTime (s))
-                startTiming (&ru_start);
-        s->numCopyingGCs++;
-        s->toSpace = s->secondaryHeap.start;
-        s->toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
-        if (DEBUG or s->messages) {
-                fprintf (stderr, "Major copying GC.\n");
-                fprintf (stderr, "fromSpace = 0x%08x of size %s\n", 
-                                (uint) s->heap.start,
-                                uintToCommaString (s->heap.size));
-                fprintf (stderr, "toSpace = 0x%08x of size %s\n",
-                                (uint) s->heap2.start,
-                                uintToCommaString (s->heap2.size));
-        }
-        assert (s->heap2.start != (void*)NULL);
-        /* The next assert ensures there is enough space for the copy to succeed.
-         * It does not assert (s->heap2.size >= s->heap.size) because that
-         * is too strong.
-         */
-        assert (s->heap2.size >= s->oldGenSize);
-        toStart = alignFrontier (s, s->heap2.start);
-        s->back = toStart;
-        foreachGlobal (s, forward);
-        foreachPointerInRange (s, toStart, &s->back, TRUE, forward);
-        updateWeaks (s);
-        s->oldGenSize = s->back - s->heap2.start;
-        s->bytesCopied += s->oldGenSize;
-        if (DEBUG)
-                fprintf (stderr, "%s bytes live.\n", 
-                                uintToCommaString (s->oldGenSize));
-        swapSemis (s);
-        clearCrossMap (s);
-        s->lastMajor = GC_COPYING;
-        if (detailedGCTime (s))
-                stopTiming (&ru_start, &s->ru_gcCopy);          
-        if (DEBUG or s->messages)
-                fprintf (stderr, "Major copying GC done.\n");
-}
+/*         assert (s->heap2.size >= s->oldGenSize); */
+/*         if (detailedGCTime (s)) */
+/*                 startTiming (&ru_start); */
+/*         s->numCopyingGCs++; */
+/*         s->toSpace = s->secondaryHeap.start; */
+/*         s->toLimit = s->secondaryHeap.start + s->secondaryHeap.size; */
+/*         if (DEBUG or s->messages) { */
+/*                 fprintf (stderr, "Major copying GC.\n"); */
+/*                 fprintf (stderr, "fromSpace = 0x%08x of size %s\n",  */
+/*                                 (uint) s->heap.start, */
+/*                                 uintToCommaString (s->heap.size)); */
+/*                 fprintf (stderr, "toSpace = 0x%08x of size %s\n", */
+/*                                 (uint) s->heap2.start, */
+/*                                 uintToCommaString (s->heap2.size)); */
+/*         } */
+/*         assert (s->heap2.start != (void*)NULL); */
+/*         /\* The next assert ensures there is enough space for the copy to succeed. */
+/*          * It does not assert (s->heap2.size >= s->heap.size) because that */
+/*          * is too strong. */
+/*          *\/ */
+/*         assert (s->heap2.size >= s->oldGenSize); */
+/*         toStart = alignFrontier (s, s->heap2.start); */
+/*         s->back = toStart; */
+/*         foreachGlobal (s, forward); */
+/*         foreachPointerInRange (s, toStart, &s->back, TRUE, forward); */
+/*         updateWeaks (s); */
+/*         s->oldGenSize = s->back - s->heap2.start; */
+/*         s->bytesCopied += s->oldGenSize; */
+/*         if (DEBUG) */
+/*                 fprintf (stderr, "%s bytes live.\n",  */
+/*                                 uintToCommaString (s->oldGenSize)); */
+/*         swapSemis (s); */
+/*         clearCrossMap (s); */
+/*         s->lastMajor = GC_COPYING; */
+/*         if (detailedGCTime (s)) */
+/*                 stopTiming (&ru_start, &s->ru_gcCopy);           */
+/*         if (DEBUG or s->messages) */
+/*                 fprintf (stderr, "Major copying GC done.\n"); */
+/* } */

@@ -217,7 +217,7 @@ typedef OBJPTR_TYPE objptr;
 #define FMTOBJPTR "0x%016"PRIxOBJPTR
 
 #if GC_MODEL_NONPTR
-#define BOGUS_OBJPTR 0x1
+#define BOGUS_OBJPTR (objptr)0x1
 #else
 #error gc model does not admit bogus object pointer
 #endif
