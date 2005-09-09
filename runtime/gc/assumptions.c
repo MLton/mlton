@@ -11,7 +11,7 @@
  * but which are reasonable to assume on a wide variety of target
  * platforms.  Working around these assumptions would be difficult.
  */
-void checkAssumptions () {
+void checkAssumptions (void) {
   assert(CHAR_BIT == 8);
   /* assert(repof(uintptr_t) == TWOS); */
 }

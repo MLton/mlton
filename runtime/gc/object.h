@@ -30,17 +30,17 @@ typedef uint32_t GC_header;
 #define GC_HEADER_SIZE sizeof(GC_header)
 #define PRIxHDR PRIx32
 #define FMTHDR "0x%08"PRIxHDR
-enum {
-  TYPE_INDEX_BITS =  19,
-  TYPE_INDEX_MASK =  0x000FFFFE,
-  TYPE_INDEX_SHIFT = 1,
-  COUNTER_BITS =     10,
-  COUNTER_MASK =     0x7FF00000,
-  COUNTER_SHIFT =    20,
-  MARK_BITS =        1,
-  MARK_MASK =        0x80000000,
-  MARK_SHIFT =       31
-};
+
+#define GC_VALID_HEADER_MASK ((GC_header)0x1)
+#define TYPE_INDEX_BITS    19
+#define TYPE_INDEX_MASK    0x000FFFFE
+#define TYPE_INDEX_SHIFT   1
+#define COUNTER_BITS       10
+#define COUNTER_MASK       0x7FF00000
+#define COUNTER_SHIFT      20
+#define MARK_BITS          1
+#define MARK_MASK          0x80000000
+#define MARK_SHIFT         3
 
 /* getHeaderp (p)
  *

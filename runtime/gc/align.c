@@ -7,7 +7,6 @@
  */
 
 static inline size_t align (size_t a, size_t b) {
-  assert (a >= 0);
   assert (b >= 1);
   a += b - 1;
   a -= a % b;

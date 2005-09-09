@@ -47,9 +47,9 @@ static inline pointer stackTop (GC_state s, GC_stack stack) {
 static inline uint32_t topFrameIndex (GC_state s, GC_stack stack) {
   uint32_t res;
 
-  res = getFrameIndex (s, 
-                       *(GC_returnAddress*)
-                       (stackTop (s, stack) - GC_RETURNADDRESS_SIZE));
+  res = 
+    getFrameIndexFromReturnAddress 
+    (s, *(GC_returnAddress*)(stackTop (s, stack) - GC_RETURNADDRESS_SIZE));
   if (DEBUG_PROFILE)
     fprintf (stderr, "topFrameIndex = %"PRIu32"\n", res);
   return res;
@@ -58,7 +58,7 @@ static inline uint32_t topFrameIndex (GC_state s, GC_stack stack) {
 static inline GC_frameLayout * topFrameLayout (GC_state s, GC_stack stack) {
   GC_frameLayout *layout;
 
-  layout = getFrameLayout (s, topFrameIndex (s, stack));
+  layout = getFrameLayoutFromFrameIndex (s, topFrameIndex (s, stack));
   return layout;
 }
 

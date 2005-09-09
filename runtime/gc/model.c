@@ -73,6 +73,6 @@ static inline pointer fetchObjptrToPointer (pointer OP, pointer B) {
 static inline void storeObjptrFromPointer (pointer OP, pointer P, pointer B) {
   *((objptr*)OP) = pointerToObjptr (P, B);
 }
-static inline size_t objptrSize () {
+static inline size_t objptrSize (void) {
   return OBJPTR_SIZE;
 }

@@ -49,8 +49,15 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CFLAGS = -O2 -Wall -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
-DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
+CWFLAGS = -Wall -pedantic -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Wstrict-prototypes -Wredundant-decls -Winline
+CWFLAGS = -pedantic -Wall -Wextra -Wno-unused \
+	-Wshadow -Wredundant-decls \
+	-Wpointer-arith -Wcast-qual -Wcast-align \
+##	-Wconversion \
+	-Wstrict-prototypes \
+	-Winline
+CFLAGS = -O2 $(CWFLAGS) -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
+DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 
 ## Order matters, as these are concatenated together to form "gc.c".
 CFILES = 								\

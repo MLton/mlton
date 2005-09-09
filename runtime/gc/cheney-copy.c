@@ -90,7 +90,7 @@ static inline void forward (GC_state s, objptr *opp) {
         /* Shrink heap stacks.
          */
         stack->reserved = 
-          stackReserved (s, maxZ(s->threadShrinkRatio * stack->reserved,
+          stackReserved (s, maxZ((size_t)(s->threadShrinkRatio * stack->reserved),
                                  stack->used));
         if (DEBUG_STACKS)
           fprintf (stderr, "Shrinking stack to size %"PRId32".\n",
@@ -106,7 +106,7 @@ static inline void forward (GC_state s, objptr *opp) {
     /* If the object has a valid weak pointer, link it into the weaks
      * for update after the copying GC is done.
      */
-    if (WEAK_TAG == tag and numObjptrs == 1) {
+    if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
       GC_weak w;
       
       w = (GC_weak)(forwardState.back + GC_NORMAL_HEADER_SIZE);

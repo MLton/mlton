@@ -21,13 +21,15 @@ static inline pointer arrayIndexAtPointer (GC_state s,
   SPLIT_HEADER();
   assert (tag == ARRAY_TAG);
 
+  size_t nonObjptrBytesPerElement =
+    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
   size_t bytesPerElement = 
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
+    nonObjptrBytesPerElement
     + (numObjptrs * OBJPTR_SIZE);
 
   return a
     + arrayIndex * bytesPerElement
-    + numNonObjptrsToBytes(numNonObjptrs, tag) 
+    + nonObjptrBytesPerElement
     + pointerIndex * OBJPTR_SIZE;
 }
 #endif

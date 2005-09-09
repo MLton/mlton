@@ -22,13 +22,12 @@ static inline GC_header GC_objectHeader (uint32_t t) {
 
 #define SPLIT_HEADER()                                                          \
   do {                                                                          \
-    int objectTypeIndex;                                                        \
+    unsigned int objectTypeIndex;                                               \
     GC_objectType *t;                                                           \
                                                                                 \
-    assert (1 == (header & 1));                                                 \
+    assert (1 == (header & GC_VALID_HEADER_MASK));                              \
     objectTypeIndex = (header & TYPE_INDEX_MASK) >> TYPE_INDEX_SHIFT;           \
-    assert (0 <= objectTypeIndex                                                \
-            and objectTypeIndex < s->objectTypesSize);                          \
+    assert (objectTypeIndex < s->objectTypesSize);                              \
     t = &s->objectTypes [objectTypeIndex];                                      \
     tag = t->tag;                                                               \
     hasIdentity = t->hasIdentity;                                               \

@@ -153,7 +153,7 @@ static inline pointer foreachObjptrInObject (GC_state s,
         fprintf (stderr, "  top = "FMTPTR"  return address = "FMTPTR"\n",
                  (uintptr_t)top, returnAddress);
       }
-      frameLayout = getFrameLayout (s, returnAddress);
+      frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
       frameOffsets = frameLayout->offsets;
       top -= frameLayout->numBytes;
       for (i = 0 ; i < frameOffsets[0] ; ++i) {
