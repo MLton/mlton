@@ -19,11 +19,32 @@
  */
 struct forwardState {
   pointer back;
-  pointer fromBase;
-  pointer toBase;
+  pointer toStart;
   pointer toLimit;
 };
 static struct forwardState forwardState;
+
+static inline bool pointerIsInFromSpace (GC_state s, pointer p) {
+  return (pointerIsInOldGen (s, p) or pointerIsInNursery (s, p));
+}
+
+static inline bool objptrIsInFromSpace (GC_state s, objptr op) {
+  return (objptrIsInOldGen (s, op) or objptrIsInNursery (s, op));
+}
+
+static inline bool pointerIsInToSpace (pointer p) {
+  return (not (isPointer (p))
+          or (forwardState.toStart <= p and p < forwardState.toLimit));
+}
+
+static inline bool objptrIsInToSpace (objptr op) {
+  pointer p;
+
+  if (not (isObjptr (op)))
+    return TRUE;
+  p = objptrToPointer (op, forwardState.toStart);
+  return pointerIsInToSpace (p);
+}
 
 static inline void forward (GC_state s, objptr *opp) {
   objptr op;
@@ -32,12 +53,12 @@ static inline void forward (GC_state s, objptr *opp) {
   GC_objectTypeTag tag;
 
   op = *opp;
-  p = objptrToPointer (op, forwardState.fromBase);
+  p = objptrToPointer (op, s->heap.start);
   if (DEBUG_DETAILED)
     fprintf (stderr,
              "forward  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
-  // assert (isInFromSpace (s, *pp));
+  assert (objptrIsInFromSpace (s, *opp));
   header = getHeader (p);
   if (DEBUG_DETAILED and header == GC_FORWARDED)
     fprintf (stderr, "  already FORWARDED\n");
@@ -82,18 +103,17 @@ static inline void forward (GC_state s, objptr *opp) {
           if (new <= stack->reserved) {
             stack->reserved = new;
             if (DEBUG_STACKS)
-              fprintf (stderr, "Shrinking stack to size %"PRId32".\n",
+              fprintf (stderr, "Shrinking stack to size %zd.\n",
                        /*uintToCommaString*/(stack->reserved));
           }
         }
       } else {
-        /* Shrink heap stacks.
-         */
+        /* Shrink heap stacks. */
         stack->reserved = 
           stackReserved (s, maxZ((size_t)(s->threadShrinkRatio * stack->reserved),
                                  stack->used));
         if (DEBUG_STACKS)
-          fprintf (stderr, "Shrinking stack to size %"PRId32".\n",
+          fprintf (stderr, "Shrinking stack to size %zd.\n",
                    /*uintToCommaString*/(stack->reserved));
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
@@ -115,7 +135,7 @@ static inline void forward (GC_state s, objptr *opp) {
                  (uintptr_t)w);
       if (isObjptr (w->objptr)
           and (not s->amInMinorGC
-               or isInNursery (s, w->objptr))) {
+               or objptrIsInNursery (s, w->objptr))) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
         w->link = s->weaks;
@@ -127,14 +147,14 @@ static inline void forward (GC_state s, objptr *opp) {
     }
     /* Store the forwarding pointer in the old object. */
     *(GC_header*)(p - GC_HEADER_SIZE) = GC_FORWARDED;
-    *(objptr*)p = pointerToObjptr(forwardState.back + headerBytes, forwardState.toBase);
+    *(objptr*)p = pointerToObjptr(forwardState.back + headerBytes, forwardState.toStart);
     /* Update the back of the queue. */
     forwardState.back += size + skip;
     assert (isAligned ((uintptr_t)forwardState.back + GC_NORMAL_HEADER_SIZE, 
                        s->alignment));
   }
   *opp = *(objptr*)p;
-  // assert (isInToSpace (s, *opp));
+  assert (objptrIsInToSpace (*opp));
 }
 
 static inline void updateWeaks (GC_state s) {
@@ -146,7 +166,7 @@ static inline void updateWeaks (GC_state s) {
 
     if (DEBUG_WEAK)
       fprintf (stderr, "updateWeaks  w = "FMTPTR"  ", (uintptr_t)w);
-    p = objptrToPointer (w->objptr, forwardState.fromBase);
+    p = objptrToPointer (w->objptr, s->heap.start);
     if (GC_FORWARDED == getHeader (p)) {
       if (DEBUG_WEAK)
         fprintf (stderr, "forwarded from "FMTOBJPTR" to "FMTOBJPTR"\n",

@@ -37,11 +37,11 @@ typedef struct GC_stack {
   /* reserved is the number of bytes reserved for stack, 
    * i.e. its maximum size.
    */
-  uint32_t reserved;
+  size_t reserved;
   /* used is the number of bytes used by the stack.  
    * Stacks with used == reserved are continuations.
    */
-  uint32_t used;      
+  size_t used;      
   /* The next address is the bottom of the stack, and the following
    * reserved bytes hold space for the stack.
    */

@@ -7,9 +7,11 @@ typedef struct GC_state {
   objptr currentThread; /* Currently executing thread (in heap). */
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsSize; /* Cardinality of frameLayouts array. */
+  pointer frontier; /* heap.start <= frontier < limit */
   objptr *globals;
   uint32_t globalsSize;
   struct GC_heap heap;
+  pointer limit; /* limit = heap.start + heap.totalBytes */
   uint32_t maxFrameSize;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesSize; /* Cardinality of objectTypes array. */

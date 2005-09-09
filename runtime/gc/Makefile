@@ -71,6 +71,7 @@ CFILES = 								\
 	frame.c								\
 	stack.c								\
 	thread.c							\
+	heap.c   							\
 	foreach.c							\
 	cheney-copy.c							\
 	assumptions.c							\
