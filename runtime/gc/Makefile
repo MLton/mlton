@@ -89,6 +89,8 @@ HFILES = 								\
 	stack.h								\
 	thread.h							\
 	weak.h								\
+	major.h								\
+	statistics.h							\
 	heap.h								\
 	gc_state.h							\
 	gc_suffix.h

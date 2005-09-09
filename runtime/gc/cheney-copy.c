@@ -183,7 +183,7 @@ static inline void updateWeaks (GC_state s) {
   s->weaks = NULL;
 }
 
-static inline void swapSemis (GC_state s) {
+static inline void swapHeaps (GC_state s) {
   struct GC_heap tempHeap;
   
   tempHeap = s->secondaryHeap;
@@ -196,46 +196,47 @@ static inline void swapSemis (GC_state s) {
 /*         return s->summary; */
 /* } */
 
-/* static void cheneyCopy (GC_state s) { */
-/*         struct rusage ru_start; */
-/*         pointer toStart; */
+static void majorCheneyCopyGC (GC_state s) {
+  // struct rusage ru_start;
+  pointer toStart;
 
-/*         assert (s->heap2.size >= s->oldGenSize); */
-/*         if (detailedGCTime (s)) */
-/*                 startTiming (&ru_start); */
-/*         s->numCopyingGCs++; */
-/*         s->toSpace = s->secondaryHeap.start; */
-/*         s->toLimit = s->secondaryHeap.start + s->secondaryHeap.size; */
-/*         if (DEBUG or s->messages) { */
-/*                 fprintf (stderr, "Major copying GC.\n"); */
-/*                 fprintf (stderr, "fromSpace = 0x%08x of size %s\n",  */
-/*                                 (uint) s->heap.start, */
-/*                                 uintToCommaString (s->heap.size)); */
-/*                 fprintf (stderr, "toSpace = 0x%08x of size %s\n", */
-/*                                 (uint) s->heap2.start, */
-/*                                 uintToCommaString (s->heap2.size)); */
-/*         } */
-/*         assert (s->heap2.start != (void*)NULL); */
-/*         /\* The next assert ensures there is enough space for the copy to succeed. */
-/*          * It does not assert (s->heap2.size >= s->heap.size) because that */
-/*          * is too strong. */
-/*          *\/ */
-/*         assert (s->heap2.size >= s->oldGenSize); */
-/*         toStart = alignFrontier (s, s->heap2.start); */
-/*         s->back = toStart; */
-/*         foreachGlobal (s, forward); */
-/*         foreachPointerInRange (s, toStart, &s->back, TRUE, forward); */
-/*         updateWeaks (s); */
-/*         s->oldGenSize = s->back - s->heap2.start; */
-/*         s->bytesCopied += s->oldGenSize; */
-/*         if (DEBUG) */
-/*                 fprintf (stderr, "%s bytes live.\n",  */
-/*                                 uintToCommaString (s->oldGenSize)); */
-/*         swapSemis (s); */
-/*         clearCrossMap (s); */
-/*         s->lastMajor = GC_COPYING; */
-/*         if (detailedGCTime (s)) */
-/*                 stopTiming (&ru_start, &s->ru_gcCopy);           */
-/*         if (DEBUG or s->messages) */
-/*                 fprintf (stderr, "Major copying GC done.\n"); */
-/* } */
+  assert (s->secondaryHeap.totalBytes >= s->heap.oldGenBytes);
+/*   if (detailedGCTime (s)) */
+/*     startTiming (&ru_start); */
+  s->cumulative.numCopyingGCs++;
+  forwardState.toStart = s->secondaryHeap.start;
+  forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.totalBytes;
+  if (DEBUG or s->messages) {
+    fprintf (stderr, "Major copying GC.\n");
+    fprintf (stderr, "fromSpace = "FMTPTR" of size %zd\n",
+             (uintptr_t) s->heap.start, 
+             /*uintToCommaString*/(s->heap.totalBytes));
+    fprintf (stderr, "toSpace = "FMTPTR" of size %zd\n",
+             (uintptr_t) s->secondaryHeap.start, 
+             /*uintToCommaString*/(s->secondaryHeap.totalBytes));
+  }
+  assert (s->secondaryHeap.start != (pointer)NULL);
+  /* The next assert ensures there is enough space for the copy to
+   * succeed.  It does not assert 
+   *   (s->secondaryHeap.totalBytes >= s->heap.totalByes) 
+   * because that is too strong.
+   */
+  assert (s->secondaryHeap.totalBytes >= s->heap.oldGenBytes);
+  toStart = alignFrontier (s, s->secondaryHeap.start);
+  forwardState.back = toStart;
+  foreachGlobalObjptr (s, forward);
+  foreachObjptrInRange (s, toStart, &forwardState.back, TRUE, forward);
+  updateWeaks (s);
+  s->secondaryHeap.oldGenBytes = forwardState.back - s->secondaryHeap.start;
+  s->cumulative.bytesCopied += s->secondaryHeap.oldGenBytes;
+  if (DEBUG)
+    fprintf (stderr, "%zd bytes live.\n",
+             /*uintToCommaString*/(s->secondaryHeap.oldGenBytes));
+  swapHeaps (s);
+  // clearCrossMap (s);
+  s->lastMajor.kind = GC_COPYING;
+/*   if (detailedGCTime (s)) */
+/*     stopTiming (&ru_start, &s->ru_gcCopy); */
+  if (DEBUG or s->messages)
+    fprintf (stderr, "Major copying GC done.\n");
+}
