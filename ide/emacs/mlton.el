@@ -10,6 +10,7 @@
 ;; markers so that file edits don't interfere with locating subsequent errros.
 
 (setq mlton-command "mlton")
+(setq mlton-flags "")
 (setq mlton-main-file "mlton-main-file undefined")
 (setq mlton-output-buffer "*mlton-output*")
 (setq mlton-errors nil)
@@ -95,6 +96,7 @@ source file."
         (kill-buffer mlton-output-buffer))
     (find-file mlton-main-file)
     (shell-command (concat mlton-command
+                           " " mlton-flags " "
                            " -stop tc "
                            (file-name-nondirectory mlton-main-file))
                    mlton-output-buffer)
