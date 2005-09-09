@@ -1488,42 +1488,46 @@ structure Scheme =
                      (List.fold
                       (flexes, Vector.toList types,
                        fn ({fields, spine, ...}, ac) =>
-                       Exn.withEscape (fn escape =>
                        let
-                          val flex =
-                             case List.peek (flexInsts,
-                                             fn {spine = spine', ...} =>
-                                             Spine.equals (spine, spine')) of
-                                NONE => escape ac (* Error.bug "missing flexInst" *)
-                              | SOME {flex, ...} => flex
-                          fun peekFields (fields, f) =
-                             Option.map
-                             (List.peek (fields, fn (f', _) =>
-                                         Field.equals (f, f')),
-                              #2)
-                          val peek =
-                             case Type.toType flex of
-                                FlexRecord {fields, ...} =>
-                                   (fn f => peekFields (fields, f))
-                              | GenFlexRecord {extra, fields, ...} =>
-                                   (fn f =>
-                                    case peekFields (fields, f) of
-                                       NONE =>
-                                          Option.map
-                                          (List.peek
-                                           (extra (), fn {field, ...} =>
-                                            Field.equals (f, field)),
-                                           Type.var o #tyvar)
-                                     | SOME t => SOME t)
-                              | Record r => (fn f => Srecord.peek (r, f))
-                              | _ => Error.bug "TypeEnv.instantiate': General:strange flexInst"
+                          fun done peek =
+                             Spine.foldOverNew
+                             (spine, fields, ac, fn (f, ac) =>
+                              (case peek f of
+                                  NONE => Type.unit
+                                | SOME t => t) :: ac)
                        in
-                          Spine.foldOverNew
-                          (spine, fields, ac, fn (f, ac) =>
-                           (case peek f of
-                               NONE => Type.unit
-                             | SOME t => t) :: ac)
-                       end)))
+                          case List.peek (flexInsts,
+                                          fn {spine = spine', ...} =>
+                                          Spine.equals (spine, spine')) of
+                             NONE => done (fn _ => NONE)
+                           | SOME {flex, ...} =>
+                                let
+                                   fun peekFields (fields, f) =
+                                      Option.map
+                                      (List.peek (fields, fn (f', _) =>
+                                                  Field.equals (f, f')),
+                                       #2)
+                                in
+                                   done
+                                   (case Type.toType flex of
+                                      FlexRecord {fields, ...} =>
+                                         (fn f => peekFields (fields, f))
+                                    | GenFlexRecord {extra, fields, ...} =>
+                                         (fn f =>
+                                          case peekFields (fields, f) of
+                                             NONE =>
+                                                Option.map
+                                                (List.peek
+                                                 (extra (),
+                                                  fn {field, ...} =>
+                                                  Field.equals (f, field)),
+                                                 Type.var o #tyvar)
+                                           | SOME t => SOME t)
+                                    | Record r =>
+                                         (fn f => Srecord.peek (r, f))
+                                    | _ => Error.bug "TypeEnv.instantiate': General:strange flexInst")
+                                end
+                       end))
                in
                   {args = args,
                    instance = ty}
