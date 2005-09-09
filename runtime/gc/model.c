@@ -21,7 +21,7 @@ static inline pointer objptrToPointer (objptr O, pointer B) {
   P_ = ((O_ << S_) + B_);
   P = (pointer)P_;
   if (DEBUG_DETAILED) 
-    fprintf (stderr, "objptrToPointer ("FMTOBJPTR") = "FMTPTR"\n", O, (intptr_t)P);
+    fprintf (stderr, "objptrToPointer ("FMTOBJPTR") = "FMTPTR"\n", O, (uintptr_t)P);
   
   return P;
 }
@@ -42,13 +42,13 @@ static inline objptr pointerToObjptr (pointer P, pointer B) {
   O_ = ((P_ - B_) >> S_);
   O = (objptr)O_;
   if (DEBUG_DETAILED) 
-    fprintf (stderr, "pointerToObjptr ("FMTPTR") = "FMTOBJPTR"\n", (intptr_t)P, O);
+    fprintf (stderr, "pointerToObjptr ("FMTPTR") = "FMTOBJPTR"\n", (uintptr_t)P, O);
 
   return O;
 }
 
-/* GC_isObjptr returns true if p looks like an object pointer. */
-static inline bool GC_isObjptr (objptr p) {
+/* isObjptr returns true if p looks like an object pointer. */
+static inline bool isObjptr (objptr p) {
   if GC_MODEL_NONPTR {
     unsigned int shift = GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT;
     objptr mask = ~((~((objptr)0)) << shift);

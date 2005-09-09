@@ -25,15 +25,14 @@
  * array) whose elements record byte offsets from the bottom of the
  * frame at which live heap pointers are located.
  */
-typedef uint16_t *GC_offsets;
+typedef uint16_t *GC_frameOffsets;
 
 typedef struct GC_frameLayout {
-  /* Identifies whether or not the frame is for a C call.  */
   bool isC;
-  /* Number of bytes in frame, including space for return address. */
   uint16_t numBytes;
-  /* Offsets from stackTop pointing at bottom of frame at which
-   * pointers are located.
-   */
-  GC_offsets offsets;
+  GC_frameOffsets offsets;
 } GC_frameLayout;
+
+typedef uintptr_t GC_returnAddress;
+#define GC_RETURNADDRESS_SIZE sizeof(GC_returnAddress)
+#define FMTRA "0x%016"PRIxPTR

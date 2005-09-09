@@ -7,17 +7,17 @@
  */
 
 #if ASSERT
-static pointer arrayPointer (GC_state s, 
-                             pointer a, 
-                             uint32_t arrayIndex, 
-                             uint32_t pointerIndex) {
+static inline pointer arrayIndexAtPointer (GC_state s, 
+                                           pointer a, 
+                                           uint32_t arrayIndex, 
+                                           uint32_t pointerIndex) {
   bool hasIdentity;
   GC_header header;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
   
-  header = GC_getHeader (a);
+  header = getHeader (a);
   SPLIT_HEADER();
   assert (tag == ARRAY_TAG);
 
@@ -41,7 +41,7 @@ static inline size_t arrayNumBytes (GC_state s,
   GC_arrayLength numElements;
   size_t result;
         
-  numElements = GC_arrayNumElements (p);
+  numElements = arrayNumElements (p);
   bytesPerElement = 
     numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
     + (numObjptrs * OBJPTR_SIZE);

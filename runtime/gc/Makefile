@@ -61,6 +61,8 @@ CFILES = 								\
 	model.c								\
 	object.c							\
 	array.c								\
+	frame.c								\
+	stack.c								\
 	foreach.c							\
 	assumptions.c							\
 	gc_suffix.c
@@ -73,8 +75,8 @@ HFILES = 								\
 	model.h								\
 	object.h							\
 	array.h								\
-	stack.h								\
 	frame.h								\
+	stack.h								\
 	thread.h							\
 	weak.h								\
 	heap.h								\

@@ -11,3 +11,7 @@
         the word after the header to get GC_weak to overlay properly.
 * what type should be used for the size field in GC_heap?  I'm using
         size_t currently, since that is the type needed by malloc.
+* I don't believe the comment concerning exnStack and the native
+        codegen in thread.h is still true; it used to be the case when
+        GC_switchToThread was implemented in codegens.  Now it should
+        be implemented in Backend.

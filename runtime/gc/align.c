@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline uintptr_t align (uintptr_t a, uintptr_t b) {
+static inline size_t align (size_t a, size_t b) {
   assert (a >= 0);
   assert (b >= 1);
   a += b - 1;
@@ -28,12 +28,12 @@ static inline W64 w64align (W64 a, uint b) {
 }
 */
 
-static bool isAligned (uintptr_t a, size_t b) {
+static inline bool isAligned (uintptr_t a, size_t b) {
   return 0 == a % b;
 }
 
 #if ASSERT
-static bool isAlignedFrontier (GC_state s, pointer p) {
+static inline bool isAlignedFrontier (GC_state s, pointer p) {
   return isAligned ((uintptr_t)p + GC_NORMAL_HEADER_SIZE, s->alignment);
 }
 
@@ -49,15 +49,15 @@ static inline size_t pad (GC_state s, size_t bytes, size_t extra) {
   return align (bytes + extra, s->alignment) - extra;
 }
 
-/*
 static inline pointer alignFrontier (GC_state s, pointer p) {
-  return (pointer) pad (s, (uintptr_t)p, GC_NORMAL_HEADER_SIZE);
+  return (pointer) pad (s, (size_t)p, GC_NORMAL_HEADER_SIZE);
 }
 
 pointer GC_alignFrontier (GC_state s, pointer p) {
   return alignFrontier (s, p);
 }
 
+/*
 static inline uint stackReserved (GC_state s, uint r) {
   uint res;
   

@@ -27,10 +27,10 @@ typedef enum {
  *      31   : mark bit, used by mark compact GC (initially 0)
  */
 typedef uint32_t GC_header;
+#define GC_HEADER_SIZE sizeof(GC_header)
 #define PRIxHDR PRIx32
 #define FMTHDR "0x%08"PRIxHDR
 enum {
-  GC_HEADER_SIZE =   sizeof(GC_header),
   TYPE_INDEX_BITS =  19,
   TYPE_INDEX_MASK =  0x000FFFFE,
   TYPE_INDEX_SHIFT = 1,
@@ -42,11 +42,11 @@ enum {
   MARK_SHIFT =       31
 };
 
-/* GC_getHeaderp (p)
+/* getHeaderp (p)
  *
  * Returns a pointer to the header for the object pointed to by p.
  */
-static inline GC_header* GC_getHeaderp (pointer p) {
+static inline GC_header* getHeaderp (pointer p) {
   return (GC_header*)(p - GC_HEADER_SIZE);
 }
 
@@ -54,8 +54,8 @@ static inline GC_header* GC_getHeaderp (pointer p) {
  *
  * Returns the header for the object pointed to by p. 
  */
-static inline GC_header GC_getHeader (pointer p) {
-  return *(GC_getHeaderp(p));
+static inline GC_header getHeader (pointer p) {
+  return *(getHeaderp(p));
 }
 
 /*
@@ -72,9 +72,7 @@ static inline GC_header GC_getHeader (pointer p) {
  * Likewise, a primitive value may span multiple native words (e.g.,
  * Word64.word).
 */
-enum {
-  GC_NORMAL_HEADER_SIZE = GC_HEADER_SIZE,
-};
+#define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
 
 /* Array objects are described in "array.h" */
 

@@ -7,5 +7,6 @@
  */
 
 typedef unsigned char* pointer;
+#define POINTER_SIZE sizeof(pointer);
 #define FMTPTR "0x%016"PRIxPTR
 #define BOGUS_POINTER 0x1

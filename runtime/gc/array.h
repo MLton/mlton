@@ -19,16 +19,14 @@
  * individual layout as normal objects, omitting the header word.
  */
 typedef uint32_t GC_arrayLength;
-enum {
-  GC_ARRAY_LENGTH_SIZE =  sizeof(GC_arrayLength),
-  GC_ARRAY_COUNTER_SIZE = GC_ARRAY_LENGTH_SIZE,
-  GC_ARRAY_HEADER_SIZE =  GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE,
-};
+#define GC_ARRAY_LENGTH_SIZE sizeof(GC_arrayLength)
+#define GC_ARRAY_COUNTER_SIZE GC_ARRAY_LENGTH_SIZE
+#define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
 
-static inline GC_arrayLength* GC_arrayNumElementsp (pointer a) {
+static inline GC_arrayLength* arrayNumElementsp (pointer a) {
   return (GC_arrayLength*)(a - GC_HEADER_SIZE - GC_ARRAY_LENGTH_SIZE);
 }
 
-static inline GC_arrayLength GC_arrayNumElements (pointer a) {
-  return *(GC_arrayNumElementsp (a));
+static inline GC_arrayLength arrayNumElements (pointer a) {
+  return *(arrayNumElementsp (a));
 }

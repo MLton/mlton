@@ -46,3 +46,4 @@ typedef struct GC_stack {
    * reserved bytes hold space for the stack.
    */
 } *GC_stack;
+#define GC_STACK_SIZE sizeof(struct GC_stack);

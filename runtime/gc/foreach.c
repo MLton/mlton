@@ -9,16 +9,16 @@
 typedef void (*GC_pointerFun) (GC_state s, objptr *pp);
 
 static inline void maybeCall (GC_pointerFun f, GC_state s, objptr *pp) {
-  if (GC_isObjptr (*pp))
+  if (isObjptr (*pp))
     f (s, pp);
 }
 
-/* foreachGlobal (s, f)
+/* foreachGlobalObjptr (s, f)
  * 
  * Apply f to each global object pointer into the heap. 
  */
-static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
-  for (int i = 0; i < s->globalsSize; ++i) {
+static inline void foreachGlobalObjptr (GC_state s, GC_pointerFun f) {
+  for (unsigned int i = 0; i < s->globalsSize; ++i) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "foreachGlobal %u\n", i);
     maybeCall (f, s, &s->globals [i]);
@@ -32,33 +32,33 @@ static inline void foreachGlobal (GC_state s, GC_pointerFun f) {
 }
 
 
-/* foreachPointerInObject (s, p, skipWeaks, f) 
+/* foreachObjptrInObject (s, p, skipWeaks, f) 
  * 
  * Applies f to each object pointer in the object pointed to by p.
  * Returns pointer to the end of object, i.e. just past object.
  *
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
-static inline pointer foreachPointerInObject (GC_state s, 
-                                              pointer p,
-                                              bool skipWeaks,
-                                              GC_pointerFun f) {
+static inline pointer foreachObjptrInObject (GC_state s, 
+                                             pointer p,
+                                             bool skipWeaks,
+                                             GC_pointerFun f) {
   bool hasIdentity;
   GC_header header;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
 
-  header = GC_getHeader (p);
+  header = getHeader (p);
   SPLIT_HEADER();
   if (DEBUG_DETAILED)
     fprintf (stderr, 
-             "foreachPointerInObject ("FMTPTR")"
+             "foreachObjptrInObject ("FMTPTR")"
              "  header = "FMTHDR
              "  tag = %s"
              "  numNonObjptrs = %d"
              "  numObjptrs = %d\n", 
-             (intptr_t)p, header, tagToString (tag), 
+             (uintptr_t)p, header, tagToString (tag), 
              numNonObjptrs, numObjptrs);
   if (NORMAL_TAG == tag) {
     p += numNonObjptrsToBytes(numNonObjptrs, NORMAL_TAG);
@@ -67,8 +67,8 @@ static inline pointer foreachPointerInObject (GC_state s,
     for ( ; p < max; p += OBJPTR_SIZE) {
       if (DEBUG_DETAILED)
         fprintf (stderr, 
-                 "p = "FMTPTR"  *p = "FMTOBJPTR"\n",
-                 (intptr_t)p, *(objptr*)p);
+                 "  p = "FMTPTR"  *p = "FMTOBJPTR"\n",
+                 (uintptr_t)p, *(objptr*)p);
       maybeCall (f, s, (objptr*)p);
     }
   } else if (WEAK_TAG == tag) {
@@ -83,7 +83,7 @@ static inline pointer foreachPointerInObject (GC_state s,
     pointer max;
     GC_arrayLength numElements;
     
-    numElements = GC_arrayNumElements (p);
+    numElements = arrayNumElements (p);
     bytesPerElement = 
       numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
       + (numObjptrs * OBJPTR_SIZE);
@@ -101,7 +101,7 @@ static inline pointer foreachPointerInObject (GC_state s,
       max = p + dataBytes;
       if (0 == numNonObjptrs)
         /* Array with only pointers. */
-        for (; p < max; p += OBJPTR_SIZE)
+        for ( ; p < max; p += OBJPTR_SIZE)
           maybeCall (f, s, (objptr*)p);
       else {
         /* Array with a mix of pointers and non-pointers. */
@@ -128,70 +128,69 @@ static inline pointer foreachPointerInObject (GC_state s,
     }
     p += pad (s, dataBytes, GC_ARRAY_HEADER_SIZE);
   } else { /* stack */
-/*     GC_stack stack; */
-/*     pointer top, bottom; */
-/*     int i; */
-/*     word returnAddress; */
-/*     GC_frameLayout *layout; */
-/*     GC_offsets frameOffsets; */
-    
-/*     assert (STACK_TAG == tag); */
-/*     stack = (GC_stack)p; */
-/*     bottom = stackBottom (s, stack); */
-/*     top = stackTop (s, stack); */
-/*     assert (stack->used <= stack->reserved); */
-/*     while (top > bottom) { */
-/*       /\* Invariant: top points just past a "return address". *\/ */
-/*       returnAddress = *(word*) (top - WORD_SIZE); */
-/*       if (DEBUG) { */
-/*         fprintf (stderr, "  top = %d  return address = ", */
-/*                  top - bottom); */
-/*         fprintf (stderr, "0x%08x.\n", returnAddress); */
-/*       } */
-/*       layout = getFrameLayout (s, returnAddress);  */
-/*       frameOffsets = layout->offsets; */
-/*       top -= layout->numBytes; */
-/*       for (i = 0 ; i < frameOffsets[0] ; ++i) { */
-/*         if (DEBUG) */
-/*           fprintf(stderr,  */
-/*                   "    offset %u  address 0x%08x\n",  */
-/*                   frameOffsets[i + 1], */
-/*                   (uint)(*(pointer*)(top + frameOffsets[i + 1]))); */
-/*         maybeCall(f, s,  */
-/*                   (pointer*) */
-/*                   (top + frameOffsets[i + 1])); */
-/*       } */
-/*     } */
-/*     assert(top == bottom); */
-/*     p += sizeof (struct GC_stack) + stack->reserved; */
+    GC_stack stack; 
+    pointer top, bottom; 
+    unsigned int i;
+    GC_returnAddress returnAddress; 
+    GC_frameLayout *frameLayout;
+    GC_frameOffsets frameOffsets;
+
+    assert (STACK_TAG == tag);
+    stack = (GC_stack)p;
+    bottom = stackBottom (s, stack); 
+    top = stackTop (s, stack);
+    if (DEBUG) {
+      fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR"\n",
+               (uintptr_t)bottom, (uintptr_t)top);
+    }
+    assert (stack->used <= stack->reserved);
+    while (top > bottom) {
+      /* Invariant: top points just past a "return address". */
+      returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
+      if (DEBUG) {
+        fprintf (stderr, "  top = "FMTPTR"  return address = "FMTPTR"\n",
+                 (uintptr_t)top, returnAddress);
+      }
+      frameLayout = getFrameLayout (s, returnAddress);
+      frameOffsets = frameLayout->offsets;
+      top -= frameLayout->numBytes;
+      for (i = 0 ; i < frameOffsets[0] ; ++i) {
+        if (DEBUG)
+          fprintf(stderr, "  offset %"PRIx16"  address "FMTOBJPTR"\n",
+                  frameOffsets[i + 1], *(objptr*)(top + frameOffsets[i + 1]));
+        maybeCall(f, s, (objptr*)(top + frameOffsets[i + 1]));
+      }
+    }
+    assert(top == bottom);
+    p += sizeof (struct GC_stack) + stack->reserved;
   }
   return p;
 }
 
-/* foreachPointerInRange (s, front, back, skipWeaks, f)
+/* foreachObjptrInRange (s, front, back, skipWeaks, f)
  *
  * Apply f to each pointer between front and *back, which should be a
  * contiguous sequence of objects, where front points at the beginning
  * of the first object and *back points just past the end of the last
  * object.  f may increase *back (for example, this is done by
- * forward).  foreachPointerInRange returns a pointer to the end of
+ * forward).  foreachObjptrInRange returns a pointer to the end of
  * the last object it visits.
  *
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
 
-static inline pointer foreachPointerInRange (GC_state s, 
-                                             pointer front, 
-                                             pointer *back,
-                                             bool skipWeaks,
-                                             GC_pointerFun f) {
+static inline pointer foreachObjptrInRange (GC_state s, 
+                                            pointer front, 
+                                            pointer *back,
+                                            bool skipWeaks,
+                                            GC_pointerFun f) {
   pointer b;
 
   assert (isAlignedFrontier (s, front));
   if (DEBUG_DETAILED)
     fprintf (stderr, 
-             "foreachPointerInRange  front = "FMTPTR"  *back = "FMTPTR"\n",
-             (intptr_t)front, (intptr_t)(*back));
+             "foreachObjptrInRange  front = "FMTPTR"  *back = "FMTPTR"\n",
+             (uintptr_t)front, (uintptr_t)(*back));
   b = *back;
   assert (front <= b);
   while (front < b) {
@@ -199,9 +198,9 @@ static inline pointer foreachPointerInRange (GC_state s,
       assert (isAligned ((uintptr_t)front, GC_MODEL_MINALIGN));
       if (DEBUG_DETAILED)
         fprintf (stderr, 
-                 "front = "FMTPTR"  *back = "FMTPTR"\n",
-                 (intptr_t)front, (intptr_t)(*back));
-      front = foreachPointerInObject (s, toData (s, front), skipWeaks, f);
+                 "  front = "FMTPTR"  *back = "FMTPTR"\n",
+                 (uintptr_t)front, (uintptr_t)(*back));
+      front = foreachObjptrInObject (s, toData (s, front), skipWeaks, f);
     }
     b = *back;
   }
