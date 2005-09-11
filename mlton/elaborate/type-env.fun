@@ -644,7 +644,13 @@ structure Type =
                        val n = !r
                        val l =
                           simple
-                          (str (concat ["'", Char.toString (Char.fromInt n)]))
+                          (str (concat
+                                ["'",
+                                 if n > Char.toInt #"z" then
+                                    concat ["a",
+                                            Int.toString (n - Char.toInt #"z")]
+                                 else
+                                    Char.toString (Char.fromInt n )]))
                        val _ = r := 1 + n
                     in
                        l

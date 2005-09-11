@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-09-11
+  - Fixed bug in display of types with large numbers of type
+    variables, which could cause unhandled exception Chr.
+
 * 2005-09-08
   - Fixed bug in type inference of flexible records that would show up
     as "Type error: variable applied to wrong number of type args"
