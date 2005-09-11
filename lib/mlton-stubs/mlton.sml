@@ -132,6 +132,7 @@ structure MLton: MLTON =
             fun collect _ = ()
             val pack = MLton.GC.pack
             fun setMessages _ = ()
+            fun setRusage _ = ()
             fun setSummary _ = ()
             fun time _ = Time.zeroTime
             fun unpack _ = ()
@@ -478,6 +479,11 @@ structure MLton: MLTON =
                   type t = word
                end
 
+            structure Ctl =
+               struct
+                  fun getERROR _ = NONE
+               end
+
             structure Host =
                struct
                   type t = {name: string}
@@ -495,6 +501,7 @@ structure MLton: MLTON =
                
             fun accept _ = raise Fail "Socket.accept"
             fun connect _ = raise Fail "Socket.connect"
+            fun fdToSock _ = raise Fail "Socket.fdToSock"
             fun listen _ = raise Fail "Socket.listen"
             fun listenAt _ = raise Fail "Socket.listenAt"
             fun shutdownRead _ = raise Fail "Socket.shutdownWrite"

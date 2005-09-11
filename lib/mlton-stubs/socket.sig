@@ -1,5 +1,6 @@
-(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
@@ -13,6 +14,13 @@ signature MLTON_SOCKET =
       structure Address:
          sig
             type t = word
+         end
+
+      structure Ctl:
+         sig
+            val getERROR:
+               ('af, 'sock_type) Socket.sock
+               -> (string * Posix.Error.syserror option) option
          end
 
       structure Host:
@@ -36,4 +44,6 @@ signature MLTON_SOCKET =
       val listenAt: Port.t -> t
       val shutdownRead: TextIO.instream -> unit
       val shutdownWrite: TextIO.outstream -> unit
+
+      val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) Socket.sock
    end
