@@ -478,7 +478,7 @@ fun makeOptions {usage} =
                           "0" => Silent
                         | "1" => Top
                         | "2" => Pass
-                        | "3" =>  Detail
+                        | "3" => Detail
                         | _ => usage (concat ["invalid -verbose arg: ", s])))),
        (Expert, "warn-ann", " {true|false}",
         "unrecognized annotation warnings",
@@ -517,6 +517,7 @@ fun commandLine (args: string list): unit =
           | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
       val result = parse args
+      val () = MLton.GC.setRusage (!verbosity <> Silent)
       val () =
          if !showAnns then
             (Layout.outputl (Control.Elaborate.document {expert = !expert}, 
