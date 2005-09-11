@@ -2673,18 +2673,26 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                         Datatype {cons = sigCons, ...} =>
                            (case TypeStr.node structStr of
                                Datatype {cons = structCons, ...} =>
-                                  (checkCons (structCons, sigCons, strids, name)
-                                   ; (structStr, false))
-                             | _ => (sigStr, true))
-                      | Scheme s => (checkScheme s; (sigStr, false))
-                      | Tycon c => (checkScheme (tyconScheme c); (sigStr, false))
+                                  (fn () =>
+                                   (checkCons (structCons, sigCons, strids,
+                                               name)
+                                    ; structStr),
+                                   false)
+                             | _ => (fn () => sigStr, true))
+                      | Scheme s =>
+                           (fn () => (checkScheme s; sigStr),
+                            false)
+                      | Tycon c =>
+                           (fn () => (checkScheme (tyconScheme c); sigStr),
+                            false)
                in
-                  if not (isPlausible (structStr, strids, name,
-                                       TypeStr.admitsEquality sigStr,
-                                       TypeStr.kind sigStr,
-                                       consMismatch))
-                     then sigStr
-                  else return
+                  if isPlausible (structStr, strids, name,
+                                  TypeStr.admitsEquality sigStr,
+                                  TypeStr.kind sigStr,
+                                  consMismatch) then
+                     return ()
+                  else
+                     sigStr
                end
       fun map (structInfo: ('a, 'b) Info.t,
                sigArray: ('a * 'c) array,
