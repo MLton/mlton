@@ -19,7 +19,9 @@
 
 typedef struct GC_heap {
   pointer nursery; /* start of nursery */
-  size_t oldGenBytes; /* size of old generation */
+  size_t oldGenSize; /* size of old generation */
   pointer start; /* start of heap (and old generation) */
-  size_t totalBytes; /* size of heap */
+  size_t size; /* size of heap */
 } *GC_heap;
+
+#define LIMIT_SLOP 512

@@ -45,14 +45,13 @@ static inline pointer foreachObjptrInObject (GC_state s,
                                              pointer p,
                                              bool skipWeaks,
                                              GC_foreachObjptrFun f) {
-  bool hasIdentity;
   GC_header header;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
 
   header = getHeader (p);
-  SPLIT_HEADER();
+  splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
   if (DEBUG_DETAILED)
     fprintf (stderr, 
              "foreachObjptrInObject ("FMTPTR")"
@@ -202,7 +201,7 @@ static inline pointer foreachObjptrInRange (GC_state s,
         fprintf (stderr, 
                  "  front = "FMTPTR"  *back = "FMTPTR"\n",
                  (uintptr_t)front, (uintptr_t)(*back));
-      front = foreachObjptrInObject (s, toData (s, front), skipWeaks, f);
+      front = foreachObjptrInObject (s, objectData (s, front), skipWeaks, f);
     }
     b = *back;
   }

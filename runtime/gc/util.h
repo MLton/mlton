@@ -24,6 +24,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <string.h>
 
 #include "../assert.h"
 
@@ -37,6 +38,14 @@
 #endif
 #define unless(p)       if (not (p))
 #define until(p)        while (not (p))
+
+#ifndef max
+#define max(a, b) ((a)>(b)?(a):(b))
+#endif
+
+#ifndef min
+#define min(a, b) ((a)<(b)?(a):(b))
+#endif
 
 /* issue error message and exit */
 extern void die (char *fmt, ...)

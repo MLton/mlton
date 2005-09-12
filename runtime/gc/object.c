@@ -20,30 +20,6 @@ static inline GC_header GC_objectHeader (uint32_t t) {
 #define WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
 #define WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
 
-#define SPLIT_HEADER()                                                          \
-  do {                                                                          \
-    unsigned int objectTypeIndex;                                               \
-    GC_objectType *t;                                                           \
-                                                                                \
-    assert (1 == (header & GC_VALID_HEADER_MASK));                              \
-    objectTypeIndex = (header & TYPE_INDEX_MASK) >> TYPE_INDEX_SHIFT;           \
-    assert (objectTypeIndex < s->objectTypesSize);                              \
-    t = &s->objectTypes [objectTypeIndex];                                      \
-    tag = t->tag;                                                               \
-    hasIdentity = t->hasIdentity;                                               \
-    numNonObjptrs = t->numNonObjptrs;                                           \
-    numObjptrs = t->numObjptrs;                                                 \
-    if (DEBUG_DETAILED)                                                         \
-      fprintf (stderr,                                                          \
-               "SPLIT_HEADER ("FMTHDR")"                                        \
-               "  tag = %s"                                                     \
-               "  hasIdentity = %u"                                             \
-               "  numNonObjptrs = %"PRIu16                                      \
-               "  numObjptrs = %"PRIu16"\n",                                    \
-               header,                                                          \
-               tagToString(tag), hasIdentity, numNonObjptrs, numObjptrs);       \
-  } while (0)
-
 static char* tagToString (GC_objectTypeTag tag) {
   switch (tag) {
   case ARRAY_TAG:
@@ -59,10 +35,50 @@ static char* tagToString (GC_objectTypeTag tag) {
   }
 }
 
-/* If p points at the beginning of an object, then toData p returns a
- * pointer to the start of the object data.
+static inline void splitHeader(GC_state s, GC_header header,
+                               GC_objectTypeTag *tagRet, bool *hasIdentityRet,
+                               uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet) {
+  unsigned int objectTypeIndex; 
+  GC_objectType *objectType; 
+  GC_objectTypeTag tag;
+  bool hasIdentity;
+  uint16_t numNonObjptrs, numObjptrs;
+
+  assert (1 == (header & GC_VALID_HEADER_MASK)); 
+  objectTypeIndex = (header & TYPE_INDEX_MASK) >> TYPE_INDEX_SHIFT; 
+  assert (objectTypeIndex < s->objectTypesSize); 
+  objectType = &s->objectTypes [objectTypeIndex]; 
+  tag = objectType->tag; 
+  hasIdentity = objectType->hasIdentity; 
+  numNonObjptrs = objectType->numNonObjptrs; 
+  numObjptrs = objectType->numObjptrs; 
+
+  if (DEBUG_DETAILED) 
+    fprintf (stderr, 
+             "splitHeader ("FMTHDR")" 
+             "  tag = %s" 
+             "  hasIdentity = %u" 
+             "  numNonObjptrs = %"PRIu16 
+             "  numObjptrs = %"PRIu16"\n", 
+             header, 
+             tagToString(tag), hasIdentity, numNonObjptrs, numObjptrs); 
+
+  if (tagRet != NULL)
+    *tagRet = tag;
+  if (hasIdentityRet != NULL)
+    *hasIdentityRet = hasIdentity;
+  if (numNonObjptrsRet != NULL)
+    *numNonObjptrsRet = numNonObjptrs;
+  if (numObjptrsRet != NULL)
+    *numObjptrsRet = numObjptrs;
+}
+
+/* objectData (s, p)
+ *
+ * If p points at the beginning of an object, then objectData returns
+ * a pointer to the start of the object data.
  */
-static inline pointer toData (GC_state s, pointer p) {
+static inline pointer objectData (GC_state s, pointer p) {
   GC_header header;
   pointer res;
 

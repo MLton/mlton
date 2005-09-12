@@ -27,7 +27,7 @@ static inline W64 w64align (W64 a, uint b) {
 }
 */
 
-static inline bool isAligned (uintptr_t a, size_t b) {
+static inline bool isAligned (size_t a, size_t b) {
   return 0 == a % b;
 }
 
@@ -55,16 +55,3 @@ static inline pointer alignFrontier (GC_state s, pointer p) {
 pointer GC_alignFrontier (GC_state s, pointer p) {
   return alignFrontier (s, p);
 }
-
-/*
-static inline uint stackReserved (GC_state s, uint r) {
-  uint res;
-  
-  res = pad (s, r, STACK_HEADER_SIZE + sizeof (struct GC_stack));
-  if (DEBUG_STACKS)
-    fprintf (stderr, "%s = stackReserved (%s)\n",
-             uintToCommaString (res),
-             uintToCommaString (r));
-  return res;
-}
-*/

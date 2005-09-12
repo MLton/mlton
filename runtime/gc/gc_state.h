@@ -4,19 +4,23 @@ typedef struct GC_state {
   bool amInGC;
   bool amInMinorGC;
   objptr callFromCHandler; /* Handler for exported C calls (in heap). */
+  bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_cumulativeStatistics cumulative;
   objptr currentThread; /* Currently executing thread (in heap). */
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsSize; /* Cardinality of frameLayouts array. */
   pointer frontier; /* heap.start <= frontier < limit */
+  struct GC_generationalInfo generational;
   objptr *globals;
   uint32_t globalsSize;
   struct GC_heap heap;
   struct GC_lastMajorStatistics lastMajor;
   pointer limit; /* limit = heap.start + heap.totalBytes */
+  pointer limitPlusSlop; /* limit + LIMIT_SLOP */
   uint32_t maxFrameSize;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesSize; /* Cardinality of objectTypes array. */
+  size_t pageSize;
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.

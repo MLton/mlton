@@ -13,6 +13,8 @@ struct GC_cumulativeStatistics {
   uintmax_t bytesHashConsed;
   uintmax_t bytesMarkCompacted;
 
+  uintmax_t markedCards; /* Number of marked cards seen during minor GCs. */
+
   size_t maxBytesLive;
   size_t maxHeapSizeSeen;
   size_t maxStackSizeSeen;

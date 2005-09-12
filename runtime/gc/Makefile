@@ -51,7 +51,8 @@ endif
 CC = gcc -std=gnu99
 CWFLAGS = -Wall -pedantic -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Wstrict-prototypes -Wredundant-decls -Winline
 CWFLAGS = -pedantic -Wall -Wextra -Wno-unused \
-	-Wshadow -Wredundant-decls \
+##	-Wshadow \
+	-Wredundant-decls \
 	-Wpointer-arith -Wcast-qual -Wcast-align \
 ##	-Wconversion \
 	-Wstrict-prototypes \
@@ -71,7 +72,9 @@ CFILES = 								\
 	frame.c								\
 	stack.c								\
 	thread.c							\
+	generational.c							\
 	heap.c   							\
+	invariant.c   							\
 	foreach.c							\
 	cheney-copy.c							\
 	assumptions.c							\
@@ -81,6 +84,7 @@ CFILES = 								\
 HFILES = 								\
 	gc_prefix.h							\
 	util.h								\
+	virtual-memory.h						\
 	pointer.h							\
 	model.h								\
 	object.h							\
@@ -90,6 +94,7 @@ HFILES = 								\
 	thread.h							\
 	weak.h								\
 	major.h								\
+	generational.h							\
 	statistics.h							\
 	heap.h								\
 	gc_state.h							\

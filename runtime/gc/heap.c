@@ -22,7 +22,7 @@ static inline bool objptrIsInHeap (GC_state s, objptr op) {
 static inline bool pointerIsInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.start <= p 
-              and p < s->heap.start + s->heap.oldGenBytes));
+              and p < s->heap.start + s->heap.oldGenSize));
 }
 
 static inline bool objptrIsInOldGen (GC_state s, objptr op) {
