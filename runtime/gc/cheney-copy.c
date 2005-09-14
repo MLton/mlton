@@ -264,12 +264,11 @@ static inline void forwardIfInNursery (GC_state s, objptr *opp) {
 
 /* Walk through all the cards and forward all intergenerational pointers. */
 static void forwardInterGenerationalObjptrs (GC_state s) {
-  uint8_t *cardMap;
-  uint8_t *crossMap;
-  size_t numCards;
+  GC_cardMapElem *cardMap;
+  GC_crossMapElem *crossMap;
   pointer oldGenStart, oldGenEnd;
 
-  size_t cardIndex;
+  size_t cardIndex, maxCardIndex;
   pointer cardStart, cardEnd;
   pointer objectStart;
   
@@ -279,7 +278,7 @@ static void forwardInterGenerationalObjptrs (GC_state s) {
   /* Constants. */
   cardMap = s->generational.cardMap;
   crossMap = s->generational.crossMap;
-  numCards = sizeToCardIndex (align (s->heap.oldGenSize, s->generational.cardSize));
+  maxCardIndex = sizeToCardIndex (align (s->heap.oldGenSize, CARD_SIZE));
   oldGenStart = s->heap.start;
   oldGenEnd = oldGenStart + s->heap.oldGenSize;
   /* Loop variables*/
@@ -287,9 +286,9 @@ static void forwardInterGenerationalObjptrs (GC_state s) {
   cardIndex = 0;
   cardStart = oldGenStart;
 checkAll:
-  assert (cardIndex <= numCards);
+  assert (cardIndex <= maxCardIndex);
   assert (isAlignedFrontier (s, objectStart));
-  if (cardIndex == numCards)
+  if (cardIndex == maxCardIndex)
     goto done;
 checkCard:
   if (DEBUG_GENERATIONAL)
@@ -313,7 +312,7 @@ skipObjects:
       goto skipObjects;
     }
     s->cumulative.minorBytesSkipped += objectStart - lastObject;
-    cardEnd = cardStart + s->generational.cardSize;
+    cardEnd = cardStart + CARD_SIZE;
     if (oldGenEnd < cardEnd) 
       cardEnd = oldGenEnd;
     assert (objectStart < cardEnd);
@@ -334,16 +333,16 @@ skipObjects:
     goto checkCard;
   } else {
     unless (CROSS_MAP_EMPTY == crossMap[cardIndex])
-      objectStart = cardStart + (crossMap[cardIndex] >> CROSS_MAP_SCALE);
+      objectStart = cardStart + (size_t)(crossMap[cardIndex]);
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, 
                "card %zu is not marked"
-               "  crossMap[%zu] == %"PRIu8
+               "  crossMap[%zu] == %zu"
                "  objectStart = "FMTPTR"\n", 
                cardIndex, cardIndex, 
-               crossMap[cardIndex], (uintptr_t)objectStart);
+               (size_t)(crossMap[cardIndex]), (uintptr_t)objectStart);
     cardIndex++;
-    cardStart += s->generational.cardSize;
+    cardStart += CARD_SIZE;
     goto checkAll;
   }
   assert (FALSE);

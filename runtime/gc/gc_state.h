@@ -10,7 +10,7 @@ typedef struct GC_state {
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsSize; /* Cardinality of frameLayouts array. */
   pointer frontier; /* heap.start <= frontier < limit */
-  struct GC_generationalInfo generational;
+  struct GC_generationalMaps generational;
   objptr *globals;
   uint32_t globalsSize;
   struct GC_heap heap;
@@ -18,6 +18,7 @@ typedef struct GC_state {
   pointer limit; /* limit = heap.start + heap.totalBytes */
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
   uint32_t maxFrameSize;
+  /*Bool*/bool mutatorMarksCards;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesSize; /* Cardinality of objectTypes array. */
   size_t pageSize;

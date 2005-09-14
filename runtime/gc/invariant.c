@@ -30,16 +30,17 @@ static bool invariant (GC_state s) {
     }
   }
   /* Generational */
-  if (s->generational.mutatorMarksCards) {
+  if (s->mutatorMarksCards) {
     assert (s->generational.cardMap == 
-            &s->generational.cardMapAbsolute
-            [pointerToCardIndex(s->heap.start)]);
-    assert (&s->generational.cardMapAbsolute
-            [pointerToCardIndex(s->heap.start + s->heap.size - 1)]
-            < s->generational.cardMap + s->generational.cardMapSize);
+            &(s->generational.cardMapAbsolute
+              [pointerToCardIndex(s->heap.start)]));
+    assert (&(s->generational.cardMapAbsolute
+              [pointerToCardIndex(s->heap.start + s->heap.size - 1)])
+            < (s->generational.cardMap 
+               + (s->generational.cardMapLength * CARD_MAP_ELEM_SIZE)));
   }
   assert (isAligned (s->heap.size, s->pageSize));
-  assert (isAligned ((size_t)s->heap.start, s->generational.cardSize));
+  assert (isAligned ((size_t)s->heap.start, CARD_SIZE));
   assert (isAlignedFrontier (s, s->heap.start + s->heap.oldGenSize));
   assert (isAlignedFrontier (s, s->heap.nursery));
   assert (isAlignedFrontier (s, s->frontier));
