@@ -24,11 +24,11 @@ getFrameLayoutFromFrameIndex (GC_state s, uint32_t index) {
   if (DEBUG_DETAILED)
     fprintf (stderr, 
              "index = %"PRIx32
-             "  frameLayoutsSize = %"PRIu16"\n",
-            index, s->frameLayoutsSize);
-  assert (index < s->frameLayoutsSize);
+             "  frameLayoutsLength = %"PRIu32"\n",
+            index, s->frameLayoutsLength);
+  assert (index < s->frameLayoutsLength);
   layout = &(s->frameLayouts[index]);
-  assert (layout->numBytes > 0);
+  assert (layout->size > 0);
   return layout;
 }
 

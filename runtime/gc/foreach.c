@@ -20,7 +20,7 @@ static inline void maybeCall (GC_foreachObjptrFun f,
  */
 static inline void foreachGlobalObjptr (GC_state s, 
                                         GC_foreachObjptrFun f) {
-  for (unsigned int i = 0; i < s->globalsSize; ++i) {
+  for (unsigned int i = 0; i < s->globalsLength; ++i) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "foreachGlobal %u\n", i);
     maybeCall (f, s, &s->globals [i]);
@@ -154,7 +154,7 @@ static inline pointer foreachObjptrInObject (GC_state s,
       }
       frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
       frameOffsets = frameLayout->offsets;
-      top -= frameLayout->numBytes;
+      top -= frameLayout->size;
       for (i = 0 ; i < frameOffsets[0] ; ++i) {
         if (DEBUG)
           fprintf(stderr, "  offset %"PRIx16"  address "FMTOBJPTR"\n",

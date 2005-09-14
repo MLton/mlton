@@ -13,14 +13,14 @@ static bool invariant (GC_state s) {
     fprintf (stderr, "invariant\n");
   // assert (ratiosOk (s));
   /* Frame layouts */
-  for (unsigned int i = 0; i < s->frameLayoutsSize; ++i) {
+  for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
     GC_frameLayout *layout;
     
     layout = &(s->frameLayouts[i]);
-    if (layout->numBytes > 0) {
+    if (layout->size > 0) {
       GC_frameOffsets offsets;
       
-      assert (layout->numBytes <= s->maxFrameSize);
+      assert (layout->size <= s->maxFrameSize);
       offsets = layout->offsets;
       /* No longer correct, since handler frames have a "size"
        * (i.e. return address) pointing into the middle of the frame.

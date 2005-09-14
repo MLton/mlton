@@ -67,7 +67,7 @@ static inline uint16_t topFrameSize (GC_state s, GC_stack stack) {
   
   assert (not (stackIsEmpty (stack)));
   layout = topFrameLayout (s, stack);
-  return layout->numBytes;
+  return layout->size;
 }
 
 static inline size_t stackReserved (GC_state s, size_t r) {

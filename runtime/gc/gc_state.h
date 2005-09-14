@@ -8,11 +8,11 @@ typedef struct GC_state {
   struct GC_cumulativeStatistics cumulative;
   objptr currentThread; /* Currently executing thread (in heap). */
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
-  uint32_t frameLayoutsSize; /* Cardinality of frameLayouts array. */
+  uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   pointer frontier; /* heap.start <= frontier < limit */
   struct GC_generationalMaps generational;
   objptr *globals;
-  uint32_t globalsSize;
+  uint32_t globalsLength;
   struct GC_heap heap;
   struct GC_lastMajorStatistics lastMajor;
   pointer limit; /* limit = heap.start + heap.totalBytes */
@@ -20,7 +20,7 @@ typedef struct GC_state {
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
   GC_objectType *objectTypes; /* Array of object types. */
-  uint32_t objectTypesSize; /* Cardinality of objectTypes array. */
+  uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   size_t pageSize;
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
   objptr savedThread; /* Result of GC_copyCurrentThread.
