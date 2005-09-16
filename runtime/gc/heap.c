@@ -45,3 +45,17 @@ static inline bool objptrIsInNursery (GC_state s, objptr op) {
   p = objptrToPointer (op, s->heap.start);
   return pointerIsInNursery (s, p);
 }
+
+void displayHeap (GC_state s,
+                  GC_heap heap,
+                  FILE *stream) {
+  fprintf(stream,
+          "\t\tnursery ="FMTPTR"\n"
+          "\t\toldGenSize = %zu\n"
+          "\t\tstart = "FMTPTR"\n"
+          "\t\tsize = %zu\n",
+          (uintptr_t)heap->nursery,
+          heap->oldGenSize,
+          (uintptr_t)heap->start,
+          heap->size);
+}

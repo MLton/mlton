@@ -74,6 +74,7 @@ CFILES = 								\
 	thread.c							\
 	generational.c							\
 	heap.c   							\
+	gc_state.c   							\
 	invariant.c   							\
 	foreach.c							\
 	cheney-copy.c							\

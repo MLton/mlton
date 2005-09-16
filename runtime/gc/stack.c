@@ -82,3 +82,13 @@ static inline size_t stackReserved (GC_state s, size_t r) {
 static inline size_t stackNeedsReserved (GC_state s, GC_stack stack) {
   return stack->used + stackSlop (s) - topFrameSize(s, stack);
 }
+
+void displayStack (GC_state s,
+                   GC_stack stack, 
+                   FILE *stream) {
+  fprintf(stream,
+          "\t\treserved = %zu\n"
+          "\t\tused = %zu\n",
+          stack->reserved,
+          stack->used);
+}

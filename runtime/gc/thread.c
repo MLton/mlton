@@ -15,3 +15,17 @@ static inline objptr currentThreadStack (GC_state s) {
   GC_thread ct = currentThread (s);
   return ct->stack;
 }
+
+void displayThread (GC_state s,
+                    GC_thread thread, 
+                    FILE *stream) {
+  fprintf(stream,
+          "\t\texnStack = %"PRIu32"\n"
+          "\t\tbytesNeeded = %"PRIu32"\n"
+          "\t\tstack = "FMTOBJPTR"\n",
+          thread->exnStack,
+          thread->bytesNeeded,
+          thread->stack);
+  displayStack (s, (GC_stack)(objptrToPointer (thread->stack, s->heap.start)),
+                stream);
+}

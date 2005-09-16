@@ -235,3 +235,30 @@ static inline void resizeCardMapAndCrossMap (GC_state s) {
     GC_munmap (oldCardMap, oldCardMapSize + oldCrossMapSize);
   }
 }
+
+void displayGenerationalMaps (GC_state s,
+                              struct GC_generationalMaps *generational,
+                              FILE *stream) {
+  fprintf(stream,
+          "\t\tcardMap ="FMTPTR"\n"
+          "\t\tcardMapAbsolute = "FMTPTR"\n"
+          "\t\tcardMapLength = %zu\n"
+          "\t\tcrossMap = "FMTPTR"\n"
+          "\t\tcrossMapLength = %zu\n"
+          "\t\tcrossMapValidSize = %zu\n",
+          (uintptr_t)generational->cardMap, 
+          (uintptr_t)generational->cardMapAbsolute,
+          generational->cardMapLength, 
+          (uintptr_t)generational->crossMap,
+          generational->crossMapLength,
+          generational->crossMapValidSize);
+  if (DEBUG_GENERATIONAL and DEBUG_DETAILED) {
+    unsigned int i;
+
+    fprintf (stderr, "crossMap trues\n");
+    for (i = 0; i < generational->crossMapLength; ++i)
+      unless (CROSS_MAP_EMPTY == generational->crossMap[i])
+        fprintf (stderr, "\t%u\n", i);
+    fprintf (stderr, "\n");
+  }               
+}
