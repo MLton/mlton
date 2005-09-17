@@ -12,6 +12,8 @@
 
 typedef uint8_t GC_cardMapElem;
 typedef uint8_t GC_crossMapElem;
+#define CARD_MAP_ELEM_SIZE sizeof(GC_cardMapElem)
+#define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
 
 struct GC_generationalMaps {
   /* cardMap is an array with cardinality equal to the size of the
@@ -37,6 +39,3 @@ struct GC_generationalMaps {
    */
   size_t crossMapValidSize;
 };
-
-#define CARD_MAP_ELEM_SIZE sizeof(GC_cardMapElem)
-#define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
