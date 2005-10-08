@@ -12,7 +12,7 @@ getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra) {
 
   res = s->returnAddressToFrameIndex (ra);
   if (DEBUG_DETAILED)
-    fprintf (stderr, "%"PRIu32" = getFrameIndex ("FMTRA")\n",
+    fprintf (stderr, "%"PRIu32" = getFrameIndexFromReturnAddress ("FMTRA")\n",
              res, ra);
   return res;
 }
@@ -23,7 +23,7 @@ getFrameLayoutFromFrameIndex (GC_state s, uint32_t index) {
 
   if (DEBUG_DETAILED)
     fprintf (stderr, 
-             "index = %"PRIx32
+             "index = %"PRIu32
              "  frameLayoutsLength = %"PRIu32"\n",
             index, s->frameLayoutsLength);
   assert (index < s->frameLayoutsLength);

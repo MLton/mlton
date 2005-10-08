@@ -6,8 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *GC_mmapAnon (size_t length);
-void *GC_mmap (void *start, size_t length);
-void *GC_munmap (void *base, size_t length);
-void GC_release (void *base, size_t length);
-void GC_decommit (void *base, size_t length);
+struct GC_control {
+  size_t fixedHeap; /* If 0, then no fixed heap. */
+  size_t maxHeap; /* if zero, then unlimited, else limit total heap */
+};

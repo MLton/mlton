@@ -6,8 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *GC_mmapAnon (size_t length);
-void *GC_mmap (void *start, size_t length);
-void *GC_munmap (void *base, size_t length);
-void GC_release (void *base, size_t length);
-void GC_decommit (void *base, size_t length);
+struct GC_sysvals {
+  size_t ram;
+  size_t availRam;
+  size_t totalRam;
+  size_t pageSize;
+};

@@ -15,3 +15,5 @@
         codegen in thread.h is still true; it used to be the case when
         GC_switchToThread was implemented in codegens.  Now it should
         be implemented in Backend.
+* the "skipObjects" loop in forwardInterGenerationalObjptrs appears to
+        be unnecessary.

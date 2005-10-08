@@ -24,10 +24,10 @@ struct GC_cumulativeStatistics {
 
   uintmax_t numLimitChecks;
 
-  unsigned int numCopyingGCs;
-  unsigned int numHashConsGCs;
-  unsigned int numMarkCompactGCs;
-  unsigned int numMinorGCs;
+  uintmax_t numCopyingGCs;
+  uintmax_t numHashConsGCs;
+  uintmax_t numMarkCompactGCs;
+  uintmax_t numMinorGCs;
 
 /*   struct rusage ru_gc; /\* total resource usage spent in gc *\/ */
 /*   struct rusage ru_gcCopy; /\* resource usage in major copying gcs. *\/ */
@@ -37,6 +37,6 @@ struct GC_cumulativeStatistics {
 
 struct GC_lastMajorStatistics {
   size_t bytesLive; /* Number of bytes live at most recent major GC. */
-  GC_MajorKind kind;
-  unsigned int numMinorsGCs;
+  GC_majorKind kind;
+  uintmax_t numMinorsGCs;
 };

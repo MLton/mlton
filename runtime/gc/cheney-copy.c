@@ -24,14 +24,6 @@ struct forwardState {
 };
 static struct forwardState forwardState;
 
-static inline bool pointerIsInFromSpace (GC_state s, pointer p) {
-  return (pointerIsInOldGen (s, p) or pointerIsInNursery (s, p));
-}
-
-static inline bool objptrIsInFromSpace (GC_state s, objptr op) {
-  return (objptrIsInOldGen (s, op) or objptrIsInNursery (s, op));
-}
-
 static inline bool pointerIsInToSpace (pointer p) {
   return (not (isPointer (p))
           or (forwardState.toStart <= p and p < forwardState.toLimit));
@@ -87,7 +79,7 @@ static void forward (GC_state s, objptr *opp) {
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
 
-      if (currentThreadStack(s) == op) {
+      if (currentThreadStackObjptr(s) == op) {
         /* Shrink stacks that don't use a lot of their reserved space;
          * but don't violate the stack invariant.
          */
@@ -111,7 +103,7 @@ static void forward (GC_state s, objptr *opp) {
       } else {
         /* Shrink heap stacks. */
         stack->reserved = 
-          stackReserved (s, maxZ((size_t)(s->threadShrinkRatio * stack->reserved),
+          stackReserved (s, maxZ((size_t)(s->ratios.threadShrink * stack->reserved),
                                  stack->used));
         if (DEBUG_STACKS)
           fprintf (stderr, "Shrinking stack to size %zd.\n",
@@ -204,7 +196,7 @@ static void majorCheneyCopyGC (GC_state s) {
   assert (s->secondaryHeap.size >= s->heap.oldGenSize);
 /*   if (detailedGCTime (s)) */
 /*     startTiming (&ru_start); */
-  s->cumulative.numCopyingGCs++;
+  s->cumulativeStatistics.numCopyingGCs++;
   forwardState.toStart = s->secondaryHeap.start;
   forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
   if (DEBUG or s->messages) {
@@ -229,13 +221,13 @@ static void majorCheneyCopyGC (GC_state s) {
   foreachObjptrInRange (s, toStart, &forwardState.back, TRUE, forward);
   updateWeaks (s);
   s->secondaryHeap.oldGenSize = forwardState.back - s->secondaryHeap.start;
-  s->cumulative.bytesCopied += s->secondaryHeap.oldGenSize;
+  s->cumulativeStatistics.bytesCopied += s->secondaryHeap.oldGenSize;
   if (DEBUG)
     fprintf (stderr, "%zd bytes live.\n",
              /*uintToCommaString*/(s->secondaryHeap.oldGenSize));
   swapHeaps (s);
   clearCrossMap (s);
-  s->lastMajor.kind = GC_COPYING;
+  s->lastMajorStatistics.kind = GC_COPYING;
 /*   if (detailedGCTime (s)) */
 /*     stopTiming (&ru_start, &s->ru_gcCopy); */
   if (DEBUG or s->messages)
@@ -276,8 +268,8 @@ static void forwardInterGenerationalObjptrs (GC_state s) {
     fprintf (stderr, "Forwarding inter-generational pointers.\n");
   updateCrossMap (s);
   /* Constants. */
-  cardMap = s->generational.cardMap;
-  crossMap = s->generational.crossMap;
+  cardMap = s->generationalMaps.cardMap;
+  crossMap = s->generationalMaps.crossMap;
   maxCardIndex = sizeToCardIndex (align (s->heap.oldGenSize, CARD_SIZE));
   oldGenStart = s->heap.start;
   oldGenEnd = oldGenStart + s->heap.oldGenSize;
@@ -299,7 +291,7 @@ checkCard:
     pointer lastObject;
     size_t size;
     
-    s->cumulative.markedCards++;
+    s->cumulativeStatistics.markedCards++;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "card %zu is marked  objectStart = "FMTPTR"\n", 
                cardIndex, (uintptr_t)objectStart);
@@ -311,7 +303,7 @@ skipObjects:
       objectStart += size;
       goto skipObjects;
     }
-    s->cumulative.minorBytesSkipped += objectStart - lastObject;
+    s->cumulativeStatistics.minorBytesSkipped += objectStart - lastObject;
     cardEnd = cardStart + CARD_SIZE;
     if (oldGenEnd < cardEnd) 
       cardEnd = oldGenEnd;
@@ -325,7 +317,7 @@ skipObjects:
      */
     objectStart = foreachObjptrInRange (s, objectStart, &cardEnd, 
                                         FALSE, forwardIfInNursery);
-    s->cumulative.minorBytesScanned += objectStart - lastObject;
+    s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
     if (objectStart == oldGenEnd)
       goto done;
     cardIndex = sizeToCardIndex (objectStart - oldGenStart);
@@ -363,7 +355,7 @@ static void minorGC (GC_state s) {
   bytesAllocated = s->frontier - s->heap.nursery;
   if (bytesAllocated == 0)
     return;
-  s->cumulative.bytesAllocated += bytesAllocated;
+  s->cumulativeStatistics.bytesAllocated += bytesAllocated;
   if (not s->canMinor) {
     s->heap.oldGenSize += bytesAllocated;
     bytesCopied = 0;
@@ -379,8 +371,8 @@ static void minorGC (GC_state s) {
     assert (isAlignedFrontier (s, forwardState.toStart));
     forwardState.toLimit = forwardState.toStart + bytesAllocated;
     assert (invariant (s));
-    s->cumulative.numMinorGCs++;
-    s->lastMajor.numMinorsGCs++;
+    s->cumulativeStatistics.numMinorGCs++;
+    s->lastMajorStatistics.numMinorsGCs++;
     forwardState.back = forwardState.toStart;
     /* Forward all globals.  Would like to avoid doing this once all
      * the globals have been assigned.
@@ -391,7 +383,7 @@ static void minorGC (GC_state s) {
                           TRUE, forwardIfInNursery);
     updateWeaks (s);
     bytesCopied = forwardState.back - forwardState.toStart;
-    s->cumulative.bytesCopiedMinor += bytesCopied;
+    s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
     s->amInMinorGC = FALSE;
 /*     if (detailedGCTime (s)) */

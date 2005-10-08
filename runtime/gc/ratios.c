@@ -6,8 +6,10 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *GC_mmapAnon (size_t length);
-void *GC_mmap (void *start, size_t length);
-void *GC_munmap (void *base, size_t length);
-void GC_release (void *base, size_t length);
-void GC_decommit (void *base, size_t length);
+static bool ratiosOk (struct GC_ratios ratios) {
+  return 1.0 < ratios.grow
+    and 1.0 < ratios.nursery
+    and 1.0 < ratios.markCompact
+    and ratios.markCompact <= ratios.copy
+    and ratios.copy <= ratios.live;
+}

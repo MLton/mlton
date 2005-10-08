@@ -16,10 +16,10 @@
  * 
  * The frameLayouts pointer is initialized to point to a static array
  * of frame layouts that is emitted for each compiled program.  The
- * isC field identified whether or not the frame is for a C
- * call. (Note: The ML stack is distinct from the system stack.  A C
- * call executes on the system stack.  The frame left on the ML stack
- * is just a marker.)  The size field indicates the size of the frame,
+ * kind field identifies whether or not the frame is for a C call.
+ * (Note: The ML stack is distinct from the system stack.  A C call
+ * executes on the system stack.  The frame left on the ML stack is
+ * just a marker.)  The size field indicates the size of the frame,
  * including space for the return address.  The offsets field points
  * to an array (the zeroeth element recording the size of the array)
  * whose elements record byte offsets from the bottom of the frame at
@@ -27,8 +27,13 @@
  */
 typedef uint16_t *GC_frameOffsets;
 
+typedef enum {
+  C_FRAME,
+  ML_FRAME
+} GC_frameKind;
+
 typedef struct GC_frameLayout {
-  bool isC;
+  GC_frameKind kind;
   uint16_t size;
   GC_frameOffsets offsets;
 } GC_frameLayout;

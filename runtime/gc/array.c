@@ -42,7 +42,7 @@ static inline size_t arrayNumBytes (GC_state s,
   GC_arrayLength numElements;
   size_t result;
         
-  numElements = arrayNumElements (p);
+  numElements = getArrayLength (p);
   bytesPerElement = 
     numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
     + (numObjptrs * OBJPTR_SIZE);

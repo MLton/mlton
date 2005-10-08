@@ -49,14 +49,24 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CWFLAGS = -Wall -pedantic -Wextra -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wconversion -Wsign-compare -Wstrict-prototypes -Wredundant-decls -Winline
-CWFLAGS = -pedantic -Wall -Wextra -Wno-unused \
-##	-Wshadow \
-	-Wredundant-decls \
-	-Wpointer-arith -Wcast-qual -Wcast-align \
-##	-Wconversion \
+CWFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter \
+	-Wformat-nonliteral \
+	-Wuninitialized -Winit-self \
+	-Wstrict-aliasing=2 \
+	-Wfloat-equal \
+	-Wpointer-arith \
+	-Wbad-function-cast -Wcast-qual -Wcast-align \
+	-Waggregate-return \
 	-Wstrict-prototypes \
-	-Winline
+	-Wmissing-noreturn -Wmissing-format-attribute \
+	-Wpacked \
+	-Wredundant-decls \
+	-Wnested-externs 
+##	-Wshadow
+##	-Wconversion 
+##	-Wmissing-prototypes
+##	-Wmissing-declarations
+##	-Winline -Wdisabled-optimization
 CFLAGS = -O2 $(CWFLAGS) -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 
@@ -74,9 +84,11 @@ CFILES = 								\
 	thread.c							\
 	generational.c							\
 	heap.c   							\
+	ratios.c   							\
 	gc_state.c   							\
-	invariant.c   							\
+	current.c   							\
 	foreach.c							\
+	invariant.c   							\
 	cheney-copy.c							\
 	assumptions.c							\
 	gc_suffix.c
@@ -98,6 +110,9 @@ HFILES = 								\
 	generational.h							\
 	statistics.h							\
 	heap.h								\
+	control.h							\
+	sysvals.h							\
+	ratios.h							\
 	gc_state.h							\
 	gc_suffix.h
 

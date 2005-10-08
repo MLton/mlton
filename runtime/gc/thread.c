@@ -6,16 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline GC_thread currentThread (GC_state s) {
-  pointer p = objptrToPointer(s->currentThread, s->heap.start);
-  return (GC_thread)p;
-}
-
-static inline objptr currentThreadStack (GC_state s) {
-  GC_thread ct = currentThread (s);
-  return ct->stack;
-}
-
 void displayThread (GC_state s,
                     GC_thread thread, 
                     FILE *stream) {

@@ -19,11 +19,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <iso646.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "../assert.h"

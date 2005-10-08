@@ -11,10 +11,10 @@
  *   array, normal (fixed size), stack, and weak.
  */
 typedef enum { 
-        ARRAY_TAG,
-        NORMAL_TAG,
-        STACK_TAG,
-        WEAK_TAG,
+  ARRAY_TAG,
+  NORMAL_TAG,
+  STACK_TAG,
+  WEAK_TAG,
 } GC_objectTypeTag;
 
 /*
@@ -40,7 +40,7 @@ typedef uint32_t GC_header;
 #define COUNTER_SHIFT      20
 #define MARK_BITS          1
 #define MARK_MASK          0x80000000
-#define MARK_SHIFT         3
+#define MARK_SHIFT         31
 
 /* getHeaderp (p)
  *
@@ -103,11 +103,11 @@ static inline GC_header getHeader (pointer p) {
  * object (and, hence, must be (2,1) or (3,0)).
 */
 typedef struct {
-        /* Keep tag first, at zero offset, since it is referenced most often. */
-        GC_objectTypeTag tag;
-        bool hasIdentity;
-        uint16_t numNonObjptrs;
-        uint16_t numObjptrs;
+  /* Keep tag first, at zero offset, since it is referenced most often. */
+  GC_objectTypeTag tag;
+  bool hasIdentity;
+  uint16_t numNonObjptrs;
+  uint16_t numObjptrs;
 } GC_objectType;
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */

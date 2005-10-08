@@ -27,10 +27,10 @@ static inline void foreachGlobalObjptr (GC_state s,
   }
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
-  maybeCall (f, s, &s->callFromCHandler);
+  maybeCall (f, s, &s->callFromCHandlerThread);
   maybeCall (f, s, &s->currentThread);
   maybeCall (f, s, &s->savedThread);
-  maybeCall (f, s, &s->signalHandler);
+  maybeCall (f, s, &s->signalHandlerThread);
 }
 
 
@@ -84,7 +84,7 @@ static inline pointer foreachObjptrInObject (GC_state s,
     pointer max;
     GC_arrayLength numElements;
     
-    numElements = arrayNumElements (p);
+    numElements = getArrayLength (p);
     bytesPerElement = 
       numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
       + (numObjptrs * OBJPTR_SIZE);

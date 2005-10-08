@@ -203,7 +203,7 @@ manageable set for users.
 #else 
 #error gc model unknown
 #endif
-#define GC_MODEL_NONPTR ((GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT) > 0)
+#define GC_MODEL_NONOBJPTR ((GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT) > 0)
 #define GC_MODEL_MINALIGN TWOPOWER(GC_MODEL_MINALIGN_SHIFT)
 
 #define OBJPTR_TYPE__(z) uint ## z ## _t
@@ -216,7 +216,7 @@ typedef OBJPTR_TYPE objptr;
 #define PRIxOBJPTR PRIxOBJPTR_(GC_MODEL_BITSIZE)
 #define FMTOBJPTR "0x%016"PRIxOBJPTR
 
-#if GC_MODEL_NONPTR
+#if GC_MODEL_NONOBJPTR
 #define BOGUS_OBJPTR (objptr)0x1
 #else
 #error gc model does not admit bogus object pointer
