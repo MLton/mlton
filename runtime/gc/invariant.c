@@ -52,7 +52,7 @@ static bool invariant (GC_state s) {
     assert (s->heap.nursery <= s->frontier);
     assert (s->frontier <= s->limitPlusSlop);
     assert (s->limit == s->limitPlusSlop - LIMIT_SLOP);
-    assert (hasBytesFree (s, 0, 0));
+    assert (heapHasBytesFree (s, 0, 0));
   }
   assert (s->secondaryHeap.start == NULL 
           or s->heap.size == s->secondaryHeap.size);

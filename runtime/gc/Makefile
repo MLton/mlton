@@ -73,22 +73,28 @@ DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 ## Order matters, as these are concatenated together to form "gc.c".
 CFILES = 								\
 	gc_prefix.c							\
+	util.c								\
 	debug.c								\
 	align.c								\
+	virtual-memory.c						\
 	pointer.c							\
 	model.c								\
 	object.c							\
 	array.c								\
+	object_size.c							\
 	frame.c								\
 	stack.c								\
 	thread.c							\
 	generational.c							\
 	heap.c   							\
-	ratios.c   							\
 	gc_state.c   							\
+	new_object.c   							\
+	ratios.c   							\
 	current.c   							\
 	foreach.c							\
+	atomic.c							\
 	invariant.c   							\
+	enter_leave.c							\
 	cheney-copy.c							\
 	assumptions.c							\
 	gc_suffix.c
@@ -106,14 +112,15 @@ HFILES = 								\
 	stack.h								\
 	thread.h							\
 	weak.h								\
+	heap.h								\
 	major.h								\
 	generational.h							\
 	statistics.h							\
-	heap.h								\
 	control.h							\
 	sysvals.h							\
 	ratios.h							\
 	gc_state.h							\
+	profile.h							\
 	gc_suffix.h
 
 all: gc.o gc-gdb.o

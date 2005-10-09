@@ -6,21 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
-/*
- * Build the header for an object, given the index to its type info.
- */
-static inline GC_header GC_objectHeader (uint32_t t) {
-        assert (t < TWOPOWER (TYPE_INDEX_BITS));
-        return 1 | (t << 1);
-}
 
-#define STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
-#define STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
-#define THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
-#define WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
-#define WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
-
-static char* tagToString (GC_objectTypeTag tag) {
+static char* objectTypeTagToString (GC_objectTypeTag tag) {
   switch (tag) {
   case ARRAY_TAG:
     return "ARRAY";
@@ -34,6 +21,20 @@ static char* tagToString (GC_objectTypeTag tag) {
     die ("bad tag %u", tag);
   }
 }
+
+/*
+ * Build the header for an object, given the index to its type info.
+ */
+static inline GC_header GC_objectHeader (uint32_t t) {
+        assert (t < TWOPOWER (TYPE_INDEX_BITS));
+        return 1 | (t << 1);
+}
+
+#define GC_STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
+#define GC_STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
+#define GC_THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
+#define GC_WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
+#define GC_WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
 
 static inline void splitHeader(GC_state s, GC_header header,
                                GC_objectTypeTag *tagRet, bool *hasIdentityRet,
@@ -61,7 +62,7 @@ static inline void splitHeader(GC_state s, GC_header header,
              "  numNonObjptrs = %"PRIu16 
              "  numObjptrs = %"PRIu16"\n", 
              header, 
-             tagToString(tag), hasIdentity, numNonObjptrs, numObjptrs); 
+             objectTypeTagToString(tag), hasIdentity, numNonObjptrs, numObjptrs); 
 
   if (tagRet != NULL)
     *tagRet = tag;
@@ -71,6 +72,20 @@ static inline void splitHeader(GC_state s, GC_header header,
     *numNonObjptrsRet = numNonObjptrs;
   if (numObjptrsRet != NULL)
     *numObjptrsRet = numObjptrs;
+}
+
+static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs, 
+                                           GC_objectTypeTag tag) {
+  switch (tag) {
+  case ARRAY_TAG:
+    return (size_t)(numNonObjptrs);
+  case NORMAL_TAG:
+    return (size_t)(numNonObjptrs) * 4;
+  case WEAK_TAG:
+    return (size_t)(numNonObjptrs) * 4;
+  default:
+    die ("bad tag %u", tag);
+  }
 }
 
 /* objectData (s, p)
@@ -92,18 +107,4 @@ static inline pointer objectData (GC_state s, pointer p) {
     res = p + GC_NORMAL_HEADER_SIZE;
   assert (isAligned ((uintptr_t)res, s->alignment));
   return res;
-}
-
-static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs, 
-                                           GC_objectTypeTag tag) {
-  switch (tag) {
-  case ARRAY_TAG:
-    return (size_t)(numNonObjptrs);
-  case NORMAL_TAG:
-    return (size_t)(numNonObjptrs) * 4;
-  case WEAK_TAG:
-    return (size_t)(numNonObjptrs) * 4;
-  default:
-    die ("bad tag %u", tag);
-  }
 }

@@ -28,3 +28,16 @@ static inline GC_stack currentThreadStack (GC_state s) {
 static inline size_t currentStackUsed (GC_state s) {
   return s->stackTop - s->stackBottom;
 }
+
+static void setCurrentStack (GC_state s) {
+  GC_thread thread;
+  GC_stack stack;
+  
+  thread = currentThread (s);
+  s->exnStack = thread->exnStack;
+  stack = currentThreadStack (s);
+  s->stackBottom = stackBottom (s, stack);
+  s->stackTop = stackTop (s, stack);
+  s->stackLimit = stackLimit (s, stack);
+  markCard (s, (pointer)stack);
+}

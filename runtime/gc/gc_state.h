@@ -3,11 +3,13 @@ typedef struct GC_state {
   size_t alignment; /* */
   bool amInGC;
   bool amInMinorGC;
+  uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_control control;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
+  uint32_t exnStack;
   GC_frameLayout *frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   pointer frontier; /* heap.start <= frontier < limit */
@@ -31,6 +33,7 @@ typedef struct GC_state {
                        */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
+  /*Bool*/bool signalIsPending;
   pointer stackBottom; /* Bottom of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   pointer stackTop; /* Top of stack in current thread. */

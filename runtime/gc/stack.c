@@ -93,6 +93,21 @@ static inline size_t stackNeedsReserved (GC_state s, GC_stack stack) {
   return stack->used + stackSlop (s) - topFrameSize(s, stack);
 }
 
+static inline void stackCopy (GC_state s, GC_stack from, GC_stack to) {
+  pointer fromBottom, toBottom;
+
+  fromBottom = stackBottom (s, from);
+  toBottom = stackBottom (s, to);
+  assert (from->used <= to->reserved);
+  to->used = from->used;
+  if (DEBUG_STACKS)
+    fprintf (stderr, "stackCopy from "FMTPTR" to "FMTPTR" of length %zd\n",
+             (uintptr_t) fromBottom, 
+             (uintptr_t) toBottom,
+             from->used);
+  memcpy (fromBottom, toBottom, from->used);
+}
+
 void displayStack (__attribute__ ((unused)) GC_state s,
                    GC_stack stack, 
                    FILE *stream) {

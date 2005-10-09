@@ -169,7 +169,7 @@ static inline void updateWeaks (GC_state s) {
     } else {
       if (DEBUG_WEAK)
         fprintf (stderr, "cleared\n");
-      *(getHeaderp(p)) = WEAK_GONE_HEADER;
+      *(getHeaderp(p)) = GC_WEAK_GONE_HEADER;
       w->objptr = BOGUS_OBJPTR;
     }
   }

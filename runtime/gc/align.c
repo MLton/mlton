@@ -17,30 +17,17 @@ static inline size_t align (size_t a, size_t b) {
   return a;       
 }
 
-/*
-static inline W64 w64align (W64 a, uint b) {
-        W64 res;
-
-        assert (a >= 0);
-        assert (b >= 1);
-        res = a + b - 1;
-        res = res - res % b;
-        if (FALSE)
-                fprintf (stderr, "%llu = w64Align (%llu, %u)\n", res, a, b);
-        return res;
-}
-*/
-
 static inline bool isAligned (size_t a, size_t b) {
   return 0 == a % b;
 }
 
 #if ASSERT
 static inline bool isAlignedFrontier (GC_state s, pointer p) {
-  return isAligned ((uintptr_t)p + GC_NORMAL_HEADER_SIZE, s->alignment);
+  return isAligned ((uintptr_t)p + GC_NORMAL_HEADER_SIZE, 
+                    s->alignment);
 }
 
-static bool isAlignedReserved (GC_state s, size_t reserved) {
+static inline bool isAlignedReserved (GC_state s, size_t reserved) {
   return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
                     s->alignment);
 }

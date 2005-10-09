@@ -55,7 +55,7 @@ static inline bool objptrIsInFromSpace (GC_state s, objptr op) {
 }
 
 #if ASSERT
-static bool hasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
+static bool heapHasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
   size_t total;
   bool res;
 
@@ -67,7 +67,7 @@ static bool hasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
     and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));
   if (DEBUG_DETAILED)
     fprintf (stderr, "%s = hasBytesFree (%zd, %zd)\n",
-             res ? "true" : "false",
+             boolToString (res),
              /*uintToCommaString*/(oldGen),
              /*uintToCommaString*/(nursery));
   return res;
@@ -268,5 +268,69 @@ static void heapSetNursery (GC_state s,
   s->frontier = s->heap.nursery;
   assert (nurseryBytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
   assert (isAlignedFrontier (s, s->heap.nursery));
-  assert (hasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
+  assert (heapHasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
+}
+
+/* heapCreate (s, h, desiredSize, minSize) 
+ * 
+ * allocates a heap of the size necessary to work with desiredSize
+ * live data, and ensures that at least minSize is available.  It
+ * returns TRUE if it is able to allocate the space, and returns FALSE
+ * if it is unable.  If a reasonable size to space is already there,
+ * then heapCreate leaves it.
+ */
+static bool heapCreate (GC_state s, GC_heap h, 
+                        size_t desiredSize, 
+                        size_t minSize) {
+  size_t backoff;
+
+  if (DEBUG_MEM)
+    fprintf (stderr, "heapCreate  desired size = %zd  min size = %zd\n",
+             /*uintToCommaString*/(desiredSize),
+             /*uintToCommaString*/(minSize));
+  assert (heapIsInit (h));
+  if (desiredSize < minSize)
+    desiredSize = minSize;
+  desiredSize = align (desiredSize, s->sysvals.pageSize);
+  assert (0 == h->size and NULL == h->start);
+  backoff = (desiredSize - minSize) / 20;
+  if (0 == backoff)
+    backoff = 1; /* enough to terminate the loop below */
+  backoff = align (backoff, s->sysvals.pageSize);
+  /* mmap toggling back and forth between high and low addresses to
+   * decrease the chance of virtual memory fragmentation causing an mmap
+   * to fail.  This is important for large heaps.
+   */
+  for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
+    static bool direction = TRUE;
+    unsigned int i;
+
+    assert (isAligned (h->size, s->sysvals.pageSize));
+    for (i = 0; i < 32; i++) {
+      size_t address;
+      
+      address = i * 0x08000000ul;
+      if (direction)
+        address = 0xf8000000ul - address;
+      h->start = GC_mmap ((void*)address, h->size);
+      if ((void*)-1 == h->start)
+        h->start = (void*)NULL;
+      unless ((void*)NULL == h->start) {
+        direction = not direction;
+        if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
+          s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+        if (DEBUG or s->messages)
+          fprintf (stderr, "Created heap of size %zd at "FMTPTR".\n",
+                   /*uintToCommaString*/(h->size),
+                   (uintptr_t)h->start);
+        assert (h->size >= minSize);
+        return TRUE;
+      }
+    }
+    if (s->messages)
+      fprintf(stderr, "[Requested %zuM cannot be satisfied, backing off by %zuM (min size = %zuM).\n",
+              meg (h->size), meg (backoff), meg (minSize));
+  }
+  h->size = 0;
+  return FALSE;
 }

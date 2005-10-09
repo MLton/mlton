@@ -59,7 +59,7 @@ static inline pointer foreachObjptrInObject (GC_state s,
              "  tag = %s"
              "  numNonObjptrs = %d"
              "  numObjptrs = %d\n", 
-             (uintptr_t)p, header, tagToString (tag), 
+             (uintptr_t)p, header, objectTypeTagToString (tag), 
              numNonObjptrs, numObjptrs);
   if (NORMAL_TAG == tag) {
     p += numNonObjptrsToBytes(numNonObjptrs, NORMAL_TAG);
