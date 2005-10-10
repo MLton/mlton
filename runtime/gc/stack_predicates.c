@@ -5,3 +5,7 @@
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  */
+
+static inline bool stackIsEmpty (GC_stack stack) {
+  return 0 == stack->used;
+}

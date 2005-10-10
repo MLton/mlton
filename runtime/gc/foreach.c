@@ -196,7 +196,7 @@ static inline pointer foreachObjptrInRange (GC_state s,
   assert (front <= b);
   while (front < b) {
     while (front < b) {
-      assert (isAligned ((uintptr_t)front, GC_MODEL_MINALIGN));
+      assert (isAligned ((size_t)front, GC_MODEL_MINALIGN));
       if (DEBUG_DETAILED)
         fprintf (stderr, 
                  "  front = "FMTPTR"  *back = "FMTPTR"\n",

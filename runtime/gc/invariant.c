@@ -42,7 +42,7 @@ static bool invariant (GC_state s) {
             < (s->generationalMaps.cardMap 
                + (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)));
   }
-  assert (isAligned (s->heap.size, s->pageSize));
+  assert (isAligned (s->heap.size, s->sysvals.pageSize));
   assert (isAligned ((size_t)s->heap.start, CARD_SIZE));
   assert (isAlignedFrontier (s, s->heap.start + s->heap.oldGenSize));
   assert (isAlignedFrontier (s, s->heap.nursery));
@@ -69,7 +69,7 @@ static bool invariant (GC_state s) {
                         FALSE, assertObjptrIsInFromSpace);
   /* Current thread. */
   GC_stack stack = currentThreadStack(s);
-  assert (isAlignedReserved (s, stack->reserved));
+  assert (isAlignedStackReserved (s, stack->reserved));
   assert (s->stackBottom == stackBottom (s, stack));
   assert (s->stackTop == stackTop (s, stack));
   assert (s->stackLimit == stackLimit (s, stack));

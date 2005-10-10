@@ -7,6 +7,6 @@
  */
 
 typedef enum {
-        GC_COPYING,
-        GC_MARK_COMPACT,
+  GC_COPYING,
+  GC_MARK_COMPACT,
 } GC_majorKind;

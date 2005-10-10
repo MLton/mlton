@@ -8,6 +8,34 @@
 
 #define CROSS_MAP_EMPTY ((GC_crossMapElem)255)
 
+void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
+                              struct GC_generationalMaps *generational,
+                              FILE *stream) {
+  fprintf(stream,
+          "\t\tcardMap ="FMTPTR"\n"
+          "\t\tcardMapAbsolute = "FMTPTR"\n"
+          "\t\tcardMapLength = %zu\n"
+          "\t\tcrossMap = "FMTPTR"\n"
+          "\t\tcrossMapLength = %zu\n"
+          "\t\tcrossMapValidSize = %zu\n",
+          (uintptr_t)generational->cardMap, 
+          (uintptr_t)generational->cardMapAbsolute,
+          generational->cardMapLength, 
+          (uintptr_t)generational->crossMap,
+          generational->crossMapLength,
+          generational->crossMapValidSize);
+  if (DEBUG_GENERATIONAL and DEBUG_DETAILED) {
+    unsigned int i;
+
+    fprintf (stderr, "crossMap trues\n");
+    for (i = 0; i < generational->crossMapLength; ++i)
+      unless (CROSS_MAP_EMPTY == generational->crossMap[i])
+        fprintf (stderr, "\t%u\n", i);
+    fprintf (stderr, "\n");
+  }               
+}
+
+
 static inline uintptr_t pointerToCardIndex (pointer p) {
   return (uintptr_t)p >> CARD_SIZE_LOG2;
 }
@@ -84,21 +112,21 @@ static inline void createCardMapAndCrossMap (GC_state s) {
   size_t totalMapSize;
 
   cardMapLength = sizeToCardIndex (s->heap.size);
-  cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->pageSize);
+  cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->sysvals.pageSize);
   cardMapLength = cardMapSize / CARD_MAP_ELEM_SIZE;
   s->generationalMaps.cardMapLength = cardMapLength;
 
   crossMapLength = sizeToCardIndex (s->heap.size);
-  crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->pageSize);
+  crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->sysvals.pageSize);
   crossMapLength = crossMapSize / CROSS_MAP_ELEM_SIZE;
   s->generationalMaps.crossMapLength = crossMapLength;
 
   totalMapSize = cardMapSize + crossMapSize;
   if (DEBUG_MEM)
-    fprintf (stderr, "Creating card/cross map of size %zd\n",
+    fprintf (stderr, "Creating card/cross map of size %zu\n",
              /*uintToCommaString*/(totalMapSize));
   s->generationalMaps.cardMap = 
-    GC_mmapAnon (totalMapSize);
+    GC_mmapAnon_safe (NULL, totalMapSize);
   s->generationalMaps.crossMap = 
     (GC_crossMapElem*)((pointer)s->generationalMaps.cardMap + cardMapSize);
   if (DEBUG_CARD_MARKING)
@@ -140,7 +168,7 @@ static inline bool crossMapIsOK (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "crossMapIsOK ()\n");
   mapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
-  map = GC_mmapAnon (mapSize);
+  map = GC_mmapAnon_safe (NULL, mapSize);
   memset (map, CROSS_MAP_EMPTY, mapSize);
   back = s->heap.start + s->heap.oldGenSize;
   cardIndex = 0;
@@ -216,7 +244,7 @@ done:
 static inline void resizeCardMapAndCrossMap (GC_state s) {
   if (s->mutatorMarksCards
       and (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)
-          != align (sizeToCardIndex (s->heap.size), s->pageSize)) {
+          != align (sizeToCardIndex (s->heap.size), s->sysvals.pageSize)) {
     GC_cardMapElem *oldCardMap;
     size_t oldCardMapSize;
     GC_crossMapElem *oldCrossMap;
@@ -234,31 +262,4 @@ static inline void resizeCardMapAndCrossMap (GC_state s) {
       fprintf (stderr, "Releasing card/cross map.\n");
     GC_munmap (oldCardMap, oldCardMapSize + oldCrossMapSize);
   }
-}
-
-void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
-                              struct GC_generationalMaps *generational,
-                              FILE *stream) {
-  fprintf(stream,
-          "\t\tcardMap ="FMTPTR"\n"
-          "\t\tcardMapAbsolute = "FMTPTR"\n"
-          "\t\tcardMapLength = %zu\n"
-          "\t\tcrossMap = "FMTPTR"\n"
-          "\t\tcrossMapLength = %zu\n"
-          "\t\tcrossMapValidSize = %zu\n",
-          (uintptr_t)generational->cardMap, 
-          (uintptr_t)generational->cardMapAbsolute,
-          generational->cardMapLength, 
-          (uintptr_t)generational->crossMap,
-          generational->crossMapLength,
-          generational->crossMapValidSize);
-  if (DEBUG_GENERATIONAL and DEBUG_DETAILED) {
-    unsigned int i;
-
-    fprintf (stderr, "crossMap trues\n");
-    for (i = 0; i < generational->crossMapLength; ++i)
-      unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t%u\n", i);
-    fprintf (stderr, "\n");
-  }               
 }

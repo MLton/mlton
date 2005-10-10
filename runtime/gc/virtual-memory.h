@@ -6,7 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *GC_mmapAnon (size_t length);
+/* showMem displays the virtual memory mapping to stdout.  
+ * It is used to diagnose memory problems. 
+ */
+void showMem (void);
+
+void *GC_mmapAnon (void *start, size_t length);
 void *GC_mmap (void *start, size_t length);
 void GC_munmap (void *start, size_t length);
 void GC_release (void *base, size_t length);

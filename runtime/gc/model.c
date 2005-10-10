@@ -47,17 +47,6 @@ static inline objptr pointerToObjptr (pointer P, pointer B) {
   return O;
 }
 
-/* isObjptr returns true if p looks like an object pointer. */
-static inline bool isObjptr (objptr p) {
-  if GC_MODEL_NONOBJPTR {
-    unsigned int shift = GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT;
-    objptr mask = ~((~((objptr)0)) << shift);
-    return (0 == (p & mask));
-  } else {
-    return TRUE;
-  }
-}
-
 /*
  * Note that by indirectly fetching and storing object pointers, the
  * following functions admit implementations that behave according to

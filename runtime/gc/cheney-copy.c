@@ -70,7 +70,7 @@ static void forward (GC_state s, objptr *opp) {
       skip = 0;
     } else if (ARRAY_TAG == tag) {
       headerBytes = GC_ARRAY_HEADER_SIZE;
-      objectBytes = arrayNumBytes (s, p, numNonObjptrs, numObjptrs);
+      objectBytes = arraySizeNoHeader (s, p, numNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
       GC_stack stack;
@@ -85,8 +85,8 @@ static void forward (GC_state s, objptr *opp) {
          */
         if (stack->used <= stack->reserved / 4) {
           size_t new = 
-            stackReserved (s, maxZ (stack->reserved / 2,
-                                    stackNeedsReserved (s, stack)));
+            alignStackReserved 
+            (s, max (stack->reserved / 2, stackMinimumReserved (s, stack)));
           /* It's possible that new > stack->reserved if the stack
            * invariant is violated. In that case, we want to leave the
            * stack alone, because some other part of the gc will grow
@@ -96,17 +96,17 @@ static void forward (GC_state s, objptr *opp) {
           if (new <= stack->reserved) {
             stack->reserved = new;
             if (DEBUG_STACKS)
-              fprintf (stderr, "Shrinking stack to size %zd.\n",
+              fprintf (stderr, "Shrinking stack to size %zu.\n",
                        /*uintToCommaString*/(stack->reserved));
           }
         }
       } else {
         /* Shrink heap stacks. */
         stack->reserved = 
-          stackReserved (s, maxZ((size_t)(s->ratios.threadShrink * stack->reserved),
-                                 stack->used));
+          alignStackReserved 
+          (s, max((size_t)(s->ratios.threadShrink * stack->reserved), stack->used));
         if (DEBUG_STACKS)
-          fprintf (stderr, "Shrinking stack to size %zd.\n",
+          fprintf (stderr, "Shrinking stack to size %zu.\n",
                    /*uintToCommaString*/(stack->reserved));
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
@@ -143,7 +143,7 @@ static void forward (GC_state s, objptr *opp) {
     *(objptr*)p = pointerToObjptr(forwardState.back + headerBytes, forwardState.toStart);
     /* Update the back of the queue. */
     forwardState.back += size + skip;
-    assert (isAligned ((uintptr_t)forwardState.back + GC_NORMAL_HEADER_SIZE, 
+    assert (isAligned ((size_t)forwardState.back + GC_NORMAL_HEADER_SIZE, 
                        s->alignment));
   }
   *opp = *(objptr*)p;
@@ -185,26 +185,22 @@ static inline void swapHeaps (GC_state s) {
   setCardMapAbsolute (s);
 }
 
-/* static inline bool detailedGCTime (GC_state s) { */
-/*         return s->summary; */
-/* } */
-
 static void majorCheneyCopyGC (GC_state s) {
-  // struct rusage ru_start;
+  struct rusage ru_start;
   pointer toStart;
 
   assert (s->secondaryHeap.size >= s->heap.oldGenSize);
-/*   if (detailedGCTime (s)) */
-/*     startTiming (&ru_start); */
+  if (detailedGCTime (s))
+    startTiming (&ru_start);
   s->cumulativeStatistics.numCopyingGCs++;
   forwardState.toStart = s->secondaryHeap.start;
   forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
-  if (DEBUG or s->messages) {
+  if (DEBUG or s->controls.messages) {
     fprintf (stderr, "Major copying GC.\n");
-    fprintf (stderr, "fromSpace = "FMTPTR" of size %zd\n",
+    fprintf (stderr, "fromSpace = "FMTPTR" of size %zu\n",
              (uintptr_t) s->heap.start, 
              /*uintToCommaString*/(s->heap.size));
-    fprintf (stderr, "toSpace = "FMTPTR" of size %zd\n",
+    fprintf (stderr, "toSpace = "FMTPTR" of size %zu\n",
              (uintptr_t) s->secondaryHeap.start, 
              /*uintToCommaString*/(s->secondaryHeap.size));
   }
@@ -223,14 +219,14 @@ static void majorCheneyCopyGC (GC_state s) {
   s->secondaryHeap.oldGenSize = forwardState.back - s->secondaryHeap.start;
   s->cumulativeStatistics.bytesCopied += s->secondaryHeap.oldGenSize;
   if (DEBUG)
-    fprintf (stderr, "%zd bytes live.\n",
+    fprintf (stderr, "%zu bytes live.\n",
              /*uintToCommaString*/(s->secondaryHeap.oldGenSize));
   swapHeaps (s);
   clearCrossMap (s);
   s->lastMajorStatistics.kind = GC_COPYING;
-/*   if (detailedGCTime (s)) */
-/*     stopTiming (&ru_start, &s->ru_gcCopy); */
-  if (DEBUG or s->messages)
+  if (detailedGCTime (s))
+    stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcCopy);
+  if (DEBUG or s->controls.messages)
     fprintf (stderr, "Major copying GC done.\n");
 }
 
@@ -346,7 +342,7 @@ done:
 static void minorGC (GC_state s) {
   size_t bytesAllocated;
   size_t bytesCopied;
-  // struct rusage ru_start;
+  struct rusage ru_start;
 
   if (DEBUG_GENERATIONAL)
     fprintf (stderr, "minorGC  nursery = "FMTPTR"  frontier = "FMTPTR"\n",
@@ -360,10 +356,10 @@ static void minorGC (GC_state s) {
     s->heap.oldGenSize += bytesAllocated;
     bytesCopied = 0;
   } else {
-    if (DEBUG_GENERATIONAL or s->messages)
+    if (DEBUG_GENERATIONAL or s->controls.messages)
       fprintf (stderr, "Minor GC.\n");
-/*     if (detailedGCTime (s)) */
-/*       startTiming (&ru_start); */
+    if (detailedGCTime (s))
+      startTiming (&ru_start);
     s->amInMinorGC = TRUE;
     forwardState.toStart = s->heap.start + s->heap.oldGenSize;
     if (DEBUG_GENERATIONAL)
@@ -386,10 +382,10 @@ static void minorGC (GC_state s) {
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
     s->amInMinorGC = FALSE;
-/*     if (detailedGCTime (s)) */
-/*       stopTiming (&ru_start, &s->ru_gcMinor); */
-    if (DEBUG_GENERATIONAL or s->messages)
-      fprintf (stderr, "Minor GC done.  %zd bytes copied.\n",
+    if (detailedGCTime (s))
+      stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMinor);
+    if (DEBUG_GENERATIONAL or s->controls.messages)
+      fprintf (stderr, "Minor GC done.  %zu bytes copied.\n",
                /*uintToCommaString*/(bytesCopied));
   }
 }

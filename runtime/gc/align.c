@@ -6,45 +6,64 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline size_t roundDown (size_t a, size_t b) {
-  return a - (a % b);
+static inline bool isAligned (size_t a, size_t b) {
+  return 0 == a % b;
+}
+
+static inline size_t alignDown (size_t a, size_t b) {
+  assert (b >= 1);
+  a -= a % b;
+  assert (isAligned (a, b));
+  return a;
 }
 
 static inline size_t align (size_t a, size_t b) {
   assert (b >= 1);
   a += b - 1;
   a -= a % b;
+  assert (isAligned (a, b));
   return a;       
 }
-
-static inline bool isAligned (size_t a, size_t b) {
-  return 0 == a % b;
-}
-
-#if ASSERT
-static inline bool isAlignedFrontier (GC_state s, pointer p) {
-  return isAligned ((uintptr_t)p + GC_NORMAL_HEADER_SIZE, 
-                    s->alignment);
-}
-
-static inline bool isAlignedReserved (GC_state s, size_t reserved) {
-  return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
-                    s->alignment);
-}
-#endif
 
 static inline size_t pad (GC_state s, size_t bytes, size_t extra) {
   return align (bytes + extra, s->alignment) - extra;
 }
 
-static inline pointer alignFrontier (GC_state s, pointer p) {
-  size_t bytes, res;
+#if ASSERT
+static inline bool isAlignedFrontier (GC_state s, pointer p) {
+  return isAligned ((size_t)p + GC_NORMAL_HEADER_SIZE, 
+                    s->alignment);
+}
+#endif
 
-  bytes = (size_t) p;
+static inline pointer alignFrontier (GC_state s, pointer p) {
+  size_t res;
+
   res = pad (s, (size_t)p, GC_NORMAL_HEADER_SIZE);
+  if (DEBUG_STACKS)
+    fprintf (stderr, FMTPTR" = stackReserved ("FMTPTR")\n", 
+             (uintptr_t)p, (uintptr_t)res);
+  assert (isAlignedFrontier (s, (pointer)res));
   return (pointer)res;
 }
 
 pointer GC_alignFrontier (GC_state s, pointer p) {
   return alignFrontier (s, p);
+}
+
+#if ASSERT
+static inline bool isAlignedStackReserved (GC_state s, size_t reserved) {
+  return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
+                    s->alignment);
+}
+#endif
+
+static inline size_t alignStackReserved (GC_state s, size_t reserved) {
+  size_t res;
+  
+  res = pad (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
+  if (DEBUG_STACKS)
+    fprintf (stderr, "%zu = stackReserved (%zu)\n", res, reserved);
+  assert (isAlignedStackReserved (s, res));
+  return res;
 }

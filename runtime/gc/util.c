@@ -5,6 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-char* boolToString (bool b) {
+const char* boolToString (bool b) {
         return b ? "TRUE" : "FALSE";
 }

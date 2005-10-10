@@ -6,24 +6,24 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline uint32_t 
+static inline GC_frameIndex
 getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra) {
-  uint32_t res;
+  GC_frameIndex res;
 
   res = s->returnAddressToFrameIndex (ra);
   if (DEBUG_DETAILED)
-    fprintf (stderr, "%"PRIu32" = getFrameIndexFromReturnAddress ("FMTRA")\n",
+    fprintf (stderr, FMTFI" = getFrameIndexFromReturnAddress ("FMTRA")\n",
              res, ra);
   return res;
 }
 
 static inline GC_frameLayout * 
-getFrameLayoutFromFrameIndex (GC_state s, uint32_t index) {
+getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index) {
   GC_frameLayout *layout;
 
   if (DEBUG_DETAILED)
     fprintf (stderr, 
-             "index = %"PRIu32
+             "index = "FMTFI
              "  frameLayoutsLength = %"PRIu32"\n",
             index, s->frameLayoutsLength);
   assert (index < s->frameLayoutsLength);
@@ -35,7 +35,7 @@ getFrameLayoutFromFrameIndex (GC_state s, uint32_t index) {
 static inline GC_frameLayout * 
 getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra) {
   GC_frameLayout *layout;
-  uint32_t index;
+  GC_frameIndex index;
   
   index = getFrameIndexFromReturnAddress (s, ra);
   layout = getFrameLayoutFromFrameIndex(s, index);

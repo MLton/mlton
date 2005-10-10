@@ -5,75 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline bool pointerIsInHeap (GC_state s, pointer p) {
-  return (not (isPointer (p))
-          or (s->heap.start <= p 
-              and p < s->frontier));
-}
-
-static inline bool objptrIsInHeap (GC_state s, objptr op) {
-  pointer p;
-  if (not (isObjptr(op)))
-    return TRUE;
-  p = objptrToPointer (op, s->heap.start);
-  return pointerIsInHeap (s, p);
-}
-
-static inline bool pointerIsInOldGen (GC_state s, pointer p) {
-  return (not (isPointer (p))
-          or (s->heap.start <= p 
-              and p < s->heap.start + s->heap.oldGenSize));
-}
-
-static inline bool objptrIsInOldGen (GC_state s, objptr op) {
-  pointer p;
-  if (not (isObjptr(op)))
-    return TRUE;
-  p = objptrToPointer (op, s->heap.start);
-  return pointerIsInOldGen (s, p);
-}
-
-static inline bool pointerIsInNursery (GC_state s, pointer p) {
-  return (not (isPointer (p))
-          or (s->heap.nursery <= p and p < s->frontier));
-}
-
-static inline bool objptrIsInNursery (GC_state s, objptr op) {
-  pointer p;
-  if (not (isObjptr(op)))
-    return TRUE;
-  p = objptrToPointer (op, s->heap.start);
-  return pointerIsInNursery (s, p);
-}
-
-static inline bool pointerIsInFromSpace (GC_state s, pointer p) {
-  return (pointerIsInOldGen (s, p) or pointerIsInNursery (s, p));
-}
-
-static inline bool objptrIsInFromSpace (GC_state s, objptr op) {
-  return (objptrIsInOldGen (s, op) or objptrIsInNursery (s, op));
-}
-
-#if ASSERT
-static bool heapHasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
-  size_t total;
-  bool res;
-
-  total =
-    s->heap.oldGenSize + oldGen 
-    + (s->canMinor ? 2 : 1) * (s->limitPlusSlop - s->heap.nursery);
-  res = 
-    (total <= s->heap.size) 
-    and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));
-  if (DEBUG_DETAILED)
-    fprintf (stderr, "%s = hasBytesFree (%zd, %zd)\n",
-             boolToString (res),
-             /*uintToCommaString*/(oldGen),
-             /*uintToCommaString*/(nursery));
-  return res;
-}
-#endif
-
 void displayHeap (__attribute__ ((unused)) GC_state s,
                   GC_heap heap,
                   FILE *stream) {
@@ -88,8 +19,120 @@ void displayHeap (__attribute__ ((unused)) GC_state s,
           heap->size);
 }
 
-/* heapDesiredSize (s, l, c) returns the desired heap size for a heap
- * with l bytes live, given that the current heap size is c.
+
+static inline void heapInit (GC_heap h) {
+  h->start = NULL;
+  h->size = 0;
+  h->oldGenSize = 0;
+  h->nursery = NULL;
+}
+
+static void heapRelease (GC_state s, GC_heap h) {
+  if (NULL == h->start)
+    return;
+  if (DEBUG or s->controls.messages)
+    fprintf (stderr, "Releasing heap at "FMTPTR" of size %zu.\n",
+             (uintptr_t)h->start,
+             /*uintToCommaString*/(h->size));
+  GC_release (h->start, h->size);
+  heapInit (h);
+}
+
+static void heapShrink (GC_state s, GC_heap h, size_t keep) {
+  assert (keep <= h->size);
+  if (0 == keep) {
+    heapRelease (s, h);
+    return;
+  }
+  keep = align (keep, s->sysvals.pageSize);
+  if (keep < h->size) {
+    if (DEBUG or s->controls.messages)
+      fprintf (stderr,
+               "Shrinking heap at "FMTPTR" of size %zu to %zu bytes.\n",
+               (uintptr_t)h->start,
+               /*uintToCommaString*/(h->size),
+               /*uintToCommaString*/(keep));
+    GC_decommit (h->start + keep, h->size - keep);
+    h->size = keep;
+  }
+}
+
+/* heapCreate (s, h, desiredSize, minSize) 
+ * 
+ * allocates a heap of the size necessary to work with desiredSize
+ * live data, and ensures that at least minSize is available.  It
+ * returns TRUE if it is able to allocate the space, and returns FALSE
+ * if it is unable.  If a reasonable size to space is already there,
+ * then heapCreate leaves it.
+ */
+static bool heapCreate (GC_state s, GC_heap h, 
+                        size_t desiredSize, 
+                        size_t minSize) {
+  size_t backoff;
+
+  if (DEBUG_MEM)
+    fprintf (stderr, "heapCreate  desired size = %zu  min size = %zu\n",
+             /*uintToCommaString*/(desiredSize),
+             /*uintToCommaString*/(minSize));
+  assert (heapIsInit (h));
+  if (desiredSize < minSize)
+    desiredSize = minSize;
+  desiredSize = align (desiredSize, s->sysvals.pageSize);
+  assert (0 == h->size and NULL == h->start);
+  backoff = (desiredSize - minSize) / 20;
+  if (0 == backoff)
+    backoff = 1; /* enough to terminate the loop below */
+  backoff = align (backoff, s->sysvals.pageSize);
+  /* mmap toggling back and forth between high and low addresses to
+   * decrease the chance of virtual memory fragmentation causing an mmap
+   * to fail.  This is important for large heaps.
+   */
+  for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
+    const size_t highAddress = ((size_t)0xf8) << ((POINTER_SIZE - 1) * 8);
+    const size_t step = (size_t)0x08000000;
+    const size_t count = highAddress / step;
+
+    static bool direction = TRUE;
+    unsigned int i;
+
+    assert (isAligned (h->size, s->sysvals.pageSize));
+    for (i = 0; i <= count; i++) {
+      size_t address;
+      
+      address = i * step;
+      if (direction)
+        address = highAddress - address;
+      h->start = GC_mmapAnon ((pointer)address, h->size);
+      if ((void*)-1 == h->start)
+        h->start = (void*)NULL;
+      unless ((void*)NULL == h->start) {
+        direction = not direction;
+        if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
+          s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+        if (DEBUG or s->controls.messages)
+          fprintf (stderr, "Created heap of size %zu at "FMTPTR".\n",
+                   /*uintToCommaString*/(h->size),
+                   (uintptr_t)h->start);
+        assert (h->size >= minSize);
+        return TRUE;
+      }
+    }
+    if (s->controls.messages)
+      fprintf(stderr, 
+              "[Requested %zuM cannot be satisfied, "
+              "backing off by %zuM (min size = %zuM).\n",
+              meg (h->size), meg (backoff), meg (minSize));
+  }
+  h->size = 0;
+  return FALSE;
+}
+
+
+
+/* heapDesiredSize (s, l, cs) 
+ *
+ * returns the desired heap size for a heap with l bytes live, given
+ * that the current heap size is cs.
  */
 static size_t heapDesiredSize (GC_state s, size_t live, size_t currentSize) {
   size_t res;
@@ -112,7 +155,7 @@ static size_t heapDesiredSize (GC_state s, size_t live, size_t currentSize) {
      * happens.  This is so resizeHeap2 doesn't get confused and free
      * a semispace in a misguided attempt to avoid paging.
      */
-    res = roundDown (s->sysvals.ram / 2, s->sysvals.pageSize);
+    res = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
   } else if (ratio >= s->ratios.copy + s->ratios.grow) {
     /* Cheney copying fits in RAM. */
     res = s->sysvals.ram - s->ratios.grow * live;
@@ -140,69 +183,28 @@ static size_t heapDesiredSize (GC_state s, size_t live, size_t currentSize) {
      * growFromSpace will make the right thing happen.
      */ 
   }
-  if (s->control.fixedHeap > 0) {
-    if (res > s->control.fixedHeap / 2)
-      res = s->control.fixedHeap;
+  if (s->controls.fixedHeap > 0) {
+    if (res > s->controls.fixedHeap / 2)
+      res = s->controls.fixedHeap;
     else
-      res = s->control.fixedHeap / 2;
+      res = s->controls.fixedHeap / 2;
     if (res < live)
-      die ("Out of memory with fixed heap size %zd.",
-           /*uintToCommaString*/(s->control.fixedHeap));
-  } else if (s->control.maxHeap > 0) {
-    if (res > s->control.maxHeap)
-      res = s->control.maxHeap;
+      die ("Out of memory with fixed heap size %zu.",
+           /*uintToCommaString*/(s->controls.fixedHeap));
+  } else if (s->controls.maxHeap > 0) {
+    if (res > s->controls.maxHeap)
+      res = s->controls.maxHeap;
     if (res < live)
-      die ("Out of memory with max heap size %zd.",
-           /*uintToCommaString*/(s->control.maxHeap));
+      die ("Out of memory with max heap size %zu.",
+           /*uintToCommaString*/(s->controls.maxHeap));
   }
   if (DEBUG_RESIZING)
-    fprintf (stderr, "%zd = heapDesiredSize (%zd, %zd)\n",
+    fprintf (stderr, "%zu = heapDesiredSize (%zu, %zu)\n",
              /*uintToCommaString*/(res),
              /*uintToCommaString*/(live),
              /*uintToCommaString*/(currentSize));
   assert (res >= live);
   return res;
-}
-
-static inline void heapInit (GC_heap h) {
-  h->start = NULL;
-  h->size = 0;
-  h->oldGenSize = 0;
-  h->nursery = NULL;
-}
-
-static inline bool heapIsInit (GC_heap h) {
-  return 0 == h->size;
-}
-
-static void heapRelease (GC_state s, GC_heap h) {
-  if (NULL == h->start)
-    return;
-  if (DEBUG or s->messages)
-    fprintf (stderr, "Releasing heap at "FMTPTR" of size %zd.\n",
-             (uintptr_t)h->start,
-             /*uintToCommaString*/(h->size));
-  GC_release (h->start, h->size);
-  heapInit (h);
-}
-
-static void heapShrink (GC_state s, GC_heap h, size_t keep) {
-  assert (keep <= h->size);
-  if (0 == keep) {
-    heapRelease (s, h);
-    return;
-  }
-  keep = align (keep, s->pageSize);
-  if (keep < h->size) {
-    if (DEBUG or s->messages)
-      fprintf (stderr,
-               "Shrinking heap at "FMTPTR" of size %zd to %zd bytes.\n",
-               (uintptr_t)h->start,
-               /*uintToCommaString*/(h->size),
-               /*uintToCommaString*/(keep));
-    GC_decommit (h->start + keep, h->size - keep);
-    h->size = keep;
-  }
 }
 
 static void heapSetNursery (GC_state s, 
@@ -212,7 +214,7 @@ static void heapSetNursery (GC_state s,
   size_t nurserySize;
 
   if (DEBUG_DETAILED)
-    fprintf (stderr, "setNursery(%zd, %zd)\n",
+    fprintf (stderr, "setNursery(%zu, %zu)\n",
              /*uintToCommaString*/(oldGenBytesRequested),
              /*uintToCommaString*/(nurseryBytesRequested));
   h = &s->heap;
@@ -271,66 +273,3 @@ static void heapSetNursery (GC_state s,
   assert (heapHasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
-/* heapCreate (s, h, desiredSize, minSize) 
- * 
- * allocates a heap of the size necessary to work with desiredSize
- * live data, and ensures that at least minSize is available.  It
- * returns TRUE if it is able to allocate the space, and returns FALSE
- * if it is unable.  If a reasonable size to space is already there,
- * then heapCreate leaves it.
- */
-static bool heapCreate (GC_state s, GC_heap h, 
-                        size_t desiredSize, 
-                        size_t minSize) {
-  size_t backoff;
-
-  if (DEBUG_MEM)
-    fprintf (stderr, "heapCreate  desired size = %zd  min size = %zd\n",
-             /*uintToCommaString*/(desiredSize),
-             /*uintToCommaString*/(minSize));
-  assert (heapIsInit (h));
-  if (desiredSize < minSize)
-    desiredSize = minSize;
-  desiredSize = align (desiredSize, s->sysvals.pageSize);
-  assert (0 == h->size and NULL == h->start);
-  backoff = (desiredSize - minSize) / 20;
-  if (0 == backoff)
-    backoff = 1; /* enough to terminate the loop below */
-  backoff = align (backoff, s->sysvals.pageSize);
-  /* mmap toggling back and forth between high and low addresses to
-   * decrease the chance of virtual memory fragmentation causing an mmap
-   * to fail.  This is important for large heaps.
-   */
-  for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
-    static bool direction = TRUE;
-    unsigned int i;
-
-    assert (isAligned (h->size, s->sysvals.pageSize));
-    for (i = 0; i < 32; i++) {
-      size_t address;
-      
-      address = i * 0x08000000ul;
-      if (direction)
-        address = 0xf8000000ul - address;
-      h->start = GC_mmap ((void*)address, h->size);
-      if ((void*)-1 == h->start)
-        h->start = (void*)NULL;
-      unless ((void*)NULL == h->start) {
-        direction = not direction;
-        if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
-          s->cumulativeStatistics.maxHeapSizeSeen = h->size;
-        if (DEBUG or s->messages)
-          fprintf (stderr, "Created heap of size %zd at "FMTPTR".\n",
-                   /*uintToCommaString*/(h->size),
-                   (uintptr_t)h->start);
-        assert (h->size >= minSize);
-        return TRUE;
-      }
-    }
-    if (s->messages)
-      fprintf(stderr, "[Requested %zuM cannot be satisfied, backing off by %zuM (min size = %zuM).\n",
-              meg (h->size), meg (backoff), meg (minSize));
-  }
-  h->size = 0;
-  return FALSE;
-}

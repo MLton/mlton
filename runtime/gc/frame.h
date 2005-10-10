@@ -37,6 +37,9 @@ typedef struct GC_frameLayout {
   uint16_t size;
   GC_frameOffsets offsets;
 } GC_frameLayout;
+typedef uint32_t GC_frameIndex;
+#define PRIFI PRIu32
+#define FMTFI "%"PRIFI
 
 typedef uintptr_t GC_returnAddress;
 #define GC_RETURNADDRESS_SIZE sizeof(GC_returnAddress)

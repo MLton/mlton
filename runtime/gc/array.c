@@ -6,49 +6,19 @@
  * See the file MLton-LICENSE for details.
  */
 
-#if ASSERT
-static inline pointer arrayIndexAtPointer (GC_state s, 
-                                           pointer a, 
-                                           uint32_t arrayIndex, 
-                                           uint32_t pointerIndex) {
-  GC_header header;
-  uint16_t numNonObjptrs;
-  uint16_t numObjptrs;
-  GC_objectTypeTag tag;
-  
-  header = getHeader (a);
-  splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
-  assert (tag == ARRAY_TAG);
-
-  size_t nonObjptrBytesPerElement =
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
-  size_t bytesPerElement = 
-    nonObjptrBytesPerElement
-    + (numObjptrs * OBJPTR_SIZE);
-
-  return a
-    + arrayIndex * bytesPerElement
-    + nonObjptrBytesPerElement
-    + pointerIndex * OBJPTR_SIZE;
+/* getArrayCounterp (p)
+ *
+ * Returns a pointer to the counter for the array pointed to by p.
+ */
+static inline GC_arrayCounter* getArrayCounterp (pointer a) {
+  return (GC_arrayCounter*)(a - GC_HEADER_SIZE 
+                            - GC_ARRAY_LENGTH_SIZE - GC_ARRAY_COUNTER_SIZE);
 }
-#endif
 
-/* The number of bytes in an array, not including the header. */
-static inline size_t arrayNumBytes (GC_state s,
-                                    pointer p, 
-                                    uint16_t numNonObjptrs,
-                                    uint16_t numObjptrs) {
-  size_t bytesPerElement;
-  GC_arrayLength numElements;
-  size_t result;
-        
-  numElements = getArrayLength (p);
-  bytesPerElement = 
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
-    + (numObjptrs * OBJPTR_SIZE);
-  result = numElements * bytesPerElement;
-  /* Empty arrays have OBJPTR_SIZE bytes for the forwarding pointer. */
-  if (0 == result) 
-    result = OBJPTR_SIZE;
-  return pad (s, result, GC_ARRAY_HEADER_SIZE);
+/* getArrayCounter (p)
+ *
+ * Returns the counter for the array pointed to by p.
+ */
+static inline GC_arrayCounter getArrayCounter (pointer a) {
+  return *(getArrayCounterp (a));
 }

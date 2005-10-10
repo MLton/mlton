@@ -38,7 +38,7 @@ static pointer newObject (GC_state s,
   *(GC_header*)(frontier) = header;
   result = frontier + GC_NORMAL_HEADER_SIZE;
   if (DEBUG)
-    fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %zd, %s)\n",
+    fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %zu, %s)\n",
              (uintptr_t)result,
              header, 
              bytesRequested,
@@ -51,7 +51,7 @@ static GC_stack newStack (GC_state s,
                           bool allocInOldGen) {
   GC_stack stack;
 
-  reserved = stackReserved (s, reserved);
+  reserved = alignStackReserved (s, reserved);
   if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
     s->cumulativeStatistics.maxStackSizeSeen = reserved;
   stack = (GC_stack) newObject (s, GC_STACK_HEADER, 
@@ -60,7 +60,7 @@ static GC_stack newStack (GC_state s,
   stack->reserved = reserved;
   stack->used = 0;
   if (DEBUG_STACKS)
-    fprintf (stderr, FMTPTR " = newStack (%zd)\n", 
+    fprintf (stderr, FMTPTR " = newStack (%zu)\n", 
              (uintptr_t)stack, 
              reserved);
   return stack;

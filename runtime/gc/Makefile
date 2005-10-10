@@ -49,7 +49,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CWFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter \
+CWFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wformat-nonliteral \
 	-Wuninitialized -Winit-self \
 	-Wstrict-aliasing=2 \
@@ -77,25 +77,31 @@ CFILES = 								\
 	debug.c								\
 	align.c								\
 	virtual-memory.c						\
+	rusage.c							\
+	pointer_predicates.c						\
 	pointer.c							\
+	model_predicates.c						\
 	model.c								\
 	object.c							\
 	array.c								\
 	object_size.c							\
 	frame.c								\
+	stack_predicates.c						\
 	stack.c								\
 	thread.c							\
 	generational.c							\
-	heap.c   							\
+	heap_predicates.c						\
+	heap.c								\
 	gc_state.c   							\
 	new_object.c   							\
-	ratios.c   							\
+	ratios_predicates.c						\
 	current.c   							\
 	foreach.c							\
 	atomic.c							\
 	invariant.c   							\
 	enter_leave.c							\
 	cheney-copy.c							\
+	dfs-mark.c							\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -116,10 +122,11 @@ HFILES = 								\
 	major.h								\
 	generational.h							\
 	statistics.h							\
-	control.h							\
+	controls.h							\
 	sysvals.h							\
 	ratios.h							\
 	gc_state.h							\
+	hash-cons.h							\
 	profile.h							\
 	gc_suffix.h
 

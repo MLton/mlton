@@ -6,7 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-
 static char* objectTypeTagToString (GC_objectTypeTag tag) {
   switch (tag) {
   case ARRAY_TAG:
@@ -25,16 +24,16 @@ static char* objectTypeTagToString (GC_objectTypeTag tag) {
 /*
  * Build the header for an object, given the index to its type info.
  */
-static inline GC_header GC_objectHeader (uint32_t t) {
+static inline GC_header objectHeader (uint32_t t) {
         assert (t < TWOPOWER (TYPE_INDEX_BITS));
         return 1 | (t << 1);
 }
 
-#define GC_STACK_HEADER GC_objectHeader (STACK_TYPE_INDEX)
-#define GC_STRING_HEADER GC_objectHeader (STRING_TYPE_INDEX)
-#define GC_THREAD_HEADER GC_objectHeader (THREAD_TYPE_INDEX)
-#define GC_WEAK_GONE_HEADER GC_objectHeader (WEAK_GONE_TYPE_INDEX)
-#define GC_WORD8_VECTOR_HEADER GC_objectHeader (WORD8_TYPE_INDEX)
+#define GC_STACK_HEADER objectHeader (STACK_TYPE_INDEX)
+#define GC_STRING_HEADER objectHeader (STRING_TYPE_INDEX)
+#define GC_THREAD_HEADER objectHeader (THREAD_TYPE_INDEX)
+#define GC_WEAK_GONE_HEADER objectHeader (WEAK_GONE_TYPE_INDEX)
+#define GC_WORD8_VECTOR_HEADER objectHeader (WORD8_TYPE_INDEX)
 
 static inline void splitHeader(GC_state s, GC_header header,
                                GC_objectTypeTag *tagRet, bool *hasIdentityRet,
@@ -72,20 +71,6 @@ static inline void splitHeader(GC_state s, GC_header header,
     *numNonObjptrsRet = numNonObjptrs;
   if (numObjptrsRet != NULL)
     *numObjptrsRet = numObjptrs;
-}
-
-static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs, 
-                                           GC_objectTypeTag tag) {
-  switch (tag) {
-  case ARRAY_TAG:
-    return (size_t)(numNonObjptrs);
-  case NORMAL_TAG:
-    return (size_t)(numNonObjptrs) * 4;
-  case WEAK_TAG:
-    return (size_t)(numNonObjptrs) * 4;
-  default:
-    die ("bad tag %u", tag);
-  }
 }
 
 /* objectData (s, p)
