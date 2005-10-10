@@ -119,7 +119,7 @@ markNext:
   assert (nextHeaderp == getHeaderp (next));
   assert (nextHeader == getHeader (next));
   // assert (*(pointer*) todo == next);
-  assert (fetchObjptrFromPointer (todo, s->heap.start) == next);
+  assert (fetchObjptrToPointer (todo, s->heap.start) == next);
   headerp = nextHeaderp;
   header = nextHeader;
   // *(pointer*)todo = prev;

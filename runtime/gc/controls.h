@@ -9,6 +9,6 @@
 struct GC_controls {
   size_t fixedHeap; /* If 0, then no fixed heap. */
   size_t maxHeap; /* if zero, then unlimited, else limit total heap */
-  bool messages;
-  bool summary;
+  bool messages; /* Print a message at the start and end of each gc. */
+  bool summary; /* Print a summary of gc info when program exits. */
 };
