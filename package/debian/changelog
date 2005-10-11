@@ -1,3 +1,9 @@
+mlton (20050930-1) unstable; urgency=low
+
+  * Fixed postinst problem.  closes: #329692
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Fri, 30 Sep 2005 09:19:50 -0700
+
 mlton (20050906-1) unstable; urgency=low
 
   * Replaces -mv8 with -mcpu=v8 for Sparc.
