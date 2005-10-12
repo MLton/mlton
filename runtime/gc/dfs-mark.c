@@ -163,7 +163,7 @@ normalDone:
     index = 0;
 markInNormal:
     if (DEBUG_MARK_COMPACT)
-      fprintf (stderr, "markInNormal  index = %d\n", index);
+      fprintf (stderr, "markInNormal  index = %"PRIu32"\n", index);
     assert (index < numObjptrs);
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
@@ -218,7 +218,7 @@ markArrayElt:
     todo += numNonObjptrsToBytes (numNonObjptrs, ARRAY_TAG);
 markInArray:
     if (DEBUG_MARK_COMPACT)
-      fprintf (stderr, "markInArray arrayIndex = %u index = %u\n",
+      fprintf (stderr, "markInArray arrayIndex = %"PRIu32" index = %"PRIu32"\n",
                arrayIndex, index);
     assert (arrayIndex < getArrayLength (cur));
     assert (index < numObjptrs);

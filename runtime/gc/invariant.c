@@ -83,7 +83,7 @@ static bool invariant (GC_state s) {
 
 static bool mutatorFrontierInvariant (GC_state s) {
   GC_thread ct = currentThread(s);
-  return (ct->bytesNeeded <= s->limitPlusSlop - s->frontier);
+  return (ct->bytesNeeded <= (size_t)(s->limitPlusSlop - s->frontier));
 }
 
 static bool mutatorStackInvariant (GC_state s) {
