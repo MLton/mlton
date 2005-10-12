@@ -21,7 +21,6 @@ all:	$(NAME)
 $(NAME): $(NAME).mlb $(shell PATH=$(BIN):$$PATH && $(MLTON) -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	$(MLTON) $(FLAGS) $(NAME).mlb
-	size $(NAME)
 
 $(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
 	mlton -stop sml $(NAME).cm

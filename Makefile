@@ -389,7 +389,7 @@ install-no-docs:
 		cd $(TMAN) && $(GZIP) $(MAN_PAGES);			\
 	fi
 	case "$(TARGET_OS)" in						\
-	darwin|solaris)							\
+	cygwin|darwin|solaris)						\
 	;;								\
 	*)								\
 		for f in $(TLIB)/$(AOUT) $(TBIN)/$(LEX)			\

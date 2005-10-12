@@ -4430,7 +4430,7 @@ int GC_init (GC_state s, int argc, char **argv) {
                                 s->alignment));
         assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak),
                                 s->alignment));
-        MLton_Platform_CygwinUseMmap = FALSE;
+        MLton_Platform_CygwinUseMmap = TRUE;
         s->amInGC = TRUE;
         s->amInMinorGC = FALSE;
         s->bytesAllocated = 0;

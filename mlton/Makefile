@@ -74,7 +74,6 @@ $(AOUT): $(SOURCES)
 	$(MAKE) $(UP)
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(FILE)
-	size $(AOUT)
 
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
