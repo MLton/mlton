@@ -14,19 +14,31 @@ structure MLtonExn =
       val addExnMessager = General.addExnMessager
 
       val history: t -> string list =
-         if keepHistory
-            then (setInitExtra (NONE: extra)
-                  ; setExtendExtra (fn e =>
-                                    case e of
-                                       NONE => SOME (MLtonCallStack.current ())
-                                     | SOME _ => e)
-                  ; fn e => (case extra e of
-                                NONE => []
-                              | SOME cs =>
-                                   (* The tl gets rid of the anonymous function
-                                    * passed to setExtendExtra above.
-                                    *)
-                                   tl (MLtonCallStack.toStrings cs)))
+         if keepHistory then
+            (setInitExtra (NONE: extra)
+             ; setExtendExtra (fn e =>
+                               case e of
+                                  NONE => SOME (MLtonCallStack.current ())
+                                | SOME _ => e)
+             ; (fn e =>
+                case extra e of
+                   NONE => []
+                 | SOME cs =>
+                      let
+                         (* Gets rid of the anonymous function passed to
+                          * setExtendExtra above.
+                          *)
+                         fun loop xs =
+                            case xs of
+                               [] => []
+                             | x :: xs =>
+                                  if String.isPrefix "MLtonExn.fn " x then
+                                     xs
+                                  else
+                                     loop xs
+                      in
+                         loop (MLtonCallStack.toStrings cs)
+                      end))
          else fn _ => []
 
       local
