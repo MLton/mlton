@@ -159,33 +159,26 @@ freebsd:
 			      # vvvv do not change make to $(MAKE)
 	cd $(BSDSRC)/freebsd && make build-package  
 
+LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
+
 .PHONY: libraries-no-check
 libraries-no-check:
 	mkdir -p $(LIB)/sml
-	cd $(LIB)/sml && rm -rf mlyacc-lib
-	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
-	find $(LIB)/sml/mlyacc -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/mlyacc -type f -name .ignore | xargs rm -rf
-	cd $(LIB)/sml && rm -rf cml
-	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
-	find $(LIB)/sml/cml -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/cml -type f -name .ignore | xargs rm -rf
-	cd $(LIB)/sml && rm -rf smlnj-lib
-	$(MAKE) -C $(SRC)/lib/smlnj-lib
-	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
-	cd $(LIB)/sml && rm -rf ckit-lib
+	cd $(LIB)/sml && rm -rf $(LIBRARIES)
 	$(MAKE) -C $(SRC)/lib/ckit-lib
+	$(MAKE) -C $(SRC)/lib/smlnj-lib
+	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
-	cd $(LIB)/sml && rm -rf mlnlffi-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
-	find $(LIB)/sml/mlnlffi-lib -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/mlnlffi-lib -type f -name .ignore | xargs rm -rf
-
+	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
+	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
+	find $(LIB)/sml -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml -type f -name .ignore | xargs rm -rf
 
 .PHONY: libraries
 libraries:
 	$(MAKE) libraries-no-check
-	for f in mlyacc-lib cml smlnj-lib ckit-lib mlnlffi-lib; do	\
+	for f in $(LIBRARIES); do				\
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
