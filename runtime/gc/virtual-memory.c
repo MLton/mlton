@@ -29,3 +29,22 @@ void *GC_mmapAnon_safe (pointer p, size_t length) {
   }
   return result;
 }
+
+void *calloc_safe (size_t count, size_t size) {
+  void *res;
+  
+  res = calloc (count, size);
+  if (NULL == res)
+    die ("calloc (%zu, %zu) failed.\n", 
+         count, size);
+  return res;
+}
+
+void *malloc_safe (size_t size) {
+  void *res;
+  
+  res = malloc (size);
+  if (NULL == res)
+    die ("malloc (%zu) failed.\n", size);
+  return res;
+}

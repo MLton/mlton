@@ -22,6 +22,7 @@ typedef struct GC_state {
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
+  GC_objectHashTable objectHashTable;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);

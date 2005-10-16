@@ -11,6 +11,9 @@
 /* ---------------------------------------------------------------- */
 
 typedef uint32_t GC_hash;
+#define GC_HASH_SIZE sizeof(GC_hash)
+#define PRIxHASH PRIx32
+#define FMTHASH "0x%08"PRIxHASH
 
 typedef struct GC_objectHashElement {
   GC_hash hash;
@@ -20,14 +23,14 @@ typedef struct GC_objectHashElement {
 typedef struct GC_objectHashTable {
   struct GC_objectHashElement *elements;
   bool elementsIsInHeap;
-  size_t elementsSize;
-  int log2ElementsSize;
+  uint32_t elementsLengthCur;
+  uint32_t elementsLengthMax;
+  uint32_t elementsLengthMaxLog2;
   bool mayInsert;
-  int32_t numElements;
-} *GC_ObjectHashTable;
+} *GC_objectHashTable;
 
-pointer hashCons (GC_state s, pointer object,
-                  bool countBytesHashConsed);
+/*
 void maybeShareObjptr (GC_state s,
                        objptr *opp,
                        bool shouldHashCons);
+*/

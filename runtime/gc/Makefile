@@ -101,7 +101,9 @@ CFILES = 								\
 	invariant.c   							\
 	enter_leave.c							\
 	cheney-copy.c							\
+	hash-cons.c							\
 	dfs-mark.c							\
+	share.c								\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -125,8 +127,8 @@ HFILES = 								\
 	controls.h							\
 	sysvals.h							\
 	ratios.h							\
-	gc_state.h							\
 	hash-cons.h							\
+	gc_state.h							\
 	profile.h							\
 	gc_suffix.h
 
