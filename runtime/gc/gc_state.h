@@ -16,6 +16,7 @@ typedef struct GC_state {
   struct GC_generationalMaps generationalMaps;
   objptr *globals;
   uint32_t globalsLength;
+  /*Bool*/bool hashConsDuringGC;
   struct GC_heap heap;
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limit; /* limit = heap.start + heap.totalBytes */

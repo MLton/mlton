@@ -104,6 +104,7 @@ CFILES = 								\
 	hash-cons.c							\
 	dfs-mark.c							\
 	share.c								\
+	mark-compact.c							\
 	assumptions.c							\
 	gc_suffix.c
 
