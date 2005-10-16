@@ -127,7 +127,139 @@ static bool heapCreate (GC_state s, GC_heap h,
   return FALSE;
 }
 
+/* heapRemap (s, h, desiredSize, minSize)
+ */
+static bool heapRemap (GC_state s, GC_heap h, 
+                       size_t desiredSize, 
+                       size_t minSize) {
+  size_t backoff;
+  size_t size;
 
+#if not HAS_REMAP
+  return FALSE;
+#endif
+  assert (minSize <= desiredSize);
+  assert (desiredSize >= h->size);
+  desiredSize = align (desiredSize, s->sysvals.pageSize);
+  backoff = (desiredSize - minSize) / 20;
+  if (0 == backoff)
+    backoff = 1; /* enough to terminate the loop below */
+  backoff = align (backoff, s->sysvals.pageSize);
+  for (size = desiredSize; size >= minSize; size -= backoff) {
+    pointer new;
+
+    new = GC_mremap (h->start, h->size, size);
+    unless ((void*)-1 == new) {
+      h->start = new;
+      h->size = size;
+      if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
+        s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+      assert (minSize <= h->size and h->size <= desiredSize);
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+enum {
+  COPY_CHUNK_SIZE = 0x2000000, /* 32M */
+};
+
+/* heapGrow (s, desiredSize, minSize)
+ */
+static void heapGrow (GC_state s, size_t desiredSize, size_t minSize) {
+  GC_heap curHeapp;
+  struct GC_heap newHeap;
+
+  pointer orig;
+  size_t size;
+
+  curHeapp = &s->heap;
+  assert (desiredSize >= s->heap.size);
+  if (DEBUG_RESIZING)
+    fprintf (stderr, "Growing heap at "FMTPTR" of size %zu to %zu bytes.\n",
+             (uintptr_t)s->heap.start,
+             /*uintToCommaString*/(s->heap.size),
+             /*uintToCommaString*/(desiredSize));
+  orig = curHeapp->start;
+  size = curHeapp->oldGenSize;
+  assert (size <= s->heap.size);
+  if (heapRemap (s, curHeapp, desiredSize, minSize))
+    goto done;
+  heapShrink (s, curHeapp, size);
+  heapInit (&newHeap);
+  /* Allocate a space of the desired size. */
+  if (heapCreate (s, &newHeap, desiredSize, minSize)) {
+    pointer from;
+    pointer to;
+    size_t remaining;
+
+    from = curHeapp->start + size;
+    to = newHeap.start + size;
+    remaining = size;
+copy:                   
+    assert (remaining == (size_t)(from - curHeapp->start)
+            and from >= curHeapp->start
+            and to >= newHeap.start);
+    if (remaining < COPY_CHUNK_SIZE) {
+      GC_memcpy (orig, newHeap.start, remaining);
+    } else {
+      remaining -= COPY_CHUNK_SIZE;
+      from -= COPY_CHUNK_SIZE;
+      to -= COPY_CHUNK_SIZE;
+      GC_memcpy (from, to, COPY_CHUNK_SIZE);
+      heapShrink (s, curHeapp, remaining);
+      goto copy;
+    }
+    heapRelease (s, curHeapp);
+    *curHeapp = newHeap;
+  } else {
+    /* Write the heap to a file and try again. */
+    int fd;
+    FILE *stream;
+    char template[80];
+    char *tmpDefault;
+    char *tmpDir;
+    char *tmpVar;
+    
+#if (defined (__MSVCRT__))
+    tmpVar = "TEMP";
+    tmpDefault = "C:/WINNT/TEMP";
+#else
+    tmpVar = "TMPDIR";
+    tmpDefault = "/tmp";
+#endif
+    tmpDir = getenv (tmpVar);
+    strcpy (template, (NULL == tmpDir) ? tmpDefault : tmpDir);
+    strcat (template, "/FromSpaceXXXXXX");
+    fd = mkstemp_safe (template);
+    close_safe (fd);
+    if (s->controls.messages)
+      fprintf (stderr, "Paging heap from "FMTPTR" to %s.\n", 
+               (uintptr_t)orig, template);
+    stream = fopen_safe (template, "wb");
+    fwrite_safe (orig, 1, size, stream);
+    fclose_safe (stream);
+    heapRelease (s, curHeapp);
+    if (heapCreate (s, curHeapp, desiredSize, minSize)) {
+      stream = fopen_safe (template, "rb");
+      fread_safe (curHeapp->start, 1, size, stream);
+      fclose_safe (stream);
+      unlink_safe (template);
+    } else {
+      unlink_safe (template);
+      if (s->controls.messages)
+        showMem ();
+      die ("Out of memory.  Unable to allocate %zu bytes.\n",
+           /*uintToCommaString*/(minSize));
+    }
+  }
+done:
+  unless (orig == s->heap.start) {
+    translateHeap (s, orig, s->heap.start, s->heap.oldGenSize);
+    setCardMapAbsolute (s);
+  }
+}
 
 /* heapDesiredSize (s, l, cs) 
  *

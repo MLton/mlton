@@ -31,7 +31,7 @@ static void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
   pointer limit;
 
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Translating heap of size %zd from "FMTPTR" to "FMTPTR".\n",
+    fprintf (stderr, "Translating heap of size %zu from "FMTPTR" to "FMTPTR".\n",
              /*uintToCommaString*/(size),
              (uintptr_t)from, (uintptr_t)to);
   if (from == to)

@@ -14,5 +14,6 @@ void showMem (void);
 void *GC_mmapAnon (void *start, size_t length);
 void *GC_mmap (void *start, size_t length);
 void GC_munmap (void *start, size_t length);
+void *GC_mremap (void *start, size_t oldLength, size_t newLength);
 void GC_release (void *base, size_t length);
 void GC_decommit (void *base, size_t length);

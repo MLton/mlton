@@ -74,6 +74,7 @@ DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 CFILES = 								\
 	gc_prefix.c							\
 	util.c								\
+	safe.c								\
 	debug.c								\
 	align.c								\
 	virtual-memory.c						\
@@ -89,6 +90,8 @@ CFILES = 								\
 	stack_predicates.c						\
 	stack.c								\
 	thread.c							\
+	foreach.c							\
+	translate.c							\
 	generational.c							\
 	heap_predicates.c						\
 	heap.c								\
@@ -96,7 +99,6 @@ CFILES = 								\
 	new_object.c   							\
 	ratios_predicates.c						\
 	current.c   							\
-	foreach.c							\
 	atomic.c							\
 	invariant.c   							\
 	enter_leave.c							\
@@ -105,7 +107,6 @@ CFILES = 								\
 	dfs-mark.c							\
 	share.c								\
 	mark-compact.c							\
-	translate.c							\
 	assumptions.c							\
 	gc_suffix.c
 
