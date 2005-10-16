@@ -105,6 +105,7 @@ CFILES = 								\
 	dfs-mark.c							\
 	share.c								\
 	mark-compact.c							\
+	translate.c							\
 	assumptions.c							\
 	gc_suffix.c
 

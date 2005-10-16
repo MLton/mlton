@@ -94,7 +94,8 @@ static void destroyHashTable (GC_objectHashTable t) {
 }
 
 static inline pointer 
-tableInsert (GC_state s, GC_objectHashTable t, 
+tableInsert (__attribute__ ((unused)) GC_state s, 
+             GC_objectHashTable t, 
              GC_hash hash, pointer object,
              bool mightBeThere, GC_header header, GC_objectTypeTag tag, pointer max) {
   static bool init = FALSE;

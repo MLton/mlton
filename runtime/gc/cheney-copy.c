@@ -38,7 +38,7 @@ static inline bool objptrIsInToSpace (objptr op) {
   return pointerIsInToSpace (p);
 }
 
-static void forward (GC_state s, objptr *opp) {
+static void forwardObjptr (GC_state s, objptr *opp) {
   objptr op;
   pointer p;
   GC_header header;
@@ -47,7 +47,7 @@ static void forward (GC_state s, objptr *opp) {
   p = objptrToPointer (op, s->heap.start);
   if (DEBUG_DETAILED)
     fprintf (stderr,
-             "forward  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             "forwardObjptr  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
   assert (objptrIsInFromSpace (s, *opp));
   header = getHeader (p);
@@ -213,8 +213,8 @@ static void majorCheneyCopyGC (GC_state s) {
   assert (s->secondaryHeap.size >= s->heap.oldGenSize);
   toStart = alignFrontier (s, s->secondaryHeap.start);
   forwardState.back = toStart;
-  foreachGlobalObjptr (s, forward);
-  foreachObjptrInRange (s, toStart, &forwardState.back, TRUE, forward);
+  foreachGlobalObjptr (s, forwardObjptr);
+  foreachObjptrInRange (s, toStart, &forwardState.back, TRUE, forwardObjptr);
   updateWeaks (s);
   s->secondaryHeap.oldGenSize = forwardState.back - s->secondaryHeap.start;
   s->cumulativeStatistics.bytesCopied += s->secondaryHeap.oldGenSize;
@@ -234,7 +234,7 @@ static void majorCheneyCopyGC (GC_state s) {
 /*                 Minor Cheney Copying Collection                  */
 /* ---------------------------------------------------------------- */
 
-static inline void forwardIfInNursery (GC_state s, objptr *opp) {
+static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
   objptr op;
   pointer p;
 
@@ -244,10 +244,10 @@ static inline void forwardIfInNursery (GC_state s, objptr *opp) {
     return;
   if (DEBUG_GENERATIONAL)
     fprintf (stderr,
-             "forwardIfInNursery  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             "forwardObjptrIfInNursery  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
   assert (s->heap.nursery <= p and p < s->limitPlusSlop);
-  forward (s, opp);
+  forwardObjptr (s, opp);
 }
 
 /* Walk through all the cards and forward all intergenerational pointers. */
@@ -312,7 +312,7 @@ skipObjects:
      * weaks, since the weak pointer will never be into the nursery.
      */
     objectStart = foreachObjptrInRange (s, objectStart, &cardEnd, 
-                                        FALSE, forwardIfInNursery);
+                                        FALSE, forwardObjptrIfInNursery);
     s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
     if (objectStart == oldGenEnd)
       goto done;
@@ -373,10 +373,10 @@ static void minorGC (GC_state s) {
     /* Forward all globals.  Would like to avoid doing this once all
      * the globals have been assigned.
      */
-    foreachGlobalObjptr (s, forwardIfInNursery);
+    foreachGlobalObjptr (s, forwardObjptrIfInNursery);
     forwardInterGenerationalObjptrs (s);
     foreachObjptrInRange (s, forwardState.toStart, &forwardState.back, 
-                          TRUE, forwardIfInNursery);
+                          TRUE, forwardObjptrIfInNursery);
     updateWeaks (s);
     bytesCopied = forwardState.back - forwardState.toStart;
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
