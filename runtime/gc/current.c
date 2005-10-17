@@ -29,6 +29,8 @@ static inline size_t currentStackUsed (GC_state s) {
   return s->stackTop - s->stackBottom;
 }
 
+
+
 static void setCurrentStack (GC_state s) {
   GC_thread thread;
   GC_stack stack;

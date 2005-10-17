@@ -405,3 +405,58 @@ static void heapSetNursery (GC_state s,
   assert (heapHasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
+/* heapResize (s, minSize)
+ */
+static void heapResize (GC_state s, size_t minSize) {
+  size_t desiredSize;
+
+  if (DEBUG_RESIZING)
+    fprintf (stderr, "heapResize  minSize = %zu  size = %zu\n",
+             /*ullongToCommaString*/(minSize), 
+             /*uintToCommaString*/(s->heap.size));
+  desiredSize = heapDesiredSize (s, minSize, s->heap.size);
+  assert (minSize <= desiredSize);
+  if (desiredSize <= s->heap.size)
+    heapShrink (s, &s->heap, desiredSize);
+  else {
+    heapRelease (s, &s->secondaryHeap);
+    heapGrow (s, desiredSize, minSize);
+  }
+  resizeCardMapAndCrossMap (s);
+  assert (s->heap.size >= minSize);
+}
+
+/* secondaryHeapResize (s)
+ */
+static void secondaryHeapResize (GC_state s) {
+  size_t primarySize;
+  size_t secondarySize;
+
+  primarySize = s->heap.size;
+  secondarySize = s->secondaryHeap.size;
+  if (DEBUG_RESIZING)
+    fprintf (stderr, "secondaryHeapResize\n");
+  if (0 == secondarySize)
+    return;
+  if (2 * primarySize > s->sysvals.ram)
+    /* Holding on to heap2 might cause paging.  So don't. */
+    heapRelease (s, &s->secondaryHeap);
+  else if (secondarySize < primarySize) {
+    unless (heapRemap (s, &s->secondaryHeap, primarySize, primarySize))
+      heapRelease (s, &s->secondaryHeap);
+  } else if (secondarySize > primarySize)
+    heapShrink (s, &s->secondaryHeap, primarySize);
+  assert (0 == s->secondaryHeap.size 
+          or s->heap.size == s->secondaryHeap.size);
+}
+
+/* secondaryHeapCreate (s, desiredSize)
+ */
+static bool secondaryHeapCreate (GC_state s, size_t desiredSize) {
+  if ((s->controls.fixedHeap > 0 
+       and s->heap.size + desiredSize > s->controls.fixedHeap)
+      or (s->controls.maxHeap > 0 
+          and s->heap.size + desiredSize > s->controls.maxHeap))
+    return FALSE;
+  return heapCreate (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
+}

@@ -75,10 +75,10 @@ CFILES = 								\
 	gc_prefix.c							\
 	util.c								\
 	safe.c								\
+	rusage.c							\
 	debug.c								\
 	align.c								\
 	virtual-memory.c						\
-	rusage.c							\
 	pointer_predicates.c						\
 	pointer.c							\
 	model_predicates.c						\
@@ -95,11 +95,11 @@ CFILES = 								\
 	generational.c							\
 	heap_predicates.c						\
 	heap.c								\
-	gc_state.c   							\
+	current.c   							\
 	new_object.c   							\
 	ratios_predicates.c						\
-	current.c   							\
 	atomic.c							\
+	gc_state.c   							\
 	invariant.c   							\
 	enter_leave.c							\
 	cheney-copy.c							\

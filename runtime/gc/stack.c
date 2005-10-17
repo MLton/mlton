@@ -96,3 +96,13 @@ static inline void stackCopy (GC_state s, GC_stack from, GC_stack to) {
              from->used);
   GC_memcpy (fromBottom, toBottom, from->used);
 }
+
+static inline size_t stackSizeTotalAligned (GC_state s, size_t reserved) {
+  size_t res;
+  
+  res = align (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved,
+               s->alignment);
+  if (DEBUG_STACKS)
+    fprintf (stderr, "%zu = stackSizeTotalAligned (%zu)\n", res, reserved);
+  return res;
+}

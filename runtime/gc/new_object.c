@@ -55,7 +55,7 @@ static GC_stack newStack (GC_state s,
   if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
     s->cumulativeStatistics.maxStackSizeSeen = reserved;
   stack = (GC_stack) newObject (s, GC_STACK_HEADER, 
-                                stackNumBytes (s, reserved),
+                                stackSizeTotalAligned (s, reserved),
                                 allocInOldGen);
   stack->reserved = reserved;
   stack->used = 0;
@@ -64,4 +64,24 @@ static GC_stack newStack (GC_state s,
              (uintptr_t)stack, 
              reserved);
   return stack;
+}
+
+static inline size_t stackGrowSize (GC_state s) {
+  return max (2 * currentThreadStack(s)->reserved,
+              stackMinimumReserved (s, currentThreadStack(s)));
+}
+
+static void stackGrow (GC_state s) {
+  size_t size;
+  GC_stack stack;
+
+  size = stackGrowSize (s);
+  if (DEBUG_STACKS or s->controls.messages)
+    fprintf (stderr, "Growing stack to size %zu.\n",
+             /*uintToCommaString*/(stackSizeTotalAligned (s, size)));
+  assert (heapHasBytesFree (s, stackSizeTotalAligned (s, size), 0));
+  stack = newStack (s, size, TRUE);
+  stackCopy (s, currentThreadStack(s), stack);
+  currentThread(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
+  markCard (s, objptrToPointer (currentThreadObjptr(s), s->heap.start));
 }

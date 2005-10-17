@@ -339,7 +339,7 @@ done:
     fprintf (stderr, "Forwarding inter-generational pointers done.\n");
 }
 
-static void minorGC (GC_state s) {
+static void minorCheneyCopyGC (GC_state s) {
   size_t bytesAllocated;
   size_t bytesCopied;
   struct rusage ru_start;
@@ -357,7 +357,7 @@ static void minorGC (GC_state s) {
     bytesCopied = 0;
   } else {
     if (DEBUG_GENERATIONAL or s->controls.messages)
-      fprintf (stderr, "Minor GC.\n");
+      fprintf (stderr, "Minor copying GC.\n");
     if (detailedGCTime (s))
       startTiming (&ru_start);
     s->amInMinorGC = TRUE;

@@ -20,6 +20,17 @@ static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs,
   }
 }
 
+static inline size_t normalSizeNoHeader (__attribute__ ((unused)) GC_state s,
+                                         uint16_t numNonObjptrs,
+                                         uint16_t numObjptrs) {
+  size_t result;
+
+  result = 
+    numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG)
+    + (numObjptrs * OBJPTR_SIZE);
+  return result;
+}
+
 static inline size_t arraySizeNoHeader (GC_state s,
                                         pointer p, 
                                         uint16_t numNonObjptrs,
@@ -39,6 +50,25 @@ static inline size_t arraySizeNoHeader (GC_state s,
   return pad (s, result, GC_ARRAY_HEADER_SIZE);
 }
 
+static inline size_t weakSizeNoHeader (__attribute__ ((unused)) GC_state s,
+                                       uint16_t numNonObjptrs,
+                                       uint16_t numObjptrs) {
+  size_t result;
+
+  result = 
+    numNonObjptrsToBytes (numNonObjptrs, WEAK_TAG)
+    + (numObjptrs * OBJPTR_SIZE);
+  return result;
+}
+
+static inline size_t stackSizeNoHeader (__attribute__ ((unused)) GC_state s,
+                                        pointer p) {
+  size_t result;
+
+  result = sizeof (struct GC_stack) + ((GC_stack)p)->reserved;
+  return result;
+}
+
 static inline size_t objectSize (GC_state s, pointer p) {
   size_t headerBytes, objectBytes;
   GC_header header;
@@ -47,34 +77,19 @@ static inline size_t objectSize (GC_state s, pointer p) {
   
   header = getHeader (p);
   splitHeader (s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
-  if (NORMAL_TAG == tag) { /* Fixed size object. */
+  if (NORMAL_TAG == tag) { 
     headerBytes = GC_NORMAL_HEADER_SIZE;
-    objectBytes = 
-      numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG)
-      + (numObjptrs * OBJPTR_SIZE);
+    objectBytes = normalSizeNoHeader (s, numNonObjptrs, numObjptrs);
   } else if (ARRAY_TAG == tag) {
     headerBytes = GC_ARRAY_HEADER_SIZE;
     objectBytes = arraySizeNoHeader (s, p, numNonObjptrs, numObjptrs);
   } else if (WEAK_TAG == tag) {
     headerBytes = GC_NORMAL_HEADER_SIZE;
-    objectBytes = 
-      numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG)
-      + (numObjptrs * OBJPTR_SIZE);
+    objectBytes = weakSizeNoHeader (s, numNonObjptrs, numObjptrs);
   } else { /* Stack. */
     assert (STACK_TAG == tag);
     headerBytes = GC_STACK_HEADER_SIZE;
-    objectBytes = sizeof (struct GC_stack) + ((GC_stack)p)->reserved;
+    objectBytes = stackSizeNoHeader (s, p);
   }
   return headerBytes + objectBytes;
-}
-
-
-static inline size_t stackNumBytes (GC_state s, size_t size) {
-  size_t res;
-  
-  res = align (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + size,
-               s->alignment);
-  if (DEBUG_STACKS)
-    fprintf (stderr, "%zu = stackNumBytes (%zu)\n", res, size);
-  return res;
 }
