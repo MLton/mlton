@@ -42,7 +42,7 @@ fun changeSize ((width : int), (height : int)) : unit =
 
 fun initialise () =
     (
-     glutInit;
+     glutInit();
      glutInitDisplayMode (GLUT_DOUBLE+GLUT_RGB);
      glutInitWindowSize 400 400;
      glutCreateWindow "Spinning Cube";

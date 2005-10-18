@@ -9,7 +9,7 @@ fun display () = (
 
 fun main () = 
 (
-         glutInit;
+         glutInit();
          glutCreateWindow "Short Test";
          glutDisplayFunc display;
          print("Click the close icon to close the window.");

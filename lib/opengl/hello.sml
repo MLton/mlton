@@ -64,7 +64,7 @@ fun display () =
 
 fun main () =
 ( 
-         glutInit;
+         glutInit();
          glutInitDisplayMode (GLUT_SINGLE + GLUT_RGB);
          glutInitWindowSize 200 200;
          glutCreateWindow "Font Test";

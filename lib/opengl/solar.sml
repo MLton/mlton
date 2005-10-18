@@ -29,7 +29,7 @@ fun changeSize ((width : int), (height : int)) : unit =
 
 fun initialise () =
     (
-     glutInit;
+     glutInit();
      glutInitDisplayMode (GLUT_DOUBLE + GLUT_RGB);
      glutInitWindowSize 200 200;
      glutCreateWindow "Solar";

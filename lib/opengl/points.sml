@@ -86,6 +86,7 @@ fun idleFunction () : unit =
 
 fun main () = 
     (
+     glutInit();
      glutInitDisplayMode (GLUT_DOUBLE + GLUT_RGBA);
      glutInitWindowSize 400 400;
      glutCreateWindow "Animating rectangle";
