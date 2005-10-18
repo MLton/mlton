@@ -1,5 +1,5 @@
 /* GLU-export.c */
-#include <GL/glu.h>
+#include "platform.h"
 #include "GLU_h.h"
 
 
