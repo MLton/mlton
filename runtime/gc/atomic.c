@@ -14,6 +14,7 @@ static inline void atomicBegin (GC_state s) {
 
 static inline void atomicEnd (GC_state s) {
   s->atomicState--;
-  if (0 == s->atomicState and s->signalIsPending)
+  if (0 == s->atomicState 
+      and s->signalsInfo.signalIsPending)
     s->limit = 0;
 }

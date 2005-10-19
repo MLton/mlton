@@ -77,7 +77,7 @@ static inline void startTiming (struct rusage *ru_start) {
   getrusage (RUSAGE_SELF, ru_start);
 }
 
-static uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
+static uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
   struct rusage ru_finish, ru_total;
 
   getrusage (RUSAGE_SELF, &ru_finish);

@@ -81,6 +81,8 @@ static bool invariant (GC_state s) {
   return TRUE;
 }
 
+#endif /* #if ASSERT */
+
 static bool mutatorFrontierInvariant (GC_state s) {
   GC_thread ct = currentThread(s);
   return (ct->bytesNeeded <= (size_t)(s->limitPlusSlop - s->frontier));
@@ -101,5 +103,3 @@ static bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
   assert (invariant (s));
   return TRUE;
 }
-
-#endif /* #if ASSERT */

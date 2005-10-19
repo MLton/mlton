@@ -127,6 +127,17 @@ static bool heapCreate (GC_state s, GC_heap h,
   return FALSE;
 }
 
+/* secondaryHeapCreate (s, desiredSize)
+ */
+static bool secondaryHeapCreate (GC_state s, size_t desiredSize) {
+  if ((s->controls.fixedHeap > 0 
+       and s->heap.size + desiredSize > s->controls.fixedHeap)
+      or (s->controls.maxHeap > 0 
+          and s->heap.size + desiredSize > s->controls.maxHeap))
+    return FALSE;
+  return heapCreate (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
+}
+
 /* heapRemap (s, h, desiredSize, minSize)
  */
 static bool heapRemap (GC_state s, GC_heap h, 
@@ -346,7 +357,7 @@ static void heapSetNursery (GC_state s,
   size_t nurserySize;
 
   if (DEBUG_DETAILED)
-    fprintf (stderr, "setNursery(%zu, %zu)\n",
+    fprintf (stderr, "heapSetNursery(%zu, %zu)\n",
              /*uintToCommaString*/(oldGenBytesRequested),
              /*uintToCommaString*/(nurseryBytesRequested));
   h = &s->heap;
@@ -448,15 +459,4 @@ static void secondaryHeapResize (GC_state s) {
     heapShrink (s, &s->secondaryHeap, primarySize);
   assert (0 == s->secondaryHeap.size 
           or s->heap.size == s->secondaryHeap.size);
-}
-
-/* secondaryHeapCreate (s, desiredSize)
- */
-static bool secondaryHeapCreate (GC_state s, size_t desiredSize) {
-  if ((s->controls.fixedHeap > 0 
-       and s->heap.size + desiredSize > s->controls.fixedHeap)
-      or (s->controls.maxHeap > 0 
-          and s->heap.size + desiredSize > s->controls.maxHeap))
-    return FALSE;
-  return heapCreate (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
 }

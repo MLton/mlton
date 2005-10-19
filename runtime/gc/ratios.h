@@ -14,6 +14,7 @@ struct GC_ratios {
   /* Minimum live ratio to use copying GC. */
   float copy; 
   float grow; 
+  float hashCons;
   /* Desired ratio of heap size to live data. */
   float live; 
   /* Minimum live ratio to us mark-compact GC. */

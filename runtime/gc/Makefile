@@ -107,6 +107,7 @@ CFILES = 								\
 	dfs-mark.c							\
 	share.c								\
 	mark-compact.c							\
+	garbage-collection.c						\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -131,8 +132,9 @@ HFILES = 								\
 	sysvals.h							\
 	ratios.h							\
 	hash-cons.h							\
+	profiling.h							\
+	signals.h							\
 	gc_state.h							\
-	profile.h							\
 	gc_suffix.h
 
 all: gc.o gc-gdb.o

@@ -1,8 +1,14 @@
+/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ */
 
-typedef struct GC_state {
+struct GC_state {
   size_t alignment; /* */
   bool amInGC;
-  bool amInMinorGC;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   bool canMinor; /* TRUE iff there is space for a minor gc. */
@@ -26,17 +32,19 @@ typedef struct GC_state {
   GC_objectHashTable objectHashTable;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
+  struct GC_profilingInfo profilingInfo;
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
   struct GC_ratios ratios;
+  bool rusageIsEnabled;
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
-  /*Bool*/bool signalIsPending;
+  struct GC_signalsInfo signalsInfo;
   pointer stackBottom; /* Bottom of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   pointer stackTop; /* Top of stack in current thread. */
   struct GC_sysvals sysvals;
   GC_weak weaks; /* Linked list of (live) weak pointers */
-} *GC_state;
+};

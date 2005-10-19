@@ -29,6 +29,7 @@ struct GC_cumulativeStatistics {
   uintmax_t numMarkCompactGCs;
   uintmax_t numMinorGCs;
 
+  uintmax_t maxPause;
   struct rusage ru_gc; /* total resource usage spent in gc */
   struct rusage ru_gcCopy; /* resource usage in major copying gcs. */
   struct rusage ru_gcMarkCompact; /* resource usage in mark-compact gcs. */

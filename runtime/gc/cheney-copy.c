@@ -18,6 +18,7 @@
  * It also updates the crossMap.
  */
 struct forwardState {
+  bool amInMinorGC;
   pointer back;
   pointer toStart;
   pointer toLimit;
@@ -127,7 +128,7 @@ static void forwardObjptr (GC_state s, objptr *opp) {
         fprintf (stderr, "forwarding weak "FMTPTR" ",
                  (uintptr_t)w);
       if (isObjptr (w->objptr)
-          and (not s->amInMinorGC
+          and (not forwardState.amInMinorGC
                or objptrIsInNursery (s, w->objptr))) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
@@ -193,6 +194,7 @@ static void majorCheneyCopyGC (GC_state s) {
   if (detailedGCTime (s))
     startTiming (&ru_start);
   s->cumulativeStatistics.numCopyingGCs++;
+  forwardState.amInMinorGC = FALSE;
   forwardState.toStart = s->secondaryHeap.start;
   forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
   if (DEBUG or s->controls.messages) {
@@ -360,7 +362,7 @@ static void minorCheneyCopyGC (GC_state s) {
       fprintf (stderr, "Minor copying GC.\n");
     if (detailedGCTime (s))
       startTiming (&ru_start);
-    s->amInMinorGC = TRUE;
+    forwardState.amInMinorGC = TRUE;
     forwardState.toStart = s->heap.start + s->heap.oldGenSize;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "toStart = "FMTPTR"\n", (uintptr_t)forwardState.toStart);
@@ -381,7 +383,6 @@ static void minorCheneyCopyGC (GC_state s) {
     bytesCopied = forwardState.back - forwardState.toStart;
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
-    s->amInMinorGC = FALSE;
     if (detailedGCTime (s))
       stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMinor);
     if (DEBUG_GENERATIONAL or s->controls.messages)
