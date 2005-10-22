@@ -62,11 +62,11 @@ CWFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wpacked \
 	-Wredundant-decls \
 	-Wnested-externs 
-##	-Wshadow
-##	-Wconversion 
-##	-Wmissing-prototypes
-##	-Wmissing-declarations
-##	-Winline -Wdisabled-optimization
+#	-Wshadow \
+#	-Wconversion \
+#	-Wmissing-prototypes \
+#	-Wmissing-declarations \
+#	-Winline -Wdisabled-optimization
 CFLAGS = -O2 $(CWFLAGS) -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 
@@ -96,7 +96,6 @@ CFILES = 								\
 	heap_predicates.c						\
 	heap.c								\
 	current.c   							\
-	new_object.c   							\
 	ratios_predicates.c						\
 	atomic.c							\
 	gc_state.c   							\
@@ -107,7 +106,10 @@ CFILES = 								\
 	dfs-mark.c							\
 	share.c								\
 	mark-compact.c							\
+	new_object.c   							\
 	garbage-collection.c						\
+	array-allocate.c						\
+	copy-thread.c							\
 	assumptions.c							\
 	gc_suffix.c
 

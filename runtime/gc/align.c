@@ -10,6 +10,10 @@ static inline bool isAligned (size_t a, size_t b) {
   return 0 == a % b;
 }
 
+static inline bool isAlignedMax (uintmax_t a, uintmax_t b) {
+  return 0 == a % b;
+}
+
 static inline size_t alignDown (size_t a, size_t b) {
   assert (b >= 1);
   a -= a % b;
@@ -18,6 +22,14 @@ static inline size_t alignDown (size_t a, size_t b) {
 }
 
 static inline size_t align (size_t a, size_t b) {
+  assert (b >= 1);
+  a += b - 1;
+  a -= a % b;
+  assert (isAligned (a, b));
+  return a;       
+}
+
+static inline uintmax_t alignMax (uintmax_t a, uintmax_t b) {
   assert (b >= 1);
   a += b - 1;
   a -= a % b;

@@ -1,0 +1,108 @@
+/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ */
+
+pointer GC_arrayAllocate (GC_state s, 
+                          size_t ensureBytesFree, 
+                          GC_arrayLength numElements, 
+                          GC_header header) {
+  uintmax_t arraySizeMax;
+  size_t arraySize;
+  size_t bytesPerElement;
+  uint16_t numNonObjptrs;
+  uint16_t numObjptrs;
+  pointer frontier;
+  pointer last;
+  pointer res;
+
+  splitHeader(s, header, NULL, NULL, &numNonObjptrs, &numObjptrs);
+  if (DEBUG)
+    fprintf (stderr, "GC_arrayAllocate (%zu, "FMTARRLEN", "FMTHDR")\n",
+             ensureBytesFree, numElements, header);
+  bytesPerElement = 
+    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
+    + (numObjptrs * OBJPTR_SIZE);
+  arraySizeMax = 
+    alignMax ((uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE,
+              s->alignment);
+  if (arraySizeMax >= (uintmax_t)SIZE_MAX)
+    die ("Out of memory: cannot allocate array with %"PRIuMAX" bytes.",
+         /*ullongToCommaString*/(arraySizeMax));
+  arraySize = (size_t)arraySizeMax;
+  if (arraySize < GC_ARRAY_HEADER_SIZE + WORD_SIZE)
+    /* Create space for forwarding pointer. */
+    arraySize = GC_ARRAY_HEADER_SIZE + WORD_SIZE;
+  if (DEBUG_ARRAY)
+    fprintf (stderr, "array with "FMTARRLEN" elts of size %zu and total size %zu.  Ensure %zu bytes free.\n",
+             numElements, bytesPerElement, 
+             /*uintToCommaString*/(arraySize),
+             /*uintToCommaString*/(ensureBytesFree));
+  if (arraySize >= s->controls.oldGenArraySize) {
+    enter (s);
+    doGC (s,  arraySize, ensureBytesFree, FALSE, TRUE);
+    leave (s);
+    frontier = s->heap.start + s->heap.oldGenSize;
+    last = frontier + arraySize;
+    s->heap.oldGenSize += arraySize;
+    s->cumulativeStatistics.bytesAllocated += arraySize;
+  } else {
+    size_t bytesRequested;
+    
+    bytesRequested = arraySize + ensureBytesFree;
+    if (bytesRequested > (size_t)(s->limitPlusSlop - s->frontier)) {
+      enter (s);
+      doGC (s, 0, bytesRequested, FALSE, TRUE);
+      leave (s);
+    }
+    frontier = s->frontier;
+    last = frontier + arraySize;
+    assert (isAlignedFrontier (s, last));
+    s->frontier = last;
+  }
+  *((GC_arrayCounter*)(frontier)) = 0;
+  frontier = frontier + GC_ARRAY_COUNTER_SIZE;
+  *((GC_arrayLength*)(frontier)) = numElements;
+  frontier = frontier + GC_ARRAY_LENGTH_SIZE;
+  *((GC_header*)(frontier)) = header;
+  frontier = frontier + GC_HEADER_SIZE;
+  res = frontier;
+  /* Initialize all pointers with BOGUS_OBJPTR. */
+  if (1 <= numObjptrs and 0 < numElements) {
+    pointer p;
+    
+    if (0 == numNonObjptrs)
+      for (p = frontier; 
+           p < last; 
+           p += OBJPTR_SIZE)
+        *((objptr*)p) = BOGUS_OBJPTR;
+    else
+      for (p = frontier; 
+           p < last; ) {
+        pointer next;
+        
+        p += numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
+        next = p + numObjptrs * OBJPTR_SIZE;
+        assert (next <= last);
+        while (p < next) {
+          *((objptr*)p) = BOGUS_OBJPTR;
+          p += OBJPTR_SIZE;
+        }
+      }
+  }
+  GC_profileAllocInc (s, arraySize);
+  if (DEBUG_ARRAY) {
+    fprintf (stderr, "GC_arrayAllocate done.  res = "FMTPTR"  frontier = "FMTPTR"\n",
+             (uintptr_t)res, (uintptr_t)s->frontier);
+    displayGCState (s, stderr);
+  }
+  assert (ensureBytesFree <= (size_t)(s->limitPlusSlop - s->frontier));
+  /* Unfortunately, the invariant isn't quite true here, because
+   * unless we did the GC, we never set s->currentThread->stack->used
+   * to reflect what the mutator did with stackTop.
+   */
+  return res;
+}       

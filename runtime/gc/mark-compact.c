@@ -10,25 +10,25 @@
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
 
-static inline void markGlobalTrue (GC_state s, objptr *opp) {
+static inline void dfsMarkTrue (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  mark (s, p, MARK_MODE, TRUE);
+  dfsMark (s, p, MARK_MODE, TRUE);
 }
 
-static inline void markGlobalFalse (GC_state s, objptr *opp) {
+static inline void dfsMarkFalse (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  mark (s, p, MARK_MODE, FALSE);
+  dfsMark (s, p, MARK_MODE, FALSE);
 }
 
-static inline void unmarkGlobal (GC_state s, objptr *opp) {
+static inline void dfsUnmark (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  mark (s, p, UNMARK_MODE, FALSE);
+  dfsMark (s, p, UNMARK_MODE, FALSE);
 }
 
 static inline void threadInternal (GC_state s, objptr *opp) {
@@ -284,10 +284,10 @@ static void majorMarkCompactGC (GC_state s) {
     s->cumulativeStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = newHashTable (s);
-    foreachGlobalObjptr (s, markGlobalTrue);
+    foreachGlobalObjptr (s, dfsMarkTrue);
     destroyHashTable (s->objectHashTable);
   } else {
-    foreachGlobalObjptr (s, markGlobalFalse);
+    foreachGlobalObjptr (s, dfsMarkFalse);
   }
 /*   foreachGlobal (s, threadInternal); */
 /*   updateForwardPointers (s); */

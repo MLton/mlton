@@ -57,7 +57,7 @@ static inline pointer arrayIndexAtPointer (GC_state s,
 }
 #endif
 
-/* mark (s, r, m, shc) 
+/* dfsMark (s, r, m, shc) 
  *
  * Sets all the mark bits in the object graph pointed to by r. 
  *
@@ -68,8 +68,8 @@ static inline pointer arrayIndexAtPointer (GC_state s,
  *
  * It returns the total size in bytes of the objects marked.
  */
-size_t mark (GC_state s, pointer root,
-             GC_markMode mode, bool shouldHashCons) {
+size_t dfsMark (GC_state s, pointer root,
+                GC_markMode mode, bool shouldHashCons) {
   GC_header mark; /* Used to set or clear the mark bit. */
   size_t size; /* Total number of bytes marked. */
   pointer cur; /* The current object being marked. */
