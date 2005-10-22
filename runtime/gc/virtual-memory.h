@@ -12,7 +12,11 @@
 void showMem (void);
 
 void *GC_mmapAnon (void *start, size_t length);
+void *GC_mmapAnon_safe (void *start, size_t length);
 void *GC_mmap (void *start, size_t length);
+void *GC_mmap_safe (void *start, size_t length);
+void *GC_mmap_safe_protect (void *start, size_t length, 
+                            size_t dead_low, size_t dead_high);
 void GC_munmap (void *start, size_t length);
 void *GC_mremap (void *start, size_t oldLength, size_t newLength);
 void GC_release (void *base, size_t length);

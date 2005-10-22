@@ -93,3 +93,5 @@ void GC_profileLeave (GC_state s);
 GC_profile GC_profileNew (GC_state s);
 
 void GC_profileWrite (GC_state s, GC_profile p, int fd);
+
+void showProf (GC_state s);

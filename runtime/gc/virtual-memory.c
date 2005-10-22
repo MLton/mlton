@@ -19,7 +19,7 @@ static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
   memcpy (dst, src, size);
 }
 
-void *GC_mmapAnon_safe (pointer p, size_t length) {
+void *GC_mmapAnon_safe (void *p, size_t length) {
   void *result;
 
   result = GC_mmapAnon (p, length);

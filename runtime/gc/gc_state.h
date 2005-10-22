@@ -9,6 +9,7 @@
 struct GC_state {
   size_t alignment; /* */
   bool amInGC;
+  bool amOriginal;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   bool canMinor; /* TRUE iff there is space for a minor gc. */
@@ -24,6 +25,8 @@ struct GC_state {
   uint32_t globalsLength;
   /*Bool*/bool hashConsDuringGC;
   struct GC_heap heap;
+  struct GC_intInfInit *intInfInits;
+  uint32_t intInfInitsLength;
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limit; /* limit = heap.start + heap.totalBytes */
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
@@ -46,5 +49,7 @@ struct GC_state {
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   pointer stackTop; /* Top of stack in current thread. */
   struct GC_sysvals sysvals;
+  struct GC_vectorInit *vectorInits;
+  uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };

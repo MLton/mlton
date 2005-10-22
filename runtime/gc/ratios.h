@@ -28,5 +28,6 @@ struct GC_ratios {
    * than nurseryRatio, use minor GCs.
    */
   float nursery; 
+  float ramSlop;
   float threadShrink; 
 };

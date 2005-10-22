@@ -110,6 +110,9 @@ CFILES = 								\
 	garbage-collection.c						\
 	array-allocate.c						\
 	copy-thread.c							\
+	init.c								\
+	pack.c								\
+	size.c								\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -136,6 +139,7 @@ HFILES = 								\
 	hash-cons.h							\
 	profiling.h							\
 	signals.h							\
+	init.h								\
 	gc_state.h							\
 	gc_suffix.h
 
