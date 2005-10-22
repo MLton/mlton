@@ -365,7 +365,7 @@ static void heapSetNursery (GC_state s,
   nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - LIMIT_SLOP;
-  assert (isAligned (nurserySize, WORD_SIZE)); // FIXME
+  assert (isAligned (nurserySize, POINTER_SIZE));
   if (/* The mutator marks cards. */
       s->mutatorMarksCards
       /* There is enough space in the nursery. */
@@ -393,7 +393,7 @@ static void heapSetNursery (GC_state s,
        )) {
     s->canMinor = TRUE;
     nurserySize /= 2;
-    while (not (isAligned (nurserySize, WORD_SIZE))) {
+    while (not (isAligned (nurserySize, POINTER_SIZE))) {
       nurserySize -= 2;
     }
     clearCardMap (s);

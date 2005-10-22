@@ -33,9 +33,9 @@ pointer GC_arrayAllocate (GC_state s,
     die ("Out of memory: cannot allocate array with %"PRIuMAX" bytes.",
          /*ullongToCommaString*/(arraySizeMax));
   arraySize = (size_t)arraySizeMax;
-  if (arraySize < GC_ARRAY_HEADER_SIZE + WORD_SIZE)
+  if (arraySize < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE)
     /* Create space for forwarding pointer. */
-    arraySize = GC_ARRAY_HEADER_SIZE + WORD_SIZE;
+    arraySize = GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE;
   if (DEBUG_ARRAY)
     fprintf (stderr, "array with "FMTARRLEN" elts of size %zu and total size %zu.  Ensure %zu bytes free.\n",
              numElements, bytesPerElement, 

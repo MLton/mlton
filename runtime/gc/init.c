@@ -97,7 +97,7 @@ static void setInitialBytesLive (GC_state s) {
     s->lastMajorStatistics.bytesLive +=
       align (GC_ARRAY_HEADER_SIZE
              + ((0 == numBytes)
-                ? WORD_SIZE
+                ? OBJPTR_SIZE
                 : numBytes),
              s->alignment);
   }
