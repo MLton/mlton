@@ -7,18 +7,20 @@
  */
 
 struct GC_signalsInfo {
-  bool amInSignalHandler;   /* TRUE iff a signal handler is running. */
+  /* TRUE iff a signal handler is running. */
+  bool amInSignalHandler;   
   bool gcSignalHandled;
   bool gcSignalPending;
-  volatile bool signalIsPending; /* TRUE iff a signal has been received 
-                                  * but not handled by the mutator.
-                                  */
-  /* signalsHandled is the set of signals for which a mutator signal
-   * handler needs to run in order to handle the signal.
+  /* TRUE iff a signal has been received but not handled by the
+   * mutator.
+   */
+  volatile bool signalIsPending; 
+  /* The signals for which a mutator signal handler needs to run in
+   * order to handle the signal.
    */
   sigset_t signalsHandled;
-  /* The signals that have been recieved but not processed by the mutator
-   * signal handler.
+  /* The signals that have been recieved but not processed by the
+   * mutator signal handler.
    */
   sigset_t signalsPending;
 };

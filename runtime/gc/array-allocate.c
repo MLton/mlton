@@ -75,23 +75,26 @@ pointer GC_arrayAllocate (GC_state s,
     pointer p;
     
     if (0 == numNonObjptrs)
-      for (p = frontier; 
-           p < last; 
-           p += OBJPTR_SIZE)
+      for (p = frontier; p < last; p += OBJPTR_SIZE)
         *((objptr*)p) = BOGUS_OBJPTR;
-    else
-      for (p = frontier; 
-           p < last; ) {
+    else {
+      /* Array with a mix of pointers and non-pointers. */
+      size_t nonObjptrBytes;
+      size_t objptrBytes;
+        
+      nonObjptrBytes = numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
+      objptrBytes = numObjptrs * OBJPTR_SIZE;
+
+      for (p = frontier; p < last; ) {
         pointer next;
         
-        p += numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
-        next = p + numObjptrs * OBJPTR_SIZE;
+        p += nonObjptrBytes;
+        next = p + objptrBytes;
         assert (next <= last);
-        while (p < next) {
+        for ( ; p < next; p += OBJPTR_SIZE)
           *((objptr*)p) = BOGUS_OBJPTR;
-          p += OBJPTR_SIZE;
-        }
       }
+    }
   }
   GC_profileAllocInc (s, arraySize);
   if (DEBUG_ARRAY) {

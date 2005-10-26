@@ -196,16 +196,16 @@ static void initVectors (GC_state s) {
   frontier = s->frontier;
   for (i = 0; i < s->vectorInitsLength; ++i) {
     size_t bytesPerElement;
-    size_t numBytes;
+    size_t dataBytes;
     size_t objectSize;
     uint32_t typeIndex;
 
     bytesPerElement = inits[i].bytesPerElement;
-    numBytes = bytesPerElement * inits[i].numElements;
+    dataBytes = bytesPerElement * inits[i].numElements;
     objectSize = align (GC_ARRAY_HEADER_SIZE
-                        + ((0 == numBytes)
+                        + ((0 == dataBytes)
                            ? POINTER_SIZE
-                           : numBytes),
+                           : dataBytes),
                         s->alignment);
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
     *((GC_arrayCounter*)(frontier)) = 0;
@@ -232,7 +232,7 @@ static void initVectors (GC_state s) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "allocated vector at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
-    GC_memcpy (inits[i].bytes, frontier, numBytes);
+    GC_memcpy (inits[i].bytes, frontier, dataBytes);
     frontier += objectSize - GC_ARRAY_HEADER_SIZE;
   }
   if (DEBUG_DETAILED)

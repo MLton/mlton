@@ -23,7 +23,6 @@ typedef struct GC_sourceLabel {
   uint32_t sourceSeqsIndex;
 } *GC_sourceLabel;
 
-
 /* If profileStack, then there is one struct GC_profileStack for each
  * function.
  */
@@ -47,15 +46,15 @@ typedef struct GC_profileStack {
   uintmax_t numOccurrences;
 } *GC_profileStack;
 
-/* GC_profile is used for both time and allocation profiling.
+/* GC_profileData is used for both time and allocation profiling.
  * In the comments below, "ticks" mean clock ticks with time profiling and
  * bytes allocated with allocation profiling.
  *
- * All of the arrays in GC_profile are of length sourcesSize + sourceNamesSize.
- * The first sourceSizes entries are for handling the duplicate copies of 
- * functions, and the next sourceNamesSize entries are for the master versions.
+ * All of the arrays in GC_profileData are of length sourcesSize + sourceNamesSize.
+ * The first sourceLength entries are for handling the duplicate copies of 
+ * functions, and the next sourceNamesLength entries are for the master versions.
  */
-typedef struct GC_profile {
+typedef struct GC_profileData {
   /* countTop is an array that counts for each function the number of
    * ticks that occurred while the function was on top of the stack.
    */
@@ -68,30 +67,45 @@ typedef struct GC_profile {
   uintmax_t total;
   /* The total number of GC ticks. */
   uintmax_t totalGC;
-} *GC_profile;
+} *GC_profileData;
 
-struct GC_profilingInfo {
+struct GC_profiling {
+  GC_profileData data;
+  /* frameSources is an array of cardinality frameLayoutsLength that
+   * for each stack frame, gives an index into sourceSeqs of the
+   * sequence of source functions corresponding to the frame.
+   */
+  uint32_t *frameSources;
+  uint32_t frameSourcesLength;
   bool isOn;
-  GC_profile profile;
   GC_profileKind kind;
+  struct GC_sourceLabel *sourceLabels;
+  uint32_t sourceLabelsLength;
+  char **sourceNames;
+  uint32_t sourceNamesLength;
+  /* Each entry in sourceSeqs is a vector, whose first element is a
+   * length, and subsequent elements index into sources.
+   */
+  uint32_t **sourceSeqs;
+  uint32_t sourceSeqsLength;
+  /* sources is an array of cardinality sourcesLength.  Each entry
+   * specifies an index into sourceNames and an index into sourceSeqs,
+   * giving the name of the function and the successors, respectively.
+   */
+  struct GC_source *sources;
+  uint32_t sourcesLength;
   bool stack;
+  pointer textEnd;
+  /* An array of indices, one entry for each address in the text
+   * segment, giving and index into sourceSeqs.
+   */
+  uint32_t *textSources;
+  pointer textStart;
 };
 
 
 void GC_profileAllocInc (GC_state s, size_t bytes);
 
-void GC_profileDone (GC_state s);
-
 void GC_profileEnter (GC_state s);
 
-void GC_profileFree (GC_state s, GC_profile p);
-
-void GC_profileInc (GC_state s, size_t bytes);
-
 void GC_profileLeave (GC_state s);
-
-GC_profile GC_profileNew (GC_state s);
-
-void GC_profileWrite (GC_state s, GC_profile p, int fd);
-
-void showProf (GC_state s);

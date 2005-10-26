@@ -75,6 +75,7 @@ CFILES = 								\
 	gc_prefix.c							\
 	util.c								\
 	safe.c								\
+	read_write.c							\
 	rusage.c							\
 	debug.c								\
 	align.c								\
@@ -90,12 +91,12 @@ CFILES = 								\
 	stack_predicates.c						\
 	stack.c								\
 	thread.c							\
+	generational.c							\
+	current.c   							\
 	foreach.c							\
 	translate.c							\
-	generational.c							\
 	heap_predicates.c						\
 	heap.c								\
-	current.c   							\
 	ratios_predicates.c						\
 	atomic.c							\
 	gc_state.c   							\
@@ -110,9 +111,10 @@ CFILES = 								\
 	garbage-collection.c						\
 	array-allocate.c						\
 	copy-thread.c							\
-	init.c								\
 	pack.c								\
 	size.c								\
+	profiling.c							\
+	init.c								\
 	assumptions.c							\
 	gc_suffix.c
 

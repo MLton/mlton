@@ -47,22 +47,22 @@ static void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
 }
 
 static inline void enterGC (GC_state s) {
-  if (s->profilingInfo.isOn) {
+  if (s->profiling.isOn) {
     /* We don't need to profileEnter for count profiling because it
      * has already bumped the counter.  If we did allow the bump, then
      * the count would look like function(s) had run an extra time.
      */  
-    if (s->profilingInfo.stack
-        and not (PROFILE_COUNT == s->profilingInfo.kind))
+    if (s->profiling.stack
+        and not (PROFILE_COUNT == s->profiling.kind))
       GC_profileEnter (s);
   }
   s->amInGC = TRUE;
 }
 
 static inline void leaveGC (GC_state s) {
-  if (s->profilingInfo.isOn) {
-    if (s->profilingInfo.stack
-        and not (PROFILE_COUNT == s->profilingInfo.kind))
+  if (s->profiling.isOn) {
+    if (s->profiling.stack
+        and not (PROFILE_COUNT == s->profiling.kind))
       GC_profileLeave (s);
   }
   s->amInGC = FALSE;

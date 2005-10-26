@@ -30,12 +30,13 @@ struct GC_state {
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limit; /* limit = heap.start + heap.totalBytes */
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+  uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
   GC_objectHashTable objectHashTable;
   GC_objectType *objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
-  struct GC_profilingInfo profilingInfo;
+  struct GC_profiling profiling;
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
   struct GC_ratios ratios;
   bool rusageIsEnabled;

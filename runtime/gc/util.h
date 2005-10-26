@@ -27,6 +27,7 @@
 #include <string.h>
 #include <math.h>
 
+#include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/resource.h>

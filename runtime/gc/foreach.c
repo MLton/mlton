@@ -81,7 +81,7 @@ static inline pointer foreachObjptrInObject (GC_state s,
   } else if (ARRAY_TAG == tag) {
     size_t bytesPerElement;
     size_t dataBytes;
-    pointer max;
+    pointer last;
     GC_arrayLength numElements;
     
     numElements = getArrayLength (p);
@@ -99,10 +99,10 @@ static inline pointer foreachObjptrInObject (GC_state s,
       /* No pointers to process. */
       ;
     else {
-      max = p + dataBytes;
+      last = p + dataBytes;
       if (0 == numNonObjptrs)
         /* Array with only pointers. */
-        for ( ; p < max; p += OBJPTR_SIZE)
+        for ( ; p < last; p += OBJPTR_SIZE)
           maybeCall (f, s, (objptr*)p);
       else {
         /* Array with a mix of pointers and non-pointers. */
@@ -113,18 +113,18 @@ static inline pointer foreachObjptrInObject (GC_state s,
         objptrBytes = numObjptrs * OBJPTR_SIZE;
 
         /* For each array element. */
-        while (p < max) {
-          pointer max2;
+        for ( ; p < last; ) {
+          pointer next;
           
           /* Skip the non-pointers. */
           p += nonObjptrBytes;
-          max2 = p + objptrBytes;
+          next = p + objptrBytes;
           /* For each internal pointer. */
-          for ( ; p < max2; p += OBJPTR_SIZE) 
+          for ( ; p < next; p += OBJPTR_SIZE) 
             maybeCall (f, s, (objptr*)p);
         }
       }
-      assert (p == max);
+      assert (p == last);
       p -= dataBytes;
     }
     p += pad (s, dataBytes, GC_ARRAY_HEADER_SIZE);
@@ -147,9 +147,9 @@ static inline pointer foreachObjptrInObject (GC_state s,
     assert (stack->used <= stack->reserved);
     while (top > bottom) {
       /* Invariant: top points just past a "return address". */
-      returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
+      returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
       if (DEBUG) {
-        fprintf (stderr, "  top = "FMTPTR"  return address = "FMTPTR"\n",
+        fprintf (stderr, "  top = "FMTPTR"  return address = "FMTRA"\n",
                  (uintptr_t)top, returnAddress);
       }
       frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
@@ -206,4 +206,38 @@ static inline pointer foreachObjptrInRange (GC_state s,
     b = *back;
   }
   return front;
+}
+
+
+typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i);
+
+/* Apply f to the frame index of each frame in the current thread's stack. */
+void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
+  pointer bottom;
+  GC_frameIndex index;
+  GC_frameLayout *layout;
+  GC_returnAddress returnAddress;
+  pointer top;
+
+  if (DEBUG_PROFILE)
+    fprintf (stderr, "foreachStackFrame\n");
+  bottom = stackBottom (s, currentThreadStack(s));
+  if (DEBUG_PROFILE)
+    fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR".\n",
+             (uintptr_t)bottom, (uintptr_t)s->stackTop);
+  for (top = s->stackTop; top > bottom; top -= layout->size) {
+    returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
+    index = getFrameIndexFromReturnAddress (s, returnAddress);
+    if (DEBUG_PROFILE)
+      fprintf (stderr, "top = "FMTPTR"  index = "FMTFI"\n",
+               (uintptr_t)top, index);
+    unless (index < s->frameLayoutsLength)
+      die ("top = "FMTPTR"  returnAddress = "FMTRA"  index = "FMTFI"\n",
+           (uintptr_t)top, (uintptr_t)returnAddress, index);
+    f (s, index);
+    layout = &(s->frameLayouts[index]);
+    assert (layout->size > 0);
+  }
+  if (DEBUG_PROFILE)
+    fprintf (stderr, "done foreachStackFrame\n");
 }
