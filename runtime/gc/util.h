@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 
 #include "../assert.h"
 
@@ -61,3 +62,6 @@ extern void die (char *fmt, ...)
 extern void diee (char *fmt, ...)
                         __attribute__ ((format(printf, 1, 2)))
                         __attribute__ ((noreturn));
+
+#define HAS_SIGALTSTACK TRUE
+#define HAS_TIME_PROFILING TRUE
