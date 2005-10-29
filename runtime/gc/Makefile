@@ -131,6 +131,7 @@ HFILES = 								\
 	stack.h								\
 	thread.h							\
 	weak.h								\
+	int-inf.h							\
 	heap.h								\
 	major.h								\
 	generational.h							\

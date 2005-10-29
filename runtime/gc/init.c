@@ -104,86 +104,82 @@ static void setInitialBytesLive (GC_state s) {
 }
 
 static void initIntInfs (GC_state s) {
-/*         struct GC_intInfInit *inits; */
-/*         pointer frontier; */
-/*         char    *str; */
-/*         uint    slen, */
-/*                 llen, */
-/*                 alen, */
-/*                 i, */
-/*                 index; */
-/*         bool    neg, */
-/*                 hex; */
-/*         bignum  *bp; */
-/*         uchar   *cp; */
+  struct GC_intInfInit *inits;
+  pointer frontier;
+  char *str;
+  size_t slen, llen;
+  mp_size_t alen;
+  uint32_t i, j;
+  bool neg, hex;
+  GC_intInf bp;
+  unsigned char *cp;
 
-/*         assert (isAlignedFrontier (s, s->frontier)); */
-/*         frontier = s->frontier; */
-/*         for (index = 0; index < s->intInfInitsSize; ++index) { */
-/*                 inits = &s->intInfInits[index]; */
-/*                 str = inits->mlstr; */
-/*                 assert (inits->globalIndex < s->globalsSize); */
-/*                 neg = *str == '~'; */
-/*                 if (neg) */
-/*                         ++str; */
-/*                 slen = strlen (str); */
-/*                 hex = str[0] == '0' && str[1] == 'x'; */
-/*                 if (hex) { */
-/*                         str += 2; */
-/*                         slen -= 2; */
-/*                         llen = (slen + 7) / 8; */
-/*                 } else */
-/*                         llen = (slen + 8) / 9; */
-/*                 assert (slen > 0); */
-/*                 bp = (bignum *)frontier; */
-/*                 cp = (uchar *)&bp->limbs[llen]; */
-/*                 for (i = 0; i != slen; ++i) */
-/*                         if ('0' <= str[i] && str[i] <= '9') */
-/*                                 cp[i] = str[i] - '0' + 0; */
-/*                         else if ('a' <= str[i] && str[i] <= 'f') */
-/*                                 cp[i] = str[i] - 'a' + 0xa; */
-/*                         else { */
-/*                                 assert('A' <= str[i] && str[i] <= 'F'); */
-/*                                 cp[i] = str[i] - 'A' + 0xA; */
-/*                         } */
-/*                 alen = mpn_set_str (bp->limbs, cp, slen, hex ? 0x10 : 10); */
-/*                 assert (alen <= llen); */
-/*                 if (alen <= 1) { */
-/*                         uint    val, */
-/*                                 ans; */
+  assert (isAlignedFrontier (s, s->frontier));
+  frontier = s->frontier;
+  for (i= 0; i < s->intInfInitsLength; i++) {
+    inits = &s->intInfInits[i];
+    str = inits->mlstr;
+    assert (inits->globalIndex < s->globalsLength);
+    neg = *str == '~';
+    if (neg)
+      str++;
+    slen = strlen (str);
+    hex = str[0] == '0' && str[1] == 'x';
+    if (hex) {
+      str += 2;
+      slen -= 2;
+      llen = (slen + 7) / 8;
+    } else
+      llen = (slen + 8) / 9;
+    assert (slen > 0);
+    bp = (GC_intInf)frontier;
+    cp = (unsigned char *)&bp->limbs[llen];
 
-/*                         if (alen == 0) */
-/*                                 val = 0; */
-/*                         else */
-/*                                 val = bp->limbs[0]; */
-/*                         if (neg) { */
-/*                                 /\* */
-/*                                  * We only fit if val in [1, 2^30]. */
-/*                                  *\/ */
-/*                                 ans = - val; */
-/*                                 val = val - 1; */
-/*                         } else */
-/*                                 /\* */
-/*                                  * We only fit if val in [0, 2^30 - 1]. */
-/*                                  *\/ */
-/*                                 ans = val; */
-/*                         if (val < (uint)1<<30) { */
-/*                                 s->globals[inits->globalIndex] =  */
-/*                                         (pointer)(ans<<1 | 1); */
-/*                                 continue; */
-/*                         } */
-/*                 } */
-/*                 s->globals[inits->globalIndex] = (pointer)&bp->isneg; */
-/*                 bp->counter = 0; */
-/*                 bp->card = alen + 1; */
-/*                 bp->magic = BIGMAGIC; */
-/*                 bp->isneg = neg; */
-/*                 frontier = alignFrontier (s, (pointer)&bp->limbs[alen]); */
-/*         } */
-/*         assert (isAlignedFrontier (s, frontier)); */
-/*         s->frontier = frontier; */
-/*         GC_profileAllocInc (s, frontier - s->frontier); */
-/*         s->bytesAllocated += frontier - s->frontier; */
+    for (j = 0; j != slen; j++)
+      if ('0' <= str[j] && str[j] <= '9')
+        cp[j] = str[j] - '0' + 0;
+      else if ('a' <= str[j] && str[j] <= 'f')
+        cp[j] = str[j] - 'a' + 0xa;
+      else {
+        assert('A' <= str[j] && str[j] <= 'F');
+        cp[j] = str[j] - 'A' + 0xA;
+      }
+    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), cp, slen, hex ? 0x10 : 10);
+    assert ((size_t)alen <= llen);
+    if (alen <= 1) {
+      uint32_t val, ans;
+      
+      if (alen == 0)
+        val = 0;
+      else
+        val = bp->limbs[0];
+      if (neg) {
+        /*
+         * We only fit if val in [1, 2^30].
+         */
+        ans = - val;
+        val = val - 1;
+      } else
+        /* 
+         * We only fit if val in [0, 2^30 - 1].
+         */
+        ans = val;
+      if (val < (uint32_t)1<<30) {
+        s->globals[inits->globalIndex] = (objptr)(ans<<1 | 1);
+        continue;
+      }
+    }
+    s->globals[inits->globalIndex] = pointerToObjptr((pointer)(&bp->isneg), s->heap.start);
+    bp->counter = 0;
+    bp->length = alen + 1;
+    bp->header = objectHeader (WORD32_VECTOR_TYPE_INDEX);
+    bp->isneg = neg;
+    frontier = alignFrontier (s, (pointer)&bp->limbs[alen]);
+  }
+  assert (isAlignedFrontier (s, frontier));
+  GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
+  s->frontier = frontier;
+  s->cumulativeStatistics.bytesAllocated += frontier - s->frontier;
 }
 
 static void initVectors (GC_state s) {
@@ -194,7 +190,7 @@ static void initVectors (GC_state s) {
   assert (isAlignedFrontier (s, s->frontier));
   inits = s->vectorInits;
   frontier = s->frontier;
-  for (i = 0; i < s->vectorInitsLength; ++i) {
+  for (i = 0; i < s->vectorInitsLength; i++) {
     size_t bytesPerElement;
     size_t dataBytes;
     size_t objectSize;
@@ -267,46 +263,45 @@ static void newWorld (GC_state s) {
   switchToThread (s, pointerToObjptr((pointer)thread, s->heap.start));
 }
 
-/* /\* worldTerminator is used to separate the human readable messages at the  */
-/*  * beginning of the world file from the machine readable data. */
-/*  *\/ */
-/* static const char worldTerminator = '\000'; */
+/* worldTerminator is used to separate the human readable messages at the
+ * beginning of the world file from the machine readable data.
+ */
+static const char worldTerminator = '\000';
 
-/* static void loadWorld (GC_state s, char *fileName) { */
-/*         FILE *file; */
-/*         uint magic; */
-/*         pointer oldGen; */
-/*         int c; */
+static void loadWorld (GC_state s, char *fileName) {
+  FILE *file;
+  uint32_t magic;
+  pointer oldGen;
+  int c;
         
-/*         if (DEBUG_WORLD) */
-/*                 fprintf (stderr, "loadWorld (%s)\n", fileName); */
-/*         file = sfopen (fileName, "rb"); */
-/*         until ((c = fgetc (file)) == worldTerminator or EOF == c); */
-/*         if (EOF == c) die ("Invalid world."); */
-/*         magic = sfreadUint (file); */
-/*         unless (s->magic == magic) */
-/*                 die ("Invalid world: wrong magic number."); */
+  if (DEBUG_WORLD)
+    fprintf (stderr, "loadWorld (%s)\n", fileName);
+  file = fopen_safe (fileName, "rb"); 
+  until ((c = fgetc (file)) == worldTerminator or EOF == c) ;
+  if (EOF == c) die ("Invalid world.");
+  // magic = sfreadUint (file);
+  unless (s->magic == magic)
+    die ("Invalid world: wrong magic number.");
 /*         oldGen = (pointer) sfreadUint (file); */
 /*         s->oldGenSize = sfreadUint (file); */
 /*         s->callFromCHandler = (GC_thread) sfreadUint (file); */
 /*         s->canHandle = sfreadUint (file); */
 /*         s->currentThread = (GC_thread) sfreadUint (file); */
 /*         s->signalHandler = (GC_thread) sfreadUint (file); */
-/*         heapCreate (s, &s->heap, heapDesiredSize (s, s->oldGenSize, 0), */
-/*                         s->oldGenSize); */
-/*         createCardMapAndCrossMap (s); */
+  heapCreate (s, &s->heap, heapDesiredSize (s, s->heap.oldGenSize, 0), s->heap.oldGenSize);
+  createCardMapAndCrossMap (s); 
 /*         sfread (s->heap.start, 1, s->oldGenSize, file); */
-/*         (*s->loadGlobals) (file); */
-/*         unless (EOF == fgetc (file)) */
-/*                 die ("Invalid world: junk at end of file."); */
-/*         fclose (file); */
-/*         /\* translateHeap must occur after loading the heap and globals, since it */
-/*          * changes pointers in all of them. */
-/*          *\/ */
-/*         translateHeap (s, oldGen, s->heap.start, s->oldGenSize); */
-/*         setNursery (s, 0, 0); */
-/*         setStack (s); */
-/* } */
+  (*s->loadGlobals) (file);
+  unless (EOF == fgetc (file))
+    die ("Invalid world: junk at end of file.");
+  fclose_safe (file); 
+  /* translateHeap must occur after loading the heap and globals, since it
+   * changes pointers in all of them.
+   */
+  translateHeap (s, oldGen, s->heap.start, s->heap.oldGenSize);
+  heapSetNursery (s, 0, 0); 
+  setCurrentStack (s); 
+}
 
 /* ---------------------------------------------------------------- */
 /*                             GC_init                              */
@@ -334,38 +329,38 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 
         arg = argv[i];
         if (0 == strcmp (arg, "copy-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton copy-ratio missing argument.");
           s->ratios.copy = stringToFloat (argv[i++]);
         } else if (0 == strcmp(arg, "fixed-heap")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton fixed-heap missing argument.");
           s->controls.fixedHeap = align (stringToBytes (argv[i++]),
                                          2 * s->sysvals.pageSize);
         } else if (0 == strcmp (arg, "gc-messages")) {
-          ++i;
+          i++;
           s->controls.messages = TRUE;
         } else if (0 == strcmp (arg, "gc-summary")) {
-          ++i;
+          i++;
 #if (defined (__MINGW32__))
           fprintf (stderr, "Warning: MinGW doesn't yet support gc-summary\n");
 #else
           s->controls.summary = TRUE;
 #endif
         } else if (0 == strcmp (arg, "copy-generational-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton copy-generational-ratio missing argument.");
           s->ratios.copyGenerational = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "grow-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton grow-ratio missing argument.");
           s->ratios.grow = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "hash-cons")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton hash-cons missing argument.");
           s->ratios.hashCons = stringToFloat (argv[i++]);
@@ -373,44 +368,44 @@ static int processAtMLton (GC_state s, int argc, char **argv,
                   and s->ratios.hashCons <= 1.0)
             die ("@MLton hash-cons argument must be between 0.0 and 1.0");
         } else if (0 == strcmp (arg, "live-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton live-ratio missing argument.");
           s->ratios.live = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "load-world")) {
           unless (s->controls.mayLoadWorld)
             die ("May not load world.");
-          ++i;
+          i++;
           s->amOriginal = FALSE;
           if (i == argc)
             die ("@MLton load-world missing argument.");
           *worldFile = argv[i++];
         } else if (0 == strcmp (arg, "max-heap")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton max-heap missing argument.");
           s->controls.maxHeap = align (stringToBytes (argv[i++]),
                                        2 * s->sysvals.pageSize);
         } else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton mark-compact-generational-ratio missing argument.");
           s->ratios.markCompactGenerational = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "mark-compact-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton mark-compact-ratio missing argument.");
           s->ratios.markCompact = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "no-load-world")) {
-          ++i;
+          i++;
           s->controls.mayLoadWorld = FALSE;
         } else if (0 == strcmp (arg, "nursery-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton nursery-ratio missing argument.");
           s->ratios.nursery = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "ram-slop")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton ram-slop missing argument.");
           s->ratios.ramSlop = stringToFloat (argv[i++]);
@@ -418,18 +413,18 @@ static int processAtMLton (GC_state s, int argc, char **argv,
           showProf (s);
           exit (0);
         } else if (0 == strcmp (arg, "stop")) {
-          ++i;
+          i++;
           s->controls.mayProcessAtMLton = FALSE;
         } else if (0 == strcmp (arg, "thread-shrink-ratio")) {
-          ++i;
+          i++;
           if (i == argc)
             die ("@MLton thread-shrink-ratio missing argument.");
           s->ratios.threadShrink = stringToFloat (argv[i++]);
         } else if (0 == strcmp (arg, "use-mmap")) {
-          ++i;
+          i++;
           MLton_Platform_CygwinUseMmap = TRUE;
         } else if (0 == strcmp (arg, "--")) {
-          ++i;
+          i++;
           done = TRUE;
         } else if (i > 1)
           die ("Strange @MLton arg: %s", argv[i]);
@@ -440,147 +435,151 @@ static int processAtMLton (GC_state s, int argc, char **argv,
   return i;
 }
 
-/* int GC_init (GC_state s, int argc, char **argv) { */
-/*         char *worldFile; */
-/*         int i; */
+int GC_init (GC_state s, int argc, char **argv) {
+  char *worldFile;
+  int i;
 
-/*         assert (isAligned (sizeof (struct GC_stack), s->alignment)); */
-/*         assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread), */
-/*                                 s->alignment)); */
-/*         assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak), */
-/*                                 s->alignment)); */
-/*         MLton_Platform_CygwinUseMmap = FALSE; */
-/*         s->amInGC = TRUE; */
-/*         s->amInMinorGC = FALSE; */
-/*         s->bytesAllocated = 0; */
-/*         s->bytesCopied = 0; */
-/*         s->bytesCopiedMinor = 0; */
-/*         s->bytesMarkCompacted = 0; */
-/*         s->callFromCHandler = BOGUS_THREAD; */
-/*         s->canHandle = 0; */
-/*         s->cardSize = 0x1 << CARD_SIZE_LOG2; */
-/*         s->copyRatio = 4.0; */
-/*         s->copyGenerationalRatio = 4.0; */
-/*         s->currentThread = BOGUS_THREAD; */
-/*         s->fixedHeap = 0.0; */
-/*         s->gcSignalIsPending = FALSE; */
-/*         s->growRatio = 8.0; */
-/*         s->handleGCSignal = FALSE; */
-/*         s->hashConsDuringGC = FALSE; */
-/*         s->hashConsFrequency = 0.0; */
-/*         s->inSignalHandler = FALSE; */
-/*         s->isOriginal = TRUE; */
-/*         s->lastMajor = GC_COPYING; */
-/*         s->liveRatio = 8.0; */
-/*         s->markCompactRatio = 1.04; */
-/*         s->markCompactGenerationalRatio = 8.0; */
-/*         s->markedCards = 0; */
-/*         s->maxBytesLive = 0; */
-/*         s->maxHeap = 0; */
-/*         s->maxHeapSizeSeen = 0; */
-/*         s->maxPause = 0; */
-/*         s->maxStackSizeSeen = 0; */
-/*         s->mayLoadWorld = TRUE; */
-/*         s->mayProcessAtMLton = TRUE; */
-/*         s->messages = FALSE; */
-/*         s->minorBytesScanned = 0; */
-/*         s->minorBytesSkipped = 0; */
-/*         s->numCopyingGCs = 0; */
-/*         s->numLCs = 0; */
-/*         s->numHashConsGCs = 0; */
-/*         s->numMarkCompactGCs = 0; */
-/*         s->numMinorGCs = 0; */
-/*         s->numMinorsSinceLastMajor = 0; */
-/*         s->nurseryRatio = 10.0; */
-/*         s->oldGenArraySize = 0x100000; */
-/*         s->pageSize = getpagesize (); */
-/*         s->ramSlop = 0.5; */
-/*         s->rusageIsEnabled = FALSE; */
-/*         s->savedThread = BOGUS_THREAD; */
-/*         s->signalHandler = BOGUS_THREAD; */
-/*         s->signalIsPending = FALSE; */
-/*         s->startTime = currentTime (); */
-/*         s->summary = FALSE; */
-/*         s->threadShrinkRatio = 0.5; */
-/*         s->weaks = NULL; */
-/*         heapInit (&s->heap); */
-/*         heapInit (&s->heap2); */
-/*         sigemptyset (&s->signalsHandled); */
-/*         initSignalStack (s); */
-/*         sigemptyset (&s->signalsPending); */
-/*         rusageZero (&s->ru_gc); */
-/*         rusageZero (&s->ru_gcCopy); */
-/*         rusageZero (&s->ru_gcMarkCompact); */
-/*         rusageZero (&s->ru_gcMinor); */
-/*         worldFile = NULL; */
-/*         unless (isAligned (s->pageSize, s->cardSize)) */
-/*                 die ("Page size must be a multiple of card size."); */
-/*         processAtMLton (s, s->atMLtonsSize, s->atMLtons, &worldFile); */
-/*         i = processAtMLton (s, argc, argv, &worldFile); */
-/*         if (s->fixedHeap > 0 and s->maxHeap > 0) */
-/*                 die ("Cannot use both fixed-heap and max-heap.\n"); */
-/*         unless (ratiosOk (s)) */
-/*                 die ("invalid ratios"); */
-/*         s->totalRam = totalRam (s); */
-/*         /\* We align s->ram by pageSize so that we can test whether or not we */
-/*          * we are using mark-compact by comparing heap size to ram size.  If  */
-/*          * we didn't round, the size might be slightly off. */
-/*          *\/ */
-/*         s->ram = align (s->ramSlop * s->totalRam, s->pageSize); */
-/*         if (DEBUG or DEBUG_RESIZING or s->messages) */
-/*                 fprintf (stderr, "total RAM = %s  RAM = %s\n", */
-/*                                 uintToCommaString (s->totalRam),  */
-/*                                 uintToCommaString (s->ram)); */
-/*         if (DEBUG_PROFILE) { */
-/*                 int i; */
-/*                         for (i = 0; i < s->frameSourcesSize; ++i) { */
-/*                         int j; */
-/*                         uint *sourceSeq; */
-/*                                 fprintf (stderr, "%d\n", i); */
-/*                         sourceSeq = s->sourceSeqs[s->frameSources[i]]; */
-/*                         for (j = 1; j <= sourceSeq[0]; ++j) */
-/*                                 fprintf (stderr, "\t%s\n", */
-/*                                                 s->sourceNames[s->sources[sourceSeq[j]].nameIndex]); */
-/*                 } */
-/*         } */
-/*         /\* Initialize profiling.  This must occur after processing command-line  */
-/*          * arguments, because those may just be doing a show prof, in which  */
-/*          * case we don't want to initialize the atExit. */
-/*          *\/ */
-/*         if (PROFILE_NONE == s->profileKind) */
-/*                 s->profilingIsOn = FALSE; */
-/*         else { */
-/*                 s->profilingIsOn = TRUE; */
-/*                 assert (s->frameSourcesSize == s->frameLayoutsSize); */
-/*                 switch (s->profileKind) { */
-/*                 case PROFILE_ALLOC: */
-/*                 case PROFILE_COUNT: */
-/*                         s->profile = GC_profileNew (s); */
-/*                 break; */
-/*                 case PROFILE_NONE: */
-/*                         die ("impossible PROFILE_NONE"); */
-/*                 case PROFILE_TIME: */
-/*                         profileTimeInit (s); */
-/*                 break; */
-/*                 } */
-/*                 profileEndState = s; */
-/*                 atexit (profileEnd); */
-/*         } */
-/*         if (s->isOriginal) { */
-/*                 newWorld (s); */
-/*                 /\* The mutator stack invariant doesn't hold, */
-/*                  * because the mutator has yet to run. */
-/*                  *\/ */
-/*                 assert (mutatorInvariant (s, TRUE, FALSE)); */
-/*         } else { */
-/*                 loadWorld (s, worldFile); */
-/*                 if (s->profilingIsOn and s->profileStack) */
-/*                         GC_foreachStackFrame (s, enterFrame); */
-/*                 assert (mutatorInvariant (s, TRUE, TRUE)); */
-/*         } */
-/*         s->amInGC = FALSE; */
-/*         return i; */
-/* } */
+  assert (isAligned (sizeof (struct GC_stack), s->alignment));
+  assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
+                     s->alignment));
+  assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak),
+                     s->alignment));
+
+  s->amInGC = TRUE;
+  s->amOriginal = TRUE;
+  s->atomicState = 0;
+  s->callFromCHandlerThread = BOGUS_OBJPTR;
+  s->controls.fixedHeap = 0;
+  s->controls.maxHeap = 0;
+  s->controls.mayLoadWorld = TRUE;
+  s->controls.mayProcessAtMLton = TRUE;
+  s->controls.messages = FALSE;
+  s->controls.oldGenArraySize = 0x100000;
+  s->controls.summary = FALSE;
+  s->cumulativeStatistics.bytesAllocated = 0;
+  s->cumulativeStatistics.bytesCopied = 0;
+  s->cumulativeStatistics.bytesCopiedMinor = 0;
+  s->cumulativeStatistics.bytesHashConsed = 0;
+  s->cumulativeStatistics.bytesMarkCompacted = 0;
+  s->cumulativeStatistics.markedCards = 0;
+  s->cumulativeStatistics.maxBytesLive = 0;
+  s->cumulativeStatistics.maxHeapSizeSeen = 0;
+  s->cumulativeStatistics.maxStackSizeSeen = 0;
+  s->cumulativeStatistics.minorBytesScanned = 0;
+  s->cumulativeStatistics.minorBytesSkipped = 0;
+  s->cumulativeStatistics.numLimitChecks = 0;
+  s->cumulativeStatistics.numCopyingGCs = 0;
+  s->cumulativeStatistics.numHashConsGCs = 0;
+  s->cumulativeStatistics.numMarkCompactGCs = 0;
+  s->cumulativeStatistics.numMinorGCs = 0;
+  s->cumulativeStatistics.maxPause = 0;
+  rusageZero (&s->cumulativeStatistics.ru_gc);
+  rusageZero (&s->cumulativeStatistics.ru_gcCopy);
+  rusageZero (&s->cumulativeStatistics.ru_gcMarkCompact);
+  rusageZero (&s->cumulativeStatistics.ru_gcMinor);
+  s->currentThread = BOGUS_OBJPTR;
+  s->hashConsDuringGC = FALSE;
+  heapInit (&s->heap);
+  s->lastMajorStatistics.bytesLive = 0;
+  s->lastMajorStatistics.kind = GC_COPYING;
+  s->lastMajorStatistics.numMinorGCs = 0;
+  s->ratios.copy = 4.0;
+  s->ratios.copyGenerational = 4.0;
+  s->ratios.grow = 8.0;
+  s->ratios.hashCons = 0.0;
+  s->ratios.live = 8.0;
+  s->ratios.markCompact = 1.04;
+  s->ratios.markCompactGenerational = 8.0;
+  s->ratios.nursery = 10.0;
+  s->ratios.ramSlop = 0.5;
+  s->ratios.threadShrink = 0.5;
+  s->rusageIsEnabled = FALSE;
+  s->savedThread = BOGUS_OBJPTR;
+  heapInit (&s->secondaryHeap);
+  s->signalHandlerThread = BOGUS_OBJPTR;
+  s->signalsInfo.amInSignalHandler = FALSE;
+  s->signalsInfo.gcSignalHandled = FALSE;
+  s->signalsInfo.gcSignalPending = FALSE;
+  s->signalsInfo.signalIsPending = FALSE;
+  sigemptyset (&s->signalsInfo.signalsHandled);
+  sigemptyset (&s->signalsInfo.signalsPending);
+  s->startTime = currentTime ();
+  // s->sysvals.availRam = ;
+  // s->sysvals.totalRam = ;
+  // s->sysvals.pageSize = ;
+  s->weaks = NULL;
+
+  initSignalStack (s);
+  worldFile = NULL;
+
+  unless (isAligned (s->sysvals.pageSize, CARD_SIZE))
+    die ("Page size must be a multiple of card size.");
+  processAtMLton (s, s->atMLtonsLength, s->atMLtons, &worldFile);
+  i = processAtMLton (s, argc, argv, &worldFile);
+  if (s->controls.fixedHeap > 0 and s->controls.maxHeap > 0)
+    die ("Cannot use both fixed-heap and max-heap.\n");
+  unless (ratiosOk (s->ratios))
+    die ("invalid ratios");
+  // s->totalRam = totalRam (s);
+  /* We align s->ram by pageSize so that we can test whether or not we
+   * we are using mark-compact by comparing heap size to ram size.  If
+   * we didn't round, the size might be slightly off.
+   */
+  s->sysvals.ram = align (s->ratios.ramSlop * s->sysvals.totalRam, s->sysvals.pageSize);
+  if (DEBUG or DEBUG_RESIZING or s->controls.messages)
+    fprintf (stderr, "total RAM = %zu  RAM = %zu\n",
+             /*uintToCommaString*/(s->sysvals.totalRam),
+             /*uintToCommaString*/(s->sysvals.ram));
+  if (DEBUG_PROFILE) {
+    uint32_t i;
+    for (i = 0; i < s->profiling.frameSourcesLength; i++) {
+      uint32_t j;
+      uint32_t *sourceSeq;
+      fprintf (stderr, "%"PRIu32"\n", i);
+      sourceSeq = s->profiling.sourceSeqs[s->profiling.frameSources[i]];
+      for (j = 1; j <= sourceSeq[0]; j++)
+        fprintf (stderr, "\t%s\n",
+                 s->profiling.sourceNames[s->profiling.sources[sourceSeq[j]].nameIndex]);
+    }
+  }
+  /* Initialize profiling.  This must occur after processing
+   * command-line arguments, because those may just be doing a show
+   * prof, in which case we don't want to initialize the atExit.
+   */
+  if (PROFILE_NONE == s->profiling.kind)
+    s->profiling.isOn = FALSE;
+  else {
+    s->profiling.isOn = TRUE;
+    assert (s->profiling.frameSourcesLength == s->frameLayoutsLength);
+    switch (s->profiling.kind) {
+    case PROFILE_ALLOC:
+    case PROFILE_COUNT:
+      s->profiling.data = GC_profileNew (s);
+      break;
+    case PROFILE_NONE:
+      die ("impossible PROFILE_NONE");
+    case PROFILE_TIME:
+      profileTimeInit (s);
+      break;
+    }
+    profileEndState = s;
+    atexit (profileEnd);
+  }
+  if (s->amOriginal) {
+    newWorld (s);
+    /* The mutator stack invariant doesn't hold,
+     * because the mutator has yet to run.
+     */
+    assert (mutatorInvariant (s, TRUE, FALSE));
+  } else {
+    loadWorld (s, worldFile);
+    if (s->profiling.isOn and s->profiling.stack)
+      foreachStackFrame (s, enterFrame);
+    assert (mutatorInvariant (s, TRUE, TRUE));
+  }
+  s->amInGC = FALSE;
+  return i;
+}
 
 /* extern char **environ; /\* for Posix_ProcEnv_environ *\/ */
 

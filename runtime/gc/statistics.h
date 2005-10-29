@@ -39,5 +39,5 @@ struct GC_cumulativeStatistics {
 struct GC_lastMajorStatistics {
   size_t bytesLive; /* Number of bytes live at most recent major GC. */
   GC_majorKind kind;
-  uintmax_t numMinorsGCs;
+  uintmax_t numMinorGCs;
 };

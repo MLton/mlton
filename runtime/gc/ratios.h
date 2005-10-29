@@ -7,12 +7,12 @@
  */
 
 struct GC_ratios {
+  /* Minimum live ratio to use copying GC. */
+  float copy; 
   /* Only use generational GC with copying collection if the ratio of
    * heap size to live data size is below copyGenerational.
    */
   float copyGenerational; 
-  /* Minimum live ratio to use copying GC. */
-  float copy; 
   float grow; 
   float hashCons;
   /* Desired ratio of heap size to live data. */

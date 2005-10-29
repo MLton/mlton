@@ -10,6 +10,8 @@ struct GC_state {
   size_t alignment; /* */
   bool amInGC;
   bool amOriginal;
+  char **atMLtons; /* Initial @MLton args, processed before command line. */
+  int32_t atMLtonsLength;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   bool canMinor; /* TRUE iff there is space for a minor gc. */
@@ -30,6 +32,7 @@ struct GC_state {
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limit; /* limit = heap.start + heap.totalBytes */
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+  void (*loadGlobals)(FILE *file); /* loads the globals from the stream. */
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
@@ -43,12 +46,14 @@ struct GC_state {
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
+  void (*saveGlobals)(int fd); /* writes out the values of all of the globals to fd. */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;
   pointer stackBottom; /* Bottom of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   pointer stackTop; /* Top of stack in current thread. */
+  uintmax_t startTime; /* The time when GC_init or GC_loadWorld was called. */
   struct GC_sysvals sysvals;
   struct GC_vectorInit *vectorInits;
   uint32_t vectorInitsLength;

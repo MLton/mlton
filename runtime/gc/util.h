@@ -33,6 +33,8 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+#include "gmp.h"
+
 #include "../assert.h"
 
 #define TWOPOWER(n) (1 << (n))

@@ -370,7 +370,7 @@ static void minorCheneyCopyGC (GC_state s) {
     forwardState.toLimit = forwardState.toStart + bytesAllocated;
     assert (invariant (s));
     s->cumulativeStatistics.numMinorGCs++;
-    s->lastMajorStatistics.numMinorsGCs++;
+    s->lastMajorStatistics.numMinorGCs++;
     forwardState.back = forwardState.toStart;
     /* Forward all globals.  Would like to avoid doing this once all
      * the globals have been assigned.
