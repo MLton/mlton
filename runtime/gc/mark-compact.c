@@ -31,242 +31,261 @@ static inline void dfsUnmark (GC_state s, objptr *opp) {
   dfsMark (s, p, UNMARK_MODE, FALSE);
 }
 
-static inline void threadInternal (GC_state s, objptr *opp) {
+/* An object pointer might be larger than a header.
+ */ 
+static inline void threadInternalCopy (pointer dst, pointer src) {
+  size_t count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
+  src = src + GC_HEADER_SIZE * count;
+
+  for (size_t i = 0; i <= count; i++) {
+    *((GC_header*)dst) = *((GC_header*)src);
+    dst += GC_HEADER_SIZE;
+    src -= GC_HEADER_SIZE;
+  }
+}
+
+static inline void threadInternalObjptr (GC_state s, objptr *opp) {
+  objptr opop;
   pointer p;
   GC_header *headerp;
 
+  opop = pointerToObjptr ((pointer)opp, s->heap.start);
   p = objptrToPointer (*opp, s->heap.start);
   if (FALSE)
     fprintf (stderr, 
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
              (uintptr_t)opp, (uintptr_t)p, getHeader (p));
   headerp = getHeaderp (p);
+  threadInternalCopy ((pointer)(opp), (pointer)(headerp));
+  threadInternalCopy ((pointer)(headerp), (pointer)(&opop));
 }
 
-/* static inline void threadInternal (GC_state s, pointer *pp) { */
-/*         Header *headerp; */
+/* If p is weak, the object pointer was valid, and points to an unmarked object,
+ * then clear the object pointer.
+ */
+static inline void maybeClearWeak (GC_state s, pointer p) {
+  GC_header header;
+  GC_header *headerp;
+  uint16_t numNonObjptrs, numObjptrs;
+  GC_objectTypeTag tag;
 
-/*         if (FALSE) */
-/*                 fprintf (stderr, "threadInternal pp = 0x%08x  *pp = 0x%08x  header = 0x%08x\n", */
-/*                                 (uint)pp, *(uint*)pp, (uint)GC_getHeader (*pp)); */
-/*         headerp = GC_getHeaderp (*pp); */
-/*         *(Header*)pp = *headerp; */
-/*         *headerp = (Header)pp; */
-/* } */
+  headerp = getHeaderp (p);
+  header = *headerp;
+  splitHeader(s, *headerp, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  if (WEAK_TAG == tag and 1 == numObjptrs) {
+    GC_header h2;
+    
+    if (DEBUG_WEAK)
+      fprintf (stderr, "maybeClearWeak ("FMTPTR")  header = "FMTHDR"\n",
+               (uintptr_t)p, header);
+    h2 = getHeader (objptrToPointer(((GC_weak)p)->objptr, s->heap.start));
+    /* If it's unmarked not threaded, clear the weak pointer. */
+    if (1 == ((MARK_MASK | 1) & h2)) {
+      ((GC_weak)p)->objptr = BOGUS_OBJPTR;
+      header = GC_WEAK_GONE_HEADER | MARK_MASK;
+      if (DEBUG_WEAK)
+        fprintf (stderr, "cleared.  new header = "FMTHDR"\n",
+                 header);
+      *headerp = header;
+    }
+  }
+}
 
-/* /\* If p is weak, the object pointer was valid, and points to an unmarked object, */
-/*  * then clear the object pointer. */
-/*  *\/ */
-/* static inline void maybeClearWeak (GC_state s, pointer p) { */
-/*         Bool hasIdentity; */
-/*         Header header; */
-/*         Header *headerp; */
-/*         uint numPointers; */
-/*         uint numNonPointers; */
-/*         uint tag; */
+static void updateForwardPointers (GC_state s) {
+  pointer back;
+  pointer endOfLastMarked;
+  pointer front;
+  size_t gap;
+  GC_header header;
+  GC_header *headerp;
+  pointer p;
+  size_t size;
 
-/*         headerp = GC_getHeaderp (p); */
-/*         header = *headerp; */
-/*         SPLIT_HEADER(); */
-/*         if (WEAK_TAG == tag and 1 == numPointers) {  */
-/*                 Header h2; */
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "Update forward pointers.\n");
+  front = alignFrontier (s, s->heap.start);
+  back = s->heap.start + s->heap.oldGenSize;
+  endOfLastMarked = front;
+  gap = 0;
+updateObject:
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "updateObject  front = "FMTPTR"  back = "FMTPTR"\n",
+             (uintptr_t)front, (uintptr_t)back);
+  if (front == back)
+    goto done;
+  headerp = (GC_header*)front;
+  header = *headerp;
+  if (0 == header) {
+    /* We're looking at an array.  Move to the header. */
+    p = front + GC_ARRAY_HEADER_SIZE;
+    headerp = (GC_header*)(p - GC_HEADER_SIZE);
+    header = *headerp;
+  } else
+    p = front + GC_HEADER_SIZE;
+  if (1 == (1 & header)) {
+    /* It's a header */
+    if (MARK_MASK & header) {
+      /* It is marked, but has no forward pointers.
+       * Thread internal pointers.
+       */
+thread:
+      maybeClearWeak (s, p);
+      size = objectSize (s, p);
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "threading "FMTPTR" of size %zu\n",
+                 (uintptr_t)p, size);
+      if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
+        /* Compress all of the unmarked into one string.  We require
+         * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
+         * because that is the smallest possible array.  You cannot
+         * use GC_ARRAY_HEADER_SIZE because even zero-length arrays
+         * require an extra word for the forwarding pointer.  If you
+         * did use GC_ARRAY_HEADER_SIZE,
+         * updateBackwardPointersAndSlide would skip the extra word
+         * and be completely busted.
+         */
+        if (DEBUG_MARK_COMPACT)
+          fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %zu)\n",
+                   (uintptr_t)endOfLastMarked, (uintptr_t)front,
+                   (size_t)(front - endOfLastMarked));
+        *((GC_arrayCounter*)(endOfLastMarked)) = 0;
+        endOfLastMarked = endOfLastMarked + GC_ARRAY_COUNTER_SIZE;
+        *((GC_arrayLength*)(endOfLastMarked)) = ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
+        endOfLastMarked = endOfLastMarked + GC_ARRAY_LENGTH_SIZE;
+        *((GC_header*)(endOfLastMarked)) = GC_STRING_HEADER;
+      }
+      front += size;
+      endOfLastMarked = front;
+      foreachObjptrInObject (s, p, FALSE, threadInternalObjptr);
+      goto updateObject;
+    } else {
+      /* It's not marked. */
+      size = objectSize (s, p);
+      gap += size;
+      front += size;
+      goto updateObject;
+    }
+  } else {
+    pointer new;
+    objptr newObjptr;
 
-/*                 if (DEBUG_WEAK) */
-/*                         fprintf (stderr, "maybeClearWeak (0x%08x)  header = 0x%08x\n", */
-/*                                         (uint)p, (uint)header); */
-/*                 h2 = GC_getHeader (((GC_weak)p)->object); */
-/*                 /\* If it's unmarked not threaded, clear the weak pointer. *\/ */
-/*                 if (1 == ((MARK_MASK | 1) & h2)) { */
-/*                         ((GC_weak)p)->object = (pointer)BOGUS_POINTER; */
-/*                         header = WEAK_GONE_HEADER | MARK_MASK; */
-/*                         if (DEBUG_WEAK) */
-/*                                 fprintf (stderr, "cleared.  new header = 0x%08x\n", */
-/*                                                 (uint)header); */
-/*                         *headerp = header; */
-/*                 } */
-/*         } */
-/* } */
+    assert (0 == (1 & header));
+    /* It's a pointer.  This object must be live.  Fix all the forward
+     * pointers to it, store its header, then thread its internal
+     * pointers.
+     */
+    new = p - gap;
+    newObjptr = pointerToObjptr (new, s->heap.start);
+    do {
+      pointer cur;
+      objptr curObjptr;
 
-/* static void updateForwardPointers (GC_state s) { */
-/*         pointer back; */
-/*         pointer front; */
-/*         uint gap; */
-/*         pointer endOfLastMarked; */
-/*         Header header; */
-/*         Header *headerp; */
-/*         pointer p; */
-/*         uint size; */
+      threadInternalCopy ((pointer)(&curObjptr), (pointer)headerp);
+      cur = objptrToPointer (curObjptr, s->heap.start);
 
-/*         if (DEBUG_MARK_COMPACT) */
-/*                 fprintf (stderr, "Update forward pointers.\n"); */
-/*         front = alignFrontier (s, s->heap.start); */
-/*         back = s->heap.start + s->oldGenSize; */
-/*         endOfLastMarked = front; */
-/*         gap = 0; */
-/* updateObject: */
-/*         if (DEBUG_MARK_COMPACT) */
-/*                 fprintf (stderr, "updateObject  front = 0x%08x  back = 0x%08x\n", */
-/*                                 (uint)front, (uint)back); */
-/*         if (front == back) */
-/*                 goto done; */
-/*         headerp = (Header*)front; */
-/*         header = *headerp; */
-/*         if (0 == header) { */
-/*                 /\* We're looking at an array.  Move to the header. *\/ */
-/*                 p = front + 3 * WORD_SIZE; */
-/*                 headerp = (Header*)(p - WORD_SIZE); */
-/*                 header = *headerp; */
-/*         } else  */
-/*                 p = front + WORD_SIZE; */
-/*         if (1 == (1 & header)) { */
-/*                 /\* It's a header *\/ */
-/*                 if (MARK_MASK & header) { */
-/*                         /\* It is marked, but has no forward pointers.  */
-/*                          * Thread internal pointers. */
-/*                          *\/ */
-/* thread: */
-/*                         maybeClearWeak (s, p); */
-/*                         size = objectSize (s, p); */
-/*                         if (DEBUG_MARK_COMPACT) */
-/*                                 fprintf (stderr, "threading 0x%08x of size %u\n",  */
-/*                                                 (uint)p, size); */
-/*                         if (front - endOfLastMarked >= 4 * WORD_SIZE) { */
-/*                                 /\* Compress all of the unmarked into one string. */
-/*                                  * We require 4 * WORD_SIZE space to be available */
-/*                                  * because that is the smallest possible array. */
-/*                                  * You cannot use 3 * WORD_SIZE because even */
-/*                                  * zero-length arrays require an extra word for */
-/*                                  * the forwarding pointer.  If you did use */
-/*                                  * 3 * WORD_SIZE, updateBackwardPointersAndSlide */
-/*                                  * would skip the extra word and be completely */
-/*                                  * busted. */
-/*                                  *\/ */
-/*                                 if (DEBUG_MARK_COMPACT) */
-/*                                         fprintf (stderr, "compressing from 0x%08x to 0x%08x (length = %u)\n", */
-/*                                                         (uint)endOfLastMarked, */
-/*                                                         (uint)front, */
-/*                                                         front - endOfLastMarked); */
-/*                                 *(uint*)endOfLastMarked = 0; */
-/*                                 *(uint*)(endOfLastMarked + WORD_SIZE) =  */
-/*                                         front - endOfLastMarked - 3 * WORD_SIZE; */
-/*                                 *(uint*)(endOfLastMarked + 2 * WORD_SIZE) = */
-/*                                         GC_objectHeader (STRING_TYPE_INDEX); */
-/*                         } */
-/*                         front += size; */
-/*                         endOfLastMarked = front; */
-/*                         foreachPointerInObject (s, p, FALSE, threadInternal); */
-/*                         goto updateObject; */
-/*                 } else { */
-/*                         /\* It's not marked. *\/ */
-/*                         size = objectSize (s, p); */
-/*                         gap += size; */
-/*                         front += size; */
-/*                         goto updateObject; */
-/*                 } */
-/*         } else { */
-/*                 pointer new; */
+      threadInternalCopy ((pointer)headerp, cur);
+      *((objptr*)cur) = newObjptr;
 
-/*                 assert (0 == (3 & header)); */
-/*                 /\* It's a pointer.  This object must be live.  Fix all the */
-/*                  * forward pointers to it, store its header, then thread */
-/*                  * its internal pointers. */
-/*                  *\/ */
-/*                 new = p - gap; */
-/*                 do { */
-/*                         pointer cur; */
+      header = *headerp;
+    } while (0 == (1 & header));
+    goto thread;
+  }
+  assert (FALSE);
+done:
+  return;
+}
 
-/*                         cur = (pointer)header; */
-/*                         header = *(word*)cur; */
-/*                         *(word*)cur = (word)new; */
-/*                 } while (0 == (1 & header)); */
-/*                 *headerp = header; */
-/*                 goto thread; */
-/*         } */
-/*         assert (FALSE); */
-/* done: */
-/*         return; */
-/* } */
+static void updateBackwardPointersAndSlide (GC_state s) {
+  pointer back;
+  pointer front;
+  size_t gap;
+  GC_header header;
+  GC_header *headerp;
+  pointer p;
+  size_t size;
 
-/* static void updateBackwardPointersAndSlide (GC_state s) { */
-/*         pointer back; */
-/*         pointer front; */
-/*         uint gap; */
-/*         Header header; */
-/*         pointer p; */
-/*         uint size; */
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "Update backward pointers and slide.\n");
+  front = alignFrontier (s, s->heap.start);
+  back = s->heap.start + s->heap.oldGenSize;
+  gap = 0;
+updateObject:
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "updateObject  front = "FMTPTR"  back = "FMTPTR"\n",
+             (uintptr_t)front, (uintptr_t)back);
+  if (front == back)
+    goto done;
+  headerp = (GC_header*)front;
+  header = *headerp;
+  if (0 == header) {
+    /* We're looking at an array.  Move to the header. */
+    p = front + GC_ARRAY_HEADER_SIZE;
+    headerp = (GC_header*)(p - GC_HEADER_SIZE);
+    header = *headerp;
+  } else
+    p = front + GC_HEADER_SIZE;
+  if (1 == (1 & header)) {
+    /* It's a header */
+    if (MARK_MASK & header) {
+      /* It is marked, but has no backward pointers to it.
+       * Unmark it.
+       */
+unmark:
+      size = objectSize (s, p);
+      /* unmark */
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "unmarking "FMTPTR" of size %zu\n",
+                 (uintptr_t)p, size);
+      *headerp = header & ~MARK_MASK;
+      /* slide */
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "sliding "FMTPTR" down %zu\n",
+                 (uintptr_t)front, gap);
+      GC_memcpy (front, front - gap, size);
+      front += size;
+      goto updateObject;
+    } else {
+      /* It's not marked. */
+      size = objectSize (s, p);
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "skipping "FMTPTR" of size %zu\n",
+                 (uintptr_t)p, size);
+      gap += size;
+      front += size;
+      goto updateObject;
+    }
+  } else {
+    pointer new;
+    objptr newObjptr;
 
-/*         if (DEBUG_MARK_COMPACT) */
-/*                 fprintf (stderr, "Update backward pointers and slide.\n"); */
-/*         front = alignFrontier (s, s->heap.start); */
-/*         back = s->heap.start + s->oldGenSize; */
-/*         gap = 0; */
-/* updateObject: */
-/*         if (DEBUG_MARK_COMPACT) */
-/*                 fprintf (stderr, "updateObject  front = 0x%08x  back = 0x%08x\n", */
-/*                                 (uint)front, (uint)back); */
-/*         if (front == back) */
-/*                 goto done; */
-/*         header = *(word*)front; */
-/*         if (0 == header) { */
-/*                 /\* We're looking at an array.  Move to the header. *\/ */
-/*                 p = front + 3 * WORD_SIZE; */
-/*                 header = *(Header*)(p - WORD_SIZE); */
-/*         } else  */
-/*                 p = front + WORD_SIZE; */
-/*         if (1 == (1 & header)) { */
-/*                 /\* It's a header *\/ */
-/*                 if (MARK_MASK & header) { */
-/*                         /\* It is marked, but has no backward pointers to it. */
-/*                          * Unmark it. */
-/*                          *\/ */
-/* unmark: */
-/*                         *GC_getHeaderp (p) = header & ~MARK_MASK; */
-/*                         size = objectSize (s, p); */
-/*                         if (DEBUG_MARK_COMPACT) */
-/*                                 fprintf (stderr, "unmarking 0x%08x of size %u\n",  */
-/*                                                 (uint)p, size); */
-/*                         /\* slide *\/ */
-/*                         if (DEBUG_MARK_COMPACT) */
-/*                                 fprintf (stderr, "sliding 0x%08x down %u\n", */
-/*                                                 (uint)front, gap); */
-/*                         copy (front, front - gap, size); */
-/*                         front += size; */
-/*                         goto updateObject; */
-/*                 } else { */
-/*                         /\* It's not marked. *\/ */
-/*                         size = objectSize (s, p); */
-/*                         if (DEBUG_MARK_COMPACT) */
-/*                                 fprintf (stderr, "skipping 0x%08x of size %u\n", */
-/*                                                 (uint)p, size); */
-/*                         gap += size; */
-/*                         front += size; */
-/*                         goto updateObject; */
-/*                 } */
-/*         } else { */
-/*                 pointer new; */
+    assert (0 == (1 & header));
+    /* It's a pointer.  This object must be live.  Fix all the
+     * backward pointers to it.  Then unmark it.
+     */
+    new = p - gap;
+    newObjptr = pointerToObjptr (new, s->heap.start);
+    do {
+      pointer cur;
+      objptr curObjptr;
+      
+      threadInternalCopy ((pointer)(&curObjptr), (pointer)headerp);
+      cur = objptrToPointer (curObjptr, s->heap.start);
 
-/*                 /\* It's a pointer.  This object must be live.  Fix all the */
-/*                  * backward pointers to it.  Then unmark it. */
-/*                  *\/ */
-/*                 new = p - gap; */
-/*                 do { */
-/*                         pointer cur; */
+      threadInternalCopy ((pointer)headerp, cur);
+      *((objptr*)cur) = newObjptr;
 
-/*                         assert (0 == (3 & header)); */
-/*                         cur = (pointer)header; */
-/*                         header = *(word*)cur; */
-/*                         *(word*)cur = (word)new; */
-/*                 } while (0 == (1 & header)); */
-/*                 /\* The header will be stored by unmark. *\/ */
-/*                 goto unmark; */
-/*         } */
-/*         assert (FALSE); */
-/* done: */
-/*         s->oldGenSize = front - gap - s->heap.start; */
-/*         if (DEBUG_MARK_COMPACT) */
-/*                 fprintf (stderr, "bytesLive = %u\n", s->bytesLive); */
-/*         return; */
-/* } */
+      header = *headerp;
+    } while (0 == (1 & header));
+    /* The unmarked header will be stored by unmark. */
+    goto unmark;
+  }
+  assert (FALSE);
+done:
+  s->heap.oldGenSize = front - gap - s->heap.start;
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "oldGenSize = %zu\n", s->heap.oldGenSize);
+  return;
+}
 
 static void majorMarkCompactGC (GC_state s) {
   struct rusage ru_start;
@@ -289,9 +308,9 @@ static void majorMarkCompactGC (GC_state s) {
   } else {
     foreachGlobalObjptr (s, dfsMarkFalse);
   }
-/*   foreachGlobal (s, threadInternal); */
-/*   updateForwardPointers (s); */
-/*   updateBackwardPointersAndSlide (s); */
+  foreachGlobalObjptr (s, threadInternalObjptr);
+  updateForwardPointers (s);
+  updateBackwardPointersAndSlide (s);
   clearCrossMap (s);
   s->cumulativeStatistics.bytesMarkCompacted += s->heap.oldGenSize;
   s->lastMajorStatistics.kind = GC_MARK_COMPACT;
