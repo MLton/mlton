@@ -115,6 +115,7 @@ CFILES = 								\
 	size.c								\
 	profiling.c							\
 	world.c								\
+	weak.c								\
 	init.c								\
 	done.c								\
 	assumptions.c							\
