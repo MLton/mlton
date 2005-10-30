@@ -32,7 +32,7 @@ struct GC_state {
   struct GC_lastMajorStatistics lastMajorStatistics;
   pointer limit; /* limit = heap.start + heap.totalBytes */
   pointer limitPlusSlop; /* limit + LIMIT_SLOP */
-  void (*loadGlobals)(FILE *file); /* loads the globals from the stream. */
+  void (*loadGlobals)(int fd); /* loads the globals from the fd. */
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
@@ -46,7 +46,7 @@ struct GC_state {
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
-  void (*saveGlobals)(int fd); /* writes out the values of all of the globals to fd. */
+  void (*saveGlobals)(int fd); /* saves the globals to the fd. */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;

@@ -114,7 +114,9 @@ CFILES = 								\
 	pack.c								\
 	size.c								\
 	profiling.c							\
+	world.c								\
 	init.c								\
+	done.c								\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -142,6 +144,7 @@ HFILES = 								\
 	hash-cons.h							\
 	profiling.h							\
 	signals.h							\
+	world.h								\
 	init.h								\
 	gc_state.h							\
 	gc_suffix.h

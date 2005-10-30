@@ -227,7 +227,6 @@ copy:
   } else {
     /* Write the heap to a file and try again. */
     int fd;
-    FILE *stream;
     char template[80];
     char *tmpDefault;
     char *tmpDir;
@@ -248,14 +247,14 @@ copy:
     if (s->controls.messages)
       fprintf (stderr, "Paging heap from "FMTPTR" to %s.\n", 
                (uintptr_t)orig, template);
-    stream = fopen_safe (template, "wb");
-    fwrite_safe (orig, 1, size, stream);
-    fclose_safe (stream);
+    fd = open_safe (template, O_WRONLY, 0);
+    write_safe (fd, orig, size);
+    close_safe (fd);
     heapRelease (s, curHeapp);
     if (heapCreate (s, curHeapp, desiredSize, minSize)) {
-      stream = fopen_safe (template, "rb");
-      fread_safe (curHeapp->start, 1, size, stream);
-      fclose_safe (stream);
+      fd = open_safe (template, O_RDONLY, 0);
+      read_safe (fd, curHeapp->start, size);
+      close_safe (fd);
       unlink_safe (template);
     } else {
       unlink_safe (template);

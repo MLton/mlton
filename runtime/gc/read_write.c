@@ -6,19 +6,79 @@
  * See the file MLton-LICENSE for details.
  */
 
+static inline char readChar (int fd) {
+  char res;
+  read_safe (fd, &res, sizeof(char));
+  return res;
+}
 
-static void writeString (int fd, char* s) {
+static inline pointer readPointer (int fd) {
+  uintptr_t res;
+  read_safe (fd, &res, sizeof(uintptr_t));
+  return (pointer)res;
+}
+
+static inline objptr readObjptr (int fd) {
+  objptr res;
+  read_safe (fd, &res, sizeof(objptr));
+  return res;
+}
+
+static inline size_t readSize (int fd) {
+  size_t res;
+  read_safe (fd, &res, sizeof(size_t));
+  return res;
+}
+
+static inline uint32_t readUint32 (int fd) {
+  uint32_t res;
+  read_safe (fd, &res, sizeof(uint32_t));
+  return res;
+}
+
+static inline uintptr_t readUintptr (int fd) {
+  uintptr_t res;
+  read_safe (fd, &res, sizeof(uintptr_t));
+  return res;
+}
+
+static inline void writeChar (int fd, char c) {
+  write_safe (fd, &c, sizeof(char));
+}
+
+static inline void writePointer (int fd, pointer p) {
+  uintptr_t u = (uintptr_t)p;
+  write_safe (fd, &u, sizeof(uintptr_t));
+}
+
+static inline void writeObjptr (int fd, objptr op) {
+  write_safe (fd, &op, sizeof(objptr));
+}
+
+static inline void writeSize (int fd, size_t z) {
+  write_safe (fd, &z, sizeof(size_t));
+}
+
+static inline void writeUint32 (int fd, uint32_t u) {
+  write_safe (fd, &u, sizeof(uint32_t));
+}
+
+static inline void writeUintptr (int fd, uintptr_t u) {
+  write_safe (fd, &u, sizeof(uintptr_t));
+}
+
+static inline void writeString (int fd, char* s) {
   write_safe (fd, s, strlen(s));
 }
 
-static void writeUint32U (int fd, uint32_t u) {
+static inline void writeUint32U (int fd, uint32_t u) {
   char buf[(UINT32_MAX / 10) + 2];
 
   sprintf (buf, "%"PRIu32, u);
   writeString (fd, buf);
 }
 
-static void writeUintmaxU (int fd, uintmax_t u) {
+static inline void writeUintmaxU (int fd, uintmax_t u) {
   // char buf[(UINTMAX_MAX / 10) + 2];
   char buf[20];
 
@@ -26,13 +86,13 @@ static void writeUintmaxU (int fd, uintmax_t u) {
   writeString (fd, buf);
 }
 
-static void writeUint32X (int fd, uint32_t u) {
+static inline void writeUint32X (int fd, uint32_t u) {
   char buf[5 + (UINT32_MAX / 16) + 2];
   
   sprintf (buf, "0x%08"PRIx32, u);
   writeString (fd, buf);
 }
 
-static inline void writeNewline (int fd) {
-        writeString (fd, "\n");
+static inline inline void writeNewline (int fd) {
+  writeString (fd, "\n");
 }

@@ -34,6 +34,15 @@ int mkstemp_safe (char *template) {
   return fd;
 }
 
+int open_safe (const char *fileName, int flags, mode_t mode) {
+  int res;
+
+  res = open (fileName, flags, mode);
+  if (-1 == res)
+    diee ("open (%s,_,_) failed.\n", fileName);
+  return res;
+}
+
 void close_safe (int fd) {
   int res;
 
@@ -43,6 +52,7 @@ void close_safe (int fd) {
   return;
 }
 
+/*
 FILE *fopen_safe (char *fileName, char *mode) {
   FILE *file;
   
@@ -83,6 +93,7 @@ void fread_safe (void *data, size_t size, size_t count, FILE *stream) {
     diee ("fread (_, _, _, _) failed.\n");
   return;
 }
+*/
 
 void unlink_safe (const char *pathname) {
   int res;
