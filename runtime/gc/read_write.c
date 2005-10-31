@@ -100,7 +100,7 @@ static inline void writeUintmaxX (int fd, uintmax_t u) {
   writeString (fd, buf);
 }
 
-static inline inline void writeNewline (int fd) {
+static inline void writeNewline (int fd) {
   writeString (fd, "\n");
 }
 #undef BUF_SIZE
