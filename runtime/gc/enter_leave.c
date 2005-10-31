@@ -11,13 +11,12 @@
  * that the function is run in a critical section and check the GC
  * invariant.
  */
-static void enter (GC_state s) {
-
+void enter (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "enter\n");
   /* used needs to be set because the mutator has changed s->stackTop. */
-  currentThreadStack(s)->used = currentStackUsed (s);
-  currentThread(s)->exnStack = s->exnStack;
+  getStackCurrent(s)->used = sizeofStackCurrentUsed (s);
+  getThreadCurrent(s)->exnStack = s->exnStack;
   if (DEBUG) 
     displayGCState (s, stderr);
   atomicBegin (s);
@@ -26,7 +25,7 @@ static void enter (GC_state s) {
     fprintf (stderr, "enter ok\n");
 }
 
-static void leave (GC_state s) {
+void leave (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "leave\n");
   /* The mutator frontier invariant may not hold

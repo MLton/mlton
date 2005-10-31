@@ -12,8 +12,12 @@
 
 typedef uint8_t GC_cardMapElem;
 typedef uint8_t GC_crossMapElem;
+typedef size_t GC_cardMapIndex;
+typedef size_t GC_crossMapIndex;
 #define CARD_MAP_ELEM_SIZE sizeof(GC_cardMapElem)
 #define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
+#define CROSS_MAP_EMPTY ((GC_crossMapElem)255)
+#define FMTCMI "%zu"
 
 struct GC_generationalMaps {
   /* cardMap is an array with cardinality equal to the size of the
@@ -25,7 +29,7 @@ struct GC_generationalMaps {
    */
   GC_cardMapElem *cardMap;
   GC_cardMapElem *cardMapAbsolute;
-  size_t cardMapLength;
+  GC_cardMapIndex cardMapLength;
   /* crossMap is an array with cardinality equal to the size of the
    * heap divided by card size.  Each element in the array is
    * interpreted as a byte offset; the offset indicates the start of
@@ -33,9 +37,32 @@ struct GC_generationalMaps {
    * card.
    */
   GC_crossMapElem *crossMap;
-  size_t crossMapLength;
+  GC_crossMapIndex crossMapLength;
   /* crossMapValidSize the size of the prefix of the old generation
    * for which the crossMap is valid.
    */
   size_t crossMapValidSize;
 };
+
+void displayGenerationalMaps (GC_state s,
+                              struct GC_generationalMaps *generational,
+                              FILE *stream);
+
+GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
+GC_cardMapIndex sizeToCardMapIndex (size_t z);
+size_t cardMapIndexToSize (GC_cardMapIndex i);
+pointer pointerToCardMapAddr (GC_state s, pointer p);
+
+bool isCardMarked (GC_state s, pointer p);
+void markCard (GC_state s, pointer p);
+
+void setCardMapAbsolute (GC_state s);
+pointer getCrossMapCardStart (GC_state s, pointer p);
+
+void clearCardMap (GC_state s);
+void clearCrossMap (GC_state s);
+void createCardMapAndCrossMap (GC_state s);
+void resizeCardMapAndCrossMap (GC_state s);
+
+bool isCrossMapOk (GC_state s);
+void updateCrossMap (GC_state s);

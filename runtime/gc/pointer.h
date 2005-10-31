@@ -11,4 +11,4 @@ typedef unsigned char* pointer;
 #define FMTPTR "0x%016"PRIxPTR
 #define BOGUS_POINTER (pointer)0x1
 
-#define WORD_SIZE POINTER_SIZE
+bool isPointer (pointer p);

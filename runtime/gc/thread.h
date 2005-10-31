@@ -21,3 +21,8 @@ typedef struct GC_thread {
                        */
   objptr stack;       /* The stack for this thread. */
 } *GC_thread;
+
+#define BOGUS_EXN_STACK 0xFFFFFFFF
+
+void displayThread (GC_state s, GC_thread thread, FILE *stream);
+size_t sizeofThread (GC_state s);

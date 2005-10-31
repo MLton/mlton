@@ -44,7 +44,7 @@ uint32_t GC_numStackFrames (GC_state s) {
 }
 
 static inline uint32_t topFrameSourceSeqIndex (GC_state s, GC_stack stack) {
-  return s->profiling.frameSources[topFrameIndex (s, stack)];
+  return s->profiling.frameSources[getStackTopFrameIndex (s, stack)];
 }
 
 uint32_t* GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex) {
@@ -243,11 +243,11 @@ static inline void profileInc (GC_state s, size_t amount, uint32_t sourceSeqInde
 }
 
 void GC_profileEnter (GC_state s) {
-  profileEnter (s, topFrameSourceSeqIndex (s, currentThreadStack (s)));
+  profileEnter (s, topFrameSourceSeqIndex (s, getStackCurrent (s)));
 }
 
 void GC_profileLeave (GC_state s) {
-  profileLeave (s, topFrameSourceSeqIndex (s, currentThreadStack (s)));
+  profileLeave (s, topFrameSourceSeqIndex (s, getStackCurrent (s)));
 }
 
 void GC_profileInc (GC_state s, size_t amount) {
@@ -256,7 +256,7 @@ void GC_profileInc (GC_state s, size_t amount) {
   profileInc (s, amount,
               s->amInGC 
               ? SOURCE_SEQ_GC 
-              : topFrameSourceSeqIndex (s, currentThreadStack (s)));
+              : topFrameSourceSeqIndex (s, getStackCurrent (s)));
 }
 
 void GC_profileAllocInc (GC_state s, size_t amount) {
@@ -396,7 +396,7 @@ void GC_handleSigProf (pointer pc) {
   if (s->amInGC)
     sourceSeqIndex = SOURCE_SEQ_GC;
   else {
-    frameIndex = topFrameIndex (s, currentThreadStack (s));
+    frameIndex = getStackTopFrameIndex (s, getStackCurrent (s));
     if (C_FRAME == s->frameLayouts[frameIndex].kind)
       sourceSeqIndex = s->profiling.frameSources[frameIndex];
     else {

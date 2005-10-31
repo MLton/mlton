@@ -57,13 +57,10 @@
 #endif
 
 /* issue error message and exit */
-extern void die (char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
+extern void die (char *fmt, ...) 
+  __attribute__ ((format(printf, 1, 2)))
+  __attribute__ ((noreturn));
 /* issue error message and exit.  Also print strerror(errno). */
 extern void diee (char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
-
-#define HAS_SIGALTSTACK TRUE
-#define HAS_TIME_PROFILING TRUE
+  __attribute__ ((format(printf, 1, 2)))
+  __attribute__ ((noreturn));

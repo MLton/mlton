@@ -19,7 +19,7 @@ struct GC_state {
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
   uint32_t exnStack;
-  GC_frameLayout *frameLayouts; /* Array of frame layouts. */
+  GC_frameLayout frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   pointer frontier; /* heap.start <= frontier < limit */
   struct GC_generationalMaps generationalMaps;
@@ -30,14 +30,14 @@ struct GC_state {
   struct GC_intInfInit *intInfInits;
   uint32_t intInfInitsLength;
   struct GC_lastMajorStatistics lastMajorStatistics;
-  pointer limit; /* limit = heap.start + heap.totalBytes */
-  pointer limitPlusSlop; /* limit + LIMIT_SLOP */
+  pointer limit; /* limit = heap.start + heap.size */
+  pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   void (*loadGlobals)(int fd); /* loads the globals from the fd. */
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   /*Bool*/bool mutatorMarksCards;
   GC_objectHashTable objectHashTable;
-  GC_objectType *objectTypes; /* Array of object types. */
+  GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
   uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
@@ -59,3 +59,5 @@ struct GC_state {
   uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };
+
+void displayGCState (GC_state s, FILE *stream);

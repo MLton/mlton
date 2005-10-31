@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-void GC_share (GC_state s, pointer object) {
+void share (GC_state s, pointer object) {
   size_t total;
   
   if (DEBUG_SHARE)

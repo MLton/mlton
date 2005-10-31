@@ -16,19 +16,19 @@ void displayStack (__attribute__ ((unused)) GC_state s,
           stack->used);
 }
 
-/* stackSlop returns the amount of "slop" space needed between the top
- * of the stack and the end of the stack space.
+/* sizeofStackSlop returns the amount of "slop" space needed between
+ * the top of the stack and the end of the stack space.
  */
-static inline size_t stackSlop (GC_state s) {
+size_t sizeofStackSlop (GC_state s) {
   return (size_t)(2 * s->maxFrameSize);
 }
 
-static inline size_t initialStackSize (GC_state s) {
-  return stackSlop (s);
+size_t sizeofStackInitial (GC_state s) {
+  return sizeofStackSlop (s);
 }
 
 /* Pointer to the bottommost word in use on the stack. */
-static inline pointer stackBottom (GC_state s, GC_stack stack) {
+pointer getStackBottom (GC_state s, GC_stack stack) {
   pointer res;
   
   res = ((pointer)stack) + sizeof (struct GC_stack);
@@ -37,56 +37,80 @@ static inline pointer stackBottom (GC_state s, GC_stack stack) {
 }
 
 /* Pointer to the topmost word in use on the stack. */
-static inline pointer stackTop (GC_state s, GC_stack stack) {
-  return stackBottom (s, stack) + stack->used;
+pointer getStackTop (GC_state s, GC_stack stack) {
+  return getStackBottom (s, stack) + stack->used;
 }
 
 /* Pointer to the end of stack. */
-static inline pointer stackLimitPlusSlop (GC_state s, GC_stack stack) {
-  return stackBottom (s, stack) + stack->reserved;
+pointer getStackLimitPlusSlop (GC_state s, GC_stack stack) {
+  return getStackBottom (s, stack) + stack->reserved;
 }
 
 /* The maximum value which is valid for stackTop. */
-static inline pointer stackLimit (GC_state s, GC_stack stack) {
-  return stackLimitPlusSlop (s, stack) - stackSlop (s);
+pointer getStackLimit (GC_state s, GC_stack stack) {
+  return getStackLimitPlusSlop (s, stack) - sizeofStackSlop (s);
 }
 
 
-static inline GC_frameIndex topFrameIndex (GC_state s, GC_stack stack) {
+GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack) {
   GC_frameIndex res;
   
   res = 
     getFrameIndexFromReturnAddress 
-    (s, *(GC_returnAddress*)(stackTop (s, stack) - GC_RETURNADDRESS_SIZE));
-  if (DEBUG_PROFILE)
-    fprintf (stderr, "topFrameIndex = "FMTFI"\n", res);
+    (s, *((GC_returnAddress*)(getStackTop (s, stack) - GC_RETURNADDRESS_SIZE)));
   return res;
 }
 
-static inline GC_frameLayout * topFrameLayout (GC_state s, GC_stack stack) {
-  GC_frameLayout *layout;
+GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack) {
+  GC_frameLayout layout;
 
-  layout = getFrameLayoutFromFrameIndex (s, topFrameIndex (s, stack));
+  layout = getFrameLayoutFromFrameIndex (s, getStackTopFrameIndex (s, stack));
   return layout;
 }
 
-static inline uint16_t topFrameSize (GC_state s, GC_stack stack) {
-  GC_frameLayout *layout;
+uint16_t getStackTopFrameSize (GC_state s, GC_stack stack) {
+  GC_frameLayout layout;
   
-  assert (not (stackIsEmpty (stack)));
-  layout = topFrameLayout (s, stack);
+  assert (not (isStackEmpty (stack)));
+  layout = getStackTopFrameLayout (s, stack);
   return layout->size;
 }
 
-static inline size_t stackMinimumReserved (GC_state s, GC_stack stack) {
-  return stack->used + stackSlop (s) - topFrameSize(s, stack);
+size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
+  size_t res;
+
+  res =
+    stack->used 
+    + sizeofStackSlop (s) 
+    - getStackTopFrameSize(s, stack);
+  return res;
 }
 
-static inline void stackCopy (GC_state s, GC_stack from, GC_stack to) {
+size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
+  size_t res;
+  
+  res = 
+    align (GC_STACK_HEADER_SIZE 
+           + sizeof (struct GC_stack) 
+           + reserved,
+           s->alignment);
+  if (DEBUG_STACKS)
+    fprintf (stderr, "%zu = sizeofStackTotalAligned (%zu)\n", res, reserved);
+  return res;
+}
+
+size_t sizeofStackGrow (GC_state s, GC_stack stack) {
+  size_t res;
+
+  res = max (2 * stack->reserved, sizeofStackMinimumReserved (s, stack));
+  return res;
+}
+
+void copyStack (GC_state s, GC_stack from, GC_stack to) {
   pointer fromBottom, toBottom;
 
-  fromBottom = stackBottom (s, from);
-  toBottom = stackBottom (s, to);
+  fromBottom = getStackBottom (s, from);
+  toBottom = getStackBottom (s, to);
   assert (from->used <= to->reserved);
   to->used = from->used;
   if (DEBUG_STACKS)
@@ -95,14 +119,4 @@ static inline void stackCopy (GC_state s, GC_stack from, GC_stack to) {
              (uintptr_t) toBottom,
              from->used);
   GC_memcpy (fromBottom, toBottom, from->used);
-}
-
-static inline size_t stackSizeTotalAligned (GC_state s, size_t reserved) {
-  size_t res;
-  
-  res = align (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved,
-               s->alignment);
-  if (DEBUG_STACKS)
-    fprintf (stderr, "%zu = stackSizeTotalAligned (%zu)\n", res, reserved);
-  return res;
 }

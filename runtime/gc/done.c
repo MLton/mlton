@@ -87,6 +87,6 @@ void GC_done (GC_state s) {
     fprintf (out, "minor skipped: %s bytes\n", 
              uintmaxToCommaString (s->cumulativeStatistics.minorBytesSkipped));
   }
-  heapRelease (s, &s->heap);
-  heapRelease (s, &s->secondaryHeap);
+  releaseHeap (s, &s->heap);
+  releaseHeap (s, &s->secondaryHeap);
 }

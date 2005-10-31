@@ -10,16 +10,11 @@
 /*                       Depth-first Marking                        */
 /* ---------------------------------------------------------------- */
 
-typedef enum {
-  MARK_MODE,
-  UNMARK_MODE,
-} GC_markMode;
-
-static inline bool isMarked (pointer p) {
+bool isMarked (pointer p) {
   return MARK_MASK & getHeader (p);
 }
 
-static bool isMarkedMode (GC_markMode m, pointer p) {
+bool isMarkedMode (GC_markMode m, pointer p) {
   switch (m) {
   case MARK_MODE:
     return isMarked (p);
@@ -30,11 +25,9 @@ static bool isMarkedMode (GC_markMode m, pointer p) {
   }
 }
 
-#if ASSERT
-static inline pointer arrayIndexAtPointer (GC_state s,
-                                           pointer a,
-                                           GC_arrayCounter arrayIndex,
-                                           uint32_t pointerIndex) {
+pointer arrayIndexAtPointer (GC_state s, pointer a,
+                             GC_arrayCounter arrayIndex,
+                             uint32_t pointerIndex) {
   GC_header header;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
@@ -45,7 +38,7 @@ static inline pointer arrayIndexAtPointer (GC_state s,
   assert (tag == ARRAY_TAG);
 
   size_t nonObjptrBytesPerElement =
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
+    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
   size_t bytesPerElement =
     nonObjptrBytesPerElement
     + (numObjptrs * OBJPTR_SIZE);
@@ -55,7 +48,6 @@ static inline pointer arrayIndexAtPointer (GC_state s,
     + nonObjptrBytesPerElement
     + pointerIndex * OBJPTR_SIZE;
 }
-#endif
 
 /* dfsMark (s, r, m, shc) 
  *
@@ -87,7 +79,7 @@ size_t dfsMark (GC_state s, pointer root,
   GC_arrayCounter arrayIndex;
   pointer top; /* The top of the next stack frame to mark. */
   GC_returnAddress returnAddress; 
-  GC_frameLayout *frameLayout;
+  GC_frameLayout frameLayout;
   GC_frameOffsets frameOffsets;
 
   if (isMarkedMode (mode, root))
@@ -150,7 +142,7 @@ mark:
   if (NORMAL_TAG == tag) {
     size += 
       GC_NORMAL_HEADER_SIZE 
-      + numNonObjptrsToBytes (numNonObjptrs, tag) 
+      + sizeofNumNonObjptrs (tag, numNonObjptrs) 
       + (numObjptrs * OBJPTR_SIZE);
     if (0 == numObjptrs) {
       /* There is nothing to mark. */
@@ -159,7 +151,7 @@ normalDone:
         cur = hashCons (s, cur, TRUE);
       goto ret;
     }
-    todo = cur + numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG);
+    todo = cur + sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
     index = 0;
 markInNormal:
     if (DEBUG_MARK_COMPACT)
@@ -200,7 +192,7 @@ markNextInNormal:
      */
     size += 
       GC_ARRAY_HEADER_SIZE
-      + arraySizeNoHeader (s, cur, numNonObjptrs, numObjptrs);
+      + sizeofArrayNoHeader (s, getArrayLength (cur), numNonObjptrs, numObjptrs);
     if (0 == numObjptrs or 0 == getArrayLength (cur)) {
       /* There is nothing to mark. */
 arrayDone:
@@ -215,7 +207,7 @@ markArrayElt:
     assert (arrayIndex < getArrayLength (cur));
     index = 0;
     /* Skip to the first pointer. */
-    todo += numNonObjptrsToBytes (numNonObjptrs, ARRAY_TAG);
+    todo += sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
 markInArray:
     if (DEBUG_MARK_COMPACT)
       fprintf (stderr, "markInArray arrayIndex = %"PRIu32" index = %"PRIu32"\n",
@@ -257,17 +249,17 @@ markNextInArray:
     size += 
       GC_STACK_HEADER_SIZE
       + sizeof (struct GC_stack) + ((GC_stack)cur)->reserved;
-    top = stackTop (s, (GC_stack)cur);
+    top = getStackTop (s, (GC_stack)cur);
     assert (((GC_stack)cur)->used <= ((GC_stack)cur)->reserved);
 markInStack:
     /* Invariant: top points just past the return address of the frame
      * to be marked.
      */
-    assert (stackBottom (s, (GC_stack)cur) <= top);
+    assert (getStackBottom (s, (GC_stack)cur) <= top);
     if (DEBUG_MARK_COMPACT)
       fprintf (stderr, "markInStack  top = %zu\n",
-               (size_t)(top - stackBottom (s, (GC_stack)cur)));
-    if (top == stackBottom (s, (GC_stack)(cur)))
+               (size_t)(top - getStackBottom (s, (GC_stack)cur)));
+    if (top == getStackBottom (s, (GC_stack)(cur)))
       goto ret;
     index = 0;
     returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
@@ -323,7 +315,7 @@ ret:
    */
   assert (WEAK_TAG != tag);
   if (NORMAL_TAG == tag) {
-    todo = cur + numNonObjptrsToBytes (numNonObjptrs, tag);
+    todo = cur + sizeofNumNonObjptrs (tag, numNonObjptrs);
     index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
     todo += index * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
@@ -333,10 +325,10 @@ ret:
     goto markNextInNormal;
   } else if (ARRAY_TAG == tag) {
     arrayIndex = getArrayCounter (cur);
-    todo = cur + arrayIndex * (numNonObjptrsToBytes (numNonObjptrs, ARRAY_TAG)
+    todo = cur + arrayIndex * (sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs)
                                + (numObjptrs * OBJPTR_SIZE));
     index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
-    todo += numNonObjptrsToBytes (numNonObjptrs, ARRAY_TAG) + index * OBJPTR_SIZE;
+    todo += sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) + index * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;
@@ -359,4 +351,25 @@ ret:
     goto markInFrame;
   }
   assert (FALSE);
+}
+
+void dfsMarkTrue (GC_state s, objptr *opp) {
+  pointer p;
+
+  p = objptrToPointer (*opp, s->heap.start);
+  dfsMark (s, p, MARK_MODE, TRUE);
+}
+
+void dfsMarkFalse (GC_state s, objptr *opp) {
+  pointer p;
+
+  p = objptrToPointer (*opp, s->heap.start);
+  dfsMark (s, p, MARK_MODE, FALSE);
+}
+
+void dfsUnmark (GC_state s, objptr *opp) {
+  pointer p;
+
+  p = objptrToPointer (*opp, s->heap.start);
+  dfsMark (s, p, UNMARK_MODE, FALSE);
 }

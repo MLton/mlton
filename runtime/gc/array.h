@@ -24,20 +24,11 @@ typedef uint32_t GC_arrayLength;
 #define FMTARRLEN "%"PRIxARRLEN
 typedef GC_arrayLength GC_arrayCounter;
 #define GC_ARRAY_COUNTER_SIZE GC_ARRAY_LENGTH_SIZE
+#define PRIxARRCTR PRIu32
+#define FMTARRCTR "%"PRIxARRCTR
 #define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
 
-/* getArrayLengthp (p)
- *
- * Returns a pointer to the length for the array pointed to by p.
- */
-static inline GC_arrayLength* getArrayLengthp (pointer a) {
-  return (GC_arrayLength*)(a - GC_HEADER_SIZE - GC_ARRAY_LENGTH_SIZE);
-}
-
-/* getArrayLength (p)
- *
- * Returns the length for the array pointed to by p.
- */
-static inline GC_arrayLength getArrayLength (pointer a) {
-  return *(getArrayLengthp (a));
-}
+GC_arrayLength* getArrayLengthp (pointer a);
+GC_arrayLength getArrayLength (pointer a);
+GC_arrayCounter* getArrayCounterp (pointer a);
+GC_arrayCounter getArrayCounter (pointer a);

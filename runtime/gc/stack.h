@@ -48,4 +48,23 @@ typedef struct GC_stack {
 } *GC_stack;
 
 #define GC_STACK_HEADER_SIZE GC_HEADER_SIZE
-#define GC_STACK_SIZE sizeof(struct GC_stack);
+
+bool isStackEmpty (GC_stack stack);
+void displayStack (GC_state s, GC_stack stack, FILE *stream);
+
+size_t sizeofStackSlop (GC_state s);
+size_t sizeofStackInitial (GC_state s);
+
+pointer getStackBottom (GC_state s, GC_stack stack);
+pointer getStackTop (GC_state s, GC_stack stack);
+pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
+pointer getStackLimit (GC_state s, GC_stack stack);
+GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
+GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
+uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
+
+size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
+size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
+size_t sizeofStackGrow (GC_state s, GC_stack stack);
+
+void copyStack (GC_state s, GC_stack from, GC_stack to);

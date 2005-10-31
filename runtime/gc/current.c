@@ -6,40 +6,40 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline objptr currentThreadObjptr (GC_state s) {
+objptr getThreadCurrentObjptr (GC_state s) {
   return s->currentThread;
 }
 
-static inline GC_thread currentThread (GC_state s) {
-  pointer p = objptrToPointer(currentThreadObjptr(s), s->heap.start);
+GC_thread getThreadCurrent (GC_state s) {
+  pointer p = objptrToPointer(getThreadCurrentObjptr(s), s->heap.start);
   return (GC_thread)p;
 }
 
-static inline objptr currentThreadStackObjptr (GC_state s) {
-  GC_thread ct = currentThread (s);
-  return ct->stack;
+objptr getStackCurrentObjptr (GC_state s) {
+  GC_thread thread = getThreadCurrent(s);
+  return thread->stack;
 }
 
-static inline GC_stack currentThreadStack (GC_state s) {
-  pointer p = objptrToPointer(currentThreadStackObjptr(s), s->heap.start);
+GC_stack getStackCurrent (GC_state s) {
+  pointer p = objptrToPointer(getStackCurrentObjptr(s), s->heap.start);
   return (GC_stack)p;
 }
 
-static inline size_t currentStackUsed (GC_state s) {
+size_t sizeofStackCurrentUsed (GC_state s) {
   return s->stackTop - s->stackBottom;
 }
 
 
 
-static void setCurrentStack (GC_state s) {
+void setThreadAndStackCurrent (GC_state s) {
   GC_thread thread;
   GC_stack stack;
   
-  thread = currentThread (s);
+  thread = getThreadCurrent (s);
   s->exnStack = thread->exnStack;
-  stack = currentThreadStack (s);
-  s->stackBottom = stackBottom (s, stack);
-  s->stackTop = stackTop (s, stack);
-  s->stackLimit = stackLimit (s, stack);
+  stack = getStackCurrent (s);
+  s->stackBottom = getStackBottom (s, stack);
+  s->stackTop = getStackTop (s, stack);
+  s->stackLimit = getStackLimit (s, stack);
   markCard (s, (pointer)stack);
 }

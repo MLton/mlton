@@ -6,14 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-static void loadWorld (GC_state s, char *fileName) {
-  int fd;
+void loadWorldFromFD (GC_state s, int fd) {
   uint32_t magic;
   pointer start;
         
   if (DEBUG_WORLD)
-    fprintf (stderr, "loadWorld (%s)\n", fileName);
-  fd = open_safe (fileName, O_RDONLY, 0); 
+    fprintf (stderr, "loadWorldFromFD (%d)\n", fd);
   until (readChar (fd) == '\000') ;
   magic = readUint32 (fd);
   unless (s->magic == magic)
@@ -21,32 +19,40 @@ static void loadWorld (GC_state s, char *fileName) {
   start = readPointer (fd);
   s->heap.oldGenSize = readSize (fd);
   s->atomicState = readUint32 (fd);
-  s->callFromCHandlerThread =  readObjptr (fd); 
+  s->callFromCHandlerThread = readObjptr (fd); 
   s->currentThread = readObjptr (fd); 
   s->signalHandlerThread = readObjptr (fd); 
-  heapCreate (s, &s->heap, 
-              heapDesiredSize (s, s->heap.oldGenSize, 0), 
+  createHeap (s, &s->heap, 
+              sizeofHeapDesired (s, s->heap.oldGenSize, 0), 
               s->heap.oldGenSize);
   createCardMapAndCrossMap (s); 
   read_safe (fd, s->heap.start, s->heap.oldGenSize);
   (*s->loadGlobals) (fd);
   // unless (EOF == fgetc (file))
   //  die ("Invalid world: junk at end of file.");
-  close_safe (fd); 
   /* translateHeap must occur after loading the heap and globals,
    * since it changes pointers in all of them.
    */
   translateHeap (s, start, s->heap.start, s->heap.oldGenSize);
-  heapSetNursery (s, 0, 0); 
-  setCurrentStack (s); 
+  setHeapNursery (s, 0, 0); 
+  setThreadAndStackCurrent (s); 
 }
 
-static void saveWorld (GC_state s, int fd) {
+void loadWorldFromFileName (GC_state s, char *fileName) {
+  int fd;
+        
+  if (DEBUG_WORLD)
+    fprintf (stderr, "loadWorldFromFileName (%s)\n", fileName);
+  fd = open_safe (fileName, O_RDONLY, 0); 
+  loadWorldFromFD (s, fd);
+  close_safe (fd); 
+}
+
+void saveWorldToFD (GC_state s, int fd) {
   char buf[80];
 
   if (DEBUG_WORLD)
-    fprintf (stderr, "GC_saveWorld (%d).\n", fd);
-  enter (s);
+    fprintf (stderr, "saveWorld (%d).\n", fd);
   /* Compact the heap. */
   doGC (s, 0, 0, TRUE, TRUE);
   sprintf (buf,
@@ -67,5 +73,10 @@ static void saveWorld (GC_state s, int fd) {
   writeObjptr (fd, s->signalHandlerThread);
   write_safe (fd, s->heap.start, s->heap.oldGenSize);
   (*s->saveGlobals) (fd);
+}
+
+void GC_saveWorldToFD (GC_state s, int fd) {
+  enter (s);
+  saveWorldToFD (s, fd);
   leave (s);
 }

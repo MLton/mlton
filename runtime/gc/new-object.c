@@ -11,17 +11,17 @@
  * Allocate a new object in the heap.
  * bytesRequested includes the size of the header.
  */
-static pointer newObject (GC_state s,
-                          GC_header header,
-                          size_t bytesRequested,
-                          bool allocInOldGen) {
+pointer newObject (GC_state s,
+                   GC_header header,
+                   size_t bytesRequested,
+                   bool allocInOldGen) {
   pointer frontier;
   pointer result;
 
   assert (isAligned (bytesRequested, s->alignment));
   assert (allocInOldGen
-          ? heapHasBytesFree (s, bytesRequested, 0)
-          : heapHasBytesFree (s, 0, bytesRequested));
+          ? hasHeapBytesFree (s, bytesRequested, 0)
+          : hasHeapBytesFree (s, 0, bytesRequested));
   if (allocInOldGen) {
     frontier = s->heap.start + s->heap.oldGenSize;
     s->heap.oldGenSize += bytesRequested;
@@ -46,16 +46,16 @@ static pointer newObject (GC_state s,
   return result;
 }
 
-static GC_stack newStack (GC_state s, 
-                          size_t reserved, 
-                          bool allocInOldGen) {
+GC_stack newStack (GC_state s, 
+                   size_t reserved, 
+                   bool allocInOldGen) {
   GC_stack stack;
 
   reserved = alignStackReserved (s, reserved);
   if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
     s->cumulativeStatistics.maxStackSizeSeen = reserved;
   stack = (GC_stack) newObject (s, GC_STACK_HEADER, 
-                                stackSizeTotalAligned (s, reserved),
+                                sizeofStackWithHeaderAligned (s, reserved),
                                 allocInOldGen);
   stack->reserved = reserved;
   stack->used = 0;
@@ -66,22 +66,17 @@ static GC_stack newStack (GC_state s,
   return stack;
 }
 
-static inline size_t stackGrowSize (GC_state s) {
-  return max (2 * currentThreadStack(s)->reserved,
-              stackMinimumReserved (s, currentThreadStack(s)));
-}
-
-static void stackGrow (GC_state s) {
+void growStack (GC_state s) {
   size_t size;
   GC_stack stack;
 
-  size = stackGrowSize (s);
+  size = sizeofStackGrow (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
     fprintf (stderr, "Growing stack to size %zu.\n",
-             /*uintToCommaString*/(stackSizeTotalAligned (s, size)));
-  assert (heapHasBytesFree (s, stackSizeTotalAligned (s, size), 0));
+             /*uintToCommaString*/(sizeofStackWithHeaderAligned (s, size)));
+  assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
   stack = newStack (s, size, TRUE);
-  stackCopy (s, currentThreadStack(s), stack);
-  currentThread(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
-  markCard (s, objptrToPointer (currentThreadObjptr(s), s->heap.start));
+  copyStack (s, getStackCurrent(s), stack);
+  getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
+  markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap.start));
 }

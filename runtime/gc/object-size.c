@@ -6,8 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs, 
-                                           GC_objectTypeTag tag) {
+size_t sizeofNumNonObjptrs (GC_objectTypeTag tag, uint16_t numNonObjptrs) {
   switch (tag) {
   case ARRAY_TAG:
     return (size_t)(numNonObjptrs);
@@ -16,32 +15,29 @@ static inline size_t numNonObjptrsToBytes (uint16_t numNonObjptrs,
   case WEAK_TAG:
     return (size_t)(numNonObjptrs) * 4;
   default:
-    die ("bad tag %u", tag);
+    die ("bad GC_objectTypeTag %u", tag);
   }
 }
 
-static inline size_t normalSizeNoHeader (__attribute__ ((unused)) GC_state s,
-                                         uint16_t numNonObjptrs,
-                                         uint16_t numObjptrs) {
+size_t sizeofNormalNoHeader (__attribute__ ((unused)) GC_state s,
+                             uint16_t numNonObjptrs,
+                             uint16_t numObjptrs) {
   size_t result;
 
   result = 
-    numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG)
+    sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs)
     + (numObjptrs * OBJPTR_SIZE);
   return result;
 }
 
-static inline size_t arraySizeNoHeader (GC_state s,
-                                        pointer p, 
-                                        uint16_t numNonObjptrs,
-                                        uint16_t numObjptrs) {
+size_t sizeofArrayNoHeader (GC_state s, 
+                            GC_arrayLength numElements,
+                            uint16_t numNonObjptrs, uint16_t numObjptrs) {
   size_t bytesPerElement;
-  GC_arrayLength numElements;
   size_t result;
         
-  numElements = getArrayLength (p);
   bytesPerElement = 
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
+    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) 
     + (numObjptrs * OBJPTR_SIZE);
   result = numElements * bytesPerElement;
   /* Empty arrays have OBJPTR_SIZE bytes for the forwarding pointer. */
@@ -50,26 +46,26 @@ static inline size_t arraySizeNoHeader (GC_state s,
   return pad (s, result, GC_ARRAY_HEADER_SIZE);
 }
 
-static inline size_t weakSizeNoHeader (__attribute__ ((unused)) GC_state s,
-                                       uint16_t numNonObjptrs,
-                                       uint16_t numObjptrs) {
+size_t sizeofWeakNoHeader (__attribute__ ((unused)) GC_state s,
+                           uint16_t numNonObjptrs,
+                           uint16_t numObjptrs) {
   size_t result;
 
   result = 
-    numNonObjptrsToBytes (numNonObjptrs, WEAK_TAG)
+    sizeofNumNonObjptrs (WEAK_TAG, numNonObjptrs)
     + (numObjptrs * OBJPTR_SIZE);
   return result;
 }
 
-static inline size_t stackSizeNoHeader (__attribute__ ((unused)) GC_state s,
-                                        pointer p) {
+size_t sizeofStackNoHeader (__attribute__ ((unused)) GC_state s,
+                            GC_stack stack) {
   size_t result;
 
-  result = sizeof (struct GC_stack) + ((GC_stack)p)->reserved;
+  result = sizeof (struct GC_stack) + stack->reserved;
   return result;
 }
 
-static inline size_t objectSize (GC_state s, pointer p) {
+size_t sizeofObject (GC_state s, pointer p) {
   size_t headerBytes, objectBytes;
   GC_header header;
   GC_objectTypeTag tag;
@@ -79,17 +75,18 @@ static inline size_t objectSize (GC_state s, pointer p) {
   splitHeader (s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
   if (NORMAL_TAG == tag) { 
     headerBytes = GC_NORMAL_HEADER_SIZE;
-    objectBytes = normalSizeNoHeader (s, numNonObjptrs, numObjptrs);
+    objectBytes = sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
   } else if (ARRAY_TAG == tag) {
     headerBytes = GC_ARRAY_HEADER_SIZE;
-    objectBytes = arraySizeNoHeader (s, p, numNonObjptrs, numObjptrs);
+    objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
+                                       numNonObjptrs, numObjptrs);
   } else if (WEAK_TAG == tag) {
     headerBytes = GC_NORMAL_HEADER_SIZE;
-    objectBytes = weakSizeNoHeader (s, numNonObjptrs, numObjptrs);
+    objectBytes = sizeofWeakNoHeader (s, numNonObjptrs, numObjptrs);
   } else { /* Stack. */
     assert (STACK_TAG == tag);
     headerBytes = GC_STACK_HEADER_SIZE;
-    objectBytes = stackSizeNoHeader (s, p);
+    objectBytes = sizeofStackNoHeader (s, (GC_stack)p);
   }
   return headerBytes + objectBytes;
 }

@@ -31,3 +31,6 @@ struct GC_ratios {
   float ramSlop;
   float threadShrink; 
 };
+
+bool ratiosOk (struct GC_ratios ratios);
+

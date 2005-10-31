@@ -20,11 +20,11 @@ void GC_pack (GC_state s) {
   doGC (s, 0, 0, TRUE, FALSE);
   keep = s->heap.oldGenSize * 1.1;
   if (keep <= s->heap.size) {
-    heapShrink (s, &s->heap, keep);
-    heapSetNursery (s, 0, 0);
-    setCurrentStack (s);
+    shrinkHeap (s, &s->heap, keep);
+    setHeapNursery (s, 0, 0);
+    setThreadAndStackCurrent (s);
   }
-  heapRelease (s, &s->secondaryHeap);
+  releaseHeap (s, &s->secondaryHeap);
   if (DEBUG or s->controls.messages)
     fprintf (stderr, "Packed heap to size %zu.\n",
              /*uintToCommaString*/(s->heap.size));
@@ -42,10 +42,10 @@ void GC_unpack (GC_state s) {
    */
   enterGC (s);
   minorGC (s);
-  heapResize (s, s->heap.oldGenSize);
-  secondaryHeapResize (s);
-  heapSetNursery (s, 0, 0);
-  setCurrentStack (s);
+  resizeHeap (s, s->heap.oldGenSize);
+  resizeHeapSecondary (s);
+  setHeapNursery (s, 0, 0);
+  setThreadAndStackCurrent (s);
   leaveGC (s);
   if (DEBUG or s->controls.messages)
     fprintf (stderr, "Unpacked heap to size %zu.\n",

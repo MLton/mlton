@@ -34,9 +34,9 @@ typedef enum {
 
 typedef struct GC_frameLayout {
   GC_frameKind kind;
-  uint16_t size;
   GC_frameOffsets offsets;
-} GC_frameLayout;
+  uint16_t size;
+} *GC_frameLayout;
 typedef uint32_t GC_frameIndex;
 #define PRIFI PRIu32
 #define FMTFI "%"PRIFI
@@ -44,3 +44,7 @@ typedef uint32_t GC_frameIndex;
 typedef uintptr_t GC_returnAddress;
 #define GC_RETURNADDRESS_SIZE sizeof(GC_returnAddress)
 #define FMTRA "0x%016"PRIxPTR
+
+GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra);
+GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index);
+GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra);

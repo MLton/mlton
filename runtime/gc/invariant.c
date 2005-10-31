@@ -6,23 +6,21 @@
  * See the file MLton-LICENSE for details.
  */
 
-#if ASSERT
-
-static inline void assertObjptrIsInFromSpace (GC_state s, objptr *opp) {
-  unless (objptrIsInFromSpace (s, *opp))
-    die ("gc.c: assertObjptrIsInFromSpace "
+void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
+  unless (isObjptrInFromSpace (s, *opp))
+    die ("gc.c: assertIsObjptrInFromSpace "
          "opp = "FMTPTR"  "
          "*opp = "FMTOBJPTR"\n",
          (uintptr_t)opp, *opp);
 }
 
-static bool invariant (GC_state s) {
+bool invariant (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "invariant\n");
   assert (ratiosOk (s->ratios));
   /* Frame layouts */
   for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
-    GC_frameLayout *layout;
+    GC_frameLayout layout;
     
     layout = &(s->frameLayouts[i]);
     if (layout->size > 0) {
@@ -36,9 +34,9 @@ static bool invariant (GC_state s) {
   if (s->mutatorMarksCards) {
     assert (s->generationalMaps.cardMap == 
             &(s->generationalMaps.cardMapAbsolute
-              [pointerToCardIndex(s->heap.start)]));
+              [pointerToCardMapIndexAbsolute(s->heap.start)]));
     assert (&(s->generationalMaps.cardMapAbsolute
-              [pointerToCardIndex(s->heap.start + s->heap.size - 1)])
+              [pointerToCardMapIndexAbsolute(s->heap.start + s->heap.size - 1)])
             < (s->generationalMaps.cardMap 
                + (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)));
   }
@@ -51,8 +49,8 @@ static bool invariant (GC_state s) {
   unless (0 == s->heap.size) {
     assert (s->heap.nursery <= s->frontier);
     assert (s->frontier <= s->limitPlusSlop);
-    assert (s->limit == s->limitPlusSlop - LIMIT_SLOP);
-    assert (heapHasBytesFree (s, 0, 0));
+    assert (s->limit == s->limitPlusSlop - GC_HEAP_LIMIT_SLOP);
+    assert (hasHeapBytesFree (s, 0, 0));
   }
   assert (s->secondaryHeap.start == NULL 
           or s->heap.size == s->secondaryHeap.size);
@@ -68,32 +66,32 @@ static bool invariant (GC_state s) {
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
                         FALSE, assertObjptrIsInFromSpace);
   /* Current thread. */
-  GC_stack stack = currentThreadStack(s);
+  GC_stack stack = getStackCurrent(s);
   assert (isAlignedStackReserved (s, stack->reserved));
-  assert (s->stackBottom == stackBottom (s, stack));
-  assert (s->stackTop == stackTop (s, stack));
-  assert (s->stackLimit == stackLimit (s, stack));
+  assert (s->stackBottom == getStackBottom (s, stack));
+  assert (s->stackTop == getStackTop (s, stack));
+  assert (s->stackLimit == getStackLimit (s, stack));
   assert (s->stackBottom <= s->stackTop);
-  assert (stack->used == currentStackUsed (s));
+  assert (stack->used == sizeofStackCurrentUsed (s));
   assert (stack->used <= stack->reserved);
   if (DEBUG)
     fprintf (stderr, "invariant passed\n");
   return TRUE;
 }
 
-#endif /* #if ASSERT */
-
-static bool mutatorFrontierInvariant (GC_state s) {
-  GC_thread ct = currentThread(s);
-  return (ct->bytesNeeded <= (size_t)(s->limitPlusSlop - s->frontier));
+bool mutatorFrontierInvariant (GC_state s) {
+  GC_thread thread = getThreadCurrent(s);
+  return (thread->bytesNeeded 
+          <= (size_t)(s->limitPlusSlop - s->frontier));
 }
 
-static bool mutatorStackInvariant (GC_state s) {
-  GC_stack sk = currentThreadStack(s);
-  return (stackTop (s, sk) <= stackLimit (s, sk) + topFrameSize (s, sk));
+bool mutatorStackInvariant (GC_state s) {
+  GC_stack stack = getStackCurrent(s);
+  return (getStackTop (s, stack) 
+          <= getStackLimit (s, stack) + getStackTopFrameSize (s, stack));
 }
 
-static bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
+bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
   if (DEBUG)
     displayGCState (s, stderr);
   if (frontier)

@@ -25,21 +25,21 @@ struct forwardState {
 };
 static struct forwardState forwardState;
 
-static inline bool pointerIsInToSpace (pointer p) {
+bool isPointerInToSpace (pointer p) {
   return (not (isPointer (p))
           or (forwardState.toStart <= p and p < forwardState.toLimit));
 }
 
-static inline bool objptrIsInToSpace (objptr op) {
+bool isObjptrInToSpace (objptr op) {
   pointer p;
 
   if (not (isObjptr (op)))
     return TRUE;
   p = objptrToPointer (op, forwardState.toStart);
-  return pointerIsInToSpace (p);
+  return isPointerInToSpace (p);
 }
 
-static void forwardObjptr (GC_state s, objptr *opp) {
+void forwardObjptr (GC_state s, objptr *opp) {
   objptr op;
   pointer p;
   GC_header header;
@@ -50,7 +50,7 @@ static void forwardObjptr (GC_state s, objptr *opp) {
     fprintf (stderr,
              "forwardObjptr  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
-  assert (objptrIsInFromSpace (s, *opp));
+  assert (isObjptrInFromSpace (s, *opp));
   header = getHeader (p);
   if (DEBUG_DETAILED and header == GC_FORWARDED)
     fprintf (stderr, "  already FORWARDED\n");
@@ -65,13 +65,12 @@ static void forwardObjptr (GC_state s, objptr *opp) {
     /* Compute the space taken by the header and object body. */
     if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
       headerBytes = GC_NORMAL_HEADER_SIZE;
-      objectBytes = 
-        numNonObjptrsToBytes(numNonObjptrs, NORMAL_TAG)
-        + (numObjptrs * OBJPTR_SIZE);
+      objectBytes = sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
       skip = 0;
     } else if (ARRAY_TAG == tag) {
       headerBytes = GC_ARRAY_HEADER_SIZE;
-      objectBytes = arraySizeNoHeader (s, p, numNonObjptrs, numObjptrs);
+      objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
+                                         numNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
       GC_stack stack;
@@ -80,14 +79,15 @@ static void forwardObjptr (GC_state s, objptr *opp) {
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
 
-      if (currentThreadStackObjptr(s) == op) {
+      if (getStackCurrentObjptr(s) == op) {
         /* Shrink stacks that don't use a lot of their reserved space;
          * but don't violate the stack invariant.
          */
         if (stack->used <= stack->reserved / 4) {
           size_t new = 
             alignStackReserved 
-            (s, max (stack->reserved / 2, stackMinimumReserved (s, stack)));
+            (s, max (stack->reserved / 2, 
+                     sizeofStackMinimumReserved (s, stack)));
           /* It's possible that new > stack->reserved if the stack
            * invariant is violated. In that case, we want to leave the
            * stack alone, because some other part of the gc will grow
@@ -129,7 +129,7 @@ static void forwardObjptr (GC_state s, objptr *opp) {
                  (uintptr_t)w);
       if (isObjptr (w->objptr)
           and (not forwardState.amInMinorGC
-               or objptrIsInNursery (s, w->objptr))) {
+               or isObjptrInNursery (s, w->objptr))) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
         w->link = s->weaks;
@@ -148,10 +148,10 @@ static void forwardObjptr (GC_state s, objptr *opp) {
                        s->alignment));
   }
   *opp = *(objptr*)p;
-  assert (objptrIsInToSpace (*opp));
+  assert (isObjptrInToSpace (*opp));
 }
 
-static inline void updateWeaks (GC_state s) {
+void updateWeaks (GC_state s) {
   pointer p;
   GC_weak w;
 
@@ -177,7 +177,7 @@ static inline void updateWeaks (GC_state s) {
   s->weaks = NULL;
 }
 
-static inline void swapHeaps (GC_state s) {
+void swapHeaps (GC_state s) {
   struct GC_heap tempHeap;
   
   tempHeap = s->secondaryHeap;
@@ -186,7 +186,7 @@ static inline void swapHeaps (GC_state s) {
   setCardMapAbsolute (s);
 }
 
-static void majorCheneyCopyGC (GC_state s) {
+void majorCheneyCopyGC (GC_state s) {
   struct rusage ru_start;
   pointer toStart;
 
@@ -236,7 +236,7 @@ static void majorCheneyCopyGC (GC_state s) {
 /*                 Minor Cheney Copying Collection                  */
 /* ---------------------------------------------------------------- */
 
-static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
+void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
   objptr op;
   pointer p;
 
@@ -253,7 +253,7 @@ static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
 }
 
 /* Walk through all the cards and forward all intergenerational pointers. */
-static void forwardInterGenerationalObjptrs (GC_state s) {
+void forwardInterGenerationalObjptrs (GC_state s) {
   GC_cardMapElem *cardMap;
   GC_crossMapElem *crossMap;
   pointer oldGenStart, oldGenEnd;
@@ -268,7 +268,7 @@ static void forwardInterGenerationalObjptrs (GC_state s) {
   /* Constants. */
   cardMap = s->generationalMaps.cardMap;
   crossMap = s->generationalMaps.crossMap;
-  maxCardIndex = sizeToCardIndex (align (s->heap.oldGenSize, CARD_SIZE));
+  maxCardIndex = sizeToCardMapIndex (align (s->heap.oldGenSize, CARD_SIZE));
   oldGenStart = s->heap.start;
   oldGenEnd = oldGenStart + s->heap.oldGenSize;
   /* Loop variables*/
@@ -284,7 +284,7 @@ checkCard:
   if (DEBUG_GENERATIONAL)
     fprintf (stderr, "checking card %zu  objectStart = "FMTPTR"\n",
              cardIndex, (uintptr_t)objectStart);
-  assert (objectStart < oldGenStart + cardIndexToSize (cardIndex + 1));
+  assert (objectStart < oldGenStart + cardMapIndexToSize (cardIndex + 1));
   if (cardMap[cardIndex]) {
     pointer lastObject;
     size_t size;
@@ -296,7 +296,7 @@ checkCard:
     lastObject = objectStart;
 skipObjects:
     assert (isAlignedFrontier (s, objectStart));
-    size = objectSize (s, objectData (s, objectStart));
+    size = sizeofObject (s, advanceToObjectData (s, objectStart));
     if (objectStart + size < cardStart) {
       objectStart += size;
       goto skipObjects;
@@ -318,8 +318,8 @@ skipObjects:
     s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
     if (objectStart == oldGenEnd)
       goto done;
-    cardIndex = sizeToCardIndex (objectStart - oldGenStart);
-    cardStart = oldGenStart + cardIndexToSize (cardIndex);
+    cardIndex = sizeToCardMapIndex (objectStart - oldGenStart);
+    cardStart = oldGenStart + cardMapIndexToSize (cardIndex);
     goto checkCard;
   } else {
     unless (CROSS_MAP_EMPTY == crossMap[cardIndex])
@@ -341,7 +341,7 @@ done:
     fprintf (stderr, "Forwarding inter-generational pointers done.\n");
 }
 
-static void minorCheneyCopyGC (GC_state s) {
+void minorCheneyCopyGC (GC_state s) {
   size_t bytesAllocated;
   size_t bytesCopied;
   struct rusage ru_start;

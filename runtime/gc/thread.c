@@ -6,8 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-#define BOGUS_EXN_STACK 0xFFFFFFFF
-
 void displayThread (GC_state s,
                     GC_thread thread, 
                     FILE *stream) {
@@ -22,13 +20,13 @@ void displayThread (GC_state s,
                 stream);
 }
 
-static inline size_t threadSize (GC_state s) {
+size_t sizeofThread (GC_state s) {
   size_t res;
 
   res = GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread);
   /* The following assert depends on struct GC_thread being the right
    * size.  Right now, it happens that res = 16, which is aligned mod
-   * 4 and mod 8, which is all that we need.  If the struct every
+   * 4 and mod 8, which is all that we need.  If the struct ever
    * changes (possible) or we need more alignment (doubtful), we may
    * need to put some padding at the beginning.
    */

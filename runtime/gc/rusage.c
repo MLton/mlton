@@ -6,13 +6,13 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline void rusageZero (struct rusage *ru) {
+void rusageZero (struct rusage *ru) {
   memset (ru, 0, sizeof (*ru));
 }
 
-static void rusagePlusMax (struct rusage *ru1,
-                           struct rusage *ru2,
-                           struct rusage *ru) {
+void rusagePlusMax (struct rusage *ru1,
+                    struct rusage *ru2,
+                    struct rusage *ru) {
   const int       million = 1000000;
   time_t          sec,
                   usec;
@@ -32,9 +32,9 @@ static void rusagePlusMax (struct rusage *ru1,
   ru->ru_stime.tv_usec = usec;
 }
 
-static void rusageMinusMax (struct rusage *ru1,
-                            struct rusage *ru2,
-                            struct rusage *ru) {
+void rusageMinusMax (struct rusage *ru1,
+                     struct rusage *ru2,
+                     struct rusage *ru) {
   const int       million = 1000000;
   time_t          sec,
                   usec;
@@ -54,7 +54,7 @@ static void rusageMinusMax (struct rusage *ru1,
   ru->ru_stime.tv_usec = usec;
 }
 
-static uintmax_t rusageTime (struct rusage *ru) {
+uintmax_t rusageTime (struct rusage *ru) {
   uintmax_t result;
 
   result = 0;
@@ -66,27 +66,22 @@ static uintmax_t rusageTime (struct rusage *ru) {
 }
 
 /* Return time as number of milliseconds. */
-static uintmax_t currentTime (void) {
+uintmax_t currentTime (void) {
   struct rusage ru;
   
   getrusage (RUSAGE_SELF, &ru);
   return rusageTime (&ru);
 }
 
-static inline void startTiming (struct rusage *ru_start) {
+void startTiming (struct rusage *ru_start) {
   getrusage (RUSAGE_SELF, ru_start);
 }
 
-static uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
+uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_acc) {
   struct rusage ru_finish, ru_total;
 
   getrusage (RUSAGE_SELF, &ru_finish);
   rusageMinusMax (&ru_finish, ru_start, &ru_total);
-  rusagePlusMax (ru_gc, &ru_total, ru_gc);
+  rusagePlusMax (ru_acc, &ru_total, ru_acc);
   return rusageTime (&ru_total);
-}
-
-
-static inline bool detailedGCTime (GC_state s) {
-  return s->controls.summary;
 }

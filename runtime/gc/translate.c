@@ -16,8 +16,8 @@ struct translateState {
 };
 static struct translateState translateState;
 
-static void translateObjptr (__attribute__ ((unused)) GC_state s, 
-                             objptr *opp) {
+void translateObjptr (__attribute__ ((unused)) GC_state s, 
+                      objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, translateState.from);
@@ -27,7 +27,7 @@ static void translateObjptr (__attribute__ ((unused)) GC_state s,
 
 /* translateHeap (s, from, to, size)
  */
-static void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
+void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
   pointer limit;
 
   if (DEBUG or s->controls.messages)

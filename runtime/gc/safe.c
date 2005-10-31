@@ -16,6 +16,15 @@ void *calloc_safe (size_t count, size_t size) {
   return res;
 }
 
+void close_safe (int fd) {
+  int res;
+
+  res = close (fd);
+  if (-1 == res)
+    diee ("close (%d) failed.\n", fd);
+  return;
+}
+
 void *malloc_safe (size_t size) {
   void *res;
   
@@ -43,57 +52,14 @@ int open_safe (const char *fileName, int flags, mode_t mode) {
   return res;
 }
 
-void close_safe (int fd) {
-  int res;
+void read_safe (int fd, void *buf, size_t size) {
+  ssize_t res;
 
-  res = close (fd);
-  if (-1 == res)
-    diee ("close (%d) failed.\n", fd);
-  return;
+  if (0 == size) return;
+  res = read (fd, buf, size);
+  if (res == -1 or (size_t)res != size)
+    diee ("read (_, _, _) failed.\n");
 }
-
-/*
-FILE *fopen_safe (char *fileName, char *mode) {
-  FILE *file;
-  
-  file = fopen (fileName, mode);
-  if (NULL == file)
-    diee ("fopen (%s) failed.\n", fileName);
-  return file;
-}
-
-void fwrite_safe (const void *data, size_t size, size_t count, FILE *stream) {
-  size_t bytes;
-  size_t res;
-
-  bytes = size * count;
-  if (0 == bytes) return;
-  res = fwrite (data, bytes, 1, stream);
-  if (1 != res)
-    diee ("fwrite (_, _, _, _) failed.\n");
-  return;
-}
-
-void fclose_safe (FILE *stream) {
-  int res;
-
-  res = fclose (stream);
-  if (-1 == res)
-    diee ("fclose (_) failed.\n");
-  return;
-}
-
-void fread_safe (void *data, size_t size, size_t count, FILE *stream) {
-  size_t bytes;
-  size_t res;
-
-  bytes = size * count;
-  res = fread (data, bytes, 1, stream);
-  if (1 != res)
-    diee ("fread (_, _, _, _) failed.\n");
-  return;
-}
-*/
 
 void unlink_safe (const char *pathname) {
   int res;
@@ -102,15 +68,6 @@ void unlink_safe (const char *pathname) {
   if (-1 == res)
     diee ("unlink (%s) failed.\n", pathname);
   return;
-}
-
-void read_safe (int fd, void *buf, size_t size) {
-  ssize_t res;
-
-  if (0 == size) return;
-  res = read (fd, buf, size);
-  if (res == -1 or (size_t)res != size)
-    diee ("read (_, _, _) failed.\n");
 }
 
 void write_safe (int fd, const void *buf, size_t size) {

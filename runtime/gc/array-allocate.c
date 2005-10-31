@@ -24,7 +24,7 @@ pointer GC_arrayAllocate (GC_state s,
     fprintf (stderr, "GC_arrayAllocate (%zu, "FMTARRLEN", "FMTHDR")\n",
              ensureBytesFree, numElements, header);
   bytesPerElement = 
-    numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG) 
+    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) 
     + (numObjptrs * OBJPTR_SIZE);
   arraySizeMax = 
     alignMax ((uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE,
@@ -82,7 +82,7 @@ pointer GC_arrayAllocate (GC_state s,
       size_t nonObjptrBytes;
       size_t objptrBytes;
         
-      nonObjptrBytes = numNonObjptrsToBytes(numNonObjptrs, ARRAY_TAG);
+      nonObjptrBytes = sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
       objptrBytes = numObjptrs * OBJPTR_SIZE;
 
       for (p = frontier; p < last; ) {

@@ -17,6 +17,8 @@ typedef enum {
   WEAK_TAG,
 } GC_objectTypeTag;
 
+const char* objectTypeTagToString (GC_objectTypeTag tag);
+
 /*
  * Each object has a header, which immediately precedes the object data.
  * A header has the following bit layout:
@@ -42,21 +44,9 @@ typedef uint32_t GC_header;
 #define MARK_MASK          0x80000000
 #define MARK_SHIFT         31
 
-/* getHeaderp (p)
- *
- * Returns a pointer to the header for the object pointed to by p.
- */
-static inline GC_header* getHeaderp (pointer p) {
-  return (GC_header*)(p - GC_HEADER_SIZE);
-}
-
-/* getHeader (p) 
- *
- * Returns the header for the object pointed to by p. 
- */
-static inline GC_header getHeader (pointer p) {
-  return *(getHeaderp(p));
-}
+GC_header* getHeaderp (pointer p);
+GC_header getHeader (pointer p);
+GC_header buildHeaderFromTypeIndex (uint32_t t);
 
 /*
  * Normal objects have the following layout:
@@ -108,7 +98,7 @@ typedef struct {
   bool hasIdentity;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
-} GC_objectType;
+} *GC_objectType;
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */
   STACK_TYPE_INDEX =         0,
@@ -119,3 +109,15 @@ enum {
   WORD32_VECTOR_TYPE_INDEX = 4,
   WORD16_VECTOR_TYPE_INDEX = 5,
 };
+
+#define GC_STACK_HEADER buildHeaderFromTypeIndex (STACK_TYPE_INDEX)
+#define GC_THREAD_HEADER buildHeaderFromTypeIndex (THREAD_TYPE_INDEX)
+#define GC_WEAK_GONE_HEADER buildHeaderFromTypeIndex (WEAK_GONE_TYPE_INDEX)
+#define GC_WORD8_VECTOR_HEADER buildHeaderFromTypeIndex (WORD8_VECTOR_TYPE_INDEX)
+#define GC_WORD16_VECTOR_HEADER buildHeaderFromTypeIndex (WORD16_VECTOR_TYPE_INDEX)
+#define GC_WORD32_VECTOR_HEADER buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX)
+
+void splitHeader (GC_state s, GC_header header,
+                  GC_objectTypeTag *tagRet, bool *hasIdentityRet,
+                  uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet);
+pointer advanceToObjectData (GC_state s, pointer p);

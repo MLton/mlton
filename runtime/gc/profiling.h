@@ -59,8 +59,8 @@ typedef struct GC_profileData {
    * ticks that occurred while the function was on top of the stack.
    */
   uintmax_t *countTop;
-  /* stack is an array that gives stack info for each function.  It is
-   * only used if profileStack.
+  /* stack is an array that gives stack info for each function.  
+   * It is only used if profileStack.
    */
   struct GC_profileStack *stack;
   /* The total number of mutator ticks. */

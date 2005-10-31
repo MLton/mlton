@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static bool ratiosOk (struct GC_ratios ratios) {
+bool ratiosOk (struct GC_ratios ratios) {
   return 1.0 < ratios.grow
     and 1.0 < ratios.nursery
     and 1.0 < ratios.markCompact

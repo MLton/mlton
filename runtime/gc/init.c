@@ -84,7 +84,7 @@ static void setInitialBytesLive (GC_state s) {
   s->lastMajorStatistics.bytesLive = 0;
   for (i = 0; i < s->intInfInitsLength; ++i) {
     numBytes = 
-      WORD_SIZE // for the sign
+      sizeof(uint32_t) // for the sign
       + strlen (s->intInfInits[i].mlstr);
     s->lastMajorStatistics.bytesLive +=
       align (GC_ARRAY_HEADER_SIZE + numBytes,
@@ -172,7 +172,7 @@ static void initIntInfs (GC_state s) {
     s->globals[inits->globalIndex] = pointerToObjptr((pointer)(&bp->isneg), s->heap.start);
     bp->counter = 0;
     bp->length = alen + 1;
-    bp->header = objectHeader (WORD32_VECTOR_TYPE_INDEX);
+    bp->header = buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX);
     bp->isneg = neg;
     frontier = alignFrontier (s, (pointer)&bp->limbs[alen]);
   }
@@ -222,7 +222,7 @@ static void initVectors (GC_state s) {
       die ("unknown bytes per element in vectorInit: %zu",
            bytesPerElement);
     }
-    *((GC_header*)(frontier)) = objectHeader (typeIndex);
+    *((GC_header*)(frontier)) = buildHeaderFromTypeIndex (typeIndex);
     frontier = frontier + GC_HEADER_SIZE;
     s->globals[inits[i].globalIndex] = pointerToObjptr(frontier, s->heap.start);
     if (DEBUG_DETAILED)
@@ -248,8 +248,8 @@ static void newWorld (GC_state s) {
   for (i = 0; i < s->globalsLength; ++i)
     s->globals[i] = BOGUS_OBJPTR;
   setInitialBytesLive (s);
-  heapCreate (s, &s->heap, 
-              heapDesiredSize (s, s->lastMajorStatistics.bytesLive, 0),
+  createHeap (s, &s->heap, 
+              sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
               s->lastMajorStatistics.bytesLive);
   createCardMapAndCrossMap (s);
   start = alignFrontier (s, s->heap.start);
@@ -258,8 +258,8 @@ static void newWorld (GC_state s) {
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = s->frontier - s->heap.start;
-  heapSetNursery (s, 0, 0);
-  thread = newThread (s, initialStackSize (s));
+  setHeapNursery (s, 0, 0);
+  thread = newThread (s, sizeofStackInitial (s));
   switchToThread (s, pointerToObjptr((pointer)thread, s->heap.start));
 }
 
@@ -397,7 +397,7 @@ static int processAtMLton (GC_state s, int argc, char **argv,
 
 int GC_init (GC_state s, int argc, char **argv) {
   char *worldFile;
-  int i;
+  int res;
 
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
   assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
@@ -439,7 +439,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   rusageZero (&s->cumulativeStatistics.ru_gcMinor);
   s->currentThread = BOGUS_OBJPTR;
   s->hashConsDuringGC = FALSE;
-  heapInit (&s->heap);
+  initHeap (s, &s->heap);
   s->lastMajorStatistics.bytesLive = 0;
   s->lastMajorStatistics.kind = GC_COPYING;
   s->lastMajorStatistics.numMinorGCs = 0;
@@ -455,7 +455,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->ratios.threadShrink = 0.5;
   s->rusageIsEnabled = FALSE;
   s->savedThread = BOGUS_OBJPTR;
-  heapInit (&s->secondaryHeap);
+  initHeap (s, &s->secondaryHeap);
   s->signalHandlerThread = BOGUS_OBJPTR;
   s->signalsInfo.amInSignalHandler = FALSE;
   s->signalsInfo.gcSignalHandled = FALSE;
@@ -475,7 +475,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   unless (isAligned (s->sysvals.pageSize, CARD_SIZE))
     die ("Page size must be a multiple of card size.");
   processAtMLton (s, s->atMLtonsLength, s->atMLtons, &worldFile);
-  i = processAtMLton (s, argc, argv, &worldFile);
+  res = processAtMLton (s, argc, argv, &worldFile);
   if (s->controls.fixedHeap > 0 and s->controls.maxHeap > 0)
     die ("Cannot use both fixed-heap and max-heap.\n");
   unless (ratiosOk (s->ratios))
@@ -485,7 +485,7 @@ int GC_init (GC_state s, int argc, char **argv) {
    * we are using mark-compact by comparing heap size to ram size.  If
    * we didn't round, the size might be slightly off.
    */
-  s->sysvals.ram = align (s->ratios.ramSlop * s->sysvals.totalRam, s->sysvals.pageSize);
+  s->sysvals.ram = align ((size_t)(s->ratios.ramSlop * s->sysvals.totalRam), s->sysvals.pageSize);
   if (DEBUG or DEBUG_RESIZING or s->controls.messages)
     fprintf (stderr, "total RAM = %zu  RAM = %zu\n",
              /*uintToCommaString*/(s->sysvals.totalRam),
@@ -532,13 +532,13 @@ int GC_init (GC_state s, int argc, char **argv) {
      */
     assert (mutatorInvariant (s, TRUE, FALSE));
   } else {
-    loadWorld (s, worldFile);
+    loadWorldFromFileName (s, worldFile);
     if (s->profiling.isOn and s->profiling.stack)
       foreachStackFrame (s, enterFrame);
     assert (mutatorInvariant (s, TRUE, TRUE));
   }
   s->amInGC = FALSE;
-  return i;
+  return res;
 }
 
 /* extern char **environ; /\* for Posix_ProcEnv_environ *\/ */

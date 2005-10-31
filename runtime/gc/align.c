@@ -21,6 +21,13 @@ static inline size_t alignDown (size_t a, size_t b) {
   return a;
 }
 
+static inline uintmax_t alignMaxDown (uintmax_t a, uintmax_t b) {
+  assert (b >= 1);
+  a -= a % b;
+  assert (isAlignedMax (a, b));
+  return a;
+}
+
 static inline size_t align (size_t a, size_t b) {
   assert (b >= 1);
   a += b - 1;
@@ -59,10 +66,6 @@ static inline pointer alignFrontier (GC_state s, pointer p) {
   return (pointer)res;
 }
 
-pointer GC_alignFrontier (GC_state s, pointer p) {
-  return alignFrontier (s, p);
-}
-
 #if ASSERT
 static inline bool isAlignedStackReserved (GC_state s, size_t reserved) {
   return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
@@ -75,7 +78,7 @@ static inline size_t alignStackReserved (GC_state s, size_t reserved) {
   
   res = pad (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
   if (DEBUG_STACKS)
-    fprintf (stderr, "%zu = stackReserved (%zu)\n", res, reserved);
+    fprintf (stderr, "%zu = alignStackReserved (%zu)\n", res, reserved);
   assert (isAlignedStackReserved (s, res));
   return res;
 }

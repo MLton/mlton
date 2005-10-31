@@ -70,7 +70,7 @@ CWFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 CFLAGS = -O2 $(CWFLAGS) -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 
-## Order matters, as these are concatenated together to form "gc.c".
+## Order matters, as these are concatenated together to form "libgc.c".
 CFILES = 								\
 	gc_prefix.c							\
 	util.c								\
@@ -80,51 +80,54 @@ CFILES = 								\
 	debug.c								\
 	align.c								\
 	virtual-memory.c						\
-	pointer_predicates.c						\
-	pointer.c							\
-	model_predicates.c						\
-	model.c								\
-	object.c							\
-	array.c								\
-	object_size.c							\
-	frame.c								\
-	stack_predicates.c						\
-	stack.c								\
-	thread.c							\
-	generational.c							\
-	current.c   							\
-	foreach.c							\
-	translate.c							\
-	heap_predicates.c						\
-	heap.c								\
-	ratios_predicates.c						\
-	atomic.c							\
-	gc_state.c   							\
-	invariant.c   							\
-	enter_leave.c							\
-	cheney-copy.c							\
-	hash-cons.c							\
-	dfs-mark.c							\
-	share.c								\
-	mark-compact.c							\
-	new_object.c   							\
-	garbage-collection.c						\
 	array-allocate.c						\
+	array.c								\
+	atomic.c							\
+	cheney-copy.c							\
+	controls.c							\
 	copy-thread.c							\
+	current.c   							\
+	dfs-mark.c							\
+	enter_leave.c							\
+	foreach.c							\
+	frame.c								\
+	garbage-collection.c						\
+	gc_state.c   							\
+	generational.c							\
+	hash-cons.c							\
+	heap.c								\
+	heap_predicates.c						\
+	invariant.c   							\
+	mark-compact.c							\
+	model.c								\
+	model_predicates.c						\
+	new-object.c   							\
+	object.c							\
+	object-size.c							\
 	pack.c								\
+	pointer.c							\
+	pointer_predicates.c						\
+	ratios_predicates.c						\
+	share.c								\
 	size.c								\
-	profiling.c							\
-	world.c								\
+	stack.c								\
+	stack_predicates.c						\
+	thread.c							\
+	translate.c							\
 	weak.c								\
+	world.c								\
+	profiling.c							\
 	init.c								\
 	done.c								\
 	assumptions.c							\
 	gc_suffix.c
 
-## Order matters, as these are concatenated together to form "gc.h".
+## Order matters, as these are concatenated together to form "libgc.h".
 HFILES = 								\
 	gc_prefix.h							\
 	util.h								\
+	safe.h								\
+	rusage.h							\
 	virtual-memory.h						\
 	pointer.h							\
 	model.h								\
@@ -134,10 +137,13 @@ HFILES = 								\
 	stack.h								\
 	thread.h							\
 	weak.h								\
+	object-size.h							\
 	int-inf.h							\
 	heap.h								\
 	major.h								\
 	generational.h							\
+	current.h							\
+	foreach.h							\
 	statistics.h							\
 	controls.h							\
 	sysvals.h							\
@@ -148,40 +154,54 @@ HFILES = 								\
 	world.h								\
 	init.h								\
 	gc_state.h							\
+	translate.h							\
+	atomic.h							\
+	invariant.h							\
+	enter_leave.h							\
+	cheney-copy.h							\
+	dfs-mark.h							\
+	share.h								\
+	mark-compact.h							\
+	new-object.h							\
+	garbage-collection.h						\
+	array-allocate.h						\
+	copy-thread.h							\
+	pack.h								\
+	size.h								\
 	gc_suffix.h
 
-all: gc.o gc-gdb.o
+all: libgc.o libgc-gdb.o
 
-gc-gdb.o: gc.c gc.h
-	$(CC) $(DEBUGFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -O1 -DASSERT=1 -c -o $@ gc.c
+libgc-gdb.o: libgc.c libgc.h
+	$(CC) $(DEBUGFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -O1 -DASSERT=1 -c -o $@ libgc.c
 
-gc.o: gc.c gc.h
-	$(CC) $(CFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -c -o $@ gc.c
+libgc.o: libgc.c libgc.h
+	$(CC) $(CFLAGS) -DGC_MODEL_$(DEFAULT_MODEL) -c -o $@ libgc.c
 
-gc.c: $(CFILES)
-	rm -f gc.c
+libgc.c: $(CFILES)
+	rm -f libgc.c
 	(								\
 		for f in $(CFILES); do					\
 			echo "#line 1 \"$$f\"";				\
 			cat $$f;					\
 		done;							\
-	) > gc.c
+	) > libgc.c
 
-gc.h: $(HFILES)
-	rm -f gc.h
+libgc.h: $(HFILES)
+	rm -f libgc.h
 	(								\
 		for f in $(HFILES); do					\
 			echo "#line 1 \"$$f\"";				\
 			cat $$f;					\
 		done;							\
-	) > gc.h
+	) > libgc.h
 
 .PHONY: models
-models: gc.c gc.h
+models: libgc.c libgc.h
 	(								\
 		for m in $(ALL_MODELS); do				\
-			$(CC) $(CFLAGS) -DGC_MODEL_$$m -c -o gc.$$m.o gc.c;	\
-			$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -DGC_MODEL_$$m -c -o gc-gdb.$$m.o gc.c;	\
+			$(CC) $(CFLAGS) -DGC_MODEL_$$m -c -o libgc.$$m.o libgc.c;	\
+			$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -DGC_MODEL_$$m -c -o libgc-gdb.$$m.o libgc.c;	\
 		done;							\
 	)
 

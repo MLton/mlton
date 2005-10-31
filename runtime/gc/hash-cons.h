@@ -29,8 +29,14 @@ typedef struct GC_objectHashTable {
   bool mayInsert;
 } *GC_objectHashTable;
 
-/*
-void maybeShareObjptr (GC_state s,
-                       objptr *opp,
-                       bool shouldHashCons);
-*/
+GC_objectHashTable newHashTable (GC_state s);
+void destroyHashTable (GC_objectHashTable t);
+pointer tableInsert (GC_state s, GC_objectHashTable t, 
+                     GC_hash hash, pointer object,
+                     bool mightBeThere, 
+                     GC_header header, GC_objectTypeTag tag, pointer max);
+void maybeGrowTable (GC_state s, GC_objectHashTable t);
+pointer hashCons (GC_state s, pointer object, bool countBytesHashConsed);
+void maybeSharePointer (GC_state s, pointer *pp, bool shouldHashCons);
+void maybeShareObjptr (GC_state s, objptr *opp, bool shouldHashCons);
+void bytesHashConsedMessage (GC_state s, uintmax_t total);

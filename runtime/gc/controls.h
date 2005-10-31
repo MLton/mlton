@@ -15,3 +15,5 @@ struct GC_controls {
   size_t oldGenArraySize; /* Arrays larger are allocated in old gen, if possible. */
   bool summary; /* Print a summary of gc info when program exits. */
 };
+
+bool detailedGCTime (GC_state s);

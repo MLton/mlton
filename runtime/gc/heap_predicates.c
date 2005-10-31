@@ -5,57 +5,58 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline bool pointerIsInHeap (GC_state s, pointer p) {
+bool isPointerInHeap (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.start <= p 
               and p < s->frontier));
 }
 
-static inline bool objptrIsInHeap (GC_state s, objptr op) {
-  pointer p;
-  if (not (isObjptr(op)))
-    return TRUE;
-  p = objptrToPointer (op, s->heap.start);
-  return pointerIsInHeap (s, p);
-}
-
-static inline bool pointerIsInOldGen (GC_state s, pointer p) {
+bool isPointerInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.start <= p 
               and p < s->heap.start + s->heap.oldGenSize));
 }
 
-static inline bool objptrIsInOldGen (GC_state s, objptr op) {
-  pointer p;
-  if (not (isObjptr(op)))
-    return TRUE;
-  p = objptrToPointer (op, s->heap.start);
-  return pointerIsInOldGen (s, p);
-}
-
-static inline bool pointerIsInNursery (GC_state s, pointer p) {
+bool isPointerInNursery (GC_state s, pointer p) {
   return (not (isPointer (p))
           or (s->heap.nursery <= p and p < s->frontier));
 }
 
-static inline bool objptrIsInNursery (GC_state s, objptr op) {
+bool isPointerInFromSpace (GC_state s, pointer p) {
+  return (isPointerInOldGen (s, p) 
+          or isPointerInNursery (s, p));
+}
+
+bool isObjptrInHeap (GC_state s, objptr op) {
   pointer p;
   if (not (isObjptr(op)))
     return TRUE;
   p = objptrToPointer (op, s->heap.start);
-  return pointerIsInNursery (s, p);
+  return isPointerInHeap (s, p);
 }
 
-static inline bool pointerIsInFromSpace (GC_state s, pointer p) {
-  return (pointerIsInOldGen (s, p) or pointerIsInNursery (s, p));
+bool isObjptrInOldGen (GC_state s, objptr op) {
+  pointer p;
+  if (not (isObjptr(op)))
+    return TRUE;
+  p = objptrToPointer (op, s->heap.start);
+  return isPointerInOldGen (s, p);
 }
 
-static inline bool objptrIsInFromSpace (GC_state s, objptr op) {
-  return (objptrIsInOldGen (s, op) or objptrIsInNursery (s, op));
+bool isObjptrInNursery (GC_state s, objptr op) {
+  pointer p;
+  if (not (isObjptr(op)))
+    return TRUE;
+  p = objptrToPointer (op, s->heap.start);
+  return isPointerInNursery (s, p);
 }
 
-#if ASSERT
-static bool heapHasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
+bool isObjptrInFromSpace (GC_state s, objptr op) {
+  return (isObjptrInOldGen (s, op) 
+          or isObjptrInNursery (s, op));
+}
+
+bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery) {
   size_t total;
   bool res;
 
@@ -72,8 +73,7 @@ static bool heapHasBytesFree (GC_state s, size_t oldGen, size_t nursery) {
              /*uintToCommaString*/(nursery));
   return res;
 }
-#endif
 
-static inline bool heapIsInit (GC_heap h) {
-  return 0 == h->size;
+bool isHeapInit (GC_heap h) {
+  return (0 == h->size);
 }

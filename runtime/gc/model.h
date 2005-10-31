@@ -221,3 +221,9 @@ typedef OBJPTR_TYPE objptr;
 #else
 #error gc model does not admit bogus object pointer
 #endif
+
+bool isObjptr (objptr p);
+pointer objptrToPointer (objptr O, pointer B);
+objptr pointerToObjptr (pointer P, pointer B);
+pointer fetchObjptrToPointer (pointer OP, pointer B);
+void storeObjptrFromPointer (pointer OP, pointer P, pointer B);

@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static char* objectTypeTagToString (GC_objectTypeTag tag) {
+const char* objectTypeTagToString (GC_objectTypeTag tag) {
   switch (tag) {
   case ARRAY_TAG:
     return "ARRAY";
@@ -17,29 +17,40 @@ static char* objectTypeTagToString (GC_objectTypeTag tag) {
   case WEAK_TAG:
     return "WEAK";
   default:
-    die ("bad tag %u", tag);
+    die ("bad GC_objectTypeTag %u", tag);
   }
+}
+
+/* getHeaderp (p)
+ *
+ * Returns a pointer to the header for the object pointed to by p.
+ */
+GC_header* getHeaderp (pointer p) {
+  return (GC_header*)(p 
+                      - GC_HEADER_SIZE);
+}
+
+/* getHeader (p) 
+ *
+ * Returns the header for the object pointed to by p. 
+ */
+GC_header getHeader (pointer p) {
+  return *(getHeaderp(p));
 }
 
 /*
  * Build the header for an object, given the index to its type info.
  */
-static inline GC_header objectHeader (uint32_t t) {
-        assert (t < TWOPOWER (TYPE_INDEX_BITS));
-        return 1 | (t << 1);
+GC_header buildHeaderFromTypeIndex (uint32_t t) {
+  assert (t < TWOPOWER (TYPE_INDEX_BITS));
+  return 1 | (t << 1);
 }
 
-#define GC_STACK_HEADER objectHeader (STACK_TYPE_INDEX)
-#define GC_STRING_HEADER objectHeader (STRING_TYPE_INDEX)
-#define GC_THREAD_HEADER objectHeader (THREAD_TYPE_INDEX)
-#define GC_WEAK_GONE_HEADER objectHeader (WEAK_GONE_TYPE_INDEX)
-#define GC_WORD8_VECTOR_HEADER objectHeader (WORD8_TYPE_INDEX)
-
-static inline void splitHeader(GC_state s, GC_header header,
-                               GC_objectTypeTag *tagRet, bool *hasIdentityRet,
-                               uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet) {
+void splitHeader(GC_state s, GC_header header,
+                 GC_objectTypeTag *tagRet, bool *hasIdentityRet,
+                 uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet) {
   unsigned int objectTypeIndex; 
-  GC_objectType *objectType; 
+  GC_objectType objectType; 
   GC_objectTypeTag tag;
   bool hasIdentity;
   uint16_t numNonObjptrs, numObjptrs;
@@ -57,11 +68,13 @@ static inline void splitHeader(GC_state s, GC_header header,
     fprintf (stderr, 
              "splitHeader ("FMTHDR")" 
              "  tag = %s" 
-             "  hasIdentity = %u" 
+             "  hasIdentity = %s" 
              "  numNonObjptrs = %"PRIu16 
              "  numObjptrs = %"PRIu16"\n", 
              header, 
-             objectTypeTagToString(tag), hasIdentity, numNonObjptrs, numObjptrs); 
+             objectTypeTagToString(tag), 
+             boolToString(hasIdentity), 
+             numNonObjptrs, numObjptrs); 
 
   if (tagRet != NULL)
     *tagRet = tag;
@@ -73,12 +86,12 @@ static inline void splitHeader(GC_state s, GC_header header,
     *numObjptrsRet = numObjptrs;
 }
 
-/* objectData (s, p)
+/* advanceToObjectData (s, p)
  *
- * If p points at the beginning of an object, then objectData returns
- * a pointer to the start of the object data.
+ * If p points at the beginning of an object, then advanceToObjectData
+ * returns a pointer to the start of the object data.
  */
-static inline pointer objectData (GC_state s, pointer p) {
+pointer advanceToObjectData (GC_state s, pointer p) {
   GC_header header;
   pointer res;
 

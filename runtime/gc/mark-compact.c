@@ -10,30 +10,9 @@
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
 
-static inline void dfsMarkTrue (GC_state s, objptr *opp) {
-  pointer p;
-
-  p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, MARK_MODE, TRUE);
-}
-
-static inline void dfsMarkFalse (GC_state s, objptr *opp) {
-  pointer p;
-
-  p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, MARK_MODE, FALSE);
-}
-
-static inline void dfsUnmark (GC_state s, objptr *opp) {
-  pointer p;
-
-  p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, UNMARK_MODE, FALSE);
-}
-
 /* An object pointer might be larger than a header.
  */ 
-static inline void threadInternalCopy (pointer dst, pointer src) {
+void threadInternalCopy (pointer dst, pointer src) {
   size_t count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
   src = src + GC_HEADER_SIZE * count;
 
@@ -44,7 +23,7 @@ static inline void threadInternalCopy (pointer dst, pointer src) {
   }
 }
 
-static inline void threadInternalObjptr (GC_state s, objptr *opp) {
+void threadInternalObjptr (GC_state s, objptr *opp) {
   objptr opop;
   pointer p;
   GC_header *headerp;
@@ -63,7 +42,7 @@ static inline void threadInternalObjptr (GC_state s, objptr *opp) {
 /* If p is weak, the object pointer was valid, and points to an unmarked object,
  * then clear the object pointer.
  */
-static inline void maybeClearWeak (GC_state s, pointer p) {
+void maybeClearWeak (GC_state s, pointer p) {
   GC_header header;
   GC_header *headerp;
   uint16_t numNonObjptrs, numObjptrs;
@@ -91,7 +70,7 @@ static inline void maybeClearWeak (GC_state s, pointer p) {
   }
 }
 
-static void updateForwardPointers (GC_state s) {
+void updateForwardPointers (GC_state s) {
   pointer back;
   pointer endOfLastMarked;
   pointer front;
@@ -113,15 +92,9 @@ updateObject:
              (uintptr_t)front, (uintptr_t)back);
   if (front == back)
     goto done;
-  headerp = (GC_header*)front;
+  p = advanceToObjectData (s, front);
+  headerp = getHeaderp (p);
   header = *headerp;
-  if (0 == header) {
-    /* We're looking at an array.  Move to the header. */
-    p = front + GC_ARRAY_HEADER_SIZE;
-    headerp = (GC_header*)(p - GC_HEADER_SIZE);
-    header = *headerp;
-  } else
-    p = front + GC_HEADER_SIZE;
   if (1 == (1 & header)) {
     /* It's a header */
     if (MARK_MASK & header) {
@@ -130,12 +103,12 @@ updateObject:
        */
 thread:
       maybeClearWeak (s, p);
-      size = objectSize (s, p);
+      size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %zu\n",
                  (uintptr_t)p, size);
       if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
-        /* Compress all of the unmarked into one string.  We require
+        /* Compress all of the unmarked into one vector.  We require
          * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
          * because that is the smallest possible array.  You cannot
          * use GC_ARRAY_HEADER_SIZE because even zero-length arrays
@@ -152,7 +125,7 @@ thread:
         endOfLastMarked = endOfLastMarked + GC_ARRAY_COUNTER_SIZE;
         *((GC_arrayLength*)(endOfLastMarked)) = ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
         endOfLastMarked = endOfLastMarked + GC_ARRAY_LENGTH_SIZE;
-        *((GC_header*)(endOfLastMarked)) = GC_STRING_HEADER;
+        *((GC_header*)(endOfLastMarked)) = GC_WORD8_VECTOR_HEADER;
       }
       front += size;
       endOfLastMarked = front;
@@ -160,7 +133,7 @@ thread:
       goto updateObject;
     } else {
       /* It's not marked. */
-      size = objectSize (s, p);
+      size = sizeofObject (s, p);
       gap += size;
       front += size;
       goto updateObject;
@@ -195,7 +168,7 @@ done:
   return;
 }
 
-static void updateBackwardPointersAndSlide (GC_state s) {
+void updateBackwardPointersAndSlide (GC_state s) {
   pointer back;
   pointer front;
   size_t gap;
@@ -215,15 +188,9 @@ updateObject:
              (uintptr_t)front, (uintptr_t)back);
   if (front == back)
     goto done;
-  headerp = (GC_header*)front;
+  p = advanceToObjectData (s, front);
+  headerp = getHeaderp (p);
   header = *headerp;
-  if (0 == header) {
-    /* We're looking at an array.  Move to the header. */
-    p = front + GC_ARRAY_HEADER_SIZE;
-    headerp = (GC_header*)(p - GC_HEADER_SIZE);
-    header = *headerp;
-  } else
-    p = front + GC_HEADER_SIZE;
   if (1 == (1 & header)) {
     /* It's a header */
     if (MARK_MASK & header) {
@@ -231,7 +198,7 @@ updateObject:
        * Unmark it.
        */
 unmark:
-      size = objectSize (s, p);
+      size = sizeofObject (s, p);
       /* unmark */
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "unmarking "FMTPTR" of size %zu\n",
@@ -246,7 +213,7 @@ unmark:
       goto updateObject;
     } else {
       /* It's not marked. */
-      size = objectSize (s, p);
+      size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "skipping "FMTPTR" of size %zu\n",
                  (uintptr_t)p, size);
@@ -287,7 +254,7 @@ done:
   return;
 }
 
-static void majorMarkCompactGC (GC_state s) {
+void majorMarkCompactGC (GC_state s) {
   struct rusage ru_start;
 
   if (detailedGCTime (s))

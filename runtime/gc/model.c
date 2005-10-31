@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline pointer objptrToPointer (objptr O, pointer B) {
+pointer objptrToPointer (objptr O, pointer B) {
   uintptr_t O_ = (uintptr_t)O;
   uintptr_t B_;
   unsigned int S_ = GC_MODEL_SHIFT;
@@ -26,7 +26,7 @@ static inline pointer objptrToPointer (objptr O, pointer B) {
   return P;
 }
 
-static inline objptr pointerToObjptr (pointer P, pointer B) {
+objptr pointerToObjptr (pointer P, pointer B) {
   uintptr_t P_ = (uintptr_t)P;
   uintptr_t B_;
   unsigned int S_ = GC_MODEL_SHIFT;
@@ -56,12 +56,9 @@ static inline objptr pointerToObjptr (pointer P, pointer B) {
  * runtime in a manner which is agnostic to the actual objptr
  * representation.
  */
-static inline pointer fetchObjptrToPointer (pointer OP, pointer B) {
+pointer fetchObjptrToPointer (pointer OP, pointer B) {
   return objptrToPointer (*((objptr*)OP), B);
 }
-static inline void storeObjptrFromPointer (pointer OP, pointer P, pointer B) {
+void storeObjptrFromPointer (pointer OP, pointer P, pointer B) {
   *((objptr*)OP) = pointerToObjptr (P, B);
-}
-static inline size_t objptrSize (void) {
-  return OBJPTR_SIZE;
 }

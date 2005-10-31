@@ -25,7 +25,7 @@
  *   we ensure by making it odd and keeping the table size as a power of 2.
  */
 
-static GC_objectHashTable newHashTable (GC_state s) {
+GC_objectHashTable newHashTable (GC_state s) {
   uint32_t elementsLengthMax;
   pointer regionStart;
   pointer regionEnd;
@@ -33,7 +33,7 @@ static GC_objectHashTable newHashTable (GC_state s) {
   
   t = (GC_objectHashTable)(malloc_safe (sizeof(*t)));
   // Try to use space in the heap for the elements.
-  if (not (heapIsInit (&s->secondaryHeap))) {
+  if (not (isHeapInit (&s->secondaryHeap))) {
     if (DEBUG_SHARE)
       fprintf (stderr, "using secondaryHeap\n");
     regionStart = s->secondaryHeap.start;
@@ -87,17 +87,17 @@ static GC_objectHashTable newHashTable (GC_state s) {
   return t;
 }
 
-static void destroyHashTable (GC_objectHashTable t) {
+void destroyHashTable (GC_objectHashTable t) {
   unless (t->elementsIsInHeap)
     free (t->elements);
   free (t);
 }
 
-static inline pointer 
-tableInsert (__attribute__ ((unused)) GC_state s, 
-             GC_objectHashTable t, 
-             GC_hash hash, pointer object,
-             bool mightBeThere, GC_header header, GC_objectTypeTag tag, pointer max) {
+pointer tableInsert (__attribute__ ((unused)) GC_state s, 
+                     GC_objectHashTable t, 
+                     GC_hash hash, pointer object,
+                     bool mightBeThere, 
+                     GC_header header, GC_objectTypeTag tag, pointer max) {
   static bool init = FALSE;
   static uint64_t mult; // magic multiplier for hashing
   static uint32_t maxNumProbes = 0;
@@ -176,7 +176,7 @@ lookNext:
   return e->object;
 }
 
-static void maybeGrowTable (GC_state s, GC_objectHashTable t) {
+void maybeGrowTable (GC_state s, GC_objectHashTable t) {
   GC_objectHashElement oldElement;
   struct GC_objectHashElement *oldElements;
   uint32_t oldElementsLengthMax;
@@ -218,7 +218,7 @@ static void maybeGrowTable (GC_state s, GC_objectHashTable t) {
     fprintf (stderr, "done growing table\n");
 }
 
-static pointer hashCons (GC_state s, pointer object, bool countBytesHashConsed) {
+pointer hashCons (GC_state s, pointer object, bool countBytesHashConsed) {
   GC_objectHashTable t;
   GC_header header;
   uint16_t numNonObjptrs;
@@ -244,9 +244,9 @@ static pointer hashCons (GC_state s, pointer object, bool countBytesHashConsed) 
   max = 
     object
     + (ARRAY_TAG == tag
-       ? arraySizeNoHeader (s, object,
-                            numNonObjptrs, numObjptrs)
-       : (numNonObjptrsToBytes (numNonObjptrs, NORMAL_TAG)
+       ? (sizeofArrayNoHeader (s, getArrayLength (object),
+                               numNonObjptrs, numObjptrs))
+       : (sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs)
           + (numObjptrs * OBJPTR_SIZE)));
   // Compute the hash.
   hash = (GC_hash)header;
@@ -272,9 +272,9 @@ done:
   return res;
 }
 
-static inline void maybeSharePointer (GC_state s,
-                                      pointer *pp,
-                                      bool shouldHashCons) {
+void maybeSharePointer (GC_state s,
+                        pointer *pp,
+                        bool shouldHashCons) {
   unless (shouldHashCons)
     return;
   if (DEBUG_SHARE)
@@ -283,9 +283,9 @@ static inline void maybeSharePointer (GC_state s,
   *pp = hashCons (s, *pp, FALSE);
 }
 
-static inline void maybeShareObjptr (GC_state s,
-                                     objptr *opp,
-                                     bool shouldHashCons) {
+void maybeShareObjptr (GC_state s,
+                       objptr *opp,
+                       bool shouldHashCons) {
   pointer p;
   
   unless (shouldHashCons)
@@ -298,7 +298,7 @@ static inline void maybeShareObjptr (GC_state s,
   *opp = pointerToObjptr (p, s->heap.start);
 }
 
-static void bytesHashConsedMessage (GC_state s, uintmax_t total) {
+void bytesHashConsedMessage (GC_state s, uintmax_t total) {
   fprintf (stderr, "%"PRIuMAX" bytes hash consed (%.1f%%).\n",
            /*ullongToCommaString*/(s->cumulativeStatistics.bytesHashConsed),
            (100.0 

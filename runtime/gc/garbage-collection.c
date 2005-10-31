@@ -6,11 +6,11 @@
  * See the file MLton-LICENSE for details.
  */
 
-static void minorGC (GC_state s) {
+void minorGC (GC_state s) {
   minorCheneyCopyGC (s);
 }
 
-static void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
+void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   uintmax_t numGCs;
   size_t desiredSize;
 
@@ -23,12 +23,12 @@ static void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
            < s->ratios.hashCons))
     s->hashConsDuringGC = TRUE;
   desiredSize = 
-    heapDesiredSize (s, s->lastMajorStatistics.bytesLive + bytesRequested, 0);
+    sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive + bytesRequested, 0);
   if ((not FORCE_MARK_COMPACT)
       and not s->hashConsDuringGC // only markCompact can hash cons
       and s->heap.size < s->sysvals.ram
-      and (not heapIsInit (&s->secondaryHeap)
-           or secondaryHeapCreate (s, desiredSize)))
+      and (not isHeapInit (&s->secondaryHeap)
+           or createHeapSecondary (s, desiredSize)))
     majorCheneyCopyGC (s);
   else
     majorMarkCompactGC (s);
@@ -36,17 +36,18 @@ static void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   s->lastMajorStatistics.bytesLive = s->heap.oldGenSize;
   if (s->lastMajorStatistics.bytesLive > s->cumulativeStatistics.maxBytesLive)
     s->cumulativeStatistics.maxBytesLive = s->lastMajorStatistics.bytesLive;
-  /* Notice that the s->bytesLive below is different than the s->bytesLive
-   * used as an argument to heapAllocateSecondSemi above.  Above, it was 
-   * an estimate.  Here, it is exactly how much was live after the GC.
+  /* Notice that the s->bytesLive below is different than the
+   * s->bytesLive used as an argument to createHeapSecondary above.
+   * Above, it was an estimate.  Here, it is exactly how much was live
+   * after the GC.
    */
   if (mayResize)
-    heapResize (s, s->lastMajorStatistics.bytesLive + bytesRequested);
-  secondaryHeapResize (s);
+    resizeHeap (s, s->lastMajorStatistics.bytesLive + bytesRequested);
+  resizeHeapSecondary (s);
   assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
 }
 
-static inline void enterGC (GC_state s) {
+void enterGC (GC_state s) {
   if (s->profiling.isOn) {
     /* We don't need to profileEnter for count profiling because it
      * has already bumped the counter.  If we did allow the bump, then
@@ -59,7 +60,7 @@ static inline void enterGC (GC_state s) {
   s->amInGC = TRUE;
 }
 
-static inline void leaveGC (GC_state s) {
+void leaveGC (GC_state s) {
   if (s->profiling.isOn) {
     if (s->profiling.stack
         and not (PROFILE_COUNT == s->profiling.kind))
@@ -68,7 +69,7 @@ static inline void leaveGC (GC_state s) {
   s->amInGC = FALSE;
 }
 
-static inline bool needGCTime (GC_state s) {
+bool needGCTime (GC_state s) {
   return 
     DEBUG 
     or s->controls.summary 
@@ -76,11 +77,11 @@ static inline bool needGCTime (GC_state s) {
     or s->rusageIsEnabled;
 }
 
-static void doGC (GC_state s, 
-                  size_t oldGenBytesRequested,
-                  size_t nurseryBytesRequested, 
-                  bool forceMajor,
-                  bool mayResize) {
+void doGC (GC_state s, 
+           size_t oldGenBytesRequested,
+           size_t nurseryBytesRequested, 
+           bool forceMajor,
+           bool mayResize) {
   uintmax_t gcTime;
   bool stackTopOk;
   size_t stackBytesRequested;
@@ -98,7 +99,9 @@ static void doGC (GC_state s,
   minorGC (s);
   stackTopOk = mutatorStackInvariant (s);
   stackBytesRequested = 
-    stackTopOk ? 0 : stackSizeTotalAligned (s, stackGrowSize (s));
+    stackTopOk 
+    ? 0 
+    : sizeofStackWithHeaderAligned (s, sizeofStackGrow (s, getStackCurrent (s)));
   totalBytesRequested = 
     oldGenBytesRequested 
     + nurseryBytesRequested
@@ -106,13 +109,13 @@ static void doGC (GC_state s,
   if (forceMajor 
       or totalBytesRequested > s->heap.size - s->heap.oldGenSize)
     majorGC (s, totalBytesRequested, mayResize);
-  heapSetNursery (s, oldGenBytesRequested + stackBytesRequested, 
+  setHeapNursery (s, oldGenBytesRequested + stackBytesRequested, 
                   nurseryBytesRequested);
-  assert (heapHasBytesFree (s, oldGenBytesRequested + stackBytesRequested,
+  assert (hasHeapBytesFree (s, oldGenBytesRequested + stackBytesRequested,
                             nurseryBytesRequested));
   unless (stackTopOk)
-    stackGrow (s);
-  setCurrentStack (s);
+    growStack (s);
+  setThreadAndStackCurrent (s);
   if (needGCTime (s)) {
     gcTime = stopTiming (&ru_start, &s->cumulativeStatistics.ru_gc);
     s->cumulativeStatistics.maxPause = 
@@ -138,17 +141,17 @@ static void doGC (GC_state s,
   }
   if (DEBUG) 
     displayGCState (s, stderr);
-  assert (heapHasBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
+  assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
   assert (invariant (s));
   leaveGC (s);
 }
 
-static inline void ensureMutatorInvariant (GC_state s, bool force) {
+void ensureMutatorInvariant (GC_state s, bool force) {
   if (force
       or not (mutatorFrontierInvariant(s))
       or not (mutatorStackInvariant(s))) {
     /* This GC will grow the stack, if necessary. */
-    doGC (s, 0, currentThread(s)->bytesNeeded, force, TRUE);
+    doGC (s, 0, getThreadCurrent(s)->bytesNeeded, force, TRUE);
   }
   assert (mutatorFrontierInvariant(s));
   assert (mutatorStackInvariant(s));
@@ -157,14 +160,14 @@ static inline void ensureMutatorInvariant (GC_state s, bool force) {
 /* ensureFree (s, b) ensures that upon return
  *      b <= s->limitPlusSlop - s->frontier
  */
-static inline void ensureFree (GC_state s, size_t bytesRequested) {
+void ensureFree (GC_state s, size_t bytesRequested) {
   assert (s->frontier <= s->limitPlusSlop);
   if (bytesRequested > (size_t)(s->limitPlusSlop - s->frontier))
     doGC (s, 0, bytesRequested, FALSE, TRUE);
   assert (bytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
 }
 
-static void switchToThread (GC_state s, objptr op) {
+void switchToThread (GC_state s, objptr op) {
   if (DEBUG_THREADS) {
     GC_thread thread;
     GC_stack stack;
@@ -176,7 +179,7 @@ static void switchToThread (GC_state s, objptr op) {
              op, stack->used, stack->reserved);
   }
   s->currentThread = op;
-  setCurrentStack (s);
+  setThreadAndStackCurrent (s);
 }
 
 /* GC_startHandler does not do an enter()/leave(), even though it is
@@ -214,7 +217,7 @@ void GC_finishHandler (GC_state s) {
   s->signalsInfo.amInSignalHandler = FALSE;     
 }
 
-static inline void maybeSwitchToHandler (GC_state s) {
+void maybeSwitchToHandler (GC_state s) {
   if (s->atomicState == 1 
       and s->signalsInfo.signalIsPending) {
     GC_startHandler (s);
@@ -222,48 +225,49 @@ static inline void maybeSwitchToHandler (GC_state s) {
   }
 }
 
-/* void GC_switchToThread (GC_state s, GC_thread t, uint ensureBytesFree) { */
-/*         if (DEBUG_THREADS) */
-/*                 fprintf (stderr, "GC_switchToThread (0x%08x, %u)\n", (uint)t, ensureBytesFree); */
-/*         if (FALSE) { */
-/*                 /\* This branch is slower than the else branch, especially  */
-/*                  * when debugging is turned on, because it does an invariant */
-/*                  * check on every thread switch. */
-/*                  * So, we'll stick with the else branch for now. */
-/*                  *\/ */
-/*                 enter (s); */
-/*                 s->currentThread->bytesNeeded = ensureBytesFree; */
-/*                 switchToThread (s, t); */
-/*                 s->canHandle--; */
-/*                 maybeSwitchToHandler (s); */
-/*                 ensureMutatorInvariant (s, FALSE); */
-/*                 assert (mutatorFrontierInvariant(s)); */
-/*                 assert (mutatorStackInvariant(s)); */
-/*                 leave (s); */
-/*         } else { */
-/*                 /\* BEGIN: enter(s); *\/ */
-/*                 s->currentThread->stack->used = currentStackUsed (s); */
-/*                 s->currentThread->exnStack = s->exnStack; */
-/*                 atomicBegin (s); */
-/*                 /\* END: enter(s); *\/ */
-/*                 s->currentThread->bytesNeeded = ensureBytesFree; */
-/*                 switchToThread (s, t); */
-/*                 s->canHandle--; */
-/*                 maybeSwitchToHandler (s); */
-/*                 /\* BEGIN: ensureMutatorInvariant *\/ */
-/*                 if (not (mutatorFrontierInvariant(s)) */
-/*                         or not (mutatorStackInvariant(s))) { */
-/*                         /\* This GC will grow the stack, if necessary. *\/ */
-/*                         doGC (s, 0, s->currentThread->bytesNeeded, FALSE, TRUE); */
-/*                 }  */
-/*                 /\* END: ensureMutatorInvariant *\/ */
-/*                 /\* BEGIN: leave(s); *\/ */
-/*                 atomicEnd (s); */
-/*                 /\* END: leave(s); *\/ */
-/*         } */
-/*         assert (mutatorFrontierInvariant(s)); */
-/*         assert (mutatorStackInvariant(s)); */
-/* } */
+void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
+  if (DEBUG_THREADS)
+    fprintf (stderr, "GC_switchToThread ("FMTPTR", %zu)\n", 
+             (uintptr_t)t, ensureBytesFree);
+  if (FALSE) {
+    /* This branch is slower than the else branch, especially
+     * when debugging is turned on, because it does an invariant
+     * check on every thread switch.
+     * So, we'll stick with the else branch for now.
+     */
+    enter (s);
+    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
+    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
+    s->atomicState--;
+    maybeSwitchToHandler (s);
+    ensureMutatorInvariant (s, FALSE);
+    assert (mutatorFrontierInvariant(s));
+    assert (mutatorStackInvariant(s));
+    leave (s);
+  } else {
+    /* BEGIN: enter(s); */
+    getStackCurrent(s)->used = sizeofStackCurrentUsed (s);
+    getThreadCurrent(s)->exnStack = s->exnStack;
+    atomicBegin (s);
+    /* END: enter(s); */
+    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
+    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
+    s->atomicState--;
+    maybeSwitchToHandler (s);
+    /* BEGIN: ensureMutatorInvariant */
+    if (not (mutatorFrontierInvariant(s))
+        or not (mutatorStackInvariant(s))) {
+      /* This GC will grow the stack, if necessary. */
+      doGC (s, 0, getThreadCurrent(s)->bytesNeeded, FALSE, TRUE);
+    }
+    /* END: ensureMutatorInvariant */
+    /* BEGIN: leave(s); */
+    atomicEnd (s);
+    /* END: leave(s); */
+  }
+  assert (mutatorFrontierInvariant(s));
+  assert (mutatorStackInvariant(s));
+}
 
 void GC_gc (GC_state s, size_t bytesRequested, bool force,
             char *file, int line) {
@@ -271,11 +275,11 @@ void GC_gc (GC_state s, size_t bytesRequested, bool force,
     fprintf (stderr, "%s %d: GC_gc\n", file, line);
   enter (s);
   /* When the mutator requests zero bytes, it may actually need as
-   * much as LIMIT_SLOP.
+   * much as GC_HEAP_LIMIT_SLOP.
    */
   if (0 == bytesRequested)
-    bytesRequested = LIMIT_SLOP;
-  currentThread(s)->bytesNeeded = bytesRequested;
+    bytesRequested = GC_HEAP_LIMIT_SLOP;
+  getThreadCurrent(s)->bytesNeeded = bytesRequested;
   maybeSwitchToHandler (s);
   ensureMutatorInvariant (s, force);
   assert (mutatorFrontierInvariant(s));
