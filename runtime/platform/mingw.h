@@ -262,6 +262,7 @@ pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
 int setgid (gid_t gid);
+int setgroups (size_t size, gid_t *list);
 int setpgid (pid_t pid, pid_t pgid);
 pid_t setsid (void);
 int setuid (uid_t uid);

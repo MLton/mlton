@@ -341,6 +341,11 @@ int setenv (const char *name, const char *value, int overwrite) {
 int setgid (gid_t gid) {
         die ("setgid not implemented");
 }
+
+int setgroups (size_t size, gid_t *list) {
+        die ("setgroups not implemented");
+}
+
 int setpgid (pid_t pid, pid_t pgid) {
         die ("setpgid not implemented");
 }
