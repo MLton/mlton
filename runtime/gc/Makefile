@@ -90,6 +90,7 @@ CFILES = 								\
 	dfs-mark.c							\
 	enter_leave.c							\
 	foreach.c							\
+	forward.c							\
 	frame.c								\
 	garbage-collection.c						\
 	gc_state.c   							\
@@ -107,7 +108,6 @@ CFILES = 								\
 	pack.c								\
 	pointer.c							\
 	pointer_predicates.c						\
-	ratios_predicates.c						\
 	share.c								\
 	size.c								\
 	stack.c								\
@@ -129,8 +129,9 @@ HFILES = 								\
 	safe.h								\
 	rusage.h							\
 	virtual-memory.h						\
-	pointer.h							\
 	model.h								\
+	pointer.h							\
+	objptr.h							\
 	object.h							\
 	array.h								\
 	frame.h								\
@@ -145,9 +146,11 @@ HFILES = 								\
 	current.h							\
 	foreach.h							\
 	statistics.h							\
-	controls.h							\
 	sysvals.h							\
 	ratios.h							\
+	controls.h							\
+	forward.h							\
+	cheney-copy.h							\
 	hash-cons.h							\
 	profiling.h							\
 	signals.h							\
@@ -158,15 +161,14 @@ HFILES = 								\
 	atomic.h							\
 	invariant.h							\
 	enter_leave.h							\
-	cheney-copy.h							\
 	dfs-mark.h							\
-	share.h								\
 	mark-compact.h							\
 	new-object.h							\
 	garbage-collection.h						\
 	array-allocate.h						\
 	copy-thread.h							\
 	pack.h								\
+	share.h								\
 	size.h								\
 	gc_suffix.h
 

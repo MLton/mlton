@@ -24,22 +24,3 @@ GC_stack getStackCurrent (GC_state s) {
   pointer p = objptrToPointer(getStackCurrentObjptr(s), s->heap.start);
   return (GC_stack)p;
 }
-
-size_t sizeofStackCurrentUsed (GC_state s) {
-  return s->stackTop - s->stackBottom;
-}
-
-
-
-void setThreadAndStackCurrent (GC_state s) {
-  GC_thread thread;
-  GC_stack stack;
-  
-  thread = getThreadCurrent (s);
-  s->exnStack = thread->exnStack;
-  stack = getStackCurrent (s);
-  s->stackBottom = getStackBottom (s, stack);
-  s->stackTop = getStackTop (s, stack);
-  s->stackLimit = getStackLimit (s, stack);
-  markCard (s, (pointer)stack);
-}

@@ -10,7 +10,6 @@ struct GC_cumulativeStatistics {
   uintmax_t bytesAllocated;
   uintmax_t bytesCopied;
   uintmax_t bytesCopiedMinor;
-  uintmax_t bytesHashConsed;
   uintmax_t bytesMarkCompacted;
 
   uintmax_t markedCards; /* Number of marked cards seen during minor GCs. */
@@ -37,6 +36,7 @@ struct GC_cumulativeStatistics {
 };
 
 struct GC_lastMajorStatistics {
+  uintmax_t bytesHashConsed;
   size_t bytesLive; /* Number of bytes live at most recent major GC. */
   GC_majorKind kind;
   uintmax_t numMinorGCs;

@@ -20,7 +20,7 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
     + s->cumulativeStatistics.numMarkCompactGCs;
   if (0 < numGCs
       and ((float)(s->cumulativeStatistics.numHashConsGCs) / (float)(numGCs)
-           < s->ratios.hashCons))
+           < s->controls.ratios.hashCons))
     s->hashConsDuringGC = TRUE;
   desiredSize = 
     sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive + bytesRequested, 0);
@@ -69,14 +69,6 @@ void leaveGC (GC_state s) {
   s->amInGC = FALSE;
 }
 
-bool needGCTime (GC_state s) {
-  return 
-    DEBUG 
-    or s->controls.summary 
-    or s->controls.messages 
-    or s->rusageIsEnabled;
-}
-
 void doGC (GC_state s, 
            size_t oldGenBytesRequested,
            size_t nurseryBytesRequested, 
@@ -109,13 +101,13 @@ void doGC (GC_state s,
   if (forceMajor 
       or totalBytesRequested > s->heap.size - s->heap.oldGenSize)
     majorGC (s, totalBytesRequested, mayResize);
-  setHeapNursery (s, oldGenBytesRequested + stackBytesRequested, 
-                  nurseryBytesRequested);
+  setGCStateCurrentHeap (s, oldGenBytesRequested + stackBytesRequested, 
+                         nurseryBytesRequested);
   assert (hasHeapBytesFree (s, oldGenBytesRequested + stackBytesRequested,
                             nurseryBytesRequested));
   unless (stackTopOk)
     growStack (s);
-  setThreadAndStackCurrent (s);
+  setGCStateCurrentThreadAndStack (s);
   if (needGCTime (s)) {
     gcTime = stopTiming (&ru_start, &s->cumulativeStatistics.ru_gc);
     s->cumulativeStatistics.maxPause = 
@@ -179,7 +171,7 @@ void switchToThread (GC_state s, objptr op) {
              op, stack->used, stack->reserved);
   }
   s->currentThread = op;
-  setThreadAndStackCurrent (s);
+  setGCStateCurrentThreadAndStack (s);
 }
 
 /* GC_startHandler does not do an enter()/leave(), even though it is
@@ -246,9 +238,9 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
     leave (s);
   } else {
     /* BEGIN: enter(s); */
-    getStackCurrent(s)->used = sizeofStackCurrentUsed (s);
+    getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
     getThreadCurrent(s)->exnStack = s->exnStack;
-    atomicBegin (s);
+    beginAtomic (s);
     /* END: enter(s); */
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
     switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
@@ -262,7 +254,7 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
     }
     /* END: ensureMutatorInvariant */
     /* BEGIN: leave(s); */
-    atomicEnd (s);
+    endAtomic (s);
     /* END: leave(s); */
   }
   assert (mutatorFrontierInvariant(s));

@@ -8,7 +8,7 @@
 
 typedef void (*GC_foreachObjptrFun) (GC_state s, objptr *opp);
 
-void maybeCall (GC_state s, GC_foreachObjptrFun f, objptr *opp);
+void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp);
 /* foreachGlobalObjptr (s, f)
  * 
  * Apply f to each global object pointer into the heap. 
@@ -22,8 +22,8 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
 pointer foreachObjptrInObject (GC_state s, pointer p,
-                               bool skipWeaks, GC_foreachObjptrFun f);
-/* foreachObjptrInRange (s, front, back, skipWeaks, f)
+                               GC_foreachObjptrFun f, bool skipWeaks);
+/* foreachObjptrInRange (s, front, back, f, skipWeaks)
  *
  * Apply f to each pointer between front and *back, which should be a
  * contiguous sequence of objects, where front points at the beginning
@@ -35,7 +35,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
 pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
-                              bool skipWeaks, GC_foreachObjptrFun f);
+                              GC_foreachObjptrFun f, bool skipWeaks);
 
 
 typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i);

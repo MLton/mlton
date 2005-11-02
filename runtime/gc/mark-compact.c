@@ -129,7 +129,7 @@ thread:
       }
       front += size;
       endOfLastMarked = front;
-      foreachObjptrInObject (s, p, FALSE, threadInternalObjptr);
+      foreachObjptrInObject (s, p, threadInternalObjptr, FALSE);
       goto updateObject;
     } else {
       /* It's not marked. */
@@ -267,11 +267,11 @@ void majorMarkCompactGC (GC_state s) {
              /*uintToCommaString*/(s->heap.size));
   }
   if (s->hashConsDuringGC) {
-    s->cumulativeStatistics.bytesHashConsed = 0;
+    s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
-    s->objectHashTable = newHashTable (s);
+    s->objectHashTable = allocHashTable (s);
     foreachGlobalObjptr (s, dfsMarkTrue);
-    destroyHashTable (s->objectHashTable);
+    freeHashTable (s->objectHashTable);
   } else {
     foreachGlobalObjptr (s, dfsMarkFalse);
   }
@@ -286,8 +286,8 @@ void majorMarkCompactGC (GC_state s) {
   if (DEBUG or s->controls.messages) {
     fprintf (stderr, "Major mark-compact GC done.\n");
     if (s->hashConsDuringGC)
-      bytesHashConsedMessage(s, 
-                             s->cumulativeStatistics.bytesHashConsed 
-                             + s->heap.oldGenSize);
+      printBytesHashConsedMessage(s, 
+                                  s->lastMajorStatistics.bytesHashConsed 
+                                  + s->heap.oldGenSize);
   }
 }

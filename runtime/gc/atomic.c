@@ -6,13 +6,13 @@
  * See the file MLton-LICENSE for details.
  */
 
-void atomicBegin (GC_state s) {
+void beginAtomic (GC_state s) {
   s->atomicState++;
   if (0 == s->limit)
     s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
 }
 
-void atomicEnd (GC_state s) {
+void endAtomic (GC_state s) {
   s->atomicState--;
   if (0 == s->atomicState 
       and s->signalsInfo.signalIsPending)

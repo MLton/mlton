@@ -38,26 +38,26 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
   float ratio;
 
   ratio = (float)s->sysvals.ram / (float)live;
-  if (ratio >= s->ratios.live + s->ratios.grow) {
+  if (ratio >= s->controls.ratios.live + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM with desired ratios.live. */
-    res = live * s->ratios.live;
+    res = live * s->controls.ratios.live;
     /* If the heap is currently close in size to what we want, leave
      * it alone.  Favor growing over shrinking.
      */
     unless (1.1 * currentSize <= res
             or res <= .5 * currentSize)
       res = currentSize;
-  } else if (s->ratios.grow >= s->ratios.copy
-             and ratio >= 2 * s->ratios.copy) {
+  } else if (s->controls.ratios.grow >= s->controls.ratios.copy
+             and ratio >= 2 * s->controls.ratios.copy) {
     /* Split RAM in half.  Round down by pageSize so that the total
      * amount of space taken isn't greater than RAM once rounding
      * happens.  This is so resizeHeap2 doesn't get confused and free
      * a semispace in a misguided attempt to avoid paging.
      */
     res = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
-  } else if (ratio >= s->ratios.copy + s->ratios.grow) {
+  } else if (ratio >= s->controls.ratios.copy + s->controls.ratios.grow) {
     /* Cheney copying fits in RAM. */
-    res = s->sysvals.ram - s->ratios.grow * live;
+    res = s->sysvals.ram - s->controls.ratios.grow * live;
     /* If the heap isn't too much smaller than what we want, leave it
      * alone.  On the other hand, if it is bigger we want to leave res
      * as is so that the heap is shrunk, to try to avoid paging.
@@ -65,7 +65,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
     if (currentSize <= res 
         and res <= 1.1 * currentSize)
       res = currentSize;
-  } else if (ratio >= s->ratios.markCompact) {
+  } else if (ratio >= s->controls.ratios.markCompact) {
     /* Mark compact fits in RAM.  It doesn't matter what the current
      * size is.  If the heap is currently smaller, we are using
      * copying and should switch to mark-compact.  If the heap is
@@ -74,7 +74,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      */
     res = s->sysvals.ram;
   } else { /* Required live ratio. */
-    res = live * s->ratios.markCompact;
+    res = live * s->controls.ratios.markCompact;
     /* If the current heap is bigger than res, then shrinking always
      * sounds like a good idea.  However, depending on what pages the
      * VM keeps around, growing could be very expensive, if it
@@ -393,71 +393,4 @@ void resizeHeapSecondary (GC_state s) {
     shrinkHeap (s, &s->secondaryHeap, primarySize);
   assert (0 == s->secondaryHeap.size 
           or s->heap.size == s->secondaryHeap.size);
-}
-
-
-void setHeapNursery (GC_state s, 
-                     size_t oldGenBytesRequested,
-                     size_t nurseryBytesRequested) {
-  GC_heap h;
-  size_t nurserySize;
-
-  if (DEBUG_DETAILED)
-    fprintf (stderr, "setHeapNursery(%zu, %zu)\n",
-             /*uintToCommaString*/(oldGenBytesRequested),
-             /*uintToCommaString*/(nurseryBytesRequested));
-  h = &s->heap;
-  assert (isAlignedFrontier (s, h->start + h->oldGenSize + oldGenBytesRequested));
-  nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
-  s->limitPlusSlop = h->start + h->size;
-  s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  assert (isAligned (nurserySize, POINTER_SIZE));
-  if (/* The mutator marks cards. */
-      s->mutatorMarksCards
-      /* There is enough space in the nursery. */
-      and (nurseryBytesRequested
-           <= (size_t)(s->limitPlusSlop
-                       - alignFrontier (s, (s->limitPlusSlop 
-                                            - nurserySize / 2 + 2))))
-      /* The nursery is large enough to be worth it. */
-      and (((float)(h->size - s->lastMajorStatistics.bytesLive) 
-            / (float)nurserySize) 
-           <= s->ratios.nursery)
-      and /* There is a reason to use generational GC. */
-      (
-       /* We must use it for debugging pruposes. */
-       FORCE_GENERATIONAL
-       /* We just did a mark compact, so it will be advantageous to to
-        * use it.
-        */
-       or (s->lastMajorStatistics.kind == GC_MARK_COMPACT)
-       /* The live ratio is low enough to make it worthwhile. */
-       or ((float)h->size / (float)s->lastMajorStatistics.bytesLive
-           <= (h->size < s->sysvals.ram
-               ? s->ratios.copyGenerational
-               : s->ratios.markCompactGenerational))
-       )) {
-    s->canMinor = TRUE;
-    nurserySize /= 2;
-    while (not (isAligned (nurserySize, POINTER_SIZE))) {
-      nurserySize -= 2;
-    }
-    clearCardMap (s);
-  } else {
-    unless (nurseryBytesRequested
-            <= (size_t)(s->limitPlusSlop
-                        - alignFrontier (s, s->limitPlusSlop
-                                         - nurserySize)))
-      die ("Out of memory.  Insufficient space in nursery.");
-    s->canMinor = FALSE;
-  }
-  assert (nurseryBytesRequested
-          <= (size_t)(s->limitPlusSlop
-                      - alignFrontier (s, s->limitPlusSlop
-                                       - nurserySize)));
-  s->heap.nursery = alignFrontier (s, s->limitPlusSlop - nurserySize);
-  s->frontier = s->heap.nursery;
-  assert (nurseryBytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
-  assert (isAlignedFrontier (s, s->heap.nursery));
-  assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }

@@ -17,7 +17,6 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
 bool invariant (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "invariant\n");
-  assert (ratiosOk (s->ratios));
   /* Frame layouts */
   for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
     GC_frameLayout layout;
@@ -60,11 +59,11 @@ bool invariant (GC_state s) {
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking old generation.\n");
   foreachObjptrInRange (s, alignFrontier (s, s->heap.start), &back, 
-                        FALSE, assertObjptrIsInFromSpace);
+                        assertObjptrIsInFromSpace, FALSE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking nursery.\n");
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
-                        FALSE, assertObjptrIsInFromSpace);
+                        assertObjptrIsInFromSpace, FALSE);
   /* Current thread. */
   GC_stack stack = getStackCurrent(s);
   assert (isAlignedStackReserved (s, stack->reserved));
@@ -72,7 +71,7 @@ bool invariant (GC_state s) {
   assert (s->stackTop == getStackTop (s, stack));
   assert (s->stackLimit == getStackLimit (s, stack));
   assert (s->stackBottom <= s->stackTop);
-  assert (stack->used == sizeofStackCurrentUsed (s));
+  assert (stack->used == sizeofGCStateCurrentStackUsed (s));
   assert (stack->used <= stack->reserved);
   if (DEBUG)
     fprintf (stderr, "invariant passed\n");

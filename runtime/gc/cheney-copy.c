@@ -10,148 +10,7 @@
 /*                    Cheney Copying Collection                     */
 /* ---------------------------------------------------------------- */
 
-#define GC_FORWARDED ~((GC_header)0)
-
-/* forward (s, opp) 
- * Forwards the object pointed to by *opp and updates *opp to point to
- * the new object.  
- * It also updates the crossMap.
- */
-struct forwardState {
-  bool amInMinorGC;
-  pointer back;
-  pointer toStart;
-  pointer toLimit;
-};
-static struct forwardState forwardState;
-
-bool isPointerInToSpace (pointer p) {
-  return (not (isPointer (p))
-          or (forwardState.toStart <= p and p < forwardState.toLimit));
-}
-
-bool isObjptrInToSpace (objptr op) {
-  pointer p;
-
-  if (not (isObjptr (op)))
-    return TRUE;
-  p = objptrToPointer (op, forwardState.toStart);
-  return isPointerInToSpace (p);
-}
-
-void forwardObjptr (GC_state s, objptr *opp) {
-  objptr op;
-  pointer p;
-  GC_header header;
-
-  op = *opp;
-  p = objptrToPointer (op, s->heap.start);
-  if (DEBUG_DETAILED)
-    fprintf (stderr,
-             "forwardObjptr  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
-             (uintptr_t)opp, op, (uintptr_t)p);
-  assert (isObjptrInFromSpace (s, *opp));
-  header = getHeader (p);
-  if (DEBUG_DETAILED and header == GC_FORWARDED)
-    fprintf (stderr, "  already FORWARDED\n");
-  if (header != GC_FORWARDED) { /* forward the object */
-    uint16_t numNonObjptrs, numObjptrs;
-    GC_objectTypeTag tag;
-
-    splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
-
-    size_t headerBytes, objectBytes, size, skip;
-
-    /* Compute the space taken by the header and object body. */
-    if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
-      headerBytes = GC_NORMAL_HEADER_SIZE;
-      objectBytes = sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
-      skip = 0;
-    } else if (ARRAY_TAG == tag) {
-      headerBytes = GC_ARRAY_HEADER_SIZE;
-      objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
-                                         numNonObjptrs, numObjptrs);
-      skip = 0;
-    } else { /* Stack. */
-      GC_stack stack;
-
-      assert (STACK_TAG == tag);
-      headerBytes = GC_STACK_HEADER_SIZE;
-      stack = (GC_stack)p;
-
-      if (getStackCurrentObjptr(s) == op) {
-        /* Shrink stacks that don't use a lot of their reserved space;
-         * but don't violate the stack invariant.
-         */
-        if (stack->used <= stack->reserved / 4) {
-          size_t new = 
-            alignStackReserved 
-            (s, max (stack->reserved / 2, 
-                     sizeofStackMinimumReserved (s, stack)));
-          /* It's possible that new > stack->reserved if the stack
-           * invariant is violated. In that case, we want to leave the
-           * stack alone, because some other part of the gc will grow
-           * the stack.  We cannot do any growing here because we may
-           * run out of to space.
-           */
-          if (new <= stack->reserved) {
-            stack->reserved = new;
-            if (DEBUG_STACKS)
-              fprintf (stderr, "Shrinking stack to size %zu.\n",
-                       /*uintToCommaString*/(stack->reserved));
-          }
-        }
-      } else {
-        /* Shrink heap stacks. */
-        stack->reserved = 
-          alignStackReserved 
-          (s, max((size_t)(s->ratios.threadShrink * stack->reserved), stack->used));
-        if (DEBUG_STACKS)
-          fprintf (stderr, "Shrinking stack to size %zu.\n",
-                   /*uintToCommaString*/(stack->reserved));
-      }
-      objectBytes = sizeof (struct GC_stack) + stack->used;
-      skip = stack->reserved - stack->used;
-    }
-    size = headerBytes + objectBytes;
-    assert (forwardState.back + size + skip <= forwardState.toLimit);
-    /* Copy the object. */
-    GC_memcpy (p - headerBytes, forwardState.back, size);
-    /* If the object has a valid weak pointer, link it into the weaks
-     * for update after the copying GC is done.
-     */
-    if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
-      GC_weak w;
-      
-      w = (GC_weak)(forwardState.back + GC_NORMAL_HEADER_SIZE);
-      if (DEBUG_WEAK)
-        fprintf (stderr, "forwarding weak "FMTPTR" ",
-                 (uintptr_t)w);
-      if (isObjptr (w->objptr)
-          and (not forwardState.amInMinorGC
-               or isObjptrInNursery (s, w->objptr))) {
-        if (DEBUG_WEAK)
-          fprintf (stderr, "linking\n");
-        w->link = s->weaks;
-        s->weaks = w;
-      } else {
-        if (DEBUG_WEAK)
-          fprintf (stderr, "not linking\n");
-      }
-    }
-    /* Store the forwarding pointer in the old object. */
-    *(GC_header*)(p - GC_HEADER_SIZE) = GC_FORWARDED;
-    *(objptr*)p = pointerToObjptr(forwardState.back + headerBytes, forwardState.toStart);
-    /* Update the back of the queue. */
-    forwardState.back += size + skip;
-    assert (isAligned ((size_t)forwardState.back + GC_NORMAL_HEADER_SIZE, 
-                       s->alignment));
-  }
-  *opp = *(objptr*)p;
-  assert (isObjptrInToSpace (*opp));
-}
-
-void updateWeaks (GC_state s) {
+void updateWeaksForCheneyCopy (GC_state s) {
   pointer p;
   GC_weak w;
 
@@ -159,7 +18,7 @@ void updateWeaks (GC_state s) {
     assert (BOGUS_OBJPTR != w->objptr);
 
     if (DEBUG_WEAK)
-      fprintf (stderr, "updateWeaks  w = "FMTPTR"  ", (uintptr_t)w);
+      fprintf (stderr, "updateWeaksForCheneyCopy  w = "FMTPTR"  ", (uintptr_t)w);
     p = objptrToPointer (w->objptr, s->heap.start);
     if (GC_FORWARDED == getHeader (p)) {
       if (DEBUG_WEAK)
@@ -177,7 +36,7 @@ void updateWeaks (GC_state s) {
   s->weaks = NULL;
 }
 
-void swapHeaps (GC_state s) {
+void swapHeapsForCheneyCopy (GC_state s) {
   struct GC_heap tempHeap;
   
   tempHeap = s->secondaryHeap;
@@ -194,9 +53,9 @@ void majorCheneyCopyGC (GC_state s) {
   if (detailedGCTime (s))
     startTiming (&ru_start);
   s->cumulativeStatistics.numCopyingGCs++;
-  forwardState.amInMinorGC = FALSE;
-  forwardState.toStart = s->secondaryHeap.start;
-  forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
+  s->forwardState.amInMinorGC = FALSE;
+  s->forwardState.toStart = s->secondaryHeap.start;
+  s->forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
   if (DEBUG or s->controls.messages) {
     fprintf (stderr, "Major copying GC.\n");
     fprintf (stderr, "fromSpace = "FMTPTR" of size %zu\n",
@@ -214,16 +73,16 @@ void majorCheneyCopyGC (GC_state s) {
    */
   assert (s->secondaryHeap.size >= s->heap.oldGenSize);
   toStart = alignFrontier (s, s->secondaryHeap.start);
-  forwardState.back = toStart;
+  s->forwardState.back = toStart;
   foreachGlobalObjptr (s, forwardObjptr);
-  foreachObjptrInRange (s, toStart, &forwardState.back, TRUE, forwardObjptr);
-  updateWeaks (s);
-  s->secondaryHeap.oldGenSize = forwardState.back - s->secondaryHeap.start;
+  foreachObjptrInRange (s, toStart, &s->forwardState.back, forwardObjptr, TRUE);
+  updateWeaksForCheneyCopy (s);
+  s->secondaryHeap.oldGenSize = s->forwardState.back - s->secondaryHeap.start;
   s->cumulativeStatistics.bytesCopied += s->secondaryHeap.oldGenSize;
   if (DEBUG)
     fprintf (stderr, "%zu bytes live.\n",
              /*uintToCommaString*/(s->secondaryHeap.oldGenSize));
-  swapHeaps (s);
+  swapHeapsForCheneyCopy (s);
   clearCrossMap (s);
   s->lastMajorStatistics.kind = GC_COPYING;
   if (detailedGCTime (s))
@@ -235,111 +94,6 @@ void majorCheneyCopyGC (GC_state s) {
 /* ---------------------------------------------------------------- */
 /*                 Minor Cheney Copying Collection                  */
 /* ---------------------------------------------------------------- */
-
-void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
-  objptr op;
-  pointer p;
-
-  op = *opp;
-  p = objptrToPointer (op, s->heap.start);
-  if (p < s->heap.nursery)
-    return;
-  if (DEBUG_GENERATIONAL)
-    fprintf (stderr,
-             "forwardObjptrIfInNursery  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
-             (uintptr_t)opp, op, (uintptr_t)p);
-  assert (s->heap.nursery <= p and p < s->limitPlusSlop);
-  forwardObjptr (s, opp);
-}
-
-/* Walk through all the cards and forward all intergenerational pointers. */
-void forwardInterGenerationalObjptrs (GC_state s) {
-  GC_cardMapElem *cardMap;
-  GC_crossMapElem *crossMap;
-  pointer oldGenStart, oldGenEnd;
-
-  size_t cardIndex, maxCardIndex;
-  pointer cardStart, cardEnd;
-  pointer objectStart;
-  
-  if (DEBUG_GENERATIONAL)
-    fprintf (stderr, "Forwarding inter-generational pointers.\n");
-  updateCrossMap (s);
-  /* Constants. */
-  cardMap = s->generationalMaps.cardMap;
-  crossMap = s->generationalMaps.crossMap;
-  maxCardIndex = sizeToCardMapIndex (align (s->heap.oldGenSize, CARD_SIZE));
-  oldGenStart = s->heap.start;
-  oldGenEnd = oldGenStart + s->heap.oldGenSize;
-  /* Loop variables*/
-  objectStart = alignFrontier (s, s->heap.start);
-  cardIndex = 0;
-  cardStart = oldGenStart;
-checkAll:
-  assert (cardIndex <= maxCardIndex);
-  assert (isAlignedFrontier (s, objectStart));
-  if (cardIndex == maxCardIndex)
-    goto done;
-checkCard:
-  if (DEBUG_GENERATIONAL)
-    fprintf (stderr, "checking card %zu  objectStart = "FMTPTR"\n",
-             cardIndex, (uintptr_t)objectStart);
-  assert (objectStart < oldGenStart + cardMapIndexToSize (cardIndex + 1));
-  if (cardMap[cardIndex]) {
-    pointer lastObject;
-    size_t size;
-    
-    s->cumulativeStatistics.markedCards++;
-    if (DEBUG_GENERATIONAL)
-      fprintf (stderr, "card %zu is marked  objectStart = "FMTPTR"\n", 
-               cardIndex, (uintptr_t)objectStart);
-    lastObject = objectStart;
-skipObjects:
-    assert (isAlignedFrontier (s, objectStart));
-    size = sizeofObject (s, advanceToObjectData (s, objectStart));
-    if (objectStart + size < cardStart) {
-      objectStart += size;
-      goto skipObjects;
-    }
-    s->cumulativeStatistics.minorBytesSkipped += objectStart - lastObject;
-    cardEnd = cardStart + CARD_SIZE;
-    if (oldGenEnd < cardEnd) 
-      cardEnd = oldGenEnd;
-    assert (objectStart < cardEnd);
-    lastObject = objectStart;
-    /* If we ever add Weak.set, then there could be intergenerational
-     * weak pointers, in which case we would need to link the weak
-     * objects into s->weaks.  But for now, since there is no
-     * Weak.set, the foreachObjptrInRange will do the right thing on
-     * weaks, since the weak pointer will never be into the nursery.
-     */
-    objectStart = foreachObjptrInRange (s, objectStart, &cardEnd, 
-                                        FALSE, forwardObjptrIfInNursery);
-    s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
-    if (objectStart == oldGenEnd)
-      goto done;
-    cardIndex = sizeToCardMapIndex (objectStart - oldGenStart);
-    cardStart = oldGenStart + cardMapIndexToSize (cardIndex);
-    goto checkCard;
-  } else {
-    unless (CROSS_MAP_EMPTY == crossMap[cardIndex])
-      objectStart = cardStart + (size_t)(crossMap[cardIndex]);
-    if (DEBUG_GENERATIONAL)
-      fprintf (stderr, 
-               "card %zu is not marked"
-               "  crossMap[%zu] == %zu"
-               "  objectStart = "FMTPTR"\n", 
-               cardIndex, cardIndex, 
-               (size_t)(crossMap[cardIndex]), (uintptr_t)objectStart);
-    cardIndex++;
-    cardStart += CARD_SIZE;
-    goto checkAll;
-  }
-  assert (FALSE);
-done:
-  if (DEBUG_GENERATIONAL)
-    fprintf (stderr, "Forwarding inter-generational pointers done.\n");
-}
 
 void minorCheneyCopyGC (GC_state s) {
   size_t bytesAllocated;
@@ -362,25 +116,25 @@ void minorCheneyCopyGC (GC_state s) {
       fprintf (stderr, "Minor copying GC.\n");
     if (detailedGCTime (s))
       startTiming (&ru_start);
-    forwardState.amInMinorGC = TRUE;
-    forwardState.toStart = s->heap.start + s->heap.oldGenSize;
+    s->forwardState.amInMinorGC = TRUE;
+    s->forwardState.toStart = s->heap.start + s->heap.oldGenSize;
     if (DEBUG_GENERATIONAL)
-      fprintf (stderr, "toStart = "FMTPTR"\n", (uintptr_t)forwardState.toStart);
-    assert (isAlignedFrontier (s, forwardState.toStart));
-    forwardState.toLimit = forwardState.toStart + bytesAllocated;
+      fprintf (stderr, "toStart = "FMTPTR"\n", (uintptr_t)s->forwardState.toStart);
+    assert (isAlignedFrontier (s, s->forwardState.toStart));
+    s->forwardState.toLimit = s->forwardState.toStart + bytesAllocated;
     assert (invariant (s));
     s->cumulativeStatistics.numMinorGCs++;
     s->lastMajorStatistics.numMinorGCs++;
-    forwardState.back = forwardState.toStart;
+    s->forwardState.back = s->forwardState.toStart;
     /* Forward all globals.  Would like to avoid doing this once all
      * the globals have been assigned.
      */
     foreachGlobalObjptr (s, forwardObjptrIfInNursery);
     forwardInterGenerationalObjptrs (s);
-    foreachObjptrInRange (s, forwardState.toStart, &forwardState.back, 
-                          TRUE, forwardObjptrIfInNursery);
-    updateWeaks (s);
-    bytesCopied = forwardState.back - forwardState.toStart;
+    foreachObjptrInRange (s, s->forwardState.toStart, &s->forwardState.back, 
+                          forwardObjptrIfInNursery, TRUE);
+    updateWeaksForCheneyCopy (s);
+    bytesCopied = s->forwardState.back - s->forwardState.toStart;
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
     if (detailedGCTime (s))

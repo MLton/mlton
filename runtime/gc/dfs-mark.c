@@ -148,7 +148,7 @@ mark:
       /* There is nothing to mark. */
 normalDone:
       if (shouldHashCons)
-        cur = hashCons (s, cur, TRUE);
+        cur = hashConsPointer (s, cur, TRUE);
       goto ret;
     }
     todo = cur + sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
@@ -174,7 +174,8 @@ markNextInNormal:
     nextHeaderp = getHeaderp (next);
     nextHeader = *nextHeaderp;
     if (mark == (nextHeader & MARK_MASK)) {
-      maybeShareObjptr (s, (objptr*)todo, shouldHashCons);
+      if (shouldHashCons)
+        shareObjptr (s, (objptr*)todo);
       goto markNextInNormal;
     }
     *headerp = (header & ~COUNTER_MASK) | (index << COUNTER_SHIFT);
@@ -197,7 +198,7 @@ markNextInNormal:
       /* There is nothing to mark. */
 arrayDone:
       if (shouldHashCons)
-        cur = hashCons (s, cur, TRUE);
+        cur = hashConsPointer (s, cur, TRUE);
       goto ret;
     }
     /* Begin marking first element. */
@@ -237,7 +238,8 @@ markNextInArray:
     nextHeaderp = getHeaderp (next);
     nextHeader = *nextHeaderp;
     if (mark == (nextHeader & MARK_MASK)) {
-      maybeShareObjptr (s, (objptr*)todo, shouldHashCons);
+      if (shouldHashCons)
+        shareObjptr (s, (objptr*)todo);
       goto markNextInArray;
     }
     /* Recur and mark next. */
@@ -287,7 +289,8 @@ markInFrame:
     nextHeader = *nextHeaderp;
     if (mark == (nextHeader & MARK_MASK)) {
       index++;
-      maybeShareObjptr (s, (objptr*)todo, shouldHashCons);
+      if (shouldHashCons)
+        shareObjptr (s, (objptr*)todo);
       goto markInFrame;
     }
     ((GC_stack)cur)->markIndex = index;

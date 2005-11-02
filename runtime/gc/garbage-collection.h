@@ -10,7 +10,6 @@ void minorGC (GC_state s);
 void majorGC (GC_state s, size_t bytesRequested, bool mayResize);
 void enterGC (GC_state s);
 void leaveGC (GC_state s);
-bool needGCTime (GC_state s);
 void doGC (GC_state s, 
            size_t oldGenBytesRequested,
            size_t nurseryBytesRequested, 

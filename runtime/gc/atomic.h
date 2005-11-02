@@ -6,5 +6,5 @@
  * See the file MLton-LICENSE for details.
  */
 
-void atomicBegin (GC_state s);
-void atomicEnd (GC_state s);
+void beginAtomic (GC_state s);
+void endAtomic (GC_state s);

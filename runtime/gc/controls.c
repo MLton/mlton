@@ -9,3 +9,10 @@
 bool detailedGCTime (GC_state s) {
   return s->controls.summary;
 }
+
+bool needGCTime (GC_state s) {
+  return 
+    DEBUG 
+    or s->controls.summary 
+    or s->controls.messages;
+}

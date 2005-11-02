@@ -15,11 +15,11 @@ void enter (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "enter\n");
   /* used needs to be set because the mutator has changed s->stackTop. */
-  getStackCurrent(s)->used = sizeofStackCurrentUsed (s);
+  getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
   getThreadCurrent(s)->exnStack = s->exnStack;
   if (DEBUG) 
     displayGCState (s, stderr);
-  atomicBegin (s);
+  beginAtomic (s);
   assert (invariant (s));
   if (DEBUG)
     fprintf (stderr, "enter ok\n");
@@ -32,7 +32,7 @@ void leave (GC_state s) {
    * for functions that don't ensureBytesFree.
    */
   assert (mutatorInvariant (s, FALSE, TRUE));
-  atomicEnd (s);
+  endAtomic (s);
   if (DEBUG)
     fprintf (stderr, "leave ok\n");
 }

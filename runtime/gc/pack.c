@@ -21,8 +21,8 @@ void GC_pack (GC_state s) {
   keep = s->heap.oldGenSize * 1.1;
   if (keep <= s->heap.size) {
     shrinkHeap (s, &s->heap, keep);
-    setHeapNursery (s, 0, 0);
-    setThreadAndStackCurrent (s);
+    setGCStateCurrentHeap (s, 0, 0);
+    setGCStateCurrentThreadAndStack (s);
   }
   releaseHeap (s, &s->secondaryHeap);
   if (DEBUG or s->controls.messages)
@@ -44,8 +44,8 @@ void GC_unpack (GC_state s) {
   minorGC (s);
   resizeHeap (s, s->heap.oldGenSize);
   resizeHeapSecondary (s);
-  setHeapNursery (s, 0, 0);
-  setThreadAndStackCurrent (s);
+  setGCStateCurrentHeap (s, 0, 0);
+  setGCStateCurrentThreadAndStack (s);
   leaveGC (s);
   if (DEBUG or s->controls.messages)
     fprintf (stderr, "Unpacked heap to size %zu.\n",

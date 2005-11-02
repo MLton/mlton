@@ -13,7 +13,9 @@ struct GC_controls {
   bool mayProcessAtMLton;
   bool messages; /* Print a message at the start and end of each gc. */
   size_t oldGenArraySize; /* Arrays larger are allocated in old gen, if possible. */
+  struct GC_ratios ratios;
   bool summary; /* Print a summary of gc info when program exits. */
 };
 
 bool detailedGCTime (GC_state s);
+bool needGCTime (GC_state s);

@@ -6,19 +6,19 @@
  * See the file MLton-LICENSE for details.
  */
 
-void share (GC_state s, pointer object) {
+void GC_share (GC_state s, pointer object) {
   size_t total;
   
   if (DEBUG_SHARE)
     fprintf (stderr, "GC_share "FMTPTR"\n", (uintptr_t)object);
   if (DEBUG_SHARE or s->controls.messages)
-    s->cumulativeStatistics.bytesHashConsed = 0;
+    s->lastMajorStatistics.bytesHashConsed = 0;
   // Don't hash cons during the first round of marking.
   total = dfsMark (s, object, MARK_MODE, FALSE);
-  s->objectHashTable = newHashTable (s);
+  s->objectHashTable = allocHashTable (s);
   // Hash cons during the second round of marking.
   dfsMark (s, object, UNMARK_MODE, TRUE);
-  destroyHashTable (s->objectHashTable);
+  freeHashTable (s->objectHashTable);
   if (DEBUG_SHARE or s->controls.messages)
-    bytesHashConsedMessage (s, total);
+    printBytesHashConsedMessage (s, total);
 }

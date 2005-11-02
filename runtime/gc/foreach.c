@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-void maybeCall (GC_state s, GC_foreachObjptrFun f, objptr *opp) {
+void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp) {
   if (isObjptr (*opp))
     f (s, opp);
 }
@@ -19,18 +19,18 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
   for (unsigned int i = 0; i < s->globalsLength; ++i) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "foreachGlobal %u\n", i);
-    maybeCall (s, f, &s->globals [i]);
+    callIfIsObjptr (s, f, &s->globals [i]);
   }
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
-  maybeCall (s, f, &s->callFromCHandlerThread);
-  maybeCall (s, f, &s->currentThread);
-  maybeCall (s, f, &s->savedThread);
-  maybeCall (s, f, &s->signalHandlerThread);
+  callIfIsObjptr (s, f, &s->callFromCHandlerThread);
+  callIfIsObjptr (s, f, &s->currentThread);
+  callIfIsObjptr (s, f, &s->savedThread);
+  callIfIsObjptr (s, f, &s->signalHandlerThread);
 }
 
 
-/* foreachObjptrInObject (s, p, skipWeaks, f) 
+/* foreachObjptrInObject (s, p, f, skipWeaks) 
  * 
  * Applies f to each object pointer in the object pointed to by p.
  * Returns pointer to the end of object, i.e. just past object.
@@ -38,7 +38,7 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
 pointer foreachObjptrInObject (GC_state s, pointer p,
-                               bool skipWeaks, GC_foreachObjptrFun f) {
+                               GC_foreachObjptrFun f, bool skipWeaks) {
   GC_header header;
   uint16_t numNonObjptrs;
   uint16_t numObjptrs;
@@ -64,12 +64,12 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
         fprintf (stderr, 
                  "  p = "FMTPTR"  *p = "FMTOBJPTR"\n",
                  (uintptr_t)p, *(objptr*)p);
-      maybeCall (s, f, (objptr*)p);
+      callIfIsObjptr (s, f, (objptr*)p);
     }
   } else if (WEAK_TAG == tag) {
     p += sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
     if (not skipWeaks and 1 == numObjptrs) {
-      maybeCall (s, f, (objptr*)p);
+      callIfIsObjptr (s, f, (objptr*)p);
       p += OBJPTR_SIZE;
     }
   } else if (ARRAY_TAG == tag) {
@@ -97,7 +97,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       if (0 == numNonObjptrs)
         /* Array with only pointers. */
         for ( ; p < last; p += OBJPTR_SIZE)
-          maybeCall (s, f, (objptr*)p);
+          callIfIsObjptr (s, f, (objptr*)p);
       else {
         /* Array with a mix of pointers and non-pointers. */
         size_t nonObjptrBytes;
@@ -115,7 +115,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
           next = p + objptrBytes;
           /* For each internal pointer. */
           for ( ; p < next; p += OBJPTR_SIZE) 
-            maybeCall (s, f, (objptr*)p);
+            callIfIsObjptr (s, f, (objptr*)p);
         }
       }
       assert (p == last);
@@ -153,7 +153,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
         if (DEBUG)
           fprintf(stderr, "  offset %"PRIx16"  address "FMTOBJPTR"\n",
                   frameOffsets[i + 1], *(objptr*)(top + frameOffsets[i + 1]));
-        maybeCall (s, f, (objptr*)(top + frameOffsets[i + 1]));
+        callIfIsObjptr (s, f, (objptr*)(top + frameOffsets[i + 1]));
       }
     }
     assert(top == bottom);
@@ -162,7 +162,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
   return p;
 }
 
-/* foreachObjptrInRange (s, front, back, skipWeaks, f)
+/* foreachObjptrInRange (s, front, back, f, skipWeaks)
  *
  * Apply f to each pointer between front and *back, which should be a
  * contiguous sequence of objects, where front points at the beginning
@@ -175,7 +175,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
  */
 
 pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
-                              bool skipWeaks, GC_foreachObjptrFun f) {
+                              GC_foreachObjptrFun f, bool skipWeaks) {
   pointer b;
 
   assert (isAlignedFrontier (s, front));
@@ -192,7 +192,7 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
         fprintf (stderr, 
                  "  front = "FMTPTR"  *back = "FMTPTR"\n",
                  (uintptr_t)front, (uintptr_t)(*back));
-      front = foreachObjptrInObject (s, advanceToObjectData (s, front), skipWeaks, f);
+      front = foreachObjptrInObject (s, advanceToObjectData (s, front), f, skipWeaks);
     }
     b = *back;
   }

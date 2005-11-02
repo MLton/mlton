@@ -34,8 +34,8 @@ void loadWorldFromFD (GC_state s, int fd) {
    * since it changes pointers in all of them.
    */
   translateHeap (s, start, s->heap.start, s->heap.oldGenSize);
-  setHeapNursery (s, 0, 0); 
-  setThreadAndStackCurrent (s); 
+  setGCStateCurrentHeap (s, 0, 0); 
+  setGCStateCurrentThreadAndStack (s); 
 }
 
 void loadWorldFromFileName (GC_state s, char *fileName) {

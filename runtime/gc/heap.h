@@ -52,6 +52,3 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize);
 void resizeHeap (GC_state s, size_t minSize);
 void resizeHeapSecondary (GC_state s);
 
-void setHeapNursery (GC_state s, 
-                     size_t oldGenBytesRequested, 
-                     size_t nurseryBytesRequested);

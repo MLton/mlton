@@ -6,4 +6,4 @@
  * See the file MLton-LICENSE for details.
  */
 
-void share (GC_state s, pointer object);
+void GC_share (GC_state s, pointer object);

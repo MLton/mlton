@@ -43,5 +43,5 @@ void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
   /* Translate globals and heap. */
   foreachGlobalObjptr (s, translateObjptr);
   limit = to + size;
-  foreachObjptrInRange (s, alignFrontier (s, to), &limit, FALSE, translateObjptr);
+  foreachObjptrInRange (s, alignFrontier (s, to), &limit, translateObjptr, FALSE);
 }
