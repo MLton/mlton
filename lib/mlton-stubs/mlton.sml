@@ -279,6 +279,7 @@ structure MLton: MLTON =
       structure ProcEnv =
          struct
             fun setenv _ = raise Fail "setenv"
+            fun setgroups _ = raise Fail "setgroups"
          end
 
       structure Process =
