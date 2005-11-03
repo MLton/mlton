@@ -21,14 +21,19 @@ structure Timer: TIMER =
       
       type cpu_timer = {gc: SysUsr.t, self: SysUsr.t}
 
-      fun startCPUTimer (): cpu_timer =
-         let
-            val {gc = {utime = gcu, stime = gcs, ...},
-                 self = {utime = selfu, stime = selfs}, ...} =
-               MLtonRusage.rusage ()
+      val startCPUTimer : unit -> cpu_timer =
+         let 
+            val () = MLtonGC.setRusage true
          in
-            {gc = SysUsr.T {sys = gcs, usr = gcu},
-             self = SysUsr.T {sys = selfs, usr = selfu}}
+            fn () =>
+            let
+               val {gc = {utime = gcu, stime = gcs, ...},
+                    self = {utime = selfu, stime = selfs}, ...} =
+                  MLtonRusage.rusage ()
+            in
+               {gc = SysUsr.T {sys = gcs, usr = gcu},
+                self = SysUsr.T {sys = selfs, usr = selfu}}
+            end
          end
 
       fun checkCPUTimes {gc, self} =
