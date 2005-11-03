@@ -21,7 +21,7 @@ MLTON = $(BIN)/mlton
 AOUT = mlton-compile
 MLBPATHMAP = $(LIB)/mlb-path-map
 TARGETMAP = $(LIB)/target-map
-SPEC = $(SRC)/package/rpm/mlton.spec
+SPEC = package/rpm/mlton.spec
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
@@ -259,7 +259,7 @@ rpms:
 	rm -rf $(SOURCEDIR)
 	mkdir -p $(SOURCEDIR)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(SOURCEDIR) && tar -xpf - )
-	$(CP) $(SOURCEDIR)/doc/mlton.spec $(TOPDIR)/SPECS/mlton.spec
+	$(CP) $(SOURCEDIR)/$(SPEC) $(TOPDIR)/SPECS/mlton.spec
 	( cd $(TOPDIR)/SOURCES && tar -cpf - mlton-$(VERSION) )		\
 		| $(GZIP) >$(SOURCEDIR).tgz
 	rm -rf $(SOURCEDIR)
@@ -307,7 +307,7 @@ version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		package/debian/changelog				\
-		package/rpm/mlton.spec					\
+		$(SPEC)							\
 		package/freebsd/Makefile				\
 		mlton/control/control-flags.sml;			\
 	do								\
