@@ -77,8 +77,6 @@ doit "$lib" \
         -target-cc-opt darwin '-I/sw/include'                   \
         -target-cc-opt solaris                                  \
                 '-Wa,-xarch=v8plusa
-                -fcall-used-g5
-                -fcall-used-g7
                 -mcpu=ultrasparc'                               \
         -target-cc-opt sparc '-mcpu=v8 -m32'                    \
         -target-cc-opt x86                                      \
