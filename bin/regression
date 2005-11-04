@@ -104,7 +104,7 @@ for f in `ls *.sml`; do
         case `host-os` in
         mingw)
                 case "$f" in
-                cmdline|command-line|filesys|mutex|prodcons|signals2)
+                cmdline|command-line|filesys|mutex|posix-exit|prodcons|signals2|timeout|unixpath)
                         continue
                 ;;
                 esac
