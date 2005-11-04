@@ -23,14 +23,13 @@ doit () {
         fi
         for f in `ls`; do
                 if [ -d $f ]; then
-                        cd $f;
-                        if [ -r Makefile ] && 
-                                grep $grepFlags '^clean:' Makefile ; then 
-                                $bin/mmake clean
+                        cd $f
+                        if [ -r Makefile ]; then
+				$bin/mmake clean || doit
                         else
                                 doit
-                        fi && 
-                        cd ..;
+                        fi
+                        cd ..
                 fi
         done
 }
