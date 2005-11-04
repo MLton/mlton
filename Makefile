@@ -19,6 +19,11 @@ COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 AOUT = mlton-compile
+ifeq (mingw, $(TARGET_OS))
+EXE = .exe
+else
+EXE =
+endif
 MLBPATHMAP = $(LIB)/mlb-path-map
 TARGETMAP = $(LIB)/target-map
 SPEC = package/rpm/mlton.spec
@@ -46,7 +51,7 @@ all-no-docs:
 # stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
 # remake MLton.
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
-	rm -f $(COMP)/$(AOUT)
+	rm -f $(COMP)/$(AOUT)$(EXE)
 endif
 	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
 	@echo 'Build of MLton succeeded.'
@@ -92,7 +97,7 @@ cm:
 .PHONY: compiler
 compiler:
 	$(MAKE) -C $(COMP)
-	$(CP) $(COMP)/$(AOUT) $(LIB)/
+	$(CP) $(COMP)/$(AOUT)$(EXE) $(LIB)/
 
 .PHONY: constants
 constants:
@@ -300,7 +305,11 @@ tools:
 	$(MAKE) -C $(NLFFIGEN)
 	$(MAKE) -C $(PROF)
 	$(MAKE) -C $(YACC)
-	$(CP) $(LEX)/$(LEX) $(NLFFIGEN)/$(NLFFIGEN) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
+	$(CP) $(LEX)/$(LEX)$(EXE) 		\
+		$(NLFFIGEN)/$(NLFFIGEN)$(EXE)	\
+		$(PROF)/$(PROF)$(EXE)		\
+		$(YACC)/$(YACC)$(EXE)		\
+		$(BIN)/
 
 .PHONY: version
 version:
@@ -321,7 +330,7 @@ version:
 world-no-check: 
 	@echo 'Making world.'
 	$(MAKE) basis-no-check
-	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
+	$(LIB)/$(AOUT)$(EXE) @MLton -- $(LIB)/world
 
 .PHONY: world
 world: 

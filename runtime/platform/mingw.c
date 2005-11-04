@@ -489,6 +489,13 @@ int kill (pid_t pid, int sig) {
         die ("kill not implemented");
 }
 
+int nanosleep (const struct timespec *req, struct timespec *rem) {
+        Sleep (req->tv_sec * 1000 + (req->tv_nsec + 999) / 1000);
+        rem->tv_nsec = 0;
+        rem->tv_sec = 0;
+        return 0;
+}
+
 int pause (void) {
         die ("pause not implemented");
 }

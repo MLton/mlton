@@ -69,7 +69,9 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
    Promise.lazy
    (fn () =>
     List.map
-    (File.lines (concat [!Control.libDir, "/target-map"]), fn line =>
+    (File.lines (OS.Path.joinDirFile {dir = !Control.libDir,
+                                      file = "target-map"}),
+     fn line =>
      case String.tokens (line, Char.isSpace) of
         [target, arch, os] =>
            let
@@ -542,7 +544,7 @@ fun commandLine (args: string list): unit =
          case target of
             Cross s => s
           | Self => "self"
-      val _ = libTargetDir := concat [!libDir, "/", targetStr]
+      val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
       val targetArch = !targetArch
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !targetOS
@@ -712,7 +714,7 @@ fun commandLine (args: string list): unit =
                      fun temp (suf: string): File.t =
                         let
                            val (f, out) =
-                              File.temp {prefix = concat [tmpDir, "/file"],
+                              File.temp {prefix = OS.Path.concat (tmpDir, "file"),
                                          suffix = suf}
                            val _ = Out.close out
                            val _ = List.push (tempFiles, f)

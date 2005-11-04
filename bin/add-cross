@@ -89,8 +89,19 @@ ssh $machine "cd $tmp/runtime && tar cf - *.a" |
         mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
                 mlbpathmap targetmap )
 
+case "$crossOS" in
+mingw)
+	suf='.exe'
+;;
+*)
+	suf=''
+;;
+esac
 
 case "$crossOS" in
+mingw)
+	libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
+;;
 solaris)
         libs='-lrt -lnsl -lsocket'
 ;;
@@ -103,5 +114,5 @@ $src/build/bin/mlton -build-constants true |
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c && 
                         gcc -I. -o $exe $exe.c libmlton.a -lgmp -lm $libs"
-ssh $machine "$tmp/runtime/$exe" >"$lib/$crossTarget/constants"
+ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"

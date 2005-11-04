@@ -302,6 +302,11 @@ int alarm (int secs);
 pid_t fork (void);
 int kill (pid_t pid, int sig);
 int pause (void);
+struct timespec {
+ time_t tv_sec;
+ long tv_nsec;
+};
+int nanosleep (const struct timespec *req, struct timespec *rem);
 unsigned int sleep (unsigned int seconds);
 pid_t wait (int *status);
 pid_t waitpid (pid_t pid, int *status, int options);

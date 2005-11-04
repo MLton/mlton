@@ -9,6 +9,7 @@
 SRC = $(shell cd .. && pwd)
 BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
+HOST_OS = $(shell $(SRC)/bin/host-os)
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
@@ -23,14 +24,19 @@ ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   FILE = mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
 else
-ifeq (cygwin, $(shell $(SRC)/bin/host-os))
+ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
   # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
+  FILE = mlton.cm
+else
+ifeq (mingw, $(HOST_OS))
+  # Ditto for MinGW.
   FILE = mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
   FILE = mlton-stubs.cm
+endif
 endif
 endif
 
