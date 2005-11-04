@@ -150,7 +150,7 @@ for f in `ls *.sml`; do
                                 libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
                         ;;
                         *solaris)
-                                libs='-lnsl -lsocket'
+                                libs='-lnsl -lsocket -lrt'
                         ;;
                         *)
                                 libs=''
