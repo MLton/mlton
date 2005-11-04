@@ -100,10 +100,7 @@ val lexAndParseString =
          val pathMap =
             List.rev
             (List.concat
-             [List.concat
-              (List.map (concat [!Control.libDir, "/mlb-path-map"]
-                         :: (!Control.mlbPathMaps),
-                         make)),
+             [List.concat (List.map (!Control.mlbPathMaps, make)),
               [{var = "LIB_MLTON_DIR", 
                 path = !Control.libDir},
                {var = "TARGET_ARCH",

@@ -68,6 +68,7 @@ doit "$lib" \
         -cc-opt "-I$lib/include"                                \
         -cc-opt '-O1'                                           \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'  \
+	-mlb-path-map "$lib/mlb-path-map"			\
         -target-as-opt amd64                                    \
                 '-m32
                 -mtune=opteron'                                 \
