@@ -15,7 +15,10 @@
 #undef max
 
 #define HAS_FEROUND TRUE
-#define HAS_FPCLASSIFY TRUE
+// As of 20051104, MinGW has fpclassify, but it is broken.  In particular, it
+// classifies subnormals as normals.  So, we disable it here, which causes the
+// runtime to use our own version.
+#define HAS_FPCLASSIFY FALSE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
