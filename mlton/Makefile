@@ -23,6 +23,7 @@ ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE = mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
+  FLAGS += -default-ann 'warnUnused true'
 else
 ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
