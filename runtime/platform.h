@@ -166,6 +166,7 @@
 #define EXECVE execve
 #endif
 
+#if not HAS_FEROUND
 #ifndef FE_TONEAREST
 #define FE_TONEAREST 0
 #endif
@@ -178,8 +179,9 @@
 #ifndef FE_TOWARDZERO
 #define FE_TOWARDZERO 3
 #endif
+#endif
 
-
+#if not HAS_FPCLASSIFY
 #ifndef FP_INFINITE
 #define FP_INFINITE 1
 #endif
@@ -194,6 +196,7 @@
 #endif
 #ifndef FP_ZERO
 #define FP_ZERO 2
+#endif
 #endif
 
 /* If HAS_TIME_PROFILING, then you must define these. */
