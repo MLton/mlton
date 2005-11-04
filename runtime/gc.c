@@ -3023,7 +3023,7 @@ static inline void leaveGC (GC_state s) {
 }
 
 static inline bool needGCTime (GC_state s) {
-        return DEBUG or s->summary or s->messages or s->rusageIsEnabled;
+        return DEBUG or s->summary or s->messages or s->rusageMeasureGC;
 }
 
 static void doGC (GC_state s, 
@@ -4476,7 +4476,7 @@ int GC_init (GC_state s, int argc, char **argv) {
         s->oldGenArraySize = 0x100000;
         s->pageSize = getpagesize ();
         s->ramSlop = 0.5;
-        s->rusageIsEnabled = FALSE;
+        s->rusageMeasureGC = FALSE;
         s->savedThread = BOGUS_THREAD;
         s->signalHandler = BOGUS_THREAD;
         s->signalIsPending = FALSE;

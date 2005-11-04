@@ -455,7 +455,7 @@ typedef struct GC_state {
         W32 ram;                /* ramSlop * totalRam */
         W32 (*returnAddressToFrameIndex) (W32 w);
         float ramSlop;
-        bool rusageIsEnabled;
+        bool rusageMeasureGC;
         struct rusage ru_gc; /* total resource usage spent in gc */
         struct rusage ru_gcCopy; /* resource usage in major copying gcs. */
         struct rusage ru_gcMarkCompact; /* resource usage in mark-compact gcs. */

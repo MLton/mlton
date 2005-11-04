@@ -400,7 +400,7 @@ structure Primitive =
             val setHashConsDuringGC =
                _import "GC_setHashConsDuringGC": bool -> unit;
             val setMessages = _import "GC_setMessages": bool -> unit;
-            val setRusage = _import "GC_setRusage": bool -> unit;
+            val setRusageMeasureGC = _import "GC_setRusageMeasureGC": bool -> unit;
             val setSummary = _import "GC_setSummary": bool -> unit;
             val unpack = _import "MLton_GC_unpack": unit -> unit;
          end

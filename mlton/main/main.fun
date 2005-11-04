@@ -517,7 +517,7 @@ fun commandLine (args: string list): unit =
           | _ => Error.bug "incorrect args from shell script"
       val _ = setTargetType ("self", usage)
       val result = parse args
-      val () = MLton.GC.setRusage (!verbosity <> Silent)
+      val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () =
          if !showAnns then
             (Layout.outputl (Control.Elaborate.document {expert = !expert}, 

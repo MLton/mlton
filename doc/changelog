@@ -1,5 +1,9 @@
 Here are the changes since version 20041109.
 
+* 2005-11-03
+  - Removed MLton.GC.setRusage.
+  - Added MLton.Rusage.measureGC.
+
 * 2005-09-11
   - Fixed bug in display of types with large numbers of type
     variables, which could cause unhandled exception Chr.

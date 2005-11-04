@@ -132,7 +132,6 @@ structure MLton: MLTON =
             fun collect _ = ()
             val pack = MLton.GC.pack
             fun setMessages _ = ()
-            fun setRusage _ = ()
             fun setSummary _ = ()
             fun time _ = Time.zeroTime
             fun unpack _ = ()
@@ -408,6 +407,8 @@ structure MLton: MLTON =
       structure Rusage =
          struct
            type t = {stime: Time.time, utime: Time.time}
+
+           fun measureGC _ = ()
 
            (* Fake it with Posix.ProcEnv.times *)
            fun rusage () =
