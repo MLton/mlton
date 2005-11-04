@@ -161,7 +161,7 @@ for f in `ls *.sml`; do
                         # latter will include other files, e.g. for finalize,
                         # it will also include finalize.2.
                         files="$f.[0-9].[cS]"
-                        if ls $f.[0-9][0-9].[cS] >/dev/null 2>&1; then 
+                        if [ 0 -ne `ls $f.[0-9][0-9].[cS] 2>/dev/null | wc -l` ]; then 
                                 files="$files $f.[0-9][0-9].[cS]"
                         fi
                         gcc -o $f -w -O1                                \
