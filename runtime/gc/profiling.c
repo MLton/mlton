@@ -520,3 +520,25 @@ static void profileEnd (void) {
     GC_profileWrite (s, s->profiling.data, fd);
   }
 }
+
+void initProfiling (GC_state s) {
+  if (PROFILE_NONE == s->profiling.kind)
+    s->profiling.isOn = FALSE;
+  else {
+    s->profiling.isOn = TRUE;
+    assert (s->profiling.frameSourcesLength == s->frameLayoutsLength);
+    switch (s->profiling.kind) {
+    case PROFILE_ALLOC:
+    case PROFILE_COUNT:
+      s->profiling.data = GC_profileNew (s);
+      break;
+    case PROFILE_NONE:
+      die ("impossible PROFILE_NONE");
+    case PROFILE_TIME:
+      profileTimeInit (s);
+      break;
+    }
+    profileEndState = s;
+    atexit (profileEnd);
+  }
+}

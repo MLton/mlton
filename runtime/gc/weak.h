@@ -31,3 +31,9 @@ typedef struct GC_weak {
   struct GC_weak *link;
   objptr objptr;
 } *GC_weak;
+
+size_t sizeofWeak (GC_state s);
+uint32_t GC_weakCanGet (GC_state s, pointer p);
+pointer GC_weakGet (GC_state s, pointer p);
+pointer GC_weakNew (GC_state s, GC_header header, pointer p);
+

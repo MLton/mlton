@@ -47,6 +47,21 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
 }
 
+void growStackCurrent (GC_state s) {
+  size_t size;
+  GC_stack stack;
+
+  size = sizeofStackGrow (s, getStackCurrent(s));
+  if (DEBUG_STACKS or s->controls.messages)
+    fprintf (stderr, "Growing stack to size %zu.\n",
+             /*uintToCommaString*/(sizeofStackWithHeaderAligned (s, size)));
+  assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
+  stack = newStack (s, size, TRUE);
+  copyStack (s, getStackCurrent(s), stack);
+  getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
+  markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap.start));
+}
+
 void enterGC (GC_state s) {
   if (s->profiling.isOn) {
     /* We don't need to profileEnter for count profiling because it
@@ -69,11 +84,11 @@ void leaveGC (GC_state s) {
   s->amInGC = FALSE;
 }
 
-void doGC (GC_state s, 
-           size_t oldGenBytesRequested,
-           size_t nurseryBytesRequested, 
-           bool forceMajor,
-           bool mayResize) {
+void performGC (GC_state s, 
+                size_t oldGenBytesRequested,
+                size_t nurseryBytesRequested, 
+                bool forceMajor,
+                bool mayResize) {
   uintmax_t gcTime;
   bool stackTopOk;
   size_t stackBytesRequested;
@@ -85,11 +100,11 @@ void doGC (GC_state s,
     fprintf (stderr, "Starting gc.  Request %zu nursery bytes and %zu old gen bytes.\n",
              /*uintToCommaString*/(nurseryBytesRequested),
              /*uintToCommaString*/(oldGenBytesRequested));
-  assert (invariant (s));
+  assert (invariantForGC (s));
   if (needGCTime (s))
     startTiming (&ru_start);
   minorGC (s);
-  stackTopOk = mutatorStackInvariant (s);
+  stackTopOk = invariantForMutatorStack (s);
   stackBytesRequested = 
     stackTopOk 
     ? 0 
@@ -106,7 +121,7 @@ void doGC (GC_state s,
   assert (hasHeapBytesFree (s, oldGenBytesRequested + stackBytesRequested,
                             nurseryBytesRequested));
   unless (stackTopOk)
-    growStack (s);
+    growStackCurrent (s);
   setGCStateCurrentThreadAndStack (s);
   if (needGCTime (s)) {
     gcTime = stopTiming (&ru_start, &s->cumulativeStatistics.ru_gc);
@@ -134,131 +149,31 @@ void doGC (GC_state s,
   if (DEBUG) 
     displayGCState (s, stderr);
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
-  assert (invariant (s));
+  assert (invariantForGC (s));
   leaveGC (s);
 }
 
-void ensureMutatorInvariant (GC_state s, bool force) {
+void ensureInvariantForMutator (GC_state s, bool force) {
   if (force
-      or not (mutatorFrontierInvariant(s))
-      or not (mutatorStackInvariant(s))) {
+      or not (invariantForMutatorFrontier(s))
+      or not (invariantForMutatorStack(s))) {
     /* This GC will grow the stack, if necessary. */
-    doGC (s, 0, getThreadCurrent(s)->bytesNeeded, force, TRUE);
+    performGC (s, 0, getThreadCurrent(s)->bytesNeeded, force, TRUE);
   }
-  assert (mutatorFrontierInvariant(s));
-  assert (mutatorStackInvariant(s));
+  assert (invariantForMutatorFrontier(s));
+  assert (invariantForMutatorStack(s));
 }
 
-/* ensureFree (s, b) ensures that upon return
- *      b <= s->limitPlusSlop - s->frontier
+/* ensureHasHeapBytesFree (s, oldGen, nursery) 
  */
-void ensureFree (GC_state s, size_t bytesRequested) {
+void ensureHasHeapBytesFree (GC_state s, 
+                             size_t oldGenBytesRequested,
+                             size_t nurseryBytesRequested) {
+  assert (s->heap.nursery <= s->limitPlusSlop);
   assert (s->frontier <= s->limitPlusSlop);
-  if (bytesRequested > (size_t)(s->limitPlusSlop - s->frontier))
-    doGC (s, 0, bytesRequested, FALSE, TRUE);
-  assert (bytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
-}
-
-void switchToThread (GC_state s, objptr op) {
-  if (DEBUG_THREADS) {
-    GC_thread thread;
-    GC_stack stack;
-    
-    thread = (GC_thread)(objptrToPointer (op, s->heap.start));
-    stack = (GC_stack)(objptrToPointer (thread->stack, s->heap.start));
-    
-    fprintf (stderr, "switchToThread ("FMTOBJPTR")  used = %zu  reserved = %zu\n",
-             op, stack->used, stack->reserved);
-  }
-  s->currentThread = op;
-  setGCStateCurrentThreadAndStack (s);
-}
-
-/* GC_startHandler does not do an enter()/leave(), even though it is
- * exported.  The basis library uses it via _import, not _prim, and so
- * does not treat it as a runtime call -- so the invariant in enter
- * would fail miserably.  It is OK because GC_startHandler must be
- * called from within a critical section.
- *
- * Don't make it inline, because it is also called in basis/Thread.c,
- * and when compiling with COMPILE_FAST, they may appear out of order.
- */
-void GC_startHandler (GC_state s) {
-  /* Switch to the signal handler thread. */
-  if (DEBUG_SIGNALS) {
-    fprintf (stderr, "GC_startHandler\n");
-  }
-  assert (s->atomicState == 1);
-  assert (s->signalsInfo.signalIsPending);
-  s->signalsInfo.signalIsPending = FALSE;
-  s->signalsInfo.amInSignalHandler = TRUE;
-  s->savedThread = s->currentThread;
-  /* Set s->atomicState to 2 when switching to the signal handler
-   * thread; leaving the runtime will decrement s->atomicState to 1,
-   * the signal handler will then run atomically and will finish by
-   * switching to the thread to continue with, which will decrement
-   * s->atomicState to 0.
-   */
-  s->atomicState = 2;
-}
-
-void GC_finishHandler (GC_state s) {
-  if (DEBUG_SIGNALS)
-    fprintf (stderr, "GC_finishHandler ()\n");
-  assert (s->atomicState == 1);
-  s->signalsInfo.amInSignalHandler = FALSE;     
-}
-
-void maybeSwitchToHandler (GC_state s) {
-  if (s->atomicState == 1 
-      and s->signalsInfo.signalIsPending) {
-    GC_startHandler (s);
-    switchToThread (s, s->signalHandlerThread);
-  }
-}
-
-void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
-  if (DEBUG_THREADS)
-    fprintf (stderr, "GC_switchToThread ("FMTPTR", %zu)\n", 
-             (uintptr_t)t, ensureBytesFree);
-  if (FALSE) {
-    /* This branch is slower than the else branch, especially
-     * when debugging is turned on, because it does an invariant
-     * check on every thread switch.
-     * So, we'll stick with the else branch for now.
-     */
-    enter (s);
-    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
-    s->atomicState--;
-    maybeSwitchToHandler (s);
-    ensureMutatorInvariant (s, FALSE);
-    assert (mutatorFrontierInvariant(s));
-    assert (mutatorStackInvariant(s));
-    leave (s);
-  } else {
-    /* BEGIN: enter(s); */
-    getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
-    getThreadCurrent(s)->exnStack = s->exnStack;
-    beginAtomic (s);
-    /* END: enter(s); */
-    getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
-    s->atomicState--;
-    maybeSwitchToHandler (s);
-    /* BEGIN: ensureMutatorInvariant */
-    if (not (mutatorFrontierInvariant(s))
-        or not (mutatorStackInvariant(s))) {
-      /* This GC will grow the stack, if necessary. */
-      doGC (s, 0, getThreadCurrent(s)->bytesNeeded, FALSE, TRUE);
-    }
-    /* END: ensureMutatorInvariant */
-    /* BEGIN: leave(s); */
-    endAtomic (s);
-    /* END: leave(s); */
-  }
-  assert (mutatorFrontierInvariant(s));
-  assert (mutatorStackInvariant(s));
+  if (not hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested))
+    performGC (s, oldGenBytesRequested, nurseryBytesRequested, FALSE, TRUE);
+  assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
 void GC_gc (GC_state s, size_t bytesRequested, bool force,
@@ -272,9 +187,9 @@ void GC_gc (GC_state s, size_t bytesRequested, bool force,
   if (0 == bytesRequested)
     bytesRequested = GC_HEAP_LIMIT_SLOP;
   getThreadCurrent(s)->bytesNeeded = bytesRequested;
-  maybeSwitchToHandler (s);
-  ensureMutatorInvariant (s, force);
-  assert (mutatorFrontierInvariant(s));
-  assert (mutatorStackInvariant(s));
+  switchToHandlerThreadIfNonAtomicAndSignalPending (s);
+  ensureInvariantForMutator (s, force);
+  assert (invariantForMutatorFrontier(s));
+  assert (invariantForMutatorStack(s));
   leave (s);
 }

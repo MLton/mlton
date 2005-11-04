@@ -12,8 +12,11 @@
 
 /* An object pointer might be larger than a header.
  */ 
-void threadInternalCopy (pointer dst, pointer src) {
-  size_t count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
+void copyForThreadInternal (pointer dst, pointer src) {
+  size_t count;
+
+  assert (0 == (OBJPTR_SIZE % GC_HEADER_SIZE));
+  count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
   src = src + GC_HEADER_SIZE * count;
 
   for (size_t i = 0; i <= count; i++) {
@@ -35,14 +38,14 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
              (uintptr_t)opp, (uintptr_t)p, getHeader (p));
   headerp = getHeaderp (p);
-  threadInternalCopy ((pointer)(opp), (pointer)(headerp));
-  threadInternalCopy ((pointer)(headerp), (pointer)(&opop));
+  copyForThreadInternal ((pointer)(opp), (pointer)(headerp));
+  copyForThreadInternal ((pointer)(headerp), (pointer)(&opop));
 }
 
-/* If p is weak, the object pointer was valid, and points to an unmarked object,
- * then clear the object pointer.
+/* If p is weak, the object pointer was valid, and points to an
+ * unmarked object, then clear the object pointer.
  */
-void maybeClearWeak (GC_state s, pointer p) {
+void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
   GC_header header;
   GC_header *headerp;
   uint16_t numNonObjptrs, numObjptrs;
@@ -52,14 +55,15 @@ void maybeClearWeak (GC_state s, pointer p) {
   header = *headerp;
   splitHeader(s, *headerp, &tag, NULL, &numNonObjptrs, &numObjptrs);
   if (WEAK_TAG == tag and 1 == numObjptrs) {
-    GC_header h2;
+    GC_header objptrHeader;
     
     if (DEBUG_WEAK)
-      fprintf (stderr, "maybeClearWeak ("FMTPTR")  header = "FMTHDR"\n",
+      fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
-    h2 = getHeader (objptrToPointer(((GC_weak)p)->objptr, s->heap.start));
-    /* If it's unmarked not threaded, clear the weak pointer. */
-    if (1 == ((MARK_MASK | 1) & h2)) {
+    objptrHeader = getHeader (objptrToPointer(((GC_weak)p)->objptr, s->heap.start));
+    /* If it's not threaded and unmarked, clear the weak pointer. */
+    if ((GC_VALID_HEADER_MASK & objptrHeader)
+        and not (MARK_MASK & objptrHeader)) {
       ((GC_weak)p)->objptr = BOGUS_OBJPTR;
       header = GC_WEAK_GONE_HEADER | MARK_MASK;
       if (DEBUG_WEAK)
@@ -70,7 +74,7 @@ void maybeClearWeak (GC_state s, pointer p) {
   }
 }
 
-void updateForwardPointers (GC_state s) {
+void updateForwardPointersForMarkCompact (GC_state s) {
   pointer back;
   pointer endOfLastMarked;
   pointer front;
@@ -95,14 +99,14 @@ updateObject:
   p = advanceToObjectData (s, front);
   headerp = getHeaderp (p);
   header = *headerp;
-  if (1 == (1 & header)) {
+  if (GC_VALID_HEADER_MASK & header) {
     /* It's a header */
     if (MARK_MASK & header) {
       /* It is marked, but has no forward pointers.
        * Thread internal pointers.
        */
 thread:
-      maybeClearWeak (s, p);
+      clearIfWeakAndUnmarkedForMarkCompact (s, p);
       size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %zu\n",
@@ -112,10 +116,10 @@ thread:
          * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
          * because that is the smallest possible array.  You cannot
          * use GC_ARRAY_HEADER_SIZE because even zero-length arrays
-         * require an extra word for the forwarding pointer.  If you
-         * did use GC_ARRAY_HEADER_SIZE,
-         * updateBackwardPointersAndSlide would skip the extra word
-         * and be completely busted.
+         * require extra space for the forwarding pointer.  If you did
+         * use GC_ARRAY_HEADER_SIZE,
+         * updateBackwardPointersAndSlideForMarkCompact would skip the
+         * extra space and be completely busted.
          */
         if (DEBUG_MARK_COMPACT)
           fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %zu)\n",
@@ -142,7 +146,7 @@ thread:
     pointer new;
     objptr newObjptr;
 
-    assert (0 == (1 & header));
+    assert (not (GC_VALID_HEADER_MASK & header));
     /* It's a pointer.  This object must be live.  Fix all the forward
      * pointers to it, store its header, then thread its internal
      * pointers.
@@ -153,10 +157,10 @@ thread:
       pointer cur;
       objptr curObjptr;
 
-      threadInternalCopy ((pointer)(&curObjptr), (pointer)headerp);
+      copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
       cur = objptrToPointer (curObjptr, s->heap.start);
 
-      threadInternalCopy ((pointer)headerp, cur);
+      copyForThreadInternal ((pointer)headerp, cur);
       *((objptr*)cur) = newObjptr;
 
       header = *headerp;
@@ -168,7 +172,7 @@ done:
   return;
 }
 
-void updateBackwardPointersAndSlide (GC_state s) {
+void updateBackwardPointersAndSlideForMarkCompact (GC_state s) {
   pointer back;
   pointer front;
   size_t gap;
@@ -191,7 +195,7 @@ updateObject:
   p = advanceToObjectData (s, front);
   headerp = getHeaderp (p);
   header = *headerp;
-  if (1 == (1 & header)) {
+  if (GC_VALID_HEADER_MASK & header) {
     /* It's a header */
     if (MARK_MASK & header) {
       /* It is marked, but has no backward pointers to it.
@@ -225,7 +229,7 @@ unmark:
     pointer new;
     objptr newObjptr;
 
-    assert (0 == (1 & header));
+    assert (not (GC_VALID_HEADER_MASK & header));
     /* It's a pointer.  This object must be live.  Fix all the
      * backward pointers to it.  Then unmark it.
      */
@@ -235,10 +239,10 @@ unmark:
       pointer cur;
       objptr curObjptr;
       
-      threadInternalCopy ((pointer)(&curObjptr), (pointer)headerp);
+      copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
       cur = objptrToPointer (curObjptr, s->heap.start);
 
-      threadInternalCopy ((pointer)headerp, cur);
+      copyForThreadInternal ((pointer)headerp, cur);
       *((objptr*)cur) = newObjptr;
 
       header = *headerp;
@@ -270,14 +274,14 @@ void majorMarkCompactGC (GC_state s) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
-    foreachGlobalObjptr (s, dfsMarkTrue);
+    foreachGlobalObjptr (s, dfsMarkWithHashCons);
     freeHashTable (s->objectHashTable);
   } else {
-    foreachGlobalObjptr (s, dfsMarkFalse);
+    foreachGlobalObjptr (s, dfsMarkWithoutHashCons);
   }
   foreachGlobalObjptr (s, threadInternalObjptr);
-  updateForwardPointers (s);
-  updateBackwardPointersAndSlide (s);
+  updateForwardPointersForMarkCompact (s);
+  updateBackwardPointersAndSlideForMarkCompact (s);
   clearCrossMap (s);
   s->cumulativeStatistics.bytesMarkCompacted += s->heap.oldGenSize;
   s->lastMajorStatistics.kind = GC_MARK_COMPACT;

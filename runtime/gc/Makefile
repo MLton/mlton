@@ -88,6 +88,7 @@ CFILES = 								\
 	copy-thread.c							\
 	current.c   							\
 	dfs-mark.c							\
+	done.c								\
 	enter_leave.c							\
 	foreach.c							\
 	forward.c							\
@@ -95,30 +96,33 @@ CFILES = 								\
 	garbage-collection.c						\
 	gc_state.c   							\
 	generational.c							\
+	handler.c							\
 	hash-cons.c							\
 	heap.c								\
 	heap_predicates.c						\
+	init-world.c							\
+	init.c								\
 	invariant.c   							\
 	mark-compact.c							\
 	model.c								\
 	model_predicates.c						\
 	new-object.c   							\
-	object.c							\
 	object-size.c							\
+	object.c							\
 	pack.c								\
 	pointer.c							\
 	pointer_predicates.c						\
+	profiling.c							\
 	share.c								\
+	signals.c							\
 	size.c								\
 	stack.c								\
 	stack_predicates.c						\
+	switch-thread.c							\
 	thread.c							\
 	translate.c							\
 	weak.c								\
 	world.c								\
-	profiling.c							\
-	init.c								\
-	done.c								\
 	assumptions.c							\
 	gc_suffix.c
 
@@ -138,38 +142,41 @@ HFILES = 								\
 	stack.h								\
 	thread.h							\
 	weak.h								\
-	object-size.h							\
 	int-inf.h							\
-	heap.h								\
-	major.h								\
+	object-size.h							\
 	generational.h							\
+	heap.h								\
 	current.h							\
 	foreach.h							\
-	statistics.h							\
+	translate.h							\
 	sysvals.h							\
-	ratios.h							\
 	controls.h							\
+	major.h								\
+	statistics.h							\
 	forward.h							\
 	cheney-copy.h							\
 	hash-cons.h							\
-	profiling.h							\
-	signals.h							\
-	world.h								\
-	init.h								\
-	gc_state.h							\
-	translate.h							\
-	atomic.h							\
-	invariant.h							\
-	enter_leave.h							\
 	dfs-mark.h							\
 	mark-compact.h							\
-	new-object.h							\
+	invariant.h							\
+	atomic.h							\
+	enter_leave.h							\
+	signals.h							\
+	handler.h							\
+	switch-thread.h							\
 	garbage-collection.h						\
+	new-object.h							\
 	array-allocate.h						\
+	profiling.h							\
+	init-world.h							\
+	world.h								\
+	init.h								\
+	done.h								\
 	copy-thread.h							\
 	pack.h								\
 	share.h								\
 	size.h								\
+	gc_state.h							\
 	gc_suffix.h
 
 all: libgc.o libgc-gdb.o

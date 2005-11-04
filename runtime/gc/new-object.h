@@ -9,4 +9,4 @@
 pointer newObject (GC_state s, GC_header header, 
                    size_t bytesRequested, bool allocInOldGen);
 GC_stack newStack (GC_state s, size_t reserved, bool allocInOldGen);
-void growStack (GC_state s);
+GC_thread newThread (GC_state s, size_t stackSize);

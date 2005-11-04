@@ -32,3 +32,6 @@ GC_arrayLength* getArrayLengthp (pointer a);
 GC_arrayLength getArrayLength (pointer a);
 GC_arrayCounter* getArrayCounterp (pointer a);
 GC_arrayCounter getArrayCounter (pointer a);
+pointer indexArrayAtPointerIndex (GC_state s, pointer a,
+                                  GC_arrayCounter arrayIndex,
+                                  uint32_t pointerIndex);

@@ -66,7 +66,7 @@ uintmax_t rusageTime (struct rusage *ru) {
 }
 
 /* Return time as number of milliseconds. */
-uintmax_t currentTime (void) {
+uintmax_t getCurrentTime (void) {
   struct rusage ru;
   
   getrusage (RUSAGE_SELF, &ru);

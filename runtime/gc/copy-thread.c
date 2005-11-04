@@ -6,24 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-GC_thread newThread (GC_state s, size_t reserved) {
-  GC_stack stack;
-  GC_thread thread;
-
-  ensureFree (s, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
-  stack = newStack (s, reserved, FALSE);
-  thread = (GC_thread) newObject (s, GC_THREAD_HEADER, 
-                                  sizeofThread (s), 
-                                  FALSE);
-  thread->bytesNeeded = 0;
-  thread->exnStack = BOGUS_EXN_STACK;
-  thread->stack = pointerToObjptr((pointer)stack, s->heap.start);
-  if (DEBUG_THREADS)
-    fprintf (stderr, FMTPTR" = newThreadOfSize (%zu)\n",
-             (uintptr_t)thread, reserved);;
-  return thread;
-}
-
 GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
   GC_thread to;
 

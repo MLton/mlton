@@ -6,9 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-void threadInternalCopy (pointer dst, pointer src);
+void copyForThreadInternal (pointer dst, pointer src);
 void threadInternalObjptr (GC_state s, objptr *opp);
-void maybeClearWeak (GC_state s, pointer p);
-void updateForwardPointers (GC_state s);
-void updateBackwardPointersAndSlide (GC_state s);
+void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p);
+void updateForwardPointersForMarkCompact (GC_state s);
+void updateBackwardPointersAndSlideForMarkComact (GC_state s);
 void majorMarkCompactGC (GC_state s);

@@ -24,3 +24,5 @@ struct GC_signalsInfo {
    */
   sigset_t signalsPending;
 };
+
+void initSignalStack (GC_state s);

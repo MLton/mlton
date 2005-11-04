@@ -54,7 +54,7 @@ void saveWorldToFD (GC_state s, int fd) {
   if (DEBUG_WORLD)
     fprintf (stderr, "saveWorld (%d).\n", fd);
   /* Compact the heap. */
-  doGC (s, 0, 0, TRUE, TRUE);
+  performGC (s, 0, 0, TRUE, TRUE);
   sprintf (buf,
            "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %zu\n",
            (uintptr_t)s->heap.start, 

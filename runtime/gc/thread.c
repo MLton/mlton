@@ -24,6 +24,14 @@ size_t sizeofThread (GC_state s) {
   size_t res;
 
   res = GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread);
+  if (DEBUG) {
+    size_t check;
+    uint16_t numNonObjptrs, numObjptrs;
+
+    splitHeader (s, GC_THREAD_HEADER, NULL, NULL, &numNonObjptrs, &numObjptrs);
+    check = GC_NORMAL_HEADER_SIZE + sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
+    assert (check == res);
+  }
   /* The following assert depends on struct GC_thread being the right
    * size.  Right now, it happens that res = 16, which is aligned mod
    * 4 and mod 8, which is all that we need.  If the struct ever

@@ -54,9 +54,9 @@ GC_stack newStack (GC_state s,
   reserved = alignStackReserved (s, reserved);
   if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
     s->cumulativeStatistics.maxStackSizeSeen = reserved;
-  stack = (GC_stack) newObject (s, GC_STACK_HEADER, 
+  stack = (GC_stack)(newObject (s, GC_STACK_HEADER, 
                                 sizeofStackWithHeaderAligned (s, reserved),
-                                allocInOldGen);
+                                allocInOldGen));
   stack->reserved = reserved;
   stack->used = 0;
   if (DEBUG_STACKS)
@@ -66,17 +66,20 @@ GC_stack newStack (GC_state s,
   return stack;
 }
 
-void growStack (GC_state s) {
-  size_t size;
+GC_thread newThread (GC_state s, size_t reserved) {
   GC_stack stack;
+  GC_thread thread;
 
-  size = sizeofStackGrow (s, getStackCurrent(s));
-  if (DEBUG_STACKS or s->controls.messages)
-    fprintf (stderr, "Growing stack to size %zu.\n",
-             /*uintToCommaString*/(sizeofStackWithHeaderAligned (s, size)));
-  assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
-  stack = newStack (s, size, TRUE);
-  copyStack (s, getStackCurrent(s), stack);
-  getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
-  markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap.start));
+  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
+  stack = newStack (s, reserved, FALSE);
+  thread = (GC_thread)(newObject (s, GC_THREAD_HEADER, 
+                                  sizeofThread (s), 
+                                  FALSE));
+  thread->bytesNeeded = 0;
+  thread->exnStack = BOGUS_EXN_STACK;
+  thread->stack = pointerToObjptr((pointer)stack, s->heap.start);
+  if (DEBUG_THREADS)
+    fprintf (stderr, FMTPTR" = newThreadOfSize (%zu)\n",
+             (uintptr_t)thread, reserved);;
+  return thread;
 }

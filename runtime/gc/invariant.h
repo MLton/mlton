@@ -6,8 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
-void assertObjptrIsInFromSpace (GC_state s, objptr *opp);
-bool invariant (GC_state s);
-bool mutatorFrontierInvariant (GC_state s);
-bool mutatorStackInvariant (GC_state s);
-bool mutatorInvariant (GC_state s, bool frontier, bool stack);
+void assertIsObjptrInFromSpace (GC_state s, objptr *opp);
+bool invariantForGC (GC_state s);
+bool invariantForMutatorFrontier (GC_state s);
+bool invariantForMutatorStack (GC_state s);
+bool invariantForMutator (GC_state s, bool frontier, bool stack);

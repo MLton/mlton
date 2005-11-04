@@ -20,7 +20,7 @@ void enter (GC_state s) {
   if (DEBUG) 
     displayGCState (s, stderr);
   beginAtomic (s);
-  assert (invariant (s));
+  assert (invariantForGC (s));
   if (DEBUG)
     fprintf (stderr, "enter ok\n");
 }
@@ -31,7 +31,7 @@ void leave (GC_state s) {
   /* The mutator frontier invariant may not hold
    * for functions that don't ensureBytesFree.
    */
-  assert (mutatorInvariant (s, FALSE, TRUE));
+  assert (invariantForMutator (s, FALSE, TRUE));
   endAtomic (s);
   if (DEBUG)
     fprintf (stderr, "leave ok\n");

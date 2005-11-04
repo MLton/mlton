@@ -11,9 +11,9 @@ size_t GC_size (GC_state s, pointer root) {
 
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size marking\n");
-  res = dfsMark (s, root, MARK_MODE, FALSE);
+  res = dfsMarkByMode (s, root, MARK_MODE, FALSE);
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size unmarking\n");
-  dfsMark (s, root, UNMARK_MODE, FALSE);
+  dfsMarkByMode (s, root, UNMARK_MODE, FALSE);
   return res;
 }

@@ -103,7 +103,7 @@ void minorCheneyCopyGC (GC_state s) {
   if (DEBUG_GENERATIONAL)
     fprintf (stderr, "minorGC  nursery = "FMTPTR"  frontier = "FMTPTR"\n",
              (uintptr_t)s->heap.nursery, (uintptr_t)s->frontier);
-  assert (invariant (s));
+  assert (invariantForGC (s));
   bytesAllocated = s->frontier - s->heap.nursery;
   if (bytesAllocated == 0)
     return;
@@ -122,7 +122,7 @@ void minorCheneyCopyGC (GC_state s) {
       fprintf (stderr, "toStart = "FMTPTR"\n", (uintptr_t)s->forwardState.toStart);
     assert (isAlignedFrontier (s, s->forwardState.toStart));
     s->forwardState.toLimit = s->forwardState.toStart + bytesAllocated;
-    assert (invariant (s));
+    assert (invariantForGC (s));
     s->cumulativeStatistics.numMinorGCs++;
     s->lastMajorStatistics.numMinorGCs++;
     s->forwardState.back = s->forwardState.toStart;

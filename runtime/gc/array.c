@@ -42,3 +42,27 @@ GC_arrayCounter* getArrayCounterp (pointer a) {
 GC_arrayCounter getArrayCounter (pointer a) {
   return *(getArrayCounterp (a));
 }
+
+pointer indexArrayAtPointerIndex (GC_state s, pointer a,
+                                  GC_arrayCounter arrayIndex,
+                                  uint32_t pointerIndex) {
+  GC_header header;
+  uint16_t numNonObjptrs;
+  uint16_t numObjptrs;
+  GC_objectTypeTag tag;
+  
+  header = getHeader (a);
+  splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  assert (tag == ARRAY_TAG);
+
+  size_t nonObjptrBytesPerElement =
+    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
+  size_t bytesPerElement =
+    nonObjptrBytesPerElement
+    + (numObjptrs * OBJPTR_SIZE);
+
+  return a
+    + arrayIndex * bytesPerElement
+    + nonObjptrBytesPerElement
+    + pointerIndex * OBJPTR_SIZE;
+}

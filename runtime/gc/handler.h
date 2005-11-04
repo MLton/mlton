@@ -6,14 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-bool detailedGCTime (GC_state s) {
-  return s->controls.summary;
-}
-
-bool needGCTime (GC_state s) {
-  return 
-    DEBUG 
-    or s->controls.summary 
-    or s->controls.messages
-    or s->controls.rusageMeasureGC;
-}
+void GC_startHandler (GC_state s);
+void GC_finishHandler (GC_state s);
+void switchToHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
+void GC_handler (GC_state s, int signum);

@@ -14,9 +14,9 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
          (uintptr_t)opp, *opp);
 }
 
-bool invariant (GC_state s) {
+bool invariantForGC (GC_state s) {
   if (DEBUG)
-    fprintf (stderr, "invariant\n");
+    fprintf (stderr, "invariantForGC\n");
   /* Frame layouts */
   for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
     GC_frameLayout layout;
@@ -54,16 +54,16 @@ bool invariant (GC_state s) {
   assert (s->secondaryHeap.start == NULL 
           or s->heap.size == s->secondaryHeap.size);
   /* Check that all pointers are into from space. */
-  foreachGlobalObjptr (s, assertObjptrIsInFromSpace);
+  foreachGlobalObjptr (s, assertIsObjptrInFromSpace);
   pointer back = s->heap.start + s->heap.oldGenSize;
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking old generation.\n");
   foreachObjptrInRange (s, alignFrontier (s, s->heap.start), &back, 
-                        assertObjptrIsInFromSpace, FALSE);
+                        assertIsObjptrInFromSpace, FALSE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking nursery.\n");
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
-                        assertObjptrIsInFromSpace, FALSE);
+                        assertIsObjptrInFromSpace, FALSE);
   /* Current thread. */
   GC_stack stack = getStackCurrent(s);
   assert (isAlignedStackReserved (s, stack->reserved));
@@ -74,29 +74,29 @@ bool invariant (GC_state s) {
   assert (stack->used == sizeofGCStateCurrentStackUsed (s));
   assert (stack->used <= stack->reserved);
   if (DEBUG)
-    fprintf (stderr, "invariant passed\n");
+    fprintf (stderr, "invariantForGC passed\n");
   return TRUE;
 }
 
-bool mutatorFrontierInvariant (GC_state s) {
+bool invariantForMutatorFrontier (GC_state s) {
   GC_thread thread = getThreadCurrent(s);
   return (thread->bytesNeeded 
           <= (size_t)(s->limitPlusSlop - s->frontier));
 }
 
-bool mutatorStackInvariant (GC_state s) {
+bool invariantForMutatorStack (GC_state s) {
   GC_stack stack = getStackCurrent(s);
   return (getStackTop (s, stack) 
           <= getStackLimit (s, stack) + getStackTopFrameSize (s, stack));
 }
 
-bool mutatorInvariant (GC_state s, bool frontier, bool stack) {
+bool invariantForMutator (GC_state s, bool frontier, bool stack) {
   if (DEBUG)
     displayGCState (s, stderr);
   if (frontier)
-    assert (mutatorFrontierInvariant(s));
+    assert (invariantForMutatorFrontier(s));
   if (stack)
-    assert (mutatorStackInvariant(s));
-  assert (invariant (s));
+    assert (invariantForMutatorStack(s));
+  assert (invariantForGC (s));
   return TRUE;
 }

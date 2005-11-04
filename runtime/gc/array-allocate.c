@@ -42,9 +42,11 @@ pointer GC_arrayAllocate (GC_state s,
              /*uintToCommaString*/(arraySize),
              /*uintToCommaString*/(ensureBytesFree));
   if (arraySize >= s->controls.oldGenArraySize) {
-    enter (s);
-    doGC (s,  arraySize, ensureBytesFree, FALSE, TRUE);
-    leave (s);
+    if (not hasHeapBytesFree (s, arraySize, ensureBytesFree)) {
+      enter (s);
+      performGC (s, arraySize, ensureBytesFree, FALSE, TRUE);
+      leave (s);
+    }
     frontier = s->heap.start + s->heap.oldGenSize;
     last = frontier + arraySize;
     s->heap.oldGenSize += arraySize;
@@ -53,9 +55,9 @@ pointer GC_arrayAllocate (GC_state s,
     size_t bytesRequested;
     
     bytesRequested = arraySize + ensureBytesFree;
-    if (bytesRequested > (size_t)(s->limitPlusSlop - s->frontier)) {
+    if (not hasHeapBytesFree (s, 0, bytesRequested)) {
       enter (s);
-      doGC (s, 0, bytesRequested, FALSE, TRUE);
+      performGC (s, 0, bytesRequested, FALSE, TRUE);
       leave (s);
     }
     frontier = s->frontier;

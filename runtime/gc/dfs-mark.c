@@ -10,46 +10,22 @@
 /*                       Depth-first Marking                        */
 /* ---------------------------------------------------------------- */
 
-bool isMarked (pointer p) {
+bool isPointerMarked (pointer p) {
   return MARK_MASK & getHeader (p);
 }
 
-bool isMarkedMode (GC_markMode m, pointer p) {
+bool isPointerMarkedByMode (pointer p, GC_markMode m) {
   switch (m) {
   case MARK_MODE:
-    return isMarked (p);
+    return isPointerMarked (p);
   case UNMARK_MODE:
-    return not isMarked (p);
+    return not isPointerMarked (p);
   default:
     die ("bad mark mode %u", m);
   }
 }
 
-pointer arrayIndexAtPointer (GC_state s, pointer a,
-                             GC_arrayCounter arrayIndex,
-                             uint32_t pointerIndex) {
-  GC_header header;
-  uint16_t numNonObjptrs;
-  uint16_t numObjptrs;
-  GC_objectTypeTag tag;
-  
-  header = getHeader (a);
-  splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
-  assert (tag == ARRAY_TAG);
-
-  size_t nonObjptrBytesPerElement =
-    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
-  size_t bytesPerElement =
-    nonObjptrBytesPerElement
-    + (numObjptrs * OBJPTR_SIZE);
-
-  return a
-    + arrayIndex * bytesPerElement
-    + nonObjptrBytesPerElement
-    + pointerIndex * OBJPTR_SIZE;
-}
-
-/* dfsMark (s, r, m, shc) 
+/* dfsMarkByMode (s, r, m, shc) 
  *
  * Sets all the mark bits in the object graph pointed to by r. 
  *
@@ -60,8 +36,8 @@ pointer arrayIndexAtPointer (GC_state s, pointer a,
  *
  * It returns the total size in bytes of the objects marked.
  */
-size_t dfsMark (GC_state s, pointer root,
-                GC_markMode mode, bool shouldHashCons) {
+size_t dfsMarkByMode (GC_state s, pointer root,
+                      GC_markMode mode, bool shouldHashCons) {
   GC_header mark; /* Used to set or clear the mark bit. */
   size_t size; /* Total number of bytes marked. */
   pointer cur; /* The current object being marked. */
@@ -82,7 +58,7 @@ size_t dfsMark (GC_state s, pointer root,
   GC_frameLayout frameLayout;
   GC_frameOffsets frameOffsets;
 
-  if (isMarkedMode (mode, root))
+  if (isPointerMarkedByMode (root, mode))
     /* Object has already been marked. */
     return 0;
   mark = (MARK_MODE == mode) ? MARK_MASK : 0;
@@ -107,7 +83,7 @@ markNext:
              "  prev = "FMTPTR"  todo = "FMTPTR"\n",
              (uintptr_t)cur, (uintptr_t)next, 
              (uintptr_t)prev, (uintptr_t)todo);
-  assert (not isMarkedMode (mode, next));
+  assert (not isPointerMarkedByMode (next, mode));
   assert (nextHeaderp == getHeaderp (next));
   assert (nextHeader == getHeader (next));
   // assert (*(pointer*) todo == next);
@@ -128,7 +104,7 @@ mark:
    * headerp points to the header of cur.
    * header is the header of cur.
    */
-  assert (not isMarkedMode (mode, cur));
+  assert (not isPointerMarkedByMode (cur, mode));
   assert (header == getHeader (cur));
   assert (headerp == getHeaderp (cur));
   header ^= MARK_MASK;
@@ -215,14 +191,14 @@ markInArray:
                arrayIndex, index);
     assert (arrayIndex < getArrayLength (cur));
     assert (index < numObjptrs);
-    assert (todo == arrayIndexAtPointer (s, cur, arrayIndex, index));
+    assert (todo == indexArrayAtPointerIndex (s, cur, arrayIndex, index));
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (not (isPointer(next))) {
 markNextInArray:
       assert (arrayIndex < getArrayLength (cur));
       assert (index < numObjptrs);
-      assert (todo == arrayIndexAtPointer (s, cur, arrayIndex, index));
+      assert (todo == indexArrayAtPointerIndex (s, cur, arrayIndex, index));
       todo += OBJPTR_SIZE;
       index++;
       if (index < numObjptrs)
@@ -305,7 +281,7 @@ ret:
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "return  cur = "FMTPTR"  prev = "FMTPTR"\n",
              (uintptr_t)cur, (uintptr_t)prev);
-  assert (isMarkedMode (mode, cur));
+  assert (isPointerMarkedByMode (cur, mode));
   if (NULL == prev)
     return size;
   next = cur;
@@ -356,23 +332,23 @@ ret:
   assert (FALSE);
 }
 
-void dfsMarkTrue (GC_state s, objptr *opp) {
+void dfsMarkWithHashCons (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, MARK_MODE, TRUE);
+  dfsMarkByMode (s, p, MARK_MODE, TRUE);
 }
 
-void dfsMarkFalse (GC_state s, objptr *opp) {
+void dfsMarkWithoutHashCons (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, MARK_MODE, FALSE);
+  dfsMarkByMode (s, p, MARK_MODE, FALSE);
 }
 
 void dfsUnmark (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p, UNMARK_MODE, FALSE);
+  dfsMarkByMode (s, p, UNMARK_MODE, FALSE);
 }

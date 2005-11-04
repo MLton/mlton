@@ -103,6 +103,10 @@ struct GC_profiling {
   pointer textStart;
 };
 
+static void showProf (GC_state s);
+void initProfiling (GC_state s);
+static void enterFrame (GC_state s, uint32_t i);
+
 
 void GC_profileAllocInc (GC_state s, size_t bytes);
 

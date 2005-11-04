@@ -18,3 +18,5 @@
 * the "skipObjects" loop in forwardInterGenerationalObjptrs appears to
         be unnecessary.
 * Why do {load,save}Globals differ in the representation of the file?
+* Why does hash-table use malloc/free while generational maps use mmap/munmap?
+
