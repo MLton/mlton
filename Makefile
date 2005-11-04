@@ -337,6 +337,9 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
+ifeq ($(TARGET_OS), darwin)
+PREFIX = /usr/local
+endif
 ifeq ($(TARGET_OS), solaris)
 PREFIX = /usr/local
 endif
