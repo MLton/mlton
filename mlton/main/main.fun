@@ -106,11 +106,6 @@ fun setTargetType (target: string, usage): unit =
                 | _ => codegen := CCodegen)
          end
 
-fun warnDeprecated (flag, use) =
-   Out.output (Out.error,
-               concat ["Warning: -", flag, " is deprecated.  ",
-                       "Use ", use, ".\n"])
-
 fun hasNative () =
    let
       datatype z = datatype Control.arch
