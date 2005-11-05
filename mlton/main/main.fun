@@ -47,11 +47,13 @@ structure OptPred =
        | Yes 
    end
 
-val buildConstants: bool ref = ref false
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val buildConstants: bool ref = ref false
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
+val explicitAlign: Control.align option ref = ref NONE
+val explicitCodegen: Control.codegen option ref = ref NONE
 val gcc: string ref = ref "<unset>"
 val keepGenerated = ref false
 val keepO = ref false
@@ -87,24 +89,6 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
               {arch = arch, os = os, target = target}
            end
       | _ => Error.bug (concat ["strange target mapping: ", line])))
-
-fun setTargetType (target: string, usage): unit =
-   case List.peek (targetMap (), fn {target = t, ...} => t = target) of
-      NONE => usage (concat ["invalid target: ", target])
-    | SOME {arch, os, ...} =>
-         let
-            datatype z = datatype MLton.Platform.Arch.t
-            open Control
-         in
-            targetArch := arch
-            ; targetOS := os
-            ; (case arch of
-                  Sparc => (align := Align8; codegen := CCodegen)
-                | HPPA => (align := Align8; codegen := CCodegen)
-                | X86 => codegen := Native
-                | AMD64 => codegen := Native
-                | _ => codegen := CCodegen)
-         end
 
 fun hasNative () =
    let
@@ -142,12 +126,12 @@ fun makeOptions {usage} =
          | _ => " {4|8}",
         "object alignment",
         (SpaceString (fn s =>
-                      align
-                      := (case s of
-                             "4" => Align4
-                           | "8" => Align8
-                           | _ => usage (concat ["invalid -align flag: ",
-                                                 s]))))),
+                      explicitAlign
+                      := SOME (case s of
+                                  "4" => Align4
+                                | "8" => Align8
+                                | _ => usage (concat ["invalid -align flag: ",
+                                                      s]))))),
        (Normal, "as-opt", " <opt>", "pass option to assembler",
         SpaceString (fn s =>
                      List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
@@ -165,11 +149,13 @@ fun makeOptions {usage} =
         concat [" {", if hasNative () then "native|" else "", "bytecode|c}"],
         "which code generator to use",
         SpaceString (fn s =>
-                     case s of
-                        "bytecode" => codegen := Bytecode
-                      | "c" => codegen := CCodegen
-                      | "native" => codegen := Native
-                      | _ => usage (concat ["invalid -codegen flag: ", s]))),
+                     explicitCodegen
+                     := SOME (case s of
+                                 "bytecode" => Bytecode
+                               | "c" => CCodegen
+                               | "native" => Native
+                               | _ => usage (concat
+                                             ["invalid -codegen flag: ", s])))),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
@@ -450,9 +436,12 @@ fun makeOptions {usage} =
                   | x :: _ => concat [#target x, "|..."]),
                 "}"],
         "platform that executable will run on",
-        SpaceString (fn s =>
-                     (setTargetType (s, usage)
-                      ; target := (if s = "self" then Self else Cross s)))),
+        SpaceString
+        (fn t =>
+         (target := (if t = "self" then Self else Cross t);
+          case List.peek (targetMap (), fn {target = t', ...} => t = t') of
+             NONE => usage (concat ["invalid target: ", t])
+           | SOME {arch, os, ...} => (targetArch := arch; targetOS := os)))),
        (Normal, "target-as-opt", " <target> <opt>", "target-dependent assembler option",
         (SpaceString2
          (fn (target, opt) =>
@@ -512,8 +501,19 @@ fun commandLine (args: string list): unit =
                (libDir := OS.Path.mkCanonical lib
                 ; args)
           | _ => Error.bug "incorrect args from shell script"
-      val _ = setTargetType ("self", usage)
       val result = parse args
+      val targetArch = !targetArch
+      val () =
+         align := (case !explicitAlign of
+                      NONE => (case targetArch of
+                                  Sparc => Align8
+                                | HPPA => Align8
+                                | _ => Align4)
+                    | SOME a => a)
+      val () =
+         codegen := (case !explicitCodegen of
+                        NONE => if hasNative () then Native else CCodegen
+                      | SOME c => c)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () =
          if !showAnns then
@@ -540,7 +540,6 @@ fun commandLine (args: string list): unit =
             Cross s => s
           | Self => "self"
       val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
-      val targetArch = !targetArch
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !targetOS
       val () =
