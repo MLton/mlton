@@ -101,14 +101,7 @@ clean:
 # Manager (CM) installed.  You may need to replace the following with
 # 'sml-cm'.
 #
-SMLNJ_VERSION = 110.4[59]
 SML	= sml
-
-.PHONY: check-nj-version
-check-nj-version:
-	if ! echo | $(SML) | grep -q $(SMLNJ_VERSION); then	\
-		echo You must use SML/NJ $(SMLNJ_VERSION);	\
-	fi
 
 .PHONY: def-use
 def-use:
@@ -116,7 +109,6 @@ def-use:
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -128,7 +120,6 @@ nj-mlton: $(SOURCES)
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -142,7 +133,6 @@ nj-mlton-dual: $(SOURCES)
 
 .PHONY: nj-mlton-quad
 nj-mlton-quad: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -158,7 +148,6 @@ nj-mlton-quad: $(SOURCES)
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
