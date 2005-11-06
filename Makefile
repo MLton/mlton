@@ -19,9 +19,14 @@ COMP = $(SRC)/mlton
 RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 AOUT = mlton-compile
+ifeq (mingw, $(TARGET_OS))
+EXE = .exe
+else
+EXE =
+endif
 MLBPATHMAP = $(LIB)/mlb-path-map
 TARGETMAP = $(LIB)/target-map
-SPEC = $(SRC)/package/rpm/mlton.spec
+SPEC = package/rpm/mlton.spec
 LEX = mllex
 PROF = mlprof
 YACC = mlyacc
@@ -46,7 +51,7 @@ all-no-docs:
 # stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
 # remake MLton.
 ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
-	rm -f $(COMP)/$(AOUT)
+	rm -f $(COMP)/$(AOUT)$(EXE)
 endif
 	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
 	@echo 'Build of MLton succeeded.'
@@ -92,7 +97,7 @@ cm:
 .PHONY: compiler
 compiler:
 	$(MAKE) -C $(COMP)
-	$(CP) $(COMP)/$(AOUT) $(LIB)/
+	$(CP) $(COMP)/$(AOUT)$(EXE) $(LIB)/
 
 .PHONY: constants
 constants:
@@ -105,7 +110,7 @@ constants:
 DEBSRC = mlton-$(VERSION).orig
 .PHONY: deb
 deb:
-	$(MAKE) clean clean-svn version deb-change
+	$(MAKE) clean clean-svn version
 	mv package/debian .
 	tar -cpf - . | \
 		( cd .. && mkdir $(DEBSRC) && cd $(DEBSRC) && tar -xpf - )
@@ -159,33 +164,26 @@ freebsd:
 			      # vvvv do not change make to $(MAKE)
 	cd $(BSDSRC)/freebsd && make build-package  
 
+LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
+
 .PHONY: libraries-no-check
 libraries-no-check:
 	mkdir -p $(LIB)/sml
-	cd $(LIB)/sml && rm -rf mlyacc-lib
-	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
-	find $(LIB)/sml/mlyacc -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/mlyacc -type f -name .ignore | xargs rm -rf
-	cd $(LIB)/sml && rm -rf cml
-	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
-	find $(LIB)/sml/cml -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/cml -type f -name .ignore | xargs rm -rf
-	cd $(LIB)/sml && rm -rf smlnj-lib
-	$(MAKE) -C $(SRC)/lib/smlnj-lib
-	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
-	cd $(LIB)/sml && rm -rf ckit-lib
+	cd $(LIB)/sml && rm -rf $(LIBRARIES)
 	$(MAKE) -C $(SRC)/lib/ckit-lib
+	$(MAKE) -C $(SRC)/lib/smlnj-lib
+	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
-	cd $(LIB)/sml && rm -rf mlnlffi-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
-	find $(LIB)/sml/mlnlffi-lib -type d -name .svn | xargs rm -rf
-	find $(LIB)/sml/mlnlffi-lib -type f -name .ignore | xargs rm -rf
-
+	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
+	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
+	find $(LIB)/sml -type d -name .svn | xargs rm -rf
+	find $(LIB)/sml -type f -name .ignore | xargs rm -rf
 
 .PHONY: libraries
 libraries:
 	$(MAKE) libraries-no-check
-	for f in mlyacc-lib cml smlnj-lib ckit-lib mlnlffi-lib; do	\
+	for f in $(LIBRARIES); do				\
 		echo "Type checking $$f library.";		\
 		$(MLTON) -disable-ann deadCode 			\
 			-stop tc 				\
@@ -266,7 +264,7 @@ rpms:
 	rm -rf $(SOURCEDIR)
 	mkdir -p $(SOURCEDIR)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(SOURCEDIR) && tar -xpf - )
-	$(CP) $(SOURCEDIR)/doc/mlton.spec $(TOPDIR)/SPECS/mlton.spec
+	$(CP) $(SOURCEDIR)/$(SPEC) $(TOPDIR)/SPECS/mlton.spec
 	( cd $(TOPDIR)/SOURCES && tar -cpf - mlton-$(VERSION) )		\
 		| $(GZIP) >$(SOURCEDIR).tgz
 	rm -rf $(SOURCEDIR)
@@ -289,9 +287,7 @@ runtime:
 
 .PHONY: script
 script:
-	@echo 'Setting lib in mlton script.'
-	sed "/^lib=/s;'.*';\"\`dirname \$$0\`/../lib\";" 	\
-		<bin/mlton-script >$(MLTON)
+	$(CP) bin/mlton-script $(MLTON)
 	chmod a+x $(MLTON)
 	$(CP) $(SRC)/bin/platform $(LIB)
 
@@ -309,16 +305,20 @@ tools:
 	$(MAKE) -C $(NLFFIGEN)
 	$(MAKE) -C $(PROF)
 	$(MAKE) -C $(YACC)
-	$(CP) $(LEX)/$(LEX) $(NLFFIGEN)/$(NLFFIGEN) $(PROF)/$(PROF) $(YACC)/$(YACC) $(BIN)/
+	$(CP) $(LEX)/$(LEX)$(EXE) 		\
+		$(NLFFIGEN)/$(NLFFIGEN)$(EXE)	\
+		$(PROF)/$(PROF)$(EXE)		\
+		$(YACC)/$(YACC)$(EXE)		\
+		$(BIN)/
 
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		package/debian/changelog				\
-		package/rpm/mlton.spec					\
+		$(SPEC)							\
 		package/freebsd/Makefile				\
-		mlton/control/control.sml; 				\
+		mlton/control/control-flags.sml;			\
 	do								\
 		sed "s/\(.*\)MLTONVERSION\(.*\)/\1$(VERSION)\2/" <$$f >z && \
 		mv z $$f;						\
@@ -330,7 +330,7 @@ version:
 world-no-check: 
 	@echo 'Making world.'
 	$(MAKE) basis-no-check
-	$(LIB)/$(AOUT) @MLton -- $(LIB)/world
+	$(LIB)/$(AOUT)$(EXE) @MLton -- $(LIB)/world
 
 .PHONY: world
 world: 
@@ -346,6 +346,9 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
+ifeq ($(TARGET_OS), darwin)
+PREFIX = /usr/local
+endif
 ifeq ($(TARGET_OS), solaris)
 PREFIX = /usr/local
 endif
@@ -369,27 +372,33 @@ endif
 .PHONY: install
 install: install-docs install-no-docs
 
+MAN_PAGES =  \
+	mllex.1 \
+	mlnlffigen.1 \
+	mlprof.1 \
+	mlton.1 \
+	mlyacc.1
+
 .PHONY: install-no-docs
 install-no-docs:
 	mkdir -p $(TLIB) $(TBIN) $(TMAN)
 	$(CP) $(LIB)/. $(TLIB)/
 	rm -f $(TLIB)/self/libmlton-gdb.a
-	sed "/^lib=/s;'.*';'$(prefix)/$(ULIB)';" 			\
+	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
 		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod a+x $(TBIN)/mlton
-	$(CP) $(BIN)/$(LEX) $(BIN)/$(PROF) $(BIN)/$(YACC) $(TBIN)/
-	( cd $(SRC)/man && tar cf - mllex.1 mlprof.1 mlton.1 mlyacc.1 ) | \
+	cd $(BIN) && $(CP) $(LEX) $(NLFFIGEN) $(PROF) $(YACC) $(TBIN)/
+	( cd $(SRC)/man && tar cf - $(MAN_PAGES)) | \
 		( cd $(TMAN)/ && tar xf - )
 	if $(GZIP_MAN); then						\
-		cd $(TMAN) && $(GZIP) mllex.1 mlprof.1 mlton.1		\
-			mlyacc.1;					\
+		cd $(TMAN) && $(GZIP) $(MAN_PAGES);			\
 	fi
 	case "$(TARGET_OS)" in						\
-	darwin|solaris)							\
+	cygwin|darwin|solaris)						\
 	;;								\
 	*)								\
-		for f in $(TLIB)/$(AOUT) 				\
-			$(TBIN)/$(LEX) $(TBIN)/$(PROF)			\
+		for f in $(TLIB)/$(AOUT) $(TBIN)/$(LEX)			\
+			$(TBIN)/$(NLFFIGEN) $(TBIN)/$(PROF)		\
 			$(TBIN)/$(YACC); do 				\
 			strip --remove-section=.comment			\
 				--remove-section=.note $$f; 		\
@@ -399,15 +408,14 @@ install-no-docs:
 .PHONY: install-docs
 install-docs:
 	mkdir -p $(TDOC)
-	(									\
-		cd $(SRC)/doc &&						\
-		$(CP) changelog examples license README $(TDOC)/		\
+	(								\
+		cd $(SRC)/doc &&					\
+		$(CP) changelog examples guide license README $(TDOC)/	\
 	)
-	(									\
-		cd $(SRC)/util &&						\
-		$(CP) cmcat cm2mlb $(TDOC)/					\
+	(								\
+		cd $(SRC)/util &&					\
+		$(CP) cmcat cm2mlb $(TDOC)/				\
 	)
-	rm -rf $(TDOC)/user-guide
 	for f in callcc command-line hello-world same-fringe signals	\
 			size taut thread1 thread2 thread-switch timeout \
 		; do 							\
@@ -428,7 +436,8 @@ post-install-debian:
 	$(CP) $(SRC)/debian/copyright $(SRC)/debian/README.Debian $(TDOC)/
 	$(CP) $(SRC)/debian/changelog $(TDOC)/changelog.Debian
 	mkdir -p $(TDOCBASE)
-	for f in mllex mlyacc; do \
+	for f in mllex mlton mlyacc; do \
 		$(CP) $(SRC)/debian/$$f.doc-base $(TDOCBASE)/$$f; \
 	done
 	cd $(TDOC)/ && $(GZIP) changelog changelog.Debian
+	chown -R root.root $(TDOC)

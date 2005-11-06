@@ -85,32 +85,30 @@ val lexAndParseString =
          HashSet.new {hash = String.hash o #1}
       local
          fun make (file: File.t) =
-            if File.canRead file
-               then
-                  List.keepAllMap
-                  (File.lines file, fn line =>
-                   if String.forall (line, Char.isSpace)
-                      then NONE
-                   else 
-                      case String.tokens (line, Char.isSpace) of
-                         [var, path] => SOME {var = var, path = path}
-                       | _ => Error.bug (concat ["strange mlb path mapping: ", 
-                                                 file, ":: ", line]))
-            else []
+            if not (File.canRead file) then
+               Error.bug (concat ["can't read MLB path map file: ", file])
+            else
+               List.keepAllMap
+               (File.lines file, fn line =>
+                if String.forall (line, Char.isSpace)
+                   then NONE
+                else 
+                   case String.tokens (line, Char.isSpace) of
+                      [var, path] => SOME {var = var, path = path}
+                    | _ => Error.bug (concat ["strange mlb path mapping: ", 
+                                              file, ":: ", line]))
          val pathMap =
-            (List.rev o List.concat)
-            [make (concat [!Control.libDir, "/mlb-path-map"]),
-             case OS.Process.getEnv "HOME" of
-                NONE => []
-              | SOME path => make (concat [path, "/.mlton/mlb-path-map"]),
-             [{var = "LIB_MLTON_DIR", 
-               path = !Control.libDir},
-              {var = "TARGET_ARCH",
-               path = (String.toLower o MLton.Platform.Arch.toString) 
-                      (!Control.targetArch)},
-              {var = "TARGET_OS",
-               path = (String.toLower o MLton.Platform.OS.toString) 
-                      (!Control.targetOS)}]]
+            List.rev
+            (List.concat
+             [List.concat (List.map (!Control.mlbPathMaps, make)),
+              [{var = "LIB_MLTON_DIR", 
+                path = !Control.libDir},
+               {var = "TARGET_ARCH",
+                path = String.toLower (MLton.Platform.Arch.toString
+                                       (!Control.targetArch))},
+               {var = "TARGET_OS",
+                path = String.toLower (MLton.Platform.OS.toString
+                                       (!Control.targetOS))}]])
          fun peekPathMap var' =
             case List.peek (pathMap, fn {var,...} =>
                             var = var') of

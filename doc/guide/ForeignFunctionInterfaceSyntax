@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>ForeignFunctionInterfaceSyntax - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      ForeignFunctionInterfaceSyntax
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<p>
+The following descriptions of the syntax of MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> expressions make use of the following (informal) type abbreviations: 
+</p>
+
+<div>
+<table>
+<tr>
+<td>
+ C base type </td>
+<td>
+ <em>cBaseTy</em> </td>
+<td>
+ <a href="ForeignFunctionInterfaceTypes"> Foreign Function Interface types</a> </td>
+</tr>
+<tr>
+<td>
+ C return type </td>
+<td>
+ <em>cRetTy</em> </td>
+<td>
+ <em>cBaseTy</em> or <tt>unit</tt> </td>
+</tr>
+<tr>
+<td>
+ C function type (<em>n</em> may be zero) </td>
+<td>
+ <em>cFuncTy</em> </td>
+<td>
+ <em>cBaseTy</em><sub>1</sub><tt>&nbsp;*&nbsp;</tt>...<tt>&nbsp;*&nbsp;</tt><em>cBaseTy</em><sub>n</sub><tt>&nbsp;-&gt;&nbsp;</tt><em>cRetTy</em> </td>
+</tr>
+<tr>
+<td>
+ C pointer type </td>
+<td>
+ <em>cPtrTy</em> </td>
+<td>
+ <tt>MLton.Pointer.t</tt> </td>
+</tr>
+</table>
+</div>
+<p>
+The type annotation and the semicolon are not optional in the syntax of <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> expressions.  However, the type is lexed, parsed, and elaborated as an SML type, so any type (including type abbreviations) may be used, so long as it elaborates to a type of the correct form. 
+</p>
+<h2 id="head-d70f93df5e8f9b55be44fbeee9d203972e3383d4">Address</h2>
+
+<pre>_address "C function or variable name" : cPtrTy;
+</pre><p>
+Denotes the address of the C function or variable. 
+</p>
+<h2 id="head-3f84ef531f9db996694ad09a8fdddbca1440577e">Symbol</h2>
+
+<pre>_symbol "C variable name" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
+</pre><p>
+Denotes the <em>getter</em> and <em>setter</em> for a C variable.   (The <em>cBaseTy</em>s must agree.)   
+</p>
+
+<pre>_symbol * : cPtrTy -&gt; (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
+</pre><p>
+Denotes the <em>getter</em> and <em>setter</em> for a C variable pointer.   (The <em>cBaseTy</em>s must agree.) 
+</p>
+<p>
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>alloc</tt> : allocate storage (and export a symbol) for the C variable 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-d6fbc9d2bdd580e18ed0bc5805dc26db323d6f5f">Import</h2>
+
+<pre>_import "C function name" attr... : cFuncTy;
+</pre><p>
+Denotes a SML function whose behavior is implemented by calling the C function. 
+</p>
+<p>
+See <a href="CallingFromSMLToC"> Calling from SML to C</a> for more details. 
+</p>
+
+<pre>_import * attr... : cPtrTy -&gt; cFuncTy;
+</pre><p>
+Denotes a SML function whose behavior is implemented by calling a C function through a C function pointer. 
+</p>
+<p>
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+See <a href="CallingFromSMLToCFunctionPointer"> Calling from SML to C function pointer</a> for more details. 
+</p>
+<h2 id="head-f3e4fadb9e370a1e2c0c622c01fc8c77daf93a2c">Export</h2>
+
+<pre>_export "C function name" attr... : cFuncTy -&gt; unit;
+</pre><p>
+Denotes a function that must be applied to a SML function <tt>f</tt> and arranges for the exported C function to call the SML function. 
+</p>
+<p>
+<tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>cdecl</tt> : call with the <tt>cdecl</tt> calling convention. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>stdcall</tt> : call with the <tt>stdcall</tt> calling convention. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+See <a href="CallingFromCToSML"> Calling from C to SML</a> for more details. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-07 21:52:33 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

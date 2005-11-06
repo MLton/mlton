@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>WikiMacros - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      WikiMacros
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Here are the wiki macros available in addition to the usual <a href="MoinMoin">MoinMoin</a> ones. 
+    <ul>
+
+    <li>
+<p>
+ <tt>[[Cite(anchor,&nbsp;text)]]</tt> displays text as a link to the  corresponding reference on the <a href="References">References</a> page.  <br>
+Examples: <a href = "References#FluetWeeks01"> a paper</a> 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
+Examples: 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+, 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>[[IncludeSVN(pathToFile,&nbsp;type)]]</tt> textually includes the latest contents of <tt>pathToFile</tt>, formatted with <a href="Enscript">Enscript</a> as <tt>type</tt> (as in the <tt>!#syntax</tt> processor).  If <tt>type</tt> is omitted, use the extension of <tt>pathToFile</tt>.  <br>
+Example: 
+</p>
+<p>
+ <pre class=code><I><FONT COLOR="#B22222">(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)</FONT></I>
+
+<B><FONT COLOR="#0000FF">structure</FONT></B> Main = Main ()
+
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Trace.Immediate
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      debug := Out Out.error
+      ; flagged ()
+      ; on []
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
+Examples: 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+, 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>[[ViewSVNSDir(pathToDir)]]</tt> displays a link to the ViewCVS  page for <tt>pathToDir</tt>.   <br>
+Examples: 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
+ 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-10 12:43:15 by <span title="net-79206.roam.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

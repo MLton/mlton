@@ -28,11 +28,11 @@ FLAGS += -mtune=opteron -m32
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -mv8 -m32
+FLAGS += -mcpu=v8 -m32
 endif
 
 ifeq ($(TARGET_OS), solaris)
-FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -mcpu=ultrasparc
+FLAGS += -Wa,-xarch=v8plusa -funroll-all-loops -mcpu=ultrasparc
 endif
 
 ifeq ($(TARGET), self)

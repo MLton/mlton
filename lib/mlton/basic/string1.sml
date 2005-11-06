@@ -19,7 +19,7 @@ type t = string
 
 val last = String0.last
          
-val layout = Layout.str o escapeSML
+val layout = Layout.str
 
 fun forall (s, f) =
    let

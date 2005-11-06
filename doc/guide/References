@@ -1,0 +1,804 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>References - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="CejtinEtAl00.ps.gz" href="http://mlton.org/pages/References/attachments/CejtinEtAl00.ps.gz">
+<link rel="Appendix" title="FluetWeeks01.ps.gz" href="http://mlton.org/pages/References/attachments/FluetWeeks01.ps.gz">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      References
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<a href="#A">A</a> <a href="#B">B</a> <a href="#C">C</a> <a href="#D">D</a> <a href="#E">E</a> <a href="#F">F</a> <a href="#G">G</a> <a href="#H">H</a> <a href="#I">I</a> <a href="#J">J</a> <a href="#K">K</a> <a href="#L">L</a> <a href="#M">M</a> <a href="#N">N</a> <a href="#O">O</a> <a href="#P">P</a> <a href="#Q">Q</a> <a href="#R">R</a> <a href="#S">S</a> <a href="#T">T</a> <a href="#U">U</a> <a href="#V">V</a> <a href="#W">W</a> <a href="#X">X</a> <a href="#Y">Y</a> <a href="#Z">Z</a> <p>
+<a id="A"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Appel92"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521416957"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compiling with Continuations</a>  (<a class="external" href="http://www.addall.com/New/submitNew.cgi?query=0-521-41695-7&amp;type=ISBN&amp;location=10000&amp;state=&amp;dispCurr=USD"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521416957.  Andrew W. Appel.  Cambridge University Press, 1992. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="AppelJim97"></a>  Shrinking Lambda Expressions in Linear Time.  Andrew Appel and Trevor Jim.  <a href="#JFP">JFP</a>, 7(5):515-540, 1997.   
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Appel98"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521582741"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Modern Compiler Implementation in ML</a>  (<a class="external" href="http://www.addall.com/New/submitNew.cgi?query=0-521-58274-1&amp;type=ISBN&amp;location=10000&amp;state=&amp;dispCurr=USD"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521582741  Andrew W. Appel.  Cambridge University Press, 1998. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="B"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="BaudinetMacqueen85"></a>  <a class="external" href="http://citeseer.ist.psu.edu/baudinet85tree.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Tree Pattern Matching for ML</a>.  Marianne Baudinet, David Mac<strong></strong>Queen.  1985. 
+</p>
+</li>
+
+            <ul>
+
+   <em>Describes the match compiler used in an early version of    <a href="SMLNJ">SML/NJ</a></em>.  
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="BentonEtAl98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/benton98compiling.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compiling Standard ML to Java Bytecodes</a>.  Nick Benton, Andrew Kennedy, and George Russell.  <a href="#ICFP">ICFP</a> 1998. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="BentonKennedy99"></a>  <a class="external" href="http://citeseer.ist.psu.edu/benton99interlanguage.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Interlanguage Working Without Tears: Blending SML with Java</a>.  Nick Benton and Andrew Kennedy.  <a href="#ICFP">ICFP</a> 1999. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="BentonKennedy01"></a>  <a class="external" href="http://citeseer.ist.psu.edu/388363.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Exceptional Syntax</a>.  Nick Benton and Andrew Kennedy.  <a href="#JFP">JFP</a>, 11(4):395-410, 2001. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Benton05"></a>  <a class="external" href="http://research.microsoft.com/~nick/benton03.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Embedded Interpreters</a>.  Nick Benton.  <a href="#JFP">JFP</a>, 2005. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="BentonEtAl04"></a>  <a class="external" href="http://www.research.microsoft.com/~nick/p53-Benton.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Adventures in Interoperability: The SML.NET Experience</a>.  Nick Benton, Andrew Kennedy, and Claudio Russo.  <a href="#PPDP">PPDP</a> 2004. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Berthomieu00"></a>  <a class="external" href="http://www.laas.fr/~bernard/oo/ooml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OO Programming styles in ML</a>.  Bernard Berthomieu.  LAAS Report #2000111, 2000. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Blume01"></a>  <a class="external" href="http://citeseer.ist.psu.edu/blume01nolongerforeign.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">No-Longer-Foreign: Teaching an ML compiler to speak C "natively"</a>.  Matthias Blume.  <a href="#BABEL">BABEL</a> 2001. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Boehm03"></a>  <a class="external" href="http://citeseer.ist.psu.edu/640926.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Destructors, Finalizers, and Synchronization</a>.  Hans Boehm.  <a href="#POPL">POPL</a> 2003. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Discusses a number of issues in the design of finalizers.  Many   of the design choices are consistent with <a href="MLtonFinalizable">MLtonFinalizable</a>.</em> 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="C"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="CejtinEtAl00"></a>  <a href="http://mlton.org/pages/References/attachments/CejtinEtAl00.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Flow-directed Closure Conversion for Typed Languages</a>.  Henry Cejtin, Suresh Jagannathan, and Stephen Weeks.  <a href="#ESOP">ESOP</a> 2000. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes MLton's closure-conversion algorithm, which translates   from its simply-typed higher-order intermediate language to its   simply-typed first-order intermediate language.</em> 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="D"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Danvy98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/danvy98functional.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Functional Unparsing</a>.  Olivier Danvy.  BRICS Technical Report RS 98-12, 1998. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="E"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Elsman03"></a>  <a class="external" href="http://www.it-c.dk/research/mlkit/papers.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Garbage Collection Safety for Region-based Memory Management</a>.  Martin Elsman.   <a href="#TLDI">TLDI</a> 2003. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Elsman04"></a>  <a class="external" href="http://www.itu.dk/people/mael/papers.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Type-Specialized Serialization with Sharing</a>  Martin Elsman.  University of Copenhagen. IT University Technical  Report TR-2004-43, 2004.  
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="F"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="FelleisenFreidman98"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=4787"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Little MLer</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=026256114X&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 026256114X.  Matthias Felleisen and Dan Freidman.  The MIT Press, 1998. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="FlattFindler04"></a>  <a class="external" href="http://www.cs.utah.edu/plt/kill-safe/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Kill-Safe Synchronization Abstractions</a>.  Matthew Flatt and Robert Bruce Findler.  <a href="#PLDI">PLDI</a> 2004. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="FluetWeeks01"></a>  <a href="http://mlton.org/pages/References/attachments/FluetWeeks01.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Contification Using Dominators</a>.  Matthew Fluet and Stephen Weeks.  <a href="#ICFP">ICFP</a> 2001. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes contification, a generalization of tail-recursion   elimination that is an optimization operating on MLton's static   single assignment (SSA) intermediate language.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="FluetPucella02"></a>  <a class="external" href="http://arxiv.org/abs/cs.PL/0403034"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Phantom Types and Subtyping</a>.  Matthew Fluet and Riccardo Pucella.  <a href="#TCS">TCS</a> 2002. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="G"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="GansnerReppy04"></a>  <a class="external" href="http://titles.cambridge.org/catalogue.asp?isbn=0521794781"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Standard ML Basis Library</a>.  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0521794781&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0521794781.  Emden R. Gansner and John H. Reppy.  Cambridge University Press, 2004. 
+</p>
+</li>
+
+        <ul>
+
+  <em>An introduction and overview of the <a href="BasisLibrary"> SML Basis Library</a>,    followed by a detailed description of each module.  The module   descriptions are also available <a class="external" href="http://mlton.org/basis/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">online</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="GrossmanEtAl02"></a>  <a class="external" href="http://www.eecs.harvard.edu/~greg/cyclone/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Region-based Memory Management in Cyclone</a>.  Dan Grossman, Greg Morrisett, Trevor Jim, Michael Hicks, Yanling  Wang, and James Cheney.   <a href="#PLDI">PLDI</a> 2002. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="H"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="HallenbergEtAl02"></a>  <a class="external" href="http://www.it-c.dk/research/mlkit/papers.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Combining Region Inference and Garbage Collection</a>.  Niels Hallenberg, Martin Elsman, and Mads Tofte.   <a href="#PLDI">PLDI</a> 2002. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="HansenRichel99"></a>  <a class="external" href="http://www.it.dtu.dk/introSML"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Introduction to Programming using SML</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0201398206&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0201398206.  Michael R. Hansen, Hans Rischel.  Addison-Wesley, 1999. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="HicksEtAl03"></a>  <a class="external" href="http://www.eecs.harvard.edu/~greg/cyclone/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Safe and Flexible Memory Management in Cyclone</a>.  Mike Hicks, Greg Morrisett, Dan Grossman, and Trevor Jim.    University of Maryland Technical Report CS-TR-4514, 2003. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="I"></a> <a id="J"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Jones99"></a>  <a class="external" href="http://www.cs.kent.ac.uk/people/staff/rej/gcbook/gcbook.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Garbage Collection: Algorithms for Automatic Memory Management</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0471941484&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0471941484.  Richard Jones.  John Wiley &amp; Sons, 1999. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="K"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Kahrs93"></a>  <a class="external" href="http://www.cs.kent.ac.uk/pubs/1993/569/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Mistakes and ambiguities in the definition of Standard ML</a>.  Stefan Kahrs.  University of Edinburgh LFCS Report ECS-LFCS-93-257, 1993. 
+</p>
+<p>
+ There are also the <a class="external" href="http://www.cs.kent.ac.uk/~smk/errors-new.ps.Z"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addenda</a>  published in 1996. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes a number of problems with the    <a href = "References#MilnerEtAl90">1990 Definition</a>, many of which were fixed   in the <a href = "References#MilnerEtAl97">1997 Definition</a>.</em> 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="L"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Lang99"></a>  <a class="external" href="http://citeseer.nj.nec.com/lang99faster.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Faster Algorithms for Finding Minimal Consistent DFAs</a>.  Kevin Lang. 1999. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="LarsenNiss04"></a>  <a class="external" href="http://www.it-c.dk/~hniss/publications/freenix2004.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mGTK: An SML binding of Gtk+</a>.  Ken Larsen and Henning Niss.  USENIX Annual Technical Conference, 2004. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Leroy90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/leroy90zinc.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The ZINC experiment: an economical implementation of the ML language</a>.  Xavier Leroy.  Technical report 117, INRIA, 1990. 
+</p>
+</li>
+
+            <ul>
+
+   <em>A detailed explanation of the design and implementation of a    bytecode compiler and interpreter for ML with a machine model aimed    at efficient implementation.</em> 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Leroy93"></a>  <a class="external" href="http://pauillac.inria.fr/~xleroy/leroy.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Polymorphism by name for references and continuations</a>.  Xavier Leroy.  <a href="#POPL">POPL</a> 1993. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="LeungGeorge98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/637416.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC Annotations</a>.  Allen Leung and Lal George. 1998. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="M"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="MarlowEtAl01"></a>  <a class="external" href="http://www.haskell.org/~simonmar/papers/async.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Asynchronous exceptions in Haskell</a>.  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.  <a href="#PLDI">PLDI</a> 2001. 
+</p>
+</li>
+
+        <ul>
+
+  <em>An asynchronous exception is a signal that one thread can send to   another, and is useful for the receiving thread to treat as an   exception so that it can clean up locks or other state relevant to   its current context.</em>   <br>
+    There are a couple of earlier versions of this paper floating   around, from August and November 2000.  Make sure and get the   official version from May 2001 (linked above). 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="MeierNorgaard93"></a>  <a class="external" href="http://www.itu.dk/stud/speciale/bmkn/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Just-In-Time backend for Moscow ML 2.00 in SML</a>.  Bjarke Meier, Kristian Nørgaard.  Masters Thesis, 2003. 
+</p>
+</li>
+
+            <ul>
+
+   <em>A just-in-time compiler using GNU Lightning, showing a speedup of    up to four times over Moscow ML's usual bytecode interpreter.</em>     <br>
+ The full report is only available in Danish. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Milner82"></a>  <a class="external" href="http://www.dcs.ed.ac.uk/home/stg/tutorial/papers/evolved.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">How ML Evolved</a>.  Robin Milner.  Polymorphism--The ML/LCF/Hope Newsletter, 1983. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="MilnerTofte90"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=8988"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Commentary on Standard ML</a> (<a class="external" href="http://www.itu.dk/people/tofte/publ/1991commentaryBody.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">online pdf</a>).  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0262631327&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0262631327.  Robin Milner and Mads Tofte.  The MIT Press, 1990. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Introduces and explains the notation and approach used in   <a href="#MilnerEtAl90">The Definition of Standard ML</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="MilnerEtAl90"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=7945"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Definition of Standard ML</a>.  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0262631326&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0262631326.  Robin Milner, Mads Tofte, and Robert Harper.  The MIT Press, 1990. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Superseded by <a href="#MilnerEtAl97">The Definition of Standard ML (Revised)</a>.   Accompanied by the <a href="#MilnerTofte90">Commentary on Standard ML</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="MilnerEtAl97"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=3874"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Definition of Standard ML (Revised)</a>.  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0262631814&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0262631814.  Robin Milner, Mads Tofte, Robert Harper, and David Mac<strong></strong>Queen.  The MIT Press, 1997. 
+</p>
+</li>
+
+        <ul>
+
+  <em>A terse and formal specification of Standard ML's syntax and   semantics.  Supersedes an <a href="#MilnerEtAl90">older version</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Morentsen99"></a>  <a class="external" href="http://www.daimi.au.dk/CPnets/workshop99/papers/Mortensen.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Automatic Code Generation from Coloured Petri Nets for an Access Control System</a>.  Kjeld H. Mortensen.  Workshop on Practical Use of Coloured Petri Nets and Design/CPN, 1999. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="N"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Neumann99"></a>  <a class="external" href="http://citeseer.ist.psu.edu/412760.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">fxp - Processing Structured Documents in SML</a>.  Andreas Neumann.  Scottish Functional Programming Workshop, 1999. 
+</p>
+</li>
+
+            <ul>
+
+   <em>Describes <a class="external" href="http://atseidl2.informatik.tu-muenchen.de/~berlea/Fxp/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">fxp</a>, an    XML parser implemented in Standard ML.</em> 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Neumann99Thesis"></a>  <a class="external" href="http://citeseer.ist.psu.edu/neumann99parsing.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Parsing and Querying XML Documents in SML</a>.  Andreas Neumann.  Doctoral Thesis, 1999. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="O"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Okasaki99"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521663504"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Purely Functional Data Structures</a>.  ISBN 0521663504.  Chris Okasaki.  Cambridge University Press, 1999. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="P"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Paulson96"></a>  <a class="external" href="http://www.cl.cam.ac.uk/users/lcp/MLbook/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML For the Working Programmer</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=052156543X&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 052156543X.  Larry C. Paulson.  Cambridge University Press, 1996. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="PetterssonEtAl02"></a>  <a class="external" href="http://user.it.uu.se/~happi/publications/flops02.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The HiPE/x86 Erlang Compiler: System Description and Performance Evaluation</a>.  Mikael Pettersson, Konstantinos Sagonas, and Erik Johansson.  <a href="#FLOPS">FLOPS</a> 2002. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes a native x86 Erlang compiler and a comparison of many   different native x86 compilers (including MLton) and their register   usage and call stack implementations.</em> 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="Q"></a> <a id="R"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Ramsey03"></a>  <a class="external" href="http://www.eecs.harvard.edu/~nr/pubs/embed-abstract.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Embedding an Interpreted Language Using Higher-Order Functions and Types</a>.  Norman Ramsey.  <a href="#IVME">IVME</a> 2003. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="RedwineRamsey04"></a>  <a class="external" href="http://citeseer.ist.psu.edu/670348.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Widening Integer Arithmetic</a>.  Kevin Redwine and Norman Ramsey.  <a href="#CC">CC</a> 2004. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes a method to implement numeric types and operations (like   <tt>Int31</tt> or <tt>Word17</tt>) for sizes smaller than that provided by   the processor.</em>  
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Reppy99"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521480892"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Concurrent Programming in ML</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0521480892&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521480892.  John Reppy.  Cambridge University Press, 1999. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Covers <a href="ConcurrentML">ConcurrentML</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Rossberg01"></a>  <a class="external" href="http://www.ps.uni-sb.de/hamlet/defects.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Defects in the Revised Definition of Standard ML</a>.  Andreas Rossberg. 2001. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="S"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Sansom91"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sansom91dualmode.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Dual-Mode Garbage Collection</a>.  Patrick M. Sansom.  Workshop on the Parallel Implementation of Functional Languages, 1991. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Scott00"></a>  <a class="external" href="http://citeseer.ist.psu.edu/scott00when.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">When Do Match-Compilation Heuristics Matter</a>.  Kevin Scott and Norman Ramsey.  University of Virginia Technical Report CS-2000-13. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Sestoft96"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sestoft96ml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML pattern match compilation and partial evaluation</a>.  Peter Sestoft.  Partial Evaluation, 1996.  
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes the derivation of the match compiler used in   <a href="MoscowML">Moscow ML</a>.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="Shipman02"></a>  Anthony L. Shipman.  <a class="external" href="http://web.access.net.au/felixadv/files/output/book/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Unix System Programming with Standard ML</a>, 2002. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Signoles03"></a>  <a class="external" href="http://www.lri.fr/~signoles/publis/jfla2003.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Calcul statique des applications de modules parametres</a>.  Julien Signoles.  <a href="#JFLA">JFLA</a> 2003. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes a defunctorizer for OCaml, and compares it to existing   defunctorizers, including MLton.</em> 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="T"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="ThorupTofte94"></a>  <a class="external" href="http://www.diku.dk/users/tofte/publ/MLWorkshop94.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Object-oriented programming and Standard ML</a>.  Lars Thorup and Mads Tofte.    Workshop on ML and its applications, 1994.  
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Tofte90"></a>  Type Inference for Polymorphic References.  Mads Tofte.  Information and Computation, 89(1), 1990. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="U"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Ullman98"></a>  <a class="external" href="http://www-db.stanford.edu/~ullman/emlp.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Elements of ML Programming</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0137903871&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0137903871.  Jeffrey D. Ullman.  Prentice-Hall, 1998. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="V"></a> <a id="W"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="Wang01"></a>  <a class="external" href="http://ncstrl.cs.princeton.edu/expand.php?id=TR-640-01"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Managing Memory with Types</a>.  Daniel C. Wang.  PhD Thesis. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Chapter 6 describes an implementation of a type-preserving garbage   collector for MLton.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="WangAppel01"></a>  <a class="external" href="http://www.cs.princeton.edu/~danwang/Papers/tpsrvgc/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Type-Preserving Garbage Collectors</a>.  Daniel C. Wang and Andrew W. Appel.  <a href="#POPL">POPL</a> 2001. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Shows how to modify MLton to generate a strongly typed garbage   collector as part of a program.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="WangMurphy"></a>  <a class="external" href="http://www-2.cs.cmu.edu/~tom7/papers/wang-murphy-recursion.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Programming With Recursion Schemes</a>.  Daniel C. Wang and Tom Murphy VII. 
+</p>
+</li>
+
+        <ul>
+
+  <em>Describes a programming technique for data abstraction, along with   benchmarks of MLton and other SML compilers.</em> 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="WangMurphy"></a>   <a class="external" href="http://www.cs.princeton.edu/~danwang/drafts/recursion-schemes.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Recursion Schemes as Abstract Interfaces</a>.  Daniel C. Wang and Tom Murphy.  <a href="#JFP">JFP</a>. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Wright95"></a>  <a class="external" href="http://citeseer.ist.psu.edu/wright95simple.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Simple Imperative Polymorphism</a>.  Andrew Wright.  <a href="#LASC">LASC</a>, 8(4):343-355, 1995. 
+</p>
+</li>
+
+            <ul>
+
+   <em>The origin of the <a href="ValueRestriction">ValueRestriction</a>.</em> 
+            </ul>
+
+
+
+    </ul>
+
+
+<p>
+<a id="X"></a> <a id="Y"></a> <a id="Z"></a> 
+</p>
+<h2 id="head-a90aba13b6feb8ff1a5141d94cb1fc2fe96e9477">Abbreviations</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="BABEL"></a> BABEL = Workshop on multi-language infrastructure  and interoperability. 
+</p>
+</li>
+    <li>
+<p>
+ <a id="CC"></a> CC = International Conference on Compiler Construction 
+</p>
+</li>
+    <li>
+<p>
+ <a id="ESOP"></a> ESOP = European Symposium on Programming 
+</p>
+</li>
+    <li>
+<p>
+ <a id="FLOPS"></a> FLOPS = Symposium on Functional and Logic Programming 
+</p>
+</li>
+    <li>
+<p>
+ <a id="ICFP"></a> ICFP = International Conference on Functional Programming 
+</p>
+</li>
+    <li>
+<p>
+ <a id="IVME"></a> IVME = Workshop on Interpreters, Virtual Machines and Emulators. 
+</p>
+</li>
+    <li>
+<p>
+ <a id="JFLA"></a> JFLA = Journees Francophones des Langages Applicatifs 
+</p>
+</li>
+    <li>
+<p>
+ <a id="JFP"></a> JFP = Journal of Functional Programming 
+</p>
+</li>
+    <li>
+<p>
+ <a id="LASC"></a> LASC = Lisp and Symbolic Computation 
+</p>
+</li>
+    <li>
+<p>
+ <a id="PLDI"></a> PLDI = Conference on Programming Language Design  and Implementation 
+</p>
+</li>
+    <li>
+<p>
+ <a id="POPL"></a> POPL = Symposium on Principles of Programming Languages  
+</p>
+</li>
+    <li>
+<p>
+ <a id="PPDP"></a> PPDP = International Conference on Principles and  Practice of Declarative Programming 
+</p>
+</li>
+    <li>
+<p>
+ <a id="TCS"></a> TCS = IFIP International Conference on Theoretical  Computer Science  
+</p>
+</li>
+    <li>
+<p>
+ <a id="TLDI"></a> TLDI = Workshop on Types in Language Design and  Implementation  
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-07-26 18:19:15 by <span title="adsl-64-166-226-32.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

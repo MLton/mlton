@@ -1,3 +1,63 @@
+mlton (20051102-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Wed, 02 Nov 2005 18:45:50 -0800
+
+mlton (20050930-1) unstable; urgency=low
+
+  * Fixed postinst problem.  closes: #329692
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Fri, 30 Sep 2005 09:19:50 -0700
+
+mlton (20050906-1) unstable; urgency=low
+
+  * Replaces -mv8 with -mcpu=v8 for Sparc.
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Tue, 06 Sep 2005 14:57:46 -0700
+
+mlton (20050901-1) unstable; urgency=low
+
+  * remaking package, linking normally with libgmp.  Thus, the package
+    will depend on libgmp3c2, but that is OK for unstable.
+  * Fixed postinst script. closes: #325850
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 01 Sep 2005 00:20:20 -0700
+
+mlton (20050826-1) unstable; urgency=low
+
+  * new upstream version
+  * Fixed broken $lib in mlton script.  The previous package didn't
+    work at all.
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 25 Aug 2005 13:33:41 -0700
+
+mlton (20050825-1) unstable; urgency=low
+
+  * new upstream version
+  * don't build statically, just link statically with libgmp.a
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Thu, 25 Aug 2005 06:14:06 -0700
+
+mlton (20050824-1) unstable; urgency=low
+
+  * new upstream version
+  * built statically, closes: #324859
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Wed, 24 Aug 2005 15:13:19 -0700
+
+mlton (20050823-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Tue, 23 Aug 2005 14:56:59 -0700
+
+mlton (20050822-1) unstable; urgency=low
+
+  * new upstream version
+
+ -- Stephen Weeks <sweeks@sweeks.com>  Mon, 22 Aug 2005 17:13:09 -0700
+
 mlton (20041109-1) unstable; urgency=low
 
   * new upstream version

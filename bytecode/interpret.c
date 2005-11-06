@@ -6,7 +6,6 @@
  */
 
 #include "platform.h"
-#include <stdint.h>
 #include "interpret.h"
 #include "c-chunk.h"    // c-chunk.h must come before opcode.h because it
                         // redefines some opcode symbols

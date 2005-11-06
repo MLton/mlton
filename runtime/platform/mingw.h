@@ -15,7 +15,10 @@
 #undef max
 
 #define HAS_FEROUND TRUE
-#define HAS_FPCLASSIFY TRUE
+// As of 20051104, MinGW has fpclassify, but it is broken.  In particular, it
+// classifies subnormals as normals.  So, we disable it here, which causes the
+// runtime to use our own version.
+#define HAS_FPCLASSIFY FALSE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
@@ -262,6 +265,7 @@ pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
 int setgid (gid_t gid);
+int setgroups (size_t size, gid_t *list);
 int setpgid (pid_t pid, pid_t pgid);
 pid_t setsid (void);
 int setuid (uid_t uid);
@@ -301,6 +305,11 @@ int alarm (int secs);
 pid_t fork (void);
 int kill (pid_t pid, int sig);
 int pause (void);
+struct timespec {
+ time_t tv_sec;
+ long tv_nsec;
+};
+int nanosleep (const struct timespec *req, struct timespec *rem);
 unsigned int sleep (unsigned int seconds);
 pid_t wait (int *status);
 pid_t waitpid (pid_t pid, int *status, int options);

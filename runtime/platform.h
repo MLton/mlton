@@ -167,18 +167,36 @@
 #endif
 
 #if not HAS_FEROUND
+#ifndef FE_TONEAREST
 #define FE_TONEAREST 0
+#endif
+#ifndef FE_DOWNWARD
 #define FE_DOWNWARD 1
+#endif
+#ifndef FE_UPWARD
 #define FE_UPWARD 2
+#endif
+#ifndef FE_TOWARDZERO
 #define FE_TOWARDZERO 3
+#endif
 #endif
 
 #if not HAS_FPCLASSIFY
+#ifndef FP_INFINITE
 #define FP_INFINITE 1
+#endif
+#ifndef FP_NAN
 #define FP_NAN 0
+#endif
+#ifndef FP_NORMAL
 #define FP_NORMAL 4
+#endif
+#ifndef FP_SUBNORMAL
 #define FP_SUBNORMAL 3
+#endif
+#ifndef FP_ZERO
 #define FP_ZERO 2
+#endif
 #endif
 
 /* If HAS_TIME_PROFILING, then you must define these. */

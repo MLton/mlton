@@ -876,20 +876,20 @@ structure Structure =
                                             ", "))),
                                str " "]
                      val t =
-                        case TypeStr.node s of
-                           TypeStr.Datatype _ => "datatype"
-                         | _ =>
-                              if isWhere
-                                 then "type"
-                              else
-                                 let
-                                    datatype z = datatype AdmitsEquality.t
-                                 in
-                                    case TypeStr.admitsEquality s of
-                                       Always => "eqtype"
-                                     | Never => "type"
-                                     | Sometimes => "eqtype"   
-                                 end
+                        if isWhere then
+                           "type"
+                        else
+                           (case TypeStr.node s of
+                               TypeStr.Datatype _ => "datatype"
+                             | _ =>
+                                  let
+                                     datatype z = datatype AdmitsEquality.t
+                                  in
+                                     case TypeStr.admitsEquality s of
+                                        Always => "eqtype"
+                                      | Never => "type"
+                                      | Sometimes => "eqtype"   
+                                  end)
                      val def = seq [str t, str " ", args, name, str " = "]
                      val res = 
                         case TypeStr.node s of
@@ -1181,10 +1181,10 @@ structure NameSpace =
                                    uses = uses}
                                end)
                val _ = current := old
-               val a =
+               val a = Array.fromList elts
+               val () =
                   QuickSort.sortArray
-                  (Array.fromList elts,
-                   fn ({domain = d, ...}, {domain = d', ...}) =>
+                  (a, fn ({domain = d, ...}, {domain = d', ...}) =>
                    Symbol.<= (toSymbol d, toSymbol d'))
             in
                Info.T a
@@ -1383,12 +1383,17 @@ fun collect (E,
                                    types = doit types,
                                    vals = doit vals})
       fun ('a, 'b) finish (r, toSymbol: 'a -> Symbol.t) =
-         QuickSort.sortArray
-         (Array.fromList (!r),
-          fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
-              {domain = d', time = t',...}: ('a, 'b) Values.value) =>
-          le ({domain = toSymbol d, time = t},
-              {domain = toSymbol d', time = t'}))
+         let
+            val a = Array.fromList (!r)
+            val () =
+               QuickSort.sortArray
+               (a, fn ({domain = d, time = t, ...}: ('a, 'b) Values.value,
+                       {domain = d', time = t',...}: ('a, 'b) Values.value) =>
+                le ({domain = toSymbol d, time = t},
+                    {domain = toSymbol d', time = t'}))
+         in
+            a
+         end
    in
       {bass = finish (bass, Basid.toSymbol),
        fcts = finish (fcts, Fctid.toSymbol),
@@ -2668,18 +2673,26 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                         Datatype {cons = sigCons, ...} =>
                            (case TypeStr.node structStr of
                                Datatype {cons = structCons, ...} =>
-                                  (checkCons (structCons, sigCons, strids, name)
-                                   ; (structStr, false))
-                             | _ => (sigStr, true))
-                      | Scheme s => (checkScheme s; (sigStr, false))
-                      | Tycon c => (checkScheme (tyconScheme c); (sigStr, false))
+                                  (fn () =>
+                                   (checkCons (structCons, sigCons, strids,
+                                               name)
+                                    ; structStr),
+                                   false)
+                             | _ => (fn () => sigStr, true))
+                      | Scheme s =>
+                           (fn () => (checkScheme s; sigStr),
+                            false)
+                      | Tycon c =>
+                           (fn () => (checkScheme (tyconScheme c); sigStr),
+                            false)
                in
-                  if not (isPlausible (structStr, strids, name,
-                                       TypeStr.admitsEquality sigStr,
-                                       TypeStr.kind sigStr,
-                                       consMismatch))
-                     then sigStr
-                  else return
+                  if isPlausible (structStr, strids, name,
+                                  TypeStr.admitsEquality sigStr,
+                                  TypeStr.kind sigStr,
+                                  consMismatch) then
+                     return ()
+                  else
+                     sigStr
                end
       fun map (structInfo: ('a, 'b) Info.t,
                sigArray: ('a * 'c) array,

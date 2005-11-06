@@ -47,11 +47,13 @@ structure OptPred =
        | Yes 
    end
 
-val buildConstants: bool ref = ref false
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val buildConstants: bool ref = ref false
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val coalesce: int option ref = ref NONE
 val expert: bool ref = ref false
+val explicitAlign: Control.align option ref = ref NONE
+val explicitCodegen: Control.codegen option ref = ref NONE
 val gcc: string ref = ref "<unset>"
 val keepGenerated = ref false
 val keepO = ref false
@@ -69,7 +71,9 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
    Promise.lazy
    (fn () =>
     List.map
-    (File.lines (concat [!Control.libDir, "/target-map"]), fn line =>
+    (File.lines (OS.Path.joinDirFile {dir = !Control.libDir,
+                                      file = "target-map"}),
+     fn line =>
      case String.tokens (line, Char.isSpace) of
         [target, arch, os] =>
            let
@@ -87,26 +91,15 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
       | _ => Error.bug (concat ["strange target mapping: ", line])))
 
 fun setTargetType (target: string, usage): unit =
-   case List.peek (targetMap (), fn {target = t, ...} => t = target) of
+   case List.peek (targetMap (), fn {target = t, ...} => target = t) of
       NONE => usage (concat ["invalid target: ", target])
     | SOME {arch, os, ...} =>
-         let
-            datatype z = datatype MLton.Platform.Arch.t
+         let 
             open Control
          in
             targetArch := arch
             ; targetOS := os
-            ; (case arch of
-                  Sparc => (align := Align8; codegen := CCodegen)
-                | X86 => codegen := Native
-                | AMD64 => codegen := Native
-                | _ => codegen := CCodegen)
          end
-
-fun warnDeprecated (flag, use) =
-   Out.output (Out.error,
-               concat ["Warning: -", flag, " is deprecated.  ",
-                       "Use ", use, ".\n"])
 
 fun hasNative () =
    let
@@ -121,6 +114,16 @@ fun hasNative () =
 fun makeOptions {usage} = 
    let
       val usage = fn s => (ignore (usage s); raise Fail "unreachable")
+      fun reportAnnotation (s, flag, e) =
+         case e of
+            Control.Elaborate.Bad => 
+               usage (concat ["invalid -", flag, " flag: ", s])
+          | Control.Elaborate.Deprecated ids =>
+               Out.output 
+               (Out.error,
+                concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
+                        List.toString Control.Elaborate.Id.name ids, ".\n"])
+          | Control.Elaborate.Good () => ()
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t
@@ -134,12 +137,12 @@ fun makeOptions {usage} =
          | _ => " {4|8}",
         "object alignment",
         (SpaceString (fn s =>
-                      align
-                      := (case s of
-                             "4" => Align4
-                           | "8" => Align8
-                           | _ => usage (concat ["invalid -align flag: ",
-                                                 s]))))),
+                      explicitAlign
+                      := SOME (case s of
+                                  "4" => Align4
+                                | "8" => Align8
+                                | _ => usage (concat ["invalid -align flag: ",
+                                                      s]))))),
        (Normal, "as-opt", " <opt>", "pass option to assembler",
         SpaceString (fn s =>
                      List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
@@ -157,11 +160,13 @@ fun makeOptions {usage} =
         concat [" {", if hasNative () then "native|" else "", "bytecode|c}"],
         "which code generator to use",
         SpaceString (fn s =>
-                     case s of
-                        "bytecode" => codegen := Bytecode
-                      | "c" => codegen := CCodegen
-                      | "native" => codegen := Native
-                      | _ => usage (concat ["invalid -codegen flag: ", s]))),
+                     explicitCodegen
+                     := SOME (case s of
+                                 "bytecode" => Bytecode
+                               | "c" => CCodegen
+                               | "native" => Native
+                               | _ => usage (concat
+                                             ["invalid -codegen flag: ", s])))),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
@@ -174,18 +179,14 @@ fun makeOptions {usage} =
         boolRef contifyIntoMain),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
         boolRef debug),
-       (Normal, "default-ann", " <ann>", "set annotation default for mlb files",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processDefault s of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -default-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "default-ann"
+       in
+          (Normal, flag, " <ann>", "set annotation default for mlb files",
+           SpaceString
+           (fn s => reportAnnotation (s, flag,
+                                      Control.Elaborate.processDefault s)))
+       end,
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
         SpaceString 
         (fn s =>
@@ -196,18 +197,15 @@ fun makeOptions {usage} =
                                ; List.push (keepPasses, re)
                             end
            | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
-       (Normal, "disable-ann", " <ann>", "disable annotation in mlb files",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processEnabled (s, false) of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -disable-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "disable-ann"
+       in
+          (Normal, flag, " <ann>", "disable annotation in mlb files",
+           SpaceString 
+           (fn s =>
+            reportAnnotation (s, flag,
+                              Control.Elaborate.processEnabled (s, false))))
+       end,
        (Expert, "drop-pass", " <pass>", "omit optimization pass",
         SpaceString
         (fn s => (case Regexp.fromString s of
@@ -215,18 +213,15 @@ fun makeOptions {usage} =
                                     in List.push (dropPasses, re)
                                     end
                    | NONE => usage (concat ["invalid -drop-pass flag: ", s])))),
-       (Expert, "enable-ann", " <ann>", "globally enable annotation",
-        SpaceString 
-        (fn s =>
-         (case Control.Elaborate.processEnabled (s, true) of
-             Control.Elaborate.Bad => 
-                usage (concat ["invalid -enable-ann flag: ", s])
-           | Control.Elaborate.Deprecated ids =>
-                Out.output 
-                (Out.error,
-                 concat ["Warning: ", "deprecated annotation: ", s, ", use ",
-                         List.toString Control.Elaborate.Id.name ids, "."])
-           | Control.Elaborate.Good () => ()))),
+       let
+          val flag = "enable-ann"
+       in
+          (Expert, flag, " <ann>", "globally enable annotation",
+           SpaceString 
+           (fn s =>
+            reportAnnotation (s, flag,
+                              Control.Elaborate.processEnabled (s, true))))
+       end,
        (Expert, "error-threshhold", " 20", "error threshhold",
         intRef errorThreshhold),
        (Expert, "expert", " {false|true}", "enable expert status",
@@ -281,6 +276,8 @@ fun makeOptions {usage} =
         boolRef markCards),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
         intRef maxFunctionSize),
+       (Normal, "mlb-path-map", " <file>", "additional MLB path map",
+        SpaceString (fn s => mlbPathMaps := !mlbPathMaps @ [s])),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
         intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 
@@ -450,9 +447,10 @@ fun makeOptions {usage} =
                   | x :: _ => concat [#target x, "|..."]),
                 "}"],
         "platform that executable will run on",
-        SpaceString (fn s =>
-                     (setTargetType (s, usage)
-                      ; target := (if s = "self" then Self else Cross s)))),
+        SpaceString
+        (fn t =>
+         (target := (if t = "self" then Self else Cross t);
+          setTargetType (t, usage)))),
        (Normal, "target-as-opt", " <target> <opt>", "target-dependent assembler option",
         (SpaceString2
          (fn (target, opt) =>
@@ -475,7 +473,7 @@ fun makeOptions {usage} =
                           "0" => Silent
                         | "1" => Top
                         | "2" => Pass
-                        | "3" =>  Detail
+                        | "3" => Detail
                         | _ => usage (concat ["invalid -verbose arg: ", s])))),
        (Expert, "warn-ann", " {true|false}",
         "unrecognized annotation warnings",
@@ -512,8 +510,21 @@ fun commandLine (args: string list): unit =
                (libDir := OS.Path.mkCanonical lib
                 ; args)
           | _ => Error.bug "incorrect args from shell script"
-      val _ = setTargetType ("self", usage)
+      val () = setTargetType ("self", usage)
       val result = parse args
+      val targetArch = !targetArch
+      val () =
+         align := (case !explicitAlign of
+                      NONE => (case targetArch of
+                                  Sparc => Align8
+                                | HPPA => Align8
+                                | _ => Align4)
+                    | SOME a => a)
+      val () =
+         codegen := (case !explicitCodegen of
+                        NONE => if hasNative () then Native else CCodegen
+                      | SOME c => c)
+      val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () =
          if !showAnns then
             (Layout.outputl (Control.Elaborate.document {expert = !expert}, 
@@ -538,8 +549,7 @@ fun commandLine (args: string list): unit =
          case target of
             Cross s => s
           | Self => "self"
-      val _ = libTargetDir := concat [!libDir, "/", targetStr]
-      val targetArch = !targetArch
+      val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
       val targetOS = !targetOS
       val () =
@@ -708,7 +718,7 @@ fun commandLine (args: string list): unit =
                      fun temp (suf: string): File.t =
                         let
                            val (f, out) =
-                              File.temp {prefix = concat [tmpDir, "/file"],
+                              File.temp {prefix = OS.Path.concat (tmpDir, "file"),
                                          suffix = suf}
                            val _ = Out.close out
                            val _ = List.push (tempFiles, f)

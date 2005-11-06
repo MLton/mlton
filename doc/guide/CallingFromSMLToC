@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>CallingFromSMLToC - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      CallingFromSMLToC
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows an SML program to <em>import</em> C functions.  Suppose you would like to import from C a function with the following prototype: 
+<pre>int foo (double d, unsigned char c);
+</pre>MLton extends the syntax of SML to allow expressions like the following: 
+<pre>_import "foo": real * char -&gt; int;
+</pre>This expression denotes a function of type <tt>real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int</tt> whose behavior is implemented by calling the C function whose name is <tt>foo</tt>.  Thinking in terms of C, imagine that there are C variables <tt>d</tt> of type <tt>double</tt>, <tt>c</tt> of type <tt>unsigned&nbsp;char</tt>,  and <tt>i</tt> of type <tt>int</tt>.  Then, the C statement <tt>i&nbsp;=&nbsp;foo&nbsp;(d,&nbsp;c)</tt> is executed and <tt>i</tt> is returned. <p>
+The general form of an <tt>_import</tt> expresion is: 
+<pre>_import "C function name" attr... : cFuncTy;
+</pre>The type and the semicolon are not optional. 
+</p>
+<p>
+The function name is followed by a (possibly empty) sequence of attributes, analogous to C <tt>_attribute__</tt> specifiers.  For now, the only attributes supported are <tt>cdecl</tt> and <tt>stdcall</tt>. These specify the calling convention of the C function on Cygwin/Windows, and are ignored on all other platforms.  The default is <tt>cdecl</tt>.  You must use <tt>stdcall</tt> in order to correctly call Windows API functions. 
+</p>
+<h2 id="head-0f01ed56a1e32a05e5ef96e4d779f34784af9a96">Example</h2>
+<p>
+<tt>import.sml</tt> imports the C function <tt>ffi</tt> and the C variable <tt>FFI_INT</tt> as follows. 
+</p>
+<p>
+<pre class=code><I><FONT COLOR="#B22222">(* main.sml *)</FONT></I>
+
+<I><FONT COLOR="#B22222">(* Declare ffi to be implemented by calling the C function ffi. *)</FONT></I>
+<B><FONT COLOR="#A020F0">val</FONT></B> ffi = _import <FONT COLOR="#BC8F8F"><B>&quot;ffi&quot;</FONT></B>: real array * int ref * int -&gt; char;
+<B><FONT COLOR="#0000FF">open</FONT></B> Array
+
+<B><FONT COLOR="#A020F0">val</FONT></B> size = <B><FONT COLOR="#5F9EA0">10</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> a = tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; real i)
+<B><FONT COLOR="#A020F0">val</FONT></B> r = ref <B><FONT COLOR="#5F9EA0">0</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#5F9EA0">17</FONT></B>
+
+<I><FONT COLOR="#B22222">(* Call the C function *)</FONT></I>
+<B><FONT COLOR="#A020F0">val</FONT></B> c = ffi (a, r, n)
+
+<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) = _symbol <FONT COLOR="#BC8F8F"><B>&quot;FFI_INT&quot;</FONT></B>: (unit -&gt; int) * (int -&gt; unit);
+
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [Int.toString (nGet ()), <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+   print (<B><FONT COLOR="#A020F0">if</FONT></B> c = #<FONT COLOR="#BC8F8F"><B>&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !r = <B><FONT COLOR="#5F9EA0">45</FONT></B>
+             <B><FONT COLOR="#A020F0">then</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;success\n&quot;</FONT></B>
+          <B><FONT COLOR="#A020F0">else</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;fail\n&quot;</FONT></B>)
+</PRE>
+ 
+</p>
+<p>
+<tt>ffi-import.c</tt> is 
+</p>
+<p>
+<pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;platform.h&quot;</FONT></B>
+
+Int FFI_INT = 13;
+Word FFI_WORD = 0xFF;
+Bool FFI_BOOL = TRUE;
+Real FFI_REAL = 3.14159;
+
+Char <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int n) {
+        <FONT COLOR="#228B22"><B>double</FONT></B> *ds = (<FONT COLOR="#228B22"><B>double</FONT></B>*)a1;
+        <FONT COLOR="#228B22"><B>int</FONT></B> *p = (<FONT COLOR="#228B22"><B>int</FONT></B>*)a2;
+        <FONT COLOR="#228B22"><B>int</FONT></B> i;
+        <FONT COLOR="#228B22"><B>double</FONT></B> sum;
+
+        sum = 0.0;
+        <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; GC_arrayNumElements (a1); ++i) {
+                sum += ds[i];
+                ds[i] += n;
+        }
+        *p = (<FONT COLOR="#228B22"><B>int</FONT></B>)sum;
+        <B><FONT COLOR="#A020F0">return</FONT></B> <FONT COLOR="#BC8F8F"><B>'c'</FONT></B>;
+}
+</PRE>
+ 
+</p>
+<p>
+Compile and run the program. 
+<pre>% mlton -default-ann 'allowImport true' import.sml ffi-import.c
+% ./import
+13
+success
+</pre>
+</p>
+<h2 id="head-a479c9c34e878d07b4d67a73a48f432ad7dc53c8">Download</h2>
+
+    <ul>
+
+    <li>
+<p>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
+ 
+</p>
+</li>
+    <li>
+<p>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
+ 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-3f170caead65df254d786032a409a6f6d204bca6">Next Steps</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="CallingFromSMLToCFunctionPointer">CallingFromSMLToCFunctionPointer</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-09 07:33:27 by <span title="pool-71-243-2-249.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

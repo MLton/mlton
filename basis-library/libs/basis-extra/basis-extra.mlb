@@ -166,6 +166,8 @@ in
       ../../mlton/signal.sml
       ../../mlton/process.sig
       ../../mlton/process.sml
+      ../../mlton/gc.sig
+      ../../mlton/gc.sml
       ../../mlton/rusage.sig
       ../../mlton/rusage.sml
 
@@ -214,8 +216,6 @@ in
       in
          ../../mlton/ffi.sml
       end
-      ../../mlton/gc.sig
-      ../../mlton/gc.sml
       ../../mlton/int-inf.sig
       ../../mlton/platform.sig
       ../../mlton/platform.sml

@@ -1,0 +1,253 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>FunctionalRecordUpdate - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      FunctionalRecordUpdate
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Functional record update is the copying of a record while replacing the values of some of the fields.  For example, the functional update of 
+<pre>{a = 13, b = 14, c = 15} 
+</pre>with <tt>c&nbsp;=&nbsp;16</tt> yields a new record  
+<pre>{a = 13, b = 14, c = 16}
+</pre>Functional record update also makes sense with multiple simultaneous updates.  For example, the functional update of the record above with <tt>a&nbsp;=&nbsp;18,&nbsp;c&nbsp;=&nbsp;19</tt> yields a new record  
+<pre>{a = 18, b = 14, c = 19}
+</pre><p>
+<a href="StandardML">Standard ML</a> does not have explicit syntax for functional record update.  One could easily imagine an extension of the SML that supported it.  For example 
+<pre>e with {a = 16, b = 17}
+</pre>would create a copy of the record denoted by <tt>e</tt> with field <tt>a</tt> replaced with <tt>16</tt> and <tt>b</tt> replaced with <tt>17</tt>. Despite the absence of special syntax, it is easy to emulate functional record update with a little boilerplate code. 
+</p>
+<h2 id="head-fa2179e8b7b0b4d2c689f9612a22a231e6cd9bf2">Simple implementation</h2>
+<p>
+To support functional record update on the record type 
+<pre>{a: 'a, b: 'b, c: 'c} 
+</pre>first, define an update function for each component. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> withA ({a = _, b, c}, a) = {a = a, b = b, c = c}
+<B><FONT COLOR="#A020F0">fun</FONT></B> withB ({a, b = _, c}, b) = {a = a, b = b, c = c}
+<B><FONT COLOR="#A020F0">fun</FONT></B> withC ({a, b, c = _}, c) = {a = a, b = b, c = c}
+</PRE>
+ Then, one can express <tt>e&nbsp;with&nbsp;{a&nbsp;=&nbsp;16,&nbsp;b&nbsp;=&nbsp;17}&nbsp;</tt> as 
+<pre>withB (withA (e, 16), 17)
+</pre>With infix notation 
+<pre>infix withA withB withC
+</pre>the syntax is almost as concise as a language extension. 
+<pre>e withA 16 withB 17
+</pre>
+</p>
+<h2 id="head-02713f1aab596f254ab1dd3551f0c5a015b6e40b">Advanced implementation</h2>
+<p>
+The above approach suffers from the fact that the amount of boilerplate code is quadratic in the number of record fields. Furthermore, changing, adding, or deleting a field requires time proportional to the number of fields (because each <tt>with</tt> function must be changed).  It is also annoying to have to define a <tt>with</tt> function, possibly with a fixity declaration, for each field. 
+</p>
+<p>
+Fortunately, there is a solution to these problems. We can define a single function, <tt>set</tt>, use the existing SML record selector syntax, and the <a href="InfixingOperators">left piping operator</a>, so that 
+<pre class=code>
+{a = <B><FONT COLOR="#5F9EA0">1</FONT></B>, b = <FONT COLOR="#BC8F8F"><B>&quot;foo&quot;</FONT></B>, c = <B><FONT COLOR="#5F9EA0">3.0</FONT></B>} &gt;| set#a <B><FONT COLOR="#5F9EA0">13</FONT></B> &gt;| set#b <FONT COLOR="#BC8F8F"><B>&quot;bar&quot;</FONT></B>
+</PRE>
+ will evaluate to 
+<pre class=code>
+{a = <B><FONT COLOR="#5F9EA0">13</FONT></B>, b = <FONT COLOR="#BC8F8F"><B>&quot;bar&quot;</FONT></B>, c = <B><FONT COLOR="#5F9EA0">3.0</FONT></B>}
+</PRE>
+ 
+</p>
+<p>
+Here is the definition of <tt>set</tt>. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> set f z {a, b, c} =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'b </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">C</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'c
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> g h z =
+         {a = <B><FONT COLOR="#A020F0">case</FONT></B> h z <B><FONT COLOR="#A020F0">of</FONT></B> A a =&gt; a | _ =&gt; a,
+          b = <B><FONT COLOR="#A020F0">case</FONT></B> h z <B><FONT COLOR="#A020F0">of</FONT></B> B b =&gt; b | _ =&gt; b,
+          c = <B><FONT COLOR="#A020F0">case</FONT></B> h z <B><FONT COLOR="#A020F0">of</FONT></B> C c =&gt; c | _ =&gt; c}
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      f {a = g A, b = g B, c = g C} z
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+Here is the type of <tt>set</tt>. 
+</p>
+
+<pre>val set : ({a:'a -&gt; {a:'a, b:'b, c:'c},
+            b:'b -&gt; {a:'a, b:'b, c:'c},
+            c:'c -&gt; {a:'a, b:'b, c:'c}} -&gt; 'd -&gt; 'e)
+          -&gt; 'd
+          -&gt; {a:'a, b:'b, c:'c}
+          -&gt; 'e
+</pre><p>
+To change a field with this approach, we only have to change three things. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ the variant in <tt>datatype&nbsp;t</tt> 
+</p>
+</li>
+    <li>
+<p>
+ the field in the result of g 
+</p>
+</li>
+    <li>
+<p>
+ the field in the argument to <tt>f</tt> 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+There is a minor disadvantage, however. The type of the field being updated can not (easily) be changed: 
+<pre class=code>
+{a=<B><FONT COLOR="#5F9EA0">1</FONT></B>, b=<B><FONT COLOR="#5F9EA0">2</FONT></B>, c=<B><FONT COLOR="#5F9EA0">3</FONT></B>} &gt;| set#a <FONT COLOR="#BC8F8F"><B>&quot;1&quot;</FONT></B> <I><FONT COLOR="#B22222">(* Type error! *)</FONT></I>
+</PRE>
+ 
+</p>
+<p>
+While our definition of <tt>set</tt> is valid SML and works with MLton, unfortunately, most other SML compilers mistakenly reject the program because of the free type variables in the datatype declaration.  You can work around this problem in such compilers by manually lifting <tt>datatype&nbsp;t</tt> to the toplevel and adding <tt>'a</tt>, <tt>'b</tt>, and <tt>'c</tt> as parameters to <tt>t</tt>. 
+</p>
+<h2 id="head-5a88564031f8f0662f3a77b949186ffc75a82bc3">Going Further</h2>
+<p>
+One can generalize the previous approach and define a function that performs functional record update on any object that is isomorphic to a tuple (of the appropriate arity). 
+</p>
+<p>
+We first define a function to perform a functional 3-tuple update: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> set3 f v (v1, v2, v3) =
+    <B><FONT COLOR="#A020F0">let</FONT></B>
+       <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> ('v1, 'v2, 'v3) t </FONT></B>=<FONT COLOR="#228B22"><B>
+                <FONT COLOR="#B8860B">V1</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'v1 </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">V2</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'v2 </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">V3</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'v3
+       </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> g h v =
+           (<B><FONT COLOR="#A020F0">case</FONT></B> h v <B><FONT COLOR="#A020F0">of</FONT></B> V1 v1 =&gt; v1 | _ =&gt; v1,
+            <B><FONT COLOR="#A020F0">case</FONT></B> h v <B><FONT COLOR="#A020F0">of</FONT></B> V2 v2 =&gt; v2 | _ =&gt; v2,
+            <B><FONT COLOR="#A020F0">case</FONT></B> h v <B><FONT COLOR="#A020F0">of</FONT></B> V3 v3 =&gt; v3 | _ =&gt; v3)
+    <B><FONT COLOR="#A020F0">in</FONT></B>
+       f (g V1, g V2, g V3) v
+    <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+We also define a generic function for wrapping a tuple update given an isomorphism: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> wrapSet (set, t2r, t2r', r2t) f v r = t2r (set (f o t2r') v (r2t r))
+</PRE>
+ 
+</p>
+<p>
+The isomorphism is specified by <tt>t2r</tt>, <tt>t2r'</tt>, and <tt>r2t</tt>; <tt>t2r</tt> and <tt>t2r'</tt> are actually the same function - we need to supply two copies because of the absence of <a href="FirstClassPolymorphism">FirstClassPolymorphism</a> in SML. 
+</p>
+<p>
+Here's how to use <tt>set3</tt> and <tt>wrapSet</tt> to define an update function for <tt>{a,&nbsp;b,&nbsp;c</tt>} and for <tt>{d,&nbsp;e,&nbsp;f</tt>}. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> set f =
+    <B><FONT COLOR="#A020F0">let</FONT></B>
+       <B><FONT COLOR="#A020F0">fun</FONT></B> t2r (v1, v2, v3) = {a = v1, b = v2, c = v3}
+       <B><FONT COLOR="#A020F0">fun</FONT></B> r2t {a = v1, b = v2, c = v3} = (v1, v2, v3)
+    <B><FONT COLOR="#A020F0">in</FONT></B>
+       wrapSet (set3, t2r, t2r, r2t) f
+    <B><FONT COLOR="#A020F0">end</FONT></B>
+
+<B><FONT COLOR="#A020F0">fun</FONT></B> set f =
+    <B><FONT COLOR="#A020F0">let</FONT></B>
+       <B><FONT COLOR="#A020F0">fun</FONT></B> t2r (v1, v2, v3) = {d = v1, e = v2, f = v3}
+       <B><FONT COLOR="#A020F0">fun</FONT></B> r2t {d = v1, e = v2, f = v3} = (v1, v2, v3)
+    <B><FONT COLOR="#A020F0">in</FONT></B>
+       wrapSet (set3, t2r, t2r, r2t) f
+    <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+With this approach, changing a field name only requires changing the name in the <tt>t2r</tt> and <tt>r2t</tt> functions. 
+</p>
+<p>
+The MLton SVN contains Emacs functions in 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-gen.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-gen.el</a>
+ to generate functional tuple update functions and functional record update functions. For example, to generate a <tt>set</tt> function for the record <tt>{a,&nbsp;b,&nbsp;c</tt>} it is sufficient to type <tt>M&nbsp;x&nbsp;esml-gen-fru-setter&nbsp;a&nbsp;b&nbsp;c</tt>. 
+</p>
+<h2 id="head-12c4ffe1d987164a4bedf6ab2aac597a113e181c">Efficiency</h2>
+<p>
+With MLton, the efficiency of these approaches is as good as one would expect with the special syntax.  Namely a sequence of updates will be optimized into a single record construction that copies the unchanged fields and fills in the changed fields with their new values. 
+</p>
+<h2 id="head-1e08a697796bdf72d4e392f34eb1c72cd4ef029e">Imperative approach</h2>
+<p>
+One can use ref cells under the hood to implement functional record update. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> set f z {a, b, c} =
+   <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> a = ref a
+      <B><FONT COLOR="#A020F0">val</FONT></B> b = ref b
+      <B><FONT COLOR="#A020F0">val</FONT></B> c = ref c
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = f {a = a, b = b, c = c} := z
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      {a = !a, b = !b, c = !c}
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-14 18:21:47 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+</body></html>

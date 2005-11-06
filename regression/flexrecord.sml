@@ -93,3 +93,9 @@ val _ =
       ()
    end
 (* flexrecord8 *)
+
+(* flexrecord9 *)
+val g = fn {...} => ()
+and h = fn () => ()
+val () = (h (); g {a = 13})
+(* flexrecord9 *)

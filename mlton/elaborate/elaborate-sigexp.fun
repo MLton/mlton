@@ -121,24 +121,33 @@ fun elaborateScheme (tyvars: Tyvar.t vector, ty: Atype.t, E): Scheme.t =
          Vector.keepAll
          (tyvars', fn a =>
           not (Vector.exists (tyvars, fn a' => Tyvar.sameName (a, a'))))
-      val _ =
-         if 0 = Vector.length unbound
-            then ()
+      val ty =
+         if 0 = Vector.length unbound then
+            ty
          else
             let
                open Layout
+               val () =
+                  Control.error (Tyvar.region (Vector.sub (tyvars', 0)),
+                                 seq [str (concat ["undefined type variable",
+                                                   if Vector.length unbound > 1
+                                                      then "s"
+                                                   else "",
+                                                      ": "]),
+                                      seq (separate
+                                           (Vector.toListMap (unbound,
+                                                              Tyvar.layout),
+                                            ", "))],
+                                 empty)
+               fun var a =
+                  if Vector.exists (unbound, fn a' => Tyvar.equals (a, a')) then
+                     Type.bogus
+                  else
+                     Type.var a
             in
-               Control.error (Tyvar.region (Vector.sub (tyvars', 0)),
-                              seq [str (concat ["undefined type variable",
-                                                if Vector.length unbound > 1
-                                                   then "s"
-                                                else "",
-                                                ": "]),
-                                   seq (separate
-                                        (Vector.toListMap (unbound,
-                                                           Tyvar.layout),
-                                         ", "))],
-                              empty)
+               Type.hom (ty, {con = Type.con,
+                              record = Type.record,
+                              var = var})
             end
       (* Need to get the representatives that were chosen when elaborating the
        * type.

@@ -35,12 +35,14 @@ binary-indep: build install
 binary-arch: build install
 	# dh_installdeb
 	mkdir -p $(BUILDDIR)/DEBIAN
-	for f in postinst prerm; do \
-		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f; \
+	for f in postinst prerm; do 				\
+		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f;	\
+		chown root.root $(BUILDDIR)/DEBIAN/$$f;		\
 	done
 	# dh_shlibdeps
 	dpkg-shlibdeps \
 		-e$(BUILDDIR)/usr/bin/mllex \
+		-e$(BUILDDIR)/usr/bin/mlnlffigen \
 		-e$(BUILDDIR)/usr/bin/mlprof \
 		-e$(BUILDDIR)/usr/bin/mlyacc \
 		-e$(BUILDDIR)/usr/lib/mlton/mlton-compile 

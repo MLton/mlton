@@ -156,7 +156,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                          Regexp.Compiled.matchesAll (re, name))
             then program
          else pass (name, doit, program)
-      val program = pass ("ToRssa", SsaToRssa.convert, (program, codegen))
+      val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
       fun rssaSimplify program = 
          let
             val program = 
@@ -531,11 +531,18 @@ let
                                       header = header,
                                       size = size}
              | PrimApp {dst, prim, args} =>
-                  Vector.new1
-                  (M.Statement.PrimApp
-                   {args = translateOperands args,
-                    dst = Option.map (dst, varOperand o #1),
-                    prim = prim})
+                  let
+                     datatype z = datatype Prim.Name.t
+                  in
+                     case Prim.name prim of
+                        MLton_touch => Vector.new0 ()
+                      | _ => 
+                           Vector.new1
+                           (M.Statement.PrimApp
+                            {args = translateOperands args,
+                             dst = Option.map (dst, varOperand o #1),
+                             prim = prim})
+                  end
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (offset + WORD_SIZE) - StackBottom; *)

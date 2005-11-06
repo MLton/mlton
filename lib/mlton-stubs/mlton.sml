@@ -278,6 +278,7 @@ structure MLton: MLTON =
       structure ProcEnv =
          struct
             fun setenv _ = raise Fail "setenv"
+            fun setgroups _ = raise Fail "setgroups"
          end
 
       structure Process =
@@ -407,6 +408,8 @@ structure MLton: MLTON =
          struct
            type t = {stime: Time.time, utime: Time.time}
 
+           fun measureGC _ = ()
+
            (* Fake it with Posix.ProcEnv.times *)
            fun rusage () =
               let
@@ -478,6 +481,11 @@ structure MLton: MLTON =
                   type t = word
                end
 
+            structure Ctl =
+               struct
+                  fun getERROR _ = NONE
+               end
+
             structure Host =
                struct
                   type t = {name: string}
@@ -495,6 +503,7 @@ structure MLton: MLTON =
                
             fun accept _ = raise Fail "Socket.accept"
             fun connect _ = raise Fail "Socket.connect"
+            fun fdToSock _ = raise Fail "Socket.fdToSock"
             fun listen _ = raise Fail "Socket.listen"
             fun listenAt _ = raise Fail "Socket.listenAt"
             fun shutdownRead _ = raise Fail "Socket.shutdownWrite"

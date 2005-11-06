@@ -1,0 +1,491 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>CompileTimeOptions - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      CompileTimeOptions
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+MLton's options allow you to control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also allow you to specify which intermediate files are saved and to stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.o</tt>, and <tt>.sml</tt>. <p>
+With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a boolean argument <tt>{true|false}&nbsp;</tt>, the first value listed is the default. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>-align&nbsp;{4|8}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Aligns object sizes and doubles in memory by the specified    alignment. On X86, the default is <tt>4</tt> and on Sparc the default    is <tt>8</tt>.  
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-as-opt</tt> <em>option</em> 
+</p>
+</li>
+
+            <ul>
+
+   Pass <em>option</em> to <tt>gcc</tt> when assembling. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-cc-opt</tt> <em>option</em> 
+</p>
+</li>
+
+            <ul>
+
+   Pass <em>option</em> to <tt>gcc</tt> when compiling C code. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-codegen&nbsp;{native|bytecode|c}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Generate native code, byte code, or C code.  With    <tt>-codegen&nbsp;native</tt>, MLton typically compiles more quickly and    generates better code. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-const&nbsp;'</tt><em>name</em><tt>&nbsp;</tt><em>value</em><tt>'</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Set the value of a compile-time constant.  Here is a list of    available constants, their default values, and what they control. 
+            </ul>
+
+
+
+        <ul>
+
+        <li>
+<p>
+ <tt>Exn.keepHistory&nbsp;{false|true}&nbsp;</tt> 
+</p>
+</li>
+
+                <ul>
+
+    Enable <tt>Exn.history</tt>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is     a performance cost to setting this to <tt>true</tt>, both in memory     usage of exceptions and in run time, because of additional work     that must be performed at each exception construction, raise, and     handle. 
+                </ul>
+
+
+
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-default-ann&nbsp;</tt><em>anns</em> 
+</p>
+</li>
+
+            <ul>
+
+   Specify the default annotation values for <a href="MLBasis"> ML Basis</a>    files.  For example, <tt>-default-ann&nbsp;'warnUnused&nbsp;true'</tt> causes    unused variable warnings to be enabled by default.  A default is    overridden by the corresponding annotation in an ML basis file. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-disable-ann&nbsp;</tt><em>anns</em> 
+</p>
+</li>
+
+            <ul>
+
+   Ignore the specified annotations in every ML basis file.  For    example, to see <em>all</em> match and unused warnings, compile with 
+<pre>-default-ann 'warnUnused true'
+-disable-ann forceUsed 
+-disable-ann warnMatch 
+-disable-ann warnUnused 
+</pre>
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-export-header&nbsp;</tt><em>file</em> 
+</p>
+</li>
+
+            <ul>
+
+   Write to <em>file</em> C prototypes for all of the functions exported    from SML to C.  This flag is useful for programs that use    <tt>_export</tt> (see <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>). 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-ieee-fp&nbsp;{false|true}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Cause the native code generator to be pedantic about following the    IEEE floating point standard.  By default, it is not, because of    the performance cost.  This has no effect with <tt>-native&nbsp;false</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-inline&nbsp;</tt><em>n</em> 
+</p>
+</li>
+
+            <ul>
+
+   Set the inlining threshold used in the optimizer.  The threshold is    an approximate measure of code size of a procedure.  The default is    <tt>320</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-keep&nbsp;{g|o|sml}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Save intermediate files.  If no <tt>-keep</tt> argument is given, then    only the output file is saved. 
+<div>
+<table>
+   <tr>
+<td>
+ <tt>g</tt> </td>
+<td>
+ generated <tt>.S</tt> and <tt>.c</tt> files passed to gcc and the assembler </td>
+</tr>
+   <tr>
+<td>
+ <tt>o</tt> </td>
+<td>
+ object (<tt>.o</tt>) files </td>
+</tr>
+   <tr>
+<td>
+ <tt>sml</tt> </td>
+<td>
+ SML file </td>
+</tr>
+</table>
+</div>
+
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-link-opt&nbsp;</tt><em>opt</em> 
+</p>
+</li>
+
+            <ul>
+
+   Pass the option to <tt>gcc</tt> when linking.  You can use this to    specify library search paths, e.g. <tt>-link-opt&nbsp;-Lpath</tt>, and    libraries to link with, e.g. <tt>-link-opt&nbsp;-lfoo</tt>, or even both at    the same time, e.g. <tt>-link-opt&nbsp;'-Lpath&nbsp;-lfoo'</tt>.  If you wish to    pash an option to the linker, you must use <tt>gcc</tt>'s <tt>-Wl,</tt>    syntax, e.g., <tt>-link-opt&nbsp;'-Wl,--export-dynamic'</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-mlb-path-map&nbsp;</tt><em>file</em> 
+</p>
+</li>
+
+            <ul>
+
+   Use <em>file</em> as an <a href="MLBasisPathMap">MLBasisPathMap</a> to define additional MLB path    variables.  Multiple uses of <tt>-mlb-path-map</tt> are allowed, with    variable definitions in later path maps taking precendence over    earlier ones. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-output&nbsp;</tt><em>file</em> 
+</p>
+</li>
+
+            <ul>
+
+   Specify the name of the final output file. The default name is the    input file name with its suffix removed and an appropriate,    possibly empty, suffix added. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-profile&nbsp;{no|alloc|count|time}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Produce an executable that gathers <a href="Profiling">Profiling</a> data.  When    such an executable is run, it produces an <tt>mlmon.out</tt> file. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-profile-branch&nbsp;{false|true}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   If true, the profiler will separately gather profiling data for     each branch of a function definition, <tt>case</tt> expression, and    <tt>if</tt> expression.  
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-profile-stack&nbsp;{false|true}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   If <tt>true</tt>, the executable will gather profiling data for each    function on the stack. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-runtime&nbsp;</tt><em>arg</em> 
+</p>
+</li>
+
+            <ul>
+
+   Pass argument to the runtime system via <tt>@MLton</tt>.  The argument    will be processed before other <tt>@MLton</tt> command line switches.    Multiple uses of <tt>-runtime</tt> are allowed, and will pass all the    arguments in order.  If the same runtime switch occurs more than    once, then the last setting will take effect. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-show-basis&nbsp;</tt><em>file</em> 
+</p>
+</li>
+
+            <ul>
+
+   Pretty print to <em>file</em> the basis defined by the input program.    See <a href="ShowBasis">ShowBasis</a>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-show-def-use&nbsp;</tt><em>file</em> 
+</p>
+</li>
+
+            <ul>
+
+   Output def-use information to <em>file</em>.  Each identifier that is    defined appears on a line, followed on subsequent lines by the    position of each use. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-stop&nbsp;{f|g|o|sml|tc}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Secify pass to stop at. 
+<div>
+<table>
+   <tr>
+<td>
+ <tt>f</tt> </td>
+<td>
+ list of files on stdout (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
+</tr>
+   <tr>
+<td>
+ <tt>g</tt> </td>
+<td>
+ generated <tt>.S</tt> and <tt>.c</tt> files </td>
+</tr>
+   <tr>
+<td>
+ <tt>o</tt> </td>
+<td>
+ object file </td>
+</tr>
+   <tr>
+<td>
+ <tt>sml</tt> </td>
+<td>
+ SML file (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
+</tr>
+   <tr>
+<td>
+ <tt>tc</tt> </td>
+<td>
+after type checking </td>
+</tr>
+</table>
+</div>
+<p>
+   If you compile <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume    compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>    or <tt>.o</tt> files.  
+</p>
+
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-target&nbsp;{self|</tt>...<tt>}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   Generate an executable that runs on the specified platform.  The    default is <tt>self</tt>, which means to compile for the machine that    MLton is running on.  To use any other target, you must first    install a <a href="CrossCompiling"> cross compiler</a>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-target-as-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+</p>
+</li>
+
+            <ul>
+
+   Like <tt>-as-opt</tt>, this passes <em>target</em> to <tt>gcc</tt> when    assembling, except it only passes <em>opt</em> when the target architecture    or operating system is <em>arch</em>.  Valid values for <em>target</em> are    as for <tt>-target-cc-opt</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-target-cc-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+</p>
+</li>
+
+            <ul>
+
+   Like <tt>-cc-opt</tt>, this passes <em>opt</em> to <tt>gcc</tt> when compiling    C code, except it only passes <em>opt</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>, <tt>cygwin</tt>,    <tt>darwin</tt>, <tt>freebsd</tt>, <tt>linux</tt>, <tt>mingw</tt>,    <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-target-link-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+</p>
+</li>
+
+            <ul>
+
+   Like <tt>-link-opt</tt>, this passes <em>target</em> to <tt>gcc</tt> when    linking, except it only passes <em>opt</em> when the target architecture    or operating system is <em>arch</em>.  Valid values for <em>target</em> are    as for <tt>-target-cc-opt</tt>. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>-verbose&nbsp;{0|1|2|3}&nbsp;</tt> 
+</p>
+</li>
+
+            <ul>
+
+   How verbose to be about what passes are running.  The default is    <tt>0</tt>. 
+<div>
+<table>
+   <tr>
+<td>
+ <tt>0</tt> </td>
+<td>
+ silent </td>
+</tr>
+   <tr>
+<td>
+ <tt>1</tt> </td>
+<td>
+ calls to compiler, assembler, and linker </td>
+</tr>
+   <tr>
+<td>
+ <tt>2</tt> </td>
+<td>
+ 1 + intermediate compiler passes </td>
+</tr>
+   <tr>
+<td>
+ <tt>3</tt> </td>
+<td>
+ 2 + some data structure sizes </td>
+</tr>
+</table>
+</div>
+</ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-09-05 21:54:58 by <span title="adsl-64-166-225-193.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

@@ -1,7 +1,7 @@
 local
-   $(MLTON_ROOT)/basis/basis.mlb
+   $(SML_LIB)/basis/basis.mlb
 
-   ../memory/memory.x86-unix.mlb
+   ../memory/memory.mlb
 
    ../c.sig
    ../c-debug.sig

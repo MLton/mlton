@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>OtherSites - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      OtherSites
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Other sites that have a MLton page (or more). 
+    <ul>
+
+    <li>
+<p>
+ <a class="external" href="http://www.advogato.org/proj/mlton/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Advogato</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://packages.debian.org/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian GNU/Linux</a>  (<a class="external" href="http://packages.qa.debian.org/m/mlton.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">developer</a>) 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://freshmeat.net/projects/mlton/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">freshmeat</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://www.freshports.org/lang/mlton/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">freshports</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://www.gnu.org/directory/all/mlton.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GNU</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="http://www.icewalkers.com/">http://www.icewalkers.com/</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://en.wikipedia.org/wiki/MLton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">wikipedi</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-12-15 21:52:42 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

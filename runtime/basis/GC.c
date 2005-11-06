@@ -16,8 +16,8 @@ void GC_setSummary (Int b) {
         gcState.summary = b;
 }
 
-void GC_setRusage () {
-        gcState.rusageIsEnabled = TRUE;
+void GC_setRusageMeasureGC (Int b) {
+        gcState.rusageMeasureGC = b;
 }
 
 void MLton_GC_pack () {

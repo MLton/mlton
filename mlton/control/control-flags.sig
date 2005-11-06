@@ -186,6 +186,8 @@ signature CONTROL_FLAGS =
 
       val maxFunctionSize: int ref
 
+      val mlbPathMaps: string list ref
+
       structure Native:
          sig
             (* whether or not to use comments in native codegen *)

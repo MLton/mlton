@@ -73,6 +73,7 @@ in
                val getppid = stub ("getppid", getppid)
                val getuid = stub ("getuid", getuid)
                val setgid = stub ("setgid", setgid)
+               val setgroups = stub ("stegroups", setgroups)
                val setpgid = stub ("setpgid", setpgid)
                val setsid = stub ("setsid", setsid)
                val setuid = stub ("setuid", setuid)

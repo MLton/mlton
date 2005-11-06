@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>ProductType - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      ProductType
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<a href="StandardML">Standard ML</a> has special syntax for products (tuples). A product type is written as 
+<pre>t1 * t2 * ... * tN
+</pre> and a product pattern is written as
+<pre>(p1, p2, ..., pN)
+</pre>In most situations the syntax is quite convenient. However, there are special circumstances under which the syntax for product patterns can be cumbersome. <p>
+The problem is probably best known through parser combinators. A typical parser combinator library provides a combinator that has a type of the form 
+<pre>'a parser * 'b parser -&gt; ('a * 'b) parser
+</pre>and produces a parser for the concatenation of two parsers. When more than two parsers are concatenated, the result of the resulting parser is a nested structure of pairs 
+<pre>(...((p1, p2), p3)..., pN)
+</pre>which is somewhat cumbersome. 
+</p>
+<p>
+One way around this problem is to use a product datatype 
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) product </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">&amp;</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+</FONT></B></PRE>
+ with an infix constructor 
+<pre class=code>
+<B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
+</PRE>
+ 
+</p>
+<p>
+The type of the concatenation combinator then becomes 
+<pre>'a parser * 'b parser -&gt; ('a, 'b) product parser
+</pre>
+</p>
+<p>
+While this doesn't stop the nesting, it makes the pattern significantly easier to write. Instead of 
+<pre>(...((p1, p2), p3)..., pN)
+</pre>the pattern is written as 
+<pre>p1 &amp; p2 &amp; p3 &amp; ... &amp; pN
+</pre>which is considerably more concise. 
+</p>
+<p>
+The symbol <tt>&amp;</tt> is inspired by the Curry-Howard isomorphism: the proof of a conjunction <tt>(A&nbsp;&amp;&nbsp;B)</tt> is a pair of proofs <tt>(a,&nbsp;b)</tt>. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-07 17:57:29 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+</body></html>

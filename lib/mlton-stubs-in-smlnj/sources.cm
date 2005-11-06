@@ -53,6 +53,7 @@ structure RealArray
 structure RealVector
 structure SML90
 structure SMLofNJ
+structure Socket
 structure String
 structure StringCvt
 structure Substring

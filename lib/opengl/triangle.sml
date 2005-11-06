@@ -43,6 +43,7 @@ fun changeSize ((width : int), (height : int)) : unit =
 
 fun initialise () =
     (
+     glutInit ();
      glutInitDisplayMode(GLUT_DOUBLE + GLUT_RGBA);
      glutInitWindowPosition 100 100;
      glutInitWindowSize 250 250;

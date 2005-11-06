@@ -1,5 +1,29 @@
 Here are the changes since version 20041109.
 
+* 2005-11-03
+  - Removed MLton.GC.setRusage.
+  - Added MLton.Rusage.measureGC.
+
+* 2005-09-11
+  - Fixed bug in display of types with large numbers of type
+    variables, which could cause unhandled exception Chr.
+
+* 2005-09-08
+  - Fixed bug in type inference of flexible records that would show up
+    as "Type error: variable applied to wrong number of type args"
+
+* 2005-09-06
+  - Fixed bug in Real.signBit, which had assumed that the underlying
+    C signbit returned 0 or 1, when in fact any nonzero value is
+    allowed to indicate the signbit is set.
+
+* 2005-09-05
+  - Added -mlb-path-map switch.
+
+* 2005-08-25
+  - Fixed bug in MLton.Finalizable.touch, which was not keeping alive
+    finalizable values in all cases.
+
 * 2005-08-18
   - Added SML/NJ Library and CKit Library from SML/NJ 110.55 to 
     standard distribution.

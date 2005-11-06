@@ -23,3 +23,7 @@ mlyacc.pdf: mlyacc.tex
 
 mlyacc.ps: mlyacc.dvi
 	dvips -o mlyacc.ps mlyacc.dvi
+
+.PHONY: clean
+clean:
+	../../bin/clean

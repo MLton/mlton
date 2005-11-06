@@ -1,5 +1,5 @@
 /* Gl-export.c */
-#include <GL/gl.h>
+#include "platform.h"
 #include "GL_h.h"
 
 

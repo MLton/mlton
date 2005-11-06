@@ -1,6 +1,5 @@
 /* Glut-export.c */
-#include <GL/gl.h>
-#include <GL/glut.h>
+#include "platform.h"
 #include "GLUT_h.h"
 
 int callGlutCreateMenu ()

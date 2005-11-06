@@ -1,0 +1,494 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonProcess - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonProcess
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PROCESS =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> pid </FONT></B>=<FONT COLOR="#228B22"><B> Posix.Process.pid
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> spawn: {path: string, args: string list} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawne: {path: string, args: string list, env: string list} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawnp: {file: string, args: string list} -&gt; pid
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+The <tt>spawn</tt> functions provide an alternative to the <tt>fork</tt>/<tt>exec</tt> idiom that is typically used to create a new process.  On most platforms, the <tt>spawn</tt> functions are simple wrappers around <tt>fork</tt>/<tt>exec</tt>.  However, on Cygwin, the <tt>spawn</tt> functions are primitive and are both faster and more reliable than <tt>fork</tt>/<tt>exec</tt>.  All <tt>spawn</tt> functions return the process id of the spawned process.  They differ in how the executable is found and the environment that it uses. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>spawn&nbsp;{path,&nbsp;args</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  Start a new process running the executable specified by <tt>path</tt>   with the arguments <tt>args</tt>.  Like <tt>Posix.Process.exec</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>spawne&nbsp;{path,&nbsp;args,&nbsp;env</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  Start a new process running the executable specified by <tt>path</tt>   with the arguments <tt>args</tt> and environment <tt>env</tt>.  Like   <tt>Posix.Process.exece</tt>.  
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>spawnp&nbsp;{file,&nbsp;args</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  Search the <tt>PATH</tt> environment variable for an executable named   <tt>file</tt>, and start a new process running that executable with the   arguments <tt>args</tt>.  Like <tt>Posix.Process.execp</tt>. 
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-a283e7658f43ceca065ff16e5fc5a2383c955359">Changes since the current public release</h2>
+<p>
+Since the release of MLton 20041109, we have extended <tt>MLTON_PROCESS</tt> with a <tt>create</tt> function similar to <tt>Unix.executeInEnv</tt>, except that it allows more control over the input, output, and error streams. <tt>create</tt> works on all platforms, including Cygwin and MinGW where <tt>Posix.fork</tt> is unavailable. 
+</p>
+<p>
+The <tt>Unix</tt> module is implemented using <tt>MLton.Process.create</tt>. Hence, for greatest portability programs should now use the standard <tt>Unix.execute</tt>, <tt>Unix.executeInEnv</tt>, and <tt>OS.Process.system</tt>. 
+</p>
+<p>
+It is only necessary to use <tt>MLton.Process</tt> if you need the additional functionality of <tt>create</tt>.  However, for applications targetting only MLton, <tt>MLton.Process</tt> is more portable than <tt>Posix.fork</tt> which requires POSIX compliance from the host. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PROCESS =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> pid </FONT></B>=<FONT COLOR="#228B22"><B> Posix.Process.pid
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> spawn: {path: string, args: string list} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawne: {path: string, args: string list, env: string list} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawnp: {file: string, args: string list} -&gt; pid
+
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('stdin, 'stdout, 'stderr) t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> none
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> chain
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> any
+
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> input
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> output
+
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">MisuseOfForget</FONT>
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">DoublyRedirected</FONT>
+
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Child:
+        <B><FONT COLOR="#0000FF">sig</FONT></B>
+          <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('use, 'dir) t
+
+          </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> binIn: (BinIO.instream, input) t -&gt; BinIO.instream
+          <B><FONT COLOR="#A020F0">val</FONT></B> binOut: (BinIO.outstream, output) t -&gt; BinIO.outstream
+          <B><FONT COLOR="#A020F0">val</FONT></B> textIn: (TextIO.instream, input) t -&gt; TextIO.instream
+          <B><FONT COLOR="#A020F0">val</FONT></B> textOut: (TextIO.outstream, output) t -&gt; TextIO.outstream
+          <B><FONT COLOR="#A020F0">val</FONT></B> fd: (Posix.FileSys.file_desc, 'dir) t -&gt; Posix.FileSys.file_desc
+
+          <B><FONT COLOR="#A020F0">val</FONT></B> remember: (any, 'dir) t -&gt; ('use, 'dir) t
+        <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Param:
+        <B><FONT COLOR="#0000FF">sig</FONT></B>
+          <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('use, 'dir) t
+
+          </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> null: (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> self: (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> file: string -&gt; (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> child: (chain, 'dir) Child.t -&gt; (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> pipe: ('use, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> fd: Posix.FileSys.file_desc -&gt; (none, 'dir) t
+
+          <B><FONT COLOR="#A020F0">val</FONT></B> forget: ('use, 'dir) t -&gt; (any, 'dir) t
+        <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> create:
+         {args: string list,
+          path: string,
+          env: string list option,
+          stdin: ('stdin, input) Param.t,
+          stdout: ('stdout, output) Param.t}
+          stderr: ('stderr, output) Param.t,
+         -&gt; ('stdin, 'stdout, 'stderr) t
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStdin:  ('stdin, 'stdout, 'stderr) t -&gt; ('stdin, output) Child.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStdout: ('stdin, 'stdout, 'stderr) t -&gt; ('stdout, input) Child.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStderr: ('stdin, 'stdout, 'stderr) t -&gt; ('stderr, input) Child.t
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> kill: ('stdin, 'stdout, 'stderr) t * Posix.Signal.signal -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> reap: ('stdin, 'stdout, 'stderr) t -&gt; Posix.Process.exit_status
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>type&nbsp;('stdin,&nbsp;'stdout,&nbsp;'stderr)&nbsp;t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This type represents a handle to a child process. The three polymorphic   types capture how the named stream of the child process may be used. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;none</tt> 
+</p>
+</li>
+
+        <ul>
+
+  The type <tt>none</tt> means that the child process's stream my not be used   by the parent process. This happens when the child process is connected   directly to some source. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;chain</tt> 
+</p>
+</li>
+
+        <ul>
+
+  The type <tt>chain</tt> means that the child process's stream was connected   via a pipe to the parent process. The parent process may pass this pipe   in turn to another child, thus chaining them together. This use sets the   polymorphic type of the connected stream to <tt>chain</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;any</tt> 
+</p>
+</li>
+
+        <ul>
+
+  In situations where an application does not want the type system to   force correct usage, this placeholder type can bypass it. See   <tt>Child.remember</tt> and <tt>Param.forget</tt>. 
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+The types <tt>BinIO.instream</tt>, <tt>BinIO.outstream</tt>, <tt>TextIO.instream</tt>, <tt>TextIO.outstream</tt>, and <tt>Posix.FileSys.file_desc</tt> are also vaild uses to which child streams may be put. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>type&nbsp;input,&nbsp;output</tt> 
+</p>
+</li>
+
+        <ul>
+
+  These two types take note of the direction a stream flows.   It is used as a part of <tt>Param.t</tt> and <tt>Child.t</tt> and is detailed   there. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>exception&nbsp;MisuseOfForget</tt> 
+</p>
+</li>
+
+        <ul>
+
+  If <tt>Child.remember</tt> and <tt>Param.forget</tt> are used to bypass the   normal type checking, this may be raised. This exception will only be   raised in cases where the <tt>forget</tt> mechanism allows a misuse that   would be impossible with the type-safe versions. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>exception&nbsp;DoublyRedirected</tt> 
+</p>
+</li>
+
+        <ul>
+
+  If a stream connected to a child process is redirected to two separate   child processes, this exception is raised. It is safe, though bad style,   to use the a <tt>Child.t</tt> with the same <tt>Child.*</tt> method repeatedly. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>('use,&nbsp;'dir)&nbsp;Child.t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This represents a handle to one of a child's standard streams. The 'dir   is viewed with respect to the parent. Thus a <tt>('a,&nbsp;input)&nbsp;Child.t</tt>   handle means that the parent may input the output from the child. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Child.{bin,text}{In,Out</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  These methods take a handle and bind it to a SML stream of the named type.   The type system will detect attempts to reverse the direction of a stream   or to use the same stream in multiple, incompatible ways. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Child.fd</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This method behaves like the other <tt>Child.*</tt> methods; it opens a   stream. However, it does not enforce that you read or write from the   handle. If you use the descriptor in an appropriate direction, the   behaviour is undefined. Furthermore, this method may potentially be   unavailable on future MLton host platforms. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Child.remember</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This method takes a stream of use <tt>any</tt> and resets the use of the   stream so that the stream may be used by <tt>Child.*</tt>. An <tt>any</tt>   stream may have had use <tt>none</tt> or <tt>'use</tt> prior to calling   <tt>Param.forget</tt>. If the stream was <tt>none</tt> and is used,   <tt>MisuseOfForget</tt> is raised. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>('use,&nbsp;'dir)&nbsp;Param.t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This is a handle to an input/output source which will be passed to the   created child processs. The <tt>'dir</tt> is relative to the child process.   Input means that the child process will read from this stream. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.null</tt> 
+</p>
+</li>
+
+        <ul>
+
+  In some situations, the child process should have its output discarded.   The null param when passed as <tt>stdout</tt> or <tt>stderr</tt> does this.   When used for <tt>stdin</tt>, the child process will either receive EOF   or a failure condition if it attempts to read from <tt>stdin</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.file</tt> 
+</p>
+</li>
+
+        <ul>
+
+  Open the given file and connect it to the child process. Note that the   file will be opened only when <tt>create</tt> is called. So any exceptions   will be raised there and not by this method. If used for <tt>input</tt>, the   file is opened read-only. If used for <tt>output</tt>, the file is opened   read-write. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.child</tt> 
+</p>
+</li>
+
+        <ul>
+
+  Connect the stream of the new child process to the stream of a previously   created child process. A single child stream should be connected to only   one child process or else <tt>DoublyRedirected</tt> will be raised. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.pipe</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This will connect the input/output of the child process to a pipe which   the parent process holds. This may later form the input to one of the   <tt>Child.*</tt> methods and/or the <tt>Param.child</tt> method. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.fd</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This creates a stream from the provided file descriptor which will be   closed when <tt>create</tt> is called. This method may not be available on   future MLton host platforms. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Param.forget</tt> 
+</p>
+</li>
+
+        <ul>
+
+  This hides the type of the actual parameter as <tt>any</tt>. This is useful   if you are implementing an application which conditionally attaches the   child process to files or pipes. However, you must ensure that your use   after <tt>Child.remember</tt> matches the original type. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>create</tt> 
+</p>
+</li>
+
+        <ul>
+
+  Start a child process with the given command-line <tt>args</tt> (excluding   the program name). <tt>path</tt> should be an absolute path to the executable   run in the new child process; relative paths work, but are less safe.   Optionally, the environment may be overriden with <tt>env</tt> where each   string element has the form <tt>"key=value"</tt>. The <tt>std*</tt> options   must be provided by the <tt>Param.*</tt> methods documented above. <p>
+  Processes which are <tt>create</tt>d must be either <tt>reap</tt>ed or   <tt>kill</tt>ed. 
+</p>
+
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getStd{in,out,err</tt>} 
+</p>
+</li>
+
+        <ul>
+
+  Get a handle to the specified stream. These should be used by the   <tt>Child.*</tt> methods. Failure to use a stream connected via pipe to a   child process may result in runtime dead-lock and elicts a compiler   warning. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>kill</tt> 
+</p>
+</li>
+
+        <ul>
+
+  Terminate the child process immediately.   The signal may or may not mean anything depending on the host platform.   A good value is <tt>Posix.Signal.term</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>reap</tt> 
+</p>
+</li>
+
+        <ul>
+
+  Wait for the child process to terminate and return its exit status. 
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-1bd1007a907ddfb4201460172ceb074df91cb3a0">Important usage notes</h2>
+<p>
+When building an application with many pipes between child processes, it is important to ensure that there are no cycles in the undirected pipe graph. If this property is not maintained, deadlocks are a very serious potential bug which may only appear under difficult to reproduce conditions. 
+</p>
+<p>
+The danger lies in that most operating systems implement pipes with a fixed buffer size. If process A has two output pipes which process B reads, it can happen that process A blocks writing to pipe 2 because it is full while process B blocks reading from pipe 1 because it is empty. This same situation can happen with any undirected cycle formed between processes (vertexes) and pipes  (undirected edges) in the graph. 
+</p>
+<p>
+It is possible to make this safe using low-level I/O primitives for polling. However, these primitives are not very portable and difficult to use properly. A far better approach is to make sure you never create a cycle in the first  place. 
+</p>
+<p>
+For these reasons, the Unix.executeInEnv is a very dangerous method. Be  careful when using it to ensure that the child process only operates on  either <tt>stdin</tt> or <tt>stdout</tt>, but not both. 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2004-12-07 22:23:51 by <span title="ce2.hrz.tu-darmstadt.de"><a href="WesleyTerpstra">WesleyTerpstra</a></span>.
+</body></html>

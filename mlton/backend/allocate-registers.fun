@@ -80,12 +80,18 @@ structure Allocation:
                      end
 
           fun new (alloc): t =
-             T (Array.toList
-                (QuickSort.sortArray
-                 (Array.fromListMap (alloc, fn StackOffset.T {offset, ty} =>
-                                     {offset = offset,
-                                      size = Type.bytes ty}),
-                  fn (r, r') => Bytes.<= (#offset r, #offset r'))))
+             let
+                val a =
+                   Array.fromListMap (alloc, fn StackOffset.T {offset, ty} =>
+                                      {offset = offset,
+                                       size = Type.bytes ty})
+                val () =
+                   QuickSort.sortArray
+                   (a, fn (r, r') => Bytes.<= (#offset r, #offset r'))
+
+             in
+                T (Array.toList a)
+             end
 
           fun get (T alloc, ty) =
              let
@@ -205,10 +211,9 @@ structure Allocation:
                           (compress
                            {next = 0,
                             alloc =
-                            Array.toList
-                            (QuickSort.sortArray
-                             (Array.fromList rs, fn (r, r') =>
-                              Register.index r <= Register.index r'))})))
+                            QuickSort.sortList
+                            (rs, fn (r, r') =>
+                             Register.index r <= Register.index r')})))
              end
 
           fun get (T f, ty: Type.t) =

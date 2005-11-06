@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>FrontEnd - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      FrontEnd
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+A translation pass from source to the <a href="AST">AST</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+<p>
+Peforms lexing and parsing to produce an abstract syntax tree. 
+</p>
+<h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">front-end.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/front-end.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">front-end.fun</a>
+ <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+The lexer is produced by <a class="nonexistent" href="MLLex">MLLex</a> from 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.lex?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ml.lex</a>
+. 
+</p>
+<p>
+The parser is produced by <a class="nonexistent" href="MLYacc">MLYacc</a> from 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/front-end/ml.grm?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ml.grm</a>
+. 
+</p>
+<p>
+The specifications for the lexer and parser were originally taken from <a href="SMLNJ"> SML/NJ</a> (version 109.32). 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-19 15:38:06 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

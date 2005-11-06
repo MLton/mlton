@@ -1,0 +1,299 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>OptionalArguments - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="optionalargs.sml" href="http://mlton.org/pages/OptionalArguments/attachments/optionalargs.sml">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      OptionalArguments
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Optional arguments are function parameters which may be omitted from applications of the function, in which case the parameters take on default values. <p>
+<a href="StandardML">Standard ML</a> does not have built-in support for optional arguments (as does <a href="OCaml">OCaml</a>).  Despite the absence of built-in support, it is easy to emulate optional arguments. 
+</p>
+<p>
+For example, consider the function 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> f x {a, b, c} = a * (real c) + b * (real x)
+</PRE>
+ for which the parameters <tt>a</tt>, <tt>b</tt>, and <tt>c</tt> should take on the default values specified by 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> defs = {a = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, b = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, c = <B><FONT COLOR="#5F9EA0">0</FONT></B>}
+</PRE>
+ We wish to provide an (optionalized) function <tt>f'</tt> and two (general) functions <tt>$</tt> and <tt>`</tt> such that 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> $
+<B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+<B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+</PRE>
+ prints out the following: 
+<pre>X = 0, Y = 1, Z = 3
+</pre>
+</p>
+<p>
+Here is the signature for the two general supporting functions, as well as two additional functions: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> OPTIONAL =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('upds, 'opts, 'res) t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('upds, 'opts, 'res, 'k) u </FONT></B>=<FONT COLOR="#228B22"><B>
+         (('upds, 'opts, 'res) t -&gt; 'k) -&gt; 'k
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> $ : ('upds, 'opts, 'res) t -&gt; 'res
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> ` : ('upds -&gt; ('opts -&gt; 'x -&gt; 'opts)) -&gt; 
+              'x -&gt;
+              ('upds, 'opts, 'res) t -&gt;
+              ('upds, 'opts, 'res, 'k) u
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> `` : 'opts -&gt;
+               ('upds, 'opts, 'res) t -&gt;
+               ('upds, 'opts, 'res, 'k) u
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> make : 'upds -&gt;
+                 'opts -&gt;
+                 ('opts -&gt; 'res) -&gt;
+                 ('upds, 'opts, 'res, 'k) u
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ Our intention is that the type <tt>('upds,&nbsp;'opts,&nbsp;'res)&nbsp;t</tt> represents the type of functions returning the type <tt>'res</tt> and whose optional arguments are given by the (record) type <tt>'opts</tt>; supporting the optional arguments is the (record) type <tt>'upds</tt> of update functions.  The function <tt>`</tt> introduces an override for an optional argument,while <tt>$</tt> marks the end of optional arguments.  The function <tt>``</tt> provides a convenient way to simultaneously set all optional arguments; it can also be useful when the <tt>'opts</tt> type is kept abstract, in which case the defining module may provide values of type <tt>'opts</tt> that may be used with <tt>``</tt> to install a new set of default values, while <tt>`</tt> may continue to be used to override these new defaults.  Finally, the <tt>make</tt> function transforms a function to use optional arguments: 
+</p>
+<p>
+A structure matching <tt>OPTIONAL</tt> could be used as follows. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">functor</FONT></B> MakeF (S: OPTIONAL) :&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> opts
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a upd </FONT></B>=<FONT COLOR="#228B22"><B> opts -&gt; 'a -&gt; opts
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> upds </FONT></B>=<FONT COLOR="#228B22"><B> {a: real upd, b: real upd, c: int upd}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> f' : int -&gt; (upds, opts, real, 'k) S.u
+      <B><FONT COLOR="#A020F0">val</FONT></B> opts_def2 : opts
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> S
+
+      <I><FONT COLOR="#B22222">(* define the function and defaults *)</FONT></I>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> f x {a, b, c} = a * (real c) + b * (real x)
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> opts </FONT></B>=<FONT COLOR="#228B22"><B> {a: real, b: real, c: int}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> opts_def1 <I><FONT COLOR="#B22222">(* : opts *)</FONT></I> = {a = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, b = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, c = <B><FONT COLOR="#5F9EA0">0</FONT></B>}
+      <B><FONT COLOR="#A020F0">val</FONT></B> opts_def2 <I><FONT COLOR="#B22222">(* : opts *)</FONT></I> = {a = <B><FONT COLOR="#5F9EA0">1.0</FONT></B>, b = <B><FONT COLOR="#5F9EA0">1.0</FONT></B>, c = <B><FONT COLOR="#5F9EA0">1</FONT></B>}
+
+      <I><FONT COLOR="#B22222">(* define the update functions *)</FONT></I>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a upd </FONT></B>=<FONT COLOR="#228B22"><B> opts -&gt; 'a -&gt; opts
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> upda <I><FONT COLOR="#B22222">(* : real upd *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> a' =&gt; {a = a', b = b, c = c}
+      <B><FONT COLOR="#A020F0">val</FONT></B> updb <I><FONT COLOR="#B22222">(* : real upd *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> b' =&gt; {a = a, b = b', c = c}
+      <B><FONT COLOR="#A020F0">val</FONT></B> updc <I><FONT COLOR="#B22222">(* : int upd *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> c' =&gt; {a = a, b = b, c = c'}
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> upds </FONT></B>=<FONT COLOR="#228B22"><B> {a: real upd, b: real upd, c: int upd}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> upds = {a = upda, b = updb, c = updc}
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> f' x <I><FONT COLOR="#B22222">(* : (upds, opts, real, 'k) u *)</FONT></I> = 
+         make upds opts_def1 (f x)
+
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+
+<B><FONT COLOR="#0000FF">functor</FONT></B> TestOptionalF (S: OPTIONAL) =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> F = MakeF (S)
+      <B><FONT COLOR="#0000FF">open</FONT></B> F S
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> $
+      <B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+      <B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) $
+      <B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+      <B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+The implementation of <tt>OPTIONAL</tt> is actually quite straightforward: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Optional :&gt; OPTIONAL =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('upds, 'opts, 'res) t </FONT></B>=<FONT COLOR="#228B22"><B>
+         'upds * 'opts * ('opts -&gt; 'res)
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('upds, 'opts, 'res, 'k) u </FONT></B>=<FONT COLOR="#228B22"><B>
+         (('upds, 'opts, 'res) t -&gt; 'k) -&gt; 'k
+         
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> make =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> upds =&gt;
+         <B><FONT COLOR="#A020F0">fn</FONT></B> defs =&gt;
+         <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt;
+         <B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; k (upds, defs, f)
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> `` opts =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> (upds, opts, f) =&gt;
+         <B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt;
+         k (upds, opts, f)
+         
+      <B><FONT COLOR="#A020F0">fun</FONT></B> ` sel v = 
+         <B><FONT COLOR="#A020F0">fn</FONT></B> (upds, opts, f) =&gt;
+         <B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; 
+         k (upds, sel upds opts v, f)
+         
+      <B><FONT COLOR="#A020F0">val</FONT></B> $ = 
+         <B><FONT COLOR="#A020F0">fn</FONT></B> (upds, opts, f) =&gt;
+         f opts
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+One may also mix sequences of required and optional arguments. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">functor</FONT></B> MakeG (S: OPTIONAL) :&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> optsABC
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'x updABC </FONT></B>=<FONT COLOR="#228B22"><B> optsABC -&gt; 'x -&gt; optsABC
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> updsABC </FONT></B>=<FONT COLOR="#228B22"><B> {a: real updABC, b: real updABC, c: int updABC}
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> optsDEF
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'x updDEF </FONT></B>=<FONT COLOR="#228B22"><B> optsDEF -&gt; 'x -&gt; optsDEF
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> updsDEF </FONT></B>=<FONT COLOR="#228B22"><B> {d: int updDEF, e: int updDEF, f: real updDEF}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> g' : int -&gt; (updsABC, optsABC,
+                       real -&gt; (updsDEF, optsDEF, string -&gt; unit, 'kDEF) S.u,
+                       'kABC) S.u
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> S
+
+      <I><FONT COLOR="#B22222">(* define the function and defaults *)</FONT></I>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> g x {a, b, c} y {d, e, f} s = 
+         <B><FONT COLOR="#A020F0">let</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> z1 = a * (real c) + b * (real x)
+            <B><FONT COLOR="#A020F0">val</FONT></B> z2 = (real d) * f + (real e) * y
+         <B><FONT COLOR="#A020F0">in</FONT></B>
+            print (concat [s, Real.toString (z1 + z2), s, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+         <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> optsABC </FONT></B>=<FONT COLOR="#228B22"><B> {a: real, b: real, c: int}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> optsABC_def <I><FONT COLOR="#B22222">(* : optsABC *)</FONT></I> = {a = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, b = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, c = <B><FONT COLOR="#5F9EA0">0</FONT></B>}
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> optsDEF </FONT></B>=<FONT COLOR="#228B22"><B> {d: int, e: int, f: real}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> optsDEF_def <I><FONT COLOR="#B22222">(* : optsDEF *)</FONT></I> = {d = <B><FONT COLOR="#5F9EA0">1</FONT></B>, e = <B><FONT COLOR="#5F9EA0">1</FONT></B>, f = <B><FONT COLOR="#5F9EA0">1.0</FONT></B>}
+
+      <I><FONT COLOR="#B22222">(* define the update functions *)</FONT></I>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a updABC </FONT></B>=<FONT COLOR="#228B22"><B> optsABC -&gt; 'a -&gt; optsABC
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> upda <I><FONT COLOR="#B22222">(* : real updABC *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> a' =&gt; {a = a', b = b, c = c}
+      <B><FONT COLOR="#A020F0">val</FONT></B> updb <I><FONT COLOR="#B22222">(* : real updABC *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> b' =&gt; {a = a, b = b', c = c}
+      <B><FONT COLOR="#A020F0">val</FONT></B> updc <I><FONT COLOR="#B22222">(* : int updABC *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> c' =&gt; {a = a, b = b, c = c'}
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> updsABC </FONT></B>=<FONT COLOR="#228B22"><B> {a: real updABC, b: real updABC, c: int updABC}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> updsABC = {a = upda, b = updb, c = updc}
+
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a updDEF </FONT></B>=<FONT COLOR="#228B22"><B> optsDEF -&gt; 'a -&gt; optsDEF
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> updd <I><FONT COLOR="#B22222">(* : real updDEF *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {d, e, f} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> d' =&gt; {d = d', e = e, f = f}
+      <B><FONT COLOR="#A020F0">val</FONT></B> upde <I><FONT COLOR="#B22222">(* : real updDEF *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {d, e, f} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> e' =&gt; {d = d, e = e', f = f}
+      <B><FONT COLOR="#A020F0">val</FONT></B> updf <I><FONT COLOR="#B22222">(* : int updDEF *)</FONT></I> = <B><FONT COLOR="#A020F0">fn</FONT></B> {d, e, f} =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> f' =&gt; {d = d, e = e, f = f'}
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> updsDEF </FONT></B>=<FONT COLOR="#228B22"><B> {d: int updDEF, e: int updDEF, f: real updDEF}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> updsDEF = {d = updd, e = upde, f = updf}
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> g' <I><FONT COLOR="#B22222">(* : (upds, opts, real, 'k) u *)</FONT></I> = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt;
+         make updsABC optsABC_def (<B><FONT COLOR="#A020F0">fn</FONT></B> optsABC =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> y =&gt;
+         make updsDEF optsDEF_def (<B><FONT COLOR="#A020F0">fn</FONT></B> optsDEF =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt;
+         g x optsABC y optsDEF s)))
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+
+<B><FONT COLOR="#0000FF">functor</FONT></B> TestOptionalG (S: OPTIONAL) =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> G = MakeG (S)
+      <B><FONT COLOR="#0000FF">open</FONT></B> G S
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = g' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #a <B><FONT COLOR="#5F9EA0">3.0</FONT></B>) $ <B><FONT COLOR="#5F9EA0">1.0</FONT></B> (` #e <B><FONT COLOR="#5F9EA0">2</FONT></B>) $ <FONT COLOR="#BC8F8F"><B>&quot; ** &quot;</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+To make a complete program and test the above code, we can apply the <tt>TestOptionalF</tt> and <tt>TestOptionalG</tt> functors to our implemenation. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> TestF = TestOptionalF (Optional)
+<B><FONT COLOR="#0000FF">structure</FONT></B> TestG = TestOptionalG (Optional)
+</PRE>
+ 
+</p>
+<p>
+Running the complete code prints out the following. 
+<pre>X = 0, Y = 1, Z = 3
+X = 2, Y = 2, Z = 3
+ ** 3 ** 
+</pre>
+</p>
+<h2 id="head-a479c9c34e878d07b4d67a73a48f432ad7dc53c8">Download</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pages/OptionalArguments/attachments/optionalargs.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">optionalargs.sml</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-70440046a3dc2e079f23ee1c57dfa76669b732aa">Notes</h2>
+
+    <ul>
+
+    <li>
+<p>
+ The ability to pass a record selector as a first-class function value is key to the succinctness of this technique. 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-30 23:56:31 by <span title="cfs38.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

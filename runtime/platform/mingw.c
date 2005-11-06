@@ -341,6 +341,11 @@ int setenv (const char *name, const char *value, int overwrite) {
 int setgid (gid_t gid) {
         die ("setgid not implemented");
 }
+
+int setgroups (size_t size, gid_t *list) {
+        die ("setgroups not implemented");
+}
+
 int setpgid (pid_t pid, pid_t pgid) {
         die ("setpgid not implemented");
 }
@@ -482,6 +487,13 @@ pid_t fork (void) {
 
 int kill (pid_t pid, int sig) {
         die ("kill not implemented");
+}
+
+int nanosleep (const struct timespec *req, struct timespec *rem) {
+        Sleep (req->tv_sec * 1000 + (req->tv_nsec + 999) / 1000);
+        rem->tv_nsec = 0;
+        rem->tv_sec = 0;
+        return 0;
 }
 
 int pause (void) {

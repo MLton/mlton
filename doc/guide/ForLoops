@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>ForLoops - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20050905</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      ForLoops
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+A <tt>for</tt>-loop is typically used to iterate over a range of consecutive integers that denote indices of some sort. For example, in <a href="OCaml">OCaml</a> a <tt>for</tt>-loop takes either the form 
+<pre>for &lt;name&gt; = &lt;lower&gt; to &lt;upper&gt; do &lt;body&gt; done
+</pre>or the form 
+<pre>for &lt;name&gt; = &lt;upper&gt; downto &lt;lower&gt; do &lt;body&gt; done
+</pre>Some languages provide considerably more flexible <tt>for</tt>-loop or <tt>foreach</tt>-constructs. <p>
+A bit suprisingly, <a href="StandardML">Standard ML</a> provides special syntax for <tt>while</tt>-loops, but not for <tt>for</tt>-loops. Indeed, in SML, many uses of <tt>for</tt>-loops are better expressed using <tt>app</tt>, <tt>foldl/foldr</tt>, <tt>map</tt> and many other higher-order functions provided by the <a href="BasisLibrary">Basis Library</a> for manipulating lists, vectors and arrays. However, the Basis Library does not provide a function for iterating over a range of integer values. Fortunately, it is very easy to write one. 
+</p>
+<h2 id="head-256b31fc11b749803c8295d4ec8da28712f04f19">A fairly simple design</h2>
+<p>
+The following implementation imitates both the syntax and semantics of the OCaml <tt>for</tt>-loop. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> for </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">to</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * int
+             </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">downto</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * int
+
+</FONT></B><B><FONT COLOR="#A020F0">infix</FONT></B> to downto
+
+<B><FONT COLOR="#A020F0">val</FONT></B> for =
+    <B><FONT COLOR="#A020F0">fn</FONT></B> lo to up =&gt;
+       (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#0000FF">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop lo = <B><FONT COLOR="#A020F0">if</FONT></B> lo &gt; up <B><FONT COLOR="#A020F0">then</FONT></B> ()
+                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f lo; loop (lo+<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+                <B><FONT COLOR="#0000FF">in</FONT></B> loop lo <B><FONT COLOR="#0000FF">end</FONT></B>)
+     | up downto lo =&gt;
+       (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#0000FF">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop up = <B><FONT COLOR="#A020F0">if</FONT></B> up &lt; lo <B><FONT COLOR="#A020F0">then</FONT></B> ()
+                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f up; loop (up-<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+                <B><FONT COLOR="#0000FF">in</FONT></B> loop up <B><FONT COLOR="#0000FF">end</FONT></B>)
+</PRE>
+<p>
+ 
+</p>
+<p>
+For example, 
+<pre class=code>
+for (<B><FONT COLOR="#5F9EA0">1</FONT></B> to <B><FONT COLOR="#5F9EA0">9</FONT></B>)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; print (Int.toString i))
+</PRE>
+ would print <tt>123456789</tt> and 
+<pre class=code>
+for (<B><FONT COLOR="#5F9EA0">9</FONT></B> downto <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; print (Int.toString i))
+</PRE>
+ would print <tt>987654321</tt>. 
+</p>
+<p>
+Straightforward formatting of nested loops 
+<pre class=code>
+for (a to b)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt;
+        for (c to d)
+            (<B><FONT COLOR="#A020F0">fn</FONT></B> j =&gt;
+                ...))
+</PRE>
+ is fairly readable, but tends to cause the body of the loop to be indented quite deeply. 
+</p>
+<h2 id="head-db5cb13e652c830a05ed522c82b38855adf3f29d">Off-by-one</h2>
+<p>
+The above design has an annoying feature. In practice, the upper bound of the iterated range is almost always excluded and most loops would subtract one from the upper bound: 
+<pre class=code>
+for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to n-<B><FONT COLOR="#5F9EA0">1</FONT></B>) ...
+for (n-<B><FONT COLOR="#5F9EA0">1</FONT></B> downto <B><FONT COLOR="#5F9EA0">0</FONT></B>) ...
+</PRE>
+ It is probably better to break convention and exclude the upper bound by default, because it leads to more concise code and becomes idiomatic with very little practise. The iterator combinators described below exclude the upper bound by default. 
+</p>
+<h2 id="head-a43056e62b4e6692169c07351860dd6bb04042d0">Iterator combinators</h2>
+<p>
+While the simple <tt>for</tt>-function described in the previous section is probably good enough for many uses, it is a bit cumbersome when one needs to iterate over a cartesian product. One might also want to iterate over more than just consecutive integers. It turns out that one can provide a library of iterator combinators that allow one to implement iterators more flexibly. 
+</p>
+<p>
+Since the types of the combinators may be a bit difficult to infer from their implementations, let's first take a look at a signature of the iterator combinator library: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> ITER =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a iter </FONT></B>=<FONT COLOR="#228B22"><B> ('a -&gt; unit) -&gt; unit
+
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> to : int * int -&gt; int iter
+    <B><FONT COLOR="#A020F0">val</FONT></B> downto : int * int -&gt; int iter
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> inList : 'a list -&gt; 'a iter
+    <B><FONT COLOR="#A020F0">val</FONT></B> inVector : 'a Vector.vector -&gt; 'a iter
+    <B><FONT COLOR="#A020F0">val</FONT></B> inArray : 'a Array.array -&gt; 'a iter
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> using : ('a -&gt; ('b * 'a) option) -&gt; 'a -&gt; 'b iter
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> when : 'a iter * ('a -&gt; bool) -&gt; 'a iter
+    <B><FONT COLOR="#A020F0">val</FONT></B> by : 'a iter * ('a -&gt; 'b) -&gt; 'b iter
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> &amp;&amp; : 'a iter * 'b iter -&gt; ('a, 'b) product iter
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> for : 'a -&gt; 'a
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ Some of the above combinators are meant to be used as infix operators. Here is a set of suitable infix declarations: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">infix</FONT></B> 2 to downto
+<B><FONT COLOR="#A020F0">infix</FONT></B> 1 when by
+<B><FONT COLOR="#A020F0">infix</FONT></B> 0 &amp;&amp;
+</PRE>
+ 
+</p>
+<p>
+A few notes are in order: 
+</p>
+
+        <ul>
+
+        <li>
+<p>
+ The following implementation of <tt>to</tt> and <tt>downto</tt> will omit   the upper bound of the range. 
+</p>
+</li>
+        <li>
+<p>
+ <tt>for</tt> is the identity function. It is purely for syntactic sugar   and is not strictly required. 
+</p>
+</li>
+        <li>
+<p>
+ Probably the most interesting combinator is <tt>&amp;&amp;</tt>. Given two   iterators, it produces an iterator for the cartesian product of the   iterators. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ See <a href="ProductType">ProductType</a> for the type function <tt>('a,&nbsp;'b)&nbsp;product</tt> used in     the type of the iterator produced by <tt>&amp;&amp;</tt>. 
+</p>
+</li>
+
+                </ul>
+
+
+        <li>
+<p>
+ The <tt>using</tt> combinator allows one to iterate over slices, streams   and many other kinds of sequences. 
+</p>
+</li>
+        <li>
+<p>
+ <tt>when</tt> is the filtering combinator. The name <tt>when</tt> is   inspired by <a href="OCaml">OCaml</a>'s guard clauses. 
+</p>
+</li>
+        <li>
+<p>
+ <tt>by</tt> is the mapping combinator. 
+</p>
+</li>
+
+        </ul>
+
+
+<p>
+Here is a structure implementing the <tt>ITER</tt> signature: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Iter :&gt; ITER =
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a iter </FONT></B>=<FONT COLOR="#228B22"><B> ('a -&gt; unit) -&gt; unit
+
+    </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> to (a, b) f =
+        <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop a = <B><FONT COLOR="#A020F0">if</FONT></B> a &lt; b <B><FONT COLOR="#A020F0">then</FONT></B> (f a; loop (a+<B><FONT COLOR="#5F9EA0">1</FONT></B>)) <B><FONT COLOR="#A020F0">else</FONT></B> ()
+        <B><FONT COLOR="#A020F0">in</FONT></B> loop a <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> downto (a, b) f =
+        <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop a = <B><FONT COLOR="#A020F0">if</FONT></B> a &gt; b <B><FONT COLOR="#A020F0">then</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; (f a; loop a)) (a-<B><FONT COLOR="#5F9EA0">1</FONT></B>) <B><FONT COLOR="#A020F0">else</FONT></B> ()
+        <B><FONT COLOR="#A020F0">in</FONT></B> loop a <B><FONT COLOR="#A020F0">end</FONT></B>
+
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inList l f = List.app f l
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inVector v f = Vector.app f v
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inArray a f = Array.app f a
+
+    <B><FONT COLOR="#A020F0">fun</FONT></B> using get s f =
+        <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop s = <B><FONT COLOR="#A020F0">case</FONT></B> get s
+                          <B><FONT COLOR="#A020F0">of</FONT></B> SOME (x, s) =&gt; (f x; loop s)
+                           | NONE =&gt; ()
+        <B><FONT COLOR="#A020F0">in</FONT></B> loop s <B><FONT COLOR="#A020F0">end</FONT></B>
+
+    <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> when (a, p) f = a (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; <B><FONT COLOR="#A020F0">if</FONT></B> p a <B><FONT COLOR="#A020F0">then</FONT></B> f a <B><FONT COLOR="#A020F0">else</FONT></B> ())
+    <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> by (a, g) f = a (f o g)
+
+    <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> &amp;&amp; (a, b) f = a (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; b (<B><FONT COLOR="#A020F0">fn</FONT></B> b =&gt; f (<B><FONT COLOR="#A020F0">op</FONT></B>&amp; (a, b))))
+
+    <B><FONT COLOR="#A020F0">val</FONT></B> for = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+To use the above combinators the <tt>Iter</tt>-structure needs to be opened 
+<pre class=code>
+<B><FONT COLOR="#0000FF">open</FONT></B> Iter
+</PRE>
+ and one usually also wants to declare the infix status of the operators as shown earlier. 
+</p>
+<p>
+Here is an example that illustrates most of the features: 
+<pre class=code>
+for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to <B><FONT COLOR="#5F9EA0">10</FONT></B> when (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x mod <B><FONT COLOR="#5F9EA0">3</FONT></B> &lt;&gt; <B><FONT COLOR="#5F9EA0">0</FONT></B>) &amp;&amp; inList [<FONT COLOR="#BC8F8F"><B>&quot;a&quot;</FONT></B>, <FONT COLOR="#BC8F8F"><B>&quot;b&quot;</FONT></B>] &amp;&amp; <B><FONT COLOR="#5F9EA0">2</FONT></B> downto <B><FONT COLOR="#5F9EA0">1</FONT></B> by real)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> x &amp; y &amp; z =&gt;
+       print (<FONT COLOR="#BC8F8F"><B>&quot;(&quot;</FONT></B>^Int.toString x^<FONT COLOR="#BC8F8F"><B>&quot;, \&quot;&quot;</FONT></B>^y^<FONT COLOR="#BC8F8F"><B>&quot;\&quot;, &quot;</FONT></B>^Real.toString z^<FONT COLOR="#BC8F8F"><B>&quot;)\n&quot;</FONT></B>))
+</PRE>
+ 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-06-16 13:33:41 by <span title="cs78147115.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+</body></html>
