@@ -71,7 +71,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
          */
         if (stack->used <= stack->reserved / 4) {
           size_t new = 
-            alignStackReserved 
+            alignStackReserved
             (s, max (stack->reserved / 2, 
                      sizeofStackMinimumReserved (s, stack)));
           /* It's possible that new > stack->reserved if the stack
@@ -180,7 +180,7 @@ void forwardInterGenerationalObjptrs (GC_state s) {
   cardStart = oldGenStart;
 checkAll:
   assert (cardIndex <= maxCardIndex);
-  assert (isAlignedFrontier (s, objectStart));
+  assert (isFrontierAligned (s, objectStart));
   if (cardIndex == maxCardIndex)
     goto done;
 checkCard:
@@ -198,7 +198,7 @@ checkCard:
                cardIndex, (uintptr_t)objectStart);
     lastObject = objectStart;
 skipObjects:
-    assert (isAlignedFrontier (s, objectStart));
+    assert (isFrontierAligned (s, objectStart));
     size = sizeofObject (s, advanceToObjectData (s, objectStart));
     if (objectStart + size < cardStart) {
       objectStart += size;

@@ -6,13 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-bool isStackEmpty (GC_stack stack) {
-  return 0 == stack->used;
-}
-
 #if ASSERT
-bool isStackReservedAligned (GC_state s, size_t reserved) {
-  return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
+bool isFrontierAligned (GC_state s, pointer p) {
+  return isAligned ((size_t)p + GC_NORMAL_HEADER_SIZE, 
                     s->alignment);
 }
 #endif

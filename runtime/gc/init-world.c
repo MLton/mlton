@@ -49,7 +49,7 @@ void initIntInfs (GC_state s) {
   GC_intInf bp;
   unsigned char *cp;
 
-  assert (isAlignedFrontier (s, s->frontier));
+  assert (isFrontierAligned (s, s->frontier));
   frontier = s->frontier;
   for (i= 0; i < s->intInfInitsLength; i++) {
     inits = &s->intInfInits[i];
@@ -111,7 +111,7 @@ void initIntInfs (GC_state s) {
     bp->isneg = neg;
     frontier = alignFrontier (s, (pointer)&bp->limbs[alen]);
   }
-  assert (isAlignedFrontier (s, frontier));
+  assert (isFrontierAligned (s, frontier));
   GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
   s->frontier = frontier;
   s->cumulativeStatistics.bytesAllocated += frontier - s->frontier;
@@ -122,7 +122,7 @@ void initVectors (GC_state s) {
   pointer frontier;
   uint32_t i;
 
-  assert (isAlignedFrontier (s, s->frontier));
+  assert (isFrontierAligned (s, s->frontier));
   inits = s->vectorInits;
   frontier = s->frontier;
   for (i = 0; i < s->vectorInitsLength; i++) {
@@ -171,7 +171,7 @@ void initVectors (GC_state s) {
              (uintptr_t)frontier);
   GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
   s->cumulativeStatistics.bytesAllocated += (size_t)(frontier - s->frontier);
-  assert (isAlignedFrontier (s, frontier));
+  assert (isFrontierAligned (s, frontier));
   s->frontier = frontier;
 }
 

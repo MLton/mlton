@@ -13,24 +13,14 @@ typedef enum {
   PROFILE_TIME,
 } GC_profileKind;
 
-typedef struct GC_source {
-  uint32_t nameIndex;
-  uint32_t successorsIndex;
-} *GC_source;
-
-typedef struct GC_sourceLabel {
-  pointer label;
-  uint32_t sourceSeqsIndex;
-} *GC_sourceLabel;
-
 /* If profileStack, then there is one struct GC_profileStack for each
  * function.
  */
 typedef struct GC_profileStack {
   /* ticks counts ticks while the function was on the stack. */
   uintmax_t ticks;
-  /* ticksInGC counts ticks in GC while the function was on the stack. */
-  uintmax_t ticksInGC; 
+  /* ticksGC counts ticks in GC while the function was on the stack. */
+  uintmax_t ticksGC; 
   /* lastTotal is the value of total when the oldest occurrence of f
    * on the stack was pushed, i.e., the most recent time that
    * numTimesOnStack changed from 0 to 1.  lastTotal is used to
@@ -46,11 +36,13 @@ typedef struct GC_profileStack {
   uintmax_t numOccurrences;
 } *GC_profileStack;
 
+typedef uint32_t GC_profileMasterIndex;
+
 /* GC_profileData is used for both time and allocation profiling.
  * In the comments below, "ticks" mean clock ticks with time profiling and
  * bytes allocated with allocation profiling.
  *
- * All of the arrays in GC_profileData are of length sourcesSize + sourceNamesSize.
+ * All of the arrays in GC_profileData are of length sourcesLength + sourceNamesLength.
  * The first sourceLength entries are for handling the duplicate copies of 
  * functions, and the next sourceNamesLength entries are for the master versions.
  */
@@ -71,45 +63,29 @@ typedef struct GC_profileData {
 
 struct GC_profiling {
   GC_profileData data;
-  /* frameSources is an array of cardinality frameLayoutsLength that
-   * for each stack frame, gives an index into sourceSeqs of the
-   * sequence of source functions corresponding to the frame.
-   */
-  uint32_t *frameSources;
-  uint32_t frameSourcesLength;
   bool isOn;
   GC_profileKind kind;
-  struct GC_sourceLabel *sourceLabels;
-  uint32_t sourceLabelsLength;
-  char **sourceNames;
-  uint32_t sourceNamesLength;
-  /* Each entry in sourceSeqs is a vector, whose first element is a
-   * length, and subsequent elements index into sources.
-   */
-  uint32_t **sourceSeqs;
-  uint32_t sourceSeqsLength;
-  /* sources is an array of cardinality sourcesLength.  Each entry
-   * specifies an index into sourceNames and an index into sourceSeqs,
-   * giving the name of the function and the successors, respectively.
-   */
-  struct GC_source *sources;
-  uint32_t sourcesLength;
   bool stack;
-  pointer textEnd;
-  /* An array of indices, one entry for each address in the text
-   * segment, giving and index into sourceSeqs.
-   */
-  uint32_t *textSources;
-  pointer textStart;
 };
 
-static void showProf (GC_state s);
-void initProfiling (GC_state s);
-static void enterFrame (GC_state s, uint32_t i);
-
-
-void GC_profileAllocInc (GC_state s, size_t bytes);
-
+void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+void enterFrameForProfiling (GC_state s, GC_frameIndex i);
 void GC_profileEnter (GC_state s);
 
+void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
 void GC_profileLeave (GC_state s);
+
+void GC_profileInc (GC_state s, size_t amount);
+void GC_profileAllocInc (GC_state s, size_t amount);
+
+GC_profileData GC_profileNew (GC_state s);
+void GC_profileFree (GC_state s, GC_profileData p);
+void GC_profileWrite (GC_state s, GC_profileData p, int fd);
+
+void GC_handleSigProf (pointer pc);
+void initProfiling (GC_state s);
+void GC_profileDone (GC_state s);
+

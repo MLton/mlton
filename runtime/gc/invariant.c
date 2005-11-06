@@ -41,9 +41,9 @@ bool invariantForGC (GC_state s) {
   }
   assert (isAligned (s->heap.size, s->sysvals.pageSize));
   assert (isAligned ((size_t)s->heap.start, CARD_SIZE));
-  assert (isAlignedFrontier (s, s->heap.start + s->heap.oldGenSize));
-  assert (isAlignedFrontier (s, s->heap.nursery));
-  assert (isAlignedFrontier (s, s->frontier));
+  assert (isFrontierAligned (s, s->heap.start + s->heap.oldGenSize));
+  assert (isFrontierAligned (s, s->heap.nursery));
+  assert (isFrontierAligned (s, s->frontier));
   assert (s->heap.nursery <= s->frontier);
   unless (0 == s->heap.size) {
     assert (s->heap.nursery <= s->frontier);
@@ -66,7 +66,7 @@ bool invariantForGC (GC_state s) {
                         assertIsObjptrInFromSpace, FALSE);
   /* Current thread. */
   GC_stack stack = getStackCurrent(s);
-  assert (isAlignedStackReserved (s, stack->reserved));
+  assert (isStackReservedAligned (s, stack->reserved));
   assert (s->stackBottom == getStackBottom (s, stack));
   assert (s->stackTop == getStackTop (s, stack));
   assert (s->stackLimit == getStackLimit (s, stack));

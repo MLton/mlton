@@ -47,38 +47,3 @@ static inline uintmax_t alignMax (uintmax_t a, uintmax_t b) {
 static inline size_t pad (GC_state s, size_t bytes, size_t extra) {
   return align (bytes + extra, s->alignment) - extra;
 }
-
-#if ASSERT
-static inline bool isAlignedFrontier (GC_state s, pointer p) {
-  return isAligned ((size_t)p + GC_NORMAL_HEADER_SIZE, 
-                    s->alignment);
-}
-#endif
-
-static inline pointer alignFrontier (GC_state s, pointer p) {
-  size_t res;
-
-  res = pad (s, (size_t)p, GC_NORMAL_HEADER_SIZE);
-  if (DEBUG_STACKS)
-    fprintf (stderr, FMTPTR" = stackReserved ("FMTPTR")\n", 
-             (uintptr_t)p, (uintptr_t)res);
-  assert (isAlignedFrontier (s, (pointer)res));
-  return (pointer)res;
-}
-
-#if ASSERT
-static inline bool isAlignedStackReserved (GC_state s, size_t reserved) {
-  return isAligned (GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved, 
-                    s->alignment);
-}
-#endif
-
-static inline size_t alignStackReserved (GC_state s, size_t reserved) {
-  size_t res;
-  
-  res = pad (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
-  if (DEBUG_STACKS)
-    fprintf (stderr, "%zu = alignStackReserved (%zu)\n", res, reserved);
-  assert (isAlignedStackReserved (s, res));
-  return res;
-}

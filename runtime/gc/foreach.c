@@ -178,7 +178,7 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
                               GC_foreachObjptrFun f, bool skipWeaks) {
   pointer b;
 
-  assert (isAlignedFrontier (s, front));
+  assert (isFrontierAligned (s, front));
   if (DEBUG_DETAILED)
     fprintf (stderr, 
              "foreachObjptrInRange  front = "FMTPTR"  *back = "FMTPTR"\n",

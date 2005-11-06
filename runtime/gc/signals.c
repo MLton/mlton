@@ -6,12 +6,14 @@
  * See the file MLton-LICENSE for details.
  */
 
-/* ---------------------------------------------------------------- */
-/*                          Initialization                          */
-/* ---------------------------------------------------------------- */
+#if not HAS_SIGALTSTACK
+
+void initSignalStack (__attribute__ ((unused)) GC_state s) {
+}
+
+#else
 
 void initSignalStack (GC_state s) {
-#if HAS_SIGALTSTACK
   static stack_t altstack;
   size_t ss_size = align (SIGSTKSZ, s->sysvals.pageSize);
   size_t psize = s->sysvals.pageSize;
@@ -20,5 +22,6 @@ void initSignalStack (GC_state s) {
   altstack.ss_size = ss_size;
   altstack.ss_flags = 0;
   sigaltstack (&altstack, NULL);
-#endif
 }
+
+#endif

@@ -62,7 +62,7 @@ pointer GC_arrayAllocate (GC_state s,
     }
     frontier = s->frontier;
     last = frontier + arraySize;
-    assert (isAlignedFrontier (s, last));
+    assert (isFrontierAligned (s, last));
     s->frontier = last;
   }
   *((GC_arrayCounter*)(frontier)) = 0;

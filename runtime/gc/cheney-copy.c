@@ -120,7 +120,7 @@ void minorCheneyCopyGC (GC_state s) {
     s->forwardState.toStart = s->heap.start + s->heap.oldGenSize;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "toStart = "FMTPTR"\n", (uintptr_t)s->forwardState.toStart);
-    assert (isAlignedFrontier (s, s->forwardState.toStart));
+    assert (isFrontierAligned (s, s->forwardState.toStart));
     s->forwardState.toLimit = s->forwardState.toStart + bytesAllocated;
     assert (invariantForGC (s));
     s->cumulativeStatistics.numMinorGCs++;

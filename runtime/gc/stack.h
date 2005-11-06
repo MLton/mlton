@@ -50,6 +50,7 @@ typedef struct GC_stack {
 #define GC_STACK_HEADER_SIZE GC_HEADER_SIZE
 
 bool isStackEmpty (GC_stack stack);
+bool isStackReservedAligned (GC_state s, size_t reserved);
 void displayStack (GC_state s, GC_stack stack, FILE *stream);
 
 size_t sizeofStackSlop (GC_state s);
@@ -64,6 +65,7 @@ GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
 uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
 
 size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
+size_t alignStackReserved (GC_state s, size_t reserved);
 size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
 size_t sizeofStackGrow (GC_state s, GC_stack stack);
 

@@ -83,6 +83,7 @@ CFILES = 								\
 	array-allocate.c						\
 	array.c								\
 	atomic.c							\
+	call-stack.c							\
 	cheney-copy.c							\
 	controls.c							\
 	copy-thread.c							\
@@ -109,6 +110,7 @@ CFILES = 								\
 	new-object.c   							\
 	object-size.c							\
 	object.c							\
+	object_predicates.c						\
 	pack.c								\
 	pointer.c							\
 	pointer_predicates.c						\
@@ -116,6 +118,7 @@ CFILES = 								\
 	share.c								\
 	signals.c							\
 	size.c								\
+	sources.c							\
 	stack.c								\
 	stack_predicates.c						\
 	switch-thread.c							\
@@ -167,6 +170,8 @@ HFILES = 								\
 	garbage-collection.h						\
 	new-object.h							\
 	array-allocate.h						\
+	sources.h							\
+	call-stack.h							\
 	profiling.h							\
 	init-world.h							\
 	world.h								\

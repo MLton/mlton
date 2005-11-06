@@ -11,9 +11,10 @@ struct GC_state {
   bool amInGC;
   bool amOriginal;
   char **atMLtons; /* Initial @MLton args, processed before command line. */
-  int32_t atMLtonsLength;
+  uint32_t atMLtonsLength;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
+  struct GC_callStackState callStackState;
   bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_controls controls;
   struct GC_cumulativeStatistics cumulativeStatistics;
@@ -49,6 +50,7 @@ struct GC_state {
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;
+  struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   pointer stackTop; /* Top of stack in current thread. */

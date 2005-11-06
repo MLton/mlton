@@ -184,8 +184,8 @@ int processAtMLton (GC_state s, int argc, char **argv,
           if (i == argc)
             die ("@MLton ram-slop missing argument.");
           s->controls.ratios.ramSlop = stringToFloat (argv[i++]);
-        } else if (0 == strcmp (arg, "show-prof")) {
-          showProf (s);
+        } else if (0 == strcmp (arg, "show-sources")) {
+          showSources (s);
           exit (0);
         } else if (0 == strcmp (arg, "stop")) {
           i++;
@@ -308,21 +308,24 @@ int GC_init (GC_state s, int argc, char **argv) {
     fprintf (stderr, "total RAM = %zu  RAM = %zu\n",
              /*uintToCommaString*/(s->sysvals.totalRam),
              /*uintToCommaString*/(s->sysvals.ram));
-  if (DEBUG_PROFILE) {
+  if (DEBUG_SOURCES or DEBUG_PROFILE) {
     uint32_t i;
-    for (i = 0; i < s->profiling.frameSourcesLength; i++) {
+    for (i = 0; i < s->sourceMaps.frameSourcesLength; i++) {
       uint32_t j;
       uint32_t *sourceSeq;
       fprintf (stderr, "%"PRIu32"\n", i);
-      sourceSeq = s->profiling.sourceSeqs[s->profiling.frameSources[i]];
+      sourceSeq = s->sourceMaps.sourceSeqs[s->sourceMaps.frameSources[i]];
       for (j = 1; j <= sourceSeq[0]; j++)
         fprintf (stderr, "\t%s\n",
-                 s->profiling.sourceNames[s->profiling.sources[sourceSeq[j]].nameIndex]);
+                 s->sourceMaps.sourceNames[
+                 s->sourceMaps.sources[sourceSeq[j]].sourceNameIndex
+                 ]);
     }
   }
   /* Initialize profiling.  This must occur after processing
-   * command-line arguments, because those may just be doing a show
-   * prof, in which case we don't want to initialize the atExit.
+   * command-line arguments, because those may just be doing a
+   * show-sources, in which case we don't want to initialize the
+   * atExit.
    */
   initProfiling (s);
   if (s->amOriginal) {
@@ -334,7 +337,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   } else {
     loadWorldFromFileName (s, worldFile);
     if (s->profiling.isOn and s->profiling.stack)
-      foreachStackFrame (s, enterFrame);
+      foreachStackFrame (s, enterFrameForProfiling);
     assert (invariantForMutator (s, TRUE, TRUE));
   }
   s->amInGC = FALSE;

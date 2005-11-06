@@ -55,7 +55,7 @@ void setGCStateCurrentHeap (GC_state s,
              /*uintToCommaString*/(oldGenBytesRequested),
              /*uintToCommaString*/(nurseryBytesRequested));
   h = &s->heap;
-  assert (isAlignedFrontier (s, h->start + h->oldGenSize + oldGenBytesRequested));
+  assert (isFrontierAligned (s, h->start + h->oldGenSize + oldGenBytesRequested));
   nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
@@ -106,6 +106,6 @@ void setGCStateCurrentHeap (GC_state s,
   s->heap.nursery = alignFrontier (s, s->limitPlusSlop - nurserySize);
   s->frontier = s->heap.nursery;
   assert (nurseryBytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
-  assert (isAlignedFrontier (s, s->heap.nursery));
+  assert (isFrontierAligned (s, s->heap.nursery));
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
