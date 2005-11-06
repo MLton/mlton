@@ -90,6 +90,17 @@ val targetMap: unit -> {arch: MLton.Platform.Arch.t,
            end
       | _ => Error.bug (concat ["strange target mapping: ", line])))
 
+fun setTargetType (target: string, usage): unit =
+   case List.peek (targetMap (), fn {target = t, ...} => target = t) of
+      NONE => usage (concat ["invalid target: ", target])
+    | SOME {arch, os, ...} =>
+         let 
+            open Control
+         in
+            targetArch := arch
+            ; targetOS := os
+         end
+
 fun hasNative () =
    let
       datatype z = datatype Control.arch
@@ -439,9 +450,7 @@ fun makeOptions {usage} =
         SpaceString
         (fn t =>
          (target := (if t = "self" then Self else Cross t);
-          case List.peek (targetMap (), fn {target = t', ...} => t = t') of
-             NONE => usage (concat ["invalid target: ", t])
-           | SOME {arch, os, ...} => (targetArch := arch; targetOS := os)))),
+          setTargetType (t, usage)))),
        (Normal, "target-as-opt", " <target> <opt>", "target-dependent assembler option",
         (SpaceString2
          (fn (target, opt) =>
@@ -501,6 +510,7 @@ fun commandLine (args: string list): unit =
                (libDir := OS.Path.mkCanonical lib
                 ; args)
           | _ => Error.bug "incorrect args from shell script"
+      val () = setTargetType ("self", usage)
       val result = parse args
       val targetArch = !targetArch
       val () =
