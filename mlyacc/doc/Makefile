@@ -26,4 +26,4 @@ mlyacc.ps: mlyacc.dvi
 
 .PHONY: clean
 clean:
-	../bin/clean
+	../../bin/clean
