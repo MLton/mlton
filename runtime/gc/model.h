@@ -135,7 +135,9 @@ After some experiments on those, we might be able to find a more
 manageable set for users.
 */
 
-#if (defined (GC_MODEL_A))
+#if (defined (MLTON_GC_INTERNAL))
+
+#if (defined (GC_MODEL_A) || defined (GC_MODEL_NATIVE32))
 #define GC_MODEL_BITSIZE  32
 #define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  FALSE
@@ -195,7 +197,7 @@ manageable set for users.
 #define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  TRUE
 #define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_G))
+#elif (defined (GC_MODEL_G) || defined (GC_MODEL_NATIVE64))
 #define GC_MODEL_BITSIZE  64
 #define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  FALSE
@@ -205,3 +207,5 @@ manageable set for users.
 #endif
 #define GC_MODEL_NONOBJPTR ((GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT) > 0)
 #define GC_MODEL_MINALIGN TWOPOWER(GC_MODEL_MINALIGN_SHIFT)
+
+#endif /* (defined (MLTON_GC_INTERNAL)) */

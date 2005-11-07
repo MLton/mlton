@@ -10,4 +10,3 @@ void loadWorldFromFD (GC_state s, int fd);
 void loadWorldFromFileName (GC_state s, char *fileName);
 void saveWorldToFD (GC_state s, int fd);
 void GC_saveWorldToFD (GC_state s, int fd);
-

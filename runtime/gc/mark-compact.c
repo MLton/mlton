@@ -10,19 +10,35 @@
 /*                 Jonkers Mark-compact Collection                  */
 /* ---------------------------------------------------------------- */
 
-/* An object pointer might be larger than a header.
- */ 
 void copyForThreadInternal (pointer dst, pointer src) {
-  size_t count;
 
-  assert (0 == (OBJPTR_SIZE % GC_HEADER_SIZE));
-  count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
-  src = src + GC_HEADER_SIZE * count;
+  if (OBJPTR_SIZE > GC_HEADER_SIZE) {
+    size_t count;
 
-  for (size_t i = 0; i <= count; i++) {
+    assert (0 == (OBJPTR_SIZE % GC_HEADER_SIZE));
+    count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
+    src = src + GC_HEADER_SIZE * count;
+    
+    for (size_t i = 0; i <= count; i++) {
+      *((GC_header*)dst) = *((GC_header*)src);
+      dst += GC_HEADER_SIZE;
+      src -= GC_HEADER_SIZE;
+    }
+  } else if (GC_HEADER_SIZE > OBJPTR_SIZE) {
+    size_t count;
+
+    assert (0 == (GC_HEADER_SIZE % OBJPTR_SIZE));
+    count = (GC_HEADER_SIZE - OBJPTR_SIZE) / OBJPTR_SIZE;
+    dst = dst + OBJPTR_SIZE * count;
+    
+    for (size_t i = 0; i <= count; i++) {
+      *((objptr*)dst) = *((objptr*)src);
+      dst -= OBJPTR_SIZE;
+      src += OBJPTR_SIZE;
+    }
+
+  } else /* (GC_HEADER_SIZE == OBJPTR_SIZE) */ {
     *((GC_header*)dst) = *((GC_header*)src);
-    dst += GC_HEADER_SIZE;
-    src -= GC_HEADER_SIZE;
   }
 }
 

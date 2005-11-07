@@ -86,17 +86,6 @@ void splitHeader(GC_state s, GC_header header,
     *numObjptrsRet = numObjptrs;
 }
 
-pointer alignFrontier (GC_state s, pointer p) {
-  size_t res;
-
-  res = pad (s, (size_t)p, GC_NORMAL_HEADER_SIZE);
-  if (DEBUG_STACKS)
-    fprintf (stderr, FMTPTR" = alignFrontier ("FMTPTR")\n", 
-             (uintptr_t)p, (uintptr_t)res);
-  assert (isFrontierAligned (s, (pointer)res));
-  return (pointer)res;
-}
-
 /* advanceToObjectData (s, p)
  *
  * If p points at the beginning of an object, then advanceToObjectData

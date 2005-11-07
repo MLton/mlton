@@ -11,7 +11,8 @@ PATH = ../bin:$(shell echo $$PATH)
 TARGET = self
 TARGET_ARCH = $(shell ../bin/host-arch)
 TARGET_OS = $(shell ../bin/host-os)
-GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
+GCC_VERSION = 							\
+	$(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
 FLAGS = -fomit-frame-pointer
 
@@ -47,17 +48,40 @@ endif
 CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
+WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
+	-Wformat-nonliteral \
+	-Wuninitialized -Winit-self \
+	-Wstrict-aliasing=2 \
+	-Wfloat-equal \
+	-Wpointer-arith \
+	-Wbad-function-cast -Wcast-qual -Wcast-align \
+	-Waggregate-return \
+	-Wstrict-prototypes \
+	-Wmissing-noreturn -Wmissing-format-attribute \
+	-Wpacked \
+	-Wredundant-decls \
+	-Wnested-externs 
+#	-Wshadow \
+#	-Wconversion \
+#	-Wmissing-prototypes \
+#	-Wmissing-declarations \
+#	-Winline -Wdisabled-optimization
+DEBUGWARNFLAGS = $(DEBUGFLAGS) $(WARNFLAGS) -Wunused
 
 CFILES = 							\
+	$(shell find util -type f | grep '\.c$$')		\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	$(shell find Posix -type f | grep '\.c$$')		\
 	gc.c							\
 	platform.c
 
-HFILES = 				\
-	gc.h				\
-	types.h				\
-	platform.h			\
+HFILES = 							\
+	util.h							\
+	$(shell find util -type f | grep '\.h$$')		\
+	gc.h							\
+	$(shell find gc -type f | grep '\.h$$')			\
+	types.h							\
+	platform.h						\
 	platform/$(TARGET_OS).h
 
 FILES = $(basename $(CFILES))
@@ -118,6 +142,18 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 
 runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c
+
+gc.o: gc.c $(shell find gc -type f | grep '\.c$$') $(HFILES) 
+	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
+
+gc-gdb.o: gc.c $(shell find gc -type f | grep '\.c$$') $(HFILES) 
+	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+
+util/%.o: util/%.c $(HFILES)
+	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
+
+util/%-gdb.o: util/%.c $(HFILES)
+	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a

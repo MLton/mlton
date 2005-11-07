@@ -6,9 +6,9 @@ Int Posix_ProcEnv_setgroups (Pointer groups) {
         int res;
         int size;
 
-        size = GC_arrayNumElements (groups);
-        ARRAY (gid_t*, list, size);
-        assert (size <= cardof (list));
+        size = GC_getArrayLength (groups);
+        list = (gid_t*)(calloc_safe (size, sizeof(*list)));
+        assert (size <= (sizeof(list) / sizeof(*list)));
         for (i = 0; i < size; ++i)
                 list[i] = ((Word*)groups)[i];
         res = setgroups (size, list);

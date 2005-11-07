@@ -9,7 +9,7 @@ Int Posix_Process_execp (NullString f, Pointer a) {
 
         file = (char *) f;
         args = (char **) a;
-        n = GC_arrayNumElements (a) - 1;
+        n = GC_getArrayLength (a) - 1;
         saved = args[n];
         args[n] = (char *) NULL;
         result = EXECVP (file, args);

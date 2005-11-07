@@ -26,3 +26,4 @@ typedef struct GC_thread {
 
 void displayThread (GC_state s, GC_thread thread, FILE *stream);
 size_t sizeofThread (GC_state s);
+

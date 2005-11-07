@@ -6,15 +6,14 @@
  * See the file MLton-LICENSE for details.
  */
 
-/* Layout of intInfs.  
- * Note, the value passed around is a pointer to the isneg member.
+/* Layout of strings.  
+ * Note, the value passed around is a pointer to the chars member.
  */
-typedef struct GC_intInf {
+typedef struct GC_string {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
-  uint32_t isneg;
-  uint32_t *limbs;
-} *GC_intInf;
+  char chars[0];
+} *GC_string;
 
-#define GC_INTINF_HEADER GC_WORD32_VECTOR_HEADER
+#define GC_STRING_HEADER GC_WORD8_VECTOR_HEADER

@@ -441,3 +441,12 @@ void GC_profileDone (GC_state s) {
     }
   }
 }
+
+
+GC_profileData GC_getProfileCurrent (GC_state s) {
+  return s->profiling.data;
+}
+void GC_setProfileCurrent (GC_state s, GC_profileData p) {
+  s->profiling.data = p;
+}
+

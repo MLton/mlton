@@ -5,5 +5,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-#include "platform.h"
-
+const char* boolToString (bool b);
+char* intmaxToCommaString (intmax_t n);
+char* uintmaxToCommaString (uintmax_t n);
+char* sizeToBytesApproxString (size_t z);

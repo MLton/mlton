@@ -5,6 +5,17 @@
  * See the file MLton-LICENSE for details.
  */
 
+/* isObjptr returns true if p looks like an object pointer. */
+bool isObjptr (objptr p) {
+  if GC_MODEL_NONOBJPTR {
+    unsigned int shift = GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT;
+    objptr mask = ~((~((objptr)0)) << shift);
+    return (0 == (p & mask));
+  } else {
+    return TRUE;
+  }
+}
+
 pointer objptrToPointer (objptr O, pointer B) {
   uintptr_t O_ = (uintptr_t)O;
   uintptr_t B_;

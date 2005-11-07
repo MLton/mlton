@@ -6,44 +6,22 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline bool isAligned (size_t a, size_t b) {
-  return 0 == a % b;
-}
-
-static inline bool isAlignedMax (uintmax_t a, uintmax_t b) {
-  return 0 == a % b;
-}
-
-static inline size_t alignDown (size_t a, size_t b) {
-  assert (b >= 1);
-  a -= a % b;
-  assert (isAligned (a, b));
-  return a;
-}
-
-static inline uintmax_t alignMaxDown (uintmax_t a, uintmax_t b) {
-  assert (b >= 1);
-  a -= a % b;
-  assert (isAlignedMax (a, b));
-  return a;
-}
-
-static inline size_t align (size_t a, size_t b) {
-  assert (b >= 1);
-  a += b - 1;
-  a -= a % b;
-  assert (isAligned (a, b));
-  return a;       
-}
-
-static inline uintmax_t alignMax (uintmax_t a, uintmax_t b) {
-  assert (b >= 1);
-  a += b - 1;
-  a -= a % b;
-  assert (isAligned (a, b));
-  return a;       
-}
-
 static inline size_t pad (GC_state s, size_t bytes, size_t extra) {
   return align (bytes + extra, s->alignment) - extra;
+}
+
+
+#if ASSERT
+bool isFrontierAligned (GC_state s, pointer p) {
+  return isAligned ((size_t)p + GC_NORMAL_HEADER_SIZE, 
+                    s->alignment);
+}
+#endif
+
+pointer alignFrontier (GC_state s, pointer p) {
+  size_t res;
+
+  res = pad (s, (size_t)p, GC_NORMAL_HEADER_SIZE);
+  assert (isFrontierAligned (s, (pointer)res));
+  return (pointer)res;
 }

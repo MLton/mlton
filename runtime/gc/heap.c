@@ -198,9 +198,11 @@ bool createHeap (GC_state s, GC_heap h,
     }
     if (s->controls.messages)
       fprintf(stderr, 
-              "[Requested %zuM cannot be satisfied, "
-              "backing off by %zuM (min size = %zuM).\n",
-              meg (h->size), meg (backoff), meg (minSize));
+              "[Requested %s cannot be satisfied, "
+              "backing off by %s (min size = %s).\n",
+              sizeToBytesApproxString (h->size),
+              sizeToBytesApproxString (backoff), 
+              sizeToBytesApproxString (minSize));
   }
   h->size = 0;
   return FALSE;

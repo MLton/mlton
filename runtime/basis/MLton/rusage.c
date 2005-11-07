@@ -55,7 +55,7 @@ Int MLton_Rusage_gc_stime_usec () {
 }
 
 void MLton_Rusage_ru () {
-        gc = gcState.ru_gc;
-        fixedGetrusage (RUSAGE_SELF, &self);
-        fixedGetrusage (RUSAGE_CHILDREN, &children);
+        gc = *(GC_getRusageGCAddr (&gcState));
+        getrusage (RUSAGE_SELF, &self);
+        getrusage (RUSAGE_CHILDREN, &children);
 }

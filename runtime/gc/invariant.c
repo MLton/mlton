@@ -65,7 +65,7 @@ bool invariantForGC (GC_state s) {
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
                         assertIsObjptrInFromSpace, FALSE);
   /* Current thread. */
-  GC_stack stack = getStackCurrent(s);
+  __attribute__ ((unused)) GC_stack stack = getStackCurrent(s);
   assert (isStackReservedAligned (s, stack->reserved));
   assert (s->stackBottom == getStackBottom (s, stack));
   assert (s->stackTop == getStackTop (s, stack));

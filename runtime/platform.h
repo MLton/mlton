@@ -6,53 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-#ifndef _PLATFORM_H_
-#define _PLATFORM_H_
+#ifndef _MLTON_PLATFORM_H_
+#define _MLTON_PLATFORM_H_
 
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-
-/* Only enable _POSIX_C_SOURCE on platforms that don't have broken system
- * headers.
- */
-#if (defined (__linux__))
-#define _POSIX_C_SOURCE 200112L
-#endif
-
-#include <sys/types.h> // lots of includes depend on this
-#include <dirent.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <math.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
-#include <utime.h>
-
-/* C99-specific headers */
-#include <inttypes.h>
-
-/* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 
- * but that is version 2.  We want gmp version 4, which is installed in 
- * /usr/local/include, and is ensured to exist because it is required by the
- * MLton package.
- * On NetBSD, we want gmp to be installed into the pkg tree (which represents
- * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
- * case, but we note that this should be changed so the makefile provides the
- * correct -I flags to the compiler.
- * On MacOS X, many users will use fink to install gmp, in which case gmp.h
- * will be installed in /sw/include.
- */
-#include "gmp.h"
-
-#include "assert.h"
+#include "cenv.h"
+#include "util.h"
+#include "gc.h"
 
 #if (defined (__APPLE_CC__))
 #define __Darwin__
@@ -76,50 +35,6 @@
 #include "platform/solaris.h"
 #else
 #error unknown platform
-#endif
-
-#ifndef bool
-#define bool    int                     /* boolean type */
-#endif
-#define uint    unsigned int            /* short names for unsigned types */
-#define ulong   unsigned long
-#define ullong  unsigned long long      /* GCC extension */
-#define llong   long long               /* GCC extension */
-#define uchar   unsigned char
-#define ushort  unsigned short int
-#define not     !                       /* logical negation operator */
-#define and     &&                      /* logical conjunction */
-#define or      ||                      /* logical disjunction */
-#ifndef TRUE
-#define TRUE    (0 == 0)
-#endif
-#ifndef FALSE
-#define FALSE   (not TRUE)
-#endif
-#define loop    while (TRUE)            /* loop until break */
-#define EOS     '\0'                    /* end-of-string char */
-#ifndef NULL
-#define NULL    0                       /* invalid pointer */
-#endif
-
-#define NEW(t, x)               x = (t)(smalloc (sizeof(*x)))
-#define ARRAY(t, a, s)  a = (t)(scalloc (s, sizeof(*a)))
-#define ARRAY_UNSAFE(t, a, s)   a = (t)(calloc (s, sizeof(*a)))
-
-#define string char*
-
-#define unless(p)       if (not (p))
-#define until(p)        while (not (p))
-#define cardof(a)       (sizeof(a) / sizeof(*(a)))
-#define endof(a)        ((a) + cardof(a))
-#define bitsof(a)       (sizeof(a) * 8)
-
-#ifndef max
-#define max(a, b) ((a)>(b)?(a):(b))
-#endif
-
-#ifndef min
-#define min(a, b) ((a)<(b)?(a):(b))
 #endif
 
 #ifndef MLton_Platform_OS_host
@@ -207,91 +122,12 @@ void *getTextEnd ();
 #define SPAWN_MODE 0
 #endif
 
-#ifndef INT_MIN
-#define INT_MIN ((int)0x80000000)
-#endif
-#ifndef INT_MAX
-#define INT_MAX ((int)0x7FFFFFFF)
-#endif
-
 enum {
-        DEBUG_MEM = FALSE,
-        DEBUG_SIGNALS = FALSE,
+  DEBUG_MEM = FALSE,
+  DEBUG_SIGNALS = FALSE,
 };
 
 #include "types.h"
-#include "gc.h"
-
-/* ---------------------------------------------------------------- */
-/*                        Utility libraries                         */
-/* ---------------------------------------------------------------- */
-
-string boolToString (bool b);
-void decommit (void *base, size_t length);
-/* issue error message and exit */
-extern void die (char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
-/* issue error message and exit.  Also print strerror(errno). */
-extern void diee (char *fmt, ...)
-                        __attribute__ ((format(printf, 1, 2)))
-                        __attribute__ ((noreturn));
-/*
- * fixedGetrusage() works just like getrusage().  We have a wrapper because on 
- * some platforms (e.g. Linux) we need to work around kernel bugs in getrusage.
- */
-int fixedGetrusage (int who, struct rusage *rup);
-bool heapRemap (GC_state s, GC_heap h, W32 desired, W32 minSize);
-string intToCommaString (int n);
-int mkdir2 (const char *pathname, mode_t mode);
-void *mmapAnon (void *start, size_t length);
-void release (void *base, size_t length);
-void *remap (void *old,  size_t oldSize, size_t newSize);
-void *scalloc (size_t nmemb, size_t size);
-void sclose (int fd);
-void setSigProfHandler (struct sigaction *sa);
-void sfclose (FILE *file);
-FILE *sfopen (char *fileName, char *mode);
-void sfread (void *ptr, size_t size, size_t nmemb, FILE *file);
-uint sfreadUint (FILE *file);
-void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file);
-/* showMem displays the virtual memory mapping to stdout.  
- * It is used to diagnose memory problems. 
- */
-void showMem ();
-void *smalloc (size_t length);
-int smkstemp (char *template);
-void *smmap (size_t length);
-/* A super-safe mmap.
- *  Allocates a region of memory with dead zones at the high and low ends.
- *  Any attempt to touch the dead zone (read or write) will cause a
- *   segmentation fault.
- */
-void *ssmmap (size_t length, size_t dead_low, size_t dead_high);
-void swrite (int fd, const void *buf, size_t count);
-void swriteUint (int fd, uint n);
-/*
- * totalRam returns the amount of physical memory on the machine.
- */
-Word32 totalRam (GC_state s);
-string uintToCommaString (uint n);
-string ullongToCommaString (ullong n);
-
-static inline bool isBigEndian(void) {
-        union {
-                Word16 x;
-                Word8 y;
-        } z;
-        
-        /* gcc optimizes the following code to just return the result. */
-        z.x = 0xABCDU;
-        if (z.y == 0xAB) return TRUE; /* big endian */
-        if (z.y == 0xCD) return FALSE; /* little endian */
-        die ("Could not detect endian --- neither big nor little!\n");
-        return 0;
-}
-
-#define MLton_Platform_Arch_bigendian isBigEndian()
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
@@ -354,8 +190,10 @@ void Debug_leave (Pointer name);
 /*                        GC                         */
 /* ------------------------------------------------- */
 
-void GC_setMessages (Int b);
-void GC_setSummary (Int b);
+void MLton_GC_setHashConsDuringGC (Int b);
+void MLton_GC_setMessages (Int b);
+void MLton_GC_setSummary (Int b);
+void MLton_GC_setRusageMeasureGC (Int b);
 
 /* ------------------------------------------------- */
 /*                     IEEEReal                      */
@@ -376,24 +214,6 @@ Int IEEEReal_getRoundingMode ();
 /* ------------------------------------------------- */
 /*                      IntInf                       */
 /* ------------------------------------------------- */
-
-/*
- * Third header word for bignums and strings.
- */
-#define BIGMAGIC        GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
-#define STRMAGIC        GC_objectHeader (STRING_TYPE_INDEX)
-
-/*
- * Layout of bignums.  Note, the value passed around is a pointer to
- * the isneg member.
- */
-typedef struct  bignum {
-        uint    counter,        /* used by GC. */
-                card,           /* one more than the number of limbs */
-                magic,          /* BIGMAGIC */
-                isneg;          /* iff bignum is negative */
-        ulong   limbs[0];       /* big digits, least significant first */
-}       bignum;
 
 /* All of these routines modify the frontier in gcState.  They assume that 
  * there are bytes bytes free, and allocate an array to store the result
@@ -449,6 +269,8 @@ Word MLton_size (Pointer p);
 /* ---------------------------------- */
 /*           MLton.Platform           */
 /* ---------------------------------- */
+
+#define MLton_Platform_Arch_bigendian isBigEndian()
 
 #if (defined (__alpha__))
 #define MLton_Platform_Arch_host "alpha"
@@ -839,7 +661,7 @@ extern CstringArray Posix_ProcEnv_environ;
 #define Posix_ProcEnv_VERSION _SC_VERSION
 
 enum {
-        Posix_ProcEnv_numgroups = 100,
+  Posix_ProcEnv_numgroups = 100,
 };
 
 Pid Posix_ProcEnv_getpid ();
@@ -1168,4 +990,4 @@ Char Word8_arshiftAsm (Char w, Word s);
 
 Word Word32_arshiftAsm (Word w, Word s);
 
-#endif /* _PLATFORM_H_ */
+#endif /* _MLTON_PLATFORM_H_ */

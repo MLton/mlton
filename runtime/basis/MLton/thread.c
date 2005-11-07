@@ -9,7 +9,7 @@ enum {
 Thread Thread_current () {
         Thread t;
 
-        t = (Thread)gcState.currentThread;
+        t = (Thread)(GC_getCurrentThread (&gcState));
         if (DEBUG_THREAD)
                 fprintf (stderr, "0x%08x = Thread_current ()\n", (uint)t);
         return t;
@@ -22,25 +22,24 @@ void Thread_finishHandler () {
 Thread Thread_saved () {
         Thread t;
 
-        t = (Thread)gcState.savedThread;
-        gcState.savedThread = (GC_thread)0x1;
+        t = (Thread)(GC_getSavedThread (&gcState));
         if (DEBUG_THREAD)
                 fprintf (stderr, "0x%08x = Thread_saved ()\n", (uint)t);
         return t;
 }
 
 void Thread_setCallFromCHandler (Thread t) {
-        gcState.callFromCHandler = (GC_thread)t;
+        GC_setCallFromCHandlerThread (&gcState, (GC_thread)t);
 }
 
 void Thread_setSaved (Thread t) {
         if (DEBUG_THREAD)
                 fprintf (stderr, "Thread_setSaved (0x%08x)\n", (uint)t);
-        gcState.savedThread = (GC_thread)t;
+        GC_setSavedThread (&gcState, (GC_thread)t);
 }
 
-void Thread_setHandler (Thread t) {
-        gcState.signalHandler = (GC_thread)t;
+void Thread_setSignalHandler (Thread t) {
+        GC_setSignalHandlerThread (&gcState, (GC_thread)t);
 }
 
 void Thread_startHandler () {

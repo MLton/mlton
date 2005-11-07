@@ -49,5 +49,5 @@ Bool NetHostDB_getByName(Cstring name) {
 }
 
 Int NetHostDB_getHostName(Pointer buf, Int len) {
-        return (gethostname (buf, len));
+        return (gethostname ((char*) buf, len));
 }

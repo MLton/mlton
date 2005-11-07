@@ -2,11 +2,11 @@
 
 Word32 Word8Vector_subWord32Rev (Pointer v, Int offset) {
         Word32 w;
-        char *p;
-        char *s;
+        pointer p;
+        pointer s;
         int i;
 
-        p = (char*)&w;
+        p = (pointer)&w;
         s = v + (offset * 4);
         for (i = 0; i < 4; ++i)
                 p[i] = s[3 - i];

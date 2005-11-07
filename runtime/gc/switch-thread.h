@@ -7,4 +7,3 @@
  */
 
 void switchToThread (GC_state s, objptr op);
-void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree);

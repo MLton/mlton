@@ -2,8 +2,8 @@
 
 Real32 PackReal32_subVec (Pointer v, Int offset) {
         Real32 r;
-        char *p = (char*)&r;
-        char *s = v + offset;
+        pointer p = (pointer)&r;
+        pointer s = v + offset;
         int i;
 
         for (i = 0; i < 4; ++i)
@@ -13,8 +13,8 @@ Real32 PackReal32_subVec (Pointer v, Int offset) {
 
 Real32 PackReal32_subVecRev (Pointer v, Int offset) {
         Real32 r;
-        char *p = (char*)&r;
-        char *s = v + offset;
+        pointer p = (pointer)&r;
+        pointer s = v + offset;
         int i;
 
         for (i = 0; i < 4; ++i)
@@ -24,8 +24,8 @@ Real32 PackReal32_subVecRev (Pointer v, Int offset) {
 
 Real64 PackReal64_subVec (Pointer v, Int offset) {
         Real64 r;
-        char *p = (char*)&r;
-        char *s = v + offset;
+        pointer p = (pointer)&r;
+        pointer s = v + offset;
         int i;
 
         for (i = 0; i < 8; ++i)
@@ -35,8 +35,8 @@ Real64 PackReal64_subVec (Pointer v, Int offset) {
 
 Real64 PackReal64_subVecRev (Pointer v, Int offset) {
         Real64 r;
-        char *p = (char*)&r;
-        char *s = v + offset;
+        pointer p = (pointer)&r;
+        pointer s = v + offset;
         int i;
 
         for (i = 0; i < 8; ++i)
@@ -45,8 +45,8 @@ Real64 PackReal64_subVecRev (Pointer v, Int offset) {
 }
 
 void PackReal32_update (Pointer a, Int offset, Real32 r) {
-        char *p = (char*)&r;
-        char *s = a + offset;
+        pointer p = (pointer)&r;
+        pointer s = a + offset;
         int i;
 
         for (i = 0; i < 4; ++i) {
@@ -55,8 +55,8 @@ void PackReal32_update (Pointer a, Int offset, Real32 r) {
 }
 
 void PackReal32_updateRev (Pointer a, Int offset, Real32 r) {
-        char *p = (char*)&r;
-        char *s = a + offset;
+        pointer p = (pointer)&r;
+        pointer s = a + offset;
         int i;
 
         for (i = 0; i < 4; ++i) {
@@ -65,8 +65,8 @@ void PackReal32_updateRev (Pointer a, Int offset, Real32 r) {
 }
 
 void PackReal64_update (Pointer a, Int offset, Real64 r) {
-        char *p = (char*)&r;
-        char *s = a + offset;
+        pointer p = (pointer)&r;
+        pointer s = a + offset;
         int i;
 
         for (i = 0; i < 8; ++i) {
@@ -75,8 +75,8 @@ void PackReal64_update (Pointer a, Int offset, Real64 r) {
 }
 
 void PackReal64_updateRev (Pointer a, Int offset, Real64 r) {
-        char *p = (char*)&r;
-        char *s = a + offset;
+        pointer p = (pointer)&r;
+        pointer s = a + offset;
         int i;
 
         for (i = 0; i < 8; ++i) {

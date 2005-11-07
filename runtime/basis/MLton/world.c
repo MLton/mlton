@@ -3,10 +3,9 @@
 extern struct GC_state gcState;
 
 Bool World_isOriginal() {
-        return gcState.isOriginal;
+        return (Bool)(GC_getAmOriginal (&gcState));
 }
 
-
 void World_makeOriginal() {
-        gcState.isOriginal = TRUE;
+        GC_setAmOriginal (&gcState, TRUE);
 }

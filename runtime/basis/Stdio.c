@@ -8,5 +8,5 @@ void Stdio_print (Pointer s) {
 }
 
 Int Stdio_sprintf (Pointer buf, Pointer fmt, Real x) {
-        return sprintf (buf, (char*) fmt, x);
+        return sprintf ((char*) buf, (char*) fmt, x);
 }

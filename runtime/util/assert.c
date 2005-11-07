@@ -5,5 +5,10 @@
  * See the file MLton-LICENSE for details.
  */
 
-#include "platform.h"
+#include "util.h"
 
+void asfail(char *file, int line, char *prop) {
+  fflush(stdout);
+  fprintf(stderr, "%s:%d: assert(%s) failed.\n", file, line, prop);
+  abort();
+}

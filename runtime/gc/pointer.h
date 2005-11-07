@@ -6,9 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-typedef unsigned char* pointer;
-#define POINTER_SIZE sizeof(pointer)
-#define FMTPTR "0x%016"PRIxPTR
 #define BOGUS_POINTER (pointer)0x1
 
 bool isPointer (pointer p);

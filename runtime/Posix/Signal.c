@@ -17,7 +17,7 @@ enum {
 Int Posix_Signal_default (Int signum) {
         struct sigaction sa;
 
-        sigdelset (&gcState.signalsHandled, signum);
+        sigdelset (GC_getSignalsHandledAddr (&gcState), signum);
         memset (&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_DFL;
         sa.sa_flags = SA_FLAGS;
@@ -27,7 +27,7 @@ Int Posix_Signal_default (Int signum) {
 bool Posix_Signal_isGCPending () {
         Bool res;
 
-        res = gcState.gcSignalIsPending;
+        res = GC_getSignalIsPending (&gcState);
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "%s = Posix_Signal_isGCPending ()\n",
                                 boolToString (res));
@@ -35,13 +35,13 @@ bool Posix_Signal_isGCPending () {
 }
 
 Bool Posix_Signal_isPending (Int signum) {
-        return sigismember (&gcState.signalsPending, signum);
+        return sigismember (GC_getSignalsPendingAddr (&gcState), signum);
 }
 
 Int Posix_Signal_handle (Int signum) {
         static struct sigaction sa;
 
-        sigaddset (&gcState.signalsHandled, signum);
+        sigaddset (GC_getSignalsHandledAddr (&gcState), signum);
         memset (&sa, 0, sizeof(sa));
         /* The mask must be full because GC_handler reads and writes 
          * s->signalsPending  (else there is a race condition).
@@ -53,13 +53,13 @@ Int Posix_Signal_handle (Int signum) {
 }
 
 void Posix_Signal_handleGC () {
-        gcState.handleGCSignal = TRUE;
+        GC_setGCSignalHandled (&gcState, TRUE);
 }
 
 Int Posix_Signal_ignore (Int signum) {
         struct sigaction sa;
 
-        sigdelset (&gcState.signalsHandled, signum);
+        sigdelset (GC_getSignalsHandledAddr (&gcState), signum);
         memset (&sa, 0, sizeof(sa));
         sa.sa_handler = SIG_IGN;
         sa.sa_flags = SA_FLAGS;
@@ -79,8 +79,8 @@ Int Posix_Signal_isDefault (Int signum, Bool *isDef) {
 void Posix_Signal_resetPending () {
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "Posix_Signal_resetPending ()\n");
-        sigemptyset (&gcState.signalsPending);
-        gcState.gcSignalIsPending = FALSE;
+        sigemptyset (GC_getSignalsPendingAddr (&gcState));
+        GC_setGCSignalPending (&gcState, FALSE);
 }
 
 static sigset_t set;

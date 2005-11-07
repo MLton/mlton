@@ -7,7 +7,7 @@
 extern struct GC_state gcState;
 
 void MLton_Profile_Data_free (Pointer p) {
-        GC_profileFree (&gcState, (GC_profile)p);
+        GC_profileFree (&gcState, (GC_profileData)p);
 }
 
 Pointer MLton_Profile_Data_malloc (void) {
@@ -17,30 +17,25 @@ Pointer MLton_Profile_Data_malloc (void) {
 void MLton_Profile_Data_write (Pointer p, Word fd) {
         if (DEBUG_PROFILE)
                 fprintf (stderr, "MLton_Profile_Data_write (0x%08x)\n", (uint)p);
-        GC_profileWrite (&gcState, (GC_profile)p, (int)fd);
+        GC_profileWrite (&gcState, (GC_profileData)p, (int)fd);
 }
 
 Pointer MLton_Profile_current (void) {
-        GC_state s;
         Pointer res;
 
-        s = &gcState;
-        res = (Pointer)s->profile;
+        res = (Pointer)(GC_getProfileCurrent (&gcState));
         if (DEBUG_PROFILE)
                 fprintf (stderr, "0x%08x = MLton_Profile_current ()\n", 
                                 (uint)res);
         return res;
 }
 
-void MLton_Profile_done () {
-        GC_profileDone (&gcState);
-}
-
 void MLton_Profile_setCurrent (Pointer d) {
-        GC_state s;
-
-        s = &gcState;
         if (DEBUG_PROFILE)
                 fprintf (stderr, "MLton_Profile_setCurrent (0x%08x)\n", (uint)d);
-        s->profile = (GC_profile)d;
+        GC_setProfileCurrent (&gcState, (GC_profileData)d);
+}
+
+void MLton_Profile_done () {
+        GC_profileDone (&gcState);
 }

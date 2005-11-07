@@ -6,5 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-void GC_pack (GC_state s);
-void GC_unpack (GC_state s);
+typedef unsigned char* pointer;
+#define POINTER_SIZE sizeof(pointer)
+#define FMTPTR "0x%016"PRIxPTR

@@ -6,25 +6,15 @@
  * See the file MLton-LICENSE for details.
  */
 
+#define MLTON_GC_INTERNAL
 #include "platform.h"
 
 enum {
-        DEBUG_INT_INF = FALSE,
+  DEBUG_INT_INF = FALSE,
 };
 
 /* Import the global gcState so we can get and set the frontier. */
 extern struct GC_state gcState;
-
-/*
- * Layout of strings.  Note, the value passed around is a pointer to
- * the chars member.
- */
-typedef struct  strng {
-        uint    counter,        /* used by GC. */
-                card,           /* number of chars */
-                magic;          /* STRMAGIC */
-        char    chars[0];       /* actual chars */
-}       strng;
 
 /*
  * Test if a intInf is a fixnum.
@@ -44,14 +34,14 @@ static inline uint areSmall (pointer arg1, pointer arg2) {
 /*
  * Convert a bignum intInf to a bignum pointer.
  */
-static inline bignum * toBignum (pointer arg) {
-        bignum  *bp;
+static inline GC_intInf toBignum (pointer arg) {
+        GC_intInf bp;
 
         assert(not isSmall(arg));
-        bp = (bignum *)((uint)arg - offsetof(struct bignum, isneg));
+        bp = (GC_intInf)((uint)arg - offsetof(struct GC_intInf, isneg));
         if (DEBUG_INT_INF)
-                fprintf (stderr, "bp->magic = 0x%08x\n", bp->magic);
-        assert (bp->magic == BIGMAGIC);
+                fprintf (stderr, "bp->header = 0x%08x\n", bp->header);
+        assert (bp->header == GC_INTINF_HEADER);
         return bp;
 }
 
@@ -60,7 +50,7 @@ static inline bignum * toBignum (pointer arg) {
  * to contain 2 limbs, fill in the __mpz_struct.
  */
 static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
-        bignum  *bp;
+        GC_intInf bp;
 
         if (DEBUG_INT_INF)
                 fprintf (stderr, "fill (0x%08x, 0x%08x, 0x%08x)\n",
@@ -78,8 +68,8 @@ static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
                         res->_mp_size = 0;
         } else {
                 bp = toBignum(arg);
-                res->_mp_alloc = bp->card - 1;
-                res->_mp_d = bp->limbs;
+                res->_mp_alloc = bp->length - 1;
+                res->_mp_d = (mp_limb_t*)(bp->limbs);
                 res->_mp_size = bp->isneg ? - res->_mp_alloc
                                         : res->_mp_alloc;
         }
@@ -89,16 +79,16 @@ static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
  * Initialize an __mpz_struct to use the space provided by an ML array.
  */
 static inline void initRes (__mpz_struct *mpzp, uint bytes) {
-        struct bignum *bp;
+        GC_intInf bp;
 
         assert (bytes <= gcState.limitPlusSlop - gcState.frontier);
-        bp = (bignum*)gcState.frontier;
+        bp = (GC_intInf)gcState.frontier;
         /* We have as much space for the limbs as there is to the end of the 
          * heap.  Divide by 4 to get number of words. 
          */
         mpzp->_mp_alloc = (gcState.limitPlusSlop - (pointer)bp->limbs) / 4;
         mpzp->_mp_size = 0; /* is this necessary? */
-        mpzp->_mp_d = bp->limbs;
+        mpzp->_mp_d = (mp_limb_t*)(bp->limbs);
 }
 
 /*
@@ -118,7 +108,7 @@ static inline uint leadingZeros (mp_limb_t word) {
 }
 
 static inline void setFrontier (pointer p, uint bytes) {
-        p = GC_alignFrontier (&gcState, p);
+        p = alignFrontier (&gcState, p);
         assert (p - gcState.frontier <= bytes);
         GC_profileAllocInc (&gcState, p - gcState.frontier);
         gcState.frontier = p;
@@ -134,11 +124,11 @@ static inline void setFrontier (pointer p, uint bytes) {
  * the array size and roll the frontier slightly back.
  */
 static pointer answer (__mpz_struct *ans, uint bytes) {
-        bignum                  *bp;
+        GC_intInf               bp;
         int                     size;
 
-        bp = (bignum *)((pointer)ans->_mp_d - offsetof(struct bignum, limbs));
-        assert(ans->_mp_d == bp->limbs);
+        bp = (GC_intInf)((pointer)ans->_mp_d - offsetof(struct GC_intInf, limbs));
+        assert(ans->_mp_d == (mp_limb_t*)(bp->limbs));
         size = ans->_mp_size;
         if (size < 0) {
                 bp->isneg = TRUE;
@@ -168,10 +158,10 @@ static pointer answer (__mpz_struct *ans, uint bytes) {
                         return (pointer)(ans<<1 | 1);
                 }
         }
-        setFrontier ((pointer)&bp->limbs[size], bytes);
+        setFrontier ((pointer)(&bp->limbs[size]), bytes);
         bp->counter = 0;
-        bp->card = size + 1; /* +1 for isNeg word */
-        bp->magic = BIGMAGIC;
+        bp->length = size + 1; /* +1 for isNeg word */
+        bp->header = GC_INTINF_HEADER;
         return (pointer)&bp->isneg;
 }
 
@@ -303,11 +293,11 @@ pointer IntInf_lshift(pointer arg, uint shift, uint bytes) {
 Word
 IntInf_smallMul(Word lhs, Word rhs, pointer carry)
 {
-        llong   prod;
+        intmax_t   prod;
 
-        prod = (llong)(int)lhs * (int)rhs;
-        *(uint *)carry = (ullong)prod >> 32;
-        return ((uint)(ullong)prod);
+        prod = (intmax_t)(int)lhs * (int)rhs;
+        *(uint *)carry = (uintmax_t)prod >> 32;
+        return ((uint)(uintmax_t)prod);
 }
 
 /*
@@ -346,7 +336,7 @@ Bool IntInf_equal (pointer lhs, pointer rhs) {
  * string (mutable) which is large enough.
  */
 pointer IntInf_toString (pointer arg, int base, uint bytes) {
-        strng           *sp;
+        GC_string       sp;
         __mpz_struct    argmpz;
         mp_limb_t       argspace[2];
         char            *str;
@@ -359,7 +349,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
                                 (uint)arg, base, bytes);
         assert (base == 2 || base == 8 || base == 10 || base == 16);
         fill (arg, &argmpz, argspace);
-        sp = (strng*)gcState.frontier;
+        sp = (GC_string)gcState.frontier;
         str = mpz_get_str(sp->chars, base, &argmpz);
         assert(str == sp->chars);
         size = strlen(str);
@@ -372,9 +362,9 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
                                 sp->chars[i] = c + ('A' - 'a');
                 }
         sp->counter = 0;
-        sp->card = size;
-        sp->magic = STRMAGIC;
-        setFrontier (&sp->chars[wordAlign(size)], bytes);
+        sp->length = size;
+        sp->header = GC_STRING_HEADER;
+        setFrontier ((pointer)(&sp->chars[align(size, 4)]), bytes);
         return (pointer)str;
 }
 

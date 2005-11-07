@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *calloc_safe (size_t count, size_t size) {
+static inline void *calloc_safe (size_t count, size_t size) {
   void *res;
   
   res = calloc (count, size);
@@ -16,7 +16,7 @@ void *calloc_safe (size_t count, size_t size) {
   return res;
 }
 
-void close_safe (int fd) {
+static inline void close_safe (int fd) {
   int res;
 
   res = close (fd);
@@ -25,7 +25,7 @@ void close_safe (int fd) {
   return;
 }
 
-void *malloc_safe (size_t size) {
+static inline void *malloc_safe (size_t size) {
   void *res;
   
   res = malloc (size);
@@ -34,7 +34,7 @@ void *malloc_safe (size_t size) {
   return res;
 }
 
-int mkstemp_safe (char *template) {
+static inline int mkstemp_safe (char *template) {
   int fd;
   
   fd = mkstemp (template);
@@ -43,7 +43,7 @@ int mkstemp_safe (char *template) {
   return fd;
 }
 
-int open_safe (const char *fileName, int flags, mode_t mode) {
+static inline int open_safe (const char *fileName, int flags, mode_t mode) {
   int res;
 
   res = open (fileName, flags, mode);
@@ -52,7 +52,7 @@ int open_safe (const char *fileName, int flags, mode_t mode) {
   return res;
 }
 
-void read_safe (int fd, void *buf, size_t size) {
+static inline void read_safe (int fd, void *buf, size_t size) {
   ssize_t res;
 
   if (0 == size) return;
@@ -61,7 +61,7 @@ void read_safe (int fd, void *buf, size_t size) {
     diee ("read (_, _, _) failed.\n");
 }
 
-void unlink_safe (const char *pathname) {
+static inline void unlink_safe (const char *pathname) {
   int res;
 
   res = unlink (pathname);
@@ -70,7 +70,7 @@ void unlink_safe (const char *pathname) {
   return;
 }
 
-void write_safe (int fd, const void *buf, size_t size) {
+static inline void write_safe (int fd, const void *buf, size_t size) {
   ssize_t res;
 
   if (0 == size) return;

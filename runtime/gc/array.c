@@ -66,3 +66,8 @@ pointer indexArrayAtPointerIndex (GC_state s, pointer a,
     + nonObjptrBytesPerElement
     + pointerIndex * OBJPTR_SIZE;
 }
+
+
+GC_arrayLength GC_getArrayLength (pointer a) {
+  return getArrayLength (a);
+}

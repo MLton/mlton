@@ -64,7 +64,7 @@ void GC_done (GC_state s) {
        &s->cumulativeStatistics.ru_gcMinor, 
        s->cumulativeStatistics.numMinorGCs, 
        s->cumulativeStatistics.bytesCopiedMinor);
-    time = currentTime () - s->startTime;
+    time = getCurrentTime () - s->startTime;
     fprintf (out, "total GC time: %s ms (%.1f%%)\n",
              uintmaxToCommaString (gcTime), 
              (0 == time) 

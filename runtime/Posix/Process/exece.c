@@ -13,9 +13,9 @@ Int Posix_Process_exece (NullString p, Pointer a, Pointer e) {
         path = (char *) p;
         args = (char **) a;
         env = (char **) e;
-        an = GC_arrayNumElements (a) - 1;
+        an = GC_getArrayLength (a) - 1;
         asaved = args[an];
-        en = GC_arrayNumElements (e) - 1;
+        en = GC_getArrayLength (e) - 1;
         esaved = env[en];
         args[an] = (char *) NULL;
         env[en] = (char *) NULL;

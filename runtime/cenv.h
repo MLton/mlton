@@ -5,6 +5,10 @@
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  */
+
+#ifndef _MLTON_CENV_H_
+#define _MLTON_CENV_H_
+
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
 
@@ -17,36 +21,30 @@
 
 /* C99-specific headers */
 #include <stddef.h>
+#include <stdarg.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <iso646.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 
+#include <errno.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <unistd.h>
+
+#include <dirent.h>
+#include <signal.h>
+#include <time.h>
+#include <utime.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+
 
 #include "gmp.h"
 
-#include "../assert.h"
-
-
-/* issue error message and exit */
-extern void die (char *fmt, ...) 
-  __attribute__ ((format(printf, 1, 2)))
-  __attribute__ ((noreturn));
-/* issue error message and exit.  Also print strerror(errno). */
-extern void diee (char *fmt, ...)
-  __attribute__ ((format(printf, 1, 2)))
-  __attribute__ ((noreturn));
-
-static inline size_t meg (size_t n) {
-  return n / (1024ul * 1024ul);
-}
+#endif /* _MLTON_CENV_H_ */

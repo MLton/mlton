@@ -122,7 +122,6 @@ void splitHeader (GC_state s, GC_header header,
                   uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet);
 
 bool isFrontierAligned (GC_state s, pointer p);
-pointer alignFrontier (GC_state s, pointer p);
 
 pointer advanceToObjectData (GC_state s, pointer p);
 

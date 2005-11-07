@@ -14,6 +14,6 @@ void rusageMinusMax (struct rusage *ru1,
                      struct rusage *ru2,
                      struct rusage *ru);
 uintmax_t rusageTime (struct rusage *ru);
-uintmax_t currentTime (void);
+uintmax_t getCurrentTime (void);
 void startTiming (struct rusage *ru_start);
 uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_gc);
