@@ -82,7 +82,7 @@ static char* suffix[suffixLines] = {
 int main (int argc, char* argv[]) {
   int fd;
 
-  fd = open_safe ("types.h", O_RDWR | O_CREAT, 0);
+  fd = open_safe ("types.h", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   for (int i = 0; i < prefixLines; i++) {
     writeString (fd, prefix[i]);
     writeNewline (fd);

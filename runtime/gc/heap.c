@@ -328,12 +328,12 @@ copy:
     if (s->controls.messages)
       fprintf (stderr, "Paging heap from "FMTPTR" to %s.\n", 
                (uintptr_t)orig, template);
-    fd = open_safe (template, O_WRONLY, 0);
+    fd = open_safe (template, O_WRONLY, S_IRUSR | S_IWUSR);
     write_safe (fd, orig, size);
     close_safe (fd);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
-      fd = open_safe (template, O_RDONLY, 0);
+      fd = open_safe (template, O_RDONLY, S_IRUSR | S_IWUSR);
       read_safe (fd, curHeapp->start, size);
       close_safe (fd);
       unlink_safe (template);

@@ -165,7 +165,6 @@ types.h: gen/gen-types.c util.h $(UTILOFILES)
 	rm -f types.h
 	$(CC) $(CFLAGS) $(WARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
 	./gen-types
-	chmod a+r types.h
 	rm -f gen-types
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
