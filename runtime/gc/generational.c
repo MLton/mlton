@@ -71,7 +71,8 @@ void setCardMapAbsolute (GC_state s) {
    * in the right place.
    */
   s->generationalMaps.cardMapAbsolute = 
-    pointerToCardMapAddr (s, s->heap.start);
+    s->generationalMaps.cardMap
+    - pointerToCardMapIndexAbsolute (s->heap.start);
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "setCardMapAbsolute = "FMTPTR"\n",
              (uintptr_t)s->generationalMaps.cardMapAbsolute);
@@ -165,7 +166,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
                     oldCrossMapSize));
     if (DEBUG_MEM)
       fprintf (stderr, "Releasing card/cross map.\n");
-    GC_munmap (oldCardMap, oldCardMapSize + oldCrossMapSize);
+    GC_release (oldCardMap, oldCardMapSize + oldCrossMapSize);
   }
 }
 
@@ -176,7 +177,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
  * entire old generation.  It is useful to check that the incremental
  * update is working correctly.
  */
-bool isCrossMapOK (GC_state s) {
+bool isCrossMapOk (GC_state s) {
   static GC_crossMapElem *map;
   size_t mapSize;
 
@@ -203,7 +204,7 @@ loopObjects:
   }
   for (size_t i = 0; i < cardIndex; ++i)
     assert (map[i] == s->generationalMaps.crossMap[i]);
-  GC_munmap (map, mapSize);
+  GC_release (map, mapSize);
   return TRUE;
 }
 

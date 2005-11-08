@@ -58,8 +58,8 @@ void initTextSources (GC_state s) {
 
   sortSourceLabels (s);
   /* Initialize s->sourceMaps.textSources. */
-  s->sourceMaps.textEnd = (pointer)(getTextEnd());
-  s->sourceMaps.textStart = (pointer)(getTextStart());
+  s->sourceMaps.textEnd = (pointer)(GC_getTextEnd());
+  s->sourceMaps.textStart = (pointer)(GC_getTextStart());
   if (ASSERT)
     for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++) {
       pointer label;

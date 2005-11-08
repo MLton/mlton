@@ -163,25 +163,41 @@ structure CFunction =
             target = Direct "Thread_switchTo",
             writesStackTop = true}
 
-      fun weakCanGet t =
-         vanilla {args = Vector.new1 t,
-                  name = "GC_weakCanGet",
-                  prototype = let
-                                 open CType
-                              in
-                                 (Vector.new1 Pointer, SOME bool)
-                              end,
-                  return = Type.bool}
+      fun weakCanGet {arg} =
+         T {args = Vector.new2 (gcState, arg),
+            bytesNeeded = NONE,
+            convention = Cdecl,
+            ensuresBytesFree = false,
+            mayGC = false,
+            maySwitchThreads = false,
+            modifiesFrontier = false,
+            prototype = let
+                           open CType
+                        in
+                           (Vector.new2 (Pointer, Pointer), SOME bool)
+                        end,
+            readsStackTop = false,
+            return = Type.bool,
+            target = Direct "GC_weakCanGet",
+            writesStackTop = false}
          
       fun weakGet {arg, return} =
-         vanilla {args = Vector.new1 arg,
-                  name = "GC_weakGet",
-                  prototype = let
-                                 open CType
-                              in
-                                 (Vector.new1 Pointer, SOME Pointer)
-                              end,
-                  return = return}
+         T {args = Vector.new2 (gcState, arg),
+            bytesNeeded = NONE,
+            convention = Cdecl,
+            ensuresBytesFree = false,
+            mayGC = false,
+            maySwitchThreads = false,
+            modifiesFrontier = false,
+            prototype = let
+                           open CType
+                        in
+                           (Vector.new2 (Pointer, Pointer), SOME Pointer)
+                        end,
+            readsStackTop = false,
+            return = return,
+            target = Direct "GC_weakGet",
+            writesStackTop = false}
                   
       fun weakNew {arg, return} =
          T {args = Vector.new3 (gcState, Word32, arg),
@@ -1330,16 +1346,33 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | Weak_canGet =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
-                                     fn _ => simpleCCall (CFunction.weakCanGet
-                                                          (Operand.ty (a 0))),
+                                     fn _ => 
+                                     let
+                                        val func = 
+                                           CFunction.weakCanGet
+                                           {arg = Operand.ty (a 0)}
+                                     in
+                                        ccall {args = (Vector.concat
+                                                       [Vector.new1 GCState,
+                                                        vos args]),
+                                               func = func}
+                                     end,
                                      fn () => move (Operand.bool false))
                                | Weak_get =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
-                                     fn t => (simpleCCall
-                                              (CFunction.weakGet
-                                               {arg = Operand.ty (a 0),
-                                                return = t})),
+                                     fn t => 
+                                     let
+                                        val func = 
+                                           CFunction.weakGet
+                                           {arg = Operand.ty (a 0),
+                                            return = t}
+                                     in
+                                        ccall {args = (Vector.concat
+                                                       [Vector.new1 GCState,
+                                                        vos args]),
+                                               func = func}
+                                     end,
                                      none)
                                | Weak_new =>
                                     ifIsWeakPointer

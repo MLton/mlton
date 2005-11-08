@@ -38,6 +38,7 @@
 
 #include <dirent.h>
 #include <signal.h>
+#include <termios.h>
 #include <time.h>
 #include <utime.h>
 #include <sys/resource.h>

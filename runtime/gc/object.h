@@ -92,7 +92,7 @@ GC_header buildHeaderFromTypeIndex (uint32_t t);
  * numNonObjptrs and numObjptrs fields are interpreted as in a normal
  * object (and, hence, must be (2,1) or (3,0)).
 */
-typedef struct {
+typedef struct GC_objectType {
   /* Keep tag first, at zero offset, since it is referenced most often. */
   GC_objectTypeTag tag;
   bool hasIdentity;
@@ -120,8 +120,6 @@ enum {
 void splitHeader (GC_state s, GC_header header,
                   GC_objectTypeTag *tagRet, bool *hasIdentityRet,
                   uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet);
-
-bool isFrontierAligned (GC_state s, pointer p);
 
 pointer advanceToObjectData (GC_state s, pointer p);
 

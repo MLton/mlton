@@ -81,6 +81,5 @@ void GC_profileLeave (GC_state s);
 void GC_profileInc (GC_state s, size_t amount);
 void GC_profileAllocInc (GC_state s, size_t amount);
 
-void GC_handleSigProf (pointer pc);
 void initProfiling (GC_state s);
 

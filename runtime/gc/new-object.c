@@ -35,7 +35,7 @@ pointer newObject (GC_state s,
     s->frontier += bytesRequested;
   }
   GC_profileAllocInc (s, bytesRequested);
-  *(GC_header*)(frontier) = header;
+  *((GC_header*)frontier) = header;
   result = frontier + GC_NORMAL_HEADER_SIZE;
   if (DEBUG)
     fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %zu, %s)\n",

@@ -68,8 +68,6 @@ bad:
 /*                             GC_init                              */
 /* ---------------------------------------------------------------- */
 
-bool MLton_Platform_CygwinUseMmap;
-
 int processAtMLton (GC_state s, int argc, char **argv,
                     char **worldFile) {
   int i;
@@ -200,7 +198,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
             die ("@MLton thread-shrink-ratio argument must be between 0.0 and 1.0");
         } else if (0 == strcmp (arg, "use-mmap")) {
           i++;
-          MLton_Platform_CygwinUseMmap = TRUE;
+          GC_setCygwinUseMmap (TRUE);
         } else if (0 == strcmp (arg, "--")) {
           i++;
           done = TRUE;
@@ -281,9 +279,9 @@ int GC_init (GC_state s, int argc, char **argv) {
   sigemptyset (&s->signalsInfo.signalsHandled);
   sigemptyset (&s->signalsInfo.signalsPending);
   s->startTime = getCurrentTime ();
-  // s->sysvals.availRam = ;
-  // s->sysvals.totalRam = ;
-  // s->sysvals.pageSize = ;
+  s->sysvals.availRam = GC_availRam ();
+  s->sysvals.totalRam = GC_totalRam ();
+  s->sysvals.pageSize = GC_pageSize ();
   s->weaks = NULL;
 
   initSignalStack (s);
@@ -343,17 +341,3 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->amInGC = FALSE;
   return res;
 }
-
-/* extern char **environ; /\* for Posix_ProcEnv_environ *\/ */
-
-/* void MLton_init (int argc, char **argv, GC_state s) { */
-/*         int start; */
-
-/*         Posix_ProcEnv_environ = (CstringArray)environ; */
-/*         start = GC_init (s, argc, argv); */
-/*         /\* Setup argv and argc that SML sees. *\/ */
-/*         /\* start is now the index of the first real arg. *\/ */
-/*         CommandLine_commandName = (uint)(argv[0]); */
-/*         CommandLine_argc = argc - start; */
-/*         CommandLine_argv = (uint)(argv + start); */
-/* } */

@@ -20,6 +20,8 @@
 #endif
 #define unless(p)       if (not (p))
 #define until(p)        while (not (p))
+#define cardof(a)       (sizeof(a) / sizeof(*(a)))
+#define endof(a)        ((a) + cardof(a))
 
 #define TWOPOWER(n) (1 << (n))
 

@@ -253,11 +253,11 @@ fun outputDeclarations
                                    CType.toString t, ", fd);\n"])))
                 ; print "}\n")
             val _ =
-               (print "static void loadGlobals (FILE *file) {\n"
+               (print "static void loadGlobals (int fd) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     print (concat ["\tLoadArray (global",
-                                   CType.toString t, ", file);\n"])))
+                                   CType.toString t, ", fd);\n"])))
                 ; print "}\n")
          in
             ()
@@ -296,7 +296,7 @@ fun outputDeclarations
       fun declareFrameOffsets () =
          Vector.foreachi
          (frameOffsets, fn (i, v) =>
-          (print (concat ["static ushort frameOffsets", C.int i, "[] = {"])
+          (print (concat ["static uint16_t frameOffsets", C.int i, "[] = {"])
            ; print (C.int (Vector.length v))
            ; Vector.foreach (v, fn i => (print ","; print (C.bytes i)))
            ; print "};\n"))
@@ -309,18 +309,18 @@ fun outputDeclarations
                              print (concat ["\t", toString (i, x), ",\n"]))
           ; print "};\n")
       fun declareFrameLayouts () =
-         declareArray ("GC_frameLayout", "frameLayouts", frameLayouts,
+         declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
                        fn (_, {frameOffsetsIndex, isC, size}) =>
                        concat ["{",
                                C.bool isC,
-                               ", ", C.bytes size,
                                ", frameOffsets", C.int frameOffsetsIndex,
+                               ", ", C.bytes size,
                                "}"])
       fun declareAtMLtons () =
-         declareArray ("string", "atMLtons", !Control.atMLtons, C.string o #2)
+         declareArray ("char*", "atMLtons", !Control.atMLtons, C.string o #2)
       fun declareObjectTypes () =
          declareArray
-         ("GC_ObjectType", "objectTypes", objectTypes,
+         ("struct GC_objectType", "objectTypes", objectTypes,
           fn (_, ty) =>
           let
              datatype z = datatype Runtime.RObjectType.t
@@ -380,22 +380,22 @@ fun outputDeclarations
                                 declareProfileLabel (label, print))
                 ; (Vector.foreachi
                    (sourceSeqs, fn (i, v) =>
-                    (print (concat ["static int sourceSeq",
+                    (print (concat ["static uint32_t sourceSeq",
                                     Int.toString i,
                                     "[] = {"])
                      ; print (C.int (Vector.length v))
                      ; Vector.foreach (v, fn i =>
                                        (print (concat [",", C.int i])))
                      ; print "};\n")))
-                ; declareArray ("uint", "*sourceSeqs", sourceSeqs, fn (i, _) =>
+                ; declareArray ("uint32_t*", "sourceSeqs", sourceSeqs, fn (i, _) =>
                                 concat ["sourceSeq", Int.toString i])
-                ; declareArray ("uint", "frameSources", frameSources, C.int o #2)
+                ; declareArray ("GC_sourceSeqIndex", "frameSources", frameSources, C.int o #2)
                 ; (declareArray
                    ("struct GC_sourceLabel", "sourceLabels", labels,
                     fn (_, {label, sourceSeqsIndex}) =>
                     concat ["{(pointer)&", ProfileLabel.toString label, ", ",
                             C.int sourceSeqsIndex, "}"]))
-                ; declareArray ("string", "sourceNames", names, C.string o #2)
+                ; declareArray ("char*", "sourceNames", names, C.string o #2)
                 ; declareArray ("struct GC_source", "sources", sources,
                                 fn (_, {nameIndex, successorsIndex}) =>
                                 concat ["{ ", Int.toString nameIndex, ", ",

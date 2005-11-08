@@ -29,7 +29,7 @@ void updateWeaksForCheneyCopy (GC_state s) {
     } else {
       if (DEBUG_WEAK)
         fprintf (stderr, "cleared\n");
-      *(getHeaderp(p)) = GC_WEAK_GONE_HEADER;
+      *(getHeaderp((pointer)w)) = GC_WEAK_GONE_HEADER;
       w->objptr = BOGUS_OBJPTR;
     }
   }

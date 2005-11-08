@@ -1,7 +1,8 @@
-void *ssmmap (size_t length, size_t dead_low, size_t dead_high) {
+void *GC_mmapAnon_safe_protect (void *start, size_t length,
+                                size_t dead_low, size_t dead_high) {
         void *base,*low,*result,*high;
 
-        base = smmap (length + dead_low + dead_high);
+        base = GC_mmapAnon_safe (start, length + dead_low + dead_high);
         low = base;
         if (mprotect (low, dead_low, PROT_NONE))
                 diee ("mprotect failed");

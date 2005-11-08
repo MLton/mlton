@@ -30,6 +30,10 @@ size_t sizeofThread (GC_state s) {
 
     splitHeader (s, GC_THREAD_HEADER, NULL, NULL, &numNonObjptrs, &numObjptrs);
     check = GC_NORMAL_HEADER_SIZE + sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
+    if (DEBUG_DETAILED) 
+      fprintf (stderr,
+               "sizeofThread: res = %zu  check = %zu\n",
+               res, check);
     assert (check == res);
   }
   /* The following assert depends on struct GC_thread being the right

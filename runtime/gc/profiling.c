@@ -340,7 +340,6 @@ void GC_handleSigProf (pointer pc) {
 
 static void initProfilingTime (GC_state s) {
   struct sigaction sa;
-  uint32_t sourceSeqsIndex;
 
   s->profiling.data = GC_profileNew (s);
   initTextSources (s);
@@ -359,7 +358,7 @@ static void initProfilingTime (GC_state s) {
    */
   handleSigProfState = s;
   sigemptyset (&sa.sa_mask);
-  setSigProfHandler (&sa);
+  GC_setSigProfHandler (&sa);
   unless (sigaction (SIGPROF, &sa, NULL) == 0)
     diee ("initProfilingTime: sigaction failed");
   /* Start the SIGPROF timer. */

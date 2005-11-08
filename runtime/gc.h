@@ -15,10 +15,11 @@
 struct GC_state;
 typedef struct GC_state *GC_state;
 
-#define GC_MODEL_NATIVE32
-
 #if (defined (MLTON_GC_INTERNAL))
 
+#define GC_MODEL_NATIVE32
+
+#include "gc/align.h"
 #include "gc/model.h"
 #include "gc/pointer.h"
 #include "gc/objptr.h"
@@ -72,6 +73,8 @@ typedef struct GC_profileData *GC_profileData;
 
 #endif /* (defined (MLTON_GC_INTERNAL)) */
 
+#include "gc/debug.h"
+#include "gc/platform.h"
 #include "gc/gc_state_exports.h"
 #include "gc/exports.h"
 

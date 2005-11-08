@@ -6,19 +6,19 @@
  * See the file MLton-LICENSE for details.
  */
 
-/* GC_startHandler does not do an enter()/leave(), even though it is
- * exported.  The basis library uses it via _import, not _prim, and so
- * does not treat it as a runtime call -- so the invariant in enter
- * would fail miserably.  It is OK because GC_startHandler must be
- * called from within a critical section.
+/* GC_startSignalHandler does not do an enter()/leave(), even though
+ * it is exported.  The basis library uses it via _import, not _prim,
+ * and so does not treat it as a runtime call -- so the invariant in
+ * enter would fail miserably.  It is OK because GC_startHandler must
+ * be called from within a critical section.
  *
  * Don't make it inline, because it is also called in basis/Thread.c,
  * and when compiling with COMPILE_FAST, they may appear out of order.
  */
-void GC_startHandler (GC_state s) {
+void GC_startSignalHandler (GC_state s) {
   /* Switch to the signal handler thread. */
   if (DEBUG_SIGNALS) {
-    fprintf (stderr, "GC_startHandler\n");
+    fprintf (stderr, "GC_startSignalHandler\n");
   }
   assert (s->atomicState == 1);
   assert (s->signalsInfo.signalIsPending);
@@ -34,17 +34,17 @@ void GC_startHandler (GC_state s) {
   s->atomicState = 2;
 }
 
-void GC_finishHandler (GC_state s) {
+void GC_finishSignalHandler (GC_state s) {
   if (DEBUG_SIGNALS)
-    fprintf (stderr, "GC_finishHandler ()\n");
+    fprintf (stderr, "GC_finishSignalHandler ()\n");
   assert (s->atomicState == 1);
   s->signalsInfo.amInSignalHandler = FALSE;     
 }
 
-void switchToHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
+void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
   if (s->atomicState == 1 
       and s->signalsInfo.signalIsPending) {
-    GC_startHandler (s);
+    GC_startSignalHandler (s);
     switchToThread (s, s->signalHandlerThread);
   }
 }

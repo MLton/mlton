@@ -18,7 +18,7 @@ Int MLton_Process_spawnp (NullString p, Pointer a) {
         return result;
 }
 #else
-Int MLton_Process_spawnp (NullString p, Pointer a) {
+Int MLton_Process_spawnp (Pointer p, Pointer a) {
         die ("MLton_Process_spawnp not implemented");
 }
 #endif

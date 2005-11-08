@@ -163,7 +163,7 @@ local
 in
    fun amInSignalHandler () = InHandler = !state
 
-   fun setHandler (f: Runnable.t -> Runnable.t): unit =
+   fun setSignalHandler (f: Runnable.t -> Runnable.t): unit =
       let
          val _ = Primitive.installSignalHandler ()
          fun loop (): unit =
@@ -172,7 +172,7 @@ in
                val _ = state := InHandler
                val t = f (fromPrimitive (Prim.saved ()))
                val _ = state := Normal
-               val _ = Prim.finishHandler ()
+               val _ = Prim.finishSignalHandler ()
                val _ =
                   atomicSwitch
                   (fn (T r) =>
@@ -180,7 +180,7 @@ in
                       val _ =
                          case !r of
                             Paused (f, _) => f (fn () => ())
-                          | _ => raise die "Thread.setHandler saw strange thread"
+                          | _ => raise die "Thread.setSignalHandler saw strange thread"
                    in
                       t
                    end) (* implicit atomicEnd () *)
@@ -192,15 +192,15 @@ in
             (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
          val _ = signalHandler := SOME p
       in
-         Prim.setHandler p
+         Prim.setSignalHandler p
       end
 
-   fun switchToHandler () =
+   fun switchToSignalHandler () =
       let
          (* Atomic 0 *)
          val () = atomicBegin ()
          (* Atomic 1 *)
-         val () = Prim.startHandler () (* implicit atomicBegin () *)
+         val () = Prim.startSignalHandler () (* implicit atomicBegin () *)
          (* Atomic 2 *)
       in
          case !signalHandler of

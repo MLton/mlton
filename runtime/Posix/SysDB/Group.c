@@ -18,6 +18,6 @@ Bool Posix_SysDB_getgrgid(Gid g) {
         return NULL != (group = getgrgid ((gid_t)g));
 }
 
-Bool Posix_SysDB_getgrnam(NullString s) {
+Bool Posix_SysDB_getgrnam(Pointer s) {
         return NULL != (group = getgrnam ((char*)s));
 }

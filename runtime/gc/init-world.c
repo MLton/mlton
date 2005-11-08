@@ -51,8 +51,8 @@ void initIntInfs (GC_state s) {
 
   assert (isFrontierAligned (s, s->frontier));
   frontier = s->frontier;
-  for (i= 0; i < s->intInfInitsLength; i++) {
-    inits = &s->intInfInits[i];
+  for (i = 0; i < s->intInfInitsLength; i++) {
+    inits = &(s->intInfInits[i]);
     str = inits->mlstr;
     assert (inits->globalIndex < s->globalsLength);
     neg = *str == '~';
@@ -68,7 +68,7 @@ void initIntInfs (GC_state s) {
       llen = (slen + 8) / 9;
     assert (slen > 0);
     bp = (GC_intInf)frontier;
-    cp = (unsigned char *)&bp->limbs[llen];
+    cp = (unsigned char *)(&(bp->limbs[llen]));
 
     for (j = 0; j != slen; j++)
       if ('0' <= str[j] && str[j] <= '9')
@@ -163,7 +163,7 @@ void initVectors (GC_state s) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "allocated vector at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
-    GC_memcpy (inits[i].bytes, frontier, dataBytes);
+    memcpy (frontier, inits[i].bytes, dataBytes);
     frontier += objectSize - GC_ARRAY_HEADER_SIZE;
   }
   if (DEBUG_DETAILED)

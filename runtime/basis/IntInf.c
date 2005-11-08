@@ -8,6 +8,7 @@
 
 #define MLTON_GC_INTERNAL
 #include "platform.h"
+#undef MLTON_GC_INTERNAL
 
 enum {
   DEBUG_INT_INF = FALSE,

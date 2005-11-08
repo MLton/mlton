@@ -18,14 +18,3 @@ static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
     return;
   memcpy (dst, src, size);
 }
-
-void *GC_mmapAnon_safe (void *p, size_t length) {
-  void *result;
-
-  result = GC_mmapAnon (p, length);
-  if ((void*)-1 == result) {
-    showMem ();
-    die ("Out of memory.");
-  }
-  return result;
-}

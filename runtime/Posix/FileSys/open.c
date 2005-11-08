@@ -4,7 +4,7 @@
 #define DEBUG FALSE
 #endif
 
-Int Posix_FileSys_open (NullString p, Word w, Mode m) {
+Int Posix_FileSys_open (Pointer p, Word w, Mode m) {
         Int res;
 
         res = open ((char *) p, w, m);

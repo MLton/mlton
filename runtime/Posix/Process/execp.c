@@ -1,6 +1,6 @@
 #include "platform.h"
 
-Int Posix_Process_execp (NullString f, Pointer a) {
+Int Posix_Process_execp (Pointer f, Pointer a) {
         char            *file;
         char            *saved;
         char            **args;

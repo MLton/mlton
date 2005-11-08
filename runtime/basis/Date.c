@@ -103,6 +103,6 @@ Int Date_mkTime() {
         return mktime(&tm);
 }
 
-Int Date_strfTime(Pointer buf, Int n, NullString fmt) {
+Int Date_strfTime(Pointer buf, Int n, Pointer fmt) {
         return strftime((char*)(buf), n, (char*)(fmt), &tm);
 }

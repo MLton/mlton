@@ -114,20 +114,17 @@
 #endif
 #endif
 
-/* If HAS_TIME_PROFILING, then you must define these. */
-void *getTextStart ();
-void *getTextEnd ();
-
 #ifndef SPAWN_MODE
 #define SPAWN_MODE 0
 #endif
 
-enum {
-  DEBUG_MEM = FALSE,
-  DEBUG_SIGNALS = FALSE,
-};
-
 #include "types.h"
+
+/* ---------------------------------------------------------------- */
+/*                        Utility libraries                         */
+/* ---------------------------------------------------------------- */
+
+int mkdir2 (const char *pathname, mode_t mode);
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
@@ -153,31 +150,31 @@ extern Cstring CommandLine_commandName;
 /*                       Date                        */
 /* ------------------------------------------------- */
 
-Int Date_Tm_sec();
-Int Date_Tm_min();
-Int Date_Tm_hour();
-Int Date_Tm_mday();
-Int Date_Tm_mon();
-Int Date_Tm_year();
-Int Date_Tm_wday();
-Int Date_Tm_yday();
-Int Date_Tm_isdst();
-void Date_Tm_setSec(Int x);
-void Date_Tm_setMin(Int x);
-void Date_Tm_setHour(Int x);
-void Date_Tm_setMday(Int x);
-void Date_Tm_setMon(Int x);
-void Date_Tm_setYear(Int x);
-void Date_Tm_setWday(Int x);
-void Date_Tm_setYday(Int x);
-void Date_Tm_setIsdst(Int x);
+Int Date_Tm_sec (void);
+Int Date_Tm_min (void);
+Int Date_Tm_hour (void);
+Int Date_Tm_mday (void);
+Int Date_Tm_mon (void);
+Int Date_Tm_year (void);
+Int Date_Tm_wday (void);
+Int Date_Tm_yday (void);
+Int Date_Tm_isdst (void);
+void Date_Tm_setSec (Int x);
+void Date_Tm_setMin (Int x);
+void Date_Tm_setHour (Int x);
+void Date_Tm_setMday (Int x);
+void Date_Tm_setMon (Int x);
+void Date_Tm_setYear (Int x);
+void Date_Tm_setWday (Int x);
+void Date_Tm_setYday (Int x);
+void Date_Tm_setIsdst (Int x);
 
-Cstring Date_ascTime();
-void Date_gmTime(Pointer p);
-Int Date_localOffset();
-void Date_localTime(Pointer p);
-Int Date_mkTime();
-Int Date_strfTime(Pointer buf, Int n, NullString fmt);
+Cstring Date_ascTime (void);
+void Date_gmTime (Pointer p);
+Int Date_localOffset (void);
+void Date_localTime (Pointer p);
+Int Date_mkTime (void);
+Int Date_strfTime (Pointer buf, Int n, Pointer fmt);
 
 /* ------------------------------------------------- */
 /*                       Debug                       */
@@ -209,7 +206,7 @@ void MLton_GC_setRusageMeasureGC (Int b);
  * overwrites them.
  */
 void IEEEReal_setRoundingMode (Int mode);
-Int IEEEReal_getRoundingMode ();
+Int IEEEReal_getRoundingMode (void);
 
 /* ------------------------------------------------- */
 /*                      IntInf                       */
@@ -260,10 +257,10 @@ void Itimer_set (Int which,
 /* print a bug message and exit (2) */
 void MLton_bug (Pointer msg);
 
-Int MLton_errno ();
+Int MLton_errno (void);
 /* halt the machine */
 void MLton_exit (Int status);
-Word MLton_random ();
+Word MLton_random (void);
 Word MLton_size (Pointer p);
 
 /* ---------------------------------- */
@@ -309,7 +306,7 @@ Pointer MLton_Profile_Data_malloc (void);
 void MLton_Profile_Data_write (Pointer data, Word fd);
 
 Pointer MLton_Profile_current (void);
-void MLton_Profile_done ();
+void MLton_Profile_done (void);
 void MLton_Profile_setCurrent (Pointer d);
 
 /* ---------------------------------- */
@@ -317,8 +314,8 @@ void MLton_Profile_setCurrent (Pointer d);
 /* ---------------------------------- */
 
 Pid MLton_Process_cwait (Pid p, Pointer s);
-Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
-Int MLton_Process_spawnp (NullString p, Pointer a);
+Int MLton_Process_spawne (Pointer p, Pointer a, Pointer e);
+Int MLton_Process_spawnp (Pointer p, Pointer a);
 
 /* ---------------------------------- */
 /*            MLton.Rlimit            */
@@ -356,8 +353,8 @@ Int MLton_Process_spawnp (NullString p, Pointer a);
 #define MLton_Rlimit_infinity RLIM_INFINITY
 
 Int MLton_Rlimit_get (Resource r);
-Rlimit MLton_Rlimit_getHard ();
-Rlimit MLton_Rlimit_getSoft ();
+Rlimit MLton_Rlimit_getHard (void);
+Rlimit MLton_Rlimit_getSoft (void);
 Int MLton_Rlimit_set (Resource r, Rlimit hard, Rlimit soft);
 
 /* ------------------------------------------------- */
@@ -368,7 +365,7 @@ Int MLton_Rlimit_set (Resource r, Rlimit hard, Rlimit soft);
 #define OS_IO_POLLPRI POLLPRI
 #define OS_IO_POLLOUT POLLOUT
 
-Cstring OS_FileSys_tmpnam ();
+Cstring OS_FileSys_tmpnam (void);
 Int OS_IO_poll (Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
 
 /* ------------------------------------------------- */
@@ -386,9 +383,9 @@ void PackReal_update (Pointer a, Int offset, Real64 r);
 /*            Posix.Error             */
 /* ---------------------------------- */
 
-void Posix_Error_clearErrno ();
-Int Posix_Error_gettErrno ();
-Cstring Posix_Error_strerror (Syserror n);
+void Posix_Error_clearErrno (void);
+Int Posix_Error_gettErrno (void);
+Cstring Posix_Error_strerror (Int n);
 
 #define Posix_Error_acces EACCES
 #define Posix_Error_again EAGAIN
@@ -529,50 +526,40 @@ Cstring Posix_Error_strerror (Syserror n);
 #define Posix_FileSys_PRIO_IO 0
 #endif
 
-Int Posix_FileSys_Dirstream_closedir (Dirstream d);
-Dirstream Posix_FileSys_DirStream_opendir (NullString p);
-Cstring Posix_FileSys_Dirstream_readdir (Dirstream d);
-void Posix_FileSys_Dirstream_rewinddir (Dirstream p);
+Int Posix_FileSys_Dirstream_closedir (Cpointer d);
+Cpointer Posix_FileSys_DirStream_opendir (Pointer p);
+Cstring Posix_FileSys_Dirstream_readdir (Cpointer d);
+void Posix_FileSys_Dirstream_rewinddir (Cpointer p);
 
 Int Posix_FileSys_Stat_fstat (Fd f);
-Int Posix_FileSys_Stat_lstat (NullString f);
-Int Posix_FileSys_Stat_stat (NullString f);
-Word Posix_FileSys_Stat_dev ();
-Int Posix_FileSys_Stat_ino ();
-Word Posix_FileSys_Stat_mode ();
-Int Posix_FileSys_Stat_nlink ();
-Word Posix_FileSys_Stat_uid ();
-Word Posix_FileSys_Stat_gid ();
-Word Posix_FileSys_Stat_rdev ();
-Position Posix_FileSys_Stat_size ();
-Int Posix_FileSys_Stat_atime ();
-Int Posix_FileSys_Stat_mtime ();
-Int Posix_FileSys_Stat_ctime ();
+Int Posix_FileSys_Stat_lstat (Pointer f);
+Int Posix_FileSys_Stat_stat (Pointer f);
+Word Posix_FileSys_Stat_dev (void);
+Int Posix_FileSys_Stat_ino (void);
+Word Posix_FileSys_Stat_mode (void);
+Int Posix_FileSys_Stat_nlink (void);
+Word Posix_FileSys_Stat_uid (void);
+Word Posix_FileSys_Stat_gid (void);
+Word Posix_FileSys_Stat_rdev (void);
+Position Posix_FileSys_Stat_size (void);
+Int Posix_FileSys_Stat_atime (void);
+Int Posix_FileSys_Stat_mtime (void);
+Int Posix_FileSys_Stat_ctime (void);
 
 void Posix_FileSys_Utimbuf_setActime (Int x);
 void Posix_FileSys_Utimbuf_setModTime (Int x);
-Int Posix_FileSys_Utimbuf_utime (NullString s);
+Int Posix_FileSys_Utimbuf_utime (Pointer s);
 
-Int Posix_FileSys_access (NullString f, Word w);
-Int Posix_FileSys_chdir (NullString p);
-Int Posix_FileSys_chmod (NullString p, Mode m);
-Int Posix_FileSys_chown (NullString p, Uid u, Gid g);
-Int Posix_FileSys_fchmod (Fd f, Mode m);
-Int Posix_FileSys_fchown (Fd f, Uid u, Gid g);
-Int Posix_FileSys_fpathconf (Fd f, Int n);
-Int Posix_FileSys_ftruncate (Fd f, Position n);
-Cstring Posix_FileSys_getcwd (Pointer buf, Size n);
-Int Posix_FileSys_link (NullString p1, NullString p2);
-Int Posix_FileSys_mkdir (NullString p, Word w);
-Int Posix_FileSys_mkfifo (NullString p, Word w);
-Int Posix_FileSys_open (NullString p, Word w, Mode m);
-Int Posix_FileSys_pathconf (NullString p, Int n);
-Int Posix_FileSys_readlink (NullString p, Pointer b, Int);
-Int Posix_FileSys_rename (NullString p1, NullString p2);
-Int Posix_FileSys_rmdir (NullString p);
-Int Posix_FileSys_symlink (NullString p1, NullString p2);
+Int Posix_FileSys_mkdir (Pointer p, Word w);
+Int Posix_FileSys_mkfifo (Pointer p, Word w);
+Int Posix_FileSys_open (Pointer p, Word w, Mode m);
+Int Posix_FileSys_pathconf (Pointer p, Int n);
+Int Posix_FileSys_readlink (Pointer p, Pointer b, Int);
+Int Posix_FileSys_rename (Pointer p1, Pointer p2);
+Int Posix_FileSys_rmdir (Pointer p);
+Int Posix_FileSys_symlink (Pointer p1, Pointer p2);
 Word Posix_FileSys_umask (Word w);
-Word Posix_FileSys_unlink (NullString p);
+Word Posix_FileSys_unlink (Pointer p);
 
 Bool Posix_FileSys_ST_isDir (Word w);
 Bool Posix_FileSys_ST_isChr (Word w);
@@ -606,11 +593,11 @@ Bool Posix_FileSys_ST_isSock (Word w);
 #define Posix_IO_FD_cloexec FD_CLOEXEC
 
 Int Posix_IO_FLock_fcntl (Fd f, Int cmd);
-Int Posix_IO_FLock_type ();
-Int Posix_IO_FLock_whence ();
-Position Posix_IO_FLock_start ();
-Position Posix_IO_FLock_len ();
-Int Posix_IO_FLock_pid ();
+Int Posix_IO_FLock_type (void);
+Int Posix_IO_FLock_whence (void);
+Position Posix_IO_FLock_start (void);
+Position Posix_IO_FLock_len (void);
+Int Posix_IO_FLock_pid (void);
 void Posix_IO_FLock_setType (Int x);
 void Posix_IO_FLock_setWhence (Int x);
 void Posix_IO_FLock_setStart (Position x);
@@ -664,38 +651,38 @@ enum {
   Posix_ProcEnv_numgroups = 100,
 };
 
-Pid Posix_ProcEnv_getpid ();
-Pid Posix_ProcEnv_getppid ();
-Uid Posix_ProcEnv_getuid ();
-Uid Posix_ProcEnv_geteuid ();
-Gid Posix_ProcEnv_getgid ();
-Gid Posix_ProcEnv_getegid ();
-Int Posix_ProcEnv_setenv (NullString s, NullString v);
+Pid Posix_ProcEnv_getpid (void);
+Pid Posix_ProcEnv_getppid (void);
+Uid Posix_ProcEnv_getuid (void);
+Uid Posix_ProcEnv_geteuid (void);
+Gid Posix_ProcEnv_getgid (void);
+Gid Posix_ProcEnv_getegid (void);
+Int Posix_ProcEnv_setenv (Pointer s, Pointer v);
 Int Posix_ProcEnv_setuid (Uid u);
 Int Posix_ProcEnv_setgid (Gid g);
 Int Posix_ProcEnv_getgroups (Pointer groups);
-Cstring Posix_ProcEnv_getlogin ();
-Pid Posix_ProcEnv_getpgrp ();
-Pid Posix_ProcEnv_setsid ();
+Cstring Posix_ProcEnv_getlogin (void);
+Pid Posix_ProcEnv_getpgrp (void);
+Pid Posix_ProcEnv_setsid (void);
 Int Posix_ProcEnv_setpgid (Pid p, Gid g);
 
-Int Posix_ProcEnv_Uname_uname ();
-Cstring Posix_ProcEnv_Uname_sysname ();
-Cstring Posix_ProcEnv_Uname_nodename ();
-Cstring Posix_ProcEnv_Uname_release ();
-Cstring Posix_ProcEnv_Uname_version ();
-Cstring Posix_ProcEnv_Uname_machine ();
+Int Posix_ProcEnv_Uname_uname (void);
+Cstring Posix_ProcEnv_Uname_sysname (void);
+Cstring Posix_ProcEnv_Uname_nodename (void);
+Cstring Posix_ProcEnv_Uname_release (void);
+Cstring Posix_ProcEnv_Uname_version (void);
+Cstring Posix_ProcEnv_Uname_machine (void);
 
-Int Posix_ProcEnv_Tms_utime ();
-Int Posix_ProcEnv_Tms_stime ();
-Int Posix_ProcEnv_Tms_cutime ();
-Int Posix_ProcEnv_Tms_cstime ();
+Int Posix_ProcEnv_Tms_utime (void);
+Int Posix_ProcEnv_Tms_stime (void);
+Int Posix_ProcEnv_Tms_cutime (void);
+Int Posix_ProcEnv_Tms_cstime (void);
 
-Cstring Posix_ProcEnv_ctermid ();
-Cstring Posix_ProcEnv_getenv (NullString s);
+Cstring Posix_ProcEnv_ctermid (void);
+Cstring Posix_ProcEnv_getenv (Pointer s);
 Bool Posix_ProcEnv_isatty (Fd f);
 Int Posix_ProcEnv_sysconf (Int i);
-Int Posix_ProcEnv_times ();
+Int Posix_ProcEnv_times (void);
 Cstring Posix_ProcEnv_ttyname (Fd f);
 
 /* ---------------------------------- */
@@ -729,12 +716,12 @@ Cstring Posix_ProcEnv_ttyname (Fd f);
 #define Posix_Signal_vtalrm SIGVTALRM
 
 Int Posix_Process_alarm (Int i);
-Int Posix_Process_exece (NullString path, Pointer args, Pointer env);
-Int Posix_Process_execp (NullString file, Pointer args);
+Int Posix_Process_exece (Pointer path, Pointer args, Pointer env);
+Int Posix_Process_execp (Pointer file, Pointer args);
 void Posix_Process_exit (Int i);
-Pid Posix_Process_fork ();
+Pid Posix_Process_fork (void);
 Int Posix_Process_kill (Pid p, Signal s);
-Int Posix_Process_pause ();
+Int Posix_Process_pause (void);
 Int Posix_Process_sleep (Int i);
 Pid Posix_Process_waitpid (Pid p, Pointer s, Int i);
 Bool Posix_Process_ifExited (Status s);
@@ -765,27 +752,27 @@ Int Posix_Signal_isDefault (Int signum, Bool *isDef);
 Bool Posix_Signal_isPending (Int signum);
 Int Posix_Signal_sigaddset (Int signum);
 Int Posix_Signal_sigdelset (Int signum);
-Int Posix_Signal_sigemptyset ();
-Int Posix_Signal_sigfillset ();
+Int Posix_Signal_sigemptyset (void);
+Int Posix_Signal_sigfillset (void);
 Int Posix_Signal_sigprocmask (Int how);
-Int Posix_Signal_sigsuspend ();
+Int Posix_Signal_sigsuspend (void);
 
 /* ---------------------------------- */
 /*            Posix.SysDB             */
 /* ---------------------------------- */
 
-Cstring Posix_SysDB_Passwd_name ();
-Uid Posix_SysDB_Passwd_uid ();
-Gid Posix_SysDB_Passwd_gid ();
-Cstring Posix_SysDB_Passwd_dir ();
-Cstring Posix_SysDB_Passwd_shell ();
+Cstring Posix_SysDB_Passwd_name (void);
+Uid Posix_SysDB_Passwd_uid (void);
+Gid Posix_SysDB_Passwd_gid (void);
+Cstring Posix_SysDB_Passwd_dir (void);
+Cstring Posix_SysDB_Passwd_shell (void);
 Bool Posix_SysDB_getpwnam (Pointer p);
 Bool Posix_SysDB_getpwuid (Uid u);
 Bool Posix_SysDB_getgrgid (Gid g);
-Bool Posix_SysDB_getgrnam (NullString s);
-Cstring Posix_SysDB_Group_name ();
-Gid Posix_SysDB_Group_gid ();
-CstringArray Posix_SysDB_Group_mem ();
+Bool Posix_SysDB_getgrnam (Pointer s);
+Cstring Posix_SysDB_Group_name (void);
+Gid Posix_SysDB_Group_gid (void);
+CstringArray Posix_SysDB_Group_mem (void);
 
 /* ---------------------------------- */
 /*             Posix.TTY              */
@@ -862,13 +849,13 @@ CstringArray Posix_SysDB_Group_mem ();
 #define Posix_TTY_TC_ioflush TCIOFLUSH
 #define Posix_TTY_TC_oflush TCOFLUSH
 
-Flag Posix_TTY_Termios_iflag ();
-Flag Posix_TTY_Termios_oflag ();
-Flag Posix_TTY_Termios_cflag ();
-Flag Posix_TTY_Termios_lflag ();
-Cstring Posix_TTY_Termios_cc ();
-Speed Posix_TTY_Termios_cfgetospeed ();
-Speed Posix_TTY_Termios_cfgetispeed ();
+Flag Posix_TTY_Termios_iflag (void);
+Flag Posix_TTY_Termios_oflag (void);
+Flag Posix_TTY_Termios_cflag (void);
+Flag Posix_TTY_Termios_lflag (void);
+Cstring Posix_TTY_Termios_cc (void);
+Speed Posix_TTY_Termios_cfgetospeed (void);
+Speed Posix_TTY_Termios_cfgetispeed (void);
 void Posix_TTY_Termios_setiflag (Flag f);
 void Posix_TTY_Termios_setoflag (Flag f);
 void Posix_TTY_Termios_setcflag (Flag f);
@@ -897,17 +884,17 @@ Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 /* ------------------------------------------------- */
 
 #if (defined (__MSVCRT__))
-void MLton_initSockets ();
+void MLton_initSockets (void);
 #else
-static inline void MLton_initSockets () {}
+static inline void MLton_initSockets (void) {}
 #endif
 
-#define NetHostDB_inAddrLen sizeof(struct in_addr)
+#define NetHostDB_inAddrLen sizeof (struct in_addr)
 #define NetHostDB_INADDR_ANY INADDR_ANY
-#define Socket_sockAddrLenMax max(sizeof(struct sockaddr), \
-                              max(sizeof(struct sockaddr_un), \
-                              max(sizeof(struct sockaddr_in), \
-                                  sizeof(struct sockaddr_in6))))
+#define Socket_sockAddrLenMax max(sizeof (struct sockaddr), \
+                              max(sizeof (struct sockaddr_un), \
+                              max(sizeof (struct sockaddr_in), \
+                                  sizeof (struct sockaddr_in6))))
 #define Socket_AF_UNIX PF_UNIX
 #define Socket_AF_INET PF_INET
 #define Socket_AF_INET6 PF_INET6
@@ -956,21 +943,21 @@ int String_equal (char * s1, char * s2);
 /*                      Thread                       */
 /* ------------------------------------------------- */
 
-Thread Thread_current ();
-void Thread_finishHandler ();
-void Thread_resetSignals ();
-Thread Thread_saved ();
-void Thread_setHandler (Thread t);
-void Thread_startHandler ();
-void Thread_switchTo (Thread t, Word ensureBytesFree);
+Pointer Thread_current (void);
+void Thread_finishSignalHandler (void);
+void Thread_resetSignals (void);
+Pointer Thread_saved (void);
+void Thread_setSignalHandler (Pointer t);
+void Thread_startSignalHandler (void);
+void Thread_switchTo (Pointer t, Word ensureBytesFree);
 
 /* ------------------------------------------------- */
 /*                       Time                        */
 /* ------------------------------------------------- */
 
-Int Time_gettimeofday ();
-Int Time_sec ();
-Int Time_usec ();
+Int Time_gettimeofday (void);
+Int Time_sec (void);
+Int Time_usec (void);
 
 /* ------------------------------------------------- */
 /*                      Windows                      */

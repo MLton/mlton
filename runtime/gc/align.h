@@ -6,5 +6,5 @@
  * See the file MLton-LICENSE for details.
  */
 
-int processAtMLton (GC_state s, int argc,
-                    char **argv, char **worldFile);
+bool isFrontierAligned (GC_state s, pointer p);
+pointer alignFrontier (GC_state s, pointer p);

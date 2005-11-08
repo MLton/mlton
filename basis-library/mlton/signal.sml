@@ -172,7 +172,7 @@ structure Handler =
                          end)
 
             val () =
-               MLtonThread.setHandler
+               MLtonThread.setSignalHandler
                (fn t =>
                 let
                    val mask = Mask.getBlocked ()
@@ -221,7 +221,7 @@ val setHandler = fn (s, h) =>
 fun suspend m =
    (Mask.write m
     ; Prim.suspend ()
-    ; MLtonThread.switchToHandler ())
+    ; MLtonThread.switchToSignalHandler ())
 
 fun handleGC f =
    (Prim.handleGC ()

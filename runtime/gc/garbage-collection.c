@@ -187,7 +187,7 @@ void GC_gc (GC_state s, size_t bytesRequested, bool force,
   if (0 == bytesRequested)
     bytesRequested = GC_HEAP_LIMIT_SLOP;
   getThreadCurrent(s)->bytesNeeded = bytesRequested;
-  switchToHandlerThreadIfNonAtomicAndSignalPending (s);
+  switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
   ensureInvariantForMutator (s, force);
   assert (invariantForMutatorFrontier(s));
   assert (invariantForMutatorStack(s));

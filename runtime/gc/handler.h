@@ -6,4 +6,4 @@
  * See the file MLton-LICENSE for details.
  */
 
-void switchToHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
+void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s);

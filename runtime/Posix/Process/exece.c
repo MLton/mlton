@@ -1,6 +1,6 @@
 #include "platform.h"
 
-Int Posix_Process_exece (NullString p, Pointer a, Pointer e) {
+Int Posix_Process_exece (Pointer p, Pointer a, Pointer e) {
         char            *path;
         char            *asaved;
         char            *esaved;

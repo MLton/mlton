@@ -340,7 +340,7 @@ copy:
     } else {
       unlink_safe (template);
       if (s->controls.messages)
-        showMem ();
+        GC_displayMem ();
       die ("Out of memory.  Unable to allocate %zu bytes.\n",
            /*uintToCommaString*/(minSize));
     }

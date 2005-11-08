@@ -1705,15 +1705,15 @@ structure Primitive =
              *)
             val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
             val current = _import "Thread_current": unit -> thread;
-            val finishHandler = _import "Thread_finishHandler": unit -> unit;
+            val finishSignalHandler = _import "Thread_finishSignalHandler": unit -> unit;
             val returnToC = _prim "Thread_returnToC": unit -> unit;
             val saved = _import "Thread_saved": unit -> thread;
             val savedPre = _import "Thread_saved": unit -> preThread;
             val setCallFromCHandler =
                _import "Thread_setCallFromCHandler": thread -> unit;
-            val setHandler = _import "Thread_setHandler": thread -> unit;
+            val setSignalHandler = _import "Thread_setSignalHandler": thread -> unit;
             val setSaved = _import "Thread_setSaved": thread -> unit;
-            val startHandler = _import "Thread_startHandler": unit -> unit;
+            val startSignalHandler = _import "Thread_startSignalHandler": unit -> unit;
             val switchTo = _prim "Thread_switchTo": thread -> unit;
          end      
 

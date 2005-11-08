@@ -8,6 +8,6 @@ int Posix_Error_getErrno () {
         return errno;
 }
 
-Cstring Posix_Error_strerror (Syserror n) {
+Cstring Posix_Error_strerror (Int n) {
         return (Cstring)(strerror (n));
 }

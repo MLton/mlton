@@ -7,12 +7,10 @@
  */
 
 #define MLTON_GC_INTERNAL
-#include "gc.h"
+#include "platform.h"
 #undef MLTON_GC_INTERNAL
 #include "gc/rusage.h"
-#include "gc/virtual-memory.h"
 
-#include "gc/debug.c"
 #include "gc/virtual-memory.c"
 #include "gc/align.c"
 #include "gc/read_write.c"
@@ -47,6 +45,7 @@
 #include "gc/new-object.c"
 #include "gc/object-size.c"
 #include "gc/object.c"
+#include "gc/objptr.c"
 #include "gc/pack.c"
 #include "gc/pointer.c"
 #include "gc/profiling.c"

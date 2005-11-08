@@ -15,7 +15,7 @@ size_t sizeofWeak (GC_state s) {
     uint16_t numNonObjptrs, numObjptrs;
 
     splitHeader (s, GC_WEAK_GONE_HEADER, NULL, NULL, &numNonObjptrs, &numObjptrs);
-    check = GC_NORMAL_HEADER_SIZE + sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
+    check = GC_NORMAL_HEADER_SIZE + sizeofWeakNoHeader (s, numNonObjptrs, numObjptrs);
     assert (check == res);
   }
   /* The following assert depends on struct GC_weak being the right

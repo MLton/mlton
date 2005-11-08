@@ -50,10 +50,10 @@ Int Posix_FileSys_Stat_fstat (Fd f) {
         return fstat (f, &statbuf);
 }
 
-Int Posix_FileSys_Stat_lstat (NullString f) {
+Int Posix_FileSys_Stat_lstat (Pointer f) {
         return lstat ((char*)f, &statbuf);
 }
 
-Int Posix_FileSys_Stat_stat (NullString f) {    
+Int Posix_FileSys_Stat_stat (Pointer f) {    
         return stat ((char*)f, &statbuf);
 }

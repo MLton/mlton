@@ -68,18 +68,29 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 #	-Winline -Wdisabled-optimization
 DEBUGWARNFLAGS = $(DEBUGFLAGS) $(WARNFLAGS) -Wunused
 
+UTILCFILES =							\
+	$(shell find util -type f | grep '\.c$$')
+UTILHFILES =							\
+	$(shell find util -type f | grep '\.h$$')
+UTILOFILES = $(foreach f, $(UTILCFILES), $(basename $(f)).o)
+
+GCCFILES =							\
+	$(shell find gc -type f | grep '\.c$$')
+GCHFILES =							\
+	$(shell find gc -type f | grep '\.h$$')
+
 CFILES = 							\
-	$(shell find util -type f | grep '\.c$$')		\
+	$(UTILCFILES)						\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	$(shell find Posix -type f | grep '\.c$$')		\
 	gc.c							\
 	platform.c
 
 HFILES = 							\
+	$(UTILHFILES)						\
 	util.h							\
-	$(shell find util -type f | grep '\.h$$')		\
+	$(GCHFILES)						\
 	gc.h							\
-	$(shell find gc -type f | grep '\.h$$')			\
 	types.h							\
 	platform.h						\
 	platform/$(TARGET_OS).h
@@ -143,17 +154,25 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c
 
-gc.o: gc.c $(shell find gc -type f | grep '\.c$$') $(HFILES) 
-	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
 
-gc-gdb.o: gc.c $(shell find gc -type f | grep '\.c$$') $(HFILES) 
+util/%-gdb.o: util/%.c util.h $(UTILHFILES)
 	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
 
-util/%.o: util/%.c $(HFILES)
+util/%.o: util/%.c util.h $(UTILHFILES)
 	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
 
-util/%-gdb.o: util/%.c $(HFILES)
+types.h: gen/gen-types.c util.h $(UTILOFILES)
+	rm -f types.h
+	$(CC) $(CFLAGS) $(WARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
+	./gen-types
+	chmod a+r types.h
+	rm -f gen-types
+
+gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+
+gc.o: gc.c $(GCCFILES) $(HFILES) 
+	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a
@@ -162,9 +181,9 @@ util/%-gdb.o: util/%.c $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGFLAGS) $(WARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(CFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(CFLAGS) $(DEBUGWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<

@@ -5,14 +5,17 @@
  * See the file MLton-LICENSE for details.
  */
 
+#define MLTON_GC_INTERNAL
 #include "platform.h"
+#undef MLTON_GC_INTERNAL
+
 #include "interpret.h"
 #include "c-chunk.h"    // c-chunk.h must come before opcode.h because it
                         // redefines some opcode symbols
 #include "opcode.h"
 
 enum {
-        DEBUG = FALSE,
+  DEBUG_BYTECODE = FALSE,
 };
 
 typedef Word32 ArrayIndex;
@@ -75,7 +78,7 @@ quotRem2 (rem)
 #define Fetch(t, z)                                                             \
         do {                                                                    \
                 z = *(t*)pc;                                                    \
-                if (DEBUG or disassemble) {                                     \
+                if (DEBUG or DEBUG_BYTECODE or disassemble) {                   \
                         if (#z == "label")                                      \
                                 fprintf (stderr, " %s", offsetToLabel[z]);      \
                         else if (#z != "opc")                                   \
@@ -318,10 +321,10 @@ enum {
                 assertRegsEmpty ();                                     \
                 while (pc < lastCase) {                                 \
                         Word##size caseWord;                            \
-                        if (DEBUG or disassemble)                       \
+                        if (DEBUG or DEBUG_BYTECODE or disassemble)     \
                                 fprintf (stderr, "\n\t  ");             \
                         Fetch (Word##size, caseWord);                   \
-                        if (DEBUG or disassemble)                       \
+                        if (DEBUG or DEBUG_BYTECODE or disassemble)     \
                                 fprintf (stderr, " =>");                \
                         Fetch (Label, label);                           \
                         if (not disassemble and test == caseWord)       \
@@ -376,8 +379,9 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 
         code = b->code;
         pcMax = b->code + b->codeSize;
-        if (DEBUG or disassemble) {
-                ARRAY (String*, offsetToLabel, b->codeSize);
+        if (DEBUG or DEBUG_BYTECODE or disassemble) {
+                offsetToLabel =
+                  (String*)(calloc_safe (b->codeSize, sizeof(*offsetToLabel)));
                 for (i = 0; i < b->nameOffsetsSize; ++i)
                         offsetToLabel [b->nameOffsets[i].codeOffset] =
                                 b->addressNames + b->nameOffsets[i].nameOffset;
@@ -391,7 +395,7 @@ static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
 mainLoop:
         if (FALSE)
                 displayRegs ();
-        if (DEBUG or disassemble) {
+        if (DEBUG or DEBUG_BYTECODE or disassemble) {
                 if (pc == pcMax)
                         goto done;
                 name = offsetToLabel [pc - b->code];
@@ -401,8 +405,8 @@ mainLoop:
         }
         assert (code <= pc and pc < pcMax);
         Fetch (Opcode, opc);
-        assert (opc < cardof (opcodeStrings));
-        if (DEBUG or disassemble)
+        assert (opc < (cardof (opcodeStrings)));
+        if (DEBUG or DEBUG_BYTECODE or disassemble)
                 fprintf (stderr, "%s", opcodeStrings[opc]);
         switch (opc) {
         prims ();
@@ -456,7 +460,7 @@ mainLoop:
         }
         assert (FALSE);
 done:
-        if (DEBUG or disassemble)
+        if (DEBUG or DEBUG_BYTECODE or disassemble)
                 free (offsetToLabel);
         return;
 }
@@ -467,7 +471,7 @@ static void disassemble (Bytecode b, Word32 codeOffset) {
 }
 
 void MLton_Bytecode_interpret (Bytecode b, Word32 codeOffset) {
-        if (DEBUG) {
+        if (DEBUG or DEBUG_BYTECODE) {
                 fprintf (stderr, "MLton_Bytecode_interpret (0x%08x, %u)\n",
                                 (uint)b,
                                 (uint)codeOffset);

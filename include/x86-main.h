@@ -93,13 +93,13 @@ void MLton_callFromC () {                                               \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         s = &gcState;                                                   \
         s->savedThread = s->currentThread;                              \
-        s->canHandle += 3;                                              \
+        s->atomicState += 3;                                            \
         /* Return to the C Handler thread. */                           \
-        GC_switchToThread (s, s->callFromCHandler, 0);                  \
-        jump = *(pointer*)(s->stackTop - WORD_SIZE);                    \
+        GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
+        jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE);        \
         MLton_jumpToSML(jump);                                          \
         GC_switchToThread (s, s->savedThread, 0);                       \
-        s->savedThread = BOGUS_THREAD;                                  \
+        s->savedThread = BOGUS_OBJPTR;                                  \
         if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_callFromC() done\n");           \
         return;                                                         \
@@ -109,11 +109,11 @@ int main (int argc, char **argv) {                                      \
         extern pointer ml;                                              \
                                                                         \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.isOriginal) {                                       \
+        if (gcState.amOriginal) {                                       \
                 real_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
-                jump = *(pointer*)(gcState.stackTop - WORD_SIZE);       \
+                jump = *(pointer*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         MLton_jumpToSML(jump);                                          \
         return 1;                                                       \

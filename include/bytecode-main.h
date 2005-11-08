@@ -33,7 +33,7 @@ void MLton_callFromC () {                                               \
         s->canHandle += 3;                                              \
         /* Switch to the C Handler thread. */                           \
         GC_switchToThread (s, s->callFromCHandler, 0);                  \
-        nextFun = *(int*)(s->stackTop - WORD_SIZE);                     \
+        nextFun = *(int*)(s->stackTop - GC_RETURNADDRESS_SIZE);         \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
         GC_switchToThread (s, s->savedThread, 0);                       \
         s->savedThread = BOGUS_THREAD;                                  \
@@ -48,7 +48,7 @@ int main (int argc, char **argv) {                                      \
                 nextFun = ml;                                           \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextFun = *(int*)(gcState.stackTop - WORD_SIZE);        \
+                nextFun = *(int*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
 }

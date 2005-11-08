@@ -68,8 +68,9 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     }
   } else if (WEAK_TAG == tag) {
     p += sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
-    if (not skipWeaks and 1 == numObjptrs) {
-      callIfIsObjptr (s, f, (objptr*)p);
+    if (1 == numObjptrs) {
+      if (not skipWeaks)
+        callIfIsObjptr (s, f, (objptr*)p);
       p += OBJPTR_SIZE;
     }
   } else if (ARRAY_TAG == tag) {

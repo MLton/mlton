@@ -75,7 +75,7 @@ void saveWorldToFD (GC_state s, int fd) {
   (*s->saveGlobals) (fd);
 }
 
-void GC_saveWorldToFD (GC_state s, int fd) {
+void GC_saveWorld (GC_state s, int fd) {
   enter (s);
   saveWorldToFD (s, fd);
   leave (s);

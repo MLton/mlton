@@ -14,7 +14,7 @@ typedef struct GC_intInf {
   GC_arrayLength length;
   GC_header header;
   uint32_t isneg;
-  uint32_t *limbs;
+  uint32_t limbs[0];
 } *GC_intInf;
 
 #define GC_INTINF_HEADER GC_WORD32_VECTOR_HEADER

@@ -10,6 +10,6 @@ void Posix_FileSys_Utimbuf_setModTime (Int i) {
         utimbuf.modtime = i;
 } 
 
-Int Posix_FileSys_Utimbuf_utime (NullString s) {
+Int Posix_FileSys_Utimbuf_utime (Pointer s) {
         return (Int)utime((char *)s, &utimbuf);
 }

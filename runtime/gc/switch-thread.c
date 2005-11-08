@@ -35,7 +35,7 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
     switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
     s->atomicState--;
-    switchToHandlerThreadIfNonAtomicAndSignalPending (s);
+    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
     ensureInvariantForMutator (s, FALSE);
     assert (invariantForMutatorFrontier(s));
     assert (invariantForMutatorStack(s));
@@ -49,7 +49,7 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
     switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
     s->atomicState--;
-    switchToHandlerThreadIfNonAtomicAndSignalPending (s);
+    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
     /* BEGIN: ensureInvariantForMutator */
     if (not (invariantForMutatorFrontier(s))
         or not (invariantForMutatorStack(s))) {

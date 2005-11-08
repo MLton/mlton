@@ -127,15 +127,19 @@ void forwardObjptr (GC_state s, objptr *opp) {
       }
     }
     /* Store the forwarding pointer in the old object. */
-    *(GC_header*)(p - GC_HEADER_SIZE) = GC_FORWARDED;
-    *(objptr*)p = pointerToObjptr(s->forwardState.back + headerBytes, 
-                                  s->forwardState.toStart);
+    *((GC_header*)(p - GC_HEADER_SIZE)) = GC_FORWARDED;
+    *((objptr*)p) = pointerToObjptr (s->forwardState.back + headerBytes, 
+                                     s->forwardState.toStart);
     /* Update the back of the queue. */
     s->forwardState.back += size + skip;
     assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE, 
                        s->alignment));
   }
-  *opp = *(objptr*)p;
+  *opp = *((objptr*)p);
+  if (DEBUG_DETAILED)
+    fprintf (stderr,
+             "forwardObjptr --> *opp = "FMTPTR"\n",
+             (uintptr_t)*opp);
   assert (isObjptrInToSpace (s, *opp));
 }
 

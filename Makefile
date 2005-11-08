@@ -276,8 +276,12 @@ runtime:
 	$(MAKE) -C runtime
 	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
 	$(CP) runtime/*.h include/*.h $(INC)/
+	mkdir -p $(INC)/gc
+	mkdir -p $(INC)/util
 	mkdir -p $(INC)/platform
 	$(CP) bytecode/interpret.h $(INC)
+	$(CP) runtime/gc/*.h $(INC)/gc
+	$(CP) runtime/util/*.h $(INC)/util
 	$(CP) runtime/platform/*.h $(INC)/platform
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes

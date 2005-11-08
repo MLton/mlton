@@ -42,15 +42,15 @@ datatype z = datatype ConstType.t
 
 val gcFields =
    [
-    "canHandle",
+    "atomicState",
     "currentThread",
     "exnStack",
     "frontier",
-    "cardMapForMutator",
+    "generationalMaps.cardMapAbsolute",
     "limit",
     "limitPlusSlop",
     "maxFrameSize",
-    "signalIsPending",
+    "signalsInfo.signalIsPending",
     "stackBottom",
     "stackLimit",
     "stackTop"
@@ -73,7 +73,8 @@ fun build (constants, out) =
    in
       List.foreach
       (List.concat
-       [["#include \"platform.h\"",
+       [["#define MLTON_GC_INTERNAL",
+         "#include \"platform.h\"",
          "struct GC_state gcState;",
          "",
          "int main (int argc, char **argv) {"],

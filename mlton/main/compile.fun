@@ -451,15 +451,15 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          in
             Runtime.GCField.setOffsets
             {
-             canHandle = get "canHandle",
-             cardMap = get "cardMapForMutator",
+             canHandle = get "atomicState",
+             cardMap = get "generationalMaps.cardMapAbsolute",
              currentThread = get "currentThread",
              exnStack = get "exnStack",
              frontier = get "frontier",
              limit = get "limit",
              limitPlusSlop = get "limitPlusSlop",
              maxFrameSize = get "maxFrameSize",
-             signalIsPending = get "signalIsPending",
+             signalIsPending = get "signalsInfo.signalIsPending",
              stackBottom = get "stackBottom",
              stackLimit = get "stackLimit",
              stackTop = get "stackTop"

@@ -58,7 +58,7 @@ void splitHeader(GC_state s, GC_header header,
   assert (1 == (header & GC_VALID_HEADER_MASK)); 
   objectTypeIndex = (header & TYPE_INDEX_MASK) >> TYPE_INDEX_SHIFT; 
   assert (objectTypeIndex < s->objectTypesLength); 
-  objectType = &s->objectTypes [objectTypeIndex]; 
+  objectType = &(s->objectTypes[objectTypeIndex]);
   tag = objectType->tag; 
   hasIdentity = objectType->hasIdentity; 
   numNonObjptrs = objectType->numNonObjptrs; 
@@ -67,11 +67,13 @@ void splitHeader(GC_state s, GC_header header,
   if (DEBUG_DETAILED) 
     fprintf (stderr, 
              "splitHeader ("FMTHDR")" 
+             "  objectTypeIndex = %u"
              "  tag = %s" 
              "  hasIdentity = %s" 
              "  numNonObjptrs = %"PRIu16 
              "  numObjptrs = %"PRIu16"\n", 
              header, 
+             objectTypeIndex,
              objectTypeTagToString(tag), 
              boolToString(hasIdentity), 
              numNonObjptrs, numObjptrs); 
@@ -104,5 +106,8 @@ pointer advanceToObjectData (GC_state s, pointer p) {
     /* Looking at a header word. */
     res = p + GC_NORMAL_HEADER_SIZE;
   assert (isAligned ((uintptr_t)res, s->alignment));
+  if (DEBUG_DETAILED)
+    fprintf (stderr, FMTPTR" = advanceToObjectData ("FMTPTR")\n",
+             (uintptr_t)res, (uintptr_t)p);
   return res;
 }

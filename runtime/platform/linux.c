@@ -4,9 +4,9 @@
 
 #include "getText.c"
 #include "mkdir2.c"
-#include "showMem.linux.c"
-#include "ssmmap.c"
-#include "totalRam.sysconf.c"
+#include "displayMem.linux.c"
+#include "mmap-protect.c"
+#include "sysconf.c"
 #include "use-mmap.c"
 
 #ifndef EIP
@@ -49,48 +49,9 @@ static void catcher (int sig, siginfo_t* sip, void* mystery) {
 #endif
 }
 
-void setSigProfHandler (struct sigaction *sa) {
+void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
-/* Work around Linux kernel bugs associated with the user and system times. */
-
-int fixedGetrusage (int who, struct rusage *rup) {
-        struct tms      tbuff;
-        int             res;
-        clock_t         user,
-                        sys;
-        static bool     first = TRUE;
-        static long     hz;
-
-        if (first) {
-                first = FALSE;
-                hz = sysconf (_SC_CLK_TCK);
-        }
-        res = getrusage (who, rup);
-        unless (res == 0)
-                return (res);
-        if (times (&tbuff) == -1)
-                diee ("Impossible: times() failed");
-        switch (who) {
-        case RUSAGE_SELF:
-                user = tbuff.tms_utime;
-                sys = tbuff.tms_stime;
-                break;
-        case RUSAGE_CHILDREN:
-                user = tbuff.tms_cutime;
-                sys = tbuff.tms_cstime;
-                break;
-        default:
-                die ("getrusage() accepted unknown who: %d", who);
-                exit (1);  /* needed to keep gcc from whining. */
-        }
-        rup->ru_utime.tv_sec = user / hz;
-        rup->ru_utime.tv_usec = (user % hz) * (1000000 / hz);
-        rup->ru_stime.tv_sec = sys / hz;
-        rup->ru_stime.tv_usec = (sys % hz) * (1000000 / hz);
-        return (0);
 }
 
 /* We need the value of MREMAP_MAYMOVE, which should come from sys/mman.h, but
@@ -102,8 +63,8 @@ int fixedGetrusage (int who, struct rusage *rup) {
  */
 #define MREMAP_MAYMOVE 1
 
-void *remap (void *old,  size_t oldSize, size_t newSize) {
-        return mremap (old, oldSize, newSize, MREMAP_MAYMOVE);
+void *GC_mremap (void *start, size_t oldLength, size_t newLength) {
+        return mremap (start, oldLength, newLength, MREMAP_MAYMOVE);
 }
 
 /* ------------------------------------------------- */
