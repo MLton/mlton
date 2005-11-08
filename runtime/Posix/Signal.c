@@ -27,7 +27,7 @@ Int Posix_Signal_default (Int signum) {
 bool Posix_Signal_isGCPending () {
         Bool res;
 
-        res = GC_getSignalIsPending (&gcState);
+        res = GC_getGCSignalPending (&gcState);
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "%s = Posix_Signal_isGCPending ()\n",
                                 boolToString (res));

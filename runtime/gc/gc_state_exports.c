@@ -37,16 +37,16 @@ sigset_t* GC_getSignalsHandledAddr (GC_state s) {
   return &(s->signalsInfo.signalsHandled);
 }
 
-bool GC_getSignalIsPending (GC_state s) {
-  return (s->signalsInfo.signalIsPending);
-}
-
 sigset_t* GC_getSignalsPendingAddr (GC_state s) {
   return &(s->signalsInfo.signalsPending);
 }
 
 void GC_setGCSignalHandled (GC_state s, bool b) {
   s->signalsInfo.gcSignalHandled = b;
+}
+
+bool GC_getGCSignalPending (GC_state s) {
+  return (s->signalsInfo.gcSignalPending);
 }
 
 void GC_setGCSignalPending (GC_state s, bool b) {

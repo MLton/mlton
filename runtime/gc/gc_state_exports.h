@@ -21,8 +21,8 @@ void GC_setSavedThread (GC_state s, GC_thread thread);
 void GC_setSignalHandlerThread (GC_state s, GC_thread thread);
 
 sigset_t* GC_getSignalsHandledAddr (GC_state s);
-bool GC_getSignalIsPending (GC_state s);
 sigset_t* GC_getSignalsPendingAddr (GC_state s);
 void GC_setGCSignalHandled (GC_state s, bool b);
+bool GC_getGCSignalPending (GC_state s);
 void GC_setGCSignalPending (GC_state s, bool b);
 
