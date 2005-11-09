@@ -90,6 +90,16 @@ if [ "$fail" = 'yes' ]; then
         exit 0
 fi
 
+forMinGW='false'
+if [ `host-os` = mingw ]; then
+	forMinGW='true'
+fi
+case $crossTarget in
+*mingw)
+	forMinGW='true'
+;;
+esac
+
 for f in `ls *.sml`; do
         f=`basename $f .sml`
         case `host-os` in
@@ -174,23 +184,19 @@ for f in `ls *.sml`; do
         esac
         if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
                 nonZeroMsg='Nonzero exit status.'
-                case $crossTarget in
-                *mingw)
-                        nonZeroMsg="$nonZeroMsg"'\r'
-                ;;
-                esac
+		if $forMinGW; then
+                       nonZeroMsg="$nonZeroMsg"'\r'
+		fi
                 ( ./$f || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
                 if [ -r $f.ok ]; then
                         compare="$f.$HOST_ARCH-$HOST_OS.ok"
                         if [ ! -r $compare ]; then
                                 compare="$f.ok"
                         fi
-                        case $crossTarget in
-                        *mingw)
+			if $forMinGW; then
                                 compare="$f.sed.ok"
-                                sed 's/$/\r/' <"$f.ok" >"$compare"
-                        ;;
-                        esac
+                                /c/cygwin/bin/sed 's/$/\r/' <"$f.ok" >"$compare"
+			fi
                         if ! diff $compare $tmp; then
                                 echo "difference with $flags"
                         fi
