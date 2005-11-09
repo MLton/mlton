@@ -12,14 +12,14 @@ usage () {
         exit 1
 }
 
-cross='no'
-fail='no'
-runOnly='no'
-short='no'
+cross='false'
+fail='false'
+runOnly='false'
+short='false'
 while [ "$#" -gt 0 ]; do
         case "$1" in
         -cross)
-                cross='yes'
+                cross='true'
                 shift
                 if [ "$#" = 0 ]; then
                         usage
@@ -28,11 +28,11 @@ while [ "$#" -gt 0 ]; do
                 shift
                 ;;
         -fail)
-                fail='yes'
+                fail='true'
                 shift
                 ;;
         -run-only)
-                runOnly='yes'
+                runOnly='true'
                 shift
                 if [ "$#" = 0 ]; then
                         usage
@@ -41,7 +41,7 @@ while [ "$#" -gt 0 ]; do
                 shift
                 ;;
         -short)
-                short='yes'
+                short='true'
                 shift
                 ;;
         *)
@@ -57,7 +57,7 @@ bin="$src/build/bin"
 lib="$src/build/lib"
 mlton="$bin/mlton"
 flags="-type-check true $flags"
-if [ $cross = 'yes' ]; then
+if $cross; then
         flags="$flags -target $crossTarget -stop g"
 fi
 cont='callcc.sml callcc2.sml callcc3.sml once.sml'
@@ -80,7 +80,7 @@ echo "flags = $flags"
 
 cd $src/regression
 
-if [ "$fail" = 'yes' ]; then
+if $fail; then
         for f in `ls fail/*.sml`; do
                 echo "testing $f"
                 ( $mlton $flags -stop tc $f >/dev/null 2>&1 &&
@@ -133,8 +133,7 @@ for f in `ls *.sml`; do
                 extraFlags=""
         ;;
         esac
-        case "$runOnly" in
-        no)
+	if (! $runOnly); then
                 mlb="$f.mlb"
                 echo "\$(SML_LIB)/basis/basis.mlb
                         \$(SML_LIB)/basis/mlton.mlb
@@ -149,12 +148,10 @@ for f in `ls *.sml`; do
                 cmd="$mlton $flags $extraFlags -output $f $mlb"
                 eval $cmd
                 rm $mlb
-                if [ "$?" -ne '0' ] || 
-                        [ "$cross" = 'no' -a ! -x "$f" ]; then
+                if [ "$?" -ne '0' ] || ((! $cross) && [ ! -x "$f" ]); then
                         compFail $f
                 fi
-        ;;
-        yes)
+	else
                 case $crossTarget in
                 *mingw)
                         libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
@@ -180,9 +177,8 @@ for f in `ls *.sml`; do
                         -L/usr/pkg/lib                          \
                         -L/usr/local/lib                        \
                         $files $libs
-        ;;
-        esac
-        if [ ! -r $f.nonterm -a $cross = 'no' -a -x $f ]; then
+	fi
+        if [ ! -r $f.nonterm -a $cross = 'false' -a -x $f ]; then
                 nonZeroMsg='Nonzero exit status.'
 		if $forMinGW; then
                        nonZeroMsg="$nonZeroMsg"'\r'
@@ -203,7 +199,7 @@ for f in `ls *.sml`; do
                 fi
         fi
 done
-if [ "$cross" = 'yes' -o "$runOnly" = 'yes' -o "$short" = 'yes' ]; then
+if $cross || $runOnly || $short; then
         exit 0
 fi
 mmake clean >/dev/null
