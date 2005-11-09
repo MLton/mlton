@@ -398,10 +398,10 @@ structure Primitive =
             val collect = _prim "GC_collect": unit -> unit;
             val pack = _import "MLton_GC_pack": unit -> unit;
             val setHashConsDuringGC =
-               _import "GC_setHashConsDuringGC": bool -> unit;
-            val setMessages = _import "GC_setMessages": bool -> unit;
-            val setRusageMeasureGC = _import "GC_setRusageMeasureGC": bool -> unit;
-            val setSummary = _import "GC_setSummary": bool -> unit;
+               _import "MLton_GC_setHashConsDuringGC": bool -> unit;
+            val setMessages = _import "MLton_GC_setMessages": bool -> unit;
+            val setRusageMeasureGC = _import "MLton_GC_setRusageMeasureGC": bool -> unit;
+            val setSummary = _import "MLton_GC_setSummary": bool -> unit;
             val unpack = _import "MLton_GC_unpack": unit -> unit;
          end
       
