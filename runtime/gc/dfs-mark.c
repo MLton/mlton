@@ -76,7 +76,7 @@ markNext:
    * nextHeader is the header of next.
    * todo is a pointer to the pointer inside cur that points to next.
    */
-  if (DEBUG_MARK_COMPACT)
+  if (DEBUG_DFS_MARK)
     fprintf (stderr, 
              "markNext"
              "  cur = "FMTPTR"  next = "FMTPTR
@@ -95,7 +95,7 @@ markNext:
   prev = cur;
   cur = next;
 mark:
-  if (DEBUG_MARK_COMPACT)
+  if (DEBUG_DFS_MARK)
     fprintf (stderr, "mark  cur = "FMTPTR"  prev = "FMTPTR"  mode = %s\n",
              (uintptr_t)cur, (uintptr_t)prev,
              (mode == MARK_MODE) ? "mark" : "unmark");
@@ -130,7 +130,7 @@ normalDone:
     todo = cur + sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
     index = 0;
 markInNormal:
-    if (DEBUG_MARK_COMPACT)
+    if (DEBUG_DFS_MARK)
       fprintf (stderr, "markInNormal  index = %"PRIu32"\n", index);
     assert (index < numObjptrs);
     // next = *(pointer*)todo;
@@ -186,7 +186,7 @@ markArrayElt:
     /* Skip to the first pointer. */
     todo += sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
 markInArray:
-    if (DEBUG_MARK_COMPACT)
+    if (DEBUG_DFS_MARK)
       fprintf (stderr, "markInArray arrayIndex = %"PRIu32" index = %"PRIu32"\n",
                arrayIndex, index);
     assert (arrayIndex < getArrayLength (cur));
@@ -234,7 +234,7 @@ markInStack:
      * to be marked.
      */
     assert (getStackBottom (s, (GC_stack)cur) <= top);
-    if (DEBUG_MARK_COMPACT)
+    if (DEBUG_DFS_MARK)
       fprintf (stderr, "markInStack  top = %zu\n",
                (size_t)(top - getStackBottom (s, (GC_stack)cur)));
     if (top == getStackBottom (s, (GC_stack)(cur)))
@@ -252,7 +252,7 @@ markInFrame:
     todo = top - frameLayout->size + frameOffsets [index + 1];
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
-    if (DEBUG_MARK_COMPACT)
+    if (DEBUG_DFS_MARK)
       fprintf (stderr,
                "    offset %u  todo "FMTPTR"  next = "FMTPTR"\n",
                frameOffsets [index + 1],
@@ -278,7 +278,7 @@ ret:
    * Need to set the pointer in the prev object that pointed to cur 
    * to point back to prev, and restore prev.
    */
-  if (DEBUG_MARK_COMPACT)
+  if (DEBUG_DFS_MARK)
     fprintf (stderr, "return  cur = "FMTPTR"  prev = "FMTPTR"\n",
              (uintptr_t)cur, (uintptr_t)prev);
   assert (isPointerMarkedByMode (cur, mode));

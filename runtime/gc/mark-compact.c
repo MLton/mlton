@@ -73,7 +73,7 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
   if (WEAK_TAG == tag and 1 == numObjptrs) {
     GC_header objptrHeader;
     
-    if (DEBUG_WEAK)
+    if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
     objptrHeader = getHeader (objptrToPointer(((GC_weak)p)->objptr, s->heap.start));
