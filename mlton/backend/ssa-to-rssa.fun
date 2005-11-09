@@ -1352,9 +1352,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            CFunction.weakCanGet
                                            {arg = Operand.ty (a 0)}
                                      in
-                                        ccall {args = (Vector.concat
-                                                       [Vector.new1 GCState,
-                                                        vos args]),
+                                        ccall {args = (Vector.new2
+                                                       (GCState,
+                                                        Vector.sub (vos args, 0))),
                                                func = func}
                                      end,
                                      fn () => move (Operand.bool false))
@@ -1368,9 +1368,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            {arg = Operand.ty (a 0),
                                             return = t}
                                      in
-                                        ccall {args = (Vector.concat
-                                                       [Vector.new1 GCState,
-                                                        vos args]),
+                                        ccall {args = (Vector.new2
+                                                       (GCState,
+                                                        Vector.sub (vos args, 0))),
                                                func = func}
                                      end,
                                      none)
