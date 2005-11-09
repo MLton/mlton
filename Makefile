@@ -349,6 +349,9 @@ PREFIX = /usr
 ifeq ($(TARGET_OS), darwin)
 PREFIX = /usr/local
 endif
+ifeq ($(TARGET_OS), mingw)
+PREFIX = /mingw
+endif
 ifeq ($(TARGET_OS), solaris)
 PREFIX = /usr/local
 endif
