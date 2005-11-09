@@ -27,7 +27,7 @@ void loadWorldFromFD (GC_state s, int fd) {
               s->heap.oldGenSize);
   createCardMapAndCrossMap (s); 
   read_safe (fd, s->heap.start, s->heap.oldGenSize);
-  (*s->loadGlobals) (fd);
+  (*(s->loadGlobals)) (fd);
   // unless (EOF == fgetc (file))
   //  die ("Invalid world: junk at end of file.");
   /* translateHeap must occur after loading the heap and globals,
@@ -72,7 +72,7 @@ void saveWorldToFD (GC_state s, int fd) {
   writeObjptr (fd, s->currentThread);
   writeObjptr (fd, s->signalHandlerThread);
   write_safe (fd, s->heap.start, s->heap.oldGenSize);
-  (*s->saveGlobals) (fd);
+  (*(s->saveGlobals)) (fd);
 }
 
 void GC_saveWorld (GC_state s, int fd) {

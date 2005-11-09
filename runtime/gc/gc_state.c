@@ -9,7 +9,7 @@
 void displayGCState (GC_state s, FILE *stream) {
   fprintf (stream,
            "GC state\n");
-  fprintf (stream, "\tcurrentThread"FMTOBJPTR"\n", s->currentThread);
+  fprintf (stream, "\tcurrentThread = "FMTOBJPTR"\n", s->currentThread);
   displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)), 
                  stream);
   fprintf (stream, "\tgenerational\n");
