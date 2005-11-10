@@ -28,7 +28,8 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t"FMTCMI"\n", i);
+        fprintf (stderr, "\t"FMTCMI"  "FMTCME"\n", 
+                 i, generational->crossMap[i]);
     fprintf (stderr, "\n");
   }               
 }
@@ -215,6 +216,10 @@ void updateCrossMap (GC_state s) {
   pointer nextObject, objectStart;
   pointer oldGenEnd;
   
+  if (DEBUG_GENERATIONAL) {
+    fprintf (stderr, "updateCrossMap starting\n");
+    displayGenerationalMaps (s, &s->generationalMaps, stderr);
+  }
   if (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize)
     goto done;
   oldGenEnd = s->heap.start + s->heap.oldGenSize;
@@ -231,6 +236,17 @@ loopObjects:
   assert ((objectStart == s->heap.start or cardStart < objectStart)
           and objectStart <= cardEnd);
   nextObject = objectStart + sizeofObject (s, advanceToObjectData (s, objectStart));
+  if (DEBUG_GENERATIONAL) {
+    fprintf (stderr, 
+             "\tloopObjects:\n"
+             "\t  cardIndex = "FMTCMI"\n"
+             "\t  cardStart = "FMTPTR"\n"
+             "\t    cardEnd = "FMTPTR"\n"
+             "\tobjectStart = "FMTPTR"\n"
+             "\t nextObject = "FMTPTR"\n",
+             cardIndex, (uintptr_t)cardStart, (uintptr_t)cardEnd,
+             (uintptr_t)objectStart, (uintptr_t)nextObject);
+  }
   if (nextObject > cardEnd) {
     /* We're about to move to a new card, so we are looking at the
      * last object boundary in the current card.  
@@ -257,4 +273,8 @@ loopObjects:
 done:
   assert (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize);
   assert (isCrossMapOk (s));
+  if (DEBUG_GENERATIONAL) {
+    fprintf (stderr, "updateCrossMap finished\n");
+    displayGenerationalMaps (s, &s->generationalMaps, stderr);
+  }
 }

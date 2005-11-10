@@ -18,6 +18,7 @@ typedef size_t GC_crossMapIndex;
 #define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
 #define CROSS_MAP_EMPTY ((GC_crossMapElem)255)
 #define FMTCMI "%zu"
+#define FMTCME "%"PRIu8
 
 struct GC_generationalMaps {
   /* cardMap is an array with cardinality equal to the size of the
