@@ -23,7 +23,7 @@ typedef uint32_t GC_arrayLength;
 #define PRIxARRLEN PRIu32
 #define FMTARRLEN "%"PRIxARRLEN
 typedef GC_arrayLength GC_arrayCounter;
-#define GC_ARRAY_COUNTER_SIZE GC_ARRAY_LENGTH_SIZE
+#define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
 #define PRIxARRCTR PRIu32
 #define FMTARRCTR "%"PRIxARRCTR
 #define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)

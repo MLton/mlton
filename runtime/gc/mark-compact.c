@@ -128,6 +128,7 @@ thread:
         fprintf (stderr, "threading "FMTPTR" of size %zu\n",
                  (uintptr_t)p, size);
       if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
+        pointer newArray = endOfLastMarked;
         /* Compress all of the unmarked into one vector.  We require
          * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
          * because that is the smallest possible array.  You cannot
@@ -141,11 +142,12 @@ thread:
           fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %zu)\n",
                    (uintptr_t)endOfLastMarked, (uintptr_t)front,
                    (size_t)(front - endOfLastMarked));
-        *((GC_arrayCounter*)(endOfLastMarked)) = 0;
-        endOfLastMarked = endOfLastMarked + GC_ARRAY_COUNTER_SIZE;
-        *((GC_arrayLength*)(endOfLastMarked)) = ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
-        endOfLastMarked = endOfLastMarked + GC_ARRAY_LENGTH_SIZE;
-        *((GC_header*)(endOfLastMarked)) = GC_WORD8_VECTOR_HEADER;
+        *((GC_arrayCounter*)(newArray)) = 0;
+        newArray += GC_ARRAY_COUNTER_SIZE;
+        *((GC_arrayLength*)(newArray)) = 
+          ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
+        newArray += GC_ARRAY_LENGTH_SIZE;
+        *((GC_header*)(newArray)) = GC_WORD8_VECTOR_HEADER;
       }
       front += size;
       endOfLastMarked = front;
