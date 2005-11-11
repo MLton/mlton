@@ -9,6 +9,7 @@
 SRC = $(shell cd .. && pwd)
 BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
+HOST_ARCH = $(shell $(SRC)/bin/host-arch)
 HOST_OS = $(shell $(SRC)/bin/host-os)
 LIB = $(BUILD)/lib
 MLTON = mlton
@@ -85,7 +86,7 @@ $(AOUT): $(SOURCES)
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
 $(UP):
-	$(SRC)/bin/upgrade-basis "$(PATH)" >$(UP)
+	$(SRC)/bin/upgrade-basis "$(PATH)" "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
 
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml

@@ -92,6 +92,7 @@ val fmt: int -> time -> string =
 val toString = fmt 3
 
 (* Adapted from the ML Kit 4.1.4; basislib/Time.sml
+ * by mfluet@acm.org on 2005-11-10 based on
  * by mfluet@acm.org on 2005-8-10 based on
  *  adaptations from the ML Kit 3 Version; basislib/Time.sml
  *  by sweeks@research.nj.nec.com on 1999-1-3.
@@ -103,10 +104,14 @@ fun scan getc src =
         | pow10 n = 10 * pow10 (n-1)
       fun mkTime sign intv fracv decs =
          let
-            val nsec = (pow10 (10-decs) * fracv + 5) div 10
+            val nsec = 
+               LargeInt.div (LargeInt.+ (LargeInt.* (Int.toLarge (pow10 (10 - decs)), 
+                                                     Int.toLarge fracv),
+                                         5), 
+                             10)
             val t =
                LargeInt.+ (LargeInt.* (Int.toLarge intv, ticksPerSecond),
-                           Int.toLarge nsec)
+                           nsec)
             val t = if sign then t else LargeInt.~ t 
          in
             T t
@@ -139,6 +144,7 @@ fun scan getc src =
       fun int sign src =
          case getc src of
             NONE           => NONE
+          | SOME (#".", rest) => frac sign 0 rest
           | SOME (c, rest) => 
                (case charToDigit c of
                    NONE   => NONE

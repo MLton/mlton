@@ -1202,12 +1202,19 @@ fun shrinkFunction {globals: Statement.t vector} =
                 | Object {args, con} =>
                      let
                         val args = varInfos args
+                        val isMutable =
+                           case Type.dest ty of
+                              Type.Object {args, ...} => Prod.isMutable args
+                            | _ => Error.bug "strange Object type"
                      in
-                        if isSome con
-                           then
-                              construct (Value.Object {args = args, con = con},
-                                         fn () => Object {args = uses args,
-                                                          con = con})
+                        (* It would be nice to improve this code to do
+                         * reconstruction when isSome con, not just for
+                         * tuples.
+                         *)
+                        if isMutable orelse isSome con then
+                           construct (Value.Object {args = args, con = con},
+                                      fn () => Object {args = uses args,
+                                                       con = con})
                         else tuple args
                      end
                 | PrimApp {args, prim} =>

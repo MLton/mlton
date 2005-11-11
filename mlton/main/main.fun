@@ -901,6 +901,13 @@ fun commandLine (args: string list): unit =
                               (MLton.GC.pack ()
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end
+                  fun showFiles (fs: File.t vector) =
+                     Vector.foreach
+                     (fs, fn f =>
+                      print (concat [String.translate
+                                     (f, fn #"\\" => "/"
+                                          | c => str c),
+                                     "\n"]))
                   fun compileCM input =
                      let
                         val files = CM.cm {cmfile = input}
@@ -916,8 +923,7 @@ fun commandLine (args: string list): unit =
                      in
                         case stop of
                            Place.Files =>
-                              List.foreach
-                              (files, fn f => print (concat [f, "\n"]))
+                              showFiles (Vector.fromList files)
                          | Place.SML => saveSML (maybeOut ".sml")
                          | _ =>
                               (if !keepSML
@@ -970,9 +976,8 @@ fun commandLine (args: string list): unit =
                         val _ =
                            case stop of
                               Place.Files =>
-                                 Vector.foreach
-                                 (Compile.sourceFilesMLB {input = file}, fn f =>
-                                  print (concat [f, "\n"]))
+                                 showFiles
+                                 (Compile.sourceFilesMLB {input = file})
                             | Place.SML => saveSML (maybeOut ".sml")
                             | Place.TypeCheck =>
                                  trace (Top, "Type Check SML")

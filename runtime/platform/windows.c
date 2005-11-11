@@ -110,7 +110,10 @@ static inline void Windows_decommit (void *base, size_t length) {
 static inline void *Windows_mmapAnon (void *start, size_t length) {
         void *res;
 
-        res = VirtualAlloc ((LPVOID)start, length, MEM_COMMIT, PAGE_READWRITE);
+        /* Use "0" instead of "start" as the first argument to VirtualAlloc
+         * because it is more stable on MinGW (at least).
+         */
+        res = VirtualAlloc ((LPVOID)0/*start*/, length, MEM_COMMIT, PAGE_READWRITE);
         if (NULL == res)
                 res = (void*)-1;
         return res;

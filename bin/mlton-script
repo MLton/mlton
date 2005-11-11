@@ -6,11 +6,19 @@ set -e
 
 dir=`dirname $0`
 lib=`cd $dir/../lib && pwd`
+eval `$lib/platform`
 gcc='gcc'
-mlton="$lib/mlton-compile"
+case "$HOST_OS" in
+mingw)
+	exe='.exe'
+;;
+*)
+	exe=''
+;;
+esac
+mlton="$lib/mlton-compile$exe"
 world="$lib/world.mlton"
 nj='sml'
-eval `$lib/platform`
 # Try to use the SML/NJ .arch-n-opsys
 if .arch-n-opsys >/dev/null 2>&1; then
         eval `.arch-n-opsys`

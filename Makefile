@@ -353,6 +353,9 @@ PREFIX = /usr
 ifeq ($(TARGET_OS), darwin)
 PREFIX = /usr/local
 endif
+ifeq ($(TARGET_OS), mingw)
+PREFIX = /mingw
+endif
 ifeq ($(TARGET_OS), solaris)
 PREFIX = /usr/local
 endif
@@ -391,7 +394,8 @@ install-no-docs:
 	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
 		<$(SRC)/bin/mlton-script >$(TBIN)/mlton
 	chmod a+x $(TBIN)/mlton
-	cd $(BIN) && $(CP) $(LEX) $(NLFFIGEN) $(PROF) $(YACC) $(TBIN)/
+	cd $(BIN) && $(CP) $(LEX)$(EXE) $(NLFFIGEN)$(EXE)		\
+		 $(PROF)$(EXE) $(YACC)$(EXE) $(TBIN)/
 	( cd $(SRC)/man && tar cf - $(MAN_PAGES)) | \
 		( cd $(TMAN)/ && tar xf - )
 	if $(GZIP_MAN); then						\
@@ -401,9 +405,9 @@ install-no-docs:
 	cygwin|darwin|solaris)						\
 	;;								\
 	*)								\
-		for f in $(TLIB)/$(AOUT) $(TBIN)/$(LEX)			\
-			$(TBIN)/$(NLFFIGEN) $(TBIN)/$(PROF)		\
-			$(TBIN)/$(YACC); do 				\
+		for f in $(TLIB)/$(AOUT)$(EXE) $(TBIN)/$(LEX)$(EXE)	\
+			$(TBIN)/$(NLFFIGEN)$(EXE) $(TBIN)/$(PROF)$(EXE)	\
+			$(TBIN)/$(YACC)$(EXE); do			\
 			strip --remove-section=.comment			\
 				--remove-section=.note $$f; 		\
 		done							\

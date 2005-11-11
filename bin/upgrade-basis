@@ -11,12 +11,14 @@ bin=`dirname $0`
 name=`basename $0`
 
 usage () {
-        die "usage: $name <PATH>"
+        die "usage: $name <PATH> <ARCH> <OS>"
 }
 
 case "$#" in
-1)
+3)
         PATH="$1"
+	ARCH="$2"
+	OS="$3"
 ;;
 *)
         usage
@@ -94,7 +96,7 @@ structure Word32 = Word
 structure LargeWord = Word'
 
 eval `$bin/platform`
-case $HOST_ARCH in
+case "$ARCH" in
 alpha)
         arch='Alpha'
 ;;
@@ -132,7 +134,7 @@ x86)
         die "strange HOST_ARCH: $HOST_ARCH"
 esac
 
-case $HOST_OS in
+case "$OS" in
 cygwin)
         os='Cygwin'
 ;;
