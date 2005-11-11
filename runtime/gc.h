@@ -12,8 +12,12 @@
 #include "cenv.h"
 #include "util.h"
 
+
+#include "gc/debug.h"
+
 struct GC_state;
 typedef struct GC_state *GC_state;
+
 
 #if (defined (MLTON_GC_INTERNAL))
 
@@ -31,6 +35,7 @@ typedef struct GC_state *GC_state;
 #include "gc/weak.h"
 #include "gc/int-inf.h"
 #include "gc/string.h"
+
 #include "gc/object-size.h"
 #include "gc/generational.h"
 #include "gc/heap.h"
@@ -73,7 +78,6 @@ typedef struct GC_profileData *GC_profileData;
 
 #endif /* (defined (MLTON_GC_INTERNAL)) */
 
-#include "gc/debug.h"
 #include "gc/platform.h"
 #include "gc/gc_state_exports.h"
 #include "gc/exports.h"

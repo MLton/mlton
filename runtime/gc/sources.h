@@ -25,8 +25,8 @@ typedef uint32_t GC_sourceSeqIndex;
 #define PRISSI PRIu32
 #define FMTSSI "%"PRISSI
 
-#define SOURCE_SEQ_GC         1
 #define SOURCE_SEQ_UNKNOWN    0
+#define SOURCE_SEQ_GC         1
 
 typedef struct GC_source {
   GC_sourceNameIndex sourceNameIndex;
