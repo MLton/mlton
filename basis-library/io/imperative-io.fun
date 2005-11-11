@@ -77,18 +77,36 @@ type vector_slice = VS.slice
 (*                     outstream                     *)
 (* ------------------------------------------------- *)
 
-datatype outstream = Out of SIO.outstream ref
+(* The following :> hides the fact that Outstream.t is an eqtype.  Doing it
+ * here is much easier than putting :> on the functor result.
+ *)
+structure Outstream:>
+   sig
+      type t
 
-fun output (Out os, v) = SIO.output (!os, v)
-fun output1 (Out os, v) = SIO.output1 (!os, v)
-fun outputSlice (Out os, v) = SIO.outputSlice (!os, v)
-fun flushOut (Out os) = SIO.flushOut (!os)
-fun closeOut (Out os) = SIO.closeOut (!os)
-fun mkOutstream os = Out (ref os)
-fun getOutstream (Out os) = !os
-fun setOutstream (Out os, os') = os := os'
-fun getPosOut (Out os) = SIO.getPosOut (!os)
-fun setPosOut (Out os, outPos) = os := SIO.setPosOut outPos
+      val get: t -> SIO.outstream
+      val make: SIO.outstream -> t
+      val set: t *  SIO.outstream -> unit
+   end =
+   struct 
+      datatype t = T of SIO.outstream ref
+
+      fun get (T r) = !r
+      fun set (T r, s) = r := s
+      fun make s = T (ref s)
+   end
+
+type outstream = Outstream.t
+fun output (os, v) = SIO.output (Outstream.get os, v)
+fun output1 (os, v) = SIO.output1 (Outstream.get os, v)
+fun outputSlice (os, v) = SIO.outputSlice (Outstream.get os, v)
+fun flushOut os = SIO.flushOut (Outstream.get os)
+fun closeOut os = SIO.closeOut (Outstream.get os)
+val mkOutstream = Outstream.make
+val getOutstream = Outstream.get
+val setOutstream  = Outstream.set
+val getPosOut = SIO.getPosOut o Outstream.get
+fun setPosOut (os, outPos) = Outstream.set (os, SIO.setPosOut outPos)
 
 fun newOut {appendMode, bufferMode, closeAtExit, fd, name} =
    let

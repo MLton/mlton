@@ -622,6 +622,10 @@ signature BASIS_EXTRA =
       sharing type Word64VectorSlice.vector = Word64Vector.vector
       sharing type Word64Array2.elem = Word64.word
       sharing type Word64Array2.vector = Word64Vector.vector
+      sharing type MLton.BinIO.instream = BinIO.instream
+      sharing type MLton.BinIO.outstream = BinIO.outstream
+      sharing type MLton.TextIO.instream = TextIO.instream
+      sharing type MLton.TextIO.outstream = TextIO.outstream
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
@@ -696,6 +700,9 @@ signature BASIS_EXTRA =
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
 
+   where type 'a MLton.Thread.t = 'a MLton.Thread.t
+   where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
+
    (* Types that must be exposed because constants denote them. *)
    where type Int1.int = Int1.int
    where type Int2.int = Int2.int
@@ -765,6 +772,3 @@ signature BASIS_EXTRA =
    where type Word31.word = Word31.word
    where type Word32.word = Word32.word
    where type Word64.word = Word64.word
-
-   where type 'a MLton.Thread.t = 'a MLton.Thread.t
-   where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
