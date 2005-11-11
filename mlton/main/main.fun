@@ -51,6 +51,7 @@ val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val buildConstants: bool ref = ref false
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val coalesce: int option ref = ref NONE
+val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitCodegen: Control.codegen option ref = ref NONE
@@ -178,7 +179,10 @@ fun makeOptions {usage} =
         "contify functions into main",
         boolRef contifyIntoMain),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
-        boolRef debug),
+        Bool (fn b => (debug := b
+                       ; debugRuntime := b))),
+       (Expert, "debug-runtime", " {false|true}", "produce executable with debug info",
+        boolRef debugRuntime),
        let
           val flag = "default-ann"
        in
@@ -578,7 +582,7 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir],
-                       if !debug then "-lmlton-gdb" else "-lmlton"],
+                       if !debugRuntime then "-lmlton-gdb" else "-lmlton"],
                       addTargetOpts linkOpts]
       (* With gcc 3.4, the '-b <arch>' must be the first argument. *)
       val targetOpts =
