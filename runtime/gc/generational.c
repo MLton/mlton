@@ -28,8 +28,9 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t"FMTCMI"  "FMTCME"\n", 
-                 i, generational->crossMap[i]);
+        fprintf (stderr, "\t"FMTCMI"  "FMTCME"  "FMTCME"\n", 
+                 i, generational->crossMap[i],
+                 CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]);
     fprintf (stderr, "\n");
   }               
 }
@@ -198,7 +199,7 @@ loopObjects:
   assert (front <= back);
   cardStart = getCrossMapCardStart (s, front);
   cardIndex = sizeToCardMapIndex (cardStart - s->heap.start);
-  map[cardIndex] = (front - cardStart);
+  map[cardIndex] = (front - cardStart) / CROSS_MAP_OFFSET_SCALE;
   if (front < back) {
     front += sizeofObject (s, advanceToObjectData (s, front));
     goto loopObjects;
@@ -220,6 +221,7 @@ void updateCrossMap (GC_state s) {
     fprintf (stderr, "updateCrossMap starting\n");
     displayGenerationalMaps (s, &s->generationalMaps, stderr);
   }
+  assert (isAligned (s->alignment, CROSS_MAP_OFFSET_SCALE));
   if (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize)
     goto done;
   oldGenEnd = s->heap.start + s->heap.oldGenSize;
@@ -254,7 +256,7 @@ loopObjects:
      */
     size_t offset;
     
-    offset = (objectStart - cardStart);
+    offset = (objectStart - cardStart) / CROSS_MAP_OFFSET_SCALE;
     assert (offset < CROSS_MAP_EMPTY);
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "crossMap[%zu] = %zu\n",
@@ -268,7 +270,8 @@ loopObjects:
   if (objectStart < oldGenEnd)
     goto loopObjects;
   assert (objectStart == oldGenEnd);
-  s->generationalMaps.crossMap[cardIndex] = (GC_crossMapElem)(oldGenEnd - cardStart);
+  s->generationalMaps.crossMap[cardIndex] = 
+    (GC_crossMapElem)(oldGenEnd - cardStart) / CROSS_MAP_OFFSET_SCALE;
   s->generationalMaps.crossMapValidSize = s->heap.oldGenSize;
 done:
   assert (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize);

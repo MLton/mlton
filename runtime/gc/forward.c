@@ -230,14 +230,15 @@ skipObjects:
     goto checkCard;
   } else {
     unless (CROSS_MAP_EMPTY == crossMap[cardIndex])
-      objectStart = cardStart + (size_t)(crossMap[cardIndex]);
+      objectStart = cardStart + (size_t)(crossMap[cardIndex] * CROSS_MAP_OFFSET_SCALE);
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, 
                "card %zu is not marked"
                "  crossMap[%zu] == %zu"
                "  objectStart = "FMTPTR"\n", 
                cardIndex, cardIndex, 
-               (size_t)(crossMap[cardIndex]), (uintptr_t)objectStart);
+               (size_t)(crossMap[cardIndex] * CROSS_MAP_OFFSET_SCALE), 
+               (uintptr_t)objectStart);
     cardIndex++;
     cardStart += CARD_SIZE;
     goto checkAll;

@@ -17,6 +17,7 @@ typedef size_t GC_crossMapIndex;
 #define CARD_MAP_ELEM_SIZE sizeof(GC_cardMapElem)
 #define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
 #define CROSS_MAP_EMPTY ((GC_crossMapElem)255)
+#define CROSS_MAP_OFFSET_SCALE 4
 #define FMTCMI "%zu"
 #define FMTCME "%"PRIu8
 
@@ -33,9 +34,9 @@ struct GC_generationalMaps {
   GC_cardMapIndex cardMapLength;
   /* crossMap is an array with cardinality equal to the size of the
    * heap divided by card size.  Each element in the array is
-   * interpreted as a byte offset; the offset indicates the start of
-   * the last object in the corresponding card from the start of the
-   * card.
+   * interpreted as a byte offset (scaled by CARD_MAP_OFFSET_SCALE);
+   * the offset indicates the start of the last object in the
+   * corresponding card from the start of the card.
    */
   GC_crossMapElem *crossMap;
   GC_crossMapIndex crossMapLength;

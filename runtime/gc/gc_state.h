@@ -6,7 +6,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-#ifdef MLTON_GC_INTERNAL
 struct GC_state {
   size_t alignment; /* */
   bool amInGC;
@@ -61,7 +60,6 @@ struct GC_state {
   uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };
-#endif
 
 void displayGCState (GC_state s, FILE *stream);
 

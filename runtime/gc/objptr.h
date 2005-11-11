@@ -5,8 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-#if (defined (MLTON_GC_INTERNAL))
-
 #define OBJPTR_TYPE__(z) uint ## z ## _t
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
 #define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_BITSIZE)
@@ -28,5 +26,3 @@ pointer objptrToPointer (objptr O, pointer B);
 objptr pointerToObjptr (pointer P, pointer B);
 pointer fetchObjptrToPointer (pointer OP, pointer B);
 void storeObjptrFromPointer (pointer OP, pointer P, pointer B);
-
-#endif /* (defined (MLTON_GC_INTERNAL)) */
