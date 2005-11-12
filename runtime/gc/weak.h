@@ -15,8 +15,8 @@
  * object-pointer
  *
  * The object type indexed by the header determines whether the weak
- * is valid or not.  If the type has numPointers == 1, then the weak
- * pointer is valid.  Otherwise, the type has numPointers == 0 and the
+ * is valid or not.  If the type has numObjptrs == 1, then the weak
+ * pointer is valid.  Otherwise, the type has numObjptrs == 0 and the
  * weak pointer is not valid.
  *
  * There may be zero or more bytes of padding for alignment purposes.
@@ -36,4 +36,3 @@ size_t offsetofWeak (GC_state s);
 uint32_t GC_weakCanGet (GC_state s, pointer p);
 pointer GC_weakGet (GC_state s, pointer p);
 pointer GC_weakNew (GC_state s, GC_header header, pointer p);
-
