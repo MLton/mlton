@@ -62,8 +62,8 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wmissing-noreturn -Wmissing-format-attribute \
 	-Wpacked \
 	-Wredundant-decls \
-	-Wnested-externs 
-#	-Winline -Wdisabled-optimization 
+	-Wnested-externs \
+	-Winline -Wdisabled-optimization 
 #	-Wshadow \
 #	-Wmissing-prototypes \
 #	-Wmissing-declarations 
@@ -166,7 +166,7 @@ util/%.o: util/%.c util.h $(UTILHFILES)
 
 types.h: gen/gen-types.c util.h $(UTILOFILES)
 	rm -f types.h
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -Wno-inline -Wno-disabled-optimization -o gen-types gen/gen-types.c $(UTILOFILES)
 	./gen-types
 	rm -f gen-types
 
@@ -183,9 +183,9 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(OPTCFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
