@@ -1,6 +1,3 @@
-* fix semantics of numNonPointers for normal objects to mean bytes of
-        non-pointer data, rather than number of 32-bit words of
-        non-pointer data.  Rename to sizeNonPointers.
 * what type should be used for the size field in GC_heap?  I'm using
         size_t currently, since that is the type needed by malloc.
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?
