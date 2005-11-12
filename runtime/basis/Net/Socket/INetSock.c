@@ -20,7 +20,7 @@ void INetSock_fromAddr (Char* addr) {
         in_addr = sa->sin_addr;
 }
 
-Int INetSock_getPort () {
+Int INetSock_getPort (void) {
         return port;
 }
 

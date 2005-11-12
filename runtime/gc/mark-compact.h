@@ -10,5 +10,5 @@ void copyForThreadInternal (pointer dst, pointer src);
 void threadInternalObjptr (GC_state s, objptr *opp);
 void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p);
 void updateForwardPointersForMarkCompact (GC_state s);
-void updateBackwardPointersAndSlideForMarkComact (GC_state s);
+void updateBackwardPointersAndSlideForMarkCompact (GC_state s);
 void majorMarkCompactGC (GC_state s);

@@ -14,7 +14,7 @@ TARGET_OS = $(shell ../bin/host-os)
 GCC_VERSION = 							\
 	$(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
-## FLAGS = -fomit-frame-pointer
+FLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
 ifneq ($(findstring $(GCC_VERSION), 3 4),)
@@ -61,11 +61,10 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wpacked \
 	-Wredundant-decls \
 	-Wnested-externs 
+#	-Winline -Wdisabled-optimization 
 #	-Wshadow \
-#	-Wconversion \
 #	-Wmissing-prototypes \
-#	-Wmissing-declarations \
-#	-Winline -Wdisabled-optimization
+#	-Wmissing-declarations 
 DEBUGWARNFLAGS = $(DEBUGFLAGS) $(WARNFLAGS) -Wunused
 
 UTILCFILES =							\
@@ -125,7 +124,7 @@ all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
-		$(CC) $(CFLAGS) 			\
+		$(CC) $(CFLAGS) $(WARNFLAGS)		\
 			-Dstrtod=gdtoa_strtod		\
 			-Dstrtof=gdtoa_strtof		\
 			-w -O1 -c -DINFNAN_CHECK 	\

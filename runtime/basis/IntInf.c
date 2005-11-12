@@ -342,7 +342,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
         mp_limb_t       argspace[2];
         char            *str;
         uint            size;
-        int             i;
+        uint            i;
         char            c;
 
         if (DEBUG_INT_INF)

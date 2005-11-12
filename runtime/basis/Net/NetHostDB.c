@@ -2,11 +2,11 @@
 
 static struct hostent *hostent;
 
-Cstring NetHostDB_Entry_name() {
+Cstring NetHostDB_Entry_name(void) {
         return (Cstring)hostent->h_name;
 }
 
-Int NetHostDB_Entry_numAliases() {
+Int NetHostDB_Entry_numAliases(void) {
         int num = 0;
         while (hostent->h_aliases[num] != NULL) num++;
         return num;
@@ -16,15 +16,15 @@ Cstring NetHostDB_Entry_aliasesN(Int n) {
         return (Cstring)hostent->h_aliases[n];
 }
 
-Int NetHostDB_Entry_addrType() {
+Int NetHostDB_Entry_addrType(void) {
         return hostent->h_addrtype;
 }
 
-Int NetHostDB_Entry_length() {
+Int NetHostDB_Entry_length(void) {
         return hostent->h_length;
 }
 
-Int NetHostDB_Entry_numAddrs() {
+Int NetHostDB_Entry_numAddrs(void) {
         int num = 0;
         while (hostent->h_addr_list[num] != NULL) num++;
         return num;

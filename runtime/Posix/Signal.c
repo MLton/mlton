@@ -24,7 +24,7 @@ Int Posix_Signal_default (Int signum) {
         return sigaction (signum, &sa, NULL);
 }
 
-bool Posix_Signal_isGCPending () {
+bool Posix_Signal_isGCPending (void) {
         Bool res;
 
         res = GC_getGCSignalPending (&gcState);
@@ -52,7 +52,7 @@ Int Posix_Signal_handle (Int signum) {
         return sigaction (signum, &sa, NULL);
 }
 
-void Posix_Signal_handleGC () {
+void Posix_Signal_handleGC (void) {
         GC_setGCSignalHandled (&gcState, TRUE);
 }
 
@@ -76,7 +76,7 @@ Int Posix_Signal_isDefault (Int signum, Bool *isDef) {
         return res;
 }
 
-void Posix_Signal_resetPending () {
+void Posix_Signal_resetPending (void) {
         if (DEBUG_SIGNALS)
                 fprintf (stderr, "Posix_Signal_resetPending ()\n");
         sigemptyset (GC_getSignalsPendingAddr (&gcState));
@@ -93,11 +93,11 @@ Int Posix_Signal_sigdelset (Int signum) {
         return sigdelset (&set, signum);
 }
 
-Int Posix_Signal_sigemptyset () {
+Int Posix_Signal_sigemptyset (void) {
         return sigemptyset (&set);
 }
 
-Int Posix_Signal_sigfillset () {
+Int Posix_Signal_sigfillset (void) {
         return sigfillset (&set);
 }
 
@@ -109,7 +109,7 @@ Int Posix_Signal_sigprocmask (Int how) {
         return sigprocmask (how, &set, &set);
 }
 
-void Posix_Signal_suspend () {
+void Posix_Signal_suspend (void) {
         int res;
 
         res = sigsuspend (&set);

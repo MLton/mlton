@@ -1,10 +1,10 @@
 #include "platform.h"
 
-void Posix_Error_clearErrno () {
+void Posix_Error_clearErrno (void) {
         errno = 0;
 }
 
-int Posix_Error_getErrno () {
+int Posix_Error_getErrno (void) {
         return errno;
 }
 

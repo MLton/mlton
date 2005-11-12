@@ -5,11 +5,11 @@
 
 static struct servent *servent;
 
-Cstring NetServDB_Entry_name() {
+Cstring NetServDB_Entry_name(void) {
         return (Cstring)servent->s_name;
 }
 
-Int NetServDB_Entry_numAliases() {
+Int NetServDB_Entry_numAliases(void) {
         int num = 0;
         while (servent->s_aliases[num] != NULL) num++;
         return num;
@@ -19,11 +19,11 @@ Cstring NetServDB_Entry_aliasesN(Int n) {
         return (Cstring)servent->s_aliases[n];
 }
 
-Int NetServDB_Entry_port() {
+Int NetServDB_Entry_port(void) {
         return servent->s_port;
 }
 
-Cstring NetServDB_Entry_protocol() {
+Cstring NetServDB_Entry_protocol(void) {
         return (Cstring)servent->s_proto;
 }
 

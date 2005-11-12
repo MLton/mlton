@@ -16,7 +16,7 @@ struct GC_forwardState {
 #define GC_FORWARDED ~((GC_header)0)
 
 bool isPointerInToSpace (GC_state s, pointer p);
-bool isObjptrsInToSpace (GC_state s, objptr op);
+bool isObjptrInToSpace (GC_state s, objptr op);
 void forwardObjptr (GC_state s, objptr *opp);
 void forwardObjptrIfInNursery (GC_state s, objptr *opp);
 void forwardInterGenerationalObjptrs (GC_state s);

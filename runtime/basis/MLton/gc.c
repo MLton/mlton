@@ -20,10 +20,10 @@ void MLton_GC_setRusageMeasureGC (Int b) {
   GC_setRusageMeasureGC (&gcState, b);
 }
 
-void MLton_GC_pack () {
+void MLton_GC_pack (void) {
   GC_pack (&gcState);
 }
 
-void MLton_GC_unpack () {
+void MLton_GC_unpack (void) {
   GC_unpack (&gcState);
 }

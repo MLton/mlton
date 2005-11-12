@@ -13,7 +13,7 @@ typedef struct GC_string {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
-  char chars[0];
+  char chars[1];
 } *GC_string;
 
 #define GC_STRING_HEADER GC_WORD8_VECTOR_HEADER
