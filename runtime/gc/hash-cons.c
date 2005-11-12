@@ -288,8 +288,8 @@ void shareObjptr (GC_state s, objptr *opp) {
 }
 
 void printBytesHashConsedMessage (GC_state s, uintmax_t total) {
-  fprintf (stderr, "%"PRIuMAX" bytes hash-consed (%.1f%%).\n",
-           /*ullongToCommaString*/(s->lastMajorStatistics.bytesHashConsed),
+  fprintf (stderr, "%s bytes hash-consed (%.1f%%).\n",
+           uintmaxToCommaString(s->lastMajorStatistics.bytesHashConsed),
            (100.0 
             * ((double)s->lastMajorStatistics.bytesHashConsed 
                / (double)total)));

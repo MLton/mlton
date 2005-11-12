@@ -83,8 +83,8 @@ void forwardObjptr (GC_state s, objptr *opp) {
           if (new <= stack->reserved) {
             stack->reserved = new;
             if (DEBUG_STACKS)
-              fprintf (stderr, "Shrinking stack to size %zu.\n",
-                       /*uintToCommaString*/(stack->reserved));
+              fprintf (stderr, "Shrinking stack to size %s.\n",
+                       uintmaxToCommaString(stack->reserved));
           }
         }
       } else {
@@ -94,8 +94,8 @@ void forwardObjptr (GC_state s, objptr *opp) {
           (s, max((size_t)(s->controls.ratios.threadShrink * stack->reserved), 
                   stack->used));
         if (DEBUG_STACKS)
-          fprintf (stderr, "Shrinking stack to size %zu.\n",
-                   /*uintToCommaString*/(stack->reserved));
+          fprintf (stderr, "Shrinking stack to size %s.\n",
+                   uintmaxToCommaString(stack->reserved));
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
       skip = stack->reserved - stack->used;

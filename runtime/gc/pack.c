@@ -11,8 +11,8 @@ void GC_pack (GC_state s) {
 
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Packing heap of size %zu.\n",
-             /*uintToCommaString*/(s->heap.size));
+    fprintf (stderr, "Packing heap of size %s.\n",
+             uintmaxToCommaString(s->heap.size));
   /* Could put some code here to skip the GC if there hasn't been much
    * allocated since the last collection.  But you would still need to
    * do a minor GC to make all objects contiguous.
@@ -26,16 +26,16 @@ void GC_pack (GC_state s) {
   }
   releaseHeap (s, &s->secondaryHeap);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Packed heap to size %zu.\n",
-             /*uintToCommaString*/(s->heap.size));
+    fprintf (stderr, "Packed heap to size %s.\n",
+             uintmaxToCommaString(s->heap.size));
   leave (s);
 }
 
 void GC_unpack (GC_state s) {
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Unpacking heap of size %zu.\n",
-             /*uintToCommaString*/(s->heap.size));
+    fprintf (stderr, "Unpacking heap of size %s.\n",
+             uintmaxToCommaString(s->heap.size));
   /* The enterGC is needed here because minorGC and resizeHeap might
    * move the stack, and the SIGPROF catcher would then see a bogus
    * stack.  The leaveGC has to happen after the setStack.
@@ -48,7 +48,7 @@ void GC_unpack (GC_state s) {
   setGCStateCurrentThreadAndStack (s);
   leaveGC (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Unpacked heap to size %zu.\n",
-             /*uintToCommaString*/(s->heap.size));
+    fprintf (stderr, "Unpacked heap to size %s.\n",
+             uintmaxToCommaString(s->heap.size));
   leave (s);
 }

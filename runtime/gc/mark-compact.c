@@ -286,9 +286,9 @@ void majorMarkCompactGC (GC_state s) {
   s->cumulativeStatistics.numMarkCompactGCs++;
   if (DEBUG or s->controls.messages) {
     fprintf (stderr, "Major mark-compact GC.\n");
-    fprintf (stderr, "heap = "FMTPTR" of size %zu\n",
+    fprintf (stderr, "heap = "FMTPTR" of size %s\n",
              (uintptr_t) s->heap.start, 
-             /*uintToCommaString*/(s->heap.size));
+             uintmaxToCommaString(s->heap.size));
   }
   if (s->hashConsDuringGC) {
     s->lastMajorStatistics.bytesHashConsed = 0;

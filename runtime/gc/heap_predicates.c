@@ -67,10 +67,10 @@ bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery) {
     (total <= s->heap.size) 
     and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));
   if (DEBUG_DETAILED)
-    fprintf (stderr, "%s = hasBytesFree (%zu, %zu)\n",
+    fprintf (stderr, "%s = hasBytesFree (%s, %s)\n",
              boolToString (res),
-             /*uintToCommaString*/(oldGen),
-             /*uintToCommaString*/(nursery));
+             uintmaxToCommaString(oldGen),
+             uintmaxToCommaString(nursery));
   return res;
 }
 

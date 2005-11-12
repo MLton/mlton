@@ -28,17 +28,17 @@ pointer GC_arrayAllocate (GC_state s,
     alignMax ((uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE,
               s->alignment);
   if (arraySizeMax >= (uintmax_t)SIZE_MAX)
-    die ("Out of memory: cannot allocate array with %"PRIuMAX" bytes.",
-         /*ullongToCommaString*/(arraySizeMax));
+    die ("Out of memory: cannot allocate array with %s bytes.",
+         uintmaxToCommaString(arraySizeMax));
   arraySize = (size_t)arraySizeMax;
   if (arraySize < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE)
     /* Create space for forwarding pointer. */
     arraySize = GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE;
   if (DEBUG_ARRAY)
-    fprintf (stderr, "array with "FMTARRLEN" elts of size %zu and total size %zu.  Ensure %zu bytes free.\n",
+    fprintf (stderr, "array with "FMTARRLEN" elts of size %zu and total size %s.  Ensure %s bytes free.\n",
              numElements, bytesPerElement, 
-             /*uintToCommaString*/(arraySize),
-             /*uintToCommaString*/(ensureBytesFree));
+             uintmaxToCommaString(arraySize),
+             uintmaxToCommaString(ensureBytesFree));
   if (arraySize >= s->controls.oldGenArraySize) {
     if (not hasHeapBytesFree (s, arraySize, ensureBytesFree)) {
       enter (s);

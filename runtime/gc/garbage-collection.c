@@ -53,8 +53,8 @@ void growStackCurrent (GC_state s) {
 
   size = sizeofStackGrow (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
-    fprintf (stderr, "Growing stack to size %zu.\n",
-             /*uintToCommaString*/(sizeofStackWithHeaderAligned (s, size)));
+    fprintf (stderr, "Growing stack to size %s.\n",
+             uintmaxToCommaString(sizeofStackWithHeaderAligned (s, size)));
   assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
   stack = newStack (s, size, TRUE);
   copyStack (s, getStackCurrent(s), stack);
@@ -97,9 +97,9 @@ void performGC (GC_state s,
         
   enterGC (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Starting gc.  Request %zu nursery bytes and %zu old gen bytes.\n",
-             /*uintToCommaString*/(nurseryBytesRequested),
-             /*uintToCommaString*/(oldGenBytesRequested));
+    fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old-gen bytes.\n",
+             uintmaxToCommaString(nurseryBytesRequested),
+             uintmaxToCommaString(oldGenBytesRequested));
   assert (invariantForGC (s));
   if (needGCTime (s))
     startTiming (&ru_start);
@@ -131,9 +131,9 @@ void performGC (GC_state s,
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
   if (DEBUG or s->controls.messages) {
     fprintf (stderr, "Finished gc.\n");
-    fprintf (stderr, "time: %"PRIuMAX" ms\n", /*intToCommaString*/(gcTime));
-    fprintf (stderr, "old gen size: %zu bytes (%.1f%%)\n", 
-             /*intToCommaString*/(s->heap.oldGenSize),
+    fprintf (stderr, "time: %s ms\n", uintmaxToCommaString(gcTime));
+    fprintf (stderr, "old gen size: %s bytes (%.1f%%)\n", 
+             uintmaxToCommaString(s->heap.oldGenSize),
              100.0 * ((double)(s->heap.oldGenSize) 
                       / (double)(s->heap.size)));
   }

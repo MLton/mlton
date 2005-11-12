@@ -88,20 +88,20 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
     else
       res = s->controls.fixedHeap / 2;
     if (res < live)
-      die ("Out of memory with fixed heap size %zu.",
-           /*uintToCommaString*/(s->controls.fixedHeap));
+      die ("Out of memory with fixed heap size %s.",
+           uintmaxToCommaString(s->controls.fixedHeap));
   } else if (s->controls.maxHeap > 0) {
     if (res > s->controls.maxHeap)
       res = s->controls.maxHeap;
     if (res < live)
-      die ("Out of memory with max heap size %zu.",
-           /*uintToCommaString*/(s->controls.maxHeap));
+      die ("Out of memory with max heap size %s.",
+           uintmaxToCommaString(s->controls.maxHeap));
   }
   if (DEBUG_RESIZING)
-    fprintf (stderr, "%zu = sizeofHeapDesired (%zu, %zu)\n",
-             /*uintToCommaString*/(res),
-             /*uintToCommaString*/(live),
-             /*uintToCommaString*/(currentSize));
+    fprintf (stderr, "%s = sizeofHeapDesired (%s, %s)\n",
+             uintmaxToCommaString(res),
+             uintmaxToCommaString(live),
+             uintmaxToCommaString(currentSize));
   assert (res >= live);
   return res;
 }
@@ -110,9 +110,9 @@ void releaseHeap (GC_state s, GC_heap h) {
   if (NULL == h->start)
     return;
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Releasing heap at "FMTPTR" of size %zu.\n",
+    fprintf (stderr, "Releasing heap at "FMTPTR" of size %s.\n",
              (uintptr_t)h->start,
-             /*uintToCommaString*/(h->size));
+             uintmaxToCommaString(h->size));
   GC_release (h->start, h->size);
   initHeap (s, h);
 }
@@ -127,10 +127,10 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
   if (keep < h->size) {
     if (DEBUG or s->controls.messages)
       fprintf (stderr,
-               "Shrinking heap at "FMTPTR" of size %zu to %zu bytes.\n",
+               "Shrinking heap at "FMTPTR" of size %s to %s bytes.\n",
                (uintptr_t)h->start,
-               /*uintToCommaString*/(h->size),
-               /*uintToCommaString*/(keep));
+               uintmaxToCommaString(h->size),
+               uintmaxToCommaString(keep));
     GC_decommit (h->start + keep, h->size - keep);
     h->size = keep;
   }
@@ -150,9 +150,9 @@ bool createHeap (GC_state s, GC_heap h,
   size_t backoff;
 
   if (DEBUG_MEM)
-    fprintf (stderr, "createHeap  desired size = %zu  min size = %zu\n",
-             /*uintToCommaString*/(desiredSize),
-             /*uintToCommaString*/(minSize));
+    fprintf (stderr, "createHeap  desired size = %s  min size = %s\n",
+             uintmaxToCommaString(desiredSize),
+             uintmaxToCommaString(minSize));
   assert (isHeapInit (h));
   if (desiredSize < minSize)
     desiredSize = minSize;
@@ -189,8 +189,8 @@ bool createHeap (GC_state s, GC_heap h,
         if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
           s->cumulativeStatistics.maxHeapSizeSeen = h->size;
         if (DEBUG or s->controls.messages)
-          fprintf (stderr, "Created heap of size %zu at "FMTPTR".\n",
-                   /*uintToCommaString*/(h->size),
+          fprintf (stderr, "Created heap of size %s at "FMTPTR".\n",
+                   uintmaxToCommaString(h->size),
                    (uintptr_t)h->start);
         assert (h->size >= minSize);
         return TRUE;
@@ -269,10 +269,10 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   curHeapp = &s->heap;
   assert (desiredSize >= s->heap.size);
   if (DEBUG_RESIZING)
-    fprintf (stderr, "Growing heap at "FMTPTR" of size %zu to %zu bytes.\n",
+    fprintf (stderr, "Growing heap at "FMTPTR" of size %s to %s bytes.\n",
              (uintptr_t)s->heap.start,
-             /*uintToCommaString*/(s->heap.size),
-             /*uintToCommaString*/(desiredSize));
+             uintmaxToCommaString(s->heap.size),
+             uintmaxToCommaString(desiredSize));
   orig = curHeapp->start;
   size = curHeapp->oldGenSize;
   assert (size <= s->heap.size);
@@ -341,8 +341,8 @@ copy:
       unlink_safe (template);
       if (s->controls.messages)
         GC_displayMem ();
-      die ("Out of memory.  Unable to allocate %zu bytes.\n",
-           /*uintToCommaString*/(minSize));
+      die ("Out of memory.  Unable to allocate %s bytes.\n",
+           uintmaxToCommaString(minSize));
     }
   }
 done:
@@ -358,9 +358,9 @@ void resizeHeap (GC_state s, size_t minSize) {
   size_t desiredSize;
 
   if (DEBUG_RESIZING)
-    fprintf (stderr, "resizeHeap  minSize = %zu  size = %zu\n",
-             /*ullongToCommaString*/(minSize), 
-             /*uintToCommaString*/(s->heap.size));
+    fprintf (stderr, "resizeHeap  minSize = %s  size = %s\n",
+             uintmaxToCommaString(minSize), 
+             uintmaxToCommaString(s->heap.size));
   desiredSize = sizeofHeapDesired (s, minSize, s->heap.size);
   assert (minSize <= desiredSize);
   if (desiredSize <= s->heap.size)

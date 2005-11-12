@@ -134,8 +134,8 @@ void createCardMapAndCrossMap (GC_state s) {
 
   totalMapSize = cardMapSize + crossMapSize;
   if (DEBUG_MEM)
-    fprintf (stderr, "Creating card/cross map of size %zu\n",
-             /*uintToCommaString*/(totalMapSize));
+    fprintf (stderr, "Creating card/cross map of size %s\n",
+             uintmaxToCommaString(totalMapSize));
   s->generationalMaps.cardMap = 
     GC_mmapAnon_safe (NULL, totalMapSize);
   s->generationalMaps.crossMap = 

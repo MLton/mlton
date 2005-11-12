@@ -51,9 +51,9 @@ void setGCStateCurrentHeap (GC_state s,
   size_t nurserySize;
 
   if (DEBUG_DETAILED)
-    fprintf (stderr, "setGCStateCurrentHeap(%zu, %zu)\n",
-             /*uintToCommaString*/(oldGenBytesRequested),
-             /*uintToCommaString*/(nurseryBytesRequested));
+    fprintf (stderr, "setGCStateCurrentHeap(%s, %s)\n",
+             uintmaxToCommaString(oldGenBytesRequested),
+             uintmaxToCommaString(nurseryBytesRequested));
   h = &s->heap;
   assert (isFrontierAligned (s, h->start + h->oldGenSize + oldGenBytesRequested));
   nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
