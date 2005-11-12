@@ -10,14 +10,12 @@ typedef struct GC_thread {
   /* The order of these fields is important.  The nonpointer fields
    * must be first, because this object must appear to be a normal
    * heap object.
-   * Furthermore, the exnStack field must be first, because the native
-   * codegen depends on this (which is bad and should be fixed).
    */
-  uint32_t exnStack;  /* An offset added to stackBottom that specifies 
-                       * where the top of the exnStack is.
-                       */
   size_t bytesNeeded; /* The number of bytes needed when returning
                        * to this thread.
+                       */
+  uint32_t exnStack;  /* An offset added to stackBottom that specifies 
+                       * where the top of the exnStack is.
                        */
   objptr stack;       /* The stack for this thread. */
 } *GC_thread;
