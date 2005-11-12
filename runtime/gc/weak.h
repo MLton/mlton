@@ -24,7 +24,7 @@
  * The link native-pointer is used to chain the live weaks together
  * during a copying gc and is otherwise unused.
  *
- * The third word is the weak object-pointer.
+ * The final component is the weak object-pointer.
  */ 
 typedef struct GC_weak {
   struct GC_weak *link;

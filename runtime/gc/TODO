@@ -3,6 +3,4 @@
         non-pointer data.  Rename to sizeNonPointers.
 * what type should be used for the size field in GC_heap?  I'm using
         size_t currently, since that is the type needed by malloc.
-* the "skipObjects" loop in forwardInterGenerationalObjptrs appears to
-        be unnecessary.
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?
