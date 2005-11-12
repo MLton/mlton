@@ -102,10 +102,9 @@ typedef struct GC_objectType {
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */
   STACK_TYPE_INDEX =         0,
-  STRING_TYPE_INDEX =        1,
-  THREAD_TYPE_INDEX =        2,
-  WEAK_GONE_TYPE_INDEX =     3,
-  WORD8_VECTOR_TYPE_INDEX =  STRING_TYPE_INDEX,
+  THREAD_TYPE_INDEX =        1,
+  WEAK_GONE_TYPE_INDEX =     2,
+  WORD8_VECTOR_TYPE_INDEX =  3,
   WORD32_VECTOR_TYPE_INDEX = 4,
   WORD16_VECTOR_TYPE_INDEX = 5,
 };

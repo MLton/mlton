@@ -379,10 +379,11 @@ structure ObjectType =
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.
        * STACK_TYPE_INDEX,
-       * STRING_TYPE_INDEX,
        * THREAD_TYPE_INDEX,
        * WEAK_GONE_TYPE_INDEX,
-       * WORD_VECTOR_TYPE_INDEX.
+       * WORD8_VECTOR_TYPE_INDEX,
+       * WORD16_VECTOR_TYPE_INDEX,
+       * WORD32_VECTOR_TYPE_INDEX.
        *)
       val basic =
          let
@@ -397,9 +398,9 @@ structure ObjectType =
          in
             Vector.fromList
             [(PointerTycon.stack, stack),
-             wordVec 8,
              (PointerTycon.thread, thread),
              (PointerTycon.weakGone, WeakGone),
+             wordVec 8,
              wordVec 32,
              wordVec 16]
          end
