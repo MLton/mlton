@@ -226,7 +226,7 @@ void growHashTableMaybe (GC_state s, GC_objectHashTable t) {
 pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) {
   GC_objectHashTable t;
   GC_header header;
-  uint16_t numNonObjptrs;
+  uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   bool hasIdentity;
   GC_objectTypeTag tag;
@@ -239,19 +239,19 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
     fprintf (stderr, "hashCons ("FMTPTR")\n", (uintptr_t)object);
   t = s->objectHashTable;
   header = getHeader (object);
-  splitHeader(s, header, &tag, &hasIdentity, &numNonObjptrs, &numObjptrs);
+  splitHeader(s, header, &tag, &hasIdentity, &bytesNonObjptrs, &numObjptrs);
   if (hasIdentity) {
     /* Don't hash cons. */
     res = object;
     goto done;
   }
-  assert (ARRAY_TAG == tag or NORMAL_TAG == tag);
+  assert ((ARRAY_TAG == tag) or (NORMAL_TAG == tag));
   max = 
     object
     + (ARRAY_TAG == tag
        ? (sizeofArrayNoHeader (s, getArrayLength (object),
-                               numNonObjptrs, numObjptrs))
-       : (sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs)));
+                               bytesNonObjptrs, numObjptrs))
+       : (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)));
   // Compute the hash.
   hash = (GC_hash)header;
   for (p = (GC_hash*)object; p < (GC_hash*)max; ++p)

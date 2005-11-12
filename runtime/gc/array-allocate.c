@@ -13,19 +13,17 @@ pointer GC_arrayAllocate (GC_state s,
   uintmax_t arraySizeMax;
   size_t arraySize;
   size_t bytesPerElement;
-  uint16_t numNonObjptrs;
+  uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   pointer frontier;
   pointer last;
   pointer res;
 
-  splitHeader(s, header, NULL, NULL, &numNonObjptrs, &numObjptrs);
+  splitHeader(s, header, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
   if (DEBUG)
     fprintf (stderr, "GC_arrayAllocate (%zu, "FMTARRLEN", "FMTHDR")\n",
              ensureBytesFree, numElements, header);
-  bytesPerElement = 
-    sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) 
-    + (numObjptrs * OBJPTR_SIZE);
+  bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   arraySizeMax = 
     alignMax ((uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE,
               s->alignment);
@@ -76,22 +74,20 @@ pointer GC_arrayAllocate (GC_state s,
   if (1 <= numObjptrs and 0 < numElements) {
     pointer p;
     
-    if (0 == numNonObjptrs)
+    if (0 == bytesNonObjptrs)
       for (p = frontier; p < last; p += OBJPTR_SIZE)
         *((objptr*)p) = BOGUS_OBJPTR;
     else {
       /* Array with a mix of pointers and non-pointers. */
-      size_t nonObjptrBytes;
-      size_t objptrBytes;
-        
-      nonObjptrBytes = sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
-      objptrBytes = numObjptrs * OBJPTR_SIZE;
+      size_t bytesObjptrs;
+
+      bytesObjptrs = numObjptrs * OBJPTR_SIZE;
 
       for (p = frontier; p < last; ) {
         pointer next;
         
-        p += nonObjptrBytes;
-        next = p + objptrBytes;
+        p += bytesNonObjptrs;
+        next = p + bytesObjptrs;
         assert (next <= last);
         for ( ; p < next; p += OBJPTR_SIZE)
           *((objptr*)p) = BOGUS_OBJPTR;

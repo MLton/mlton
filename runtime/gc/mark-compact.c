@@ -64,12 +64,12 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
 void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
   GC_header header;
   GC_header *headerp;
-  uint16_t numNonObjptrs, numObjptrs;
+  uint16_t bytesNonObjptrs, numObjptrs;
   GC_objectTypeTag tag;
 
   headerp = getHeaderp (p);
   header = *headerp;
-  splitHeader(s, *headerp, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  splitHeader(s, *headerp, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if (WEAK_TAG == tag and 1 == numObjptrs) {
     GC_header objptrHeader;
     GC_weak w;

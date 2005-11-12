@@ -415,16 +415,16 @@ structure ObjectType =
                      val (b, p) = Type.bytesAndPointers elt
                   in
                      R.Array {hasIdentity = hasIdentity,
-                              nonPointer = b,
-                              pointers = p}
+                              bytesNonPointers = b,
+                              numPointers = p}
                   end
              | Normal {hasIdentity, ty} =>
                   let
                      val (b, p) = Type.bytesAndPointers ty
                   in
                      R.Normal {hasIdentity = hasIdentity,
-                               nonPointer = Bytes.toWords b,
-                               pointers = p}
+                               bytesNonPointers = b,
+                               numPointers = p}
                   end
              | Stack => R.Stack
              | Weak _ => R.Weak

@@ -41,22 +41,22 @@ void forwardObjptr (GC_state s, objptr *opp) {
   if (DEBUG_DETAILED and header == GC_FORWARDED)
     fprintf (stderr, "  already FORWARDED\n");
   if (header != GC_FORWARDED) { /* forward the object */
-    uint16_t numNonObjptrs, numObjptrs;
+    uint16_t bytesNonObjptrs, numObjptrs;
     GC_objectTypeTag tag;
 
-    splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
+    splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
     size_t headerBytes, objectBytes, size, skip;
 
     /* Compute the space taken by the header and object body. */
     if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
       headerBytes = GC_NORMAL_HEADER_SIZE;
-      objectBytes = sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
+      objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
       skip = 0;
     } else if (ARRAY_TAG == tag) {
       headerBytes = GC_ARRAY_HEADER_SIZE;
       objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
-                                         numNonObjptrs, numObjptrs);
+                                         bytesNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
       GC_stack stack;

@@ -40,23 +40,23 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
 pointer foreachObjptrInObject (GC_state s, pointer p,
                                GC_foreachObjptrFun f, bool skipWeaks) {
   GC_header header;
-  uint16_t numNonObjptrs;
+  uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
 
   header = getHeader (p);
-  splitHeader(s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if (DEBUG_DETAILED)
     fprintf (stderr, 
              "foreachObjptrInObject ("FMTPTR")"
              "  header = "FMTHDR
              "  tag = %s"
-             "  numNonObjptrs = %d"
+             "  bytesNonObjptrs = %d"
              "  numObjptrs = %d\n", 
              (uintptr_t)p, header, objectTypeTagToString (tag), 
-             numNonObjptrs, numObjptrs);
+             bytesNonObjptrs, numObjptrs);
   if (NORMAL_TAG == tag) {
-    p += sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
+    p += bytesNonObjptrs;
     pointer max = p + (numObjptrs * OBJPTR_SIZE);
     /* Apply f to all internal pointers. */
     for ( ; p < max; p += OBJPTR_SIZE) {
@@ -67,23 +67,19 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       callIfIsObjptr (s, f, (objptr*)p);
     }
   } else if (WEAK_TAG == tag) {
-    p += sizeofNumNonObjptrs (WEAK_TAG, numNonObjptrs);
+    p += bytesNonObjptrs;
     if (1 == numObjptrs) {
       if (not skipWeaks)
         callIfIsObjptr (s, f, (objptr*)p);
       p += OBJPTR_SIZE;
     }
   } else if (ARRAY_TAG == tag) {
-    size_t bytesPerElement;
     size_t dataBytes;
     pointer last;
     GC_arrayLength numElements;
     
     numElements = getArrayLength (p);
-    bytesPerElement = 
-      sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) 
-      + (numObjptrs * OBJPTR_SIZE);
-    dataBytes = numElements * bytesPerElement;
+    dataBytes = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     /* Must check 0 == dataBytes before 0 == numPointers to correctly
      * handle arrays when both are true.
      */
@@ -95,25 +91,23 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       ;
     else {
       last = p + dataBytes;
-      if (0 == numNonObjptrs)
+      if (0 == bytesNonObjptrs)
         /* Array with only pointers. */
         for ( ; p < last; p += OBJPTR_SIZE)
           callIfIsObjptr (s, f, (objptr*)p);
       else {
         /* Array with a mix of pointers and non-pointers. */
-        size_t nonObjptrBytes;
-        size_t objptrBytes;
+        size_t bytesObjptrs;
         
-        nonObjptrBytes = sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
-        objptrBytes = numObjptrs * OBJPTR_SIZE;
+        bytesObjptrs = numObjptrs * OBJPTR_SIZE;
 
         /* For each array element. */
         for ( ; p < last; ) {
           pointer next;
           
           /* Skip the non-pointers. */
-          p += nonObjptrBytes;
-          next = p + objptrBytes;
+          p += bytesNonObjptrs;
+          next = p + bytesObjptrs;
           /* For each internal pointer. */
           for ( ; p < next; p += OBJPTR_SIZE) 
             callIfIsObjptr (s, f, (objptr*)p);
@@ -122,7 +116,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       assert (p == last);
       p -= dataBytes;
     }
-    p += pad (s, dataBytes, GC_ARRAY_HEADER_SIZE);
+    p += alignWithExtra (s, dataBytes, GC_ARRAY_HEADER_SIZE);
   } else { /* stack */
     GC_stack stack; 
     pointer top, bottom; 

@@ -101,7 +101,7 @@ size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
 size_t alignStackReserved (GC_state s, size_t reserved) {
   size_t res;
   
-  res = pad (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
+  res = alignWithExtra (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
   if (DEBUG_STACKS)
     fprintf (stderr, "%zu = alignStackReserved (%zu)\n", res, reserved);
   assert (isStackReservedAligned (s, res));

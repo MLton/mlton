@@ -26,10 +26,10 @@ size_t sizeofThread (GC_state s) {
   res = GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread);
   if (DEBUG) {
     size_t check;
-    uint16_t numNonObjptrs, numObjptrs;
+    uint16_t bytesNonObjptrs, numObjptrs;
 
-    splitHeader (s, GC_THREAD_HEADER, NULL, NULL, &numNonObjptrs, &numObjptrs);
-    check = GC_NORMAL_HEADER_SIZE + sizeofNormalNoHeader (s, numNonObjptrs, numObjptrs);
+    splitHeader (s, GC_THREAD_HEADER, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
+    check = GC_NORMAL_HEADER_SIZE + (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     if (DEBUG_DETAILED) 
       fprintf (stderr,
                "sizeofThread: res = %zu  check = %zu\n",

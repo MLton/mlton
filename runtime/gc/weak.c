@@ -13,10 +13,10 @@ size_t sizeofWeak (GC_state s) {
   res = align (res, s->alignment);
   if (DEBUG) {
     size_t check;
-    uint16_t numNonObjptrs, numObjptrs;
+    uint16_t bytesNonObjptrs, numObjptrs;
 
-    splitHeader (s, GC_WEAK_GONE_HEADER, NULL, NULL, &numNonObjptrs, &numObjptrs);
-    check = GC_NORMAL_HEADER_SIZE + sizeofWeakNoHeader (s, numNonObjptrs, numObjptrs);
+    splitHeader (s, GC_WEAK_GONE_HEADER, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
+    check = GC_NORMAL_HEADER_SIZE + (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     assert (check == res);
   }
   assert (isAligned (res, s->alignment));

@@ -48,12 +48,12 @@ GC_header buildHeaderFromTypeIndex (uint32_t t) {
 
 void splitHeader(GC_state s, GC_header header,
                  GC_objectTypeTag *tagRet, bool *hasIdentityRet,
-                 uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet) {
+                 uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet) {
   unsigned int objectTypeIndex; 
   GC_objectType objectType; 
   GC_objectTypeTag tag;
   bool hasIdentity;
-  uint16_t numNonObjptrs, numObjptrs;
+  uint16_t bytesNonObjptrs, numObjptrs;
 
   assert (1 == (header & GC_VALID_HEADER_MASK)); 
   objectTypeIndex = (header & TYPE_INDEX_MASK) >> TYPE_INDEX_SHIFT; 
@@ -61,7 +61,7 @@ void splitHeader(GC_state s, GC_header header,
   objectType = &(s->objectTypes[objectTypeIndex]);
   tag = objectType->tag; 
   hasIdentity = objectType->hasIdentity; 
-  numNonObjptrs = objectType->numNonObjptrs; 
+  bytesNonObjptrs = objectType->bytesNonObjptrs; 
   numObjptrs = objectType->numObjptrs; 
 
   if (DEBUG_DETAILED) 
@@ -70,20 +70,20 @@ void splitHeader(GC_state s, GC_header header,
              "  objectTypeIndex = %u"
              "  tag = %s" 
              "  hasIdentity = %s" 
-             "  numNonObjptrs = %"PRIu16 
+             "  bytesNonObjptrs = %"PRIu16 
              "  numObjptrs = %"PRIu16"\n", 
              header, 
              objectTypeIndex,
              objectTypeTagToString(tag), 
              boolToString(hasIdentity), 
-             numNonObjptrs, numObjptrs); 
+             bytesNonObjptrs, numObjptrs); 
 
   if (tagRet != NULL)
     *tagRet = tag;
   if (hasIdentityRet != NULL)
     *hasIdentityRet = hasIdentity;
-  if (numNonObjptrsRet != NULL)
-    *numNonObjptrsRet = numNonObjptrs;
+  if (bytesNonObjptrsRet != NULL)
+    *bytesNonObjptrsRet = bytesNonObjptrs;
   if (numObjptrsRet != NULL)
     *numObjptrsRet = numObjptrs;
 }

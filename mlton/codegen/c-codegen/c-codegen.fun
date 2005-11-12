@@ -324,27 +324,37 @@ fun outputDeclarations
           fn (_, ty) =>
           let
              datatype z = datatype Runtime.RObjectType.t
-             val (tag, hasIdentity, nonPointers, pointers) =
+             val (tag, hasIdentity, bytesNonPointers, numPointers) =
                 case ObjectType.toRuntime ty of
-                   Array {hasIdentity, nonPointer, pointers} =>
-                      (0, hasIdentity, Bytes.toInt nonPointer, pointers)
-                 | Normal {hasIdentity, nonPointer, pointers} =>
-                      (1, hasIdentity, Words.toInt nonPointer, pointers)
+                   Array {hasIdentity, bytesNonPointers, numPointers} =>
+                      (0, hasIdentity, 
+                       Bytes.toInt bytesNonPointers, numPointers)
+                 | Normal {hasIdentity, bytesNonPointers, numPointers} =>
+                      (1, hasIdentity, 
+                       Bytes.toInt bytesNonPointers, numPointers)
                  | Stack =>
                       (2, false, 0, 0)
                  | Weak =>
                       (case !Control.align of
-                          Control.Align4 => (3, false, 1, 1)
-                        | Control.Align8 => (3, false, 2, 1))
+                          Control.Align4 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 1)), 1)
+                        | Control.Align8 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 1))
                  | WeakGone =>
                       (case !Control.align of
-                          Control.Align4 => (3, false, 2, 0)
-                        | Control.Align8 => (3, false, 3, 0))
+                          Control.Align4 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 0)
+                        | Control.Align8 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 3)), 0))
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",
-                     C.int nonPointers, ", ",
-                     C.int pointers, " }"]
+                     C.int bytesNonPointers, ", ",
+                     C.int numPointers, " }"]
           end)
       fun declareMain () =
          let

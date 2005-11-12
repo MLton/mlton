@@ -46,7 +46,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   pointer todo; /* A pointer to the pointer in cur to next. */
   GC_header header;
   GC_header* headerp;
-  uint16_t numNonObjptrs;
+  uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
   uint32_t index; /* The i'th pointer in the object (element) being marked. */
@@ -114,11 +114,11 @@ mark:
    * would see the object as unmarked and traverse it again.
    */
   *headerp = header;
-  splitHeader (s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if (NORMAL_TAG == tag) {
     size += 
       GC_NORMAL_HEADER_SIZE 
-      + sizeofNumNonObjptrs (tag, numNonObjptrs) 
+      + bytesNonObjptrs 
       + (numObjptrs * OBJPTR_SIZE);
     if (0 == numObjptrs) {
       /* There is nothing to mark. */
@@ -127,7 +127,7 @@ normalDone:
         cur = hashConsPointer (s, cur, TRUE);
       goto ret;
     }
-    todo = cur + sizeofNumNonObjptrs (NORMAL_TAG, numNonObjptrs);
+    todo = cur + bytesNonObjptrs;
     index = 0;
 markInNormal:
     if (DEBUG_DFS_MARK)
@@ -169,7 +169,7 @@ markNextInNormal:
      */
     size += 
       GC_ARRAY_HEADER_SIZE
-      + sizeofArrayNoHeader (s, getArrayLength (cur), numNonObjptrs, numObjptrs);
+      + sizeofArrayNoHeader (s, getArrayLength (cur), bytesNonObjptrs, numObjptrs);
     if (0 == numObjptrs or 0 == getArrayLength (cur)) {
       /* There is nothing to mark. */
 arrayDone:
@@ -184,7 +184,7 @@ markArrayElt:
     assert (arrayIndex < getArrayLength (cur));
     index = 0;
     /* Skip to the first pointer. */
-    todo += sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs);
+    todo += bytesNonObjptrs;
 markInArray:
     if (DEBUG_DFS_MARK)
       fprintf (stderr, "markInArray arrayIndex = %"PRIu32" index = %"PRIu32"\n",
@@ -288,13 +288,13 @@ ret:
   cur = prev;
   headerp = getHeaderp (cur);
   header = *headerp;
-  splitHeader (s, header, &tag, NULL, &numNonObjptrs, &numObjptrs);
+  splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   /* It's impossible to get a WEAK_TAG here, since we would never
    * follow the weak object pointer.
    */
   assert (WEAK_TAG != tag);
   if (NORMAL_TAG == tag) {
-    todo = cur + sizeofNumNonObjptrs (tag, numNonObjptrs);
+    todo = cur + bytesNonObjptrs;
     index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
     todo += index * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
@@ -304,10 +304,9 @@ ret:
     goto markNextInNormal;
   } else if (ARRAY_TAG == tag) {
     arrayIndex = getArrayCounter (cur);
-    todo = cur + arrayIndex * (sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs)
-                               + (numObjptrs * OBJPTR_SIZE));
+    todo = cur + arrayIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
-    todo += sizeofNumNonObjptrs (ARRAY_TAG, numNonObjptrs) + index * OBJPTR_SIZE;
+    todo += bytesNonObjptrs + index * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;

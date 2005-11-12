@@ -82,21 +82,21 @@ GC_header buildHeaderFromTypeIndex (uint32_t t);
  * of object types that is emitted for each compiled program.  The
  * hasIdentity field indicates whether or not the object has mutable
  * fields, in which case it may not be hash-cons-ed.  In a normal
- * object, the numNonObjptrs field indicates the number of 32-bit
- * words of non heap-pointer data, while the numObjptrs field
- * indicates the number of heap pointers.  In an array object, the
- * numNonObjptrs field indicates the number of bytes of non
- * heap-pointer data, while the numObjptrs field indicates the number
- * of heap pointers.  In a stack object, the numNonObjptrs and
- * numObjptrs fields are irrelevant.  In a weak object, the
- * numNonObjptrs and numObjptrs fields are interpreted as in a normal
- * object (and, hence, must be (2,1) or (3,0)).
+ * object, the bytesNonObjptrs field indicates the number of bytes of
+ * non heap-pointer data, while the numObjptrs field indicates the
+ * number of heap pointers.  In an array object, the bytesNonObjptrs
+ * field indicates the number of bytes of non heap-pointer data in a
+ * single array element, while the numObjptrs field indicates the
+ * number of heap pointers in a single array element.  In a stack
+ * object, the bytesNonObjptrs and numObjptrs fields are irrelevant.
+ * In a weak object, the bytesNonObjptrs and numObjptrs fields are
+ * interpreted as in a normal object.
 */
 typedef struct GC_objectType {
   /* Keep tag first, at zero offset, since it is referenced most often. */
   GC_objectTypeTag tag;
   bool hasIdentity;
-  uint16_t numNonObjptrs;
+  uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
 } *GC_objectType;
 enum {
@@ -118,7 +118,7 @@ enum {
 
 void splitHeader (GC_state s, GC_header header,
                   GC_objectTypeTag *tagRet, bool *hasIdentityRet,
-                  uint16_t *numNonObjptrsRet, uint16_t *numObjptrsRet);
+                  uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet);
 
 pointer advanceToObjectData (GC_state s, pointer p);
 
