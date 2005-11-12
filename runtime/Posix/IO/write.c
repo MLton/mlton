@@ -9,7 +9,7 @@ Ssize Posix_IO_write (Fd fd, Pointer b, Int i, Size s) {
         
         res = (Ssize)(write (fd, (void *) ((char *) b + i), s));
         if (DEBUG_WRITE)
-                fprintf (stderr, "%d = Posix_IO_write (%d, 0x%08x, %d, %d)\n",
-                                (int)res, (int)fd, (uint)b, (int)i, (int)s);
+                fprintf (stderr, "%d = Posix_IO_write (%d, "FMTPTR", %d, %d)\n",
+                                (int)res, (int)fd, (uintptr_t)b, (int)i, (int)s);
         return res;
 }

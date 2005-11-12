@@ -20,16 +20,16 @@ extern struct GC_state gcState;
 /*
  * Test if a intInf is a fixnum.
  */
-static inline uint isSmall (pointer arg) {
-        return ((uint)arg & 1);
+static inline bool isSmall (pointer arg) {
+        return ((uintptr_t)arg & 1);
 }
 
-static inline uint eitherIsSmall (pointer arg1, pointer arg2) {
-        return (1 & ((uint)arg1 | (uint)arg2));
+static inline bool eitherIsSmall (pointer arg1, pointer arg2) {
+        return (((uintptr_t)arg1 | (uintptr_t)arg2) & 1);
 }
 
-static inline uint areSmall (pointer arg1, pointer arg2) {
-        return ((uint)arg1 & (uint)arg2 & 1);
+static inline bool areSmall (pointer arg1, pointer arg2) {
+        return ((uintptr_t)arg1 & (uintptr_t)arg2 & 1);
 }
 
 /*
@@ -39,7 +39,7 @@ static inline GC_intInf toBignum (pointer arg) {
         GC_intInf bp;
 
         assert(not isSmall(arg));
-        bp = (GC_intInf)((uint)arg - offsetof(struct GC_intInf, isneg));
+        bp = (GC_intInf)(arg - offsetof(struct GC_intInf, isneg));
         if (DEBUG_INT_INF)
                 fprintf (stderr, "bp->header = 0x%08x\n", bp->header);
         assert (bp->header == GC_INTINF_HEADER);
@@ -54,8 +54,8 @@ static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
         GC_intInf bp;
 
         if (DEBUG_INT_INF)
-                fprintf (stderr, "fill (0x%08x, 0x%08x, 0x%08x)\n",
-                                (uint)arg, (uint)res, (uint)space);
+                fprintf (stderr, "fill ("FMTPTR", "FMTPTR", "FMTPTR")\n",
+                                (uintptr_t)arg, (uintptr_t)res, (uintptr_t)space);
         if (isSmall(arg)) {
                 res->_mp_alloc = 2;
                 res->_mp_d = space;
@@ -185,50 +185,50 @@ static inline pointer binary (pointer lhs, pointer rhs, uint bytes,
 
 pointer IntInf_add (pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_add (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_add ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_add);
 }
 
 pointer IntInf_gcd (pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_gcd (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_gcd ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_gcd);
 }
 
 pointer IntInf_mul (pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_mul (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_mul ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_mul);
 }
 
 pointer IntInf_sub (pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_sub (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_sub ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
 pointer IntInf_andb(pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_andb (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_andb ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_and);
 }
 
 pointer IntInf_orb(pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_orb (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_orb ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_ior);
 }
 
 pointer IntInf_xorb(pointer lhs, pointer rhs, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_xorb (0x%08x, 0x%08x, %u)\n",
-                                (uint)lhs, (uint)rhs, bytes);
+                fprintf (stderr, "IntInf_xorb ("FMTPTR", "FMTPTR", %u)\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_xor);
 }
 
@@ -249,15 +249,15 @@ unary(pointer arg, uint bytes,
 
 pointer IntInf_neg(pointer arg, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_neg (0x%08x, %u)\n",
-                                (uint)arg, bytes);
+                fprintf (stderr, "IntInf_neg ("FMTPTR", %u)\n",
+                                (uintptr_t)arg, bytes);
         return unary(arg, bytes, &mpz_neg);
 }
 
 pointer IntInf_notb(pointer arg, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_notb (0x%08x, %u)\n",
-                                (uint)arg, bytes);
+                fprintf (stderr, "IntInf_notb ("FMTPTR", %u)\n",
+                                (uintptr_t)arg, bytes);
         return unary(arg, bytes, &mpz_com);
 }
 
@@ -279,15 +279,15 @@ shary(pointer arg, uint shift, uint bytes,
 
 pointer IntInf_arshift(pointer arg, uint shift, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_arshift (0x%08x, %u, %u)\n",
-                                (uint)arg, shift, bytes);
+                fprintf (stderr, "IntInf_arshift ("FMTPTR", %u, %u)\n",
+                                (uintptr_t)arg, shift, bytes);
         return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
 pointer IntInf_lshift(pointer arg, uint shift, uint bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_lshift (0x%08x, %u, %u)\n",
-                                (uint)arg, shift, bytes);
+                fprintf (stderr, "IntInf_lshift ("FMTPTR", %u, %u)\n",
+                                (uintptr_t)arg, shift, bytes);
         return shary(arg, shift, bytes, &mpz_mul_2exp);
 }
 
@@ -312,8 +312,8 @@ Int IntInf_compare (pointer lhs, pointer rhs) {
                                 rhsspace[2];
 
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_compare (0x%08x, 0x%08x)\n",
-                                (uint)lhs, (uint)rhs);
+                fprintf (stderr, "IntInf_compare ("FMTPTR", "FMTPTR")\n",
+                                (uintptr_t)lhs, (uintptr_t)rhs);
         fill (lhs, &lhsmpz, lhsspace);
         fill (rhs, &rhsmpz, rhsspace);
         return mpz_cmp (&lhsmpz, &rhsmpz);
@@ -346,8 +346,8 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
         char            c;
 
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_toString (0x%08x, %d, %u)\n",
-                                (uint)arg, base, bytes);
+                fprintf (stderr, "IntInf_toString ("FMTPTR", %d, %u)\n",
+                                (uintptr_t)arg, base, bytes);
         assert (base == 2 || base == 8 || base == 10 || base == 16);
         fill (arg, &argmpz, argspace);
         sp = (GC_string)gcState.frontier;

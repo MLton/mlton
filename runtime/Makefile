@@ -14,7 +14,8 @@ TARGET_OS = $(shell ../bin/host-os)
 GCC_VERSION = 							\
 	$(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
-FLAGS = -fomit-frame-pointer
+FLAGS =
+OPTFLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
 ifneq ($(findstring $(GCC_VERSION), 3 4),)
@@ -25,15 +26,15 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -mtune=opteron -m32
+FLAGS += -m32 -mtune=opteron
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -mcpu=v8 -m32
+FLAGS += -m32 -mcpu=v8 
 endif
 
 ifeq ($(TARGET_OS), solaris)
-FLAGS += -Wa,-xarch=v8plusa -funroll-all-loops -mcpu=ultrasparc
+FLAGS += -Wa,-xarch=v8plusa -mcpu=ultrasparc -funroll-all-loops
 endif
 
 ifeq ($(TARGET), self)
@@ -46,8 +47,9 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
-DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
+CFLAGS = -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
+OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
+DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
 WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wformat-nonliteral \
 	-Wuninitialized -Winit-self \
@@ -65,7 +67,8 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 #	-Wshadow \
 #	-Wmissing-prototypes \
 #	-Wmissing-declarations 
-DEBUGWARNFLAGS = $(DEBUGFLAGS) $(WARNFLAGS) -Wunused
+OPTWARNFLAGS = $(WARNFLAGS)
+DEBUGWARNFLAGS = $(WARNFLAGS) -Wunused
 
 UTILCFILES =							\
 	$(shell find util -type f | grep '\.c$$')
@@ -124,7 +127,7 @@ all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
-		$(CC) $(CFLAGS) $(WARNFLAGS)		\
+		$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS)	\
 			-Dstrtod=gdtoa_strtod		\
 			-Dstrtof=gdtoa_strtof		\
 			-w -O1 -c -DINFNAN_CHECK 	\
@@ -150,27 +153,28 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 	$(RANLIB) libmlton-gdb.a
 
+
 runtime.c: $(CFILES)
 	cat $(CFILES) >runtime.c
 
 
 util/%-gdb.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
 
 util/%.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
 
 types.h: gen/gen-types.c util.h $(UTILOFILES)
 	rm -f types.h
-	$(CC) $(CFLAGS) $(WARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
 	./gen-types
 	rm -f gen-types
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
-	$(CC) $(DEBUGFLAGS) $(DEBUGWARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
 
 gc.o: gc.c $(GCCFILES) $(HFILES) 
-	$(CC) $(CFLAGS) $(WARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a
@@ -179,21 +183,21 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(DEBUGFLAGS) $(WARNFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(CFLAGS) $(DEBUGWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
 
 %.o: %.c $(HFILES)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S
-	$(CC) $(DEBUGFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
 
 %.o: %.S
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:

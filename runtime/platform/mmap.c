@@ -5,8 +5,8 @@ static inline void *mmapAnon (void *start, size_t length) {
 
 static void munmap_safe (void *base, size_t length) {
         if (DEBUG_MEM)
-                fprintf (stderr, "munmap_safe (0x%08x, %s)\n",
-                                (uint)base,
+                fprintf (stderr, "munmap_safe ("FMTPTR", %s)\n",
+                                (uintptr_t)base,
                                 uintmaxToCommaString (length));
         assert (base != NULL);
         if (0 == length)
