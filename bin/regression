@@ -3,12 +3,12 @@
 # This script runs the regression tests in src/regression.
 # It also compiles the tests in benchmark/tests
 
-set -e
+# set -e
 
 name=`basename $0`
 
 usage () {
-        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [mlton flags ...]"
+        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [-skip-to reg] [mlton flags ...]"
         exit 1
 }
 
@@ -16,6 +16,7 @@ cross='false'
 fail='false'
 runOnly='false'
 short='false'
+skipTo=''
 while [ "$#" -gt 0 ]; do
         case "$1" in
         -cross)
@@ -42,6 +43,14 @@ while [ "$#" -gt 0 ]; do
                 ;;
         -short)
                 short='true'
+                shift
+                ;;
+        -skip-to)
+                shift
+                if [ "$#" = 0 ]; then
+                        usage
+                fi
+                skipTo="$1"
                 shift
                 ;;
         *)
@@ -102,6 +111,14 @@ esac
 
 for f in `ls *.sml`; do
         f=`basename $f .sml`
+        if [ "$skipTo" != "" ]; then
+                if [ "$skipTo" != "$f" ]; then
+                        echo "skipping $f"
+                        continue
+                else
+                        skipTo=''
+                fi
+        fi
         case `host-os` in
         cygwin|mingw)
                 case "$f" in
