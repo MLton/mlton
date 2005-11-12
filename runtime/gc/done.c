@@ -84,8 +84,6 @@ void GC_done (GC_state s) {
              uintmaxToCommaString (s->cumulativeStatistics.markedCards));
     fprintf (out, "minor scanned: %s bytes\n",
              uintmaxToCommaString (s->cumulativeStatistics.minorBytesScanned));
-    fprintf (out, "minor skipped: %s bytes\n", 
-             uintmaxToCommaString (s->cumulativeStatistics.minorBytesSkipped));
   }
   releaseHeap (s, &s->heap);
   releaseHeap (s, &s->secondaryHeap);

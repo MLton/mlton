@@ -249,7 +249,6 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->cumulativeStatistics.maxHeapSizeSeen = 0;
   s->cumulativeStatistics.maxStackSizeSeen = 0;
   s->cumulativeStatistics.minorBytesScanned = 0;
-  s->cumulativeStatistics.minorBytesSkipped = 0;
   s->cumulativeStatistics.numLimitChecks = 0;
   s->cumulativeStatistics.numCopyingGCs = 0;
   s->cumulativeStatistics.numHashConsGCs = 0;

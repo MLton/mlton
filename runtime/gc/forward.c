@@ -194,21 +194,12 @@ checkCard:
   assert (objectStart < oldGenStart + cardMapIndexToSize (cardIndex + 1));
   if (cardMap[cardIndex]) {
     pointer lastObject;
-    size_t size;
     
     s->cumulativeStatistics.markedCards++;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "card %zu is marked  objectStart = "FMTPTR"\n", 
                cardIndex, (uintptr_t)objectStart);
-    lastObject = objectStart;
-skipObjects:
     assert (isFrontierAligned (s, objectStart));
-    size = sizeofObject (s, advanceToObjectData (s, objectStart));
-    if (objectStart + size < cardStart) {
-      objectStart += size;
-      goto skipObjects;
-    }
-    s->cumulativeStatistics.minorBytesSkipped += objectStart - lastObject;
     cardEnd = cardStart + CARD_SIZE;
     if (oldGenEnd < cardEnd) 
       cardEnd = oldGenEnd;

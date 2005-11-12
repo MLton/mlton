@@ -19,7 +19,6 @@ struct GC_cumulativeStatistics {
   size_t maxStackSizeSeen;
 
   uintmax_t minorBytesScanned;
-  uintmax_t minorBytesSkipped;
 
   uintmax_t numLimitChecks;
 
