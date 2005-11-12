@@ -218,8 +218,6 @@ int GC_init (GC_state s, int argc, char **argv) {
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
   assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
                      s->alignment));
-  assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_weak),
-                     s->alignment));
 
   s->amInGC = TRUE;
   s->amOriginal = TRUE;

@@ -14,7 +14,7 @@ TARGET_OS = $(shell ../bin/host-os)
 GCC_VERSION = 							\
 	$(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
-FLAGS = -fomit-frame-pointer
+## FLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
 ifneq ($(findstring $(GCC_VERSION), 3 4),)

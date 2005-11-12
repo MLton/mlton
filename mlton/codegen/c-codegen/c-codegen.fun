@@ -333,9 +333,13 @@ fun outputDeclarations
                  | Stack =>
                       (2, false, 0, 0)
                  | Weak =>
-                      (3, false, 2, 1)
+                      (case !Control.align of
+                          Control.Align4 => (3, false, 1, 1)
+                        | Control.Align8 => (3, false, 2, 1))
                  | WeakGone =>
-                      (3, false, 3, 0)
+                      (case !Control.align of
+                          Control.Align4 => (3, false, 2, 0)
+                        | Control.Align8 => (3, false, 3, 0))
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",

@@ -72,15 +72,17 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
   splitHeader(s, *headerp, &tag, NULL, &numNonObjptrs, &numObjptrs);
   if (WEAK_TAG == tag and 1 == numObjptrs) {
     GC_header objptrHeader;
+    GC_weak w;
     
     if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
-    objptrHeader = getHeader (objptrToPointer(((GC_weak)p)->objptr, s->heap.start));
+    w = (GC_weak)(p + (offsetofWeak(s)));
+    objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap.start));
     /* If it's not threaded and unmarked, clear the weak pointer. */
     if ((GC_VALID_HEADER_MASK & objptrHeader)
         and not (MARK_MASK & objptrHeader)) {
-      ((GC_weak)p)->objptr = BOGUS_OBJPTR;
+      w->objptr = BOGUS_OBJPTR;
       header = GC_WEAK_GONE_HEADER | MARK_MASK;
       if (DEBUG_WEAK)
         fprintf (stderr, "cleared.  new header = "FMTHDR"\n",

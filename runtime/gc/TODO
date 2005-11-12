@@ -1,18 +1,8 @@
 * fix semantics of numNonPointers for normal objects to mean bytes of
         non-pointer data, rather than number of 32-bit words of
         non-pointer data.  Rename to sizeNonPointers.
-* the unused field in GC_weak appears to be for alignment; is there a
-        way to have it work well with 64-bits?  Yes -- it requires
-        choosing the representation for Weaks based on the model and
-        the alignment; also, the GC will need to bump the pointer to
-        the word after the header to get GC_weak to overlay properly.
 * what type should be used for the size field in GC_heap?  I'm using
         size_t currently, since that is the type needed by malloc.
-* I don't believe the comment concerning exnStack and the native
-        codegen in thread.h is still true; it used to be the case when
-        GC_switchToThread was implemented in codegens.  Now it should
-        be implemented in Backend.
 * the "skipObjects" loop in forwardInterGenerationalObjptrs appears to
         be unnecessary.
-* Why do {load,save}Globals differ in the representation of the file?
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?

@@ -7,6 +7,7 @@
  */
 
 void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
+  assert (isObjptrInFromSpace (s, *opp));
   unless (isObjptrInFromSpace (s, *opp))
     die ("gc.c: assertIsObjptrInFromSpace "
          "opp = "FMTPTR"  "
