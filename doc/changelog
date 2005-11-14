@@ -1,5 +1,10 @@
 Here are the changes since version 20041109.
 
+* 2005-11-11
+  - Fixed a bug in the interleaving of lexing/parsing and elaborating of
+    ML Basis files, which would raise an unhandled Force exception on
+    cyclic basis references.  Thanks to John Dias for the bug report.
+
 * 2005-11-10
   - Fixed two bugs in Time.scan.  One would raise Time on a string with a
     large fractional component.  Thanks to Carsten Varming for the bug
