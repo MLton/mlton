@@ -512,7 +512,7 @@ structure BuiltInCFunction =
                                end,
                    readsStackTop = true,
                    return = unit,       
-                   target = Direct "GC_gc",
+                   target = Direct "GC_collect",
                    writesStackTop = true}
          val t = make true
          val f = make false

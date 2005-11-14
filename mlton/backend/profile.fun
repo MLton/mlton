@@ -630,7 +630,7 @@ fun profile program =
                                           add (#1 (enter (pushes, si)))
                                     in
                                        case target of
-                                          Direct "GC_gc" => doit SourceInfo.gc
+                                          Direct "GC_collect" => doit SourceInfo.gc
                                         | Direct "GC_arrayAllocate" =>
                                              doit SourceInfo.gcArrayAllocate
                                         | Direct "MLton_bug" => add pushes

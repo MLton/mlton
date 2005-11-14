@@ -9,6 +9,8 @@
 structure MLtonWorld: MLTON_WORLD =
    struct
       structure Prim = Primitive.World
+
+      val gcState = Primitive.GCState.gcState
          
       datatype status = Clone | Original
 
@@ -39,9 +41,9 @@ structure MLtonWorld: MLTON_WORLD =
                end
             val _ = Prim.save (Posix.FileSys.fdToWord fd)
          in
-            if Prim.isOriginal ()
+            if Prim.getAmOriginal gcState
                then (Posix.IO.close fd; Original)
-            else (Prim.makeOriginal ()
+            else (Prim.setAmOriginal (gcState, true)
                   ; Cleaner.clean Cleaner.atLoadWorld
                   ; Clone)
          end

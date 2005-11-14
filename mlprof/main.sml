@@ -116,12 +116,12 @@ structure AFile =
             Process.callWithIn
             (OS.Path.mkAbsolute {path = afile,
                                  relativeTo = OS.FileSys.getDir ()},
-             ["@MLton", "show-prof"],
+             ["@MLton", "show-sources"],
              fn ins =>
              let
                 fun line () =
                    case In.inputLine ins of
-                      NONE => Error.bug "unexpected end of show-prof data"
+                      NONE => Error.bug "unexpected end of show-sources data"
                     | SOME l => l
                 val magic = valOf (Word.fromString (line ()))
                 fun vector (f: string -> 'a): 'a vector =

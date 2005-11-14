@@ -9,4 +9,21 @@
 structure MLtonGC =
    struct
       open Primitive.GC
+
+      val gcState = Primitive.GCState.gcState
+
+      val pack : unit -> unit =
+         fn () => pack gcState
+      val unpack : unit -> unit =
+         fn () => unpack gcState
+
+      val setHashConsDuringGC : bool -> unit =
+         fn b => setHashConsDuringGC (gcState, b)
+      val setMessages : bool -> unit =
+         fn b => setMessages (gcState, b)
+      val setRusageMeasureGC : bool -> unit =
+         fn b => setRusageMeasureGC (gcState, b)
+      val setSummary : bool -> unit =
+         fn b => setSummary (gcState, b)
+
    end

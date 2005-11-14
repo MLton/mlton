@@ -176,10 +176,10 @@ void ensureHasHeapBytesFree (GC_state s,
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
-void GC_gc (GC_state s, size_t bytesRequested, bool force,
+void GC_collect (GC_state s, size_t bytesRequested, bool force,
             char *file, int line) {
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "%s %d: GC_gc\n", file, line);
+    fprintf (stderr, "%s %d: GC_collect\n", file, line);
   enter (s);
   /* When the mutator requests zero bytes, it may actually need as
    * much as GC_HEAP_LIMIT_SLOP.

@@ -400,7 +400,7 @@ struct
   val fileNameLabel = Label.fromString "fileName"
   val fileName = Operand.immediate_label fileNameLabel
   (* This is a hack: The line number needs to be pushed, but the actual
-   *  call to GC_gc is about 9 lines further (push 4 more arguments,
+   *  call to GC_collect is about 9 lines further (push 4 more arguments,
    *  adjust stackTop, save return label,
    *  save gcState.frontier and gcState.stackTop, make call).
    * However, there are probably cases where this is different.

@@ -10,6 +10,8 @@ struct
 
 structure Prim = Primitive.Thread
 
+val gcState = Primitive.GCState.gcState
+
 structure AtomicState =
    struct
       datatype t = NonAtomic | Atomic of int
@@ -68,7 +70,7 @@ local
             val () = Prim.copyCurrent ()
          in
             case !func of
-               NONE => Prim.savedPre ()
+               NONE => Prim.savedPre gcState
              | SOME x =>
                   (* This branch never returns. *)
                   let
@@ -107,7 +109,7 @@ in
             val r : (unit -> 'a) ref = 
                ref (fn () => die "Thread.atomicSwitch didn't set r.\n")
             val t: 'a thread ref =
-               ref (Paused (fn x => r := x, Prim.current ()))
+               ref (Paused (fn x => r := x, Prim.current gcState))
             fun fail e = (t := Dead
                           ; switching := false
                           ; atomicEnd ()
@@ -170,9 +172,9 @@ in
             let
                (* Atomic 1 *)
                val _ = state := InHandler
-               val t = f (fromPrimitive (Prim.saved ()))
+               val t = f (fromPrimitive (Prim.saved gcState))
                val _ = state := Normal
-               val _ = Prim.finishSignalHandler ()
+               val _ = Prim.finishSignalHandler gcState
                val _ =
                   atomicSwitch
                   (fn (T r) =>
@@ -192,7 +194,7 @@ in
             (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
          val _ = signalHandler := SOME p
       in
-         Prim.setSignalHandler p
+         Prim.setSignalHandler (gcState, p)
       end
 
    fun switchToSignalHandler () =
@@ -200,7 +202,7 @@ in
          (* Atomic 0 *)
          val () = atomicBegin ()
          (* Atomic 1 *)
-         val () = Prim.startSignalHandler () (* implicit atomicBegin () *)
+         val () = Prim.startSignalHandler gcState (* implicit atomicBegin () *)
          (* Atomic 2 *)
       in
          case !signalHandler of
@@ -220,7 +222,7 @@ in
          fun loop (): unit =
             let
                (* Atomic 2 *)
-               val t = Prim.saved ()
+               val t = Prim.saved gcState
                fun doit () =
                   let
                      (* Atomic 1 *)
@@ -233,7 +235,7 @@ in
                             ; MLtonExn.topLevelHandler e)
                         (* atomicBegin() before putting res *)
                      (* Atomic 1 *)
-                     val _ = Prim.setSaved t
+                     val _ = Prim.setSaved (gcState, t)
                      val _ = Prim.returnToC () (* implicit atomicEnd() *)
                   in
                      ()
@@ -243,7 +245,7 @@ in
                loop ()
             end
          val p = toPrimitive (new (fn () => loop ()))
-         val _ = Prim.setCallFromCHandler p
+         val _ = Prim.setCallFromCHandler (gcState, p)
       in
          fn (i, f) => Array.update (exports, i, f)
       end

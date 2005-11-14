@@ -41,7 +41,7 @@ static inline GC_intInf toBignum (pointer arg) {
         assert(not isSmall(arg));
         bp = (GC_intInf)(arg - offsetof(struct GC_intInf, isneg));
         if (DEBUG_INT_INF)
-                fprintf (stderr, "bp->header = 0x%08x\n", bp->header);
+                fprintf (stderr, "bp->header = "FMTHDR"\n", bp->header);
         assert (bp->header == GC_intInfHeader ());
         return bp;
 }
@@ -265,7 +265,7 @@ static pointer
 shary(pointer arg, uint shift, uint bytes,
       void(*shop)(__mpz_struct *resmpz, 
                   __gmp_const __mpz_struct *argspace,
-                  ulong shift))
+                  unsigned long shift))
 {
         __mpz_struct    argmpz,
                         resmpz;
@@ -273,7 +273,7 @@ shary(pointer arg, uint shift, uint bytes,
 
         initRes(&resmpz, bytes);
         fill(arg, &argmpz, argspace);
-        shop(&resmpz, &argmpz, (ulong)shift);
+        shop(&resmpz, &argmpz, (unsigned long)shift);
         return answer (&resmpz, bytes);
 }
 

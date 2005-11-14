@@ -22,7 +22,7 @@ static void ensureInvariantForMutator (GC_state s, bool force);
 static void ensureHasHeapBytesFree (GC_state s, 
                                     size_t oldGenBytesRequested,
                                     size_t nurseryBytesRequested);
-void GC_gc (GC_state s, size_t bytesRequested, bool force,
-            char *file, int line);
+void GC_collect (GC_state s, size_t bytesRequested, bool force,
+                 char *file, int line);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

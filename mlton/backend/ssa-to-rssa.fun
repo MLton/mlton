@@ -91,7 +91,7 @@ structure CFunction =
             writesStackTop = true}
 
       val exit =
-         T {args = Vector.new1 Word32,
+         T {args = Vector.new2 (GCState, Word32),
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
@@ -101,7 +101,7 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new1 Word32, NONE)
+                           (Vector.new2 (Pointer, Word32), NONE)
                         end,
             readsStackTop = true,
             return = unit,
@@ -146,7 +146,7 @@ structure CFunction =
             writesStackTop = true}
 
       val threadSwitchTo =
-         T {args = Vector.new2 (Type.thread, Word32),
+         T {args = Vector.new3 (gcState, Type.thread, Word32),
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = true,
@@ -156,7 +156,7 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new2 (Pointer, Word32), NONE)
+                           (Vector.new3 (Pointer, Pointer, Word32), NONE)
                         end,
             readsStackTop = true,
             return = unit,
@@ -236,7 +236,7 @@ structure CFunction =
             writesStackTop = true}
 
       fun share t =
-         T {args = Vector.new1 t,
+         T {args = Vector.new2 (gcState, t),
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
@@ -246,22 +246,30 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new1 Pointer, NONE)
+                           (Vector.new2 (Pointer, Pointer), NONE)
                         end,
             readsStackTop = false,
             return = unit,
-            target = Direct "MLton_share",
+            target = Direct "GC_share",
             writesStackTop = false}
 
       fun size t =
-         vanilla {args = Vector.new1 t,
-                  name = "MLton_size",
-                  prototype = let
-                                 open CType
-                              in
-                                 (Vector.new1 Pointer, SOME Word32)
-                              end,
-                  return = Word32}
+         T {args = Vector.new2 (gcState, t),
+            bytesNeeded = NONE,
+            convention = Cdecl,
+            ensuresBytesFree = false,
+            mayGC = false,
+            maySwitchThreads = false,
+            modifiesFrontier = false,
+            prototype = let
+                           open CType
+                        in
+                           (Vector.new2 (Pointer, Pointer), NONE)
+                        end,
+            readsStackTop = false,
+            return = Word32,
+            target = Direct "GC_size",
+            writesStackTop = false}
    end
 
 structure Name =
@@ -913,9 +921,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                in
                   case Prim.name prim of
                      MLton_halt =>
-                        ([], Transfer.CCall {args = vos args,
-                                             func = CFunction.exit,
-                                             return = NONE})
+                           ([],
+                            Transfer.CCall
+                            {args = Vector.concat [Vector.new1 GCState,
+                                                   vos args],
+                             func = CFunction.exit,
+                             return = NONE})
                    | Thread_copyCurrent =>
                         let
                            val func = CFunction.copyCurrentThread
@@ -1090,6 +1101,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               fun simpleCCall (f: CFunction.t) =
                                  ccall {args = vos args,
                                         func = f}
+                              fun simpleCCallWithGCState (f: CFuntion.t) =
+                                 ccall {args = Vector.concat 
+                                               (Vector.new1 GCState,
+                                                vos args),
+                                        func = f}
                               fun array (numElts: Operand.t) =
                                  let
                                     val result = valOf (toRtype ty)
@@ -1200,10 +1216,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            if not (Type.isPointer t)
                                               then none ()
                                            else
-                                              simpleCCall (CFunction.share
-                                                           (Operand.ty (a 0))))
+                                              simpleCCallWithGCState 
+                                              (CFunction.share (Operand.ty (a 0)))
                                | MLton_size =>
-                                    simpleCCall
+                                    simpleCCallWithGCState 
                                     (CFunction.size (Operand.ty (a 0)))
                                | MLton_touch =>
                                     let
@@ -1334,45 +1350,31 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | Thread_canHandle =>
                                     move (Runtime GCField.CanHandle)
                                | Thread_copy =>
-                                    ccall {args = (Vector.concat
-                                                   [Vector.new1 GCState,
-                                                    vos args]),
-                                           func = CFunction.copyThread}
+                                    simpleCCallWithGCState
+                                    CFunction.copyThread
                                | Thread_switchTo =>
-                                    ccall {args = (Vector.new2
-                                                   (a 0, EnsuresBytesFree)),
+                                    ccall {args = (Vector.new3
+                                                   (GCState, 
+                                                    a 0, 
+                                                    EnsuresBytesFree)),
                                            func = CFunction.threadSwitchTo}
                                | Vector_length => arrayOrVectorLength ()
                                | Weak_canGet =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
                                      fn _ => 
-                                     let
-                                        val func = 
-                                           CFunction.weakCanGet
-                                           {arg = Operand.ty (a 0)}
-                                     in
-                                        ccall {args = (Vector.new2
-                                                       (GCState,
-                                                        Vector.sub (vos args, 0))),
-                                               func = func}
-                                     end,
+                                     simpleCCallWithGCState
+                                     (CFunction.weakCanGet 
+                                      {arg = Operand.ty (a 0)}),
                                      fn () => move (Operand.bool false))
                                | Weak_get =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
                                      fn t => 
-                                     let
-                                        val func = 
-                                           CFunction.weakGet
-                                           {arg = Operand.ty (a 0),
-                                            return = t}
-                                     in
-                                        ccall {args = (Vector.new2
-                                                       (GCState,
-                                                        Vector.sub (vos args, 0))),
-                                               func = func}
-                                     end,
+                                     simpleCCallWithGCState
+                                     (CFunction.weakGet
+                                      {arg = Operand.ty (a 0),
+                                       return = t}),
                                      none)
                                | Weak_new =>
                                     ifIsWeakPointer
@@ -1385,15 +1387,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            (case Type.dePointer result of
                                                NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Weak_new"
                                              | SOME pt => pt)
-                                        val func =
-                                           CFunction.weakNew {arg = t,
-                                                              return = result}
                                      in
-                                        ccall {args = (Vector.concat
-                                                       [Vector.new2
-                                                        (GCState, header),
-                                                        vos args]),
-                                               func = func}
+                                        simpleCCallWithGCState
+                                        (CFunction.weakNew 
+                                         {arg = t,
+                                          return = result})
                                      end,
                                      none)
                                | Word_equal s =>
@@ -1431,10 +1429,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                src = a 2})
                                | Word8Vector_subWord => subWord ()
                                | World_save =>
-                                    ccall {args = (Vector.new2
-                                                   (GCState,
-                                                    Vector.sub (vos args, 0))),
-                                           func = CFunction.worldSave}
+                                    simpleCCallWithGCState
+                                    CFunction.worldSave
                                | _ => codegenOrC prim
                            end
                       | S.Exp.Select {base, offset} =>

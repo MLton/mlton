@@ -10,6 +10,8 @@ struct
 
 structure P = Primitive.MLton.Profile
 
+val gcState = Primitive.GCState.gcState
+
 val isOn = P.isOn
 
 structure Data =
@@ -43,7 +45,7 @@ structure Data =
                                         if equals (d, d')
                                            then ac
                                         else d' :: ac) [] (!all)
-                     ; P.Data.free raw
+                     ; P.Data.free (gcState, raw)
                      ; isFreed := true)
 
       fun make (raw: P.Data.t): t =
@@ -55,7 +57,7 @@ structure Data =
          let
             val array =
                if isOn
-                  then P.Data.malloc ()
+                  then P.Data.malloc gcState
                else P.Data.dummy
             val d = make array
             val _ = all := d :: !all
@@ -79,7 +81,7 @@ structure Data =
                         creat (file,
                                flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth])
                      end
-                  val _ = P.Data.write (raw, Posix.FileSys.fdToWord fd)
+                  val _ = P.Data.write (gcState, raw, Posix.FileSys.fdToWord fd)
                   val _ = Posix.IO.close fd
                in
                   ()
@@ -102,7 +104,7 @@ fun setCurrent (d as Data.T {isCurrent, isFreed, raw, ...}) =
             val _ = ic := false
             val _ = isCurrent := true
             val _ = r := d
-            val _ = P.setCurrent raw
+            val _ = P.setCurrent (gcState, raw)
          in
             ()
          end
@@ -115,7 +117,7 @@ fun withData (d: Data.t, f: unit -> 'a): 'a =
       DynamicWind.wind (f, fn () => setCurrent old)
    end
 
-fun init () = setCurrent (Data.make (P.current ()))
+fun init () = setCurrent (Data.make (P.getCurrent gcState))
 
 val _ =
    if not isOn
@@ -127,7 +129,8 @@ val _ =
             (Cleaner.atExit, fn () =>
              (P.done ()
               ; Data.write (current (), "mlmon.out")
-              ; List.app (P.Data.free o Data.raw) (!Data.all)))
+              ; List.app (fn d => P.Data.free (gcState, Data.raw d)) 
+                         (!Data.all)))
          val _ =
             Cleaner.addNew
             (Cleaner.atLoadWorld, fn () =>

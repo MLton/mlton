@@ -396,13 +396,17 @@ structure Primitive =
       structure GC =
          struct
             val collect = _prim "GC_collect": unit -> unit;
-            val pack = _import "MLton_GC_pack": unit -> unit;
+            val pack = _import "GC_pack": GCState.t -> unit;
             val setHashConsDuringGC =
-               _import "MLton_GC_setHashConsDuringGC": bool -> unit;
-            val setMessages = _import "MLton_GC_setMessages": bool -> unit;
-            val setRusageMeasureGC = _import "MLton_GC_setRusageMeasureGC": bool -> unit;
-            val setSummary = _import "MLton_GC_setSummary": bool -> unit;
-            val unpack = _import "MLton_GC_unpack": unit -> unit;
+               _import "GC_setHashConsDuringGC": GCState.t * bool -> unit;
+            val setMessages = 
+               _import "GC_setMessages": GCState.t * bool -> unit;
+            val setRusageMeasureGC = 
+               _import "GC_setRusageMeasureGC": GCState.t * bool -> unit;
+            val setSummary = 
+               _import "GC_setSummary": GCState.t * bool -> unit;
+            val unpack = 
+               _import "GC_unpack": GCState.t -> unit;
          end
       
       structure IEEEReal =
@@ -1040,16 +1044,20 @@ structure Primitive =
                         type t = word
 
                         val dummy:t = 0w0
-                        val free = _import "MLton_Profile_Data_free": t -> unit;
-                        val malloc = _import "MLton_Profile_Data_malloc": unit -> t;
-                        val write =
-                           _import "MLton_Profile_Data_write"
-                           : t * word (* fd *) -> unit;
+                        val free = 
+                           _import "GC_profileFree": GCState.t * t -> unit;
+                        val malloc = 
+                           _import "GC_profileMalloc": GCState.t * unit -> t;
+                        val write = 
+                           _import "GC_profileWrite" 
+                           : GCState.t * t * word (* fd *) -> unit;
                      end
-                  val current = _import "MLton_Profile_current": unit -> Data.t;
-                  val done = _import "MLton_Profile_done": unit -> unit;
+                  val done = _import "GC_profileDone": GCState.t -> unit;
+                  val getCurrent = 
+                     _import "GC_getProfileCurrent": GCState.t -> Data.t;
                   val setCurrent =
-                     _import "MLton_Profile_setCurrent": Data.t -> unit;
+                     _import "GC_setProfileCurrent"
+                     : GCState.t * Data.t -> unit;
                end
             
             structure Rlimit =
@@ -1704,16 +1712,16 @@ structure Primitive =
              * switching to a copy.
              *)
             val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
-            val current = _import "Thread_current": unit -> thread;
-            val finishSignalHandler = _import "Thread_finishSignalHandler": unit -> unit;
+            val current = _import "GC_getCurrentThread": GCState.t -> thread;
+            val finishSignalHandler = _import "GC_finishSignalHandler": GCState.t* -> unit;
             val returnToC = _prim "Thread_returnToC": unit -> unit;
-            val saved = _import "Thread_saved": unit -> thread;
-            val savedPre = _import "Thread_saved": unit -> preThread;
+            val saved = _import "GC_getSavedThread": GCState.t -> thread;
+            val savedPre = _import "GC_getSavedThread": GCState.t -> preThread;
             val setCallFromCHandler =
-               _import "Thread_setCallFromCHandler": thread -> unit;
-            val setSignalHandler = _import "Thread_setSignalHandler": thread -> unit;
-            val setSaved = _import "Thread_setSaved": thread -> unit;
-            val startSignalHandler = _import "Thread_startSignalHandler": unit -> unit;
+               _import "GC_setCallFromCHandlerThread": GCState.t * thread -> unit;
+            val setSignalHandler = _import "GC_setSignalHandlerThread": GCState.t * thread -> unit;
+            val setSaved = _import "GC_setSavedThread": GCState.t * thread -> unit;
+            val startSignalHandler = _import "GC_startSignalHandler": GCState.t -> unit;
             val switchTo = _prim "Thread_switchTo": thread -> unit;
          end      
 
@@ -2182,8 +2190,8 @@ structure Primitive =
 
       structure World =
          struct
-            val isOriginal = _import "World_isOriginal": unit -> bool;
-            val makeOriginal = _import "World_makeOriginal": unit -> unit;
+            val getAmOriginal = _import "GC_getAmOriginal": GCState.t -> bool;
+            val setAmOriginal = _import "GC_setAmOriginal": GCState.t * bool -> unit;
             val save = _prim "World_save": word (* filedes *) -> unit;
          end
    end
