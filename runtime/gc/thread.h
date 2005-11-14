@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 typedef struct GC_thread {
   /* The order of these fields is important.  The nonpointer fields
    * must be first, because this object must appear to be a normal
@@ -22,6 +24,16 @@ typedef struct GC_thread {
 
 #define BOGUS_EXN_STACK 0xFFFFFFFF
 
-void displayThread (GC_state s, GC_thread thread, FILE *stream);
-size_t sizeofThread (GC_state s);
+#else
 
+struct GC_thread;
+typedef struct GC_thread *GC_thread;
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void displayThread (GC_state s, GC_thread thread, FILE *stream);
+static size_t sizeofThread (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

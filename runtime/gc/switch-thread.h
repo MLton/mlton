@@ -6,4 +6,10 @@
  * See the file MLton-LICENSE for details.
  */
 
-void switchToThread (GC_state s, objptr op);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void switchToThread (GC_state s, objptr op);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree);

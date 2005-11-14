@@ -5,6 +5,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 #define OBJPTR_TYPE__(z) uint ## z ## _t
 #define OBJPTR_TYPE_(z) OBJPTR_TYPE__(z)
 #define OBJPTR_TYPE OBJPTR_TYPE_(GC_MODEL_BITSIZE)
@@ -21,8 +23,14 @@ typedef OBJPTR_TYPE objptr;
 #error gc model does not admit bogus object pointer
 #endif
 
-bool isObjptr (objptr p);
-pointer objptrToPointer (objptr O, pointer B);
-objptr pointerToObjptr (pointer P, pointer B);
-pointer fetchObjptrToPointer (pointer OP, pointer B);
-void storeObjptrFromPointer (pointer OP, pointer P, pointer B);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static bool isObjptr (objptr p);
+static pointer objptrToPointer (objptr O, pointer B);
+static objptr pointerToObjptr (pointer P, pointer B);
+static pointer fetchObjptrToPointer (pointer OP, pointer B);
+static void storeObjptrFromPointer (pointer OP, pointer P, pointer B);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

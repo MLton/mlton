@@ -6,9 +6,11 @@
  * See the file MLton-LICENSE for details.
  */
 
-#define MLTON_GC_INTERNAL
+#define MLTON_GC_INTERNAL_TYPES
+#define MLTON_GC_INTERNAL_FUNCS
+#define MLTON_GC_INTERNAL_INTINF
+#define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
-#undef MLTON_GC_INTERNAL
 #include "gc/rusage.h"
 
 #include "gc/virtual-memory.c"
@@ -39,6 +41,7 @@
 #include "gc/heap_predicates.c"
 #include "gc/init-world.c"
 #include "gc/init.c"
+#include "gc/int-inf.c"
 #include "gc/invariant.c"
 #include "gc/mark-compact.c"
 #include "gc/model.c"
@@ -55,6 +58,7 @@
 #include "gc/size.c"
 #include "gc/sources.c"
 #include "gc/stack.c"
+#include "gc/string.c"
 #include "gc/switch-thread.c"
 #include "gc/thread.c"
 #include "gc/translate.c"

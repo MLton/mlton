@@ -6,7 +6,11 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 typedef enum {
   GC_COPYING,
   GC_MARK_COMPACT,
 } GC_majorKind;
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

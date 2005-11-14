@@ -16,7 +16,6 @@ BIN = $(BUILD)/bin
 LIB = $(BUILD)/lib
 INC = $(LIB)/include
 COMP = $(SRC)/mlton
-RUN = $(SRC)/runtime
 MLTON = $(BIN)/mlton
 AOUT = mlton-compile
 ifeq (mingw, $(TARGET_OS))
@@ -274,15 +273,16 @@ rpms:
 runtime:
 	@echo 'Compiling MLton runtime system for $(TARGET).'
 	$(MAKE) -C runtime
-	$(CP) $(RUN)/*.a $(LIB)/$(TARGET)/
-	$(CP) runtime/*.h include/*.h $(INC)/
+	$(CP) include/*.h $(INC)/
+	$(CP) runtime/*.a $(LIB)/$(TARGET)/
 	mkdir -p $(INC)/gc
 	mkdir -p $(INC)/util
 	mkdir -p $(INC)/platform
-	$(CP) bytecode/interpret.h $(INC)
+	$(CP) runtime/*.h $(INC)/
 	$(CP) runtime/gc/*.h $(INC)/gc
 	$(CP) runtime/util/*.h $(INC)/util
 	$(CP) runtime/platform/*.h $(INC)/platform
+	$(CP) bytecode/interpret.h $(INC)
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >$(LIB)/opcodes
 	ar r $(LIB)/$(TARGET)/libmlton.a bytecode/interpret.o 

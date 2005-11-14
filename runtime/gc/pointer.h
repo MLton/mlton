@@ -6,6 +6,10 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
 #define BOGUS_POINTER (pointer)0x1
 
-bool isPointer (pointer p);
+static bool isPointer (pointer p);
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

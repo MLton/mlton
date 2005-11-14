@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /*
  * Array objects have the following layout:
  * 
@@ -28,10 +30,18 @@ typedef GC_arrayLength GC_arrayCounter;
 #define FMTARRCTR "%"PRIxARRCTR
 #define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
 
-GC_arrayLength* getArrayLengthp (pointer a);
-GC_arrayLength getArrayLength (pointer a);
-GC_arrayCounter* getArrayCounterp (pointer a);
-GC_arrayCounter getArrayCounter (pointer a);
-pointer indexArrayAtPointerIndex (GC_state s, pointer a,
-                                  GC_arrayCounter arrayIndex,
-                                  uint32_t pointerIndex);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static inline GC_arrayLength* getArrayLengthp (pointer a);
+static inline GC_arrayLength getArrayLength (pointer a);
+static inline GC_arrayCounter* getArrayCounterp (pointer a);
+static inline GC_arrayCounter getArrayCounter (pointer a);
+static pointer indexArrayAtPointerIndex (GC_state s, pointer a,
+                                         GC_arrayCounter arrayIndex,
+                                         uint32_t pointerIndex);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+uintmax_t GC_getArrayLength (pointer a);

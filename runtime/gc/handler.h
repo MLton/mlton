@@ -6,4 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+void GC_startSignalHandler (GC_state s);
+void GC_finishSignalHandler (GC_state s);
+void GC_handler (GC_state s, int signum);

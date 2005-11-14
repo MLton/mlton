@@ -62,12 +62,11 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wmissing-noreturn -Wmissing-format-attribute \
 	-Wpacked \
 	-Wredundant-decls \
-	-Wnested-externs \
-	-Winline -Wdisabled-optimization 
+	-Wnested-externs 
 #	-Wshadow \
 #	-Wmissing-prototypes \
 #	-Wmissing-declarations 
-OPTWARNFLAGS = $(WARNFLAGS)
+OPTWARNFLAGS = $(WARNFLAGS) -Winline -Wdisabled-optimization 
 DEBUGWARNFLAGS = $(WARNFLAGS) -Wunused
 
 UTILCFILES =							\
@@ -183,9 +182,9 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -Wno-redundant-decls -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(OPTCFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(OPTCFLAGS) -O1 -fno-strict-aliasing $(OPTWARNFLAGS) -Wno-redundant-decls -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) -c -o $@ $<

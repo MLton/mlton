@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 typedef uint32_t GC_sourceNameIndex;
 #define PRISNI PRIu32
 #define FMTSNI "%"PRISNI
@@ -68,10 +70,16 @@ struct GC_sourceMaps {
   pointer textStart;
 };
 
-GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
 char* GC_sourceName (GC_state s, GC_sourceIndex i);
 
-void sortSourceLabels (GC_state s);
-void initTextSources (GC_state s);
+static void sortSourceLabels (GC_state s);
+static void initTextSources (GC_state s);
 
-void showSources (GC_state s);
+static void showSources (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

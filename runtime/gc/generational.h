@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /* must agree w/ cardSizeLog2 in ssa-to-rssa.fun */
 #define CARD_SIZE_LOG2 8
 #define CARD_SIZE TWOPOWER(CARD_SIZE_LOG2)
@@ -46,25 +48,31 @@ struct GC_generationalMaps {
   size_t crossMapValidSize;
 };
 
-void displayGenerationalMaps (GC_state s,
-                              struct GC_generationalMaps *generational,
-                              FILE *stream);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
-GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
-GC_cardMapIndex sizeToCardMapIndex (size_t z);
-size_t cardMapIndexToSize (GC_cardMapIndex i);
-pointer pointerToCardMapAddr (GC_state s, pointer p);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-bool isCardMarked (GC_state s, pointer p);
-void markCard (GC_state s, pointer p);
+static void displayGenerationalMaps (GC_state s,
+                                     struct GC_generationalMaps *generational,
+                                     FILE *stream);
 
-void setCardMapAbsolute (GC_state s);
-pointer getCrossMapCardStart (GC_state s, pointer p);
+static GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
+static GC_cardMapIndex sizeToCardMapIndex (size_t z);
+static size_t cardMapIndexToSize (GC_cardMapIndex i);
+static pointer pointerToCardMapAddr (GC_state s, pointer p);
 
-void clearCardMap (GC_state s);
-void clearCrossMap (GC_state s);
-void createCardMapAndCrossMap (GC_state s);
-void resizeCardMapAndCrossMap (GC_state s);
+static bool isCardMarked (GC_state s, pointer p);
+static void markCard (GC_state s, pointer p);
 
-bool isCrossMapOk (GC_state s);
-void updateCrossMap (GC_state s);
+static void setCardMapAbsolute (GC_state s);
+static pointer getCrossMapCardStart (GC_state s, pointer p);
+
+static void clearCardMap (GC_state s);
+static void clearCrossMap (GC_state s);
+static void createCardMapAndCrossMap (GC_state s);
+static void resizeCardMapAndCrossMap (GC_state s);
+
+static bool isCrossMapOk (GC_state s);
+static void updateCrossMap (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,9 +6,13 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 struct GC_sysvals {
   size_t ram;
   size_t availRam;
   size_t totalRam;
   size_t pageSize;
 };
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

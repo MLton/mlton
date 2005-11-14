@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /* ---------------------------------------------------------------- */
 /*                       Object hash consing                        */
 /* ---------------------------------------------------------------- */
@@ -29,15 +31,21 @@ typedef struct GC_objectHashTable {
   bool mayInsert;
 } *GC_objectHashTable;
 
-GC_objectHashTable allocHashTable (GC_state s);
-void freeHashTable (GC_objectHashTable t);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
-pointer insertHashTableElem (GC_state s, 
-                             GC_objectHashTable t, GC_hash hash, 
-                             pointer object, pointer max, bool mightBeThere);
-void growHashTableMaybe (GC_state s, GC_objectHashTable t);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed);
-void shareObjptr (GC_state s, objptr *opp);
+static GC_objectHashTable allocHashTable (GC_state s);
+static void freeHashTable (GC_objectHashTable t);
 
-void printBytesHashConsedMessage (GC_state s, uintmax_t total);
+static pointer insertHashTableElem (GC_state s, 
+                                    GC_objectHashTable t, GC_hash hash, 
+                                    pointer object, pointer max, bool mightBeThere);
+static void growHashTableMaybe (GC_state s, GC_objectHashTable t);
+
+static pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed);
+static void shareObjptr (GC_state s, objptr *opp);
+
+static void printBytesHashConsedMessage (GC_state s, uintmax_t total);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

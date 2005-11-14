@@ -18,9 +18,6 @@
 struct GC_state;
 typedef struct GC_state *GC_state;
 
-
-#if (defined (MLTON_GC_INTERNAL))
-
 #define GC_MODEL_NATIVE32
 
 #include "gc/align.h"
@@ -35,7 +32,6 @@ typedef struct GC_state *GC_state;
 #include "gc/weak.h"
 #include "gc/int-inf.h"
 #include "gc/string.h"
-
 #include "gc/object-size.h"
 #include "gc/generational.h"
 #include "gc/heap.h"
@@ -68,15 +64,6 @@ typedef struct GC_state *GC_state;
 #include "gc/init.h"
 #include "gc/copy-thread.h"
 #include "gc/gc_state.h"
-
-#else /* not (defined (MLTON_GC_INTERNAL)) */
-
-struct GC_thread;
-typedef struct GC_thread *GC_thread;
-struct GC_profileData;
-typedef struct GC_profileData *GC_profileData;
-
-#endif /* (defined (MLTON_GC_INTERNAL)) */
 
 #include "gc/platform.h"
 #include "gc/gc_state_exports.h"

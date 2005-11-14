@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 typedef enum {
   PROFILE_ALLOC,
   PROFILE_COUNT,
@@ -68,18 +70,48 @@ struct GC_profiling {
   bool stack;
 };
 
-void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
-void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-void enterFrameForProfiling (GC_state s, GC_frameIndex i);
+#else
+
+struct GC_profileData;
+typedef struct GC_profileData *GC_profileData;
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, GC_sourceIndex i);
+static GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s, GC_profileMasterIndex i);
+static GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterIndex i);
+
+static void addToStackForProfiling (GC_state s, GC_profileMasterIndex i);
+static void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+static void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+static void enterFrameForProfiling (GC_state s, GC_frameIndex i);
+
+static void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i);
+static void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+static void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+static void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
+
+static void profileInc (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex);
+
+static void setProfTimer (long usec);
+static void initProfiling (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
 void GC_profileEnter (GC_state s);
-
-void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);
-void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
 void GC_profileLeave (GC_state s);
-
 void GC_profileInc (GC_state s, size_t amount);
 void GC_profileAllocInc (GC_state s, size_t amount);
 
-void initProfiling (GC_state s);
+GC_profileData GC_getProfileCurrent (GC_state s);
+void GC_setProfileCurrent (GC_state s, GC_profileData p);
 
+GC_profileData GC_profileNew (GC_state s);
+void GC_profileWrite (GC_state s, GC_profileData p, int fd);
+void GC_profileFree (GC_state s, GC_profileData p);
+
+void GC_profileDone (GC_state s);
+
+void GC_handleSigProf (pointer pc);

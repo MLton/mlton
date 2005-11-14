@@ -44,7 +44,7 @@ Int Posix_Signal_handle (Int signum) {
         sigaddset (GC_getSignalsHandledAddr (&gcState), signum);
         memset (&sa, 0, sizeof(sa));
         /* The mask must be full because GC_handler reads and writes 
-         * s->signalsPending  (else there is a race condition).
+         * s->signalsPending (else there is a race condition).
          */
         sigfillset (&sa.sa_mask);
         sa.sa_handler = handler;

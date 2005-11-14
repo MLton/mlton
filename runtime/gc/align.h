@@ -6,5 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-bool isFrontierAligned (GC_state s, pointer p);
-pointer alignFrontier (GC_state s, pointer p);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static size_t alignWithExtra (GC_state s, size_t bytes, size_t extra);
+static bool isFrontierAligned (GC_state s, pointer p);
+static pointer alignFrontier (GC_state s, pointer p);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+pointer GC_alignFrontier (GC_state s, pointer p);

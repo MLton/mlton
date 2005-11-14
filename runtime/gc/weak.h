@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /*
  * Weak objects have the following layout:
  * 
@@ -31,8 +33,15 @@ typedef struct GC_weak {
   objptr objptr;
 } *GC_weak;
 
-size_t sizeofWeak (GC_state s);
-size_t offsetofWeak (GC_state s);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static size_t sizeofWeak (GC_state s);
+static size_t offsetofWeak (GC_state s);
+
 uint32_t GC_weakCanGet (GC_state s, pointer p);
 pointer GC_weakGet (GC_state s, pointer p);
 pointer GC_weakNew (GC_state s, GC_header header, pointer p);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

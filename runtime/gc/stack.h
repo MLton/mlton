@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /*
  * Stack objects have the following layout:
  * 
@@ -49,24 +51,31 @@ typedef struct GC_stack {
 
 #define GC_STACK_HEADER_SIZE GC_HEADER_SIZE
 
-bool isStackEmpty (GC_stack stack);
-bool isStackReservedAligned (GC_state s, size_t reserved);
-void displayStack (GC_state s, GC_stack stack, FILE *stream);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
-size_t sizeofStackSlop (GC_state s);
-size_t sizeofStackInitial (GC_state s);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-pointer getStackBottom (GC_state s, GC_stack stack);
-pointer getStackTop (GC_state s, GC_stack stack);
-pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
-pointer getStackLimit (GC_state s, GC_stack stack);
-GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
-GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
-uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
+static void displayStack (GC_state s, GC_stack stack, FILE *stream);
 
-size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
-size_t alignStackReserved (GC_state s, size_t reserved);
-size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
-size_t sizeofStackGrow (GC_state s, GC_stack stack);
+static bool isStackEmpty (GC_stack stack);
+static bool isStackReservedAligned (GC_state s, size_t reserved);
 
-void copyStack (GC_state s, GC_stack from, GC_stack to);
+static size_t sizeofStackSlop (GC_state s);
+static size_t sizeofStackInitial (GC_state s);
+
+static pointer getStackBottom (GC_state s, GC_stack stack);
+static pointer getStackTop (GC_state s, GC_stack stack);
+static pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
+static pointer getStackLimit (GC_state s, GC_stack stack);
+static GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
+static GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
+static uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
+
+static size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
+static size_t alignStackReserved (GC_state s, size_t reserved);
+static size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
+static size_t sizeofStackGrow (GC_state s, GC_stack stack);
+
+static void copyStack (GC_state s, GC_stack from, GC_stack to);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

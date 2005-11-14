@@ -6,14 +6,16 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
 typedef void (*GC_foreachObjptrFun) (GC_state s, objptr *opp);
 
-void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp);
+static void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp);
 /* foreachGlobalObjptr (s, f)
  * 
  * Apply f to each global object pointer into the heap. 
  */
-void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
+static void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
 /* foreachObjptrInObject (s, p, skipWeaks, f) 
  * 
  * Applies f to each object pointer in the object pointed to by p.
@@ -21,8 +23,8 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f);
  *
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
-pointer foreachObjptrInObject (GC_state s, pointer p,
-                               GC_foreachObjptrFun f, bool skipWeaks);
+static pointer foreachObjptrInObject (GC_state s, pointer p,
+                                      GC_foreachObjptrFun f, bool skipWeaks);
 /* foreachObjptrInRange (s, front, back, f, skipWeaks)
  *
  * Apply f to each pointer between front and *back, which should be a
@@ -34,8 +36,8 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
  *
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
-pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
-                              GC_foreachObjptrFun f, bool skipWeaks);
+static pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
+                                     GC_foreachObjptrFun f, bool skipWeaks);
 
 
 typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i);
@@ -44,4 +46,6 @@ typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i);
  *
  * Apply f to the frame index of each frame in the current stack.
  */
-void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f);
+static void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

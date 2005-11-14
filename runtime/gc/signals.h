@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 struct GC_signalsInfo {
   /* TRUE iff a signal handler is running. */
   bool amInSignalHandler;   
@@ -25,4 +27,10 @@ struct GC_signalsInfo {
   sigset_t signalsPending;
 };
 
-void initSignalStack (GC_state s);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void initSignalStack (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

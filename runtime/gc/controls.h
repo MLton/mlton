@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 struct GC_ratios {
   /* Minimum live ratio to use copying GC. */
   float copy; 
@@ -44,5 +46,11 @@ struct GC_controls {
   bool summary; /* Print a summary of gc info when program exits. */
 };
 
-bool detailedGCTime (GC_state s);
-bool needGCTime (GC_state s);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static bool detailedGCTime (GC_state s);
+static bool needGCTime (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

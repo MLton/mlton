@@ -6,5 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-int processAtMLton (GC_state s, int argc,
-                    char **argv, char **worldFile);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static int processAtMLton (GC_state s, int argc,
+                           char **argv, char **worldFile);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

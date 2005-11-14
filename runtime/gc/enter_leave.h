@@ -6,5 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-void enter (GC_state s);
-void leave (GC_state s);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void enter (GC_state s);
+static void leave (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

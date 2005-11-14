@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /* GC_init uses the array of struct intInfInits in s at program start
  * to allocate intInfs.  
  * The globalIndex'th entry of the globals array in s is set to the
@@ -30,7 +32,13 @@ struct GC_vectorInit {
   GC_arrayLength numElements;
 };
 
-size_t sizeofInitialBytesLive (GC_state s);
-void initIntInfs (GC_state s);
-void initVectors (GC_state s);
-void initWorld (GC_state s);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static size_t sizeofInitialBytesLive (GC_state s);
+static void initIntInfs (GC_state s);
+static void initVectors (GC_state s);
+static void initWorld (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /*
  * The "... reserved bytes ..." of a stack object constitute a linear
  * sequence of frames.  For the purposes of garbage collection, we
@@ -45,6 +47,12 @@ typedef uintptr_t GC_returnAddress;
 #define GC_RETURNADDRESS_SIZE sizeof(GC_returnAddress)
 #define FMTRA "0x%016"PRIxPTR
 
-GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra);
-GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index);
-GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra);
+static GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index);
+static GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /* 
  * There are four kinds of ML objects: 
  *   array, normal (fixed size), stack, and weak.
@@ -17,7 +19,16 @@ typedef enum {
   WEAK_TAG,
 } GC_objectTypeTag;
 
-const char* objectTypeTagToString (GC_objectTypeTag tag);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS)) 
+
+static const char* objectTypeTagToString (GC_objectTypeTag tag);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+
+#if (defined (MLTON_GC_INTERNAL_TYPES))
 
 /*
  * Each object has a header, which immediately precedes the object data.
@@ -44,9 +55,18 @@ typedef uint32_t GC_header;
 #define MARK_MASK          0x80000000
 #define MARK_SHIFT         31
 
-GC_header* getHeaderp (pointer p);
-GC_header getHeader (pointer p);
-GC_header buildHeaderFromTypeIndex (uint32_t t);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static GC_header* getHeaderp (pointer p);
+static GC_header getHeader (pointer p);
+static GC_header buildHeaderFromTypeIndex (uint32_t t);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+
+#if (defined (MLTON_GC_INTERNAL_TYPES))
 
 /*
  * Normal objects have the following layout:
@@ -64,12 +84,17 @@ GC_header buildHeaderFromTypeIndex (uint32_t t);
 */
 #define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
 
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+
 /* Array objects are described in "array.h" */
 
 /* Stack objects are described in "stack.h" */
 
 /* Weak objects are described in "weak.h" */
 
+
+#if (defined (MLTON_GC_INTERNAL_TYPES))
 
 /* 
  * The type index of a header is an index into an array of object
@@ -109,6 +134,10 @@ enum {
   WORD16_VECTOR_TYPE_INDEX = 5,
 };
 
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
 #define GC_STACK_HEADER buildHeaderFromTypeIndex (STACK_TYPE_INDEX)
 #define GC_THREAD_HEADER buildHeaderFromTypeIndex (THREAD_TYPE_INDEX)
 #define GC_WEAK_GONE_HEADER buildHeaderFromTypeIndex (WEAK_GONE_TYPE_INDEX)
@@ -116,9 +145,9 @@ enum {
 #define GC_WORD16_VECTOR_HEADER buildHeaderFromTypeIndex (WORD16_VECTOR_TYPE_INDEX)
 #define GC_WORD32_VECTOR_HEADER buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX)
 
-void splitHeader (GC_state s, GC_header header,
-                  GC_objectTypeTag *tagRet, bool *hasIdentityRet,
-                  uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet);
+static void splitHeader (GC_state s, GC_header header,
+                         GC_objectTypeTag *tagRet, bool *hasIdentityRet,
+                         uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet);
+static pointer advanceToObjectData (GC_state s, pointer p);
 
-pointer advanceToObjectData (GC_state s, pointer p);
-
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

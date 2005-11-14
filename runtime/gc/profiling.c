@@ -7,7 +7,8 @@
  */
 
 GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, 
-                                                       GC_sourceIndex i) {
+                                                       GC_sourceIndex i)
+ {
   return s->sourceMaps.sources[i].sourceNameIndex + s->sourceMaps.sourcesLength;
 }
 

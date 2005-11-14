@@ -6,7 +6,11 @@
  * See the file MLton-LICENSE for details.
  */
 
-void updateWeaksForCheneyCopy (GC_state s);
-void swapHeapsForCheneyCopy (GC_state s);
-void majorCheneyCopyGC (GC_state s);
-void minorCheneyCopyGC (GC_state s);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void updateWeaksForCheneyCopy (GC_state s);
+static void swapHeapsForCheneyCopy (GC_state s);
+static void majorCheneyCopyGC (GC_state s);
+static void minorCheneyCopyGC (GC_state s);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,6 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-void loadWorldFromFD (GC_state s, int fd);
-void loadWorldFromFileName (GC_state s, char *fileName);
-void saveWorldToFD (GC_state s, int fd);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void loadWorldFromFD (GC_state s, int fd);
+static void loadWorldFromFileName (GC_state s, char *fileName);
+static void saveWorldToFD (GC_state s, int fd);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+void GC_saveWorld (GC_state s, int fd);

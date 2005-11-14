@@ -24,6 +24,10 @@ GC_arrayLength getArrayLength (pointer a) {
   return *(getArrayLengthp (a));
 }
 
+uintmax_t GC_getArrayLength (pointer a) {
+  return ((uintmax_t)(getArrayLength (a)));
+}
+
 /* getArrayCounterp (p)
  *
  * Returns a pointer to the counter for the array pointed to by p.
@@ -59,9 +63,4 @@ pointer indexArrayAtPointerIndex (GC_state s, pointer a,
     + (arrayIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)))
     + bytesNonObjptrs
     + (pointerIndex * OBJPTR_SIZE);
-}
-
-
-GC_arrayLength GC_getArrayLength (pointer a) {
-  return getArrayLength (a);
 }

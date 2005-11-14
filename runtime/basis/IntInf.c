@@ -6,9 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-#define MLTON_GC_INTERNAL
+#define MLTON_GC_INTERNAL_TYPES
+#define MLTON_GC_INTERNAL_INTINF
 #include "platform.h"
-#undef MLTON_GC_INTERNAL
 
 enum {
   DEBUG_INT_INF = FALSE,
@@ -42,7 +42,7 @@ static inline GC_intInf toBignum (pointer arg) {
         bp = (GC_intInf)(arg - offsetof(struct GC_intInf, isneg));
         if (DEBUG_INT_INF)
                 fprintf (stderr, "bp->header = 0x%08x\n", bp->header);
-        assert (bp->header == GC_INTINF_HEADER);
+        assert (bp->header == GC_intInfHeader ());
         return bp;
 }
 
@@ -109,7 +109,7 @@ static inline uint leadingZeros (mp_limb_t word) {
 }
 
 static inline void setFrontier (pointer p, uint bytes) {
-        p = alignFrontier (&gcState, p);
+        p = GC_alignFrontier (&gcState, p);
         assert (p - gcState.frontier <= bytes);
         GC_profileAllocInc (&gcState, p - gcState.frontier);
         gcState.frontier = p;
@@ -162,7 +162,7 @@ static pointer answer (__mpz_struct *ans, uint bytes) {
         setFrontier ((pointer)(&bp->limbs[size]), bytes);
         bp->counter = 0;
         bp->length = size + 1; /* +1 for isNeg word */
-        bp->header = GC_INTINF_HEADER;
+        bp->header = GC_intInfHeader ();
         return (pointer)&bp->isneg;
 }
 
@@ -364,7 +364,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
                 }
         sp->counter = 0;
         sp->length = size;
-        sp->header = GC_STRING_HEADER;
+        sp->header = GC_stringHeader ();
         setFrontier ((pointer)(&sp->chars[align(size, 4)]), bytes);
         return (pointer)str;
 }

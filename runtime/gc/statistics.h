@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 struct GC_cumulativeStatistics {
   uintmax_t bytesAllocated;
   uintmax_t bytesCopied;
@@ -40,3 +42,5 @@ struct GC_lastMajorStatistics {
   GC_majorKind kind;
   uintmax_t numMinorGCs;
 };
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

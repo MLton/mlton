@@ -6,8 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-size_t sizeofArrayNoHeader (GC_state s, GC_arrayLength numElements, 
-                            uint16_t numNonObjptrs, uint16_t numObjptrs);
-size_t sizeofStackNoHeader (GC_state s, GC_stack stack);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-size_t sizeofObject (GC_state s, pointer p);
+static size_t sizeofArrayNoHeader (GC_state s, GC_arrayLength numElements, 
+                                   uint16_t numNonObjptrs, uint16_t numObjptrs);
+static size_t sizeofStackNoHeader (GC_state s, GC_stack stack);
+
+static size_t sizeofObject (GC_state s, pointer p);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 /* Layout of intInfs.  
  * Note, the value passed around is a pointer to the isneg member.
  */
@@ -17,4 +19,16 @@ typedef struct GC_intInf {
   uint32_t limbs[1];
 } *GC_intInf;
 
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
 #define GC_INTINF_HEADER GC_WORD32_VECTOR_HEADER
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+#if (defined (MLTON_GC_INTERNAL_INTINF))
+
+GC_header GC_intInfHeader (void);
+
+#endif /* (defined (MLTON_GC_INTERNAL_INTINF)) */

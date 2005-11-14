@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
 struct GC_state {
   size_t alignment; /* */
   bool amInGC;
@@ -61,10 +63,16 @@ struct GC_state {
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };
 
-void displayGCState (GC_state s, FILE *stream);
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
-size_t sizeofGCStateCurrentStackUsed (GC_state s);
-void setGCStateCurrentThreadAndStack (GC_state s);
-void setGCStateCurrentHeap (GC_state s, 
-                            size_t oldGenBytesRequested, 
-                            size_t nurseryBytesRequested);
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static void displayGCState (GC_state s, FILE *stream);
+
+static size_t sizeofGCStateCurrentStackUsed (GC_state s);
+static void setGCStateCurrentThreadAndStack (GC_state s);
+static void setGCStateCurrentHeap (GC_state s, 
+                                   size_t oldGenBytesRequested, 
+                                   size_t nurseryBytesRequested);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

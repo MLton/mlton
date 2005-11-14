@@ -73,7 +73,7 @@ fun build (constants, out) =
    in
       List.foreach
       (List.concat
-       [["#define MLTON_GC_INTERNAL",
+       [["#define MLTON_GC_INTERNAL_TYPES",
          "#include \"platform.h\"",
          "struct GC_state gcState;",
          "",
