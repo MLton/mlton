@@ -28,7 +28,7 @@ structure MLtonRusage: MLTON_RUSAGE =
              utime = toTime (utimeSec, utimeUsec)}
          end
 
-      val measureGC = Primitive.GC.setRusageMeasureGC
+      val measureGC = MLtonGC.setRusageMeasureGC
 
       val rusage =
          let 

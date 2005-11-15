@@ -10,6 +10,7 @@ structure MLtonCont:> MLTON_CONT =
 struct
 
 structure Thread = Primitive.Thread
+val gcState = Primitive.GCState.gcState
 
 (* This mess with dummy is so that if callcc is ever used anywhere in the
  * program, then Primitive.usesCallcc is set to true during basis library
@@ -42,7 +43,7 @@ fun callcc (f: 'a t -> 'a): 'a =
                           ; v ())
              | Original f =>
                   let
-                     val t = Thread.savedPre ()
+                     val t = Thread.savedPre gcState
                   in
                      Thread.atomicEnd () (* Match 1 *)
                      ; f (fn v =>

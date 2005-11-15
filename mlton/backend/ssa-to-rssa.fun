@@ -91,7 +91,7 @@ structure CFunction =
             writesStackTop = true}
 
       val exit =
-         T {args = Vector.new2 (GCState, Word32),
+         T {args = Vector.new2 (gcState, Word32),
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
@@ -1101,10 +1101,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               fun simpleCCall (f: CFunction.t) =
                                  ccall {args = vos args,
                                         func = f}
-                              fun simpleCCallWithGCState (f: CFuntion.t) =
+                              fun simpleCCallWithGCState (f: CFunction.t) =
                                  ccall {args = Vector.concat 
-                                               (Vector.new1 GCState,
-                                                vos args),
+                                               [Vector.new1 GCState,
+                                                vos args],
                                         func = f}
                               fun array (numElts: Operand.t) =
                                  let
@@ -1217,7 +1217,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               then none ()
                                            else
                                               simpleCCallWithGCState 
-                                              (CFunction.share (Operand.ty (a 0)))
+                                              (CFunction.share (Operand.ty (a 0))))
                                | MLton_size =>
                                     simpleCCallWithGCState 
                                     (CFunction.size (Operand.ty (a 0)))

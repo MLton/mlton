@@ -5,9 +5,8 @@
  * See the file MLton-LICENSE for details.
  */
 
-#define MLTON_GC_INTERNAL
+#define MLTON_GC_INTERNAL_TYPES
 #include "platform.h"
-#undef MLTON_GC_INTERNAL
 
 #include "interpret.h"
 #include "c-chunk.h"    // c-chunk.h must come before opcode.h because it

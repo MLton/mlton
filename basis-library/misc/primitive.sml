@@ -1046,7 +1046,7 @@ structure Primitive =
                         val free = 
                            _import "GC_profileFree": GCState.t * t -> unit;
                         val malloc = 
-                           _import "GC_profileMalloc": GCState.t * unit -> t;
+                           _import "GC_profileMalloc": GCState.t -> t;
                         val write = 
                            _import "GC_profileWrite" 
                            : GCState.t * t * word (* fd *) -> unit;
@@ -1712,7 +1712,7 @@ structure Primitive =
              *)
             val copyCurrent = _prim "Thread_copyCurrent": unit -> unit;
             val current = _import "GC_getCurrentThread": GCState.t -> thread;
-            val finishSignalHandler = _import "GC_finishSignalHandler": GCState.t* -> unit;
+            val finishSignalHandler = _import "GC_finishSignalHandler": GCState.t -> unit;
             val returnToC = _prim "Thread_returnToC": unit -> unit;
             val saved = _import "GC_getSavedThread": GCState.t -> thread;
             val savedPre = _import "GC_getSavedThread": GCState.t -> preThread;

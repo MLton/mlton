@@ -127,7 +127,7 @@ val _ =
          val _ =
             Cleaner.addNew
             (Cleaner.atExit, fn () =>
-             (P.done ()
+             (P.done gcState
               ; Data.write (current (), "mlmon.out")
               ; List.app (fn d => P.Data.free (gcState, Data.raw d)) 
                          (!Data.all)))
