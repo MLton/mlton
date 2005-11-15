@@ -76,6 +76,7 @@ struct GC_sourceMaps {
 
 static GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
 
+static int compareSourceLabels (const void *v1, const void *v2);
 static void sortSourceLabels (GC_state s);
 static void initTextSources (GC_state s);
 

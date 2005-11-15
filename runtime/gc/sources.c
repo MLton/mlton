@@ -15,12 +15,11 @@ char* GC_sourceName (GC_state s, GC_sourceIndex i) {
   return s->sourceMaps.sourceNames[s->sourceMaps.sources[i].sourceNameIndex];
 }
 
-static int compareSourceLabels (const void *v1, const void *v2) {
-  uintptr_t ui1;
-  uintptr_t ui2;
-
-  ui1 = (uintptr_t)v1;
-  ui2 = (uintptr_t)v2;
+int compareSourceLabels (const void *v1, const void *v2) {
+  const struct GC_sourceLabel* l1 = (const struct GC_sourceLabel*)v1;
+  const struct GC_sourceLabel* l2 = (const struct GC_sourceLabel*)v2;
+  uintptr_t ui1 = (uintptr_t)(l1->label);
+  uintptr_t ui2 = (uintptr_t)(l2->label);
 
   if (ui1 < ui2)
     return -1;
@@ -39,7 +38,7 @@ void sortSourceLabels (GC_state s) {
          sizeof (*s->sourceMaps.sourceLabels),
          compareSourceLabels);
   if (0 == s->sourceMaps.sourceLabels[s->sourceMaps.sourceLabelsLength - 1].label)
-    die ("Max profile label is 0 -- something is wrong.");
+    die ("Max source label is 0 -- something is wrong.");
   if (DEBUG_SOURCES)
     for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
       fprintf (stderr, FMTPTR"  %"PRIu32"\n",
