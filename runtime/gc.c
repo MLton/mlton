@@ -8,7 +8,6 @@
 
 #define MLTON_GC_INTERNAL_TYPES
 #define MLTON_GC_INTERNAL_FUNCS
-#define MLTON_GC_INTERNAL_INTINF
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 #include "gc/rusage.h"
@@ -33,7 +32,6 @@
 #include "gc/frame.c"
 #include "gc/garbage-collection.c"
 #include "gc/gc_state.c"
-#include "gc/gc_state_exports.c"
 #include "gc/generational.c"
 #include "gc/handler.c"
 #include "gc/hash-cons.c"

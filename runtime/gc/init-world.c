@@ -10,7 +10,6 @@
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
-
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
   size_t numBytes;

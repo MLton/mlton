@@ -27,8 +27,8 @@ typedef struct GC_intInf {
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
-#if (defined (MLTON_GC_INTERNAL_INTINF))
+#if (defined (MLTON_GC_INTERNAL_BASIS))
 
 GC_header GC_intInfHeader (void);
 
-#endif /* (defined (MLTON_GC_INTERNAL_INTINF)) */
+#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

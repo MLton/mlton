@@ -204,7 +204,7 @@ void GC_profileAllocInc (GC_state s, size_t amount) {
 }
 
 
-GC_profileData GC_profileNew (GC_state s) {
+GC_profileData GC_profileMalloc (GC_state s) {
   GC_profileData p;
   uint32_t profileMasterLength;
 
@@ -218,7 +218,7 @@ GC_profileData GC_profileNew (GC_state s) {
       (struct GC_profileStack *)
       (calloc_safe(profileMasterLength, sizeof(*(p->stack))));
   if (DEBUG_PROFILE)
-    fprintf (stderr, FMTPTR" = GC_profileNew ()\n", (uintptr_t)p);
+    fprintf (stderr, FMTPTR" = GC_profileMalloc ()\n", (uintptr_t)p);
   return p;
 }
 
@@ -342,7 +342,7 @@ void GC_handleSigProf (pointer pc) {
 static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
-  s->profiling.data = GC_profileNew (s);
+  s->profiling.data = GC_profileMalloc (s);
   initTextSources (s);
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
@@ -399,7 +399,7 @@ void initProfiling (GC_state s) {
     switch (s->profiling.kind) {
     case PROFILE_ALLOC:
     case PROFILE_COUNT:
-      s->profiling.data = GC_profileNew (s);
+      s->profiling.data = GC_profileMalloc (s);
       break;
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");

@@ -76,3 +76,28 @@ static void setGCStateCurrentHeap (GC_state s,
                                    size_t nurseryBytesRequested);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+#if (defined (MLTON_GC_INTERNAL_BASIS)) 
+
+bool GC_getAmOriginal (GC_state s);
+void GC_setAmOriginal (GC_state s, bool b);
+void GC_setMessages (GC_state s, bool b);
+void GC_setSummary (GC_state s, bool b);
+void GC_setRusageMeasureGC (GC_state s, bool b);
+void GC_setHashConsDuringGC (GC_state s, bool b);
+
+GC_thread GC_getCurrentThread (GC_state s);
+GC_thread GC_getSavedThread (GC_state s);
+void GC_setCallFromCHandlerThread (GC_state s, GC_thread thread);
+void GC_setSavedThread (GC_state s, GC_thread thread);
+void GC_setSignalHandlerThread (GC_state s, GC_thread thread);
+
+#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
+
+struct rusage* GC_getRusageGCAddr (GC_state s);
+
+sigset_t* GC_getSignalsHandledAddr (GC_state s);
+sigset_t* GC_getSignalsPendingAddr (GC_state s);
+void GC_setGCSignalHandled (GC_state s, bool b);
+bool GC_getGCSignalPending (GC_state s);
+void GC_setGCSignalPending (GC_state s, bool b);

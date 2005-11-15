@@ -59,14 +59,14 @@ typedef struct GC_state *GC_state;
 #include "gc/sources.h"
 #include "gc/call-stack.h"
 #include "gc/profiling.h"
+#include "gc/gc_state.h"
 #include "gc/init-world.h"
 #include "gc/world.h"
 #include "gc/init.h"
+#include "gc/done.h"
 #include "gc/copy-thread.h"
-#include "gc/gc_state.h"
-
-#include "gc/platform.h"
-#include "gc/gc_state_exports.h"
-#include "gc/exports.h"
+#include "gc/pack.h"
+#include "gc/size.h"
+#include "gc/share.h"
 
 #endif /* _MLTON_GC_H_ */

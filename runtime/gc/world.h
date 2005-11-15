@@ -14,4 +14,8 @@ static void saveWorldToFD (GC_state s, int fd);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
+#if (defined (MLTON_GC_INTERNAL_BASIS))
+
 void GC_saveWorld (GC_state s, int fd);
+
+#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

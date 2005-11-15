@@ -109,3 +109,77 @@ void setGCStateCurrentHeap (GC_state s,
   assert (isFrontierAligned (s, s->heap.nursery));
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
+
+
+bool GC_getAmOriginal (GC_state s) {
+  return s->amOriginal;
+}
+void GC_setAmOriginal (GC_state s, bool b) {
+  s->amOriginal = b;
+}
+
+void GC_setMessages (GC_state s, bool b) {
+  s->controls.messages = b;
+}
+
+void GC_setSummary (GC_state s, bool b) {
+  s->controls.summary = b;
+}
+
+void GC_setRusageMeasureGC (GC_state s, bool b) {
+  s->controls.rusageMeasureGC = b;
+}
+
+void GC_setHashConsDuringGC (GC_state s, bool b) {
+  s->hashConsDuringGC = b;
+}
+
+struct rusage* GC_getRusageGCAddr (GC_state s) {
+  return &(s->cumulativeStatistics.ru_gc);
+}
+
+sigset_t* GC_getSignalsHandledAddr (GC_state s) {
+  return &(s->signalsInfo.signalsHandled);
+}
+
+sigset_t* GC_getSignalsPendingAddr (GC_state s) {
+  return &(s->signalsInfo.signalsPending);
+}
+
+void GC_setGCSignalHandled (GC_state s, bool b) {
+  s->signalsInfo.gcSignalHandled = b;
+}
+
+bool GC_getGCSignalPending (GC_state s) {
+  return (s->signalsInfo.gcSignalPending);
+}
+
+void GC_setGCSignalPending (GC_state s, bool b) {
+  s->signalsInfo.gcSignalPending = b;
+}
+
+void GC_setCallFromCHandlerThread (GC_state s, GC_thread t) {
+  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+  s->callFromCHandlerThread = op;
+}
+
+GC_thread GC_getCurrentThread (GC_state s) {
+  pointer p = objptrToPointer (s->currentThread, s->heap.start);
+  return (GC_thread)p;
+}
+
+GC_thread GC_getSavedThread (GC_state s) {
+  pointer p = objptrToPointer (s->savedThread, s->heap.start);
+  s->savedThread = BOGUS_OBJPTR;
+  return (GC_thread)p;
+}
+
+void GC_setSavedThread (GC_state s, GC_thread t) {
+  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+  s->savedThread = op;
+}
+
+void GC_setSignalHandlerThread (GC_state s, GC_thread t) {
+  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+  s->signalHandlerThread = op;
+}

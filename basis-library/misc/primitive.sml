@@ -210,7 +210,6 @@ structure Primitive =
       val detectOverflow =
          _command_line_const "MLton.detectOverflow": bool = true;
       val eq = _prim "MLton_eq": 'a * 'a -> bool;
-      (* val errno = _import "MLton_errno": unit -> int; *)
       val installSignalHandler =
          _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _command_line_const "MLton.safe": bool = true;

@@ -7,7 +7,7 @@
  */
 
 #define MLTON_GC_INTERNAL_TYPES
-#define MLTON_GC_INTERNAL_INTINF
+#define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 
 enum {

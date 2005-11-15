@@ -10,6 +10,7 @@
 #define _MAIN_H_
 
 #define MLTON_GC_INTERNAL_TYPES
+#define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 
 /* The label must be declared as weak because gcc's optimizer may prove that

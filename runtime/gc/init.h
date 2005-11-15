@@ -12,3 +12,5 @@ static int processAtMLton (GC_state s, int argc,
                            char **argv, char **worldFile);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+int GC_init (GC_state s, int argc, char **argv);

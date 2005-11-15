@@ -127,6 +127,46 @@
 int mkdir2 (const char *pathname, mode_t mode);
 
 /* ---------------------------------------------------------------- */
+/*                        Garbage Collector                         */
+/* ---------------------------------------------------------------- */
+
+/* ------------------------------------------------- */
+/*                Virtual Memory                     */
+/* ------------------------------------------------- */
+
+/* GC_displayMem displays the virtual memory mapping to stdout.  
+ * It is used to diagnose memory problems. 
+ */
+void GC_displayMem (void);
+
+void *GC_mmapAnon (void *start, size_t length);
+void *GC_mmapAnon_safe (void *start, size_t length);
+void *GC_mmapAnon_safe_protect (void *start, size_t length, 
+                                size_t dead_low, size_t dead_high);
+void *GC_mremap (void *start, size_t oldLength, size_t newLength);
+void GC_release (void *base, size_t length);
+void GC_decommit (void *base, size_t length);
+
+size_t GC_pageSize (void);
+size_t GC_totalRam (void);
+size_t GC_availRam (void);
+
+void GC_setCygwinUseMmap (bool b);
+
+/* ------------------------------------------------- */
+/*                Text Segment                       */
+/* ------------------------------------------------- */
+
+void *GC_getTextEnd (void);
+void *GC_getTextStart (void);
+
+/* ------------------------------------------------- */
+/*                SigProf Handler                    */
+/* ------------------------------------------------- */
+
+void GC_setSigProfHandler (struct sigaction *sa);
+
+/* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
 /* ---------------------------------------------------------------- */
 
@@ -182,15 +222,6 @@ Int Date_strfTime (Pointer buf, Int n, Pointer fmt);
 
 void Debug_enter (Pointer name);
 void Debug_leave (Pointer name);
-
-/* ------------------------------------------------- */
-/*                        GC                         */
-/* ------------------------------------------------- */
-
-void MLton_GC_setHashConsDuringGC (Int b);
-void MLton_GC_setMessages (Int b);
-void MLton_GC_setSummary (Int b);
-void MLton_GC_setRusageMeasureGC (Int b);
 
 /* ------------------------------------------------- */
 /*                     IEEEReal                      */
@@ -258,10 +289,6 @@ void Itimer_set (Int which,
 void MLton_bug (Pointer msg);
 
 Int MLton_errno (void);
-/* halt the machine */
-void MLton_exit (Int status);
-Word MLton_random (void);
-Word MLton_size (Pointer p);
 
 /* ---------------------------------- */
 /*           MLton.Platform           */
@@ -296,18 +323,6 @@ Word MLton_size (Pointer p);
 #endif
 
 extern Bool MLton_Platform_CygwinUseMmap;
-
-/* ---------------------------------- */
-/*           MLton.Profile            */
-/* ---------------------------------- */
-
-void MLton_Profile_Data_free (Pointer d);
-Pointer MLton_Profile_Data_malloc (void);
-void MLton_Profile_Data_write (Pointer data, Word fd);
-
-Pointer MLton_Profile_current (void);
-void MLton_Profile_done (void);
-void MLton_Profile_setCurrent (Pointer d);
 
 /* ---------------------------------- */
 /*           MLton.Process            */
@@ -938,18 +953,6 @@ Int Stdio_sprintf (Pointer buf, Pointer fmt, Real64 x);
 /* ------------------------------------------------- */
 
 int String_equal (char * s1, char * s2);
-
-/* ------------------------------------------------- */
-/*                      Thread                       */
-/* ------------------------------------------------- */
-
-Pointer Thread_current (void);
-void Thread_finishSignalHandler (void);
-void Thread_resetSignals (void);
-Pointer Thread_saved (void);
-void Thread_setSignalHandler (Pointer t);
-void Thread_startSignalHandler (void);
-void Thread_switchTo (Pointer t, Word ensureBytesFree);
 
 /* ------------------------------------------------- */
 /*                       Time                        */

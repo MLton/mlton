@@ -12,4 +12,8 @@ static void switchToThread (GC_state s, objptr op);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
+#if (defined (MLTON_GC_INTERNAL_BASIS))
+
 void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree);
+
+#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
