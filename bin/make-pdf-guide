@@ -133,4 +133,4 @@ mv $pdf $src/doc/guide
 
 cd
 
-# rm -rf $tmp
+rm -rf $tmp
