@@ -44,10 +44,12 @@ echo 'Massaging HTML.'
 
 for f in `cat $pages`; do
 cat >$script <<EOF
-23,41d
+/^<table bgcolor = lightblue/,+29d
 s;\(<body .*\);\1\n<h1>$f</h1>;
 s;<FONT[^>]*>;;g
 s;</FONT>;;g
+s;\(<div id="content"\);\1;
+s;<td colspan = 3;<td align = right;
 s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
 EOF
 	sed -f $script <$f >.tmp
@@ -131,4 +133,4 @@ mv $pdf $src/doc/guide
 
 cd
 
-rm -rf $tmp
+# rm -rf $tmp
