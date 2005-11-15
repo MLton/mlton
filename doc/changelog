@@ -1,5 +1,8 @@
 Here are the changes since version 20041109.
 
+* 2005-11-15
+  - Fixed a bug in MLton.ProcEnv.setgroups.
+
 * 2005-11-11
   - Fixed a bug in the interleaving of lexing/parsing and elaborating of
     ML Basis files, which would raise an unhandled Force exception on

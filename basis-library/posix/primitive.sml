@@ -269,7 +269,7 @@ structure PosixPrimitive =
             val setenv =
                _import "Posix_ProcEnv_setenv": NullString.t * NullString.t -> int;
             val setgid = _import "Posix_ProcEnv_setgid": gid -> int;
-            val setgroups = _import "Posix_ProcEnv_getgroups": gid array -> int;
+            val setgroups = _import "Posix_ProcEnv_setgroups": gid array -> int;
             val setpgid = _import "Posix_ProcEnv_setpgid": Pid.t * Pid.t -> int;
             val setsid = _import "Posix_ProcEnv_setsid": unit -> Pid.t;
             val setuid = _import "Posix_ProcEnv_setuid": uid -> int;

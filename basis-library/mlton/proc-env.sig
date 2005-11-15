@@ -8,6 +8,8 @@
 
 signature MLTON_PROC_ENV =
    sig
+      type gid
+
       val setenv: {name: string, value: string} -> unit
-      val setgroups: Posix.ProcEnv.gid list -> unit
+      val setgroups: gid list -> unit
    end
