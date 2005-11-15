@@ -46,6 +46,8 @@ for f in `cat $pages`; do
 cat >$script <<EOF
 23,41d
 s;\(<body .*\);\1\n<h1>$f</h1>;
+s;<FONT[^>]*>;;g
+s;</FONT>;;g
 s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
 EOF
 	sed -f $script <$f >.tmp
@@ -90,7 +92,7 @@ cat <<EOF
 --firstpage p1 
 --fontsize 11.0 
 --fontspacing 1.2 
---footer ..1 
+--footer ..1
 --header t.c
 --headfootfont Helvetica 
 --headfootsize 11.0 
