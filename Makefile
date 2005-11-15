@@ -151,6 +151,7 @@ dirs:
 docs: dirs
 	$(MAKE) -C $(LEX) docs
 	$(MAKE) -C $(YACC) docs
+	bin/make-pdf-guide
 
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
@@ -416,6 +417,7 @@ install-docs:
 		cd $(SRC)/doc &&					\
 		$(CP) changelog examples guide license README $(TDOC)/	\
 	)
+	mv $(TDOC)/guide/mlton-guide.pdf $(TDOC)/
 	(								\
 		cd $(SRC)/util &&					\
 		$(CP) cmcat cm2mlb $(TDOC)/				\
