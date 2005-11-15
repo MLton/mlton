@@ -1387,11 +1387,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            (case Type.dePointer result of
                                                NONE => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Weak_new"
                                              | SOME pt => pt)
+                                        val func =
+                                           CFunction.weakNew {arg = t,
+                                                              return = result}
                                      in
-                                        simpleCCallWithGCState
-                                        (CFunction.weakNew 
-                                         {arg = t,
-                                          return = result})
+                                        ccall {args = (Vector.concat
+                                                       [Vector.new2
+                                                        (GCState, header),
+                                                        vos args]),
+                                               func = func}
                                      end,
                                      none)
                                | Word_equal s =>
