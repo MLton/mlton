@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,10 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
-An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. 
-</p>
-<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
 Eliminate instances of common subexpressions. 
 </p>
@@ -113,7 +110,8 @@ it also gets things like
  
 <pre>  val l = (n + m) + (n + m)
 
-  val k = (l + n) + ((l + m) handle Overflow =&gt; ((l + m) handle Overflow =&gt; l + n)) 
+  val k = (l + n) + ((l + m) handle Overflow =&gt; ((l + m) 
+                             handle Overflow =&gt; l + n)) 
 </pre> is rewritten so that <tt>(n&nbsp;+&nbsp;m)</tt> is computed exactly once, as
 </p>
 </li>
@@ -130,5 +128,5 @@ are <tt>(l&nbsp;+&nbsp;n)</tt> and <tt>(l&nbsp;+&nbsp;m)</tt>.
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:41:48 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-13 23:15:26 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -90,7 +90,7 @@ Ground types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt> may be compared
 The one ground type that can not be compared is <tt>real</tt>.  So, <tt>13.0&nbsp;=&nbsp;14.0</tt> is not type correct.  One can use <tt>Real.==</tt> to compare reals for equality, but beware that this has different algebraic properties than polymorphic equality. 
 </p>
 <p>
-See <a href="http://mlton.org/basis/real.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/basis/real.html</a> for a discussion of why <tt>real</tt> is not an equality type. 
+See <a class="external" href="http://mlton.org/basis/real.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/basis/real.html</a> for a discussion of why <tt>real</tt> is not an equality type. 
 </p>
 <h2 id="head-16f64cbf7b943934e1a83e690a579efe57383553">Equality of functions</h2>
 <p>
@@ -252,5 +252,5 @@ MLton uses some optimizations to improve performance.
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:31:49 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:29:40 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

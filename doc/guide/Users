@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -135,7 +135,7 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 </li>
     <li>
 <p>
- <a class="external" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tom7misc/net/mlftpd"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlftpd</a>, an ftp daemon written in SML.  Tom Murphy is also working on <a class="external" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tom7misc/net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">replacements for standard network services</a> in SML.  He also uses MLton to build his entries (<a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2001/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2001</a>, <a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2002/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2002</a>, <a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2004/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2004</a>) in the annual ICFP programming contest. 
+ <a class="external" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tom7misc/net/mlftpd"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlftpd</a>, an ftp daemon written in SML.  <a href="TomMurphy">TomMurphy</a> is also working on <a class="external" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tom7misc/net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">replacements for standard network services</a> in SML.  He also uses MLton to build his entries (<a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2001/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2001</a>, <a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2002/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2002</a>, <a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2004/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2004</a>, <a class="external" href="http://www.cs.cmu.edu/~tom7/icfp2005/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">2005</a>) in the annual ICFP programming contest. 
 </p>
 </li>
     <li>
@@ -189,5 +189,5 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 
 <p>
 <hr>
-Last edited on 2005-03-12 10:39:14 by <span title="adsl-63-195-184-47.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-27 15:45:52 by <span title="adsl-64-170-115-30.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

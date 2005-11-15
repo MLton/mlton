@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -209,7 +209,8 @@ And this turns out to be the case.  Construct the graph <tt>G</tt> as follows:
 <pre>nodes(G) = {Root} U Var.t
 edges(G) = {Root -&gt; v | v bound in a Statement.t or
                                 in the Function.t args} U
-           {xi -&gt; ai | L(x1, ..., xn) transfer where (a1, ..., an) are the formals of L} U
+           {xi -&gt; ai | L(x1, ..., xn) transfer where (a1, ..., an) 
+                                      are the formals of L} U
            {Root -&gt; a | a is a block argument used in an unknown context}
 </pre>
     </ul>
@@ -254,5 +255,5 @@ On the downside, the optimization doesn't have a huge impact on runtime, althoug
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:42:33 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-13 23:14:11 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

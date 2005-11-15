@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -163,9 +163,9 @@ See <a href="CallingFromSMLToCFunctionPointer"> Calling from SML to C function p
 </p>
 <h2 id="head-f3e4fadb9e370a1e2c0c622c01fc8c77daf93a2c">Export</h2>
 
-<pre>_export "C function name" attr... : cFuncTy -&gt; unit;
+<pre>_export "CFunctionName" attr... : cFuncTy -&gt; unit;
 </pre><p>
-Denotes a function that must be applied to a SML function <tt>f</tt> and arranges for the exported C function to call the SML function. 
+Exports a C function with the name <tt>CFunctionName</tt> that can be used to call an SML function of the type <em>cFuncTy</em>. When the function denoted by the export expression is applied to an SML function <tt>f</tt>, subsequent C calls to <tt>CFunctionName</tt> will call <tt>f</tt>.  It is an error to call <tt>CFunctionName</tt> before the export has been applied.  The export may be applied more than once, with each application replacing any previous definition of <tt>CFunctionName</tt>. 
 </p>
 <p>
 <tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
@@ -196,5 +196,5 @@ See <a href="CallingFromCToSML"> Calling from C to SML</a> for more details.
 
 <p>
 <hr>
-Last edited on 2005-08-07 21:52:33 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-23 16:59:31 by <span title="adsl-64-166-227-19.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

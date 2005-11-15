@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -129,7 +129,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Tom Murphy wrote the original version of <tt>MLton.Syslog</tt> as part  of his <tt>mlftpd</tt> project, and has sent many useful bug reports and  suggestions.  
+ <a href="TomMurphy">TomMurphy</a> wrote the original version of <tt>MLton.Syslog</tt> as part  of his <tt>mlftpd</tt> project, and has sent many useful bug reports and  suggestions.  
 </p>
 </li>
     <li class="gap">
@@ -230,5 +230,5 @@ We have also benefited from other software development tools and borrowed code f
 
 <p>
 <hr>
-Last edited on 2005-08-30 05:33:54 by <span title="adsl-64-166-226-67.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-27 15:46:17 by <span title="adsl-64-170-115-30.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

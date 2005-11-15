@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -89,7 +89,8 @@ make[3]: *** [upgrade-basis.sml] Error 1
     <li class="gap">
 <p>
  Mac OS X executables do not seem to like static libraries to have a different path location at runtime compared to when the executable was built.  For example, the binary package for Mac OS X unpacks to <tt>/usr</tt>.  If you try to install it in <tt>/usr/local</tt> you may get the following errors:  
-<pre>/usr/bin/ld: table of contents for archive: /usr/local/lib/mlton/self/libmlton.a is out of date;
+<pre>/usr/bin/ld: table of contents for archive:
+/usr/local/lib/mlton/self/libmlton.a is out of date;
 rerun ranlib(1) (can't load from it)
 </pre> Although running <tt>ranlib</tt> seems like the right thing to do, it doesn't actually resolve the problem.  Best bet is to just install in <tt>/usr</tt> and then either live with this location, or build MLton yourself and install in <tt>/usr/local</tt>. 
 </p>
@@ -108,5 +109,5 @@ To compile with SML/NJ, run <tt>make&nbsp;nj-mlton</tt> from within the root dir
 
 <p>
 <hr>
-Last edited on 2005-02-28 07:54:28 by <span title="adsl-69-234-103-239.dsl.irvnca.pacbell.net">BrentFulgham</span>.
+Last edited on 2005-11-13 23:21:25 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -147,7 +147,7 @@ That's it for the simple use.  There are also other commands like cvs.
 <tt>rename</tt> and <tt>remove</tt> shouldn't work for most people on <tt>mlton.org</tt> because of the way our <a href="AccessControl">AccessControl</a> is set up. 
 </p>
 <p>
-This code is a two-day hack and is not widely used.  But we've found it useful.  Please send bug reports to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
+This code is a two-day hack and is not widely used.  But we've found it useful.  Please send bug reports to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>. 
 </p>
 </div>
 
@@ -155,5 +155,5 @@ This code is a two-day hack and is not widely used.  But we've found it useful. 
 
 <p>
 <hr>
-Last edited on 2005-01-24 15:11:41 by <span title="cfs35.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:21:21 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

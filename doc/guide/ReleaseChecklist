@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@
 
         <li>
 <p>
- <tt>basis</tt> gets a snapshot of <a href="http://standardml.org/Basis">http://standardml.org/Basis</a>. 
+ <tt>basis</tt> gets a snapshot of <a class="external" href="http://standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://standardml.org/Basis</a>. 
 </p>
 </li>
         <li>
@@ -104,22 +104,22 @@
 
         <li>
 <p>
- <a href="mailto:MLton@mlton.org">MLton@mlton.org</a> 
+ <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a> 
 </p>
 </li>
         <li>
 <p>
- <a href="mailto:MLton-user@mlton.org">MLton-user@mlton.org</a> 
+ <a class="external" href="mailto:MLton-user@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton-user@mlton.org</a> 
 </p>
 </li>
         <li>
 <p>
- <a href="mailto:sml-list@cs.cmu.edu">sml-list@cs.cmu.edu</a>  (aka comp.lang.ml) 
+ <a class="external" href="mailto:sml-list@cs.cmu.edu"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:sml-list@cs.cmu.edu</a>  (aka <a class="external" href="news:comp.lang.ml"><img src="moin-news.png" alt="[NEWS]" height="11" width="10">news:comp.lang.ml</a>) 
 </p>
 </li>
         <li>
 <p>
- <a href="mailto:lwn@lwn.net">lwn@lwn.net</a> (linux weekly news) 
+ <a class="external" href="mailto:lwn@lwn.net"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:lwn@lwn.net</a> (linux weekly news) 
 </p>
 </li>
 
@@ -136,7 +136,7 @@
 
         <li>
 <p>
- comp.lang.functional 
+ <a class="external" href="news:comp.lang.functional"><img src="moin-news.png" alt="[NEWS]" height="11" width="10">news:comp.lang.functional</a> 
 </p>
 </li>
 
@@ -166,5 +166,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-10 22:10:57 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:20:24 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

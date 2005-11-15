@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Support for MLton on MinGW is preliminary.  We are still working on resolving the issues below.  If you are interested to help out, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a> and get involved with MLton <a href="Development">Development</a>. 
+Support for MLton on MinGW is preliminary.  We are still working on resolving the issues below.  If you are interested to help out, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a> and get involved with MLton <a href="Development">Development</a>. 
     <ul>
 
     <li>
@@ -75,5 +75,5 @@ Support for MLton on MinGW is preliminary.  We are still working on resolving th
 
 <p>
 <hr>
-Last edited on 2005-01-24 15:11:09 by <span title="cfs35.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:20:33 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -316,7 +316,7 @@ Finalizers in MLton are asynchronous.  That is, they run at an unspecified time,
 
     <li>
 <p>
- <a href="http://mlton.org/pipermail/mlton/2004-September/016570.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-September/016570.html</a> 
+ <a class="external" href="http://mlton.org/pipermail/mlton/2004-September/016570.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-September/016570.html</a> 
 </p>
 </li>
 
@@ -332,5 +332,5 @@ Also see <a href = "References#Boehm03">Boehm03</a>.
 
 <p>
 <hr>
-Last edited on 2004-12-16 00:12:27 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:29:14 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

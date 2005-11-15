@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -84,7 +84,7 @@ Other sites that have a MLton page (or more).
 </li>
     <li>
 <p>
- <a href="http://www.icewalkers.com/">http://www.icewalkers.com/</a> 
+ <a class="external" href="http://www.icewalkers.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">icewalkers</a> 
 </p>
 </li>
     <li>
@@ -100,5 +100,5 @@ Other sites that have a MLton page (or more).
 
 <p>
 <hr>
-Last edited on 2004-12-15 21:52:42 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:19:23 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

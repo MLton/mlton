@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,7 +61,7 @@ MLton's copying collector is a simple, two-space, breadth-first, Cheney-style co
 
     <li>
 <p>
- <a href="http://mlton.org/pipermail/mlton/2002-May/012420.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-May/012420.html</a>  <br>
+ <a class="external" href="http://mlton.org/pipermail/mlton/2002-May/012420.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-May/012420.html</a>  <br>
  object layout and header word design 
 </p>
 </li>
@@ -86,5 +86,5 @@ MLton's copying collector is a simple, two-space, breadth-first, Cheney-style co
 
 <p>
 <hr>
-Last edited on 2004-12-10 18:23:47 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:28:47 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

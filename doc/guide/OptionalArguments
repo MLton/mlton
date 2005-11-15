@@ -26,7 +26,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,9 @@ For example, consider the function
 <B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> $
 <B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
 <B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
-<B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X,
+                        <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y,
+                        <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
 </PRE>
  prints out the following: 
 <pre>X = 0, Y = 1, Z = 3
@@ -144,12 +146,16 @@ A structure matching <tt>OPTIONAL</tt> could be used as follows.
       <B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> $
       <B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
       <B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
-      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X,
+                              <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y,
+                              <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
 
       <B><FONT COLOR="#A020F0">val</FONT></B> X = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) $
       <B><FONT COLOR="#A020F0">val</FONT></B> Y = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
       <B><FONT COLOR="#A020F0">val</FONT></B> Z = f' <B><FONT COLOR="#5F9EA0">1</FONT></B> (`` opts_def2) (` #a <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) (` #c <B><FONT COLOR="#5F9EA0">2</FONT></B>) (` #b <B><FONT COLOR="#5F9EA0">1.0</FONT></B>) $
-      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X, <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y, <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;X = &quot;</FONT></B>, Real.toString X,
+                              <FONT COLOR="#BC8F8F"><B>&quot;, Y = &quot;</FONT></B>, Real.toString Y,
+                              <FONT COLOR="#BC8F8F"><B>&quot;, Z = &quot;</FONT></B>, Real.toString Z, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -295,5 +301,5 @@ X = 2, Y = 2, Z = 3
 
 <p>
 <hr>
-Last edited on 2005-01-30 23:56:31 by <span title="cfs38.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-13 23:18:55 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

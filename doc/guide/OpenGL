@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
 
             <ul>
 
-   <a href="http://mlton.org/pipermail/mlton/2005-January/026669.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2005-January/026669.html</a> 
+   <a class="external" href="http://mlton.org/pipermail/mlton/2005-January/026669.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2005-January/026669.html</a> 
             </ul>
 
 
@@ -84,5 +84,5 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:31:56 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:29:26 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
