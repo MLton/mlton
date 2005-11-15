@@ -160,7 +160,7 @@ structure CFunction =
                         end,
             readsStackTop = true,
             return = unit,
-            target = Direct "Thread_switchTo",
+            target = Direct "GC_switchToThread",
             writesStackTop = true}
 
       fun weakCanGet {arg} =
