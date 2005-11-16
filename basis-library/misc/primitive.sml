@@ -219,7 +219,6 @@ structure Primitive =
       structure Stdio =
          struct
             val print = _import "Stdio_print": string -> unit;
-            (* val sprintf = _import "Stdio_sprintf": char array * nullString * real -> int; *)
          end
 
       structure Array =
@@ -1088,7 +1087,7 @@ structure Primitive =
             
             structure Rusage =
                struct
-                 val ru = _import "MLton_Rusage_ru": unit -> unit;
+                 val ru = _import "MLton_Rusage_ru": GCState.t -> unit;
                     
                  val self_utime_sec = _import "MLton_Rusage_self_utime_sec": unit -> int;
                  val self_utime_usec = _import "MLton_Rusage_self_utime_usec": unit -> int;

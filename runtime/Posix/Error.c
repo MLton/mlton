@@ -9,5 +9,6 @@ int Posix_Error_getErrno (void) {
 }
 
 Cstring Posix_Error_strerror (Int n) {
-        return (Cstring)(strerror (n));
+        char *res = strerror (n);
+        return (Cstring)res;
 }

@@ -6,7 +6,7 @@
 #endif
 
 /* This code is patterned on g_dfmt from the gdtoa sources. */
-char * Real64_gdtoa (double d, int mode, int ndig, int *decpt) {
+Cstring Real64_gdtoa (double d, int mode, int ndig, int *decpt) {
         ULong bits[2];
         int ex;
         static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0 };
@@ -37,10 +37,10 @@ char * Real64_gdtoa (double d, int mode, int ndig, int *decpt) {
         if (DEBUG)
                 fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
                                 result, d, mode, ndig, *decpt);
-        return result;
+        return (Cstring)result;
 }
 
-char * Real32_gdtoa (float f, int mode, int ndig, int *decpt) {
+Cstring Real32_gdtoa (float f, int mode, int ndig, int *decpt) {
         ULong bits[1];
         int ex;
         static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, 0 };
@@ -70,5 +70,5 @@ char * Real32_gdtoa (float f, int mode, int ndig, int *decpt) {
         if (DEBUG)
                 fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
                                 result, (double)f, mode, ndig, *decpt);
-        return result;
+        return (Cstring)result;
 }

@@ -13,6 +13,19 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
          "opp = "FMTPTR"  "
          "*opp = "FMTOBJPTR"\n",
          (uintptr_t)opp, *opp);
+  /* The following checks that intergenerational pointers have the
+   * appropriate card marked.  Unfortunately, it doesn't work because
+   * for stacks, the card containing the beginning of the stack is
+   * marked, but any remaining cards aren't.
+   */
+  if (FALSE and s->mutatorMarksCards 
+      and isPointerInOldGen (s, (pointer)opp) 
+      and isObjptrInNursery (s, *opp)
+      and not isCardMarked (s, (pointer)opp)) {
+    displayGCState (s, stderr);
+    die ("gc.c: intergenerational pointer from "FMTPTR" to "FMTOBJPTR" with unmarked card.\n",
+         (uintptr_t)opp, *opp);
+  }
 }
 
 bool invariantForGC (GC_state s) {

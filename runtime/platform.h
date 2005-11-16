@@ -121,6 +121,13 @@
 #include "types.h"
 
 /* ---------------------------------------------------------------- */
+/*                        Runtime Init/Exit                         */
+/* ---------------------------------------------------------------- */
+
+void MLton_init (int argc, char **argv, GC_state s);
+void MLton_exit (GC_state s, Int status) __attribute__ ((noreturn));
+
+/* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
 /* ---------------------------------------------------------------- */
 
@@ -169,13 +176,6 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
 /* ---------------------------------------------------------------- */
-
-/* ------------------------------------------------- */
-/*                       Array                       */
-/* ------------------------------------------------- */
-
-#define Array_maxLen GC_MAX_ARRAY_LENGTH
-Int Array_numElements (Pointer p);
 
 /* ------------------------------------------------- */
 /*                    CommandLine                    */
@@ -250,20 +250,20 @@ Int IEEEReal_getRoundingMode (void);
  * into the array used for allocation profiling, and the appropriate element
  * is incremented by the amount that the function moves the frontier.
  */
-Pointer IntInf_add (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_andb (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_arshift (Pointer arg, uint shift, uint bytes);
-Pointer IntInf_gcd (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_lshift (Pointer arg, uint shift, uint bytes);
-Pointer IntInf_mul (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_neg (Pointer arg, uint bytes);
-Pointer IntInf_notb (Pointer arg, uint bytes);
-Pointer IntInf_orb (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_quot (Pointer num, Pointer den, uint bytes);
-Pointer IntInf_rem (Pointer num, Pointer den, uint bytes);
-Pointer IntInf_sub (Pointer lhs, Pointer rhs, uint bytes);
-Pointer IntInf_toString (Pointer arg, int base, uint bytes);
-Pointer IntInf_xorb (Pointer lhs, Pointer rhs, uint bytes);
+Pointer IntInf_add (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_andb (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_arshift (Pointer arg, uint shift, size_t bytes);
+Pointer IntInf_gcd (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_lshift (Pointer arg, uint shift, size_t bytes);
+Pointer IntInf_mul (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_neg (Pointer arg, size_t bytes);
+Pointer IntInf_notb (Pointer arg, size_t bytes);
+Pointer IntInf_orb (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_quot (Pointer num, Pointer den, size_t bytes);
+Pointer IntInf_rem (Pointer num, Pointer den, size_t bytes);
+Pointer IntInf_sub (Pointer lhs, Pointer rhs, size_t bytes);
+Pointer IntInf_toString (Pointer arg, int base, size_t bytes);
+Pointer IntInf_xorb (Pointer lhs, Pointer rhs, size_t bytes);
 
 Word IntInf_smallMul (Word lhs, Word rhs, Pointer carry);
 Int IntInf_compare (Pointer lhs, Pointer rhs);
@@ -285,10 +285,9 @@ void Itimer_set (Int which,
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
+void MLton_allocTooLarge (void) __attribute__ ((noreturn));
 /* print a bug message and exit (2) */
-void MLton_bug (Pointer msg);
-
-Int MLton_errno (void);
+void MLton_bug (Pointer msg) __attribute__ ((noreturn));
 
 /* ---------------------------------- */
 /*           MLton.Platform           */
@@ -372,6 +371,60 @@ Rlimit MLton_Rlimit_getHard (void);
 Rlimit MLton_Rlimit_getSoft (void);
 Int MLton_Rlimit_set (Resource r, Rlimit hard, Rlimit soft);
 
+/* ---------------------------------- */
+/*           MLton.Rusage             */
+/* ---------------------------------- */
+
+Int MLton_Rusage_self_utime_sec (void);
+Int MLton_Rusage_self_utime_usec (void);
+Int MLton_Rusage_self_stime_sec (void);
+Int MLton_Rusage_self_stime_usec (void);
+Int MLton_Rusage_children_utime_sec (void);
+Int MLton_Rusage_children_utime_usec (void);
+Int MLton_Rusage_children_stime_sec (void);
+Int MLton_Rusage_children_stime_usec (void);
+Int MLton_Rusage_gc_utime_sec (void);
+Int MLton_Rusage_gc_utime_usec (void);
+Int MLton_Rusage_gc_stime_sec (void);
+Int MLton_Rusage_gc_stime_usec (void);
+void MLton_Rusage_ru (GC_state s);
+
+/* ------------------------------------------------- */
+/*                        Net                        */
+/* ------------------------------------------------- */
+
+Int Net_htonl (Int i);
+Int Net_ntohl (Int i);
+Int Net_htons (Int i);
+Int Net_ntohs (Int i);
+#define NetHostDB_inAddrLen sizeof (struct in_addr)
+#define NetHostDB_INADDR_ANY INADDR_ANY
+Cstring NetHostDB_Entry_name(void);
+Int NetHostDB_Entry_numAliases(void);
+Cstring NetHostDB_Entry_aliasesN(Int n);
+Int NetHostDB_Entry_addrType(void);
+Int NetHostDB_Entry_length(void);
+Int NetHostDB_Entry_numAddrs(void);
+void NetHostDB_Entry_addrsN(Int n, Pointer addr);
+Bool NetHostDB_getByAddress(Pointer addr, Int len);
+Bool NetHostDB_getByName(Cstring name);
+Int NetHostDB_getHostName(Pointer buf, Int len);
+Cstring NetProtDB_Entry_name(void);
+Int NetProtDB_Entry_numAliases(void);
+Cstring NetProtDB_Entry_aliasesN(Int n);
+Int NetProtDB_Entry_protocol(void);
+Int NetProtDB_getByName(Cstring name);
+Int NetProtDB_getByNumber(Int proto);
+Cstring NetServDB_Entry_name(void);
+Int NetServDB_Entry_numAliases(void);
+Cstring NetServDB_Entry_aliasesN(Int n);
+Int NetServDB_Entry_port(void);
+Cstring NetServDB_Entry_protocol(void);
+Int NetServDB_getByName(Cstring name, Cstring proto);
+Int NetServDB_getByNameNull(Cstring name);
+Int NetServDB_getByPort(Int port, Cstring proto);
+Int NetServDB_getByPortNull(Int port);
+
 /* ------------------------------------------------- */
 /*                      OS                           */
 /* ------------------------------------------------- */
@@ -387,8 +440,14 @@ Int OS_IO_poll (Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
 /*                     PackReal                      */
 /* ------------------------------------------------- */
 
-Real64 PackReal_subVec (Pointer v, Int offset);
-void PackReal_update (Pointer a, Int offset, Real64 r);
+Real32 PackReal32_subVec (Pointer v, Int offset);
+Real32 PackReal32_subVecRev (Pointer v, Int offset);
+Real64 PackReal64_subVec (Pointer v, Int offset);
+Real64 PackReal64_subVecRev (Pointer v, Int offset);
+void PackReal32_update (Pointer a, Int offset, Real32 r);
+void PackReal32_updateRev (Pointer a, Int offset, Real32 r);
+void PackReal64_update (Pointer a, Int offset, Real64 r);
+void PackReal64_updateRev (Pointer a, Int offset, Real64 r);
 
 /* ------------------------------------------------- */
 /*                       Posix                       */
@@ -399,7 +458,7 @@ void PackReal_update (Pointer a, Int offset, Real64 r);
 /* ---------------------------------- */
 
 void Posix_Error_clearErrno (void);
-Int Posix_Error_gettErrno (void);
+int Posix_Error_getErrno (void);
 Cstring Posix_Error_strerror (Int n);
 
 #define Posix_Error_acces EACCES
@@ -542,7 +601,7 @@ Cstring Posix_Error_strerror (Int n);
 #endif
 
 Int Posix_FileSys_Dirstream_closedir (Cpointer d);
-Cpointer Posix_FileSys_DirStream_opendir (Pointer p);
+Cpointer Posix_FileSys_Dirstream_opendir (Pointer p);
 Cstring Posix_FileSys_Dirstream_readdir (Cpointer d);
 void Posix_FileSys_Dirstream_rewinddir (Cpointer p);
 
@@ -565,6 +624,16 @@ void Posix_FileSys_Utimbuf_setActime (Int x);
 void Posix_FileSys_Utimbuf_setModTime (Int x);
 Int Posix_FileSys_Utimbuf_utime (Pointer s);
 
+Int Posix_FileSys_access (Pointer f, Word w);
+Int Posix_FileSys_chdir(Pointer p);
+Int Posix_FileSys_chmod (Pointer p, Mode m);
+Int Posix_FileSys_chown (Pointer p, Uid u, Gid g);
+Int Posix_FileSys_fchmod (Fd f, Mode m);
+Int Posix_FileSys_fchown (Fd f, Uid u, Gid g);
+Int Posix_FileSys_fpathconf (Fd f, Int n);
+Int Posix_FileSys_ftruncate (Fd f, Position n);
+Cstring Posix_FileSys_getcwd (Pointer buf, Size n);
+Int Posix_FileSys_link (Pointer p1, Pointer p2);
 Int Posix_FileSys_mkdir (Pointer p, Word w);
 Int Posix_FileSys_mkfifo (Pointer p, Word w);
 Int Posix_FileSys_open (Pointer p, Word w, Mode m);
@@ -676,6 +745,7 @@ Int Posix_ProcEnv_setenv (Pointer s, Pointer v);
 Int Posix_ProcEnv_setuid (Uid u);
 Int Posix_ProcEnv_setgid (Gid g);
 Int Posix_ProcEnv_getgroups (Pointer groups);
+Int Posix_ProcEnv_setgroups (Pointer groups);
 Cstring Posix_ProcEnv_getlogin (void);
 Pid Posix_ProcEnv_getpgrp (void);
 Pid Posix_ProcEnv_setsid (void);
@@ -733,11 +803,13 @@ Cstring Posix_ProcEnv_ttyname (Fd f);
 Int Posix_Process_alarm (Int i);
 Int Posix_Process_exece (Pointer path, Pointer args, Pointer env);
 Int Posix_Process_execp (Pointer file, Pointer args);
-void Posix_Process_exit (Int i);
+void Posix_Process_exit (Int i) __attribute__ ((noreturn));
 Pid Posix_Process_fork (void);
 Int Posix_Process_kill (Pid p, Signal s);
+Int Posix_Process_nanosleep (Pointer sec, Pointer nsec);
 Int Posix_Process_pause (void);
 Int Posix_Process_sleep (Int i);
+int Posix_Process_system (const char* cmd);
 Pid Posix_Process_waitpid (Pid p, Pointer s, Int i);
 Bool Posix_Process_ifExited (Status s);
 Int Posix_Process_exitStatus (Status s);
@@ -761,16 +833,21 @@ Signal Posix_Process_stopSig (Status s);
 #define Posix_Signal_setmask SIG_SETMASK
 #define Posix_Signal_unblock SIG_UNBLOCK
 Int Posix_Signal_default (Int signum);
+bool Posix_Signal_isGCPending (void);
+Bool Posix_Signal_isPending (Int signum);
 Int Posix_Signal_handle (Int signum);
+void Posix_Signal_handleGC (void);
 Int Posix_Signal_ignore (Int signum);
 Int Posix_Signal_isDefault (Int signum, Bool *isDef);
-Bool Posix_Signal_isPending (Int signum);
+void Posix_Signal_resetPending (void);
+
 Int Posix_Signal_sigaddset (Int signum);
 Int Posix_Signal_sigdelset (Int signum);
 Int Posix_Signal_sigemptyset (void);
 Int Posix_Signal_sigfillset (void);
+Int Posix_Signal_sigismember (Int signum);
 Int Posix_Signal_sigprocmask (Int how);
-Int Posix_Signal_sigsuspend (void);
+void Posix_Signal_suspend (void);
 
 /* ---------------------------------- */
 /*            Posix.SysDB             */
@@ -895,6 +972,58 @@ Int Ptrace_ptrace2 (Int request, Int pid);
 Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 
 /* ------------------------------------------------- */
+/*                       Real                        */
+/* ------------------------------------------------- */
+
+Real64 Real64_modf (Real64 x, Real64 *exp);
+Real32 Real32_modf (Real32 x, Real32 *exp);
+#define unaryReal(f)                                            \
+  Real64 Real64_##f (Real64 x);                                 \
+  Real32 Real32_##f (Real32 x);
+unaryReal(abs)
+unaryReal(round)
+#undef unaryReal
+#define binaryReal(f)                                           \
+        Real64 Real64_Math_##f (Real64 x, Real64 y);            \
+        Real32 Real32_Math_##f (Real32 x, Real32 y);
+binaryReal(atan2)
+#undef binaryReal
+#define unaryReal(f)                                            \
+        Real64 Real64_Math_##f (Real64 x);                      \
+        Real32 Real32_Math_##f (Real32 x);
+unaryReal(acos)
+unaryReal(asin)
+unaryReal(atan)
+unaryReal(cos)
+unaryReal(exp)
+unaryReal(ln)
+unaryReal(log10)
+unaryReal(sin)
+unaryReal(sqrt)
+unaryReal(tan)
+#undef unaryReal
+Real64 Real64_ldexp (Real64 x, Int32 i);
+Real32 Real32_ldexp (Real32 x, Int32 i);
+Real64 Real64_frexp (Real64 x, Int *exp);
+Cstring Real64_gdtoa (double d, int mode, int ndig, int *decpt);
+Cstring Real32_gdtoa (float f, int mode, int ndig, int *decpt);
+Int Real32_class (Real32 f);
+Int Real64_class (Real64 d);
+Real32 Real32_strto (Pointer s);
+Real64 Real64_strto (Pointer s);
+Real64 Real64_nextAfter (Real64 x1, Real64 x2);
+Int Real32_signBit (Real32 f);
+Int Real64_signBit (Real64 d);
+#define ternary(size, name)                                     \
+        Real##size Real##size##_mul##name                       \
+                (Real##size r1, Real##size r2, Real##size r3);
+ternary(32, add)
+ternary(64, add)
+ternary(32, sub)
+ternary(64, sub)
+#undef ternary
+
+/* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
@@ -904,8 +1033,6 @@ void MLton_initSockets (void);
 static inline void MLton_initSockets (void) {}
 #endif
 
-#define NetHostDB_inAddrLen sizeof (struct in_addr)
-#define NetHostDB_INADDR_ANY INADDR_ANY
 #define Socket_sockAddrLenMax max(sizeof (struct sockaddr), \
                               max(sizeof (struct sockaddr_un), \
                               max(sizeof (struct sockaddr_in), \
@@ -940,13 +1067,37 @@ static inline void MLton_initSockets (void) {}
 #define Socket_MSG_PEEK MSG_PEEK
 #define Socket_INetSock_TCP_SOL_TCP IPPROTO_TCP
 #define Socket_INetSock_TCP_SO_NODELAY TCP_NODELAY
+Int Socket_accept (Int s, Char *addr, Int *addrlen);
+Int Socket_bind (Int s, Char *addr, Int addrlen);
+Int Socket_close(Int s);
+Int Socket_connect (Int s, Char *addr, Int addrlen);
+Int Socket_familyOfAddr(Char *addr);
+Int Socket_listen (Int s, Int backlog);
+Int Socket_recv (Int s, Char *msg, Int start, Int len, Word flags);
+Int Socket_recvFrom (Int s, Char *msg, Int start, Int len, Word flags, Char* addr, Int *addrlen);
+Int Socket_send (Int s, Char *msg, Int start, Int len, Word flags);
+Int Socket_sendTo (Int s, Char *msg, Int start, Int len, Word flags, Char* addr, Int addrlen);
+Int Socket_shutdown (Int s, Int how);
+Int Socket_Ctl_getSockOpt (Int s, Int level, Int optname, Char *optval, Int *optlen);
+Int Socket_Ctl_setSockOpt (Int s, Int level, Int optname, Char *optval, Int optlen);
+Int Socket_Ctl_getsetIOCtl (Int s, Int request, Char* argp);
+Int Socket_Ctl_getPeerName (Int s, Char *name, Int *namelen);
+Int Socket_Ctl_getSockName (Int s, Char *name, Int *namelen);
+Int GenericSock_socket (Int domain, Int type, Int protocol);
+Int GenericSocket_socketPair (Int domain, Int type, Int protocol, Int sv[2]);
+void UnixSock_toAddr (Char* path, Int pathlen, Char* addr, Int *addrlen);
+Int UnixSock_pathLen (Char* addr);
+void UnixSock_fromAddr (Char* addr, Char* path, Int pathlen);
+void INetSock_toAddr (Pointer in_addr, Int port, Char* addr, Int *addrlen);
+void INetSock_fromAddr (Char* addr);
+Int INetSock_getPort (void);
+void INetSock_getInAddr (Pointer addr);
 
 /* ------------------------------------------------- */
 /*                       Stdio                       */
 /* ------------------------------------------------- */
 
 void Stdio_print (Pointer s);
-Int Stdio_sprintf (Pointer buf, Pointer fmt, Real64 x);
 
 /* ------------------------------------------------- */
 /*                      String                       */
@@ -969,15 +1120,101 @@ Int Time_usec (void);
 Int Windows_terminate (Pid p, Int s);
 
 /* ------------------------------------------------- */
-/*                       Word8                       */
+/*                  Word{8,16,32,64}                 */
 /* ------------------------------------------------- */
 
-Char Word8_arshiftAsm (Char w, Word s);
+#define coerce(f, t)                            \
+        t f##_to##t (f x);
+#define bothCoerce(from, to)                    \
+        coerce (Word##S##from, Word##to)        \
+        coerce (Word##U##from, Word##to)
+#define binary(kind, name)                                              \
+        Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);
+#define bothBinary(size, name)                  \
+        binary (S##size, name)                  \
+        binary (U##size, name)
+#define SaddCheckOverflows(size)                                        \
+        Bool WordS##size##_addCheckOverflows (WordS##size x, WordS##size y);
+#define UaddCheckOverflows(size)                                        \
+        Bool WordU##size##_addCheckOverflows (WordU##size x, WordU##size y);
+#define SmulCheckOverflows(size)                                        \
+        Bool WordS##size##_mulCheckOverflows (WordS##size x, WordS##size y);
+#define negCheckOverflows(size)                                         \
+        Bool Word##size##_negCheckOverflows (WordS##size x);
+#define SsubCheckOverflows(size)                                        \
+        Bool WordS##size##_subCheckOverflows (WordS##size x, WordS##size y);
+#define compare(kind, name)                                             \
+        Bool Word##kind##_##name (Word##kind w1, Word##kind w2);
+#define bothCompare(size, name)                     \
+        compare (S##size, name)                     \
+        compare (U##size, name)    
+#define unary(kind, name)                           \
+        Word##kind Word##kind##_##name (Word##kind w);
+#define shift(kind, name)                                               \
+        Word##kind Word##kind##_##name (Word##kind w1, Word w2);
+
+#define all(size)                                               \
+        binary (size, add)                                      \
+        SaddCheckOverflows (size)                               \
+        UaddCheckOverflows (size)                               \
+        binary (size, andb)                                     \
+        compare (size, equal)                                   \
+        bothCompare (size, ge)                                  \
+        bothCompare (size, gt)                                  \
+        bothCompare (size, le)                                  \
+        shift (size, lshift)                                    \
+        bothCompare (size, lt)                                  \
+        bothBinary (size, mul)                                  \
+        unary (size, neg)                                       \
+        negCheckOverflows (size)                                \
+        unary (size, notb)                                      \
+        binary (size, orb)                                      \
+        bothBinary (size, quot)                                 \
+        SmulCheckOverflows (size)                               \
+        bothBinary (size, rem)                                  \
+        Word##size Word##size##_rol (Word##size w1, Word w2);   \
+        Word##size Word##size##_ror (Word##size w1, Word w2);   \
+        shift (S##size, rshift)                                 \
+        shift (U##size, rshift)                                 \
+        binary (size, sub)                                      \
+        SsubCheckOverflows (size)                               \
+        binary (size, xorb)                                     \
+        bothCoerce (size, 64)                                   \
+        bothCoerce (size, 32)                                   \
+        bothCoerce (size, 16)                                   \
+        bothCoerce (size, 8)
+
+all (8)
+all (16)
+all (32)
+all (64)
+
+#undef coerce
+#undef bothCoerce
+#undef binary
+#undef bothBinary
+#undef SaddCheckOverflows
+#undef UaddCheckOverflows
+#undef SmulCheckOverflows
+#undef negCheckOverflows
+#undef SsubCheckOverflows
+#undef compare
+#undef bothCompare
+#undef unary
+#undef shift
+#undef all
 
 /* ------------------------------------------------- */
-/*                      Word32                       */
+/*                    Word8 Array                    */
 /* ------------------------------------------------- */
 
-Word Word32_arshiftAsm (Word w, Word s);
+Word32 Word8Array_subWord32Rev (Pointer v, Int offset);
+void Word8Array_updateWord32Rev (Pointer a, Int offset, Word32 w);
+
+/* ------------------------------------------------- */
+/*                    Word8 Vector                   */
+/* ------------------------------------------------- */
+
+Word32 Word8Vector_subWord32Rev (Pointer v, Int offset);
 
 #endif /* _MLTON_PLATFORM_H_ */

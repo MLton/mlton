@@ -13,14 +13,9 @@ Int Posix_FileSys_Dirstream_closedir (Cpointer p) {
         return res;
 }
 
-Cpointer Posix_FileSys_Dirstream_opendir (Cpointer p) {
-        Cpointer res;
-
-        res = (Cpointer)(opendir ((char *) p));
-        if (DEBUG_DIRSTREAM)
-                fprintf (stderr, "0x%08x = opendir (%s)\n", 
-                                (uint)res, (char *)p);
-        return res;
+Cpointer Posix_FileSys_Dirstream_opendir (Pointer p) {
+        DIR *res = opendir ((char *) p);
+        return (Cpointer)res;
 }
 
 Cstring Posix_FileSys_Dirstream_readdir (Cpointer d) {

@@ -79,15 +79,16 @@ static inline void fill (pointer arg, __mpz_struct *res, mp_limb_t space[2]) {
 /*
  * Initialize an __mpz_struct to use the space provided by an ML array.
  */
-static inline void initRes (__mpz_struct *mpzp, uint bytes) {
+static inline void initRes (__mpz_struct *mpzp, size_t bytes) {
         GC_intInf bp;
 
-        assert (bytes <= gcState.limitPlusSlop - gcState.frontier);
+        assert (bytes <= (size_t)(gcState.limitPlusSlop - gcState.frontier));
         bp = (GC_intInf)gcState.frontier;
-        /* We have as much space for the limbs as there is to the end of the 
-         * heap.  Divide by 4 to get number of words. 
+        /* We have as much space for the limbs as there is to the end
+         * of the heap.  Divide by (sizeof(mp_limb_t)) to get number
+         * of limbs.
          */
-        mpzp->_mp_alloc = (gcState.limitPlusSlop - (pointer)bp->limbs) / 4;
+        mpzp->_mp_alloc = (gcState.limitPlusSlop - (pointer)bp->limbs) / (sizeof(mp_limb_t));
         mpzp->_mp_size = 0; /* is this necessary? */
         mpzp->_mp_d = (mp_limb_t*)(bp->limbs);
 }
@@ -108,9 +109,9 @@ static inline uint leadingZeros (mp_limb_t word) {
         return (res);
 }
 
-static inline void setFrontier (pointer p, uint bytes) {
+static inline void setFrontier (pointer p, size_t bytes) {
         p = GC_alignFrontier (&gcState, p);
-        assert (p - gcState.frontier <= bytes);
+        assert ((size_t)(p - gcState.frontier) <= bytes);
         GC_profileAllocInc (&gcState, p - gcState.frontier);
         gcState.frontier = p;
         assert (gcState.frontier <= gcState.limitPlusSlop);
@@ -124,7 +125,7 @@ static inline void setFrontier (pointer p, uint bytes) {
  * If the answer doesn't need all of the space allocated, we adjust
  * the array size and roll the frontier slightly back.
  */
-static pointer answer (__mpz_struct *ans, uint bytes) {
+static pointer answer (__mpz_struct *ans, size_t bytes) {
         GC_intInf               bp;
         int                     size;
 
@@ -166,7 +167,7 @@ static pointer answer (__mpz_struct *ans, uint bytes) {
         return (pointer)&bp->isneg;
 }
 
-static inline pointer binary (pointer lhs, pointer rhs, uint bytes,
+static inline pointer binary (pointer lhs, pointer rhs, size_t bytes,
                                 void(*binop)(__mpz_struct *resmpz, 
                                         __gmp_const __mpz_struct *lhsspace,
                                         __gmp_const __mpz_struct *rhsspace)) {
@@ -183,57 +184,57 @@ static inline pointer binary (pointer lhs, pointer rhs, uint bytes,
         return answer (&resmpz, bytes);
 }
 
-pointer IntInf_add (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_add (pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_add ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_add ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_add);
 }
 
-pointer IntInf_gcd (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_gcd (pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_gcd ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_gcd ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_gcd);
 }
 
-pointer IntInf_mul (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_mul (pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_mul ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_mul ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_mul);
 }
 
-pointer IntInf_sub (pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_sub (pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_sub ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_sub ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary (lhs, rhs, bytes, &mpz_sub);
 }
 
-pointer IntInf_andb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_andb(pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_andb ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_andb ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_and);
 }
 
-pointer IntInf_orb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_orb(pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_orb ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_orb ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_ior);
 }
 
-pointer IntInf_xorb(pointer lhs, pointer rhs, uint bytes) {
+pointer IntInf_xorb(pointer lhs, pointer rhs, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_xorb ("FMTPTR", "FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_xorb ("FMTPTR", "FMTPTR", %zu)\n",
                                 (uintptr_t)lhs, (uintptr_t)rhs, bytes);
         return binary(lhs, rhs, bytes, &mpz_xor);
 }
 
 static pointer
-unary(pointer arg, uint bytes,
+unary(pointer arg, size_t bytes,
       void(*unop)(__mpz_struct *resmpz, 
                   __gmp_const __mpz_struct *argspace))
 {
@@ -247,22 +248,22 @@ unary(pointer arg, uint bytes,
         return answer (&resmpz, bytes);
 }
 
-pointer IntInf_neg(pointer arg, uint bytes) {
+pointer IntInf_neg(pointer arg, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_neg ("FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_neg ("FMTPTR", %zu)\n",
                                 (uintptr_t)arg, bytes);
         return unary(arg, bytes, &mpz_neg);
 }
 
-pointer IntInf_notb(pointer arg, uint bytes) {
+pointer IntInf_notb(pointer arg, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_notb ("FMTPTR", %u)\n",
+                fprintf (stderr, "IntInf_notb ("FMTPTR", %zu)\n",
                                 (uintptr_t)arg, bytes);
         return unary(arg, bytes, &mpz_com);
 }
 
 static pointer
-shary(pointer arg, uint shift, uint bytes,
+shary(pointer arg, uint shift, size_t bytes,
       void(*shop)(__mpz_struct *resmpz, 
                   __gmp_const __mpz_struct *argspace,
                   unsigned long shift))
@@ -277,16 +278,16 @@ shary(pointer arg, uint shift, uint bytes,
         return answer (&resmpz, bytes);
 }
 
-pointer IntInf_arshift(pointer arg, uint shift, uint bytes) {
+pointer IntInf_arshift(pointer arg, uint shift, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_arshift ("FMTPTR", %u, %u)\n",
+                fprintf (stderr, "IntInf_arshift ("FMTPTR", %u, %zu)\n",
                                 (uintptr_t)arg, shift, bytes);
         return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-pointer IntInf_lshift(pointer arg, uint shift, uint bytes) {
+pointer IntInf_lshift(pointer arg, uint shift, size_t bytes) {
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_lshift ("FMTPTR", %u, %u)\n",
+                fprintf (stderr, "IntInf_lshift ("FMTPTR", %u, %zu)\n",
                                 (uintptr_t)arg, shift, bytes);
         return shary(arg, shift, bytes, &mpz_mul_2exp);
 }
@@ -336,7 +337,7 @@ Bool IntInf_equal (pointer lhs, pointer rhs) {
  * Arg is an intInf, base is the base to use (2, 8, 10 or 16) and space is a
  * string (mutable) which is large enough.
  */
-pointer IntInf_toString (pointer arg, int base, uint bytes) {
+pointer IntInf_toString (pointer arg, int base, size_t bytes) {
         GC_string       sp;
         __mpz_struct    argmpz;
         mp_limb_t       argspace[2];
@@ -346,7 +347,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
         char            c;
 
         if (DEBUG_INT_INF)
-                fprintf (stderr, "IntInf_toString ("FMTPTR", %d, %u)\n",
+                fprintf (stderr, "IntInf_toString ("FMTPTR", %d, %zu)\n",
                                 (uintptr_t)arg, base, bytes);
         assert (base == 2 || base == 8 || base == 10 || base == 16);
         fill (arg, &argmpz, argspace);
@@ -382,7 +383,7 @@ pointer IntInf_toString (pointer arg, int base, uint bytes) {
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer IntInf_quot (pointer num, pointer den, uint bytes) {
+pointer IntInf_quot (pointer num, pointer den, size_t bytes) {
         __mpz_struct    resmpz,
                         nmpz,
                         dmpz;
@@ -468,7 +469,7 @@ pointer IntInf_quot (pointer num, pointer den, uint bytes) {
  * num is the numerator bignum, den is the denominator and frontier is
  * the current frontier.
  */
-pointer IntInf_rem (pointer num, pointer den, uint bytes) {
+pointer IntInf_rem (pointer num, pointer den, size_t bytes) {
         __mpz_struct    resmpz,
                         nmpz,
                         dmpz;

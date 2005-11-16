@@ -1,7 +1,8 @@
 #include "platform.h"
 
 Cstring Posix_ProcEnv_ctermid () {
-        return (Cstring)(ctermid (NULL));
+        char *res = ctermid (NULL);
+        return (Cstring)res;
 }
 
 Gid Posix_ProcEnv_getegid () {

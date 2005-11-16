@@ -181,16 +181,16 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # are class.c and gdtoa.c.  But there may be others.  So, we compile
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
-basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
-basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
-	$(CC) $(OPTCFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h $(HFILES)
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+basis/Real/%.o: basis/Real/%.c gdtoa/arith.h  $(HFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
 
 %.o: %.c $(HFILES)
-	$(CC) $(OPTCFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S
 	$(CC) $(DEBUGCFLAGS) -c -o $@ $<

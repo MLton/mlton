@@ -4,7 +4,7 @@ Int Posix_ProcEnv_setgroups (Pointer groups) {
         int i;
         gid_t *list;
         int res;
-        int size;
+        uintmax_t size;
 
         size = GC_getArrayLength (groups);
         list = (gid_t*)(calloc_safe (size, sizeof(*list)));

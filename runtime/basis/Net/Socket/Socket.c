@@ -57,16 +57,6 @@ Int Socket_shutdown (Int s, Int how) {
         return shutdown (s, how);
 }
 
-Int GenericSock_socket (Int domain, Int type, Int protocol) {
-        MLton_initSockets ();
-        return socket (domain, type, protocol);
-}
-
-Int Socket_socketPair (Int domain, Int type, Int protocol, Int sv[2]) {
-        MLton_initSockets ();
-        return socketpair (domain, type, protocol, (int*)sv);
-}
-
 Int Socket_Ctl_getSockOpt (Int s, Int level, Int optname, Char *optval,
                                  Int *optlen) {
         MLton_initSockets ();

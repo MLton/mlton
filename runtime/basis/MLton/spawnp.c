@@ -18,7 +18,8 @@ Int MLton_Process_spawnp (NullString p, Pointer a) {
         return result;
 }
 #else
-Int MLton_Process_spawnp (Pointer p, Pointer a) {
+Int MLton_Process_spawnp (__attribute__ ((unused)) Pointer p, 
+                          __attribute__ ((unused)) Pointer a) {
         die ("MLton_Process_spawnp not implemented");
 }
 #endif

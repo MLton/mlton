@@ -71,11 +71,11 @@ void *GC_mremap (void *start, size_t oldLength, size_t newLength) {
 /*                       Posix                       */
 /* ------------------------------------------------- */
 
-void Posix_IO_setbin (Fd fd) {
+void Posix_IO_setbin (__attribute__ ((unused)) Fd fd) {
         die("Posix_IO_setbin not implemented");
 }
 
-void Posix_IO_settext (Fd fd) {
+void Posix_IO_settext (__attribute__ ((unused)) Fd fd) {
         die("Posix_IO_settext not implemented");
 }
 
@@ -83,6 +83,7 @@ void Posix_IO_settext (Fd fd) {
 /*                      Process                      */
 /* ------------------------------------------------- */
 
-Pid MLton_Process_cwait (Pid pid, Pointer status) {
+Pid MLton_Process_cwait (__attribute__ ((unused)) Pid pid, 
+                         __attribute__ ((unused)) Pointer status) {
         die("MLton_Process_cwait not implemented");
 }

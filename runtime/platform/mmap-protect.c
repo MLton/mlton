@@ -6,10 +6,10 @@ void *GC_mmapAnon_safe_protect (void *start, size_t length,
         low = base;
         if (mprotect (low, dead_low, PROT_NONE))
                 diee ("mprotect failed");
-        result = low + dead_low;
+        result = (void*)((pointer)low + dead_low);
         if (mprotect (result, length, PROT_READ | PROT_WRITE | PROT_EXEC))
                 diee ("mprotect failed");
-        high = result + length;
+        high = (void*)((pointer)result + length);
         if (mprotect (high, dead_high, PROT_NONE))
                 diee ("mprotect failed");
         return result;

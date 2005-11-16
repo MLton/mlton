@@ -22,9 +22,9 @@ void MLton_init (int argc, char **argv, GC_state s) {
   start = GC_init (s, argc, argv);
   /* Setup argv and argc that SML sees. */
   /* start is now the index of the first real arg. */
-  CommandLine_commandName = (uint)(argv[0]);
+  CommandLine_commandName = (unsigned int)(argv[0]);
   CommandLine_argc = argc - start;
-  CommandLine_argv = (uint)(argv + start);
+  CommandLine_argv = (unsigned int)(argv + start);
 }
 
 void MLton_exit (GC_state s, Int status) {

@@ -28,7 +28,9 @@ Int MLton_Process_spawne (NullString p, Pointer a, Pointer e) {
         return result;
 }
 #else
-Int MLton_Process_spawne (Pointer p, Pointer a, Pointer e) {
+Int MLton_Process_spawne (__attribute__ ((unused)) Pointer p, 
+                          __attribute__ ((unused)) Pointer a, 
+                          __attribute__ ((unused)) Pointer e) {
         die ("MLton_Process_spawne not implemented");
 }
 #endif
