@@ -29,7 +29,7 @@ base='http://mlton.org'
 index='.index'
 script='.script'
 tmp='.tmp'
-useLocal='true'
+useLocal='false'
 version=`date +%Y%m%d`
 
 cd "$src/doc/guide"
