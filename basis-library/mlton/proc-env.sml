@@ -8,6 +8,8 @@
 
 structure MLtonProcEnv: MLTON_PROC_ENV =
    struct
+      type gid = PosixPrimitive.ProcEnv.gid
+
       fun setenv {name, value} =
          let
             val name = NullString.nullTerm name
