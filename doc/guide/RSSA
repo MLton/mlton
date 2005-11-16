@@ -55,9 +55,9 @@ RSSA is a <a href="IntermediateLanguage">IntermediateLanguage</a> that makes rep
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/rssa.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">rssa.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/backend/rssa.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">rssa.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/backend/rssa.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">rssa.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/backend/rssa.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">rssa.fun</a>
  <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
 The new type language is aimed at expressing bit-level control over layout and associated packing of data representations.  There are singleton types that denote constants, other atomic types for things like integers and reals, and arbitrary sum types and sequence (tuple) types.  The big change to the type system is that type checking is now based on subtyping, not type equality.  So, for example, the singleton type 0xFFFFEEBB whose only inhabitant is the eponymous constant is a subtype of the type Word32. 

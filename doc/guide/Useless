@@ -90,9 +90,9 @@ If a useful tuple is coerced to another useful tuple, then all of their componen
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/useless.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/useless.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/useless.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/useless.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 It is also trivial to convert a useful tuple to one of its useful components -- but this seems hard. 

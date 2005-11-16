@@ -61,9 +61,9 @@ For example, an <tt>(int&nbsp;*&nbsp;int)&nbsp;ref</tt> is represented by a 2 wo
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 

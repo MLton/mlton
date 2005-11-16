@@ -55,9 +55,9 @@ Descends the entire <a href="SXML">SXML</a> program and attaches a property to e
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/lambda-free.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">lambda-free.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/closure-convert/lambda-free.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">lambda-free.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/closure-convert/lambda-free.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">lambda-free.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/closure-convert/lambda-free.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">lambda-free.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 For <tt>Lambda</tt>s bound in a <tt>Fun</tt> dec, <tt>lambdaFree</tt> gives the union of the frees of the entire group of mutually recursive functions.  Hence, <tt>lambdaFree</tt> for every <tt>Lambda</tt> in a single <tt>Fun</tt> dec is the same. Furthermore, for a <tt>Lambda</tt> bound in a <tt>Fun</tt> dec, <tt>lambdaRec</tt> gives the list of other functions bound in the same dec defining that <tt>Lambda</tt>.  For example: 

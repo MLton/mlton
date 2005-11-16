@@ -62,9 +62,9 @@ Examples: <a href = "References#FluetWeeks01"> a paper</a>
 <p>
  <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
 , 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
  
 </p>
 </li>
@@ -100,9 +100,9 @@ Example:
 <p>
  <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
 , 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
  
 </p>
 </li>
@@ -110,7 +110,7 @@ Examples:
 <p>
  <tt>[[ViewSVNSDir(pathToDir)]]</tt> displays a link to the ViewCVS  page for <tt>pathToDir</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
  
 </p>
 </li>
