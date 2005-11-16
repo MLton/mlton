@@ -264,7 +264,7 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new2 (Pointer, Pointer), NONE)
+                           (Vector.new2 (Pointer, Pointer), SOME Word32)
                         end,
             readsStackTop = false,
             return = Word32,
