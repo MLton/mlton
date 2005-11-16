@@ -33,6 +33,7 @@
 #endif
 
 #define coerce(f, t)                            \
+        t f##_to##t (f x);                      \
         t f##_to##t (f x) {                     \
                 return (t)x;                    \
         }
@@ -55,6 +56,7 @@
 #define WordU64_max (WordU64)0xFFFFFFFFFFFFFFFFull
 
 #define binary(kind, name, op)                                          \
+        Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);  \
         Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) { \
                 return w1 op w2;                                        \
         }
@@ -125,6 +127,7 @@
         }
 
 #define compare(kind, name, op)                                         \
+        Bool Word##kind##_##name (Word##kind w1, Word##kind w2);        \
         Bool Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
                 return w1 op w2;                                        \
         }
@@ -134,11 +137,13 @@
         compare (U##size, name, op)
 
 #define unary(kind,name, op)                            \
+        Word##kind Word##kind##_##name (Word##kind w);  \
         Word##kind Word##kind##_##name (Word##kind w) { \
                 return op w;                            \
         }
 
 #define shift(kind, name, op)                                           \
+        Word##kind Word##kind##_##name (Word##kind w1, Word w2);        \
         Word##kind Word##kind##_##name (Word##kind w1, Word w2) {       \
                 return w1 op w2;                                        \
         }
@@ -162,9 +167,11 @@
         bothBinary (size, quot, /)                              \
         SmulCheckOverflows (size)                               \
         bothBinary (size, rem, %)                               \
+        Word##size Word##size##_rol (Word##size w1, Word w2);   \
         Word##size Word##size##_rol (Word##size w1, Word w2) {  \
                 return (w1 >> (size - w2)) | (w1 << w2);        \
         }                                                       \
+        Word##size Word##size##_ror (Word##size w1, Word w2);   \
         Word##size Word##size##_ror (Word##size w1, Word w2) {  \
                 return (w1 >> w2) | (w1 << (size - w2));        \
         }                                                       \

@@ -977,33 +977,6 @@ Int Ptrace_ptrace4 (Int request, Int pid, Word addr, Pointer data);
 
 Real64 Real64_modf (Real64 x, Real64 *exp);
 Real32 Real32_modf (Real32 x, Real32 *exp);
-#define unaryReal(f)                                            \
-  Real64 Real64_##f (Real64 x);                                 \
-  Real32 Real32_##f (Real32 x);
-unaryReal(abs)
-unaryReal(round)
-#undef unaryReal
-#define binaryReal(f)                                           \
-        Real64 Real64_Math_##f (Real64 x, Real64 y);            \
-        Real32 Real32_Math_##f (Real32 x, Real32 y);
-binaryReal(atan2)
-#undef binaryReal
-#define unaryReal(f)                                            \
-        Real64 Real64_Math_##f (Real64 x);                      \
-        Real32 Real32_Math_##f (Real32 x);
-unaryReal(acos)
-unaryReal(asin)
-unaryReal(atan)
-unaryReal(cos)
-unaryReal(exp)
-unaryReal(ln)
-unaryReal(log10)
-unaryReal(sin)
-unaryReal(sqrt)
-unaryReal(tan)
-#undef unaryReal
-Real64 Real64_ldexp (Real64 x, Int32 i);
-Real32 Real32_ldexp (Real32 x, Int32 i);
 Real64 Real64_frexp (Real64 x, Int *exp);
 Cstring Real64_gdtoa (double d, int mode, int ndig, int *decpt);
 Cstring Real32_gdtoa (float f, int mode, int ndig, int *decpt);
@@ -1123,16 +1096,6 @@ Int Windows_terminate (Pid p, Int s);
 /*                  Word{8,16,32,64}                 */
 /* ------------------------------------------------- */
 
-#define coerce(f, t)                            \
-        t f##_to##t (f x);
-#define bothCoerce(from, to)                    \
-        coerce (Word##S##from, Word##to)        \
-        coerce (Word##U##from, Word##to)
-#define binary(kind, name)                                              \
-        Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);
-#define bothBinary(size, name)                  \
-        binary (S##size, name)                  \
-        binary (U##size, name)
 #define SaddCheckOverflows(size)                                        \
         Bool WordS##size##_addCheckOverflows (WordS##size x, WordS##size y);
 #define UaddCheckOverflows(size)                                        \
@@ -1143,65 +1106,24 @@ Int Windows_terminate (Pid p, Int s);
         Bool Word##size##_negCheckOverflows (WordS##size x);
 #define SsubCheckOverflows(size)                                        \
         Bool WordS##size##_subCheckOverflows (WordS##size x, WordS##size y);
-#define compare(kind, name)                                             \
-        Bool Word##kind##_##name (Word##kind w1, Word##kind w2);
-#define bothCompare(size, name)                     \
-        compare (S##size, name)                     \
-        compare (U##size, name)    
-#define unary(kind, name)                           \
-        Word##kind Word##kind##_##name (Word##kind w);
-#define shift(kind, name)                                               \
-        Word##kind Word##kind##_##name (Word##kind w1, Word w2);
 
 #define all(size)                                               \
-        binary (size, add)                                      \
         SaddCheckOverflows (size)                               \
         UaddCheckOverflows (size)                               \
-        binary (size, andb)                                     \
-        compare (size, equal)                                   \
-        bothCompare (size, ge)                                  \
-        bothCompare (size, gt)                                  \
-        bothCompare (size, le)                                  \
-        shift (size, lshift)                                    \
-        bothCompare (size, lt)                                  \
-        bothBinary (size, mul)                                  \
-        unary (size, neg)                                       \
         negCheckOverflows (size)                                \
-        unary (size, notb)                                      \
-        binary (size, orb)                                      \
-        bothBinary (size, quot)                                 \
         SmulCheckOverflows (size)                               \
-        bothBinary (size, rem)                                  \
-        Word##size Word##size##_rol (Word##size w1, Word w2);   \
-        Word##size Word##size##_ror (Word##size w1, Word w2);   \
-        shift (S##size, rshift)                                 \
-        shift (U##size, rshift)                                 \
-        binary (size, sub)                                      \
         SsubCheckOverflows (size)                               \
-        binary (size, xorb)                                     \
-        bothCoerce (size, 64)                                   \
-        bothCoerce (size, 32)                                   \
-        bothCoerce (size, 16)                                   \
-        bothCoerce (size, 8)
 
 all (8)
 all (16)
 all (32)
 all (64)
 
-#undef coerce
-#undef bothCoerce
-#undef binary
-#undef bothBinary
 #undef SaddCheckOverflows
 #undef UaddCheckOverflows
 #undef SmulCheckOverflows
 #undef negCheckOverflows
 #undef SsubCheckOverflows
-#undef compare
-#undef bothCompare
-#undef unary
-#undef shift
 #undef all
 
 /* ------------------------------------------------- */
