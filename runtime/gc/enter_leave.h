@@ -8,7 +8,7 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void enter (GC_state s);
-static void leave (GC_state s);
+static inline void enter (GC_state s);
+static inline void leave (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

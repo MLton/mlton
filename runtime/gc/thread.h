@@ -34,6 +34,6 @@ typedef struct GC_thread *GC_thread;
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 static void displayThread (GC_state s, GC_thread thread, FILE *stream);
-static size_t sizeofThread (GC_state s);
+static inline size_t sizeofThread (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

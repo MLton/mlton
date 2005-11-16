@@ -8,9 +8,9 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void copyForThreadInternal (pointer dst, pointer src);
-static void threadInternalObjptr (GC_state s, objptr *opp);
-static void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p);
+static inline void copyForThreadInternal (pointer dst, pointer src);
+static inline void threadInternalObjptr (GC_state s, objptr *opp);
+static inline void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p);
 static void updateForwardPointersForMarkCompact (GC_state s);
 static void updateBackwardPointersAndSlideForMarkCompact (GC_state s);
 static void majorMarkCompactGC (GC_state s);

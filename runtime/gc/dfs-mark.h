@@ -17,12 +17,12 @@ typedef enum {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static bool isPointerMarked (pointer p);
-static bool isPointerMarkedByMode (pointer p, GC_markMode m);
+static inline bool isPointerMarked (pointer p);
+static inline bool isPointerMarkedByMode (pointer p, GC_markMode m);
 static size_t dfsMarkByMode (GC_state s, pointer root,
                              GC_markMode mode, bool shouldHashCons);
-static void dfsMarkWithHashCons (GC_state s, objptr *opp);
-static void dfsMarkWithoutHashCons (GC_state s, objptr *opp);
-static void dfsUnmark (GC_state s, objptr *opp);
+static inline void dfsMarkWithHashCons (GC_state s, objptr *opp);
+static inline void dfsMarkWithoutHashCons (GC_state s, objptr *opp);
+static inline void dfsUnmark (GC_state s, objptr *opp);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

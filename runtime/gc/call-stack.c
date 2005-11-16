@@ -6,8 +6,8 @@
  * See the file MLton-LICENSE for details.
  */
 
-static void numStackFramesAux (GC_state s, 
-                               __attribute__ ((unused)) GC_frameIndex i) {
+void numStackFramesAux (GC_state s, 
+                        __attribute__ ((unused)) GC_frameIndex i) {
   s->callStackState.numStackFrames++;
 }
 
@@ -20,8 +20,7 @@ uint32_t GC_numStackFrames (GC_state s) {
   return s->callStackState.numStackFrames;
 }
 
-static void callStackAux (GC_state s, 
-                          GC_frameIndex i) {
+void callStackAux (GC_state s, GC_frameIndex i) {
   if (DEBUG_CALL_STACK)
     fprintf (stderr, "callStackAux ("FMTFI")\n", i);
   s->callStackState.callStack[s->callStackState.numStackFrames] = i;

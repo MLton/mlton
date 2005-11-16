@@ -14,7 +14,7 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   uintmax_t numGCs;
   size_t desiredSize;
 
-  s->cumulativeStatistics.numMinorGCs = 0;
+  s->lastMajorStatistics.numMinorGCs = 0;
   numGCs = 
     s->cumulativeStatistics.numCopyingGCs 
     + s->cumulativeStatistics.numMarkCompactGCs;

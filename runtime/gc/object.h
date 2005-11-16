@@ -59,9 +59,9 @@ typedef uint32_t GC_header;
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static GC_header* getHeaderp (pointer p);
-static GC_header getHeader (pointer p);
-static GC_header buildHeaderFromTypeIndex (uint32_t t);
+static inline GC_header* getHeaderp (pointer p);
+static inline GC_header getHeader (pointer p);
+static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
@@ -145,9 +145,9 @@ enum {
 #define GC_WORD16_VECTOR_HEADER buildHeaderFromTypeIndex (WORD16_VECTOR_TYPE_INDEX)
 #define GC_WORD32_VECTOR_HEADER buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX)
 
-static void splitHeader (GC_state s, GC_header header,
-                         GC_objectTypeTag *tagRet, bool *hasIdentityRet,
-                         uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet);
-static pointer advanceToObjectData (GC_state s, pointer p);
+static inline void splitHeader (GC_state s, GC_header header,
+                                GC_objectTypeTag *tagRet, bool *hasIdentityRet,
+                                uint16_t *bytesNonObjptrsRet, uint16_t *numObjptrsRet);
+static inline pointer advanceToObjectData (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -42,7 +42,7 @@ void addToStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   ps = getProfileStackInfo (s, i);
   if (DEBUG_PROFILE)
     fprintf (stderr, "adding %s to stack  lastTotal = %"PRIuMAX"  lastTotalGC = %"PRIuMAX"\n",
-             GC_sourceName (s, i), 
+             getSourceName (s, i), 
              p->total,
              p->totalGC);
   ps->lastTotal = p->total;
@@ -79,7 +79,7 @@ void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
     if (DEBUG_ENTER_LEAVE or DEBUG_PROFILE) {
       profileIndent ();
       fprintf (stderr, "(entering %s\n",
-               GC_sourceName (s, sourceIndex));
+               getSourceName (s, sourceIndex));
       profileDepth++;
     }
     enterSourceForProfiling (s, (GC_profileMasterIndex)sourceIndex);
@@ -103,7 +103,7 @@ void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   ps = getProfileStackInfo (s, i);
   if (DEBUG_PROFILE)
     fprintf (stderr, "removing %s from stack  ticksInc = %"PRIuMAX"  ticksGCInc = %"PRIuMAX"\n",
-             GC_sourceName (s, i), 
+             getSourceName (s, i), 
              p->total - ps->lastTotal,
              p->totalGC - ps->lastTotalGC);
   ps->ticks += p->total - ps->lastTotal;
@@ -140,7 +140,7 @@ void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
       profileDepth--;
       profileIndent ();
       fprintf (stderr, "leaving %s)\n",
-               GC_sourceName (s, sourceIndex));
+               getSourceName (s, sourceIndex));
     }
     leaveSourceForProfiling (s, (GC_profileMasterIndex)sourceIndex);
     leaveSourceForProfiling (s, sourceIndexToProfileMasterIndex (s, sourceIndex));
@@ -156,12 +156,12 @@ void GC_profileLeave (GC_state s) {
 }
 
 
-void profileInc (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex) {
+void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex) {
   uint32_t *sourceSeq;
   GC_sourceIndex topSourceIndex;
 
   if (DEBUG_PROFILE)
-    fprintf (stderr, "profileInc (%zu, "FMTSSI")\n",
+    fprintf (stderr, "incForProfiling (%zu, "FMTSSI")\n",
              amount, sourceSeqIndex);
   assert (sourceSeqIndex < s->sourceMaps.sourceSeqsLength);
   sourceSeq = s->sourceMaps.sourceSeqs[sourceSeqIndex];
@@ -172,7 +172,7 @@ void profileInc (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex) {
   if (DEBUG_PROFILE) {
     profileIndent ();
     fprintf (stderr, "bumping %s by %zu\n",
-             GC_sourceName (s, topSourceIndex), amount);
+             getSourceName (s, topSourceIndex), amount);
   }
   s->profiling.data->countTop[topSourceIndex] += amount;
   s->profiling.data->countTop[sourceIndexToProfileMasterIndex (s, topSourceIndex)] += amount;
@@ -189,10 +189,10 @@ void profileInc (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex) {
 void GC_profileInc (GC_state s, size_t amount) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileInc (%zu)\n", amount);
-  profileInc (s, amount,
-              s->amInGC
-              ? SOURCE_SEQ_GC
-              : getStackTopFrameSourceSeqIndex (s, getStackCurrent (s)));
+  incForProfiling (s, amount,
+                   s->amInGC
+                   ? SOURCE_SEQ_GC
+                   : getStackTopFrameSourceSeqIndex (s, getStackCurrent (s)));
 }
 
 void GC_profileAllocInc (GC_state s, size_t amount) {
@@ -229,8 +229,8 @@ void GC_profileFree (GC_state s, GC_profileData p) {
   free (p);
 }
 
-static void writeProfileCount (GC_state s, int fd,
-                               GC_profileData p, GC_profileMasterIndex i) {
+void writeProfileCount (GC_state s, int fd,
+                        GC_profileData p, GC_profileMasterIndex i) {
   writeUintmaxU (fd, p->countTop[i]);
   if (s->profiling.stack) {
     GC_profileStack ps;
@@ -303,7 +303,7 @@ void setProfTimer (long usec) {
  * mlton/main/main.fun to make sure that time profiling is never
  * turned on.
  */
-void initProfilingTime (GC_state s) __attribute__ ((noreturn));
+static void initProfilingTime (GC_state s) __attribute__ ((noreturn));
 void initProfilingTime (__attribute__ ((unused)) GC_state s) {
   die ("no time profiling");
 }
@@ -336,9 +336,10 @@ void GC_handleSigProf (pointer pc) {
       }
     }
   }
-  profileInc (s, 1, sourceSeqIndex);
+  incForProfiling (s, 1, sourceSeqIndex);
 }
 
+static void initProfilingTime (GC_state s);
 static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
@@ -375,7 +376,7 @@ static void initProfilingTime (GC_state s) {
  */
 static GC_state atexitForProfilingState;
 
-static void atexitForProfiling (void) {
+void atexitForProfiling (void) {
   int fd;
   GC_state s;
 
@@ -433,7 +434,7 @@ void GC_profileDone (GC_state s) {
         if (DEBUG_PROFILE)
           fprintf (stderr, "done leaving %s\n",
                    (profileMasterIndex < s->sourceMaps.sourcesLength)
-                   ? GC_sourceName (s, (GC_sourceIndex)profileMasterIndex)
+                   ? getSourceName (s, (GC_sourceIndex)profileMasterIndex)
                    : s->sourceMaps.sourceNames[
                      profileMasterIndexToSourceNameIndex (s, profileMasterIndex)]);
         removeFromStackForProfiling (s, profileMasterIndex);

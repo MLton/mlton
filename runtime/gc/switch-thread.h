@@ -8,7 +8,7 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void switchToThread (GC_state s, objptr op);
+static inline void switchToThread (GC_state s, objptr op);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

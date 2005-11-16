@@ -8,9 +8,9 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static objptr getThreadCurrentObjptr (GC_state s);
-static GC_thread getThreadCurrent (GC_state s);
-static objptr getStackCurrentObjptr (GC_state s);
-static GC_stack getStackCurrent (GC_state s);
+static inline objptr getThreadCurrentObjptr (GC_state s);
+static inline GC_thread getThreadCurrent (GC_state s);
+static inline objptr getStackCurrentObjptr (GC_state s);
+static inline GC_stack getStackCurrent (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

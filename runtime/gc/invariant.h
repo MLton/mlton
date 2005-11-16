@@ -8,10 +8,10 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void assertIsObjptrInFromSpace (GC_state s, objptr *opp);
+static inline void assertIsObjptrInFromSpace (GC_state s, objptr *opp);
 static bool invariantForGC (GC_state s);
-static bool invariantForMutatorFrontier (GC_state s);
-static bool invariantForMutatorStack (GC_state s);
+static inline bool invariantForMutatorFrontier (GC_state s);
+static inline bool invariantForMutatorStack (GC_state s);
 static bool invariantForMutator (GC_state s, bool frontier, bool stack);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

@@ -6,11 +6,11 @@
  * See the file MLton-LICENSE for details.
  */
 
-#if (defined (MLTON_GC_INTERNAL_FUNCS))
+#if (defined (MLTON_GC_INTERNAL_BASIS))
 
 pointer GC_arrayAllocate (GC_state s, 
                           size_t ensureBytesFree, 
                           GC_arrayLength numElements, 
                           GC_header header);
 
-#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

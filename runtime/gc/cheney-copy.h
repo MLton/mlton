@@ -8,8 +8,8 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void updateWeaksForCheneyCopy (GC_state s);
-static void swapHeapsForCheneyCopy (GC_state s);
+static inline void updateWeaksForCheneyCopy (GC_state s);
+static inline void swapHeapsForCheneyCopy (GC_state s);
 static void majorCheneyCopyGC (GC_state s);
 static void minorCheneyCopyGC (GC_state s);
 

@@ -50,7 +50,7 @@ struct GC_controls {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static bool detailedGCTime (GC_state s);
-static bool needGCTime (GC_state s);
+static inline bool detailedGCTime (GC_state s);
+static inline bool needGCTime (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

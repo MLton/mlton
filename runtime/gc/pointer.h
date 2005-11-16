@@ -10,6 +10,6 @@
 
 #define BOGUS_POINTER (pointer)0x1
 
-static bool isPointer (pointer p);
+static inline bool isPointer (pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

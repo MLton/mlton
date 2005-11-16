@@ -34,22 +34,23 @@ typedef struct GC_heap {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static bool isPointerInHeap (GC_state s, pointer p);
-static bool isPointerInOldGen (GC_state s, pointer p);
-static bool isPointerInNursery (GC_state s, pointer p);
-static bool isPointerInFromSpace (GC_state s, pointer p);
-static bool isObjptrInHeap (GC_state s, objptr op);
-static bool isObjptrInOldGen (GC_state s, objptr op);
-static bool isObjptrInNursery (GC_state s, objptr op);
-static bool isObjptrInFromSpace (GC_state s, objptr op);
-static bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery);
-static bool isHeapInit (GC_heap h);
+static inline bool isPointerInHeap (GC_state s, pointer p);
+static inline bool isPointerInOldGen (GC_state s, pointer p);
+static inline bool isPointerInNursery (GC_state s, pointer p);
+static inline bool isPointerInFromSpace (GC_state s, pointer p);
+static inline bool isObjptrInHeap (GC_state s, objptr op);
+static inline bool isObjptrInOldGen (GC_state s, objptr op);
+static inline bool isObjptrInNursery (GC_state s, objptr op);
+static inline bool isObjptrInFromSpace (GC_state s, objptr op);
+static inline bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery);
+static inline bool isHeapInit (GC_heap h);
 
 static void displayHeap (GC_state s, GC_heap heap, FILE *stream);
-static void initHeap (GC_state s, GC_heap h);
-static size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize);
 
-static void releaseHeap (GC_state s, GC_heap h);
+static inline void initHeap (GC_state s, GC_heap h);
+static inline size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize);
+
+static inline void releaseHeap (GC_state s, GC_heap h);
 static void shrinkHeap (GC_state s, GC_heap h, size_t keep);
 static bool createHeap (GC_state s, GC_heap h, size_t desiredSize, size_t minSize);
 static bool createHeapSecondary (GC_state s, size_t desiredSize);

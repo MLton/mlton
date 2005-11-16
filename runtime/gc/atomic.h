@@ -8,7 +8,7 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void beginAtomic (GC_state s);
-static void endAtomic (GC_state s);
+static inline void beginAtomic (GC_state s);
+static inline void endAtomic (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

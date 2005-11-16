@@ -21,10 +21,10 @@ struct GC_forwardState {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static bool isPointerInToSpace (GC_state s, pointer p);
-static bool isObjptrInToSpace (GC_state s, objptr op);
-static void forwardObjptr (GC_state s, objptr *opp);
-static void forwardObjptrIfInNursery (GC_state s, objptr *opp);
-static void forwardInterGenerationalObjptrs (GC_state s);
+static inline bool isPointerInToSpace (GC_state s, pointer p);
+static inline bool isObjptrInToSpace (GC_state s, objptr op);
+static inline void forwardObjptr (GC_state s, objptr *opp);
+static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp);
+static inline void forwardInterGenerationalObjptrs (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

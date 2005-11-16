@@ -79,24 +79,27 @@ typedef struct GC_profileData *GC_profileData;
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, GC_sourceIndex i);
-static GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s, GC_profileMasterIndex i);
-static GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterIndex i);
+static inline GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, GC_sourceIndex i);
+static inline GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s, GC_profileMasterIndex i);
+static inline GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterIndex i);
 
-static void addToStackForProfiling (GC_state s, GC_profileMasterIndex i);
-static void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
-static void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-static void enterFrameForProfiling (GC_state s, GC_frameIndex i);
+static inline void addToStackForProfiling (GC_state s, GC_profileMasterIndex i);
+static inline void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+static inline void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+static inline void enterFrameForProfiling (GC_state s, GC_frameIndex i);
 
-static void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i);
-static void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);
-static void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-static void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
+static inline void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i);
+static inline void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);
+static inline void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
+static inline void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
 
-static void profileInc (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex);
+static inline void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex);
+
+static void writeProfileCount (GC_state s, int fd, GC_profileData p, GC_profileMasterIndex i);
 
 static void setProfTimer (long usec);
 static void initProfiling (GC_state s);
+static void atexitForProfiling (void);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

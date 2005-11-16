@@ -69,8 +69,8 @@ struct GC_state {
 
 static void displayGCState (GC_state s, FILE *stream);
 
-static size_t sizeofGCStateCurrentStackUsed (GC_state s);
-static void setGCStateCurrentThreadAndStack (GC_state s);
+static inline size_t sizeofGCStateCurrentStackUsed (GC_state s);
+static inline void setGCStateCurrentThreadAndStack (GC_state s);
 static void setGCStateCurrentHeap (GC_state s, 
                                    size_t oldGenBytesRequested, 
                                    size_t nurseryBytesRequested);

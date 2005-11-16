@@ -74,9 +74,11 @@ struct GC_sourceMaps {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
+static inline GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
 
-static int compareSourceLabels (const void *v1, const void *v2);
+static inline char* getSourceName (GC_state s, GC_sourceIndex i);
+
+static inline int compareSourceLabels (const void *v1, const void *v2);
 static void sortSourceLabels (GC_state s);
 static void initTextSources (GC_state s);
 

@@ -37,8 +37,8 @@ typedef struct GC_weak {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static size_t sizeofWeak (GC_state s);
-static size_t offsetofWeak (GC_state s);
+static inline size_t sizeofWeak (GC_state s);
+static inline size_t offsetofWeak (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

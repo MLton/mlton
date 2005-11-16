@@ -8,7 +8,7 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void translateObjptr (GC_state s, objptr *opp);
+static inline void translateObjptr (GC_state s, objptr *opp);
 static void translateHeap (GC_state s, pointer from, pointer to, size_t size);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

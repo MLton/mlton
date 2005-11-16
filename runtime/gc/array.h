@@ -38,9 +38,9 @@ static inline GC_arrayLength* getArrayLengthp (pointer a);
 static inline GC_arrayLength getArrayLength (pointer a);
 static inline GC_arrayCounter* getArrayCounterp (pointer a);
 static inline GC_arrayCounter getArrayCounter (pointer a);
-static pointer indexArrayAtPointerIndex (GC_state s, pointer a,
-                                         GC_arrayCounter arrayIndex,
-                                         uint32_t pointerIndex);
+static inline pointer indexArrayAtPointerIndex (GC_state s, pointer a,
+                                                GC_arrayCounter arrayIndex,
+                                                uint32_t pointerIndex);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

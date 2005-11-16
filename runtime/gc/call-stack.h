@@ -15,6 +15,14 @@ struct GC_callStackState {
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
+#if (defined (MLTON_GC_INTERNAL_FUNCS))
+
+static inline void numStackFramesAux (GC_state s, GC_frameIndex i);
+static inline void callStackAux (GC_state s, GC_frameIndex i);
+
+#endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
+
+
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
 uint32_t GC_numStackFrames (GC_state s);

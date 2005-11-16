@@ -8,7 +8,7 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
+static inline void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

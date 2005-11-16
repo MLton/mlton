@@ -10,9 +10,13 @@ GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack) {
   return s->sourceMaps.frameSources[getStackTopFrameIndex (s, stack)];
 }
 
-char* GC_sourceName (GC_state s, GC_sourceIndex i) {
+char* getSourceName (GC_state s, GC_sourceIndex i) {
   assert (i < s->sourceMaps.sourcesLength);
   return s->sourceMaps.sourceNames[s->sourceMaps.sources[i].sourceNameIndex];
+}
+
+char* GC_sourceName (GC_state s, GC_sourceIndex i) {
+  return getSourceName (s, i);
 }
 
 int compareSourceLabels (const void *v1, const void *v2) {

@@ -51,8 +51,8 @@ typedef uintptr_t GC_returnAddress;
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra);
-static GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index);
-static GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra);
+static inline GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra);
+static inline GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex index);
+static inline GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

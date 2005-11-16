@@ -35,16 +35,16 @@ typedef struct GC_objectHashTable {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static GC_objectHashTable allocHashTable (GC_state s);
-static void freeHashTable (GC_objectHashTable t);
+static inline GC_objectHashTable allocHashTable (GC_state s);
+static inline void freeHashTable (GC_objectHashTable t);
 
-static pointer insertHashTableElem (GC_state s, 
-                                    GC_objectHashTable t, GC_hash hash, 
-                                    pointer object, pointer max, bool mightBeThere);
-static void growHashTableMaybe (GC_state s, GC_objectHashTable t);
+static inline pointer insertHashTableElem (GC_state s, 
+                                           GC_objectHashTable t, GC_hash hash, 
+                                           pointer object, pointer max, bool mightBeThere);
+static inline void growHashTableMaybe (GC_state s, GC_objectHashTable t);
 
 static pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed);
-static void shareObjptr (GC_state s, objptr *opp);
+static inline void shareObjptr (GC_state s, objptr *opp);
 
 static void printBytesHashConsedMessage (GC_state s, uintmax_t total);
 

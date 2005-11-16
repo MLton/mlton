@@ -56,19 +56,19 @@ static void displayGenerationalMaps (GC_state s,
                                      struct GC_generationalMaps *generational,
                                      FILE *stream);
 
-static GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
-static GC_cardMapIndex sizeToCardMapIndex (size_t z);
-static size_t cardMapIndexToSize (GC_cardMapIndex i);
-static pointer pointerToCardMapAddr (GC_state s, pointer p);
+static inline GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
+static inline GC_cardMapIndex sizeToCardMapIndex (size_t z);
+static inline size_t cardMapIndexToSize (GC_cardMapIndex i);
+static inline pointer pointerToCardMapAddr (GC_state s, pointer p);
 
-static bool isCardMarked (GC_state s, pointer p);
-static void markCard (GC_state s, pointer p);
+static inline bool isCardMarked (GC_state s, pointer p);
+static inline void markCard (GC_state s, pointer p);
 
-static void setCardMapAbsolute (GC_state s);
-static pointer getCrossMapCardStart (GC_state s, pointer p);
+static inline void setCardMapAbsolute (GC_state s);
+static inline pointer getCrossMapCardStart (GC_state s, pointer p);
 
-static void clearCardMap (GC_state s);
-static void clearCrossMap (GC_state s);
+static inline void clearCardMap (GC_state s);
+static inline void clearCrossMap (GC_state s);
 static void createCardMapAndCrossMap (GC_state s);
 static void resizeCardMapAndCrossMap (GC_state s);
 

@@ -57,25 +57,25 @@ typedef struct GC_stack {
 
 static void displayStack (GC_state s, GC_stack stack, FILE *stream);
 
-static bool isStackEmpty (GC_stack stack);
-static bool isStackReservedAligned (GC_state s, size_t reserved);
+static inline bool isStackEmpty (GC_stack stack);
+static inline bool isStackReservedAligned (GC_state s, size_t reserved);
 
-static size_t sizeofStackSlop (GC_state s);
-static size_t sizeofStackInitial (GC_state s);
+static inline size_t sizeofStackSlop (GC_state s);
+static inline size_t sizeofStackInitial (GC_state s);
 
-static pointer getStackBottom (GC_state s, GC_stack stack);
-static pointer getStackTop (GC_state s, GC_stack stack);
-static pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
-static pointer getStackLimit (GC_state s, GC_stack stack);
-static GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
-static GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
-static uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
+static inline pointer getStackBottom (GC_state s, GC_stack stack);
+static inline pointer getStackTop (GC_state s, GC_stack stack);
+static inline pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
+static inline pointer getStackLimit (GC_state s, GC_stack stack);
+static inline GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
+static inline GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
+static inline uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
 
-static size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
-static size_t alignStackReserved (GC_state s, size_t reserved);
-static size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
-static size_t sizeofStackGrow (GC_state s, GC_stack stack);
+static inline size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
+static inline size_t alignStackReserved (GC_state s, size_t reserved);
+static inline size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
+static inline size_t sizeofStackGrow (GC_state s, GC_stack stack);
 
-static void copyStack (GC_state s, GC_stack from, GC_stack to);
+static inline void copyStack (GC_state s, GC_stack from, GC_stack to);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
