@@ -6,7 +6,6 @@
  * versions, since it depends on the CM structure.
  *
  * cm2mlb takes a ".cm" file and prints on stdout a corresponding ".mlb".
- * cm2mlb will look in $HOME/.mlton/cm2mlb-map.
  *
  * To use from the REPL, do the following:
  * CM2MLB.cm2mlb {defines = ["MLton"],
@@ -59,6 +58,45 @@ struct
             end
       end
 
+   structure AnchorMap =
+      struct
+
+         fun make (file : string) =
+            if OS.FileSys.access (file, [OS.FileSys.A_READ])
+               then 
+                  let
+                     val lines =
+                        let
+                           val f = TextIO.openIn file
+                        in
+                           let
+                              fun loop lines =
+                                 case TextIO.inputLine f of
+                                    NONE => List.rev lines
+                                  | SOME l => loop (l::lines)
+                           in
+                              loop []
+                              before TextIO.closeIn f
+                           end handle e => (TextIO.closeIn f; raise e)
+                        end handle _ => []
+                  in
+                     List.mapPartial
+                     (fn line =>
+                      if CharVector.all Char.isSpace line
+                         then NONE
+                         else 
+                            case String.tokens Char.isSpace line of
+                               [cmAnchor, mlbPath] => 
+                                  SOME {cmAnchor = cmAnchor, mlbPath = mlbPath}
+                             | _ =>  die (concat ["strange cm->mlb mapping: ", 
+                                                  file, ":: ", line]))
+                     lines
+                  end
+               else []
+
+         val default = make "cm2mlb-map"
+      end
+   
    fun cm2mlb {defines, maps, out, sources} =
       let
          (* Define preprocessor symbols *)
@@ -78,46 +116,10 @@ struct
          val () = if dir <> "" then OS.FileSys.chDir dir else ()
 
          local
-            fun make (file : string) =
-               if OS.FileSys.access (file, [OS.FileSys.A_READ])
-                  then 
-                     let
-                        val lines =
-                           let
-                              val f = TextIO.openIn file
-                           in
-                              let
-                                 fun loop lines =
-                                    case TextIO.inputLine f of
-                                       NONE => List.rev lines
-                                     | SOME l => loop (l::lines)
-                              in
-                                 loop []
-                                 before TextIO.closeIn f
-                              end handle e => (TextIO.closeIn f; raise e)
-                           end handle _ => []
-                     in
-                        List.mapPartial
-                        (fn line =>
-                         if CharVector.all Char.isSpace line
-                            then NONE
-                            else 
-                               case String.tokens Char.isSpace line of
-                                  [cmAnchor, mlbPath] => 
-                                     SOME {cmAnchor = cmAnchor, mlbPath = mlbPath}
-                                | _ =>  die (concat ["strange cm->mlb mapping: ", 
-                                                     file, ":: ", line]))
-                        lines
-                     end
-                  else []
             val anchorMap =
-               (List.rev o List.concat)
-               ((List.map make maps) @
-                [case OS.Process.getEnv "HOME" of
-                    NONE => []
-                  | SOME path => make (concat [path, "/.mlton/cm2mlb-map"]),
-                 [{cmAnchor = "basis", 
-                   mlbPath = "$(SML_LIB)/basis"}]])
+               List.concat
+               ((List.map AnchorMap.make maps) @
+                [AnchorMap.default])
                
             fun peekAnchorMap cmAnchor' =
                case List.find (fn {cmAnchor, ...} => cmAnchor = cmAnchor') anchorMap of

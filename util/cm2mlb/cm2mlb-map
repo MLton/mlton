@@ -1,3 +1,5 @@
+basis           $(SML_LIB)/basis
+
 ml-yacc-lib     $(SML_LIB)/mlyacc-lib
 
 smlnj-lib       $(SML_LIB)/smlnj-lib/Util
