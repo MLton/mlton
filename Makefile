@@ -151,7 +151,9 @@ dirs:
 docs: dirs
 	$(MAKE) -C $(LEX) docs
 	$(MAKE) -C $(YACC) docs
-	bin/make-pdf-guide
+	if htmldoc --version >/dev/null 2>&1; then \
+		bin/make-pdf-guide; \
+	fi
 
 BSDSRC = /tmp/mlton-$(VERSION)
 .PHONY: freebsd
