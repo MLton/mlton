@@ -23,6 +23,7 @@ signature RUNTIME =
                CanHandle
              | CardMap
              | CurrentThread
+             | CurSourceSeqsIndex
              | ExnStack
              | Frontier (* The place where the next object is allocated. *)
              | Limit (* frontier + heapSize - LIMIT_SLOP *)
@@ -39,6 +40,7 @@ signature RUNTIME =
             val setOffsets: {canHandle: Bytes.t,
                              cardMap: Bytes.t,
                              currentThread: Bytes.t,
+                             curSourceSeqsIndex: Bytes.t,
                              exnStack: Bytes.t,
                              frontier: Bytes.t,
                              limit: Bytes.t,

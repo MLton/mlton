@@ -884,7 +884,7 @@ structure Program =
                         vectors, ...}) =
          let
             val _ =
-               if !Control.profile = Control.ProfileTime
+               if !Control.profile = Control.ProfileTimeLabel
                   then
                      List.foreach
                      (chunks, fn Chunk.T {blocks, ...} =>

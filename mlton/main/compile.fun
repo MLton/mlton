@@ -454,6 +454,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
              canHandle = get "canHandle",
              cardMap = get "cardMapForMutator",
              currentThread = get "currentThread",
+             curSourceSeqsIndex = get "curSourceSeqsIndex",
              exnStack = get "exnStack",
              frontier = get "frontier",
              limit = get "limit",

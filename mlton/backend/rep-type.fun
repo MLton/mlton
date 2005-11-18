@@ -450,6 +450,7 @@ fun ofGCField (f: GCField.t): t =
          CanHandle => defaultWord
        | CardMap => cPointer ()
        | CurrentThread => cPointer ()
+       | CurSourceSeqsIndex => defaultWord
        | ExnStack => defaultWord
        | Frontier => cPointer ()
        | Limit => cPointer ()

@@ -16,6 +16,7 @@ structure GCField =
          CanHandle
        | CardMap
        | CurrentThread
+       | CurSourceSeqsIndex
        | ExnStack
        | Frontier
        | Limit
@@ -46,6 +47,7 @@ structure GCField =
       val canHandleOffset: Bytes.t ref = ref Bytes.zero
       val cardMapOffset: Bytes.t ref = ref Bytes.zero
       val currentThreadOffset: Bytes.t ref = ref Bytes.zero
+      val curSourceSeqsIndexOffset: Bytes.t ref = ref Bytes.zero
       val exnStackOffset: Bytes.t ref = ref Bytes.zero
       val frontierOffset: Bytes.t ref = ref Bytes.zero
       val limitOffset: Bytes.t ref = ref Bytes.zero
@@ -56,12 +58,13 @@ structure GCField =
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
-      fun setOffsets {canHandle, cardMap, currentThread, exnStack, frontier,
-                      limit, limitPlusSlop, maxFrameSize, signalIsPending,
-                      stackBottom, stackLimit, stackTop} =
+      fun setOffsets {canHandle, cardMap, currentThread, curSourceSeqsIndex, 
+                      exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
+                      signalIsPending, stackBottom, stackLimit, stackTop} =
          (canHandleOffset := canHandle
           ; cardMapOffset := cardMap
           ; currentThreadOffset := currentThread
+          ; curSourceSeqsIndexOffset := curSourceSeqsIndex
           ; exnStackOffset := exnStack
           ; frontierOffset := frontier
           ; limitOffset := limit
@@ -76,6 +79,7 @@ structure GCField =
          fn CanHandle => !canHandleOffset
           | CardMap => !cardMapOffset
           | CurrentThread => !currentThreadOffset
+          | CurSourceSeqsIndex => !curSourceSeqsIndexOffset
           | ExnStack => !exnStackOffset
           | Frontier => !frontierOffset
           | Limit => !limitOffset
@@ -90,6 +94,7 @@ structure GCField =
          fn CanHandle => "CanHandle"
           | CardMap => "CardMap"
           | CurrentThread => "CurrentThread"
+          | CurSourceSeqsIndex => "CurSourceSeqsIndex"
           | ExnStack => "ExnStack"
           | Frontier => "Frontier"
           | Limit => "Limit"

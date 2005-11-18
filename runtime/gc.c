@@ -3544,7 +3544,8 @@ void GC_profileDone (GC_state s) {
         if (DEBUG_PROFILE) 
                 fprintf (stderr, "GC_profileDone ()\n");
         assert (s->profilingIsOn);
-        if (PROFILE_TIME == s->profileKind)
+        if (PROFILE_TIME_FIELD == s->profileKind
+            or PROFILE_TIME_LABEL == s->profileKind)
                 setProfTimer (0);
         s->profilingIsOn = FALSE;
         p = s->profile;
@@ -3814,7 +3815,10 @@ void GC_profileWrite (GC_state s, GC_profile p, int fd) {
         case PROFILE_NONE:
                 die ("impossible PROFILE_NONE");
         break;
-        case PROFILE_TIME:
+        case PROFILE_TIME_FIELD:
+                kind = "time\n";
+        break;
+        case PROFILE_TIME_LABEL:
                 kind = "time\n";
         break;
         }
@@ -3853,28 +3857,33 @@ static GC_state catcherState;
 void GC_handleSigProf (pointer pc) {
         uint frameIndex;
         GC_state s;
-        uint sourceSeqIndex;
+        uint sourceSeqsIndex;
 
         s = catcherState;
         if (DEBUG_PROFILE)
                 fprintf (stderr, "GC_handleSigProf (0x%08x)\n", (uint)pc);
         if (s->amInGC)
-                sourceSeqIndex = SOURCE_SEQ_GC;
+                sourceSeqsIndex = SOURCE_SEQ_GC;
         else {
                 frameIndex = topFrameIndex (s);
                 if (s->frameLayouts[frameIndex].isC)
-                        sourceSeqIndex = s->frameSources[frameIndex];
+                        sourceSeqsIndex = s->frameSources[frameIndex];
                 else {
-                        if (s->textStart <= pc and pc < s->textEnd)
-                                sourceSeqIndex = s->textSources [pc - s->textStart];
-                        else {
-                                if (DEBUG_PROFILE)
-                                        fprintf (stderr, "pc out of bounds\n");
-                                sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+                        if (PROFILE_TIME_LABEL == s->profileKind) {
+                                if (s->textStart <= pc and pc < s->textEnd)
+                                        sourceSeqsIndex = 
+                                                s->textSources [pc - s->textStart];
+                                else {
+                                        if (DEBUG_PROFILE)
+                                                fprintf (stderr, "pc out of bounds\n");
+                                        sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+                                }
+                        } else {
+                                sourceSeqsIndex = s->curSourceSeqsIndex;
                         }
                 }
         }
-        profileInc (s, 1, sourceSeqIndex);
+        profileInc (s, 1, sourceSeqsIndex);
 }
 
 static int compareProfileLabels (const void *v1, const void *v2) {
@@ -3893,6 +3902,7 @@ static void profileTimeInit (GC_state s) {
         uint sourceSeqsIndex;
 
         s->profile = GC_profileNew (s);
+        if (PROFILE_TIME_LABEL == s->profileKind) {
         /* Sort sourceLabels by address. */
         qsort (s->sourceLabels, s->sourceLabelsSize, sizeof (*s->sourceLabels),
                 compareProfileLabels);
@@ -3929,6 +3939,9 @@ static void profileTimeInit (GC_state s) {
         }
         for ( ; p < s->textEnd; ++p)
                 s->textSources[p - s->textStart] = sourceSeqsIndex;
+        } else {
+        s->curSourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+        }
         /*
          * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
          * 
@@ -4540,7 +4553,8 @@ int GC_init (GC_state s, int argc, char **argv) {
                 break;
                 case PROFILE_NONE:
                         die ("impossible PROFILE_NONE");
-                case PROFILE_TIME:
+                case PROFILE_TIME_FIELD:
+                case PROFILE_TIME_LABEL:
                         profileTimeInit (s);
                 break;
                 }

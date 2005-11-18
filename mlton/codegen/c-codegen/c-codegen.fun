@@ -359,7 +359,8 @@ fun outputDeclarations
                 | Control.ProfileCount => "PROFILE_COUNT"
                 | Control.ProfileDrop => "PROFILE_NONE"
                 | Control.ProfileLabel => "PROFILE_NONE"
-                | Control.ProfileTime => "PROFILE_TIME"
+                | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
+                | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in 
             C.callNoSemi ("Main",
                           [C.int align,
@@ -676,7 +677,9 @@ fun output {program as Machine.Program.T {chunks,
                                     print)
                             ))
          end
-      val amTimeProfiling = !Control.profile = Control.ProfileTime
+      val amTimeProfiling = 
+         !Control.profile = Control.ProfileTimeField
+         orelse !Control.profile = Control.ProfileTimeLabel
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
          let
             val {done, print, ...} = outputC ()

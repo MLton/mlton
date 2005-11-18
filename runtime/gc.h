@@ -246,7 +246,8 @@ typedef enum {
         PROFILE_ALLOC,
         PROFILE_COUNT,
         PROFILE_NONE,
-        PROFILE_TIME,
+        PROFILE_TIME_FIELD,
+        PROFILE_TIME_LABEL
 } ProfileKind;
 
 typedef struct GC_source {
@@ -377,6 +378,7 @@ typedef struct GC_state {
          */
         uint crossMapValidSize;
         GC_thread currentThread; /* This points to a thread in the heap. */
+        volatile uint curSourceSeqsIndex; /* Used by time profiling. */
         uint fixedHeap; /* If 0, then no fixed heap. */
         GC_frameLayout *frameLayouts;
         uint frameLayoutsSize;
@@ -505,7 +507,7 @@ typedef struct GC_state {
         bool summary; 
         pointer textEnd;
         /* An array of indices, one entry for each address in the text segment,
-         * giving and index into profileSourceSeqs.
+         * giving an index into profileSourceSeqs.
          */
         uint *textSources;
         pointer textStart;

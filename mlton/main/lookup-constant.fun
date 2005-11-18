@@ -44,6 +44,7 @@ val gcFields =
    [
     "canHandle",
     "currentThread",
+    "curSourceSeqsIndex",
     "exnStack",
     "frontier",
     "cardMapForMutator",

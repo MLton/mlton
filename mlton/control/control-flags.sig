@@ -252,7 +252,8 @@ signature CONTROL_FLAGS =
        | ProfileCount
        | ProfileDrop
        | ProfileLabel
-       | ProfileTime
+       | ProfileTimeField
+       | ProfileTimeLabel
       val profile: profile ref
 
       val profileBranch: bool ref
