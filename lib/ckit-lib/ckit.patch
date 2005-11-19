@@ -1,11 +1,11 @@
 diff -Naur ckit/ckit-lib.mlb ckit-mlton/ckit-lib.mlb
 --- ckit/ckit-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/ckit-lib.mlb	2005-08-18 12:21:04.000000000 -0400
++++ ckit-mlton/ckit-lib.mlb	2005-08-18 09:31:14.000000000 -0400
 @@ -0,0 +1 @@
 +src/ckit-lib.mlb
 diff -Naur ckit/README.mlton ckit-mlton/README.mlton
 --- ckit/README.mlton	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/README.mlton	2005-08-18 12:21:04.000000000 -0400
++++ ckit-mlton/README.mlton	2005-08-17 19:41:36.000000000 -0400
 @@ -0,0 +1,13 @@
 +The following changes were made to the ckit Library, in addition to
 +deriving the {{{.mlb}}} file from the {{{.cm}}} files:
@@ -22,7 +22,7 @@ diff -Naur ckit/README.mlton ckit-mlton/README.mlton
 + * {{{ast/build-ast.sml}}} (modified): Rewrote use of ''or-patterns''.
 diff -Naur ckit/src/ast/ast-sig.sml ckit-mlton/src/ast/ast-sig.sml
 --- ckit/src/ast/ast-sig.sml	2001-10-31 15:22:41.000000000 -0500
-+++ ckit-mlton/src/ast/ast-sig.sml	2005-08-18 12:21:04.000000000 -0400
++++ ckit-mlton/src/ast/ast-sig.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -67,7 +67,12 @@
    datatype declaration
      = TypeDecl of {shadow: {strct:bool} option, tid:tid}
@@ -99,7 +99,7 @@ diff -Naur ckit/src/ast/ast-sig.sml ckit-mlton/src/ast/ast-sig.sml
       location : SourceMap.location,
 diff -Naur ckit/src/ast/build-ast.sml ckit-mlton/src/ast/build-ast.sml
 --- ckit/src/ast/build-ast.sml	2003-08-28 17:58:39.000000000 -0400
-+++ ckit-mlton/src/ast/build-ast.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/build-ast.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -290,7 +290,8 @@
  	of SOME{ntype=NONE,...} => true
  	 | _ => false
@@ -225,7 +225,7 @@ diff -Naur ckit/src/ast/build-ast.sml ckit-mlton/src/ast/build-ast.sml
  					       else if repeated_declarations_ok
 diff -Naur ckit/src/ast/initializer-normalizer.sml ckit-mlton/src/ast/initializer-normalizer.sml
 --- ckit/src/ast/initializer-normalizer.sml	2003-08-28 17:58:39.000000000 -0400
-+++ ckit-mlton/src/ast/initializer-normalizer.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/initializer-normalizer.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -156,7 +156,13 @@
  		   feed (unionNorm (ctype, fields), inits)
  		| SOME _ => fail "Incomplete type for union ref"
@@ -243,7 +243,7 @@ diff -Naur ckit/src/ast/initializer-normalizer.sml ckit-mlton/src/ast/initialize
  	 | Ast.Ellipses => fail "Cannot initialize ellipses"
 diff -Naur ckit/src/ast/pp/pp-ast-adornment-sig.sml ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml
 --- ckit/src/ast/pp/pp-ast-adornment-sig.sml	2000-04-05 14:34:56.000000000 -0400
-+++ ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -1,14 +1,14 @@
  (* Copyright (c) 1998 by Lucent Technologies *)
  
@@ -264,7 +264,7 @@ diff -Naur ckit/src/ast/pp/pp-ast-adornment-sig.sml ckit-mlton/src/ast/pp/pp-ast
 +(* end *)
 diff -Naur ckit/src/ast/pp/pp-ast-ext-sig.sml ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml
 --- ckit/src/ast/pp/pp-ast-ext-sig.sml	2000-04-05 14:34:56.000000000 -0400
-+++ ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -1,13 +1,13 @@
  (* Copyright (c) 1998 by Lucent Technologies *)
  
@@ -289,7 +289,7 @@ diff -Naur ckit/src/ast/pp/pp-ast-ext-sig.sml ckit-mlton/src/ast/pp/pp-ast-ext-s
 +(* end *)
 diff -Naur ckit/src/ast/pp/pp-lib.sml ckit-mlton/src/ast/pp/pp-lib.sml
 --- ckit/src/ast/pp/pp-lib.sml	2000-04-05 14:34:57.000000000 -0400
-+++ ckit-mlton/src/ast/pp/pp-lib.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-lib.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -115,7 +115,10 @@
  
    fun ppId pps ({name,uid,kind,stClass,global,...}: Ast.id) = 
@@ -304,7 +304,7 @@ diff -Naur ckit/src/ast/pp/pp-lib.sml ckit-mlton/src/ast/pp/pp-lib.sml
  	 | _ => ppSymbol pps (name,uid)
 diff -Naur ckit/src/ast/sizeof.sml ckit-mlton/src/ast/sizeof.sml
 --- ckit/src/ast/sizeof.sml	2000-04-05 14:34:55.000000000 -0400
-+++ ckit-mlton/src/ast/sizeof.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/sizeof.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -321,7 +321,9 @@
    and process (sizesErrWarnBug as {sizes, err, warn, bug}) tidtab ty =
        case ty
@@ -318,7 +318,7 @@ diff -Naur ckit/src/ast/sizeof.sml ckit-mlton/src/ast/sizeof.sml
  	     let val {bits,align} = #int sizes
 diff -Naur ckit/src/ast/type-util-sig.sml ckit-mlton/src/ast/type-util-sig.sml
 --- ckit/src/ast/type-util-sig.sml	2001-10-31 15:22:41.000000000 -0500
-+++ ckit-mlton/src/ast/type-util-sig.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/type-util-sig.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -1,10 +1,10 @@
  (* Copyright (c) 1998 by Lucent Technologies *)
  
@@ -340,7 +340,7 @@ diff -Naur ckit/src/ast/type-util-sig.sml ckit-mlton/src/ast/type-util-sig.sml
 +(* end (* local *) *)
 diff -Naur ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
 --- ckit/src/ast/type-util.sml	2001-10-31 15:22:41.000000000 -0500
-+++ ckit-mlton/src/ast/type-util.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ast/type-util.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -282,7 +282,8 @@
    fun isStructOrUnion tidtab ty =
      case reduceTypedef tidtab ty
@@ -393,7 +393,7 @@ diff -Naur ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
  				  )
 diff -Naur ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 --- ckit/src/ckit-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/ckit-lib.mlb	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/ckit-lib.mlb	2005-11-19 13:53:37.000000000 -0500
 @@ -0,0 +1,876 @@
 +
 +ann
@@ -1273,7 +1273,7 @@ diff -Naur ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 +end
 diff -Naur ckit/src/parser/grammar/c.grm.desc ckit-mlton/src/parser/grammar/c.grm.desc
 --- ckit/src/parser/grammar/c.grm.desc	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.grm.desc	2005-08-18 12:23:58.000000000 -0400
++++ ckit-mlton/src/parser/grammar/c.grm.desc	2005-11-19 13:53:36.000000000 -0500
 @@ -0,0 +1,10001 @@
 +1 shift/reduce conflict
 +
@@ -11278,7 +11278,7 @@ diff -Naur ckit/src/parser/grammar/c.grm.desc ckit-mlton/src/parser/grammar/c.gr
 +712 goto table entries
 diff -Naur ckit/src/parser/grammar/c.grm.sig ckit-mlton/src/parser/grammar/c.grm.sig
 --- ckit/src/parser/grammar/c.grm.sig	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.grm.sig	2005-08-18 12:23:58.000000000 -0400
++++ ckit-mlton/src/parser/grammar/c.grm.sig	2005-11-19 13:53:36.000000000 -0500
 @@ -0,0 +1,101 @@
 +signature C_TOKENS =
 +sig
@@ -11383,7 +11383,7 @@ diff -Naur ckit/src/parser/grammar/c.grm.sig ckit-mlton/src/parser/grammar/c.grm
 +end
 diff -Naur ckit/src/parser/grammar/c.grm.sml ckit-mlton/src/parser/grammar/c.grm.sml
 --- ckit/src/parser/grammar/c.grm.sml	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.grm.sml	2005-08-18 12:23:58.000000000 -0400
++++ ckit-mlton/src/parser/grammar/c.grm.sml	2005-11-19 13:53:36.000000000 -0500
 @@ -0,0 +1,3866 @@
 +functor LrValsFun(structure Token : TOKEN 
 +			    ) = 
@@ -15253,7 +15253,7 @@ diff -Naur ckit/src/parser/grammar/c.grm.sml ckit-mlton/src/parser/grammar/c.grm
 +end
 diff -Naur ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex.sml
 --- ckit/src/parser/grammar/c.lex.sml	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.lex.sml	2005-08-18 12:23:55.000000000 -0400
++++ ckit-mlton/src/parser/grammar/c.lex.sml	2005-11-19 13:53:36.000000000 -0500
 @@ -0,0 +1,1053 @@
 +type int = Int.int
 +functor CLexFun(structure Tokens : C_TOKENS 
@@ -16310,7 +16310,7 @@ diff -Naur ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex
 +end
 diff -Naur ckit/src/parser/parse-tree-sig.sml ckit-mlton/src/parser/parse-tree-sig.sml
 --- ckit/src/parser/parse-tree-sig.sml	2000-04-05 14:35:01.000000000 -0400
-+++ ckit-mlton/src/parser/parse-tree-sig.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/parser/parse-tree-sig.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -27,8 +27,10 @@
      | ModAssign | XorAssign | OrAssign | AndAssign
      | LshiftAssign | RshiftAssign 
@@ -16469,7 +16469,7 @@ diff -Naur ckit/src/parser/parse-tree-sig.sml ckit-mlton/src/parser/parse-tree-s
    and declarationExt = 
 diff -Naur ckit/src/parser/parse-tree.sml ckit-mlton/src/parser/parse-tree.sml
 --- ckit/src/parser/parse-tree.sml	2000-04-05 14:35:01.000000000 -0400
-+++ ckit-mlton/src/parser/parse-tree.sml	2005-08-18 12:21:05.000000000 -0400
++++ ckit-mlton/src/parser/parse-tree.sml	2005-08-17 19:41:36.000000000 -0400
 @@ -23,8 +23,10 @@
      | ModAssign | XorAssign | OrAssign | AndAssign
      | LshiftAssign | RshiftAssign 
