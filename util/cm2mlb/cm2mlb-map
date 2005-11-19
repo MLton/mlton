@@ -5,7 +5,7 @@ $ml-yacc-lib.cm                    $(SML_LIB)/mlyacc-lib
 $ml-yacc-lib.cm/ml-yacc-lib.cm     $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 $cml            $(SML_LIB)/cml
-$cml/cml.mlb    $(SML_LIB)/cml/cml.mlb
+$cml/cml.cm     $(SML_LIB)/cml/cml.mlb
 
 $c          $(SML_LIB)/mlnlffi-lib
 $c/c.cm     $(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb
