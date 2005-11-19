@@ -138,7 +138,7 @@ struct
                       let
                          val cmLibDescr = CM.Library.descr cmLib
                          val cmLibOSString = CM.Library.osstring cmLib
-
+                            
                          fun mlbLibDef () =
                             let
                                val {base, ext} = OS.Path.splitBaseExt cmLibOSString
@@ -146,40 +146,36 @@ struct
                             in
                                mlbLib
                             end
-                                  
-                         fun doitAnchoredPath (anchor, path) =
-                            case peekAnchorMap anchor of
-                               SOME mlbPath => 
-                                  let
-                                     val {dir, file} = OS.Path.splitDirFile path
-                                     val {base, ext} = OS.Path.splitBaseExt file
-                                     val file = OS.Path.joinBaseExt {base = base, ext = SOME "mlb"}
-                                     val path = OS.Path.joinDirFile {dir = dir, file = file}
-                                     val mlbLib = OS.Path.joinDirFile {dir = mlbPath, file = path}
-                                  in 
-                                     concat ["(* ", cmLibDescr, " ====> *) ", mlbLib]
-                                  end
-                             | NONE => 
-                                  concat ["(* ", cmLibDescr, " =??=> *) ", mlbLibDef ()]
+
+                         fun doitAnchoredPath arcs =
+                            let
+                               fun loop (prefix, suffix) =
+                                  if List.null prefix 
+                                     then concat ["(* ", cmLibDescr, " =??=> *) ", mlbLibDef ()]
+                                     else case peekAnchorMap (String.concatWith "/" (List.rev prefix)) of
+                                             SOME mlbPath =>
+                                                concat ["(* ", cmLibDescr, " ====> *) ", mlbPath ^ suffix]
+                                           | NONE =>
+                                                let
+                                                   val suffix =
+                                                      if suffix = ""
+                                                         then OS.Path.joinBaseExt
+                                                              {base = #base (OS.Path.splitBaseExt (List.hd prefix)),
+                                                               ext = SOME "mlb"}
+                                                         else (List.hd prefix) ^ suffix
+                                                in
+                                                   loop (List.tl prefix, "/" ^ suffix)
+                                                end
+                            in
+                               loop (List.rev arcs, "")
+                            end
 
                          val mlbLib =
                             if String.sub (cmLibDescr, 0) = #"$"
                                then case String.fields (fn #"/" => true | _ => false) cmLibDescr of
-                                       ["$", abbrev] =>
-                                          let
-                                             val anchor = OS.Path.base abbrev
-                                             val path = abbrev
-                                          in
-                                             doitAnchoredPath (anchor, path)
-                                          end
-                                     | anchor::path =>
-                                          let
-                                             val anchor = String.extract (anchor, 1, NONE)
-                                             val path = String.concatWith "/" path
-                                          in
-                                             doitAnchoredPath (anchor, path)
-                                          end
-                                     | _ => die "strange anchored path"
+                                       "$" :: (arcs as (arc0 :: _)) => 
+                                          doitAnchoredPath (("$" ^ arc0) :: arcs)
+                                     | arcs => doitAnchoredPath arcs
                                else concat ["(* ", cmLibOSString, " ===> *) ", mlbLibDef ()]
                       in
                          concat 
