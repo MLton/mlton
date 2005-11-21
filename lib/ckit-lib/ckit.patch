@@ -393,7 +393,7 @@ diff -Naur ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
  				  )
 diff -Naur ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 --- ckit/src/ckit-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ ckit-mlton/src/ckit-lib.mlb	2005-11-19 14:44:19.000000000 -0500
++++ ckit-mlton/src/ckit-lib.mlb	2005-11-21 11:29:39.000000000 -0500
 @@ -0,0 +1,876 @@
 +
 +ann
@@ -1272,8 +1272,8 @@ diff -Naur ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 +
 +end
 diff -Naur ckit/src/parser/grammar/c.grm.sml ckit-mlton/src/parser/grammar/c.grm.sml
---- ckit/src/parser/grammar/c.grm.sml	2005-11-19 14:44:17.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.grm.sml	2005-11-19 14:44:17.000000000 -0500
+--- ckit/src/parser/grammar/c.grm.sml	2005-11-21 11:29:22.000000000 -0500
++++ ckit-mlton/src/parser/grammar/c.grm.sml	2005-11-21 11:29:23.000000000 -0500
 @@ -1866,10 +1866,11 @@
  (T 5) $$ (T 4) $$ (T 3) $$ (T 2) $$ (T 1) $$ (T 0)end
  structure Actions =
@@ -1288,8 +1288,8 @@ diff -Naur ckit/src/parser/grammar/c.grm.sml ckit-mlton/src/parser/grammar/c.grm
  case (i392,stack)
  of  ( 0, ( ( _, ( MlyValue.tu tu, tu1left, tu1right)) :: rest671)) =>
 diff -Naur ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex.sml
---- ckit/src/parser/grammar/c.lex.sml	2005-11-19 14:44:17.000000000 -0500
-+++ ckit-mlton/src/parser/grammar/c.lex.sml	2005-11-19 14:44:17.000000000 -0500
+--- ckit/src/parser/grammar/c.lex.sml	2005-11-21 11:29:21.000000000 -0500
++++ ckit-mlton/src/parser/grammar/c.lex.sml	2005-11-21 11:29:21.000000000 -0500
 @@ -1,3 +1,4 @@
 +type int = Int.int
  functor CLexFun(structure Tokens : C_TOKENS 

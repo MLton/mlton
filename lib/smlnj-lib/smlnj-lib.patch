@@ -1,6 +1,6 @@
 diff -Naur smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls-lib.mlb
 --- smlnj-lib/Controls/controls-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/Controls/controls-lib.mlb	2005-11-19 14:44:42.000000000 -0500
++++ smlnj-lib-mlton/Controls/controls-lib.mlb	2005-11-21 11:37:31.000000000 -0500
 @@ -0,0 +1,170 @@
 +
 +ann
@@ -174,7 +174,7 @@ diff -Naur smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls
 +end
 diff -Naur smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/hash-cons-lib.mlb
 --- smlnj-lib/HashCons/hash-cons-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2005-11-19 14:44:42.000000000 -0500
++++ smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2005-11-21 11:37:34.000000000 -0500
 @@ -0,0 +1,144 @@
 +
 +ann
@@ -447,8 +447,8 @@ diff -Naur smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-element
  	  in
  	    case SS.getc ss
 diff -Naur smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
---- smlnj-lib/HTML/html-gram.sml	2005-11-19 14:44:41.000000000 -0500
-+++ smlnj-lib-mlton/HTML/html-gram.sml	2005-11-19 14:44:41.000000000 -0500
+--- smlnj-lib/HTML/html-gram.sml	2005-11-21 11:37:24.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-gram.sml	2005-11-21 11:37:24.000000000 -0500
 @@ -1226,10 +1226,11 @@
  (T 3) $$ (T 2) $$ (T 0)end
  structure Actions =
@@ -463,8 +463,8 @@ diff -Naur smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
  case (i392,stack)
  of  ( 0, ( ( _, ( _, _, EndHTML1right)) :: ( _, ( MlyValue.Body Body,
 diff -Naur smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
---- smlnj-lib/HTML/html-lex.sml	2005-11-19 14:44:41.000000000 -0500
-+++ smlnj-lib-mlton/HTML/html-lex.sml	2005-11-19 14:44:41.000000000 -0500
+--- smlnj-lib/HTML/html-lex.sml	2005-11-21 11:37:24.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-lex.sml	2005-11-21 11:37:24.000000000 -0500
 @@ -1,3 +1,4 @@
 +type int = Int.int
  functor HTMLLexFn (
@@ -562,7 +562,7 @@ diff -Naur smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
  	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
 diff -Naur smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 --- smlnj-lib/HTML/html-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/HTML/html-lib.mlb	2005-11-19 14:44:42.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-lib.mlb	2005-11-21 11:37:38.000000000 -0500
 @@ -0,0 +1,300 @@
 +
 +ann
@@ -866,7 +866,7 @@ diff -Naur smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 +end
 diff -Naur smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 --- smlnj-lib/INet/inet-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/INet/inet-lib.mlb	2005-11-19 14:44:43.000000000 -0500
++++ smlnj-lib-mlton/INet/inet-lib.mlb	2005-11-21 11:37:42.000000000 -0500
 @@ -0,0 +1,144 @@
 +
 +ann
@@ -1014,7 +1014,7 @@ diff -Naur smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 +end
 diff -Naur smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 --- smlnj-lib/PP/pp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/PP/pp-lib.mlb	2005-11-19 14:44:43.000000000 -0500
++++ smlnj-lib-mlton/PP/pp-lib.mlb	2005-11-21 11:37:43.000000000 -0500
 @@ -0,0 +1,212 @@
 +
 +ann
@@ -1230,7 +1230,7 @@ diff -Naur smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 +end
 diff -Naur smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/reactive-lib.mlb
 --- smlnj-lib/Reactive/reactive-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/Reactive/reactive-lib.mlb	2005-11-19 14:44:43.000000000 -0500
++++ smlnj-lib-mlton/Reactive/reactive-lib.mlb	2005-11-21 11:37:43.000000000 -0500
 @@ -0,0 +1,70 @@
 +
 +ann
@@ -1323,7 +1323,7 @@ diff -Naur smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
 + * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
 diff -Naur smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-lib.mlb
 --- smlnj-lib/RegExp/regexp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/RegExp/regexp-lib.mlb	2005-11-19 14:44:43.000000000 -0500
++++ smlnj-lib-mlton/RegExp/regexp-lib.mlb	2005-11-21 11:37:44.000000000 -0500
 @@ -0,0 +1,214 @@
 +
 +ann
@@ -1558,7 +1558,7 @@ diff -Naur smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 +end
 diff -Naur smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
 --- smlnj-lib/Unix/unix-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/Unix/unix-lib.mlb	2005-11-19 14:44:44.000000000 -0500
++++ smlnj-lib-mlton/Unix/unix-lib.mlb	2005-11-21 11:37:44.000000000 -0500
 @@ -0,0 +1,45 @@
 +
 +ann
@@ -1760,7 +1760,7 @@ diff -Naur smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack-set-
      structure Key = K
 diff -Naur smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
 --- smlnj-lib/Util/smlnj-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ smlnj-lib-mlton/Util/smlnj-lib.mlb	2005-11-19 14:44:46.000000000 -0500
++++ smlnj-lib-mlton/Util/smlnj-lib.mlb	2005-11-21 11:38:02.000000000 -0500
 @@ -0,0 +1,1099 @@
 +
 +ann
