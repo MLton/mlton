@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To report a bug, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. Please include the complete SML program that caused the problem and a log of a compile of the program with <tt>-verbose&nbsp;2</tt>.  For large messages (over 512K), please send an email containing the discussion text and a link to any large files.  You may use our <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> page for uploading large files. <p>
+To report a bug, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>. Please include the complete SML program that caused the problem and a log of a compile of the program with <tt>-verbose&nbsp;2</tt>.  For large messages (over 512K), please send an email containing the discussion text and a link to any large files.  You may use our <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> page for uploading large files. <p>
 There are some <a href="UnresolvedBugs">UnresolvedBugs</a> that we don't plan to fix. 
 </p>
 <p>
@@ -71,5 +71,5 @@ We also maintain a list of bugs found with each release.
 
 <p>
 <hr>
-Last edited on 2005-08-31 23:32:42 by <span title="adsl-64-166-226-67.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:18:45 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

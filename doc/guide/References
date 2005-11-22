@@ -27,7 +27,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,8 +51,8 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a href="#A">A</a> <a href="#B">B</a> <a href="#C">C</a> <a href="#D">D</a> <a href="#E">E</a> <a href="#F">F</a> <a href="#G">G</a> <a href="#H">H</a> <a href="#I">I</a> <a href="#J">J</a> <a href="#K">K</a> <a href="#L">L</a> <a href="#M">M</a> <a href="#N">N</a> <a href="#O">O</a> <a href="#P">P</a> <a href="#Q">Q</a> <a href="#R">R</a> <a href="#S">S</a> <a href="#T">T</a> <a href="#U">U</a> <a href="#V">V</a> <a href="#W">W</a> <a href="#X">X</a> <a href="#Y">Y</a> <a href="#Z">Z</a> <p>
-<a id="A"></a> 
+<a href="#A_References">A</a> <a href="#B_References">B</a> <a href="#C_References">C</a> <a href="#D_References">D</a> <a href="#E_References">E</a> <a href="#F_References">F</a> <a href="#G_References">G</a> <a href="#H_References">H</a> <a href="#I_References">I</a> <a href="#J_References">J</a> <a href="#K_References">K</a> <a href="#L_References">L</a> <a href="#M_References">M</a> <a href="#N_References">N</a> <a href="#O_References">O</a> <a href="#P_References">P</a> <a href="#Q_References">Q</a> <a href="#R_References">R</a> <a href="#S_References">S</a> <a href="#T_References">T</a> <a href="#U_References">U</a> <a href="#V_References">V</a> <a href="#W_References">W</a> <a href="#X_References">X</a> <a href="#Y_References">Y</a> <a href="#Z_References">Z</a> <p>
+<a id="A_References"></a> 
 </p>
 
     <ul>
@@ -77,7 +77,7 @@
 
 
 <p>
-<a id="B"></a> 
+<a id="B_References"></a> 
 </p>
 
     <ul>
@@ -146,7 +146,7 @@
 
 
 <p>
-<a id="C"></a> 
+<a id="C_References"></a> 
 </p>
 
     <ul>
@@ -168,7 +168,7 @@
 
 
 <p>
-<a id="D"></a> 
+<a id="D_References"></a> 
 </p>
 
     <ul>
@@ -178,12 +178,24 @@
  <a id="Danvy98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/danvy98functional.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Functional Unparsing</a>.  Olivier Danvy.  BRICS Technical Report RS 98-12, 1998. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <a id="Dubois95"></a>  <a class="external" href="ftp://ftp.inria.fr/INRIA/Projects/cristal/Francois.Rouaix/generics.dvi.Z"><img src="moin-ftp.png" alt="[FTP]" height="11" width="11">Extensional Polymorphism</a>.  Catherin Dubois, Francois Rouaix, and Pierre Weis.  <a href="#POPL">POPL</a> 1995. 
+</p>
+</li>
+
+        <ul>
+
+  <em>An extension of ML that allows the definition of ad-hoc   polymorphic functions by inspecting the type of their argument.</em> 
+        </ul>
+
+
 
     </ul>
 
 
 <p>
-<a id="E"></a> 
+<a id="E_References"></a> 
 </p>
 
     <ul>
@@ -203,7 +215,7 @@
 
 
 <p>
-<a id="F"></a> 
+<a id="F_References"></a> 
 </p>
 
     <ul>
@@ -235,12 +247,24 @@
  <a id="FluetPucella02"></a>  <a class="external" href="http://arxiv.org/abs/cs.PL/0403034"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Phantom Types and Subtyping</a>.  Matthew Fluet and Riccardo Pucella.  <a href="#TCS">TCS</a> 2002. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <a id="Furuse01"></a>  <a class="external" href="http://pauillac.inria.fr/~furuse/publications/jfla2001.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Generic Polymorphism in ML</a>.  J. Furuse.  <a href="#JFLA">JFLA</a> 2001. 
+</p>
+</li>
+
+        <ul>
+
+  <em>The formalism behind G'CAML, which has an approach to ad-hoc   polymorphism based on <a href = "References#Dubois94">Dubois94</a>, the differences being in   how type checking works an an improved compilation approach for   typecase that does the matching at compile time, not run time.</em> 
+        </ul>
+
+
 
     </ul>
 
 
 <p>
-<a id="G"></a> 
+<a id="G_References"></a> 
 </p>
 
     <ul>
@@ -267,7 +291,7 @@
 
 
 <p>
-<a id="H"></a> 
+<a id="H_References"></a> 
 </p>
 
     <ul>
@@ -292,7 +316,7 @@
 
 
 <p>
-<a id="I"></a> <a id="J"></a> 
+<a id="I_References"></a> <a id="J_References"></a> 
 </p>
 
     <ul>
@@ -307,7 +331,7 @@
 
 
 <p>
-<a id="K"></a> 
+<a id="K_References"></a> 
 </p>
 
     <ul>
@@ -327,12 +351,17 @@
         </ul>
 
 
+    <li class="gap">
+<p>
+ <a id="Kennedy04"></a>  <a class="external" href="http://research.microsoft.com/~akenn/fun/picklercombinators.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Pickler Combinators</a>.  Andrew Kennedy.  <a href="#JFP">JFP</a>, 14(6): 727-739, 2004. 
+</p>
+</li>
 
     </ul>
 
 
 <p>
-<a id="L"></a> 
+<a id="L_References"></a> 
 </p>
 
     <ul>
@@ -374,7 +403,7 @@
 
 
 <p>
-<a id="M"></a> 
+<a id="M_References"></a> 
 </p>
 
     <ul>
@@ -456,7 +485,7 @@
 
 
 <p>
-<a id="N"></a> 
+<a id="N_References"></a> 
 </p>
 
     <ul>
@@ -483,7 +512,7 @@
 
 
 <p>
-<a id="O"></a> 
+<a id="O_References"></a> 
 </p>
 
     <ul>
@@ -498,7 +527,7 @@
 
 
 <p>
-<a id="P"></a> 
+<a id="P_References"></a> 
 </p>
 
     <ul>
@@ -525,7 +554,7 @@
 
 
 <p>
-<a id="Q"></a> <a id="R"></a> 
+<a id="Q_References"></a> <a id="R_References"></a> 
 </p>
 
     <ul>
@@ -569,7 +598,7 @@
 
 
 <p>
-<a id="S"></a> 
+<a id="S_References"></a> 
 </p>
 
     <ul>
@@ -584,6 +613,13 @@
  <a id="Scott00"></a>  <a class="external" href="http://citeseer.ist.psu.edu/scott00when.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">When Do Match-Compilation Heuristics Matter</a>.  Kevin Scott and Norman Ramsey.  University of Virginia Technical Report CS-2000-13. 
 </p>
 </li>
+
+        <ul>
+
+  <em>Modified SML/NJ to experimentally compare a number of   match-compilation heuristics and showed that choice of heuristic   usually does not significantly affect code size or run time.</em> 
+        </ul>
+
+
     <li class="gap">
 <p>
  <a id="Sestoft96"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sestoft96ml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML pattern match compilation and partial evaluation</a>.  Peter Sestoft.  Partial Evaluation, 1996.  
@@ -618,7 +654,7 @@
 
 
 <p>
-<a id="T"></a> 
+<a id="T_References"></a> 
 </p>
 
     <ul>
@@ -630,7 +666,7 @@
 </li>
     <li class="gap">
 <p>
- <a id="Tofte90"></a>  Type Inference for Polymorphic References.  Mads Tofte.  Information and Computation, 89(1), 1990. 
+ <a id="Tofte90"></a>  Type Inference for Polymorphic References.  Mads Tofte.  Information and Computation, 89(1_References), 1990. 
 </p>
 </li>
 
@@ -638,7 +674,7 @@
 
 
 <p>
-<a id="U"></a> 
+<a id="U_References"></a> 
 </p>
 
     <ul>
@@ -653,7 +689,7 @@
 
 
 <p>
-<a id="V"></a> <a id="W"></a> 
+<a id="V_References"></a> <a id="W_References"></a> 
 </p>
 
     <ul>
@@ -716,7 +752,7 @@
 
 
 <p>
-<a id="X"></a> <a id="Y"></a> <a id="Z"></a> 
+<a id="X_References"></a> <a id="Y_References"></a> <a id="Z_References"></a> 
 </p>
 <h2 id="head-a90aba13b6feb8ff1a5141d94cb1fc2fe96e9477">Abbreviations</h2>
 
@@ -800,5 +836,5 @@
 
 <p>
 <hr>
-Last edited on 2005-07-26 18:19:15 by <span title="adsl-64-166-226-32.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-11-14 23:08:59 by <span title="fox.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

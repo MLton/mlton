@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -314,7 +314,21 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Pass argument to the runtime system via <tt>@MLton</tt>.  The argument    will be processed before other <tt>@MLton</tt> command line switches.    Multiple uses of <tt>-runtime</tt> are allowed, and will pass all the    arguments in order.  If the same runtime switch occurs more than    once, then the last setting will take effect. 
+   Pass argument to the runtime system via <tt>@MLton</tt>.  The argument    will be processed before other <tt>@MLton</tt> command line switches.    Multiple uses of <tt>-runtime</tt> are allowed, and will pass all the    arguments in order.  If the same runtime switch occurs more than    once, then the last setting will take effect.  There is no need to    supply the leading <tt>@MLton</tt> or the trailing <tt>--</tt>; these    will be supplied automatically.  <p>
+   An argument to <tt>-runtime</tt> may contain spaces, which will cause    the argument to be treated as a sequence of words by the runtime.    For example the command line 
+</p>
+   
+<pre>mlton -runtime 'ram-slop 0.4' foo.sml</pre><p>
+   is effectively the same as 
+</p>
+   
+<pre>foo @MLton ram-slop 0.4 --</pre><p>
+   An executable created with <tt>-runtime&nbsp;stop</tt> doesn't process any    <tt>@MLton</tt> arguments.  This is useful to create an executable,    e.g. <tt>echo</tt>, that must treat <tt>@MLton</tt> like any other    command-line argument.  
+</p>
+   
+<pre>% mlton -runtime stop echo.sml
+% echo @MLton --
+@MLton --</pre>
             </ul>
 
 
@@ -487,5 +501,5 @@ after type checking </td>
 
 <p>
 <hr>
-Last edited on 2005-09-05 21:54:58 by <span title="adsl-64-166-225-193.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-27 18:15:36 by <span title="adsl-64-170-115-30.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

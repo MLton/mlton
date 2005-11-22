@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -107,7 +107,7 @@ but got: [real] * [int]
 Here the brackets make it easy to see that the components do not match. 
 </p>
 <p>
-MLton's type checker is fairly new.  If you encounter a difference between MLton and another SML compiler, or even with an older version of MLton, and are not able to determine if it is a bug, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>.  We would also appreciate feedback on any type error messages that you find confusing, or suggestions you may have for improvements to error messages. 
+MLton's type checker is fairly new.  If you encounter a difference between MLton and another SML compiler, or even with an older version of MLton, and are not able to determine if it is a bug, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>.  We would also appreciate feedback on any type error messages that you find confusing, or suggestions you may have for improvements to error messages. 
 </p>
 <h2 id="head-e849875c2946f3612529e7b5c9eeeb137490f29b">The shortest/most-recent rule for type names</h2>
 <p>
@@ -199,5 +199,5 @@ This error reflects the fact that the signature requires type <tt>u</tt> to equa
 
 <p>
 <hr>
-Last edited on 2005-01-24 15:10:30 by <span title="cfs35.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:21:09 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

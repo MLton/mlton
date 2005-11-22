@@ -24,11 +24,30 @@
 <link rel="Appendix" title="mlton-20050731-1.sparc-solaris.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.sparc-solaris.tgz">
 <link rel="Appendix" title="mlton-20050731-1.src.rpm" href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.rpm">
 <link rel="Appendix" title="mlton-20050731-1.src.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20050731-1.src.tgz">
+<link rel="Appendix" title="mlton-20051102-1.i386-cygwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051102-1.i386-cygwin.tgz">
+<link rel="Appendix" title="mlton-20051102-1.powerpc-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051102-1.powerpc-darwin.tgz">
+<link rel="Appendix" title="mlton-20051108-1.i386-mingw.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051108-1.i386-mingw.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-cygwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-cygwin.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-freebsd.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-freebsd.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-linux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-linux.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-mingw.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-mingw.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-netbsd.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-netbsd.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386-openbsd.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-openbsd.tgz">
+<link rel="Appendix" title="mlton-20051109-1.i386.rpm" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386.rpm">
+<link rel="Appendix" title="mlton-20051109-1.powerpc-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.powerpc-darwin.tgz">
+<link rel="Appendix" title="mlton-20051109-1.sparc-solaris.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.sparc-solaris.tgz">
+<link rel="Appendix" title="mlton-20051109-1.src.rpm" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.src.rpm">
+<link rel="Appendix" title="mlton-20051109-1.src.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.src.tgz">
 <link rel="Appendix" title="mlton_20050731-1.diff.gz" href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.diff.gz">
 <link rel="Appendix" title="mlton_20050731-1.dsc" href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1.dsc">
 <link rel="Appendix" title="mlton_20050731-1_i386.changes" href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1_i386.changes">
 <link rel="Appendix" title="mlton_20050731-1_i386.deb" href="http://mlton.org/pages/Experimental/attachments/mlton_20050731-1_i386.deb">
 <link rel="Appendix" title="mlton_20050731.orig.tar.gz" href="http://mlton.org/pages/Experimental/attachments/mlton_20050731.orig.tar.gz">
+<link rel="Appendix" title="mlton_20051109-1.diff.gz" href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1.diff.gz">
+<link rel="Appendix" title="mlton_20051109-1.dsc" href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1.dsc">
+<link rel="Appendix" title="mlton_20051109-1_i386.changes" href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1_i386.changes">
+<link rel="Appendix" title="mlton_20051109-1_i386.deb" href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1_i386.deb">
+<link rel="Appendix" title="mlton_20051109.orig.tar.gz" href="http://mlton.org/pages/Experimental/attachments/mlton_20051109.orig.tar.gz">
 </head>
 
 <body lang="en" dir="ltr">
@@ -40,7 +59,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,34 +92,240 @@ This page is for experimental releases of MLton.  These versions are not as well
 
     <li>
 <p>
- Compiler: better exception history 
+ New license: BSD-style instead of GPL. 
 </p>
 </li>
     <li>
 <p>
- FFI: support for symbols 
+ New platforms: x86/MinGW, hppa/Linux. 
 </p>
 </li>
     <li>
 <p>
- Libraries: <tt>Int1</tt>, <tt>MLton.CallStack</tt>,  <tt>MLton.Process.create</tt>, <tt>Word1</tt> 
+ Compiler: better exception history. 
 </p>
 </li>
     <li>
 <p>
- MLBs: <tt>warnExnMatch</tt> annotation 
+ FFI: support for symbols. 
 </p>
 </li>
     <li>
 <p>
- Profiling: better inclusion/exclusion of code 
+ Libraries: <tt>Int1</tt>, <tt>MLton.CallStack</tt>,  <tt>MLton.Process.create</tt>, <tt>Word1</tt>. 
 </p>
 </li>
     <li>
 <p>
- Tools: updates of mllex and mlyacc from SML/NJ 
+ MLBs: <tt>warnExnMatch</tt> annotation. 
 </p>
 </li>
+    <li>
+<p>
+ Profiling: better inclusion/exclusion of code. 
+</p>
+</li>
+    <li>
+<p>
+ Tools: updates of mllex and mlyacc from SML/NJ. 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-0e3b62959b790d2ab3ea48811fd819acd889cd24">20051109 binary packages</h2>
+
+    <ul>
+
+    <li>
+<p>
+ x86  
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-cygwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> 1.5.18-1 
+</p>
+</li>
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-freebsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 5.4 
+</p>
+</li>
+        <li>
+<p>
+ Linux 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1_i386.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> sid 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RedHat</a> 7.1 
+</p>
+</li>
+            <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tgz</a> for other distributions (glibc 2.3) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051108-1.i386-mingw.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a> 
+</p>
+</li>
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-netbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 2.0.2 
+</p>
+</li>
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.i386-openbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 3.7 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ PowerPC 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 7.9.0 (Mac OS X) 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Sparc 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.sparc-solaris.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Solaris</a> 8 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-4a3ee97e74efdeedf7a6690a0962c3e5674109ea">20051109 sources</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.src.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source tgz</a> 
+</p>
+</li>
+    <li>
+<p>
+ Debian <a href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1.dsc"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dsc</a>,   <a href="http://mlton.org/pages/Experimental/attachments/mlton_20051109-1.diff.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">diff.gz</a>,  <a href="http://mlton.org/pages/Experimental/attachments/mlton_20051109.orig.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">orig.tar.gz</a> 
+</p>
+</li>
+    <li>
+<p>
+ R<strong></strong>edHat <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051109-1.src.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source rpm</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-fa8a75e4310fa61a1be9c6fef3a2788dff704576">20051108 binary packages</h2>
+
+    <ul>
+
+    <li>
+<p>
+ x86 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051108-1.i386-mingw.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a> 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-cc061b2e542c1d0cf34c23eeaba9f154189a93cd">20051102 binary packages</h2>
+
+    <ul>
+
+    <li>
+<p>
+ x86  
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051102-1.i386-cygwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> 1.5.18-1 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ PowerPC 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051102-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 7.9.0 (Mac OS X) 
+</p>
+</li>
+
+        </ul>
+
+
 
     </ul>
 
@@ -228,5 +453,5 @@ This page is for experimental releases of MLton.  These versions are not as well
 
 <p>
 <hr>
-Last edited on 2005-08-02 01:10:29 by <span title="adsl-66-126-175-21.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-11-10 06:49:35 by <span title="71.141.5.253"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

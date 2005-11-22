@@ -62,6 +62,7 @@ val keepSML = ref false
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
+val profileTimeSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
 val showAnns: bool ref = ref false
 val stop = ref Place.OUT
@@ -350,7 +351,10 @@ fun makeOptions {usage} =
                             | "count" => ProfileCount
                             | "drop" => ProfileDrop
                             | "label" => ProfileLabel
-                            | "time" => ProfileTime
+                            | "time" => (profileTimeSet := true
+                                         ; ProfileTimeLabel)
+                            | "time-field" => ProfileTimeField
+                            | "time-label" => ProfileTimeLabel
                             | _ => usage (concat
                                           ["invalid -profile arg: ", s]))))),
        (Normal, "profile-branch", " {false|true}",
@@ -535,6 +539,11 @@ fun commandLine (args: string list): unit =
                              Out.standard)
              ; let open OS.Process in exit success end)
          else ()
+      val () = if !profileTimeSet
+                  then (case !codegen of
+                           Native => profile := ProfileTimeLabel
+                         | _ => profile := ProfileTimeField)
+                  else ()
       val () = if !exnHistory
                   then (case !profile of
                            ProfileNone => profile := ProfileCallStack
@@ -643,7 +652,8 @@ fun commandLine (args: string list): unit =
           | OpenBSD => ()
           | Solaris => ()
           | _ =>
-               if !profile = ProfileTime
+               if !profile = ProfileTimeField 
+                  orelse !profile = ProfileTimeLabel
                   then usage (concat ["can't use -profile time on ",
                                       MLton.Platform.OS.toString targetOS])
                else ()

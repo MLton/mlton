@@ -190,24 +190,6 @@ extern struct GC_state gcState;
                 Return();                                                       \
         } while (0)                                                             \
 
-#if (defined __APPLE_CC__)
-
-#define DeclareProfileLabel(l)                  \
-        void l()
-
-#define ProfileLabel(l)                                         \
-        __asm__ __volatile__ (".globl _" #l "\n_" #l ":" : : )
-
-#else
-
-#define DeclareProfileLabel(l)                                  \
-        void l() __attribute__ ((alias (#l "_internal")))
-
-#define ProfileLabel(l)                                 \
-        __asm__ __volatile__ (#l "_internal:" : : )
-
-#endif
-
 /* ------------------------------------------------- */
 /*                       Real                        */
 /* ------------------------------------------------- */

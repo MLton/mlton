@@ -319,6 +319,7 @@ signature BASIS_EXTRA =
 
       sharing type MLton.IntInf.t = IntInf.int
       sharing type MLton.Process.pid = Posix.Process.pid
+      sharing type MLton.ProcEnv.gid = Posix.ProcEnv.gid
       sharing type MLton.Signal.t = Posix.Signal.signal
       sharing type MLton.Word.t = Word.word
       sharing type MLton.Word8.t = Word8.word

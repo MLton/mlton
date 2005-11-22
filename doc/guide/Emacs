@@ -27,7 +27,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -68,12 +68,12 @@ There are a few Emacs modes for SML.
 
         <li>
 <p>
- <a href="http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html">http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html</a> 
+ <a class="external" href="http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.xemacs.org/Documentation/packages/html/sml-mode_3.html</a> 
 </p>
 </li>
         <li>
 <p>
- <a href="http://www.smlnj.org/doc/Emacs/sml-mode.html">http://www.smlnj.org/doc/Emacs/sml-mode.html</a> 
+ <a class="external" href="http://www.smlnj.org/doc/Emacs/sml-mode.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.smlnj.org/doc/Emacs/sml-mode.html</a> 
 </p>
 </li>
 
@@ -83,13 +83,13 @@ There are a few Emacs modes for SML.
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
  contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
 </p>
 </li>
     <li class="gap">
 <p>
- <a href="http://primate.net/~itz/mindent.tar">http://primate.net/~itz/mindent.tar</a>, developed by Ian Zimmerman,  who writes: 
+ <a class="external" href="http://primate.net/~itz/mindent.tar"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://primate.net/~itz/mindent.tar</a>, developed by Ian Zimmerman,  who writes: 
 </p>
 </li>
 
@@ -113,7 +113,7 @@ There are a couple of modes for editing <a href="MLBasis"> ML Basis</a> files.
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
  
 </p>
 </li>
@@ -158,5 +158,5 @@ Alternatively, you could use a sed script to rewrite MLton's errors. Here is one
 
 <p>
 <hr>
-Last edited on 2005-08-06 22:25:50 by <span title="pool-70-22-241-24.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:19:05 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

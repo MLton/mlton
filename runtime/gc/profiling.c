@@ -261,7 +261,10 @@ void GC_profileWrite (GC_state s, GC_profileData p, int fd) {
   case PROFILE_NONE:
     die ("impossible PROFILE_NONE");
     break;
-  case PROFILE_TIME:
+  case PROFILE_TIME_FIELD:
+    kind = "time\n";
+    break;
+  case PROFILE_TIME_LABEL:
     kind = "time\n";
     break;
   }
@@ -315,28 +318,32 @@ static GC_state handleSigProfState;
 void GC_handleSigProf (pointer pc) {
   GC_frameIndex frameIndex;
   GC_state s;
-  GC_sourceSeqIndex sourceSeqIndex;
+  GC_sourceSeqIndex sourceSeqsIndex;
 
   s = handleSigProfState;
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_handleSigProf ("FMTPTR")\n", (uintptr_t)pc);
   if (s->amInGC)
-    sourceSeqIndex = SOURCE_SEQ_GC;
+    sourceSeqsIndex = SOURCE_SEQ_GC;
   else {
     frameIndex = getStackTopFrameIndex (s, getStackCurrent (s));
     if (C_FRAME == s->frameLayouts[frameIndex].kind)
-      sourceSeqIndex = s->sourceMaps.frameSources[frameIndex];
+      sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
     else {
+      if (PROFILE_TIME_LABEL == s->profiling.kind) {
       if (s->sourceMaps.textStart <= pc and pc < s->sourceMaps.textEnd)
-        sourceSeqIndex = s->sourceMaps.textSources [pc - s->sourceMaps.textStart];
+        sourceSeqsIndex = s->sourceMaps.textSources [pc - s->sourceMaps.textStart];
       else {
         if (DEBUG_PROFILE)
           fprintf (stderr, "pc out of bounds\n");
-        sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+        sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+      }
+      } else {
+        sourceSeqsIndex = s->sourceMaps.curSourceSeqsIndex;
       }
     }
   }
-  incForProfiling (s, 1, sourceSeqIndex);
+  incForProfiling (s, 1, sourceSeqsIndex);
 }
 
 static void initProfilingTime (GC_state s);
@@ -344,7 +351,11 @@ static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
   s->profiling.data = GC_profileMalloc (s);
-  initTextSources (s);
+  if (PROFILE_TIME_LABEL == s->profiling.kind) {
+    initTextSources (s);
+  } else {
+    s->sourceMaps.curSourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+  }
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
    *
@@ -404,7 +415,8 @@ void initProfiling (GC_state s) {
       break;
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");
-    case PROFILE_TIME:
+    case PROFILE_TIME_FIELD:
+    case PROFILE_TIME_LABEL:
       initProfilingTime (s);
       break;
     }
@@ -420,7 +432,8 @@ void GC_profileDone (GC_state s) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileDone ()\n");
   assert (s->profiling.isOn);
-  if (PROFILE_TIME == s->profiling.kind)
+  if (PROFILE_TIME_FIELD == s->profiling.kind
+      or PROFILE_TIME_LABEL == s->profiling.kind)
     setProfTimer (0);
   s->profiling.isOn = FALSE;
   p = s->profiling.data;

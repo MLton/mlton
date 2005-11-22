@@ -2,8 +2,9 @@ MLton is a whole-program optimizing compiler for the Standard ML
 programming language. MLton has the following features.
 
    + Runs on a variety of platforms.
+     o HPPA: Debian
      o PowerPC: Debian, Mac OSX
-     o X86: Linux, Cygwin/Windows, FreeBSD, NetBSD, OpenBSD
+     o X86: Linux, Cygwin/Windows, FreeBSD, MinGW/Windows, NetBSD, OpenBSD
      o Sparc: Debian, Solaris.
    + Generates standalone executables with excellent running times.
    + Supports the full SML 97 language.
@@ -24,10 +25,12 @@ programming language. MLton has the following features.
 
 For more information, go to the MLton home page. 
 
-        http://www.mlton.org/
+        http://mlton.org/
 
-For general MLton discussion, send mail to MLton-user@mlton.org.  To
-send mail to the MLton developers, use MLton@mlton.org.
+There are two mailing lists available.
+
+ * MLton@mlton.org        MLton developers
+ * MLton-user@mlton.org   MLton user community 
 
 doc directory contents:
         README                  this file
@@ -35,8 +38,9 @@ doc directory contents:
         cm2mlb/                 a utility for producing ML Basis programs in SML/NJ
         cmcat/                  a utility for producing whole programs in SML/NJ
         examples/               example SML programs
-	guide/			MLton guide
+	guide/			HTML MLton guide (copy of the MLton wiki)
         license/                license information
         mllex.ps.gz             user guide for mllex lexer generator
+	mlton-guide.pdf		PDF version of MLton guide
         mlyacc.ps.gz            user guide for mlyacc parser generator
 

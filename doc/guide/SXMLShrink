@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,9 +55,9 @@ Performs optimizations based on a reduction system.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 <a href="SXML">SXML</a> shares the <a href="XMLShrink">XMLShrink</a> simplifier. 

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -75,6 +75,11 @@
     <li>
 <p>
  <a href="PolyML">Poly/ML</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="Poplog">Poplog</a> 
 </p>
 </li>
     <li>
@@ -135,11 +140,6 @@
 </li>
     <li>
 <p>
- <a class="external" href="ftp://ftp.cs.bham.ac.uk/pub/dist/poplog/freepoplog.html"><img src="moin-ftp.png" alt="[FTP]" height="11" width="11">Free POPLOG</a> 
-</p>
-</li>
-    <li>
-<p>
  <a class="external" href="http://www.cs.cornell.edu/Info/People/jgm/til.tar.Z"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TIL</a> 
 </p>
 </li>
@@ -151,5 +151,5 @@
 
 <p>
 <hr>
-Last edited on 2005-07-27 18:18:47 by <span title="adsl-64-166-226-32.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-10-09 23:07:21 by <span title="adsl-64-166-225-6.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -104,7 +104,7 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="ZZZOtherPass">ZZZOtherPass</a>: <a href="CompilerPassTemplate">CompilerPassTemplate</a></li>
 <li>
-<a class="nonexistent" href="ZZZPrev">ZZZPrev</a>: <a href="TalkDiveIn">TalkDiveIn</a>, <a href="TalkTemplate">TalkTemplate</a></li>
+<a class="nonexistent" href="ZZZPrev">ZZZPrev</a>: <a href="TalkTemplate">TalkTemplate</a></li>
 <li>
 <a class="nonexistent" href="ZZZSimplify">ZZZSimplify</a>: <a href="CompilerPassTemplate">CompilerPassTemplate</a></li>
 </ol>

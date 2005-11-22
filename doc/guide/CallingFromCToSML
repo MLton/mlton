@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -176,7 +176,9 @@ Pointer <B><FONT COLOR="#0000FF">g2</FONT></B> () {
 <p>
 Compile <tt>ffi-export.c</tt> and <tt>export.sml</tt>. 
 <pre>% gcc -c ffi-export.c
-% mlton -default-ann 'allowExport true' -default-ann 'allowImport true' export.sml ffi-export.o
+% mlton -default-ann 'allowExport true' \
+        -default-ann 'allowImport true' \
+         export.sml ffi-export.o
 </pre>
 </p>
 <p>
@@ -195,14 +197,14 @@ success
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/doc/examples/ffi/export.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">export.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/export.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">export.sml</a>
  
 </p>
 </li>
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/doc/examples/ffi/ffi-export.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-export.c</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/ffi-export.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-export.c</a>
  
 </p>
 </li>
@@ -214,5 +216,5 @@ success
 
 <p>
 <hr>
-Last edited on 2005-08-09 07:31:39 by <span title="pool-71-243-2-249.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-13 23:08:49 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

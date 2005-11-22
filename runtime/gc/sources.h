@@ -41,6 +41,7 @@ typedef struct GC_sourceLabel {
 } *GC_sourceLabel;
 
 struct GC_sourceMaps {
+  volatile GC_sourceSeqIndex curSourceSeqsIndex;
   /* frameSources is an array of cardinality frameLayoutsLength that
    * for each stack frame, gives an index into sourceSeqs of the
    * sequence of source functions corresponding to the frame.
@@ -64,7 +65,7 @@ struct GC_sourceMaps {
   uint32_t sourcesLength;
   pointer textEnd;
   /* An array of indices, one entry for each address in the text
-   * segment, giving and index into sourceSeqs.
+   * segment, giving an index into sourceSeqs.
    */
   GC_sourceSeqIndex *textSources;
   pointer textStart;

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -82,9 +82,9 @@ L_3 (c)
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/common-arg.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/common-arg.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/common-arg.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/common-arg.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 Three analyses were originally proposed to drive the optimization transformation.  Only the <em>Dominator Analysis</em> is currently implemented.  (Implementations of the other analyses are available in the Subversion repository.) 
@@ -209,7 +209,8 @@ And this turns out to be the case.  Construct the graph <tt>G</tt> as follows:
 <pre>nodes(G) = {Root} U Var.t
 edges(G) = {Root -&gt; v | v bound in a Statement.t or
                                 in the Function.t args} U
-           {xi -&gt; ai | L(x1, ..., xn) transfer where (a1, ..., an) are the formals of L} U
+           {xi -&gt; ai | L(x1, ..., xn) transfer where (a1, ..., an) 
+                                      are the formals of L} U
            {Root -&gt; a | a is a block argument used in an unknown context}
 </pre>
     </ul>
@@ -254,5 +255,5 @@ On the downside, the optimization doesn't have a huge impact on runtime, althoug
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:42:33 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-13 23:14:11 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
 </body></html>

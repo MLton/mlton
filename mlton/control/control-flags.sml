@@ -814,7 +814,8 @@ structure Profile =
        | ProfileCount
        | ProfileDrop
        | ProfileLabel
-       | ProfileTime
+       | ProfileTimeField
+       | ProfileTimeLabel
 
       val toString =
          fn ProfileNone => "None"
@@ -823,7 +824,8 @@ structure Profile =
           | ProfileCount => "Count"
           | ProfileDrop => "Drop"
           | ProfileLabel => "Label"
-          | ProfileTime => "Time"
+          | ProfileTimeField => "TimeField"
+          | ProfileTimeLabel => "TimeLabel"
    end
 
 datatype profile = datatype Profile.t

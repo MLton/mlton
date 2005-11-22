@@ -187,6 +187,12 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                           (fileAbs, B)
                        end)
                    val B = Promise.force B
+                           handle Promise.Force =>
+                           (* Basis forms a cycle; 
+                            * force the AST to generate error message.
+                            *)
+                           (ignore (Promise.force basdec)
+                            ; #2 (Env.makeBasis (E, fn () => ())))
                 in
                    Env.openBasis (E, B)
                 end

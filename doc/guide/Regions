@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -98,7 +98,7 @@ One might ask whether we might do the same thing -- i.e., provide a <tt>MLton.Re
 
         <ul>
 
-  <a href="http://www.cs.cornell.edu/People/fluet/rgn-monad/index.html">http://www.cs.cornell.edu/People/fluet/rgn-monad/index.html</a> 
+  <a class="external" href="http://www.cs.cornell.edu/People/fluet/rgn-monad/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.cs.cornell.edu/People/fluet/rgn-monad/index.html</a> 
         </ul>
 
 
@@ -111,5 +111,5 @@ Unfortunately, his conclusion is that the SML type system is too weak to support
 
 <p>
 <hr>
-Last edited on 2004-11-23 22:47:40 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-09-06 23:20:00 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

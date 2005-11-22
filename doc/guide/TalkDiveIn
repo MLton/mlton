@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -86,7 +86,7 @@
 </tr>
 <tr>
 <td width="50%" align="left">
-<a class="nonexistent" href="ZZZPrev"> Prev</a></td>
+<a href="TalkMLtonHistory"> Prev</a></td>
 <td width="50%" align="right">
 </td>
 </tr>
@@ -100,5 +100,5 @@
 
 <p>
 <hr>
-Last edited on 2004-12-01 18:35:50 by <span title="cfs38.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-14 23:13:23 by <span title="fox.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

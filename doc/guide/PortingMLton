@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -344,12 +344,12 @@ The above description is based on the following emails sent to the MLton list.
 
     <li>
 <p>
- <a href="http://mlton.org/pipermail/mlton/2002-October/013110.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-October/013110.html</a> 
+ <a class="external" href="http://mlton.org/pipermail/mlton/2002-October/013110.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-October/013110.html</a> 
 </p>
 </li>
     <li>
 <p>
- <a href="http://mlton.org/pipermail/mlton/2004-July/016029.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-July/016029.html</a>        
+ <a class="external" href="http://mlton.org/pipermail/mlton/2004-July/016029.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-July/016029.html</a> 
 </p>
 </li>
 </ul>
@@ -360,5 +360,5 @@ The above description is based on the following emails sent to the MLton list.
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:44:56 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-09-06 23:29:57 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

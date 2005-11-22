@@ -148,7 +148,9 @@ fun profile program =
       val profile = !Control.profile
       val profileStack: bool = !Control.profileStack
       val needProfileLabels: bool =
-         profile = ProfileTime orelse profile = ProfileLabel
+         profile = ProfileTimeLabel orelse profile = ProfileLabel
+      val needCodeCoverage: bool =
+         needProfileLabels orelse (profile = ProfileTimeField)
       val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
       val nameCounter = Counter.new 0
@@ -300,7 +302,7 @@ fun profile program =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("info", Label.layout))
       val labels = ref []
-      fun profileLabelIndex (sourceSeqsIndex: int): Statement.t =
+      fun profileLabelFromIndex (sourceSeqsIndex: int): Statement.t =
          let
             val l = ProfileLabel.new ()
             val _ = List.push (labels, {label = l,
@@ -308,8 +310,25 @@ fun profile program =
          in
             Statement.ProfileLabel l
          end
-      fun profileLabel (sourceSeq: int list): Statement.t =
-         profileLabelIndex (sourceSeqIndex sourceSeq)
+      fun setCurSourceSeqsIndexFromIndex (sourceSeqsIndex: int): Statement.t =
+         let
+            val curSourceSeqsIndex = 
+               Operand.Runtime Runtime.GCField.CurSourceSeqsIndex
+         in
+            Statement.Move
+            {dst = curSourceSeqsIndex,
+             src = Operand.word (WordX.fromIntInf 
+                                 (IntInf.fromInt sourceSeqsIndex,
+                                  WordSize.default))}
+         end
+      fun codeCoverageStatementFromIndex (sourceSeqsIndex: int): Statement.t =
+         if needProfileLabels
+            then profileLabelFromIndex sourceSeqsIndex
+         else if profile = ProfileTimeField
+            then setCurSourceSeqsIndexFromIndex sourceSeqsIndex
+         else Error.bug "Profile.codeCoverageStatement"
+      fun codeCoverageStatement (sourceSeq: int list): Statement.t =
+         codeCoverageStatementFromIndex (sourceSeqIndex sourceSeq)
       local
          val {get: Func.t -> FuncInfo.t, ...} =
             Property.get (Func.plist, Property.initFun (fn _ => FuncInfo.new ()))
@@ -444,22 +463,22 @@ fun profile program =
                           statements: Statement.t list,
                           transfer: Transfer.t}: unit =
                let
-                  val (_, npl, sourceSeq, statements) =
+                  val (_, ncc, sourceSeq, statements) =
                      List.fold
                      (statements,
                       (leaves, true, sourceSeq, []),
-                      fn (s, (leaves, npl, sourceSeq, ss)) =>
+                      fn (s, (leaves, ncc, sourceSeq, ss)) =>
                       case s of
                          Object _ => (leaves, true, sourceSeq, s :: ss)
                        | Profile ps =>
                             let
-                               val (npl, ss) =
-                                  if needProfileLabels
+                               val (ncc, ss) =
+                                  if needCodeCoverage
                                      then
-                                        if npl
+                                        if ncc
                                            andalso not (List.isEmpty sourceSeq)
                                            then (false,
-                                                 profileLabel sourceSeq :: ss)
+                                                 codeCoverageStatement sourceSeq :: ss)
                                         else (true, ss)
                                   else (false, ss)
                                val (leaves, sourceSeq) = 
@@ -478,13 +497,13 @@ fun profile program =
                                                 InfoNode.sourcesIndex infoNode
                                                 :: sourceSeq))
                             in
-                               (leaves, npl, sourceSeq, ss)
+                               (leaves, ncc, sourceSeq, ss)
                             end
                        | _ => (leaves, true, sourceSeq, s :: ss))
                   val statements =
-                     if needProfileLabels
-                        andalso npl
-                        then profileLabel sourceSeq :: statements
+                     if needCodeCoverage
+                        andalso ncc
+                        then codeCoverageStatement sourceSeq :: statements
                      else statements
                   val {args, kind, label} =
                      if profileStack andalso (case kind of
@@ -499,10 +518,9 @@ fun profile program =
                                  addFrameProfileIndex
                                  (newLabel, sourceSeqIndex sourceSeq)
                               val statements =
-                                 if needProfileLabels
+                                 if needCodeCoverage
                                     then (Vector.new1
-                                          (profileLabelIndex
-                                           (sourceSeqIndex sourceSeq)))
+                                          (codeCoverageStatement sourceSeq))
                                  else Vector.new0 ()
                               val _ =
                                  List.push
@@ -556,8 +574,8 @@ fun profile program =
                   val index = sourceSeqIndex (Push.toSources pushes)
                   val _ = addFrameProfileIndex (newLabel, index)
                   val statements =
-                     if needProfileLabels
-                        then Vector.new1 (profileLabelIndex index)
+                     if needCodeCoverage
+                        then Vector.new1 (codeCoverageStatementFromIndex index)
                      else Vector.new0 ()
                   val _ =
                      List.push

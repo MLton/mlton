@@ -44,6 +44,7 @@ val gcFields =
    [
     "atomicState",
     "currentThread",
+    "sourceMaps.curSourceSeqsIndex",
     "exnStack",
     "frontier",
     "generationalMaps.cardMapAbsolute",

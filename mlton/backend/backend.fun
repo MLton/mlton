@@ -967,7 +967,7 @@ let
                            end
                       | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
                   val (first, statements) =
-                     if !Control.profile = Control.ProfileTime
+                     if !Control.profile = Control.ProfileTimeLabel
                         then
                            case (if 0 = Vector.length statements
                                     then NONE

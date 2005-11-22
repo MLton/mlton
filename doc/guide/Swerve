@@ -26,7 +26,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20050905</a>
+      <a class = mltona href="Home">MLton 20051115</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,7 +50,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a class="external" href="http://web.access.net.au/felixadv/files/output/book/c3253.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Swerve</a> is an HTTP server written in SML, originally developed with SML/NJ. <a href="RayRacine">RayRacine</a> ported Swerve to MLton in January 2005.   <p>
+<a class="external" href="http://ftp.sun.ac.za/ftp/mirrorsites/ocaml/Systems_programming/book/c3253.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Swerve</a> is an HTTP server written in SML, originally developed with SML/NJ. <a href="RayRacine">RayRacine</a> ported Swerve to MLton in January 2005.   <p>
 <a href="http://mlton.org/pages/Swerve/attachments/swerve.tar.bz2"><img src="moin-www.png" alt="[WWW]" height="11" width="11">download the port</a> 
 </p>
 <p>
@@ -67,5 +67,5 @@ Excerpt from the included <tt>README</tt>:
 
 <p>
 <hr>
-Last edited on 2005-06-19 01:06:54 by <span title="69-163-240-36.atlsfl.adelphia.net"><a href="RayRacine">RayRacine</a></span>.
+Last edited on 2005-10-24 00:55:35 by <span title="ursula.cs.purdue.edu">PhilipSchatz</span>.
 </body></html>

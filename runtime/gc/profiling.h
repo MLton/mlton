@@ -12,7 +12,8 @@ typedef enum {
   PROFILE_ALLOC,
   PROFILE_COUNT,
   PROFILE_NONE,
-  PROFILE_TIME,
+  PROFILE_TIME_FIELD,
+  PROFILE_TIME_LABEL
 } GC_profileKind;
 
 /* If profileStack, then there is one struct GC_profileStack for each
