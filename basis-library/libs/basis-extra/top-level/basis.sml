@@ -171,7 +171,6 @@ structure BasisExtra :> BASIS_EXTRA =
       structure SysWord = SysWord
       structure Unix = Unix
       structure UnixSock = UnixSock
-(*
       structure WideChar = WideChar
       structure WideCharArray = WideCharArray
       structure WideCharArray2 = WideCharArray2
@@ -181,6 +180,7 @@ structure BasisExtra :> BASIS_EXTRA =
       structure WideString = WideString
       structure WideSubstring = WideSubstring
       structure WideText = WideText
+(*
       structure WideTextPrimIO = WideTextPrimIO
 *)
 (*
@@ -246,6 +246,34 @@ structure BasisExtra :> BASIS_EXTRA =
       structure MLton = MLton
       structure SMLofNJ = SMLofNJ
       structure Unsafe = Unsafe
+      
+      structure Char4 = Char4
+      structure Char4Array = Char4Array
+      structure Char4Array2 = Char4Array2
+      structure Char4ArraySlice = Char4ArraySlice
+      structure Char4Vector = Char4Vector
+      structure Char4VectorSlice = Char4VectorSlice
+      structure String4 = String4
+      structure WideSubstring4 = Substring4
+      structure Text4 = Text4
+      structure Char2 = Char2
+      structure Char2Array = Char2Array
+      structure Char2Array2 = Char2Array2
+      structure Char2ArraySlice = Char2ArraySlice
+      structure Char2Vector = Char2Vector
+      structure Char2VectorSlice = Char2VectorSlice
+      structure String2 = String2
+      structure WideSubstring2 = Substring2
+      structure Text2 = Text2
+      structure Char1 = Char1
+      structure Char1Array = Char1Array
+      structure Char1Array2 = Char1Array2
+      structure Char1ArraySlice = Char1ArraySlice
+      structure Char1Vector = Char1Vector
+      structure Char1VectorSlice = Char1VectorSlice
+      structure String1 = String1
+      structure WideSubstring1 = Substring1
+      structure Text1 = Text1
          
       open ArrayGlobal
            BoolGlobal

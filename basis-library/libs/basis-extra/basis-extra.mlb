@@ -47,10 +47,9 @@ in
       ../../arrays-and-vectors/mono-array2.sig
       ../../arrays-and-vectors/mono-array2.fun
       ../../arrays-and-vectors/mono.sml
-      ../../text/string0.sml
-      ../../text/char0.sml
       ../../misc/reader.sig
       ../../misc/reader.sml
+      ../../text/charset.sml
       ../../text/string-cvt.sig
       ../../text/string-cvt.sml
       ../../general/bool.sig
@@ -58,11 +57,14 @@ in
       ../../integer/integer.sig
       ../../integer/int.sml
       ../../text/char.sig
+      ../../text/char.fun
       ../../text/char.sml
-      ../../text/substring.sig
-      ../../text/substring.sml
       ../../text/string.sig
+      ../../text/string.fun
       ../../text/string.sml
+      ../../text/substring.sig
+      ../../text/substring.fun
+      ../../text/substring.sml
       ../../misc/C.sig
       ../../misc/C.sml
       ../../integer/word.sig

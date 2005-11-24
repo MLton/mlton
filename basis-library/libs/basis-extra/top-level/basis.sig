@@ -242,7 +242,6 @@ signature BASIS_EXTRA =
       structure SysWord : WORD
       structure Unix : UNIX
       structure UnixSock : UNIX_SOCK
-(*
       structure WideChar : CHAR
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -252,9 +251,8 @@ signature BASIS_EXTRA =
       structure WideString : STRING
       structure WideSubstring : SUBSTRING
       structure WideText : TEXT
-      structure WideTextPrimIO : PRIM_IO
-*)
 (*
+      structure WideTextPrimIO : PRIM_IO
       structure Windows : WINDOWS
 *)
       structure Word1: WORD
@@ -316,6 +314,36 @@ signature BASIS_EXTRA =
       structure MLton: MLTON
       structure SMLofNJ: SML_OF_NJ
       structure Unsafe: UNSAFE
+      
+      structure Char4 : CHAR
+      structure Char4Array : MONO_ARRAY
+      structure Char4Array2 : MONO_ARRAY2
+      structure Char4ArraySlice : MONO_ARRAY_SLICE
+      structure Char4Vector : MONO_VECTOR
+      structure Char4VectorSlice : MONO_VECTOR_SLICE
+      structure String4 : STRING
+      structure Substring4 : SUBSTRING
+      structure Text4 : TEXT
+
+      structure Char2 : CHAR
+      structure Char2Array : MONO_ARRAY
+      structure Char2Array2 : MONO_ARRAY2
+      structure Char2ArraySlice : MONO_ARRAY_SLICE
+      structure Char2Vector : MONO_VECTOR
+      structure Char2VectorSlice : MONO_VECTOR_SLICE
+      structure String2 : STRING
+      structure Substring2 : SUBSTRING
+      structure Text2 : TEXT
+
+      structure Char1 : CHAR
+      structure Char1Array : MONO_ARRAY
+      structure Char1Array2 : MONO_ARRAY2
+      structure Char1ArraySlice : MONO_ARRAY_SLICE
+      structure Char1Vector : MONO_VECTOR
+      structure Char1VectorSlice : MONO_VECTOR_SLICE
+      structure String1 : STRING
+      structure Substring1 : SUBSTRING
+      structure Text1 : TEXT
 
       sharing type MLton.IntInf.t = IntInf.int
       sharing type MLton.Process.pid = Posix.Process.pid
@@ -578,6 +606,38 @@ signature BASIS_EXTRA =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
+      sharing type WideChar.string = WideString.string
+      sharing type WideCharArray.elem = WideChar.char
+      sharing type WideCharArray.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.elem =  WideChar.char
+      sharing type WideCharArraySlice.array = WideCharArray.array
+      sharing type WideCharArraySlice.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.vector_slice = WideCharVectorSlice.slice
+      sharing type WideCharVector.elem = WideChar.char
+      sharing type WideCharVector.vector = WideString.string
+      sharing type WideCharVectorSlice.elem = WideChar.char
+      sharing type WideCharVectorSlice.vector = WideString.string
+      sharing type WideCharVectorSlice.slice = WideSubstring.substring
+      sharing type WideString.string = WideCharVector.vector
+      sharing type WideString.char = WideChar.char
+      sharing type WideSubstring.substring = WideCharVectorSlice.slice
+      sharing type WideSubstring.string = WideString.string
+      sharing type WideSubstring.char = WideChar.char
+      sharing type WideText.Char.char = WideChar.char
+      sharing type WideText.String.string = WideString.string
+      sharing type WideText.Substring.substring = WideSubstring.substring
+      sharing type WideText.CharVector.vector = WideCharVector.vector
+      sharing type WideText.CharArray.array = WideCharArray.array
+      sharing type WideText.CharArraySlice.slice = WideCharArraySlice.slice
+      sharing type WideText.CharVectorSlice.slice = WideCharVectorSlice.slice
+(*
+      sharing type WideTextPrimIO.array = WideCharArray.array
+      sharing type WideTextPrimIO.array_slice = WideCharArraySlice.slice
+      sharing type WideTextPrimIO.elem = WideChar.char
+      sharing type WideTextPrimIO.pos = Position.int
+      sharing type WideTextPrimIO.vector = WideCharVector.vector
+      sharing type WideTextPrimIO.vector_slice = WideCharVectorSlice.slice
+*)
       sharing type WordArray.elem = word
       sharing type WordArray.vector = WordVector.vector
       sharing type WordArraySlice.elem = word
@@ -627,6 +687,91 @@ signature BASIS_EXTRA =
       sharing type MLton.BinIO.outstream = BinIO.outstream
       sharing type MLton.TextIO.instream = TextIO.instream
       sharing type MLton.TextIO.outstream = TextIO.outstream
+      
+      (* extensions *)
+      sharing type Char4.string = String4.string
+      sharing type Char4Array.elem = Char4.char
+      sharing type Char4Array.vector = Char4Vector.vector
+      sharing type Char4ArraySlice.elem =  Char4.char
+      sharing type Char4ArraySlice.array = Char4Array.array
+      sharing type Char4ArraySlice.vector = Char4Vector.vector
+      sharing type Char4ArraySlice.vector_slice = Char4VectorSlice.slice
+      sharing type Char4Vector.elem = Char4.char
+      sharing type Char4Vector.vector = String4.string
+      sharing type Char4VectorSlice.elem = Char4.char
+      sharing type Char4VectorSlice.vector = String4.string
+      sharing type Char4VectorSlice.slice = Substring4.substring
+      sharing type String4.string = Char4Vector.vector
+      sharing type String4.char = Char4.char
+      sharing type Substring4.substring = Char4VectorSlice.slice
+      sharing type Substring4.string = String4.string
+      sharing type Substring4.char = Char4.char
+      sharing type Text4.Char.char = Char4.char
+      sharing type Text4.String.string = String4.string
+      sharing type Text4.Substring.substring = Substring4.substring
+      sharing type Text4.CharVector.vector = Char4Vector.vector
+      sharing type Text4.CharArray.array = Char4Array.array
+      sharing type Text4.CharArraySlice.slice = Char4ArraySlice.slice
+      sharing type Text4.CharVectorSlice.slice = Char4VectorSlice.slice
+      sharing type Char2.string = String2.string
+      sharing type Char2Array.elem = Char2.char
+      sharing type Char2Array.vector = Char2Vector.vector
+      sharing type Char2ArraySlice.elem =  Char2.char
+      sharing type Char2ArraySlice.array = Char2Array.array
+      sharing type Char2ArraySlice.vector = Char2Vector.vector
+      sharing type Char2ArraySlice.vector_slice = Char2VectorSlice.slice
+      sharing type Char2Vector.elem = Char2.char
+      sharing type Char2Vector.vector = String2.string
+      sharing type Char2VectorSlice.elem = Char2.char
+      sharing type Char2VectorSlice.vector = String2.string
+      sharing type Char2VectorSlice.slice = Substring2.substring
+      sharing type String2.string = Char2Vector.vector
+      sharing type String2.char = Char2.char
+      sharing type Substring2.substring = Char2VectorSlice.slice
+      sharing type Substring2.string = String2.string
+      sharing type Substring2.char = Char2.char
+      sharing type Text2.Char.char = Char2.char
+      sharing type Text2.String.string = String2.string
+      sharing type Text2.Substring.substring = Substring2.substring
+      sharing type Text2.CharVector.vector = Char2Vector.vector
+      sharing type Text2.CharArray.array = Char2Array.array
+      sharing type Text2.CharArraySlice.slice = Char2ArraySlice.slice
+      sharing type Text2.CharVectorSlice.slice = Char2VectorSlice.slice
+      sharing type Char1.string = String1.string
+      sharing type Char1Array.elem = Char1.char
+      sharing type Char1Array.vector = Char1Vector.vector
+      sharing type Char1ArraySlice.elem =  Char1.char
+      sharing type Char1ArraySlice.array = Char1Array.array
+      sharing type Char1ArraySlice.vector = Char1Vector.vector
+      sharing type Char1ArraySlice.vector_slice = Char1VectorSlice.slice
+      sharing type Char1Vector.elem = Char1.char
+      sharing type Char1Vector.vector = String1.string
+      sharing type Char1VectorSlice.elem = Char1.char
+      sharing type Char1VectorSlice.vector = String1.string
+      sharing type Char1VectorSlice.slice = Substring1.substring
+      sharing type String1.string = Char1Vector.vector
+      sharing type String1.char = Char1.char
+      sharing type Substring1.substring = Char1VectorSlice.slice
+      sharing type Substring1.string = String1.string
+      sharing type Substring1.char = Char1.char
+      sharing type Text1.Char.char = Char1.char
+      sharing type Text1.String.string = String1.string
+      sharing type Text1.Substring.substring = Substring1.substring
+      sharing type Text1.CharVector.vector = Char1Vector.vector
+      sharing type Text1.CharArray.array = Char1Array.array
+      sharing type Text1.CharArraySlice.slice = Char1ArraySlice.slice
+      sharing type Text1.CharVectorSlice.slice = Char1VectorSlice.slice
+      (* Bind the Char1=Char and Char4=WideChar *)
+      sharing type Char1Array.array = CharArray.array
+      sharing type Char1ArraySlice.array_slice = CharArraySlice.array_slice
+      sharing type String1.string = String.string
+      sharing type Substring1.substring = Substring.string
+      sharing type Char1.char = Char.char
+      sharing type Char4Array.array = WideCharArray.array
+      sharing type Char4ArraySlice.array_slice = WideCharArraySlice.array_slice
+      sharing type String4.string = WideString.string
+      sharing type Substring4.substring = WideSubstring.string
+      sharing type Char4.char = WideChar.char
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
@@ -773,3 +918,12 @@ signature BASIS_EXTRA =
    where type Word31.word = Word31.word
    where type Word32.word = Word32.word
    where type Word64.word = Word64.word
+   (* Top-level types for wide string and char constants *)
+   where type WideChar.char = WideChar.char
+   where type WideString.string = WideString.string
+   where type Char1.char = Char1.char
+   where type Char2.char = Char2.char
+   where type Char4.char = Char4.char
+   where type String1.string = String1.string
+   where type String2.string = String2.string
+   where type String4.string = String4.string

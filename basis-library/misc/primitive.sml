@@ -275,6 +275,8 @@ structure Primitive =
             val fromInt8 = _prim "WordS8_toWord8": Int8.int -> char;
             val toWord8 = _prim "WordU8_toWord8": char -> Word8.word;
             val fromWord8 = _prim "WordU8_toWord8": Word8.word -> char;
+            val toWord32 = _prim "WordU8_toWord32": char -> Word32.word;
+            val fromWord32 = _prim "WordU8_toWord32": Word32.word -> char;
          end
 
       structure Char =
@@ -296,8 +298,8 @@ structure Primitive =
             val ord = _prim "WordU16_toWord32": char -> int;
             val toInt16 = _prim "WordS16_toWord16": char -> Int16.int;
             val fromInt16 = _prim "WordS16_toWord16": Int16.int -> char;
-            (* val toWord16 = _prim "WordU16_toWord16": char -> Word16.word; *)
-            (* val fromWord16 = _prim "WordU16_toWord16": Word16.word -> char; *)
+            val toWord32 = _prim "WordU16_toWord32": char -> Word32.word;
+            val fromWord32 = _prim "WordU16_toWord32": Word32.word -> char;
          end
       
       structure Char4 =
@@ -309,8 +311,6 @@ structure Primitive =
             val ord = _prim "WordU32_toWord32": char -> int;
             val toInt32 = _prim "WordS32_toWord32": char -> Int32.int;
             val fromInt32 = _prim "WordS32_toWord32": Int32.int -> char;
-            (* val toWord32 = _prim "WordU32_toWord32": char -> Word32.word; *)
-            (* val fromWord32 = _prim "WordU32_toWord32": Word32.word -> char; *)
          end
 
       structure CommandLine =

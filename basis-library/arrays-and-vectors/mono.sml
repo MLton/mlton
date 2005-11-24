@@ -61,12 +61,42 @@ local
       = EqMono (type elem = char)
    open S
 in
-   structure CharArray = Array
-   structure CharArray2 = Array2
-   structure CharArraySlice = ArraySlice
-   structure CharVector = Vector
-   structure CharVectorSlice = VectorSlice
-   val _ = CharVector.fromArray: CharArray.array -> CharVector.vector
+   structure Char1Array = Array
+   structure Char1Array2 = Array2
+   structure Char1ArraySlice = ArraySlice
+   structure Char1Vector = Vector
+   structure Char1VectorSlice = VectorSlice
+   val _ = Char1Vector.fromArray: Char1Array.array -> Char1Vector.vector
+end
+local
+   structure S:>
+      EQ_MONO
+      where type Array.elem = Char2.char
+      where type Vector.vector = String2.string
+      = EqMono (type elem = Char2.char)
+   open S
+in
+   structure Char2Array = Array
+   structure Char2Array2 = Array2
+   structure Char2ArraySlice = ArraySlice
+   structure Char2Vector = Vector
+   structure Char2VectorSlice = VectorSlice
+   val _ = Char2Vector.fromArray: Char2Array.array -> Char2Vector.vector
+end
+local
+   structure S:>
+      EQ_MONO
+      where type Array.elem = Char4.char
+      where type Vector.vector = String4.string
+      = EqMono (type elem = Char4.char)
+   open S
+in
+   structure Char4Array = Array
+   structure Char4Array2 = Array2
+   structure Char4ArraySlice = ArraySlice
+   structure Char4Vector = Vector
+   structure Char4VectorSlice = VectorSlice
+   val _ = Char4Vector.fromArray: Char4Array.array -> Char4Vector.vector
 end
 local
    structure S = EqMono (type elem = Int8.int)
@@ -181,6 +211,18 @@ in
    structure Word64ArraySlice = ArraySlice
    structure Word64Array2 = Array2
 end
+
+structure CharVector = Char1Vector
+structure CharVectorSlice = Char1VectorSlice
+structure CharArray = Char1Array
+structure CharArraySlice = Char1ArraySlice
+structure CharArray2 = Char1Array2
+
+structure WideCharVector = Char4Vector
+structure WideCharVectorSlice = Char4VectorSlice
+structure WideCharArray = Char4Array
+structure WideCharArraySlice = Char4ArraySlice
+structure WideCharArray2 = Char4Array2
 
 structure IntVector = Int32Vector
 structure IntVectorSlice = Int32VectorSlice

@@ -6,49 +6,12 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure String: STRING_EXTRA =
-   struct
-      open String0
+structure String1 = StringFn(Char1Vector)
+structure String2 = StringFn(Char2Vector)
+structure String4 = StringFn(Char4Vector)
 
-      val toLower = translate (str o Char.toLower)
-
-      local
-         fun make f = f (op = : char * char -> bool)
-      in
-        val isPrefix = make isPrefix
-        val isSubstring = make isSubvector
-        val isSuffix = make isSuffix
-      end
-      val compare = collate Char.compare
-      val {<, <=, >, >=} = Util.makeOrder compare
-
-      val toString = translate Char.toString
-      val toCString = translate Char.toCString
-
-      val scan: (char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader =
-         fn reader =>
-         let
-            fun loop (state, cs) =
-               case Char.scan reader state of
-                  NONE => SOME (implode (rev cs),
-                                Char.formatSequences reader state)
-                | SOME (c, state) => loop (state, c :: cs)
-         in
-            fn state => loop (state, [])
-         end
-         
-      val fromString = StringCvt.scanString scan
-         
-      fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
-        : (string, 'a) StringCvt.reader =
-         fn state =>
-         Option.map (fn (cs, state) => (implode cs, state))
-         (Reader.list (scanChar reader) state)
-
-      val fromCString = StringCvt.scanString (scanString Char.scanC)
-
-      fun nullTerm s = s ^ "\000"
-   end
+structure String = String1
+structure WideString = String4
 
 structure StringGlobal: STRING_GLOBAL = String
 open StringGlobal

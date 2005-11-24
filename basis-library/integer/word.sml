@@ -75,7 +75,7 @@ fun fmt radix (w: word): string =
          let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
             val q = q div radix
          in if q = zero
-               then String0.implode chars
+               then CharVector.fromList chars
             else loop (q, chars)
          end
    in loop (w, [])

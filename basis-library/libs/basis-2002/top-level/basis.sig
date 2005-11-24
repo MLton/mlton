@@ -242,7 +242,6 @@ signature BASIS_2002 =
       structure SysWord : WORD
       structure Unix : UNIX
       structure UnixSock : UNIX_SOCK
-(*
       structure WideChar : CHAR
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -252,9 +251,8 @@ signature BASIS_2002 =
       structure WideString : STRING
       structure WideSubstring : SUBSTRING
       structure WideText : TEXT
-      structure WideTextPrimIO : PRIM_IO
-*)
 (*
+      structure WideTextPrimIO : PRIM_IO
       structure Windows : WINDOWS
 *)
       structure Word1: WORD
@@ -552,6 +550,38 @@ signature BASIS_2002 =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
+      sharing type WideChar.string = WideString.string
+      sharing type WideCharArray.elem = WideChar.char
+      sharing type WideCharArray.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.elem =  WideChar.char
+      sharing type WideCharArraySlice.array = WideCharArray.array
+      sharing type WideCharArraySlice.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.vector_slice = WideCharVectorSlice.slice
+      sharing type WideCharVector.elem = WideChar.char
+      sharing type WideCharVector.vector = WideString.string
+      sharing type WideCharVectorSlice.elem = WideChar.char
+      sharing type WideCharVectorSlice.vector = WideString.string
+      sharing type WideCharVectorSlice.slice = WideSubstring.substring
+      sharing type WideString.string = WideCharVector.vector
+      sharing type WideString.char = WideChar.char
+      sharing type WideSubstring.substring = WideCharVectorSlice.slice
+      sharing type WideSubstring.string = WideString.string
+      sharing type WideSubstring.char = WideChar.char
+      sharing type WideText.Char.char = WideChar.char
+      sharing type WideText.String.string = WideString.string
+      sharing type WideText.Substring.substring = WideSubstring.substring
+      sharing type WideText.CharVector.vector = WideCharVector.vector
+      sharing type WideText.CharArray.array = WideCharArray.array
+      sharing type WideText.CharArraySlice.slice = WideCharArraySlice.slice
+      sharing type WideText.CharVectorSlice.slice = WideCharVectorSlice.slice
+(*
+      sharing type WideTextPrimIO.array = WideCharArray.array
+      sharing type WideTextPrimIO.array_slice = WideCharArraySlice.slice
+      sharing type WideTextPrimIO.elem = WideChar.char
+      sharing type WideTextPrimIO.pos = Position.int
+      sharing type WideTextPrimIO.vector = WideCharVector.vector
+      sharing type WideTextPrimIO.vector_slice = WideCharVectorSlice.slice
+*)
       sharing type WordArray.elem = word
       sharing type WordArray.vector = WordVector.vector
       sharing type WordArraySlice.elem = word
