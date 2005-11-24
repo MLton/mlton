@@ -1,0 +1,50 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+ann  
+   "deadCode true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused true" "forceUsed"
+in
+   local
+      libs/basis-extra/basis-extra.mlb
+   in
+      structure Char4 : CHAR
+      structure Char4Array : MONO_ARRAY
+      structure Char4Array2 : MONO_ARRAY2
+      structure Char4ArraySlice : MONO_ARRAY_SLICE
+      structure Char4Vector : MONO_VECTOR
+      structure Char4VectorSlice : MONO_VECTOR_SLICE
+      structure String4 : STRING
+      structure Substring4 : SUBSTRING
+      structure Text4 : TEXT
+
+      structure Char2 : CHAR
+      structure Char2Array : MONO_ARRAY
+      structure Char2Array2 : MONO_ARRAY2
+      structure Char2ArraySlice : MONO_ARRAY_SLICE
+      structure Char2Vector : MONO_VECTOR
+      structure Char2VectorSlice : MONO_VECTOR_SLICE
+      structure String2 : STRING
+      structure Substring2 : SUBSTRING
+      structure Text2 : TEXT
+
+      structure Char1 : CHAR
+      structure Char1Array : MONO_ARRAY
+      structure Char1Array2 : MONO_ARRAY2
+      structure Char1ArraySlice : MONO_ARRAY_SLICE
+      structure Char1Vector : MONO_VECTOR
+      structure Char1VectorSlice : MONO_VECTOR_SLICE
+      structure String1 : STRING
+      structure Substring1 : SUBSTRING
+      structure Text1 : TEXT
+      
+      signature CHARSET_CONVERTER
+      structure CharsetConverter : CHARSET_CONVERTER
+   end
+end
