@@ -84,6 +84,7 @@ doit "$lib" \
                 '-m32
                 -mtune=opteron'                                 \
         -target-cc-opt darwin '-I/sw/include'                   \
+	-target-cc-opt freebsd '-I/usr/local/include'		\
         -target-cc-opt solaris                                  \
                 '-Wa,-xarch=v8plusa
                 -mcpu=ultrasparc'                               \
