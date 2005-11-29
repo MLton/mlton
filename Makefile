@@ -36,8 +36,8 @@ CP = /bin/cp -fpR
 GZIP = gzip --force --best
 RANLIB = ranlib
 
-VERSION = $(shell date +%Y%m%d)
-RELEASE = 1
+VERSION ?= $(shell date +%Y%m%d)
+RELEASE ?= 1
 
 .PHONY: all
 all:
@@ -163,9 +163,9 @@ freebsd:
 	mkdir -p $(BSDSRC)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
-		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
-			      # vvvv do not change make to $(MAKE)
-	cd $(BSDSRC)/freebsd && make build-package  
+		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
+        # do not change "make" to "$(MAKE)" in the following line
+	cd $(BSDSRC)/package/freebsd && MAINTAINER_MODE=yes make build-package  
 
 LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
 

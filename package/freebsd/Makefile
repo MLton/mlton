@@ -11,7 +11,7 @@
 # alread-built version of MLton, BOOT_DIST, to use for bootstrapping.
 
 PORTNAME=	mlton
-PORTVERSION=	20041109
+PORTVERSION=	${VERSION}
 CATEGORIES=	lang
 MASTER_SITES=	http://mlton.org/pages/Download/attachments/ \
 		http://mlton.org/pages/Experimental/attachments/
@@ -21,11 +21,13 @@ EXTRACT_ONLY=	${SRC_DIST}
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
-BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash2		\
-		hevea:${PORTSDIR}/textproc/hevea 	\
+BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
+.if !defined(NOPORTDOCS)
+BUILD_DEPENDS+=	hevea:${PORTSDIR}/textproc/hevea 	\
 		latex:${PORTSDIR}/print/teTeX
+.endif
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
-RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash2
+RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash
 
 SRC_DIST=	${DISTNAME}-1.freebsd.src.tgz
 BOOT_DIST=	${PORTNAME}-${BOOT_VER}-1.${MACHINE_ARCH}-freebsd.${BOOT_SUF}
@@ -45,16 +47,24 @@ MAKE_ARGS=	DESTDIR='' \
 		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
 
+# XXX Temporary, until docs install is fixed in main Makefile
+NOPORTDOCS=	yes
+
+.if defined(NOPORTDOCS)
+INSTALL_TARGET=	install-no-docs
+.endif
+
 PORTDIR=	usr/ports/lang/mlton
 
 .include <bsd.port.pre.mk>
 
-BOOT_EXTRACT=	--bzip
+.if ${OSVERSION} >= 600000
+LIB_DEPENDS+=	c.5:${PORTSDIR}/misc/compat5x
+.endif
+
+BOOT_EXTRACT=	--bzip2
 BOOT_SUF=	tbz
 BOOT_VER=	20041109
-.if ${OSVERSION} >= 500000
-LIB_DEPENDS+=	c.4:${PORTSDIR}/misc/compat4x
-.endif
 
 post-extract:
 	@${MKDIR} ${BOOT_WRKSRC}
@@ -67,12 +77,24 @@ post-install:
 .for bin in mllex mlprof mlton mlyacc
 	${CHOWN} ${SHAREOWN}:${SHAREGRP} ${PREFIX}/bin/${bin}	\
 		${MAN1PREFIX}/man/man1/${bin}.1.gz
+	${CHMOD} a+rx ${PREFIX}/bin/${bin}
 .endfor
-	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton	${DOCSDIR}
+	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${PREFIX}/lib/mlton
+	${FIND} ${PREFIX}/lib/mlton -type f -exec ${CHMOD} a+r {} \;
+	${FIND} ${PREFIX}/lib/mlton -type d -exec ${CHMOD} a+rx {} \;
+	${CHMOD} a+x ${PREFIX}/lib/mlton/mlton-compile
+	${CHMOD} a+x ${PREFIX}/lib/mlton/platform
+.if !defined(NOPORTDOCS)
+	${CHOWN} -R ${SHAREOWN}:${SHAREGRP} ${DOCSDIR}
+	${FIND} ${DOCSDIR} -type f -exec ${CHMOD} a+r {} \;
+	${FIND} ${DOCSDIR} -type d -exec ${CHMOD} a+rx {} \;
+.endif
 
 # Stuff below this line is for maintainer use only.
 
 .if defined(MAINTAINER_MODE)
+PKGORIGIN=${PKGCATEGORY}/${PORTNAME}
+
 .PHONY: build-package
 build-package:
 	${MAKE} makesum build
@@ -82,12 +104,12 @@ build-package:
 	${MAKE} install
 	${MAKE} package
 	${MAKE} deinstall
-	pkg_add ${PORTNAME}-${PORTVERSION}.tbz
+	pkg_add ${PKGREPOSITORY}/${PORTNAME}-${PORTVERSION}.tbz
 	${MAKE} deinstall
 	${MAKE} reinstall
 	${MAKE} package
-	${CP} ${PORTNAME}-${PORTVERSION}.tbz	\
-		${DISTDIR}/${PORTNAME}-${PORTVERSION}-1.i386-freebsd.tbz
+	${CP} ${PKGREPOSITORY}/${PORTNAME}-${PORTVERSION}.tbz	\
+		${DISTDIR}/${PORTNAME}-${PORTVERSION}-${RELEASE}.i386-freebsd.tbz
 	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
 	shar `find ${PORTDIR}` >/tmp/mlton-${PORTVERSION}-portdir.shar
@@ -96,7 +118,8 @@ TMP_PLIST=	tmp-pkg-plist
 PLIST=		${.CURDIR}/pkg-plist
 
 pkg-plist:
-	cd ${WRKSRC} && ${GMAKE} install
+# XXX Temporary, until docs install is fixed in main Makefile
+	cd ${WRKSRC} && ${GMAKE} install-no-docs
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * \! -type d | ${GREP} -v man/man | \
 		${SORT} >${PLIST}
