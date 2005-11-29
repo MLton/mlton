@@ -86,14 +86,6 @@ clean:
 clean-svn:
 	find . -type d | grep .svn | xargs rm -rf
 
-.PHONY: cm
-cm:
-	$(MAKE) -C $(COMP) mlton-stubs_cm
-	$(MAKE) -C $(LEX) mllex_cm
-	$(MAKE) -C $(PROF) mlprof_cm
-	$(MAKE) -C $(YACC) mlyacc_cm
-	$(MAKE) -C benchmark benchmark_cm
-
 .PHONY: compiler
 compiler:
 	$(MAKE) -C $(COMP)
