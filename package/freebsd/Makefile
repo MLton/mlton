@@ -34,7 +34,7 @@ BOOT_DIST=	${PORTNAME}-${BOOT_VER}-1.${MACHINE_ARCH}-freebsd.${BOOT_SUF}
 
 ONLY_FOR_ARCHS=	i386
 
-MAN1=		mllex.1 mlprof.1 mlton.1 mlyacc.1
+MAN1=		mllex.1 mlnlffigen.1 mlprof.1 mlton.1 mlyacc.1
 MANCOMPRESSED=	yes
 
 BOOT_WRKSRC=	${WRKDIR}/mlton-bootstrap
@@ -74,7 +74,7 @@ post-extract:
 	${BOOT_WRKSRC}/bin/mlton
 
 post-install:
-.for bin in mllex mlprof mlton mlyacc
+.for bin in mllex mlnlffigen mlprof mlton mlyacc
 	${CHOWN} ${SHAREOWN}:${SHAREGRP} ${PREFIX}/bin/${bin}	\
 		${MAN1PREFIX}/man/man1/${bin}.1.gz
 	${CHMOD} a+rx ${PREFIX}/bin/${bin}
