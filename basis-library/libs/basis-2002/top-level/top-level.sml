@@ -13,6 +13,7 @@ open Basis2002
  *
  * Order here matters!  Do not alphabetize or otherwise reorder without thinking.
  *)
+structure Posix = Posix
 structure OS = OS
 structure BoolArray = BoolArray
 structure BoolVector = BoolVector
