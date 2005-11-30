@@ -9,12 +9,4 @@
  	mv .tmp $f
  done
  
-@@ -127,7 +127,7 @@
- ) >$book
- 
- echo 'Running htmldoc.'
--htmldoc --batch $book
-+htmldoc --batch $book || true
- 
- mv $pdf $src/doc/guide
  

@@ -127,7 +127,7 @@ grep -v '^\(Home\|Index\)$' $pages
 ) >$book
 
 echo 'Running htmldoc.'
-htmldoc --batch $book
+htmldoc --batch $book || true
 
 mv $pdf $src/doc/guide
 
