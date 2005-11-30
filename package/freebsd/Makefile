@@ -21,6 +21,8 @@ EXTRACT_ONLY=	${SRC_DIST}
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
+RELEASE ?=	1
+
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
 .if !defined(NOPORTDOCS)
 BUILD_DEPENDS+=	gsed:${PORTSDIR}/textproc/gsed \
