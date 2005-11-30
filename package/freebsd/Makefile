@@ -23,8 +23,7 @@ COMMENT=	An optimizing Standard ML compiler
 
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
 .if !defined(NOPORTDOCS)
-BUILD_DEPENDS+=	hevea:${PORTSDIR}/textproc/hevea 	\
-		latex:${PORTSDIR}/print/teTeX
+BUILD_DEPENDS+= latex:${PORTSDIR}/print/teTeX
 .endif
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash
