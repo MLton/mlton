@@ -16,6 +16,10 @@ ifeq ($(TARGET_ARCH), amd64)
 CFLAGS += -mtune=opteron -m32 
 endif 
 
+ifeq ($(TARGET_OS), freebsd)
+CFLAGS += -I/usr/local/include
+endif
+
 interpret.o: interpret.c interpret.h opcode.h
 	$(CC) $(CFLAGS) -c -O2 interpret.c
 

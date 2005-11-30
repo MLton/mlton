@@ -23,7 +23,9 @@ COMMENT=	An optimizing Standard ML compiler
 
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
 .if !defined(NOPORTDOCS)
-BUILD_DEPENDS+= latex:${PORTSDIR}/print/teTeX
+BUILD_DEPENDS+=	gsed:${PORTSDIR}/textproc/gsed \
+		htmldoc:${PORTSDIR}/textproc/htmldoc \
+		latex:${PORTSDIR}/print/teTeX
 .endif
 LIB_DEPENDS=	gmp.6:${PORTSDIR}/math/libgmp4
 RUN_DEPENDS=	bash:${PORTSDIR}/shells/bash
@@ -46,9 +48,6 @@ MAKE_ARGS=	DESTDIR='' \
 		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
 
-# XXX Temporary, until docs install is fixed in main Makefile
-NOPORTDOCS=	yes
-
 .if defined(NOPORTDOCS)
 INSTALL_TARGET=	install-no-docs
 .endif
@@ -61,6 +60,10 @@ PORTDIR=	usr/ports/lang/mlton
 LIB_DEPENDS+=	c.5:${PORTSDIR}/misc/compat5x
 .endif
 
+.if ${OSVERSION} >= 503000
+LIB_DEPENDS+=	m.2:${PORTSDIR}/misc/compat4x
+.endif
+
 BOOT_EXTRACT=	--bzip2
 BOOT_SUF=	tbz
 BOOT_VER=	20041109
@@ -71,6 +74,14 @@ post-extract:
 	@${REINPLACE_CMD} -e \
 		"s|lib=\'${LOCALBASE}/|lib=\'${BOOT_WRKSRC}/|" \
 	${BOOT_WRKSRC}/bin/mlton
+
+post-patch:
+	@${REINPLACE_CMD} -e \
+		"s|FLAGS += -I/usr/local/include|FLAGS += -I${LOCALBASE}/include|" \
+		${WRKSRC}/runtime/Makefile
+	@${REINPLACE_CMD} -e \
+		"s|CFLAGS += -I/usr/local/include|CFLAGS += -I${LOCALBASE}/include|" \
+		${WRKSRC}/bytecode/Makefile
 
 post-install:
 .for bin in mllex mlnlffigen mlprof mlton mlyacc
@@ -103,11 +114,11 @@ build-package:
 	${MAKE} install
 	${MAKE} package
 	${MAKE} deinstall
-	pkg_add ${PKGREPOSITORY}/${PORTNAME}-${PORTVERSION}.tbz
+	pkg_add ${PORTNAME}-${PORTVERSION}.tbz
 	${MAKE} deinstall
 	${MAKE} reinstall
 	${MAKE} package
-	${CP} ${PKGREPOSITORY}/${PORTNAME}-${PORTVERSION}.tbz	\
+	${CP} ${PORTNAME}-${PORTVERSION}.tbz	\
 		${DISTDIR}/${PORTNAME}-${PORTVERSION}-${RELEASE}.i386-freebsd.tbz
 	${TAR} -cpf - Makefile distinfo pkg-descr pkg-plist | \
 		( ${MKDIR} ${PORTDIR} && cd ${PORTDIR} && ${TAR} -xpf - )
@@ -117,8 +128,7 @@ TMP_PLIST=	tmp-pkg-plist
 PLIST=		${.CURDIR}/pkg-plist
 
 pkg-plist:
-# XXX Temporary, until docs install is fixed in main Makefile
-	cd ${WRKSRC} && ${GMAKE} install-no-docs
+	cd ${WRKSRC} && ${GMAKE} install
 	cd ${WRKSRC}/install/usr && \
 		${FIND} -d * \! -type d | ${GREP} -v man/man | \
 		${SORT} >${PLIST}

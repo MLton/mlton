@@ -1,0 +1,20 @@
+--- bin/make-pdf-guide.orig	Wed Nov 30 00:44:19 2005
++++ bin/make-pdf-guide	Wed Nov 30 00:44:33 2005
+@@ -52,7 +52,7 @@
+ s;<td colspan = 3;<td align = right;
+ s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
+ EOF
+-	sed -f $script <$f >.tmp
++	gsed -f $script <$f >.tmp
+ 	mv .tmp $f
+ done
+ 
+@@ -127,7 +127,7 @@
+ ) >$book
+ 
+ echo 'Running htmldoc.'
+-htmldoc --batch $book
++htmldoc --batch $book || true
+ 
+ mv $pdf $src/doc/guide
+ 
