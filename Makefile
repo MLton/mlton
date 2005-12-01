@@ -45,7 +45,7 @@ all:
 
 .PHONY: all-no-docs
 all-no-docs:
-	$(MAKE) dirs runtime compiler world-no-check libraries tools
+	$(MAKE) dirs runtime compiler world-no-check script mlbpathmap targetmap constants libraries tools
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
 # stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
@@ -57,7 +57,7 @@ ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
 	rm -f $(COMP)/$(AOUT)$(EXE)
 	$(MAKE) -C $(COMP)/front-end clean
 endif
-	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
+	$(MAKE) compiler world
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis-no-check
