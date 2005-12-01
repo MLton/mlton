@@ -36,6 +36,15 @@ CP = /bin/cp -fpR
 GZIP = gzip --force --best
 RANLIB = ranlib
 
+# If we're compiling with another version of MLton, then we want to do
+# another round of compilation so that we get a MLton built without
+# stubs.
+ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
+	BOOTSTRAP_OTHER=true
+else
+	BOOTSTRAP_OTHER=false
+endif
+
 VERSION ?= $(shell date +%Y%m%d)
 RELEASE ?= 1
 
@@ -46,14 +55,11 @@ all:
 .PHONY: all-no-docs
 all-no-docs:
 	$(MAKE) dirs runtime compiler world-no-check script mlbpathmap targetmap constants libraries tools
-# If we're compiling with another version of MLton, then we want to do
-# another round of compilation so that we get a MLton built without
-# stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
-# remake MLton.
+# Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
 # We also want to re-run the just-built tools (mllex and mlyacc)
 # because they may be better than those that were used for the first
 # round of compilation.  So, we clean out the front end.
-ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
+ifeq (true, $(BOOTSTRAP_OTHER))
 	rm -f $(COMP)/$(AOUT)$(EXE)
 	$(MAKE) -C $(COMP)/front-end clean
 endif
