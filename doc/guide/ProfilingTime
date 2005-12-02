@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To use <a href="Profiling">Profiling</a> to find out how much time is spent by each source function over an entire run of the program, compile with  <tt>-profile&nbsp;time</tt>.  For example, suppose that <tt>tak.sml</tt> contains the following. <p>
+With MLton and <tt>mlprof</tt>, you can <a href="Profiling">profile</a> your program to find out how much time is spent in each function over an entire run of the program.  To do so, compile your program with  <tt>-profile&nbsp;time</tt>.  For example, suppose that <tt>tak.sml</tt> contains the following. <p>
 <pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tak =
    <B><FONT COLOR="#0000FF">struct</FONT></B>
       <B><FONT COLOR="#A020F0">fun</FONT></B> tak1 (x, y, z) =
@@ -99,7 +99,7 @@ function     cur
 Tak.tak1.tak2 75.8%
 Tak.tak1      24.2%
 </pre><p>
-This example shows how <tt>mlprof</tt> indicates lexical nesting via a sequence of period-separated names indicating the structures and functions in which a function definition is nested.  The profiling data shows that roughly three-quarters of the time is spent in the <tt>Tak.tak1.tak2</tt> function, while the rest is spent in <tt>Tak.tak1</tt>. 
+This example shows how <tt>mlprof</tt> indicates lexical nesting: as a sequence of period-separated names indicating the structures and functions in which a function definition is nested.  The profiling data shows that roughly three-quarters of the time is spent in the <tt>Tak.tak1.tak2</tt> function, while the rest is spent in <tt>Tak.tak1</tt>. 
 </p>
 <p>
 Display raw counts in addition to percentages with <tt>-raw&nbsp;true</tt>. 
@@ -122,7 +122,10 @@ Tak.tak1  tak.sml: 3      24.2%
 </pre>
 </p>
 <p>
-Time profiling is designed to have a very small performance impact. You can also compile with <tt>-profile&nbsp;time&nbsp;-profile-branch&nbsp;true</tt> to find out how much time is spent in each branch of a function; see <a href="ProfilingCounts">ProfilingCounts</a> for more details on <tt>-profile-branch</tt>. 
+Time profiling is designed to have a very small performance impact. However, in some cases there will be a run-time performance cost, which may perturb the results.  There is more likely to be an impact with <tt>-codegen&nbsp;c</tt> than <tt>-codegen&nbsp;native</tt>. 
+</p>
+<p>
+You can also compile with <tt>-profile&nbsp;time&nbsp;-profile-branch&nbsp;true</tt> to find out how much time is spent in each branch of a function; see <a href="ProfilingCounts">ProfilingCounts</a> for more details on <tt>-profile-branch</tt>. 
 </p>
 <h2 id="head-bcaa33a7ae44bd5042c37a9cdbea7f843b1cf7c8">Caveats</h2>
 <p>
@@ -154,5 +157,5 @@ Also, because of the random sampling used to implement  <tt>-profile&nbsp;time</
 
 <p>
 <hr>
-Last edited on 2005-08-12 17:49:16 by <span title="132.236.243.210"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 00:51:55 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

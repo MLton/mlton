@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,6 +67,18 @@ Installation of MLton creates the following files and directories.
             <ul>
 
    The <a class="nonexistent" href="MLLex">MLLex</a> lexer generator. 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>/usr/bin/mlnlffigen</tt> 
+</p>
+</li>
+
+            <ul>
+
+   The <a href="MLNLFFI">ML-NLFFI</a> tool. 
             </ul>
 
 
@@ -120,7 +132,7 @@ Installation of MLton creates the following files and directories.
 
     <li class="gap">
 <p>
- <tt>/usr/share/man/man1/mllex.1</tt>, <tt>mlprof.1</tt>, <tt>mlton.1</tt>, <tt>mlyacc.1</tt> 
+ <tt>/usr/share/man/man1/mllex.1</tt>, <tt>mlnlffigen.1</tt>, <tt>mlprof.1</tt>, <tt>mlton.1</tt>, <tt>mlyacc.1</tt> 
 </p>
 </li>
 
@@ -160,5 +172,5 @@ Once you have installed MLton, create a file called <tt>hello-world.sml</tt> wit
 
 <p>
 <hr>
-Last edited on 2004-11-01 21:24:12 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 04:45:57 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

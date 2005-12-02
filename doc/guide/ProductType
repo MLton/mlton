@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,7 +54,7 @@
 </pre> and a product pattern is written as
 <pre>(p1, p2, ..., pN)
 </pre>In most situations the syntax is quite convenient. However, there are special circumstances under which the syntax for product patterns can be cumbersome. <p>
-The problem is probably best known through parser combinators. A typical parser combinator library provides a combinator that has a type of the form 
+The problem is best shown through parser combinators. A typical parser combinator library provides a combinator that has a type of the form 
 <pre>'a parser * 'b parser -&gt; ('a * 'b) parser
 </pre>and produces a parser for the concatenation of two parsers. When more than two parsers are concatenated, the result of the resulting parser is a nested structure of pairs 
 <pre>(...((p1, p2), p3)..., pN)
@@ -92,5 +92,5 @@ The symbol <tt>&amp;</tt> is inspired by the Curry-Howard isomorphism: the proof
 
 <p>
 <hr>
-Last edited on 2005-08-07 17:57:29 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-02 04:23:58 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

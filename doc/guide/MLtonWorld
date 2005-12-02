@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,7 +74,7 @@
 
         <ul>
 
-  used to specify whether a world is original or restarted (a clone). 
+  specifies whether a world is original or restarted (a clone). 
         </ul>
 
 
@@ -86,7 +86,7 @@
 
         <ul>
 
-  load the saved computation from file <tt>f</tt>. 
+  loads the saved computation from file <tt>f</tt>. 
         </ul>
 
 
@@ -98,7 +98,7 @@
 
         <ul>
 
-  save the entire state of the computation to the file <tt>f</tt>.  The   computation can then be restarted at a later time using   <tt>World.load</tt> or the <tt>load-world</tt> runtime system option.  The   call to <tt>save</tt> in the original computation returns   <tt>Original</tt> and the call in the restarted world returns   <tt>Clone</tt>. 
+  saves the entire state of the computation to the file <tt>f</tt>.  The   computation can then be restarted at a later time using   <tt>World.load</tt> or the <tt>load-world</tt>    <a href="RunTimeOptions">runtime option</a>.  The call to <tt>save</tt> in the   original computation returns <tt>Original</tt> and the call in the   restarted world returns <tt>Clone</tt>.  
         </ul>
 
 
@@ -110,7 +110,7 @@
 
         <ul>
 
-  save the entire state of the computation to the file <tt>f</tt> that   will resume with thread <tt>rt</tt> upon restart.  
+  saves the entire state of the computation to the file <tt>f</tt> that   will resume with thread <tt>rt</tt> upon restart.  
         </ul>
 
 
@@ -149,5 +149,5 @@ I am the clone
 
 <p>
 <hr>
-Last edited on 2004-11-11 22:23:51 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 23:17:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

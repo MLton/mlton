@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,24 +54,21 @@
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RLIMIT =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> rlim </FONT></B>=<FONT COLOR="#228B22"><B> word
-               
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> infinity: rlim
-
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
                
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> coreFileSize: t        <I><FONT COLOR="#B22222">(* CORE    max core file size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> cpuTime: t             <I><FONT COLOR="#B22222">(* CPU     CPU time in seconds *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> dataSize: t            <I><FONT COLOR="#B22222">(* DATA    max data size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> fileSize: t            <I><FONT COLOR="#B22222">(* FSIZE   Maximum filesize *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> get: t -&gt; {hard: rlim, soft: rlim}
+      <B><FONT COLOR="#A020F0">val</FONT></B> infinity: rlim
       <B><FONT COLOR="#A020F0">val</FONT></B> lockedInMemorySize: t  <I><FONT COLOR="#B22222">(* MEMLOCK max locked address space *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> numFiles: t            <I><FONT COLOR="#B22222">(* NOFILE  max number of open files *)</FONT></I>  
       <B><FONT COLOR="#A020F0">val</FONT></B> numProcesses: t        <I><FONT COLOR="#B22222">(* NPROC   max number of processes *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> residentSetSize: t     <I><FONT COLOR="#B22222">(* RSS     max resident set size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> set: t * {hard: rlim, soft: rlim} -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> stackSize: t           <I><FONT COLOR="#B22222">(* STACK   max stack size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> virtualMemorySize: t   <I><FONT COLOR="#B22222">(* AS      virtual memory limit *)</FONT></I>
-      
-      <B><FONT COLOR="#A020F0">val</FONT></B> get: t -&gt; {hard: rlim, soft: rlim}
-      <B><FONT COLOR="#A020F0">val</FONT></B> set: t * {hard: rlim, soft: rlim} -&gt; unit
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -92,18 +89,6 @@
         <ul>
 
   the type of resource limits. 
-        </ul>
-
-
-    <li class="gap">
-<p>
- <tt>infinity</tt> 
-</p>
-</li>
-
-        <ul>
-
-  indicates that a resource is unlimited. 
         </ul>
 
 
@@ -133,6 +118,18 @@
 
     <li class="gap">
 <p>
+ <tt>infinity</tt> 
+</p>
+</li>
+
+        <ul>
+
+  indicates that a resource is unlimited. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>set&nbsp;(r,&nbsp;{hard,&nbsp;soft})</tt> 
 </p>
 </li>
@@ -149,5 +146,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:28:25 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:54:25 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

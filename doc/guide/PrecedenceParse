@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,15 +49,15 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An analysis/rewrite pass for the <a href="AST">AST</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="Elaborate">Elaborate</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+PrecedenceParse is an analysis/rewrite pass for the <a href="AST">AST</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="Elaborate">Elaborate</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-Rewrites <a href="AST">AST</a> function clauses, expressions, and patterns to resolve <a href="OperatorPrecedence">OperatorPrecedence</a>. 
+This pass rewrites <a href="AST">AST</a> function clauses, expressions, and patterns to resolve <a href="OperatorPrecedence">OperatorPrecedence</a>. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/elaborate/precedence-parse.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/elaborate/precedence-parse.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/elaborate/precedence-parse.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/elaborate/precedence-parse.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">precedence-parse.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
@@ -65,5 +65,5 @@ Rewrites <a href="AST">AST</a> function clauses, expressions, and patterns to re
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:30:43 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 23:34:53 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

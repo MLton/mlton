@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -59,7 +59,7 @@ MLton was designed and implemented by <a href="HenryCejtin">HenryCejtin</a>, <a 
 </li>
     <li class="gap">
 <p>
- <a href="MatthewFluet">MatthewFluet</a> implemented the X86 native code generator, ported  <tt>mlprof</tt> to work with the native code generator, did a lot of work  on the SSA optimizer, both adding new optimizations and improving or  porting existing optimizations, updated the   <a href="BasisLibrary"> SML Basis Library</a> implementation, ported  <a href="ConcurrentML">ConcurrentML</a> to MLton, and implemented the   <a href="MLBasis"> ML Basis system</a>.  
+ <a href="MatthewFluet">MatthewFluet</a> implemented the X86 native code generator, ported  <tt>mlprof</tt> to work with the native code generator, did a lot of work  on the SSA optimizer, both adding new optimizations and improving or  porting existing optimizations, updated the   <a href="BasisLibrary">Basis Library</a> implementation, ported  <a href="ConcurrentML">ConcurrentML</a> and <a href="MLNLFFI">ML-NLFFI</a> to MLton, and implemented the   <a href="MLBasis"> ML Basis system</a>.  
 </p>
 </li>
     <li class="gap">
@@ -84,7 +84,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 
     <li>
 <p>
- Jesper Louis Andersen sent several patches to improve the runtime on  FreeBSD and ported MLton to run on NetBSD and OpenBSD.  
+ <a href="JesperLouisAndersen">JesperLouisAndersen</a> sent several patches to improve the runtime on  FreeBSD and ported MLton to run on NetBSD and OpenBSD.  
 </p>
 </li>
     <li class="gap">
@@ -94,17 +94,22 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Alain Deutsch and   <a class="external" href="http://www.polyspace.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">PolySpace Technologies</a> provided many bug  fixes and runtime system improvements, as well as some code to help  the Sparc port. 
+ Alain Deutsch and   <a class="external" href="http://www.polyspace.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">PolySpace Technologies</a> provided many bug  fixes and runtime system improvements, code to help the Sparc/Solaris  port, and funded a number of improvements to MLton. 
 </p>
 </li>
     <li class="gap">
 <p>
- Martin Elsman provided helpful discussions in the development of  the <a href="MLBasis"> MLBasis system</a>.  
+ Martin Elsman provided helpful discussions in the development of  the <a href="MLBasis">ML Basis system</a>.  
 </p>
 </li>
     <li class="gap">
 <p>
  Brent Fulgham ported MLton most of the way to MinGW. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ Adam Goode provided the script to build the PDF MLton Guide. 
 </p>
 </li>
     <li class="gap">
@@ -125,6 +130,11 @@ Many people have helped us over the years.  Here is an alphabetical list.
     <li class="gap">
 <p>
  Richard Kelsey provided helpful discussions. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ Geoffrey Mainland helped with FreeBSD packaging. 
 </p>
 </li>
     <li class="gap">
@@ -159,7 +169,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- <a href="WesleyTerpstra">WesleyTerpstra</a> added support for <tt>MLton.Process.Create</tt>,  made  a number of contributions to the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> and  contributed a number of other runtime system patches. 
+ <a href="WesleyTerpstra">WesleyTerpstra</a> added support for <tt>MLton.Process.create</tt>, made  a number of contributions to the <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>, and  contributed a number of other runtime system patches. 
 </p>
 </li>
     <li class="gap">
@@ -172,14 +182,14 @@ Many people have helped us over the years.  Here is an alphabetical list.
 
 
 <p>
-We have also benefited from other software development tools and borrowed code from other sources. 
+We have also benefited from other software development tools and used code from other sources. 
 </p>
 
     <ul>
 
     <li>
 <p>
- MLton was developed using   <a class="external" href="http://www.smlnj.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Standard ML of New Jersey</a> and the  <a class="external" href="http://www.smlnj.org/doc/CM/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compilation Manager (CM)</a>  
+ MLton was developed using   <a href="SMLNJ">Standard ML of New Jersey</a> and the  <a href="CompilationManager">Compilation Manager (CM)</a>  
 </p>
 </li>
     <li class="gap">
@@ -189,17 +199,17 @@ We have also benefited from other software development tools and borrowed code f
 </li>
     <li class="gap">
 <p>
- The MLton <a href="BasisLibrary"> SML Basis Library</a> implementation of  conversions between binary and decimal representations of reals uses  David Gay's  <a class="external" href="http://www.netlib.org/fp/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">gdtoa</a> library.  
+ The MLton <a href="BasisLibrary">Basis Library</a> implementation of  conversions between binary and decimal representations of reals uses  David Gay's <a class="external" href="http://www.netlib.org/fp/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">gdtoa</a> library.  
 </p>
 </li>
     <li class="gap">
 <p>
- The MLton <a href="BasisLibrary"> SML Basis Library</a> implementation uses  modified versions of  portions of the the SML/NJ Basis Library  implementation modules <tt>OS.IO</tt>, <tt>Posix.IO</tt>, <tt>Process</tt>,  and <tt>Unix</tt>. 
+ The MLton <a href="BasisLibrary">Basis Library</a> implementation uses  modified versions of  portions of the the SML/NJ Basis Library  implementation modules <tt>OS.IO</tt>, <tt>Posix.IO</tt>, <tt>Process</tt>,  and <tt>Unix</tt>. 
 </p>
 </li>
     <li class="gap">
 <p>
- The MLton <a href="BasisLibrary"> SML Basis Library</a> implementation uses  modified versions of portions of the  <a class="external" href="http://www.itu.dk/research/mlkit/kit3/readme.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML Kit Version 4.1.4</a>  Basis Library implementation modules <tt>Path</tt>, <tt>Time</tt>, and  <tt>Date</tt>.   
+ The MLton <a href="BasisLibrary">Basis Library</a> implementation uses  modified versions of portions of the <a href="MLKit">ML Kit</a> Version 4.1.4  Basis Library implementation modules <tt>Path</tt>, <tt>Time</tt>, and  <tt>Date</tt>.   
 </p>
 </li>
     <li class="gap">
@@ -219,7 +229,7 @@ We have also benefited from other software development tools and borrowed code f
 </li>
     <li class="gap">
 <p>
- MLton's implementation of <a href="ConcurrentML">Concurrent ML</a> and the  <a href="MLNLFFI">ML-NLFFI</a> are modified versions of code from SML/NJ. 
+ MLton's implementation of mllex, mlyacc, the   <a href="CKitLibrary">ckit Library</a>,   <a href="ConcurrentML">Concurrent ML</a>,   and <a href="MLNLFFI">ML-NLFFI</a>   are modified versions of code from SML/NJ. 
 </p>
 </li>
 </ul>
@@ -230,5 +240,5 @@ We have also benefited from other software development tools and borrowed code f
 
 <p>
 <hr>
-Last edited on 2005-09-27 15:46:17 by <span title="adsl-64-170-115-30.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 05:16:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

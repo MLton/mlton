@@ -29,7 +29,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,7 +66,7 @@ Documentation is available on the following topics.
 
         <li>
 <p>
- <a href="BasisLibrary"> SML Basis Library</a> 
+ <a href="BasisLibrary">Basis Library</a> 
 </p>
 </li>
         <li>
@@ -98,7 +98,7 @@ Documentation is available on the following topics.
 </li>
         <li>
 <p>
- <a href="ManualPage"> Manual Page</a> 
+ <a href="ManualPage"> Manual page</a>    (<a href="CompileTimeOptions">compile-time options</a>   <a href="RunTimeOptions">run-time options</a>) 
 </p>
 </li>
         <li>
@@ -113,7 +113,7 @@ Documentation is available on the following topics.
 </li>
         <li>
 <p>
- <a href="PlatformSpecificNotes"> Platform specific notes</a> 
+ <a href="PlatformSpecificNotes"> Platform-specific notes</a> 
 </p>
 </li>
         <li>
@@ -195,5 +195,5 @@ Documentation is available on the following topics.
 
 <p>
 <hr>
-Last edited on 2005-01-29 01:32:35 by <span title="adsl-64-170-112-189.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 19:30:55 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

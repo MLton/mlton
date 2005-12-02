@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,21 +49,18 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+Deep flatten is an optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-An optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. 
-</p>
-<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
-<p>
-Flatten into mutable fields of objects and into vectors. 
+This pass flattens into mutable fields of objects and into vectors. 
 </p>
 <p>
 For example, an <tt>(int&nbsp;*&nbsp;int)&nbsp;ref</tt> is represented by a 2 word object, and an <tt>(int&nbsp;*&nbsp;int)&nbsp;array</tt> contains pairs of <tt>int</tt>s, rather than pointers to pairs of <tt>int</tt>s. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
@@ -71,5 +68,5 @@ For example, an <tt>(int&nbsp;*&nbsp;int)&nbsp;ref</tt> is represented by a 2 wo
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:39:38 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 03:29:16 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

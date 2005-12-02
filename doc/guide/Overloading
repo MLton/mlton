@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -121,7 +121,7 @@ Other implementations may use a smaller context or different default types.
 
     <li>
 <p>
- <a class="external" href="http://mlton.org/basis/top-level-chapter.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">discussion of overloading in the SML Basis Library</a> 
+ <a class="external" href="http://mlton.org/basis/top-level-chapter.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">discussion of overloading in the Basis Library</a> 
 </p>
 </li>
 
@@ -155,5 +155,5 @@ Other implementations may use a smaller context or different default types.
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:55:49 by <span title="roam59-224.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 01:19:19 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

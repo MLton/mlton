@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,11 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An <a href="MLBasis">ML Basis</a> (MLB) file describes a library or program.  An MLB file should have the <tt>.mlb</tt> suffix and should contain a basis declaration, which must be one of the following forms. 
+An <a href="MLBasis">ML Basis</a> (MLB) file should have the <tt>.mlb</tt> suffix and should contain a basis declaration. <h2 id="head-17c7ba7676ad1ad6dd1c4e6b997adcae910262c9">Syntax</h2>
+<p>
+A basis declaration must be one of the following forms. 
+</p>
+
     <ul>
 
     <li>
@@ -89,7 +93,7 @@ An <a href="MLBasis">ML Basis</a> (MLB) file describes a library or program.  An
 </li>
     <li>
 <p>
- <em>path</em><tt>.sml</tt> 
+ <em>path</em><tt>.sml</tt>, <em>path</em><tt>.sig</tt>, or <em>path</em><tt>.fun</tt> 
 </p>
 </li>
     <li>
@@ -106,9 +110,6 @@ An <a href="MLBasis">ML Basis</a> (MLB) file describes a library or program.  An
     </ul>
 
 
-<p>
-Files of the form <em>path</em><tt>.sml</tt> and <em>path</em><tt>.mlb</tt> can  be quoted to include non-alphanumeric characters -- see below. 
-</p>
 <p>
 A basis expression <em>basexp</em> must be of one the following forms. 
 </p>
@@ -138,16 +139,26 @@ A basis expression <em>basexp</em> must be of one the following forms.
 Nested SML-style comments (enclosed with <tt>(*</tt> and <tt>*)</tt>) are ignored (but <a href="LineDirective">LineDirective</a>s are recognized). 
 </p>
 <p>
-Conceptually, a basis file is elaborated starting in an empty basis, and each basis declaration produces a basis as a result.  Basis expressions and basis identifiers allow binding a basis to a name; this, in turn, allows fine-grained specification of dependencies, without the need for additional MLB files.  Local declarations provide name hiding.  Sequencing of basis declarations merges the bases. Structure, signature, and functor declarations bind a module in the current basis. 
-</p>
-<p>
-References to SML source files cause the file to be elaborated in the "current" basis.  References to other ML basis files cause the basis denoted by that ML basis file to be imported.  Recall that an ML basis file is elaborated in an empty basis; hence, no bindings from the "current" basis are available to the imported basis file.  Since MLB files are elaborated in the empty basis, they need only be elaborated (and evaluated) once.  The semantics of MLB files are such that the results of elaborating (and evaluating) an MLB file are cached.  Thus, any observable effects due to evaluation are not duplicated if the MLB file is referred to multiple times. 
-</p>
-<p>
 Paths can be relative or absolute.  Relative paths are relative to the directory containing the MLB file.  Paths may include path variables and are expanded according to a <a href="MLBasisPathMap">path map</a>.  Unquoted paths may include alpha-numeric characters and the symbols "<tt>-</tt>" and "<tt>_</tt>", along with the arc separator "<tt>/</tt>" and extension separator "<tt>.</tt>".  More complicated paths, including paths with spaces, may be included by quoting the path with <tt>"</tt>.  A quoted path is lexed as a SML string constant. 
 </p>
 <p>
-Finally, <a href="MLBasisAnnotations">annotations</a> allow a library author to control options that affect the elaboration of SML source files. 
+<a href="MLBasisAnnotations">Annotations</a> allow a library author to control options that affect the elaboration of SML source files. 
+</p>
+<h2 id="head-fe03c3515833357d89e7094df960e757cae3bc1d">Semantics</h2>
+<p>
+There is a <a href="http://mlton.org/pages/MLBasis/attachments/mlb-formal.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">formal semantics</a> for ML Basis files in the style of the <a href="DefinitionOfStandardML">Definition</a>. Here, we give an informal explanation. 
+</p>
+<p>
+An SML structure is a collection of types, values, and other structures.  Similarly, a basis is a collection, but of more kinds of objects: types, values, structures, fixities, signatures, functors, and other bases.  
+</p>
+<p>
+A basis declaration denotes a basis.  A structure, signature, or functor declaration denotes a basis containing the corresponding module.  Sequencing of basis declarations merges bases, with later definitions taking precedence over earlier ones, just like sequencing of SML declarations.  Local declarations provide name hiding, just like SML local declarations.  A reference to an SML source file causes the file to be elaborated in the basis extant at the point of reference.  A reference to an MLB file causes the basis denoted by that MLB file to be imported -- the basis at the point of reference does <em>not</em> affect the imported basis. 
+</p>
+<p>
+Basis expressions and basis identifiers allow binding a basis to a name. 
+</p>
+<p>
+An MLB file is elaborated starting in an empty basis.  Each MLB file is elaborated and evaluated only once, with the result being cached. Subsequent references use the cached value.  Thus, any observable effects due to evaluation are not duplicated if the MLB file is referred to multiple times. 
 </p>
 </div>
 
@@ -155,5 +166,5 @@ Finally, <a href="MLBasisAnnotations">annotations</a> allow a library author to 
 
 <p>
 <hr>
-Last edited on 2005-05-01 08:42:17 by <span title="adsl-64-170-112-95.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 20:54:18 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,8 +49,8 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-We have written a simple command-line tool that makes it possible to edit wiki pages using your favorite text editor instead of within a browser text box.  The tool provides a cvs-like command-line interface that can be used to update local copies of files from the web and to commit local modifications to the web.   <p>
-The tool is written in SML (of course) and is  <a class="external" href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/wiki/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">available in the MLton CVS</a>. To compile it, you need to have the latest CVS of the MLton library sources, and point the mlb path variable <tt>MLTON_SRC_LIB</tt> at the <tt>lib/mlton</tt> dir in the sources. 
+We have written a simple command-line tool that makes it possible to edit wiki pages using your favorite text editor instead of within a browser text box.  The tool provides a CVS/SVN-like command-line interface that can be used to update local copies of files from the web and to commit local modifications to the web. <p>
+The tool is written in SML (of course) and is [<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/wiki/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/cgi-bin/viewcvs.cgi/mlton/wiki/</a> available in the MLton CVS].  To compile it, you need to have the latest SVN of the MLton library sources, and point the MLB path variable <tt>MLTON_SRC_LIB</tt> at the <tt>lib/mlton</tt> dir in the sources. 
 </p>
 <p>
 Here's a quick tutorial on how to use the tool 
@@ -147,7 +147,7 @@ That's it for the simple use.  There are also other commands like cvs.
 <tt>rename</tt> and <tt>remove</tt> shouldn't work for most people on <tt>mlton.org</tt> because of the way our <a href="AccessControl">AccessControl</a> is set up. 
 </p>
 <p>
-This code is a two-day hack and is not widely used.  But we've found it useful.  Please send bug reports to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>. 
+This code is a two-day hack and is not widely used.  But we've found it useful.  Please send bug reports to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
 </p>
 </div>
 
@@ -155,5 +155,5 @@ This code is a two-day hack and is not widely used.  But we've found it useful. 
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:21:21 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:21:22 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

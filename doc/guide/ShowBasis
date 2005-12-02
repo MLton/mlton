@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,17 +49,18 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
 MLton has a flag, <tt>-show-basis&nbsp;</tt> <em>file</em>, that causes MLton to pretty print to <em>file</em> the basis defined by the input program.  For example, if <tt>foo.sml</tt> contains 
 <pre class=code>
 <B><FONT COLOR="#A020F0">fun</FONT></B> f x = x + <B><FONT COLOR="#5F9EA0">1</FONT></B>
 </PRE>
+<p>
  then <tt>mlton&nbsp;-show-basis&nbsp;foo.basis&nbsp;foo.sml</tt> will create <tt>foo.basis</tt> with the following contents. 
 <pre>val f: int -&gt; int
 </pre>If you only want to see the basis and do not wish to compile the program, you can call MLton with <tt>-stop&nbsp;tc</tt>. 
 </p>
+<h2 id="head-f68fa1f6c99a6935aec560696799f2414d893d6f">Displaying signatures</h2>
 <p>
-When displaying signatures, MLton prefixes types defined in the signature them with <tt>?.</tt> to distinguish them from types defined in the environment.  For example, 
+When displaying signatures, MLton prefixes types defined in the signature them with <tt>?.</tt> to distinguish them from types defined in the environment.  For example,  
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -76,7 +77,7 @@ When displaying signatures, MLton prefixes types defined in the signature them w
 </pre>Notice that <tt>int</tt> occurs without the <tt>?.</tt> prefix. 
 </p>
 <p>
-MLton also uses a canonical name for each type in the signature, and that name is used everywhere for that type, no matter what the input signature looked like.  For example 
+MLton also uses a canonical name for each type in the signature, and that name is used everywhere for that type, no matter what the input signature looked like.  For example: 
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -97,7 +98,7 @@ MLton also uses a canonical name for each type in the signature, and that name i
 </pre>
 </p>
 <p>
-Canonical names are always relative to the "top" of the signature, even when used in nested substructures.  For example, 
+Canonical names are always relative to the "top" of the signature, even when used in nested substructures.  For example: 
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> S =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -127,6 +128,7 @@ Canonical names are always relative to the "top" of the signature, even when use
    end
 </pre>
 </p>
+<h2 id="head-c6c2aa845cc7b36e66f2c4aa799b976c96116919">Displaying structures</h2>
 <p>
 When displaying structures, MLton uses signature constraints wherever possible, combined with <tt>where&nbsp;type</tt> clauses to specify the meanings of the types defined within the signature. 
 </p>
@@ -163,5 +165,5 @@ signature SIG =
 
 <p>
 <hr>
-Last edited on 2004-11-28 19:09:32 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:48:03 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

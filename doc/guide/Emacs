@@ -14,8 +14,6 @@
 <link rel="Start" href="Home">
 
 
-<link rel="Appendix" title="esml-mlb-mode.el" href="http://mlton.org/pages/Emacs/attachments/esml-mlb-mode.el">
-<link rel="Appendix" title="mlb.el" href="http://mlton.org/pages/Emacs/attachments/mlb.el">
 </head>
 
 <body lang="en" dir="ltr">
@@ -27,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -83,7 +81,7 @@ There are a few Emacs modes for SML.
     <li class="gap">
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
  contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
 </p>
 </li>
@@ -105,7 +103,7 @@ There are a few Emacs modes for SML.
 
 <h3 id="head-ca4c2c588f94359116733bd5a53f0e418c8306bd">MLB modes</h3>
 <p>
-There are a couple of modes for editing <a href="MLBasis"> ML Basis</a> files.  
+There is a mode for editing <a href="MLBasis"> ML Basis</a> files.  
 </p>
 
     <ul>
@@ -113,13 +111,8 @@ There are a couple of modes for editing <a href="MLBasis"> ML Basis</a> files.
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
  
-</p>
-</li>
-    <li>
-<p>
- <a href="http://mlton.org/pages/Emacs/attachments/mlb.el"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlb.el</a> 
 </p>
 </li>
 
@@ -158,5 +151,5 @@ Alternatively, you could use a sed script to rewrite MLton's errors. Here is one
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:19:05 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 03:57:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

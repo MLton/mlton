@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,15 +49,15 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+Zone is an optimization pass for the <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSA2Simplify">SSA2Simplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-Breaks large <a href="SSA2">SSA2</a> functions into zones, which are connected subgraphs of the dominator tree.  For each zone, at the node that dominates the zone (the "zone root"), it places a tuple collecting all of the live variables at that node.  It replaces any variables used in that zone with offsets from the tuple.  The goal is to decrease the liveness information in large <a href="SSA">SSA</a> functions. 
+This pass breaks large <a href="SSA2">SSA2</a> functions into zones, which are connected subgraphs of the dominator tree.  For each zone, at the node that dominates the zone (the "zone root"), it places a tuple collecting all of the live variables at that node.  It replaces any variables used in that zone with offsets from the tuple.  The goal is to decrease the liveness information in large <a href="SSA">SSA</a> functions. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/zone.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">zone.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/zone.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">zone.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/zone.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">zone.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/zone.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">zone.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 Compute strongly-connected components to avoid put tuple constructions in loops. 
@@ -80,5 +80,5 @@ In the <tt>HOL</tt> program, the particular problem is the main function, which 
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:23:59 by <span title="net-79206.roam.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:24:42 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,13 +49,10 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
 MLton is run from the command line with a collection of options followed by a file name and a list of files to compile, assemble, and link with. 
 <pre>mlton [option ...] file.{c|cm|mlb|o|sml} [file.{c|o|s|S} ...]
-</pre>The simplest case is to run <tt>mlton&nbsp;foo.sml</tt>, where <tt>foo.sml</tt> contains a valid SML program, in which case MLton compiles the program to produce an executable <tt>foo</tt>.  Since MLton does not support separate compilation, the program must be the entire program you wish to compile.  However, the program may refer to signatures and structures defined in the <a href="BasisLibrary"> SML Basis Library</a>. 
-</p>
-<p>
-Larger programs, spanning many files, may be compiled with the  <a href="MLBasis">ML Basis system</a>.  In this case, <tt>mlton&nbsp;foo.mlb</tt> will compile the complete SML program described by the basis <tt>foo.mlb</tt>, which may specify both SML files and additional bases. 
+</pre>The simplest case is to run <tt>mlton&nbsp;foo.sml</tt>, where <tt>foo.sml</tt> contains a valid SML program, in which case MLton compiles the program to produce an executable <tt>foo</tt>.  Since MLton does not support separate compilation, the program must be the entire program you wish to compile.  However, the program may refer to signatures and structures defined in the <a href="BasisLibrary">Basis Library</a>. <p>
+Larger programs, spanning many files, can be compiled with the  <a href="MLBasis">ML Basis system</a>.  In this case, <tt>mlton&nbsp;foo.mlb</tt> will compile the complete SML program described by the basis <tt>foo.mlb</tt>, which may specify both SML files and additional bases. 
 </p>
 <p>
 MLton also supports a limited subset of <a href="CompilationManager"> SML/NJ CompilationManager (CM)</a> files.  For example, <tt>mlton&nbsp;foo.cm</tt> will compile the complete SML program consisting of the concatenation of all the SML files referred to (either directly or indirectly) by <tt>foo.cm</tt>. 
@@ -82,5 +79,5 @@ MLton also supports a limited subset of <a href="CompilationManager"> SML/NJ Com
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:46:37 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 19:31:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

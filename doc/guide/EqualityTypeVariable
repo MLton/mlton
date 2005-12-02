@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,10 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
-An equality type variable is a type variable that starts with two or more primes, as in <tt>''a</tt> or <tt>''b</tt>.  The canonical use of equality type variables is in specifying the type of the <a href="PolymorphicEquality">PolymorphicEquality</a> function, which is <tt>''a&nbsp;*&nbsp;''a&nbsp;-&gt;&nbsp;bool</tt>. Equality type variables ensure that polymorphic equality is only used on <a href="EqualityType">EqualityType</a>s, by requiring that at every use of a polymorphic value, equality type variables are instantiated by equality types. 
-</p>
-<p>
+An equality type variable is a type variable that starts with two or more primes, as in <tt>''a</tt> or <tt>''b</tt>.  The canonical use of equality type variables is in specifying the type of the <a href="PolymorphicEquality">PolymorphicEquality</a> function, which is <tt>''a&nbsp;*&nbsp;''a&nbsp;-&gt;&nbsp;bool</tt>. Equality type variables ensure that polymorphic equality is only used on <a href="EqualityType">equality types</a>, by requiring that at every use of a polymorphic value, equality type variables are instantiated by equality types. <p>
 For example, the following program is type correct because polymorphic equality is applied to variables of type <tt>''a</tt>. 
 </p>
 
@@ -165,7 +162,7 @@ For each of these programs, MLton reports the following error.
     signature: [&lt;non-equality&gt;] -&gt; _
 </pre><h2 id="head-298e9694028673faa9fcbabf774bc23e4d2fbbe0">Equality type variables in type and datatype declarations</h2>
 <p>
-Equality type variables can be used in type and datatype declarations, however they play no special role.  For example, 
+Equality type variables can be used in type and datatype declarations; however they play no special role.  For example, 
 </p>
 
 <pre class=code>
@@ -213,5 +210,5 @@ is completely identical to
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:35:39 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:00:38 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

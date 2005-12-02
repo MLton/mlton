@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,27 +50,27 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <p>
-<tt>$(MLTON_ROOT)/basis/basis.mlb</tt> 
+<tt>$(SML_LIB)/basis/basis.mlb</tt> 
 </p>
 
         <ul>
 
-  The <a href="BasisLibrary"> Standard ML Basis Library</a>. 
+  The <a href="BasisLibrary">Basis Library</a>. 
         </ul>
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/basis-1997.mlb</tt> 
+<tt>$(SML_LIB)/basis/basis-1997.mlb</tt> 
 </p>
 
         <ul>
 
-  The (deprecated) 1997 specification of the <a href="BasisLibrary"> Standard ML Basis Library</a>. 
+  The (deprecated) 1997 version of the <a href="BasisLibrary">Basis Library</a>. 
         </ul>
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/mlton.mlb</tt> 
+<tt>$(SML_LIB)/basis/mlton.mlb</tt> 
 </p>
 
         <ul>
@@ -80,7 +80,7 @@ MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/sml-nj.mlb</tt> 
+<tt>$(SML_LIB)/basis/sml-nj.mlb</tt> 
 </p>
 
         <ul>
@@ -90,7 +90,7 @@ MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/unsafe.mlb</tt> 
+<tt>$(SML_LIB)/basis/unsafe.mlb</tt> 
 </p>
 
         <ul>
@@ -100,7 +100,7 @@ MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <
 
 
 <p>
-<tt>$(MLTON_ROOT)/mlyacc-lib/mlyacc-lib.mlb</tt> 
+<tt>$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb</tt> 
 </p>
 
         <ul>
@@ -110,7 +110,7 @@ MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <
 
 
 <p>
-<tt>$(MLTON_ROOT)/cml/cml.mlb</tt> 
+<tt>$(SML_LIB)/cml/cml.mlb</tt> 
 </p>
 
         <ul>
@@ -119,12 +119,42 @@ MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <
         </ul>
 
 
+<p>
+<tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt> 
+</p>
+
+        <ul>
+
+  <a href="MLNLFFI">ML-NLFFI</a>, a library for foreign function interfaces. 
+        </ul>
+
+
+<p>
+<tt>$(SML_LIB)/smlnj-lib/...</tt> 
+</p>
+
+        <ul>
+
+  <a href="SMLNJLibrary">SMLNJLibrary</a>, a collection of libraries distributed with SML/NJ. 
+        </ul>
+
+
+<p>
+<tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt> 
+</p>
+
+        <ul>
+
+  <a href="CKitLibrary">CKitLibrary</a>, a library for C source code. 
+        </ul>
+
+
 <h2 id="head-b5773a8c56013cd129e0fe857d8a7d13604efcc0">Basis fragments</h2>
 <p>
 There are a number of specialized ML Basis files for importing fragments of the <a href="BasisLibrary"> Basis Library</a> that can not be expressed within SML. 
 </p>
 <p>
-<tt>$(MLTON_ROOT)/basis/pervasive-types.mlb</tt> 
+<tt>$(SML_LIB)/basis/pervasive-types.mlb</tt> 
 </p>
 
         <ul>
@@ -134,7 +164,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/pervasive-exns.mlb</tt> 
+<tt>$(SML_LIB)/basis/pervasive-exns.mlb</tt> 
 </p>
 
         <ul>
@@ -144,7 +174,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/pervasive-vals.mlb</tt> 
+<tt>$(SML_LIB)/basis/pervasive-vals.mlb</tt> 
 </p>
 
         <ul>
@@ -154,7 +184,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/overloads.mlb</tt> 
+<tt>$(SML_LIB)/basis/overloads.mlb</tt> 
 </p>
 
         <ul>
@@ -164,7 +194,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/equal.mlb</tt> 
+<tt>$(SML_LIB)/basis/equal.mlb</tt> 
 </p>
 
         <ul>
@@ -174,7 +204,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/infixes.mlb</tt> 
+<tt>$(SML_LIB)/basis/infixes.mlb</tt> 
 </p>
 
         <ul>
@@ -184,12 +214,12 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 
 <p>
-<tt>$(MLTON_ROOT)/basis/pervasive.mlb</tt> 
+<tt>$(SML_LIB)/basis/pervasive.mlb</tt> 
 </p>
 
         <ul>
 
-  The entire top-level environment of the Basis Library, with infix   status.  </ul>
+  The entire top-level value and type environment of the Basis   Library, with infix status.  This is the same as importing the above   six MLB files. </ul>
 
 </div>
 
@@ -197,5 +227,5 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:46:15 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 19:54:53 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

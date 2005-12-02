@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Notes about running MLton is available on the following specific platforms. <h2 id="head-fe3daeee99f491988f6fd6066389c8167a7797fd">Operating Systems</h2>
+Here are notes about using MLton on the following platforms. <h2 id="head-fe3daeee99f491988f6fd6066389c8167a7797fd">Operating Systems</h2>
 
     <ul>
 
@@ -132,5 +132,5 @@ Notes about running MLton is available on the following specific platforms. <h2 
 
 <p>
 <hr>
-Last edited on 2004-12-26 19:15:46 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 23:27:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

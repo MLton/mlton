@@ -26,7 +26,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,7 +51,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 The ML Basis system extends Standard ML to support programming-in-the-very-large, namespace management at the module level, separate delivery of library sources, and more.  While Standard ML modules are a sophisticated language for programming-in-the-large, it is difficult, if not impossible, to accomplish a number of routine namespace management operations when a program draws upon multiple libraries provided by different vendors.   <p>
-The ML Basis system is a simple, yet powerful, approach that builds upon the programmer's intuitive notion (and the <a href="DefinitionOfStandardML"> Definition of Standard ML's</a> formal notion) of the top-level environment (a <em>basis</em>).  The system has been designed to be a natural extension of <a href="StandardML"> Standard ML</a>; the Formal Specification of the ML Basis system (<a href="http://mlton.org/pages/MLBasis/attachments/mlb-formal.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pdf</a>) is given in the style of the Definition. 
+The ML Basis system is a simple, yet powerful, approach that builds upon the programmer's intuitive notion (and the <a href="DefinitionOfStandardML"> Definition of Standard ML's</a> formal notion) of the top-level environment (a <em>basis</em>).  The system is designed as a natural extension of <a href="StandardML"> Standard ML</a>; the formal specification of the ML Basis system (<a href="http://mlton.org/pages/MLBasis/attachments/mlb-formal.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pdf</a>) is given in the style of the Definition. 
 </p>
 <p>
 Here are some of the key features of the ML Basis system: 
@@ -61,7 +61,7 @@ Here are some of the key features of the ML Basis system:
 
     <li>
 <p>
-Explicit file order: The order of files (and, hence, the order  of evaluation) in the program is explicit.  The ML Basis system's semantics are  structured in such a way that for any well-formed project, there  will be exactly one possible interpretation of the project's syntax,  static semantics, and dynamic semantics. 
+Explicit file order: The order of files (and, hence, the order of  evaluation) in the program is explicit.  The ML Basis system's  semantics are structured in such a way that for any well-formed  project, there will be exactly one possible interpretation of the  project's syntax, static semantics, and dynamic semantics. 
 </p>
 </li>
     <li class="gap">
@@ -71,12 +71,12 @@ Implicit dependencies: A source file (corresponding to a SML  top-level declarat
 </li>
     <li class="gap">
 <p>
-Scoping and renaming: The ML Basis system provides mechanisms for limiting the  scope of (i.e, hiding) and renaming identifiers. 
+Scoping and renaming: The ML Basis system provides mechanisms for  limiting the scope of (i.e, hiding) and renaming identifiers. 
 </p>
 </li>
     <li class="gap">
 <p>
-No file name convention: The ML Basis system assumes no convention for finding  the file that defines a module.  (Conversely, to import a module,  its defining file must appear in the project.) 
+No naming convention for finding the file that defines a module.  To import a module, its defining file must appear in some ML Basis  file. 
 </p>
 </li>
 
@@ -120,5 +120,5 @@ No file name convention: The ML Basis system assumes no convention for finding  
 
 <p>
 <hr>
-Last edited on 2005-01-29 01:32:39 by <span title="adsl-64-170-112-189.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 20:09:32 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

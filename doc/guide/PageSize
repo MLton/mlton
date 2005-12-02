@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,367 +52,371 @@
 <p>
 List of all pages, sorted by their size: <ol>
 <li>
-<tt>&nbsp;18926 </tt><a href="References">References</a></li>
+<tt>&nbsp;18913 </tt><a href="References">References</a></li>
 <li>
 <tt>&nbsp;17504 </tt><a href="http://mlton.org/VesaKarvonen_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">VesaKarvonen/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;13897 </tt><a href="BasisLibrary">BasisLibrary</a></li>
+<tt>&nbsp;14012 </tt><a href="BasisLibrary">BasisLibrary</a></li>
+<li>
+<tt>&nbsp;11993 </tt><a href="http://mlton.org/WesleyTerpstra_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WesleyTerpstra/MoinEditorBackup</a></li>
 <li>
 <tt>&nbsp;11878 </tt><a href="Performance">Performance</a></li>
 <li>
-<tt>&nbsp;11333 </tt><a href="MLtonProcess">MLtonProcess</a></li>
+<tt>&nbsp;11462 </tt><a href="MLtonProcess">MLtonProcess</a></li>
 <li>
-<tt>&nbsp;11149 </tt><a href="CommonArg">CommonArg</a></li>
+<tt>&nbsp;11164 </tt><a href="CommonArg">CommonArg</a></li>
 <li>
-<tt>&nbsp;10764 </tt><a href="ConcurrentMLImplementation">ConcurrentMLImplementation</a></li>
+<tt>&nbsp;10772 </tt><a href="ConcurrentMLImplementation">ConcurrentMLImplementation</a></li>
 <li>
-<tt>&nbsp;&nbsp;8485 </tt><a href="ValueRestriction">ValueRestriction</a></li>
+<tt>&nbsp;&nbsp;8502 </tt><a href="CompileTimeOptions">CompileTimeOptions</a></li>
+<li>
+<tt>&nbsp;&nbsp;8492 </tt><a href="ValueRestriction">ValueRestriction</a></li>
+<li>
+<tt>&nbsp;&nbsp;8321 </tt><a href="SyntacticConventions">SyntacticConventions</a></li>
 <li>
 <tt>&nbsp;&nbsp;8291 </tt><a href="PrintfGentle">PrintfGentle</a></li>
 <li>
-<tt>&nbsp;&nbsp;8269 </tt><a href="CompileTimeOptions">CompileTimeOptions</a></li>
-<li>
-<tt>&nbsp;&nbsp;8246 </tt><a href="SyntacticConventions">SyntacticConventions</a></li>
-<li>
-<tt>&nbsp;&nbsp;7972 </tt><a href="InfixingOperators">InfixingOperators</a></li>
+<tt>&nbsp;&nbsp;7950 </tt><a href="InfixingOperators">InfixingOperators</a></li>
 <li>
 <tt>&nbsp;&nbsp;7789 </tt><a href="OptionalArguments">OptionalArguments</a></li>
 <li>
-<tt>&nbsp;&nbsp;6716 </tt><a href="MLtonThread">MLtonThread</a></li>
-<li>
-<tt>&nbsp;&nbsp;6588 </tt><a href="SMLNJDeviations">SMLNJDeviations</a></li>
+<tt>&nbsp;&nbsp;6725 </tt><a href="MLtonThread">MLtonThread</a></li>
 <li>
 <tt>&nbsp;&nbsp;6422 </tt><a href="MLNLFFIImplementation">MLNLFFIImplementation</a></li>
 <li>
-<tt>&nbsp;&nbsp;6122 </tt><a href="Bugs20041109">Bugs20041109</a></li>
+<tt>&nbsp;&nbsp;6382 </tt><a href="Bugs20041109">Bugs20041109</a></li>
 <li>
 <tt>&nbsp;&nbsp;6066 </tt><a href="FunctionalRecordUpdate">FunctionalRecordUpdate</a></li>
 <li>
-<tt>&nbsp;&nbsp;6036 </tt><a href="http://mlton.org/WesleyTerpstra_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WesleyTerpstra/MoinEditorBackup</a></li>
+<tt>&nbsp;&nbsp;6051 </tt><a href="Elaborate">Elaborate</a></li>
 <li>
-<tt>&nbsp;&nbsp;5955 </tt><a href="PolymorphicEquality">PolymorphicEquality</a></li>
+<tt>&nbsp;&nbsp;5995 </tt><a href="SMLNJDeviations">SMLNJDeviations</a></li>
 <li>
-<tt>&nbsp;&nbsp;5938 </tt><a href="Elaborate">Elaborate</a></li>
-<li>
-<tt>&nbsp;&nbsp;5853 </tt><a href="AdmitsEquality">AdmitsEquality</a></li>
+<tt>&nbsp;&nbsp;5951 </tt><a href="PolymorphicEquality">PolymorphicEquality</a></li>
 <li>
 <tt>&nbsp;&nbsp;5832 </tt><a href="PortingMLton">PortingMLton</a></li>
 <li>
-<tt>&nbsp;&nbsp;5830 </tt><a href="ForLoops">ForLoops</a></li>
+<tt>&nbsp;&nbsp;5831 </tt><a href="ForLoops">ForLoops</a></li>
 <li>
-<tt>&nbsp;&nbsp;5760 </tt><a href="MLtonFinalizable">MLtonFinalizable</a></li>
+<tt>&nbsp;&nbsp;5754 </tt><a href="MLtonFinalizable">MLtonFinalizable</a></li>
 <li>
-<tt>&nbsp;&nbsp;5550 </tt><a href="MLtonSignal">MLtonSignal</a></li>
+<tt>&nbsp;&nbsp;5713 </tt><a href="AdmitsEquality">AdmitsEquality</a></li>
 <li>
-<tt>&nbsp;&nbsp;5280 </tt><a href="CompilationManager">CompilationManager</a></li>
+<tt>&nbsp;&nbsp;5553 </tt><a href="MLtonSignal">MLtonSignal</a></li>
 <li>
-<tt>&nbsp;&nbsp;5155 </tt><a href="XML">XML</a></li>
+<tt>&nbsp;&nbsp;5326 </tt><a href="CompilationManager">CompilationManager</a></li>
 <li>
-<tt>&nbsp;&nbsp;5093 </tt><a href="Features">Features</a></li>
+<tt>&nbsp;&nbsp;5234 </tt><a href="Features">Features</a></li>
 <li>
-<tt>&nbsp;&nbsp;5083 </tt><a href="MLtonStructure">MLtonStructure</a></li>
+<tt>&nbsp;&nbsp;5162 </tt><a href="XML">XML</a></li>
 <li>
-<tt>&nbsp;&nbsp;4898 </tt><a href="TypeChecking">TypeChecking</a></li>
+<tt>&nbsp;&nbsp;5094 </tt><a href="MLtonStructure">MLtonStructure</a></li>
 <li>
 <tt>&nbsp;&nbsp;4709 </tt><a href="Regions">Regions</a></li>
 <li>
-<tt>&nbsp;&nbsp;4690 </tt><a href="CallGraph">CallGraph</a></li>
+<tt>&nbsp;&nbsp;4702 </tt><a href="CallGraph">CallGraph</a></li>
 <li>
-<tt>&nbsp;&nbsp;4660 </tt><a href="MLBasisExamples">MLBasisExamples</a></li>
+<tt>&nbsp;&nbsp;4651 </tt><a href="TypeChecking">TypeChecking</a></li>
 <li>
-<tt>&nbsp;&nbsp;4469 </tt><a href="SMLNJLibrary">SMLNJLibrary</a></li>
+<tt>&nbsp;&nbsp;4484 </tt><a href="Credits">Credits</a></li>
 <li>
-<tt>&nbsp;&nbsp;4372 </tt><a href="TypeVariableScope">TypeVariableScope</a></li>
+<tt>&nbsp;&nbsp;4456 </tt><a href="TypeVariableScope">TypeVariableScope</a></li>
 <li>
-<tt>&nbsp;&nbsp;4356 </tt><a href="Credits">Credits</a></li>
+<tt>&nbsp;&nbsp;4440 </tt><a href="MLBasisExamples">MLBasisExamples</a></li>
 <li>
-<tt>&nbsp;&nbsp;4332 </tt><a href="SelfCompiling">SelfCompiling</a></li>
+<tt>&nbsp;&nbsp;4301 </tt><a href="SelfCompiling">SelfCompiling</a></li>
 <li>
-<tt>&nbsp;&nbsp;4238 </tt><a href="MLtonProfile">MLtonProfile</a></li>
+<tt>&nbsp;&nbsp;4212 </tt><a href="MLtonProfile">MLtonProfile</a></li>
+<li>
+<tt>&nbsp;&nbsp;4096 </tt><a href="http://mlton.org/MatthewFluet_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MatthewFluet/MoinEditorBackup</a></li>
+<li>
+<tt>&nbsp;&nbsp;3997 </tt><a href="SMLNJLibrary">SMLNJLibrary</a></li>
 <li>
 <tt>&nbsp;&nbsp;3961 </tt><a href="UniversalType">UniversalType</a></li>
 <li>
 <tt>&nbsp;&nbsp;3560 </tt><a href="Printf">Printf</a></li>
 <li>
-<tt>&nbsp;&nbsp;3506 </tt><a href="EqualityTypeVariable">EqualityTypeVariable</a></li>
+<tt>&nbsp;&nbsp;3518 </tt><a href="EqualityTypeVariable">EqualityTypeVariable</a></li>
 <li>
-<tt>&nbsp;&nbsp;3501 </tt><a href="Enscript">Enscript</a></li>
+<tt>&nbsp;&nbsp;3497 </tt><a href="Enscript">Enscript</a></li>
 <li>
-<tt>&nbsp;&nbsp;3325 </tt><a href="Users">Users</a></li>
+<tt>&nbsp;&nbsp;3321 </tt><a href="Users">Users</a></li>
 <li>
-<tt>&nbsp;&nbsp;3274 </tt><a href="ForeignFunctionInterfaceTypes">ForeignFunctionInterfaceTypes</a></li>
+<tt>&nbsp;&nbsp;3284 </tt><a href="ForeignFunctionInterfaceTypes">ForeignFunctionInterfaceTypes</a></li>
 <li>
-<tt>&nbsp;&nbsp;3090 </tt><a href="RunTimeOptions">RunTimeOptions</a></li>
+<tt>&nbsp;&nbsp;3193 </tt><a href="MLBasisSyntaxAndSemantics">MLBasisSyntaxAndSemantics</a></li>
 <li>
-<tt>&nbsp;&nbsp;3026 </tt><a href="MLBasisSyntaxAndSemantics">MLBasisSyntaxAndSemantics</a></li>
+<tt>&nbsp;&nbsp;3114 </tt><a href="RunTimeOptions">RunTimeOptions</a></li>
 <li>
-<tt>&nbsp;&nbsp;2967 </tt><a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
+<tt>&nbsp;&nbsp;2971 </tt><a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
 <li>
-<tt>&nbsp;&nbsp;2949 </tt><a href="Monomorphise">Monomorphise</a></li>
+<tt>&nbsp;&nbsp;2967 </tt><a href="Monomorphise">Monomorphise</a></li>
 <li>
-<tt>&nbsp;&nbsp;2898 </tt><a href="ForeignFunctionInterfaceSyntax">ForeignFunctionInterfaceSyntax</a></li>
+<tt>&nbsp;&nbsp;2965 </tt><a href="ForeignFunctionInterfaceSyntax">ForeignFunctionInterfaceSyntax</a></li>
 <li>
-<tt>&nbsp;&nbsp;2885 </tt><a href="HowProfilingWorks">HowProfilingWorks</a></li>
+<tt>&nbsp;&nbsp;2910 </tt><a href="HowProfilingWorks">HowProfilingWorks</a></li>
 <li>
 <tt>&nbsp;&nbsp;2821 </tt><a href="PropertyList">PropertyList</a></li>
 <li>
-<tt>&nbsp;&nbsp;2807 </tt><a href="Experimental">Experimental</a></li>
-<li>
 <tt>&nbsp;&nbsp;2574 </tt><a href="CompilerOverview">CompilerOverview</a></li>
 <li>
-<tt>&nbsp;&nbsp;2542 </tt><a href="UnresolvedBugs">UnresolvedBugs</a></li>
+<tt>&nbsp;&nbsp;2572 </tt><a href="MLtonSocket">MLtonSocket</a></li>
+<li>
+<tt>&nbsp;&nbsp;2547 </tt><a href="UnresolvedBugs">UnresolvedBugs</a></li>
+<li>
+<tt>&nbsp;&nbsp;2501 </tt><a href="MatchCompile">MatchCompile</a></li>
+<li>
+<tt>&nbsp;&nbsp;2495 </tt><a href="CrossCompiling">CrossCompiling</a></li>
 <li>
 <tt>&nbsp;&nbsp;2493 </tt><a href="GenerativeException">GenerativeException</a></li>
 <li>
-<tt>&nbsp;&nbsp;2480 </tt><a href="CrossCompiling">CrossCompiling</a></li>
-<li>
-<tt>&nbsp;&nbsp;2455 </tt><a href="MatchCompile">MatchCompile</a></li>
+<tt>&nbsp;&nbsp;2451 </tt><a href="ProfilingTime">ProfilingTime</a></li>
 <li>
 <tt>&nbsp;&nbsp;2450 </tt><a href="http://mlton.org/ChrisClearwater_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ChrisClearwater/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;&nbsp;2398 </tt><a href="CallingFromCToSML">CallingFromCToSML</a></li>
-<li>
-<tt>&nbsp;&nbsp;2378 </tt><a href="ShowBasis">ShowBasis</a></li>
+<tt>&nbsp;&nbsp;2433 </tt><a href="ShowBasis">ShowBasis</a></li>
 <li>
 <tt>&nbsp;&nbsp;2355 </tt><a href="OCaml">OCaml</a></li>
 <li>
-<tt>&nbsp;&nbsp;2288 </tt><a href="MLBasisAnnotations">MLBasisAnnotations</a></li>
+<tt>&nbsp;&nbsp;2354 </tt><a href="Installation">Installation</a></li>
+<li>
+<tt>&nbsp;&nbsp;2342 </tt><a href="CallingFromCToSML">CallingFromCToSML</a></li>
+<li>
+<tt>&nbsp;&nbsp;2322 </tt><a href="MLBasisAnnotations">MLBasisAnnotations</a></li>
 <li>
 <tt>&nbsp;&nbsp;2288 </tt><a href="History">History</a></li>
 <li>
-<tt>&nbsp;&nbsp;2285 </tt><a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a></li>
+<tt>&nbsp;&nbsp;2281 </tt><a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a></li>
 <li>
-<tt>&nbsp;&nbsp;2271 </tt><a href="Installation">Installation</a></li>
+<tt>&nbsp;&nbsp;2239 </tt><a href="MLtonPointer">MLtonPointer</a></li>
 <li>
-<tt>&nbsp;&nbsp;2238 </tt><a href="MLtonPointer">MLtonPointer</a></li>
+<tt>&nbsp;&nbsp;2212 </tt><a href="RefFlatten">RefFlatten</a></li>
 <li>
-<tt>&nbsp;&nbsp;2198 </tt><a href="ProfilingTime">ProfilingTime</a></li>
+<tt>&nbsp;&nbsp;2159 </tt><a href="MLBasisAnnotationExamples">MLBasisAnnotationExamples</a></li>
 <li>
-<tt>&nbsp;&nbsp;2188 </tt><a href="RefFlatten">RefFlatten</a></li>
+<tt>&nbsp;&nbsp;2147 </tt><a href="RunningOnMinGW">RunningOnMinGW</a></li>
+<li>
+<tt>&nbsp;&nbsp;2146 </tt><a href="ProfilingCounts">ProfilingCounts</a></li>
 <li>
 <tt>&nbsp;&nbsp;2129 </tt><a href="LanguageChanges">LanguageChanges</a></li>
 <li>
-<tt>&nbsp;&nbsp;2124 </tt><a href="MLBasisAnnotationExamples">MLBasisAnnotationExamples</a></li>
+<tt>&nbsp;&nbsp;2086 </tt><a href="CKitLibrary">CKitLibrary</a></li>
 <li>
-<tt>&nbsp;&nbsp;2106 </tt><a href="CKitLibrary">CKitLibrary</a></li>
+<tt>&nbsp;&nbsp;2022 </tt><a href="MLBasisAvailableLibraries">MLBasisAvailableLibraries</a></li>
 <li>
-<tt>&nbsp;&nbsp;2075 </tt><a href="ProfilingCounts">ProfilingCounts</a></li>
-<li>
-<tt>&nbsp;&nbsp;2045 </tt><a href="MLtonSocket">MLtonSocket</a></li>
-<li>
-<tt>&nbsp;&nbsp;1982 </tt><a href="MLBasis">MLBasis</a></li>
-<li>
-<tt>&nbsp;&nbsp;1951 </tt><a href="SimplifyTypes">SimplifyTypes</a></li>
+<tt>&nbsp;&nbsp;1976 </tt><a href="SimplifyTypes">SimplifyTypes</a></li>
 <li>
 <tt>&nbsp;&nbsp;1923 </tt><a href="http://mlton.org/JesperLouisAndersen_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">JesperLouisAndersen/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;&nbsp;1903 </tt><a href="WikiTool">WikiTool</a></li>
+<tt>&nbsp;&nbsp;1921 </tt><a href="WikiTool">WikiTool</a></li>
 <li>
-<tt>&nbsp;&nbsp;1893 </tt><a href="XMLShrink">XMLShrink</a></li>
+<tt>&nbsp;&nbsp;1919 </tt><a href="MLBasis">MLBasis</a></li>
 <li>
-<tt>&nbsp;&nbsp;1888 </tt><a href="FAQ">FAQ</a></li>
+<tt>&nbsp;&nbsp;1918 </tt><a href="XMLShrink">XMLShrink</a></li>
 <li>
-<tt>&nbsp;&nbsp;1883 </tt><a href="Emacs">Emacs</a></li>
+<tt>&nbsp;&nbsp;1883 </tt><a href="FAQ">FAQ</a></li>
 <li>
-<tt>&nbsp;&nbsp;1880 </tt><a href="Defunctorize">Defunctorize</a></li>
+<tt>&nbsp;&nbsp;1868 </tt><a href="Libraries">Libraries</a></li>
 <li>
-<tt>&nbsp;&nbsp;1851 </tt><a href="SMLofNJStructure">SMLofNJStructure</a></li>
+<tt>&nbsp;&nbsp;1853 </tt><a href="SMLofNJStructure">SMLofNJStructure</a></li>
 <li>
-<tt>&nbsp;&nbsp;1836 </tt><a href="Libraries">Libraries</a></li>
+<tt>&nbsp;&nbsp;1845 </tt><a href="Unicode">Unicode</a></li>
 <li>
-<tt>&nbsp;&nbsp;1826 </tt><a href="DefineTypeBeforeUse">DefineTypeBeforeUse</a></li>
+<tt>&nbsp;&nbsp;1841 </tt><a href="Emacs">Emacs</a></li>
 <li>
-<tt>&nbsp;&nbsp;1814 </tt><a href="RunningOnNetBSD">RunningOnNetBSD</a></li>
+<tt>&nbsp;&nbsp;1831 </tt><a href="ConcurrentML">ConcurrentML</a></li>
 <li>
-<tt>&nbsp;&nbsp;1808 </tt><a href="CallingFromSMLToC">CallingFromSMLToC</a></li>
+<tt>&nbsp;&nbsp;1810 </tt><a href="RunningOnNetBSD">RunningOnNetBSD</a></li>
 <li>
-<tt>&nbsp;&nbsp;1795 </tt><a href="Overloading">Overloading</a></li>
+<tt>&nbsp;&nbsp;1798 </tt><a href="CallingFromSMLToC">CallingFromSMLToC</a></li>
+<li>
+<tt>&nbsp;&nbsp;1791 </tt><a href="Overloading">Overloading</a></li>
+<li>
+<tt>&nbsp;&nbsp;1787 </tt><a href="Defunctorize">Defunctorize</a></li>
 <li>
 <tt>&nbsp;&nbsp;1751 </tt><a href="JesperLouisAndersen">JesperLouisAndersen</a></li>
 <li>
-<tt>&nbsp;&nbsp;1719 </tt><a href="MLBasisAvailableLibraries">MLBasisAvailableLibraries</a></li>
-<li>
 <tt>&nbsp;&nbsp;1665 </tt><a href="CallingFromSMLToCFunctionPointer">CallingFromSMLToCFunctionPointer</a></li>
 <li>
-<tt>&nbsp;&nbsp;1655 </tt><a href="Unicode">Unicode</a></li>
+<tt>&nbsp;&nbsp;1600 </tt><a href="MLtonSyslog">MLtonSyslog</a></li>
 <li>
-<tt>&nbsp;&nbsp;1628 </tt><a href="SSA2">SSA2</a></li>
+<tt>&nbsp;&nbsp;1562 </tt><a href="DefineTypeBeforeUse">DefineTypeBeforeUse</a></li>
 <li>
-<tt>&nbsp;&nbsp;1596 </tt><a href="MLtonSyslog">MLtonSyslog</a></li>
+<tt>&nbsp;&nbsp;1554 </tt><a href="SSA2">SSA2</a></li>
 <li>
-<tt>&nbsp;&nbsp;1539 </tt><a href="MLBasisPathMap">MLBasisPathMap</a></li>
+<tt>&nbsp;&nbsp;1523 </tt><a href="ScopeInference">ScopeInference</a></li>
 <li>
-<tt>&nbsp;&nbsp;1491 </tt><a href="ScopeInference">ScopeInference</a></li>
+<tt>&nbsp;&nbsp;1497 </tt><a href="Shrink">Shrink</a></li>
 <li>
-<tt>&nbsp;&nbsp;1475 </tt><a href="Shrink">Shrink</a></li>
+<tt>&nbsp;&nbsp;1485 </tt><a href="Contact">Contact</a></li>
 <li>
-<tt>&nbsp;&nbsp;1460 </tt><a href="MLtonWorld">MLtonWorld</a></li>
+<tt>&nbsp;&nbsp;1474 </tt><a href="MLtonWorld">MLtonWorld</a></li>
 <li>
-<tt>&nbsp;&nbsp;1452 </tt><a href="Zone">Zone</a></li>
+<tt>&nbsp;&nbsp;1470 </tt><a href="Zone">Zone</a></li>
 <li>
-<tt>&nbsp;&nbsp;1447 </tt><a href="MLtonRlimit">MLtonRlimit</a></li>
+<tt>&nbsp;&nbsp;1441 </tt><a href="KnownCase">KnownCase</a></li>
 <li>
-<tt>&nbsp;&nbsp;1444 </tt><a href="Contact">Contact</a></li>
+<tt>&nbsp;&nbsp;1434 </tt><a href="EqualityType">EqualityType</a></li>
 <li>
-<tt>&nbsp;&nbsp;1439 </tt><a href="EqualityType">EqualityType</a></li>
+<tt>&nbsp;&nbsp;1423 </tt><a href="MLtonRlimit">MLtonRlimit</a></li>
 <li>
-<tt>&nbsp;&nbsp;1432 </tt><a href="ProductType">ProductType</a></li>
+<tt>&nbsp;&nbsp;1423 </tt><a href="ProductType">ProductType</a></li>
 <li>
-<tt>&nbsp;&nbsp;1417 </tt><a href="KnownCase">KnownCase</a></li>
+<tt>&nbsp;&nbsp;1419 </tt><a href="Sources">Sources</a></li>
 <li>
-<tt>&nbsp;&nbsp;1412 </tt><a href="SSA">SSA</a></li>
+<tt>&nbsp;&nbsp;1403 </tt><a href="ProfilingAllocation">ProfilingAllocation</a></li>
 <li>
-<tt>&nbsp;&nbsp;1411 </tt><a href="Sources">Sources</a></li>
+<tt>&nbsp;&nbsp;1392 </tt><a href="LocalRef">LocalRef</a></li>
 <li>
-<tt>&nbsp;&nbsp;1389 </tt><a href="LocalRef">LocalRef</a></li>
+<tt>&nbsp;&nbsp;1348 </tt><a href="TypeConstructor">TypeConstructor</a></li>
 <li>
-<tt>&nbsp;&nbsp;1377 </tt><a href="RunningOnCygwin">RunningOnCygwin</a></li>
+<tt>&nbsp;&nbsp;1339 </tt><a href="SSA">SSA</a></li>
 <li>
-<tt>&nbsp;&nbsp;1364 </tt><a href="ConcurrentML">ConcurrentML</a></li>
-<li>
-<tt>&nbsp;&nbsp;1318 </tt><a href="TypeConstructor">TypeConstructor</a></li>
+<tt>&nbsp;&nbsp;1330 </tt><a href="ToMachine">ToMachine</a></li>
 <li>
 <tt>&nbsp;&nbsp;1314 </tt><a href="http://mlton.org/Preferences"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Preferences</a></li>
 <li>
-<tt>&nbsp;&nbsp;1312 </tt><a href="ProfilingAllocation">ProfilingAllocation</a></li>
+<tt>&nbsp;&nbsp;1280 </tt><a href="Projects">Projects</a></li>
 <li>
-<tt>&nbsp;&nbsp;1295 </tt><a href="Projects">Projects</a></li>
+<tt>&nbsp;&nbsp;1259 </tt><a href="ProfilingTheStack">ProfilingTheStack</a></li>
 <li>
-<tt>&nbsp;&nbsp;1288 </tt><a href="ToMachine">ToMachine</a></li>
+<tt>&nbsp;&nbsp;1251 </tt><a href="MLBasisPathMap">MLBasisPathMap</a></li>
 <li>
-<tt>&nbsp;&nbsp;1219 </tt><a href="ManualPage">ManualPage</a></li>
+<tt>&nbsp;&nbsp;1213 </tt><a href="ManualPage">ManualPage</a></li>
+<li>
+<tt>&nbsp;&nbsp;1212 </tt><a href="Restore">Restore</a></li>
 <li>
 <tt>&nbsp;&nbsp;1209 </tt><a href="WebSite">WebSite</a></li>
 <li>
-<tt>&nbsp;&nbsp;1207 </tt><a href="ProfilingTheStack">ProfilingTheStack</a></li>
-<li>
-<tt>&nbsp;&nbsp;1206 </tt><a href="StandardMLPortability">StandardMLPortability</a></li>
-<li>
-<tt>&nbsp;&nbsp;1206 </tt><a href="Restore">Restore</a></li>
+<tt>&nbsp;&nbsp;1209 </tt><a href="MLNLFFI">MLNLFFI</a></li>
 <li>
 <tt>&nbsp;&nbsp;1203 </tt><a href="Useless">Useless</a></li>
 <li>
-<tt>&nbsp;&nbsp;1182 </tt><a href="ImplementSuffix">ImplementSuffix</a></li>
+<tt>&nbsp;&nbsp;1203 </tt><a href="StandardMLPortability">StandardMLPortability</a></li>
+<li>
+<tt>&nbsp;&nbsp;1194 </tt><a href="ImplementSuffix">ImplementSuffix</a></li>
+<li>
+<tt>&nbsp;&nbsp;1157 </tt><a href="MLtonPlatform">MLtonPlatform</a></li>
 <li>
 <tt>&nbsp;&nbsp;1139 </tt><a href="SSASimplify">SSASimplify</a></li>
 <li>
-<tt>&nbsp;&nbsp;1127 </tt><a href="MLtonPlatform">MLtonPlatform</a></li>
+<tt>&nbsp;&nbsp;1133 </tt><a href="DeadCode">DeadCode</a></li>
 <li>
-<tt>&nbsp;&nbsp;1121 </tt><a href="MLtonCont">MLtonCont</a></li>
+<tt>&nbsp;&nbsp;1129 </tt><a href="MLtonCont">MLtonCont</a></li>
+<li>
+<tt>&nbsp;&nbsp;1118 </tt><a href="RunningOnCygwin">RunningOnCygwin</a></li>
 <li>
 <tt>&nbsp;&nbsp;1116 </tt><a href="Lazy">Lazy</a></li>
 <li>
-<tt>&nbsp;&nbsp;1103 </tt><a href="Closure">Closure</a></li>
+<tt>&nbsp;&nbsp;1110 </tt><a href="LambdaFree">LambdaFree</a></li>
 <li>
-<tt>&nbsp;&nbsp;1097 </tt><a href="MLtonIO">MLtonIO</a></li>
+<tt>&nbsp;&nbsp;1106 </tt><a href="CommonBlock">CommonBlock</a></li>
 <li>
-<tt>&nbsp;&nbsp;1096 </tt><a href="MLtonRandom">MLtonRandom</a></li>
+<tt>&nbsp;&nbsp;1104 </tt><a href="Closure">Closure</a></li>
 <li>
-<tt>&nbsp;&nbsp;1088 </tt><a href="CommonBlock">CommonBlock</a></li>
+<tt>&nbsp;&nbsp;1103 </tt><a href="MLtonRandom">MLtonRandom</a></li>
 <li>
-<tt>&nbsp;&nbsp;1086 </tt><a href="LambdaFree">LambdaFree</a></li>
+<tt>&nbsp;&nbsp;1102 </tt><a href="MLtonIO">MLtonIO</a></li>
 <li>
 <tt>&nbsp;&nbsp;1044 </tt><a href="WikiMacros">WikiMacros</a></li>
 <li>
-<tt>&nbsp;&nbsp;1040 </tt><a href="RSSA">RSSA</a></li>
+<tt>&nbsp;&nbsp;1038 </tt><a href="SXML">SXML</a></li>
 <li>
-<tt>&nbsp;&nbsp;1034 </tt><a href="SXML">SXML</a></li>
+<tt>&nbsp;&nbsp;1024 </tt><a href="RSSA">RSSA</a></li>
+<li>
+<tt>&nbsp;&nbsp;1003 </tt><a href="CommonSubexp">CommonSubexp</a></li>
 <li>
 <tt>&nbsp;&nbsp;1002 </tt><a href="http://mlton.org/WikiSandBox"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WikiSandBox</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;998 </tt><a href="WholeProgramOptimization">WholeProgramOptimization</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;983 </tt><a href="CommonSubexp">CommonSubexp</a></li>
+<tt>&nbsp;&nbsp;&nbsp;972 </tt><a href="MLtonIntInf">MLtonIntInf</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;964 </tt><a href="MLtonIntInf">MLtonIntInf</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;949 </tt><a href="DeadCode">DeadCode</a></li>
+<tt>&nbsp;&nbsp;&nbsp;951 </tt><a href="MLtonExn">MLtonExn</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;946 </tt><a href="UnsafeStructure">UnsafeStructure</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;942 </tt><a href="MLtonRusage">MLtonRusage</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;940 </tt><a href="Identifier">Identifier</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;907 </tt><a href="PolyEqual">PolyEqual</a></li>
+<tt>&nbsp;&nbsp;&nbsp;938 </tt><a href="PolyEqual">PolyEqual</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;891 </tt><a href="MLtonExn">MLtonExn</a></li>
+<tt>&nbsp;&nbsp;&nbsp;922 </tt><a href="StandardML">StandardML</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;863 </tt><a href="RemoveUnused">RemoveUnused</a></li>
+<tt>&nbsp;&nbsp;&nbsp;917 </tt><a href="MLtonRusage">MLtonRusage</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;861 </tt><a href="Flatten">Flatten</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;860 </tt><a href="MLtonGC">MLtonGC</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;853 </tt><a href="StandardML">StandardML</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;847 </tt><a href="MLtonWeak">MLtonWeak</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;836 </tt><a href="GnuMP">GnuMP</a></li>
+<tt>&nbsp;&nbsp;&nbsp;837 </tt><a href="GnuMP">GnuMP</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;835 </tt><a href="VesaKarvonen">VesaKarvonen</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;827 </tt><a href="LineDirective">LineDirective</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;827 </tt><a href="SXMLSimplify">SXMLSimplify</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;826 </tt><a href="LineDirective">LineDirective</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;823 </tt><a href="Flatten">Flatten</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;813 </tt><a href="SSA2Simplify">SSA2Simplify</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;798 </tt><a href="ReleaseChecklist">ReleaseChecklist</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;792 </tt><a href="RunningOnSparc">RunningOnSparc</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;787 </tt><a href="Documentation">Documentation</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;784 </tt><a href="WesleyTerpstra">WesleyTerpstra</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;784 </tt><a href="TalkMLtonHistory">TalkMLtonHistory</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;757 </tt><a href="GenerativeDatatype">GenerativeDatatype</a></li>
+<tt>&nbsp;&nbsp;&nbsp;784 </tt><a href="XMLSimplifyTypes">XMLSimplifyTypes</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;752 </tt><a href="XMLSimplifyTypes">XMLSimplifyTypes</a></li>
+<tt>&nbsp;&nbsp;&nbsp;757 </tt><a href="Inline">Inline</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;757 </tt><a href="GenerativeDatatype">GenerativeDatatype</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;751 </tt><a href="Profiling">Profiling</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;748 </tt><a href="RunningOnSparc">RunningOnSparc</a></li>
+<tt>&nbsp;&nbsp;&nbsp;722 </tt><a href="Drawbacks">Drawbacks</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;736 </tt><a href="Inline">Inline</a></li>
+<tt>&nbsp;&nbsp;&nbsp;720 </tt><a href="Contify">Contify</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;721 </tt><a href="RayRacine">RayRacine</a></li>
+<tt>&nbsp;&nbsp;&nbsp;717 </tt><a href="RemoveUnused">RemoveUnused</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;709 </tt><a href="Contify">Contify</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;707 </tt><a href="Documentation">Documentation</a></li>
+<tt>&nbsp;&nbsp;&nbsp;717 </tt><a href="RayRacine">RayRacine</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;700 </tt><a href="License">License</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;686 </tt><a href="IntroduceLoops">IntroduceLoops</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;686 </tt><a href="http://mlton.org/RayRacine_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RayRacine/MoinEditorBackup</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;682 </tt><a href="GarbageCollection">GarbageCollection</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;676 </tt><a href="RSSASimplify">RSSASimplify</a></li>
+<tt>&nbsp;&nbsp;&nbsp;678 </tt><a href="Redundant">Redundant</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;672 </tt><a href="RunningOnSolaris">RunningOnSolaris</a></li>
+<tt>&nbsp;&nbsp;&nbsp;677 </tt><a href="RSSASimplify">RSSASimplify</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;670 </tt><a href="Drawbacks">Drawbacks</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;665 </tt><a href="Redundant">Redundant</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;664 </tt><a href="AST">AST</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;662 </tt><a href="mGTK">mGTK</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;662 </tt><a href="ReleaseChecklist">ReleaseChecklist</a></li>
+<tt>&nbsp;&nbsp;&nbsp;670 </tt><a href="AST">AST</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;660 </tt><a href="http://mlton.org/SureshJagannathan_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SureshJagannathan/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;659 </tt><a href="IntroduceLoops">IntroduceLoops</a></li>
+<tt>&nbsp;&nbsp;&nbsp;659 </tt><a href="RunningOnSolaris">RunningOnSolaris</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;645 </tt><a href="EditingPages">EditingPages</a></li>
+<tt>&nbsp;&nbsp;&nbsp;654 </tt><a href="EditingPages">EditingPages</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;644 </tt><a href="CompilerPassTemplate">CompilerPassTemplate</a></li>
+<tt>&nbsp;&nbsp;&nbsp;645 </tt><a href="CompilerPassTemplate">CompilerPassTemplate</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;644 </tt><a href="ToSSA2">ToSSA2</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;617 </tt><a href="OpenGL">OpenGL</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;614 </tt><a href="StandardMLBooks">StandardMLBooks</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;612 </tt><a href="Swerve">Swerve</a></li>
+<tt>&nbsp;&nbsp;&nbsp;613 </tt><a href="FrontEnd">FrontEnd</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;608 </tt><a href="ToSSA2">ToSSA2</a></li>
+<tt>&nbsp;&nbsp;&nbsp;612 </tt><a href="Swerve">Swerve</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;607 </tt><a href="XMLSimplify">XMLSimplify</a></li>
 <li>
@@ -420,71 +424,69 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;583 </tt><a href="http://mlton.org/MichaelNorrish_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MichaelNorrish/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;573 </tt><a href="RunningOnMinGW">RunningOnMinGW</a></li>
+<tt>&nbsp;&nbsp;&nbsp;576 </tt><a href="Machine">Machine</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;571 </tt><a href="Developers">Developers</a></li>
+<tt>&nbsp;&nbsp;&nbsp;571 </tt><a href="ForeignFunctionInterface">ForeignFunctionInterface</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;570 </tt><a href="ForeignFunctionInterface">ForeignFunctionInterface</a></li>
+<tt>&nbsp;&nbsp;&nbsp;562 </tt><a href="Developers">Developers</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;564 </tt><a href="Machine">Machine</a></li>
+<tt>&nbsp;&nbsp;&nbsp;561 </tt><a href="RedundantTests">RedundantTests</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;551 </tt><a href="SureshJagannathan">SureshJagannathan</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;547 </tt><a href="FrontEnd">FrontEnd</a></li>
+<tt>&nbsp;&nbsp;&nbsp;551 </tt><a href="Multi">Multi</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;533 </tt><a href="OtherSites">OtherSites</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;531 </tt><a href="RedundantTests">RedundantTests</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;527 </tt><a href="Multi">Multi</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;523 </tt><a href="RunningOnOpenBSD">RunningOnOpenBSD</a></li>
+<tt>&nbsp;&nbsp;&nbsp;523 </tt><a href="Bug">Bug</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;521 </tt><a href="IntermediateLanguage">IntermediateLanguage</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;507 </tt><a href="Bug">Bug</a></li>
+<tt>&nbsp;&nbsp;&nbsp;520 </tt><a href="CreatingPages">CreatingPages</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;507 </tt><a href="StandardMLImplementations">StandardMLImplementations</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;505 </tt><a href="SMLNJ">SMLNJ</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;501 </tt><a href="CreatingPages">CreatingPages</a></li>
+<tt>&nbsp;&nbsp;&nbsp;503 </tt><a href="ClosureConvert">ClosureConvert</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;499 </tt><a href="PhantomType">PhantomType</a></li>
+<tt>&nbsp;&nbsp;&nbsp;501 </tt><a href="DeepFlatten">DeepFlatten</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;495 </tt><a href="AccessControl">AccessControl</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;481 </tt><a href="ClosureConvert">ClosureConvert</a></li>
+<tt>&nbsp;&nbsp;&nbsp;494 </tt><a href="PhantomType">PhantomType</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;485 </tt><a href="mGTK">mGTK</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;480 </tt><a href="MichaelNorrish">MichaelNorrish</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;475 </tt><a href="DeepFlatten">DeepFlatten</a></li>
+<tt>&nbsp;&nbsp;&nbsp;479 </tt><a href="Chunkify">Chunkify</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;463 </tt><a href="Chunkify">Chunkify</a></li>
+<tt>&nbsp;&nbsp;&nbsp;477 </tt><a href="PackedRepresentation">PackedRepresentation</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;454 </tt><a href="MLtonItimer">MLtonItimer</a></li>
+<tt>&nbsp;&nbsp;&nbsp;463 </tt><a href="LoopInvariant">LoopInvariant</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;448 </tt><a href="CoreML">CoreML</a></li>
+<tt>&nbsp;&nbsp;&nbsp;462 </tt><a href="CoreML">CoreML</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;447 </tt><a href="PlatformSpecificNotes">PlatformSpecificNotes</a></li>
+<tt>&nbsp;&nbsp;&nbsp;456 </tt><a href="MLtonItimer">MLtonItimer</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;443 </tt><a href="PackedRepresentation">PackedRepresentation</a></li>
+<tt>&nbsp;&nbsp;&nbsp;453 </tt><a href="RSSAShrink">RSSAShrink</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;436 </tt><a href="LoopInvariant">LoopInvariant</a></li>
+<tt>&nbsp;&nbsp;&nbsp;438 </tt><a href="LocalFlatten">LocalFlatten</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;426 </tt><a href="RSSAShrink">RSSAShrink</a></li>
+<tt>&nbsp;&nbsp;&nbsp;433 </tt><a href="Globalize">Globalize</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;432 </tt><a href="PlatformSpecificNotes">PlatformSpecificNotes</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;431 </tt><a href="ConstantPropagation">ConstantPropagation</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;421 </tt><a href="Poplog">Poplog</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;414 </tt><a href="MLNLFFI">MLNLFFI</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;412 </tt><a href="LocalFlatten">LocalFlatten</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;412 </tt><a href="StandardMLTutorials">StandardMLTutorials</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;410 </tt><a href="http://mlton.org/AndreiFormiga_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">AndreiFormiga/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;409 </tt><a href="Globalize">Globalize</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;405 </tt><a href="ConstantPropagation">ConstantPropagation</a></li>
+<tt>&nbsp;&nbsp;&nbsp;401 </tt><a href="RunningOnPowerPC">RunningOnPowerPC</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;400 </tt><a href="TalkStandardML">TalkStandardML</a></li>
 <li>
@@ -492,79 +494,75 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;397 </tt><a href="TalkMLtonFeatures">TalkMLtonFeatures</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;391 </tt><a href="StandardMLImplementations">StandardMLImplementations</a></li>
+<tt>&nbsp;&nbsp;&nbsp;387 </tt><a href="MatthewFluet">MatthewFluet</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;386 </tt><a href="Polyvariance">Polyvariance</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;382 </tt><a href="PrecedenceParse">PrecedenceParse</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;379 </tt><a href="Home">Home</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;372 </tt><a href="MatthewFluet">MatthewFluet</a></li>
+<tt>&nbsp;&nbsp;&nbsp;374 </tt><a href="MLtonWord">MLtonWord</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;371 </tt><a href="MLtonWord">MLtonWord</a></li>
+<tt>&nbsp;&nbsp;&nbsp;370 </tt><a href="MLtonProcEnv">MLtonProcEnv</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;369 </tt><a href="TalkWholeProgram">TalkWholeProgram</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;369 </tt><a href="OperatorPrecedence">OperatorPrecedence</a></li>
+<tt>&nbsp;&nbsp;&nbsp;369 </tt><a href="RunningOnOpenBSD">RunningOnOpenBSD</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;368 </tt><a href="MLtonProcEnv">MLtonProcEnv</a></li>
+<tt>&nbsp;&nbsp;&nbsp;367 </tt><a href="ParallelMove">ParallelMove</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;361 </tt><a href="ObjectOrientedProgramming">ObjectOrientedProgramming</a></li>
+<tt>&nbsp;&nbsp;&nbsp;364 </tt><a href="OperatorPrecedence">OperatorPrecedence</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;364 </tt><a href="ObjectOrientedProgramming">ObjectOrientedProgramming</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;361 </tt><a href="ToRSSA">ToRSSA</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;359 </tt><a href="Development">Development</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;354 </tt><a href="RunningOnPowerPC">RunningOnPowerPC</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;353 </tt><a href="PrecedenceParse">PrecedenceParse</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;351 </tt><a href="Polyvariance">Polyvariance</a></li>
+<tt>&nbsp;&nbsp;&nbsp;358 </tt><a href="AllocateRegisters">AllocateRegisters</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;351 </tt><a href="RunningOnFreeBSD">RunningOnFreeBSD</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;347 </tt><a href="SXMLShrink">SXMLShrink</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;340 </tt><a href="MatchCompilation">MatchCompilation</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;337 </tt><a href="AllocateRegisters">AllocateRegisters</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;337 </tt><a href="ToRSSA">ToRSSA</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;336 </tt><a href="ParallelMove">ParallelMove</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;329 </tt><a href="ImperativeTypeVariable">ImperativeTypeVariable</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;323 </tt><a href="SXMLShrink">SXMLShrink</a></li>
+<tt>&nbsp;&nbsp;&nbsp;324 </tt><a href="ImplementHandlers">ImplementHandlers</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;321 </tt><a href="MLtonVector">MLtonVector</a></li>
+<tt>&nbsp;&nbsp;&nbsp;323 </tt><a href="MLtonVector">MLtonVector</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;320 </tt><a href="http://mlton.org/StephenWeeks_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">StephenWeeks/MoinEditorBackup</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;318 </tt><a href="MLtonArray">MLtonArray</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;314 </tt><a href="http://mlton.org/HenryCejtin_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HenryCejtin/MoinEditorBackup</a></li>
+<tt>&nbsp;&nbsp;&nbsp;319 </tt><a href="MLtonArray">MLtonArray</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;309 </tt><a href="AndreiFormiga">AndreiFormiga</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;306 </tt><a href="TalkMLtonApproach">TalkMLtonApproach</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;305 </tt><a href="ImplementHandlers">ImplementHandlers</a></li>
+<tt>&nbsp;&nbsp;&nbsp;302 </tt><a href="ImplementProfiling">ImplementProfiling</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;286 </tt><a href="ImplementProfiling">ImplementProfiling</a></li>
+<tt>&nbsp;&nbsp;&nbsp;295 </tt><a href="ImplementExceptions">ImplementExceptions</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;279 </tt><a href="ImplementExceptions">ImplementExceptions</a></li>
+<tt>&nbsp;&nbsp;&nbsp;292 </tt><a href="http://mlton.org/StephenWeeks_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">StephenWeeks/MoinEditorBackup</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;289 </tt><a href="http://mlton.org/HenryCejtin_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HenryCejtin/MoinEditorBackup</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;284 </tt><a href="InsertSignalChecks">InsertSignalChecks</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;281 </tt><a href="InsertLimitChecks">InsertLimitChecks</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;278 </tt><a href="Eclipse">Eclipse</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;277 </tt><a href="TalkFolkLore">TalkFolkLore</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;273 </tt><a href="http://mlton.org/MatthewFluet_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MatthewFluet/MoinEditorBackup</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;270 </tt><a href="TalkHowHigherOrder">TalkHowHigherOrder</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;267 </tt><a href="InsertSignalChecks">InsertSignalChecks</a></li>
+<tt>&nbsp;&nbsp;&nbsp;266 </tt><a href="Pronounce">Pronounce</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;265 </tt><a href="ML">ML</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;265 </tt><a href="InsertLimitChecks">InsertLimitChecks</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;263 </tt><a href="Subversion">Subversion</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;262 </tt><a href="Pronounce">Pronounce</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;261 </tt><a href="MLj">MLj</a></li>
 <li>
@@ -574,11 +572,13 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;244 </tt><a href="TalkFromSMLTo">TalkFromSMLTo</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;242 </tt><a href="HaMLet">HaMLet</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;242 </tt><a href="TalkHowPolymorphism">TalkHowPolymorphism</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;241 </tt><a href="HaMLet">HaMLet</a></li>
+<tt>&nbsp;&nbsp;&nbsp;238 </tt><a href="RunningOnDarwin">RunningOnDarwin</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;234 </tt><a href="EXene">EXene</a></li>
+<tt>&nbsp;&nbsp;&nbsp;234 </tt><a href="eXene">eXene</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;230 </tt><a href="Immutable">Immutable</a></li>
 <li>
@@ -588,49 +588,47 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;218 </tt><a href="MoscowML">MoscowML</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;218 </tt><a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;217 </tt><a href="HenryCejtin">HenryCejtin</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;209 </tt><a href="fxp">fxp</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;201 </tt><a href="Serialization">Serialization</a></li>
+<tt>&nbsp;&nbsp;&nbsp;209 </tt><a href="Glade">Glade</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;200 </tt><a href="Talk">Talk</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;196 </tt><a href="MoinMoin">MoinMoin</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;188 </tt><a href="TomMurphy">TomMurphy</a></li>
+<tt>&nbsp;&nbsp;&nbsp;193 </tt><a href="Experimental">Experimental</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;186 </tt><a href="Variant">Variant</a></li>
+<tt>&nbsp;&nbsp;&nbsp;192 </tt><a href="HenryCejtin">HenryCejtin</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;190 </tt><a href="Variant">Variant</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;188 </tt><a href="TomMurphy">TomMurphy</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;184 </tt><a href="SpaceSafety">SpaceSafety</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;184 </tt><a href="ZZZOrphanedPages">ZZZOrphanedPages</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;176 </tt><a href="StephenWeeks">StephenWeeks</a></li>
+<tt>&nbsp;&nbsp;&nbsp;177 </tt><a href="Serialization">Serialization</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;176 </tt><a href="TalkDiveIn">TalkDiveIn</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;175 </tt><a href="JohnnyAndersen">JohnnyAndersen</a></li>
+<tt>&nbsp;&nbsp;&nbsp;176 </tt><a href="StephenWeeks">StephenWeeks</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;174 </tt><a href="WikiName">WikiName</a></li>
+<tt>&nbsp;&nbsp;&nbsp;175 </tt><a href="JohnnyAndersen">JohnnyAndersen</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;165 </tt><a href="Mutable">Mutable</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;161 </tt><a href="RunningOnDarwin">RunningOnDarwin</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;160 </tt><a href="MLtonTextIO">MLtonTextIO</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;157 </tt><a href="MLtonBinIO">MLtonBinIO</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;152 </tt><a href="StyleGuide">StyleGuide</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;145 </tt><a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;136 </tt><a href="Survey">Survey</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;136 </tt><a href="TalkTemplate">TalkTemplate</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;125 </tt><a href="WantedPages">WantedPages</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;120 </tt><a href="WikiName">WikiName</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;118 </tt><a href="Alice">Alice</a></li>
 <li>
@@ -648,23 +646,21 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;78 </tt><a href="OrphanedPages">OrphanedPages</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;73 </tt><a href="MLtonTextIO">MLtonTextIO</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;72 </tt><a href="MLtonBinIO">MLtonBinIO</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;69 </tt><a href="PageSize">PageSize</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;46 </tt><a href="RunningOnLinux">RunningOnLinux</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;45 </tt><a href="SurveyDone">SurveyDone</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;&nbsp;31 </tt><a href="ChrisClearwater">ChrisClearwater</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;30 </tt><a href="SystemInfo">SystemInfo</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;&nbsp;23 </tt><a href="UserGuide">UserGuide</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;&nbsp;21 </tt><a href="http://mlton.org/TemporaryBugExamples"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryBugExamples</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;&nbsp;20 </tt><a href="Papers">Papers</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;&nbsp;15 </tt><a href="Index">Index</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 </tt><a href="ChrisClearwater">ChrisClearwater</a></li>
 </ol>
 
  

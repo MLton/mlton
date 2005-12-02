@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,11 +49,11 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To aid in the debugging of code produced by program generators such as <a class="external" href="http://www.eecs.harvard.edu/~nr/noweb/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Noweb</a>, MLton supports comments with line directives of the form  <tt>&nbsp;(*#line&nbsp;</tt><em>line</em><tt>.</tt><em>col</em><tt>&nbsp;"</tt><em>file</em><tt>"*)</tt>.   Here, <em>line</em> and <em>col</em> are sequences of decimal digits and <em>file</em> is the source file.  A line directive causes the front end to believe that the character following the right parenthesis is at the line and column of the specified file.  A line directive only affects the reporting of error messages and does not affect program semantics (except for functions like <tt>MLton.Exn.history</tt> that report source file positions).  Syntactically invalid line directives are ignored. To prevent incompatibilites with SML, the file name may not contain the character sequence <tt>*)</tt>. </div>
+To aid in the debugging of code produced by program generators such as <a class="external" href="http://www.eecs.harvard.edu/~nr/noweb/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Noweb</a>, MLton supports comments with line directives of the form  <tt>&nbsp;(*#line&nbsp;</tt><em>line</em><tt>.</tt><em>col</em><tt>&nbsp;"</tt><em>file</em><tt>"*)</tt>.   Here, <em>line</em> and <em>col</em> are sequences of decimal digits and <em>file</em> is the source file.  A line directive causes the front end to believe that the character following the right parenthesis is at the line and column of the specified file.  A line directive only affects the reporting of error messages and does not affect program semantics (except for functions like <tt>MLton.Exn.history</tt> that report source file positions).  Syntactically invalid line directives are ignored. To prevent incompatibilities with SML, the file name may not contain the character sequence <tt>*)</tt>. </div>
 
 
 
 <p>
 <hr>
-Last edited on 2004-11-28 19:09:52 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 04:21:37 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-There are 294 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C">C</a> | <a href="#D">D</a> | <a href="#E">E</a> | <a href="#F">F</a> | <a href="#G">G</a> | <a href="#H">H</a> | <a href="#I">I</a> | <a href="#J">J</a> | <a href="#K">K</a> | <a href="#L">L</a> | <a href="#M">M</a> | <a href="#O">O</a> | <a href="#P">P</a> | <a href="#R">R</a> | <a href="#S">S</a> | <a href="#T">T</a> | <a href="#U">U</a> | <a href="#V">V</a> | <a href="#W">W</a> | <a href="#X">X</a> | <a href="#Z">Z</a><br>
+There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C">C</a> | <a href="#D">D</a> | <a href="#E">E</a> | <a href="#F">F</a> | <a href="#G">G</a> | <a href="#H">H</a> | <a href="#I">I</a> | <a href="#J">J</a> | <a href="#K">K</a> | <a href="#L">L</a> | <a href="#M">M</a> | <a href="#O">O</a> | <a href="#P">P</a> | <a href="#R">R</a> | <a href="#S">S</a> | <a href="#T">T</a> | <a href="#U">U</a> | <a href="#V">V</a> | <a href="#W">W</a> | <a href="#X">X</a> | <a href="#Z">Z</a><br>
 </p><a name="A"><h3>A</h3></a><a href="AccessControl">AccessControl</a>
 <br><a href="AdmitsEquality">AdmitsEquality</a>
 <br><a href="Alice">Alice</a>
@@ -100,7 +100,7 @@ There are 294 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Enscript">Enscript</a>
 <br><a href="EqualityType">EqualityType</a>
 <br><a href="EqualityTypeVariable">EqualityTypeVariable</a>
-<br><a href="EXene">EXene</a>
+<br><a href="eXene">eXene</a>
 <br><a href="Experimental">Experimental</a>
 <a name="F"><h3>F</h3></a><a href="FAQ">FAQ</a>
 <br><a href="Features">Features</a>
@@ -116,6 +116,7 @@ There are 294 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <a name="G"><h3>G</h3></a><a href="GarbageCollection">GarbageCollection</a>
 <br><a href="GenerativeDatatype">GenerativeDatatype</a>
 <br><a href="GenerativeException">GenerativeException</a>
+<br><a href="Glade">Glade</a>
 <br><a href="Globalize">Globalize</a>
 <br><a href="GnuMP">GnuMP</a>
 <a name="H"><h3>H</h3></a><a href="HaMLet">HaMLet</a>
@@ -212,7 +213,6 @@ There are 294 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Overloading">Overloading</a>
 <a name="P"><h3>P</h3></a><a href="PackedRepresentation">PackedRepresentation</a>
 <br><a href="PageSize">PageSize</a>
-<br><a href="Papers">Papers</a>
 <br><a href="ParallelMove">ParallelMove</a>
 <br><a href="Performance">Performance</a>
 <br><a href="PhantomType">PhantomType</a>
@@ -319,7 +319,6 @@ There are 294 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="UnresolvedBugs">UnresolvedBugs</a>
 <br><a href="UnsafeStructure">UnsafeStructure</a>
 <br><a href="Useless">Useless</a>
-<br><a href="UserGuide">UserGuide</a>
 <br><a href="Users">Users</a>
 <a name="V"><h3>V</h3></a><a href="ValueRestriction">ValueRestriction</a>
 <br><a href="Variant">Variant</a>

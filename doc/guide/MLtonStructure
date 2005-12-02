@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-The <tt>MLton</tt> structure contains a lot of functionality that is not available in the <a href="BasisLibrary"> SML Basis Library</a>.  As a warning, please keep in mind that the <tt>MLton</tt> structure and its substructures do change from release to release of MLton. 
+The <tt>MLton</tt> structure contains a lot of functionality that is not available in the <a href="BasisLibrary">Basis Library</a>.  As a warning, please keep in mind that the <tt>MLton</tt> structure and its substructures do change from release to release of MLton. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> MLton:
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -229,29 +229,64 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
 
     <li>
 <p>
- <tt>eq&nbsp;(x,&nbsp;y)</tt>  returns true if <tt>x</tt> and <tt>y</tt> are equal as pointers.  For simple  types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt>, this is the same as  equals.  For arrays, datatypes, strings, tuples, and vectors, this is  a simple pointer equality.  The semantics is a bit murky. 
+ <tt>eq&nbsp;(x,&nbsp;y)</tt> 
 </p>
 </li>
+
+        <ul>
+
+  returns true if <tt>x</tt> and <tt>y</tt> are equal as pointers.  For   simple types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt>, this is the   same as equals.  For arrays, datatypes, strings, tuples, and   vectors, this is a simple pointer equality.  The semantics is a bit   murky. 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>isMLton</tt>  is always true in a MLton implementation, and is always false in a  stub implementation. 
+ <tt>isMLton</tt> 
 </p>
 </li>
+
+        <ul>
+
+  is always true in a MLton implementation, and is always false in a   stub implementation. 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>share&nbsp;x</tt>  maximizes sharing in the heap for the object graph reachable from <tt>x</tt>. 
+ <tt>share&nbsp;x</tt> 
 </p>
 </li>
+
+        <ul>
+
+  maximizes sharing in the heap for the object graph reachable from   <tt>x</tt>. 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>shareAll&nbsp;()</tt>  maximizes sharing in the heap by sharing space for equivalent  immutable objects.  A call to <tt>shareAll</tt> performs a major garbage  collection, and takes time proportional to the size of the heap. 
+ <tt>shareAll&nbsp;()</tt> 
 </p>
 </li>
+
+        <ul>
+
+  maximizes sharing in the heap by sharing space for equivalent   immutable objects.  A call to <tt>shareAll</tt> performs a major   garbage collection, and takes time proportional to the size of the   heap. 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>size&nbsp;x</tt>  return the amount of heap space (in bytes) taken by the value of  <tt>x</tt>, including all objects reachable from <tt>x</tt> by following   pointers.  It takes time proportional to the size of <tt>x</tt>.  For an  example, see <a href="#size">below</a>. 
+ <tt>size&nbsp;x</tt> 
 </p>
 </li>
+
+        <ul>
+
+  returns the amount of heap space (in bytes) taken by the value of   <tt>x</tt>, including all objects reachable from <tt>x</tt> by following   pointers.  It takes time proportional to the size of <tt>x</tt>.  See   below for an example. 
+        </ul>
+
+
 
     </ul>
 
@@ -341,5 +376,5 @@ The size of a continuation option ref is &lt; 1000.
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:45:34 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 23:10:46 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

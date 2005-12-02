@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a href="StandardML">Standard ML</a> does not have explicit support for object-oriented programming.  Here are some papers that show how to express some object-oriented concepts in SML. 
+<a href="StandardML">Standard ML</a> does not have explicit support for object-oriented programming.  Here are some papers that show how to express certain object-oriented concepts in SML. 
     <ul>
 
     <li>
@@ -75,5 +75,5 @@
 
 <p>
 <hr>
-Last edited on 2004-12-26 17:35:40 by <span title="adsl-10-6-82.mia.bellsouth.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 23:20:26 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

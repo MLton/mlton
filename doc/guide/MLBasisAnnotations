@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -59,7 +59,7 @@
 </table>
 </div>
 <p>
-Here are the available annotations.  In the explanation below, for annotations that take  argument, the first value listed is the default. 
+Here are the available annotations.  In the explanation below, for annotations that take an argument, the first value listed is the default. 
 </p>
 <p>
 <tt>allowFFI&nbsp;{false|true}&nbsp;</tt> 
@@ -67,7 +67,7 @@ Here are the available annotations.  In the explanation below, for annotations t
 
         <ul>
 
-  If <tt>true</tt>, allow <tt>_address</tt>,<tt>_export</tt>,<tt>_import</tt>, and   <tt>_symbol</tt> expressions to appear in source files. 
+  If <tt>true</tt>, allow <tt>_address</tt>, <tt>_export</tt>, <tt>_import</tt>,   and <tt>_symbol</tt> expressions to appear in source files.  See    <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>. 
         </ul>
 
 
@@ -97,7 +97,7 @@ Here are the available annotations.  In the explanation below, for annotations t
 
         <ul>
 
-  If <tt>error</tt> or <tt>warn</tt>, report nonexhaustive matches.  (An   error will abort a compile, while a warning will not.) 
+  If <tt>error</tt> or <tt>warn</tt>, report nonexhaustive matches.  An   error will abort a compile, while a warning will not. 
         </ul>
 
 
@@ -107,7 +107,7 @@ Here are the available annotations.  In the explanation below, for annotations t
 
         <ul>
 
-  If <tt>error</tt> or <tt>warn</tt>, report redundant matches.  (An   error will abort a compile, while a warning will not.) 
+  If <tt>error</tt> or <tt>warn</tt>, report redundant matches.  An   error will abort a compile, while a warning will not. 
         </ul>
 
 
@@ -148,5 +148,5 @@ Here are the available annotations.  In the explanation below, for annotations t
 
 <p>
 <hr>
-Last edited on 2005-08-07 22:07:24 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 19:50:46 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

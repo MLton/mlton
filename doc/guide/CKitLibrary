@@ -27,7 +27,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,8 +51,8 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-The <a class="external" href="http://www.smlnj.org/doc/ckit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit Library</a> is a C front end written in SML that translates C source code (after preprocessing) into abstract syntax represented as a set of SML datatypes and is distributed with SML/NJ.  Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton.   <p>
-MLton ???????? includes a port of the ckit Library (from SML/NJ version 110.55). 
+The <a class="external" href="http://www.smlnj.org/doc/ckit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit Library</a> is a C front end written in SML that translates C source code (after preprocessing) into abstract syntax represented as a set of SML datatypes.  The ckit Library is distributed with SML/NJ.  Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
+As of 20050818, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.57. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -60,34 +60,14 @@ MLton ???????? includes a port of the ckit Library (from SML/NJ version 110.55).
 
     <li>
 <p>
- You can import the ckit Library by referencing the appropriate <tt>.mlb</tt> file: 
+ You can import the ckit Library into an MLB file with  <tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt> 
 </p>
 </li>
-
-        <ul>
-
-
-<div>
-<table>
-  <tr>
-<td align="center">
-MLB file</td>
-</tr>
-  <tr>
-<td>
-<tt>$(SML_LIB)/ckit-lib/src/ckit-lib.mlb</tt></td>
-</tr>
-</table>
-</div>
-
-        </ul>
-
-
-    <li>
+    <li class="gap">
 <p>
- If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a> to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, you will find it helpful to add the following to your <tt>.mlton/cm2mlb-map</tt>: 
-<pre>ckit-lib   $(SML_LIB)/ckit-lib/src
-</pre> This will automatically convert a <tt>$/ckit-lib.cm</tt> import in an input <tt>.cm</tt> file into a <tt>$(SML_LIB)/ckit-lib/src/ckit-lib.mlb</tt> import in the output <tt>.mlb</tt> file.
+ If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a>  to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, note that  the following map is included by default: 
+<pre>$ckit-lib.cm/ckit-lib.cm   $(SML_LIB)/ckit-lib/ckit-lib.mlb
+</pre> This will automatically convert a <tt>$/ckit-lib.cm</tt> import in an  input <tt>.cm</tt> file into a <tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt>  import in the output <tt>.mlb</tt> file.  
 </p>
 </li>
 
@@ -167,7 +147,7 @@ The following changes were made to the ckit Library, in addition to deriving the
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/lib/ckit-lib/ckit.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit.patch</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/lib/ckit-lib/ckit.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit.patch</a>
  
 </p>
 </li>
@@ -179,5 +159,5 @@ The following changes were made to the ckit Library, in addition to deriving the
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:56:56 by <span title="net-79206.roam.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-30 23:24:50 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

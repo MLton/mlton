@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@
 
         <ul>
 
-  return the file descriptor corresponding to <tt>ins</tt>. 
+  returns the file descriptor corresponding to <tt>ins</tt>. 
         </ul>
 
 
@@ -90,7 +90,7 @@
 
         <ul>
 
-  like the C <tt>mkstemp</tt> function, generate and open a temporary   file with prefix <tt>s</tt>. 
+  like the C <tt>mkstemp</tt> function, generates and open a temporary   file with prefix <tt>s</tt>. 
         </ul>
 
 
@@ -114,7 +114,7 @@
 
         <ul>
 
-  create a new instream from file descriptor   <tt>fd</tt>, with <tt>name</tt> used in any <tt>Io</tt> exceptions later   raised. 
+  creates a new instream from file descriptor   <tt>fd</tt>, with <tt>name</tt> used in any <tt>Io</tt> exceptions later   raised. 
         </ul>
 
 
@@ -126,7 +126,7 @@
 
         <ul>
 
-  create a new outstream from file descriptor <tt>fd</tt>, with   <tt>name</tt> used in any <tt>Io</tt> exceptions later raised. 
+  creates a new outstream from file descriptor <tt>fd</tt>, with   <tt>name</tt> used in any <tt>Io</tt> exceptions later raised. 
         </ul>
 
 
@@ -138,7 +138,7 @@
 
         <ul>
 
-  return the file descriptor corresponding to <tt>out</tt>. </ul>
+  returns the file descriptor corresponding to <tt>out</tt>. </ul>
 
 </ul>
 
@@ -148,5 +148,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-28 19:09:43 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:27:48 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

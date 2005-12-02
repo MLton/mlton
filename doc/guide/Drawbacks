@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-
+MLton has several drawbacks due to its use of whole-program compilation. 
     <ul>
 
     <li>
@@ -72,7 +72,7 @@
 
             <ul>
 
-   Whole-program compilation can take a long time on large    programs.  For example, compiling MLton (over 140K lines)    on a 1.6GhZ machine takes five to ten minutes. 
+   Whole-program compilation can take a long time.  For example,    compiling MLton (over 140K lines) on a 1.6GHz machine takes five to    ten minutes.  
             </ul>
 
 
@@ -84,7 +84,7 @@
 
             <ul>
 
-   Because of whole-program compilation, MLton does not    provide an interactive top level.  In particular, it does    not implement the optional <tt>use</tt> <a href="BasisLibrary"> SML Basis Library</a>    function. </ul>
+   Because of whole-program compilation, MLton does not provide an    interactive top level.  In particular, it does not implement the    optional <a href="BasisLibrary">Basis Library</a> function <tt>use</tt>. </ul>
 
 </ul>
 
@@ -94,5 +94,5 @@
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:47:21 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:19:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

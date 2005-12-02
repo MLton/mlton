@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -114,7 +114,7 @@
 
         <ul>
 
-  close the connection to the system logger. 
+  closes the connection to the system logger. 
         </ul>
 
 
@@ -126,7 +126,7 @@
 
         <ul>
 
-  log message <tt>s</tt> at a loglevel <tt>l</tt>. 
+  logs message <tt>s</tt> at a loglevel <tt>l</tt>. 
         </ul>
 
 
@@ -138,7 +138,7 @@
 
         <ul>
 
-  open a connection to the system logger. <tt>name</tt> will be prefixed   to each message, and is typically set to the program name. </ul>
+  opens a connection to the system logger. <tt>name</tt> will be prefixed   to each message, and is typically set to the program name. </ul>
 
 </ul>
 
@@ -148,5 +148,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:29:56 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 23:11:30 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

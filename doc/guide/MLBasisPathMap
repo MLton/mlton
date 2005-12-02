@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,29 +49,54 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An <a href="MLBasis">ML Basis</a> <em>path map</em> describes a map from ML Basis path variables (of the form <tt>$(VAR)</tt>) to file system paths.  ML Basis path variables to provide a flexible way to refer to libraries while allowing them to be moved without changing their clients. <p>
+An <a href="MLBasis">ML Basis</a> <em>path map</em> describes a map from ML Basis path variables (of the form <tt>$(VAR)</tt>) to file system paths.  ML Basis path variables provide a flexible way to refer to libraries while allowing them to be moved without changing their clients. <p>
 The format of an <tt>mlb-path-map</tt> file is a sequence of lines; each line consists of two, white-space delimited tokens.  The first token is a path variable <tt>VAR</tt> and the second token is the path to which the variable is mapped.  The path may include path variables, which are recursively expanded. 
 </p>
 <p>
-The mapping from path variables to paths is initialized by reading  a system-wide configuration file: <tt>/usr/lib/mlton/mlb-path-map</tt>. Additional path maps can be specified with <tt>-mlb-path-map</tt>. Configuration files are processed from first to last and from top to bottom, later mappings take precedence over earlier mappings. 
+The mapping from path variables to paths is initialized by reading a system-wide configuration file: <tt>/usr/lib/mlton/mlb-path-map</tt>. Additional path maps can be specified with <tt>-mlb-path-map</tt> (see <a href="CompileTimeOptions">CompileTimeOptions</a>).  Configuration files are processed from first to last and from top to bottom, later mappings take precedence over earlier mappings. 
 </p>
 <p>
-The system-wide configuration file makes the following path variables available. 
+The compiler and system-wide configuration file makes the following path  variables available. 
 </p>
 
-<pre>LIB_MLTON_DIR   /usr/lib/mlton
-SML_LIB         $(LIB_MLTON_DIR)/sml
-</pre><h2 id="head-a283e7658f43ceca065ff16e5fc5a2383c955359">Changes since the current public release</h2>
-<p>
-Since the release of MLton 20041109, we have switched from <tt>MLTON_ROOT</tt> to <tt>SML_LIB</tt>, to use a more compiler neutral name, since at least one other SML compiler (the <a href="MLKit">MLKit</a>) is in the process of adding support for MLB files.  You can add an entry like the following to either your personal path map or to the system-wide path map, and begin to migrate to the new name immediately. 
-</p>
+    <ul>
 
-<pre>SML_LIB $(MLTON_ROOT)
-</pre></div>
+
+<div>
+<table>
+ <tr>
+<td align="center">
+MLB path variable</td>
+<td align="center">
+Description</td>
+</tr>
+ <tr>
+<td>
+<tt>SML_LIB</tt></td>
+<td>
+<tt>/usr/lib/mlton/sml</tt></td>
+</tr>
+ <tr>
+<td>
+<tt>TARGET_ARCH</tt></td>
+<td>
+string representation of target architecture</td>
+</tr>
+ <tr>
+<td>
+<tt>TARGET_OS</tt></td>
+<td>
+string representation of target operating system</td>
+</tr>
+</table>
+</div>
+</ul>
+
+</div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-09-05 21:54:46 by <span title="adsl-64-166-225-193.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 03:48:35 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

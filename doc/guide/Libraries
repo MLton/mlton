@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -100,9 +100,9 @@ In theory every strictly conforming Standard ML program should run on MLton.  Ho
         <li>
 <p>
  The internal MLton library has a regexp module which we hope to   cleanup and make more accessible someday.   See 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/lib/mlton/basic/regexp.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/lib/mlton/basic/regexp.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sig</a>
    
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/lib/mlton/basic/regexp.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/lib/mlton/basic/regexp.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">regexp.sml</a>
  
 </p>
 </li>
@@ -122,12 +122,17 @@ In theory every strictly conforming Standard ML program should run on MLton.  Ho
 </li>
     <li>
 <p>
- <a href="MLNLFFI">MLNLFFI</a> - distributed with MLton 
+ <a href="MLNLFFI">ML-NLFFI</a> - distributed with MLton 
 </p>
 </li>
     <li>
 <p>
- <a class="external" href="http://cvs.sourceforge.net/viewcvs.py/tom7misc/sml-lib/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml-lib</a>, a sort  of grab-bag of libraries for MLton and other SML implementations. 
+ <a class="external" href="http://cvs.sourceforge.net/viewcvs.py/tom7misc/sml-lib/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml-lib</a>,  a grab bag of libraries for MLton and other SML implementations.  
+</p>
+</li>
+    <li>
+<p>
+ <a href="Swerve">Swerve</a>, an HTTP server. 
 </p>
 </li>
     <li>
@@ -238,5 +243,5 @@ More projects using MLton can be seen on the <a href="Users">Users</a> page.
 
 <p>
 <hr>
-Last edited on 2005-09-09 19:23:21 by <span title="adsl-64-166-227-25.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 03:33:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

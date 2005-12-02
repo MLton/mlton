@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,7 +50,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> only allows values of certain SML types to be passed between SML and C.  The following types are allowed: <tt>bool</tt>, <tt>char</tt>, <tt>int</tt>, <tt>real</tt>, <tt>word</tt>. All of the different sizes of (fixed-sized) integers, reals, and words are supported as well: <tt>Int8.int</tt>, <tt>Int16.int</tt>, <tt>Int32.int</tt>, <tt>Int64.int</tt>, <tt>Real32.real</tt>, <tt>Real64.real</tt>, <tt>Word8.word</tt>, <tt>Word16.word</tt>, <tt>Word32.word</tt>, <tt>Word64.word</tt>.  There is a special type, <tt>MLton.Pointer.t</tt>, for passing C pointers -- see <a href="MLtonPointer">MLtonPointer</a> for details. <p>
-Arrays, refs, and vectors of the above types are also allowed. Because in MLton monomorphic arrays and vectors are exactly the same as their polymorphic counterpart, these are also allowed.  Hence, <tt>string</tt> (equivalent to <tt>CharVector.vector</tt>) is also allowed. Strings are not null terminated, unless you manually do so from the SML side. 
+Arrays, refs, and vectors of the above types are also allowed. Because in MLton monomorphic arrays and vectors are exactly the same as their polymorphic counterpart, these are also allowed.  Hence, <tt>string</tt>, <tt>char&nbsp;vector</tt>, and <tt>CharVector.vector</tt> are also allowed.  Strings are not null terminated, unless you manually do so from the SML side. 
 </p>
 <p>
 Unfortunately, passing tuples or datatypes is not allowed because that would interfere with representation optimizations. 
@@ -246,5 +246,5 @@ When calling an <a href="CallingFromSMLToC"> imported C function from SML</a> th
 
 <p>
 <hr>
-Last edited on 2005-08-07 22:18:13 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:27:38 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,23 +49,26 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Since 20050730, we have maintained our sources with <a href="Subversion">Subversion</a>. You can <a class="external" href="http://mlton.org/svn"><img src="moin-www.png" alt="[WWW]" height="11" width="11">view them on the web</a> or access them with a subversion client.  Anonymous read access is available via 
-<pre>svn://mlton.org/mlton</pre>We use the  <a class="external" href="http://svnbook.red-bean.com/en/1.1/ch05s04.html#svn-ch-5-sect-6.1"><img src="moin-www.png" alt="[WWW]" height="11" width="11">standard repository layout</a>, so you can check out the latest revision with 
-<pre>svn co svn://mlton.org/mlton/trunk mlton</pre>Committers (you know who you are) can access via 
+We maintain our sources with <a href="Subversion">Subversion</a>.  You can <a class="external" href="http://mlton.org/svn"><img src="moin-www.png" alt="[WWW]" height="11" width="11">view them on the web</a> or access them with a subversion client.  Anonymous read access is available via  
+<pre>svn://mlton.org/mlton</pre><p>
+We use the <a class="external" href="http://svnbook.red-bean.com/en/1.1/ch05s04.html#svn-ch-5-sect-6.1"><img src="moin-www.png" alt="[WWW]" height="11" width="11">standard repository layout</a>, so you can check out the latest revision with  
+<pre>svn co svn://mlton.org/mlton/trunk mlton</pre>
+</p>
+Committers (you know who you are) can access via 
 <pre>svn+ssh://mlton.org/svnroot/
-</pre>So, committers can check out the trunk with 
+</pre>Committers can check out the trunk with 
 <pre>svn co svn+ssh://mlton.org/svnroot/mlton/trunk mlton
 </pre><h2 id="head-302a5a9f18557bb8071c342c910d4001a0b7c373">Commit email</h2>
 <p>
-All commits are sent to <tt>MLton-commit@mlton.org</tt>  (<a class="external" href="http://mlton.org/mailman/listinfo/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,  <a class="external" href="http://mlton.org/pipermail/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>), which is only for commit email.  Discussion should go to <tt>MLton@mlton.org</tt>. 
+All commits are sent to <tt>MLton-commit@mlton.org</tt>  (<a class="external" href="http://mlton.org/mailman/listinfo/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,  <a class="external" href="http://mlton.org/pipermail/mlton-commit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>), which is only for commit email.  Discussion should go to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
 </p>
 <p>
-If the first line of a log message for a commit begins with  "<tt>MAIL&nbsp;</tt>", then the commit message will be sent with the subject as the rest of that first line, and will also be sent to <tt>MLton@mlton.org</tt>. 
+If the first line of a commit log message begins with "<tt>MAIL&nbsp;</tt>", then the commit message will be sent with the subject as the rest of that first line, and will also be sent to [<a href="mailto:MLton@mlton.org">mailto:MLton@mlton.org</a> <a href="mailto:MLton@mlton.org">MLton@mlton.org</a>]. 
 </p>
 <h2 id="head-164b3d4809f98d0458414f1bf9cf3c9dcba16bb5">Changelog</h2>
 <p>
 See the 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/doc/changelog?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/doc/changelog?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>
  for a list of changes and bug fixes. 
 </p>
 <h2 id="head-5e1dd8155002a7d7db24335015acaddd25a44f09">CVS</h2>
@@ -98,5 +101,5 @@ Prior to 20050730, we used <a href="CVS">CVS</a>.  We have left the CVS server u
 
 <p>
 <hr>
-Last edited on 2005-08-19 21:30:44 by <span title="adsl-64-166-224-249.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 02:33:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

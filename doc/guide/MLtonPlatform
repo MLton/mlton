@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,8 @@
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Arch:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">PowerPC</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Sparc</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">X86</FONT>
+            <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Alpha</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">AMD64</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">ARM</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">HPPA</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">IA64</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">m68k</FONT> 
+                       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">MIPS</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">PowerPC</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">S390</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Sparc</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">X86</FONT>
 
             </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fromString: string -&gt; t option
             <B><FONT COLOR="#A020F0">val</FONT></B> host: t
@@ -64,8 +65,8 @@
          
       <B><FONT COLOR="#0000FF">structure</FONT></B> OS:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Cygwin</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Darwin</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">FreeBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Linux</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">MinGW</FONT>
-                       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">NetBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">OpenBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Solaris</FONT>
+            <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Cygwin</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Darwin</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">FreeBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Linux</FONT> 
+                       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">MinGW</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">NetBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">OpenBSD</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Solaris</FONT>
 
             </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fromString: string -&gt; t option
             <B><FONT COLOR="#A020F0">val</FONT></B> host: t
@@ -87,7 +88,7 @@
 
         <ul>
 
-  the architectures to which MLton can compile. 
+  processor architectures 
         </ul>
 
 
@@ -99,7 +100,7 @@
 
         <ul>
 
-  convert from string to architecture.  Case insensitive. 
+  converts from string to architecture.  Case insensitive. 
         </ul>
 
 
@@ -135,7 +136,7 @@
 
         <ul>
 
-  the operating systems to which MLton can compile. 
+  operating systems 
         </ul>
 
 
@@ -147,7 +148,7 @@
 
         <ul>
 
-  convert from string to operating system.  Case insensitive. 
+  converts from string to operating system.  Case insensitive. 
         </ul>
 
 
@@ -181,5 +182,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-09 22:12:46 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:27:55 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

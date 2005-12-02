@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,12 +54,12 @@ The contents of these pages have been moved to other pages.
 
     <li>
 <p>
- <a href="Papers">Papers</a> 
+ <a class="nonexistent" href="Papers">Papers</a> 
 </p>
 </li>
     <li>
 <p>
- <a href="UserGuide">UserGuide</a> 
+ <a class="nonexistent" href="UserGuide">UserGuide</a> 
 </p>
 </li>
 

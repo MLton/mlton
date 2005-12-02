@@ -26,7 +26,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,7 +51,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 Optional arguments are function parameters which may be omitted from applications of the function, in which case the parameters take on default values. <p>
-<a href="StandardML">Standard ML</a> does not have built-in support for optional arguments (as does <a href="OCaml">OCaml</a>).  Despite the absence of built-in support, it is easy to emulate optional arguments. 
+<a href="StandardML">Standard ML</a> does not have built-in support for optional arguments (unlike <a href="OCaml">OCaml</a>).  Despite the absence of built-in support, it is easy to emulate optional arguments. 
 </p>
 <p>
 For example, consider the function 
@@ -257,7 +257,7 @@ One may also mix sequences of required and optional arguments.
  
 </p>
 <p>
-To make a complete program and test the above code, we can apply the <tt>TestOptionalF</tt> and <tt>TestOptionalG</tt> functors to our implemenation. 
+To make a complete program and test the above code, we can apply the <tt>TestOptionalF</tt> and <tt>TestOptionalG</tt> functors to our implementation. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> TestF = TestOptionalF (Optional)
 <B><FONT COLOR="#0000FF">structure</FONT></B> TestG = TestOptionalG (Optional)
@@ -301,5 +301,5 @@ X = 2, Y = 2, Z = 3
 
 <p>
 <hr>
-Last edited on 2005-11-13 23:18:55 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
+Last edited on 2005-12-02 04:23:32 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

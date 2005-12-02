@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,6 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+Here are a number of syntactic conventions useful for programming in SML. <p>
 <ol>
 <li>
 <a href="#head-9239ee2cda84eca4c3440e2a7b50148af67da3d4">General</a></li>
@@ -66,7 +67,9 @@
 <a href="#head-23ac4cb38bc668a9233ce693377f7f5c3879f104">Functors</a></li>
 </ol>
 
- <h2 id="head-9239ee2cda84eca4c3440e2a7b50148af67da3d4"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>General</h2>
+ 
+</p>
+<h2 id="head-9239ee2cda84eca4c3440e2a7b50148af67da3d4">General</h2>
 
     <ul>
 
@@ -99,7 +102,7 @@
     </ul>
 
 
-<h2 id="head-649d2864df18704de32e689e69e63f2483e8b76e"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Identifiers</h2>
+<h2 id="head-649d2864df18704de32e689e69e63f2483e8b76e">Identifiers</h2>
 
     <ul>
 
@@ -135,7 +138,7 @@ BINARY_HEAP</pre>
     </ul>
 
 
-<h2 id="head-93b9e289e2842469d001eccf7ad5d79f3c302dc9"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Types</h2>
+<h2 id="head-93b9e289e2842469d001eccf7ad5d79f3c302dc9">Types</h2>
 
     <ul>
 
@@ -230,7 +233,7 @@ BINARY_HEAP</pre>
     </ul>
 
 
-<h2 id="head-68836c550ee20fae0e06b2994e76a40348d2fc30"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Core</h2>
+<h2 id="head-68836c550ee20fae0e06b2994e76a40348d2fc30">Core</h2>
 
     <ul>
 
@@ -521,7 +524,7 @@ e1
     </ul>
 
 
-<h2 id="head-e4cf0392296064579858651f856889aadbc2805e"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Signatures</h2>
+<h2 id="head-e4cf0392296064579858651f856889aadbc2805e">Signatures</h2>
 
     <ul>
 
@@ -566,7 +569,7 @@ e1
     </ul>
 
 
-<h2 id="head-c64b6d8ab6a3167af6b211df05198e555a8951eb"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Structures</h2>
+<h2 id="head-c64b6d8ab6a3167af6b211df05198e555a8951eb">Structures</h2>
 
     <ul>
 
@@ -613,7 +616,7 @@ e1
     </ul>
 
 
-<h2 id="head-23ac4cb38bc668a9233ce693377f7f5c3879f104"><a href="#bottom"><img src="moin-bottom.png" alt="[BOTTOM]" height="10" width="14"></a><a href="#top"><img src="moin-top.png" alt="[TOP]" height="10" width="14"></a>Functors</h2>
+<h2 id="head-23ac4cb38bc668a9233ce693377f7f5c3879f104">Functors</h2>
 
     <ul>
 
@@ -646,5 +649,5 @@ e1
 
 <p>
 <hr>
-Last edited on 2005-06-13 18:59:30 by <span title="cs78147115.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-02 02:44:41 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

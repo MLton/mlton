@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -53,8 +53,10 @@
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PROC_ENV =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setenv: {name: string, value: string} -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> setgroups: Posix.ProcEnv.gid list -&gt; unit
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> gid
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> setenv: {name: string, value: string} -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setgroups: gid list -&gt; unit
   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -71,7 +73,7 @@
 
         <ul>
 
-  Like the C <tt>setenv</tt> function.  Does not require <tt>name</tt> or   <tt>value</tt> to be null terminated. 
+  like the C <tt>setenv</tt> function.  Does not require <tt>name</tt> or   <tt>value</tt> to be null terminated. 
         </ul>
 
 
@@ -83,7 +85,7 @@
 
         <ul>
 
-  Like the C <tt>setgroups</tt> function. </ul>
+  like the C <tt>setgroups</tt> function. </ul>
 
 </ul>
 
@@ -93,5 +95,5 @@
 
 <p>
 <hr>
-Last edited on 2005-08-07 22:14:28 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 22:28:03 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

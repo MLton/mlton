@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,16 +50,16 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows an SML program to <em>import</em> C functions.  Suppose you would like to import from C a function with the following prototype: 
-<pre>int foo (double d, unsigned char c);
+<pre>int foo (double d, char c);
 </pre>MLton extends the syntax of SML to allow expressions like the following: 
 <pre>_import "foo": real * char -&gt; int;
 </pre>This expression denotes a function of type <tt>real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int</tt> whose behavior is implemented by calling the C function whose name is <tt>foo</tt>.  Thinking in terms of C, imagine that there are C variables <tt>d</tt> of type <tt>double</tt>, <tt>c</tt> of type <tt>unsigned&nbsp;char</tt>,  and <tt>i</tt> of type <tt>int</tt>.  Then, the C statement <tt>i&nbsp;=&nbsp;foo&nbsp;(d,&nbsp;c)</tt> is executed and <tt>i</tt> is returned. <p>
-The general form of an <tt>_import</tt> expresion is: 
+The general form of an <tt>_import</tt> expression is: 
 <pre>_import "C function name" attr... : cFuncTy;
 </pre>The type and the semicolon are not optional. 
 </p>
 <p>
-The function name is followed by a (possibly empty) sequence of attributes, analogous to C <tt>_attribute__</tt> specifiers.  For now, the only attributes supported are <tt>cdecl</tt> and <tt>stdcall</tt>. These specify the calling convention of the C function on Cygwin/Windows, and are ignored on all other platforms.  The default is <tt>cdecl</tt>.  You must use <tt>stdcall</tt> in order to correctly call Windows API functions. 
+The function name is followed by a (possibly empty) sequence of attributes, analogous to C <tt>__attribute__</tt> specifiers.  For now, the only attributes supported are <tt>cdecl</tt> and <tt>stdcall</tt>. These specify the calling convention of the C function on Cygwin/Windows, and are ignored on all other platforms.  The default is <tt>cdecl</tt>.  You must use <tt>stdcall</tt> in order to correctly call Windows API functions. 
 </p>
 <h2 id="head-0f01ed56a1e32a05e5ef96e4d779f34784af9a96">Example</h2>
 <p>
@@ -121,7 +121,7 @@ Char <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int n) {
 </p>
 <p>
 Compile and run the program. 
-<pre>% mlton -default-ann 'allowImport true' import.sml ffi-import.c
+<pre>% mlton -default-ann 'allowFFI true' import.sml ffi-import.c
 % ./import
 13
 success
@@ -134,14 +134,14 @@ success
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
  
 </p>
 </li>
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
  
 </p>
 </li>
@@ -166,5 +166,5 @@ success
 
 <p>
 <hr>
-Last edited on 2005-08-09 07:33:27 by <span title="pool-71-243-2-249.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:17:30 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

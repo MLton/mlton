@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,6 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+MLton runs fine on PowerPC. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
 
     <ul>
 
@@ -65,5 +66,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 00:52:39 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:36:54 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

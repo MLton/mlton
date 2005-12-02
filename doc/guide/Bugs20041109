@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,6 +50,24 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 Here are the known bugs in MLton 20041109, listed in reverse chronological order of date reported. <p>
+<a id="17"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>MLton.Finalizable.touch</tt> doesn't necessarily keep values alive  long enough.  Our SVN has a patch to the compiler.  You must rebuild  the compiler in order for the patch to take effect. 
+</p>
+<p>
+ Thanks to Florian Weimer for reporting this bug. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
 <a id="16"></a> 
 </p>
 
@@ -60,7 +78,7 @@ Here are the known bugs in MLton 20041109, listed in reverse chronological order
  A bug in an optimization pass may incorrectly transform a program  to flatten ref cells into their containing data structure, yielding a  type-error in the transformed program.  Our CVS has a  <a class="external" href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/ssa/ref-flatten.fun.diff?r1=1.35&amp;r2=1.37"><img src="moin-www.png" alt="[WWW]" height="11" width="11">patch</a>   to the compiler.  You must rebuild the compiler in order for the  patch to take effect. 
 </p>
 <p>
- Thanks to Vesa Karvonen for reporting this bug. 
+ Thanks to <a href="VesaKarvonen">VesaKarvonen</a> for reporting this bug. 
 </p>
 </li>
 
@@ -348,5 +366,5 @@ Here are the known bugs in MLton 20041109, listed in reverse chronological order
 
 <p>
 <hr>
-Last edited on 2005-07-28 16:28:29 by <span title="adsl-64-166-225-145.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 05:16:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

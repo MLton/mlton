@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -171,6 +171,11 @@ Standard ML (SML) is a programming language that combines excellent support for 
 </li>
     <li>
 <p>
+ <a href="Serialization">Serialization</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="StyleGuide">StyleGuide</a> 
 </p>
 </li>
@@ -215,6 +220,24 @@ Standard ML (SML) is a programming language that combines excellent support for 
  <a href="Regions">Regions</a> 
 </p>
 </li>
+
+    </ul>
+
+
+<h2 id="head-c2bde4ab5c0231d52c93e602e91fc08c6eff09a9">Related Languages</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Alice">Alice</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="OCaml">OCaml</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -223,5 +246,5 @@ Standard ML (SML) is a programming language that combines excellent support for 
 
 <p>
 <hr>
-Last edited on 2005-08-01 17:59:53 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-02 03:34:06 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

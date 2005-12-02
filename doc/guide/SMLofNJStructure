@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -88,7 +88,7 @@
 
     <li>
 <p>
- <tt>structure&nbsp;Cont</tt>} 
+ <tt>structure&nbsp;Cont</tt> 
 </p>
 </li>
 
@@ -190,7 +190,7 @@
 
         <ul>
 
-  save the state of the computation to a file that will apply <tt>f</tt>   to the command-line arguments upon restart. 
+  saves the state of the computation to a file that will apply <tt>f</tt>   to the command-line arguments upon restart. 
         </ul>
 
 
@@ -202,7 +202,7 @@
 
         <ul>
 
-  save the state of the computation to file <tt>f</tt> and continue.   Return <tt>true</tt> in the restarted computation and <tt>false</tt> in   the continuing computation. </ul>
+  saves the state of the computation to file <tt>f</tt> and continue.   Returns <tt>true</tt> in the restarted computation and <tt>false</tt> in   the continuing computation. </ul>
 
 </ul>
 
@@ -212,5 +212,5 @@
 
 <p>
 <hr>
-Last edited on 2004-12-17 01:40:36 by <span title="roam59-224.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 02:31:55 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

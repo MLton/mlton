@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,18 +49,15 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+ImplementExceptions is a pass for the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SXMLSimplify">SXMLSimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-An implementation pass for the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SXMLSimplify">SXMLSimplify</a>. 
-</p>
-<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
-<p>
-Implements exceptions. 
+This pass implements exceptions. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/implement-exceptions.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/xml/implement-exceptions.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/implement-exceptions.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/xml/implement-exceptions.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-exceptions.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
@@ -68,5 +65,5 @@ Implements exceptions.
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:37:11 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:37:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

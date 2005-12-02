@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@ MLton has <a href="Performance">excellent performance</a>.
 </p>
 <h2 id="head-192264d667fe968b31a7cb67efc7f5b812d9b2c3">Does MLton treat monomorphic arrays and vectors specially?</h2>
 <p>
-MLton implements monomorphic arrays and vectors (e.g. <tt>BoolArray</tt>, <tt>Word8Vector</tt>) exactly as instantiations of their polymorphic counterpart (e.g. <tt>bool&nbsp;array</tt>, <tt>Word8.word&nbsp;vector</tt>).  Thus, there is no need to use the monomorphic versions except when required to interface with the <a href="BasisLibrary"> SML Basis Library</a> or for portability with other SML implementations. 
+MLton implements monomorphic arrays and vectors (e.g. <tt>BoolArray</tt>, <tt>Word8Vector</tt>) exactly as instantiations of their polymorphic counterpart (e.g. <tt>bool&nbsp;array</tt>, <tt>Word8.word&nbsp;vector</tt>).  Thus, there is no need to use the monomorphic versions except when required to interface with the <a href="BasisLibrary">Basis Library</a> or for portability with other SML implementations. 
 </p>
 <h2 id="head-a853893393a762751e90db219072e6a768c91f39">Why do I get a Segfault/Bus error in a program that uses IntInf/LargeInt to calculate numbers with several hundred thousand digits?</h2>
 <p>
@@ -113,5 +113,5 @@ Also, please <a href="Contact">Contact</a> us to let us know the problem to help
 
 <p>
 <hr>
-Last edited on 2005-04-25 19:36:00 by <span title="adsl-63-195-184-50.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:19:12 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,9 +49,9 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-A rewrite pass for the <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>s,  invoked from every optimization pass (see <a href="SSASimplify">SSASimplify</a> and <a href="SSA2Simplify">SSA2Simplify</a>). <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+Shrink is a rewrite pass for the <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a> <a href="IntermediateLanguage">IntermediateLanguage</a>s, invoked from every optimization pass (see <a href="SSASimplify">SSASimplify</a> and <a href="SSA2Simplify">SSA2Simplify</a>). <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-Implements a whole family of compile-time reductions, like 
+This pass implements a whole family of compile-time reductions, like: 
 </p>
 
     <ul>
@@ -86,16 +86,19 @@ Implements a whole family of compile-time reductions, like
 
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+<p>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
 <br>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a>
+ 
+</p>
+<h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The Shrink pass is run after every <a href="SSA">SSA</a> and <a href="SSA2">SSA2</a> optimization pass. 
 </p>
@@ -103,7 +106,7 @@ The Shrink pass is run after every <a href="SSA">SSA</a> and <a href="SSA2">SSA2
 The Shrink implementation also includes functions to eliminate unreachable blocks from a <a href="SSA">SSA</a> or <a href="SSA2">SSA2</a> program or function. The Shrink pass does not guarantee to eliminate all unreachable blocks.  Doing so would unduly complicate the implementation, and it is almost always the case that all unreachable blocks are eliminated. However, a small number of optimization passes require that the input have no unreachable blocks (essentially, when the analysis works on the control flow graph and the rewrite iterates on the vector of blocks).  These passes explicitly call <tt>eliminateDeadBlocks</tt>. 
 </p>
 <p>
-The Shrink pass has a special case to turn a non-tail call where the continuation and handler only do <tt>Profile</tt> statements into a tail call where the <tt>Profile</tt> statements preceed the tail call. 
+The Shrink pass has a special case to turn a non-tail call where the continuation and handler only do <tt>Profile</tt> statements into a tail call where the <tt>Profile</tt> statements precede the tail call. 
 </p>
 </div>
 
@@ -111,5 +114,5 @@ The Shrink pass has a special case to turn a non-tail call where the continuatio
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:25:20 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:24:49 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,7 +65,7 @@ In a typical implementation, a closure consists of a <em>code pointer</em> (indi
  
 </p>
 <p>
-the closure for <tt>fn&nbsp;y&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;y</tt> contains a pointer to a piece of code that knows to take its argument and add the value of <tt>x</tt> to it, plus the environment recording the value of <tt>x</tt> as<tt>5</tt>. 
+the closure for <tt>fn&nbsp;y&nbsp;=&gt;&nbsp;x&nbsp;+&nbsp;y</tt> contains a pointer to a piece of code that knows to take its argument and add the value of <tt>x</tt> to it, plus the environment recording the value of <tt>x</tt> as <tt>5</tt>. 
 </p>
 <p>
 To call a function, the code pointer is extracted and jumped to, passing in some agreed upon location the environment and the argument. 
@@ -80,5 +80,5 @@ MLton does not implement closures traditionally.  Instead, based on whole-progra
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:36:54 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-30 23:25:36 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

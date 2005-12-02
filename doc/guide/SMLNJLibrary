@@ -27,7 +27,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,7 +52,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 The  <a class="external" href="http://www.smlnj.org/doc/smlnj-lib/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML/NJ Library</a>  is a collection of libraries that are distributed with SML/NJ.  Due to differences between SML/NJ and MLton, these libraries will not work out-of-the box with MLton.   <p>
-MLton ???????? includes a port of the SML/NJ Library (from SML/NJ version 110.55). 
+As of 20050818, MLton includes a port of the SML/NJ Library, currently synchronized with SML/NJ version 110.57. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -60,7 +60,7 @@ MLton ???????? includes a port of the SML/NJ Library (from SML/NJ version 110.55
 
     <li>
 <p>
- You can import a sub-library by referencing the appropriate <tt>.mlb</tt> file: 
+ You can import a sub-library of the SML/NJ Library into an MLB file with: 
 </p>
 </li>
 
@@ -137,16 +137,16 @@ Reactive scripting library.</td>
 
     <li>
 <p>
- If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a> to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, you will find it helpful to add the following to your <tt>.mlton/cm2mlb-map</tt>: 
-<pre>smlnj-lib       $(SML_LIB)/smlnj-lib/Util
-controls-lib    $(SML_LIB)/smlnj-lib/Controls
-hash-cons-lib   $(SML_LIB)/smlnj-lib/HashCons
-inet-lib        $(SML_LIB)/smlnj-lib/INet
-unix-lib        $(SML_LIB)/smlnj-lib/Unix
-pp-lib          $(SML_LIB)/smlnj-lib/PP
-html-lib        $(SML_LIB)/smlnj-lib/HTML
-regexp-lib      $(SML_LIB)/smlnj-lib/RegExp
-reactive-lib    $(SML_LIB)/smlnj-lib/Reactive
+ If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a> to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, note that the following maps are included by default: 
+<pre>$smlnj-lib.cm       $(SML_LIB)/smlnj-lib/Util
+$controls-lib.cm    $(SML_LIB)/smlnj-lib/Controls
+$hash-cons-lib.cm   $(SML_LIB)/smlnj-lib/HashCons
+$inet-lib.cm        $(SML_LIB)/smlnj-lib/INet
+$unix-lib.cm        $(SML_LIB)/smlnj-lib/Unix
+$pp-lib.cm          $(SML_LIB)/smlnj-lib/PP
+$html-lib.cm        $(SML_LIB)/smlnj-lib/HTML
+$regexp-lib.cm      $(SML_LIB)/smlnj-lib/RegExp
+$reactive-lib.cm    $(SML_LIB)/smlnj-lib/Reactive
 </pre> This will automatically convert a <tt>$/smlnj-lib.cm</tt> import in an input <tt>.cm</tt> file into a <tt>$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb</tt> import in the output <tt>.mlb</tt> file.
 </p>
 </li>
@@ -161,11 +161,6 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
     <ul>
 
-    <li>
-<p>
- <tt>Util/deviations.sml</tt> (added): Accomodate <a href="SMLNJDeviations"> SML/NJ's deviations</a> from the <a class="external" href="http://www.standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Basis Library specification</a>. 
-</p>
-</li>
     <li>
 <p>
  <tt>Util/redblack-set-fn.sml</tt> (modified): Rewrote use of <tt>where</tt> structure specification. 
@@ -185,7 +180,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 <p>
  <tt>Util/bit-array.sml</tt> (modified): The computation of the <tt>maxLen</tt> is given by: 
 <pre>val maxLen = 8*Word8Array.maxLen
-</pre> This is fine in SML/NJ where <tt>Word8Array.maxLen</tt> is 16777215, but in MLton, <tt>Word8Array.maxLen</tt> is equal to <tt>valOf(Int.maxInt)</tt>, so the computation overflows. To accomodate both SML/NJ and MLton, the computation is replaced by 
+</pre> This is fine in SML/NJ where <tt>Word8Array.maxLen</tt> is 16777215, but in MLton, <tt>Word8Array.maxLen</tt> is equal to <tt>valOf(Int.maxInt)</tt>, so the computation overflows. To accommodate both SML/NJ and MLton, the computation is replaced by 
 <pre>val maxLen = (8*Word8Array.maxLen) handle Overflow =&gt; Word8Array.maxLen
 </pre>
 </p>
@@ -202,17 +197,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 </li>
     <li>
 <p>
- <tt>Util/time-limit.mlb</tt> (added): Exports <tt>structure&nbsp;TimeLimit</tt>, which is <em>not</em> exported by <tt>smlnj-lib.mlb</tt>.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unecessarily including <tt>structure&nbsp;TimeLimit</tt>. 
-</p>
-</li>
-    <li>
-<p>
- <tt>Unix/deviations.sml</tt> (added, not exported): Accomodate <a href="SMLNJDeviations"> SML/NJ's deviations</a> from the <a class="external" href="http://www.standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Basis Library specification</a>. 
-</p>
-</li>
-    <li>
-<p>
- <tt>HTML/deviations.sml</tt> (added, not exported): Accomodate <a href="SMLNJDeviations"> SML/NJ's deviations</a> from the <a class="external" href="http://www.standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Basis Library specification</a>. 
+ <tt>Util/time-limit.mlb</tt> (added): Exports <tt>structure&nbsp;TimeLimit</tt>, which is <em>not</em> exported by <tt>smlnj-lib.mlb</tt>.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including <tt>structure&nbsp;TimeLimit</tt>. 
 </p>
 </li>
     <li>
@@ -236,7 +221,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a>
  
 </p>
 </li>
@@ -248,5 +233,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2005-08-19 16:00:36 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:43:32 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

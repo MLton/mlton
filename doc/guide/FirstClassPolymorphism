@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-First-class polymorphism means the ability to treat polymorphic functions as other values: pass them as arguments, store them in data structures, etc.  Although <a href="StandardML">Standard ML</a> does have polymorphic functions, it does not support first-class polymorphism. <p>
+First-class polymorphism is the ability to treat polymorphic functions just like other values: pass them as arguments, store them in data structures, etc.  Although <a href="StandardML">Standard ML</a> does have polymorphic functions, it does not support first-class polymorphism. <p>
 For example, the following declares and uses the polymorphic function <tt>id</tt>. 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> id = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
@@ -150,5 +150,5 @@ Such an extension would need to be thought through very carefully, as it could c
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:35:11 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:14:09 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

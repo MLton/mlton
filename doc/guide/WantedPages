@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,10 +66,6 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="FlatLattice">FlatLattice</a>: <a href="CommonArg">CommonArg</a></li>
 <li>
-<a class="nonexistent" href="GarbageCollector">GarbageCollector</a>: <a href="ToMachine">ToMachine</a></li>
-<li>
-<a class="nonexistent" href="HelpForBeginners">HelpForBeginners</a>: <a href="WikiName">WikiName</a></li>
-<li>
 <a class="nonexistent" href="HigherOrder">HigherOrder</a>: <a href="IntermediateLanguage">IntermediateLanguage</a></li>
 <li>
 <a class="nonexistent" href="LambdaLift">LambdaLift</a>: <a href="SXMLSimplify">SXMLSimplify</a></li>
@@ -86,6 +82,8 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="PackWord">PackWord</a>: <a href="RayRacine">RayRacine</a></li>
 <li>
+<a class="nonexistent" href="Papers">Papers</a>: <a href="ZZZOrphanedPages">ZZZOrphanedPages</a></li>
+<li>
 <a class="nonexistent" href="SimplyTyped">SimplyTyped</a>: <a href="IntermediateLanguage">IntermediateLanguage</a>, <a href="SSA">SSA</a>, <a href="SSA2">SSA2</a></li>
 <li>
 <a class="nonexistent" href="TypeInference">TypeInference</a>: <a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
@@ -93,6 +91,8 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <a class="nonexistent" href="Uncurry">Uncurry</a>: <a href="SXMLSimplify">SXMLSimplify</a></li>
 <li>
 <a class="nonexistent" href="Untyped">Untyped</a>: <a href="Machine">Machine</a></li>
+<li>
+<a class="nonexistent" href="UserGuide">UserGuide</a>: <a href="ZZZOrphanedPages">ZZZOrphanedPages</a></li>
 <li>
 <a class="nonexistent" href="ZZA">ZZA</a>: <a href="CompilerPassTemplate">CompilerPassTemplate</a></li>
 <li>
