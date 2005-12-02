@@ -25,7 +25,20 @@ structure SMLofNJ: SML_OF_NJ =
             fun getHostArch () =
                MLton.Platform.Arch.toString MLton.Platform.Arch.host
                      
-            fun getOSKind () = UNIX
+            fun getOSKind () =
+               let
+                  open MLton.Platform.OS
+               in
+                  case host of
+                     Cygwin => UNIX
+                   | Darwin => MACOS
+                   | FreeBSD => UNIX
+                   | Linux => UNIX
+                   | MinGW => WIN32
+                   | NetBSD => UNIX
+                   | OpenBSD => UNIX
+                   | Solaris => UNIX
+               end
 
             fun getOSName () = MLton.Platform.OS.toString MLton.Platform.OS.host
          end
