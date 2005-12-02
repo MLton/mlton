@@ -4,19 +4,19 @@
 language
 .SH SYNOPSIS
 \fBmlton\fP \fI[option ...] file\fB.\fP{\fBc\fP|\fBcm\fP|\fBmlb\fP|\fBo\fP|\fBsml\fP} 
-[file\fB.\fP{\fBc\fP|\fBS\fP|\fBo\fP} ...]\fR
+[file\fB.\fP{\fBc\fP|\fBo\fP|\fBs\fP|\fBS\fP} ...]\fR
 .SH DESCRIPTION
 .PP
 \fBMLton\fP is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
-link.  The simplest case is to run \fBmlton foo.sml\fP, which
+link with.  The simplest case is to run \fBmlton foo.sml\fP, which
 will produce an executable \fBfoo\fP.  Since \fBMLton\fP does not
 support separate compilation, the program must be the entire program
 you wish to compile.  However, the program may refer to signatures and
-structures defined in the SML Basis Library.
+structures defined in the Basis Library.
 
 Larger programs, spanning many files, may be compiled with the ML
-Basis system (MLBs).  In this case, \fBmlton foo.mlb\fP will compile
+Basis system.  In this case, \fBmlton foo.mlb\fP will compile
 the complete SML program described by the basis \fBfoo.mlb\fP, which
 may specify both SML files and additional bases.  See the \fBMLton
 User Guide\fP for details.
@@ -26,7 +26,7 @@ Manager (CM) files.  For example, \fBmlton foo.cm\fP will compile the
 complete SML program consisting of the concatenation of all the SML
 files referred to (either directly or indirectly) by \fBfoo.cm\fP.
 
-\fBMLton\fP's options allow you to control the name of the output
+\fBMLton\fP's compile-time control the name of the output
 file, the verbosity of compile-time messages, and whether or not
 certain optimizations are performed.  They also can specify
 which intermediate files are saved and can stop the compilation process
@@ -41,16 +41,6 @@ For a usage message, run \fBMLton\fP with an invalid switch, e.g.
 for flags that take a number of choices
 (e.g. \fI{\fBtrue\fP|\fBfalse\fP}\fR), the first value listed is the
 default. 
-
-plain \fB bold \fP plain
-
-plain \fI italic \fR plain
-
-plain \fI italic \fB bold \fP italic \fR plain
-
-plain \fB bold \fI italic \fP bold \fR plain
-
-plain \fB bold \fI italic \fB bold \fP italic \fP bold \fR plain
 
 .SH Compile-time options
 .TP
@@ -163,8 +153,8 @@ expression, and \fBif\fP expression.
 
 .TP
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
-If true, the profiler will gather profiling data for each
-function on the stack, not just the topmost one.
+If true, the profiler will gather profiling data for all
+functions on the stack, not just the currently executing function.
 
 .TP
 \fB-runtime \fIarg\fP\fR
@@ -266,15 +256,33 @@ How verbose to be about what passes are running.  The default is 0.
 .in -.5i
 
 .SH Runtime system options
-To control the runtime system, executables produced by \fBMLton\fP take
-several optional command line arguments before their usual arguments.
-To use these options, the first argument to the executable must be
-\fB@MLton\fP.  The optional arguments then follow, must be terminated
-by \fB--\fP, and are followed by any arguments to the program.
-The optional arguments are \fInot\fP made available to the SML
-program via \fBCommandLine.arguments\fP.
+Executables produced by \fBMLton\fP take command line arguments that control
+the runtime system.  These arguments are optional, and occur before
+the executable's usual arguments.  To use these options, the first
+argument to the executable must be \fB@MLton\fP.  The optional
+arguments then follow, must be terminated by \fB--\fP, and are
+followed by any arguments to the program.  The optional arguments are
+\fInot\fP made available to the SML program via
+\fBCommandLine.arguments\fP.  For example, a valid call to
+\fBhello-world\fP is:
+.in +.5i
+hello-world @MLton gc-summary fixed-heap 10k -- a b c
+.in -.5i
+In the above example, 
+\fBCommandLine.arguments () = ["a", "b", "c"]\fP.
+
+It is allowed to have a sequence of \fB@MLton\fP arguments, as in:
+.in +.5i
+hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
+.in -.5i
+
+Run-time options can also control \fBMLton\fP, as in
+.in +.5i
+mlton @MLton fixed-heap 0.5g -- foo.sml
+.in -.5i
+
 .TP
-\fBfixed-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fR
+\fBfixed-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fP\fR
 Use a fixed size heap of size \fIx\fP, where \fIx\fP is a real number
 and the trailing letter indicates its units.
 .in +.5i
@@ -284,39 +292,51 @@ and the trailing letter indicates its units.
 .br
 \fBg\fP or \fBG\fP    1,073,741,824
 .in -.5i
-Upper case \fBK\fP, \fBM\fP, or \fBG\fP can also be used.
 A value of \fB0\fP means to use almost all the RAM present on the machine.
+
+The heap size used by \fBfixed-heap\fP includes all memory
+allocated by SML code, including memory for the stack (or stacks,
+if there are multiple threads).  It does not, however, include any
+memory used for code itself or memory used by C globals, the C
+stack, or malloc.
+
 .TP
 \fBgc-messages\fP
 Print a message at the start and end of every garbage collection.
+
 .TP
 \fBgc-summary\fP
 Print a summary of garbage collection statistics upon program
 termination.
+
 .TP
-\fBload-world \fIworld\fR
-Restart the computation with the file \fIworld\fP, which must have
+\fBload-world \fIworld\fP\fR
+Restart the computation with the file specified by \fIworld\fP, which must have
 been created by a call to \fBMLton.World.save\fP by the same
 executable.
+
 .TP
-\fBmax-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fR
+\fBmax-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fP\fR
 Run the computation with an automatically resized heap that is never
 larger than \fIx\fP, where \fIx\fP is a real number and the trailing
-letter indicates the units as with \fBfixed-heap\fP.
+letter indicates the units as with \fBfixed-heap\fP.  The
+heap size for \fBmax-heap\fP is accounted for as with
+\fBfixed-heap\fP.
 
-option.
 .TP
 \fB-no-load-world\fP
 Disable \fBload-world\fP.  This can be used as an argument to the
 compiler via \fB-runtime no-load-world\fP to create executables that
 will not load a world.  This may be useful to ensure that set-uid
 executables do not load some strange world.
+
 .TP
-\fBram-slop \fIx\fR
+\fBram-slop \fIx\fP\fR
 Multiply \fBx\fP by the amount of RAM on the machine to obtain what
 the runtime views as the amount of RAM it can use.  Typically \fBx\fP
 is less than 1, and is used to account for space used by other
 programs running on the same machine.
+
 .TP
 \fBstop\fP
 Causes the runtime to stop processing \fB@MLton\fP arguments once the
