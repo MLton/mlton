@@ -1,4 +1,4 @@
-.TH mlton 1 "November 9, 2004"
+.TH mlton 1 "December 1, 2005"
 .SH NAME
 \fBmlton\fP \- whole-program compiler for the Standard ML (SML) programming
 language
@@ -9,29 +9,30 @@ language
 .PP
 \fBMLton\fP is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
-link with.  The simplest case is to run \fBmlton foo.sml\fP, which
-will produce an executable \fBfoo\fP.  Since \fBMLton\fP does not
-support separate compilation, the program must be the entire program
-you wish to compile.  However, the program may refer to signatures and
-structures defined in the Basis Library.
+link with.  The simplest case is to run \fBmlton foo.sml\fP, where
+\fBfoo.sml\fP contains a valid SML program, in which case MLton
+compiles the program to produce an executable \fBfoo\fP.  Since
+\fBMLton\fP does not support separate compilation, the program must be
+the entire program you wish to compile.  However, the program may
+refer to signatures and structures defined in the Basis Library.
 
 Larger programs, spanning many files, may be compiled with the ML
 Basis system.  In this case, \fBmlton foo.mlb\fP will compile
 the complete SML program described by the basis \fBfoo.mlb\fP, which
 may specify both SML files and additional bases.  See the \fBMLton
-User Guide\fP for details.
+Guide\fP for details.
 
 \fBMLton\fP also supports a limited subset of SML/NJ Compilation
 Manager (CM) files.  For example, \fBmlton foo.cm\fP will compile the
 complete SML program consisting of the concatenation of all the SML
 files referred to (either directly or indirectly) by \fBfoo.cm\fP.
 
-\fBMLton\fP's compile-time control the name of the output
+\fBMLton\fP's compile-time options control the name of the output
 file, the verbosity of compile-time messages, and whether or not
 certain optimizations are performed.  They also can specify
 which intermediate files are saved and can stop the compilation process
 early, at some intermediate pass, in which case compilation can be
-resumed by passing the resulting files to \fBMLton\fP.  \fBMLton\fP
+resumed by passing the generated files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
 The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, and \fB.sml\fP.
 
@@ -85,9 +86,12 @@ Defaults may be overridden by an annotation in an ML Basis file.
 .TP
 \fB-disable-ann \fIann\fP\fR
 Ignore the specified ML Basis annotation in every ML Basis File. For example,
-to see \fIall\fP match and unused warnings, compile with \fB-default-ann 'warnUnused true'
--disable-ann forceUsed -disable-ann nonexhaustiveMatch -disable-ann redundantMatch 
--disable-ann warnUnused\fP.
+to see \fIall\fP match and unused warnings, compile with 
+\fB-default-ann 'warnUnused true'\fP, 
+\fB-disable-ann forceUsed\fP,
+\fB-disable-ann nonexhaustiveMatch\fP,
+\fB-disable-ann redundantMatch\fP,
+and \fB-disable-ann warnUnused\fP.
 
 .TP
 \fB-export-header \fIfile\fP\fR
@@ -98,7 +102,7 @@ from SML to C.
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 Cause the native code generator to be pedantic about following the IEEE
 floating point standard.  By default, it is not, because of the
-performance cost.  This only has an effect with h\fB-codegen native\fP.
+performance cost.  This only has an effect with \fB-codegen native\fP.
 
 .TP
 \fB-inline \fIn\fP\fR
@@ -170,11 +174,11 @@ An argument to \fB-runtime\fP may contain spaces, which will cause the
 argument to be treated as a sequence of words by the runtime.  For
 example, the command line:
 .in +.5i
-mlton -runtime 'ram-slop 0.4' foo.sml
+\fBmlton -runtime 'ram-slop 0.4' foo.sml\fP
 .in -.5i
 will cause foo to run as if it had been called like
 .in +.5i
-foo @MLton ram-slop 0.4 --
+\fBfoo @MLton ram-slop 0.4 --\fP
 .in -.5i
 
 An executable created with \fB-runtime stop\fP doesn't proces any
@@ -194,7 +198,7 @@ of each use.
 
 .TP
 \fB-stop \fI{\fBf\fP|\fBg\fP|\fBo\fP|\fBsml\fP|\fBtc\fP}\fP\fR
-Specify pass to stop at.
+Specify when to stop.
 .in +.5i
 \fBf\fP    list of files on stdout (only makes sense when input is \fBfoo.cm\fP or \fBfoo.mlb\fP)
 .br
@@ -215,7 +219,7 @@ or \fB.o\fP files.
 Generate an executable that runs on the specified platform.  The
 default is \fBself\fP, which means to compile for the machine that
 \fBMLton\fP is running on.  To use any other target, you must first
-install a cross compiler.  See the \fBMLton User Guide\fP for
+install a cross compiler.  See the \fBMLton Guide\fP for
 details.
 
 .TP
@@ -266,29 +270,29 @@ followed by any arguments to the program.  The optional arguments are
 \fBCommandLine.arguments\fP.  For example, a valid call to
 \fBhello-world\fP is:
 .in +.5i
-hello-world @MLton gc-summary fixed-heap 10k -- a b c
+\fBhello-world @MLton gc-summary fixed-heap 10k -- a b c\fP
 .in -.5i
 In the above example, 
 \fBCommandLine.arguments () = ["a", "b", "c"]\fP.
 
 It is allowed to have a sequence of \fB@MLton\fP arguments, as in:
 .in +.5i
-hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
+\fBhello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c\fP
 .in -.5i
 
 Run-time options can also control \fBMLton\fP, as in
 .in +.5i
-mlton @MLton fixed-heap 0.5g -- foo.sml
+\fBmlton @MLton fixed-heap 0.5g -- foo.sml\fP
 .in -.5i
 
 .TP
-\fBfixed-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fP\fR
+\fBfixed-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
 Use a fixed size heap of size \fIx\fP, where \fIx\fP is a real number
 and the trailing letter indicates its units.
 .in +.5i
 \fBk\fP or \fBK\fP    1024
 .br
-\fPm\fP or \fBM\fP    1,048,576
+\fPm\fP or \fBM\fP   1,048,576
 .br
 \fBg\fP or \fBG\fP    1,073,741,824
 .in -.5i
@@ -316,7 +320,7 @@ been created by a call to \fBMLton.World.save\fP by the same
 executable.
 
 .TP
-\fBmax-heap \fIx{\fBk\fP|\fBm\fP|\fBg\fP}\fP\fR
+\fBmax-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
 Run the computation with an automatically resized heap that is never
 larger than \fIx\fP, where \fIx\fP is a real number and the trailing
 letter indicates the units as with \fBfixed-heap\fP.  The
@@ -350,5 +354,5 @@ by Emacs.  For details on how to fix this, see
 http://mlton.org/Emacs.
 
 .SH "SEE ALSO"
-.BR mlprof (1)
-and the \fBMLton User Guide\fP.
+.BR mlprof (1) 
+and the \fBMLton Guide\fP.
