@@ -20,7 +20,7 @@ Summary:
     * Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch,
         redundantMatch, sequenceNonUnit.
     * Deprecated: allowExport, allowImport, sequenceUnit, warnMatch.
-  + Libraries
+  + Libraries.
    o Basis Library.
     * Added: Int1, Word1.
    o MLton structure.
