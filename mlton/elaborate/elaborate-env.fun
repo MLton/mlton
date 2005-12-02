@@ -78,7 +78,9 @@ structure Tycon =
 structure Type =
    struct
       open Type
-         
+
+      fun bracket l = let open Layout in seq [str "[", l, str "]"] end
+
       fun explainDoesNotAdmitEquality (t: t): Layout.t =
          let
             open Layout
@@ -98,7 +100,8 @@ structure Type =
                in
                   case ! (Tycon.admitsEquality c) of
                      Always => NONE
-                   | Never => SOME (keep {showInside = false})
+                   | Never => SOME (bracket (#1 (keep {showInside = false})),
+                                    {isChar = false, needsParen = false})
                    | Sometimes =>
                         if Vector.exists (ts, Option.isSome)
                            then SOME (keep {showInside = true})
@@ -113,6 +116,11 @@ structure Type =
                       NONE =>
                          let
                             val v = SortedRecord.toVector r
+                            val ending =
+                               if SortedRecord.exists (r, Option.isNone) then
+                                  ", ...}"
+                               else
+                                  "}"
                          in
                             (seq
                              [str "{",
@@ -125,7 +133,7 @@ structure Type =
                                   | SOME (z, _) =>
                                        seq [Field.layout f, str ": ", z] :: ac),
                                 ",")),
-                              str "}"],
+                              str ending],
                              {isChar = false, needsParen = false})
                          end
                     | SOME v =>
