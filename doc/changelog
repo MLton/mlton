@@ -18,7 +18,7 @@ Summary:
     * Removed: _ffi.
    o ML Basis annotations.
     * Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch,
-        redundantMatch.
+        redundantMatch, sequenceNonUnit.
     * Deprecated: allowExport, allowImport, sequenceUnit, warnMatch.
   + Libraries
    o Basis Library.
