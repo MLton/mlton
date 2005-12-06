@@ -21,8 +21,6 @@ EXTRACT_ONLY=	${SRC_DIST}
 MAINTAINER=	MLton@mlton.org
 COMMENT=	An optimizing Standard ML compiler
 
-RELEASE ?=	1
-
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
 .if !defined(NOPORTDOCS)
 BUILD_DEPENDS+=	gsed:${PORTSDIR}/textproc/gsed \
@@ -49,6 +47,8 @@ USE_GMAKE=	yes
 MAKE_ARGS=	DESTDIR='' \
 		PATH=${WRKSRC}/build/bin:${BOOT_WRKSRC}/bin:${PATH} \
 		PREFIX=${PREFIX}
+
+RELEASE ?=	1
 
 .if defined(NOPORTDOCS)
 INSTALL_TARGET=	install-no-docs
