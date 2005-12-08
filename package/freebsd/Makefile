@@ -18,7 +18,7 @@ MASTER_SITES=	http://mlton.org/pages/Download/attachments/ \
 DISTFILES=	${BOOT_DIST} ${SRC_DIST}
 EXTRACT_ONLY=	${SRC_DIST}
 
-MAINTAINER=	MLton@mlton.org
+MAINTAINER=	sweeks@sweeks.com and mainland@apeiron.net
 COMMENT=	An optimizing Standard ML compiler
 
 BUILD_DEPENDS=	bash:${PORTSDIR}/shells/bash
@@ -54,21 +54,21 @@ RELEASE ?=	1
 INSTALL_TARGET=	install-no-docs
 .endif
 
-PORTDIR=	usr/ports/lang/mlton
+MANUAL_PACKAGE_BUILD=	"Requires at least 512MB of dedicated heap to build."
 
 .include <bsd.port.pre.mk>
 
 .if ${OSVERSION} >= 600000
-LIB_DEPENDS+=	c.5:${PORTSDIR}/misc/compat5x
+BUILD_DEPENDS+=	${LOCALBASE}/lib/compat/libc.so.5:${PORTSDIR}/misc/compat5x
 .endif
 
-.if ${OSVERSION} >= 503000
-LIB_DEPENDS+=	m.2:${PORTSDIR}/misc/compat4x
+.if ${OSVERSION} < 504000
++BROKEN=		"Cannot bootstrap on FreeBSD < 5.4"
 .endif
 
 BOOT_EXTRACT=	--bzip2
 BOOT_SUF=	tbz
-BOOT_VER=	20041109
+BOOT_VER=	20051202
 
 post-extract:
 	@${MKDIR} ${BOOT_WRKSRC}
