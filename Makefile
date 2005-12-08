@@ -351,6 +351,9 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
+ifeq ($(TARGET_OS), cygwin)
+PREFIX = /
+endif
 ifeq ($(TARGET_OS), darwin)
 PREFIX = /usr/local
 endif
@@ -367,6 +370,9 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
+ifeq ($(TARGET_OS), cygwin)
+TDOC = $(DESTDIR)$(prefix)/usr/share/doc/mlton
+endif
 ifeq ($(TARGET_OS), solaris)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
