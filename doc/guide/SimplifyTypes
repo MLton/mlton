@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+SimplifyTypes is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
 This pass computes a "cardinality" of each datatype, which is an abstraction of the number of values of the datatype. 
 </p>
@@ -76,7 +76,7 @@ This pass computes a "cardinality" of each datatype, which is an abstraction of 
 
 
 <p>
-This pass removes all datatypes whose cardinality is Zero or One and removes 
+This pass removes all datatypes whose cardinality is Zero or One and removes: 
 </p>
 
     <ul>
@@ -104,7 +104,7 @@ This pass removes all datatypes whose cardinality is Zero or One and removes
 which are such datatypes. 
 </p>
 <p>
-This pass marks constructors as one of 
+This pass marks constructors as one of: 
 </p>
 
     <ul>
@@ -132,13 +132,16 @@ This pass marks constructors as one of
 This pass also removes Useless and Transparent constructors. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
-This pass must happen before polymorphic equality is implemented becuase 
+
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a>
+ 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a>
+ 
+</p>
+<h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<p>
+This pass must happen before polymorphic equality is implemented because 
 </p>
 
     <ol type="1">
@@ -158,7 +161,7 @@ it removes uses of polymorphic equality that must return true
 
 
 <p>
-We must keep track of Transparent consturctors whose argument type uses <tt>array</tt> because of datatypes like the following: 
+We must keep track of Transparent constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
 <pre class=code>
   <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
 </FONT></B></PRE>
@@ -185,5 +188,5 @@ Also, to eliminate as many Transparent constructors as possible, for something l
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:25:00 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:25:02 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

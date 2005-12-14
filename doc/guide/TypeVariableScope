@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-In <a href="StandardML">Standard ML</a>, a type variable can be either implicitly scoped or explicitly scoped.  For example, <tt>'a</tt> is implicitly scoped in 
+In <a href="StandardML">Standard ML</a>, every type variable is <em>scoped</em> (or bound) at a particular point in the program.  A type variable can be either implicitly scoped or explicitly scoped.  For example, <tt>'a</tt> is implicitly scoped in 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
 </PRE>
@@ -221,5 +221,5 @@ This is an error even if the scoping is implicit.  That is, the following progra
 
 <p>
 <hr>
-Last edited on 2005-01-26 19:41:40 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:01:09 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,11 +51,8 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_TEXT_IO =
-   MLTON_IO
-   <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> instream </FONT></B>=<FONT COLOR="#228B22"><B> TextIO.instream
-   <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> outstream </FONT></B>=<FONT COLOR="#228B22"><B> TextIO.outstream
-</FONT></B></PRE>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_TEXT_IO = MLTON_IO
+</PRE>
 <p>
  
 </p>
@@ -68,5 +65,5 @@ See <a href="MLtonIO">MLtonIO</a>.
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:30:21 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 23:11:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

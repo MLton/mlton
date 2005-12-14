@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,16 +50,24 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 <a class="external" href="http://mgtk.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mGTK</a> is a wrapper for <a class="external" href="http://www.gtk.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GTK+</a>, a GUI toolkit. <p>
-At the <a class="external" href="http://mgtk.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mGTK site</a>, they say that MLton support is "almost ready", however there is a version (0.93) that works with MLton 20041109.  mGTK 0.93 is not listed on the site, but is available at the <a class="external" href="http://sourceforge.net/project/showfiles.php?group_id=23226&amp;package_id=16523"><img src="moin-www.png" alt="[WWW]" height="11" width="11">file release page</a>. To test it, after unpacking, do <tt>cd&nbsp;examples;&nbsp;make&nbsp;mlton</tt>, after which you should be able to run the many examples (<tt>signup-mlton</tt>, <tt>listview-mlton</tt>, ...). 
+We recommend using mGTK 0.93, which is not listed on their home page, but is available at the <a class="external" href="http://sourceforge.net/project/showfiles.php?group_id=23226&amp;package_id=16523"><img src="moin-www.png" alt="[WWW]" height="11" width="11">file release page</a>. To test it, after unpacking, do <tt>cd&nbsp;examples;&nbsp;make&nbsp;mlton</tt>, after which you should be able to run the many examples (<tt>signup-mlton</tt>, <tt>listview-mlton</tt>, ...). 
 </p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
 <p>
-There is an older verision (0.92) of mGTK that works with MLton 20040227. 
+ <a href="Glade">Glade</a> 
 </p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-01-13 17:57:57 by <span title="p253.n-dapop04.stsn.com"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 03:33:24 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

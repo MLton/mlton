@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -191,7 +191,7 @@ This example uses <tt>dlopen</tt> and friends (imported using normal <tt>_import
 </p>
 <p>
 Compile and run <tt>iimport.sml</tt>. 
-<pre>% mlton -default-ann 'allowImport true' \
+<pre>% mlton -default-ann 'allowFFI true'    \
         -target-link-opt linux -ldl     \
         -target-link-opt solaris -ldl   \
          iimport.sml
@@ -210,7 +210,7 @@ This example also shows the <tt>-target-link-opt</tt> option, which uses the swi
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a>
  
 </p>
 </li>
@@ -222,5 +222,5 @@ This example also shows the <tt>-target-link-opt</tt> option, which uses the swi
 
 <p>
 <hr>
-Last edited on 2005-08-09 07:34:19 by <span title="pool-71-243-2-249.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-30 23:18:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

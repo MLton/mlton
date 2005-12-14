@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,27 +49,24 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+Flatten is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. 
-</p>
-<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
-<p>
-Flatten arguments to <a href="SSA">SSA</a> constructors, blocks, and functions. 
+This pass flattens arguments to <a href="SSA">SSA</a> constructors, blocks, and functions. 
 </p>
 <p>
-If a tuple is explicitly available at all uses of a function (resp. block), then  
+If a tuple is explicitly available at all uses of a function (resp. block), then: 
 </p>
 
     <ul>
 
     <li>
 <p>
- The formals and call sites are changed so that the components of the tuple are passed. 
+ The formals and call sites are changed so that the components of  the tuple are passed.  
 </p>
 </li>
-    <li>
+    <li class="gap">
 <p>
- The tuple is reconstructed at the beginning of the body of the function (resp. block). 
+ The tuple is reconstructed at the beginning of the body of the  function (resp. block).  
 </p>
 </li>
 
@@ -77,22 +74,22 @@ If a tuple is explicitly available at all uses of a function (resp. block), then
 
 
 <p>
-Similarly, if a tuple is explicitly available at all uses of a constructor, 
+Similarly, if a tuple is explicitly available at all uses of a constructor, then: 
 </p>
 
     <ul>
 
     <li>
 <p>
- The constructor argument datatype is changed to flatten the tuple type. 
+ The constructor argument datatype is changed to flatten the tuple  type.  
 </p>
 </li>
-    <li>
+    <li class="gap">
 <p>
  The tuple is passed flat at each <tt>ConApp</tt>. 
 </p>
 </li>
-    <li>
+    <li class="gap">
 <p>
  The tuple is reconstructed at each <tt>Case</tt> transfer target. 
 </p>
@@ -103,9 +100,9 @@ Similarly, if a tuple is explicitly available at all uses of a constructor,
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
@@ -113,5 +110,5 @@ Similarly, if a tuple is explicitly available at all uses of a constructor,
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:38:29 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:41:06 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

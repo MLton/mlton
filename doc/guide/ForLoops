@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,7 +54,7 @@ A <tt>for</tt>-loop is typically used to iterate over a range of consecutive int
 </pre>or the form 
 <pre>for &lt;name&gt; = &lt;upper&gt; downto &lt;lower&gt; do &lt;body&gt; done
 </pre>Some languages provide considerably more flexible <tt>for</tt>-loop or <tt>foreach</tt>-constructs. <p>
-A bit suprisingly, <a href="StandardML">Standard ML</a> provides special syntax for <tt>while</tt>-loops, but not for <tt>for</tt>-loops. Indeed, in SML, many uses of <tt>for</tt>-loops are better expressed using <tt>app</tt>, <tt>foldl/foldr</tt>, <tt>map</tt> and many other higher-order functions provided by the <a href="BasisLibrary">Basis Library</a> for manipulating lists, vectors and arrays. However, the Basis Library does not provide a function for iterating over a range of integer values. Fortunately, it is very easy to write one. 
+A bit surprisingly, <a href="StandardML">Standard ML</a> provides special syntax for <tt>while</tt>-loops, but not for <tt>for</tt>-loops. Indeed, in SML, many uses of <tt>for</tt>-loops are better expressed using <tt>app</tt>, <tt>foldl/foldr</tt>, <tt>map</tt> and many other higher-order functions provided by the <a href="BasisLibrary">Basis Library</a> for manipulating lists, vectors and arrays. However, the Basis Library does not provide a function for iterating over a range of integer values. Fortunately, it is very easy to write one. 
 </p>
 <h2 id="head-256b31fc11b749803c8295d4ec8da28712f04f19">A fairly simple design</h2>
 <p>
@@ -257,5 +257,5 @@ for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to <B><FONT COLOR="#5F9EA0">10</FONT>
 
 <p>
 <hr>
-Last edited on 2005-06-16 13:33:41 by <span title="cs78147115.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-02 04:20:07 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

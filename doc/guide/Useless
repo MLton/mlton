@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,29 +49,26 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+Useless is an optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-An optimization pass for the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>, invoked from <a href="SSASimplify">SSASimplify</a>. 
-</p>
-<h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
-<p>
-Useless thing elimination: 
+This pass: 
 </p>
 
     <ul>
 
     <li>
 <p>
- remove components of tuples that are constants (use unification) 
+ removes components of tuples that are constants (use unification) 
 </p>
 </li>
     <li>
 <p>
- remove function arguments that are constants 
+ removes function arguments that are constants 
 </p>
 </li>
     <li>
 <p>
- build some kind of dependence graph where  
+ builds some kind of dependence graph where  
 </p>
 </li>
 
@@ -86,14 +83,17 @@ Useless thing elimination:
 
 
 <p>
-If a useful tuple is coerced to another useful tuple, then all of their components must agree (exactly). It is trivial to convert a useful value to a useless one. 
+If a useful tuple is coerced to another useful tuple, then all of their components must agree (exactly).  It is trivial to convert a useful value to a useless one. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
+<p>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/useless.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/useless.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/ssa/useless.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/useless.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">useless.fun</a>
+ 
+</p>
+<h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 It is also trivial to convert a useful tuple to one of its useful components -- but this seems hard. 
 </p>
@@ -109,5 +109,5 @@ Unify all handler arguments so that <tt>raise</tt>/<tt>handle</tt> has a consist
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:23:54 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:09:00 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

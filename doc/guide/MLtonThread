@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -53,27 +53,28 @@
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_THREAD =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#0000FF">structure</FONT></B> AtomicState :
+      <B><FONT COLOR="#0000FF">structure</FONT></B> AtomicState:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
             <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">NonAtomic</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Atomic</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
          </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> atomically: (unit -&gt; 'a) -&gt; 'a
       <B><FONT COLOR="#A020F0">val</FONT></B> atomicBegin: unit -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> atomicEnd: unit -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomically: (unit -&gt; 'a) -&gt; 'a
       <B><FONT COLOR="#A020F0">val</FONT></B> atomicState: unit -&gt; AtomicState.t
 
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Runnable :
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Runnable:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
             <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
          </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 
       <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a t
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> new: ('a -&gt; unit) -&gt; 'a t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> atomicSwitch: ('a t -&gt; Runnable.t) -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> new: ('a -&gt; unit) -&gt; 'a t
       <B><FONT COLOR="#A020F0">val</FONT></B> prepend: 'a t * ('b -&gt; 'a) -&gt; 'b t
       <B><FONT COLOR="#A020F0">val</FONT></B> prepare: 'a t * 'a -&gt; Runnable.t
       <B><FONT COLOR="#A020F0">val</FONT></B> switch: ('a t -&gt; Runnable.t) -&gt; 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomicSwitch: ('a t -&gt; Runnable.t) -&gt; 'a
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -99,30 +100,6 @@
 
     <li class="gap">
 <p>
- <tt>atomicBegin&nbsp;()</tt> 
-</p>
-</li>
-
-        <ul>
-
-  begin a critical section. 
-        </ul>
-
-
-    <li class="gap">
-<p>
- <tt>atomicEnd&nbsp;()</tt> 
-</p>
-</li>
-
-        <ul>
-
-  end a critical section. 
-        </ul>
-
-
-    <li class="gap">
-<p>
  <tt>atomically&nbsp;f</tt> 
 </p>
 </li>
@@ -135,13 +112,37 @@
 
     <li class="gap">
 <p>
+ <tt>atomicBegin&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  begins a critical section. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>atomicEnd&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  ends a critical section. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>atomicState&nbsp;()</tt> 
 </p>
 </li>
 
         <ul>
 
-  return the current atomic state. 
+  returns the current atomic state. 
         </ul>
 
 
@@ -171,13 +172,25 @@
 
     <li class="gap">
 <p>
+ <tt>atomicSwitch&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  like <tt>switch</tt>, but assumes an atomic calling context.  Upon   <tt>switch</tt>ing back to the current thread, an implicit   <tt>atomicEnd</tt> is performed. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>new&nbsp;f</tt> 
 </p>
 </li>
 
         <ul>
 
-  create a new thread that, when run, applies <tt>f</tt> to the value   given to the thread.  <tt>f</tt> must terminate by <tt>switch</tt>ing to   another thread or exiting the process. 
+  creates a new thread that, when run, applies <tt>f</tt> to the value   given to the thread.  <tt>f</tt> must terminate by <tt>switch</tt>ing to   another thread or exiting the process. 
         </ul>
 
 
@@ -189,7 +202,7 @@
 
         <ul>
 
-  create a new thread (destroying <tt>t</tt> in the process) that first   applies <tt>f</tt> to the value given to the thread and then continues   with <tt>t</tt>.  This is a constant time operation. 
+  creates a new thread (destroying <tt>t</tt> in the process) that first   applies <tt>f</tt> to the value given to the thread and then continues   with <tt>t</tt>.  This is a constant time operation. 
         </ul>
 
 
@@ -201,7 +214,7 @@
 
         <ul>
 
-  prepare a new runnable thread (destroying <tt>t</tt> in the process)   that will evaluate <tt>t</tt> on <tt>v</tt>. 
+  prepares a new runnable thread (destroying <tt>t</tt> in the process)   that will evaluate <tt>t</tt> on <tt>v</tt>. 
         </ul>
 
 
@@ -213,19 +226,7 @@
 
         <ul>
 
-  apply <tt>f</tt> to the current thread to get <tt>rt</tt>, and then start   running thread <tt>rt</tt>.  It is an error for <tt>f</tt> to perform   another <tt>switch</tt>.  <tt>f</tt> is guaranteed to run atomically. 
-        </ul>
-
-
-    <li class="gap">
-<p>
- <tt>atomicSwitch&nbsp;f</tt> 
-</p>
-</li>
-
-        <ul>
-
-  as <tt>switch</tt>, but assumes an atomic calling context.  Upon   <tt>switch</tt>ing back to the current thread, an implicit   <tt>atomicEnd</tt> is performed. 
+  applies <tt>f</tt> to the current thread to get <tt>rt</tt>, and then start   running thread <tt>rt</tt>.  It is an error for <tt>f</tt> to perform   another <tt>switch</tt>.  <tt>f</tt> is guaranteed to run atomically. 
         </ul>
 
 
@@ -437,5 +438,5 @@
 
 <p>
 <hr>
-Last edited on 2005-01-28 20:18:01 by <span title="adsl-64-166-226-179.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 03:52:11 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,7 +61,7 @@ file1.sml
 ...
 filen.sml
 </pre><p>
-The bases denoted by <tt>lib1.mlb</tt>, ..., <tt>libm.mlb</tt> are merged (bindings of names in later bases take precedence over bindings of the same name in earlier bases), producing a basis in which <tt>file1.sml</tt>, ..., <tt>filen.sml</tt> are elaborated, possibly adding additional bindings to the basis. 
+The bases denoted by <tt>lib1.mlb</tt>, ..., <tt>libm.mlb</tt> are merged (bindings of names in later bases take precedence over bindings of the same name in earlier bases), producing a basis in which <tt>file1.sml</tt>, ..., <tt>filen.sml</tt> are elaborated, adding additional bindings to the basis. 
 </p>
 <h2 id="head-bbdea99ed8fa0bf96f01819de00940a9a5bd15df">Export filter</h2>
 <p>
@@ -139,7 +139,7 @@ file1.sml
 filen.sml
 </pre><h2 id="head-b0df1400a6248030b137c5676e8feb1a2195343d">Full Basis</h2>
 <p>
-Since the Modules level of SML is the natural means for organizing program and library components, MLB files provide convenient syntax for renaming Modules level identifiers (in fact, renaming of functor identifiers provides a mechanism that is not available in SML). However, please note that <tt>.mlb</tt> files elaborate to full bases including top-level types and values (including infix status), in addition to structures, signatures, and functors.  For example, suppose you wished to extend the <a href="BasisLibrary"> SML Basis Library</a> with an <tt>('a,&nbsp;'b)&nbsp;either</tt> datatype corresponding to a disjoint sum; the type and some operations should be available at the top-level; additionally, a signature and structure provide the complete interface. 
+Since the Modules level of SML is the natural means for organizing program and library components, MLB files provide convenient syntax for renaming Modules level identifiers (in fact, renaming of functor identifiers provides a mechanism that is not available in SML). However, please note that <tt>.mlb</tt> files elaborate to full bases including top-level types and values (including infix status), in addition to structures, signatures, and functors.  For example, suppose you wished to extend the <a href="BasisLibrary">Basis Library</a> with an <tt>('a,&nbsp;'b)&nbsp;either</tt> datatype corresponding to a disjoint sum; the type and some operations should be available at the top-level; additionally, a signature and structure provide the complete interface. 
 </p>
 <p>
 We could use the following files. 
@@ -187,8 +187,7 @@ We could use the following files.
     <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) either </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Left</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Right</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'b
     </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f &amp; g = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt;
       <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B> Left z =&gt; f z | Right z =&gt; g z
-    <B><FONT COLOR="#A020F0">fun</FONT></B> f &amp;&amp; g = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt;
-      ((Left o f) &amp; (Right o g)) x
+    <B><FONT COLOR="#A020F0">fun</FONT></B> f &amp;&amp; g = (Left o f) &amp; (Right o g)
     <B><FONT COLOR="#A020F0">fun</FONT></B> isLeft x = ((<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; true) &amp; (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; false)) x
     <B><FONT COLOR="#A020F0">fun</FONT></B> isRight x = (not o isLeft) x
     ...
@@ -243,17 +242,15 @@ We could use the following files.
     <ul>
 
  
-<pre>local
+<pre>either-infixes.sml
+local
   (* import Basis Library *)
   $(SML_LIB)/basis/basis.mlb
-
   either-sigs.sml
-  either-infixes.sml
   either-strs.sml
 in
   signature EITHER
   structure Either
-  either-infixes.sml
   either-open.sml
 end
 </pre>
@@ -261,7 +258,7 @@ end
 
 
 <p>
-A client that imports <tt>either.mlb</tt> will have access to neither <tt>EITHER_GLOBAL</tt> nor <tt>EitherGlobal</tt>, but will have access to the type <tt>either</tt> and the values <tt>&amp;</tt> and <tt>&amp;&amp;</tt> (with infix status) in the top-level environment.  Note that the infix directive in <tt>either-infixes.sml</tt> is repeated, because <tt>local</tt> limits limits the scope of the directive.  Although the repetition is unfortunate, it is preferable to repeat <tt>either-infixes.sml</tt> in <tt>either.mlb</tt>, rather than require every client of <tt>either.mlb</tt> to also import <tt>either-infixes.sml</tt>. 
+A client that imports <tt>either.mlb</tt> will have access to neither <tt>EITHER_GLOBAL</tt> nor <tt>EitherGlobal</tt>, but will have access to the type <tt>either</tt> and the values <tt>&amp;</tt> and <tt>&amp;&amp;</tt> (with infix status) in the top-level environment.  Note that  <tt>either-infixes.sml</tt> is outside the scope of the local, because we want the infixes available in the implementation of the library and to clients of the library. 
 </p>
 </div>
 
@@ -269,5 +266,5 @@ A client that imports <tt>either.mlb</tt> will have access to neither <tt>EITHER
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:46:04 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:21:48 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

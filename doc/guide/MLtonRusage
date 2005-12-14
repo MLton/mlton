@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,9 +57,7 @@
                 stime: Time.time} <I><FONT COLOR="#B22222">(* system time *)</FONT></I>
 
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> measureGC: bool -&gt; unit         
-      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: unit -&gt; {children: t,
-                           gc: t,
-                           self: t}
+      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: unit -&gt; {children: t, gc: t, self: t}
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -88,7 +86,7 @@
 
         <ul>
 
-  controls whether garbage collection time is measured during program execution.  This affects the behavior of both <tt>rusage</tt> and <tt>Timer.checkCPUTimes</tt>.  Note that garbage collection time is always measured when either <tt>gc-messages</tt> or <tt>gc-summary</tt> is given as a runtime system option. 
+  controls whether garbage collection time is measured during program   execution.  This affects the behavior of both <tt>rusage</tt> and   <tt>Timer.checkCPUTimes</tt>.  Note that garbage collection time is   always measured when either <tt>gc-messages</tt> or <tt>gc-summary</tt> is   given as a <a href="RunTimeOptions">runtime system option</a>. 
         </ul>
 
 
@@ -110,5 +108,5 @@
 
 <p>
 <hr>
-Last edited on 2005-11-04 00:32:18 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 22:56:24 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,13 +49,14 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-For porting code from SML/NJ and for developing code for MLton under SML/NJ, MLton supports a very limited subset of SML/NJ's <a class="external" href="http://www.smlnj.org/doc/CM/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compilation Manager</a> (CM) files.  From MLton's point of view, a CM file <tt>foo.cm</tt> defines a list of SML source files.  The call <tt>mlton&nbsp;foo.cm</tt> is equivalent to compiling an SML program consisting of the concatenation of these files.  As always with MLton, the concatenation must be the whole program you wish to compile. <p>
+The <a class="external" href="http://www.smlnj.org/doc/CM/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compilation Manager</a> (CM) is SML/NJ's mechanism for supporting programming-in-the-very-large. To aid in porting code from SML/NJ and in developing code simultaneously with MLton and SML/NJ, MLton supports a very limited subset of CM files.  From MLton's point of view, a CM file <tt>foo.cm</tt> defines a list of SML source files.  The call  
+<pre>mlton foo.cm</pre> is equivalent to compiling an SML program consisting of the concatenation of these files.  As always with MLton, the concatenation must be the whole program you wish to compile. <p>
 In its simplest form, a CM file contains the keywords <tt>Group&nbsp;is</tt> followed by an explicit list of sml files. For example, if <tt>foo.cm</tt> contains  
 <pre>Group is
 bar.sig
 bar.fun
 main.sml
-</pre>then a call <tt>mlton&nbsp;foo.cm</tt> is equivalent to concatenating the three files together and calling MLton on that SML file.  The list of files defined by a CM file is the same as the order in which the filenames appear in the CM file.  Thus, order in a CM file matters. In the above example, if <tt>main.sml</tt> refers to a structure defined in <tt>bar.fun</tt>, then <tt>main.sml</tt> must appear after <tt>bar.fun</tt> in the file list. 
+</pre>then a call <tt>mlton&nbsp;foo.cm</tt> is equivalent to concatenating the three files together and calling MLton on that SML file.  The list of files defined by a CM file is the same as the order in which the filenames appear in the CM file.  Thus, to MLton, order in a CM file matters. In the above example, if <tt>main.sml</tt> refers to a structure defined in <tt>bar.fun</tt>, then <tt>main.sml</tt> must appear after <tt>bar.fun</tt> in the file list. 
 </p>
 <p>
 CM files can also refer to other CM files.  A reference to <tt>bar.cm</tt> from within <tt>foo.cm</tt> means to include all of the SML files defined by <tt>bar.cm</tt> before any of the subsequent files in <tt>foo.cm</tt>.  For example if <tt>foo.cm</tt> contains 
@@ -87,19 +88,19 @@ The filenames listed in a CM file can be either absolute paths or relative paths
 If you are unfamiliar with CM under SML/NJ, then you can skip this section. 
 </p>
 <p>
-MLton supports the full syntax of CM as of SML/NJ version 110.9.1.  Extensions since then are unsupported.  Also, many of the syntactic constructs are ignored.  The most important difference between the two is that order in CM files matters to MLton but not to CM, which performs automatic dependency analysis.  Also, CM supports export filters, which restricts the visibility of modules. MLton ignores export filters.  As a consequence, it is possible that a program that is accepted by SML/NJ's CM might not be accepted by MLton's CM.  In this case, you will have to manually reorder the files and possibly rename modules so that the concatenation of the files is the program you intend. 
+MLton supports the full syntax of CM as of SML/NJ version 110.9.1.  Extensions since then are unsupported.  Also, many of the syntactic constructs are ignored.  The most important difference between the two is that order in CM files matters to MLton but not to SML/NJ, which performs automatic dependency analysis.  Also, CM supports export filters, which restricts the visibility of modules. MLton ignores export filters.  As a consequence, it is possible that a program that is accepted by SML/NJ's CM might not be accepted by MLton's CM.  In this case, you will have to manually reorder the files and possibly rename modules so that the concatenation of the files is the program you intend. 
 </p>
 <p>
 CM performs cutoff recompilation to avoid recompiling the entire program, while MLton always compiles the entire program.  CM makes a distinction between groups and libraries, which MLton does not. CM supports other tools like lex and yacc, while MLton does not. MLton relies on traditional makefiles to use other tools. 
 </p>
 <h2 id="head-193cb628868edba7572702dfc2473d103eecc836">Porting SML/NJ CM files to MLton</h2>
 <p>
-If you have already created large projects using SML/NJ and CM, there may be a large number of file dependencies implicit in your sources that are not reflected in your CM files.  Because MLton relies on ordering in CM files, your CM files probably will not work with MLton.  To help in porting CM files to MLton, the MLton distribution includes the sources for a utility, <tt>cmcat</tt>, that will print an ordered list of files corresponding to a CM file.  See <tt>doc/cmcat/cmcat.sml</tt> for details.  Building <tt>cmcat</tt> requires that you have already installed SML/NJ version 110.44. 
+If you have already created large projects using SML/NJ and CM, there may be a large number of file dependencies implicit in your sources that are not reflected in your CM files.  Because MLton relies on ordering in CM files, your CM files probably will not work with MLton.  To help in porting CM files to MLton, the MLton distribution includes the sources for a utility, <tt>cmcat</tt>, that will print an ordered list of files corresponding to a CM file.  See <tt>util/cmcat/cmcat.sml</tt> for details.  Building <tt>cmcat</tt> requires that you have already installed a recent version of SML/NJ. 
 </p>
 <p>
-Alternatively, you may convert your CM files to <tt>.mlb</tt> files.  The MLton distribution includes the sources for a utility, <tt>cm2mlb</tt>, that will print a <a href="MLBasis"> ML Basis</a> file with essentially the same semantics as the CM file -- handling the full syntax of CM supported by your installed SML/NJ version and correctly handling export filters.  When <tt>cm2mlb</tt> encounters a <tt>.cm</tt> import, it attempts to convert it to a corresponding <tt>.mlb</tt> import.  CM anchors are translated to paths according to a configuration file in <tt>.mlton/cm2mlb-map</tt> in the user's home directory (which must be given by the <tt>HOME</tt> environment variable.  For example, adding 
-<pre>basis  $(SML_LIB)/basis
-</pre>to your <tt>cm2mlb-map</tt> file will ensure that a <tt>$/basis.cm</tt> import is translated to a <tt>$(MLTON_ROOT)/basis/basis.mlb</tt> import. See <tt>doc/cmcat/cm2mlb</tt> for details.  Building <tt>cm2mlb</tt> requires that you have already installed SML/NJ version 110.44. 
+Alternatively, you can convert your CM files to <tt>.mlb</tt> files.  The MLton distribution includes the sources for a utility, <tt>cm2mlb</tt>, that will print an <a href="MLBasis"> ML Basis</a> file with essentially the same semantics as the CM file -- handling the full syntax of CM supported by your installed SML/NJ version and correctly handling export filters.  When <tt>cm2mlb</tt> encounters a <tt>.cm</tt> import, it attempts to convert it to a corresponding <tt>.mlb</tt> import.  CM anchored paths are translated to paths according to a default configuration file (<tt>cm2mlb-map</tt>).  For example, the default configuration includes 
+<pre>$basis.cm/basis.cm  $(SML_LIB)/basis/basis.mlb
+</pre> to ensure that a <tt>$/basis.cm</tt> import is translated to a <tt>$(SML_LIB)/basis/basis.mlb</tt> import.  See <tt>util/cm2mlb</tt> for details.  Building <tt>cm2mlb</tt> requires that you have already installed a recent version of SML/NJ. 
 </p>
 </div>
 
@@ -107,5 +108,5 @@ Alternatively, you may convert your CM files to <tt>.mlb</tt> files.  The MLton 
 
 <p>
 <hr>
-Last edited on 2005-08-18 21:31:49 by <span title="net-79206.roam.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-30 23:40:40 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

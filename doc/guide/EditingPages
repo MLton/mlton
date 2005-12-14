@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,11 +49,11 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-You can help maintain the site and improve a page's contents by using the "Edit" link found at the bottom of that page.  Pages are written using <a href="MoinMoin">MoinMoin</a>'s  <a class="external" href="http://moinmoin.wikiwikiweb.de/HelpOnEditing"><img src="moin-www.png" alt="[WWW]" height="11" width="11">wiki markup language</a>. You can practice editing in the <a href="http://mlton.org/WikiSandBox"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WikiSandBox</a>. <p>
+You can help maintain this <a href="WebSite">WebSite</a> and improve a page's contents by using the "Edit" link found at the bottom of that page.  Pages are written using <a href="MoinMoin">MoinMoin</a>'s  <a class="external" href="http://moinmoin.wikiwikiweb.de/HelpOnEditing"><img src="moin-www.png" alt="[WWW]" height="11" width="11">wiki markup language</a>.  You can practice editing in the <a href="http://mlton.org/WikiSandBox"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WikiSandBox</a>. <p>
 Before you begin editing, you must  <a href="http://mlton.org/Preferences"><img src="moin-www.png" alt="[WWW]" height="11" width="11">create a user account</a>.  When you do so, please also create a home page (like <a href="StephenWeeks">StephenWeeks</a>) so we know who you are.  See our <a href="AccessControl">AccessControl</a> policy for who is allowed to edit what. 
 </p>
 <p>
-By contributing to this web site, you agree to dedicate your contribution to the public domain.  For more details, please see the <a href="License">License</a>. 
+By contributing to this web site, you agree to dedicate your contribution to the public domain.  For more details, please see our <a href="License">License</a>. 
 </p>
 </div>
 
@@ -61,5 +61,5 @@ By contributing to this web site, you agree to dedicate your contribution to the
 
 <p>
 <hr>
-Last edited on 2004-12-03 00:40:17 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 20:16:41 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

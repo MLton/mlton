@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To find out how many bytes each function allocates, compile your program with <tt>-profile&nbsp;alloc</tt>.  For example, suppose that <tt>list-rev.sml</tt> is the following. <p>
+With MLton and <tt>mlprof</tt>, you can <a href="Profiling">profile</a> your program to find out how many bytes each function allocates.  To do so, compile your program with <tt>-profile&nbsp;alloc</tt>.  For example, suppose that <tt>list-rev.sml</tt> is the following. <p>
 <pre class=code><B><FONT COLOR="#A020F0">fun</FONT></B> append (l1, l2) =
    <B><FONT COLOR="#A020F0">case</FONT></B> l1 <B><FONT COLOR="#A020F0">of</FONT></B>
       [] =&gt; l2
@@ -80,10 +80,13 @@ append  list-rev.sml: 1 97.6%
 &lt;main&gt;                   0.4%
 rev  list-rev.sml: 6     0.2%
 </pre><p>
-The data shows that most of the allocation is done by the <tt>append</tt> function defined on line 1 of <tt>list-rev.sml</tt>.  The table also shows how special functions like <tt>gc</tt> and <tt>main</tt> are handled: they are printed with surrounding brackets.  C functions are displayed similarly.  Here, as is usually the case, the allocation done by the garbage collector is due to stack growth. 
+The data shows that most of the allocation is done by the <tt>append</tt> function defined on line 1 of <tt>list-rev.sml</tt>.  The table also shows how special functions like <tt>gc</tt> and <tt>main</tt> are handled: they are printed with surrounding brackets.  C functions are displayed similarly.  In this example, the allocation done by the garbage collector is due to stack growth, which is usually the case. 
 </p>
 <p>
-The performance impact of allocation profiling is noticeable, because it inserts additional C calls for object allocation.  You can also compile with <tt>-profile&nbsp;alloc&nbsp;-profile-branch&nbsp;true</tt> to find out how much allocation is done in each branch of a function; see <a href="ProfilingCounts">ProfilingCounts</a> for more details on <tt>-profile-branch</tt>. 
+The run-time performance impact of allocation profiling is noticeable, because it inserts additional C calls for object allocation. 
+</p>
+<p>
+Compile with <tt>-profile&nbsp;alloc&nbsp;-profile-branch&nbsp;true</tt> to find out how much allocation is done in each branch of a function; see <a href="ProfilingCounts">ProfilingCounts</a> for more details on <tt>-profile-branch</tt>. 
 </p>
 </div>
 
@@ -91,5 +94,5 @@ The performance impact of allocation profiling is noticeable, because it inserts
 
 <p>
 <hr>
-Last edited on 2005-08-12 17:51:37 by <span title="132.236.243.210"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:24:10 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

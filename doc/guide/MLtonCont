@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -87,7 +87,7 @@
 
         <ul>
 
-  apply <tt>f</tt> to the current continuation.  Because this copies the   entire stack, <tt>callcc</tt> takes time proportional to the current   stack size. 
+  applies <tt>f</tt> to the current continuation.  This copies the entire   stack; hence, <tt>callcc</tt> takes time proportional to the current   stack size. 
         </ul>
 
 
@@ -99,7 +99,7 @@
 
         <ul>
 
-  compose a function <tt>f</tt> with a continuation <tt>k</tt> to create a   continuation that first does <tt>f</tt> and then does <tt>k</tt>.  This   is a constant time operation. 
+  composes a function <tt>f</tt> with a continuation <tt>k</tt> to create a   continuation that first does <tt>f</tt> and then does <tt>k</tt>.  This   is a constant time operation. 
         </ul>
 
 
@@ -111,7 +111,7 @@
 
         <ul>
 
-  throw value <tt>v</tt> to continuation <tt>k</tt>.  Because this copies the   entire stack of <tt>k</tt>, <tt>throw</tt> takes time proportional to the   size of this stack. 
+  throws value <tt>v</tt> to continuation <tt>k</tt>.  This copies the entire   stack of <tt>k</tt>; hence, <tt>throw</tt> takes time proportional to the    size of this stack. 
         </ul>
 
 
@@ -133,5 +133,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:21:52 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:27:22 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

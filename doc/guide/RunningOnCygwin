@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,12 +49,10 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton uses the <a class="external" href="http://www.cygwin.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> emulation layer to provide a Posix-like environment while running on Windows.  To run MLton on Windows, you must first install Cygwin on your machine.  To do this, visit the Cygwin site from your Windows machine and run their <tt>setup.exe</tt> script.  Then, you can unpack the MLton binary tgz in your Cygwin environment. <p>
+MLton runs on the <a class="external" href="http://www.cygwin.com/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> emulation layer, which provides a Posix-like environment while running on Windows.  To run MLton with Cygwin, you must first install Cygwin on your Windows machine.  To do this, visit the Cygwin site from your Windows machine and run their <tt>setup.exe</tt> script.  Then, you can unpack the MLton binary <tt>tgz</tt> in your Cygwin environment. <p>
 To run MLton cross-compiled executables on Windows, you must install the Cygwin <tt>dll</tt> on the Windows machine. 
 </p>
-<p>
-Here are the known problems using MLton on Cygwin. 
-</p>
+<h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
 
     <ul>
 
@@ -65,10 +63,25 @@ Here are the known problems using MLton on Cygwin.
 </li>
     <li class="gap">
 <p>
- <tt>Posix.Process.fork</tt> is disabled.  Any use of <tt>fork</tt> will  raise <tt>OS.SysErr</tt>.  For idiomatic uses of <tt>fork</tt> plus  <tt>exec</tt>, you can instead use the <tt>MLton.Process.spawn</tt> family  of functions, which work on all our platforms.   
+ Cygwin's <tt>mmap</tt> emulation is less than perfect.  Sometimes it  interacts badly with <tt>Posix.Process.fork</tt>.  For idiomatic uses of  <tt>fork</tt> plus <tt>exec</tt>, you can instead use the  <tt>MLton.Process.spawn</tt> family of functions, which work on all our  platforms. 
 </p>
+</li>
+    <li class="gap">
 <p>
- Fork used to be disabled due to Cygwin bugs involving the interaction  of <tt>fork</tt> and <tt>mmap</tt>.  Recently, Cygwin developers have fixed  those bugs, in Cygwin versions from 2004-Jul-15 or later (1.5.11-1 or  higher).  However, Cygwin's <tt>mmap</tt> emulation does not make  available as much contiguous virtual address space as using the  Windows <tt>VirtualAlloc</tt> function.  Hence, MLton still uses  <tt>VirtualAlloc</tt> and not <tt>mmap</tt>, which means that Cygwin can  not properly emulate fork.  Consequently, <tt>Posix.Process.fork</tt> is  disabled. 
+ Cygwin's <tt>mmap</tt> emulation does not make available as much  contiguous virtual address space as using the Windows  <tt>VirtualAlloc</tt> function.  Earlier versions of MLton used  <tt>VirtualAlloc</tt> instead of <tt>mmap</tt>, but that no longer works. 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ RunningOnMinGW 
 </p>
 </li>
 </ul>
@@ -79,5 +92,5 @@ Here are the known problems using MLton on Cygwin.
 
 <p>
 <hr>
-Last edited on 2004-11-02 01:03:46 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:37:10 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

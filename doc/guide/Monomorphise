@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-A translation pass from the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
+Monomorphise is a translation pass from the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="SXML">SXML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
 Monomorphisation eliminates polymorphic values and datatype declarations by duplicating them for each type at which they are used. 
 </p>
@@ -60,7 +60,7 @@ fun 'a f (x: 'a) = T x
 val a = f 1
 val b = f 2
 val z = f (3, 4)
-</pre> The result of monorphising this program is the following <a href="SXML">SXML</a> program:  
+</pre> The result of monomorphising this program is the following <a href="SXML">SXML</a> program:  
 <pre>datatype t1 = T1 of int
 datatype t2 = T2 of int * int
 fun f1 (x: t1) = T1 x
@@ -72,9 +72,9 @@ val z = f2 (3, 4)
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/monomorphise.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/xml/monomorphise.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051115-release/mlton/xml/monomorphise.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/xml/monomorphise.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The monomorphiser works by making one pass over the entire program. On the way down, it creates a cache for each variable declared in a polymorphic declaration that maps a lists of type arguments to a new variable name.  At a variable reference, it consults the cache (based on the types the variable is applied to).  If there is already an entry in the cache, it is used.  If not, a new entry is created.  On the way up, the monomorphiser duplicates a variable declaration for each entry in the cache. 
@@ -116,5 +116,5 @@ val z : int t = B1 (B2 (A3 ((1, 2), (3, 4))))
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:32:32 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:22:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

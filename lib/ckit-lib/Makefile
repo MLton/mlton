@@ -10,6 +10,8 @@ all: ckit/README.mlton
 
 ckit/README.mlton: ckit.tgz ckit.patch
 	gzip -dc ckit.tgz | tar xf -
+	chmod -R a+r ckit
+	chmod -R g-s ckit
 	patch -p0 < ckit.patch
 
 .PHONY: clean

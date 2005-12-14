@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,7 +65,7 @@ Between the March 1999 and January 2002, MLton grew to 102,541 lines, as we adde
 During 2002, MLton grew to 112,204 lines and we had releases in April and September.  We added support for cross compilation and used this to enable MLton to run on Cygwin/Windows and FreeBSD.  We also made improvements to the garbage collector, so that it now works with large arrays and up to 4G of memory and so that it automatically uses copying, mark-compact, or generational collection depending on heap usage and RAM size.  We also continued improvements to the optimizer and libraries. 
 </p>
 <p>
-During 2003, MLton grew to 122,299 lines and we had releases in March and July.  We extended the profiler to support source-level profiling of time and allocation and to display call graphs.  We completed the basis library implementation, and added new MLton-specific libraries for weak pointers and finalization.  We extended the FFI to allow callbacks from C to SML.  We added support for the Sparc/Solaris platform, and made many improvements to the C code generator. 
+During 2003, MLton grew to 122,299 lines and we had releases in March and July.  We extended the profiler to support source-level profiling of time and allocation and to display call graphs.  We completed the Basis Library implementation, and added new MLton-specific libraries for weak pointers and finalization.  We extended the FFI to allow callbacks from C to SML.  We added support for the Sparc/Solaris platform, and made many improvements to the C code generator. 
 </p>
 </div>
 
@@ -73,5 +73,5 @@ During 2003, MLton grew to 122,299 lines and we had releases in March and July. 
 
 <p>
 <hr>
-Last edited on 2004-11-15 23:12:05 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 04:23:16 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

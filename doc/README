@@ -1,27 +1,39 @@
 MLton is a whole-program optimizing compiler for the Standard ML
-programming language. MLton has the following features.
+programming language.  MLton has the following features.
 
-   + Runs on a variety of platforms.
-     o HPPA: Debian
-     o PowerPC: Debian, Mac OSX
-     o X86: Linux, Cygwin/Windows, FreeBSD, MinGW/Windows, NetBSD, OpenBSD
-     o Sparc: Debian, Solaris.
-   + Generates standalone executables with excellent running times.
-   + Supports the full SML 97 language.
-   + A complete basis library matching the latest specification.
-   + Untagged native integers and words.
-   + Unboxed reals.
-   + Unboxed arrays
-   + Fast C FFI for calling from SML to C and from C to SML.
-   + Source-level profiling of both time and allocation.
-   + Multiple garbage collection strategies.
-   + Support for large amounts of memory (up to 4G), large arrays (up
-     to 2G elements), and large files (using 64-bit integers for file
-     positions).
-   + Fast IntInf based on the GNU multiprecision library (gmp).
-   + Libraries for C pointers, continuations, interval timers, random
-       numbers, resource limits, resource usage, signal handlers,
-       system logging, threads, and heap save and restore.
+  + Portability.  
+   MLton runs on the following platforms.
+   o HPPA: Debian.
+   o PowerPC: Debian, Mac OSX.
+   o X86: Linux, Cygwin/Windows, FreeBSD, MinGW/Windows, NetBSD, OpenBSD.
+   o Sparc: Debian, Solaris.
+  + Robustness.
+   o Supports the full SML 97 language.
+   o Follows the Definition of SML closely.
+   o Has a complete implementation of the Basis Library.
+   o Generates standalone executables.
+   o Compiles large programs (hundreds of thousands of lines).
+   o Supports large amounts of memory (up to 4G).
+   o Supports large arrays (up to 2G elements).
+   o Supports large files (using 64-bit integers for file positions).
+  + Performance.
+   o Executables with excellent running times.
+   o Untagged and unboxed native integers and words.
+   o Unboxed reals.
+   o Unboxed arrays.
+   o Multiple garbage collection strategies.
+   o Fast arbitrary-precision arithmetic based on the GnuMP.
+  + Tools.
+   o Source-level profiler for both time and allocation.
+   o Lexer generator.
+   o Parser generator.
+   o ML-NLFFIGEN.
+  + Extensions.
+   o Fast C FFI for calling from SML to C and from C to SML.
+   o ML Basis system for programming in the very large.
+   o Libraries for C pointers, continuations, interval timers, random
+      numbers, resource limits, resource usage, signal handlers,
+      system logging, threads, and heap save and restore.
 
 For more information, go to the MLton home page. 
 

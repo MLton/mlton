@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -76,7 +76,7 @@
 
         <ul>
 
-  set the interval timer (using <tt>setitimer</tt>) specified by <tt>t</tt> to   the given <tt>interval</tt> and <tt>value</tt>. 
+  sets the interval timer (using <tt>setitimer</tt>) specified by <tt>t</tt> to   the given <tt>interval</tt> and <tt>value</tt>. 
         </ul>
 
 
@@ -88,7 +88,7 @@
 
         <ul>
 
-  return the signal corresponding to <tt>t</tt>. </ul>
+  returns the signal corresponding to <tt>t</tt>. </ul>
 
 </ul>
 
@@ -98,5 +98,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:25:53 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:27:07 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

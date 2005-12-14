@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-A type constructor is a function from types to types.  Type constructors can be <em>nullary</em>, meaning that they take no arguments, as in <tt>char</tt>, <tt>int</tt>, and <tt>real</tt>.  Type constructors can be <em>unary</em>, meaning that they take one argument, as in <tt>array</tt>, <tt>list</tt>, and <tt>vector</tt>.  A program can define a new type constructor in two ways: a <tt>type</tt> definition or a <tt>datatype</tt> declaration.  User-defined type constructors can can take any number of arguments. 
+In <a href="StandardML">Standard ML</a>, a type constructor is a function from types to types.  Type constructors can be <em>nullary</em>, meaning that they take no arguments, as in <tt>char</tt>, <tt>int</tt>, and <tt>real</tt>. Type constructors can be <em>unary</em>, meaning that they take one argument, as in <tt>array</tt>, <tt>list</tt>, and <tt>vector</tt>.  A program can define a new type constructor in two ways: a <tt>type</tt> definition or a <tt>datatype</tt> declaration.  User-defined type constructors can can take any number of arguments. 
 <pre class=code>
 <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * real            <I><FONT COLOR="#B22222">(* 0 arguments *)</FONT></I>
 </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a t </FONT></B>=<FONT COLOR="#228B22"><B> 'a * int                    <I><FONT COLOR="#B22222">(* 1 argument *)</FONT></I>
@@ -82,7 +82,7 @@ Here are the syntax rules for type constructor application.
 </li>
     <li class="gap">
 <p>
- N-ary type consructors use tuple notation; for example,   <tt>(int,&nbsp;real)&nbsp;t</tt>.  
+ N-ary type constructors use tuple notation; for example,   <tt>(int,&nbsp;real)&nbsp;t</tt>.  
 </p>
 </li>
     <li class="gap">
@@ -98,5 +98,5 @@ Here are the syntax rules for type constructor application.
 
 <p>
 <hr>
-Last edited on 2004-11-29 19:46:56 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 04:26:23 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

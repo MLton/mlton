@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Unlike in <a href="Alice">Alice</a>, fixity specifications are not part of signatures in <a href="StandardML"> Standard ML</a>. When one wants to use a module that provides functions designed to be used as infix operators there are several obvious alternatives: 
+Fixity specifications are not part of signatures in <a href="StandardML">Standard ML</a>. When one wants to use a module that provides functions designed to be used as infix operators there are several obvious alternatives: 
         <ul>
 
         <li>
@@ -217,5 +217,5 @@ The closest approximation of Haskell's <tt>x&nbsp;`f`&nbsp;y</tt> syntax achieva
 
 <p>
 <hr>
-Last edited on 2005-08-07 18:22:19 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-01 04:41:31 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

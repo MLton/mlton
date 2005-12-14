@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,12 +49,17 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a href="StandardML">Standard ML</a> does not have built-in support for serialization.  Here is one paper that describes a user-level approach. 
+<a href="StandardML">Standard ML</a> does not have built-in support for serialization.  Here are papers that describes a user-level approach. 
     <ul>
 
     <li>
 <p>
- <a href = "References#Elsman04"> Type-Specialized Serialization with Sharing</a> 
+ <a href = "References#Elsman04">Elsman04</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href = "References#Kennedy04">Kennedy04</a> 
 </p>
 </li>
 </ul>
@@ -65,5 +70,5 @@
 
 <p>
 <hr>
-Last edited on 2005-07-04 16:04:28 by <span title="adsl-64-166-224-93.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:46:34 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

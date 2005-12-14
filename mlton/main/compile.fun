@@ -654,10 +654,7 @@ val elaborateMLB =
 local
    fun genMLB {input: File.t list}: MLBString.t =
       let
-         val basis =
-            String.concat
-            (List.map (["basis", "mlton", "sml-nj", "unsafe"],
-                       fn s => concat ["$(SML_LIB)/basis/", s, ".mlb\n"]))
+         val basis = "$(SML_LIB)/basis/default.mlb"
       in
          MLBString.fromString
          (case input of
@@ -668,7 +665,7 @@ local
                 in
                    String.concat
                    ["local\n",
-                    basis,
+                    basis, "\n",
                     "in\n",
                     String.concat (List.separate (input, "\n")), "\n",
                     "end\n"]

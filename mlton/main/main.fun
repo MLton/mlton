@@ -431,7 +431,7 @@ fun makeOptions {usage} =
          case !Control.ssa2PassesSet (OptPassesCustom s) of
             Result.Yes () => ()
           | Result.No s' => usage (concat ["invalid -ssa2-pass arg: ", s']))),
-       (Normal, "stop", " {f|g|o|sml|tc}", "where to stop",
+       (Normal, "stop", " {f|g|o|sml|tc}", "when to stop",
         SpaceString
         (fn s =>
          stop := (case s of

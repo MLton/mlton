@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -70,7 +70,7 @@
 
         <ul>
 
-  construct an array <em>a</em> of length <tt>n</tt>, whose elements <em>a<sub>i</sub></em>   are determined by the equations <em>b<sub>0</sub> = b</em> and    <em>(a<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. </ul>
+  constructs an array <em>a</em> of length <tt>n</tt>, whose elements <em>a<sub>i</sub></em>   are determined by the equations <em>b<sub>0</sub> = b</em> and    <em>(a<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. </ul>
 
 </ul>
 
@@ -80,5 +80,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:20:05 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 22:27:14 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-For easier visualization of profiling data, <tt>mlprof</tt> can create a call graph of the program in dot format, from which you can use the <a class="external" href="http://www.research.att.com/sw/tools/graphviz/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">graphviz</a> software package to create a postscript graph.  For example,  
+For easier visualization of <a href="Profiling">profiling</a> data, <tt>mlprof</tt> can create a call graph of the program in dot format, from which you can use the <a class="external" href="http://www.research.att.com/sw/tools/graphviz/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">graphviz</a> software package to create a postscript graph.  For example, 
 <pre>mlprof -call-graph foo.dot foo mlmon.out</pre> will create <tt>foo.dot</tt> with a complete call graph.  For each source function, there will be one node in the graph that contains the function name (and source position with <tt>-show-line&nbsp;true</tt>), as well as the percentage of ticks.  If you want to create a call graph for your program without any profiling data, you can simply call <tt>mlprof</tt> without any <tt>mlmon.out</tt> files, as in 
 <pre>mlprof -call-graph foo.dot foo</pre><p>
 Because SML has higher-order functions, the call graph is is dependent on MLton's analysis of which functions call each other.  This analysis depends on many implementation details and might display spurious edges that a human could conclude are impossible.  However, in practice, the call graphs tend to be very accurate. 
@@ -147,5 +147,5 @@ Technically speaking, <tt>mlprof</tt> produces a call-stack graph rather than a 
 
 <p>
 <hr>
-Last edited on 2004-11-01 18:47:41 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-11-30 23:11:25 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

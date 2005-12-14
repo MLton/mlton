@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,13 +49,13 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows programs to <em>export</em> SML functions to be called from C. Suppose you would like export from SML a function of type  <tt>real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int</tt> as the C function <tt>foo</tt>.  MLton extends the syntax of SML to allow expressions like the following: 
+MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> allows programs to <em>export</em> SML functions to be called from C.  Suppose you would like export from SML a function of type  <tt>real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int</tt> as the C function <tt>foo</tt>.  MLton extends the syntax of SML to allow expressions like the following: 
 <pre>_export "foo": (real * char -&gt; int) -&gt; unit;
-</pre>The above expression exports a C function named <tt>foo</tt>, with prototype  
+</pre>The above expression exports a C function named <tt>foo</tt>, with prototype 
 <pre>Int32 foo (Real64 x0, Char x1);
-</pre>The <tt>_export</tt> expression denotes a function of type  <tt>(real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int)&nbsp;-&gt;&nbsp;unit</tt> that when called with a function <tt>f</tt> arranges for the exported <tt>foo</tt> function to call <tt>f</tt> when <tt>foo</tt> is called.  So, for example, the following exports and defines <tt>foo</tt>. 
+</pre>The <tt>_export</tt> expression denotes a function of type  <tt>(real&nbsp;*&nbsp;char&nbsp;-&gt;&nbsp;int)&nbsp;-&gt;&nbsp;unit</tt> that when called with a function <tt>f</tt>, arranges for the exported <tt>foo</tt> function to call <tt>f</tt> when <tt>foo</tt> is called.  So, for example, the following exports and defines <tt>foo</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> e = _export <FONT COLOR="#BC8F8F"><B>&quot;foo&quot;</FONT></B>: real * char -&gt; int;
+<B><FONT COLOR="#A020F0">val</FONT></B> e = _export <FONT COLOR="#BC8F8F"><B>&quot;foo&quot;</FONT></B>: (real * char -&gt; int) -&gt; unit;
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = e (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, c) =&gt; <B><FONT COLOR="#5F9EA0">13</FONT></B> + Real.floor x + Char.ord c)
 </PRE>
 <p>
@@ -70,7 +70,7 @@ The general form of an <tt>_export</tt> expression is
 The type and the semicolon are not optional.  As with <tt>_import</tt>, a sequence of attributes may follow the function name. 
 </p>
 <p>
-MLton's <tt>-export-header</tt> option generates a C header file with prototypes for all of the functions exported from SML.  Include this header file in your C files to type check calls to functions exported from SML.  This header file includes <tt>typedef</tt>s for the types that can be passed between SML and C, as described in the next section.  
+MLton's <tt>-export-header</tt> option generates a C header file with prototypes for all of the functions exported from SML.  Include this header file in your C files to type check calls to functions exported from SML.  This header file includes <tt>typedef</tt>s for the <a href="ForeignFunctionInterfaceTypes"> types that can be passed between SML and C</a>. 
 </p>
 <h2 id="head-0f01ed56a1e32a05e5ef96e4d779f34784af9a96">Example</h2>
 <p>
@@ -118,8 +118,7 @@ Suppose that <tt>export.sml</tt> is
 Create the header file with <tt>-export-header</tt>. 
 </p>
 
-<pre>% mlton -default-ann 'allowExport true' \
-        -default-ann 'allowImport true' \
+<pre>% mlton -default-ann 'allowFFI true'    \
         -export-header export.h         \
         -stop tc                        \
         export.sml
@@ -127,10 +126,11 @@ Create the header file with <tt>-export-header</tt>.
 <tt>export.h</tt> now contains the following C prototypes. 
 </p>
 
-<pre>Word8 f (Word32 x0, Real64 x1, Word8 x2);
+<pre>Int8 f (Int32 x0, Real64 x1, Int8 x2);
 Pointer f2 (Word8 x0);
 void f3 ();
-void f4 (Word32 x0);
+void f4 (Int32 x0);
+extern Int32 zzz;
 </pre><p>
 Use <tt>export.h</tt> in a C program, <tt>ffi-export.c</tt>, as follows. 
 </p>
@@ -176,8 +176,7 @@ Pointer <B><FONT COLOR="#0000FF">g2</FONT></B> () {
 <p>
 Compile <tt>ffi-export.c</tt> and <tt>export.sml</tt>. 
 <pre>% gcc -c ffi-export.c
-% mlton -default-ann 'allowExport true' \
-        -default-ann 'allowImport true' \
+% mlton -default-ann 'allowFFI true' \
          export.sml ffi-export.o
 </pre>
 </p>
@@ -197,14 +196,14 @@ success
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/export.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">export.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/export.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">export.sml</a>
  
 </p>
 </li>
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051115-release/doc/examples/ffi/ffi-export.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-export.c</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/ffi-export.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-export.c</a>
  
 </p>
 </li>
@@ -216,5 +215,5 @@ success
 
 <p>
 <hr>
-Last edited on 2005-11-13 23:08:49 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
+Last edited on 2005-11-30 23:11:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,18 +49,19 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To control the runtime system, executables produced by MLton take several optional command line arguments before their usual arguments. To use these options, the first argument to the executable must be <tt>@MLton</tt>.  The optional arguments then follow, must be terminated by <tt>--</tt>, and are followed by any arguments to the program.  The optional arguments are <em>not</em> made available to the SML program via <tt>CommandLine.arguments</tt>.  For example, a valid call to <tt>hello-world</tt> is: 
+Executables produced by MLton take command line arguments that control the runtime system.  These arguments are optional, and occur before the executable's usual arguments.  To use these options, the first argument to the executable must be <tt>@MLton</tt>.  The optional arguments then follow, must be terminated by <tt>--</tt>, and are followed by any arguments to the program.  The optional arguments are <em>not</em> made available to the SML program via <tt>CommandLine.arguments</tt>.  For example, a valid call to <tt>hello-world</tt> is: 
 <pre>hello-world @MLton gc-summary fixed-heap 10k -- a b c
-</pre>In the above example,  <tt>CommandLine.arguments&nbsp;()&nbsp;=&nbsp;["a",&nbsp;"b",&nbsp;"c"]</tt>. It is also allowed to have a sequence of <tt>@MLton</tt> arguments, as in: 
+</pre>In the above example,  <tt>CommandLine.arguments&nbsp;()&nbsp;=&nbsp;["a",&nbsp;"b",&nbsp;"c"]</tt>. <p>
+It is allowed to have a sequence of <tt>@MLton</tt> arguments, as in: 
 <pre>hello-world @MLton gc-summary -- @MLton fixed-heap 10k -- a b c
-</pre><p>
-These options can also control MLton, as in 
-<pre>mlton @MLton fixed-heap 0.5g -- foo.sml
 </pre>
 </p>
 <p>
-Here are the allowed options. 
+Run-time options can also control MLton, as in 
+<pre>mlton @MLton fixed-heap 0.5g -- foo.sml
+</pre>
 </p>
+<h2 id="head-6bf5da9c080bee3a8142586c412aa39971137eee">Options</h2>
 
     <ul>
 
@@ -134,7 +135,7 @@ Here are the allowed options.
 
             <ul>
 
-   Restart the computation with the file specified by world, which    must have been created by a call to <tt>MLton.World.save</tt> by the    same executable.  See <a href="MLtonWorld">MLtonWorld</a>. 
+   Restart the computation with the file specified by <em>world</em>, which    must have been created by a call to <tt>MLton.World.save</tt> by the    same executable.  See <a href="MLtonWorld">MLtonWorld</a>. 
             </ul>
 
 
@@ -192,5 +193,5 @@ Here are the allowed options.
 
 <p>
 <hr>
-Last edited on 2005-01-22 01:32:34 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 06:13:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

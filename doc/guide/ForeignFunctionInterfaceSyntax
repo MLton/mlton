@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,10 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
-The following descriptions of the syntax of MLton's <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> expressions make use of the following (informal) type abbreviations: 
-</p>
-
+MLton extends the syntax of SML with expressions that enable a <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> to C.  The following description of the syntax uses some abbreviations. 
 <div>
 <table>
 <tr>
@@ -65,6 +62,14 @@ The following descriptions of the syntax of MLton's <a href="ForeignFunctionInte
 </tr>
 <tr>
 <td>
+ C argument type </td>
+<td>
+ <em>cArgTy</em> </td>
+<td>
+ <em>cBaseTy</em><sub>1</sub><tt>&nbsp;*&nbsp;</tt>...<tt>&nbsp;*&nbsp;</tt><em>cBaseTy</em><sub>n</sub> or <tt>unit</tt> </td>
+</tr>
+<tr>
+<td>
  C return type </td>
 <td>
  <em>cRetTy</em> </td>
@@ -73,11 +78,11 @@ The following descriptions of the syntax of MLton's <a href="ForeignFunctionInte
 </tr>
 <tr>
 <td>
- C function type (<em>n</em> may be zero) </td>
+ C function type </td>
 <td>
  <em>cFuncTy</em> </td>
 <td>
- <em>cBaseTy</em><sub>1</sub><tt>&nbsp;*&nbsp;</tt>...<tt>&nbsp;*&nbsp;</tt><em>cBaseTy</em><sub>n</sub><tt>&nbsp;-&gt;&nbsp;</tt><em>cRetTy</em> </td>
+ <em>cArgTy</em><tt>&nbsp;-&gt;&nbsp;</tt><em>cRetTy</em> </td>
 </tr>
 <tr>
 <td>
@@ -102,12 +107,7 @@ Denotes the address of the C function or variable.
 
 <pre>_symbol "C variable name" attr... : (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
 </pre><p>
-Denotes the <em>getter</em> and <em>setter</em> for a C variable.   (The <em>cBaseTy</em>s must agree.)   
-</p>
-
-<pre>_symbol * : cPtrTy -&gt; (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
-</pre><p>
-Denotes the <em>getter</em> and <em>setter</em> for a C variable pointer.   (The <em>cBaseTy</em>s must agree.) 
+Denotes the <em>getter</em> and <em>setter</em> for a C variable.   The <em>cBaseTy</em>s must be identical. 
 </p>
 <p>
 <tt>attr...</tt> denotes a (possibly empty) sequence of attributes. 
@@ -124,14 +124,16 @@ Denotes the <em>getter</em> and <em>setter</em> for a C variable pointer.   (The
     </ul>
 
 
+
+<pre>_symbol * : cPtrTy -&gt; (unit -&gt; cBaseTy) * (cBaseTy -&gt; unit);
+</pre><p>
+Denotes the <em>getter</em> and <em>setter</em> for a C pointer to a variable. The <em>cBaseTy</em>s must be identical. 
+</p>
 <h2 id="head-d6fbc9d2bdd580e18ed0bc5805dc26db323d6f5f">Import</h2>
 
-<pre>_import "C function name" attr... : cFuncTy;
+<pre>_import "CFunctionName" attr... : cFuncTy;
 </pre><p>
-Denotes a SML function whose behavior is implemented by calling the C function. 
-</p>
-<p>
-See <a href="CallingFromSMLToC"> Calling from SML to C</a> for more details. 
+Denotes an SML function whose behavior is implemented by calling the C function.  See <a href="CallingFromSMLToC"> Calling from SML to C</a> for more details. 
 </p>
 
 <pre>_import * attr... : cPtrTy -&gt; cFuncTy;
@@ -196,5 +198,5 @@ See <a href="CallingFromCToSML"> Calling from C to SML</a> for more details.
 
 <p>
 <hr>
-Last edited on 2005-09-23 16:59:31 by <span title="adsl-64-166-227-19.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 04:25:23 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

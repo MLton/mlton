@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -123,7 +123,7 @@ The <a href="DefinitionOfStandardML">Definition of SML</a> spells out precisely 
 
 <h2 id="head-703900d855ba7be2afdc98e4967fa5c011bfcb4f">Why the value restriction exists</h2>
 <p>
-The value restriction prevents a ref cell (or an array) from holding values of different types, which would allow a value of one type to be cast to another and break type safety.  If the restriction were not in place, the following program would type check. 
+The value restriction prevents a ref cell (or an array) from holding values of different types, which would allow a value of one type to be cast to another and hence would break type safety.  If the restriction were not in place, the following program would type check. 
 </p>
 
 <pre class=code>
@@ -200,7 +200,7 @@ then the program succeeds; however, MLton gives us the following warning.
     type: ??? -&gt; ???
     in: val f = id id
 </pre><p>
-This warning indicates that neither could MLton polymorphically generalize <tt>f</tt>, nor was there enough context using <tt>f</tt> to determine its type.  This in itself is not a type error, but it it is a hint that something is wrong with our program.  Using <tt>f</tt> provides enough context to eliminate the warning. 
+This warning indicates that MLton couldn't polymorphically generalize <tt>f</tt>, nor was there enough context using <tt>f</tt> to determine its type.  This in itself is not a type error, but it it is a hint that something is wrong with our program.  Using <tt>f</tt> provides enough context to eliminate the warning. 
 </p>
 
 <pre class=code>
@@ -345,5 +345,5 @@ Of course, one can hide the constructor <tt>T</tt> inside a <tt>local</tt> or be
 
 <p>
 <hr>
-Last edited on 2005-02-27 02:12:16 by <span title="pool-141-151-144-215.pitt.east.verizon.net">AdamGoode</span>.
+Last edited on 2005-12-02 03:12:47 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

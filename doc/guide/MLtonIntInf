@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -105,7 +105,7 @@ MLton represents an arbitrary precision integer either as an unboxed 32 bit word
 
         <ul>
 
-  use the GnuMP's fast gcd implementation. 
+  uses the GnuMP's fast gcd implementation. 
         </ul>
 
 
@@ -141,7 +141,7 @@ MLton represents an arbitrary precision integer either as an unboxed 32 bit word
 
         <ul>
 
-  return the underlying representation of i. </ul>
+  returns the underlying representation of <tt>i</tt>. </ul>
 
 </ul>
 
@@ -151,5 +151,5 @@ MLton represents an arbitrary precision integer either as an unboxed 32 bit word
 
 <p>
 <hr>
-Last edited on 2004-12-29 20:47:58 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 03:46:17 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

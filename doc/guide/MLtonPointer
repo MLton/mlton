@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -98,7 +98,7 @@
 
         <ul>
 
-  The type of pointers, i.e. machine addresses. 
+  the type of pointers, i.e. machine addresses. 
         </ul>
 
 
@@ -122,7 +122,7 @@
 
         <ul>
 
-  compare the pointer <tt>p1</tt> to the pointer <tt>p2</tt> (as addresses). 
+  compares the pointer <tt>p1</tt> to the pointer <tt>p2</tt> (as addresses). 
         </ul>
 
 
@@ -192,5 +192,5 @@
 
 <p>
 <hr>
-Last edited on 2005-02-09 06:40:25 by <span title="ip68-108-63-84.lv.lv.cox.net"><a href="ChrisClearwater">ChrisClearwater</a></span>.
+Last edited on 2005-12-01 22:26:57 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

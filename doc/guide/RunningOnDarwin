@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,12 +49,12 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-
+MLton runs fine on Darwin, which underlies Mac OSX. 
     <ul>
 
     <li>
 <p>
- <a class="external" href="http://fink.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">fink</a> has the <a href="GnuMP">GnuMP</a> library  <a class="external" href="http://fink.sourceforge.net/pdb/package.php/gmp"><img src="moin-www.png" alt="[WWW]" height="11" width="11">here</a>. 
+ MLton requires the <a href="GnuMP">GnuMP</a> library, which  <a class="external" href="http://fink.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">fink</a> has   <a class="external" href="http://fink.sourceforge.net/pdb/package.php/gmp"><img src="moin-www.png" alt="[WWW]" height="11" width="11">here</a>. 
 </p>
 </li>
 
@@ -78,5 +78,5 @@
 
 <p>
 <hr>
-Last edited on 2005-04-22 20:01:14 by <span title="adsl-67-117-152-215.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 01:14:31 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

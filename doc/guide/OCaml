@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -159,7 +159,7 @@ Here's a comparison of some aspects of OCaml and MLton.
 </li>
         <li class="gap">
 <p>
- OCaml supports seperate compilation, while MLton does not. 
+ OCaml supports separate compilation, while MLton does not. 
 </p>
 </li>
         <li class="gap">
@@ -221,5 +221,5 @@ Here's a comparison of some aspects of OCaml and MLton.
 
 <p>
 <hr>
-Last edited on 2005-08-11 12:14:37 by <span title="ip68-224-49-254.lv.lv.cox.net"><a href="ChrisClearwater">ChrisClearwater</a></span>.
+Last edited on 2005-12-02 04:23:05 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

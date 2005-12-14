@@ -35,8 +35,17 @@ CP = /bin/cp -fpR
 GZIP = gzip --force --best
 RANLIB = ranlib
 
-VERSION = $(shell date +%Y%m%d)
-RELEASE = 1
+# If we're compiling with another version of MLton, then we want to do
+# another round of compilation so that we get a MLton built without
+# stubs.
+ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
+	BOOTSTRAP_OTHER=true
+else
+	BOOTSTRAP_OTHER=false
+endif
+
+VERSION ?= $(shell date +%Y%m%d)
+RELEASE ?= 1
 
 .PHONY: all
 all:
@@ -44,15 +53,16 @@ all:
 
 .PHONY: all-no-docs
 all-no-docs:
-	$(MAKE) dirs runtime compiler world-no-check
-# If we're compiling with another version of MLton, then we want to do
-# another round of compilation so that we get a MLton built without
-# stubs.  Remove $(AOUT) so that the $(MAKE) compiler below will
-# remake MLton.
-ifeq (other, $(shell if [ ! -x $(BIN)/mlton ]; then echo other; fi))
+	$(MAKE) dirs runtime compiler world-no-check script mlbpathmap targetmap constants libraries tools
+# Remove $(AOUT) so that the $(MAKE) compiler below will remake MLton.
+# We also want to re-run the just-built tools (mllex and mlyacc)
+# because they may be better than those that were used for the first
+# round of compilation.  So, we clean out the front end.
+ifeq (true, $(BOOTSTRAP_OTHER))
 	rm -f $(COMP)/$(AOUT)$(EXE)
+	$(MAKE) -C $(COMP)/front-end clean
 endif
-	$(MAKE) script mlbpathmap targetmap constants compiler world libraries tools
+	$(MAKE) compiler world
 	@echo 'Build of MLton succeeded.'
 
 .PHONY: basis-no-check
@@ -84,14 +94,6 @@ clean:
 .PHONY: clean-svn
 clean-svn:
 	find . -type d | grep .svn | xargs rm -rf
-
-.PHONY: cm
-cm:
-	$(MAKE) -C $(COMP) mlton-stubs_cm
-	$(MAKE) -C $(LEX) mllex_cm
-	$(MAKE) -C $(PROF) mlprof_cm
-	$(MAKE) -C $(YACC) mlyacc_cm
-	$(MAKE) -C benchmark benchmark_cm
 
 .PHONY: compiler
 compiler:
@@ -162,9 +164,9 @@ freebsd:
 	mkdir -p $(BSDSRC)
 	( cd $(SRC) && tar -cpf - . ) | ( cd $(BSDSRC) && tar -xpf - )
 	cd /tmp && tar -cpf - mlton-$(VERSION) | \
-		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-1.freebsd.src.tgz
-			      # vvvv do not change make to $(MAKE)
-	cd $(BSDSRC)/freebsd && make build-package  
+		 $(GZIP) >/usr/ports/distfiles/mlton-$(VERSION)-$(RELEASE).freebsd.src.tgz
+        # do not change "make" to "$(MAKE)" in the following line
+	cd $(BSDSRC)/package/freebsd && MAINTAINER_MODE=yes make build-package  
 
 LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
 
@@ -353,6 +355,9 @@ world:
 # puts them.
 DESTDIR = $(CURDIR)/install
 PREFIX = /usr
+ifeq ($(TARGET_OS), cygwin)
+PREFIX = /
+endif
 ifeq ($(TARGET_OS), darwin)
 PREFIX = /usr/local
 endif
@@ -369,6 +374,9 @@ ULIB = lib/mlton
 TLIB = $(DESTDIR)$(prefix)/$(ULIB)
 TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
 TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
+ifeq ($(TARGET_OS), cygwin)
+TDOC = $(DESTDIR)$(prefix)/usr/share/doc/mlton
+endif
 ifeq ($(TARGET_OS), solaris)
 TDOC = $(DESTDIR)$(prefix)/doc/mlton
 endif
@@ -452,4 +460,4 @@ post-install-debian:
 		$(CP) $(SRC)/debian/$$f.doc-base $(TDOCBASE)/$$f; \
 	done
 	cd $(TDOC)/ && $(GZIP) changelog changelog.Debian
-	chown -R root.root $(TDOC)
+	chown -R root.root $(TDOC) $(TLIB)

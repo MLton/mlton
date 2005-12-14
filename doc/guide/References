@@ -27,7 +27,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -84,7 +84,7 @@
 
     <li>
 <p>
- <a id="BaudinetMacqueen85"></a>  <a class="external" href="http://citeseer.ist.psu.edu/baudinet85tree.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Tree Pattern Matching for ML</a>.  Marianne Baudinet, David Mac<strong></strong>Queen.  1985. 
+ <a id="BaudinetMacqueen85"></a>  <a class="external" href="http://citeseer.ist.psu.edu/baudinet85tree.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Tree Pattern Matching for ML</a>.  Marianne Baudinet, David MacQueen.  1985. 
 </p>
 </li>
 
@@ -277,7 +277,7 @@
 
         <ul>
 
-  <em>An introduction and overview of the <a href="BasisLibrary"> SML Basis Library</a>,    followed by a detailed description of each module.  The module   descriptions are also available <a class="external" href="http://mlton.org/basis/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">online</a>.</em> 
+  <em>An introduction and overview of the <a href="BasisLibrary">Basis Library</a>,    followed by a detailed description of each module.  The module   descriptions are also available <a class="external" href="http://mlton.org/basis/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">online</a>.</em> 
         </ul>
 
 
@@ -465,7 +465,7 @@
 
     <li class="gap">
 <p>
- <a id="MilnerEtAl97"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=3874"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Definition of Standard ML (Revised)</a>.  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0262631814&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0262631814.  Robin Milner, Mads Tofte, Robert Harper, and David Mac<strong></strong>Queen.  The MIT Press, 1997. 
+ <a id="MilnerEtAl97"></a>  <a class="external" href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&amp;tid=3874"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The Definition of Standard ML (Revised)</a>.  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0262631814&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>)  ISBN 0262631814.  Robin Milner, Mads Tofte, Robert Harper, and David MacQueen.  The MIT Press, 1997. 
 </p>
 </li>
 
@@ -836,5 +836,5 @@
 
 <p>
 <hr>
-Last edited on 2005-11-14 23:08:59 by <span title="fox.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:28:18 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

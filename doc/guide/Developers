@@ -26,7 +26,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,14 +61,29 @@ Also see the <a href="Credits">Credits</a> for a list of specific contributions.
 </p>
 <h2 id="head-b90776c7682f20fa1845ab687f9e1eef63b0ad4d">Developers list</h2>
 <p>
-A number of people read the developers mailing list, <tt>MLton@mlton.org</tt>, and make contributions there.  Here's a list of those on the list who have a page here. 
+A number of people read the developers mailing list, <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>, and make contributions there.  Here's a list of those who have a page here. 
 </p>
 
     <ul>
 
     <li>
 <p>
+ <a href="AndreiFormiga">AndreiFormiga</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="JesperLouisAndersen">JesperLouisAndersen</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="JohnnyAndersen">JohnnyAndersen</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MichaelNorrish">MichaelNorrish</a> 
 </p>
 </li>
     <li>
@@ -83,27 +98,7 @@ A number of people read the developers mailing list, <tt>MLton@mlton.org</tt>, a
 </li>
     <li>
 <p>
- <a href="AndreiFormiga">AndreiFormiga</a> 
-</p>
-</li>
-    <li>
-<p>
- <a href="JesperLouisAndersen">JesperLouisAndersen</a> 
-</p>
-</li>
-    <li>
-<p>
- <a href="MichaelNorrish">MichaelNorrish</a> 
-</p>
-</li>
-    <li>
-<p>
  <a href="WesleyTerpstra">WesleyTerpstra</a> 
-</p>
-</li>
-    <li>
-<p>
- <a href="VesaKarvonen">VesaKarvonen</a> 
 </p>
 </li>
 </ul>
@@ -114,5 +109,5 @@ A number of people read the developers mailing list, <tt>MLton@mlton.org</tt>, a
 
 <p>
 <hr>
-Last edited on 2005-08-12 13:54:35 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2005-12-01 03:45:09 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

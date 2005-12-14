@@ -10,6 +10,8 @@ all: smlnj-lib/README.mlton
 
 smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	gzip -dc smlnj-lib.tgz | tar xf -
+	chmod -R a+r smlnj-lib
+	chmod -R g-s smlnj-lib
 	patch -p0 < smlnj-lib.patch
 	mv smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
 

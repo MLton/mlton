@@ -1,4 +1,38 @@
-Here are the changes since version 20041109.
+Here are the changes from version 20041109 to version 20051202.
+
+Summary:
+  + New license: BSD-style instead of GPL.
+  + New platforms:
+   o hppa: Debian Linux.
+   o x86: MinGW.
+  + Compiler.
+   o improved exception history.
+   o Command-line switches.
+    * Added: -as-opt, -mlb-path-map, -target-as-opt, -target-cc-opt.
+    * Deprecated: none.
+    * Removed: -native, -sequence-unit, -warn-match, -warn-unused.
+  + Language.
+   o FFI syntax changes and extensions.
+    * Added: _symbol.
+    * Changed: _export, _import.
+    * Removed: _ffi.
+   o ML Basis annotations.
+    * Added: allowFFI, nonexhaustiveExnMatch, nonexhaustiveMatch,
+        redundantMatch, sequenceNonUnit.
+    * Deprecated: allowExport, allowImport, sequenceUnit, warnMatch.
+  + Libraries.
+   o Basis Library.
+    * Added: Int1, Word1.
+   o MLton structure.
+    * Added: Process.create, ProcEnv.setgroups, Rusage.measureGC, 
+        Socket.fdToSock Socket.Ctl.getError.
+    * Changed: MLton.Platform.Arch.
+   o Other libraries.
+    * Added: ckit library, ML-NLFFI library, SML/NJ library.
+  + Tools.
+   o updates of mllex and mlyacc from SML/NJ.
+   o added mlnlffigen.
+   o profiling supports better inclusion/exclusion of code.
 
 * 2005-11-19
   - Updated SML/NJ Library and CKit Library from SML/NJ 110.57.

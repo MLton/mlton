@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -85,7 +85,7 @@ While the above example is benign, the following example shows how to cast an in
  
 </p>
 <p>
-Unfortunately, there is a bug in MLton 20041109 that causes it to fail to properly display an error message for this program.  Instead it displays the obscure internal bug message <tt>t&nbsp;has&nbsp;no&nbsp;region&nbsp;property</tt>.  This problem has since been fixed, and later versions of MLton display the following. 
+MLton reports the following error. 
 </p>
 
 <pre>Warning: z.sml 1.1.
@@ -102,5 +102,5 @@ Error: z.sml 1.1.
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:36:15 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 03:38:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

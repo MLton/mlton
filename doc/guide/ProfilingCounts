@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,8 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-To find out how many times each function is called and how many times each branch is taken, compile your program with  <tt>-profile&nbsp;count&nbsp;-profile-branch&nbsp;true</tt>.  For example, suppose that <tt>tak.sml</tt> contains the following. <p>
+With MLton and <tt>mlprof</tt>, you can <a href="Profiling">profile</a> your program to find out how many times each function is called and how many times each branch is taken.  To do so, compile your program with <pre>-profile 
+count -profile-branch true</pre>. For example, suppose that <tt>tak.sml</tt>contains the following. <p>
 <pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tak =
    <B><FONT COLOR="#0000FF">struct</FONT></B>
       <B><FONT COLOR="#A020F0">fun</FONT></B> tak1 (x, y, z) =
@@ -108,10 +109,10 @@ f.&lt;branch&gt;  tak.sml: 23            0.0%           (1)
 uncalled  tak.sml: 29              0.0%           (0)
 f.&lt;branch&gt;  tak.sml: 24            0.0%           (0)
 </pre><p>
-Branches are displayed with the usual lexical nesting followed by <tt>&lt;branch&gt;</tt> where the function name would normally be, or <tt>&lt;true&gt;</tt> or <tt>&lt;false&gt;</tt> for if-expressions.  Hence, it is best to run <tt>mlprof</tt> with <tt>-show-line&nbsp;true</tt> to help identify the branch. 
+Branches are displayed with lexical nesting followed by <tt>&lt;branch&gt;</tt> where the function name would normally be, or <tt>&lt;true&gt;</tt> or <tt>&lt;false&gt;</tt> for if-expressions.  It is best to run <tt>mlprof</tt> with <tt>-show-line&nbsp;true</tt> to help identify the branch. 
 </p>
 <p>
-One use of <tt>-profile&nbsp;count</tt> is as a code-coverage tool, to help find code in your program that hasn't been tested.  For this reason, <tt>mlprof</tt> displays functions and branches that have a count of zero.  As the above output shows, the branch on line 24 was never taken and the function defined on line 29 was never called.  To see zero counts, it is best to run <tt>mlprof</tt> with <tt>-raw&nbsp;true</tt>, since some code (e.g. the branch on line 23 above) will show up with <tt>0.0%</tt> but may still have been executed and hence have a nonzero raw count. 
+One use of <tt>-profile&nbsp;count</tt> is as a code-coverage tool, to help find code in your program that hasn't been tested.  For this reason, <tt>mlprof</tt> displays functions and branches even if they have a count of zero.  As the above output shows, the branch on line 24 was never taken and the function defined on line 29 was never called.  To see zero counts, it is best to run <tt>mlprof</tt> with <tt>-raw&nbsp;true</tt>, since some code (e.g. the branch on line 23 above) will show up with <tt>0.0%</tt> but may still have been executed and hence have a nonzero raw count. 
 </p>
 </div>
 
@@ -119,5 +120,5 @@ One use of <tt>-profile&nbsp;count</tt> is as a code-coverage tool, to help find
 
 <p>
 <hr>
-Last edited on 2005-08-12 17:48:06 by <span title="132.236.243.210"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:24:22 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

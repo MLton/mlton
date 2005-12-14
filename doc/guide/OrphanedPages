@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,21 +52,13 @@
 Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
 <ol>
 <li>
-<a href="EXene">EXene</a></li>
-<li>
 <a href="Identifier">Identifier</a></li>
 <li>
 <a href="LanguageChanges">LanguageChanges</a></li>
 <li>
-<a href="Serialization">Serialization</a></li>
-<li>
 <a href="Survey">Survey</a></li>
 <li>
 <a href="SurveyDone">SurveyDone</a></li>
-<li>
-<a href="Swerve">Swerve</a></li>
-<li>
-<a href="http://mlton.org/TemporaryBugExamples"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryBugExamples</a></li>
 <li>
 <a href="Variant">Variant</a></li>
 <li>

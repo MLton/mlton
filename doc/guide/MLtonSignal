@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -244,7 +244,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
         <ul>
 
-  block all signals in <tt>m</tt>. 
+  blocks all signals in <tt>m</tt>. 
         </ul>
 
 
@@ -256,7 +256,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
         <ul>
 
-  get the signal mask <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
+  gets the signal mask <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
         </ul>
 
 
@@ -292,7 +292,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
         <ul>
 
-  set the signal mask to <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
+  sets the signal mask to <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
         </ul>
 
 
@@ -316,7 +316,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
         <ul>
 
-  unblock all signals in <tt>m</tt>. 
+  unblocks all signals in <tt>m</tt>. 
         </ul>
 
 
@@ -340,7 +340,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
         <ul>
 
-  returns the signal mask <tt>m</tt> corresponding to the currently handled   signals; i.e., a signal is handled if and only if it is im <tt>m</tt>. 
+  returns the signal mask <tt>m</tt> corresponding to the currently handled   signals; i.e., a signal is handled if and only if it is in <tt>m</tt>. 
         </ul>
 
 
@@ -410,7 +410,7 @@ A signal handler is never invoked while the running thread is in a critical sect
 
 <h2 id="head-f8a475209a6f55001051eae0624aca8b3a75b651">Interruptible System Calls</h2>
 <p>
-Signal handling interacts in a non-trivial way with those functions in the <a href="BasisLibrary"> SML Basis Library</a> that correspond directly to interruptible system calls (a subset of those functions that may raise <tt>OS.SysError</tt>). The desire is that these functions should have predictable semantics. The principal concerns are: 
+Signal handling interacts in a non-trivial way with those functions in the <a href="BasisLibrary">Basis Library</a> that correspond directly to interruptible system calls (a subset of those functions that may raise <tt>OS.SysError</tt>).  The desire is that these functions should have predictable semantics.  The principal concerns are: 
 </p>
 
     <ol type="1">
@@ -440,5 +440,5 @@ A system call that must be restarted while in a critical section  will be restar
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:33:02 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:22:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

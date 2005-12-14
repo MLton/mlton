@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,7 +66,7 @@
  
 </p>
 <p>
-A finalizable value is a value to which <em>finalizers</em> can be attached.  A finalizer is a function that runs after a garbage collection determines that the value to which it is attached is unreachable.  Reachability is the same as with  <a href="MLtonWeak">weak pointers</a>.  The finalizer is treated like a signal handler, in that it runs asynchronously in a separate thread, with signals blocked, and will not run within a critical section (see <a href="MLtonThread">MLtonThread</a>). 
+A finalizable value is a value to which <em>finalizers</em> can be attached.  A finalizer is a function that runs after a garbage collection determines that the value to which it is attached is unreachable.  Reachability is the same as with <a href="MLtonWeak">weak pointers</a>.  The finalizer is treated like a signal handler, in that it runs asynchronously in a separate thread, with signals blocked, and will not interrupt a critical section (see <a href="MLtonThread">MLtonThread</a>). 
 </p>
 
     <ul>
@@ -283,7 +283,7 @@ int listSum (Cons c) {
 </p>
 <p>
 We can compile these to create an executable with 
-<pre>% mlton -default-ann 'allowImport true' finalizable.sml cons.c
+<pre>% mlton -default-ann 'allowFFI true' finalizable.sml cons.c
 </pre>
 </p>
 <p>
@@ -332,5 +332,5 @@ Also see <a href = "References#Boehm03">Boehm03</a>.
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:29:14 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:43:20 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

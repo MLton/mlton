@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -58,12 +58,12 @@ There are two mailing lists available.
 
     <li>
 <p>
- <tt>MLton@mlton.org</tt>   (<a class="external" href="http://mlton.org/mailman/listinfo/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,   <a class="external" href="http://mlton.org/pipermail/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>)   MLton developers 
+ <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>  (<a class="external" href="http://mlton.org/mailman/listinfo/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,   <a class="external" href="http://mlton.org/pipermail/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>)   MLton developers 
 </p>
 </li>
     <li class="gap">
 <p>
- <tt>MLton-user@mlton.org</tt>   (<a class="external" href="http://mlton.org/mailman/listinfo/mlton-user"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,   <a class="external" href="http://mlton.org/pipermail/mlton-user"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>)   MLton user community  
+ <a class="external" href="mailto:MLton-user@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton-user@mlton.org</a>  (<a class="external" href="http://mlton.org/mailman/listinfo/mlton-user"><img src="moin-www.png" alt="[WWW]" height="11" width="11">subscribe</a>,   <a class="external" href="http://mlton.org/pipermail/mlton-user"><img src="moin-www.png" alt="[WWW]" height="11" width="11">archive</a>)   MLton user community  
 </p>
 </li>
 
@@ -71,7 +71,7 @@ There are two mailing lists available.
 
 
 <p>
-In addition to the pipermail archive on this site, there are archives of both  <a class="external" href="http://terpstra.ca/lurker/list/mlton.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton</a> and <a class="external" href="http://terpstra.ca/lurker/list/mlton-user.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton-user</a> that use <a class="external" href="http://lurker.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Lurker</a>. 
+In addition to the pipermail archive at mlton.org, there are archives of both  <a class="external" href="http://terpstra.ca/lurker/list/mlton.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton</a> and <a class="external" href="http://terpstra.ca/lurker/list/mlton-user.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton-user</a> that use <a class="external" href="http://lurker.sourceforge.net/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Lurker</a>. 
 </p>
 <h3 id="head-4d664627fe28b8283a45df64cc700772bb91b4c4">Mailing list policy</h3>
 
@@ -84,7 +84,7 @@ In addition to the pipermail archive on this site, there are archives of both  <
 </li>
     <li class="gap">
 <p>
- Large messages (over 512K) should not be sent.  Rather, please send  an email containing the discussion text and a link to any large  files.  You may use our <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> page for uploading these files. 
+ Large messages (over 256K) should not be sent.  Rather, please send  an email containing the discussion text and a link to any large  files.  You may use our <a href="http://mlton.org/TemporaryUpload"><img src="moin-www.png" alt="[WWW]" height="11" width="11">TemporaryUpload</a> page for uploading these files. 
 </p>
 </li>
     <li class="gap">
@@ -113,5 +113,5 @@ In addition to the pipermail archive on this site, there are archives of both  <
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:18:54 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 02:58:05 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

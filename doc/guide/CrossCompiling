@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,10 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<p>
-You can use the MLton's <tt>-target</tt> flag to cross compile applications.  By default, MLton is only able to compile for the machine it is running on.  In order to use MLton as a cross compiler, you need to do two things. 
-</p>
-
+MLton's <tt>-target</tt> flag directs MLton to cross compile an application for another platform.  By default, MLton is only able to compile for the machine it is running on.  In order to use MLton as a cross compiler, you need to do two things. 
     <ol type="1">
 
     <li>
@@ -83,7 +80,7 @@ Next, you must cross compile the MLton runtime system and inform MLton of the av
 Making runtime.
 Building print-constants executable.
 Running print-constants on blade.
-</pre>Running <tt>add-cross</tt> uses <tt>ssh</tt> to compile the runtime on the target machine and to create <tt>print-constants</tt>, which prints out all of the constants that MLton needs in order to implement the <a href="BasisLibrary"> SML Basis Library</a>.  The script runs <tt>print-constants</tt> on the target machine (<tt>blade</tt> in this case), and saves the output. 
+</pre>Running <tt>add-cross</tt> uses <tt>ssh</tt> to compile the runtime on the target machine and to create <tt>print-constants</tt>, which prints out all of the constants that MLton needs in order to implement the <a href="BasisLibrary">Basis Library</a>.  The script runs <tt>print-constants</tt> on the target machine (<tt>blade</tt> in this case), and saves the output. 
 </p>
 <p>
 Once you have done all this, you should be able to cross compile SML applications.  For example, 
@@ -100,5 +97,5 @@ Building and maintaining cross-compiling <tt>gcc</tt>'s is complex.  You may fin
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:47:57 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:19:16 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

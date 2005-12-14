@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are the places where MLton deviates from the <a href="DefinitionOfStandardML">Definition of SML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the three deviations listed here are the only known deviations that we have no plans to fix.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
+Here are the places where MLton deviates from the <a href="DefinitionOfStandardML">Definition of SML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the three deviations listed here are the only known deviations, and we have no plans to fix them.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
 We don't plan to fix these bugs because one of them (parsing nested cases) has historically never been accepted by any SML compiler, while the other two clearly indicate problems in the Definition. 
 </p>
 
@@ -114,5 +114,5 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:29:51 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 03:06:59 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

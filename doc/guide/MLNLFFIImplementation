@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,7 +54,7 @@ MLton's implementation(s) of the <a href="MLNLFFI">MLNLFFI</a> library differs f
 
     <li>
 <p>
- MLton cannot utilize the <tt>Unsafe.cast</tt> "cheat" described in Section 3.7 of <a href = "References#Blume01">Blume01</a>.  (MLton's representation of <a class="nonexistent" href="Closures">closures</a> and <a href="PackedRepresentation">aggressive representation</a> optimizations make an <tt>Unsafe.cast</tt> even more "unsafe" than in other implementations.)  We have considered two solutions: 
+ MLton cannot utilize the <tt>Unsafe.cast</tt> "cheat" described in Section 3.7 of <a href = "References#Blume01">Blume01</a>.  (MLton's representation of <a href="Closure">closures</a> and <a href="PackedRepresentation">aggressive representation</a> optimizations make an <tt>Unsafe.cast</tt> even more "unsafe" than in other implementations.)  We have considered two solutions: 
 </p>
 </li>
 
@@ -187,7 +187,6 @@ MLton's implementation(s) of the <a href="MLNLFFI">MLNLFFI</a> library differs f
 
 
 
-<p>
 <hr>
-Last edited on 2005-08-19 15:53:05 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 05:11:01 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="http://mlton.org/MatthewFluet">MatthewFluet</a></span>.
 </body></html>

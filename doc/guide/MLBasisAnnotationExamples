@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,7 +51,7 @@
 <div id="content" lang="en" dir="ltr">
 Here are some example uses of <a href="MLBasisAnnotations">MLBasisAnnotations</a>. <h2 id="head-1152ecc106cfaf7f85015d0ff747fb60937f1498">Eliminate spurious warnings in automatically generated code</h2>
 <p>
-Programs that automatically generate source code can often produce nonexhaustive matches, relying upon invariants of the generated code to ensure that the matches never fail.  A programmer may wish to elide the nonexhaustive match warnings from this code, in order that legitimate warnings are not missed in a flurry of false positives.  To do so, the programmer simply annotates the generated code with the <tt>nonexhaustiveMatch&nbsp;ignore</tt> annotation: 
+Programs that automatically generate source code can often produce nonexhaustive matches, relying on invariants of the generated code to ensure that the matches never fail.  A programmer may wish to elide the nonexhaustive match warnings from this code, in order that legitimate warnings are not missed in a flurry of false positives.  To do so, the programmer simply annotates the generated code with the <tt>nonexhaustiveMatch&nbsp;ignore</tt> annotation: 
 <pre>local
   $(GEN_ROOT)/gen-lib.mlb
 
@@ -66,8 +66,7 @@ end
 </p>
 <h2 id="head-ca0798eb6a561e7bad74e00fdaeec1e2d7d9dec3">Deliver a library</h2>
 <p>
-Standard ML libraries can be delivered via <tt>.mlb</tt> files.  Authors of such libraries should strive to be mindful of the ways in which programmers may choose to compile their programs.  For example, although the defaults for <tt>sequenceUnit</tt> and <tt>warnUnused</tt> are <tt>false</tt>, periodically compiling with these annotations defaulted to <tt>true</tt> can help uncover likely bugs.  However, a programmer is unlikely to be interested in unused modules from an imported library, and the behavior of <tt>sequenceUnit&nbsp;true</tt> may be incompatible with some libraries.  Hence, a library author may choose to deliver a library as follows: 
-<pre>ann 
+Standard ML libraries can be delivered via <tt>.mlb</tt> files.  Authors of such libraries should strive to be mindful of the ways in which programmers may choose to compile their programs.  For example, although the defaults for <tt>sequenceNonUnit</tt> and <tt>warnUnused</tt> are <tt>ignore</tt> and <tt>false</tt>, periodically compiling with these annotations defaulted to <tt>warn</tt> and <tt>true</tt> can help uncover likely bugs.  However, a programmer is unlikely to be interested in unused modules from an imported library, and the behavior of <tt>sequenceNonUnit&nbsp;error</tt> may be incompatible with some libraries. Hence, a library author may choose to deliver a library as follows: <pre>ann 
   "nonexhaustiveMatch warn" "redundantMatch warn"
   "sequenceNonUnit warn"
   "warnUnused true" "forceUsed"
@@ -96,5 +95,5 @@ The annotations <tt>nonexhaustiveMatch&nbsp;warn</tt>,  <tt>redundantMatch&nbsp;
 
 <p>
 <hr>
-Last edited on 2005-08-07 22:08:02 by <span title="pool-71-243-10-187.bos.east.verizon.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 19:45:40 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

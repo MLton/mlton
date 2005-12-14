@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -113,7 +113,7 @@ On the other hand, after the definition
  
 </p>
 <p>
-type constructor <tt>t</tt> does not admit equality becuase  <tt>real&nbsp;*&nbsp;int</tt> is not equality type. 
+type constructor <tt>t</tt> does not admit equality because  <tt>real&nbsp;*&nbsp;int</tt> is not equality type. 
 </p>
 <p>
 We can check that a type constructor admits equality using an <tt>eqtype</tt> specification. 
@@ -141,7 +141,7 @@ We can check that a type constructor admits equality using an <tt>eqtype</tt> sp
 <p>
 On <tt>structure&nbsp;Bad</tt>, MLton reports the following error. 
 <pre>Type t admits equality in signature but not in structure.
-  not equality: real * _ * _
+  not equality: [real] * _ * _
 </pre>The <tt>not&nbsp;equality</tt> section provides an explanation of why the type did not admit equality, highlighting the problematic component (<tt>real</tt>). 
 </p>
 <h2 id="head-c494234542affd2943bc7247d524477b03bc18bc">Datatype declarations</h2>
@@ -214,7 +214,7 @@ MLton reports the following error.
 </p>
 
 <pre>Type t admits equality in signature but not in structure.
-  not equality: B of real * _
+  not equality: B of [real] * _
 </pre><p>
 MLton indicates the problematic constructor (<tt>B</tt>), as well as the problematic component of the constructor's argument. 
 </p>
@@ -270,20 +270,20 @@ As always, we can check whether a type admits equality using an <tt>eqtype</tt> 
  
 </p>
 <p>
-Unfortunately, due to a bug in error reporting, MLton 20041109 prints an obscure internal bug message (<tt>Type.deArrow</tt>) and exits.  The problem has been fixed, and MLton now reports 
+MLton reports the following error. 
 </p>
 
 <pre>Error: z.sml 1.16.
   Type t admits equality in signature but not in structure.
-    not equality: B of u * real
+    not equality: B of [u] * [real]
 Error: z.sml 1.16.
   Type u admits equality in signature but not in structure.
-    not equality: D of t
+    not equality: D of [t]
 </pre></div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-01-26 20:48:53 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 06:44:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

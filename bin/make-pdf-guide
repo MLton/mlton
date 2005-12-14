@@ -5,6 +5,7 @@ set -e
 name=`basename $0`
 dir=`dirname $0`
 src=`cd $dir/.. && pwd`
+bin="$src/bin"
 
 die () {
         echo >&2 "$1"
@@ -52,7 +53,7 @@ s;\(<div id="content"\);\1;
 s;<td colspan = 3;<td align = right;
 s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
 EOF
-	sed -f $script <$f >.tmp
+	$bin/msed -f $script <$f >.tmp
 	mv .tmp $f
 done
 
@@ -127,7 +128,7 @@ grep -v '^\(Home\|Index\)$' $pages
 ) >$book
 
 echo 'Running htmldoc.'
-htmldoc --batch $book
+htmldoc --batch $book || true
 
 mv $pdf $src/doc/guide
 

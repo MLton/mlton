@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@ In some respects MLton's type checker is more powerful than other SML compilers,
 </li>
     <li class="gap">
 <p>
- MLton uses as large a context as possible to resolve the type of  variables constrained by the value resriction to be monotypes.  For  example, MLton accepts the following. 
+ MLton uses as large a context as possible to resolve the type of  variables constrained by the value restriction to be monotypes.  For  example, MLton accepts the following. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> S:
    <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -86,7 +86,7 @@ In some respects MLton's type checker is more powerful than other SML compilers,
 
 <h2 id="head-05f93ee06dde2d7fa78009c59b64a585bd6ab4ca">Type error messages</h2>
 <p>
-To aid in the understanding of type errors, MLton's type checker displays type errors differently than other SML compilers.  In particular, when two types are different, it is important for the programmer to easily understand why they are different.  So, MLton displays only the differences between two types that don't match, using underscores for the parts that do.  For example, if a function expects <tt>real&nbsp;*&nbsp;int</tt> but gets <tt>real&nbsp;*&nbsp;real</tt>, the type error message would look like 
+To aid in the understanding of type errors, MLton's type checker displays type errors differently than other SML compilers.  In particular, when two types are different, it is important for the programmer to easily understand why they are different.  So, MLton displays only the differences between two types that don't match, using underscores for the parts that match.  For example, if a function expects <tt>real&nbsp;*&nbsp;int</tt> but gets <tt>real&nbsp;*&nbsp;real</tt>, the type error message would look like 
 </p>
 
 <pre>expects: _ * [int]
@@ -107,7 +107,7 @@ but got: [real] * [int]
 Here the brackets make it easy to see that the components do not match. 
 </p>
 <p>
-MLton's type checker is fairly new.  If you encounter a difference between MLton and another SML compiler, or even with an older version of MLton, and are not able to determine if it is a bug, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>.  We would also appreciate feedback on any type error messages that you find confusing, or suggestions you may have for improvements to error messages. 
+We appreciate feedback on any type error messages that you find confusing, or suggestions you may have for improvements to error messages. 
 </p>
 <h2 id="head-e849875c2946f3612529e7b5c9eeeb137490f29b">The shortest/most-recent rule for type names</h2>
 <p>
@@ -199,5 +199,5 @@ This error reflects the fact that the signature requires type <tt>u</tt> to equa
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:21:09 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:26:13 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

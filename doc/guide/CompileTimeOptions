@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,9 +49,10 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's options allow you to control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also allow you to specify which intermediate files are saved and to stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.o</tt>, and <tt>.sml</tt>. <p>
-With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a boolean argument <tt>{true|false}&nbsp;</tt>, the first value listed is the default. 
+MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.mlb</tt>, <tt>.o</tt>, and <tt>.sml</tt>. <p>
+With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a number of choices (e.g. <tt>{true|false}&nbsp;</tt>), the first value listed is the default. 
 </p>
+<h2 id="head-6bf5da9c080bee3a8142586c412aa39971137eee">Options</h2>
 
     <ul>
 
@@ -63,7 +64,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Aligns object sizes and doubles in memory by the specified    alignment. On X86, the default is <tt>4</tt> and on Sparc the default    is <tt>8</tt>.  
+   Aligns object sizes and doubles in memory by the specified    alignment.  The default varies depending on architecture. 
             </ul>
 
 
@@ -126,7 +127,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
                 <ul>
 
-    Enable <tt>Exn.history</tt>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is     a performance cost to setting this to <tt>true</tt>, both in memory     usage of exceptions and in run time, because of additional work     that must be performed at each exception construction, raise, and     handle. 
+    Enable <tt>MLton.Exn.history</tt>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is     a performance cost to setting this to <tt>true</tt>, both in memory     usage of exceptions and in run time, because of additional work     that must be performed at each exception construction, raise, and     handle. 
                 </ul>
 
 
@@ -136,29 +137,30 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-default-ann&nbsp;</tt><em>anns</em> 
+ <tt>-default-ann&nbsp;</tt><em>ann</em> 
 </p>
 </li>
 
             <ul>
 
-   Specify the default annotation values for <a href="MLBasis"> ML Basis</a>    files.  For example, <tt>-default-ann&nbsp;'warnUnused&nbsp;true'</tt> causes    unused variable warnings to be enabled by default.  A default is    overridden by the corresponding annotation in an ML basis file. 
+   Specify default <a href="MLBasisAnnotations">ML Basis annotations</a>.  For    example, <tt>-default-ann&nbsp;'warnUnused&nbsp;true'</tt> causes unused    variable warnings to be enabled by default.  A default is    overridden by the corresponding annotation in an ML Basis file. 
             </ul>
 
 
     <li class="gap">
 <p>
- <tt>-disable-ann&nbsp;</tt><em>anns</em> 
+ <tt>-disable-ann&nbsp;</tt><em>ann</em> 
 </p>
 </li>
 
             <ul>
 
-   Ignore the specified annotations in every ML basis file.  For    example, to see <em>all</em> match and unused warnings, compile with 
+   Ignore the specified <a href="MLBasisAnnotations">ML Basis annotation</a> in    every ML Basis file.  For example, to see <em>all</em> match and unused    warnings, compile with 
 <pre>-default-ann 'warnUnused true'
 -disable-ann forceUsed 
--disable-ann warnMatch 
--disable-ann warnUnused 
+-disable-ann nonexhaustiveMatch
+-disable-ann redundantMatch
+-disable-ann warnUnused
 </pre>
             </ul>
 
@@ -171,7 +173,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Write to <em>file</em> C prototypes for all of the functions exported    from SML to C.  This flag is useful for programs that use    <tt>_export</tt> (see <a href="ForeignFunctionInterface">ForeignFunctionInterface</a>). 
+   Write to <em>file</em> C prototypes for all of the functions in the    program <a href="CallingFromCToSML">exported from SML to C</a>. 
             </ul>
 
 
@@ -183,7 +185,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Cause the native code generator to be pedantic about following the    IEEE floating point standard.  By default, it is not, because of    the performance cost.  This has no effect with <tt>-native&nbsp;false</tt>. 
+   Cause the native code generator to be pedantic about following the    IEEE floating point standard.  By default, it is not, because of    the performance cost.  This only has an effect with     <tt>-codegen&nbsp;native</tt>.  
             </ul>
 
 
@@ -236,13 +238,13 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-link-opt&nbsp;</tt><em>opt</em> 
+ <tt>-link-opt&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
             <ul>
 
-   Pass the option to <tt>gcc</tt> when linking.  You can use this to    specify library search paths, e.g. <tt>-link-opt&nbsp;-Lpath</tt>, and    libraries to link with, e.g. <tt>-link-opt&nbsp;-lfoo</tt>, or even both at    the same time, e.g. <tt>-link-opt&nbsp;'-Lpath&nbsp;-lfoo'</tt>.  If you wish to    pash an option to the linker, you must use <tt>gcc</tt>'s <tt>-Wl,</tt>    syntax, e.g., <tt>-link-opt&nbsp;'-Wl,--export-dynamic'</tt>. 
+   Pass <em>option</em> to <tt>gcc</tt> when linking.  You can use this to    specify library search paths, e.g. <tt>-link-opt&nbsp;-Lpath</tt>, and    libraries to link with, e.g. <tt>-link-opt&nbsp;-lfoo</tt>, or even both at    the same time, e.g. <tt>-link-opt&nbsp;'-Lpath&nbsp;-lfoo'</tt>.  If you wish to    pass an option to the linker, you must use <tt>gcc</tt>'s <tt>-Wl,</tt>    syntax, e.g., <tt>-link-opt&nbsp;'-Wl,--export-dynamic'</tt>. 
             </ul>
 
 
@@ -254,7 +256,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Use <em>file</em> as an <a href="MLBasisPathMap">MLBasisPathMap</a> to define additional MLB path    variables.  Multiple uses of <tt>-mlb-path-map</tt> are allowed, with    variable definitions in later path maps taking precendence over    earlier ones. 
+   Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define    additional MLB path variables.  Multiple uses of    <tt>-mlb-path-map</tt> are allowed, with variable definitions in later    path maps taking precedence over earlier ones. 
             </ul>
 
 
@@ -302,7 +304,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   If <tt>true</tt>, the executable will gather profiling data for each    function on the stack. 
+   If <tt>true</tt>, the executable will gather profiling data for all    functions on the stack, not just the currently executing function.    See <a href="ProfilingTheStack">ProfilingTheStack</a>. 
             </ul>
 
 
@@ -314,12 +316,12 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Pass argument to the runtime system via <tt>@MLton</tt>.  The argument    will be processed before other <tt>@MLton</tt> command line switches.    Multiple uses of <tt>-runtime</tt> are allowed, and will pass all the    arguments in order.  If the same runtime switch occurs more than    once, then the last setting will take effect.  There is no need to    supply the leading <tt>@MLton</tt> or the trailing <tt>--</tt>; these    will be supplied automatically.  <p>
-   An argument to <tt>-runtime</tt> may contain spaces, which will cause    the argument to be treated as a sequence of words by the runtime.    For example the command line 
+   Pass argument to the runtime system via <tt>@MLton</tt>.  See    <a href="RunTimeOptions">RunTimeOptions</a>.  The argument will be processed before other    <tt>@MLton</tt> command line switches.  Multiple uses of    <tt>-runtime</tt> are allowed, and will pass all the arguments in    order.  If the same runtime switch occurs more than once, then the    last setting will take effect.  There is no need to supply the    leading <tt>@MLton</tt> or the trailing <tt>--</tt>; these will be    supplied automatically. <p>
+   An argument to <tt>-runtime</tt> may contain spaces, which will cause    the argument to be treated as a sequence of words by the runtime.    For example the command line: 
 </p>
    
 <pre>mlton -runtime 'ram-slop 0.4' foo.sml</pre><p>
-   is effectively the same as 
+   will cause <tt>foo</tt> to run as if it had been called like: 
 </p>
    
 <pre>foo @MLton ram-slop 0.4 --</pre><p>
@@ -364,7 +366,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Secify pass to stop at. 
+   Specify when to stop. 
 <div>
 <table>
    <tr>
@@ -383,7 +385,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 <td>
  <tt>o</tt> </td>
 <td>
- object file </td>
+ object (<tt>.o</tt>) files </td>
 </tr>
    <tr>
 <td>
@@ -400,7 +402,7 @@ after type checking </td>
 </table>
 </div>
 <p>
-   If you compile <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume    compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>    or <tt>.o</tt> files.  
+   If you compile with <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume    compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>    or <tt>.o</tt> files.  
 </p>
 
             </ul>
@@ -420,37 +422,37 @@ after type checking </td>
 
     <li class="gap">
 <p>
- <tt>-target-as-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+ <tt>-target-as-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
             <ul>
 
-   Like <tt>-as-opt</tt>, this passes <em>target</em> to <tt>gcc</tt> when    assembling, except it only passes <em>opt</em> when the target architecture    or operating system is <em>arch</em>.  Valid values for <em>target</em> are    as for <tt>-target-cc-opt</tt>. 
+   Like <tt>-as-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    assembling, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>hppa</tt>, <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>,    <tt>cygwin</tt>, <tt>darwin</tt>, <tt>freebsd</tt>, <tt>linux</tt>,    <tt>mingw</tt>, <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
             </ul>
 
 
     <li class="gap">
 <p>
- <tt>-target-cc-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+ <tt>-target-cc-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
             <ul>
 
-   Like <tt>-cc-opt</tt>, this passes <em>opt</em> to <tt>gcc</tt> when compiling    C code, except it only passes <em>opt</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>, <tt>cygwin</tt>,    <tt>darwin</tt>, <tt>freebsd</tt>, <tt>linux</tt>, <tt>mingw</tt>,    <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
+   Like <tt>-cc-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when compiling    C code, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em> are    as for <tt>-target-as-opt</tt>. 
             </ul>
 
 
     <li class="gap">
 <p>
- <tt>-target-link-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>opt</em> 
+ <tt>-target-link-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
             <ul>
 
-   Like <tt>-link-opt</tt>, this passes <em>target</em> to <tt>gcc</tt> when    linking, except it only passes <em>opt</em> when the target architecture    or operating system is <em>arch</em>.  Valid values for <em>target</em> are    as for <tt>-target-cc-opt</tt>. 
+   Like <tt>-link-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    linking, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em> are    as for <tt>-target-as-opt</tt>. 
             </ul>
 
 
@@ -481,13 +483,13 @@ after type checking </td>
 <td>
  <tt>2</tt> </td>
 <td>
- 1 + intermediate compiler passes </td>
+ 1, plus intermediate compiler passes </td>
 </tr>
    <tr>
 <td>
  <tt>3</tt> </td>
 <td>
- 2 + some data structure sizes </td>
+ 2, plus some data structure sizes </td>
 </tr>
 </table>
 </div>
@@ -501,5 +503,5 @@ after type checking </td>
 
 <p>
 <hr>
-Last edited on 2005-09-27 18:15:36 by <span title="adsl-64-170-115-30.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 06:14:04 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

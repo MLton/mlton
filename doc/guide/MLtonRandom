@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -87,7 +87,7 @@
 
         <ul>
 
-  return a string of length <tt>n</tt> of random alphanumeric   characters.  
+  returns a string of length <tt>n</tt> of random alphanumeric   characters.  
         </ul>
 
 
@@ -99,7 +99,7 @@
 
         <ul>
 
-  return the next pseudrandom number. 
+  returns the next pseudo-random number. 
         </ul>
 
 
@@ -111,7 +111,7 @@
 
         <ul>
 
-  return a random word from <tt>/dev/random</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/random</tt> can not be read from,    <tt>seed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>seed</tt> may block   until enough random bits are available. 
+  returns a random word from <tt>/dev/random</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/random</tt> can not be read from,    <tt>seed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>seed</tt> may block   until enough random bits are available. 
         </ul>
 
 
@@ -123,7 +123,7 @@
 
         <ul>
 
-  set the seed used by <tt>rand</tt> to <tt>w</tt>. 
+  sets the seed used by <tt>rand</tt> to <tt>w</tt>. 
         </ul>
 
 
@@ -135,7 +135,7 @@
 
         <ul>
 
-  return a random word from <tt>/dev/urandom</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/urandom</tt> can not be read from,    <tt>useed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>useed</tt> will never   block -- it will instead return lower quality random bits. </ul>
+  returns a random word from <tt>/dev/urandom</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/urandom</tt> can not be read from,    <tt>useed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>useed</tt> will never   block -- it will instead return lower quality random bits. </ul>
 
 </ul>
 
@@ -145,5 +145,5 @@
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:28:04 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-02 04:22:31 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

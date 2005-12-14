@@ -33,6 +33,10 @@ ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -m32 -mcpu=v8 
 endif
 
+ifeq ($(TARGET_OS), freebsd)
+FLAGS += -I/usr/local/include
+endif
+
 ifeq ($(TARGET_OS), solaris)
 FLAGS += -Wa,-xarch=v8plusa -mcpu=ultrasparc -funroll-all-loops
 endif

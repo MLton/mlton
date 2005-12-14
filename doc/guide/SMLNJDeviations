@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +49,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="DefinitionOfStandardML">Definition of SML</a>. Some of these are documented in the  <a class="external" href="http://www.smlnj.org/doc/Conversion/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML '97 Conversion Guide</a>.  Since MLton does not deviate from the Definition, you should look here if you are having trouble porting a program from MLton to SML/NJ or vice versa.  If you discover other deviations of SML/NJ that aren't listed here, please send mail to <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mailto:MLton@mlton.org</a>. 
+Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="DefinitionOfStandardML">Definition of SML</a>.  Some of these are documented in the  <a class="external" href="http://www.smlnj.org/doc/Conversion/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML '97 Conversion Guide</a>. Since MLton does not deviate from the Definition, you should look here if you are having trouble porting a program from MLton to SML/NJ or vice versa.  If you discover other deviations of SML/NJ that aren't listed here, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
     <ul>
 
     <li>
@@ -302,26 +302,11 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
 
     <li>
 <p>
- SML/NJ exposes the equality of the <tt>vector</tt> type in structures such as <tt>Word8Vector</tt> that abstractly match <tt>MONO_VECTOR</tt>, which says <tt>type&nbsp;vector</tt>, not <tt>eqtype&nbsp;vector</tt>.  So, for example, SML/NJ accepts the following program: 
+ SML/NJ exposes the equality of the <tt>vector</tt> type in structures  such as <tt>Word8Vector</tt> that abstractly match <tt>MONO_VECTOR</tt>,  which says <tt>type&nbsp;vector</tt>, not <tt>eqtype&nbsp;vector</tt>.  So, for  example, SML/NJ accepts the following program: 
 <pre class=code>
 <B><FONT COLOR="#A020F0">fun</FONT></B> f (v: Word8Vector.vector) = v = v
 </PRE>
  
-</p>
-</li>
-    <li class="gap">
-<p>
- SML/NJ extends the <tt>SUBSTRING</tt> signature with the specification  <tt>val&nbsp;all&nbsp;:&nbsp;string&nbsp;-&gt;&nbsp;substring</tt>.  <tt>all</tt> was deprecated in  favor of <tt>full</tt> in Sept. 2000; <tt>all</tt> was removed from the  specification in July 2003.   
-</p>
-</li>
-    <li class="gap">
-<p>
- SML/NJ provides <tt>structure&nbsp;Pack32Big&nbsp;:&gt;&nbsp;PACK_WORD</tt> and  <tt>structure&nbsp;Pack32Little&nbsp;:&gt;&nbsp;PACK_WORD</tt>.  Such structures were  renamed to <tt>PackWord&lt;N&gt;Big</tt> and <tt>PackWord&lt;N&gt;Little</tt> in  September 2003.  
-</p>
-</li>
-    <li class="gap">
-<p>
- When formatting numerical values, SML/NJ converts hexidecimal digits to the characters <tt>"#a"</tt> through <tt>"#f"</tt>, rather than <tt>"#A"</tt> through <tt>"#F"</tt>. 
 </p>
 </li>
 </ul>
@@ -332,5 +317,5 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:20:48 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:25:13 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

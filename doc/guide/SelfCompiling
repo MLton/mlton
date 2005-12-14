@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -54,7 +54,7 @@ If you want to compile MLton, you must first get the <a href="Sources">Sources</
 To compile with MLton, you need the binary versions of <tt>mlton</tt>, <tt>mllex</tt>, and <tt>mlyacc</tt> that come with the MLton binary package.  To be safe, you should use the same version of MLton that you are building.  However, older versions may work, as long as they don't go back too far.  To build MLton, run <tt>make</tt> from within the root directory of the sources.  This will build MLton first with the already installed binary version of MLton and will then rebuild MLton with itself. 
 </p>
 <p>
-First, the <tt>Makefile</tt> calls <tt>mllex</tt> and <tt>mlyacc</tt> to build the lexer and parser, and then calls <tt>mlton</tt> to compile itself. When making MLton using another version the <tt>Makefile</tt> automatically uses <tt>mlton-stubs.cm</tt>, which will put in enough stubs to emulate the <tt>MLton</tt> structure.  Once MLton is built, the <tt>Makefile</tt> will rebuild MLton with itself, this time using <tt>mlton.cm</tt> and the real <tt>MLton</tt> structure from the <a href="BasisLibrary"> SML Basis Library</a>. This second round of compilation is essential in order to achieve a fast and robust MLton. 
+First, the <tt>Makefile</tt> calls <tt>mllex</tt> and <tt>mlyacc</tt> to build the lexer and parser, and then calls <tt>mlton</tt> to compile itself. When making MLton using another version the <tt>Makefile</tt> automatically uses <tt>mlton-stubs.cm</tt>, which will put in enough stubs to emulate the <tt>MLton</tt> structure.  Once MLton is built, the <tt>Makefile</tt> will rebuild MLton with itself, this time using <tt>mlton.cm</tt> and the real <tt>MLton</tt> structure from the <a href="BasisLibrary">Basis Library</a>. This second round of compilation is essential in order to achieve a fast and robust MLton. 
 </p>
 <p>
 Compiling MLton requires at least 512M of actual RAM, and 1G is preferable.  If your machine has less than 512M, self-compilation will likely fail, or at least take a very long time due to paging.  Even if you have enough memory, there simply may not be enough available, due to memory consumed by other processes.  In this case, you may see an <tt>Out&nbsp;of&nbsp;memory</tt> message, or self-compilation may become extremely slow.  The only fix is to make sure that enough memory is available. 
@@ -92,7 +92,7 @@ make[3]: *** [upgrade-basis.sml] Error 1
 <pre>/usr/bin/ld: table of contents for archive:
 /usr/local/lib/mlton/self/libmlton.a is out of date;
 rerun ranlib(1) (can't load from it)
-</pre> Although running <tt>ranlib</tt> seems like the right thing to do, it doesn't actually resolve the problem.  Best bet is to just install in <tt>/usr</tt> and then either live with this location, or build MLton yourself and install in <tt>/usr/local</tt>. 
+</pre> Although running <tt>ranlib</tt> seems like the right thing to do, it  doesn't actually resolve the problem.  Best bet is to install in  <tt>/usr</tt> and then either live with this location, or build MLton  yourself and install in <tt>/usr/local</tt>. 
 </p>
 </li>
 
@@ -101,7 +101,7 @@ rerun ranlib(1) (can't load from it)
 
 <h2 id="head-0df153093cbf2253d0cd4f9678b2c577464c35e0">Compiling with SML/NJ</h2>
 <p>
-To compile with SML/NJ, run <tt>make&nbsp;nj-mlton</tt> from within the root directory of the sources.  You must use SML/NJ version 110.45, which is what MLton is tested with.  First, the <tt>Makefile</tt> calls <tt>mllex</tt> and <tt>mlyacc</tt> to build the lexer and parser.  Then, it calls SML/NJ with the appropriate <tt>sources.cm</tt> file.  Building with SML/NJ takes some time (10 minutes on a 1.6GHz machine).  Unless you are doing compiler development and need rapid recompilation, we recommend compiling with MLton. 
+To compile with SML/NJ, run <tt>make&nbsp;nj-mlton</tt> from within the root directory of the sources.  You must use a recent version of SML/NJ. First, the <tt>Makefile</tt> calls <tt>mllex</tt> and <tt>mlyacc</tt> to build the lexer and parser.  Then, it calls SML/NJ with the appropriate <tt>sources.cm</tt> file.  Building with SML/NJ takes some time (roughly 10 minutes on a 1.6GHz machine).  Unless you are doing compiler development and need rapid recompilation, we recommend compiling with MLton. 
 </p>
 </div>
 
@@ -109,5 +109,5 @@ To compile with SML/NJ, run <tt>make&nbsp;nj-mlton</tt> from within the root dir
 
 <p>
 <hr>
-Last edited on 2005-11-13 23:21:25 by <span title="pool-68-162-172-153.pitt.east.verizon.net">AdamGoode</span>.
+Last edited on 2005-12-02 01:44:46 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

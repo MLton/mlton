@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -63,19 +63,107 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li>
 <p>
- PowerPC: Darwin (Mac OSX) 
+ hppa 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ Debian Linux 
+</p>
+</li>
+
+            </ul>
+
+
         <li class="gap">
 <p>
- X86: Linux, <a class="external" href="http://www.cygwin.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a>/Windows,   <a class="external" href="http://www.freebsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>, <a class="external" href="http://www.netbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a>,   <a class="external" href="http://www.openbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a>. 
+ PowerPC 
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ Darwin (Mac OS X) 
+</p>
+</li>
+            <li>
+<p>
+ Debian Linux 
+</p>
+</li>
+
+            </ul>
+
+
         <li class="gap">
 <p>
- Sparc: Solaris. 
+ X86:  
 </p>
 </li>
+
+            <ul>
+
+            <li>
+<p>
+ <a class="external" href="http://www.cygwin.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a>/Windows 
+</p>
+</li>
+            <li>
+<p>
+ <a class="external" href="http://www.freebsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>  
+</p>
+</li>
+            <li>
+<p>
+ Linux (Debian, Red Hat, ...) 
+</p>
+</li>
+            <li>
+<p>
+ <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>/Windows 
+</p>
+</li>
+            <li>
+<p>
+ <a class="external" href="http://www.netbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a class="external" href="http://www.openbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ Sparc 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ Debian Linux 
+</p>
+</li>
+            <li>
+<p>
+ Solaris 
+</p>
+</li>
+
+            </ul>
+
+
 
         </ul>
 
@@ -102,7 +190,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
     <li class="gap">
 <p>
- A complete implementation of the <a href="BasisLibrary"> SML Basis Library</a>. 
+ A complete implementation of the <a href="BasisLibrary">Basis Library</a>. 
 </p>
 </li>
 
@@ -253,7 +341,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
     <li class="gap">
 <p>
- A number of extension libraries that provide useful functionality that cannot be implemented with the <a href="BasisLibrary"> SML Basis Library</a>.  See below for an overview and <a href="MLtonStructure">MLtonStructure</a> for details. 
+ A number of extension libraries that provide useful functionality that cannot be implemented with the <a href="BasisLibrary">Basis Library</a>.  See below for an overview and <a href="MLtonStructure">MLtonStructure</a> for details. 
 </p>
 </li>
 
@@ -411,5 +499,5 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:50:46 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-01 04:12:19 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

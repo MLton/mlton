@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,7 +50,7 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 Technically, SML'97 as defined in the <a href="DefinitionOfStandardML">Definition</a> requires only a a minimal initial basis, which, while including the types <tt>int</tt>, <tt>real</tt>, <tt>char</tt>, and <tt>string</tt>, need have no operations on those base types.  Hence, the only observable output of an SML'97 program is termination or raising an exception.  Most SML compilers should agree there, to the degree each agrees with the Definition.  See <a href="UnresolvedBugs">UnresolvedBugs</a> for MLton's very few corner cases. <p>
-Realistically, a program needs to make use of the <a href="BasisLibrary"> SML Basis Library</a>. Within the Basis Library, there are numerous places where the behavior is implementation dependent.  For a trivial example: 
+Realistically, a program needs to make use of the  <a href="BasisLibrary">Basis Library</a>. Within the Basis Library, there are numerous places where the behavior is implementation dependent.  For a trivial example: 
 </p>
 
 <pre class=code>
@@ -60,7 +60,7 @@ Realistically, a program needs to make use of the <a href="BasisLibrary"> SML Ba
  
 </p>
 <p>
-may either raise the <tt>Option</tt> exception (if  <tt>Int.maxInt&nbsp;==&nbsp;NONE</tt>) or may terminate normally.  The default Int/Real/Word sizes are the biggest implementation dependent aspect; so, one implementation may raise <tt>Overflow</tt> while another can accomodate the result.  Also, maximum array and vector lengths are implementation dependent.  Interfacing with the operating system is a bit murky, and implementations surely differ in handling of errors there. 
+may either raise the <tt>Option</tt> exception (if  <tt>Int.maxInt&nbsp;==&nbsp;NONE</tt>) or may terminate normally.  The default Int/Real/Word sizes are the biggest implementation dependent aspect; so, one implementation may raise <tt>Overflow</tt> while another can accommodate the result.  Also, maximum array and vector lengths are implementation dependent.  Interfacing with the operating system is a bit murky, and implementations surely differ in handling of errors there. 
 </p>
 </div>
 
@@ -68,5 +68,5 @@ may either raise the <tt>Option</tt> exception (if  <tt>Int.maxInt&nbsp;==&nbsp;
 
 <p>
 <hr>
-Last edited on 2005-01-28 21:44:09 by <span title="cfs36.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-12-02 04:25:49 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -99,7 +99,18 @@ Below is a complete list of what MLton implements.
 </p>
 <h2 id="head-f3c583ffa7ae975564fe862325a230f0750a322b">Top-level exception constructors</h2>
 <p>
-<tt>Bind</tt>, <tt>Chr</tt>, <tt>Div</tt>, <tt>Domain</tt>, <tt>Empty</tt>, <tt>Fail</tt>, <tt>Match</tt>, <tt>Option</tt>, <tt>Overflow</tt>, <tt>Size</tt>, <tt>Span</tt>, <tt>Subscript</tt>. 
+<tt>Bind</tt> <br>
+<tt>Chr</tt> <br>
+<tt>Div</tt> <br>
+<tt>Domain</tt> <br>
+<tt>Empty</tt> <br>
+<tt>Fail&nbsp;of&nbsp;string</tt> <br>
+<tt>Match</tt> <br>
+<tt>Option</tt> <br>
+<tt>Overflow</tt> <br>
+<tt>Size</tt> <br>
+<tt>Span</tt> <br>
+<tt>Subscript</tt> 
 </p>
 <h2 id="head-ee76afd3593ec7eebc14e2997b54ea6c04a954e4">Top-level values</h2>
 <p>
@@ -202,7 +213,6 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 
 
 <p>
-<br>
 <tt>structure&nbsp;CharArray:&nbsp;MONO_ARRAY</tt> <br>
 <tt>structure&nbsp;CharArray2:&nbsp;MONO_ARRAY2</tt> <br>
 <tt>structure&nbsp;CharArraySlice:&nbsp;MONO_ARRAY_SLICE</tt> <br>
@@ -226,6 +236,7 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;INetSock:&nbsp;INET_SOCK</tt> <br>
 <tt>structure&nbsp;IO:&nbsp;IO</tt> <br>
 <tt>structure&nbsp;Int:&nbsp;INTEGER</tt> <br>
+<tt>structure&nbsp;Int1:&nbsp;INTEGER</tt> <br>
 <tt>structure&nbsp;Int2:&nbsp;INTEGER</tt> <br>
 <tt>structure&nbsp;Int3:&nbsp;INTEGER</tt> <br>
 <tt>structure&nbsp;Int4:&nbsp;INTEGER</tt> <br>
@@ -337,7 +348,6 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 
 
 <p>
-<br>
 <tt>structure&nbsp;String:&nbsp;STRING</tt> 
 </p>
 
@@ -348,7 +358,6 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 
 
 <p>
-<br>
 <tt>structure&nbsp;StringCvt:&nbsp;STRING_CVT</tt> <br>
 <tt>structure&nbsp;Substring:&nbsp;SUBSTRING</tt> <br>
 <tt>structure&nbsp;SysWord:&nbsp;WORD</tt> <br>
@@ -362,6 +371,7 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;Vector:&nbsp;VECTOR</tt> <br>
 <tt>structure&nbsp;VectorSlice:&nbsp;VECTOR_SLICE</tt> <br>
 <tt>structure&nbsp;Word:&nbsp;WORD</tt> <br>
+<tt>structure&nbsp;Word1:&nbsp;WORD</tt> <br>
 <tt>structure&nbsp;Word2:&nbsp;WORD</tt> <br>
 <tt>structure&nbsp;Word3:&nbsp;WORD</tt> <br>
 <tt>structure&nbsp;Word4:&nbsp;WORD</tt> <br>
@@ -425,5 +435,5 @@ MLton's <tt>StreamIO</tt> functor takes structures <tt>ArraySlice</tt> and <tt>V
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:28:14 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2005-11-30 23:04:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

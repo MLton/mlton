@@ -25,7 +25,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051115</a>
+      <a class = mltona href="Home">MLton 20051202</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,6 +57,10 @@
          <B><FONT COLOR="#0000FF">sig</FONT></B>
             <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> word
          </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Ctl:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> getERROR: ('a, 'b) Socket.sock -&gt; (string * int option) option
+         <B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Host:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
             <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> {name: string}
@@ -73,6 +77,7 @@
 
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> accept: t -&gt; Address.t * Port.t * TextIO.instream * TextIO.outstream
       <B><FONT COLOR="#A020F0">val</FONT></B> connect: string * Port.t -&gt; TextIO.instream * TextIO.outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> fdToSock: Posix.FileSys.file_desc -&gt; ('a, 'b) Socket.sock
       <B><FONT COLOR="#A020F0">val</FONT></B> listen: unit -&gt; Port.t * t
       <B><FONT COLOR="#A020F0">val</FONT></B> listenAt: Port.t -&gt; t
       <B><FONT COLOR="#A020F0">val</FONT></B> shutdownRead: TextIO.instream -&gt; unit
@@ -102,13 +107,25 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
     <li class="gap">
 <p>
+ <tt>Ctl.getERROR&nbsp;s</tt> 
+</p>
+</li>
+
+        <ul>
+
+  like the Basis Library's <tt>Socket.Ctl.getERROR</tt>, except that it   returns more information.  <tt>NONE</tt> means that there was no error,   and <tt>SOME</tt> means that there was an error, and provides the error   message and error code, if any. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>Host.getByAddress&nbsp;a</tt> 
 </p>
 </li>
 
         <ul>
 
-  lookup the hostname (using <tt>gethostbyaddr</tt>) corresponding to   <tt>a</tt>.  
+  looks up the hostname (using <tt>gethostbyaddr</tt>) corresponding to   <tt>a</tt>.  
         </ul>
 
 
@@ -120,7 +137,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  lookup the hostname (using <tt>gethostbyname</tt>) corresponding to   <tt>s</tt>.  
+  looks up the hostname (using <tt>gethostbyname</tt>) corresponding to   <tt>s</tt>.  
         </ul>
 
 
@@ -156,7 +173,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  accept a connection on socket <tt>s</tt> and return the address and   port of the connecting socket, as well as streams corresponding to   the connection. 
+  accepts a connection on socket <tt>s</tt> and return the address and   port of the connecting socket, as well as streams corresponding to   the connection. 
         </ul>
 
 
@@ -168,7 +185,19 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  connect to host <tt>h</tt> on port <tt>p</tt>, returning the streams   corresponding to the connection. 
+  connects to host <tt>h</tt> on port <tt>p</tt>, returning the streams   corresponding to the connection. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>fdToSock&nbsp;fd</tt> 
+</p>
+</li>
+
+        <ul>
+
+  coerces a file descriptor to a socket. 
         </ul>
 
 
@@ -180,7 +209,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  listen to a port chosen by the system.  Returns the port and the socket. 
+  listens to a port chosen by the system.  Returns the port and the   socket. 
         </ul>
 
 
@@ -192,7 +221,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  listen to port <tt>p</tt>.  Returns the socket. 
+  listens to port <tt>p</tt>.  Returns the socket. 
         </ul>
 
 
@@ -204,7 +233,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  cause the read part of the socket associated with <tt>ins</tt> to be   shutdown.  
+  causes the read part of the socket associated with <tt>ins</tt> to be   shutdown.  
         </ul>
 
 
@@ -216,7 +245,7 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  cause the write part of the socket associated with <tt>out</tt> to be   shutdown.  </ul>
+  causes the write part of the socket associated with <tt>out</tt> to be   shutdown.  </ul>
 
 </ul>
 
@@ -226,5 +255,5 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:29:32 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-01 23:07:28 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>
