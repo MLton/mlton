@@ -192,7 +192,7 @@ manageable set for users.
 #define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  FALSE
 #define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_EX))
+#elif (defined (GC_MODEL_FX))
 #define GC_MODEL_BITSIZE  40
 #define GC_MODEL_SHIFT    0
 #define GC_MODEL_USEBASE  TRUE
