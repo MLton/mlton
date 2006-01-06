@@ -9,6 +9,7 @@
 #define MLTON_GC_INTERNAL_TYPES
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
+typedef unsigned int uint;
 
 enum {
   DEBUG_INT_INF = FALSE,
