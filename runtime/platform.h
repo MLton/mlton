@@ -252,9 +252,9 @@ Int IEEEReal_getRoundingMode (void);
  */
 Pointer IntInf_add (Pointer lhs, Pointer rhs, size_t bytes);
 Pointer IntInf_andb (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_arshift (Pointer arg, uint shift, size_t bytes);
+Pointer IntInf_arshift (Pointer arg, Word shift, size_t bytes);
 Pointer IntInf_gcd (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_lshift (Pointer arg, uint shift, size_t bytes);
+Pointer IntInf_lshift (Pointer arg, Word shift, size_t bytes);
 Pointer IntInf_mul (Pointer lhs, Pointer rhs, size_t bytes);
 Pointer IntInf_neg (Pointer arg, size_t bytes);
 Pointer IntInf_notb (Pointer arg, size_t bytes);
