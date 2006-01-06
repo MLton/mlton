@@ -80,7 +80,7 @@ static inline void writeUintmaxX (int fd, uintmax_t u) {
   } else if (sizeof(uintmax_t) == 8) {
     sprintf (buf, "0x%016"PRIxMAX, u);
   } else {
-    sprintf (buf, "0x"PRIxMAX, u);
+    sprintf (buf, "0x%"PRIxMAX, u);
   }
   writeString (fd, buf);
 }
