@@ -1,3 +1,5 @@
 * what type should be used for the size field in GC_heap?  I'm using
         size_t currently, since that is the type needed by malloc.
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?
+
+* Use C99 <assert.h> instead of util/assert.{c,h}
