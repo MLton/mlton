@@ -122,7 +122,7 @@ pointer insertHashTableElem (__attribute__ ((unused)) GC_state s,
   slot = (uint32_t)(mult * (uint64_t)hash) >> (32 - t->elementsLengthMaxLog2);
   probe = (1 == slot % 2) ? slot : slot - 1;
   if (DEBUG_SHARE)
-    fprintf (stderr, "probe = 0x%08x\n", (uint)probe);
+    fprintf (stderr, "probe = 0x%"PRIx32"\n", probe);
   assert (1 == probe % 2);
   numProbes = 0;
 look:
