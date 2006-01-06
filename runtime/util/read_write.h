@@ -74,8 +74,14 @@ static inline void writeUint32X (int fd, uint32_t u) {
 
 static inline void writeUintmaxX (int fd, uintmax_t u) {
   static char buf[BUF_SIZE];
-  
-  sprintf (buf, "0x%08"PRIxMAX, u);
+
+  if (sizeof(uintmax_t) == 4) {
+    sprintf (buf, "0x%08"PRIxMAX, u);
+  } else if (sizeof(uintmax_t) == 8) {
+    sprintf (buf, "0x%016"PRIxMAX, u);
+  } else {
+    sprintf (buf, "0x"PRIxMAX, u);
+  }
   writeString (fd, buf);
 }
 
