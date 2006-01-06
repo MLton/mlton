@@ -1,7 +1,7 @@
 #include "platform.h"
 
 Int Posix_ProcEnv_setgroups (Pointer groups) {
-        int i;
+        unsigned int i;
         gid_t *list;
         int res;
         uintmax_t size;
