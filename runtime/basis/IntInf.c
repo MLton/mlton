@@ -279,14 +279,16 @@ shary(pointer arg, uint shift, size_t bytes,
         return answer (&resmpz, bytes);
 }
 
-pointer IntInf_arshift(pointer arg, uint shift, size_t bytes) {
+pointer IntInf_arshift(pointer arg, Word shift_w, size_t bytes) {
+        uint shift = (uint)shift_w;
         if (DEBUG_INT_INF)
                 fprintf (stderr, "IntInf_arshift ("FMTPTR", %u, %zu)\n",
                                 (uintptr_t)arg, shift, bytes);
         return shary(arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-pointer IntInf_lshift(pointer arg, uint shift, size_t bytes) {
+pointer IntInf_lshift(pointer arg, Word shift_w, size_t bytes) {
+        uint shift = (uint)shift_w;
         if (DEBUG_INT_INF)
                 fprintf (stderr, "IntInf_lshift ("FMTPTR", %u, %zu)\n",
                                 (uintptr_t)arg, shift, bytes);

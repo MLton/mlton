@@ -1,6 +1,6 @@
 HANDLE fileDesHandle (int fd);
 
-static void showMaps () {
+static void displayMaps () {
         MEMORY_BASIC_INFORMATION buf;
         LPCVOID lpAddress;
         char *state = "<unset>";
@@ -60,7 +60,7 @@ static void showMaps () {
         }
 }
 
-void showMem () {
+void GC_displayMem () {
         MEMORYSTATUS ms; 
 
         ms.dwLength = sizeof (MEMORYSTATUS); 

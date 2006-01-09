@@ -2,33 +2,32 @@
 
 #include "platform.h"
 
-#include "getrusage.c"
 #include "mkdir2.c"
 #include "mmap.c"
-#include "totalRam.sysconf.c"
+#include "sysconf.c"
 #include "windows.c"
-
-void decommit (void *base, size_t length) {
-        if (MLton_Platform_CygwinUseMmap)
-                smunmap (base, length);
-        else
-                Windows_decommit (base, length);
-}
 
 HANDLE fileDesHandle (int fd) {
         return (HANDLE)(get_osfhandle (fd));
 }
 
-void *mmapAnon (void *start, size_t length) {
+void GC_decommit (void *base, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
-                return mmapAnonMmap (start, length);
+                munmap_safe (base, length);
+        else
+                Windows_decommit (base, length);
+}
+
+void *GC_mmapAnon (void *start, size_t length) {
+        if (MLton_Platform_CygwinUseMmap)
+                return mmapAnon (start, length);
         else
                 return Windows_mmapAnon (start, length);
 }
 
-void release (void *base, size_t length) {
+void GC_release (void *base, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
-                smunmap (base, length);
+                munmap_safe (base, length);
         else
                 Windows_release (base);
 }

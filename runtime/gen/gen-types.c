@@ -177,6 +177,7 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* C99 */");
   writeNewline (fd);
+  systype(_Bool, "Word", "C_Bool");
   systype(intmax_t, "Int", "C_Intmax");
   systype(uintmax_t, "Word", "C_Uintmax");
   systype(intptr_t, "Int", "C_Intptr");
@@ -195,7 +196,7 @@ int main (int argc, char* argv[]) {
   systype(off_t, "Int", "C_Off");
   systype(pid_t, "Int", "C_PId");
   systype(ssize_t, "Int", "C_SSize");
-  systype(suseconds_t, "Int", "C_SUSeconds");
+  // systype(suseconds_t, "Int", "C_SUSeconds");
   chknumsystype(time_t, "C_Time");
   chkintsystype(uid_t, "C_UId");
   systype(useconds_t, "Word", "C_USeconds");
