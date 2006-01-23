@@ -47,6 +47,8 @@ static char* stdtypes[] = {
   "#define Ref(t) Pointer",
   "#define Vector(t) Pointer",
   "",
+  "typedef void unit;",
+  "",
   "typedef int8_t Int8;",
   "typedef int16_t Int16;",
   "typedef int32_t Int32;",
@@ -84,6 +86,9 @@ static char* stdtypes[] = {
   "typedef Word32 Word;",
   ""
   "typedef String NullString;",
+  "",
+  "typedef String String_t;",
+  "typedef String NullString_t;",
   NULL
 };
 
@@ -117,14 +122,16 @@ static char* stdtypes[] = {
 
 static char* suffix[] = {
   "",
-  "typedef C_Pointer Cpointer;",
-  "typedef C_Size Size;",
+  "#define C_Errno_t(t) t",
+  "",
+  "typedef C_Pointer_t Cpointer;",
+  "typedef C_Size_t Size;",
   "typedef C_SSize Ssize;",
-  "typedef C_String Cstring;",
-  "typedef C_StringArray CstringArray;",
+  "typedef C_String_t Cstring;",
+  "typedef C_StringArray_t CstringArray;",
   "typedef C_Off Position;"
   "",
-  "typedef C_Fd Fd;",
+  "typedef C_Fd_t Fd;",
   "typedef C_TCFlag Flag;",
   "typedef C_GId Gid;",
   "typedef C_Mode Mode;",
@@ -155,33 +162,41 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* C */");
   writeNewline (fd);
-  chkintsystype(char, "C_Char");
-  systype(signed char, "Int", "C_SChar");
-  systype(unsigned char, "Word", "C_UChar");
-  systype(short, "Int", "C_Short");
-  systype(unsigned short, "Word", "C_UShort");
-  systype(int, "Int", "C_Int");
-  systype(unsigned int, "Word", "C_UInt");
-  systype(long, "Int", "C_Long");
-  systype(unsigned long, "Word", "C_ULong");
-  systype(long long, "Int", "C_LongLong");
-  systype(unsigned long long, "Word", "C_ULongLong");
-  systype(float, "Real", "C_Float");
-  systype(double, "Real", "C_Double");
+  chkintsystype(char, "C_Char_t");
+  systype(signed char, "Int", "C_SChar_t");
+  systype(unsigned char, "Word", "C_UChar_t");
+  systype(short, "Int", "C_Short_t");
+  systype(unsigned short, "Word", "C_UShort_t");
+  systype(int, "Int", "C_Int_t");
+  systype(unsigned int, "Word", "C_UInt_t");
+  systype(long, "Int", "C_Long_t");
+  systype(unsigned long, "Word", "C_ULong_t");
+  systype(long long, "Int", "C_LongLong_t");
+  systype(unsigned long long, "Word", "C_ULongLong_t");
+  systype(float, "Real", "C_Float_t");
+  systype(double, "Real", "C_Double_t");
   // systype(long double, "Real", "C_LongDouble");
-  systype(size_t, "Word", "C_Size");
+  systype(size_t, "Word", "C_Size_t");
   writeNewline (fd);
-  systype(void*, "Word", "C_Pointer");
-  systype(char*, "Word", "C_String");
-  systype(char**, "Word", "C_StringArray");
+  systype(void*, "Word", "C_Pointer_t");
+  systype(char*, "Word", "C_String_t");
+  systype(char**, "Word", "C_StringArray_t");
   writeNewline (fd);
   writeString (fd, "/* C99 */");
   writeNewline (fd);
-  systype(_Bool, "Word", "C_Bool");
-  systype(intmax_t, "Int", "C_Intmax");
-  systype(uintmax_t, "Word", "C_Uintmax");
-  systype(intptr_t, "Int", "C_Intptr");
-  systype(uintptr_t, "Word", "C_UIntptr");
+  systype(_Bool, "Word", "C_Bool_t");
+  systype(intmax_t, "Int", "C_Intmax_t");
+  systype(uintmax_t, "Word", "C_Uintmax_t");
+  systype(intptr_t, "Int", "C_Intptr_t");
+  systype(uintptr_t, "Word", "C_UIntptr_t");
+  writeNewline (fd);
+  writeString (fd, "/* Generic integers */");
+  writeNewline (fd);
+  systype(int, "Int", "C_Fd_t");
+  writeNewline (fd);
+  writeString (fd, "/* from <poll.h> */");
+  writeNewline (fd);
+  systype(nfds_t, "Word", "C_NFds_t");
   writeNewline (fd);
   writeString (fd, "/* from <sys/resource.h> */");
   writeNewline (fd);
@@ -196,19 +211,18 @@ int main (int argc, char* argv[]) {
   systype(off_t, "Int", "C_Off");
   systype(pid_t, "Int", "C_PId");
   systype(ssize_t, "Int", "C_SSize");
-  // systype(suseconds_t, "Int", "C_SUSeconds");
-  chknumsystype(time_t, "C_Time");
+  systype(suseconds_t, "Int", "C_SUSeconds_t");
+  chknumsystype(time_t, "C_Time_t");
   chkintsystype(uid_t, "C_UId");
-  systype(useconds_t, "Word", "C_USeconds");
+  systype(useconds_t, "Word", "C_USeconds_t");
   writeNewline (fd);
   writeString (fd, "/* from <termios.h> */");
   writeNewline (fd);
   systype(tcflag_t, "Word", "C_TCFlag");
   systype(speed_t, "Word", "C_Speed");
   writeNewline (fd);
-  writeString (fd, "/* Generic integers */");
+  writeString (fd, "/* Misc */");
   writeNewline (fd);
-  systype(int, "Int", "C_Fd");
   systype(int, "Int", "C_Resource");
   systype(int, "Int", "C_Signal");
   systype(int, "Int", "C_Status");

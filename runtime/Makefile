@@ -97,6 +97,7 @@ HFILES = 							\
 	$(GCHFILES)						\
 	gc.h							\
 	types.h							\
+	basis-ffi.h						\
 	platform.h						\
 	platform/$(TARGET_OS).h
 
@@ -172,6 +173,13 @@ types.h: gen/gen-types.c util.h $(UTILOFILES)
 	$(CC) $(OPTCFLAGS) $(WARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
 	./gen-types
 	rm -f gen-types
+
+basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
+	rm -f basis-ffi.def
+	cd gen && mlton gen-basis-ffi.sml
+	cd gen && ./gen-basis-ffi 
+	cp gen/basis-ffi.h basis-ffi.h
+	rm -f gen/gen-basis-ffi gen/basis-ffi.h gen/basis-ffi.sml
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<

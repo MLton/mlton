@@ -119,6 +119,7 @@
 #endif
 
 #include "types.h"
+#include "basis-ffi.h"
 
 /* ---------------------------------------------------------------- */
 /*                        Runtime Init/Exit                         */
@@ -176,52 +177,6 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
 /* ---------------------------------------------------------------- */
-
-/* ------------------------------------------------- */
-/*                    CommandLine                    */
-/* ------------------------------------------------- */
-
-/* These are initialized by MLton_init. */
-extern Int CommandLine_argc;
-extern CstringArray CommandLine_argv;
-extern Cstring CommandLine_commandName;
-
-/* ------------------------------------------------- */
-/*                       Date                        */
-/* ------------------------------------------------- */
-
-Int Date_Tm_sec (void);
-Int Date_Tm_min (void);
-Int Date_Tm_hour (void);
-Int Date_Tm_mday (void);
-Int Date_Tm_mon (void);
-Int Date_Tm_year (void);
-Int Date_Tm_wday (void);
-Int Date_Tm_yday (void);
-Int Date_Tm_isdst (void);
-void Date_Tm_setSec (Int x);
-void Date_Tm_setMin (Int x);
-void Date_Tm_setHour (Int x);
-void Date_Tm_setMday (Int x);
-void Date_Tm_setMon (Int x);
-void Date_Tm_setYear (Int x);
-void Date_Tm_setWday (Int x);
-void Date_Tm_setYday (Int x);
-void Date_Tm_setIsdst (Int x);
-
-Cstring Date_ascTime (void);
-void Date_gmTime (Pointer p);
-Int Date_localOffset (void);
-void Date_localTime (Pointer p);
-Int Date_mkTime (void);
-Int Date_strfTime (Pointer buf, Int n, Pointer fmt);
-
-/* ------------------------------------------------- */
-/*                       Debug                       */
-/* ------------------------------------------------- */
-
-void Debug_enter (Pointer name);
-void Debug_leave (Pointer name);
 
 /* ------------------------------------------------- */
 /*                     IEEEReal                      */
@@ -432,9 +387,6 @@ Int NetServDB_getByPortNull(Int port);
 #define OS_IO_POLLIN POLLIN
 #define OS_IO_POLLPRI POLLPRI
 #define OS_IO_POLLOUT POLLOUT
-
-Cstring OS_FileSys_tmpnam (void);
-Int OS_IO_poll (Int *fds, Word *eventss, Int n, Int timeout, Word *reventss);
 
 /* ------------------------------------------------- */
 /*                     PackReal                      */
@@ -1067,26 +1019,6 @@ Int INetSock_getPort (void);
 void INetSock_getInAddr (Pointer addr);
 
 /* ------------------------------------------------- */
-/*                       Stdio                       */
-/* ------------------------------------------------- */
-
-void Stdio_print (Pointer s);
-
-/* ------------------------------------------------- */
-/*                      String                       */
-/* ------------------------------------------------- */
-
-int String_equal (char * s1, char * s2);
-
-/* ------------------------------------------------- */
-/*                       Time                        */
-/* ------------------------------------------------- */
-
-Int Time_gettimeofday (void);
-Int Time_sec (void);
-Int Time_usec (void);
-
-/* ------------------------------------------------- */
 /*                      Windows                      */
 /* ------------------------------------------------- */
 
@@ -1106,19 +1038,16 @@ Int Windows_terminate (Pid p, Int s);
         Bool Word##size##_negCheckOverflows (WordS##size x);
 #define SsubCheckOverflows(size)                                        \
         Bool WordS##size##_subCheckOverflows (WordS##size x, WordS##size y);
-
 #define all(size)                                               \
         SaddCheckOverflows (size)                               \
         UaddCheckOverflows (size)                               \
-        negCheckOverflows (size)                                \
         SmulCheckOverflows (size)                               \
-        SsubCheckOverflows (size)                               \
-
+        negCheckOverflows (size)                                \
+        SsubCheckOverflows (size)
 all (8)
 all (16)
 all (32)
 all (64)
-
 #undef SaddCheckOverflows
 #undef UaddCheckOverflows
 #undef SmulCheckOverflows
