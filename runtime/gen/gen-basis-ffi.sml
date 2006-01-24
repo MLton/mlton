@@ -68,7 +68,8 @@ structure Name =
             val ss = Substring.droplSpace ss
             val (names, rest) = 
                Substring.splitl 
-               (fn c => Char.isAlpha c orelse c = #".")
+               (fn c => Char.isAlphaNum c 
+                   orelse c = #"." orelse c = #"_")
                ss
             val rest = Substring.droplSpace rest
          in
@@ -122,7 +123,7 @@ structure Type =
                 | SOME (name, rest) => loop (rest, Con (name, t))
          in
             case Name.parse s of
-               NONE => raise Fail "Type.parse"
+               NONE => raise Fail (concat ["Type.parse: \"", Substring.string s, "\""])
              | SOME (Name.T ["unit"], rest) => loop (rest, Unit)
              | SOME (name, rest) => loop (rest, Base name)
          end
@@ -148,7 +149,7 @@ structure Type =
                                ret = ret}, 
                               rest)
                           end
-                  else raise Fail "Type.parseFn"
+                  else raise Fail (concat ["Type.parseFn: \"", Substring.string s, "\""])
                end
          in
             loop (s, [])
@@ -179,9 +180,11 @@ structure Entry =
          case entry of
             Const {name, ty} => 
                String.concat
-               ["/* ",
+               ["extern const ",
+                Type.toC ty,
+                " ",
                 Name.toC name,
-                " */"]
+                ";"]
           | Import {name, ty = {args, ret}} =>
                String.concat
                [Type.toC ret,
@@ -235,11 +238,11 @@ structure Entry =
             val s = Substring.droplSpace s
             val s = if Substring.isPrefix ":" s
                       then #2 (Substring.splitAt (s, 1))
-                       else raise Fail "Entry.parseSymbol"
+                       else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
             val (ret, rest) = Type.parse s
             val () = if Substring.isEmpty rest
                         then ()
-                        else raise Fail "Entry.parseSymbol"
+                        else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
          in
             Const {name = name,
                    ty = ret}
@@ -251,11 +254,11 @@ structure Entry =
             val s = Substring.droplSpace s
             val s = if Substring.isPrefix ":" s
                        then #2 (Substring.splitAt (s, 1))
-                       else raise Fail "Entry.parseImport"
+                       else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
             val ({args, ret}, rest) = Type.parseFn s
             val () = if Substring.isEmpty rest
                         then ()
-                        else raise Fail "Entry.parseImport"
+                        else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
          in
             Import {name = name,
                     ty = {args = args, ret = ret}}
@@ -267,11 +270,11 @@ structure Entry =
             val s = Substring.droplSpace s
             val s = if Substring.isPrefix ":" s
                       then #2 (Substring.splitAt (s, 1))
-                       else raise Fail "Entry.parseSymbol"
+                       else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
             val (ret, rest) = Type.parse s
             val () = if Substring.isEmpty rest
                         then ()
-                        else raise Fail "Entry.parseSymbol"
+                        else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
          in
             Symbol {name = name,
                     ty = ret}
@@ -292,9 +295,9 @@ structure Entry =
                              then parseImport (rest, name)
                           else if Substring.isPrefix "_symbol" rest
                              then parseSymbol (rest, name)
-                          else raise Fail "Entry.parse"
+                          else raise Fail (concat ["Entry.parse: \"", Substring.string s, "\""])
                        end
-                  else raise Fail "Entry.parse"
+                  else raise Fail (concat ["Entry.parse: \"", Substring.string s, "\""])
    end
 
 val entries =

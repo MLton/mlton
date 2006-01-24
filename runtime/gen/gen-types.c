@@ -45,50 +45,78 @@ static char* stdtypes[] = {
   "typedef unsigned char* Pointer;",
   "#define Array(t) Pointer",
   "#define Ref(t) Pointer",
-  "#define Vector(t) Pointer",
+  "#define Vector(t) const Pointer",
   "",
-  "typedef void unit;",
-  "",
+  "typedef int8_t Int8_t;",
   "typedef int8_t Int8;",
+  "typedef int16_t Int16_t;",
   "typedef int16_t Int16;",
+  "typedef int32_t Int32_t;",
   "typedef int32_t Int32;",
+  "typedef int64_t Int64_t;",
   "typedef int64_t Int64;",
+  "typedef float Real32_t;",
   "typedef float Real32;",
+  "typedef double Real64_t;",
   "typedef double Real64;",
+  "typedef uint8_t Word8_t;",
   "typedef uint8_t Word8;",
+  "typedef uint16_t Word16_t;",
   "typedef uint16_t Word16;",
+  "typedef uint32_t Word32_t;",
   "typedef uint32_t Word32;",
+  "typedef uint64_t Word64_t;",
   "typedef uint64_t Word64;",
   "",
-  "typedef Int8 WordS8;",
-  "typedef Int16 WordS16;",
-  "typedef Int32 WordS32;",
-  "typedef Int64 WordS64;",
+  "typedef Int8_t WordS8_t;",
+  "typedef Int8_t WordS8;",
+  "typedef Int16_t WordS16_t;",
+  "typedef Int16_t WordS16;",
+  "typedef Int32_t WordS32_t;",
+  "typedef Int32_t WordS32;",
+  "typedef Int64_t WordS64_t;",
+  "typedef Int64_t WordS64;",
   "",
-  "typedef Word8 WordU8;",
-  "typedef Word16 WordU16;",
-  "typedef Word32 WordU32;",
-  "typedef Word64 WordU64;",
+  "typedef Word8_t WordU8_t;",
+  "typedef Word8_t WordU8;",
+  "typedef Word16_t WordU16_t;",
+  "typedef Word16_t WordU16;",
+  "typedef Word32_t WordU32_t;",
+  "typedef Word32_t WordU32;",
+  "typedef Word64_t WordU64_t;",
+  "typedef Word64_t WordU64;",
   "",
-  "typedef WordS8 Char8;",
-  "typedef WordS16 Char16;",
-  "typedef WordS32 Char32;",
+  "typedef WordS8_t Char8_t;",
+  "typedef WordS8_t Char8;",
+  "typedef WordS16_t Char16_t;",
+  "typedef WordS16_t Char16;",
+  "typedef WordS32_t Char32_t;",
+  "typedef WordS32_t Char32;",
   "",
-  "typedef Vector(Char8) String8;",
-  "typedef Vector(Char16) String16;",
-  "typedef Vector(Char32) String32;",
+  "typedef Vector(Char8_t) String8_t;",
+  "typedef Vector(Char8_t) String8;",
+  "typedef Vector(Char16_t) String16_t;",
+  "typedef Vector(Char16_t) String16;",
+  "typedef Vector(Char32_t) String32_t;",
+  "typedef Vector(Char32_t) String32;",
   "",
-  "typedef Int32 Bool;",
-  "typedef Char8 Char;",
-  "typedef Int32 Int;",
-  "typedef Real64 Real;",
-  "typedef String8 String;",
-  "typedef Word32 Word;",
+  "typedef Int32_t Bool_t;",
+  "typedef Int32_t Bool;",
+  "typedef Char8_t Char_t;",
+  "typedef Char8_t Char;",
+  "typedef Int32_t Int_t;",
+  "typedef Int32_t Int;",
+  "typedef Real64_t Real_t;",
+  "typedef Real64_t Real;",
+  "typedef String8_t String_t;",
+  "typedef String8_t String;",
+  "typedef Word32_t Word_t;",
+  "typedef Word32_t Word;",
   ""
-  "typedef String NullString;",
-  "",
-  "typedef String String_t;",
-  "typedef String NullString_t;",
+  "typedef String8_t NullString8_t;",
+  "typedef String8_t NullString8;",
+  "typedef NullString8_t NullString_t;",
+  "typedef NullString8_t NullString;",
   NULL
 };
 
@@ -100,7 +128,7 @@ static char* stdtypes[] = {
   writeString (fd, " */ ");                \
   writeString (fd, bt);                    \
   writeUintmaxU (fd, CHAR_BIT * sizeof(t));\
-  writeString (fd, " ");                   \
+  writeString (fd, "_t ");                 \
   writeString (fd, name);                  \
   writeString (fd, ";");                   \
   writeNewline (fd);                       \
@@ -123,10 +151,11 @@ static char* stdtypes[] = {
 static char* suffix[] = {
   "",
   "#define C_Errno_t(t) t",
+  "#define C_HErrno_t(t) t",
   "",
   "typedef C_Pointer_t Cpointer;",
   "typedef C_Size_t Size;",
-  "typedef C_SSize Ssize;",
+  "typedef C_SSize_t Ssize;",
   "typedef C_String_t Cstring;",
   "typedef C_StringArray_t CstringArray;",
   "typedef C_Off Position;"
@@ -137,7 +166,7 @@ static char* suffix[] = {
   "typedef C_Mode Mode;",
   "typedef C_PId Pid;",
   "typedef C_Resource Resource;",
-  "typedef C_RLim Rlimit;",
+  "typedef C_RLim_t Rlimit;",
   "typedef C_Signal Signal;",
   "typedef C_Speed Speed;",
   "typedef C_Status Status;",
@@ -193,6 +222,7 @@ int main (int argc, char* argv[]) {
   writeString (fd, "/* Generic integers */");
   writeNewline (fd);
   systype(int, "Int", "C_Fd_t");
+  systype(int, "Int", "C_Sock_t");
   writeNewline (fd);
   writeString (fd, "/* from <poll.h> */");
   writeNewline (fd);
@@ -200,7 +230,7 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* from <sys/resource.h> */");
   writeNewline (fd);
-  systype(rlim_t, "Word", "C_RLim");
+  systype(rlim_t, "Word", "C_RLim_t");
   writeNewline (fd);
   writeString (fd, "/* from <sys/types.h> */");
   writeNewline (fd);
@@ -210,11 +240,15 @@ int main (int argc, char* argv[]) {
   chkintsystype(mode_t, "C_Mode");
   systype(off_t, "Int", "C_Off");
   systype(pid_t, "Int", "C_PId");
-  systype(ssize_t, "Int", "C_SSize");
+  systype(ssize_t, "Int", "C_SSize_t");
   systype(suseconds_t, "Int", "C_SUSeconds_t");
   chknumsystype(time_t, "C_Time_t");
   chkintsystype(uid_t, "C_UId");
   systype(useconds_t, "Word", "C_USeconds_t");
+  writeNewline (fd);
+  writeString (fd, "/* from <sys/types.h> */");
+  writeNewline (fd);
+  chkintsystype(socklen_t, "C_Socklen_t");
   writeNewline (fd);
   writeString (fd, "/* from <termios.h> */");
   writeNewline (fd);

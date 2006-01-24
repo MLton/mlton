@@ -1,20 +1,17 @@
-#define _ISOC99_SOURCE
-#define _BSD_SOURCE
-
 #include "platform.h"
 
-Int Net_htonl (Int i) {
-        return htonl (i);
+Word32_t Net_htonl (Word32_t w) {
+  return htonl (w);
 }
 
-Int Net_ntohl (Int i) {
-        return ntohl (i);
+Word32_t Net_ntohl (Word32_t w) {
+  return ntohl (w);
 }
 
-Int Net_htons (Int i) {
-        return htons (i);
+Word16_t Net_htons (Word16_t w) {
+  return htons (w);
 }
 
-Int Net_ntohs (Int i) {
-        return ntohs (i);
+Word16_t Net_ntohs (Word16_t w) {
+  return ntohs (w);
 }

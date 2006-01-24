@@ -1,11 +1,12 @@
 #include "platform.h"
 
-C_Int_t OS_IO_poll (Vector(C_Fd_t) fds, 
-                    Vector(C_Short_t) eventss, 
-                    C_NFds_t n, 
-                    C_Int_t timeout, 
-                    Array(C_Short_t) reventss) {
-  unsigned int i
+C_Errno_t(C_Int_t) 
+OS_IO_poll (Vector(C_Fd_t) fds, 
+            Vector(C_Short_t) eventss, 
+            C_NFds_t n, 
+            C_Int_t timeout, 
+            Array(C_Short_t) reventss) {
+  unsigned int i;
   int res;
   struct pollfd ufds[n];
 

@@ -18,13 +18,13 @@ extern char **environ; /* for Posix_ProcEnv_environ */
 void MLton_init (int argc, char **argv, GC_state s) {
   int start;
 
-  Posix_ProcEnv_environ = (CstringArray)environ;
+  Posix_ProcEnv_environ = (C_StringArray_t)environ;
   start = GC_init (s, argc, argv);
   /* Setup argv and argc that SML sees. */
   /* start is now the index of the first real arg. */
-  CommandLine_commandName = (unsigned int)(argv[0]);
+  CommandLine_commandName = (C_String_t)(argv[0]);
   CommandLine_argc = argc - start;
-  CommandLine_argv = (unsigned int)(argv + start);
+  CommandLine_argv = (C_StringArray_t)(argv + start);
 }
 
 void MLton_exit (GC_state s, Int status) {

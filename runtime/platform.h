@@ -225,18 +225,6 @@ Int IntInf_compare (Pointer lhs, Pointer rhs);
 Bool IntInf_equal (Pointer lhs, Pointer rhs);
 
 /* ------------------------------------------------- */
-/*                      Itimer                       */
-/* ------------------------------------------------- */
-
-#define Itimer_prof ITIMER_PROF
-#define Itimer_real ITIMER_REAL
-#define Itimer_virtual ITIMER_VIRTUAL
-
-void Itimer_set (Int which,
-                        Int interval_tv_sec, Int interval_tv_usec,
-                        Int value_tv_sec, Int value_tv_usec);
-
-/* ------------------------------------------------- */
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
@@ -285,108 +273,6 @@ extern Bool MLton_Platform_CygwinUseMmap;
 Pid MLton_Process_cwait (Pid p, Pointer s);
 Int MLton_Process_spawne (Pointer p, Pointer a, Pointer e);
 Int MLton_Process_spawnp (Pointer p, Pointer a);
-
-/* ---------------------------------- */
-/*            MLton.Rlimit            */
-/* ---------------------------------- */
-
-#define RLIMIT_BOGUS 0xFFFFFFFF
-
-#ifndef RLIMIT_RSS
-#define RLIMIT_RSS RLIMIT_BOGUS
-#endif
-#ifndef RLIMIT_NPROC
-#define RLIMIT_NPROC RLIMIT_BOGUS
-#endif
-#ifndef RLIMIT_MEMLOCK
-#define RLIMIT_MEMLOCK RLIMIT_BOGUS
-#endif
-
-#define MLton_Rlimit_cpuTime RLIMIT_CPU
-#define MLton_Rlimit_coreFileSize RLIMIT_CORE
-#define MLton_Rlimit_dataSize RLIMIT_DATA
-#define MLton_Rlimit_fileSize RLIMIT_FSIZE
-#define MLton_Rlimit_lockedInMemorySize RLIMIT_MEMLOCK
-#define MLton_Rlimit_numFiles RLIMIT_NOFILE
-#define MLton_Rlimit_numProcesses RLIMIT_NPROC
-#define MLton_Rlimit_residentSetSize RLIMIT_RSS
-#define MLton_Rlimit_stackSize RLIMIT_STACK
-#if (defined (RLIMIT_DATA))
-#define MLton_Rlimit_virtualMemorySize RLIMIT_DATA
-#elif (defined (RLIMIT_AS))
-#define MLton_Rlimit_virtualMemorySize RLIMIT_AS
-#else
-#error MLton_Rlimit_virtualMemorySize not defined
-#endif
-
-#define MLton_Rlimit_infinity RLIM_INFINITY
-
-Int MLton_Rlimit_get (Resource r);
-Rlimit MLton_Rlimit_getHard (void);
-Rlimit MLton_Rlimit_getSoft (void);
-Int MLton_Rlimit_set (Resource r, Rlimit hard, Rlimit soft);
-
-/* ---------------------------------- */
-/*           MLton.Rusage             */
-/* ---------------------------------- */
-
-Int MLton_Rusage_self_utime_sec (void);
-Int MLton_Rusage_self_utime_usec (void);
-Int MLton_Rusage_self_stime_sec (void);
-Int MLton_Rusage_self_stime_usec (void);
-Int MLton_Rusage_children_utime_sec (void);
-Int MLton_Rusage_children_utime_usec (void);
-Int MLton_Rusage_children_stime_sec (void);
-Int MLton_Rusage_children_stime_usec (void);
-Int MLton_Rusage_gc_utime_sec (void);
-Int MLton_Rusage_gc_utime_usec (void);
-Int MLton_Rusage_gc_stime_sec (void);
-Int MLton_Rusage_gc_stime_usec (void);
-void MLton_Rusage_ru (GC_state s);
-
-/* ------------------------------------------------- */
-/*                        Net                        */
-/* ------------------------------------------------- */
-
-Int Net_htonl (Int i);
-Int Net_ntohl (Int i);
-Int Net_htons (Int i);
-Int Net_ntohs (Int i);
-#define NetHostDB_inAddrLen sizeof (struct in_addr)
-#define NetHostDB_INADDR_ANY INADDR_ANY
-Cstring NetHostDB_Entry_name(void);
-Int NetHostDB_Entry_numAliases(void);
-Cstring NetHostDB_Entry_aliasesN(Int n);
-Int NetHostDB_Entry_addrType(void);
-Int NetHostDB_Entry_length(void);
-Int NetHostDB_Entry_numAddrs(void);
-void NetHostDB_Entry_addrsN(Int n, Pointer addr);
-Bool NetHostDB_getByAddress(Pointer addr, Int len);
-Bool NetHostDB_getByName(Cstring name);
-Int NetHostDB_getHostName(Pointer buf, Int len);
-Cstring NetProtDB_Entry_name(void);
-Int NetProtDB_Entry_numAliases(void);
-Cstring NetProtDB_Entry_aliasesN(Int n);
-Int NetProtDB_Entry_protocol(void);
-Int NetProtDB_getByName(Cstring name);
-Int NetProtDB_getByNumber(Int proto);
-Cstring NetServDB_Entry_name(void);
-Int NetServDB_Entry_numAliases(void);
-Cstring NetServDB_Entry_aliasesN(Int n);
-Int NetServDB_Entry_port(void);
-Cstring NetServDB_Entry_protocol(void);
-Int NetServDB_getByName(Cstring name, Cstring proto);
-Int NetServDB_getByNameNull(Cstring name);
-Int NetServDB_getByPort(Int port, Cstring proto);
-Int NetServDB_getByPortNull(Int port);
-
-/* ------------------------------------------------- */
-/*                      OS                           */
-/* ------------------------------------------------- */
-
-#define OS_IO_POLLIN POLLIN
-#define OS_IO_POLLPRI POLLPRI
-#define OS_IO_POLLOUT POLLOUT
 
 /* ------------------------------------------------- */
 /*                     PackReal                      */
@@ -957,66 +843,6 @@ void MLton_initSockets (void);
 #else
 static inline void MLton_initSockets (void) {}
 #endif
-
-#define Socket_sockAddrLenMax max(sizeof (struct sockaddr), \
-                              max(sizeof (struct sockaddr_un), \
-                              max(sizeof (struct sockaddr_in), \
-                                  sizeof (struct sockaddr_in6))))
-#define Socket_AF_UNIX PF_UNIX
-#define Socket_AF_INET PF_INET
-#define Socket_AF_INET6 PF_INET6
-#define Socket_AF_UNSPEC PF_UNSPEC
-#define Socket_SOCK_STREAM SOCK_STREAM
-#define Socket_SOCK_DGRAM SOCK_DGRAM
-#define Socket_Ctl_SOL_SOCKET SOL_SOCKET
-#define Socket_Ctl_SO_DEBUG SO_DEBUG
-#define Socket_Ctl_SO_REUSEADDR SO_REUSEADDR
-#define Socket_Ctl_SO_KEEPALIVE SO_KEEPALIVE
-#define Socket_Ctl_SO_DONTROUTE SO_DONTROUTE
-#define Socket_Ctl_SO_LINGER SO_LINGER
-#define Socket_Ctl_SO_BROADCAST SO_BROADCAST
-#define Socket_Ctl_SO_OOBINLINE SO_OOBINLINE
-#define Socket_Ctl_SO_SNDBUF SO_SNDBUF
-#define Socket_Ctl_SO_RCVBUF SO_RCVBUF
-#define Socket_Ctl_SO_TYPE SO_TYPE
-#define Socket_Ctl_SO_ERROR SO_ERROR
-#define Socket_Ctl_FIONBIO FIONBIO
-#define Socket_Ctl_FIONREAD FIONREAD
-#define Socket_Ctl_SIOCATMARK SIOCATMARK
-#define Socket_SHUT_RD SHUT_RD
-#define Socket_SHUT_WR SHUT_WR
-#define Socket_SHUT_RDWR SHUT_RDWR
-#define Socket_MSG_DONTROUTE MSG_DONTROUTE
-#define Socket_MSG_DONTWAIT MSG_DONTWAIT
-#define Socket_MSG_OOB MSG_OOB
-#define Socket_MSG_PEEK MSG_PEEK
-#define Socket_INetSock_TCP_SOL_TCP IPPROTO_TCP
-#define Socket_INetSock_TCP_SO_NODELAY TCP_NODELAY
-Int Socket_accept (Int s, Char *addr, Int *addrlen);
-Int Socket_bind (Int s, Char *addr, Int addrlen);
-Int Socket_close(Int s);
-Int Socket_connect (Int s, Char *addr, Int addrlen);
-Int Socket_familyOfAddr(Char *addr);
-Int Socket_listen (Int s, Int backlog);
-Int Socket_recv (Int s, Char *msg, Int start, Int len, Word flags);
-Int Socket_recvFrom (Int s, Char *msg, Int start, Int len, Word flags, Char* addr, Int *addrlen);
-Int Socket_send (Int s, Char *msg, Int start, Int len, Word flags);
-Int Socket_sendTo (Int s, Char *msg, Int start, Int len, Word flags, Char* addr, Int addrlen);
-Int Socket_shutdown (Int s, Int how);
-Int Socket_Ctl_getSockOpt (Int s, Int level, Int optname, Char *optval, Int *optlen);
-Int Socket_Ctl_setSockOpt (Int s, Int level, Int optname, Char *optval, Int optlen);
-Int Socket_Ctl_getsetIOCtl (Int s, Int request, Char* argp);
-Int Socket_Ctl_getPeerName (Int s, Char *name, Int *namelen);
-Int Socket_Ctl_getSockName (Int s, Char *name, Int *namelen);
-Int GenericSock_socket (Int domain, Int type, Int protocol);
-Int GenericSocket_socketPair (Int domain, Int type, Int protocol, Int sv[2]);
-void UnixSock_toAddr (Char* path, Int pathlen, Char* addr, Int *addrlen);
-Int UnixSock_pathLen (Char* addr);
-void UnixSock_fromAddr (Char* addr, Char* path, Int pathlen);
-void INetSock_toAddr (Pointer in_addr, Int port, Char* addr, Int *addrlen);
-void INetSock_fromAddr (Char* addr);
-Int INetSock_getPort (void);
-void INetSock_getInAddr (Pointer addr);
 
 /* ------------------------------------------------- */
 /*                      Windows                      */

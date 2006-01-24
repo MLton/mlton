@@ -6,7 +6,7 @@
 
 static struct timeval timeval;
 
-C_Int_t Time_gettimeofday (void) {
+C_Int_t Time_getTimeOfDay (void) {
   int res;
   res = gettimeofday (&timeval, (struct timezone*)NULL);
   if (DEBUG)

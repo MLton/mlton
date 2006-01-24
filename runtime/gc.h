@@ -17,6 +17,7 @@
 
 struct GC_state;
 typedef struct GC_state *GC_state;
+typedef GC_state GCState_t;
 
 #define GC_MODEL_NATIVE32
 

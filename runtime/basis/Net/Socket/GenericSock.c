@@ -1,11 +1,13 @@
 #include "platform.h"
 
-Int GenericSock_socket (Int domain, Int type, Int protocol) {
-        MLton_initSockets ();
-        return socket (domain, type, protocol);
+C_Errno_t(C_Int_t) 
+Socket_GenericSock_socket (C_Int_t domain, C_Int_t type, C_Int_t protocol) {
+  MLton_initSockets ();
+  return socket (domain, type, protocol);
 }
 
-Int GenericSocket_socketPair (Int domain, Int type, Int protocol, Int sv[2]) {
-        MLton_initSockets ();
-        return socketpair (domain, type, protocol, (int*)sv);
+C_Errno_t(C_Int_t)
+Socket_GenericSock_socketPair (C_Int_t domain, C_Int_t type, C_Int_t protocol, Array(C_Int_t) sv) {
+  MLton_initSockets ();
+  return socketpair (domain, type, protocol, (int*)sv);
 }

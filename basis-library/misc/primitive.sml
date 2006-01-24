@@ -22,6 +22,7 @@ type 'a array = 'a Array.array
 structure Bool =
    struct
       datatype bool = datatype bool
+      type t = bool
    end
 
 structure Char =
