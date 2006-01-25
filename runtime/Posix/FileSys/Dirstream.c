@@ -1,38 +1,23 @@
 #include "platform.h"
 
-enum {
-        DEBUG_DIRSTREAM = FALSE,
-};
-
-Int Posix_FileSys_Dirstream_closedir (Cpointer p) {
-        Int res;
-
-        res = (Int)(closedir ((DIR *) p));
-        if (DEBUG_DIRSTREAM)
-                fprintf (stderr, "%d = closedir (0x%08"PRIxPTR")\n", res, (uintptr_t)p);
-        return res;
+C_Errno_t(C_Int_t) Posix_FileSys_Dirstream_closeDir (C_DirP_t p) {
+  return closedir ((DIR *) p);
 }
 
-Cpointer Posix_FileSys_Dirstream_opendir (Pointer p) {
-        DIR *res = opendir ((char *) p);
-        return (Cpointer)res;
+C_Errno_t(C_DirP_t) Posix_FileSys_Dirstream_openDir (NullString8_t p) {
+  DIR *res = opendir ((char *) p);
+  return (C_Errno_t(C_DirP_t))res;
 }
 
-Cstring Posix_FileSys_Dirstream_readdir (Cpointer d) {
-        struct dirent *e;
-        Cstring res;
+C_Errno_t(C_String_t) Posix_FileSys_Dirstream_readDir (C_DirP_t d) {
+  struct dirent *e;
+  char *res;
         
-        e = readdir ((DIR *) d);
-        res = (Cstring)((NULL == e) ? NULL : e->d_name);
-        if (DEBUG_DIRSTREAM)
-                fprintf (stderr, "%s = readdir (0x%08"PRIxPTR")\n", 
-                                ((Cstring)NULL == res) ? "NULL": (char*)res,
-                                (uintptr_t)d);
-        return res;
+  e = readdir ((DIR *) d);
+  res = (NULL == e) ? NULL : e->d_name;
+  return (C_Errno_t(C_String_t))res;
 }
 
-void Posix_FileSys_Dirstream_rewinddir (Cpointer p) {
-        if (DEBUG_DIRSTREAM)
-                fprintf (stderr, "rewinddir (0x%08"PRIxPTR")\n", (uintptr_t)p);
-        rewinddir ((DIR *) p);
+void Posix_FileSys_Dirstream_rewindDir (C_DirP_t p) {
+  rewinddir ((DIR *) p);
 }

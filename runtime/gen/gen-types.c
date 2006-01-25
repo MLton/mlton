@@ -158,19 +158,16 @@ static char* suffix[] = {
   "typedef C_SSize_t Ssize;",
   "typedef C_String_t Cstring;",
   "typedef C_StringArray_t CstringArray;",
-  "typedef C_Off Position;"
+  "typedef C_Off_t Position;"
   "",
   "typedef C_Fd_t Fd;",
-  "typedef C_TCFlag Flag;",
-  "typedef C_GId Gid;",
-  "typedef C_Mode Mode;",
-  "typedef C_PId Pid;",
+  "typedef C_GId_t Gid;",
+  "typedef C_Mode_t Mode;",
+  "typedef C_PId_t Pid;",
   "typedef C_Resource Resource;",
-  "typedef C_RLim_t Rlimit;",
   "typedef C_Signal Signal;",
-  "typedef C_Speed Speed;",
   "typedef C_Status Status;",
-  "typedef C_UId Uid;",
+  "typedef C_UId_t Uid;",
   "",
   "#endif /* _MLTON_TYPES_H_ */",
   NULL
@@ -215,7 +212,7 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   systype(_Bool, "Word", "C_Bool_t");
   systype(intmax_t, "Int", "C_Intmax_t");
-  systype(uintmax_t, "Word", "C_Uintmax_t");
+  systype(uintmax_t, "Word", "C_UIntmax_t");
   systype(intptr_t, "Int", "C_Intptr_t");
   systype(uintptr_t, "Word", "C_UIntptr_t");
   writeNewline (fd);
@@ -223,6 +220,10 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   systype(int, "Int", "C_Fd_t");
   systype(int, "Int", "C_Sock_t");
+  writeNewline (fd);
+  writeString (fd, "/* from <dirent.h> */");
+  writeNewline (fd);
+  systype(DIR*, "Word", "C_DirP_t");
   writeNewline (fd);
   writeString (fd, "/* from <poll.h> */");
   writeNewline (fd);
@@ -235,15 +236,18 @@ int main (int argc, char* argv[]) {
   writeString (fd, "/* from <sys/types.h> */");
   writeNewline (fd);
   chknumsystype(clock_t, "C_Clock");
-  chkintsystype(gid_t, "C_GId");
+  chknumsystype(dev_t, "C_Dev_t");
+  chkintsystype(gid_t, "C_GId_t");
   chkintsystype(id_t, "C_Id");
-  chkintsystype(mode_t, "C_Mode");
-  systype(off_t, "Int", "C_Off");
-  systype(pid_t, "Int", "C_PId");
+  systype(ino_t, "Word", "C_INo_t");
+  chkintsystype(mode_t, "C_Mode_t");
+  chkintsystype(nlink_t, "C_NLink_t");
+  systype(off_t, "Int", "C_Off_t");
+  systype(pid_t, "Int", "C_PId_t");
   systype(ssize_t, "Int", "C_SSize_t");
   systype(suseconds_t, "Int", "C_SUSeconds_t");
   chknumsystype(time_t, "C_Time_t");
-  chkintsystype(uid_t, "C_UId");
+  chkintsystype(uid_t, "C_UId_t");
   systype(useconds_t, "Word", "C_USeconds_t");
   writeNewline (fd);
   writeString (fd, "/* from <sys/types.h> */");
@@ -252,8 +256,9 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* from <termios.h> */");
   writeNewline (fd);
-  systype(tcflag_t, "Word", "C_TCFlag");
-  systype(speed_t, "Word", "C_Speed");
+  systype(cc_t, "Word", "C_CC_t");
+  systype(speed_t, "Word", "C_Speed_t");
+  systype(tcflag_t, "Word", "C_TCFlag_t");
   writeNewline (fd);
   writeString (fd, "/* Misc */");
   writeNewline (fd);

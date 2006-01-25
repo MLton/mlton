@@ -2,86 +2,90 @@
 
 static struct termios termios;
 
-Flag Posix_TTY_Termios_iflag () {
-        return termios.c_iflag;
+C_TCFlag_t Posix_TTY_Termios_getIFlag (void) {
+  return termios.c_iflag;
 }
 
-Flag Posix_TTY_Termios_oflag () {
-        return termios.c_oflag;
+C_TCFlag_t Posix_TTY_Termios_getOFlag (void) {
+  return termios.c_oflag;
 }
 
-Flag Posix_TTY_Termios_cflag () {
-        return termios.c_cflag;
+C_TCFlag_t Posix_TTY_Termios_getCFlag (void) {
+  return termios.c_cflag;
 }
 
-Flag Posix_TTY_Termios_lflag () {
-        return termios.c_lflag;
+C_TCFlag_t Posix_TTY_Termios_getLFlag (void) {
+  return termios.c_lflag;
 }
 
-Cstring Posix_TTY_Termios_cc () {
-        return (Cstring)termios.c_cc;
+C_CC_t Posix_TTY_Termios_getCCN (C_Int_t n) {
+  return termios.c_cc[n];
 }
 
-Speed Posix_TTY_Termios_cfgetospeed () {
-        return cfgetospeed (&termios);
+C_Speed_t Posix_TTY_Termios_cfGetOSpeed (void) {
+  return cfgetospeed (&termios);
 }
 
-Speed Posix_TTY_Termios_cfgetispeed () {
-        return cfgetispeed (&termios);
+C_Speed_t Posix_TTY_Termios_cfGetISpeed () {
+  return cfgetispeed (&termios);
 }
 
-void Posix_TTY_Termios_setiflag (Flag f) {
-        termios.c_iflag = f;
+void Posix_TTY_Termios_setIFlag (C_TCFlag_t f) {
+  termios.c_iflag = f;
 }
 
-void Posix_TTY_Termios_setoflag (Flag f) {
-        termios.c_oflag = f;
+void Posix_TTY_Termios_setOFlag (C_TCFlag_t f) {
+  termios.c_oflag = f;
 }
 
-void Posix_TTY_Termios_setcflag (Flag f) {
-        termios.c_cflag = f;
+void Posix_TTY_Termios_setCFlag (C_TCFlag_t f) {
+  termios.c_cflag = f;
 }
 
-void Posix_TTY_Termios_setlflag (Flag f) {
-        termios.c_lflag = f;
+void Posix_TTY_Termios_setLFlag (C_TCFlag_t f) {
+  termios.c_lflag = f;
 }
 
-Int Posix_TTY_Termios_setospeed (Speed s) {
-        return cfsetospeed (&termios, s);
+void Posix_TTY_Termios_setCCN (C_Int_t n, C_CC_t c) {
+  termios.c_cc[n] = c;
 }
 
-Int Posix_TTY_Termios_setispeed (Speed s) {
-        return cfsetispeed (&termios, s);
+C_Errno_t(C_Int_t) Posix_TTY_Termios_cfSetOSpeed (C_Speed_t s) {
+  return cfsetospeed (&termios, s);
 }
 
-Int Posix_TTY_drain (Fd f) {
-        return tcdrain (f);
+C_Errno_t(C_Int_t) Posix_TTY_Termios_cfSetISpeed (C_Speed_t s) {
+  return cfsetispeed (&termios, s);
 }
 
-Int Posix_TTY_flow (Fd f, Int i) {
-        return tcflow (f, i);
+C_Errno_t(C_Int_t) Posix_TTY_TC_drain (C_Fd_t f) {
+  return tcdrain (f);
 }
 
-Int Posix_TTY_flush (Fd f, Int i) {
-        return tcflush (f, i);
+C_Errno_t(C_Int_t) Posix_TTY_TC_flow (C_Fd_t f, C_Int_t i) {
+  return tcflow (f, i);
 }
 
-Int Posix_TTY_getattr (Fd f) {
-        return tcgetattr (f, &termios);
+C_Errno_t(C_Int_t) Posix_TTY_TC_flush (C_Fd_t f, C_Int_t i) {
+  return tcflush (f, i);
 }
 
-Int Posix_TTY_getpgrp (Fd f) {
-        return tcgetpgrp (f);
+C_Errno_t(C_Int_t) Posix_TTY_TC_getattr (C_Fd_t f) {
+  return tcgetattr (f, &termios);
 }
 
-Int Posix_TTY_sendbreak (Fd f, Int i) {
-        return tcsendbreak (f, i);
+C_Errno_t(C_PId_t) Posix_TTY_TC_getpgrp (C_Fd_t f) {
+  return tcgetpgrp (f);
 }
 
-Int Posix_TTY_setattr (Fd f, Int i) {
-        return tcsetattr (f, i, &termios);
+C_Errno_t(C_Int_t) Posix_TTY_TC_sendbreak (C_Fd_t f, C_Int_t i) {
+  return tcsendbreak (f, i);
 }
 
-Int Posix_TTY_setpgrp (Fd f, Pid p) {
-        return tcsetpgrp (f, p);
+C_Errno_t(C_Int_t) Posix_TTY_TC_setattr (C_Fd_t f, C_Int_t i) {
+  return tcsetattr (f, i, &termios);
+}
+
+C_Errno_t(C_Int_t) Posix_TTY_TC_setpgrp (C_Fd_t f, C_PId_t p) {
+  return tcsetpgrp (f, p);
 }

@@ -1,14 +1,14 @@
 #include "platform.h"
 
 void Posix_Error_clearErrno (void) {
-        errno = 0;
+  errno = 0;
 }
 
-int Posix_Error_getErrno (void) {
-        return errno;
+C_Int_t Posix_Error_getErrno (void) {
+  return errno;
 }
 
-Cstring Posix_Error_strerror (Int n) {
-        char *res = strerror (n);
-        return (Cstring)res;
+C_String_t Posix_Error_strError (C_Int_t n) {
+  char *res = strerror (n);
+  return (C_String_t)res;
 }

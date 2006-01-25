@@ -35,11 +35,11 @@ static inline void fesetround (int mode) {
 
 #endif
 
-Int IEEEReal_getRoundingMode () {
-        return fegetround ();
+C_Int_t IEEEReal_getRoundingMode () {
+  return fegetround ();
 }
 
-void IEEEReal_setRoundingMode (Int m) {
-        assert (m != FE_NOSUPPORT);
-        fesetround (m);
+void IEEEReal_setRoundingMode (C_Int_t m) {
+  assert (m != IEEEReal_RoundingMode_FE_NOSUPPORT);
+  fesetround (m);
 }

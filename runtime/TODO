@@ -5,10 +5,6 @@
 * Use C99 <assert.h> instead of util/assert.{c,h}
 
 
-Posix/Error.c
-Posix/FileSys/Dirstream.c
-Posix/FileSys/ST.c
-Posix/FileSys/Stat.c
 Posix/FileSys/Utimbuf.c
 Posix/FileSys/access.c
 Posix/FileSys/chdir.c
@@ -74,27 +70,14 @@ Posix/Process/waitpid.c
 Posix/Signal.c
 Posix/SysDB/Group.c
 Posix/SysDB/Passwd.c
-Posix/TTY.c
-basis/IEEEReal.c
 basis/Int/Word.c
 basis/Int/Word8Array.c
 basis/Int/Word8Vector.c
 basis/IntInf.c
-basis/Itimer/set.c
 basis/MLton/allocTooLarge.c
 basis/MLton/bug.c
-basis/MLton/rlimit.c
-basis/MLton/rusage.c
 basis/MLton/spawne.c
 basis/MLton/spawnp.c
-basis/Net/Net.c
-basis/Net/NetHostDB.c
-basis/Net/NetProtDB.c
-basis/Net/NetServDB.c
-basis/Net/Socket/GenericSock.c
-basis/Net/Socket/INetSock.c
-basis/Net/Socket/Socket.c
-basis/Net/Socket/UnixSock.c
 basis/PackReal.c
 basis/Ptrace.c
 basis/Real/Math.c

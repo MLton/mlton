@@ -81,21 +81,6 @@
 #define EXECVE execve
 #endif
 
-#if not HAS_FEROUND
-#ifndef FE_TONEAREST
-#define FE_TONEAREST 0
-#endif
-#ifndef FE_DOWNWARD
-#define FE_DOWNWARD 1
-#endif
-#ifndef FE_UPWARD
-#define FE_UPWARD 2
-#endif
-#ifndef FE_TOWARDZERO
-#define FE_TOWARDZERO 3
-#endif
-#endif
-
 #if not HAS_FPCLASSIFY
 #ifndef FP_INFINITE
 #define FP_INFINITE 1
@@ -177,22 +162,6 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */
 /* ---------------------------------------------------------------- */
-
-/* ------------------------------------------------- */
-/*                     IEEEReal                      */
-/* ------------------------------------------------- */
-
-#define FE_NOSUPPORT -1
-/* Can't handle undefined rounding modes with code like the following.
- *  #ifndef FE_TONEAREST
- *  #define FE_TONEAREST FE_NOSUPPORT
- *  #endif
- * On some platforms, FE_* are defined via an enum, not the preprocessor,
- * and hence don't show up as #defined.  In that case, the above code 
- * overwrites them.
- */
-void IEEEReal_setRoundingMode (Int mode);
-Int IEEEReal_getRoundingMode (void);
 
 /* ------------------------------------------------- */
 /*                      IntInf                       */
@@ -292,67 +261,6 @@ void PackReal64_updateRev (Pointer a, Int offset, Real64 r);
 /* ------------------------------------------------- */
 
 /* ---------------------------------- */
-/*            Posix.Error             */
-/* ---------------------------------- */
-
-void Posix_Error_clearErrno (void);
-int Posix_Error_getErrno (void);
-Cstring Posix_Error_strerror (Int n);
-
-#define Posix_Error_acces EACCES
-#define Posix_Error_again EAGAIN
-#define Posix_Error_badf EBADF
-#ifndef EBADMSG
-#define EBADMSG 0
-#endif
-#define Posix_Error_badmsg EBADMSG
-#define Posix_Error_busy EBUSY
-#ifndef ECANCELED
-#define ECANCELED 0
-#endif
-#define Posix_Error_canceled ECANCELED
-#define Posix_Error_child ECHILD
-#define Posix_Error_deadlk EDEADLK
-#define Posix_Error_dom EDOM
-#define Posix_Error_exist EEXIST
-#define Posix_Error_fault EFAULT
-#define Posix_Error_fbig EFBIG
-#define Posix_Error_inprogress EINPROGRESS
-#define Posix_Error_intr EINTR
-#define Posix_Error_inval EINVAL
-#define Posix_Error_io EIO
-#define Posix_Error_isdir EISDIR
-#define Posix_Error_loop ELOOP
-#define Posix_Error_mfile EMFILE
-#define Posix_Error_mlink EMLINK
-#define Posix_Error_msgsize EMSGSIZE
-#define Posix_Error_nametoolong ENAMETOOLONG
-#define Posix_Error_nfile ENFILE
-#define Posix_Error_nodev ENODEV
-#define Posix_Error_noent ENOENT
-#define Posix_Error_noexec ENOEXEC
-#define Posix_Error_nolck ENOLCK
-#define Posix_Error_nomem ENOMEM
-#define Posix_Error_nospc ENOSPC
-#define Posix_Error_nosys ENOSYS
-#define Posix_Error_notdir ENOTDIR
-#define Posix_Error_notempty ENOTEMPTY
-#ifndef ENOTSUP
-#define ENOTSUP 0
-#endif
-#define Posix_Error_notsup ENOTSUP
-#define Posix_Error_notty ENOTTY
-#define Posix_Error_nxio ENXIO
-#define Posix_Error_perm EPERM
-#define Posix_Error_pipe EPIPE
-#define Posix_Error_range ERANGE
-#define Posix_Error_rofs EROFS
-#define Posix_Error_spipe ESPIPE
-#define Posix_Error_srch ESRCH
-#define Posix_Error_toobig E2BIG
-#define Posix_Error_xdev EXDEV
-
-/* ---------------------------------- */
 /*           Posix.FileSys            */
 /* ---------------------------------- */
 
@@ -438,26 +346,6 @@ Cstring Posix_Error_strerror (Int n);
 #define Posix_FileSys_PRIO_IO 0
 #endif
 
-Int Posix_FileSys_Dirstream_closedir (Cpointer d);
-Cpointer Posix_FileSys_Dirstream_opendir (Pointer p);
-Cstring Posix_FileSys_Dirstream_readdir (Cpointer d);
-void Posix_FileSys_Dirstream_rewinddir (Cpointer p);
-
-Int Posix_FileSys_Stat_fstat (Fd f);
-Int Posix_FileSys_Stat_lstat (Pointer f);
-Int Posix_FileSys_Stat_stat (Pointer f);
-Word Posix_FileSys_Stat_dev (void);
-Int Posix_FileSys_Stat_ino (void);
-Word Posix_FileSys_Stat_mode (void);
-Int Posix_FileSys_Stat_nlink (void);
-Word Posix_FileSys_Stat_uid (void);
-Word Posix_FileSys_Stat_gid (void);
-Word Posix_FileSys_Stat_rdev (void);
-Position Posix_FileSys_Stat_size (void);
-Int Posix_FileSys_Stat_atime (void);
-Int Posix_FileSys_Stat_mtime (void);
-Int Posix_FileSys_Stat_ctime (void);
-
 void Posix_FileSys_Utimbuf_setActime (Int x);
 void Posix_FileSys_Utimbuf_setModTime (Int x);
 Int Posix_FileSys_Utimbuf_utime (Pointer s);
@@ -482,14 +370,6 @@ Int Posix_FileSys_rmdir (Pointer p);
 Int Posix_FileSys_symlink (Pointer p1, Pointer p2);
 Word Posix_FileSys_umask (Word w);
 Word Posix_FileSys_unlink (Pointer p);
-
-Bool Posix_FileSys_ST_isDir (Word w);
-Bool Posix_FileSys_ST_isChr (Word w);
-Bool Posix_FileSys_ST_isBlk (Word w);
-Bool Posix_FileSys_ST_isReg (Word w);
-Bool Posix_FileSys_ST_isFIFO (Word w);
-Bool Posix_FileSys_ST_isLink (Word w);
-Bool Posix_FileSys_ST_isSock (Word w);
 
 /* ---------------------------------- */
 /*              Posix.IO              */
@@ -703,103 +583,6 @@ Bool Posix_SysDB_getgrnam (Pointer s);
 Cstring Posix_SysDB_Group_name (void);
 Gid Posix_SysDB_Group_gid (void);
 CstringArray Posix_SysDB_Group_mem (void);
-
-/* ---------------------------------- */
-/*             Posix.TTY              */
-/* ---------------------------------- */
-
-#define Posix_TTY_b0 B0
-#define Posix_TTY_b110 B110
-#define Posix_TTY_b1200 B1200
-#define Posix_TTY_b134 B134
-#define Posix_TTY_b150 B150
-#define Posix_TTY_b1800 B1800
-#define Posix_TTY_b19200 B19200
-#define Posix_TTY_b200 B200
-#define Posix_TTY_b2400 B2400
-#define Posix_TTY_b300 B300
-#define Posix_TTY_b38400 B38400
-#define Posix_TTY_b4800 B4800
-#define Posix_TTY_b50 B50
-#define Posix_TTY_b600 B600
-#define Posix_TTY_b75 B75
-#define Posix_TTY_b9600 B9600
-#define Posix_TTY_V_eof VEOF
-#define Posix_TTY_V_eol VEOL
-#define Posix_TTY_V_erase VERASE
-#define Posix_TTY_V_intr VINTR
-#define Posix_TTY_V_kill VKILL
-#define Posix_TTY_V_min VMIN
-#define Posix_TTY_V_nccs NCCS
-#define Posix_TTY_V_quit VQUIT
-#define Posix_TTY_V_start VSTART
-#define Posix_TTY_V_stop VSTOP
-#define Posix_TTY_V_susp VSUSP
-#define Posix_TTY_V_time VTIME
-#define Posix_TTY_I_brkint BRKINT
-#define Posix_TTY_I_icrnl ICRNL
-#define Posix_TTY_I_ignbrk IGNBRK
-#define Posix_TTY_I_igncr IGNCR
-#define Posix_TTY_I_ignpar IGNPAR
-#define Posix_TTY_I_inlcr INLCR
-#define Posix_TTY_I_inpck INPCK
-#define Posix_TTY_I_istrip ISTRIP
-#define Posix_TTY_I_ixoff IXOFF
-#define Posix_TTY_I_ixon IXON
-#define Posix_TTY_I_parmrk PARMRK
-#define Posix_TTY_O_opost OPOST
-#define Posix_TTY_C_clocal CLOCAL
-#define Posix_TTY_C_cread CREAD
-#define Posix_TTY_C_cs5 CS5
-#define Posix_TTY_C_cs6 CS6
-#define Posix_TTY_C_cs7 CS7
-#define Posix_TTY_C_cs8 CS8
-#define Posix_TTY_C_csize CSIZE
-#define Posix_TTY_C_cstopb CSTOPB
-#define Posix_TTY_C_hupcl HUPCL
-#define Posix_TTY_C_parenb PARENB
-#define Posix_TTY_C_parodd PARODD
-#define Posix_TTY_L_echo ECHO
-#define Posix_TTY_L_echoe ECHOE
-#define Posix_TTY_L_echok ECHOK
-#define Posix_TTY_L_echonl ECHONL
-#define Posix_TTY_L_icanon ICANON
-#define Posix_TTY_L_iexten IEXTEN
-#define Posix_TTY_L_isig ISIG
-#define Posix_TTY_L_noflsh NOFLSH
-#define Posix_TTY_L_tostop TOSTOP
-#define Posix_TTY_TC_sadrain TCSADRAIN
-#define Posix_TTY_TC_saflush TCSAFLUSH
-#define Posix_TTY_TC_sanow TCSANOW
-#define Posix_TTY_TC_ion TCION
-#define Posix_TTY_TC_ioff TCIOFF
-#define Posix_TTY_TC_ooff TCOOFF
-#define Posix_TTY_TC_oon TCOON
-#define Posix_TTY_TC_iflush TCIFLUSH
-#define Posix_TTY_TC_ioflush TCIOFLUSH
-#define Posix_TTY_TC_oflush TCOFLUSH
-
-Flag Posix_TTY_Termios_iflag (void);
-Flag Posix_TTY_Termios_oflag (void);
-Flag Posix_TTY_Termios_cflag (void);
-Flag Posix_TTY_Termios_lflag (void);
-Cstring Posix_TTY_Termios_cc (void);
-Speed Posix_TTY_Termios_cfgetospeed (void);
-Speed Posix_TTY_Termios_cfgetispeed (void);
-void Posix_TTY_Termios_setiflag (Flag f);
-void Posix_TTY_Termios_setoflag (Flag f);
-void Posix_TTY_Termios_setcflag (Flag f);
-void Posix_TTY_Termios_setlflag (Flag f);
-Int Posix_TTY_Termios_setospeed (Speed s);
-Int Posix_TTY_Termios_setispeed (Speed s);
-Int Posix_TTY_getattr (Fd f);
-Int Posix_TTY_setattr (Fd f, Int i);
-Int Posix_TTY_sendbreak (Fd f, Int i);
-Int Posix_TTY_drain (Fd f);
-Int Posix_TTY_flush (Fd f, Int i);
-Int Posix_TTY_flow (Fd f, Int i);
-Int Posix_TTY_getpgrp (Fd f);
-Int Posix_TTY_setpgrp (Fd f, Pid p);
 
 /* ------------------------------------------------- */
 /*                      Ptrace                       */

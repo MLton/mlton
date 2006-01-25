@@ -1,29 +1,29 @@
 #include "platform.h"
 
-Bool Posix_FileSys_ST_isBlk (Word w) {
-        return S_ISBLK(w);
+Bool_t Posix_FileSys_ST_isBlk (C_Mode_t m) {
+  return S_ISBLK(m);
 }
 
-Bool Posix_FileSys_ST_isChr (Word w) {
-        return S_ISCHR (w);
+Bool_t Posix_FileSys_ST_isChr (C_Mode_t m) {
+  return S_ISCHR(m);
 }
 
-Bool Posix_FileSys_ST_isDir (Word w) {
-        return S_ISDIR (w);
+Bool_t Posix_FileSys_ST_isDir (C_Mode_t m) {
+  return S_ISDIR(m);
 }
 
-Bool Posix_FileSys_ST_isFIFO (Word w) {
-        return S_ISFIFO (w);
+Bool_t Posix_FileSys_ST_isFIFO (C_Mode_t m) {
+  return S_ISFIFO(m);
 }
 
-Bool Posix_FileSys_ST_isLink (Word w) {
-        return S_ISLNK (w);
+Bool_t Posix_FileSys_ST_isLink (C_Mode_t m) {
+  return S_ISLNK(m);
 }
 
-Bool Posix_FileSys_ST_isReg (Word w) {
-        return S_ISREG (w);
+Bool_t Posix_FileSys_ST_isReg (C_Mode_t m) {
+  return S_ISREG(m);
 }
 
-Bool Posix_FileSys_ST_isSock (Word w) {
-        return S_ISSOCK (w);
+Bool_t Posix_FileSys_ST_isSock (C_Mode_t m) {
+  return S_ISSOCK(m);
 }

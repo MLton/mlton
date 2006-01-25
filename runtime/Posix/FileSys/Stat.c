@@ -2,58 +2,58 @@
 
 static struct stat statbuf;
 
-Word Posix_FileSys_Stat_dev () {
-        return statbuf.st_dev;
+C_Dev_t Posix_FileSys_Stat_getDev (void) {
+  return statbuf.st_dev;
 }
 
-Int Posix_FileSys_Stat_ino () {
-        return statbuf.st_ino;
+C_INo_t Posix_FileSys_Stat_getINo (void) {
+  return statbuf.st_ino;
 }
 
-Word Posix_FileSys_Stat_mode () {
-        return statbuf.st_mode;
+C_Mode_t Posix_FileSys_Stat_getMode (void) {
+  return statbuf.st_mode;
 }
 
-Int Posix_FileSys_Stat_nlink () {
-        return statbuf.st_nlink;
+C_NLink_t Posix_FileSys_Stat_getNLink (void) {
+  return statbuf.st_nlink;
 }
 
-Word Posix_FileSys_Stat_uid () {
-        return statbuf.st_uid;
+C_UId_t Posix_FileSys_Stat_getUId (void) {
+  return statbuf.st_uid;
 }
 
-Word Posix_FileSys_Stat_gid () {
-        return statbuf.st_gid;
+C_GId_t Posix_FileSys_Stat_getGId (void) {
+  return statbuf.st_gid;
 }
 
-Word Posix_FileSys_Stat_rdev () {
-        return statbuf.st_rdev;
+C_Dev_t Posix_FileSys_Stat_getRDev (void) {
+  return statbuf.st_rdev;
 }
 
-Position Posix_FileSys_Stat_size () {
-        return statbuf.st_size;
+C_Off_t Posix_FileSys_Stat_getSize (void) {
+  return statbuf.st_size;
 }
 
-Int Posix_FileSys_Stat_atime () {
-        return statbuf.st_atime;
+C_Time_t Posix_FileSys_Stat_getATime (void) {
+  return statbuf.st_atime;
 }
 
-Int Posix_FileSys_Stat_mtime () {
-        return statbuf.st_mtime;
+C_Time_t Posix_FileSys_Stat_getMTime (void) {
+  return statbuf.st_mtime;
 }
 
-Int Posix_FileSys_Stat_ctime () {
-        return statbuf.st_ctime;
+C_Time_t Posix_FileSys_Stat_getCTime (void) {
+  return statbuf.st_ctime;
 }
 
-Int Posix_FileSys_Stat_fstat (Fd f) {
-        return fstat (f, &statbuf);
+C_Errno_t(C_Int_t) Posix_FileSys_Stat_fstat (C_Fd_t f) {
+  return fstat (f, &statbuf);
 }
 
-Int Posix_FileSys_Stat_lstat (Pointer f) {
-        return lstat ((char*)f, &statbuf);
+C_Errno_t(C_Int_t) Posix_FileSys_Stat_lstat (NullString8_t f) {
+  return lstat ((char*)f, &statbuf);
 }
 
-Int Posix_FileSys_Stat_stat (Pointer f) {    
-        return stat ((char*)f, &statbuf);
+C_Errno_t(C_Int_t) Posix_FileSys_Stat_stat (NullString8_t f) {
+  return stat ((char*)f, &statbuf);
 }

@@ -69,6 +69,7 @@ WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wnested-externs \
 	-Wmissing-prototypes \
 	-Wmissing-declarations 
+#	-Wconversion
 #	-Wshadow 
 OPTWARNFLAGS = $(WARNFLAGS) -Winline -Wdisabled-optimization 
 DEBUGWARNFLAGS = $(WARNFLAGS) -Wunused
@@ -170,16 +171,17 @@ util/%.o: util/%.c util.h $(UTILHFILES)
 
 types.h: gen/gen-types.c util.h $(UTILOFILES)
 	rm -f types.h
-	$(CC) $(OPTCFLAGS) $(WARNFLAGS) -o gen-types gen/gen-types.c $(UTILOFILES)
-	./gen-types
-	rm -f gen-types
+	$(CC) $(OPTCFLAGS) $(WARNFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
+	cd gen && ./gen-types
+	cp gen/types.h types.h
+	rm -f gen/gen-types
 
 basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	rm -f basis-ffi.def
+	rm -f basis-ffi.h
 	cd gen && mlton gen-basis-ffi.sml
 	cd gen && ./gen-basis-ffi 
 	cp gen/basis-ffi.h basis-ffi.h
-	rm -f gen/gen-basis-ffi gen/basis-ffi.h gen/basis-ffi.sml
+	rm -f gen/gen-basis-ffi
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<

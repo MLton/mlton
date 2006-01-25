@@ -224,9 +224,11 @@ structure Entry =
                 ";"]
           | Symbol {name, ty} =>
                String.concat
-               ["val ",
+               ["val (",
                 Name.last name,
-                " = #2 (_symbol \"",
+                "Get, ",
+                Name.last name,
+                "Set) = _symbol \"",
                 Name.toC name,
                 "\": (",
                 Type.toML ty,
