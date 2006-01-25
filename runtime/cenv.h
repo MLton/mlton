@@ -12,7 +12,7 @@
 /* GNU C Library Feature Macros */
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
-// #define _XOPEN_SOURCE 600
+#define _XOPEN_SOURCE 600
 /* Only enable _POSIX_C_SOURCE on platforms that don't have broken
  * system headers.
  */

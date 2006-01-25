@@ -123,12 +123,12 @@ static char* stdtypes[] = {
 #define systype(t, bt, name)               \
   do {                                     \
   writeString (fd, "typedef ");            \
-  writeString (fd, "/* ");                 \
   writeString (fd, #t);                    \
-  writeString (fd, " */ ");                \
+  writeString (fd, " /* ");                \
   writeString (fd, bt);                    \
   writeUintmaxU (fd, CHAR_BIT * sizeof(t));\
   writeString (fd, "_t ");                 \
+  writeString (fd, "*/ ");                 \
   writeString (fd, name);                  \
   writeString (fd, ";");                   \
   writeNewline (fd);                       \
@@ -235,6 +235,8 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* from <sys/types.h> */");
   writeNewline (fd);
+  systype(blkcnt_t, "Int", "C_BlkCnt_t");
+  systype(blksize_t, "Int", "C_BlkSize_t");
   chknumsystype(clock_t, "C_Clock");
   chknumsystype(dev_t, "C_Dev_t");
   chkintsystype(gid_t, "C_GId_t");

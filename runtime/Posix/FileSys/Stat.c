@@ -46,6 +46,14 @@ C_Time_t Posix_FileSys_Stat_getCTime (void) {
   return statbuf.st_ctime;
 }
 
+C_BlkSize_t Posix_FileSys_Stat_getBlkSize (void) {
+  return statbuf.st_blksize;
+}
+
+C_BlkCnt_t Posix_FileSys_Stat_getBlkCnt (void) {
+  return statbuf.st_blocks;
+}
+
 C_Errno_t(C_Int_t) Posix_FileSys_Stat_fstat (C_Fd_t f) {
   return fstat (f, &statbuf);
 }
