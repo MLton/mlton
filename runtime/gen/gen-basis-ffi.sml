@@ -240,11 +240,11 @@ structure Entry =
             val s = Substring.droplSpace s
             val s = if Substring.isPrefix ":" s
                       then #2 (Substring.splitAt (s, 1))
-                       else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
+                       else raise Fail (concat ["Entry.parseConst: \"", Substring.string s, "\""])
             val (ret, rest) = Type.parse s
             val () = if Substring.isEmpty rest
                         then ()
-                        else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
+                        else raise Fail (concat ["Entry.parseConst: \"", Substring.string s, "\""])
          in
             Const {name = name,
                    ty = ret}
@@ -308,11 +308,14 @@ val entries =
       fun loop entries =
          case TextIO.inputLine f of
             NONE => List.rev entries
-          | SOME s => let
-                         val entry = Entry.parse (Substring.full s)
-                      in
-                         loop (entry :: entries)
-                      end
+          | SOME s => 
+               if String.isPrefix "#" s
+                  then loop entries
+                  else let
+                          val entry = Entry.parse (Substring.full s)
+                       in
+                          loop (entry :: entries)
+                       end
       val entries = loop []
       val () = TextIO.closeIn f
       val entries = List.sort Entry.compare entries

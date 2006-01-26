@@ -42,7 +42,7 @@ static char* prefix[] = {
 
 static char* stdtypes[] = {
   "/* ML types */",
-  "typedef unsigned char* Pointer;",
+  "typedef unsigned char* /* uintptr_t */ Pointer;",
   "#define Array(t) Pointer",
   "#define Ref(t) Pointer",
   "#define Vector(t) const Pointer",
@@ -59,6 +59,8 @@ static char* stdtypes[] = {
   "typedef float Real32;",
   "typedef double Real64_t;",
   "typedef double Real64;",
+  // "typedef long double Real128_t;",
+  // "typedef long double Real128;",
   "typedef uint8_t Word8_t;",
   "typedef uint8_t Word8;",
   "typedef uint16_t Word16_t;",
@@ -102,33 +104,33 @@ static char* stdtypes[] = {
   "",
   "typedef Int32_t Bool_t;",
   "typedef Int32_t Bool;",
-  "typedef Char8_t Char_t;",
-  "typedef Char8_t Char;",
+  // "typedef Char8_t Char_t;",
+  // "typedef Char8_t Char;",
   "typedef Int32_t Int_t;",
   "typedef Int32_t Int;",
-  "typedef Real64_t Real_t;",
-  "typedef Real64_t Real;",
-  "typedef String8_t String_t;",
-  "typedef String8_t String;",
+  // "typedef Real64_t Real_t;",
+  // "typedef Real64_t Real;",
+  // "typedef String8_t String_t;",
+  // "typedef String8_t String;",
   "typedef Word32_t Word_t;",
   "typedef Word32_t Word;",
   ""
   "typedef String8_t NullString8_t;",
   "typedef String8_t NullString8;",
-  "typedef NullString8_t NullString_t;",
-  "typedef NullString8_t NullString;",
+  "typedef Array(NullString8_t) NullString8Array_t;",
+  "typedef Array(NullString8_t) NullString8Array;",
   NULL
 };
 
 #define systype(t, bt, name)               \
   do {                                     \
   writeString (fd, "typedef ");            \
+  writeString (fd, "/* ");                 \
   writeString (fd, #t);                    \
-  writeString (fd, " /* ");                \
+  writeString (fd, " */ ");                \
   writeString (fd, bt);                    \
   writeUintmaxU (fd, CHAR_BIT * sizeof(t));\
   writeString (fd, "_t ");                 \
-  writeString (fd, "*/ ");                 \
   writeString (fd, name);                  \
   writeString (fd, ";");                   \
   writeNewline (fd);                       \
@@ -151,23 +153,6 @@ static char* stdtypes[] = {
 static char* suffix[] = {
   "",
   "#define C_Errno_t(t) t",
-  "#define C_HErrno_t(t) t",
-  "",
-  "typedef C_Pointer_t Cpointer;",
-  "typedef C_Size_t Size;",
-  "typedef C_SSize_t Ssize;",
-  "typedef C_String_t Cstring;",
-  "typedef C_StringArray_t CstringArray;",
-  "typedef C_Off_t Position;"
-  "",
-  "typedef C_Fd_t Fd;",
-  "typedef C_GId_t Gid;",
-  "typedef C_Mode_t Mode;",
-  "typedef C_PId_t Pid;",
-  "typedef C_Resource Resource;",
-  "typedef C_Signal Signal;",
-  "typedef C_Status Status;",
-  "typedef C_UId_t Uid;",
   "",
   "#endif /* _MLTON_TYPES_H_ */",
   NULL
@@ -176,6 +161,7 @@ static char* suffix[] = {
 int main (int argc, char* argv[]) {
   int fd;
 
+  unlink_safe ("types.h");
   fd = open_safe ("types.h", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
   for (int i = 0; prefix[i] != NULL; i++) {
     writeString (fd, prefix[i]);
@@ -219,6 +205,8 @@ int main (int argc, char* argv[]) {
   writeString (fd, "/* Generic integers */");
   writeNewline (fd);
   systype(int, "Int", "C_Fd_t");
+  systype(int, "Int", "C_Signal_t");
+  systype(int, "Int", "C_Status_t");
   systype(int, "Int", "C_Sock_t");
   writeNewline (fd);
   writeString (fd, "/* from <dirent.h> */");
@@ -235,12 +223,12 @@ int main (int argc, char* argv[]) {
   writeNewline (fd);
   writeString (fd, "/* from <sys/types.h> */");
   writeNewline (fd);
-  systype(blkcnt_t, "Int", "C_BlkCnt_t");
-  systype(blksize_t, "Int", "C_BlkSize_t");
-  chknumsystype(clock_t, "C_Clock");
+  // systype(blkcnt_t, "Int", "C_BlkCnt_t");
+  // systype(blksize_t, "Int", "C_BlkSize_t");
+  chknumsystype(clock_t, "C_Clock_t");
   chknumsystype(dev_t, "C_Dev_t");
   chkintsystype(gid_t, "C_GId_t");
-  chkintsystype(id_t, "C_Id");
+  chkintsystype(id_t, "C_Id_t");
   systype(ino_t, "Word", "C_INo_t");
   chkintsystype(mode_t, "C_Mode_t");
   chkintsystype(nlink_t, "C_NLink_t");
@@ -252,7 +240,7 @@ int main (int argc, char* argv[]) {
   chkintsystype(uid_t, "C_UId_t");
   systype(useconds_t, "Word", "C_USeconds_t");
   writeNewline (fd);
-  writeString (fd, "/* from <sys/types.h> */");
+  writeString (fd, "/* from <sys/socket.h> */");
   writeNewline (fd);
   chkintsystype(socklen_t, "C_Socklen_t");
   writeNewline (fd);
@@ -261,12 +249,6 @@ int main (int argc, char* argv[]) {
   systype(cc_t, "Word", "C_CC_t");
   systype(speed_t, "Word", "C_Speed_t");
   systype(tcflag_t, "Word", "C_TCFlag_t");
-  writeNewline (fd);
-  writeString (fd, "/* Misc */");
-  writeNewline (fd);
-  systype(int, "Int", "C_Resource");
-  systype(int, "Int", "C_Signal");
-  systype(int, "Int", "C_Status");
   writeNewline (fd);
   for (int i = 0; suffix[i] != NULL; i++) {
     writeString (fd, suffix[i]);

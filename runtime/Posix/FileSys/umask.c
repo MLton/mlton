@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Word Posix_FileSys_umask (Word w) {
-        return umask (w);
+C_Mode_t Posix_FileSys_umask (C_Mode_t m) {
+  return umask (m);
 }

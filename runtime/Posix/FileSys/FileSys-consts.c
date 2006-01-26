@@ -1,0 +1,75 @@
+#include "platform.h"
+
+const C_Int_t Posix_FileSys_A_F_OK = F_OK;
+const C_Int_t Posix_FileSys_A_R_OK = R_OK;
+const C_Int_t Posix_FileSys_A_W_OK = W_OK;
+const C_Int_t Posix_FileSys_A_X_OK = X_OK;
+
+const C_Int_t Posix_FileSys_O_RDONLY = O_RDONLY;
+const C_Int_t Posix_FileSys_O_RDWR = O_RDWR;
+const C_Int_t Posix_FileSys_O_WRONLY = O_WRONLY;
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
+#ifndef O_TEXT
+#define O_TEXT 0
+#endif
+
+const C_Int_t Posix_FileSys_O_APPEND = O_APPEND;
+const C_Int_t Posix_FileSys_O_BINARY = O_BINARY;
+const C_Int_t Posix_FileSys_O_CREAT = O_CREAT;
+const C_Int_t Posix_FileSys_O_DSYNC = O_DSYNC;
+const C_Int_t Posix_FileSys_O_EXCL = O_EXCL;
+const C_Int_t Posix_FileSys_O_NOCTTY = O_NOCTTY;
+const C_Int_t Posix_FileSys_O_NONBLOCK = O_NONBLOCK;
+const C_Int_t Posix_FileSys_O_RSYNC = O_RSYNC;
+const C_Int_t Posix_FileSys_O_SYNC = O_SYNC;
+const C_Int_t Posix_FileSys_O_TEXT = O_TEXT;
+const C_Int_t Posix_FileSys_O_TRUNC = O_TRUNC;
+
+const C_Int_t Posix_FileSys_PC_FILESIZEBITS = _PC_FILESIZEBITS;
+const C_Int_t Posix_FileSys_PC_LINK_MAX = _PC_LINK_MAX;
+const C_Int_t Posix_FileSys_PC_MAX_CANON = _PC_MAX_CANON;
+const C_Int_t Posix_FileSys_PC_MAX_INPUT = _PC_MAX_INPUT;
+const C_Int_t Posix_FileSys_PC_NAME_MAX = _PC_NAME_MAX;
+const C_Int_t Posix_FileSys_PC_PATH_MAX = _PC_PATH_MAX;
+const C_Int_t Posix_FileSys_PC_PIPE_BUF = _PC_PIPE_BUF;
+const C_Int_t Posix_FileSys_PC_2_SYMLINKS = _PC_2_SYMLINKS;
+const C_Int_t Posix_FileSys_PC_ALLOC_SIZE_MIN = _PC_ALLOC_SIZE_MIN;
+const C_Int_t Posix_FileSys_PC_REC_INCR_XFER_SIZE = _PC_REC_INCR_XFER_SIZE;
+const C_Int_t Posix_FileSys_PC_REC_MAX_XFER_SIZE = _PC_REC_MAX_XFER_SIZE;
+const C_Int_t Posix_FileSys_PC_REC_MIN_XFER_SIZE = _PC_REC_MIN_XFER_SIZE;
+const C_Int_t Posix_FileSys_PC_REC_XFER_ALIGN = _PC_REC_XFER_ALIGN;
+const C_Int_t Posix_FileSys_PC_SYMLINK_MAX = _PC_SYMLINK_MAX;
+const C_Int_t Posix_FileSys_PC_CHOWN_RESTRICTED = _PC_CHOWN_RESTRICTED;
+const C_Int_t Posix_FileSys_PC_NO_TRUNC = _PC_NO_TRUNC;
+const C_Int_t Posix_FileSys_PC_VDISABLE = _PC_VDISABLE;
+const C_Int_t Posix_FileSys_PC_ASYNC_IO = _PC_ASYNC_IO;
+const C_Int_t Posix_FileSys_PC_PRIO_IO = _PC_PRIO_IO;
+const C_Int_t Posix_FileSys_PC_SYNC_IO = _PC_SYNC_IO;
+
+const C_Mode_t Posix_FileSys_S_IFBLK = S_IFBLK;
+const C_Mode_t Posix_FileSys_S_IFCHR = S_IFCHR;
+const C_Mode_t Posix_FileSys_S_IFDIR = S_IFDIR;
+const C_Mode_t Posix_FileSys_S_IFIFO = S_IFIFO;
+const C_Mode_t Posix_FileSys_S_IFLNK = S_IFLNK;
+const C_Mode_t Posix_FileSys_S_IFMT = S_IFMT;
+const C_Mode_t Posix_FileSys_S_IFREG = S_IFREG;
+const C_Mode_t Posix_FileSys_S_IFSOCK = S_IFSOCK;
+const C_Mode_t Posix_FileSys_S_IRGRP = S_IRGRP;
+const C_Mode_t Posix_FileSys_S_IROTH = S_IROTH;
+const C_Mode_t Posix_FileSys_S_IRUSR = S_IRUSR;
+const C_Mode_t Posix_FileSys_S_IRWXG = S_IRWXG;
+const C_Mode_t Posix_FileSys_S_IRWXO = S_IRWXO;
+const C_Mode_t Posix_FileSys_S_IRWXU = S_IRWXU;
+const C_Mode_t Posix_FileSys_S_ISGID = S_ISGID;
+const C_Mode_t Posix_FileSys_S_ISUID = S_ISUID;
+const C_Mode_t Posix_FileSys_S_ISVTX = S_ISVTX;
+const C_Mode_t Posix_FileSys_S_IWGRP = S_IWGRP;
+const C_Mode_t Posix_FileSys_S_IWOTH = S_IWOTH;
+const C_Mode_t Posix_FileSys_S_IWUSR = S_IWUSR;
+const C_Mode_t Posix_FileSys_S_IXGRP = S_IXGRP;
+const C_Mode_t Posix_FileSys_S_IXOTH = S_IXOTH;
+const C_Mode_t Posix_FileSys_S_IXUSR = S_IXUSR;

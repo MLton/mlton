@@ -2,30 +2,30 @@
 
 static struct passwd *passwd;
 
-Cstring Posix_SysDB_Passwd_name() {
-        return (Cstring)passwd->pw_name;
+C_String_t Posix_SysDB_Passwd_getName(void) {
+  return (C_String_t)(passwd->pw_name);
 }
 
-Uid Posix_SysDB_Passwd_uid() {
-        return passwd->pw_uid;
+C_UId_t Posix_SysDB_Passwd_getUId(void) {
+  return passwd->pw_uid;
 }
 
-Gid Posix_SysDB_Passwd_gid() {
-        return passwd->pw_gid;
+C_GId_t Posix_SysDB_Passwd_getGId(void) {
+  return passwd->pw_gid;
 }
 
-Cstring Posix_SysDB_Passwd_dir() {
-        return (Cstring)passwd->pw_dir;
+C_String_t Posix_SysDB_Passwd_getDir(void) {
+  return (C_String_t)(passwd->pw_dir);
 }
 
-Cstring Posix_SysDB_Passwd_shell() {
-        return (Cstring)passwd->pw_shell;
+C_String_t Posix_SysDB_Passwd_getShell(void) {
+  return (C_String_t)(passwd->pw_shell);
 }
 
-Bool Posix_SysDB_getpwnam(Pointer p) {
-        return NULL != (passwd = getpwnam((char *) p));
+Bool_t Posix_SysDB_getpwnam(NullString8_t p) {
+  return NULL != (passwd = getpwnam((const char *) p));
 }
 
-Bool Posix_SysDB_getpwuid(Uid u) {
-        return NULL != (passwd = getpwuid(u));
+Bool_t Posix_SysDB_getpwuid(C_UId_t u) {
+  return NULL != (passwd = getpwuid(u));
 }

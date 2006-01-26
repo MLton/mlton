@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_FileSys_rename (Pointer p1, Pointer p2) {
-        return rename ((char *) p1, (char *) p2);
+C_Errno_t(C_Int_t) Posix_FileSys_rename (NullString8_t p1, NullString8_t p2) {
+  return rename ((const char*) p1, (const char*) p2);
 }

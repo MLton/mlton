@@ -1,37 +1,27 @@
 #include "platform.h"
 
-#ifndef DEBUG
-#define DEBUG FALSE
-#endif
-
 static struct utsname utsname;
 
-Int Posix_ProcEnv_Uname_uname () {
-        Int res;
-        
-        res = uname (&utsname);
-        if (DEBUG)
-                fprintf (stderr, "%d = Posix_ProcEnv_Uname_uname ()\n",
-                                (int)res);
-        return res;
+C_String_t Posix_ProcEnv_Uname_getSysName () {
+  return (C_String_t)utsname.sysname;
 }
 
-Cstring Posix_ProcEnv_Uname_sysname () {
-        return (Cstring)utsname.sysname;
+C_String_t Posix_ProcEnv_Uname_getNodeName () {
+  return (C_String_t)utsname.nodename;
 }
 
-Cstring Posix_ProcEnv_Uname_nodename () {
-        return (Cstring)utsname.nodename;
+C_String_t Posix_ProcEnv_Uname_getRelease () {
+  return (C_String_t)utsname.release;
 }
 
-Cstring Posix_ProcEnv_Uname_release () {
-        return (Cstring)utsname.release;
+C_String_t Posix_ProcEnv_Uname_getVersion () {
+  return (C_String_t)utsname.version;
 }
 
-Cstring Posix_ProcEnv_Uname_version () {
-        return (Cstring)utsname.version;
+C_String_t Posix_ProcEnv_Uname_getMachine () {
+  return (C_String_t)utsname.machine;
 }
 
-Cstring Posix_ProcEnv_Uname_machine () {
-        return (Cstring)utsname.machine;
+C_Errno_t(C_Int_t) Posix_ProcEnv_uname () {
+  return uname (&utsname);
 }

@@ -12,13 +12,14 @@
 /* GNU C Library Feature Macros */
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
-#define _XOPEN_SOURCE 600
+// #define _XOPEN_SOURCE 600
 /* Only enable _POSIX_C_SOURCE on platforms that don't have broken
  * system headers.
  */
 #if (defined (__linux__))
 #define _POSIX_C_SOURCE 200112L
 #endif
+#define _FILE_OFFSET_BITS 64
 
 /* C99 headers */
 // #include <assert.h>

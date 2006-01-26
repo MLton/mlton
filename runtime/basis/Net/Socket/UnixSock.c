@@ -10,11 +10,11 @@ void Socket_UnixSock_toAddr (NullString8_t path, C_Size_t pathlen, Array(Word8_t
   i = 0;
   if (pathlen <= UNIXSOCK_PATH_MAX) {
     for (i = 0; i < pathlen; i++) {
-      sa->sun_path[i] = path[i];
+      sa->sun_path[i] = ((const char*)path)[i];
     }
   } else {
     for (i = 0; i < UNIXSOCK_PATH_MAX-1; i++) {
-      sa->sun_path[i] = path[i];
+      sa->sun_path[i] = ((const char*)path)[i];
     }
     sa->sun_path[UNIXSOCK_PATH_MAX-1] = '\000';
   }

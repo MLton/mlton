@@ -51,7 +51,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CFLAGS = -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
+CFLAGS = -Wall -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
 DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
 WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \

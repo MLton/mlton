@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_ProcEnv_sysconf (Int i) {
-        return sysconf (i);
+C_Errno_t(C_Long_t) Posix_ProcEnv_sysconf (C_Int_t i) {
+  return sysconf (i);
 }

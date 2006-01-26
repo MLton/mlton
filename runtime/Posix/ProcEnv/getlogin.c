@@ -1,6 +1,6 @@
 #include "platform.h"
 
-Cstring Posix_ProcEnv_getlogin () {
-        char *res = getlogin ();
-        return (Cstring)(res);
+C_Errno_t(C_String_t) Posix_ProcEnv_getlogin (void) {
+  char *res = getlogin ();
+  return (C_Errno_t(C_String_t))res;
 }

@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_Process_alarm (Int i) {
-        return alarm (i);
+C_UInt_t Posix_Process_alarm (C_UInt_t i) {
+  return alarm (i);
 }

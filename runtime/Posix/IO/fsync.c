@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_IO_fsync (Fd f) {
-        return fsync (f);
+C_Errno_t(C_Int_t) Posix_IO_fsync (C_Fd_t f) {
+  return fsync (f);
 }

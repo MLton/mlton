@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_FileSys_link (Pointer p1, Pointer p2) {
-        return link ((char *) p1, (char *) p2);
+C_Errno_t(C_Int_t) Posix_FileSys_link (NullString8_t p1, NullString8_t p2) {
+  return link ((const char *) p1, (const char *) p2);
 }

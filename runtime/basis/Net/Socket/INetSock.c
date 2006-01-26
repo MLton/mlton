@@ -22,7 +22,7 @@ void Socket_INetSock_fromAddr (Vector(Word8_t) addr) {
   in_addr = sa->sin_addr;
 }
 
-Int Socket_INetSock_getPort (void) {
+C_Int_t Socket_INetSock_getPort (void) {
   return port;
 }
 

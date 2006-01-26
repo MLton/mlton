@@ -1,25 +1,26 @@
 #include "platform.h"
 
 #if HAS_SPAWN
-Int MLton_Process_spawnp (NullString p, Pointer a) {
-        char    *path;
-        char    *asaved;
-        char    **args;
-        int     an;
-        int     result;
+C_Errno_t(C_Int_t) MLton_Process_spawnp (NullString8_t p, NullString8Array_t a) {
+  const char      *file;
+  char            *asaved;
+  char            **args;
+  int             an;
+  int             res;
 
-        path = (char *) p;
-        args = (char **) a;
-        an = GC_arrayNumElements(a) - 1;
-        asaved = args[an];
-        args[an] = (char *) NULL;
-        result = spawnvp (SPAWN_MODE, path, (const char * const *)args);
-        args[an] = asaved;
-        return result;
+  path = (const char *) p;
+  args = (char **) a;
+  an = GC_arrayNumElements((pointer)a) - 1;
+  asaved = args[an];
+  args[an] = (char *) NULL;
+  result = spawnvp (SPAWN_MODE, path, 
+                    (const char * const *)args);
+  args[an] = asaved;
+  return res;
 }
 #else
-Int MLton_Process_spawnp (__attribute__ ((unused)) Pointer p, 
-                          __attribute__ ((unused)) Pointer a) {
-        die ("MLton_Process_spawnp not implemented");
+C_Errno_t(C_Int_t) MLton_Process_spawnp (__attribute__ ((unused)) NullString8_t p, 
+                                         __attribute__ ((unused)) NullString8Array_t a) {
+  die ("MLton_Process_spawnp not implemented");
 }
 #endif

@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Word Posix_FileSys_unlink (Pointer p) {
-        return unlink ((char *) p);
+C_Errno_t(C_Int_t) Posix_FileSys_unlink (NullString8_t p) {
+  return unlink ((const char*) p);
 }

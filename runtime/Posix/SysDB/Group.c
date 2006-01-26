@@ -2,22 +2,22 @@
 
 static struct group *group;
 
-Cstring Posix_SysDB_Group_name() {
-        return (Cstring)group->gr_name;
+C_String_t Posix_SysDB_Group_getName(void) {
+  return (C_String_t)(group->gr_name);
 }
 
-Gid Posix_SysDB_Group_gid() {
-        return group->gr_gid;
+C_GId_t Posix_SysDB_Group_getGId(void) {
+  return group->gr_gid;
 }
 
-CstringArray Posix_SysDB_Group_mem() {
-        return (CstringArray)group->gr_mem;
+C_StringArray_t Posix_SysDB_Group_getMem(void) {
+  return (C_StringArray_t)(group->gr_mem);
 }
 
-Bool Posix_SysDB_getgrgid(Gid g) {
-        return NULL != (group = getgrgid ((gid_t)g));
+Bool_t Posix_SysDB_getgrgid(C_GId_t g) {
+  return NULL != (group = getgrgid ((gid_t)g));
 }
 
-Bool Posix_SysDB_getgrnam(Pointer s) {
-        return NULL != (group = getgrnam ((char*)s));
+Bool_t Posix_SysDB_getgrnam(NullString8_t s) {
+  return NULL != (group = getgrnam ((const char*)s));
 }

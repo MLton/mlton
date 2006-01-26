@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Pid Posix_Process_fork () {
-        return fork ();
+C_Errno_t(C_PId_t) Posix_Process_fork (void) {
+  return fork ();
 }

@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Int Posix_Process_kill (Pid p, Signal s) {
-        return kill (p, s);
+C_Errno_t(C_Int_t) Posix_Process_kill (C_PId_t p, C_Signal_t s) {
+  return kill (p, s);
 }

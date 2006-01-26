@@ -58,6 +58,6 @@ C_Errno_t(C_Time_t) Date_mkTime(void) {
   return mktime(&tm_in);
 }
 
-C_Size_t Date_strfTime(Array(Char8_t) buf, C_Size_t n, NullString_t fmt) {
+C_Size_t Date_strfTime(Array(Char8_t) buf, C_Size_t n, NullString8_t fmt) {
   return strftime((char*)(buf), n, (char*)(fmt), &tm_in);
 }

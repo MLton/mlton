@@ -34,7 +34,6 @@ int fpclassify64 (double d);
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
 #define HAS_FPCLASSIFY64 TRUE
-#define HAS_PTRACE TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SIGNBIT FALSE

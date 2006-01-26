@@ -1,46 +1,50 @@
 #include "platform.h"
 
-Cstring Posix_ProcEnv_ctermid () {
-        char *res = ctermid (NULL);
-        return (Cstring)res;
+C_String_t Posix_ProcEnv_ctermid () {
+  char *res = ctermid (NULL);
+  return (C_String_t)res;
 }
 
-Gid Posix_ProcEnv_getegid () {
-        return getegid ();
+C_GId_t Posix_ProcEnv_getegid (void) {
+  return getegid ();
 }
 
-Uid Posix_ProcEnv_geteuid () {
-        return geteuid ();
+C_UId_t Posix_ProcEnv_geteuid (void) {
+  return geteuid ();
 }
 
-Gid Posix_ProcEnv_getgid () {
-        return getgid ();
+C_GId_t Posix_ProcEnv_getgid (void) {
+  return getgid ();
 }
 
-Pid Posix_ProcEnv_getpid  () {
-        return getpid ();
+C_PId_t Posix_ProcEnv_getpid  (void) {
+  return getpid ();
 }
 
-Pid Posix_ProcEnv_getppid () {
-        return getppid ();
+C_PId_t Posix_ProcEnv_getppid (void) {
+  return getppid ();
 }
 
-Uid Posix_ProcEnv_getuid () {
-        return getuid ();
+C_PId_t Posix_ProcEnv_getpgrp (void) {
+  return getpgrp ();
 }
 
-Int Posix_ProcEnv_setgid (Gid g) {
-        return setgid (g);
+C_UId_t Posix_ProcEnv_getuid (void) {
+  return getuid ();
 }
 
-Int Posix_ProcEnv_setpgid (Pid p, Gid g) {
-        return setpgid (p, g);
+C_Errno_t(C_Int_t) Posix_ProcEnv_setgid (C_GId_t g) {
+  return setgid (g);
 }
 
-Pid Posix_ProcEnv_setsid () {
-        return setsid ();
+C_Errno_t(C_Int_t) Posix_ProcEnv_setpgid (C_PId_t p, C_GId_t g) {
+  return setpgid (p, g);
 }
 
-Int Posix_ProcEnv_setuid (Uid u) {
-        return setuid (u);
+C_Errno_t(C_PId_t) Posix_ProcEnv_setsid (void) {
+  return setsid ();
+}
+
+C_Errno_t(C_Int_t) Posix_ProcEnv_setuid (C_UId_t u) {
+  return setuid (u);
 }

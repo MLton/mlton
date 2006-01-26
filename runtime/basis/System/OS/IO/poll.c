@@ -11,12 +11,12 @@ OS_IO_poll (Vector(C_Fd_t) fds,
   struct pollfd ufds[n];
 
   for (i = 0; i < n; i++) {
-    ufds[i].fd = fds[i];
-    ufds[i].events = eventss[i];
+    ufds[i].fd = ((nfds_t*)fds)[i];
+    ufds[i].events = ((short*)eventss)[i];
   }
   res = poll (ufds, n, timeout);
   for (i = 0; i < n; i++) {
-    reventss[i] = ufds[i].revents;
+    ((short*)reventss)[i] = ufds[i].revents;
   }
   return res;
 }

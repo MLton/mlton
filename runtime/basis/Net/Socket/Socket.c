@@ -44,20 +44,44 @@ Socket_recvFrom (C_Sock_t s, Array(Word8_t) msg,
                    (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
-C_Errno_t(C_SSize_t)
-Socket_send (C_Sock_t s, Vector(Word8_t) msg, 
+static inline C_Errno_t(C_SSize_t)
+Socket_send (C_Sock_t s, Pointer msg, 
              C_Int_t start, C_Size_t len, C_Int_t flags) {
   MLton_initSockets ();
   return send (s, (void*)((char *)msg + start), len, flags);
 }
 
-C_Errno_t(C_SSize_t) 
-Socket_sendTo (C_Sock_t s, Vector(Word8_t)msg, 
+C_Errno_t(C_SSize_t)
+Socket_sendArr (C_Sock_t s, Array(Word8_t) msg, 
+                C_Int_t start, C_Size_t len, C_Int_t flags) {
+  return Socket_send (s, (Pointer)msg, start, len, flags);
+}
+C_Errno_t(C_SSize_t)
+Socket_sendVec (C_Sock_t s, Vector(Word8_t) msg, 
+                C_Int_t start, C_Size_t len, C_Int_t flags) {
+  return Socket_send (s, (Pointer)msg, start, len, flags);
+}
+
+static inline C_Errno_t(C_SSize_t) 
+Socket_sendTo (C_Sock_t s, Pointer msg, 
                C_Int_t start, C_Size_t len, C_Int_t flags,
                Vector(Word8_t) addr, C_Socklen_t addrlen) {
   MLton_initSockets ();
   return sendto (s, (void*)((char *)msg + start), len, flags,
                  (struct sockaddr*)addr, (socklen_t)addrlen);
+}
+
+C_Errno_t(C_SSize_t) 
+Socket_sendArrTo (C_Sock_t s, Array(Word8_t) msg, 
+                  C_Int_t start, C_Size_t len, C_Int_t flags,
+                  Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  return Socket_sendTo (s, (Pointer)msg, start, len, flags, addr, addrlen);
+}
+C_Errno_t(C_SSize_t) 
+Socket_sendVecTo (C_Sock_t s, Vector(Word8_t) msg, 
+                  C_Int_t start, C_Size_t len, C_Int_t flags,
+                  Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  return Socket_sendTo (s, (Pointer)msg, start, len, flags, addr, addrlen);
 }
 
 C_Errno_t(C_Int_t) Socket_shutdown (C_Sock_t s, C_Int_t how) {

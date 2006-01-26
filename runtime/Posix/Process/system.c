@@ -1,5 +1,5 @@
 #include "platform.h"
 
-int Posix_Process_system (const char* cmd) {
-        return system (cmd);
+C_Errno_t(C_Status_t) Posix_Process_system (NullString8_t cmd) {
+  return system ((const char*) cmd);
 }

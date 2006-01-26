@@ -124,8 +124,9 @@ static inline void Windows_release (void *base) {
                 die ("VirtualFree release failed");
 }
 
-Pid Windows_Process_create (NullString cmds, NullString args, NullString envs,
-                                Fd in, Fd out, Fd err) {
+C_Errno_t(C_PId_t) 
+Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t envs,
+                        C_Fd_t in, C_Fd_t out, C_Fd_t err) {
         char    *cmd;
         char    *arg;
         char    *env;
