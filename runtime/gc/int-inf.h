@@ -15,15 +15,21 @@ typedef struct GC_intInf {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
-  uint32_t isneg;
-  uint32_t limbs[1];
+  mp_limb_t isneg;
+  mp_limb_t limbs[1];
 } *GC_intInf;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-#define GC_INTINF_HEADER GC_WORD32_VECTOR_HEADER
+COMPILE_TIME_ASSERT(sizeof_mp_limb_t__is_four_or_eight, 
+                    (sizeof(mp_limb_t) == 4 || sizeof(mp_limb_t) == 8));
+#define GC_INTINF_HEADER ( \
+        CHAR_BIT * sizeof(mp_limb_t) == 32 ? \
+        GC_WORD32_VECTOR_HEADER : ( \
+        CHAR_BIT * sizeof(mp_limb_t) == 64 ? \
+        GC_WORD64_VECTOR_HEADER : ( 0 ) ) )
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

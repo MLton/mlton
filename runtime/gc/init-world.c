@@ -17,9 +17,10 @@ size_t sizeofInitialBytesLive (GC_state s) {
   
   total = 0;
   for (i = 0; i < s->intInfInitsLength; ++i) {
+    /* A slight overestimate. */
     numBytes = 
-      sizeof(uint32_t) // for the sign
-      + strlen (s->intInfInits[i].mlstr);
+      sizeof(mp_limb_t) // for the sign
+      + (align(strlen (s->intInfInits[i].mlstr), sizeof(mp_limb_t)));
     total += align (GC_ARRAY_HEADER_SIZE 
                     + numBytes, 
                     s->alignment);
@@ -41,12 +42,11 @@ void initIntInfs (GC_state s) {
   struct GC_intInfInit *inits;
   pointer frontier;
   char *str;
-  size_t slen, llen;
+  size_t slen;
   mp_size_t alen;
   uint32_t i, j;
-  bool neg, hex;
+  bool neg;
   GC_intInf bp;
-  unsigned char *cp;
 
   assert (isFrontierAligned (s, s->frontier));
   frontier = s->frontier;
@@ -58,30 +58,18 @@ void initIntInfs (GC_state s) {
     if (neg)
       str++;
     slen = strlen (str);
-    hex = str[0] == '0' && str[1] == 'x';
-    if (hex) {
-      str += 2;
-      slen -= 2;
-      llen = (slen + 7) / 8;
-    } else
-      llen = (slen + 8) / 9;
     assert (slen > 0);
-    bp = (GC_intInf)frontier;
-    cp = (unsigned char *)(&(bp->limbs[llen]));
 
-    for (j = 0; j != slen; j++)
-      if ('0' <= str[j] && str[j] <= '9')
-        cp[j] = str[j] - '0' + 0;
-      else if ('a' <= str[j] && str[j] <= 'f')
-        cp[j] = str[j] - 'a' + 0xa;
-      else {
-        assert('A' <= str[j] && str[j] <= 'F');
-        cp[j] = str[j] - 'A' + 0xA;
-      }
-    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), cp, slen, hex ? 0x10 : 10);
-    assert ((size_t)alen <= llen);
+    bp = (GC_intInf)frontier;
+
+    for (j = 0; j != slen; j++) {
+      assert('0' <= str[j] && str[j] <= '9');
+      unsigned char c = str[j] - '0' + 0;
+      str[j] = c;
+    }
+    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), (unsigned char*)str, slen, 10);
     if (alen <= 1) {
-      uint32_t val, ans;
+      uintmax_t val, ans;
       
       if (alen == 0)
         val = 0;
@@ -89,16 +77,16 @@ void initIntInfs (GC_state s) {
         val = bp->limbs[0];
       if (neg) {
         /*
-         * We only fit if val in [1, 2^30].
+         * We only fit if val in [1, 2^(8 * OBJPTR_SIZE - 1)].
          */
         ans = - val;
         val = val - 1;
       } else
         /* 
-         * We only fit if val in [0, 2^30 - 1].
+         * We only fit if val in [0, 2^(8 * OBJPTR_SIZE - 1) - 1].
          */
         ans = val;
-      if (val < (uint32_t)1<<30) {
+      if (val < (uintmax_t)1<<(8 * OBJPTR_SIZE - 1)) {
         s->globals[inits->globalIndex] = (objptr)(ans<<1 | 1);
         continue;
       }
@@ -106,7 +94,7 @@ void initIntInfs (GC_state s) {
     s->globals[inits->globalIndex] = pointerToObjptr((pointer)(&bp->isneg), s->heap.start);
     bp->counter = 0;
     bp->length = alen + 1;
-    bp->header = buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX);
+    bp->header = GC_INTINF_HEADER;
     bp->isneg = neg;
     frontier = alignFrontier (s, (pointer)&bp->limbs[alen]);
   }
@@ -151,6 +139,9 @@ void initVectors (GC_state s) {
       break;
     case 4:
       typeIndex = WORD32_VECTOR_TYPE_INDEX;
+      break;
+    case 8:
+      typeIndex = WORD64_VECTOR_TYPE_INDEX;
       break;
     default:
       die ("unknown bytes per element in vectorInit: %zu",

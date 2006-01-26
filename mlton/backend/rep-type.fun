@@ -384,6 +384,7 @@ structure ObjectType =
        * WORD8_VECTOR_TYPE_INDEX,
        * WORD16_VECTOR_TYPE_INDEX,
        * WORD32_VECTOR_TYPE_INDEX.
+       * WORD64_VECTOR_TYPE_INDEX.
        *)
       val basic =
          let
@@ -402,7 +403,8 @@ structure ObjectType =
              (PointerTycon.weakGone, WeakGone),
              wordVec 8,
              wordVec 32,
-             wordVec 16]
+             wordVec 16,
+             wordVec 64]
          end
 
       local

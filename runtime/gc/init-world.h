@@ -15,8 +15,8 @@
  *
  * The strings pointed to by the mlstr fields consist of
  *      an optional ~
- *      either one or more of [0-9] or
- *             0x followed by one or more of [0-9a-fA-F]
+ *      one of [1-9]
+ *      zero or more of [0-9]
  *      a trailing EOS
  */
 struct GC_intInfInit {
