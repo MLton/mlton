@@ -47,7 +47,11 @@
 // #include <wchar.h>
 // #include <wctype.h>
 
-
+#define COMPILE_TIME_ASSERT(name, x) \
+        typedef int _COMPILE_TIME_ASSERT___##name[(x) ? 1 : -1]
+COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
+COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
+COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 
 #include <fcntl.h>
 #include <unistd.h>
