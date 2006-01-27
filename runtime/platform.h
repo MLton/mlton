@@ -235,14 +235,45 @@ extern Bool MLton_Platform_CygwinUseMmap;
 /*                     PackReal                      */
 /* ------------------------------------------------- */
 
-Real32 PackReal32_subVec (Pointer v, Int offset);
-Real32 PackReal32_subVecRev (Pointer v, Int offset);
-Real64 PackReal64_subVec (Pointer v, Int offset);
-Real64 PackReal64_subVecRev (Pointer v, Int offset);
-void PackReal32_update (Pointer a, Int offset, Real32 r);
-void PackReal32_updateRev (Pointer a, Int offset, Real32 r);
-void PackReal64_update (Pointer a, Int offset, Real64 r);
-void PackReal64_updateRev (Pointer a, Int offset, Real64 r);
+Real32_t PackReal32_subArr (Array(Word8_t) v, Int offset);
+Real32_t PackReal32_subArrRev (Array(Word8_t) v, Int offset);
+Real64_t PackReal64_subArr (Array(Word8_t) v, Int offset);
+Real64_t PackReal64_subArrRev (Array(Word8_t) v, Int offset);
+Real32_t PackReal32_subVec (Vector(Word8_t) v, Int offset);
+Real32_t PackReal32_subVecRev (Vector(Word8_t) v, Int offset);
+Real64_t PackReal64_subVec (Vector(Word8_t) v, Int offset);
+Real64_t PackReal64_subVecRev (Vector(Word8_t) v, Int offset);
+void PackReal32_update (Array(Word8_t) a, Int offset, Real32_t r);
+void PackReal32_updateRev (Array(Word8_t) a, Int offset, Real32_t r);
+void PackReal64_update (Array(Word8_t) a, Int offset, Real64_t r);
+void PackReal64_updateRev (Array(Word8_t) a, Int offset, Real64_t r);
+
+/* ------------------------------------------------- */
+/*                     PackWord                      */
+/* ------------------------------------------------- */
+
+Word16_t PackWord16_subArr (Array(Word8_t) v, Int offset);
+Word16_t PackWord16_subArrRev (Array(Word8_t) v, Int offset);
+Word32_t PackWord32_subArr (Array(Word8_t) v, Int offset);
+Word32_t PackWord32_subArrRev (Array(Word8_t) v, Int offset);
+Word64_t PackWord64_subArr (Array(Word8_t) v, Int offset);
+Word64_t PackWord64_subArrRev (Array(Word8_t) v, Int offset);
+Word16_t PackWord16_subVec (Vector(Word8_t) v, Int offset);
+Word16_t PackWord16_subVecRev (Vector(Word8_t) v, Int offset);
+Word32_t PackWord32_subVec (Vector(Word8_t) v, Int offset);
+Word32_t PackWord32_subVecRev (Vector(Word8_t) v, Int offset);
+Word64_t PackWord64_subVec (Vector(Word8_t) v, Int offset);
+Word64_t PackWord64_subVecRev (Vector(Word8_t) v, Int offset);
+void PackWord16_update (Array(Word8_t) a, Int offset, Word16_t w);
+void PackWord16_updateRev (Array(Word8_t) a, Int offset, Word16_t w);
+void PackWord32_update (Array(Word8_t) a, Int offset, Word32_t w);
+void PackWord32_updateRev (Array(Word8_t) a, Int offset, Word32_t w);
+void PackWord64_update (Array(Word8_t) a, Int offset, Word64_t w);
+void PackWord64_updateRev (Array(Word8_t) a, Int offset, Word64_t w);
+/* Compat */
+Word32 Word8Array_subWord32Rev (Pointer v, Int offset);
+void Word8Array_updateWord32Rev (Pointer a, Int offset, Word32 w);
+Word32 Word8Vector_subWord32Rev (Pointer v, Int offset);
 
 /* ------------------------------------------------- */
 /*                       Real                        */
@@ -280,11 +311,6 @@ static inline void MLton_initSockets (void) {}
 #endif
 
 /* ------------------------------------------------- */
-/*                      Windows                      */
-/* ------------------------------------------------- */
-
-
-/* ------------------------------------------------- */
 /*                  Word{8,16,32,64}                 */
 /* ------------------------------------------------- */
 
@@ -314,18 +340,5 @@ all (64)
 #undef negCheckOverflows
 #undef SsubCheckOverflows
 #undef all
-
-/* ------------------------------------------------- */
-/*                    Word8 Array                    */
-/* ------------------------------------------------- */
-
-Word32 Word8Array_subWord32Rev (Pointer v, Int offset);
-void Word8Array_updateWord32Rev (Pointer a, Int offset, Word32 w);
-
-/* ------------------------------------------------- */
-/*                    Word8 Vector                   */
-/* ------------------------------------------------- */
-
-Word32 Word8Vector_subWord32Rev (Pointer v, Int offset);
 
 #endif /* _MLTON_PLATFORM_H_ */
