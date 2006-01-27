@@ -21,7 +21,7 @@
  */
 struct GC_intInfInit {
   uint32_t globalIndex;
-  char *mlstr;
+  const char *mlstr;
 };
 
 /* GC_init allocates a collection of arrays/vectors in the heap. */

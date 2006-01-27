@@ -12,19 +12,25 @@
 
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
+  size_t maxSLen = 0;
   size_t numBytes;
   size_t total;
   
   total = 0;
   for (i = 0; i < s->intInfInitsLength; ++i) {
+    size_t slen = strlen (s->intInfInits[i].mlstr);
+    maxSLen = max (maxSLen, slen);
+    double bytesPerChar = 0.415241011861 /* = ((log(10.0) / log(2.0)) / 8.0) */ ;
+    double bytes = ceil((double)slen * bytesPerChar);
     /* A slight overestimate. */
     numBytes = 
       sizeof(mp_limb_t) // for the sign
-      + (align(strlen (s->intInfInits[i].mlstr), sizeof(mp_limb_t)));
+      + (align((size_t)bytes, sizeof(mp_limb_t)));
     total += align (GC_ARRAY_HEADER_SIZE 
                     + numBytes, 
                     s->alignment);
   }
+  total += maxSLen;
   for (i = 0; i < s->vectorInitsLength; ++i) {
     numBytes = 
       s->vectorInits[i].bytesPerElement
@@ -41,12 +47,13 @@ size_t sizeofInitialBytesLive (GC_state s) {
 void initIntInfs (GC_state s) {
   struct GC_intInfInit *inits;
   pointer frontier;
-  char *str;
+  const char *str;
   size_t slen;
   mp_size_t alen;
   uint32_t i, j;
   bool neg;
   GC_intInf bp;
+  unsigned char* cp;
 
   assert (isFrontierAligned (s, s->frontier));
   frontier = s->frontier;
@@ -59,15 +66,15 @@ void initIntInfs (GC_state s) {
       str++;
     slen = strlen (str);
     assert (slen > 0);
+    cp = (unsigned char*)(s->heap.start + (s->heap.size - slen));
 
     bp = (GC_intInf)frontier;
 
     for (j = 0; j != slen; j++) {
       assert('0' <= str[j] && str[j] <= '9');
-      unsigned char c = str[j] - '0' + 0;
-      str[j] = c;
+      cp[j] = str[j] - '0' + 0;
     }
-    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), (unsigned char*)str, slen, 10);
+    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), cp, slen, 10);
     if (alen <= 1) {
       uintmax_t val, ans;
       
