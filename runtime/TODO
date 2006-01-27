@@ -4,13 +4,14 @@
 
 * Use C99 <assert.h> instead of util/assert.{c,h}
 
+
+Fix PackWord{16,32,64}_{sub,upadate}{,Rev} to use byte offset; 
+This requires fixing the semantics of the primitives as well.
+
 basis/Int/Word.c
-basis/Int/Word8Array.c
-basis/Int/Word8Vector.c
 basis/IntInf.c
 basis/MLton/allocTooLarge.c
 basis/MLton/bug.c
-basis/PackReal.c
 basis/Real/Math.c
 basis/Real/class.c
 basis/Real/frexp.c
