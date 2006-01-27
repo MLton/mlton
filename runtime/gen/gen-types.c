@@ -151,7 +151,6 @@ static char* stdtypes[] = {
   } while (0)
 
 static char* suffix[] = {
-  "",
   "#define C_Errno_t(t) t",
   "",
   "#endif /* _MLTON_TYPES_H_ */",
@@ -249,6 +248,10 @@ int main (int argc, char* argv[]) {
   systype(cc_t, "Word", "C_CC_t");
   systype(speed_t, "Word", "C_Speed_t");
   systype(tcflag_t, "Word", "C_TCFlag_t");
+  writeNewline (fd);
+  writeString (fd, "/* from \"gmp.h\" */");
+  writeNewline (fd);
+  systype(mp_limb_t, "Word", "C_MPLimb_t");
   writeNewline (fd);
   for (int i = 0; suffix[i] != NULL; i++) {
     writeString (fd, suffix[i]);
