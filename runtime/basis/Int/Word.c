@@ -24,10 +24,6 @@
  * implements / and %.
  */
 
-#ifndef DEBUG
-#define DEBUG FALSE
-#endif
-
 #if ! (defined (__amd64__) || defined (__hppa__) || defined (__i386__) || defined (__ppc__) || defined (__powerpc__) || defined (__sparc__))
 #error check that C {/,%} correctly implement {quot,rem} from the basis library
 #endif
@@ -42,18 +38,18 @@
         coerce (Word##S##from, Word##to)        \
         coerce (Word##U##from, Word##to)
 
-#define WordS8_max (WordS8)0x7F
-#define WordS8_min (WordS8)0x80
-#define WordS16_max (WordS16)0x7FFF
-#define WordS16_min (WordS16)0x8000
-#define WordS32_max (WordS32)0x7FFFFFFF
-#define WordS32_min (WordS32)0x80000000
-#define WordS64_max (WordS64)0x7FFFFFFFFFFFFFFFll
-#define WordS64_min (WordS64)0x8000000000000000ll
-#define WordU8_max (WordU8)0xFF
-#define WordU16_max (WordU16)0xFFFF
-#define WordU32_max (WordU32)0xFFFFFFFF
-#define WordU64_max (WordU64)0xFFFFFFFFFFFFFFFFull
+#define WordS8_max (WordS8)INT8_MAX
+#define WordS8_min (WordS8)INT8_MIN
+#define WordS16_max (WordS16)INT16_MAX
+#define WordS16_min (WordS16)INT16_MIN
+#define WordS32_max (WordS32)INT32_MAX
+#define WordS32_min (WordS32)INT32_MIN
+#define WordS64_max (WordS64)INT64_MAX
+#define WordS64_min (WordS64)INT64_MIN
+#define WordU8_max (WordU8)UINT8_MAX
+#define WordU16_max (WordU16)UINT16_MAX
+#define WordU32_max (WordU32)UINT32_MAX
+#define WordU64_max (WordU64)UINT64_MAX
 
 #define binary(kind, name, op)                                          \
         Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);  \

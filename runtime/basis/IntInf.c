@@ -22,11 +22,11 @@ extern struct GC_state gcState;
  * Test if a intInf is a fixnum.
  */
 static inline bool isSmall (pointer arg) {
-        return ((uintptr_t)arg & 1);
+  return ((uintptr_t)arg & 1);
 }
 
 static inline bool eitherIsSmall (pointer arg1, pointer arg2) {
-        return (((uintptr_t)arg1 | (uintptr_t)arg2) & 1);
+  return (((uintptr_t)arg1 | (uintptr_t)arg2) & 1);
 }
 
 static inline bool areSmall (pointer arg1, pointer arg2) {
