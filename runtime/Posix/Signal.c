@@ -54,7 +54,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(Bool_t) isDef) {
   return res;
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_handle (C_Int_t signum) {
+C_Errno_t(C_Int_t) Posix_Signal_handlee (C_Int_t signum) {
   static struct sigaction sa;
 
   sigaddset (GC_getSignalsHandledAddr (&gcState), signum);
