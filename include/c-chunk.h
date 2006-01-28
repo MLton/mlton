@@ -13,7 +13,7 @@
 
 #include "assert.h"
 #include "c-common.h"
-#include "types.h"
+#include "ml-types.h"
 
 #ifndef TRUE
 #define TRUE 1

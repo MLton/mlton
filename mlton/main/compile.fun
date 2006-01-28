@@ -414,7 +414,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                 let
                    val _ =
                       File.outputContents
-                      (concat [!Control.libDir, "/include/types.h"], out)
+                      (concat [!Control.libDir, "/include/ml-types.h"], out)
                    fun print s = Out.output (out, s)
                    val _ = print "\n"
                    val _ = Ffi.declareHeaders {print = print}
