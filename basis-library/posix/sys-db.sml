@@ -8,7 +8,7 @@
 
 structure PosixSysDB: POSIX_SYS_DB =
    struct
-      structure CS = C.CS
+      structure CS = COld.CS
       structure Prim = PosixPrimitive.SysDB
       structure Error = PosixError
       structure SysCall = Error.SysCall
@@ -66,7 +66,7 @@ structure PosixSysDB: POSIX_SYS_DB =
                 (if f () then 0 else ~1,
                  fn () => {name = CS.toString(Group.name()),
                            gid = Group.gid(),
-                           members = C.CSS.toList(Group.mem())}))
+                           members = COld.CSS.toList(Group.mem())}))
                   
             val name: group -> string = #name
             val gid: group -> gid = #gid

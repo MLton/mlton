@@ -34,7 +34,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          else fn () => Error.raiseSys Error.nosys
 
       val conv = NullString.nullTerm
-      val convs = C.CSS.fromList
+      val convs = COld.CSS.fromList
 
       fun exece (path, args, env): 'a =
          let

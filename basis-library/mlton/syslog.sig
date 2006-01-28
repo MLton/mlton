@@ -20,7 +20,11 @@ signature MLTON_SYSLOG =
          
       val CONS     : openflag
       val NDELAY   : openflag
+      val NOWAIT   : openflag
+      val ODELAY   : openflag
+(*
       val PERROR   : openflag
+*)
       val PID      : openflag
 
       type facility
@@ -40,7 +44,9 @@ signature MLTON_SYSLOG =
       val LPR      : facility
       val MAIL     : facility
       val NEWS     : facility
+(*
       val SYSLOG   : facility
+*)
       val USER     : facility
       val UUCP     : facility
 

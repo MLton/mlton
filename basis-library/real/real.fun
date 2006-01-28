@@ -432,10 +432,10 @@ functor Real (R: PRE_REAL): REAL =
                      if Int.< (i, 0)
                         then ac
                      else loop (Int.- (i, 1),
-                                (Int.- (Char.ord (C.CS.sub (cs, i)),
+                                (Int.- (Char.ord (COld.CS.sub (cs, i)),
                                         Char.ord #"0"))
                                 :: ac)
-                  val digits = loop (Int.- (C.CS.length cs, 1), [])
+                  val digits = loop (Int.- (COld.CS.length cs, 1), [])
                in
                   {class = c,
                    digits = digits,
@@ -448,16 +448,16 @@ functor Real (R: PRE_REAL): REAL =
       fun add1 n = Int.+ (n, 1)
          
       local
-         fun fix (sign: string, cs: C.CS.t, decpt: int, ndig: int): string =
+         fun fix (sign: string, cs: COld.CS.t, decpt: int, ndig: int): string =
             let
-               val length = C.CS.length cs
+               val length = COld.CS.length cs
             in
                if Int.< (decpt, 0)
                   then
                      concat [sign,
                              "0.",
                              String.new (Int.~ decpt, #"0"),
-                             C.CS.toString cs,
+                             COld.CS.toString cs,
                              String.new (Int.+ (Int.- (ndig, length),
                                                 decpt),
                                          #"0")]
@@ -469,7 +469,7 @@ functor Real (R: PRE_REAL): REAL =
                         else
                            String.tabulate (decpt, fn i =>
                                             if Int.< (i, length)
-                                               then C.CS.sub (cs, i)
+                                               then COld.CS.sub (cs, i)
                                             else #"0")
                   in
                      if 0 = ndig
@@ -483,7 +483,7 @@ functor Real (R: PRE_REAL): REAL =
                                   val j = Int.+ (i, decpt)
                                in
                                   if Int.< (j, length)
-                                     then C.CS.sub (cs, j)
+                                     then COld.CS.sub (cs, j)
                                   else #"0"
                                end)
                         in
@@ -495,8 +495,8 @@ functor Real (R: PRE_REAL): REAL =
             let
                val sign = if x < zero then "~" else ""
                val (cs, decpt) = gdtoa (x, Sci, add1 ndig)
-               val length = C.CS.length cs
-               val whole = String.tabulate (1, fn _ => C.CS.sub (cs, 0))
+               val length = COld.CS.length cs
+               val whole = String.tabulate (1, fn _ => COld.CS.sub (cs, 0))
                val frac =
                   if 0 = ndig
                      then ""
@@ -507,7 +507,7 @@ functor Real (R: PRE_REAL): REAL =
                                    val j = Int.+ (i, 1)
                                 in
                                    if Int.< (j, length)
-                                      then C.CS.sub (cs, j)
+                                      then COld.CS.sub (cs, j)
                                    else #"0"
                                 end)]
                val exp = Int.- (decpt, 1)

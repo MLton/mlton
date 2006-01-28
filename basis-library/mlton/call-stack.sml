@@ -44,7 +44,7 @@ structure MLtonCallStack =
                          if j > max
                             then ac
                          else loop (j + 1,
-                                    C.CS.toString (sourceName
+                                    COld.CS.toString (sourceName
                                                    (gcState, Pointer.getInt32 (p, j)))
                                     :: ac)
                    in

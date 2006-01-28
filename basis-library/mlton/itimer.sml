@@ -8,7 +8,7 @@
 
 structure MLtonItimer =
    struct
-      structure Prim = Primitive.Itimer
+      structure Prim = PrimitiveFFI.MLton.Itimer
          
       datatype t = Prof | Real | Virtual
 
@@ -18,9 +18,9 @@ structure MLtonItimer =
           | Virtual => PosixPrimitive.Signal.vtalrm
 
       val toInt =
-         fn Prof => Prim.prof
-          | Real => Prim.real
-          | Virtual => Prim.virtual
+         fn Prof => Prim.PROF
+          | Real => Prim.REAL
+          | Virtual => Prim.VIRTUAL
 
       fun set' (t, {interval, value}) =
          let
@@ -33,7 +33,7 @@ structure MLtonItimer =
             val (s1, u1) = split interval
             val (s2, u2) = split value
          in
-            Prim.set (toInt t, s1, u1, s2, u2)
+            ignore (Prim.set (toInt t, s1, u1, s2, u2))
          end
 
       fun set (z as (t, _)) =

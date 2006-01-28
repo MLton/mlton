@@ -8,7 +8,9 @@
 
 structure MLtonRlimit: MLTON_RLIMIT =
    struct
-      open Primitive.MLton.Rlimit
+      open PrimitiveFFI.MLton.Rlimit
+      type rlim = C.RLim.t
+      type t = C.Int.t
 
       val get =
          fn (r: t) =>
@@ -22,4 +24,21 @@ structure MLtonRlimit: MLTON_RLIMIT =
          fn (r: t, {hard, soft}) =>
          PosixError.SysCall.simple
          (fn () => set (r, hard, soft))
+
+      val infinity = INFINITY
+
+      val coreFileSize = CORE
+      val cpuTime = CPU
+      val dataSize = DATA
+      val fileSize = FSIZE
+      val numFiles = NOFILE
+      val stackSize = STACK
+      val virtualMemorySize = AS
+
+(*
+      val lockedInMemorySize = MEMLOCK
+      val numProcesses = NPROC
+      val residentSetSize = RSS
+*)
+
    end

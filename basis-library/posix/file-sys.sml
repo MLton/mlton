@@ -95,7 +95,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                         NONE => NONE
                       | SOME cs => 
                            let
-                              val s = C.CS.toString cs
+                              val s = COld.CS.toString cs
                            in
                               if s = "." orelse s = ".."
                                  then loop ()

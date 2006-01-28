@@ -27,20 +27,20 @@ structure NetServDB: NET_SERV_DB =
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = C.CS.toString (Prim.entryName ())
+                   val name = COld.CS.toString (Prim.entryName ())
                    val numAliases = Prim.entryNumAliases ()
                    fun fill (n, aliases) =
                      if n < numAliases
                        then let
                               val alias =
-                                C.CS.toString (Prim.entryAliasesN n)
+                                COld.CS.toString (Prim.entryAliasesN n)
                             in
                               fill (n + 1, alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
                    val port = Net.ntohs (Prim.entryPort ())
-                   val protocol = C.CS.toString (Prim.entryProtocol ())
+                   val protocol = COld.CS.toString (Prim.entryProtocol ())
                  in
                    SOME (T {name = name,
                             aliases = aliases,

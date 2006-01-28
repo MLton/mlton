@@ -110,13 +110,6 @@ in
       struct
          open Primitive
 
-         structure Itimer =
-            struct
-               open Itimer
-
-               val set = stub ("set", set)
-            end
-
          structure OS =
             struct
                open OS
@@ -139,6 +132,22 @@ in
 
                      val toAddr = stub ("toAddr", toAddr)
                      val fromAddr = stub ("fromAddr", fromAddr)
+                  end
+            end
+      end
+   structure PrimitiveFFI =
+      struct
+         open PrimitiveFFI
+
+         structure MLton =
+            struct
+               open MLton
+                  
+               structure Itimer =
+                  struct
+                     open Itimer
+                        
+                     val set = stub ("set", set)
                   end
             end
       end

@@ -25,13 +25,13 @@ structure NetProtDB: NET_PROT_DB =
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = C.CS.toString (Prim.entryName ())
+                   val name = COld.CS.toString (Prim.entryName ())
                    val numAliases = Prim.entryNumAliases ()
                    fun fill (n, aliases) =
                      if n < numAliases
                        then let
                               val alias =
-                                C.CS.toString (Prim.entryAliasesN n)
+                                COld.CS.toString (Prim.entryAliasesN n)
                             in
                               fill (n + 1, alias::aliases)
                             end

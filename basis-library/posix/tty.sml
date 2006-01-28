@@ -8,7 +8,7 @@
 
 structure PosixTTY: POSIX_TTY =
    struct
-      structure Cstring = C.CS
+      structure Cstring = COld.CS
       structure Prim = PosixPrimitive.TTY
       open Prim
       structure Error = PosixError

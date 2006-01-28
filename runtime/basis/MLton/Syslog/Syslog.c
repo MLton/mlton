@@ -13,5 +13,5 @@ void MLton_Syslog_openlog(NullString8_t s, C_Int_t o, C_Int_t f) {
 }
 
 void MLton_Syslog_syslog(C_Int_t p, NullString8_t s) {
-  syslog(p, (const char*)s);
+  syslog(p, "%s", (const char*)s);
 }

@@ -11,7 +11,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       structure Prim = PosixPrimitive.ProcEnv
       structure Error = PosixError
       structure SysCall = Error.SysCall
-      structure CS = C.CS
+      structure CS = COld.CS
 
       type pid = Pid.t
          
@@ -119,7 +119,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
              end)
       end
 
-      fun environ () = C.CSS.toList Prim.environ
+      fun environ () = COld.CSS.toList Prim.environ
 
       fun getenv name =
          let

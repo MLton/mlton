@@ -22,7 +22,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
        | SUBNORMAL
        | ZERO
          
-      structure Prim = Primitive.IEEEReal
+      structure Prim = PrimitiveFFI.IEEEReal
 
       structure RoundingMode =
          struct
@@ -37,10 +37,10 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                   let
                      open Prim.RoundingMode
                   in
-                     [(toNearest, TO_NEAREST),
-                      (downward, TO_NEGINF),
-                      (upward, TO_POSINF),
-                      (towardZero, TO_ZERO)]
+                     [(FE_TONEAREST, TO_NEAREST),
+                      (FE_DOWNWARD, TO_NEGINF),
+                      (FE_UPWARD, TO_POSINF),
+                      (FE_TOWARDZERO, TO_ZERO)]
                   end
             in
                val fromInt: int -> t =
@@ -55,12 +55,12 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                      open Prim.RoundingMode
                      val i =
                         case m of
-                           TO_NEAREST => toNearest
-                         | TO_NEGINF => downward
-                         | TO_POSINF => upward
-                         | TO_ZERO => towardZero
+                           TO_NEAREST => FE_TONEAREST
+                         | TO_NEGINF => FE_DOWNWARD
+                         | TO_POSINF => FE_UPWARD
+                         | TO_ZERO => FE_TOWARDZERO
                   in
-                     if i = noSupport
+                     if i = FE_NOSUPPORT
                         then raise Fail "IEEEReal rounding mode not supported"
                      else i
                   end

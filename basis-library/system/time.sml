@@ -9,7 +9,7 @@
 structure Time: TIME_EXTRA =
 struct
 
-structure Prim = Primitive.Time
+structure Prim = PrimitiveFFI.Time
 
 (* A time is represented as a number of nanoseconds. *)
 val ticksPerSecond: LargeInt.int = 1000000000
@@ -68,7 +68,7 @@ end
  *)
 local
    fun getNow (): time =
-      (if ~1 = Prim.gettimeofday ()
+      (if ~1 = Prim.getTimeOfDay ()
           then raise Fail "Time.now"
        else ()
        ; timeAdd(fromSeconds (LargeInt.fromInt (Prim.sec ())),

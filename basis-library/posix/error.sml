@@ -45,7 +45,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
          in
             if cs = Primitive.Pointer.null
                then "Unknown error"
-            else C.CS.toString cs
+            else COld.CS.toString cs
          end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)

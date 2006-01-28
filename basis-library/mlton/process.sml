@@ -322,8 +322,8 @@ structure MLtonProcess =
             then
                let
                   val path = NullString.nullTerm path
-                  val args = C.CSS.fromList args
-                  val env = C.CSS.fromList env
+                  val args = COld.CSS.fromList args
+                  val env = COld.CSS.fromList env
                in
                   SysCall.syscall
                   (fn () =>
@@ -346,7 +346,7 @@ structure MLtonProcess =
             then
                let
                   val file = NullString.nullTerm file
-                  val args = C.CSS.fromList args
+                  val args = COld.CSS.fromList args
                in
                   SysCall.syscall
                   (fn () =>

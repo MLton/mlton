@@ -128,10 +128,6 @@ structure Primitive =
          struct
             type t = Pointer.t
          end
-      structure CStringArray =
-         struct
-            type t = Pointer.t
-         end
 
       structure GCState =
          struct
@@ -204,13 +200,6 @@ structure Primitive =
             (* val fromWord32 = _prim "WordU32_toWord32": Word32.word -> char; *)
          end
 
-      structure CommandLine =
-         struct
-            val argc = #1 _symbol "CommandLine_argc": int GetSet.t;
-            val argv = #1 _symbol "CommandLine_argv": CStringArray.t GetSet.t;
-            val commandName = #1 _symbol "CommandLine_commandName": CString.t GetSet.t;
-         end
-
       structure Exn =
          struct
             (* The polymorphism with extra and setInitExtra is because primitives
@@ -264,25 +253,6 @@ structure Primitive =
                _import "GC_unpack": GCState.t -> unit;
          end
       
-      structure IEEEReal =
-         struct
-            structure RoundingMode =
-               struct
-                  type t = int
-                     
-                  val toNearest = _const "FE_TONEAREST": t;
-                  val downward = _const "FE_DOWNWARD": t;
-                  val noSupport = _const "FE_NOSUPPORT": t;
-                  val upward = _const "FE_UPWARD": t;
-                  val towardZero = _const "FE_TOWARDZERO": t;
-               end
-            
-            val getRoundingMode =
-               _import "IEEEReal_getRoundingMode": unit -> int;
-            val setRoundingMode =
-               _import "IEEEReal_setRoundingMode": int -> unit;
-         end
-
       structure Int1 =
          struct
             open Int1
@@ -761,17 +731,6 @@ structure Primitive =
             val xorb = _prim "IntInf_xorb": int * int * word -> int;
          end
 
-      structure Itimer =
-         struct
-            type which = int
-               
-            val prof = _const "Itimer_prof": which;
-            val real = _const "Itimer_real": which;
-            val set =
-               _import "Itimer_set": which * int * int * int * int -> unit;
-            val virtual = _const "Itimer_virtual": which;
-         end
-
       structure MLton =
          struct
             structure Codegen =
@@ -913,93 +872,6 @@ structure Primitive =
                   val setCurrent =
                      _import "GC_setProfileCurrent"
                      : GCState.t * Data.t -> unit;
-               end
-            
-            structure Rlimit =
-               struct
-                  type rlim = word
-                     
-                  val infinity = _const "MLton_Rlimit_infinity": rlim;
-
-                  type t = int
-
-                  val cpuTime = _const "MLton_Rlimit_cpuTime": t;
-                  val coreFileSize = _const "MLton_Rlimit_coreFileSize": t;
-                  val dataSize = _const "MLton_Rlimit_dataSize": t;
-                  val fileSize = _const "MLton_Rlimit_fileSize": t;
-                  val lockedInMemorySize =
-                     _const "MLton_Rlimit_lockedInMemorySize": t;
-                  val numFiles = _const "MLton_Rlimit_numFiles": t;
-                  val numProcesses = _const "MLton_Rlimit_numProcesses": t;
-                  val residentSetSize = _const "MLton_Rlimit_residentSetSize": t;
-                  val stackSize = _const "MLton_Rlimit_stackSize": t;
-                  val virtualMemorySize =
-                     _const "MLton_Rlimit_virtualMemorySize": t;
-                     
-                  val get = _import "MLton_Rlimit_get": t -> int;
-                  val getHard = _import "MLton_Rlimit_getHard": unit -> rlim;
-                  val getSoft = _import "MLton_Rlimit_getSoft": unit -> rlim;
-                  val set = _import "MLton_Rlimit_set": t * rlim * rlim -> int;
-               end
-            
-            structure Rusage =
-               struct
-                 val ru = _import "MLton_Rusage_ru": unit -> unit;
-                    
-                 val self_utime_sec = _import "MLton_Rusage_self_utime_sec": unit -> int;
-                 val self_utime_usec = _import "MLton_Rusage_self_utime_usec": unit -> int;
-                 val self_stime_sec = _import "MLton_Rusage_self_stime_sec": unit -> int;
-                 val self_stime_usec = _import "MLton_Rusage_self_stime_usec": unit -> int;
-                 val children_utime_sec = _import "MLton_Rusage_children_utime_sec": unit -> int;
-                 val children_utime_usec = _import "MLton_Rusage_children_utime_usec": unit -> int;
-                 val children_stime_sec = _import "MLton_Rusage_children_stime_sec": unit -> int;
-                 val children_stime_usec = _import "MLton_Rusage_children_stime_usec": unit -> int;
-                 val gc_utime_sec = _import "MLton_Rusage_gc_utime_sec": unit -> int;
-                 val gc_utime_usec = _import "MLton_Rusage_gc_utime_usec": unit -> int;
-                 val gc_stime_sec = _import "MLton_Rusage_gc_stime_sec": unit -> int;
-                 val gc_stime_usec = _import "MLton_Rusage_gc_stime_usec": unit -> int;
-               end
-
-            structure Syslog =
-               struct
-                  type openflag = int
-                     
-                  val CONS = _const "LOG_CONS": openflag;
-                  val NDELAY = _const "LOG_NDELAY": openflag;
-                  val PERROR = _const "LOG_PERROR": openflag;
-                  val PID = _const "LOG_PID": openflag;
-                     
-                  type facility = int
-                     
-                  val AUTHPRIV = _const "LOG_AUTHPRIV": facility;
-                  val CRON = _const "LOG_CRON": facility;
-                  val DAEMON = _const "LOG_DAEMON": facility;
-                  val KERN = _const "LOG_KERN": facility;
-                  val LOCAL0 = _const "LOG_LOCAL0": facility;
-                  val LOCAL1 = _const "LOG_LOCAL1": facility;
-                  val LOCAL2 = _const "LOG_LOCAL2": facility;
-                  val LOCAL3 = _const "LOG_LOCAL3": facility;
-                  val LOCAL4 = _const "LOG_LOCAL4": facility;
-                  val LOCAL5 = _const "LOG_LOCAL5": facility;
-                  val LOCAL6 = _const "LOG_LOCAL6": facility;
-                  val LOCAL7 = _const "LOG_LOCAL7": facility;
-                  val LPR = _const "LOG_LPR": facility;
-                  val MAIL = _const "LOG_MAIL": facility;
-                  val NEWS = _const "LOG_NEWS": facility;
-                  val SYSLOG = _const "LOG_SYSLOG": facility;
-                  val USER = _const "LOG_USER": facility;
-                  val UUCP = _const "LOG_UUCP": facility;
-                     
-                  type loglevel = int
-                     
-                  val EMERG = _const "LOG_EMERG": loglevel;
-                  val ALERT = _const "LOG_ALERT": loglevel;
-                  val CRIT = _const "LOG_CRIT": loglevel;
-                  val ERR = _const "LOG_ERR": loglevel;
-                  val WARNING = _const "LOG_WARNING": loglevel;
-                  val NOTICE = _const "LOG_NOTICE": loglevel;
-                  val INFO = _const "LOG_INFO": loglevel;
-                  val DEBUG = _const "LOG_DEBUG": loglevel;
                end
 
             structure Weak =
@@ -1579,13 +1451,6 @@ structure Primitive =
             val startSignalHandler = _import "GC_startSignalHandler": GCState.t -> unit;
             val switchTo = _prim "Thread_switchTo": thread -> unit;
          end      
-
-      structure Time =
-         struct
-            val gettimeofday = _import "Time_gettimeofday": unit -> int;
-            val sec = _import "Time_sec": unit -> int;
-            val usec = _import "Time_usec": unit -> int;
-         end
 
       structure TopLevel =
          struct

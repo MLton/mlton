@@ -10,7 +10,7 @@ structure Cygwin =
       structure Prim = Primitive.Cygwin
          
       fun toFullWindowsPath p =
-         C.CS.toString (Prim.toFullWindowsPath (NullString.nullTerm p))
+         COld.CS.toString (Prim.toFullWindowsPath (NullString.nullTerm p))
 
       fun toExe cmd =
          let

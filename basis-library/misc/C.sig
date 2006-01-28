@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature C =
+signature C_OLD =
    sig
       (* C char* *)
       structure CS :
