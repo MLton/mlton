@@ -99,7 +99,8 @@
 #define SPAWN_MODE 0
 #endif
 
-#include "types.h"
+#include "ml-types.h"
+#include "c-types.h"
 #include "basis-ffi.h"
 
 /* ---------------------------------------------------------------- */
