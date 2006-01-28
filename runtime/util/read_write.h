@@ -88,4 +88,9 @@ static inline void writeUintmaxX (int fd, uintmax_t u) {
 static inline void writeNewline (int fd) {
   writeString (fd, "\n");
 }
+
+static inline void writeStringWithNewline (int fd, char* s) {
+  writeString (fd, s);
+  writeNewline (fd);
+}
 #undef BUF_SIZE
