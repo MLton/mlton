@@ -230,9 +230,11 @@ structure Entry =
                 Name.last name,
                 "Set) = _symbol \"",
                 Name.toC name,
-                "\": (",
+                "\": (unit -> (",
                 Type.toML ty,
-                ") GetSet.t;"]
+                ")) * ((",
+                Type.toML ty, 
+                ") -> unit);"]
 
       fun parseConst (s, name) =
          let
