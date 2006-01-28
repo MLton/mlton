@@ -5,7 +5,7 @@ structure Int =
 
 structure LargeInt =
    struct
-      type int = intInf
+      type int = Primitive.IntInf.int
    end
 
 signature INTEGER_GLOBAL =

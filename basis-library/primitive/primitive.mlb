@@ -16,7 +16,13 @@ ann
    "sequenceNonUnit warn"
    "warnUnused true"
 in
-   _prim
-   ../misc/primitive.sml
-   ../posix/primitive.sml
+   prim-basis.mlb
+   ann "forceUsed" in
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+   end
+   primitive.sml
+   posix-primitive.sml
+   ann "forceUsed" in
+      basis-ffi.sml
+   end
 end

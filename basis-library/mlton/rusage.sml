@@ -9,7 +9,6 @@
 structure MLtonRusage: MLTON_RUSAGE =
    struct
       structure Prim = Primitive.MLton.Rusage
-      val gcState = Primitive.GCState.gcState
 
       type t = {utime: Time.time, stime: Time.time}
 
@@ -37,7 +36,7 @@ structure MLtonRusage: MLTON_RUSAGE =
          in
             fn () =>
             let
-               val () = Prim.ru gcState
+               val () = Prim.ru ()
                open Prim
             in
                {children = collect (children_utime_sec, children_utime_usec,

@@ -12,7 +12,7 @@ ann
    "warnUnused true" "forceUsed"
 in
    local
-      ../primitive.mlb
+      ../../primitive/primitive.mlb
       (* Common basis implementation. *)
       ../../top-level/infixes.sml
       ../../misc/basic.sml

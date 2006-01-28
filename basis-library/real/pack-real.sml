@@ -10,10 +10,10 @@ functor PackReal (S: sig
                         type real
                         val bytesPerElem: int
                         val isBigEndian: bool
-                        val subVec: word8 vector * int -> real
-                        val subVecRev: word8 vector * int -> real
-                        val update: word8 array * int * real -> unit
-                        val updateRev: word8 array * int * real -> unit
+                        val subVec: Word8.word vector * int -> real
+                        val subVecRev: Word8.word vector * int -> real
+                        val update: Word8.word array * int * real -> unit
+                        val updateRev: Word8.word array * int * real -> unit
                      end): PACK_REAL =
 struct
 

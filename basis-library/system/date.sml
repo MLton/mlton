@@ -9,7 +9,7 @@
 
 structure Date :> DATE =
   struct
-     structure Prim = Primitive.Date
+     structure Prim = PrimitiveFFI.Date
      structure Tm = Prim.Tm
         
      (* Patch to make Time look like it deals with Int.int
@@ -70,38 +70,38 @@ structure Date :> DATE =
                  tm_year   : int}
 
     local
-       fun make (f: int ref -> unit) (n: int): tmoz =
-          (f (ref n)
-           ; {tm_hour = Tm.hour (),
-              tm_isdst = Tm.isdst (),
-              tm_mday = Tm.mday (),
-              tm_min = Tm.min (),
-              tm_mon = Tm.mon (),
-              tm_sec = Tm.sec (),
-              tm_wday = Tm.wday (),
-              tm_yday = Tm.yday (),
-              tm_year = Tm.year ()})
+       fun make (f: int ref -> int) (n: int): tmoz =
+          (ignore (f (ref n))
+           ; {tm_hour = Tm.getHour (),
+              tm_isdst = Tm.getIsDst (),
+              tm_mday = Tm.getMDay (),
+              tm_min = Tm.getMin (),
+              tm_mon = Tm.getMon (),
+              tm_sec = Tm.getSec (),
+              tm_wday = Tm.getWDay (),
+              tm_yday = Tm.getYDay (),
+              tm_year = Tm.getYear ()})
     in
        val getlocaltime_ = make Prim.localTime
-       val getunivtime_ = make Prim.gmTime
+       val getgmtime_ = make Prim.gmTime
     end
 
     fun setTmBuf {tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, tm_sec, tm_wday,
                  tm_yday, tm_year} =
        (Tm.setHour tm_hour
-        ; Tm.setIsdst tm_isdst
-        ; Tm.setMday tm_mday
+        ; Tm.setIsDst tm_isdst
+        ; Tm.setMDay tm_mday
         ; Tm.setMin tm_min
         ; Tm.setMon tm_mon
         ; Tm.setSec tm_sec
-        ; Tm.setWday tm_wday
-        ; Tm.setYday tm_yday
+        ; Tm.setWDay tm_wday
+        ; Tm.setYDay tm_yday
         ; Tm.setYear tm_year)
         
     fun mktime_ (t: tmoz): int = (setTmBuf t; Prim.mkTime ())
 
     (* The offset to add to local time to get UTC: positive West of UTC *)
-    val localoffset: int = Prim.localOffset ()
+    val localoffset: int = Real.round (Prim.localOffset ())
 
     val toweekday: int -> weekday =
        fn 0 => Sun | 1 => Mon | 2 => Tue | 3 => Wed
@@ -282,7 +282,7 @@ structure Date :> DATE =
         tmozToDate (getlocaltime_ (Time.toSeconds t)) NONE
 
     fun fromTimeUniv t = 
-        tmozToDate (getunivtime_ (Time.toSeconds t)) (SOME 0)
+        tmozToDate (getgmtime_ (Time.toSeconds t)) (SOME 0)
 
     (* The following implements conversion from a local date to 
      * a Time.time.  It IGNORES wday and yday.
@@ -322,8 +322,9 @@ structure Date :> DATE =
                 let
                    val len =
                       Prim.strfTime
-                      (buf, bufLen,
+                      (buf, Word.fromInt bufLen,
                        NullString.fromString (concat ["%", str fmtChar, "\000"]))
+                   val len = Word.toInt len
                 in if len = 0
                       then raise Fail "Date.fmt"
                    else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len))

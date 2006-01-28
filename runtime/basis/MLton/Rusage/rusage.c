@@ -1,5 +1,7 @@
 #include "platform.h"
 
+extern struct GC_state gcState;
+
 static struct rusage self;
 static struct rusage children;
 static struct rusage gc;
@@ -52,8 +54,8 @@ C_SUSeconds_t MLton_Rusage_gc_stime_usec (void) {
   return gc.ru_stime.tv_usec;
 }
 
-void MLton_Rusage_getrusage (GC_state s) {
-  gc = *(GC_getRusageGCAddr (s));
+void MLton_Rusage_getrusage (void) {
+  gc = *(GC_getRusageGCAddr (&gcState));
   getrusage (RUSAGE_SELF, &self);
   getrusage (RUSAGE_CHILDREN, &children);
 }

@@ -461,7 +461,7 @@ structure PosixPrimitive =
                _import "Posix_FileSys_pathconf": NullString.t * int -> int;
             val readlink =
                _import "Posix_FileSys_readlink"
-               : NullString.t * word8 array * int -> int;
+               : NullString.t * Word8.word array * int -> int;
             val rename =
                _import "Posix_FileSys_rename": NullString.t * NullString.t -> int;
             val rmdir = _import "Posix_FileSys_rmdir": NullString.t -> int;
@@ -570,11 +570,11 @@ structure PosixPrimitive =
             val writeCharVec =
                _import "Posix_IO_write": fd * char vector * int * size -> ssize;
             val readWord8 =
-               _import "Posix_IO_read": fd * word8 array * int * size -> ssize;
+               _import "Posix_IO_read": fd * Word8.word array * int * size -> ssize;
             val writeWord8 =
-               _import "Posix_IO_write": fd * word8 array * int * size -> ssize;
+               _import "Posix_IO_write": fd * Word8.word array * int * size -> ssize;
             val writeWord8Vec =
-               _import "Posix_IO_write": fd * word8 vector * int * size -> ssize;
+               _import "Posix_IO_write": fd * Word8.word vector * int * size -> ssize;
          end           
 
       structure SysDB =
