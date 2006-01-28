@@ -16,7 +16,7 @@ typedef struct GC_intInf {
   GC_arrayLength length;
   GC_header header;
   mp_limb_t isneg;
-  mp_limb_t limbs[1];
+  mp_limb_t limbs[];
 } *GC_intInf;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
