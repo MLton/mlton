@@ -1,7 +1,7 @@
 signature NET =
    sig
-(*     val htonl: int -> int *)
-(*     val ntohl: int -> int *)
-     val htons: int -> int
-     val ntohs: int -> int
+      val htonl: Int32.int -> Int32.int
+      val ntohl: Int32.int -> Int32.int
+      val htons: Int16.int -> Int16.int
+      val ntohs: Int16.int -> Int16.int
    end

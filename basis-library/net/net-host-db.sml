@@ -7,11 +7,11 @@
 
 structure NetHostDB:> NET_HOST_DB_EXTRA =
    struct
-      structure Prim = Primitive.NetHostDB
+      structure Prim = PrimitiveFFI.NetHostDB
 
       (* network byte order (MSB) *)
-      type pre_in_addr = Prim.pre_in_addr
-      type in_addr = Prim.in_addr
+      type pre_in_addr = Word8.word array
+      type in_addr = Word8.word vector
 
       val preInAddrToWord8Array = fn a => a
       val inAddrToWord8Vector = fn v => v
@@ -19,7 +19,8 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
       structure PW = PackWord32Big
       fun new_in_addr () =
         let
-          val ia: pre_in_addr = Array.array (Prim.inAddrLen, 0wx0: Word8.word)
+          val inAddrLen = Word32.toIntX Prim.inAddrSize
+          val ia: pre_in_addr = Array.array (inAddrLen, 0wx0: Word8.word)
           fun finish () = Array.vector ia
         in
           (ia, finish)
@@ -34,7 +35,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
           finish ()
         end
       fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
-      type addr_family = Prim.addr_family
+      type addr_family = C.Int.t
 
       val intToAddrFamily = fn z => z
       val addrFamilyToInt = fn z => z
@@ -58,27 +59,27 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = COld.CS.toString (Prim.entryName ())
-                   val numAliases = Prim.entryNumAliases ()
+                   val name = COld.CS.toString (Prim.getEntryName ())
+                   val numAliases = Prim.getEntryAliasesNum ()
                    fun fill (n, aliases) =
                      if n < numAliases
                        then let
                               val alias =
-                                COld.CS.toString (Prim.entryAliasesN n)
+                                COld.CS.toString (Prim.getEntryAliasesN n)
                             in
                               fill (n + 1, alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
-                   val addrType = Prim.entryAddrType ()
-                   val length = Prim.entryLength ()
-                   val numAddrs = Prim.entryNumAddrs ()
+                   val addrType = Prim.getEntryAddrType ()
+                   val length = Prim.getEntryLength ()
+                   val numAddrs = Prim.getEntryAddrsNum ()
                    fun fill (n, addrs) =
                      if n < numAddrs
                        then let
                               val addr = Word8Array.array (length, 0wx0)
                               val _ =
-                                 Prim.entryAddrsN (n, Word8Array.toPoly addr)
+                                 Prim.getEntryAddrsN (n, Word8Array.toPoly addr)
                               val addr =
                                  Word8Vector.toPoly (Word8Array.vector addr)
                             in
@@ -95,7 +96,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
             else NONE
       in
         fun getByAddr in_addr = 
-           get (Prim.getByAddress (in_addr, Vector.length in_addr))
+           get (Prim.getByAddress (in_addr, C.Socklen.fromInt (Vector.length in_addr)))
         fun getByName name = 
            get (Prim.getByName (NullString.nullTerm name))
       end
@@ -106,7 +107,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
           val buf = CharArray.array (n, #"\000")
           val () =
              Posix.Error.SysCall.simple
-             (fn () => Prim.getHostName (CharArray.toPoly buf, n))
+             (fn () => Prim.getHostName (CharArray.toPoly buf, C.Size.fromInt n))
         in
           case CharArray.findi (fn (_, c) => c = #"\000") buf of
              NONE => CharArray.vector buf

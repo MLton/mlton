@@ -39,7 +39,7 @@ structure MLtonWorld: MLTON_WORLD =
                                          file, " due to ",
                                          General.exnMessage e])
                end
-            val _ = Prim.save (Posix.FileSys.fdToWord fd)
+            val _ = Prim.save fd
          in
             if Prim.getAmOriginal gcState
                then (Posix.IO.close fd; Original)

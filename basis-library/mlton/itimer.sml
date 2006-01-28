@@ -13,9 +13,9 @@ structure MLtonItimer =
       datatype t = Prof | Real | Virtual
 
       val signal =
-         fn Prof => PosixPrimitive.Signal.prof
-          | Real => PosixPrimitive.Signal.alrm
-          | Virtual => PosixPrimitive.Signal.vtalrm
+         fn Prof => PosixSignal.prof
+          | Real => PosixSignal.alrm
+          | Virtual => PosixSignal.vtalrm
 
       val toInt =
          fn Prof => Prim.PROF

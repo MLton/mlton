@@ -52,7 +52,7 @@ structure GetSet =
       type 'a t = (unit -> 'a) * ('a -> unit)
    end
 
-structure Pid :> sig
+structure Pid : sig
                     eqtype t
 
                     val fromInt: int -> t
@@ -884,70 +884,11 @@ structure Primitive =
                end
          end
 
-      structure Net =
-         struct
-            (* val htonl = _import "Net_htonl": int -> int; *)
-            (* val ntohl = _import "Net_ntohl": int -> int; *)
-            val htons = _import "Net_htons": int -> int;
-            val ntohs = _import "Net_ntohs": int -> int;
-         end
-
       structure NetHostDB =
          struct
             (* network byte order (MSB) *)
             type pre_in_addr = Word8.word array
             type in_addr = Word8.word vector
-            val inAddrLen = _const "NetHostDB_inAddrLen": int;
-            val INADDR_ANY = _const "NetHostDB_INADDR_ANY": int;
-            type addr_family = int
-            val entryName = _import "NetHostDB_Entry_name": unit -> CString.t;
-            val entryNumAliases = _import "NetHostDB_Entry_numAliases": unit -> int;
-            val entryAliasesN = _import "NetHostDB_Entry_aliasesN": int -> CString.t;
-            val entryAddrType = _import "NetHostDB_Entry_addrType": unit -> int;
-            val entryLength = _import "NetHostDB_Entry_length": unit -> int;
-            val entryNumAddrs = _import "NetHostDB_Entry_numAddrs": unit -> int;
-            val entryAddrsN =
-               _import "NetHostDB_Entry_addrsN": int * pre_in_addr -> unit;
-            val getByAddress =
-               _import "NetHostDB_getByAddress": in_addr * int -> bool;
-            val getByName = _import "NetHostDB_getByName": NullString.t -> bool;
-            val getHostName =
-               _import "NetHostDB_getHostName": char array * int -> int;
-         end
-
-      structure NetProtDB =
-         struct
-            val entryName = _import "NetProtDB_Entry_name": unit -> CString.t;
-            val entryNumAliases = _import "NetProtDB_Entry_numAliases": unit -> int;
-            val entryAliasesN = _import "NetProtDB_Entry_aliasesN": int -> CString.t;
-            val entryProtocol = _import "NetProtDB_Entry_protocol": unit -> int;
-            val getByName = _import "NetProtDB_getByName": NullString.t -> bool;
-            val getByNumber = _import "NetProtDB_getByNumber": int -> bool;
-         end
-
-      structure NetServDB =
-         struct
-            val entryName = _import "NetServDB_Entry_name": unit -> CString.t;
-            val entryNumAliases = _import "NetServDB_Entry_numAliases": unit -> int;
-            val entryAliasesN = _import "NetServDB_Entry_aliasesN": int -> CString.t;
-            val entryPort = _import "NetServDB_Entry_port": unit -> int;
-            val entryProtocol = _import "NetServDB_Entry_protocol": unit -> CString.t;
-            val getByName = _import "NetServDB_getByName": NullString.t * NullString.t -> bool;
-            val getByNameNull = _import "NetServDB_getByNameNull": NullString.t -> bool;
-            val getByPort = _import "NetServDB_getByPort": int * NullString.t -> bool;
-            val getByPortNull = _import "NetServDB_getByPortNull": int -> bool;
-         end
-
-      structure OS =
-         struct
-            structure IO =
-               struct
-                  val POLLIN = _const "OS_IO_POLLIN": word;
-                  val POLLPRI = _const "OS_IO_POLLPRI": word;
-                  val POLLOUT = _const "OS_IO_POLLOUT": word;
-                  val poll = _import "OS_IO_poll": int vector * word vector * 
-                                                int * int * word array -> int;
-               end
          end
 
       structure PackReal32 =
@@ -1190,23 +1131,21 @@ structure Primitive =
             val assign = _prim "Ref_assign": 'a ref * 'a -> unit;
          end
 
-      structure Signal:>
+      structure Signal:
          sig
             eqtype t
-            type how
 
             val fromInt: int -> t
             val toInt: t -> int
          end =
          struct
             type t = int
-            type how = int
 
             val fromInt = fn s => s
             val toInt = fn s => s
          end
 
-      structure Socket:>
+      structure Socket:
          sig
             type sock
 
@@ -1235,7 +1174,7 @@ structure Primitive =
                   val INET6 = _const "Socket_AF_INET6": addr_family;
                   val UNSPEC = _const "Socket_AF_UNSPEC": addr_family;
                end
-            structure SOCK:>
+            structure SOCK:
                sig
                   eqtype sock_type
 
@@ -1380,7 +1319,7 @@ structure Primitive =
                end
          end
 
-      structure Status:>
+      structure Status:
          sig
             eqtype t
 
@@ -1665,6 +1604,9 @@ structure Primitive =
             val toLarge = _prim "WordU16_toWord64": word -> LargeWord.word;
             val toLargeX = _prim "WordS16_toWord64": word -> LargeWord.word;
             val xorb = _prim "Word16_xorb": word * word -> word;
+
+            val toInt16 = _prim "WordU16_toWord16": word -> Int16.int;
+            val fromInt16 = _prim "WordU16_toWord16": Int16.int -> word;
          end
       structure Word16 =
          struct
@@ -1823,6 +1765,9 @@ structure Primitive =
             val toLarge = _prim "WordU32_toWord64": word -> LargeWord.word;
             val toLargeX = _prim "WordS32_toWord64": word -> LargeWord.word;
             val xorb = _prim "Word32_xorb": word * word -> word;
+
+            val toInt32 = _prim "WordU32_toWord32": word -> Int32.int;
+            val fromInt32 = _prim "WordU32_toWord32": Int32.int -> word;
          end
       structure Word32 =
          struct
@@ -1877,7 +1822,7 @@ structure Primitive =
                _import "Cygwin_toFullWindowsPath": NullString.t -> CString.t;
          end
 
-      structure FileDesc:>
+      structure FileDesc:
          sig
             eqtype t
 
@@ -1912,7 +1857,7 @@ structure Primitive =
          struct
             val getAmOriginal = _import "GC_getAmOriginal": GCState.t -> bool;
             val setAmOriginal = _import "GC_setAmOriginal": GCState.t * bool -> unit;
-            val save = _prim "World_save": word (* filedes *) -> unit;
+            val save = _prim "World_save": FileDesc.t -> unit;
          end
    end
 

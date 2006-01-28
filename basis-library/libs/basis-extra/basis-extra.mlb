@@ -87,6 +87,9 @@ in
       ../../integer/patch.sml
       ../../integer/embed-int.sml
       ../../integer/embed-word.sml
+      ann "forceUsed" in
+         ../../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      end
 
       ../../top-level/arithmetic.sml
 

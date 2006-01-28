@@ -48,6 +48,6 @@ Bool_t NetHostDB_getByName(NullString8_t name) {
   return (hostent != NULL and hostent->h_name != NULL);
 }
 
-Bool NetHostDB_getHostName(Array(Char8_t) buf, C_Size_t len) {
-  return (gethostname ((char*)buf, len) == 0);
+C_Errno_t(C_Int_t) NetHostDB_getHostName(Array(Char8_t) buf, C_Size_t len) {
+  gethostname ((char*)buf, len);
 }

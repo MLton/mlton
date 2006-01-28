@@ -10,17 +10,14 @@ structure MLtonSignal: MLTON_SIGNAL_EXTRA =
 struct
 
 open Posix.Signal
-structure Prim = PosixPrimitive.Signal
+structure Prim = PrimitiveFFI.Posix.Signal
 structure Error = PosixError
 structure SysCall = Error.SysCall
 val restart = SysCall.restartFlag
 
 type t = signal
 
-val prof = Prim.prof
-val vtalrm = Prim.vtalrm
-
-type how = Prim.how
+type how = C.Int.t
 
 (* val toString = SysWord.toString o toWord *)
    
@@ -33,7 +30,7 @@ fun raiseInval () =
 
 val validSignals = 
    Array.tabulate 
-   (Prim.numSignals, fn i => 
+   (Prim.NSIG, fn i => 
     Prim.sigismember(fromInt i) <> ~1)
 
 structure Mask =
@@ -73,10 +70,10 @@ structure Mask =
          fun make (how: how) (m: t) =
             (write m; SysCall.simpleRestart (fn () => Prim.sigprocmask how))
       in
-         val block = make Prim.block
-         val unblock = make Prim.unblock
-         val setBlocked = make Prim.setmask
-         fun getBlocked () = (make Prim.block none; read ())
+         val block = make Prim.SIG_BLOCK
+         val unblock = make Prim.SIG_UNBLOCK
+         val setBlocked = make Prim.SIG_SETMASK
+         fun getBlocked () = (make Prim.SIG_BLOCK none; read ())
       end
 
       local
@@ -115,7 +112,7 @@ end
 
 val (getHandler, setHandler, handlers) =
    let
-      val handlers = Array.tabulate (Prim.numSignals, initHandler o fromInt)
+      val handlers = Array.tabulate (Prim.NSIG, initHandler o fromInt)
       val _ =
          Cleaner.addNew
          (Cleaner.atLoadWorld, fn () =>
@@ -179,7 +176,7 @@ structure Handler =
                    val () = Mask.block (handled ())
                    val fs = 
                       case !gcHandler of
-                         Handler f => if Prim.isGCPending () then [f] else []
+                         Handler f => if Prim.isPendingGC () then [f] else []
                        | _ => []
                    val fs =
                       Array.foldri
@@ -220,7 +217,7 @@ val setHandler = fn (s, h) =>
 
 fun suspend m =
    (Mask.write m
-    ; Prim.suspend ()
+    ; Prim.sigsuspend ()
     ; MLtonThread.switchToSignalHandler ())
 
 fun handleGC f =

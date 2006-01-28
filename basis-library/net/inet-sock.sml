@@ -24,7 +24,7 @@ structure INetSock:> INET_SOCK =
             let
                val (sa, salen, finish) = Socket.new_sock_addr ()
                val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
-                                    Net.htons port, sa, salen)
+                                    Net.htonl port, sa, salen)
             in
                finish ()
             end
@@ -34,7 +34,7 @@ structure INetSock:> INET_SOCK =
       fun fromAddr sa =
         let
           val _ = Prim.fromAddr (Word8Vector.toPoly (Socket.unpackSockAddr sa))
-          val port = Net.ntohs (Prim.getPort ())
+          val port = Net.ntohl (Prim.getPort ())
           val (ia, finish) = NetHostDB.new_in_addr ()
           val _ = Prim.getInAddr (NetHostDB.preInAddrToWord8Array ia)
         in

@@ -8,9 +8,174 @@
 
 structure PosixError: POSIX_ERROR_EXTRA =
    struct
-      structure Prim = PosixPrimitive.Error
+      structure Prim = PrimitiveFFI.Posix.Error
       open Prim
-         
+
+      type syserror = C.Int.t
+ 
+      val acces = EACCES
+      val addrinuse = EADDRINUSE
+      val addrnotavail = EADDRNOTAVAIL
+      val afnosupport = EAFNOSUPPORT
+      val again = EAGAIN
+      val already = EALREADY
+      val badf = EBADF
+      val badmsg = EBADMSG
+      val busy = EBUSY
+      val canceled = ECANCELED
+      val child = ECHILD
+      val connaborted = ECONNABORTED
+      val connrefused = ECONNREFUSED
+      val connreset = ECONNRESET
+      val deadlk = EDEADLK
+      val destaddrreq = EDESTADDRREQ
+      val dom = EDOM
+      val dquot = EDQUOT
+      val exist = EEXIST
+      val fault = EFAULT
+      val fbig = EFBIG
+      val hostunreach = EHOSTUNREACH
+      val idrm = EIDRM
+      val ilseq = EILSEQ
+      val inprogress = EINPROGRESS
+      val intr = EINTR
+      val inval = EINVAL
+      val io = EIO
+      val isconn = EISCONN
+      val isdir = EISDIR
+      val loop = ELOOP
+      val mfile = EMFILE
+      val mlink = EMLINK
+      val msgsize = EMSGSIZE
+      val multihop = EMULTIHOP
+      val nametoolong = ENAMETOOLONG
+      val netdown = ENETDOWN
+      val netreset = ENETRESET
+      val netunreach = ENETUNREACH
+      val nfile = ENFILE
+      val nobufs = ENOBUFS
+      val nodata = ENODATA
+      val nodev = ENODEV
+      val noent = ENOENT
+      val noexec = ENOEXEC
+      val nolck = ENOLCK
+      val nolink = ENOLINK
+      val nomem = ENOMEM
+      val nomsg = ENOMSG
+      val noprotoopt = ENOPROTOOPT
+      val nospc = ENOSPC
+      val nosr = ENOSR
+      val nostr = ENOSTR
+      val nosys = ENOSYS
+      val notconn = ENOTCONN
+      val notdir = ENOTDIR
+      val notempty = ENOTEMPTY
+      val notsock = ENOTSOCK
+      val notsup = ENOTSUP
+      val notty = ENOTTY
+      val nxio = ENXIO
+      val opnotsupp = EOPNOTSUPP
+      val overflow = EOVERFLOW
+      val perm = EPERM
+      val pipe = EPIPE
+      val proto = EPROTO
+      val protonosupport = EPROTONOSUPPORT
+      val prototype = EPROTOTYPE
+      val range = ERANGE
+      val rofs = EROFS
+      val spipe = ESPIPE
+      val srch = ESRCH
+      val stale = ESTALE
+      val time = ETIME
+      val timedout = ETIMEDOUT
+      val toobig = E2BIG
+      val txtbsy = ETXTBSY
+      val wouldblock = EWOULDBLOCK
+      val xdev = EXDEV
+
+      val errorNames =
+         [
+          (acces,"acces"),
+          (addrinuse,"addrinuse"),
+          (addrnotavail,"addrnotavail"),
+          (afnosupport,"afnosupport"),
+          (again,"again"),
+          (already,"already"),
+          (badf,"badf"),
+          (badmsg,"badmsg"),
+          (busy,"busy"),
+          (canceled,"canceled"),
+          (child,"child"),
+          (connaborted,"connaborted"),
+          (connrefused,"connrefused"),
+          (connreset,"connreset"),
+          (deadlk,"deadlk"),
+          (destaddrreq,"destaddrreq"),
+          (dom,"dom"),
+          (dquot,"dquot"),
+          (exist,"exist"),
+          (fault,"fault"),
+          (fbig,"fbig"),
+          (hostunreach,"hostunreach"),
+          (idrm,"idrm"),
+          (ilseq,"ilseq"),
+          (inprogress,"inprogress"),
+          (intr,"intr"),
+          (inval,"inval"),
+          (io,"io"),
+          (isconn,"isconn"),
+          (isdir,"isdir"),
+          (loop,"loop"),
+          (mfile,"mfile"),
+          (mlink,"mlink"),
+          (msgsize,"msgsize"),
+          (multihop,"multihop"),
+          (nametoolong,"nametoolong"),
+          (netdown,"netdown"),
+          (netreset,"netreset"),
+          (netunreach,"netunreach"),
+          (nfile,"nfile"),
+          (nobufs,"nobufs"),
+          (nodata,"nodata"),
+          (nodev,"nodev"),
+          (noent,"noent"),
+          (noexec,"noexec"),
+          (nolck,"nolck"),
+          (nolink,"nolink"),
+          (nomem,"nomem"),
+          (nomsg,"nomsg"),
+          (noprotoopt,"noprotoopt"),
+          (nospc,"nospc"),
+          (nosr,"nosr"),
+          (nostr,"nostr"),
+          (nosys,"nosys"),
+          (notconn,"notconn"),
+          (notdir,"notdir"),
+          (notempty,"notempty"),
+          (notsock,"notsock"),
+          (notsup,"notsup"),
+          (notty,"notty"),
+          (nxio,"nxio"),
+          (opnotsupp,"opnotsupp"),
+          (overflow,"overflow"),
+          (perm,"perm"),
+          (pipe,"pipe"),
+          (proto,"proto"),
+          (protonosupport,"protonosupport"),
+          (prototype,"prototype"),
+          (range,"range"),
+          (rofs,"rofs"),
+          (spipe,"spipe"),
+          (srch,"srch"),
+          (stale,"stale"),
+          (time,"time"),
+          (timedout,"timedout"),
+          (toobig,"toobig"),
+          (txtbsy,"txtbsy"),
+          (wouldblock,"wouldblock"),
+          (xdev,"xdev")
+         ]
+
       exception SysErr of string * syserror option
 
       val toWord = SysWord.fromInt
@@ -41,7 +206,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
 
       fun errorMsg (n: int) =
          let
-            val cs = strerror n
+            val cs = strError n
          in
             if cs = Primitive.Pointer.null
                then "Unknown error"

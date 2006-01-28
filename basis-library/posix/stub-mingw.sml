@@ -110,18 +110,6 @@ in
       struct
          open Primitive
 
-         structure OS =
-            struct
-               open OS
-
-               structure IO =
-                  struct
-                     open IO
-
-                     val poll = stub ("poll", poll)
-                  end
-            end
-
          structure Socket =
             struct
                open Socket
@@ -148,6 +136,18 @@ in
                      open Itimer
                         
                      val set = stub ("set", set)
+                  end
+            end
+
+         structure OS =
+            struct
+               open OS
+
+               structure IO =
+                  struct
+                     open IO
+
+                     val poll = stub ("poll", poll)
                   end
             end
       end

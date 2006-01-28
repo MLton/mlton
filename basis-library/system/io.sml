@@ -94,24 +94,28 @@ structure OS_IO: OS_IO =
 
   (* polling function *)
     local
-      structure Prim = Primitive.OS.IO
+      structure Prim = PrimitiveFFI.OS.IO
       fun join (false, _, w) = w
-        | join (true, b, w) = Word.orb(w, b)
-      fun test (w, b) = (Word.andb(w, b) <> 0w0)
-      val rdBit : Word.word = Primitive.OS.IO.POLLIN
-      and wrBit : Word.word = Primitive.OS.IO.POLLOUT
-      and priBit : Word.word = Primitive.OS.IO.POLLPRI
+        | join (true, b, w) = Word16.orb(w, b)
+      fun test (w, b) = (Word16.andb(w, b) <> 0w0)
+      val rdBit : Word16.word = Primitive.Word16.fromInt16 PrimitiveFFI.OS.IO.POLLIN
+      and wrBit : Word16.word = Primitive.Word16.fromInt16 PrimitiveFFI.OS.IO.POLLOUT
+      and priBit : Word16.word = Primitive.Word16.fromInt16 PrimitiveFFI.OS.IO.POLLPRI
       fun fromPollDesc (PollDesc (iod, {rd, wr, pri})) =
             ( toInt iod,
+              Primitive.Word16.toInt16 (
               join (rd, rdBit, 
               join (wr, wrBit, 
-              join (pri, priBit, 0w0)))
+              join (pri, priBit, 0w0))))
             )
-      fun toPollInfo (fd, w) = PollInfo (fromInt fd, {
+      fun toPollInfo (fd, i) = 
+         let val w = Primitive.Word16.fromInt16 i
+         in PollInfo (fromInt fd, {
               rd = test(w, rdBit), 
               wr = test(w, wrBit), 
               pri = test(w, priBit)
             })
+         end
     in
     fun poll (pds, timeOut) = let
           val (fds, eventss) = ListPair.unzip (List.map fromPollDesc pds)
@@ -126,13 +130,13 @@ structure OS_IO: OS_IO =
                       then let open PosixError in raiseSys inval end
                    else (Int.fromLarge (Time.toMilliseconds t)
                          handle Overflow => Error.raiseSys Error.inval)
-          val reventss = Array.array (n, 0w0)
+          val reventss = Array.array (n, 0)
           val _ = Posix.Error.SysCall.simpleRestart
-                  (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))
+                  (fn () => Prim.poll (fds, eventss, C.NFds.fromInt n, timeOut, reventss))
           in
             Array.foldri
             (fn (i, w, l) => 
-             if w <> 0w0
+             if w <> 0
                then (toPollInfo (Vector.sub (fds, i), w))::l
                else l)
             []

@@ -148,6 +148,8 @@ static char* mlTypesHStd[] = {
 
 #define systype(t, bt, name)                        \
   do {                                              \
+  char *btLower = strdup(bt);                       \
+  btLower[0] = tolower(bt[0]);                      \
   writeString (cTypesHFd, "typedef ");              \
   writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
@@ -161,10 +163,14 @@ static char* mlTypesHStd[] = {
   writeNewline (cTypesHFd);                         \
   writeString (cTypesSMLFd, "structure ");          \
   writeString (cTypesSMLFd, name);                  \
-  writeString (cTypesSMLFd, " = ");                 \
+  writeString (cTypesSMLFd, " = struct open ");     \
   writeString (cTypesSMLFd, bt);                    \
   writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
+  writeString (cTypesSMLFd, " type t = ");          \
+  writeString (cTypesSMLFd, btLower);               \
+  writeString (cTypesSMLFd, " end");                \
   writeNewline (cTypesSMLFd);                       \
+  free (btLower);                                   \
   } while (0)
 #define chksystype(t, name)                \
   do {                                     \
@@ -175,6 +181,23 @@ static char* mlTypesHStd[] = {
   else                                     \
   systype(t, "Int", name);                 \
   } while (0)
+#define ptrtype(t, name)                            \
+  do {                                              \
+  writeString (cTypesHFd, "typedef ");              \
+  writeString (cTypesHFd, "/* ");                   \
+  writeString (cTypesHFd, #t);                      \
+  writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, "Pointer_t ");            \
+  writeString (cTypesHFd, "C_");                    \
+  writeString (cTypesHFd, name);                    \
+  writeString (cTypesHFd, "_t;");                   \
+  writeNewline (cTypesHFd);                         \
+  writeString (cTypesSMLFd, "structure ");          \
+  writeString (cTypesSMLFd, name);                  \
+  writeString (cTypesSMLFd, " = Pointer");          \
+  writeNewline (cTypesSMLFd);                       \
+  } while (0)
+
 #define aliastype(name1, name2)                     \
   do {                                              \
   writeString (cTypesHFd, "typedef ");              \
@@ -256,8 +279,8 @@ int main (int argc, char* argv[]) {
   chksystype(size_t, "Size");
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   // systype(void*, "Word", "Pointer");
-  systype(char*, "Word", "String");
-  systype(char**, "Word", "StringArray");
+  ptrtype(char*, "String");
+  ptrtype(char**, "StringArray");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* Generic integers */");
@@ -270,6 +293,7 @@ int main (int argc, char* argv[]) {
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* from <dirent.h> */");
   writeStringWithNewline (cTypesSMLFd, "(* from <dirent.h> *)");
+  // ptrtype(DIR*, "DirP");
   systype(DIR*, "Word", "DirP");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);

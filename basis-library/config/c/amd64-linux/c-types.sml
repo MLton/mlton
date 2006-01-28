@@ -9,27 +9,27 @@ structure C = struct
 
 
 (* C *)
-structure Char = Int8
-structure SChar = Int8
-structure UChar = Word8
-structure Short = Int16
-structure SShort = Int16
-structure UShort = Word16
-structure Int = Int32
-structure SInt = Int32
-structure UInt = Word32
-structure Long = Int32
-structure SLong = Int32
-structure ULong = Word32
-structure LongLong = Int64
-structure SLongLong = Int64
-structure ULongLong = Word64
-structure Float = Real32
-structure Double = Real64
-structure Size = Word32
+structure Char = struct open Int8 type t = int end
+structure SChar = struct open Int8 type t = int end
+structure UChar = struct open Word8 type t = word end
+structure Short = struct open Int16 type t = int end
+structure SShort = struct open Int16 type t = int end
+structure UShort = struct open Word16 type t = word end
+structure Int = struct open Int32 type t = int end
+structure SInt = struct open Int32 type t = int end
+structure UInt = struct open Word32 type t = word end
+structure Long = struct open Int32 type t = int end
+structure SLong = struct open Int32 type t = int end
+structure ULong = struct open Word32 type t = word end
+structure LongLong = struct open Int64 type t = int end
+structure SLongLong = struct open Int64 type t = int end
+structure ULongLong = struct open Word64 type t = word end
+structure Float = struct open Real32 type t = real end
+structure Double = struct open Real64 type t = real end
+structure Size = struct open Word32 type t = word end
 
-structure String = Word32
-structure StringArray = Word32
+structure String = Pointer
+structure StringArray = Pointer
 
 (* Generic integers *)
 structure Fd = Int
@@ -38,40 +38,40 @@ structure Status = Int
 structure Sock = Int
 
 (* from <dirent.h> *)
-structure DirP = Word32
+structure DirP = struct open Word32 type t = word end
 
 (* from <poll.h> *)
-structure NFds = Word32
+structure NFds = struct open Word32 type t = word end
 
 (* from <resource.h> *)
-structure RLim = Word64
+structure RLim = struct open Word64 type t = word end
 
 (* from <sys/types.h> *)
-structure Clock = Int32
-structure Dev = Word64
-structure GId = Word32
-structure Id = Word32
-structure INo = Word64
-structure Mode = Word32
-structure NLink = Word32
-structure Off = Int64
-structure PId = Int32
-structure SSize = Int32
-structure SUSeconds = Int32
-structure Time = Int32
-structure UId = Word32
-structure USeconds = Word32
+structure Clock = struct open Int32 type t = int end
+structure Dev = struct open Word64 type t = word end
+structure GId = struct open Word32 type t = word end
+structure Id = struct open Word32 type t = word end
+structure INo = struct open Word64 type t = word end
+structure Mode = struct open Word32 type t = word end
+structure NLink = struct open Word32 type t = word end
+structure Off = struct open Int64 type t = int end
+structure PId = struct open Int32 type t = int end
+structure SSize = struct open Int32 type t = int end
+structure SUSeconds = struct open Int32 type t = int end
+structure Time = struct open Int32 type t = int end
+structure UId = struct open Word32 type t = word end
+structure USeconds = struct open Word32 type t = word end
 
 (* from <sys/socket.h> *)
-structure Socklen = Word32
+structure Socklen = struct open Word32 type t = word end
 
 (* from <termios.h> *)
-structure CC = Word8
-structure Speed = Word32
-structure TCFlag = Word32
+structure CC = struct open Word8 type t = word end
+structure Speed = struct open Word32 type t = word end
+structure TCFlag = struct open Word32 type t = word end
 
 (* from "gmp.h" *)
-structure MPLimb = Word32
+structure MPLimb = struct open Word32 type t = word end
 
 
 structure Errno = struct type 'a t = 'a end

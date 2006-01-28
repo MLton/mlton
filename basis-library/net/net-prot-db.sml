@@ -7,7 +7,7 @@
 
 structure NetProtDB: NET_PROT_DB =
    struct
-      structure Prim = Primitive.NetProtDB
+      structure Prim = PrimitiveFFI.NetProtDB
 
       datatype entry = T of {name: string,
                              aliases: string list,
@@ -25,19 +25,19 @@ structure NetProtDB: NET_PROT_DB =
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = COld.CS.toString (Prim.entryName ())
-                   val numAliases = Prim.entryNumAliases ()
+                   val name = COld.CS.toString (Prim.getEntryName ())
+                   val numAliases = Prim.getEntryAliasesNum ()
                    fun fill (n, aliases) =
                      if n < numAliases
                        then let
                               val alias =
-                                COld.CS.toString (Prim.entryAliasesN n)
+                                COld.CS.toString (Prim.getEntryAliasesN n)
                             in
                               fill (n + 1, alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
-                   val protocol = Prim.entryProtocol ()
+                   val protocol = Prim.getEntryProto ()
                  in
                    SOME (T {name = name,
                             aliases = aliases,
