@@ -267,11 +267,11 @@ fun nonBlock (f, post, no) =
    nonBlock' ({restart = true}, f, post, Error.again, no)
 
 local
-   structure PIO = PosixPrimitive.IO
+   structure PIO = PrimitiveFFI.Posix.IO
 in
    fun withNonBlock (s, f: unit -> 'a) =
       let
-         val fd = PosixPrimitive.FileDesc.fromInt (Prim.toInt s)
+         val fd = Primitive.FileDesc.fromInt (Prim.toInt s)
          val flags = 
             Syscall.simpleResultRestart (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
          val _ =
@@ -280,7 +280,7 @@ in
              PIO.fcntl3 (fd, PIO.F_SETFL,
                          Word.toIntX
                          (Word.orb (Word.fromInt flags,
-                                    PosixPrimitive.FileSys.O.nonblock))))
+                                    SysWord.fromInt PrimitiveFFI.Posix.FileSys.O.NONBLOCK))))
       in
          DynamicWind.wind
          (f, fn () =>

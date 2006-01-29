@@ -25,17 +25,17 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          end
       
       structure SysCall = Error.SysCall
-      structure Prim = PosixPrimitive.FileSys
+      structure Prim = PrimitiveFFI.Posix.FileSys
       open Prim
       structure Stat = Prim.Stat
       structure Flags = BitFlags
 
-      type file_desc = Prim.file_desc
-      type uid = Prim.uid
-      type gid = Prim.gid
+      type file_desc = C.Fd.t
+      type uid = C.UId.t
+      type gid = C.GId.t
 
-      val fdToWord = PosixPrimitive.FileDesc.toWord
-      val wordToFD = PosixPrimitive.FileDesc.fromWord
+      val fdToWord = Primitive.FileDesc.toWord
+      val wordToFD = Primitive.FileDesc.fromWord
       val fdToIOD = OS.IO.fromFD
       val iodToFD = SOME o OS.IO.toFD
 
@@ -45,7 +45,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          structure Prim = Prim.Dirstream
-         datatype dirstream = DS of Prim.dirstream option ref
+         datatype dirstream = DS of C.DirP.t option ref
 
          fun get (DS r) =
             case !r of
@@ -61,9 +61,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                SysCall.syscall
                (fn () =>
                 let
-                   val d = Prim.opendir s
+                   val d = Prim.openDir s
+                   val p = Primitive.Pointer.fromWord d
                 in
-                   (if Primitive.Pointer.isNull d then ~1 else 0,
+                   (if Primitive.Pointer.isNull p then ~1 else 0,
                     fn () => DS (ref (SOME d)))
                 end)
             end
@@ -78,7 +79,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                         ({clear = true, restart = false},
                          fn () =>
                          let
-                            val cs = Prim.readdir d
+                            val cs = Prim.readDir d
                          in
                             {return = if Primitive.Pointer.isNull cs
                                          then ~1
@@ -111,7 +112,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                SysCall.syscallErr
                ({clear = true, restart = false},
                 fn () =>
-                let val () = Prim.rewinddir d
+                let val () = Prim.rewindDir d
                 in
                    {return = ~1,
                     post = fn () => (),
@@ -122,7 +123,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          fun closedir (DS r) =
             case !r of
                NONE => ()
-             | SOME d => (SysCall.simple (fn () => Prim.closedir d); r := NONE)
+             | SOME d => (SysCall.simple (fn () => Prim.closeDir d); r := NONE)
       end
          
       fun chdir s =
@@ -150,14 +151,14 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          fun extract a = extractToChar (a, #"\000")
       in
          fun getcwd () =
-            if Primitive.Pointer.isNull (Prim.getcwd (!buffer, !size))
+            if Primitive.Pointer.isNull (Prim.getcwd (!buffer, C.Size.fromInt (!size)))
                then (size := 2 * !size
                      ; buffer := make ()
                      ; getcwd ())
             else extract (!buffer)
       end
 
-      val FD = PosixPrimitive.FileDesc.fromInt
+      val FD = Primitive.FileDesc.fromInt
 
       val stdin = FD 0
       val stdout = FD 1
@@ -166,25 +167,63 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure S =
          struct
             open S Flags
+            type mode = C.Mode.t
+            val ifblk = IFBLK
+            val ifchr = IFCHR
+            val ifdir = IFDIR
+            val ififo = IFIFO
+            val iflnk = IFLNK
+            val ifmt = IFMT
+            val ifreg = IFREG
+            val ifsock = IFSOCK
+            val irgrp = IRGRP
+            val iroth = IROTH
+            val irusr = IRUSR
+            val irwxg = IRWXG
+            val irwxo = IRWXO
+            val irwxu = IRWXU
+            val isgid = ISGID
+            val isuid = ISUID
+            val isvtx = ISVTX
+            val iwgrp = IWGRP
+            val iwoth = IWOTH
+            val iwusr = IWUSR
+            val ixgrp = IXGRP
+            val ixoth = IXOTH
+            val ixusr = IXUSR
          end
 
       structure O =
          struct
             open O Flags
+            val append = SysWord.fromInt APPEND
+            val binary = SysWord.fromInt BINARY
+            val creat = SysWord.fromInt CREAT
+            val dsync = SysWord.fromInt DSYNC
+            val excl = SysWord.fromInt EXCL
+            val noctty = SysWord.fromInt NOCTTY
+            val nonblock = SysWord.fromInt NONBLOCK
+            val rdonly = SysWord.fromInt RDONLY
+            val rdwr = SysWord.fromInt RDWR
+            val rsync = SysWord.fromInt RSYNC
+            val sync = SysWord.fromInt SYNC
+            val text = SysWord.fromInt TEXT
+            val trunc = SysWord.fromInt TRUNC
+            val wronly = SysWord.fromInt WRONLY
          end
 
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR
 
       fun wordToOpenMode w =
-         if w = o_rdonly then O_RDONLY
-         else if w = o_wronly then O_WRONLY
-              else if w = o_rdwr then O_RDWR
+         if w = O.rdonly then O_RDONLY
+         else if w = O.wronly then O_WRONLY
+              else if w = O.rdwr then O_RDWR
                    else raise Fail "wordToOpenMode: unknown word"
                       
       val openModeToWord =
-         fn O_RDONLY => o_rdonly
-          | O_WRONLY => o_wronly
-          | O_RDWR => o_rdwr
+         fn O_RDONLY => O.rdonly
+          | O_WRONLY => O.wronly
+          | O_RDWR => O.rdwr
 
       fun createf (pathname, openMode, flags, mode) =
          let
@@ -194,7 +233,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                                      O.creat]
             val fd =
                SysCall.simpleResult
-               (fn () => Prim.openn (pathname, flags, mode))
+               (fn () => Prim.open3 (pathname, SysWord.toInt flags, mode))
          in
             FD fd
          end
@@ -205,7 +244,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             val flags = Flags.flags [openModeToWord openMode, flags]
             val fd = 
                SysCall.simpleResult
-               (fn () => Prim.openn (pathname, flags, Flags.empty))
+               (fn () => Prim.open3 (pathname, SysWord.toInt flags, Flags.empty))
          in FD fd
          end
          
@@ -238,7 +277,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          val size: int = 1024
-         val buf = Word8Array.array (size, 0w0)
+         val buf : char array = Array.array (size, #"\000")
       in
          fun readlink (path: string): string =
             let 
@@ -246,22 +285,21 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             in
                SysCall.syscall
                (fn () =>
-                let val len = Prim.readlink (path, Word8Array.toPoly buf, size)
+                let val len = Prim.readlink (path, buf, C.Size.fromInt size)
                 in
                    (len, fn () =>
-                    Byte.unpackString (Word8ArraySlice.slice (buf, 0, SOME len)))
+                    ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len)))
                 end)
             end
       end
 
-      type dev = Prim.dev
-      val id = fn x => x
-      val wordToDev = id
-      val devToWord = id
+      type dev = C.Dev.t
+      val wordToDev = C.Dev.fromLargeWord o SysWord.toLargeWord
+      val devToWord = SysWord.fromLargeWord o C.Dev.toLargeWord
 
-      type ino = Prim.ino
-      val wordToIno = SysWord.toInt
-      val inoToWord = SysWord.fromInt
+      type ino = C.INo.t
+      val wordToIno = C.INo.fromLargeWord o SysWord.toLargeWord
+      val inoToWord = SysWord.fromLargeWord o C.INo.toLargeWord
 
       structure ST =
          struct
@@ -278,16 +316,16 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                      ctime: Time.time}
 
             fun fromC (): stat =
-               T {dev = Stat.dev (),
-                  ino = Stat.ino (),
-                  mode = Stat.mode (),
-                  nlink = Stat.nlink (),
-                  uid = Stat.uid (),
-                  gid = Stat.gid (),
-                  size = Stat.size (),
-                  atime = Time.fromSeconds (Stat.atime ()),
-                  mtime = Time.fromSeconds (Stat.mtime ()),
-                  ctime = Time.fromSeconds (Stat.ctime ())}
+               T {dev = Stat.getDev (),
+                  ino = Stat.getINo (),
+                  mode = Stat.getMode (),
+                  nlink = C.NLink.toInt (Stat.getNLink ()),
+                  uid = Stat.getUId (),
+                  gid = Stat.getGId (),
+                  size = Stat.getSize (),
+                  atime = Time.fromSeconds (Stat.getATime ()),
+                  mtime = Time.fromSeconds (Stat.getMTime ()),
+                  ctime = Time.fromSeconds (Stat.getCTime ())}
 
             local
                fun make sel (T r) = sel r
@@ -329,13 +367,13 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       datatype access_mode = A_READ | A_WRITE | A_EXEC
 
       val conv_access_mode =
-         fn A_READ => R_OK
-          | A_WRITE => W_OK
-          | A_EXEC => X_OK
+         fn A_READ => A.R_OK
+          | A_WRITE => A.W_OK
+          | A_EXEC => A.X_OK
 
       fun access (path: string, mode: access_mode list): bool =
          let 
-            val mode = Flags.flags (F_OK :: (map conv_access_mode mode))
+            val mode = SysWord.toInt (Flags.flags (map SysWord.fromInt (A.F_OK :: (map conv_access_mode mode))))
             val path = NullString.nullTerm path
          in 
             SysCall.syscallErr
@@ -372,14 +410,41 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             in 
                SysCall.syscallRestart
                (fn () => 
-                (U.setActime a
-                 ; U.setModtime m
+                (U.setAcTime a
+                 ; U.setModTime m
                  ; (U.utime f, fn () => 
                     ())))
             end
       end
 
       local
+         local
+            open Prim.PC
+         in
+            val properties =
+               [
+                (ALLOC_SIZE_MIN,"ALLOC_SIZE_MIN"),
+                (ASYNC_IO,"ASYNC_IO"),
+                (CHOWN_RESTRICTED,"CHOWN_RESTRICTED"),
+                (FILESIZEBITS,"FILESIZEBITS"),
+                (LINK_MAX,"LINK_MAX"),
+                (MAX_CANON,"MAX_CANON"),
+                (MAX_INPUT,"MAX_INPUT"),
+                (NAME_MAX,"NAME_MAX"),
+                (NO_TRUNC,"NO_TRUNC"),
+                (PATH_MAX,"PATH_MAX"),
+                (PIPE_BUF,"PIPE_BUF"),
+                (PRIO_IO,"PRIO_IO"),
+                (REC_INCR_XFER_SIZE,"REC_INCR_XFER_SIZE"),
+                (REC_MAX_XFER_SIZE,"REC_MAX_XFER_SIZE"),
+                (REC_MIN_XFER_SIZE,"REC_MIN_XFER_SIZE"),
+                (REC_XFER_ALIGN,"REC_XFER_ALIGN"),
+                (SYMLINK_MAX,"SYMLINK_MAX"),
+                (SYNC_IO,"SYNC_IO"),
+                (VDISABLE,"VDISABLE")
+               ]
+         end
+
          fun convertProperty s =
             case List.find (fn (_, s') => s = s') properties of
                NONE => Error.raiseSys Error.inval

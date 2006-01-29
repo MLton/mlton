@@ -22,7 +22,7 @@ signature MLTON_SYSLOG =
       val NDELAY   : openflag
       val NOWAIT   : openflag
       val ODELAY   : openflag
-(*
+(* NOT STANDARD
       val PERROR   : openflag
 *)
       val PID      : openflag
@@ -44,7 +44,7 @@ signature MLTON_SYSLOG =
       val LPR      : facility
       val MAIL     : facility
       val NEWS     : facility
-(*
+(* NOT STANDARD
       val SYSLOG   : facility
 *)
       val USER     : facility

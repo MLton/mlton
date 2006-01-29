@@ -39,8 +39,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
       fun isSuccess st = st = success
          
       fun system cmd =
-         PosixPrimitive.Process.system (NullString.fromString
-                                        (concat [cmd, "\000"]))
+         PrimitiveFFI.Posix.Process.system (NullString.fromString
+                                            (concat [cmd, "\000"]))
 
       val atExit = MLtonProcess.atExit
          

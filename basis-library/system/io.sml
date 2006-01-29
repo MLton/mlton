@@ -22,13 +22,13 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    type file_desc = PosixPrimitive.FileDesc.t
+    type file_desc = Primitive.FileDesc.t
 
     fun toFD (iod: iodesc): file_desc =
        valOf (Posix.FileSys.iodToFD iod)
 
-    val FD = PosixPrimitive.FileDesc.fromInt
-    val unFD = PosixPrimitive.FileDesc.toInt
+    val FD = Primitive.FileDesc.fromInt
+    val unFD = Primitive.FileDesc.toInt
        
     fun fromInt i = Posix.FileSys.fdToIOD (FD i)
        

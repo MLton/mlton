@@ -25,7 +25,7 @@ structure MLtonWorld: MLTON_WORLD =
                   open Posix.FileSys
                   val flags =
                      O.flags [O.trunc,
-                              PosixPrimitive.FileSys.O.binary]
+                              SysWord.fromInt PrimitiveFFI.Posix.FileSys.O.BINARY]
                   val mode =
                      let
                         open S

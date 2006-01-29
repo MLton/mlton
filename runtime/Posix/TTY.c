@@ -18,8 +18,9 @@ C_TCFlag_t Posix_TTY_Termios_getLFlag (void) {
   return termios.c_lflag;
 }
 
-C_CC_t Posix_TTY_Termios_getCCN (C_Int_t n) {
-  return termios.c_cc[n];
+void Posix_TTY_Termios_getCC (Array(C_CC_t) a) {
+  for (int i = 0; i < NCCS; i++) 
+    ((cc_t*)a)[i] = termios.c_cc[n];
 }
 
 C_Speed_t Posix_TTY_Termios_cfGetOSpeed (void) {
@@ -46,8 +47,9 @@ void Posix_TTY_Termios_setLFlag (C_TCFlag_t f) {
   termios.c_lflag = f;
 }
 
-void Posix_TTY_Termios_setCCN (C_Int_t n, C_CC_t c) {
-  termios.c_cc[n] = c;
+void Posix_TTY_Termios_setCC (Array(C_CC_t) a) {
+  for (int i = 0; i < NCCS; i++) 
+    termios.c_cc[n] = ((cc_t*)a)[i];
 }
 
 C_Errno_t(C_Int_t) Posix_TTY_Termios_cfSetOSpeed (C_Speed_t s) {

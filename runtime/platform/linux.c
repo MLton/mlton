@@ -84,6 +84,6 @@ void Posix_IO_settext (__attribute__ ((unused)) C_Fd_t fd) {
 /* ------------------------------------------------- */
 
 C_Errno_t(C_PId_t) MLton_Process_cwait (__attribute__ ((unused)) C_PId_t pid, 
-                                        __attribute__ ((unused)) Ref(C_Int_t) status) {
+                                        __attribute__ ((unused)) Ref(C_status_t) status) {
         die("MLton_Process_cwait not implemented");
 }

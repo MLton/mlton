@@ -21,7 +21,6 @@ in
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
    end
    primitive.sml
-   posix-primitive.sml
    ann "forceUsed" in
       basis-ffi.sml
    end

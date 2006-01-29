@@ -7,7 +7,14 @@
 
 structure Exit =
    struct
-      structure Status = PosixPrimitive.Process.Status
+      structure Status = 
+         struct
+            type t = C.Status.t
+            val fromInt =C.Status.fromInt
+            val toInt = C.Status.toInt
+            val failure = fromInt 1
+            val success = fromInt 0
+         end
 
       val exiting = ref false
 

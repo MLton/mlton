@@ -9,12 +9,12 @@
 structure PosixSysDB: POSIX_SYS_DB =
    struct
       structure CS = COld.CS
-      structure Prim = PosixPrimitive.SysDB
+      structure Prim = PrimitiveFFI.Posix.SysDB
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type uid = Prim.uid
-      type gid = Prim.gid
+      type uid = C.UId.t
+      type gid = C.GId.t
 
       structure Passwd =
          struct
@@ -24,20 +24,18 @@ structure PosixSysDB: POSIX_SYS_DB =
                            home: string,
                            shell: string}
 
-            local
-               structure C = Prim.Passwd
-            in
-               fun fromC (f: unit -> bool): passwd =
-                  SysCall.syscall
-                  (fn () =>
-                   (if f () then 0 else ~1,
-                    fn () => {name = CS.toString(C.name()),
-                              uid = C.uid(),
-                              gid = C.gid(),
-                              home = CS.toString(C.dir()),
-                              shell = CS.toString(C.shell())}))
-            end
+            structure Passwd = Prim.Passwd
 
+            fun fromC (f: unit -> bool): passwd =
+               SysCall.syscall
+               (fn () =>
+                (if f () then 0 else ~1,
+                 fn () => {name = CS.toString(Passwd.getName ()),
+                           uid = Passwd.getUId (),
+                           gid = Passwd.getGId (),
+                           home = CS.toString(Passwd.getDir ()),
+                           shell = CS.toString(Passwd.getShell ())}))
+               
             val name: passwd -> string = #name
             val uid: passwd -> uid = #uid
             val gid: passwd -> gid = #gid
@@ -64,9 +62,9 @@ structure PosixSysDB: POSIX_SYS_DB =
                SysCall.syscall
                (fn () =>
                 (if f () then 0 else ~1,
-                 fn () => {name = CS.toString(Group.name()),
-                           gid = Group.gid(),
-                           members = COld.CSS.toList(Group.mem())}))
+                 fn () => {name = CS.toString(Group.getName ()),
+                           gid = Group.getGId (),
+                           members = COld.CSS.toList(Group.getMem ())}))
                   
             val name: group -> string = #name
             val gid: group -> gid = #gid

@@ -48,7 +48,7 @@ in
    val LPR = LOG_LPR
    val MAIL = LOG_MAIL
    val NEWS = LOG_NEWS
-(*
+(* NOT STANDARD
    val SYSLOG = LOG_SYSLOG
 *)
    val USER = LOG_USER

@@ -20,7 +20,7 @@ fun x <> y = not (x = y)
 
 fun die (s: string): 'a =
    (Primitive.Stdio.print s
-    ; PosixPrimitive.Process.exit 1
+    ; PrimitiveFFI.Posix.Process.exit 1
     ; let exception DieFailed
       in raise DieFailed
       end)

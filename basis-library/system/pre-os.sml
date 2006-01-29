@@ -9,16 +9,16 @@ structure OS =
    struct
       structure Process =
          struct
-            type status = PosixPrimitive.Process.Status.t
+            type status = C.Status.t
          end
       structure IO :> sig
                          eqtype iodesc
 
-                         val fromFD: PosixPrimitive.IO.file_desc -> iodesc
-                         val toFD: iodesc -> PosixPrimitive.IO.file_desc
+                         val fromFD: C.Fd.t -> iodesc
+                         val toFD: iodesc -> C.Fd.t
                       end = 
                       struct
-                         type iodesc = PosixPrimitive.IO.file_desc
+                         type iodesc = C.Fd.t
 
                          val fromFD = fn z => z
                          val toFD = fn z => z

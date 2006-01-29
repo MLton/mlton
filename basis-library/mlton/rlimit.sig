@@ -21,7 +21,8 @@ signature MLTON_RLIMIT =
       val numFiles: t            (* NOFILE  max number of open files *)  
       val stackSize: t           (* STACK   max stack size *)
       val virtualMemorySize: t   (* AS      virtual memory limit *)
-(*
+
+(* NOT STANDARD
       val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
       val numProcesses: t        (* NPROC   max number of processes *)
       val residentSetSize: t     (* RSS     max resident set size *)

@@ -35,7 +35,7 @@ structure MLtonRlimit: MLTON_RLIMIT =
       val stackSize = STACK
       val virtualMemorySize = AS
 
-(*
+(* NOT STANDARD
       val lockedInMemorySize = MEMLOCK
       val numProcesses = NPROC
       val residentSetSize = RSS

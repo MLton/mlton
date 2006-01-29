@@ -8,7 +8,7 @@
 
 structure PosixProcess: POSIX_PROCESS_EXTRA =
    struct
-      structure Prim = PosixPrimitive.Process
+      structure Prim = PrimitiveFFI.Posix.Process
       open Prim
       structure Error = PosixError
       structure SysCall = Error.SysCall
@@ -86,10 +86,13 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       structure W =
          struct
             open W BitFlags
+            val continued = SysWord.fromInt CONTINUED
+            val nohang = SysWord.fromInt NOHANG
+            val untraced = SysWord.fromInt UNTRACED
          end
 
       local
-         val status: Status.t ref = ref (Status.fromInt 0)
+         val status: C.Status.t ref = ref (C.Status.fromInt 0)
          fun wait (wa, status, flags) =
             let
                val useCwait = 
@@ -108,7 +111,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                 let
                    val pid = 
                       if useCwait 
-                         then Prim.cwait (Pid.fromInt p, status)
+                         then PrimitiveFFI.MLton.Process.cwait (Pid.fromInt p, status)
                       else Prim.waitpid (Pid.fromInt p, status,
                                          SysWord.toInt flags)
                 in
@@ -126,7 +129,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 
          fun waitpid_nh (wa, flags) =
             let
-               val pid = wait (wa, status, wnohang :: flags)
+               val pid = wait (wa, status, W.nohang :: flags)
             in
                if 0 = Pid.toInt pid
                   then NONE
@@ -162,10 +165,12 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       local
          fun wrap prim (t: Time.time): Time.time =
             Time.fromSeconds
-            (LargeInt.fromInt 
-             (prim 
-              (LargeInt.toInt (Time.toSeconds t)
-               handle Overflow => Error.raiseSys Error.inval)))
+            (LargeInt.fromInt
+             (C.UInt.toInt
+              (prim 
+               (C.UInt.fromInt
+                (LargeInt.toInt (Time.toSeconds t)
+                 handle Overflow => Error.raiseSys Error.inval)))))
       in
          val alarm = wrap Prim.alarm
 (*       val sleep = wrap Prim.sleep *)

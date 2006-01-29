@@ -16,7 +16,7 @@ structure TextIO: TEXT_IO_EXTRA =
           structure Vector = CharVector
           structure VectorSlice = CharVectorSlice
           val chunkSize = Primitive.TextIO.bufSize
-          val fileTypeFlags = [PosixPrimitive.FileSys.O.text]
+          val fileTypeFlags = [SysWord.fromInt PrimitiveFFI.Posix.FileSys.O.TEXT]
           val line = SOME {isLine = fn c => c = #"\n",
                            lineElem = #"\n"}
           val mkReader = Posix.IO.mkTextReader
