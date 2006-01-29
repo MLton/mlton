@@ -37,7 +37,7 @@ C_Errno_t(C_Int_t) Posix_ProcEnv_setgid (C_GId_t g) {
   return setgid (g);
 }
 
-C_Errno_t(C_Int_t) Posix_ProcEnv_setpgid (C_PId_t p, C_GId_t g) {
+C_Errno_t(C_Int_t) Posix_ProcEnv_setpgid (C_PId_t p, C_PId_t g) {
   return setpgid (p, g);
 }
 

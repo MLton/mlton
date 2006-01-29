@@ -11,10 +11,6 @@
 #include "platform.h"
 typedef unsigned int uint;
 
-enum {
-  DEBUG_INT_INF = FALSE,
-};
-
 /* Import the global gcState so we can get and set the frontier. */
 extern struct GC_state gcState;
 

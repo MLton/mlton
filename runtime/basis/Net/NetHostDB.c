@@ -49,5 +49,5 @@ Bool_t NetHostDB_getByName(NullString8_t name) {
 }
 
 C_Errno_t(C_Int_t) NetHostDB_getHostName(Array(Char8_t) buf, C_Size_t len) {
-  gethostname ((char*)buf, len);
+  return gethostname ((char*)buf, len);
 }

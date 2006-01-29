@@ -187,7 +187,7 @@ static char* mlTypesHStd[] = {
   writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " */ ");                  \
-  writeString (cTypesHFd, "Pointer_t ");            \
+  writeString (cTypesHFd, "Pointer ");              \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
