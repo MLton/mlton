@@ -80,15 +80,6 @@ val whenceToInt =
    fn SEEK_SET => Prim.SEEK_SET
     | SEEK_CUR => Prim.SEEK_CUR
     | SEEK_END => Prim.SEEK_END
-
-fun intToWhence n =
-   if n = Prim.SEEK_SET
-      then SEEK_SET
-   else if n = Prim.SEEK_CUR
-           then SEEK_CUR
-        else if n = Prim.SEEK_END
-                then SEEK_END
-             else raise Fail "Posix.IO.intToWhence"
                       
 fun lseek (fd, n: Position.int, w: whence): Position.int =
    SysCall.syscall

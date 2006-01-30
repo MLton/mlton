@@ -14,7 +14,7 @@ ann
    "nonexhaustiveMatch warn"
    "redundantMatch warn"
    "sequenceNonUnit warn"
-   "warnUnused true"
+   "warnUnused false"
 in
    prim-basis.mlb
    ann "forceUsed" in

@@ -379,7 +379,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/libs/primitive.mlb")
+         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/primitive/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})

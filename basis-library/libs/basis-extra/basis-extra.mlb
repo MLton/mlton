@@ -9,7 +9,7 @@ ann
    "deadCode true"
    "sequenceNonUnit warn"
    "nonexhaustiveMatch warn" "redundantMatch warn"
-   "warnUnused true" "forceUsed"
+   "warnUnused false" "forceUsed"
 in
    local
       ../../primitive/primitive.mlb

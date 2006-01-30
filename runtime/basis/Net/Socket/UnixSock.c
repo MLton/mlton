@@ -21,7 +21,7 @@ void Socket_UnixSock_toAddr (NullString8_t path, C_Size_t pathlen, Array(Word8_t
   *((socklen_t*)addrlen) = sizeof(struct sockaddr_un);
 }
 
-C_Size_t Socket_UnixSock_pathLen (Array(Word8_t) addr) {
+C_Size_t Socket_UnixSock_pathLen (Vector(Word8_t) addr) {
   size_t i;
   struct sockaddr_un *sa = (struct sockaddr_un*)addr;
 
@@ -34,7 +34,7 @@ C_Size_t Socket_UnixSock_pathLen (Array(Word8_t) addr) {
   }
 }
 
-void Socket_UnixSock_fromAddr (Array(Word8_t) addr, Array(Char8_t) path, C_Size_t pathlen) {
+void Socket_UnixSock_fromAddr (Vector(Word8_t) addr, Array(Char8_t) path, C_Size_t pathlen) {
   size_t i;
   struct sockaddr_un *sa = (struct sockaddr_un*)addr;
   

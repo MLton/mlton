@@ -7,7 +7,7 @@
 
 structure INetSock:> INET_SOCK =
    struct
-      structure Prim = Primitive.Socket.INetSock
+      structure Prim = PrimitiveFFI.Socket.INetSock
          
       datatype inet = INET (* a phantom type*)
       type 'sock_type sock = (inet, 'sock_type) Socket.sock
@@ -15,7 +15,7 @@ structure INetSock:> INET_SOCK =
       type dgram_sock = Socket.dgram sock
       type sock_addr = inet Socket.sock_addr
 
-      val inetAF = NetHostDB.intToAddrFamily Primitive.Socket.AF.INET
+      val inetAF = NetHostDB.intToAddrFamily PrimitiveFFI.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
          if port < 0 orelse port >= 0x10000
@@ -51,7 +51,7 @@ structure INetSock:> INET_SOCK =
       
       structure TCP =
          struct
-            structure Prim = Prim.TCP
+            structure Prim = Prim.Ctl
 
             fun socket' prot =
                GenericSock.socket' (inetAF, Socket.SOCK.stream, prot)
@@ -60,10 +60,10 @@ structure INetSock:> INET_SOCK =
 
             fun getNODELAY sock =
               Socket.CtlExtra.getSockOptBool
-              (Prim.TCP, Prim.NODELAY) sock
+              (Prim.IPPROTO_TCP, Prim.TCP_NODELAY) sock
 
             fun setNODELAY (sock,optval) =
               Socket.CtlExtra.setSockOptBool
-              (Prim.TCP, Prim.NODELAY) (sock,optval)
+              (Prim.IPPROTO_TCP, Prim.TCP_NODELAY) (sock,optval)
          end
    end

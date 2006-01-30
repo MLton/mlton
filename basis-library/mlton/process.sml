@@ -7,7 +7,7 @@
 
 structure MLtonProcess =
    struct
-      structure Prim = Primitive.MLton.Process
+      structure Prim = PrimitiveFFI.MLton.Process
       structure MLton = Primitive.MLton
       local
          open Posix
@@ -219,7 +219,7 @@ structure MLtonProcess =
                        then
                           SysCall.simple
                           (fn () =>
-                           Primitive.Windows.Process.terminate (pid, signal))
+                           PrimitiveFFI.Windows.Process.terminate (pid, signal))
                     else Process.kill (Process.K_PROC pid, signal)
               in
                  ignore (reap p)
@@ -267,7 +267,7 @@ structure MLtonProcess =
                     | _ => raise Fail "create"
                 end
              val p =
-                Primitive.Windows.Process.create
+                PrimitiveFFI.Windows.Process.create
                 (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
              val p' = Pid.toInt p
           in

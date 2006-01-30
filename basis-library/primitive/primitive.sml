@@ -16,7 +16,6 @@ structure Char = Char8
 type char = Char.char
 structure Int = Int32
 type int = Int.int
-structure Position = Int64
 structure Real = Real64
 type real = Real.real
 
@@ -815,41 +814,6 @@ structure Primitive =
                      end
                end
 
-            structure Process =
-               struct
-                  val spawne =
-                     if let
-                           open Platform.OS
-                        in
-                           case host of
-                              Cygwin => true
-                            | MinGW => true
-                            | _ => false
-                        end
-                        then
-                           _import "MLton_Process_spawne"
-                           : (NullString.t 
-                              * NullString.t array
-                              * NullString.t array
-                              -> Pid.t);
-                        else fn _ => raise Fail "spawne not defined"
-                  val spawnp =
-                     if let
-                           open Platform.OS
-                        in
-                           case host of
-                              Cygwin => true
-                            | MinGW => true
-                            | _ => false
-                        end
-                        then
-                           _import "MLton_Process_spawnp"
-                           : (NullString.t 
-                              * NullString.t array
-                              -> Pid.t);
-                        else fn _ => raise Fail "spawnp not defined"
-               end
-            
             structure Profile =
                struct
                   val isOn = _build_const "MLton_Profile_isOn": bool;
@@ -882,13 +846,6 @@ structure Primitive =
                   val get = _prim "Weak_get": 'a t -> 'a;
                   val new = _prim "Weak_new": 'a -> 'a t;
                end
-         end
-
-      structure NetHostDB =
-         struct
-            (* network byte order (MSB) *)
-            type pre_in_addr = Word8.word array
-            type in_addr = Word8.word vector
          end
 
       structure PackReal32 =
@@ -1129,194 +1086,6 @@ structure Primitive =
          struct
             val deref = _prim "Ref_deref": 'a ref -> 'a;
             val assign = _prim "Ref_assign": 'a ref * 'a -> unit;
-         end
-
-      structure Signal:
-         sig
-            eqtype t
-
-            val fromInt: int -> t
-            val toInt: t -> int
-         end =
-         struct
-            type t = int
-
-            val fromInt = fn s => s
-            val toInt = fn s => s
-         end
-
-      structure Socket:
-         sig
-            type sock
-
-            val fromInt: int -> sock
-            val toInt: sock -> int
-         end =
-         struct
-            type sock = int
-
-            fun fromInt i = i
-            fun toInt i = i
-         end
-            
-      structure Socket =
-         struct
-            open Socket
-
-            type pre_sock_addr = Word8.word array
-            type sock_addr = Word8.word vector
-            val sockAddrLenMax = _const "Socket_sockAddrLenMax": int;
-            structure AF =
-               struct
-                  type addr_family = int
-                  val UNIX = _const "Socket_AF_UNIX": addr_family;
-                  val INET = _const "Socket_AF_INET": addr_family;
-                  val INET6 = _const "Socket_AF_INET6": addr_family;
-                  val UNSPEC = _const "Socket_AF_UNSPEC": addr_family;
-               end
-            structure SOCK:
-               sig
-                  eqtype sock_type
-
-                  val fromInt: int -> sock_type
-               end =
-               struct
-                  type sock_type = int
-
-                  val fromInt = fn i => i
-               end
-            structure SOCK =
-               struct
-                  open SOCK
-                  val STREAM = _const "Socket_SOCK_STREAM": sock_type;
-                  val DGRAM = _const "Socket_SOCK_DGRAM": sock_type;
-               end
-            structure CtlExtra =
-               struct
-                  type level = int
-                  type optname = int
-                  type request = int
-                  (* host byte order (LSB) *)
-                  type read_data = Word8.word vector
-                  type write_data = Word8.word array
-
-                  val setSockOpt = 
-                     _import "Socket_Ctl_setSockOpt": sock * level * optname * 
-                                                   read_data * int -> 
-                                                   int;
-                  val getSockOpt = 
-                     _import "Socket_Ctl_getSockOpt": sock * level * optname * 
-                                                   write_data * int ref -> 
-                                                   int;
-                  val setIOCtl =
-                     _import "Socket_Ctl_getsetIOCtl": sock * request *
-                                                    read_data ->
-                                                    int;
-                  val getIOCtl =
-                     _import "Socket_Ctl_getsetIOCtl": sock * request *
-                                                    write_data ->
-                                                    int;
-               end
-            structure Ctl =
-               struct
-                  open CtlExtra
-                  val SOCKET = _const "Socket_Ctl_SOL_SOCKET": level;
-                  val DEBUG = _const "Socket_Ctl_SO_DEBUG": optname;
-                  val REUSEADDR = _const "Socket_Ctl_SO_REUSEADDR": optname;
-                  val KEEPALIVE = _const "Socket_Ctl_SO_KEEPALIVE": optname;
-                  val DONTROUTE = _const "Socket_Ctl_SO_DONTROUTE": optname;
-                  val LINGER = _const "Socket_Ctl_SO_LINGER": optname;
-                  val BROADCAST = _const "Socket_Ctl_SO_BROADCAST": optname;
-                  val OOBINLINE = _const "Socket_Ctl_SO_OOBINLINE": optname;
-                  val SNDBUF = _const "Socket_Ctl_SO_SNDBUF": optname;
-                  val RCVBUF = _const "Socket_Ctl_SO_RCVBUF": optname;
-                  val TYPE = _const "Socket_Ctl_SO_TYPE": optname;
-                  val ERROR = _const "Socket_Ctl_SO_ERROR": optname;
-
-                  val getPeerName =
-                     _import "Socket_Ctl_getPeerName": sock * pre_sock_addr * int ref -> int;
-                  val getSockName =
-                     _import "Socket_Ctl_getSockName": sock * pre_sock_addr * int ref -> int;
-
-                  (* val NBIO = _const "Socket_Ctl_FIONBIO": request; *)
-                  val NREAD = _const "Socket_Ctl_FIONREAD": request;
-                  val ATMARK = _const "Socket_Ctl_SIOCATMARK": request;
-               end
-
-            val familyOfAddr =
-               _import "Socket_familyOfAddr": sock_addr -> AF.addr_family;
-            val bind = _import "Socket_bind": sock * sock_addr * int -> int;
-            val listen = _import "Socket_listen": sock * int -> int;
-            val connect =
-               _import "Socket_connect": sock * sock_addr * int -> int;
-            val accept =
-               _import "Socket_accept": sock * pre_sock_addr * int ref -> int;
-            val close = _import "Socket_close": sock -> int;
-
-            type how = int
-            val SHUT_RD = _const "Socket_SHUT_RD": how;
-            val SHUT_WR = _const "Socket_SHUT_WR": how;
-            val SHUT_RDWR = _const "Socket_SHUT_RDWR": how;
-            val shutdown = _import "Socket_shutdown": sock * how -> int;
-
-            type flags = word
-            val MSG_DONTROUTE = _const "Socket_MSG_DONTROUTE": flags;
-            val MSG_DONTWAIT = _const "Socket_MSG_DONTWAIT": flags;
-            val MSG_OOB = _const "Socket_MSG_OOB": flags;
-            val MSG_PEEK = _const "Socket_MSG_PEEK": flags;
-
-            val sendArr = _import "Socket_send":
-               sock * Word8.word array * int * int * word -> int;
-            val sendVec = _import "Socket_send":
-               sock * Word8.word vector * int * int * word -> int;
-            val sendToArr = _import "Socket_sendTo":
-               sock * Word8.word array * int * int * word * sock_addr * int -> int;
-            val sendToVec = _import "Socket_sendTo":
-               sock * Word8.word vector * int * int * word * sock_addr * int -> int;
-            val recv = _import "Socket_recv":
-               sock * Word8.word array * int * int * word -> int;
-            val recvFrom = _import "Socket_recvFrom":
-               sock * Word8.word array * int * int * word * pre_sock_addr * int ref
-               -> int;
-
-            structure GenericSock =
-               struct
-                  val socket = 
-                     _import "GenericSock_socket": AF.addr_family * 
-                                                SOCK.sock_type * 
-                                                int -> int;
-                  val socketPair = 
-                     _import "GenericSock_socketPair": AF.addr_family * 
-                                                    SOCK.sock_type * 
-                                                    int * 
-                                                    int ref * int ref -> int;
-               end
-
-            structure INetSock =
-               struct
-                  val toAddr = _import "INetSock_toAddr": NetHostDB.in_addr * int * 
-                                                       pre_sock_addr * int ref -> unit;
-                  val fromAddr = _import "INetSock_fromAddr": sock_addr -> unit;
-                  val getInAddr = _import "INetSock_getInAddr": NetHostDB.pre_in_addr -> 
-                                                             unit;
-                  val getPort = _import "INetSock_getPort": unit -> int;
-                  structure TCP =
-                     struct
-                        open CtlExtra
-                        val TCP = _const "Socket_INetSock_TCP_SOL_TCP": level;
-                        val NODELAY = _const "Socket_INetSock_TCP_SO_NODELAY": optname;
-                     end
-               end
-            structure UnixSock =
-               struct
-                  val toAddr =
-                     _import "UnixSock_toAddr"
-                     : NullString.t * int * pre_sock_addr * int ref -> unit;
-                  val pathLen = _import "UnixSock_pathLen": sock_addr -> int;
-                  val fromAddr =
-                     _import "UnixSock_fromAddr"
-                     : sock_addr * char array * int -> unit;
-               end
          end
 
       structure Status:
@@ -1838,19 +1607,6 @@ structure Primitive =
             fun fromInt i = i
             fun toInt i = i
             val toWord = Word32.fromInt
-         end
-
-      structure Windows =
-         struct
-            structure Process =
-               struct
-                  val create = 
-                     _import "Windows_Process_create"
-                     : (NullString.t * NullString.t * NullString.t
-                        * FileDesc.t * FileDesc.t * FileDesc.t) -> Pid.t;
-                  val terminate =
-                     _import "Windows_terminate": Pid.t * Signal.t -> int;
-               end
          end
 
       structure World =

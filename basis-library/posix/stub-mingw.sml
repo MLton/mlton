@@ -19,23 +19,6 @@ local
                        ; Error.raiseSys Error.nosys)
       else f
 in
-   structure Primitive =
-      struct
-         open Primitive
-
-         structure Socket =
-            struct
-               open Socket
-
-               structure UnixSock =
-                  struct
-                     open UnixSock
-
-                     val toAddr = stub ("toAddr", toAddr)
-                     val fromAddr = stub ("fromAddr", fromAddr)
-                  end
-            end
-      end
    structure PrimitiveFFI =
       struct
          open PrimitiveFFI
@@ -153,6 +136,19 @@ in
                            val setattr = stub ("setattr", setattr)
                            val setpgrp = stub ("setpgrp", setpgrp)
                         end
+                  end
+            end
+
+         structure Socket =
+            struct
+               open Socket
+                  
+               structure UnixSock =
+                  struct
+                     open UnixSock
+                        
+                     val toAddr = stub ("toAddr", toAddr)
+                     val fromAddr = stub ("fromAddr", fromAddr)
                   end
             end
       end

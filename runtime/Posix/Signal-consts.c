@@ -1,9 +1,9 @@
 #include "platform.h"
 
 #if (defined (NSIG))
-#define Posix_Signal_NSIG NSIG
+const C_Int_t Posix_Signal_NSIG = NSIG;
 #elif (defined (_NSIG))
-#define Posix_Signal_NSIG _NSIG
+const C_Int_t Posix_Signal_NSIG = _NSIG;
 #else
 #error Posix_Signal_numSignals not defined
 #endif
