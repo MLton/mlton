@@ -18,16 +18,19 @@ structure INetSock:> INET_SOCK =
       val inetAF = NetHostDB.intToAddrFamily PrimitiveFFI.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
+         let val port = Net.htonl port
+         in
          if port < 0 orelse port >= 0x10000
             then PosixError.raiseSys PosixError.inval
          else
             let
                val (sa, salen, finish) = Socket.new_sock_addr ()
                val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
-                                    Net.htonl port, sa, salen)
+                                    port, sa, salen)
             in
                finish ()
             end
+         end
 
       fun any port = toAddr (NetHostDB.any (), port)
 
