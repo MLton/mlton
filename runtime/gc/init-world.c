@@ -53,7 +53,7 @@ void initIntInfs (GC_state s) {
   uint32_t i, j;
   bool neg;
   GC_intInf bp;
-  unsigned char* cp;
+  unsigned char *cp;
 
   assert (isFrontierAligned (s, s->frontier));
   frontier = s->frontier;
@@ -66,12 +66,11 @@ void initIntInfs (GC_state s) {
       str++;
     slen = strlen (str);
     assert (slen > 0);
+    bp = (GC_intInf)frontier;
     cp = (unsigned char*)(s->heap.start + (s->heap.size - slen));
 
-    bp = (GC_intInf)frontier;
-
     for (j = 0; j != slen; j++) {
-      assert('0' <= str[j] && str[j] <= '9');
+      assert ('0' <= str[j] && str[j] <= '9');
       cp[j] = str[j] - '0' + 0;
     }
     alen = mpn_set_str ((mp_limb_t*)(bp->limbs), cp, slen, 10);
@@ -84,16 +83,16 @@ void initIntInfs (GC_state s) {
         val = bp->limbs[0];
       if (neg) {
         /*
-         * We only fit if val in [1, 2^(8 * OBJPTR_SIZE - 1)].
+         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
          */
         ans = - val;
         val = val - 1;
       } else
         /* 
-         * We only fit if val in [0, 2^(8 * OBJPTR_SIZE - 1) - 1].
+         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
          */
         ans = val;
-      if (val < (uintmax_t)1<<(8 * OBJPTR_SIZE - 1)) {
+      if (val < (uintmax_t)1<<(CHAR_BIT * OBJPTR_SIZE - 2)) {
         s->globals[inits->globalIndex] = (objptr)(ans<<1 | 1);
         continue;
       }
