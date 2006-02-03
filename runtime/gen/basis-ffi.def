@@ -31,6 +31,7 @@ IEEEReal.RoundingMode.FE_TOWARDZERO = _const : C.Int.t
 IEEEReal.RoundingMode.FE_UPWARD = _const : C.Int.t
 IEEEReal.getRoundingMode = _import : unit -> C.Int.t
 IEEEReal.setRoundingMode = _import : C.Int.t -> unit
+MLton.bug = _import : NullString8.t -> unit
 MLton.Itimer.PROF = _const : C.Int.t
 MLton.Itimer.REAL = _const : C.Int.t
 MLton.Itimer.VIRTUAL = _const : C.Int.t

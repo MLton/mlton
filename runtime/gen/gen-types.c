@@ -293,6 +293,7 @@ int main (int argc, char* argv[]) {
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* C99 */");
   writeStringWithNewline (cTypesSMLFd, "(* C99 *)");
+  chksystype(ptrdiff_t, "Ptrdiff");
   chksystype(intmax_t, "Intmax");
   chksystype(uintmax_t, "UIntmax");
 
