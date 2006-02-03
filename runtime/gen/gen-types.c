@@ -291,6 +291,12 @@ int main (int argc, char* argv[]) {
   aliastype("Int", "Sock");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
+  writeStringWithNewline (cTypesHFd, "/* C99 */");
+  writeStringWithNewline (cTypesSMLFd, "(* C99 *)");
+  chksystype(intmax_t, "Intmax");
+  chksystype(uintmax_t, "UIntmax");
+
+  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* from <dirent.h> */");
   writeStringWithNewline (cTypesSMLFd, "(* from <dirent.h> *)");
   // ptrtype(DIR*, "DirP");
