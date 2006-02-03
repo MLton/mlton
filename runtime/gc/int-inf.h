@@ -31,10 +31,38 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__is_four_or_eight,
         CHAR_BIT * sizeof(mp_limb_t) == 64 ? \
         GC_WORD64_VECTOR_HEADER : ( 0 ) ) )
 
+COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr, 
+                    (sizeof(mp_limb_t) >= sizeof(objptr)) ||
+                    (sizeof(objptr) % sizeof(mp_limb_t) == 0));
+#define LIMBS_PER_OBJPTR ( \
+        sizeof(mp_limb_t) >= sizeof(objptr) ? \
+        1 : sizeof(objptr) / sizeof(mp_limb_t))
+
+static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res, 
+                                  mp_limb_t space[LIMBS_PER_OBJPTR + 1]);
+static inline void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
+static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
+
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-GC_header GC_intInfHeader (void);
+objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes);
+objptr IntInf_neg (objptr arg, size_t bytes);
+objptr IntInf_notb (objptr arg, size_t bytes);
+objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes);
+objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
+Int32_t IntInf_compare (objptr lhs, objptr rhs);
+Bool_t IntInf_equal (objptr lhs, objptr rhs);
+objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
+Word32_t IntInf_smallMul (Word32_t lhs, Word32_t rhs, pointer carry);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

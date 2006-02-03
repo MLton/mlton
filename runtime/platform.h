@@ -161,36 +161,6 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /* ---------------------------------------------------------------- */
 
 /* ------------------------------------------------- */
-/*                      IntInf                       */
-/* ------------------------------------------------- */
-
-/* All of these routines modify the frontier in gcState.  They assume that 
- * there are bytes bytes free, and allocate an array to store the result
- * at the current frontier position.
- * Immediately after the bytesArg, they take a labelIndex arg.  This is an index
- * into the array used for allocation profiling, and the appropriate element
- * is incremented by the amount that the function moves the frontier.
- */
-Pointer IntInf_add (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_andb (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_arshift (Pointer arg, Word shift, size_t bytes);
-Pointer IntInf_gcd (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_lshift (Pointer arg, Word shift, size_t bytes);
-Pointer IntInf_mul (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_neg (Pointer arg, size_t bytes);
-Pointer IntInf_notb (Pointer arg, size_t bytes);
-Pointer IntInf_orb (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_quot (Pointer num, Pointer den, size_t bytes);
-Pointer IntInf_rem (Pointer num, Pointer den, size_t bytes);
-Pointer IntInf_sub (Pointer lhs, Pointer rhs, size_t bytes);
-Pointer IntInf_toString (Pointer arg, int base, size_t bytes);
-Pointer IntInf_xorb (Pointer lhs, Pointer rhs, size_t bytes);
-
-Word IntInf_smallMul (Word lhs, Word rhs, Pointer carry);
-Int IntInf_compare (Pointer lhs, Pointer rhs);
-Bool IntInf_equal (Pointer lhs, Pointer rhs);
-
-/* ------------------------------------------------- */
 /*                       MLton                       */
 /* ------------------------------------------------- */
 

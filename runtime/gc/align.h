@@ -13,9 +13,3 @@ static inline bool isFrontierAligned (GC_state s, pointer p);
 static inline pointer alignFrontier (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
-
-#if (defined (MLTON_GC_INTERNAL_BASIS))
-
-pointer GC_alignFrontier (GC_state s, pointer p);
-
-#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

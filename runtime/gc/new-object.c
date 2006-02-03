@@ -83,3 +83,12 @@ GC_thread newThread (GC_state s, size_t reserved) {
              (uintptr_t)thread, reserved);;
   return thread;
 }
+
+static inline void setFrontier (GC_state s, pointer p, size_t bytes) {
+  p = alignFrontier (s, p);
+  assert ((size_t)(p - s->frontier) <= bytes);
+  GC_profileAllocInc (s, p - s->frontier);
+  s->cumulativeStatistics.bytesAllocated += p - s->frontier;
+  s->frontier = p;
+  assert (s->frontier <= s->limitPlusSlop);
+}

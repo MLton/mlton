@@ -11,23 +11,17 @@
 /* Layout of strings.  
  * Note, the value passed around is a pointer to the chars member.
  */
-typedef struct GC_string {
+typedef struct GC_string8 {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
   char chars[1];
-} *GC_string;
+} *GC_string8;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-#define GC_STRING_HEADER GC_WORD8_VECTOR_HEADER
+#define GC_STRING8_HEADER GC_WORD8_VECTOR_HEADER
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
-
-#if (defined (MLTON_GC_INTERNAL_BASIS))
-
-GC_header GC_stringHeader (void);
-
-#endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

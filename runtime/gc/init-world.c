@@ -10,27 +10,27 @@
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
+size_t sizeofIntInfFromString (GC_state s, const char *str) {
+  size_t slen = strlen (str);
+
+  /* A slight overestimate. */
+  double bytesPerChar = 0.415241011861 /* = ((log(10.0) / log(2.0)) / 8.0) */ ;
+  double bytes = ceil((double)slen * bytesPerChar);
+  return align (GC_ARRAY_HEADER_SIZE 
+                + sizeof(mp_limb_t) // for the sign
+                + align((size_t)bytes, sizeof(mp_limb_t)),
+                s->alignment);
+}
+
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
-  size_t maxSLen = 0;
   size_t numBytes;
   size_t total;
   
   total = 0;
   for (i = 0; i < s->intInfInitsLength; ++i) {
-    size_t slen = strlen (s->intInfInits[i].mlstr);
-    maxSLen = max (maxSLen, slen);
-    double bytesPerChar = 0.415241011861 /* = ((log(10.0) / log(2.0)) / 8.0) */ ;
-    double bytes = ceil((double)slen * bytesPerChar);
-    /* A slight overestimate. */
-    numBytes = 
-      sizeof(mp_limb_t) // for the sign
-      + (align((size_t)bytes, sizeof(mp_limb_t)));
-    total += align (GC_ARRAY_HEADER_SIZE 
-                    + numBytes, 
-                    s->alignment);
+    total += sizeofIntInfFromString (s, s->intInfInits[i].mlstr);
   }
-  total += maxSLen;
   for (i = 0; i < s->vectorInitsLength; ++i) {
     numBytes = 
       s->vectorInits[i].bytesPerElement
@@ -46,68 +46,30 @@ size_t sizeofInitialBytesLive (GC_state s) {
 
 void initIntInfs (GC_state s) {
   struct GC_intInfInit *inits;
-  pointer frontier;
+  uint32_t i;
   const char *str;
-  size_t slen;
-  mp_size_t alen;
-  uint32_t i, j;
+  size_t bytes;
   bool neg;
-  GC_intInf bp;
-  unsigned char *cp;
+  __mpz_struct resmpz;
+  int ans;
 
   assert (isFrontierAligned (s, s->frontier));
-  frontier = s->frontier;
   for (i = 0; i < s->intInfInitsLength; i++) {
     inits = &(s->intInfInits[i]);
-    str = inits->mlstr;
     assert (inits->globalIndex < s->globalsLength);
+    str = inits->mlstr;
+    bytes = sizeofIntInfFromString (s, str);
     neg = *str == '~';
     if (neg)
       str++;
-    slen = strlen (str);
-    assert (slen > 0);
-    bp = (GC_intInf)frontier;
-    cp = (unsigned char*)(s->heap.start + (s->heap.size - slen));
-
-    for (j = 0; j != slen; j++) {
-      assert ('0' <= str[j] && str[j] <= '9');
-      cp[j] = str[j] - '0' + 0;
-    }
-    alen = mpn_set_str ((mp_limb_t*)(bp->limbs), cp, slen, 10);
-    if (alen <= 1) {
-      uintmax_t val, ans;
-      
-      if (alen == 0)
-        val = 0;
-      else
-        val = bp->limbs[0];
-      if (neg) {
-        /*
-         * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
-         */
-        ans = - val;
-        val = val - 1;
-      } else
-        /* 
-         * We only fit if val in [0, 2^(CHAR_BIT * OBJPTR_SIZE - 2) - 1].
-         */
-        ans = val;
-      if (val < (uintmax_t)1<<(CHAR_BIT * OBJPTR_SIZE - 2)) {
-        s->globals[inits->globalIndex] = (objptr)(ans<<1 | 1);
-        continue;
-      }
-    }
-    s->globals[inits->globalIndex] = pointerToObjptr((pointer)(&bp->isneg), s->heap.start);
-    bp->counter = 0;
-    bp->length = alen + 1;
-    bp->header = GC_INTINF_HEADER;
-    bp->isneg = neg;
-    frontier = alignFrontier (s, (pointer)&bp->limbs[alen]);
+    initIntInfRes (s, &resmpz, bytes);
+    ans = mpz_set_str (&resmpz, str, 10);
+    assert (ans == 0);
+    if (neg)
+      resmpz._mp_size = - resmpz._mp_size;
+    s->globals[inits->globalIndex] = finiIntInfRes (s, &resmpz, bytes);
   }
-  assert (isFrontierAligned (s, frontier));
-  GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
-  s->frontier = frontier;
-  s->cumulativeStatistics.bytesAllocated += frontier - s->frontier;
+  assert (isFrontierAligned (s, s->frontier));
 }
 
 void initVectors (GC_state s) {
@@ -185,6 +147,8 @@ void initWorld (GC_state s) {
   createCardMapAndCrossMap (s);
   start = alignFrontier (s, s->heap.start);
   s->frontier = start;
+  s->limitPlusSlop = s->heap.start + s->heap.size;
+  s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   initIntInfs (s);
   initVectors (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);

@@ -26,6 +26,3 @@ pointer alignFrontier (GC_state s, pointer p) {
   return (pointer)res;
 }
 
-pointer GC_alignFrontier (GC_state s, pointer p) {
-  return alignFrontier (s, p);
-}

@@ -26,7 +26,7 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -m32 -mtune=opteron
+FLAGS += -m64 -mtune=opteron
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
@@ -53,6 +53,7 @@ endif
 CC = gcc -std=gnu99
 CFLAGS = -Wall -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
+GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
 DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
 WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
 	-Wformat-nonliteral \
@@ -189,7 +190,7 @@ gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
 
 gc.o: gc.c $(GCCFILES) $(HFILES) 
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a
