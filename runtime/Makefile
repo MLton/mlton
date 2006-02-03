@@ -26,7 +26,7 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -m64 -mtune=opteron
+FLAGS += -m32 -mtune=opteron
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
