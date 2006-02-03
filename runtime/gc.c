@@ -16,6 +16,9 @@
 #include "gc/align.c"
 #include "gc/read_write.c"
 
+/* Import the global gcState (but try not to use it too much). */
+extern struct GC_state gcState;
+
 #include "gc/array-allocate.c"
 #include "gc/array.c"
 #include "gc/atomic.c"
@@ -39,6 +42,7 @@
 #include "gc/heap_predicates.c"
 #include "gc/init-world.c"
 #include "gc/init.c"
+#include "gc/int-inf.c"
 #include "gc/invariant.c"
 #include "gc/mark-compact.c"
 #include "gc/model.c"
@@ -60,4 +64,3 @@
 #include "gc/translate.c"
 #include "gc/weak.c"
 #include "gc/world.c"
-#include "gc/int-inf-ops.c"
