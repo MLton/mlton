@@ -37,6 +37,10 @@ structure Signal = Int
 structure Status = Int
 structure Sock = Int
 
+(* C99 *)
+structure Intmax = struct open Int64 type t = int end
+structure UIntmax = struct open Word64 type t = word end
+
 (* from <dirent.h> *)
 structure DirP = struct open Word32 type t = word end
 
