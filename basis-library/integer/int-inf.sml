@@ -97,20 +97,6 @@ structure IntInf: INT_INF_EXTRA =
          Word.orb (Word.<< (argw, 0w1), 0w1)
 
       (*
-       * Given a fixnum bigInt, change the tag bit to 0.
-       * NOTE: it is an ERROR to call zeroTag on an argument
-       * which is a bignum bigInt.
-       *)
-      fun zeroTag (arg: bigInt): Word.word =
-         Word.andb (Prim.toWord arg, 0wxFFFFFFFE)
-
-      (*
-       * Given a Word.word, set the tag bit back to 1.
-       *)
-      fun incTag (argw: Word.word): Word.word =
-         Word.orb (argw, 0w1)
-
-      (*
        * badw is the fixnum bigInt (as a word) whose negation and
        * absolute value are not fixnums.  badv is the same thing
        * with the tag stripped off.
@@ -272,35 +258,29 @@ structure IntInf: INT_INF_EXTRA =
             recur 0
          end
             
-      (*
-       * bigInt multiplication.
-       *)
-      local 
-         val carry: Word.word ref = ref 0w0
-      in
-         fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
-            let
-               val res =
-                  if areSmall (lhs, rhs)
-                     then let
-                             val lhsv = stripTag lhs
-                             val rhs0 = zeroTag rhs
-                             val ans0 = Prim.smallMul (lhsv, rhs0, carry)
-                          in
-                             if (! carry) = Word.~>> (ans0, 0w31)
-                                then SOME (Prim.fromWord (incTag ans0))
+
+      fun bigMul (lhs: bigInt, rhs: bigInt): bigInt =
+         let
+            val res =
+               if areSmall (lhs, rhs)
+                  then let val ansv = (Word.fromInt o Int.*) 
+                                      (Word.toIntX (stripTag lhs),
+                                       Word.toIntX (stripTag rhs))
+                           val ans = addTag ansv
+                       in
+                          if sameSign (ans, ansv)
+                             then SOME (Prim.fromWord ans)
                              else NONE
-                          end
+                       end handle Overflow => NONE
                   else NONE
-            in
-               case res of
-                  NONE =>
-                     dontInline
-                     (fn () =>
-                      Prim.* (lhs, rhs, reserve (size lhs +? size rhs, 0)))
-                | SOME i => i
-            end
-      end
+         in
+            case res of
+               NONE =>
+                  dontInline
+                  (fn () =>
+                   Prim.* (lhs, rhs, reserve (size lhs +? size rhs, 0)))
+             | SOME i => i
+         end
 
       (*
        * bigInt quot.

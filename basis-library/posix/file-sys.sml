@@ -30,9 +30,9 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure Stat = Prim.Stat
       structure Flags = BitFlags
 
-      type file_desc = C.Fd.t
-      type uid = C.UId.t
-      type gid = C.GId.t
+      type file_desc = C_Fd.t
+      type uid = C_UId.t
+      type gid = C_GId.t
 
       val fdToWord = Primitive.FileDesc.toWord
       val wordToFD = Primitive.FileDesc.fromWord
@@ -45,7 +45,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          structure Prim = Prim.Dirstream
-         datatype dirstream = DS of C.DirP.t option ref
+         datatype dirstream = DS of C_DirP.t option ref
 
          fun get (DS r) =
             case !r of
@@ -151,7 +151,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          fun extract a = extractToChar (a, #"\000")
       in
          fun getcwd () =
-            if Primitive.Pointer.isNull (Prim.getcwd (!buffer, C.Size.fromInt (!size)))
+            if Primitive.Pointer.isNull (Prim.getcwd (!buffer, C_Size.fromInt (!size)))
                then (size := 2 * !size
                      ; buffer := make ()
                      ; getcwd ())
@@ -167,7 +167,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure S =
          struct
             open S Flags
-            type mode = C.Mode.t
+            type mode = C_Mode.t
             val ifblk = IFBLK
             val ifchr = IFCHR
             val ifdir = IFDIR
@@ -285,7 +285,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             in
                SysCall.syscall
                (fn () =>
-                let val len = Prim.readlink (path, buf, C.Size.fromInt size)
+                let val len = Prim.readlink (path, buf, C_Size.fromInt size)
                 in
                    (len, fn () =>
                     ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len)))
@@ -293,13 +293,13 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             end
       end
 
-      type dev = C.Dev.t
-      val wordToDev = C.Dev.fromLargeWord o SysWord.toLargeWord
-      val devToWord = SysWord.fromLargeWord o C.Dev.toLargeWord
+      type dev = C_Dev.t
+      val wordToDev = C_Dev.fromLargeWord o SysWord.toLargeWord
+      val devToWord = SysWord.fromLargeWord o C_Dev.toLargeWord
 
-      type ino = C.INo.t
-      val wordToIno = C.INo.fromLargeWord o SysWord.toLargeWord
-      val inoToWord = SysWord.fromLargeWord o C.INo.toLargeWord
+      type ino = C_INo.t
+      val wordToIno = C_INo.fromLargeWord o SysWord.toLargeWord
+      val inoToWord = SysWord.fromLargeWord o C_INo.toLargeWord
 
       structure ST =
          struct
@@ -319,7 +319,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                T {dev = Stat.getDev (),
                   ino = Stat.getINo (),
                   mode = Stat.getMode (),
-                  nlink = C.NLink.toInt (Stat.getNLink ()),
+                  nlink = C_NLink.toInt (Stat.getNLink ()),
                   uid = Stat.getUId (),
                   gid = Stat.getGId (),
                   size = Stat.getSize (),

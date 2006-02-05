@@ -20,7 +20,7 @@ structure UnixSock : UNIX_SOCK =
         let
           val (sa, salen, finish) = Socket.new_sock_addr ()
           val _ = Prim.toAddr (NullString.nullTerm s, 
-                               C.Size.fromInt (String.size s), 
+                               C_Size.fromInt (String.size s), 
                                sa, salen)
         in 
           finish ()
@@ -31,10 +31,10 @@ structure UnixSock : UNIX_SOCK =
           val sa = Socket.unpackSockAddr sa
           val sa = Word8Vector.toPoly sa
           val len = Prim.pathLen sa
-          val a = CharArray.array (C.Size.toInt len, #"\000")
+          val a = CharArray.array (C_Size.toInt len, #"\000")
           val _ = Prim.fromAddr (sa, CharArray.toPoly a, len)
         in
-           CharArraySlice.vector (CharArraySlice.slice (a, 0, SOME (C.Size.toInt len)))
+           CharArraySlice.vector (CharArraySlice.slice (a, 0, SOME (C_Size.toInt len)))
         end 
 
       structure Strm =

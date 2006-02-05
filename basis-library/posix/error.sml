@@ -11,7 +11,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
       structure Prim = PrimitiveFFI.Posix.Error
       open Prim
 
-      type syserror = C.Int.t
+      type syserror = C_Int.t
  
       val acces = EACCES
       val addrinuse = EADDRINUSE

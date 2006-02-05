@@ -5,74 +5,124 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure C = struct
-
 
 (* C *)
-structure Char = struct open Int8 type t = int end
-structure SChar = struct open Int8 type t = int end
-structure UChar = struct open Word8 type t = word end
-structure Short = struct open Int16 type t = int end
-structure SShort = struct open Int16 type t = int end
-structure UShort = struct open Word16 type t = word end
-structure Int = struct open Int32 type t = int end
-structure SInt = struct open Int32 type t = int end
-structure UInt = struct open Word32 type t = word end
-structure Long = struct open Int32 type t = int end
-structure SLong = struct open Int32 type t = int end
-structure ULong = struct open Word32 type t = word end
-structure LongLong = struct open Int64 type t = int end
-structure SLongLong = struct open Int64 type t = int end
-structure ULongLong = struct open Word64 type t = word end
-structure Float = struct open Real32 type t = real end
-structure Double = struct open Real64 type t = real end
-structure Size = struct open Word32 type t = word end
+structure C_Char = struct open Int8 type t = int end
+functor C_Char_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int8 (A)
+structure C_SChar = struct open Int8 type t = int end
+functor C_SChar_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int8 (A)
+structure C_UChar = struct open Word8 type t = word end
+functor C_UChar_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word8 (A)
+structure C_Short = struct open Int16 type t = int end
+functor C_Short_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int16 (A)
+structure C_SShort = struct open Int16 type t = int end
+functor C_SShort_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int16 (A)
+structure C_UShort = struct open Word16 type t = word end
+functor C_UShort_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
+structure C_Int = struct open Int32 type t = int end
+functor C_Int_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_SInt = struct open Int32 type t = int end
+functor C_SInt_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_UInt = struct open Word32 type t = word end
+functor C_UInt_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_Long = struct open Int32 type t = int end
+functor C_Long_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_SLong = struct open Int32 type t = int end
+functor C_SLong_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_ULong = struct open Word32 type t = word end
+functor C_ULong_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_LongLong = struct open Int64 type t = int end
+functor C_LongLong_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int64 (A)
+structure C_SLongLong = struct open Int64 type t = int end
+functor C_SLongLong_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int64 (A)
+structure C_ULongLong = struct open Word64 type t = word end
+functor C_ULongLong_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
+structure C_Float = struct open Real32 type t = real end
+functor C_Float_ChooseRealN (A: CHOOSE_REALN_ARG) = ChooseRealN_Real32 (A)
+structure C_Double = struct open Real64 type t = real end
+functor C_Double_ChooseRealN (A: CHOOSE_REALN_ARG) = ChooseRealN_Real64 (A)
+structure C_Size = struct open Word32 type t = word end
+functor C_Size_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
-structure String = Pointer
-structure StringArray = Pointer
+structure C_Pointer = Pointer
+structure C_String = Pointer
+structure C_StringArray = Pointer
 
 (* Generic integers *)
-structure Fd = Int
-structure Signal = Int
-structure Status = Int
-structure Sock = Int
+structure C_Fd = C_Int
+functor C_Fd_ChooseIntN (A: CHOOSE_INTN_ARG) = C_Int_ChooseIntN (A)
+structure C_Signal = C_Int
+functor C_Signal_ChooseIntN (A: CHOOSE_INTN_ARG) = C_Int_ChooseIntN (A)
+structure C_Status = C_Int
+functor C_Status_ChooseIntN (A: CHOOSE_INTN_ARG) = C_Int_ChooseIntN (A)
+structure C_Sock = C_Int
+functor C_Sock_ChooseIntN (A: CHOOSE_INTN_ARG) = C_Int_ChooseIntN (A)
+
+(* C99 *)
+structure C_Ptrdiff = struct open Int32 type t = int end
+functor C_Ptrdiff_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_Intmax = struct open Int64 type t = int end
+functor C_Intmax_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int64 (A)
+structure C_UIntmax = struct open Word64 type t = word end
+functor C_UIntmax_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
 
 (* from <dirent.h> *)
-structure DirP = struct open Word32 type t = word end
+structure C_DirP = struct open Word32 type t = word end
+functor C_DirP_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <poll.h> *)
-structure NFds = struct open Word32 type t = word end
+structure C_NFds = struct open Word32 type t = word end
+functor C_NFds_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <resource.h> *)
-structure RLim = struct open Word64 type t = word end
+structure C_RLim = struct open Word64 type t = word end
+functor C_RLim_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
 
 (* from <sys/types.h> *)
-structure Clock = struct open Int32 type t = int end
-structure Dev = struct open Word64 type t = word end
-structure GId = struct open Word32 type t = word end
-structure Id = struct open Word32 type t = word end
-structure INo = struct open Word64 type t = word end
-structure Mode = struct open Word32 type t = word end
-structure NLink = struct open Word32 type t = word end
-structure Off = struct open Int64 type t = int end
-structure PId = struct open Int32 type t = int end
-structure SSize = struct open Int32 type t = int end
-structure SUSeconds = struct open Int32 type t = int end
-structure Time = struct open Int32 type t = int end
-structure UId = struct open Word32 type t = word end
-structure USeconds = struct open Word32 type t = word end
+structure C_Clock = struct open Int32 type t = int end
+functor C_Clock_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_Dev = struct open Word64 type t = word end
+functor C_Dev_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
+structure C_GId = struct open Word32 type t = word end
+functor C_GId_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_Id = struct open Word32 type t = word end
+functor C_Id_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_INo = struct open Word64 type t = word end
+functor C_INo_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
+structure C_Mode = struct open Word32 type t = word end
+functor C_Mode_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_NLink = struct open Word32 type t = word end
+functor C_NLink_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_Off = struct open Int64 type t = int end
+functor C_Off_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int64 (A)
+structure C_PId = struct open Int32 type t = int end
+functor C_PId_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_SSize = struct open Int32 type t = int end
+functor C_SSize_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_SUSeconds = struct open Int32 type t = int end
+functor C_SUSeconds_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_Time = struct open Int32 type t = int end
+functor C_Time_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_UId = struct open Word32 type t = word end
+functor C_UId_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_USeconds = struct open Word32 type t = word end
+functor C_USeconds_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <sys/socket.h> *)
-structure Socklen = struct open Word32 type t = word end
+structure C_Socklen = struct open Word32 type t = word end
+functor C_Socklen_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <termios.h> *)
-structure CC = struct open Word8 type t = word end
-structure Speed = struct open Word32 type t = word end
-structure TCFlag = struct open Word32 type t = word end
+structure C_CC = struct open Word8 type t = word end
+functor C_CC_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word8 (A)
+structure C_Speed = struct open Word32 type t = word end
+functor C_Speed_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_TCFlag = struct open Word32 type t = word end
+functor C_TCFlag_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from "gmp.h" *)
-structure MPLimb = struct open Word32 type t = word end
+structure C_MPLimb = struct open Word32 type t = word end
+functor C_MPLimb_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 
-structure Errno = struct type 'a t = 'a end
-end
+structure C_Errno = struct type 'a t = 'a end

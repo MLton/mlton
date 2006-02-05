@@ -132,7 +132,7 @@ structure OS_IO: OS_IO =
                          handle Overflow => Error.raiseSys Error.inval)
           val reventss = Array.array (n, 0)
           val _ = Posix.Error.SysCall.simpleRestart
-                  (fn () => Prim.poll (fds, eventss, C.NFds.fromInt n, timeOut, reventss))
+                  (fn () => Prim.poll (fds, eventss, C_NFds.fromInt n, timeOut, reventss))
           in
             Array.foldri
             (fn (i, w, l) => 

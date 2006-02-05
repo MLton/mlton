@@ -18,6 +18,7 @@ ann
 in
    prim-basis.mlb
    ann "forceUsed" in
+      ../config/choose.sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
    end
    primitive.sml

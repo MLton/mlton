@@ -720,8 +720,6 @@ structure Primitive =
             val orb = _prim "IntInf_orb": int * int * word -> int;
             val quot = _prim "IntInf_quot": int * int * word -> int;
             val rem = _prim "IntInf_rem": int * int * word -> int;
-            val smallMul =
-               _import "IntInf_smallMul": word * word * word ref -> word;
             val - = _prim "IntInf_sub": int * int * word -> int; 
             val toString
                = _prim "IntInf_toString": int * Int.int * word -> string;

@@ -16,7 +16,7 @@ struct
 
 open PrimitiveFFI.MLton.Syslog
 
-type openflag = C.Int.t
+type openflag = C_Int.t
 
 local 
    open Logopt
@@ -28,7 +28,7 @@ in
    val PID = LOG_PID
 end
 
-type facility = C.Int.t
+type facility = C_Int.t
 
 local
    open Facility
@@ -55,7 +55,7 @@ in
    val UUCP = LOG_UUCP
 end
 
-type loglevel = C.Int.t
+type loglevel = C_Int.t
 
 local
    open Severity

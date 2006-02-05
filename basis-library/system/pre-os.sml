@@ -9,16 +9,16 @@ structure OS =
    struct
       structure Process =
          struct
-            type status = C.Status.t
+            type status = C_Status.t
          end
       structure IO :> sig
                          eqtype iodesc
 
-                         val fromFD: C.Fd.t -> iodesc
-                         val toFD: iodesc -> C.Fd.t
+                         val fromFD: C_Fd.t -> iodesc
+                         val toFD: iodesc -> C_Fd.t
                       end = 
                       struct
-                         type iodesc = C.Fd.t
+                         type iodesc = C_Fd.t
 
                          val fromFD = fn z => z
                          val toFD = fn z => z

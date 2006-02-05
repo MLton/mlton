@@ -13,8 +13,8 @@ structure PosixSysDB: POSIX_SYS_DB =
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type uid = C.UId.t
-      type gid = C.GId.t
+      type uid = C_UId.t
+      type gid = C_GId.t
 
       structure Passwd =
          struct

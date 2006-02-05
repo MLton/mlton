@@ -9,8 +9,8 @@
 structure MLtonRlimit: MLTON_RLIMIT =
    struct
       open PrimitiveFFI.MLton.Rlimit
-      type rlim = C.RLim.t
-      type t = C.Int.t
+      type rlim = C_RLim.t
+      type t = C_Int.t
 
       val get =
          fn (r: t) =>

@@ -8,7 +8,7 @@
 
 structure MLtonProcEnv: MLTON_PROC_ENV =
    struct
-      type gid = C.GId.t
+      type gid = C_GId.t
 
       fun setenv {name, value} =
          let

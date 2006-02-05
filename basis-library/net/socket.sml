@@ -6,7 +6,7 @@
  *)
 
 structure Socket:> SOCKET_EXTRA
-   where type SOCK.sock_type = C.Int.t
+   where type SOCK.sock_type = C_Int.t
    where type pre_sock_addr = Word8.word array
 =
 struct
@@ -16,23 +16,23 @@ structure Error = Posix.Error
 structure Syscall = Error.SysCall
 structure FileSys = Posix.FileSys
 
-type sock = C.Sock.t
-val sockToWord = SysWord.fromInt o C.Sock.toInt
-val wordToSock = C.Sock.fromInt o SysWord.toInt
+type sock = C_Sock.t
+val sockToWord = SysWord.fromInt o C_Sock.toInt
+val wordToSock = C_Sock.fromInt o SysWord.toInt
 fun sockToFD sock = FileSys.wordToFD (sockToWord sock)
 fun fdToSock fd = wordToSock (FileSys.fdToWord fd)
 
 type pre_sock_addr = Word8.word array
 datatype sock_addr = SA of Word8.word vector
 fun unpackSockAddr (SA sa) = Word8Vector.fromPoly sa
-fun new_sock_addr (): (pre_sock_addr * C.Socklen.t ref * (unit -> sock_addr)) = 
+fun new_sock_addr (): (pre_sock_addr * C_Socklen.t ref * (unit -> sock_addr)) = 
    let
-      val salen = C.Size.toInt Prim.sockAddrStorageLen
+      val salen = C_Size.toInt Prim.sockAddrStorageLen
       val sa = Array.array (salen, 0wx0)
-      val salenRef = ref (C.Socklen.fromInt salen)
+      val salenRef = ref (C_Socklen.fromInt salen)
       fun finish () =
          SA (ArraySlice.vector (ArraySlice.slice 
-                                (sa, 0, SOME (C.Socklen.toInt (!salenRef)))))
+                                (sa, 0, SOME (C_Socklen.toInt (!salenRef)))))
    in
       (sa, salenRef, finish)
    end
@@ -64,7 +64,7 @@ structure AF =
 
 structure SOCK =
    struct
-      type sock_type = C.Int.t
+      type sock_type = C_Int.t
       val stream = Prim.SOCK.STREAM
       val dgram = Prim.SOCK.DGRAM
       val names = [
@@ -84,9 +84,9 @@ structure SOCK =
 
 structure CtlExtra =
    struct
-      type level = C.Int.t
-      type optname = C.Int.t
-      type request = C.Int.t
+      type level = C_Int.t
+      type optname = C_Int.t
+      type request = C_Int.t
       
       (* host byte order *)
       structure PW = PackWord32Host
@@ -142,14 +142,14 @@ structure CtlExtra =
                fun getSockOpt (level: level, optname: optname) s =
                   let
                      val optval = Word8Array.array (optlen, 0wx0)
-                     val optlen = ref (C.Socklen.fromInt optlen)
+                     val optlen = ref (C_Socklen.fromInt optlen)
                   in
                      Syscall.simple
                      (fn () =>
                       Prim.Ctl.getSockOpt (s, level, optname,
                                            Word8Array.toPoly optval,
                                            optlen))
-                     ; unmarshal (optval, C.Socklen.toInt (!optlen), 0)
+                     ; unmarshal (optval, C_Socklen.toInt (!optlen), 0)
                   end
                fun setSockOpt (level: level, optname: optname) (s, optval) =
                   let
@@ -160,7 +160,7 @@ structure CtlExtra =
                      (fn () => 
                       Prim.Ctl.setSockOpt (s, level, optname,
                                            Word8Vector.toPoly optval,
-                                           C.Socklen.fromInt optlen))
+                                           C_Socklen.fromInt optlen))
                   end
                fun getIOCtl (request: request) s : 'a =
                   let
@@ -221,7 +221,7 @@ structure CtlExtra =
             else SOME (Posix.Error.errorMsg se, SOME se)
          end handle Error.SysErr z => SOME z
       local
-         fun getName (s, f: sock * pre_sock_addr * C.Socklen.t ref -> int) =
+         fun getName (s, f: sock * pre_sock_addr * C_Socklen.t ref -> int) =
             let
                val (sa, salen, finish) = new_sock_addr ()
                val () = Syscall.simple (fn () => f (s, sa, salen))
@@ -248,7 +248,7 @@ fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 fun familyOfAddr (SA sa) = NetHostDB.intToAddrFamily (Prim.familyOfAddr sa)
 
 fun bind (s, SA sa) =
-   Syscall.simple (fn () => Prim.bind (s, sa, C.Socklen.fromInt (Vector.length sa)))
+   Syscall.simple (fn () => Prim.bind (s, sa, C_Socklen.fromInt (Vector.length sa)))
 
 fun listen (s, n) = 
    Syscall.simple (fn () => Prim.listen (s, n))
@@ -290,12 +290,12 @@ in
 end
 
 fun connect (s, SA sa) =
-   Syscall.simple (fn () => Prim.connect (s, sa, C.Socklen.fromInt (Vector.length sa)))
+   Syscall.simple (fn () => Prim.connect (s, sa, C_Socklen.fromInt (Vector.length sa)))
 
 fun connectNB (s, SA sa) =
    nonBlock'
    ({restart = false}, fn () => 
-    withNonBlock (s, fn () => Prim.connect (s, sa, C.Socklen.fromInt (Vector.length sa))),
+    withNonBlock (s, fn () => Prim.connect (s, sa, C_Socklen.fromInt (Vector.length sa))),
     fn _ => true,
     Error.inprogress, false)
 
@@ -397,7 +397,7 @@ local
                val (buf, i, sz) = base sl
             in
                Syscall.simpleResultRestart
-               (fn () => primSend (s, buf, i, C.Size.fromInt sz, 
+               (fn () => primSend (s, buf, i, C_Size.fromInt sz, 
                                    Word.toInt (mk_out_flags out_flags)))
             end
          fun send (sock, buf) = send' (sock, buf, no_out_flags)
@@ -407,7 +407,7 @@ local
             in
                nonBlock
                (fn () =>
-                primSend (s, buf, i, C.Size.fromInt sz,
+                primSend (s, buf, i, C_Size.fromInt sz,
                           Word.toInt (
                           Word.orb (Word.fromInt Prim.MSG_DONTWAIT, 
                                     mk_out_flags out_flags))),
@@ -421,9 +421,9 @@ local
             in
                Syscall.simpleRestart
                (fn () =>
-                primSendTo (s, buf, i, C.Size.fromInt sz,
+                primSendTo (s, buf, i, C_Size.fromInt sz,
                             Word.toInt (mk_out_flags out_flags), 
-                            sa, C.Socklen.fromInt (Vector.length sa)))
+                            sa, C_Socklen.fromInt (Vector.length sa)))
             end
          fun sendTo (sock, sock_addr, sl) =
             sendTo' (sock, sock_addr, sl, no_out_flags)
@@ -433,11 +433,11 @@ local
             in
                nonBlock 
                (fn () =>
-                primSendTo (s, buf, i, C.Size.fromInt sz,
+                primSendTo (s, buf, i, C_Size.fromInt sz,
                             Word.toInt (
                             Word.orb (Word.fromInt Prim.MSG_DONTWAIT,
                                       mk_out_flags out_flags)),
-                            sa, C.Socklen.fromInt (Vector.length sa)),
+                            sa, C_Socklen.fromInt (Vector.length sa)),
                 fn _ => true,
                 false)
             end
@@ -471,7 +471,7 @@ fun recvArr' (s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       Syscall.simpleResultRestart
-      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, C.Size.fromInt sz, 
+      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, C_Size.fromInt sz, 
                            Word.toInt (mk_in_flags in_flags)))
    end
 
@@ -499,7 +499,7 @@ fun recvArrFrom' (s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
       val n =
          Syscall.simpleResultRestart
-         (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, C.Size.fromInt sz,
+         (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, C_Size.fromInt sz,
                                   Word.toInt (mk_in_flags in_flags), 
                                   sa, salen))
    in
@@ -526,7 +526,7 @@ fun recvArrNB' (s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, C.Size.fromInt sz,
+      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, C_Size.fromInt sz,
                            Word.toInt (mk_in_flagsNB in_flags)),
        SOME, 
        NONE)
@@ -537,7 +537,7 @@ fun recvVecNB' (s, n, in_flags) =
       val a = Word8Array.rawArray n
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, C.Size.fromInt n,
+      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                            Word.toInt (mk_in_flagsNB in_flags)),
        fn bytesRead => SOME (getVec (a, n, bytesRead)),
        NONE)
@@ -553,7 +553,7 @@ fun recvArrFromNB' (s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, C.Size.fromInt sz,
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, C_Size.fromInt sz,
                                Word.toInt (mk_in_flagsNB in_flags), sa, salen),
        fn n => SOME (n, finish ()),
        NONE)
@@ -565,7 +565,7 @@ fun recvVecFromNB' (s, n, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, C.Size.fromInt n,
+      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                                Word.toInt (mk_in_flagsNB in_flags), sa, salen),
        fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()),
        NONE)

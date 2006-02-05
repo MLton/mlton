@@ -35,7 +35,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
           finish ()
         end
       fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
-      type addr_family = C.Int.t
+      type addr_family = C_Int.t
 
       val intToAddrFamily = fn z => z
       val addrFamilyToInt = fn z => z
@@ -96,7 +96,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
             else NONE
       in
         fun getByAddr in_addr = 
-           get (Prim.getByAddress (in_addr, C.Socklen.fromInt (Vector.length in_addr)))
+           get (Prim.getByAddress (in_addr, C_Socklen.fromInt (Vector.length in_addr)))
         fun getByName name = 
            get (Prim.getByName (NullString.nullTerm name))
       end
@@ -107,7 +107,7 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
           val buf = CharArray.array (n, #"\000")
           val () =
              Posix.Error.SysCall.simple
-             (fn () => Prim.getHostName (CharArray.toPoly buf, C.Size.fromInt n))
+             (fn () => Prim.getHostName (CharArray.toPoly buf, C_Size.fromInt n))
         in
           case CharArray.findi (fn (_, c) => c = #"\000") buf of
              NONE => CharArray.vector buf

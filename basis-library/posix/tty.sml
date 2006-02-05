@@ -14,9 +14,9 @@ structure PosixTTY: POSIX_TTY =
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type pid = C.PId.t
+      type pid = C_PId.t
          
-      type file_desc = C.Fd.t
+      type file_desc = C_Fd.t
          
       structure V =
          struct
@@ -34,7 +34,7 @@ structure PosixTTY: POSIX_TTY =
             val start = VSTART
             val stop = VSTOP
 
-            type cc = C.CC.t array
+            type cc = C_CC.t array
 
             val default = Byte.charToByte #"\000"
 
@@ -58,9 +58,9 @@ structure PosixTTY: POSIX_TTY =
             val sub = Byte.byteToChar o Array.sub
          end
       
-      structure IFlags =
+      structure I =
          struct
-            open IFlags BitFlags
+            open I BitFlags
             val brkint = BRKINT
             val icrnl = ICRNL
             val ignbrk = IGNBRK
@@ -75,9 +75,9 @@ structure PosixTTY: POSIX_TTY =
             val parmrk = PARMRK
          end
       
-      structure OFlags =
+      structure O =
          struct
-            open OFlags BitFlags
+            open O BitFlags
             val bs0 = BS0
             val bs1 = BS1
             val bsdly = BSDLY
@@ -108,9 +108,9 @@ structure PosixTTY: POSIX_TTY =
             val vtdly = VTDLY
          end
       
-      structure CFlags =
+      structure C =
          struct
-            open CFlags BitFlags
+            open C BitFlags
             val clocal = CLOCAL
             val cread = CREAD
             val cs5 = CS5
@@ -124,9 +124,9 @@ structure PosixTTY: POSIX_TTY =
             val parodd = PARODD
          end
       
-      structure LFlags =
+      structure L =
          struct
-            open LFlags BitFlags
+            open L BitFlags
             val echo = ECHO
             val echoe = ECHOE
             val echok = ECHOK
@@ -138,7 +138,7 @@ structure PosixTTY: POSIX_TTY =
             val tostop = TOSTOP
          end
 
-      type speed = C.Speed.t
+      type speed = C_Speed.t
 
       val b0 = B0
       val b110 = B110
@@ -162,10 +162,10 @@ structure PosixTTY: POSIX_TTY =
       val speedToWord = id
       val wordToSpeed = id
 
-      type termios = {iflag: IFlags.flags,
-                      oflag: OFlags.flags,
-                      cflag: CFlags.flags,
-                      lflag: LFlags.flags,
+      type termios = {iflag: I.flags,
+                      oflag: O.flags,
+                      cflag: C.flags,
+                      lflag: L.flags,
                       cc: V.cc,
                       ispeed: speed,
                       ospeed: speed}
@@ -173,10 +173,10 @@ structure PosixTTY: POSIX_TTY =
       val termios = id
       val fieldsOf = id
 
-      val getiflag: termios -> IFlags.flags = #iflag
-      val getoflag: termios -> OFlags.flags = #oflag
-      val getcflag: termios -> CFlags.flags = #cflag
-      val getlflag: termios -> LFlags.flags = #oflag
+      val getiflag: termios -> I.flags = #iflag
+      val getoflag: termios -> O.flags = #oflag
+      val getcflag: termios -> C.flags = #cflag
+      val getlflag: termios -> L.flags = #oflag
       val getcc: termios -> V.cc = #cc
 
       structure CF =
@@ -211,18 +211,18 @@ structure PosixTTY: POSIX_TTY =
          struct
             open Prim.TC 
 
-            type set_action = C.Int.t
+            type set_action = C_Int.t
             val sadrain = TCSADRAIN
             val saflush = TCSAFLUSH
             val sanow = TCSANOW
 
-            type flow_action = C.Int.t
+            type flow_action = C_Int.t
             val ioff = TCIOFF
             val ion = TCION
             val ooff = TCOOFF
             val oon = TCOON
 
-            type queue_sel = C.Int.t
+            type queue_sel = C_Int.t
             val iflush = TCIFLUSH
             val oflush = TCOFLUSH
             val ioflush = TCIOFLUSH
@@ -275,9 +275,4 @@ structure PosixTTY: POSIX_TTY =
             fun setpgrp (fd, pid) = 
                SysCall.simpleRestart (fn () => Prim.TC.setpgrp (fd, pid))
          end
-
-      structure C = CFlags
-      structure I = IFlags
-      structure L = LFlags
-      structure O = OFlags
    end

@@ -15,11 +15,11 @@ structure Error = PosixError
 structure SysCall = Error.SysCall
 structure FS = PosixFileSys
 
-type file_desc = C.Fd.t
-type pid = C.PId.t
+type file_desc = C_Fd.t
+type pid = C_PId.t
 
-val FD = C.Fd.fromInt
-val unFD = C.Fd.toInt
+val FD = C_Fd.fromInt
+val unFD = C_Fd.toInt
    
 local
    val a: file_desc array = Array.array (2, FD 0)
@@ -228,13 +228,13 @@ local
             let
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
             in
-               SysCall.simpleResultRestart (fn () => read (fd, buf, i, C.Size.fromInt sz))
+               SysCall.simpleResultRestart (fn () => read (fd, buf, i, C_Size.fromInt sz))
             end
          fun readVec (fd, n) =
             let
                val a = Primitive.Array.array n
                val bytesRead = 
-                  SysCall.simpleResultRestart (fn () => read (fd, a, 0, C.Size.fromInt n))
+                  SysCall.simpleResultRestart (fn () => read (fd, a, 0, C_Size.fromInt n))
             in 
                fromVector
                (if n = bytesRead
@@ -247,7 +247,7 @@ local
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
             in
                SysCall.simpleResultRestart
-               (fn () => write (fd, buf, i, C.Size.fromInt sz))
+               (fn () => write (fd, buf, i, C_Size.fromInt sz))
             end
          val writeVec =
             fn (fd, sl) =>
@@ -255,7 +255,7 @@ local
                val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
             in
                SysCall.simpleResultRestart
-               (fn () => writeVec (fd, buf, i, C.Size.fromInt sz))
+               (fn () => writeVec (fd, buf, i, C_Size.fromInt sz))
             end
          fun mkReader {fd, name, initBlkMode} =
             let

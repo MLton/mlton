@@ -92,7 +92,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          end
 
       local
-         val status: C.Status.t ref = ref (C.Status.fromInt 0)
+         val status: C_Status.t ref = ref (C_Status.fromInt 0)
          fun wait (wa, status, flags) =
             let
                val useCwait = 
@@ -166,9 +166,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          fun wrap prim (t: Time.time): Time.time =
             Time.fromSeconds
             (LargeInt.fromInt
-             (C.UInt.toInt
+             (C_UInt.toInt
               (prim 
-               (C.UInt.fromInt
+               (C_UInt.fromInt
                 (LargeInt.toInt (Time.toSeconds t)
                  handle Overflow => Error.raiseSys Error.inval)))))
       in

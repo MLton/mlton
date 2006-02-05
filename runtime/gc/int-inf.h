@@ -63,6 +63,5 @@ objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
 Int32_t IntInf_compare (objptr lhs, objptr rhs);
 Bool_t IntInf_equal (objptr lhs, objptr rhs);
 objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
-Word32_t IntInf_smallMul (Word32_t lhs, Word32_t rhs, pointer carry);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

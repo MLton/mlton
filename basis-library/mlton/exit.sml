@@ -9,9 +9,9 @@ structure Exit =
    struct
       structure Status = 
          struct
-            type t = C.Status.t
-            val fromInt =C.Status.fromInt
-            val toInt = C.Status.toInt
+            type t = C_Status.t
+            val fromInt = C_Status.fromInt
+            val toInt = C_Status.toInt
             val failure = fromInt 1
             val success = fromInt 0
          end

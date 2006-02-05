@@ -17,7 +17,7 @@ val restart = SysCall.restartFlag
 
 type t = signal
 
-type how = C.Int.t
+type how = C_Int.t
 
 (* val toString = SysWord.toString o toWord *)
    

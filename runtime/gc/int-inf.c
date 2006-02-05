@@ -356,12 +356,3 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   sp->header = GC_STRING8_HEADER;
   return pointerToObjptr ((pointer)&sp->chars, gcState.heap.start);
 }
-
-Word32_t
-IntInf_smallMul(Word32_t lhs, Word32_t rhs, Ref(Word32_t) carry) {
-  intmax_t   prod;
-
-  prod = (intmax_t)(Int32_t)lhs * (intmax_t)(Int32_t)rhs;
-  *(Word32_t *)carry = (Word32_t)((uintmax_t)prod >> 32);
-  return ((Word32_t)(uintmax_t)prod);
-}

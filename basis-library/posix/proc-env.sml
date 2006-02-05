@@ -13,10 +13,10 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       structure SysCall = Error.SysCall
       structure CS = COld.CS
 
-      type pid = C.PId.t
-      type uid = C.UId.t
-      type gid = C.GId.t
-      type file_desc = C.Fd.t
+      type pid = C_PId.t
+      type uid = C_UId.t
+      type gid = C_GId.t
+      type file_desc = C_Fd.t
          
       local
          open Prim
@@ -222,9 +222,9 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
          val ticksPerSec = Int.toLarge (SysWord.toIntX (sysconf "CLK_TCK"))
 
-         fun cvt (ticks: C.Clock.t) =
+         fun cvt (ticks: C_Clock.t) =
             Time.fromTicks (LargeInt.quot
-                            (LargeInt.* (C.Clock.toLarge ticks,
+                            (LargeInt.* (C_Clock.toLarge ticks,
                                          Time.ticksPerSecond),
                              ticksPerSec))
       in

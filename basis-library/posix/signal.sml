@@ -10,7 +10,7 @@ structure PosixSignal: POSIX_SIGNAL_EXTRA =
    struct
       open PrimitiveFFI.Posix.Signal
 
-      type signal = C.Int.t
+      type signal = C_Int.t
          
       val abrt = SIGABRT
       val alrm = SIGALRM
@@ -41,8 +41,8 @@ structure PosixSignal: POSIX_SIGNAL_EXTRA =
       val xcpu = SIGXCPU
       val xfsz = SIGXFSZ
 
-      val toInt = C.Int.toInt
-      val fromInt = C.Int.fromInt
+      val toInt = C_Int.toInt
+      val fromInt = C_Int.fromInt
 
       val toWord = SysWord.fromInt o toInt
       val fromWord = fromInt o SysWord.toInt

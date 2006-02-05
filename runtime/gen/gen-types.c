@@ -58,8 +58,6 @@ static char* cTypesSMLPrefix[] = {
   " * See the file MLton-LICENSE for details.",
   " *)",
   "",
-  "structure C = struct",
-  "",
   NULL
 };
 
@@ -149,7 +147,11 @@ static char* mlTypesHStd[] = {
 #define systype(t, bt, name)                        \
   do {                                              \
   char *btLower = strdup(bt);                       \
-  btLower[0] = tolower(bt[0]);                      \
+  for (size_t i = 0; i < strlen(btLower); i++)      \
+    btLower[i] = tolower(bt[i]);                    \
+  char *btUpper = strdup(bt);                       \
+  for (size_t i = 0; i < strlen(btUpper); i++)      \
+    btUpper[i] = toupper(bt[i]);                    \
   writeString (cTypesHFd, "typedef ");              \
   writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
@@ -161,7 +163,7 @@ static char* mlTypesHStd[] = {
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
   writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure ");          \
+  writeString (cTypesSMLFd, "structure C_");        \
   writeString (cTypesSMLFd, name);                  \
   writeString (cTypesSMLFd, " = struct open ");     \
   writeString (cTypesSMLFd, bt);                    \
@@ -170,7 +172,21 @@ static char* mlTypesHStd[] = {
   writeString (cTypesSMLFd, btLower);               \
   writeString (cTypesSMLFd, " end");                \
   writeNewline (cTypesSMLFd);                       \
+  writeString (cTypesSMLFd, "functor C_");          \
+  writeString (cTypesSMLFd, name);                  \
+  writeString (cTypesSMLFd, "_Choose");             \
+  writeString (cTypesSMLFd, bt);                    \
+  writeString (cTypesSMLFd, "N (A: CHOOSE_");       \
+  writeString (cTypesSMLFd, btUpper);               \
+  writeString (cTypesSMLFd, "N_ARG) = Choose");     \
+  writeString (cTypesSMLFd, bt);                    \
+  writeString (cTypesSMLFd, "N_");                  \
+  writeString (cTypesSMLFd, bt);                    \
+  writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
+  writeString (cTypesSMLFd, " (A)");                \
+  writeNewline (cTypesSMLFd);                       \
   free (btLower);                                   \
+  free (btUpper);                                   \
   } while (0)
 #define chksystype(t, name)                \
   do {                                     \
@@ -192,14 +208,20 @@ static char* mlTypesHStd[] = {
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
   writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure ");          \
+  writeString (cTypesSMLFd, "structure C_");        \
   writeString (cTypesSMLFd, name);                  \
   writeString (cTypesSMLFd, " = Pointer");          \
   writeNewline (cTypesSMLFd);                       \
   } while (0)
 
-#define aliastype(name1, name2)                     \
+#define aliastype(name1, bt, name2)                 \
   do {                                              \
+  char *btLower = strdup(bt);                       \
+  for (size_t i = 0; i < strlen(btLower); i++)      \
+    btLower[i] = tolower(bt[i]);                    \
+  char *btUpper = strdup(bt);                       \
+  for (size_t i = 0; i < strlen(btUpper); i++)      \
+    btUpper[i] = toupper(bt[i]);                    \
   writeString (cTypesHFd, "typedef ");              \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name1);                   \
@@ -208,10 +230,22 @@ static char* mlTypesHStd[] = {
   writeString (cTypesHFd, name2);                   \
   writeString (cTypesHFd, "_t;");                   \
   writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure ");          \
+  writeString (cTypesSMLFd, "structure C_");        \
   writeString (cTypesSMLFd, name2);                 \
-  writeString (cTypesSMLFd, " = ");                 \
+  writeString (cTypesSMLFd, " = C_");               \
   writeString (cTypesSMLFd, name1);                 \
+  writeNewline (cTypesSMLFd);                       \
+  writeString (cTypesSMLFd, "functor C_");          \
+  writeString (cTypesSMLFd, name2);                 \
+  writeString (cTypesSMLFd, "_Choose");             \
+  writeString (cTypesSMLFd, bt);                    \
+  writeString (cTypesSMLFd, "N (A: CHOOSE_");       \
+  writeString (cTypesSMLFd, btUpper);               \
+  writeString (cTypesSMLFd, "N_ARG) = C_");         \
+  writeString (cTypesSMLFd, name1);                 \
+  writeString (cTypesSMLFd, "_Choose");             \
+  writeString (cTypesSMLFd, bt);                    \
+  writeString (cTypesSMLFd, "N (A)");               \
   writeNewline (cTypesSMLFd);                       \
   } while (0)
 
@@ -231,8 +265,7 @@ static char* cTypesHSuffix[] = {
 
 static char* cTypesSMLSuffix[] = {
   "",
-  "structure Errno = struct type 'a t = 'a end",
-  "end",
+  "structure C_Errno = struct type 'a t = 'a end",
   NULL
 };
 
@@ -278,17 +311,17 @@ int main (int argc, char* argv[]) {
   // chksystype(long double, "LongDouble");
   chksystype(size_t, "Size");
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  // systype(void*, "Word", "Pointer");
+  ptrtype(void*, "Pointer");
   ptrtype(char*, "String");
   ptrtype(char**, "StringArray");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* Generic integers */");
   writeStringWithNewline (cTypesSMLFd, "(* Generic integers *)");
-  aliastype("Int", "Fd");
-  aliastype("Int", "Signal");
-  aliastype("Int", "Status");
-  aliastype("Int", "Sock");
+  aliastype("Int", "Int", "Fd");
+  aliastype("Int", "Int", "Signal");
+  aliastype("Int", "Int", "Status");
+  aliastype("Int", "Int", "Sock");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* C99 */");
