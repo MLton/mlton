@@ -6,6 +6,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
+structure Primitive = struct
+
 (* Primitive Basis (Definition) *)
 structure Bool =
    struct
@@ -443,12 +445,13 @@ structure Weak =
       type 'a t = 'a weak
    end
 
+end
 
 (* Top-level bindings *)
-datatype bool = datatype Bool.bool
-type exn = Exn.exn
-datatype list = datatype List.list
-datatype ref = datatype Ref.ref
-type unit = Unit.unit
-type 'a array = 'a Array.array
-type 'a vector = 'a Vector.vector
+datatype bool = datatype Primitive.Bool.bool
+type exn = Primitive.Exn.exn
+datatype list = datatype Primitive.List.list
+datatype ref = datatype Primitive.Ref.ref
+type unit = Primitive.Unit.unit
+type 'a array = 'a Primitive.Array.array
+type 'a vector = 'a Primitive.Vector.vector

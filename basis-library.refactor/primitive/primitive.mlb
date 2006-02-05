@@ -9,7 +9,6 @@ ann
    "allowConstant true"
    "allowFFI true"
    "allowPrim true"
-   "allowRebindEquals true"
    "deadCode true"
    "nonexhaustiveMatch warn"
    "redundantMatch warn"
@@ -17,12 +16,28 @@ ann
    "warnUnused false"
 in
    prim-basis.mlb
-   ann "forceUsed" in
+   ann "allowRebindEquals true" in
+      prim1.sml
+   end 
+   local
+      ../util/integral-comparisons.sml
+   in
+      prim-char.sml
+      prim-word.sml
+      prim-int.sml
+   end
+   local ../config/bind-for-config0.sml in ann "forceUsed" in
       ../config/choose.sml
-      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
-   end
-   primitive.sml
-   ann "forceUsed" in
-      basis-ffi.sml
-   end
+   end end
+   local ../config/bind-for-config0.sml in ann "forceUsed" in
+      ../config/c/misc/$(CTYPES)
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/seq/$(SEQ_INDEX)
+   end end
+   prim-intinf.sml
+   prim-seq.sml
+   prim-nullstring.sml
+   prim-mlton.sml
+   basis-ffi.sml
+   prim2.sml
 end
