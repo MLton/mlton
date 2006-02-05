@@ -1,0 +1,26 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+ann  
+   "deadCode true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused true" "forceUsed"
+in
+   local
+      libs/basis-extra/basis-extra.mlb
+      libs/basis-2002/basis-2002.mlb
+   in
+      libs/basis-2002/top-level/basis-funs.sml
+      libs/basis-2002/top-level/basis-sigs.sml
+      libs/basis-2002/top-level/top-level.sml
+      libs/basis-2002/top-level/infixes.sml
+      ann "allowOverload true" in 
+         libs/basis-2002/top-level/overloads.sml 
+      end
+   end
+end

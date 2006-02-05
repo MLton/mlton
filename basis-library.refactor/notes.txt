@@ -1,0 +1,1360 @@
+
+Date: Tue, 23 Jul 2002 11:49:57 -0400 (EDT)
+From: Matthew Fluet <fluet@CS.Cornell.EDU>
+
+
+John and SML implementers,
+
+Here are a loose collection of notes I've taken while starting to
+update the MLton implementation of the SML Basis Library to the latest
+version.  They span quite a range: errata and typos, signature
+constraint concerns, and some design questions.  Thus far, I've looked
+at the structures that had been grouped under the headings General,
+Text, Integer, Reals, Lists, and Arrays and Vectors (i.e., excluding
+IO, System, and Posix) in the "old" web specification.
+
+A few high level comments:
+
+* As an organizational principal, I liked the grouping of modules into
+  larger collections used in the "old" web specification better than
+  the long alphabetical list.
+* I'm quite happy to see opaque signature matches for most structures.
+  In particular, I think it will help avoid porting problems between
+  implementations that provide different INTEGER structures, especially
+  when LargeInt = Int in one implementation and LargeInt = IntInf in 
+  another.
+
+Required and optional components, Top-level:
+
+* A number of structures have an opaque signature match in
+  overview.html, but not in the corresponding structure specific page:
+  General, Bool, Option, List, ListPair, IntInf, 
+  Array, ArraySlice, Vector, VectorSlice.
+* Word8Array2 is listed as required in overview.html,
+  but its signature, MONO_ARRAY2, is not required.
+  Furthermore, Word8Array2 is marked optional in mono-array2.html.
+  I don't quite see a rationale for Word8Array2 being required.
+* With the addition of  val ~ : word -> word  to the WORD signature,
+  presumably ~ should be overloaded at num, rather than at intreal.
+
+Reals:
+
+* In pack-float.html, the where type clauses are incorrect:
+  structure PackRealBig :> PACK_REAL  
+    where type PackRealBig.real = Real.real
+  should be
+  structure PackRealBig :> PACK_REAL  
+    where type real = Real.real
+* Likewise, in most places, references to basic types are unqualifed,
+  so perhaps the where clause should read
+  where type real = real
+  for the PackRealBig and PackRealLittle structures.
+
+Arrays and Vectors:
+
+* In vector-slice.html, the description of subslice references |arr|
+  when it should reference |sl|.
+* In {[mono-]array[-slice],[mono-]vector[-slice]}.html, the
+  description of findi references appi when it should reference findi.
+* In mono-array-slice.html, structure CharArraySlice has the clause
+  where type array = CharVector.vector
+  which should be
+  where type array = CharArray.array.
+* In mono-{vector[-slice],array[-slice],array2}.html, there are
+  Word<N> structures but no (default word) Word structures.
+* In mono-vector.html, structure CharVector has the clause
+  where type elem = Char.char
+  while the other monomorphic vectors of basic types reference
+  the unqualified type; i.e. structure BoolVector has the clause
+  where type elem = bool.
+* There are no "See also"'s into MONO_VECTOR_SLICE or MONO_ARRAY_SLICE
+  from MONO_VECTOR or MONO_ARRAY.
+* A long discussion about types defined in
+  [MONO_]{ARRAY,VECTOR}[_SLICE] signatures; deferred to a separate
+  email. 
+
+Really nit-picky:
+
+* Ordering of comparison functions (>, >=, etc.) and unary negation
+  are different within INTEGER and WORD.
+* Ordering of functions in CHAR seems awkward.
+* Ordering of full, slice, subslice different in ARRAY_SLICE and
+  VECTOR_SLICE. 
+* Ordering of foldi/fold and modifi/modify different in ARRAY2 and
+  MONO_ARRAY2. 
+
+Top-level and opaque signatures:
+* I think it would be useful to see the entire top-level of required
+  structures written out with their respective signature constraints.
+  For example, in the description of the Math structure, the spec
+  reads: "The top-level structure Math provides these functions for
+  the default real type Real.real."  Because the top-level Math
+  structure has an opaque signature match (in overview.html), then the
+  sentence above implies that there ought to be the constraint 
+  where type real = real (or Real.real).  
+  Granted, none of the other structures in overview.html have where
+  clauses, and most type constraints are documented in the structure
+  specific pages, but the constraint on the top-level Math.real
+  slipped my mind when I first looked at it.
+
+-Matthew
+
+******************************************************************************
+******************************************************************************
+
+Date: Tue, 23 Jul 2002 11:54:09 -0400 (EDT)
+From: Matthew Fluet <fluet@CS.Cornell.EDU>
+
+
+As promised, here is a longish look at the types used in Arrays and
+Vectors.
+
+Array and Vector design:
+
+* The ARRAY signature includes type 'a vector.
+  Presumably, type 'a Array.vector = type 'a Vector.vector, but no
+  constraint makes this explicit.
+* MONO_ARRAY_SLICE includes type vector and type vector_slice, 
+  while the ARRAY_SLICE signature explicitly references 
+  'a VectorSlice.slice and 'a Vector.vector.
+* VECTOR_SLICE doesn't include 'a vector, but has
+  val mapi : (int * 'a -> 'b) -> 'a slice -> 'b vector
+  val map  : ('a -> 'b) -> 'a slice -> 'b vector;
+  On the other hand, full, slice, base, vector, and concat
+  reference 'a Vector.vector.
+
+For consistency, I'd prefer to see
+signature VECTOR = 
+  sig  type 'a vector  ... end
+signature VECTOR_SLICE = 
+  sig  type 'a vector  type 'a slice  ... end 
+signature ARRAY = 
+  sig  type 'a vector  type 'a array  ... end
+signature ARRAY_SLICE = 
+  sig  type 'a vector  type 'a vector_slice
+       tyep 'a array  type 'a slice  ... end
+signature MONO_VECTOR = 
+  sig  type elem  type vector  ... end
+signature MONO_VECTOR_SLICE = 
+  sig  type elem  type vector  type slice ... end
+signature MONO_ARRAY =
+  sig  type elem  type vector  type array  ... end
+signature MONO_ARRAY_SLICE =
+  sig  type elem  type vector  type vector_slice
+       type array  type slice  ... end
+
+structure Vector :> VECTOR
+structure VectorSlice :> VECTOR_SLICE 
+                         where type 'a vector = 'a Vector.vector
+structure Array :> ARRAY 
+                   where type 'a vector = 'a Vector.vector
+structure ArraySlice :> ARRAY_SLICE 
+                        where type 'a vector = 'a Vector
+                        where type 'a vector_slice = 'a VectorSlice.slice
+                        where type 'a array = 'a Array.array
+structure BoolVector :> MONO_VECTOR 
+                        where type elem = bool
+structure BoolVectorSlice :> MONO_VECTOR_SLICE 
+                             where type elem = bool
+                             where type vector = BoolVector.vector
+structure BoolArray :> MONO_ARRAY 
+                       where type elem = bool
+                       where type vector = BoolVector.vector
+structure BoolArraySlice :> MONO_ARRAY_SLICE 
+                            where type elem = bool
+                            where type vector = BoolVector.vector
+                            where type vector_slice = BoolVectorSlice.slice
+                            where type array = BoolArray.array
+
+While semantically, this shouldn't be any different than the
+specification, it could effect type-error messages.  For example, if I
+have the structure Foo:
+
+structure Foo = struct
+   open BoolArraySlice
+
+   val copyVec0 {src: vector_slice, 
+                 dst: array} = copyVec {src = src, dst = dst, di = 0}   
+end
+
+which I decide to generalize to polymorphic array slices, then just
+changing BoolArraySlice to ArraySlice will lead to different
+type-error messages: either "ubound type constructor: vector_slice"
+(under the specification) or "type constructor vector_slice given 0
+arguments, wants 1" (under the signatures given above); and an arity
+error for array in either case.  It's not much of an argument, but I
+need to replace vector_slice with 'a VectorSlice.slice under the
+specification, while I only need to add 'a under the sigs above.
+
+
+Array2:
+* Why not have an ARRAY2_REGION analagous to ARRAY_SLICE?
+  Likewise, how about VECTOR2 and VECTOR2_REGION?
+  I think the decision to separate Arrays and Vectors from
+  their corresponding slices is a nice design choice, and I'd be in
+  favor of extending it to multi-dimentional ones.
+* Should ARRAY2 have findi/find, exists, all?  collate?
+
+******************************************************************************
+******************************************************************************
+
+Date: Thu, 25 Jul 2002 15:20:01 +0200
+From: Andreas Rossberg <rossberg@ps.uni-sb.de>
+
+
+Like Matthew I started implementing the latest version of the Basis spec
+for Alice and Hamlet. I'm quite happy with most of the changes. It was a
+surprise to discover the presence of a Windows structure, though :-)
+
+Here is my list of comments, some of which may duplicate observations
+already made by Matthew. They primarily cover global issues and the
+required part of the library, though I haven't looked deeper into the IO
+and Posix parts yet. I also included some proposals for modest additions
+to the library, which I believe are useful and fit its spirit.
+
+
+Trivial bugs, typos, cosmetics
+------------------------------
+
+* Overview:
+  - INT_INF appears in the list of required signatures.
+  - WordArray2 appears under the list of required structures,
+    instead of optional ones.
+
+* LIST_PAIR:
+  - Typo in description of allEq: double "the".
+
+* SUBSTRING:
+  - The scan example uses the deprecated "all" function.
+
+* VECTOR_SLICE:
+  - Typo in synopsis of subslice: s/opt/sz/.
+  - Typo in description of subslice: s/|arr|/|sl|/.
+  - Typo in description of findi: s/appi/findi/.
+  - Signature sometimes uses Vector.vector instead of plain vector.
+  - The equation for mapi can be simplified to:
+        Vector.fromList (foldri (fn (i,a,l) => f(i,a)::l) [] slice)
+
+* MONO_VECTOR_SLICE and ARRAY_SLICE and MONO_ARRAY_SLICE:
+  - Typo in synopsis of subslice: s/opt/sz/.
+  - Typo in description of findi: s/appi/findi/.
+
+* BYTE:
+  - Accidental "val" keyword in synopsis of some functions.
+
+* TEXT_IO:
+  - The "where" constraints contain erroneously qualified ids.
+  - The specification of the TEXT_IO signature is not valid SML'97,
+    since StreamIO is specified twice. You might want to add a
+    comment regarding that.
+  - The constraints for types vector and elem are redundant
+    (in fact, invalid), because the signature TEXT_STREAM_IO
+    already specifies the necessary equations.
+
+* The use of variable names is sometimes inconsistent:
+  - Predicate arguments to higher-order functions are usually
+    named "f" (eg. List.all), sometimes "p" (eg. String.tokens,
+    StringCvt.splitl), and sometimes even "pred" (eg. ListPair.all).
+  - Similarly, fold functions mostly use "init" to name initial
+    accumulators, except in the List and ListPair modules.
+
+
+
+Ambiguities / Unclear Details
+-----------------------------
+
+* Overview:
+  - The subsection about dependencies among optional modules has
+    disappeared. Does that mean that there aren't any anymore?
+    (The nice subsection about design rules and conventions also
+    has gone.)
+
+* The intended meaning of opaque signature constraints is not always
+  clear to me. Sometimes the prose contains remarks about additional
+  equalities that are not appearent from the signature constraints.
+  For example, is or isn't
+  - Text.Char.char = Char.char ? (and so on for the rest of Text)
+  - LargeInt.int = IntN.int (for some structure IntN) ?
+    (likewise LargeWord.word, LargeReal.real)
+  - Char.string = String.string ?
+  - Math.real = Real.real ?
+  In particular, the spec sometimes speaks of "equal structures",
+  which has no real technical meaning in SML'97.
+  Note that from the opaque matching on the overview page one might
+  even conclude that General.unit <> {} !
+
+* The type specification of String.string and CharVector.vector
+  is circular:
+        structure String :> STRING
+               where type string = CharVector.vector
+        structure CharVector :> MONO_VECTOR
+               where type vector = String.string
+  Likewise for Substring.substring and CharVectorSlice.slice.
+  A respective defining structure should be chosen.
+
+* STRING:
+  - Function fromString has a special case that is not covered by
+    implementing the function through straight-forward iterative
+    application of the Char.scan function, namely a trailing gap
+    escape (\f...f\) as in "foo\\ \\" or "foo\\ \\\000" (where \000
+    is an non-convertible character). Several implementations I
+    tried get that detail wrong, so a corresponding note might be
+    in order. Moreover, it is not completely obvious from the
+    description what the result should be for strings that contain
+    a gap escape as the only convertible sequence, e.g. "\\ \\" or
+    "\\ \\\000" - it is supposed to be SOME "", I guess.
+
+* SUBSTRING:
+  - Shouldn't span raise Span if i' < i? Otherwise, contrary
+    to the prose, it in fact accepts arguments where ss' is
+    left to ss, as long as they overlap (which is rather odd).
+  - For the curried triml/trimr it is not clear whether an
+    Subscript exception has to be raised already if k < 0 but no
+    second argument is applied.
+
+
+
+Naming and structuring
+----------------------
+
+Its nicely chosen regular naming conventions and structure are two of
+the aspects I like most about the Standard Basis. The following list
+enumerates the few cases where I feel that the spec violates its own
+conventions.
+
+* WORD:
+  - The fromLargeWord and toLargeWord functions should drop
+    the "Word" suffix to be consistent with the corresponding
+    functions in the REAL and INTEGER signatures.
+
+* CHAR:
+  - The functions contains/notContains should be moved to the
+    STRING signature, as they are similar to find/exist
+    operations and thus functionality of the aggregate. The
+    type string could then be removed from the signature.
+
+* ARRAY_SLICE and MONO_ARRAY_SLICE:
+  - The function copyVec seems completely out of place: it does
+    neither operate on array slices, nor on vectors. But honestly
+    I have got no idea where else to put it :-(
+
+* STRING and SUBSTRING:
+  - There is a certain asymmetry between slices and substrings
+    which tends to confuse at least myself when hacking. For more
+    consistency I propose:
+    (1) changing the type of Substring.substring to
+        string * int * int option -> substring
+        (for consistency with VectorSlice.slice),
+    (2) renaming Substring.slice to Substring.subsubstring,
+        (for consistency with VectorSlice.subslice),
+    (3) removing Substring.{app,foldl,foldr} (there are no similar
+        functions in the STRING signature, and in both cases they
+        are available through CharVector/CharVectorSlice),
+    (4) removing String.extract and Substring.extract (the same
+        functionality is available through CharVector[Slice]).
+  - I believe the deprecated Substring.all can be removed for good.
+    After all, there are more serious incompatible changes being
+    made (e.g. array copying functions).
+
+* Vectors and arrays:
+  - While the lib consistently uses the to/from convention for
+    conversions on basic types, it sometimes uses adhoc conventions
+    for aggregates. I propose renaming:
+    (1) Array.vector to Array.toVector
+    (2) VectorSlice.vector to VectorSlice.toVector,
+    (3) ArraySlice.vector to ArraySlice.toVector,
+    (4) Substring.string to Substring.toString,
+  - Since the copy functions have only 3, mostly distinctly typed
+    arguments now, there no longer seems to be a strong reason to
+    require passing those by notationally heavy records.
+
+* INT_INF:
+  - The presence of bit fiddling operators in that signature is
+    something that feels exceptionally ad-hoc. Either they should
+    be available for all integer types, or there should be a
+    separate WORD_INF, with appropriate conversions, that makes
+    these available.
+
+* Toplevel:
+  - Now that there is Word.~ (which is good) it seems rather odd
+    that the toplevel ~ is not overloaded for words, i.e. does not
+    have type num-> num.
+
+* Net functionality:
+  - I really like the idea of structuring the library namespace as
+    it has been done with the OS and Posix structures. I would
+    prefer to see something similar being done for the added
+    network functionality. More precisely, I propose
+    (1) moving the structures Socket, INetSock, GenericSock, and
+        the three Net*DB structures into a new wrapper structure
+        Net (renaming Net*DB to *DB),
+    (2) defining a corresponding signature NET,
+    (3) renaming the signatures SOCKET, GENERIC_SOCK and INET_SOCK
+        to NET_SOCKET, NET_GENERIC_SOCK and NET_INET_SOCK, resp.,
+    (4) moving UnixSock to the Unix structure (renamed as Socket).
+
+
+
+Misc. proposals for additional functionality
+--------------------------------------------
+
+Here is a small collection of miscellaneous simple functions which I
+believe the library is still lacking, either because they are commonly
+useful or because they would make the library more regular.
+
+* LIST and LIST_PAIR:
+  - The IMHO single most convenient extension to the library would
+    be indexed morphisms on lists, i.e. adding
+        val appi : (int * 'a -> unit) -> 'a list -> unit
+        val mapi : (int * 'a -> 'b) -> 'a list -> 'b list
+        val foldli : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+        val foldri : (int * 'a * 'b -> 'b) -> 'b -> 'a list -> 'b
+        val findi : (int * 'a -> bool) -> 'a list -> (int * 'a) option
+  - Likewise for LIST_PAIR.
+  - LIST_PAIR does not support partial mapping:
+        val mapPartial : ('a * 'b -> 'c option) ->
+                                'a list * 'b list -> 'c list
+
+* LIST, VECTOR, ARRAY, etc.:
+  - Another function on lists that would be very useful from my
+    perspective is
+        val appr : ('a -> unit) -> 'a list -> unit
+    and its indexed sibling
+        val appri : (int * 'a -> unit) -> 'a list -> unit
+    which traverse the list from right to left.
+  - Likewise for all aggregate types.
+  - All aggregates come with a fromList function. I often feel the
+    need to have inverse toList functions. Use of foldr is obfuscating.
+
+* OPTION:
+  - Often using isSome is a bit clumsy. I thus propose adding the dual
+        val isNone : 'a option -> bool
+
+* STRING and SUBSTRING:
+  - For historical reasons we have {String,Substring}.size instead
+    of *.length, which is inconsistent with all other aggregates and
+    frequently lets me mix them up when I use them side by side.
+    I propose adding aliases
+        String.maxLen
+        String.length
+        Substring.length
+
+* WideChar and WideString:
+  - There is no convenient way to convert between the standard and
+    wide character set. Would it be reasonable to introduce LargeChar
+    and LargeString structures (and so on) and have the CHAR and
+    STRING signatures enriched by fromLarge/toLarge functions, as for
+    numbers? That would also allow a program to select the widest
+    character set available (which is currently impossible within the
+    language).
+
+* String conversion:
+  - I don't quite see the rationale for which signatures contain a
+    scan function and which don't. I believe it makes sense to have
+    scan in every signature that has fromString.
+  - There should be a function
+        val scanC : (Char.char, 'a) StringCvt.reader
+                        -> (char, 'a) StringCvt.reader
+    to scan strings as C characters. This would make Char.fromCString
+    and particularly String.fromCString more modular.
+  - How about a dual writer abstraction as with
+        type ('a,'b) writer = 'a * 'b -> 'b option
+    and supporting fmt functions for basic types? Such a thing might
+    be useful for writing to streams or buffers.
+
+* Vectors:
+  For some time now I have been trying to use vectors more often
+  instead of an often inappropriate list representation. This is
+  sometimes made more difficult simply because the library support
+  isn't as good as for lists. It improved in the updated version
+  but still I miss:
+  - Array.fromVector,
+  - Vector.mapPartial,
+  - Vector.rev,
+  - Vector.append (though I guess concat is good enough),
+  - most of all: a VectorPair structure.
+
+* Hash functions:
+  - Giving every basic type a (default) hash function in addition to
+    comparison would be quite useful in conjunction with container
+    libraries.
+
+* There is no defining structure for references. I would like to see
+        signature REF
+        structure Ref : REF
+  where REF contains:
+        datatype ref = datatype ref
+        val ! : 'a ref -> 'a
+        val := : 'a ref * 'a -> unit
+        val swap : 'a ref * 'a ref -> unit      (* or :=: ? *)
+        val map : ('a -> 'a) -> 'a ref -> 'a ref
+  You might then consider removing ! and := from GENERAL.
+
+* Signature conventions:
+  Some additional conventions would make use of Basis types as
+  functor arguments more convenient:
+  - Each signature defining an abstract type should make that
+    type available under the alias "t" as well (this includes
+    monomorphic types as well as polymorphic ones).
+  - Every equality type should come with an explicit equality
+    function
+        val eq : t * t -> bool
+    to move away from the reliance on eqtypes.
+  - There should be a uniform name for canonical constructor
+    functions, e.g. "new" (or at least an alias).
+
+-- 
+Andreas Rossberg, rossberg@ps.uni-sb.de
+
+******************************************************************************
+******************************************************************************
+
+Date: Fri, 2 Aug 2002 14:04:16 +0100
+From: David Matthews <David.Matthews@deanvillage.com>
+
+
+I've been having another look at the Basis library implementation in 
+Poly/ML and in particular the I/O library.  I'm still not sure I fully 
+understand the implications of the Stream IO (functional IO) layer and 
+in particular the way "canInput" works and interacts with "input".
+
+The definition says that canInput(f, n) returns SOME k "if a call to 
+input would return immediately with at least k characters".  
+Specifically it does not say "if a call to inputN(f, k) would return 
+immediately".   Secondly it says that it "should attempt to return as 
+large a k as possible" and gives the example of a buffer containing 10 
+characters with the user calling canInput(f, 15).  This suggests that a 
+call to canInput could have the effect of committing the stream since a 
+perfectly good implementation of "input" would be to return what was 
+left of the buffer, i.e. 10 characters, and only read  from the 
+underlying stream on a subsequent call to "input".  Yet after a call to 
+canInput(f, 15) which returns SOME 15 the call to "input" is forced to 
+return at least 15.  In other words a call to canInput changes the 
+behaviour of a subsequent call to "input".  Generally, what is the 
+behaviour of canInput with an argument larger than the buffer size?  How 
+far ahead is canInput expected to read?
+
+A few other notes of things I've discovered, some of which are trivial:
+
+The signature for TextIO.StreamIO contains duplicates of
+  where type StreamIO.reader = TextPrimIO.reader
+  where type StreamIO.writer = TextPrimIO.writer
+
+There are declared constants for platformWin32Windows2000 and 
+platformWin32WindowsXP in the Windows structure.  When I proposed the 
+Windows.Config structure I didn't include constants for these versions 
+of the OS because the underlying GetVersionEx function returns the same 
+value, VER_PLATFORM_WIN32_NT in the dwPlatformId field for NT, Windows 
+2000 and XP   It is possible to distinguish these but only using the 
+major and minor version fields.  Windows CE does give a different value 
+for the platformID.  I would say it is confusing to have these here 
+because it implies that it's possible to discriminate on the basis of 
+the platformID field.
+
+The example definition of input1 at the bottom of STREAM_IO returns a 
+value of type elem option * instream when the signature says it should 
+be (elem * instream) option.
+
+Description of "input" function in STREAM_IO signature.  The word "ay" 
+should be "may".
+
+--
+David.
+
+******************************************************************************
+******************************************************************************
+
+Date: Fri, 11 Oct 2002 17:46:59 -0400 (EDT)
+From: Matthew Fluet <fluet@CS.Cornell.EDU>
+
+
+Following up my previous post, here is another loose collection of
+notes I've taken while updating the MLton implementation of the SML
+Basis Library.  This includes the structures that had been grouped
+under the headings System, Posix, and IO in the "old" web
+specification.
+
+Required and optional components:
+* The optional functors PrimIO, StreamIO, and ImperativeIO are not
+  listed among the optional components in overview.html.
+
+Lists:
+* The discussion for the ListPair structure says:
+  "Note that a function requiring equal length arguments may determine
+  this lazily, i.e. , it may act as though the lists have equal length
+  and invoke the user-supplied function argument, but raise the
+  exception when it arrives at the end of one list before the end of the
+  other."
+  Such an implementation choice seems to go against the spirit that
+  programs run under conforming implementations of the Basis Library
+  should behave the same.
+
+Posix:
+* In posix.html, last sentence in Discussion: "onsult" instead of
+  "consult"
+PosixSignal:
+* In posix-signal.html, in Discussion: "The name of the coressponding
+  ..." sentence is repeated.
+PosixError:
+* In the discussion of POSIX_ERROR:
+  "The name of a corresponding POSIX error can be derived by
+  capitalizing all letters and adding the character ``E'' as a
+  prefix. For example, the POSIX error associated with nodev is
+  ENODEV. The only exception to this rule is the error toobig, whose
+  associated POSIX error is E2BIG."
+  It isn't clear if this is the intended semantics for errorName and
+  syserror.
+
+Time:
+* The type time now includes "negative values moving to the past."
+  In the absence of negative values, the text for the the
+  to{Seconds,Milliseconds,Microseconds} functions to drop fractions of
+  the time unit was unambigous.  With negative values, I would
+  interpret this as rounding towards zero.  Is this correct?  Would it
+  be clearer to describe the rounding as such?
+* The + and - functions are required to raise Overflow, although most
+  other "result not representable as a time value" error raises Time.
+* The - function is written prefix instead of infix in the
+  description.
+* The scan and fromString functions do not specify how to treat a
+  value with greater precision than the internal representation;
+  should it have rounding or truncation semantics?  Also, the
+  functions are required to raise Overflow for an unrepresentable
+  time value.
+
+IO:
+* The nice introduction to IO that appears at
+  http://cm.bell-labs.com/cm/cs/what/smlnj/doc/basis/pages/io-explain.html
+  doesn't seem to be included with the new pages.
+* The functor arguments in PrimIO, StreamIO, and ImperativIO functors
+  don't match; some use structure A: MONO_ARRAY and others use
+  structure Array: MONO_ARRAY.
+
+PrimIO() and PRIM_IO
+* The PRIM_IO signature requires pos to be an eqtype, but the PrimIO
+  functor argument only requires pos to be a type.
+* readArr[NB], write{Vec,Arr}[NB] take "slices" (records of type {buf:
+  {vector,array}, i: int, sz: int option}) but no description of the
+  appropriate action to take when the slices are invalid.  Presumably,
+  they should raise Subscript.
+* There are a number of "contradictory" statments:
+  "Readers and writers should not, in general, raise the IO.Io
+  exception. It is assumed that the higher levels will appropriately
+  handle these exceptions."
+  "A reader is required to raise IO.Io if any of its functions, except
+  close or getPos, is invoked after a call to close. A writer is
+  required to raise IO.Io if any of its functions, except close, is
+  invoked after a call to close."
+  "closes the reader and frees operating system resources. Further
+  operations on the reader (besides close and getPos) raise
+  IO.ClosedStream."
+  "closes the writer and frees operating system resources. Further
+  operations (other than close) raise IO.ClosedStream."
+* The augment_reader and augment_writer functions may introduce new
+  functions.  Should the synthesized operations handle IO.Io
+  exceptions and change the function field?  Maybe this falls under
+  the "intentionally unspecified" clause.
+
+StreamIO() and STREAM_IO:
+* What is the difference between a terminated output stream and a
+  closed output stream?  Some operations say what to do when the
+  stream is terminated or closed, but many are unspecified when the
+  other condition holds.  I resolved this by looking at the IO
+  introduction mentioned above, where it discusses stream states.
+  But, closeOut is still confusing: "flushes f's buffers, marks the
+  stream closed, and closes the underlying writer. This operation has
+  no effect if f is already closed. If f is terminated, it should
+  close the underlying writer."  Shouldn't closeOut always execute the
+  underlying writer's close function?  The only way to terminate an
+  outstream is to getOutstream, but I would really expect
+  TextIO.closeOut to "really" close the underlying
+  file/outstream/writer.
+* The IO structure has dropped the TerminatedStream exception, but
+  there seem to be sufficient cases when a stream should raise an
+  exception when it is terminated.
+* The semantics of the vector returned by getReader are unclear.  At
+  the very least, the source code for SML/NJ and PolyML have very
+  different interpretations, and I've chosen yet another.  I think
+  part of the problem is that the word "[un]consumed" only appears in
+  the description of this function, so it's unclear what corresponds
+  to consumed input.
+* I suspect the example under endOfStream is wrong:
+  
+  In these cases the StreamIO.instream will also have multiple EOF's;
+  that is, it can be that
+
+  val true = endOfStream(f)
+  val ("",f') = input f
+  val true = endOfStream(f')
+  val ("xyz",f'') = input f
+
+  The fact that input f can return two different values would seem to
+  violate the principal argument for functional streams!  Looking at
+  the aforementioned IO introduction in the "old" pages, I see the
+  more reasonable example:
+
+  Consequently, the following is not guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f'
+  in x=z   (* not necessarily true! *)
+  end
+
+  whereas the following is guaranteed to be true:
+
+  let val z = TextIO.StreamIO.endOfStream f
+      val (a,f') = TextIO.StreamIO.input f
+      val x = TextIO.StreamIO.endOfStream f (* note, no prime! *)
+  in x=z   (* guaranteed true! *)
+  end
+* David Matthews's post on Aug. 2 raised questions about canInput
+  which are unresolved.
+
+General comments:
+* Various operations in IO take "slices", but aren't expressed in
+  terms of {Vector,Array}Slice structures.  One difficulty with this
+  is that the slice types are not in scope within the IO signatures.  
+  
+  I would really advocate making the VectorSlice structure a
+  substructure of the Vector structure (and likewise for arrays).
+  Even if this isn't done for the polymorphic vector/array structures,
+  it would be extremely beneficial for the monomorphic structures,
+  where in the {Prim,Stream,Imperative}IO functors, it is impossible
+  to access the corresponding monomorphic vector/array slice
+  structures.  I found myself using Vector.tabulate when I really
+  wanted ArraySlice.vector.
+
+  The "old" MONO_ARRAY signature included structure Vector:
+  MONO_VECTOR which gave access to the corresponding monomorphic
+  vectors.
+
+-Matthew
+
+******************************************************************************
+******************************************************************************
+
+Date: Fri, 13 Dec 2002 15:57:55 +0100
+From: Andreas Rossberg <rossberg@ps.uni-sb.de>
+
+
+Here is a collection of issues and comments we gathered when
+implementing the I/O stack from the Standard Basis (primitive, stream,
+imperative I/O) for Alice. While in general the specification seems to
+be pretty precise and complete, we sometimes found it hard to understand
+the semantic details of stream I/O, especially since many of them can
+only be derived indirectly from the examples in the discussion section
+and there appear to be some minor ambiguities and inconsistencies. Also,
+the PrimIO and StreamIO functors cannot always be implemented as
+suggested, because of their parametricity in types such as position and
+element.
+
+As a general note, the I/O interface does not seem to have been designed
+with concurrency in mind. In particular, augmenting readers and writers
+cannot be made thread-safe, AFAWCS. This is a bit of a problem for us,
+since Alice is relying on concurrency. However, that does not seem to be
+an issue easily solved.
+
+        - Leif Kornstaedt, Andreas Rossberg
+
+
+The IO structure
+----------------
+
+* exception Io:
+
+  - function field: (pedantic) The wording seems to imply that only
+    functions from STREAM_IO raise the Io exception, but this is
+    clearly not the case (consider TextIO.openIn to name just one).
+
+* datatype buffer_mode:
+
+  - There is no specification of what precisely line buffering is
+    supposed to mean, in particular for non-text streams.
+
+
+
+The PRIM_IO signature
+---------------------
+
+* Synopsis:
+
+  - (pedantic) It says that "higher level I/O facilities do not
+    access the OS structure directly...". That's somewhat misleading
+    since OS does not provide the same functionality anyway (if any,
+    it was the Posix structure).
+
+* type reader:
+
+  - Unlike for writers, it is not specified what the minimal set of
+    operations is that a reader must support.
+
+  - It is not specified whether multiple end-of-streams may occur.
+    Since they are anticipated for StreamIO, one should expect them
+    to be possible for underlying readers as well. However, this
+    requires clarification of the semantics of several operations.
+
+  - readArr, readArrNB: It is specified nowhere what the option for
+    sz is supposed to mean, i.e. what the semantics of NONE is
+    (presumably as for slices).
+
+  - readVec, readVecNB: Unlike all other similar read and write
+    functions, these two do not accept an option for the size
+    argument.
+
+  - avail: The description suggests that the function can be used as
+    a hint by inputAll. However, this information is too inaccurate
+    to be useful, since (apart from translation issues) the physical
+    size of elements cannot be obtained (in particular in the
+    StreamIO functor, which is parametric in the element type). In
+    practice, endPos seems to be more useful for this purpose. So it
+    is not clear what purpose avail could actually serve at all at
+    the abstraction level provided by readers.
+
+  - endPos:
+    (1) May it block? For example, when reading from terminal or
+    from another kind of stream, this can be naturally expected.
+
+    (2) Which position is returned if there are multiple
+    end-of-streams?
+
+  - getPos, setPos, endPos, verifyPos: Description should start with
+    "when present".
+
+  - setPos, endPos: Should not raise an exception if unimplemented,
+    but rather be NONE. Actually, the implementation notes on writers
+    state that endPos *must* be implemented for readers.
+
+  - Implementation note, item 6: Why is it likely that the client
+    uses getPos frequently? And why should the reader count
+    *untranslated* elements (and how would there be actual elements
+    before translation)?
+    (See also comments on STREAM_IO.filePosIn)
+
+* type writer:
+
+  - writeVec, writeArr, writeVecNB, writeArrNB:
+    (1) Again, it is not specified what the optional size means.
+
+    (2) When may k < sz occur without having IO failure? If it is
+    arbitrary, then there appears to be no correct way to write a
+    sequence of elements, because it is neither possible to detect
+    partial element writes (which are explained in the paragraph
+    before the Implementation Notes), nor to complete such writes.
+    This particularly implies that the StreamIO functor cannot
+    implement flushing correctly (see below).
+
+  - getPos, setPos, endPos, verifyPos: Description should start with
+    "when present".
+
+  - getPos, setPos: Should not raise an exception if unimplemented,
+    but rather be NONE.
+
+  - last paragraph before Implementation Note: Typo, double "plus".
+
+  - first sentence in Implementation Note: (pedantic) Why is this
+    put into the implementation notes when it actually seems to be a
+    requirement of the specification?
+
+  - last paragraph of Implementation Note:
+    (1) States that readers must implement getPos, which seems to be
+    contradicted by its optional type.
+
+    (2) Typo, double "need".
+
+* openVector:
+
+  - Is this supposed to support random access? Note that for types
+    generated with the PrimIO functor it cannot (see below)! That
+    seems to make this function rather useless.
+
+* augmentReader, augmentWriter:
+
+  - It is not possible to synthesize operations in a way that is
+    thread-safe in concurrent systems, hence it should be noted that
+    augmenting is potentially dangerous.
+
+* There is no reference to the PrimIO functor.
+
+
+
+The PrimIO functor
+------------------
+
+* General problems:
+
+  - Since the implementation is necessarily parametric in the pos
+    type, openVector, nullRd, nullWr cannot create readers that
+    allow random access, although one would expect that at least for
+    openVector.
+
+* Functor argument:
+
+  - Structure names A and V are inconsistent with the StreamIO and
+    ImperativeIO functors.
+
+  - Type pos has to be an eqtype to match the result signature.
+
+  - Since the extract and copy functions have been removed/changed
+    from ARRAY and VECTOR signatures, the PrimIO functor now
+    naturally requires slice structures for efficient
+    implementation. (Likewise the StreamIO functor)
+
+* Functor result:
+
+  - Type sharing of the pos type is not specified, though essential
+    for this functor being useful at all.
+
+
+
+
+The STREAM_IO signature
+-----------------------
+
+* Synopsis:
+
+  - An exception likely to be raised in by the underlying
+    reader/writer is Size, which is not mentioned. OTOH, Fail can
+    only occur in the rare case of user-supplied readers/writers, as
+    the Basis itself is supposed to never raise it.
+
+* type out_pos:
+
+  - A note on the meaning of this type would be desirable, since its
+    canonical representation is (outstream * pos) rather than pos.
+    (That also may have caused confusion in the discussion of
+    imperative I/O, see below.)
+
+* input1:
+
+  - The signature of this function is inconsistent with all other
+    input functions. It should rather have type
+
+        instream -> elem option * instream
+
+    which in fact appears to be the type assumed in the discussion
+    example relating input1 to inputN.
+
+* input:
+
+  - Typo, s/ay/may/
+
+* inputN:
+
+  - This function is somewhat underspecified for n=0. In particular,
+    may it block? Is it required to raise Io if the underlying
+    reader is closed?
+
+* input, input1, inputN, inputAll:
+
+  - (pedantic) Descriptions speak of "underlying system calls",
+    although the reader may not actually depend on system calls.
+    Preferably speak of "underlying reader" only.
+
+* closeIn:
+
+  - Likewise, description speaks of "releasing system resources".
+    This should be replaced by saying that it closes the underlying
+    reader (which is not even specified as is).
+
+* closeOut:
+
+  - Does the function attempt to close the stream even if flushing
+    fails?
+
+  - Why is it possible to close terminated streams? That seems to
+    allow unfortunate interference with another stream that has been
+    created from the extracted writer.
+
+* mkInstream, getReader:
+
+  - The table seems to imply that mkInstream always augments its
+    reader. This is inappropriate for concurrent environments (see
+    above).
+
+  - Should getReader return the original or the augmented reader?
+
+  - The table still includes the removed getPosIn and setPosIn
+    functions.
+
+* mkOutstream, getWriter:
+
+  - Likewise.
+
+* filePosIn:
+
+  - There seems to be no way to implement this function for buffered
+    I/O, because the reader position that corresponds to a
+    mid-block-element is not available and cannot be calculated in
+    general. So how is this meant?
+
+  - Typo, s/character/element/
+
+* filePosOut:
+
+  - Likewise.
+
+* getWriter:
+
+  - It is non-obvious what the precise meaning of "terminating" a
+    stream is. If this is merely setting a status flag then a
+    corresponding note would be helpful.
+
+* getPosOut:
+
+  - May this flush the stream (and hence raise Io exceptions)?
+
+* setPosOut:
+
+  - This may raise an exception because the position has been
+    invalidated after obtaining it (e.g. by file truncation
+    performed by another process).
+
+  - Typo, s/underlying device/underlying writer/
+
+* setBufferMode, getBufferMode:
+
+  - There is no specification of the semantics of line buffering, in
+    particular for non-text streams.
+    (See also comments on StreamIO functor)
+
+  - It is not specified whether the stream may be flushed when set
+    to LINE_BUF mode (may cause Io exception). It seems unreasonable
+    to require it not to do so (assuming that line buffering is
+    intended to maintain the invariant that the buffer never
+    contains line breaks).
+
+  - The synopsis of this function uses "ostr", while all others
+    use "f" for streams.
+
+* setPosOut, setBufferMode, getWriter:
+
+  - Can raise an exception if flushing fails.
+
+* Discussion:
+
+  - The statement that closing a stream just causes the
+    not-yet-determined part of the stream to be empty should
+    probably be generalised to explain what *truncating* a stream
+    means (getReader also truncates the stream).
+
+  - Example of freshly opened stream:
+    s/mkInstream r/mkInstream(r, vector [])/
+    s/size/length/
+
+  - nreads example:
+    s/mkInstream r/mkInstream(r, vector [])/
+    s/size/length/
+
+  - input1/inputN relation example:
+    (1) Inconsistent with the actual typing of input1 (see above).
+
+    (2) Typo, s/inputN f/inputN(f,1)/
+
+  - Unbuffered I/O, 1st example:
+    (1) Typos,
+    s/mkInstream(reader)/mkInstream(reader, vector [])/
+    s/PrimIO.Rd{chunkSize,...}/(PrimIO.RD{chunksize,...}, v)/
+
+    (2) More importantly, the actual condition appears to be
+    incorrect. It should read:
+    (chunkSize > 1 orelse length v = 1) andalso endOfStream f'
+
+  - Unbuffered I/O, 2nd example:
+    s/mkInstream(reader)/mkInstream(reader, vector [])/
+    s/PrimIO.Rd{chunkSize,...}/(PrimIO.RD{chunksize,...}, v)/
+    The condition must be corrected as above.
+
+* There is no reference to the StreamIO functor.
+
+
+
+The StreamIO functor
+--------------------
+
+* General problems:
+
+  - It is impossible for this functor to support line buffering,
+    since it has no way of knowing which element consists a line
+    break. This could be solved by changing the someElem functor
+    argument to a breakElem argument.
+
+  - It is also impossible to utilize reader's endPos for
+    pre-allocation, because the functor is parametric in the
+    position type.
+
+* Functor argument:
+
+  - Since the extract and copy functions have been removed/changed
+    from ARRAY and VECTOR signatures, the StreamIO functor now
+    naturally requires slice structures for efficient
+    implementation. (Likewise the PrimIO functor)
+
+* Functor result:
+
+  - Type sharing of the result types is not specified.
+
+* Discussion, paragraph on flushing:
+
+  - Most of this discussion rather belongs to the description of
+    STREAM_IO.
+
+  - Everything said here is not restricted to flushOut, but applies
+    to flushing in general.
+
+  - Unfortunately, it is left unspecified where flushing may happen
+    and, consequently, where respective Io exceptions may occur.
+
+  - Write retries as suggested here seem to be impossible to
+    implement correctly using the writer interface as specified (see
+    comments on PRIM_IO.writer).
+
+  - According to the writer description, write operations may never
+    return an element count of 0, so the last sentence is
+    misleading.
+
+* Discussion, last paragraph:
+
+  - Typo, missing ")"
+
+* Implementation note:
+
+  - 3rd bullet: typo, s/PrimIO.augmentIn/PrimIO.augmentReader/
+
+  - 5th and 6th bullet: The endPos function cannot be utilized as
+    suggested, because the functor is necessarily parametric in the
+    position type.
+
+
+
+The IMPERATIVE_IO signature
+---------------------------
+
+* General comment:
+
+  - It is unfortunate that imperative I/O is asymmetric with respect
+    to providing (limited) random access on input vs. output streams
+    - the former requires going down to the lower-level stream I/O.
+    That makes imperative I/O a somewhat incomplete abstraction
+    layer.
+
+  - Likewise, it would be desirable if there were ways for
+    performing full-fledged random access without leaving the
+    imperative I/O abstraction layer, at least for streams were it
+    is suitable (e.g. BinIO). Despite the statement in the
+    discussion this is neither available for input nor for output
+    streams (see comments below).
+
+* closeIn:
+
+  - Typo, s/S.closeIn/StreamIO.closeIn/
+
+* flushOut:
+
+  - Typo, s/S.flushOut/StreamIO.flushOut/
+
+* closeOut:
+
+  - Typo, s/S.closeOut/StreamIO.closeOut/
+
+* Discussion:
+
+  - Equivalences, last line: s/StreamIO.output/StreamIO.flushOut/
+
+  - Paragraph about random-access on output streams: It says that
+    BinIO.StreamIO.out_pos = Position.int. This is not true, we have
+    BinPrimIO.pos = Position.int, but that is a completely different
+    type. In fact, it is impossible to implement out_pos as
+    Position.int.
+
+* There is no reference to the ImperativeIO functor.
+
+
+
+The ImperativeIO functor
+------------------------
+
+* Functor argument:
+
+  - The Array argument is unnecessary.
+
+* Functor result:
+
+  - Type sharing of the result types is not specified.
+
+
+
+The TEXT_STREAM_IO signature
+----------------------------
+
+* General comment:
+
+  - Why bother separating this signature from STREAM_IO?
+    => outputSubstr can easily be generalised to outputSlice
+       (for good),
+    => if line buffering is part of STREAM_IO, inputLine
+       might be as well.
+
+
+
+The TextIO structure
+--------------------
+
+* General comment:
+
+  - Systems providing WideText should also provide a WideTextIO
+    structure (they have to provide WideTextPrimIO already, which
+    seems inconsistent).
+
+* Interface:
+
+  - Duplicated type constraints for StreamIO.reader and
+    StreamIO.writer.
+
+
+
+The BinIO structure
+--------------------
+
+* Interface:
+
+  - Type sharing with BinPrimIO is not specified (unlike for
+    TextIO), i.e. the following constraints are missing:
+
+        where type StreamIO.reader = BinPrimIO.reader
+        where type StreamIO.writer = BinPrimIO.writer
+        where type StreamIO.pos = BinPrimIO.pos
+
+******************************************************************************
+******************************************************************************
+******************************************************************************
+******************************************************************************
+
+Doing host/network byte order conversions on ML side.
+
+Socket.Ctl
+* Semantics of setNBIO, getNREAD, getATMARK are unclear;
+  Don't seem to be accessible via {get,set}sockopt;
+  Instead, using ioctl.
+
+******************************************************************************
+******************************************************************************
+
+Posix.FileSys:
+* Within structure S, the type mode is constrained equal to flags,
+  but flags is an eqtype.
+
+STREAM_IO.pos
+* "This is the type of positions in the underlying readers and
+  writers. In some instantiations of this signature (e.g.,
+  TextIO.StreamIO), pos is abstract; in others (e.g., BinIO.StreamIO)
+  it is Position.int."  But, the equality of BinIO.StreamIO.pos and
+  Position.int is never specified in any where constraint of BinIO.
+* How can filePosIn be implemented with completely abstract pos?
+
+Not sent to list:
+
+* (In general, probably a good idea to look at the entire top-level
+  structure/signature matches and choose a consistent usage of base
+  types.  For example, Int:>INTEGER would seem to hide the top-level
+  int; unless Int is opened afterwards.  But, then what about all the
+  other structures that reference int?  Is top-level int = Int.int or
+  is Int.int = top-level int.)
+--> I think I'm biased from looking at the MLton implementation,
+becuase I'm finding it hard to think about how to really express all
+of the sharing constraints in a way that will be acceptable.  This
+might be the wrong way to look at things: the listing of structures
+and signatures with clauses doesn't correspond to a build order, it
+corresponds to the way the environment should look to the program.
+
+Sequences and Slices:
+Why not existsi, alli?
+
+Vector:
+Why no vector: int * 'a -> 'a vector?
+
+
+Resolved:
+ 
+If one defines VECTOR_SLICE by including a type 'a vector and replace
+'a Vector.vector with the local 'a vector, but then binds
+structure Vector: VECTOR
+structure VectorSlice: VECTOR_SLICE where type 'a vector = 'a Vector.vector
+at the top-level, does one violate the basis spec?
+Rationale: it's easiset to implement Vector and VectorSlice
+simultaneously, say with VectorSlice as a substructure of Vector (in
+fact, with all of the Vector operations being dispatched to the
+corresponding VectorSlice ops with full slices), so Vector isn't in
+scope for the VECTOR_SLICE.
+*** No, it's not o.k., because opening VectorSlice will introduce a binding
+    for 'a vector; but, if we're lucky, John will accept the proposal.
+
+IEEEReal:
+toString prepends a #"~" even when the class is NAN?
+*** I guess this is o.k.; there is an explicit sign field.
+
+PACK_WORD:
+structure Pack<N>Big :> PACK_WORD  (* OPTIONAL *)
+structure Pack<N>Little :> PACK_WORD  (* OPTIONAL *)
+but PACK_WORD has
+val subVec  : Word8Vector.vector * int -> LargeWord.word
+i.e., reference to LargeWord.word.
+Should it be
+PACK_WORD
+type word
+val subVec  : Word8Vector.vector * int -> word
+with
+structure Pack<N>Big :> PACK_WORD with word = Word<N>.word  (* OPTIONAL *)
+Should there be PackBig and PackLittle with word = Word.word?
+Should there be PackLargeBig with word = LargeWord.word?
+There aren't many structures that refine on LargeXYZ; most refine on XYZ<N>.
+*** O.k., we always unpack into a LargeWord, which we could then
+    Word<N>.fromLargeWord back to the size.  I guess this is o.k.; It
+    lets an implementation give more Pack<N>Big structures than there
+    are Word<N> structures.
+
+MLton specific:
+ + why are Int32_gtu and Int32_geu primitive?
+   Why not just Word.fromInt and use Word comparisons?
+ + Real:>REAL doesn't match basis because it may peform
+    arithmetic at extended precision.  Should this be mentioned
+    in the user guide?
+ + QUESTION: proc-env.sml
+ + QUESTION: char.sml
+ + check uses of {Vector,Array}Slice.slice for replacement by unsafeSlice.
+
+
+******************************************************************************
+******************************************************************************
+
+UNIX:
+I'm not quite sure how the ('a, 'b) proc type is supposed to work in
+practice; The old Unix structure just used them as
+TextIO.{in,out}streams.  My suspicion is that we're supposed to use
+Posix.IO.mk{Bin,Text}{Reader,Writer} functions and then use the type
+system to ensure that if we force a stream to be bin or text, then all
+other uses have to be the same.  I also suspect that we're only
+supposed to lift the file_desc up to an instream/outstream once; i.e.,
+multiple textInstreamOf calls should continue to return the same
+TextIO.instream.  That would seem to suggest we need an 'a option ref
+that can be banged at the first call to a streamOf function, and
+subsequent calls just return the value there.
+
+textInstreamOf pr
+binInstreamOf pr
+    return a text or binary instream connected to the standard output
+    stream of the process pr. Note the multiple calls to these
+    functions on the same proc will result in multiple streams that
+    all share the same underlying Unix stream.
+
+textOutstreamOf pr
+binOutstreamOf pr
+    return a text or binary outstream connected to the standard input
+    stream of the process pr. Note the multiple calls to these
+    functions on the same proc will result in multiple streams that
+    all share the same underlying Unix stream.
+
+streamsOf pr
+    returns a pair of input and output text streams associated with
+    pr. This function is equivalent to (textInstream pr, textOutstream
+    pr) and is provided for backward compatibility.
