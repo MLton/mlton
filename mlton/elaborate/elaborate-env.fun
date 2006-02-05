@@ -3155,10 +3155,11 @@ fun functorClosure
                               fun loop cs =
                                  case cs of
                                     [] => Error.bug "ElaborateEnv.functorClosure: missing firstTycon"
-                                  | c :: cs =>
-                                       if Tycon.equals (c, firstTycon)
-                                          then cs
-                                       else loop cs
+                                  | c :: cs' =>
+                                       if Tycon.equals (c, firstTycon) then
+                                          cs
+                                       else
+                                          loop cs'
                            in
                               loop (!allTycons)
                            end

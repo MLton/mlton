@@ -267,7 +267,7 @@ fun polyCompile {bench} =
    (fn e =>
     let
        val originalDbase = "/usr/lib/poly/ML_dbase"
-       val poly = "poly"
+       val poly = "/usr/bin/poly"
     in File.withTemp
        (fn dbase =>
         let
@@ -286,7 +286,7 @@ fun polyCompile {bench} =
                withInput
                (input, fn () =>
                 timeIt (Explicit {args = [dbase],
-                                  com = "poly"})))
+                                  com = poly})))
            val after = File.size dbase
         in
            if original = after

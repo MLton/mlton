@@ -41,8 +41,6 @@ structure Math
 structure MLton
 structure OS
 structure Option
-structure Pack32Big
-structure Pack32Little
 structure Position
 structure Posix
 structure Real
