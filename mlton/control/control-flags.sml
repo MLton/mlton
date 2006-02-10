@@ -534,17 +534,18 @@ structure Elaborate =
 
       local
          fun checkPrefix (s, f) =
-            case String.fields (s, fn c => c = #":") of
-               [s] => f s
-             | [comp,s] => 
+            case String.peeki (s, fn (_, c) => c = #":") of
+               NONE => f s
+             | SOME (i, _) =>
                   let
+                     val comp = String.prefix (s, i)
                      val comp = String.deleteSurroundingWhitespace comp
+                     val s = String.dropPrefix (s, i + 1)
                   in
                      if String.equals (comp, "mlton")
                         then f s
                         else Other
                   end
-             | _ => Bad
       in
          val parseId = fn s => checkPrefix (s, parseId)
          val parseIdAndArgs = fn s => checkPrefix (s, parseIdAndArgs)
