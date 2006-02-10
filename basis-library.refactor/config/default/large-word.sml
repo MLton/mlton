@@ -5,9 +5,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Real = Real64
-type real = Real.real
+structure LargeWord = Word64
 
-functor Real_ChooseRealN (A: CHOOSE_REALN_ARG) :
-   sig val f : Real.real A.t end =
-   ChooseRealN_Real64 (A)
+functor LargeWord_ChooseWordN (A: CHOOSE_WORDN_ARG) :
+   sig val f : LargeWord.word A.t end =
+   ChooseWordN_Word64 (A)

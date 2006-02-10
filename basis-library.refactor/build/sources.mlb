@@ -29,7 +29,22 @@ in
    local ../config/bind-for-config0.sml in ann "forceUsed" in
       ../config/default/$(DEFAULT_CHAR)
       ../config/default/$(DEFAULT_INT)
+      ../config/default/$(DEFAULT_REAL)
       ../config/default/$(DEFAULT_WORD)
+      ../config/default/large-int.sml
+      ../config/default/large-real.sml
+      ../config/default/large-word.sml
+   end end
+   ../integer/int1.sml
+   ../integer/word1.sml
+   local ../config/bind-for-config0.sml in ann "forceUsed" in
+      ../config/default/$(DEFAULT_CHAR)
+      ../config/default/$(DEFAULT_INT)
+      ../config/default/$(DEFAULT_REAL)
+      ../config/default/$(DEFAULT_WORD)
+      ../config/default/large-int.sml
+      ../config/default/large-real.sml
+      ../config/default/large-word.sml
    end end
    local ../config/bind-for-config0.sml in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
@@ -37,44 +52,37 @@ in
       ../config/seq/$(SEQ_INDEX)
       ../config/c/misc/$(CTYPES)
    end end
-
+   ../general/general.sig
+   ../general/general.sml
+   ../general/option.sig
+   ../general/option.sml
+   ../list/list.sig
+   ../list/list.sml
+   ../list/list-pair.sig
+   ../list/list-pair.sml
+   ../arrays-and-vectors/slice.sig
+   ../arrays-and-vectors/sequence.sig
 (*
-   local
-      ../../primitive/primitive.mlb
-      (* Common basis implementation. *)
-      ../../top-level/infixes.sml
-      ../../misc/basic.sml
-      ../../misc/dynamic-wind.sig
-      ../../misc/dynamic-wind.sml
-      ../../general/general.sig
-      ../../general/general.sml
-      ../../misc/util.sml
-      ../../general/option.sig
-      ../../general/option.sml
-      ../../list/list.sig
-      ../../list/list.sml
-      ../../list/list-pair.sig
-      ../../list/list-pair.sml
-      ../../arrays-and-vectors/slice.sig
-      ../../arrays-and-vectors/sequence.sig
-      ../../arrays-and-vectors/sequence.fun
-      ../../arrays-and-vectors/vector-slice.sig
-      ../../arrays-and-vectors/vector.sig
-      ../../arrays-and-vectors/vector.sml
-      ../../arrays-and-vectors/array-slice.sig
-      ../../arrays-and-vectors/array.sig
-      ../../arrays-and-vectors/array.sml
-      ../../arrays-and-vectors/array2.sig
-      ../../arrays-and-vectors/array2.sml
-      ../../arrays-and-vectors/mono-vector-slice.sig
-      ../../arrays-and-vectors/mono-vector.sig
-      ../../arrays-and-vectors/mono-vector.fun
-      ../../arrays-and-vectors/mono-array-slice.sig
-      ../../arrays-and-vectors/mono-array.sig
-      ../../arrays-and-vectors/mono-array.fun
-      ../../arrays-and-vectors/mono-array2.sig
-      ../../arrays-and-vectors/mono-array2.fun
-      ../../arrays-and-vectors/mono.sml
+      ../arrays-and-vectors/sequence.fun
+*)
+      ../arrays-and-vectors/vector-slice.sig
+      ../arrays-and-vectors/vector.sig
+(*
+      ../arrays-and-vectors/vector.sml
+      ../arrays-and-vectors/array-slice.sig
+      ../arrays-and-vectors/array.sig
+      ../arrays-and-vectors/array.sml
+      ../arrays-and-vectors/array2.sig
+      ../arrays-and-vectors/array2.sml
+      ../arrays-and-vectors/mono-vector-slice.sig
+      ../arrays-and-vectors/mono-vector.sig
+      ../arrays-and-vectors/mono-vector.fun
+      ../arrays-and-vectors/mono-array-slice.sig
+      ../arrays-and-vectors/mono-array.sig
+      ../arrays-and-vectors/mono-array.fun
+      ../arrays-and-vectors/mono-array2.sig
+      ../arrays-and-vectors/mono-array2.fun
+      ../arrays-and-vectors/mono.sml
       ../../text/string0.sml
       ../../text/char0.sml
       ../../misc/reader.sig

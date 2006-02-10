@@ -8,7 +8,7 @@
 
 structure General: GENERAL_EXTRA =
    struct
-      type unit = unit
+      type unit = Primitive.Unit.unit
 
       type exn = exn
       exception Bind = Bind
@@ -16,13 +16,13 @@ structure General: GENERAL_EXTRA =
       exception Chr
       exception Div
       exception Domain
-      exception Fail = Fail
+      exception Fail of string
       exception Overflow = Overflow
       exception Size = Size
       exception Span
       exception Subscript
 
-      datatype order = LESS | EQUAL | GREATER
+      datatype order = datatype Primitive.Order.order
 
       val ! = Primitive.Ref.deref
       val op := = Primitive.Ref.assign
@@ -54,4 +54,3 @@ structure General: GENERAL_EXTRA =
 
 structure GeneralGlobal: GENERAL_GLOBAL = General
 open GeneralGlobal
-

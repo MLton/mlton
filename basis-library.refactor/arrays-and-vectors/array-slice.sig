@@ -1,3 +1,8 @@
+structure Array =
+   struct
+      type 'a array = 'a array
+   end
+
 signature ARRAY_SLICE_GLOBAL =
    sig
    end

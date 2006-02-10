@@ -21,7 +21,7 @@ functor Sequence (S: sig
 
       structure Array = Primitive.Array
 
-      open Primitive.Int
+      open Int
 
       val maxLen = Array.maxLen
 
@@ -104,13 +104,13 @@ functor Sequence (S: sig
             fun unsafeSub (T {seq, start, ...}, i) =
                S.sub (seq, start +? i)
             fun sub (sl as T {len, ...}, i) =
-               if Primitive.safe andalso Primitive.Int.geu (i, len)
+               if Primitive.Controls.safe andalso Int.geu (i, len)
                   then raise Subscript
                else unsafeSub (sl, i)
             fun unsafeUpdate' update (T {seq, start, ...}, i, x) =
                update (seq, start +? i, x)
             fun update' update (sl as T {len, ...}, i, x) =
-               if Primitive.safe andalso Primitive.Int.geu (i, len)
+               if Primitive.safe andalso Int.geu (i, len)
                   then raise Subscript
                else unsafeUpdate' update (sl, i, x)
             fun full (seq: 'a sequence) : 'a slice = 
@@ -373,7 +373,7 @@ functor Sequence (S: sig
                in split (sl, loop (start +? len -? 1))
                end
             fun splitAt (T {seq, start, len}, i) =
-               if Primitive.safe andalso Primitive.Int.gtu (i, len)
+               if Primitive.safe andalso Int.gtu (i, len)
                   then raise Subscript
                else (unsafeSlice (seq, start, SOME i),
                      unsafeSlice (seq, start +? i, SOME (len -? i)))

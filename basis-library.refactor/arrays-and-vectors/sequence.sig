@@ -20,7 +20,8 @@ signature SEQUENCE =
       val length: 'a sequence -> int
       val sub: 'a sequence * int -> 'a elt
       val unsafeSub: 'a sequence * int -> 'a elt
-      (* ('a sequence * int * 'a elt -> unit  should be an unsafe update. 
+      (* update':
+       * ('a sequence * int * 'a elt -> unit)  should be an unsafe update. 
        *)
       val update': ('a sequence * int * 'a elt -> unit) ->
                    ('a sequence * int * 'a elt) -> unit
@@ -53,7 +54,7 @@ signature SEQUENCE =
       (* Extra *)
       val append: 'a sequence * 'a sequence -> 'a sequence
       (* createi,create:
-       * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
+       * (int * (int -> 'b elt) -> 'c)  should be a tabulate function.
        *)
       val createi: (int * (int -> 'b elt) -> 'c) ->
                    (int * 'a elt -> 'b elt) -> 'a sequence -> 'c

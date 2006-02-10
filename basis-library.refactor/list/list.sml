@@ -8,9 +8,9 @@
 
 structure List: LIST =
   struct
-     open Primitive.Int
+     open Int
         
-     datatype list = datatype list
+     datatype list = datatype Primitive.List.list
 
      exception Empty
 
@@ -101,7 +101,7 @@ structure List: LIST =
      fun all pred = not o (exists (not o pred))
 
      fun tabulate (n, f) = 
-        if Primitive.safe andalso n < 0
+        if Primitive.Controls.safe andalso n < 0
            then raise Size
         else let
                 fun loop (i, ac) =
@@ -121,7 +121,7 @@ structure List: LIST =
                        then loop (l, n - 1)
                     else x
         in
-           if Primitive.safe andalso n < 0
+           if Primitive.Controls.safe andalso n < 0
               then raise Subscript
            else loop (l, n)
         end
@@ -135,7 +135,7 @@ structure List: LIST =
                         | x :: l => loop (l, n - 1, x :: ac))
               else rev ac
         in
-           if Primitive.safe andalso n < 0
+           if Primitive.Controls.safe andalso n < 0
               then raise Subscript
            else loop (l, n, [])
         end
@@ -149,7 +149,7 @@ structure List: LIST =
                         | _ :: l => loop (l, n - 1))
               else l
         in
-           if Primitive.safe andalso n < 0
+           if Primitive.Controls.safe andalso n < 0
               then raise Subscript
            else loop (l, n)
         end

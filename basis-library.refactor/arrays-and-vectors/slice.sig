@@ -14,7 +14,8 @@ signature SLICE =
       val length: 'a slice -> int
       val sub: 'a slice * int -> 'a elt
       val unsafeSub: 'a slice * int -> 'a elt
-      (* ('a sequence * int * 'a elt -> unit  should be an unsafe update. 
+      (* update',unsafeUpdate':
+       * ('a sequence * int * 'a elt -> unit)  should be an unsafe update. 
        *)
       val update': ('a sequence * int * 'a elt -> unit) ->
                    ('a slice * int * 'a elt) -> unit
@@ -62,7 +63,7 @@ signature SLICE =
       val position: ('a elt * 'a elt -> bool) -> 
                     'a sequence -> 'a slice -> 'a slice * 'a slice
       (* span:
-       * 'a sequence * 'a sequence -> bool should be polymorphic equality
+       * ('a sequence * 'a sequence -> bool)  should be polymorphic equality
        *)
       val span: ('a sequence * 'a sequence -> bool) -> 'a slice * 'a slice -> 'a slice
       val translate: ('a elt -> 'a sequence) -> 'a slice -> 'a sequence
@@ -72,7 +73,7 @@ signature SLICE =
       (* Extra *)
       val append: 'a slice * 'a slice -> 'a sequence
       (* createi,create:
-       * (int * (int -> 'b elt) -> 'c  should be a tabulate function.
+       * (int * (int -> 'b elt) -> 'c)  should be a tabulate function.
        *)
       val createi: (int * (int -> 'b elt) -> 'c) ->
                    (int * 'a elt -> 'b elt) -> 'a slice -> 'c

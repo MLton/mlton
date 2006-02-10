@@ -71,10 +71,10 @@ signature INT_INF0 =
       val fromWord64: Primitive.Word64.word -> int
 
       (* Sign extend. *)
-      val fromWordX8: Primitive.Word8.word -> int
-      val fromWordX16: Primitive.Word16.word -> int
-      val fromWordX32: Primitive.Word32.word -> int
-      val fromWordX64: Primitive.Word64.word -> int
+      val fromWord8X: Primitive.Word8.word -> int
+      val fromWord16X: Primitive.Word16.word -> int
+      val fromWord32X: Primitive.Word32.word -> int
+      val fromWord64X: Primitive.Word64.word -> int
 
       (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
@@ -90,10 +90,10 @@ signature INT_INF0 =
       val toWord64: int -> Primitive.Word64.word
 
       (* Lowbits. *)
-      val toWordX8: int -> Primitive.Word8.word
-      val toWordX16: int -> Primitive.Word16.word
-      val toWordX32: int -> Primitive.Word32.word
-      val toWordX64: int -> Primitive.Word64.word
+      val toWord8X: int -> Primitive.Word8.word
+      val toWord16X: int -> Primitive.Word16.word
+      val toWord32X: int -> Primitive.Word32.word
+      val toWord64X: int -> Primitive.Word64.word
    end
 
 structure Primitive = struct
@@ -136,10 +136,10 @@ structure IntInf : INT_INF0 =
                           structure S =
                              ObjptrInt_ChooseIntN
                              (type 'a t = ObjptrWord.word -> 'a
-                              val fInt8 = ObjptrWord.toIntX8
-                              val fInt16 = ObjptrWord.toIntX16
-                              val fInt32 = ObjptrWord.toIntX32
-                              val fInt64 = ObjptrWord.toIntX64)
+                              val fInt8 = ObjptrWord.toInt8X
+                              val fInt16 = ObjptrWord.toInt16X
+                              val fInt32 = ObjptrWord.toInt32X
+                              val fInt64 = ObjptrWord.toInt64X)
                        in
                           val toObjptrIntX = S.f
                        end
@@ -261,7 +261,7 @@ structure IntInf : INT_INF0 =
             if Int8.>= (i, 0)
                then fromWordAux8 (false, Word8.fromInt8 i)
                else fromWordAux8 (true, Word8.~ (Word8.fromInt8 i))
-         fun fromWordX8 w = fromInt8 (Word8.toIntX8 w)
+         fun fromWord8X w = fromInt8 (Word8.toInt8X w)
 
          val fromWordAux16 =
             make {toMPLimb = MPLimb.fromWord16,
@@ -275,7 +275,7 @@ structure IntInf : INT_INF0 =
             if Int16.>= (i, 0)
                then fromWordAux16 (false, Word16.fromInt16 i)
                else fromWordAux16 (true, Word16.~ (Word16.fromInt16 i))
-         fun fromWordX16 w = fromInt16 (Word16.toIntX16 w)
+         fun fromWord16X w = fromInt16 (Word16.toInt16X w)
 
          val fromWordAux32 =
             make {toMPLimb = MPLimb.fromWord32,
@@ -289,7 +289,7 @@ structure IntInf : INT_INF0 =
             if Int32.>= (i, 0)
                then fromWordAux32 (false, Word32.fromInt32 i)
                else fromWordAux32 (true, Word32.~ (Word32.fromInt32 i))
-         fun fromWordX32 w = fromInt32 (Word32.toIntX32 w)
+         fun fromWord32X w = fromInt32 (Word32.toInt32X w)
 
          val fromWordAux64 =
             make {toMPLimb = MPLimb.fromWord64,
@@ -303,7 +303,7 @@ structure IntInf : INT_INF0 =
             if Int64.>= (i, 0)
                then fromWordAux64 (false, Word64.fromInt64 i)
                else fromWordAux64 (true, Word64.~ (Word64.fromInt64 i))
-         fun fromWordX64 w = fromInt64 (Word64.toIntX64 w)
+         fun fromWord64X w = fromInt64 (Word64.toInt64X w)
 
          fun fromIntInf i = i
       end
@@ -385,20 +385,20 @@ structure IntInf : INT_INF0 =
                            zero = Word8.zero,
                            lshift = Word8.<<,
                            orb = Word8.orb}}
-         fun toWordX8 i =
+         fun toWord8X i =
             case toWordAux8 i of
-               Small w => ObjptrWord.toWordX8 w
+               Small w => ObjptrWord.toWord8X w
              | Big (isneg, _, ans) => if isneg then Word8.~ ans else ans
-         fun toWord8 i = toWordX8 i
+         fun toWord8 i = toWord8X i
          fun toInt8 i =
             case toWordAux8 i of
-               Small w => ObjptrWord.toIntX8 w
+               Small w => ObjptrWord.toInt8X w
              | Big (isneg, extra, ans) =>
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word8.toIntX8 (Word8.~ ans)
+                             val ans = Word8.toInt8X (Word8.~ ans)
                           in
                              if Int8.>= (ans, 0)
                                 then raise Overflow
@@ -413,20 +413,20 @@ structure IntInf : INT_INF0 =
                            zero = Word16.zero,
                            lshift = Word16.<<,
                            orb = Word16.orb}}
-         fun toWordX16 i =
+         fun toWord16X i =
             case toWordAux16 i of
-               Small w => ObjptrWord.toWordX16 w
+               Small w => ObjptrWord.toWord16X w
              | Big (isneg, _, ans) => if isneg then Word16.~ ans else ans
-         fun toWord16 i = toWordX16 i
+         fun toWord16 i = toWord16X i
          fun toInt16 i =
             case toWordAux16 i of
-               Small w => ObjptrWord.toIntX16 w
+               Small w => ObjptrWord.toInt16X w
              | Big (isneg, extra, ans) =>
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word16.toIntX16 (Word16.~ ans)
+                             val ans = Word16.toInt16X (Word16.~ ans)
                           in
                              if Int16.>= (ans, 0)
                                 then raise Overflow
@@ -441,20 +441,20 @@ structure IntInf : INT_INF0 =
                            zero = Word32.zero,
                            lshift = Word32.<<,
                            orb = Word32.orb}}
-         fun toWordX32 i =
+         fun toWord32X i =
             case toWordAux32 i of
-               Small w => ObjptrWord.toWordX32 w
+               Small w => ObjptrWord.toWord32X w
              | Big (isneg, _, ans) => if isneg then Word32.~ ans else ans
-         fun toWord32 i = toWordX32 i
+         fun toWord32 i = toWord32X i
          fun toInt32 i =
             case toWordAux32 i of
-               Small w => ObjptrWord.toIntX32 w
+               Small w => ObjptrWord.toInt32X w
              | Big (isneg, extra, ans) =>
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word32.toIntX32 (Word32.~ ans)
+                             val ans = Word32.toInt32X (Word32.~ ans)
                           in
                              if Int32.>= (ans, 0)
                                 then raise Overflow
@@ -469,20 +469,20 @@ structure IntInf : INT_INF0 =
                            zero = Word64.zero,
                            lshift = Word64.<<,
                            orb = Word64.orb}}
-         fun toWordX64 i =
+         fun toWord64X i =
             case toWordAux64 i of
-               Small w => ObjptrWord.toWordX64 w
+               Small w => ObjptrWord.toWord64X w
              | Big (isneg, _, ans) => if isneg then Word64.~ ans else ans
-         fun toWord64 i = toWordX64 i
+         fun toWord64 i = toWord64X i
          fun toInt64 i =
             case toWordAux64 i of
-               Small w => ObjptrWord.toIntX64 w
+               Small w => ObjptrWord.toInt64X w
              | Big (isneg, extra, ans) =>
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word64.toIntX64 (Word64.~ ans)
+                             val ans = Word64.toInt64X (Word64.~ ans)
                           in
                              if Int64.>= (ans, 0)
                                 then raise Overflow
@@ -890,28 +890,28 @@ structure Word8 =
       open Word8
       val fromIntInf = IntInf.toWord8
       val toIntInf = IntInf.fromWord8
-      val toIntInfX = IntInf.fromWordX8
+      val toIntInfX = IntInf.fromWord8X
    end
 structure Word16 =
    struct
       open Word16
       val fromIntInf = IntInf.toWord16
       val toIntInf = IntInf.fromWord16
-      val toIntInfX = IntInf.fromWordX16
+      val toIntInfX = IntInf.fromWord16X
    end
 structure Word32 =
    struct
       open Word32
       val fromIntInf = IntInf.toWord32
       val toIntInf = IntInf.fromWord32
-      val toIntInfX = IntInf.fromWordX32
+      val toIntInfX = IntInf.fromWord32X
    end
 structure Word64 =
    struct
       open Word64
       val fromIntInf = IntInf.toWord64
       val toIntInf = IntInf.fromWord64
-      val toIntInfX = IntInf.fromWordX64
+      val toIntInfX = IntInf.fromWord64X
    end
 
 end

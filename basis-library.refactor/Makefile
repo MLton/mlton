@@ -26,6 +26,7 @@ SEQ_INDEX_MAPS = seqindex-int32.map seqindex-int64.map
 CTYPES_MAPS = c-types.m32.map c-types.m64.map c-types.weird.map
 DEFAULT_CHAR_MAPS = default-char8.map
 DEFAULT_INT_MAPS = default-int32.map default-int64.map default-intinf.map 
+DEFAULT_REAL_MAPS = default-real64.map
 DEFAULT_WORD_MAPS = default-word32.map default-word64.map
 
 .PHONY: type-check
@@ -36,8 +37,9 @@ type-check:
 	for ctypes in $(CTYPES_MAPS); do \
 	for defchar in $(DEFAULT_CHAR_MAPS); do \
 	for defint in $(DEFAULT_INT_MAPS); do \
+	for defreal in $(DEFAULT_REAL_MAPS); do \
 	for defword in $(DEFAULT_WORD_MAPS); do \
-	echo "Type checking: $$objptrrep $$header $$seqindex $$ctypes $$defchar $$defint $$defword"; \
+	echo "Type checking: $$objptrrep $$header $$seqindex $$ctypes $$defchar $$defint $$defreal $$defword"; \
 	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
 		-mlb-path-map "maps/$$objptrrep" \
 		-mlb-path-map "maps/$$header" \
@@ -45,6 +47,7 @@ type-check:
 		-mlb-path-map "maps/$$ctypes" \
 		-mlb-path-map "maps/$$defchar" \
 		-mlb-path-map "maps/$$defint" \
+		-mlb-path-map "maps/$$defreal" \
 		-mlb-path-map "maps/$$defword" \
 		build/sources.mlb; \
-	done; done; done; done; done; done; done
+	done; done; done; done; done; done; done; done

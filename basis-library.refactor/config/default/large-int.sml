@@ -5,9 +5,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Real = Real64
-type real = Real.real
+structure LargeInt = IntInf
 
-functor Real_ChooseRealN (A: CHOOSE_REALN_ARG) :
-   sig val f : Real.real A.t end =
-   ChooseRealN_Real64 (A)
+functor LargeInt_ChooseInt (A: CHOOSE_INT_ARG) :
+   sig val f : LargeInt.int A.t end =
+   ChooseInt_IntInf (A)

@@ -26,9 +26,10 @@ SEQ_INDEX_MAPS = seqindex-int32.map
 CTYPES_MAPS = c-types.m32.map
 DEFAULT_CHAR_MAPS = default-char8.map
 DEFAULT_INT_MAPS = default-int32.map default-int64.map default-intinf.map 
+DEFAULT_REAL_MAPS = default-real64.map
 DEFAULT_WORD_MAPS = default-word32.map default-word64.map
 
-test: test.mlb print.o $(shell $(MLTON) -mlb-path-map "../maps/header-word32.map" -mlb-path-map "../maps/objptr-rep32.map" -mlb-path-map "../maps/seqindex-int32.map" -mlb-path-map "../maps/c-types.m32.map" -mlb-path-map "../maps/default-char8.map" -mlb-path-map "../maps/default-int32.map" -mlb-path-map "../maps/default-word32.map" -stop f test.mlb)
+test: test.mlb print.o $(shell $(MLTON) -mlb-path-map "../maps/header-word32.map" -mlb-path-map "../maps/objptr-rep32.map" -mlb-path-map "../maps/seqindex-int32.map" -mlb-path-map "../maps/c-types.m32.map" -mlb-path-map "../maps/default-char8.map" -mlb-path-map "../maps/default-int32.map" -mlb-path-map "../maps/default-real64.map" -mlb-path-map "../maps/default-word32.map" -stop f test.mlb)
 	$(MLTON) \
 		-mlb-path-map "../maps/header-word32.map" \
 		-mlb-path-map "../maps/objptr-rep32.map" \
@@ -36,6 +37,7 @@ test: test.mlb print.o $(shell $(MLTON) -mlb-path-map "../maps/header-word32.map
 		-mlb-path-map "../maps/c-types.m32.map" \
 		-mlb-path-map "../maps/default-char8.map" \
 		-mlb-path-map "../maps/default-int32.map" \
+		-mlb-path-map "../maps/default-real64.map" \
 		-mlb-path-map "../maps/default-word32.map" \
 		test.mlb print.o
 

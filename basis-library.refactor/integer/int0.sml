@@ -26,10 +26,10 @@ signature INTEGER0 =
       val rem: int * int -> int
 
       val << : int * Primitive.Word32.word -> int
-      val >> : int * Primitive.Word32.word -> int
       val rol : int * Primitive.Word32.word -> int
       val ror : int * Primitive.Word32.word -> int
       val ~>> : int * Primitive.Word32.word -> int
+      val >> : int * Primitive.Word32.word -> int
 
       val sign': int -> Primitive.Int32.int
       val sameSign: int * int -> bool
@@ -47,10 +47,10 @@ signature INTEGER0 =
       val fromWord64: Primitive.Word64.word -> int
 
       (* Overflow checking, signed interp. *)
-      val fromWordX8: Primitive.Word8.word -> int
-      val fromWordX16: Primitive.Word16.word -> int
-      val fromWordX32: Primitive.Word32.word -> int
-      val fromWordX64: Primitive.Word64.word -> int
+      val fromWord8X: Primitive.Word8.word -> int
+      val fromWord16X: Primitive.Word16.word -> int
+      val fromWord32X: Primitive.Word32.word -> int
+      val fromWord64X: Primitive.Word64.word -> int
 
       (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
@@ -65,10 +65,10 @@ signature INTEGER0 =
       val toWord64: int -> Primitive.Word64.word
 
       (* Lowbits or sign extend. *)
-      val toWordX8: int -> Primitive.Word8.word
-      val toWordX16: int -> Primitive.Word16.word
-      val toWordX32: int -> Primitive.Word32.word
-      val toWordX64: int -> Primitive.Word64.word
+      val toWord8X: int -> Primitive.Word8.word
+      val toWord16X: int -> Primitive.Word16.word
+      val toWord32X: int -> Primitive.Word32.word
+      val toWord64X: int -> Primitive.Word64.word
    end
 
 functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
@@ -268,35 +268,35 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                 toWordXUnsafe)
             end
       in
-         val (fromWord8, fromWordX8, toWord8, toWordX8) =
+         val (fromWord8, fromWord8X, toWord8, toWord8X) =
             make {fromWordUnsafe = fromWord8Unsafe, 
-                  fromWordXUnsafe = fromWordX8Unsafe,
+                  fromWordXUnsafe = fromWord8XUnsafe,
                   toWordUnsafe = toWord8Unsafe,
-                  toWordXUnsafe =toWordX8Unsafe,
+                  toWordXUnsafe =toWord8XUnsafe,
                   other = {wordSize' = Primitive.Word8.wordSize',
                            lt = Primitive.Word8.<,
                            gt = Primitive.Word8.>}}
-         val (fromWord16, fromWordX16, toWord16, toWordX16) =
+         val (fromWord16, fromWord16X, toWord16, toWord16X) =
             make {fromWordUnsafe = fromWord16Unsafe, 
-                  fromWordXUnsafe = fromWordX16Unsafe,
+                  fromWordXUnsafe = fromWord16XUnsafe,
                   toWordUnsafe = toWord16Unsafe,
-                  toWordXUnsafe =toWordX16Unsafe,
+                  toWordXUnsafe =toWord16XUnsafe,
                   other = {wordSize' = Primitive.Word16.wordSize',
                            lt = Primitive.Word16.<,
                            gt = Primitive.Word16.>}}
-         val (fromWord32, fromWordX32, toWord32, toWordX32) =
+         val (fromWord32, fromWord32X, toWord32, toWord32X) =
             make {fromWordUnsafe = fromWord32Unsafe, 
-                  fromWordXUnsafe = fromWordX32Unsafe,
+                  fromWordXUnsafe = fromWord32XUnsafe,
                   toWordUnsafe = toWord32Unsafe,
-                  toWordXUnsafe =toWordX32Unsafe,
+                  toWordXUnsafe =toWord32XUnsafe,
                   other = {wordSize' = Primitive.Word32.wordSize',
                            lt = Primitive.Word32.<,
                            gt = Primitive.Word32.>}}
-         val (fromWord64, fromWordX64, toWord64, toWordX64) =
+         val (fromWord64, fromWord64X, toWord64, toWord64X) =
             make {fromWordUnsafe = fromWord64Unsafe, 
-                  fromWordXUnsafe = fromWordX64Unsafe,
+                  fromWordXUnsafe = fromWord64XUnsafe,
                   toWordUnsafe = toWord64Unsafe,
-                  toWordXUnsafe =toWordX64Unsafe,
+                  toWordXUnsafe =toWord64XUnsafe,
                   other = {wordSize' = Primitive.Word64.wordSize',
                            lt = Primitive.Word64.<,
                            gt = Primitive.Word64.>}}

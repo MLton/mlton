@@ -31,10 +31,10 @@ signature WORD0 =
       val fromInt64: Primitive.Int64.int -> word
 
       (* Lowbits or zero extend. *)
-      val fromIntZ8: Primitive.Int8.int -> word
-      val fromIntZ16: Primitive.Int16.int -> word
-      val fromIntZ32: Primitive.Int32.int -> word
-      val fromIntZ64: Primitive.Int64.int -> word
+      val fromInt8Z: Primitive.Int8.int -> word
+      val fromInt16Z: Primitive.Int16.int -> word
+      val fromInt32Z: Primitive.Int32.int -> word
+      val fromInt64Z: Primitive.Int64.int -> word
 
       (* Lowbits or zero extend. *)
       val fromWord8: Primitive.Word8.word -> word
@@ -43,10 +43,10 @@ signature WORD0 =
       val fromWord64: Primitive.Word64.word -> word
          
       (* Lowbits or sign extend. *)
-      val fromWordX8: Primitive.Word8.word -> word
-      val fromWordX16: Primitive.Word16.word -> word
-      val fromWordX32: Primitive.Word32.word -> word
-      val fromWordX64: Primitive.Word64.word -> word
+      val fromWord8X: Primitive.Word8.word -> word
+      val fromWord16X: Primitive.Word16.word -> word
+      val fromWord32X: Primitive.Word32.word -> word
+      val fromWord64X: Primitive.Word64.word -> word
 
       (* Overflow checking, unsigned interp. *)
       val toInt8: word -> Primitive.Int8.int
@@ -55,10 +55,10 @@ signature WORD0 =
       val toInt64: word -> Primitive.Int64.int
 
       (* Overflow checking, signed interp. *)
-      val toIntX8: word -> Primitive.Int8.int
-      val toIntX16: word -> Primitive.Int16.int
-      val toIntX32: word -> Primitive.Int32.int
-      val toIntX64: word -> Primitive.Int64.int   
+      val toInt8X: word -> Primitive.Int8.int
+      val toInt16X: word -> Primitive.Int16.int
+      val toInt32X: word -> Primitive.Int32.int
+      val toInt64X: word -> Primitive.Int64.int   
 
       (* Lowbits or zero extend. *)
       val toWord8: word -> Primitive.Word8.word
@@ -67,10 +67,10 @@ signature WORD0 =
       val toWord64: word -> Primitive.Word64.word
 
       (* Lowbits or sign extend. *)
-      val toWordX8: word -> Primitive.Word8.word
-      val toWordX16: word -> Primitive.Word16.word
-      val toWordX32: word -> Primitive.Word32.word
-      val toWordX64: word -> Primitive.Word64.word
+      val toWord8X: word -> Primitive.Word8.word
+      val toWord16X: word -> Primitive.Word16.word
+      val toWord32X: word -> Primitive.Word32.word
+      val toWord64X: word -> Primitive.Word64.word
    end
 
 functor MkWord0 (W: PRIM_WORD): WORD0 =
@@ -152,48 +152,48 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
                 toIntX)
             end
       in
-         val (fromInt8, fromIntZ8, toInt8, toIntX8) = 
+         val (fromInt8, fromInt8Z, toInt8, toInt8X) = 
             make {fromIntUnsafe = fromInt8Unsafe,
-                  fromIntZUnsafe = fromIntZ8Unsafe,
+                  fromIntZUnsafe = fromInt8ZUnsafe,
                   toIntUnsafe = toInt8Unsafe,
-                  toIntXUnsafe = toIntX8Unsafe,
+                  toIntXUnsafe = toInt8XUnsafe,
                   other = {precision' = Primitive.Int8.precision',
                            maxInt' = Primitive.Int8.maxInt',
                            minInt' = Primitive.Int8.minInt'}}
-         val (fromInt16, fromIntZ16, toInt16, toIntX16) = 
+         val (fromInt16, fromInt16Z, toInt16, toInt16X) = 
             make {fromIntUnsafe = fromInt16Unsafe,
-                  fromIntZUnsafe = fromIntZ16Unsafe,
+                  fromIntZUnsafe = fromInt16ZUnsafe,
                   toIntUnsafe = toInt16Unsafe,
-                  toIntXUnsafe = toIntX16Unsafe,
+                  toIntXUnsafe = toInt16XUnsafe,
                   other = {precision' = Primitive.Int16.precision',
                            maxInt' = Primitive.Int16.maxInt',
                            minInt' = Primitive.Int16.minInt'}}
-         val (fromInt32, fromIntZ32, toInt32, toIntX32) = 
+         val (fromInt32, fromInt32Z, toInt32, toInt32X) = 
             make {fromIntUnsafe = fromInt32Unsafe,
-                  fromIntZUnsafe = fromIntZ32Unsafe,
+                  fromIntZUnsafe = fromInt32ZUnsafe,
                   toIntUnsafe = toInt32Unsafe,
-                  toIntXUnsafe = toIntX32Unsafe,
+                  toIntXUnsafe = toInt32XUnsafe,
                   other = {precision' = Primitive.Int32.precision',
                            maxInt' = Primitive.Int32.maxInt',
                            minInt' = Primitive.Int32.minInt'}}
-         val (fromInt64, fromIntZ64, toInt64, toIntX64) = 
+         val (fromInt64, fromInt64Z, toInt64, toInt64X) = 
             make {fromIntUnsafe = fromInt64Unsafe,
-                  fromIntZUnsafe = fromIntZ64Unsafe,
+                  fromIntZUnsafe = fromInt64ZUnsafe,
                   toIntUnsafe = toInt64Unsafe,
-                  toIntXUnsafe = toIntX64Unsafe,
+                  toIntXUnsafe = toInt64XUnsafe,
                   other = {precision' = Primitive.Int64.precision',
                            maxInt' = Primitive.Int64.maxInt',
                            minInt' = Primitive.Int64.minInt'}}
       end
 
-      val (fromWord8, fromWordX8, toWord8, toWordX8) =
-         (fromWord8Unsafe, fromWordX8Unsafe, toWord8Unsafe, toWordX8Unsafe)   
-      val (fromWord16, fromWordX16, toWord16, toWordX16) =
-         (fromWord16Unsafe, fromWordX16Unsafe, toWord16Unsafe, toWordX16Unsafe)   
-      val (fromWord32, fromWordX32, toWord32, toWordX32) =
-         (fromWord32Unsafe, fromWordX32Unsafe, toWord32Unsafe, toWordX32Unsafe)   
-      val (fromWord64, fromWordX64, toWord64, toWordX64) =
-         (fromWord64Unsafe, fromWordX64Unsafe, toWord64Unsafe, toWordX64Unsafe)   
+      val (fromWord8, fromWord8X, toWord8, toWord8X) =
+         (fromWord8Unsafe, fromWord8XUnsafe, toWord8Unsafe, toWord8XUnsafe)   
+      val (fromWord16, fromWord16X, toWord16, toWord16X) =
+         (fromWord16Unsafe, fromWord16XUnsafe, toWord16Unsafe, toWord16XUnsafe)   
+      val (fromWord32, fromWord32X, toWord32, toWord32X) =
+         (fromWord32Unsafe, fromWord32XUnsafe, toWord32Unsafe, toWord32XUnsafe)   
+      val (fromWord64, fromWord64X, toWord64, toWord64X) =
+         (fromWord64Unsafe, fromWord64XUnsafe, toWord64Unsafe, toWord64XUnsafe)   
 
    end
 

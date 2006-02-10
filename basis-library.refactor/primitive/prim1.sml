@@ -43,7 +43,6 @@ structure Exn =
 
       exception Div
       exception Fail8 of String8.string
-      (* exception Fail = Fail8 *)
       exception Fail16 of String16.string
       exception Fail32 of String32.string
       exception Overflow
@@ -85,7 +84,6 @@ val not = Primitive.Bool.not
 
 exception Bind = Primitive.Exn.Bind
 exception Div = Primitive.Exn.Div
-(* exception Fail = Primitive.Exn.Fail *)
 exception Match = Primitive.Exn.Match
 exception Overflow = Primitive.Exn.Overflow
 exception Size = Primitive.Exn.Size
