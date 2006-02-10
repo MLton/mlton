@@ -174,7 +174,7 @@ structure Elaborate =
       fun equalsId (ctrl, id') = Id.equals (id ctrl, id')
 
       datatype ('a, 'b) parseResult =
-         Bad | Deprecated of 'a | Good of 'b
+         Bad | Deprecated of 'a | Good of 'b | Other
       val deGood = 
          fn Good z => z
           | _ => Error.bug "Control.Elaborate.deGood"
@@ -532,6 +532,24 @@ structure Elaborate =
          val {parseId, parseIdAndArgs} = ac
       end
 
+      local
+         fun checkPrefix (s, f) =
+            case String.fields (s, fn c => c = #":") of
+               [s] => f s
+             | [comp,s] => 
+                  let
+                     val comp = String.deleteSurroundingWhitespace comp
+                  in
+                     if String.equals (comp, "mlton")
+                        then f s
+                        else Other
+                  end
+             | _ => Bad
+      in
+         val parseId = fn s => checkPrefix (s, parseId)
+         val parseIdAndArgs = fn s => checkPrefix (s, parseIdAndArgs)
+      end
+
       val processDefault = fn s =>
          case parseIdAndArgs s of
             Bad => Bad
@@ -540,6 +558,7 @@ structure Elaborate =
                (alts, Deprecated (List.map (alts, #1)), fn ((_,args),res) =>
                 if Args.processDef args then res else Bad)
           | Good (_, args) => if Args.processDef args then Good () else Bad
+          | Other => Bad
 
       val processEnabled = fn (s, b) =>
          case parseId s of
@@ -549,6 +568,7 @@ structure Elaborate =
                (alts, Deprecated alts, fn (id,res) =>
                 if Id.setEnabled (id, b) then res else Bad)
           | Good id => if Id.setEnabled (id, b) then Good () else Bad
+          | Other => Bad
 
       val withDef : (unit -> 'a) -> 'a = fn f =>
          let

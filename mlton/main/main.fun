@@ -125,6 +125,8 @@ fun makeOptions {usage} =
                 concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
                         List.toString Control.Elaborate.Id.name ids, ".\n"])
           | Control.Elaborate.Good () => ()
+          | Control.Elaborate.Other =>
+               usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t

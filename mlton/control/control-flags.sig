@@ -94,7 +94,7 @@ signature CONTROL_FLAGS =
             val name: ('args, 'st) t -> string
 
             datatype ('a, 'b) parseResult =
-               Bad | Deprecated of 'a | Good of 'b
+               Bad | Deprecated of 'a | Good of 'b | Other
 
             structure Id :
                sig
