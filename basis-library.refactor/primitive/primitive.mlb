@@ -30,9 +30,10 @@ in
       ../config/choose.sml
    end end
    local ../config/bind-for-config0.sml in ann "forceUsed" in
-      ../config/c/misc/$(CTYPES)
       ../config/objptr/$(OBJPTR_REP)
+      ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
+      ../config/c/misc/$(CTYPES)
    end end
    prim-intinf.sml
    prim-seq.sml

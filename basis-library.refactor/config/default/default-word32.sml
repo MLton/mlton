@@ -8,12 +8,6 @@
 structure Word = Word32
 type word = Word.word
 
-functor WordAddToFromWord(type word
-                          val fromWord32 : Word32.word -> word
-                          val toWord32 : word -> Word32.word
-                          val toWord32X : word -> Word32.word) =
-   struct
-      val fromWord = fromWord32
-      val toWord = toWord32
-      val toWordX = toWord32X
-   end
+functor Word_ChooseWordN (A: CHOOSE_WORDN_ARG) :
+   sig val f : Word.word A.t end =
+   ChooseWordN_Word32 (A)

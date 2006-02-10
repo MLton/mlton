@@ -28,7 +28,7 @@ structure NullString8 :>
       type t = String8.string
  
       fun fromString s =
-         if #"\000" = Vector.sub (s, SeqIndex.- (Vector.length s, 1))
+         if #"\000" = Vector.subUnsafe (s, SeqIndex.- (Vector.length s, 1))
             then s
          else raise Exn.Fail8 "NullString.fromString"
 

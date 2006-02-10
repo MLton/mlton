@@ -24,16 +24,20 @@ signature INT_INF0 =
       val one: int
 
       val abs: int -> int
+      val +? : int * int -> int
       val + : int * int -> int
       val divMod: int * int -> int * int
       val div: int * int -> int
       val gcd: int * int -> int
       val mod: int * int -> int
+      val *? : int * int -> int
       val * : int * int -> int
+      val ~? : int -> int
       val ~ : int -> int
       val quotRem: int * int -> int * int
       val quot: int * int -> int
       val rem: int * int -> int
+      val -? : int * int -> int
       val - : int * int -> int
 
       val < : int * int -> bool
@@ -53,33 +57,39 @@ signature INT_INF0 =
 
       val toString8: int -> Primitive.String8.string
 
+      (* Sign extend. *)
       val fromInt8: Primitive.Int8.int -> int
       val fromInt16: Primitive.Int16.int -> int
       val fromInt32: Primitive.Int32.int -> int
       val fromInt64: Primitive.Int64.int -> int
       val fromIntInf: Primitive.IntInf.int -> int
 
+      (* Zero extend. *)
       val fromWord8: Primitive.Word8.word -> int
       val fromWord16: Primitive.Word16.word -> int
       val fromWord32: Primitive.Word32.word -> int
       val fromWord64: Primitive.Word64.word -> int
 
+      (* Sign extend. *)
       val fromWordX8: Primitive.Word8.word -> int
       val fromWordX16: Primitive.Word16.word -> int
       val fromWordX32: Primitive.Word32.word -> int
       val fromWordX64: Primitive.Word64.word -> int
 
+      (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
       val toInt16: int -> Primitive.Int16.int
       val toInt32: int -> Primitive.Int32.int
       val toInt64: int -> Primitive.Int64.int
       val toIntInf: int -> Primitive.IntInf.int
 
+      (* Lowbits. *)
       val toWord8: int -> Primitive.Word8.word
       val toWord16: int -> Primitive.Word16.word
       val toWord32: int -> Primitive.Word32.word
       val toWord64: int -> Primitive.Word64.word
 
+      (* Lowbits. *)
       val toWordX8: int -> Primitive.Word8.word
       val toWordX16: int -> Primitive.Word16.word
       val toWordX32: int -> Primitive.Word32.word
@@ -98,7 +108,43 @@ structure IntInf : INT_INF0 =
       structure V = Primitive.Vector
       structure S = SeqIndex
 
-      structure W = ObjptrWord
+      structure W = struct
+                       open ObjptrWord
+                       local
+                          structure S =
+                             ObjptrInt_ChooseIntN
+                             (type 'a t = 'a -> ObjptrWord.word
+                              val fInt8 = ObjptrWord.fromInt8
+                              val fInt16 = ObjptrWord.fromInt16
+                              val fInt32 = ObjptrWord.fromInt32
+                              val fInt64 = ObjptrWord.fromInt64)
+                       in
+                          val fromObjptrInt = S.f
+                       end
+                       local
+                          structure S =
+                             ObjptrInt_ChooseIntN
+                             (type 'a t = ObjptrWord.word -> 'a
+                              val fInt8 = ObjptrWord.toInt8
+                              val fInt16 = ObjptrWord.toInt16
+                              val fInt32 = ObjptrWord.toInt32
+                              val fInt64 = ObjptrWord.toInt64)
+                       in
+                          val toObjptrInt = S.f
+                       end
+                       local
+                          structure S =
+                             ObjptrInt_ChooseIntN
+                             (type 'a t = ObjptrWord.word -> 'a
+                              val fInt8 = ObjptrWord.toIntX8
+                              val fInt16 = ObjptrWord.toIntX16
+                              val fInt32 = ObjptrWord.toIntX32
+                              val fInt64 = ObjptrWord.toIntX64)
+                       in
+                          val toObjptrIntX = S.f
+                       end
+                    end
+
       structure I = ObjptrInt
       structure MPLimb = C_MPLimb
       structure Sz = struct 
@@ -142,10 +188,10 @@ structure IntInf : INT_INF0 =
 
       fun dropTag (w: W.word): W.word = W.~>> (w, 0w1)
       fun dropTagCoerce (i: bigInt): W.word = dropTag (Prim.toWord i)
-      fun dropTagCoerceInt (i: bigInt): I.int = W.toIntXEq (dropTagCoerce i)
+      fun dropTagCoerceInt (i: bigInt): I.int = W.toObjptrIntX (dropTagCoerce i)
       fun addTag (w: W.word): W.word = W.orb (W.<< (w, 0w1), 0w1)
       fun addTagCoerce (w: W.word): bigInt = Prim.fromWord (addTag w)
-      fun addTagCoerceInt (i: I.int): bigInt = addTagCoerce (W.fromIntEq i)
+      fun addTagCoerceInt (i: I.int): bigInt = addTagCoerce (W.fromObjptrInt i)
       fun zeroTag (w: W.word): W.word = W.andb (w, W.notb 0w1)
       fun oneTag (w: W.word): W.word = W.orb (w, 0w1)
       fun oneTagCoerce (w: W.word): bigInt = Prim.fromWord (oneTag w)
@@ -155,124 +201,111 @@ structure IntInf : INT_INF0 =
             then Small (dropTagCoerceInt i)
             else Big (Prim.toVector i)
 
-      fun 'a buildBigInt {toMPLimb: 'a -> MPLimb.word,
-                          other : {zero: 'a,
-                                   eq: 'a * 'a -> bool,
-                                   rshift: 'a * Word32.word -> 'a}} 
-                         (isneg, ans) =
-         let
-            fun loop (ans, i, acc) =
-               if (#eq other) (ans, (#zero other))
-                  then (i, acc)
-                  else let
-                          val limb = toMPLimb ans
-                          val ans = (#rshift other) (ans, MPLimb.wordSizeWord')
-                       in
-                          loop (ans, S.+ (i, 1), (i, limb) :: acc)
-                       end
-            val (n, acc) = loop (ans, 1, [(0, if isneg then 0w1 else 0w0)])
-            val a = A.array n
-            fun loop acc =
-               case acc of
-                  [] => ()
-                | (i, v) :: acc => (A.update (a, i, v)
-                                    ; loop acc)
-            val () = loop acc
-         in
-            Prim.fromVector (V.fromArray a)
-         end
-
       local
          fun 'a make {toMPLimb: 'a -> MPLimb.word,
                       toObjptrWord: 'a -> ObjptrWord.word,
-                      toObjptrWordX: 'a -> ObjptrWord.word,
-                      other : {precision': Int32.int,
+                      other : {wordSize': Int32.int,
                                zero: 'a,
-                               one: 'a,
-                               neg: 'a -> 'a,
                                eq: 'a * 'a -> bool,
-                               lt: 'a * 'a -> bool,
-                               rashift: 'a * Word32.word -> 'a,
-                               rshift: 'a * Word32.word -> 'a}} =
-            let
-               fun fromInt i =
-                  if Int32.> (ObjptrWord.wordSize', #precision' other)
-                     then Prim.fromWord (addTag (toObjptrWordX i))
-                     else let
-                             val upperBits =
-                                (#rashift other)
-                                (i, Word32.- (ObjptrWord.wordSizeWord', 0w2))
-                          in
-                             if (#eq other) (upperBits, #zero other)
-                                orelse (#eq other) (upperBits, (#neg other) (#one other))
-                                then Prim.fromWord (addTag (toObjptrWord i))
-                                else let
-                                        val (isneg, ans) = 
-                                           if (#lt other) (i, (#zero other))
-                                              then (true, (#neg other) i)
-                                              else (false, i)
-                                     in
-                                        buildBigInt 
-                                        {toMPLimb = toMPLimb,
-                                         other = {zero = #zero other,
-                                                  eq = #eq other,
-                                                  rshift = #rshift other}}
-                                        (isneg, ans)
-                                     end
-                          end
-            in
-               fromInt
-            end
+                               rshift: 'a * Word32.word -> 'a}} 
+                     (isneg, w) =
+            if Int32.> (ObjptrWord.wordSize', #wordSize' other)
+               orelse let
+                         val upperBits =
+                            (#rshift other)
+                            (w, Word32.- (ObjptrWord.wordSizeWord', 0w2))
+                      in
+                         (#eq other) (upperBits, #zero other)
+                      end
+               then let
+                       val ans = toObjptrWord w
+                       val ans = if isneg then ObjptrWord.~ ans else ans
+                    in 
+                       Prim.fromWord (addTag ans)
+                    end
+               else let
+                       fun loop (w, i, acc) =
+                          if (#eq other) (w, (#zero other))
+                             then (i, acc)
+                             else 
+                                let
+                                   val limb = toMPLimb w
+                                   val w = 
+                                      (#rshift other) 
+                                      (w, MPLimb.wordSizeWord')
+                                in
+                                   loop (w, S.+ (i, 1), (i, limb) :: acc)
+                                end
+                       val (n, acc) = 
+                          loop (w, 1, [(0, if isneg then 0w1 else 0w0)])
+                       val a = A.array n
+                       fun loop acc =
+                          case acc of
+                             [] => ()
+                           | (i, v) :: acc => (A.updateUnsafe (a, i, v)
+                                               ; loop acc)
+                       val () = loop acc
+                    in
+                       Prim.fromVector (V.fromArray a)
+                    end
       in
-         val fromInt8 =
-            make {toMPLimb = MPLimb.fromIntZ8,
-                  toObjptrWord = ObjptrWord.fromIntZ8,
-                  toObjptrWordX = ObjptrWord.fromInt8,
-                  other = {precision' = Int8.precision',
-                           zero = Int8.zero,
-                           one = Int8.one,
-                           neg = Int8.~,
-                           eq = ((op =) : Int8.int * Int8.int -> bool),
-                           lt = Int8.<,
-                           rashift = Int8.~>>,
-                           rshift = Int8.>>}}
-         val fromInt16 =
-            make {toMPLimb = MPLimb.fromIntZ16,
-                  toObjptrWord = ObjptrWord.fromIntZ16,
-                  toObjptrWordX = ObjptrWord.fromInt16,
-                  other = {precision' = Int16.precision',
-                           zero = Int16.zero,
-                           one = Int16.one,
-                           neg = Int16.~,
-                           eq = ((op =) : Int16.int * Int16.int -> bool),
-                           lt = Int16.<,
-                           rashift = Int16.~>>,
-                           rshift = Int16.>>}}
-         val fromInt32 =
-            make {toMPLimb = MPLimb.fromIntZ32,
-                  toObjptrWord = ObjptrWord.fromIntZ32,
-                  toObjptrWordX = ObjptrWord.fromInt32,
-                  other = {precision' = Int32.precision',
-                           zero = Int32.zero,
-                           one = Int32.one,
-                           neg = Int32.~,
-                           eq = ((op =) : Int32.int * Int32.int -> bool),
-                           lt = Int32.<,
-                           rashift = Int32.~>>,
-                           rshift = Int32.>>}}
-         val fromInt64 =
-            make {toMPLimb = MPLimb.fromIntZ64,
-                  toObjptrWord = ObjptrWord.fromIntZ64,
-                  toObjptrWordX = ObjptrWord.fromInt64,
-                  other = {precision' = Int64.precision',
-                           zero = Int64.zero,
-                           one = Int64.one,
-                           neg = Int64.~,
-                           eq = ((op =) : Int64.int * Int64.int -> bool),
-                           lt = Int64.<,
-                           rashift = Int64.~>>,
-                           rshift = Int64.>>}}
-         val fromIntInf = fn i => i
+         val fromWordAux8 =
+            make {toMPLimb = MPLimb.fromWord8,
+                  toObjptrWord = ObjptrWord.fromWord8,
+                  other = {wordSize' = Word8.wordSize',
+                           zero = Word8.zero,
+                           eq = ((op =) : Word8.word * Word8.word -> bool),
+                           rshift = Word8.>>}}
+         fun fromWord8 w = fromWordAux8 (false, w)
+         fun fromInt8 i =
+            if Int8.>= (i, 0)
+               then fromWordAux8 (false, Word8.fromInt8 i)
+               else fromWordAux8 (true, Word8.~ (Word8.fromInt8 i))
+         fun fromWordX8 w = fromInt8 (Word8.toIntX8 w)
+
+         val fromWordAux16 =
+            make {toMPLimb = MPLimb.fromWord16,
+                  toObjptrWord = ObjptrWord.fromWord16,
+                  other = {wordSize' = Word16.wordSize',
+                           zero = Word16.zero,
+                           eq = ((op =) : Word16.word * Word16.word -> bool),
+                           rshift = Word16.>>}}
+         fun fromWord16 w = fromWordAux16 (false, w)
+         fun fromInt16 i =
+            if Int16.>= (i, 0)
+               then fromWordAux16 (false, Word16.fromInt16 i)
+               else fromWordAux16 (true, Word16.~ (Word16.fromInt16 i))
+         fun fromWordX16 w = fromInt16 (Word16.toIntX16 w)
+
+         val fromWordAux32 =
+            make {toMPLimb = MPLimb.fromWord32,
+                  toObjptrWord = ObjptrWord.fromWord32,
+                  other = {wordSize' = Word32.wordSize',
+                           zero = Word32.zero,
+                           eq = ((op =) : Word32.word * Word32.word -> bool),
+                           rshift = Word32.>>}}
+         fun fromWord32 w = fromWordAux32 (false, w)
+         fun fromInt32 i =
+            if Int32.>= (i, 0)
+               then fromWordAux32 (false, Word32.fromInt32 i)
+               else fromWordAux32 (true, Word32.~ (Word32.fromInt32 i))
+         fun fromWordX32 w = fromInt32 (Word32.toIntX32 w)
+
+         val fromWordAux64 =
+            make {toMPLimb = MPLimb.fromWord64,
+                  toObjptrWord = ObjptrWord.fromWord64,
+                  other = {wordSize' = Word64.wordSize',
+                           zero = Word64.zero,
+                           eq = ((op =) : Word64.word * Word64.word -> bool),
+                           rshift = Word64.>>}}
+         fun fromWord64 w = fromWordAux64 (false, w)
+         fun fromInt64 i =
+            if Int64.>= (i, 0)
+               then fromWordAux64 (false, Word64.fromInt64 i)
+               else fromWordAux64 (true, Word64.~ (Word64.fromInt64 i))
+         fun fromWordX64 w = fromInt64 (Word64.toIntX64 w)
+
+         fun fromIntInf i = i
       end
 
       local
@@ -288,261 +321,183 @@ structure IntInf : INT_INF0 =
       end
 
       local
-         fun 'a make {toMPLimb: 'a -> MPLimb.word,
-                      toObjptrWord: 'a -> ObjptrWord.word,
+         datatype 'a ans =
+            Big of bool * bool * 'a
+          | Small of ObjptrWord.word
+         fun 'a make {fromMPLimb: MPLimb.word -> 'a,
                       other : {wordSize': Int32.int,
+                               wordSizeWord': Word32.word,
                                zero: 'a,
-                               one: 'a,
-                               eq: 'a * 'a -> bool,
-                               lt: 'a * 'a -> bool,
-                               rshift: 'a * Word32.word -> 'a}} =
-            let
-               fun fromWord w =
-                  if Int32.> (ObjptrWord.wordSize', #wordSize' other)
-                     then Prim.fromWord (addTag (toObjptrWord w))
-                     else let
-                             val upperBits =
-                                (#rshift other)
-                                (w, Word32.- (ObjptrWord.wordSizeWord', 0w2))
-                          in
-                             if (#eq other) (upperBits, #zero other)
-                                then Prim.fromWord (addTag (toObjptrWord w))
-                                else let
-                                        val ans = w
+                               lshift: 'a * Word32.word -> 'a,
+                               orb: 'a * 'a -> 'a}} i =
+            if isSmall i
+               then Small (dropTagCoerce i)
+               else let
+                       val v = Prim.toVector i
+                       val n = V.length v
+                       val isneg = V.subUnsafe (v, 0) <> 0w0
+                    in
+                       if Int32.>= (MPLimb.wordSize', #wordSize' other) 
+                          then let
+                                  val limbsPer = 1
+                                  val limb = V.subUnsafe (v, 1)
+                                  val extra =
+                                     S.> (n, S.+ (limbsPer, 1))
+                                     orelse
+                                     (MPLimb.>> (limb, #wordSizeWord' other)) <> 0w0
+                                  val ans = fromMPLimb limb
+                               in
+                                  Big (isneg, extra, ans)
+                               end
+                          else let
+                                  val limbsPer =
+                                     S.fromInt32 (Int32.quot (#wordSize' other, 
+                                                              MPLimb.wordSize'))
+                                  val extra =
+                                     S.> (n, S.+ (limbsPer, 1))
+                                  val ans =
+                                     let
+                                        fun loop (i, ans) =
+                                           if S.> (i, 0)
+                                              then let
+                                                      val limb = V.subUnsafe (v, i)
+                                                      val ans = 
+                                                         (#orb other) 
+                                                         ((#lshift other) 
+                                                          (ans, MPLimb.wordSizeWord'),
+                                                          fromMPLimb limb)
+                                                   in
+                                                      loop (S.- (i, 1), ans)
+                                                   end
+                                              else ans
                                      in
-                                        buildBigInt 
-                                        {toMPLimb = toMPLimb,
-                                         other = {zero = #zero other,
-                                                  eq = #eq other,
-                                                  rshift = #rshift other}}
-                                        (false, ans)
+                                        loop (S.min (S.- (n, 1), limbsPer), #zero other)
                                      end
-                          end
-            in
-               fromWord
-            end
+                               in
+                                  Big (isneg, extra, ans)
+                               end
+                    end
       in
-         val fromWord8 =
-            make {toMPLimb = MPLimb.fromWord8,
-                  toObjptrWord = ObjptrWord.fromWord8,
-                  other = {wordSize' = Word8.wordSize',
-                           zero = Word8.zero,
-                           one = Word8.one,
-                           eq = ((op =) : Word8.word * Word8.word -> bool),
-                           lt = Word8.<,
-                           rshift = Word8.>>}}
-         val fromWord16 =
-            make {toMPLimb = MPLimb.fromWord16,
-                  toObjptrWord = ObjptrWord.fromWord16,
-                  other = {wordSize' = Word16.wordSize',
-                           zero = Word16.zero,
-                           one = Word16.one,
-                           eq = ((op =) : Word16.word * Word16.word -> bool),
-                           lt = Word16.<,
-                           rshift = Word16.>>}}
-         val fromWord32 =
-            make {toMPLimb = MPLimb.fromWord32,
-                  toObjptrWord = ObjptrWord.fromWord32,
-                  other = {wordSize' = Word32.wordSize',
-                           zero = Word32.zero,
-                           one = Word32.one,
-                           eq = ((op =) : Word32.word * Word32.word -> bool),
-                           lt = Word32.<,
-                           rshift = Word32.>>}}
-         val fromWord64 =
-            make {toMPLimb = MPLimb.fromWord64,
-                  toObjptrWord = ObjptrWord.fromWord64,
-                  other = {wordSize' = Word64.wordSize',
-                           zero = Word64.zero,
-                           one = Word64.one,
-                           eq = ((op =) : Word64.word * Word64.word -> bool),
-                           lt = Word64.<,
-                           rshift = Word64.>>}}
-      end
-
-      val fromWordX8 : Word8.word -> bigInt =
-         fn w => fromInt8 (Int8.fromWordX8 w)
-      val fromWordX16 : Word16.word -> bigInt =
-         fn w => fromInt16 (Int16.fromWordX16 w)
-      val fromWordX32 : Word32.word -> bigInt =
-         fn w => fromInt32 (Int32.fromWordX32 w)
-      val fromWordX64 : Word64.word -> bigInt =
-         fn w => fromInt64 (Int64.fromWordX64 w)
-
-      local
-         fun 'a make {fromMPLimb: MPLimb.word -> 'a,
-                      fromObjptrWordX: ObjptrWord.word -> 'a, 
-                      other : {precision': Int32.int,
-                               zero: 'a,
-                               lshift: 'a * Word32.word -> 'a,
-                               neg: 'a -> 'a,
-                               orb: 'a * 'a -> 'a}} =
-            let
-               val limbsPer =
-                  if Int32.>= (MPLimb.wordSize', #precision' other)
-                     then 1
-                     else S.fromInt32 (Int32.quot (#precision' other, MPLimb.wordSize'))
-               fun toInt i =
-                  if isSmall i
-                     then fromObjptrWordX (dropTagCoerce i)
-                     else if Int32.> (ObjptrWord.wordSize', #precision' other)
-                             then raise Overflow
-                             else 
-                             let
-                                val v = Prim.toVector i
-                                val n = V.length v
-                                val isneg = V.sub (v, 0) <> 0w0
-                                val ans =
-                                   if S.> (S.- (n, 1), limbsPer)
-                                      then raise Overflow
-                                   else if Int32.>= (MPLimb.wordSize', #precision' other)
-                                      then fromMPLimb (V.sub (v, 1))
-                                   else 
-                                   let
-                                      fun loop (i, ans) =
-                                         if S.> (i, 0)
-                                            then let
-                                                    val ans = 
-                                                       (#orb other) 
-                                                       ((#lshift other) 
-                                                        (ans, MPLimb.wordSizeWord'),
-                                                        fromMPLimb (V.sub (v, i)))
-                                                 in
-                                                    loop (S.- (i, 1), ans)
-                                                 end
-                                            else ans
-                                   in
-                                      loop (S.- (n, 1), #zero other)
-                                   end
-                             in
-                                if isneg then (#neg other) ans else ans
-                             end
-            in
-               toInt
-            end
-      in
-         val toInt8 =
-            make {fromMPLimb = MPLimb.toInt8,
-                  fromObjptrWordX = ObjptrWord.toIntX8,
-                  other = {precision' = Int8.precision',
-                           zero = Int8.zero,
-                           lshift = Int8.<<,
-                           neg = Int8.~,
-                           orb = Int8.orb}}
-         val toInt16 =
-            make {fromMPLimb = MPLimb.toInt16,
-                  fromObjptrWordX = ObjptrWord.toIntX16,
-                  other = {precision' = Int16.precision',
-                           zero = Int16.zero,
-                           lshift = Int16.<<,
-                           neg = Int16.~,
-                           orb = Int16.orb}}
-         val toInt32 =
-            make {fromMPLimb = MPLimb.toInt32,
-                  fromObjptrWordX = ObjptrWord.toIntX32,
-                  other = {precision' = Int32.precision',
-                           zero = Int32.zero,
-                           lshift = Int32.<<,
-                           neg = Int32.~,
-                           orb = Int32.orb}}
-         val toInt64 =
-            make {fromMPLimb = MPLimb.toInt64,
-                  fromObjptrWordX = ObjptrWord.toIntX64,
-                  other = {precision' = Int64.precision',
-                           zero = Int64.zero,
-                           lshift = Int64.<<,
-                           neg = Int64.~,
-                           orb = Int64.orb}}
-         val toIntInf = fn i => i
-      end
-
-      local
-         fun 'a make {fromMPLimb: MPLimb.word -> 'a,
-                      fromObjptrWordX: ObjptrWord.word -> 'a, 
-                      other : {wordSize': Int32.int,
-                               zero: 'a,
-                               lshift: 'a * Word32.word -> 'a,
-                               neg: 'a -> 'a,
-                               orb: 'a * 'a -> 'a}} = 
-            let
-               val limbsPer =
-                  if Int32.>= (MPLimb.wordSize', #wordSize' other)
-                     then 1
-                     else S.fromInt32 (Int32.quot (#wordSize' other, MPLimb.wordSize'))
-               fun toWord i =
-                  if isSmall i
-                     then fromObjptrWordX (dropTagCoerce i)
-                     else let
-                             val v = Prim.toVector i
-                             val n = V.length v
-                             val isneg = V.sub (v, 0) <> 0w0
-                             val ans =
-                                let
-                                   fun loop (i, ans) =
-                                      if S.> (i, 0)
-                                         then let
-                                                 val ans = 
-                                                    (#orb other) 
-                                                    ((#lshift other) 
-                                                     (ans, MPLimb.wordSizeWord'),
-                                                     fromMPLimb (V.sub (v, i)))
-                                              in
-                                                 loop (S.- (i, 1), ans)
-                                              end
-                                         else ans
-                                in
-                                   loop (S.min (S.- (n, 1), limbsPer), #zero other)
-                                end
-                          in
-                             if isneg then (#neg other) ans else ans
-                          end
-            in
-               toWord
-            end
-      in
-         val toWord8 =
+         val toWordAux8 =
             make {fromMPLimb = MPLimb.toWord8,
-                  fromObjptrWordX = ObjptrWord.toWordX8,
                   other = {wordSize' = Word8.wordSize',
+                           wordSizeWord' = Word8.wordSizeWord',
                            zero = Word8.zero,
                            lshift = Word8.<<,
-                           neg = Word8.~,
                            orb = Word8.orb}}
-         val toWordX8 = toWord8
-         val toWord16 =
+         fun toWordX8 i =
+            case toWordAux8 i of
+               Small w => ObjptrWord.toWordX8 w
+             | Big (isneg, _, ans) => if isneg then Word8.~ ans else ans
+         fun toWord8 i = toWordX8 i
+         fun toInt8 i =
+            case toWordAux8 i of
+               Small w => ObjptrWord.toIntX8 w
+             | Big (isneg, extra, ans) =>
+                  if extra
+                     then raise Overflow
+                  else if isneg
+                     then let
+                             val ans = Word8.toIntX8 (Word8.~ ans)
+                          in
+                             if Int8.>= (ans, 0)
+                                then raise Overflow
+                                else ans
+                          end
+                  else Word8.toInt8 ans
+
+         val toWordAux16 =
             make {fromMPLimb = MPLimb.toWord16,
-                  fromObjptrWordX = ObjptrWord.toWordX16,
                   other = {wordSize' = Word16.wordSize',
+                           wordSizeWord' = Word16.wordSizeWord',
                            zero = Word16.zero,
                            lshift = Word16.<<,
-                           neg = Word16.~,
                            orb = Word16.orb}}
-         val toWordX16 = toWord16
-         val toWord32 =
+         fun toWordX16 i =
+            case toWordAux16 i of
+               Small w => ObjptrWord.toWordX16 w
+             | Big (isneg, _, ans) => if isneg then Word16.~ ans else ans
+         fun toWord16 i = toWordX16 i
+         fun toInt16 i =
+            case toWordAux16 i of
+               Small w => ObjptrWord.toIntX16 w
+             | Big (isneg, extra, ans) =>
+                  if extra
+                     then raise Overflow
+                  else if isneg
+                     then let
+                             val ans = Word16.toIntX16 (Word16.~ ans)
+                          in
+                             if Int16.>= (ans, 0)
+                                then raise Overflow
+                                else ans
+                          end
+                  else Word16.toInt16 ans
+                           
+         val toWordAux32 =
             make {fromMPLimb = MPLimb.toWord32,
-                  fromObjptrWordX = ObjptrWord.toWordX32,
                   other = {wordSize' = Word32.wordSize',
+                           wordSizeWord' = Word32.wordSizeWord',
                            zero = Word32.zero,
                            lshift = Word32.<<,
-                           neg = Word32.~,
                            orb = Word32.orb}}
-         val toWordX32 = toWord32
-         val toWord64 =
+         fun toWordX32 i =
+            case toWordAux32 i of
+               Small w => ObjptrWord.toWordX32 w
+             | Big (isneg, _, ans) => if isneg then Word32.~ ans else ans
+         fun toWord32 i = toWordX32 i
+         fun toInt32 i =
+            case toWordAux32 i of
+               Small w => ObjptrWord.toIntX32 w
+             | Big (isneg, extra, ans) =>
+                  if extra
+                     then raise Overflow
+                  else if isneg
+                     then let
+                             val ans = Word32.toIntX32 (Word32.~ ans)
+                          in
+                             if Int32.>= (ans, 0)
+                                then raise Overflow
+                                else ans
+                          end
+                  else Word32.toInt32 ans
+
+         val toWordAux64 =
             make {fromMPLimb = MPLimb.toWord64,
-                  fromObjptrWordX = ObjptrWord.toWordX64,
                   other = {wordSize' = Word64.wordSize',
+                           wordSizeWord' = Word64.wordSizeWord',
                            zero = Word64.zero,
                            lshift = Word64.<<,
-                           neg = Word64.~,
                            orb = Word64.orb}}
-         val toWordX64 = toWord64
+         fun toWordX64 i =
+            case toWordAux64 i of
+               Small w => ObjptrWord.toWordX64 w
+             | Big (isneg, _, ans) => if isneg then Word64.~ ans else ans
+         fun toWord64 i = toWordX64 i
+         fun toInt64 i =
+            case toWordAux64 i of
+               Small w => ObjptrWord.toIntX64 w
+             | Big (isneg, extra, ans) =>
+                  if extra
+                     then raise Overflow
+                  else if isneg
+                     then let
+                             val ans = Word64.toIntX64 (Word64.~ ans)
+                          in
+                             if Int64.>= (ans, 0)
+                                then raise Overflow
+                                else ans
+                          end
+                  else Word64.toInt64 ans
+
+         fun toIntInf i = i
       end
 
       local
          val bytesPerMPLimb = Sz.fromInt32 (Int32.quot (MPLimb.wordSize', 8))
          val bytesPerCounter = Sz.fromInt32 (Int32.quot (S.precision', 8))
          val bytesPerLength = Sz.fromInt32 (Int32.quot (S.precision', 8))
-         val bytesPerHeader = Sz.fromInt32 4
+         val bytesPerHeader = Sz.fromInt32 (Int32.quot (HeaderWord.wordSize', 8))
       in
          val bytesPerArrayHeader =
             Sz.+ (bytesPerCounter, Sz.+ (bytesPerLength, bytesPerHeader))
@@ -563,20 +518,20 @@ structure IntInf : INT_INF0 =
        * negBadIntInf is the negation (and absolute value) of that IntInf.int.
        *)
       val badObjptrInt: I.int = I.~>> (I.minInt', 0w1)
-      val badObjptrWord: W.word = W.fromIntEq badObjptrInt
+      val badObjptrWord: W.word = W.fromObjptrInt badObjptrInt
       val badObjptrWordTagged: W.word = addTag badObjptrWord
-      val badObjptrIntTagged: I.int = W.toIntXEq badObjptrWordTagged
+      val badObjptrIntTagged: I.int = W.toObjptrIntX badObjptrWordTagged
       val negBadIntInf: bigInt = fromObjptrInt (I.~ badObjptrInt)
 
       (* Given two ObjptrWord.word's, check if they have the same `high'/'sign' bit.
        *)
       fun sameSignBit (lhs: W.word, rhs: W.word): bool =
-         I.>= (W.toIntXEq (W.xorb (lhs, rhs)), 0)
+         I.>= (W.toObjptrIntX (W.xorb (lhs, rhs)), 0)
 
       (* Given a bignum bigint, test if it is (strictly) negative.
        *)
       fun bigIsNeg (arg: bigInt): bool =
-         V.sub (Prim.toVector arg, 0) <> 0w0
+         V.subUnsafe (Prim.toVector arg, 0) <> 0w0
 
       local
          fun make (smallOp, bigOp, limbsFn, extra)
@@ -586,11 +541,11 @@ structure IntInf : INT_INF0 =
                   if areSmall (lhs, rhs)
                      then let
                              val lhsw = dropTagCoerce lhs
-                             val lhsi = W.toIntXEq lhsw
+                             val lhsi = W.toObjptrIntX lhsw
                              val rhsw = dropTagCoerce rhs
-                             val rhsi = W.toIntXEq rhsw
+                             val rhsi = W.toObjptrIntX rhsw
                              val ansi = smallOp (lhsi, rhsi)
-                             val answ = W.fromIntEq ansi
+                             val answ = W.fromObjptrInt ansi
                              val ans = addTag answ
                           in
                              if sameSignBit (ans, answ)
@@ -626,16 +581,16 @@ structure IntInf : INT_INF0 =
          if areSmall (num, den)
             then let
                     val numw = dropTagCoerce num
-                    val numi = W.toIntXEq numw
+                    val numi = W.toObjptrIntX numw
                     val denw = dropTagCoerce den
-                    val deni = W.toIntXEq numw
+                    val deni = W.toObjptrIntX numw
                  in
                     if numw = badObjptrWord 
                        andalso deni = ~1
                        then negBadIntInf
                        else let
                                val ansi = I.quot (numi, deni)
-                               val answ = W.fromIntEq ansi
+                               val answ = W.fromObjptrInt ansi
                                val ans = addTag answ
                             in 
                                Prim.fromWord ans
@@ -650,18 +605,18 @@ structure IntInf : INT_INF0 =
                        else if den = zero
                                then raise Div
                                else Prim.quot (num, den, 
-                                               reserve (S.- (nlimbs, dlimbs), 1))
+                                               reserve (S.- (nlimbs, dlimbs), 2))
                  end
 
       fun bigRem (num: bigInt, den: bigInt): bigInt =
          if areSmall (num, den)
             then let 
                     val numw = dropTagCoerce num
-                    val numi = W.toIntXEq numw
+                    val numi = W.toObjptrIntX numw
                     val denw = dropTagCoerce den
-                    val deni = W.toIntXEq numw
+                    val deni = W.toObjptrIntX numw
                     val ansi = I.rem (numi, deni)
-                    val answ = W.fromIntEq ansi
+                    val answ = W.fromObjptrInt ansi
                     val ans = addTag answ
                  in 
                     Prim.fromWord ans
@@ -727,16 +682,16 @@ structure IntInf : INT_INF0 =
 
       fun bigCompare (lhs: bigInt, rhs: bigInt): order =
          if areSmall (lhs, rhs)
-            then I.compare (W.toIntXEq (Prim.toWord lhs),
-                            W.toIntXEq (Prim.toWord rhs))
+            then I.compare (W.toObjptrIntX (Prim.toWord lhs),
+                            W.toObjptrIntX (Prim.toWord rhs))
             else Int32.compare (Prim.compare (lhs, rhs), 0)
 
       local
          fun make (smallTest, int32Test)
                   (lhs: bigInt, rhs: bigInt): bool =
             if areSmall (lhs, rhs)
-               then smallTest (W.toIntXEq (Prim.toWord lhs),
-                               W.toIntXEq (Prim.toWord rhs))
+               then smallTest (W.toObjptrIntX (Prim.toWord lhs),
+                               W.toObjptrIntX (Prim.toWord rhs))
                else int32Test (Prim.compare (lhs, rhs), 0)
       in
          val bigLT = make (I.<, Int32.<)
@@ -752,7 +707,7 @@ structure IntInf : INT_INF0 =
                  in 
                     if argw = badObjptrWordTagged
                        then negBadIntInf
-                       else if I.< (W.toIntXEq argw, 0)
+                       else if I.< (W.toObjptrIntX argw, 0)
                                then Prim.fromWord (W.- (0w2, argw))
                                else arg
                  end
@@ -872,16 +827,20 @@ structure IntInf : INT_INF0 =
       val minInt = NONE
 
       val abs = bigAbs
+      val op +? = bigAdd
       val op + = bigAdd
       val divMod = bigDivMod
       val op div = bigDiv
       val gcd = bigGcd
       val op mod = bigMod
+      val op *? = bigMul
       val op * = bigMul
+      val op ~? = bigNeg
       val op ~ = bigNeg
       val quotRem = bigQuotRem
       val quot = bigQuot
       val rem = bigRem
+      val op -? = bigSub
       val op - = bigSub
 
       val op < = bigLT

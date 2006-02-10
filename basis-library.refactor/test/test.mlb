@@ -1,3 +1,5 @@
 
 ../build/sources.mlb
-test.sml
+ann "allowFFI true" in
+   test.sml
+end

@@ -20,19 +20,24 @@ clean:
 	../bin/clean
 
 
+OBJPTR_REP_MAPS = objptr-rep32.map
+HEADER_MAPS = header-word32.map
+SEQ_INDEX_MAPS = seqindex-int32.map
 CTYPES_MAPS = c-types.m32.map
 DEFAULT_CHAR_MAPS = default-char8.map
 DEFAULT_INT_MAPS = default-int32.map default-int64.map default-intinf.map 
 DEFAULT_WORD_MAPS = default-word32.map default-word64.map
-OBJPTR_REP_MAPS = objptr-rep32.map
-SEQ_INDEX_MAPS = seq-index32.map
 
-test: test.mlb $(shell $(MLTON) -mlb-path-map "../maps/c-types.m32.map" -mlb-path-map "../maps/default-char8.map" -mlb-path-map "../maps/default-int32.map" -mlb-path-map "../maps/default-word32.map" -mlb-path-map "../maps/objptr-rep32.map" -mlb-path-map "../maps/seq-index32.map" -stop f test.mlb)
+test: test.mlb print.o $(shell $(MLTON) -mlb-path-map "../maps/header-word32.map" -mlb-path-map "../maps/objptr-rep32.map" -mlb-path-map "../maps/seqindex-int32.map" -mlb-path-map "../maps/c-types.m32.map" -mlb-path-map "../maps/default-char8.map" -mlb-path-map "../maps/default-int32.map" -mlb-path-map "../maps/default-word32.map" -stop f test.mlb)
 	$(MLTON) \
+		-mlb-path-map "../maps/header-word32.map" \
+		-mlb-path-map "../maps/objptr-rep32.map" \
+		-mlb-path-map "../maps/seqindex-int32.map" \
 		-mlb-path-map "../maps/c-types.m32.map" \
 		-mlb-path-map "../maps/default-char8.map" \
 		-mlb-path-map "../maps/default-int32.map" \
 		-mlb-path-map "../maps/default-word32.map" \
-		-mlb-path-map "../maps/objptr-rep32.map" \
-		-mlb-path-map "../maps/seq-index32.map" \
-		test.mlb
+		test.mlb print.o
+
+print.o: print.c
+	gcc -m32 -c print.c

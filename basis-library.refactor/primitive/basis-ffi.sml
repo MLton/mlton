@@ -983,6 +983,8 @@ end
 structure Stdio = 
 struct
 val print = _import "Stdio_print" : String8.t -> unit;
+val printStderr = _import "Stdio_printStderr" : String8.t -> unit;
+val printStdout = _import "Stdio_printStdout" : String8.t -> unit;
 end
 structure Time = 
 struct

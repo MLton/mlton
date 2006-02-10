@@ -24,45 +24,49 @@ signature WORD0 =
       val ror : word * Primitive.Word32.word -> word
       val ~>> : word * Primitive.Word32.word -> word
 
+      (* Lowbits or sign extend. *)
       val fromInt8: Primitive.Int8.int -> word
       val fromInt16: Primitive.Int16.int -> word
       val fromInt32: Primitive.Int32.int -> word
       val fromInt64: Primitive.Int64.int -> word
-      val fromIntEq: intEq -> word
-         
+
+      (* Lowbits or zero extend. *)
       val fromIntZ8: Primitive.Int8.int -> word
       val fromIntZ16: Primitive.Int16.int -> word
       val fromIntZ32: Primitive.Int32.int -> word
       val fromIntZ64: Primitive.Int64.int -> word
-      val fromIntZEq: intEq -> word
 
+      (* Lowbits or zero extend. *)
       val fromWord8: Primitive.Word8.word -> word
       val fromWord16: Primitive.Word16.word -> word
       val fromWord32: Primitive.Word32.word -> word
       val fromWord64: Primitive.Word64.word -> word
          
+      (* Lowbits or sign extend. *)
       val fromWordX8: Primitive.Word8.word -> word
       val fromWordX16: Primitive.Word16.word -> word
       val fromWordX32: Primitive.Word32.word -> word
       val fromWordX64: Primitive.Word64.word -> word
 
+      (* Overflow checking, unsigned interp. *)
       val toInt8: word -> Primitive.Int8.int
       val toInt16: word -> Primitive.Int16.int
       val toInt32: word -> Primitive.Int32.int
       val toInt64: word -> Primitive.Int64.int
-      val toIntEq: word -> intEq
-         
+
+      (* Overflow checking, signed interp. *)
       val toIntX8: word -> Primitive.Int8.int
       val toIntX16: word -> Primitive.Int16.int
       val toIntX32: word -> Primitive.Int32.int
       val toIntX64: word -> Primitive.Int64.int   
-      val toIntXEq: word -> intEq
 
+      (* Lowbits or zero extend. *)
       val toWord8: word -> Primitive.Word8.word
       val toWord16: word -> Primitive.Word16.word
       val toWord32: word -> Primitive.Word32.word
       val toWord64: word -> Primitive.Word64.word
-         
+
+      (* Lowbits or sign extend. *)
       val toWordX8: word -> Primitive.Word8.word
       val toWordX16: word -> Primitive.Word16.word
       val toWordX32: word -> Primitive.Word32.word
@@ -180,15 +184,6 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
                   other = {precision' = Primitive.Int64.precision',
                            maxInt' = Primitive.Int64.maxInt',
                            minInt' = Primitive.Int64.minInt'}}
-         val (fromIntEq, fromIntZEq, toIntEq, toIntXEq) =
-            (fromIntEqUnsafe, 
-             fromIntZEqUnsafe,
-             fn w =>
-             if detectOverflow
-                andalso w > (>> (notb zero, 0w1))
-                then raise Overflow
-                else toIntEqUnsafe w,
-                   toIntXEqUnsafe)
       end
 
       val (fromWord8, fromWordX8, toWord8, toWordX8) =

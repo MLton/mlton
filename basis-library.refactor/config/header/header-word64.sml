@@ -5,9 +5,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Word = Word64
-type word = Word.word
+structure HeaderWord = Word64
 
-functor Word_ChooseWordN (A: CHOOSE_WORDN_ARG) :
-   sig val f : Word.word A.t end =
+functor HeaderWord_ChooseWordN (A: CHOOSE_WORDN_ARG) :
+   sig val f : HeaderWord.word A.t end = 
    ChooseWordN_Word64 (A)

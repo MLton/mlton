@@ -34,31 +34,37 @@ signature INTEGER0 =
       val sign': int -> Primitive.Int32.int
       val sameSign: int * int -> bool
 
+      (* Overflow checking, signed interp. *)
       val fromInt8: Primitive.Int8.int -> int
       val fromInt16: Primitive.Int16.int -> int
       val fromInt32: Primitive.Int32.int -> int
       val fromInt64: Primitive.Int64.int -> int
 
+      (* Overflow checking, unsigned interp. *)
       val fromWord8: Primitive.Word8.word -> int
       val fromWord16: Primitive.Word16.word -> int
       val fromWord32: Primitive.Word32.word -> int
       val fromWord64: Primitive.Word64.word -> int
 
+      (* Overflow checking, signed interp. *)
       val fromWordX8: Primitive.Word8.word -> int
       val fromWordX16: Primitive.Word16.word -> int
       val fromWordX32: Primitive.Word32.word -> int
       val fromWordX64: Primitive.Word64.word -> int
 
+      (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
       val toInt16: int -> Primitive.Int16.int
       val toInt32: int -> Primitive.Int32.int
       val toInt64: int -> Primitive.Int64.int
 
+      (* Lowbits or zero extend. *)
       val toWord8: int -> Primitive.Word8.word
       val toWord16: int -> Primitive.Word16.word
       val toWord32: int -> Primitive.Word32.word
       val toWord64: int -> Primitive.Word64.word
 
+      (* Lowbits or sign extend. *)
       val toWordX8: int -> Primitive.Word8.word
       val toWordX16: int -> Primitive.Word16.word
       val toWordX32: int -> Primitive.Word32.word

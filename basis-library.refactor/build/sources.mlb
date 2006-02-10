@@ -20,9 +20,10 @@ in
    ../integer/int0.sml
    ../integer/word0.sml
    local ../config/bind-for-config0.sml in ann "forceUsed" in
-      ../config/c/misc/$(CTYPES)
       ../config/objptr/$(OBJPTR_REP)
+      ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
+      ../config/c/misc/$(CTYPES)
    end end
    ../integer/int-inf0.sml
    local ../config/bind-for-config0.sml in ann "forceUsed" in
@@ -31,9 +32,10 @@ in
       ../config/default/$(DEFAULT_WORD)
    end end
    local ../config/bind-for-config0.sml in ann "forceUsed" in
-      ../config/c/misc/$(CTYPES)
       ../config/objptr/$(OBJPTR_REP)
+      ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
+      ../config/c/misc/$(CTYPES)
    end end
 
 (*
