@@ -16,10 +16,6 @@ structure Array =
    struct
       open Array
       val arrayUnsafe = _prim "Array_array": SeqIndex.int -> 'a array;
-      fun array n =
-         if Controls.safe andalso SeqIndex.< (n, 0)
-            then raise Exn.Size
-            else arrayUnsafe n
       val array0Const = _prim "Array_array0Const": unit -> 'a array;
       val length = _prim "Array_length": 'a array -> SeqIndex.int;
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)

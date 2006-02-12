@@ -238,7 +238,7 @@ structure IntInf : INT_INF0 =
                                 end
                        val (n, acc) = 
                           loop (w, 1, [(0, if isneg then 0w1 else 0w0)])
-                       val a = A.array n
+                       val a = A.arrayUnsafe n
                        fun loop acc =
                           case acc of
                              [] => ()

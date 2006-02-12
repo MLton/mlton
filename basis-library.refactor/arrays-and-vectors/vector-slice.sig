@@ -5,7 +5,6 @@ structure Vector =
 
 signature VECTOR_SLICE_GLOBAL =
    sig
-
    end
 
 signature VECTOR_SLICE =
@@ -43,8 +42,11 @@ signature VECTOR_SLICE_EXTRA =
    sig
       include VECTOR_SLICE
 
+      val unsafeSub': 'a slice * SeqIndex.int -> 'a
       val unsafeSub: 'a slice * int -> 'a
+      val unsafeSlice': 'a Vector.vector * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSlice: 'a Vector.vector * int * int option -> 'a slice
+      val unsafeSubslice': 'a slice * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
 
       (* Used to implement Substring/String functions *)

@@ -48,7 +48,6 @@ end
 (* Install an emergency suffix. *)
 local
    structure P = Primitive
-   structure PFFI = PrimitiveFFI
    val _ =
       P.TopLevel.setSuffix
       (fn () => 
