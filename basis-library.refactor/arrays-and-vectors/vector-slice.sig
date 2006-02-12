@@ -26,10 +26,10 @@ signature VECTOR_SLICE =
       val appi: (int * 'a -> unit) -> 'a slice -> unit
       val app: ('a -> unit) -> 'a slice -> unit
       val mapi: (int * 'a -> 'b) -> 'a slice -> 'b Vector.vector
-      val map: ('a -> 'b) -> 'a slice -> 'b Vector.vector
+      val map: ('a -> 'b) -> 'a slice -> 'b Vector.vector 
       val foldli: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-      val foldri: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val foldl: ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+      val foldri: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val foldr: ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val findi: (int * 'a -> bool) -> 'a slice -> (int * 'a) option
       val find: ('a -> bool) -> 'a slice -> 'a option

@@ -69,8 +69,6 @@ structure Array: ARRAY_EXTRA =
             end
          end
 
-      val array = new
-
       local
         fun make f arr = f (ArraySlice.full arr)
       in
@@ -84,7 +82,14 @@ structure Array: ARRAY_EXTRA =
                                                          dst = dst, di = di}
       end
 
+      val arrayUninit' = newUninit'
+      val arrayUninit = newUninit
+      val array' = new'
+      val array = new
+
+      fun update' (arr, i, x) = updateMk' Primitive.Array.updateUnsafe (arr, i, x)
       fun update (arr, i, x) = updateMk Primitive.Array.updateUnsafe (arr, i, x)
+      fun unsafeUpdate' (arr, i, x) = unsafeUpdateMk' Primitive.Array.updateUnsafe (arr, i, x)
       fun unsafeUpdate (arr, i, x) = unsafeUpdateMk Primitive.Array.updateUnsafe (arr, i, x)
    end
 structure ArraySlice: ARRAY_SLICE_EXTRA = Array.ArraySlice

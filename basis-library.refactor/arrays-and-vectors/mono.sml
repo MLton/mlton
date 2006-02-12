@@ -44,7 +44,7 @@ functor Mono (type elem) =
    end
 
 local
-   structure S = EqMono (type elem = Bool.bool)
+   structure S = EqMono (type elem = Primitive.Bool.bool)
    open S
 in
    structure BoolVector = Vector
@@ -54,22 +54,7 @@ in
    structure BoolArray2 = Array2
 end
 local
-   structure S:>
-      EQ_MONO
-      where type Array.elem = char
-      where type Vector.vector = string
-      = EqMono (type elem = char)
-   open S
-in
-   structure CharArray = Array
-   structure CharArray2 = Array2
-   structure CharArraySlice = ArraySlice
-   structure CharVector = Vector
-   structure CharVectorSlice = VectorSlice
-   val _ = CharVector.fromArray: CharArray.array -> CharVector.vector
-end
-local
-   structure S = EqMono (type elem = Int8.int)
+   structure S = EqMono (type elem = Primitive.Int8.int)
    open S
 in
    structure Int8Vector = Vector
@@ -79,7 +64,7 @@ in
    structure Int8Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Int16.int)
+   structure S = EqMono (type elem = Primitive.Int16.int)
    open S
 in
    structure Int16Vector = Vector
@@ -89,7 +74,7 @@ in
    structure Int16Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Int32.int)
+   structure S = EqMono (type elem = Primitive.Int32.int)
    open S
 in
    structure Int32Vector = Vector
@@ -99,7 +84,7 @@ in
    structure Int32Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Int64.int)
+   structure S = EqMono (type elem = Primitive.Int64.int)
    open S
 in
    structure Int64Vector = Vector
@@ -109,7 +94,7 @@ in
    structure Int64Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = IntInf.int)
+   structure S = EqMono (type elem = Primitive.IntInf.int)
    open S
 in
    structure IntInfVector = Vector
@@ -119,7 +104,7 @@ in
    structure IntInfArray2 = Array2
 end
 local
-   structure S = Mono (type elem = Real32.real)
+   structure S = Mono (type elem = Primitive.Real32.real)
    open S
 in
    structure Real32Vector = Vector
@@ -129,7 +114,7 @@ in
    structure Real32Array2 = Array2
 end
 local
-   structure S = Mono (type elem = Real64.real)
+   structure S = Mono (type elem = Primitive.Real64.real)
    open S
 in
    structure Real64Vector = Vector
@@ -139,10 +124,7 @@ in
    structure Real64Array2 = Array2
 end
 local
-   structure S:>
-      EQ_MONO
-      where type Array.elem = Word8.word
-      = EqMono (type elem = Word8.word)
+   structure S = EqMono (type elem = Primitive.Word8.word)
    open S
 in
    structure Word8Vector = Vector
@@ -152,7 +134,7 @@ in
    structure Word8Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Word16.word)
+   structure S = EqMono (type elem = Primitive.Word16.word)
    open S
 in
    structure Word16Vector = Vector
@@ -162,7 +144,7 @@ in
    structure Word16Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Word32.word)
+   structure S = EqMono (type elem = Primitive.Word32.word)
    open S
 in
    structure Word32Vector = Vector
@@ -172,7 +154,7 @@ in
    structure Word32Array2 = Array2
 end
 local
-   structure S = EqMono (type elem = Word64.word)
+   structure S = EqMono (type elem = Primitive.Word64.word)
    open S
 in
    structure Word64Vector = Vector
@@ -182,38 +164,74 @@ in
    structure Word64Array2 = Array2
 end
 
-structure IntVector = Int32Vector
-structure IntVectorSlice = Int32VectorSlice
-structure IntArray = Int32Array
-structure IntArraySlice = Int32ArraySlice
-structure IntArray2 = Int32Array2
 
-structure LargeIntVector = IntInfVector
-structure LargeIntVectorSlice = IntInfVectorSlice
-structure LargeIntArray = IntInfArray
-structure LargeIntArraySlice = IntInfArraySlice
-structure LargeIntArray2 = IntInfArray2
-
-structure RealVector = Real64Vector
-structure RealVectorSlice = Real64VectorSlice
-structure RealArray = Real64Array
-structure RealArraySlice = Real64ArraySlice
-structure RealArray2 = Real64Array2
-
-structure LargeRealVector = Real64Vector
-structure LargeRealVectorSlice = Real64VectorSlice
-structure LargeRealArray = Real64Array
-structure LargeRealArraySlice = Real64ArraySlice
-structure LargeRealArray2 = Real64Array2
-
-structure WordVector = Word32Vector
-structure WordVectorSlice = Word32VectorSlice
-structure WordArray = Word32Array
-structure WordArraySlice = Word32ArraySlice
-structure WordArray2 = Word32Array2
-
-structure LargeWordVector = Word64Vector
-structure LargeWordVectorSlice = Word64VectorSlice
-structure LargeWordArray = Word64Array
-structure LargeWordArraySlice = Word64ArraySlice
-structure LargeWordArray2 = Word64Array2
+local
+   structure S = EqMono (type elem = Char.char)
+   open S
+in
+   structure CharArray = Array
+   structure CharArray2 = Array2
+   structure CharArraySlice = ArraySlice
+   structure CharVector = Vector
+   structure CharVectorSlice = VectorSlice
+end
+local
+   structure S = EqMono (type elem = Int.int)
+   open S
+in
+   structure IntVector = Vector
+   structure IntVectorSlice = VectorSlice
+   structure IntArray = Array
+   structure IntArraySlice = ArraySlice
+   structure IntArray2 = Array2
+end
+local
+   structure S = EqMono (type elem = LargeInt.int)
+   open S
+in
+   structure LargeIntVector = Vector
+   structure LargeIntVectorSlice = VectorSlice
+   structure LargeIntArray = Array
+   structure LargeIntArraySlice = ArraySlice
+   structure LargeIntArray2 = Array2
+end
+local
+   structure S = Mono (type elem = Real.real)
+   open S
+in
+   structure RealVector = Vector
+   structure RealVectorSlice = VectorSlice
+   structure RealArray = Array
+   structure RealArraySlice = ArraySlice
+   structure RealArray2 = Array2
+end
+local
+   structure S = Mono (type elem = LargeReal.real)
+   open S
+in
+   structure LargeRealVector = Vector
+   structure LargeRealVectorSlice = VectorSlice
+   structure LargeRealArray = Array
+   structure LargeRealArraySlice = ArraySlice
+   structure LargeRealArray2 = Array2
+end
+local
+   structure S = EqMono (type elem = Word.word)
+   open S
+in
+   structure WordVector = Vector
+   structure WordVectorSlice = VectorSlice
+   structure WordArray = Array
+   structure WordArraySlice = ArraySlice
+   structure WordArray2 = Array2
+end
+local
+   structure S = EqMono (type elem = LargeWord.word)
+   open S
+in
+   structure LargeWordVector = Vector
+   structure LargeWordVectorSlice = VectorSlice
+   structure LargeWordArray = Array
+   structure LargeWordArraySlice = ArraySlice
+   structure LargeWordArray2 = Array2
+end

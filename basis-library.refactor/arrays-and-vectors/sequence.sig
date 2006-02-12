@@ -80,6 +80,9 @@ signature SEQUENCE =
       val create: (SeqIndex.int * (SeqIndex.int -> 'b elt) -> 'c) ->
                   ('a elt -> 'b elt) -> 'a sequence -> 'c
       val duplicate: 'a sequence -> 'a sequence
+      val newUninit': SeqIndex.int -> 'a sequence
+      val newUninit: int -> 'a sequence
+      val new': SeqIndex.int * 'a elt -> 'a sequence
       val new: int * 'a elt -> 'a sequence
       val toList: 'a sequence -> 'a elt list
       val unfoldi': SeqIndex.int * 'a * (SeqIndex.int * 'a -> 'b elt * 'a) -> 'b sequence

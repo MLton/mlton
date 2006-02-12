@@ -76,20 +76,23 @@ functor Sequence (S: sig
                  handle Overflow => raise Fail "Sequence.length"
             else SeqIndex.toIntUnsafe (length' s)
 
-      fun array' n =
+      fun arrayUninit' n =
          if not S.isMutable andalso n = 0
             then Array.array0Const ()
             else if Primitive.Controls.safe
                     andalso (n < 0 orelse n > maxLen')
                     then raise Size
                     else Array.arrayUnsafe n
-      fun array n = array' (fromIntForLength n)
+      fun arrayUninit n = arrayUninit' (fromIntForLength n)
 
-      fun seq0 () = S.fromArray (array' 0)
+      fun newUninit' n = S.fromArray (arrayUninit' n)
+      fun newUninit n = S.fromArray (arrayUninit n)
+
+      fun seq0 () = S.fromArray (arrayUninit' 0)
 
       fun unfoldi' (n, b, f) =
          let
-            val a = array' n
+            val a = arrayUninit' n
             fun loop (i, b)  =
                if i >= n
                   then ()
@@ -112,11 +115,12 @@ functor Sequence (S: sig
       fun tabulate (n, f) =
          unfoldi (n, (), fn (i, ()) => (f i, ()))
 
+      fun new' (n, x) = tabulate' (n, fn _ => x)
       fun new (n, x) = tabulate (n, fn _ => x)
 
       fun fromList l =
          let
-            val a = array (List.length l)
+            val a = arrayUninit (List.length l)
             val _ =
                List.foldl (fn (x, i) => (Array.updateUnsafe (a, i, x) ; (i +? 1))) 0 l
          in
