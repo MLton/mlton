@@ -58,11 +58,24 @@ signature INT_INF0 =
       val toString8: int -> Primitive.String8.string
 
       (* Sign extend. *)
+      val fromInt8Unsafe: Primitive.Int8.int -> int
+      val fromInt16Unsafe: Primitive.Int16.int -> int
+      val fromInt32Unsafe: Primitive.Int32.int -> int
+      val fromInt64Unsafe: Primitive.Int64.int -> int
+      val fromIntInfUnsafe: Primitive.IntInf.int -> int
+
+      (* Sign extend. *)
       val fromInt8: Primitive.Int8.int -> int
       val fromInt16: Primitive.Int16.int -> int
       val fromInt32: Primitive.Int32.int -> int
       val fromInt64: Primitive.Int64.int -> int
       val fromIntInf: Primitive.IntInf.int -> int
+
+      (* Zero extend. *)
+      val fromWord8Unsafe: Primitive.Word8.word -> int
+      val fromWord16Unsafe: Primitive.Word16.word -> int
+      val fromWord32Unsafe: Primitive.Word32.word -> int
+      val fromWord64Unsafe: Primitive.Word64.word -> int
 
       (* Zero extend. *)
       val fromWord8: Primitive.Word8.word -> int
@@ -71,10 +84,23 @@ signature INT_INF0 =
       val fromWord64: Primitive.Word64.word -> int
 
       (* Sign extend. *)
+      val fromWord8XUnsafe: Primitive.Word8.word -> int
+      val fromWord16XUnsafe: Primitive.Word16.word -> int
+      val fromWord32XUnsafe: Primitive.Word32.word -> int
+      val fromWord64XUnsafe: Primitive.Word64.word -> int
+
+      (* Sign extend. *)
       val fromWord8X: Primitive.Word8.word -> int
       val fromWord16X: Primitive.Word16.word -> int
       val fromWord32X: Primitive.Word32.word -> int
       val fromWord64X: Primitive.Word64.word -> int
+
+      (* Lowbits. *)
+      val toInt8Unsafe: int -> Primitive.Int8.int
+      val toInt16Unsafe: int -> Primitive.Int16.int
+      val toInt32Unsafe: int -> Primitive.Int32.int
+      val toInt64Unsafe: int -> Primitive.Int64.int
+      val toIntInfUnsafe: int -> Primitive.IntInf.int
 
       (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
@@ -84,10 +110,22 @@ signature INT_INF0 =
       val toIntInf: int -> Primitive.IntInf.int
 
       (* Lowbits. *)
+      val toWord8Unsafe: int -> Primitive.Word8.word
+      val toWord16Unsafe: int -> Primitive.Word16.word
+      val toWord32Unsafe: int -> Primitive.Word32.word
+      val toWord64Unsafe: int -> Primitive.Word64.word
+
+      (* Lowbits. *)
       val toWord8: int -> Primitive.Word8.word
       val toWord16: int -> Primitive.Word16.word
       val toWord32: int -> Primitive.Word32.word
       val toWord64: int -> Primitive.Word64.word
+
+      (* Lowbits. *)
+      val toWord8XUnsafe: int -> Primitive.Word8.word
+      val toWord16XUnsafe: int -> Primitive.Word16.word
+      val toWord32XUnsafe: int -> Primitive.Word32.word
+      val toWord64XUnsafe: int -> Primitive.Word64.word
 
       (* Lowbits. *)
       val toWord8X: int -> Primitive.Word8.word
@@ -262,6 +300,10 @@ structure IntInf : INT_INF0 =
                then fromWordAux8 (false, Word8.fromInt8 i)
                else fromWordAux8 (true, Word8.~ (Word8.fromInt8 i))
          fun fromWord8X w = fromInt8 (Word8.toInt8X w)
+         val fromInt8Unsafe = fromInt8
+         val fromWord8Unsafe = fromWord8
+         val fromWord8XUnsafe = fromWord8X
+
 
          val fromWordAux16 =
             make {toMPLimb = MPLimb.fromWord16,
@@ -276,6 +318,9 @@ structure IntInf : INT_INF0 =
                then fromWordAux16 (false, Word16.fromInt16 i)
                else fromWordAux16 (true, Word16.~ (Word16.fromInt16 i))
          fun fromWord16X w = fromInt16 (Word16.toInt16X w)
+         val fromInt16Unsafe = fromInt16
+         val fromWord16Unsafe = fromWord16
+         val fromWord16XUnsafe = fromWord16X
 
          val fromWordAux32 =
             make {toMPLimb = MPLimb.fromWord32,
@@ -290,6 +335,9 @@ structure IntInf : INT_INF0 =
                then fromWordAux32 (false, Word32.fromInt32 i)
                else fromWordAux32 (true, Word32.~ (Word32.fromInt32 i))
          fun fromWord32X w = fromInt32 (Word32.toInt32X w)
+         val fromInt32Unsafe = fromInt32
+         val fromWord32Unsafe = fromWord32
+         val fromWord32XUnsafe = fromWord32X
 
          val fromWordAux64 =
             make {toMPLimb = MPLimb.fromWord64,
@@ -304,8 +352,12 @@ structure IntInf : INT_INF0 =
                then fromWordAux64 (false, Word64.fromInt64 i)
                else fromWordAux64 (true, Word64.~ (Word64.fromInt64 i))
          fun fromWord64X w = fromInt64 (Word64.toInt64X w)
+         val fromInt64Unsafe = fromInt64
+         val fromWord64Unsafe = fromWord64
+         val fromWord64XUnsafe = fromWord64X
 
          fun fromIntInf i = i
+         fun fromIntInfUnsafe i = i
       end
 
       local
@@ -405,6 +457,9 @@ structure IntInf : INT_INF0 =
                                 else ans
                           end
                   else Word8.toInt8 ans
+         val toWord8Unsafe = toWord8
+         val toWord8XUnsafe = toWord8X
+         fun toInt8Unsafe i = Word8.toInt8X (toWord8X i)
 
          val toWordAux16 =
             make {fromMPLimb = MPLimb.toWord16,
@@ -433,6 +488,9 @@ structure IntInf : INT_INF0 =
                                 else ans
                           end
                   else Word16.toInt16 ans
+         val toWord16Unsafe = toWord16
+         val toWord16XUnsafe = toWord16X
+         fun toInt16Unsafe i = Word16.toInt16X (toWord16X i)
                            
          val toWordAux32 =
             make {fromMPLimb = MPLimb.toWord32,
@@ -461,6 +519,9 @@ structure IntInf : INT_INF0 =
                                 else ans
                           end
                   else Word32.toInt32 ans
+         val toWord32Unsafe = toWord32
+         val toWord32XUnsafe = toWord32X
+         fun toInt32Unsafe i = Word32.toInt32X (toWord32X i)
 
          val toWordAux64 =
             make {fromMPLimb = MPLimb.toWord64,
@@ -489,8 +550,12 @@ structure IntInf : INT_INF0 =
                                 else ans
                           end
                   else Word64.toInt64 ans
+         val toWord64Unsafe = toWord64
+         val toWord64XUnsafe = toWord64X
+         fun toInt64Unsafe i = Word64.toInt64X (toWord64X i)
 
          fun toIntInf i = i
+         fun toIntInfUnsafe i = i
       end
 
       local
@@ -861,56 +926,94 @@ structure IntInf : INT_INF0 =
       val toString8 = bigToString8
 end
 
+structure Char8 =
+   struct
+      open Char8
+      fun fromIntInfUnsafe i = fromInt8Unsafe (IntInf.toInt8Unsafe i)
+      fun toIntInfUnsafe c = IntInf.fromInt8Unsafe (toInt8Unsafe c)
+   end
+structure Char16 =
+   struct
+      open Char16
+      fun fromIntInfUnsafe i = fromInt16Unsafe (IntInf.toInt16Unsafe i)
+      fun toIntInfUnsafe c = IntInf.fromInt16Unsafe (toInt16Unsafe c)
+   end
+structure Char32 =
+   struct
+      open Char32
+      fun fromIntInfUnsafe i = fromInt32Unsafe (IntInf.toInt32Unsafe i)
+      fun toIntInfUnsafe c = IntInf.fromInt32Unsafe (toInt32Unsafe c)
+   end
 structure Int8 = 
    struct
       open Int8
+      val fromIntInfUnsafe = IntInf.toInt8Unsafe
       val fromIntInf = IntInf.toInt8
+      val toIntInfUnsafe = IntInf.fromInt8Unsafe
       val toIntInf = IntInf.fromInt8
    end
 structure Int16 = 
    struct
       open Int16
+      val fromIntInfUnsafe = IntInf.toInt16Unsafe
       val fromIntInf = IntInf.toInt16
+      val toIntInfUnsafe = IntInf.fromInt16Unsafe
       val toIntInf = IntInf.fromInt16
    end
 structure Int32 = 
    struct
       open Int32
+      val fromIntInfUnsafe = IntInf.toInt32Unsafe
       val fromIntInf = IntInf.toInt32
+      val toIntInfUnsafe = IntInf.fromInt32Unsafe
       val toIntInf = IntInf.fromInt32
    end
 structure Int64 = 
    struct
       open Int64
+      val fromIntInfUnsafe = IntInf.toInt64Unsafe
       val fromIntInf = IntInf.toInt64
+      val toIntInfUnsafe = IntInf.fromInt64Unsafe
       val toIntInf = IntInf.fromInt64
    end
 structure Word8 =
    struct
       open Word8
+      val fromIntInfUnsafe = IntInf.toWord8Unsafe
       val fromIntInf = IntInf.toWord8
+      val toIntInfUnsafe = IntInf.fromWord8Unsafe
       val toIntInf = IntInf.fromWord8
+      val toIntInfXUnsafe = IntInf.fromWord8XUnsafe
       val toIntInfX = IntInf.fromWord8X
    end
 structure Word16 =
    struct
       open Word16
+      val fromIntInfUnsafe = IntInf.toWord16Unsafe
       val fromIntInf = IntInf.toWord16
+      val toIntInfUnsafe = IntInf.fromWord16Unsafe
       val toIntInf = IntInf.fromWord16
+      val toIntInfXUnsafe = IntInf.fromWord16XUnsafe
       val toIntInfX = IntInf.fromWord16X
    end
 structure Word32 =
    struct
       open Word32
+      val fromIntInfUnsafe = IntInf.toWord32Unsafe
       val fromIntInf = IntInf.toWord32
+      val toIntInfUnsafe = IntInf.fromWord32Unsafe
       val toIntInf = IntInf.fromWord32
+      val toIntInfXUnsafe = IntInf.fromWord32XUnsafe
       val toIntInfX = IntInf.fromWord32X
    end
 structure Word64 =
    struct
       open Word64
+      val fromIntInfUnsafe = IntInf.toWord64Unsafe
       val fromIntInf = IntInf.toWord64
+      val toIntInfUnsafe = IntInf.fromWord64Unsafe
       val toIntInf = IntInf.fromWord64
+      val toIntInfXUnsafe = IntInf.fromWord64XUnsafe
       val toIntInfX = IntInf.fromWord64X
    end
 

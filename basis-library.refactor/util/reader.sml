@@ -9,7 +9,7 @@
 structure Reader: READER =
 struct
 
-open Primitive.Int
+open Int
    
 type ('a, 'b) reader = 'b -> ('a * 'b) option
 

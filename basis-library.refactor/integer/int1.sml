@@ -9,12 +9,24 @@
 signature INT_FROM_TO_ARG =
    sig
       type int
+      (* Lowbits or sign-extend. *)
+      val fromInt8Unsafe: Primitive.Int8.int -> int
+      val fromInt16Unsafe: Primitive.Int16.int -> int
+      val fromInt32Unsafe: Primitive.Int32.int -> int
+      val fromInt64Unsafe: Primitive.Int64.int -> int
+      val fromIntInfUnsafe: Primitive.IntInf.int -> int
       (* Overflow checking, signed interp. *)
       val fromInt8: Primitive.Int8.int -> int
       val fromInt16: Primitive.Int16.int -> int
       val fromInt32: Primitive.Int32.int -> int
       val fromInt64: Primitive.Int64.int -> int
       val fromIntInf: Primitive.IntInf.int -> int
+      (* Lowbits or sign-extend. *)
+      val toInt8Unsafe: int -> Primitive.Int8.int
+      val toInt16Unsafe: int -> Primitive.Int16.int
+      val toInt32Unsafe: int -> Primitive.Int32.int
+      val toInt64Unsafe: int -> Primitive.Int64.int
+      val toIntInfUnsafe: int -> Primitive.IntInf.int
       (* Overflow checking. *)
       val toInt8: int -> Primitive.Int8.int
       val toInt16: int -> Primitive.Int16.int
@@ -26,8 +38,12 @@ signature INT_FROM_TO_ARG =
 signature INT_FROM_TO_RES =
    sig
       type int
+      val fromIntUnsafe: Int.int -> int
+      val fromLargeUnsafe: LargeInt.int -> int
       val fromInt: Int.int -> int
       val fromLarge: LargeInt.int -> int
+      val toIntUnsafe: int -> Int.int
+      val toLargeUnsafe: int -> LargeInt.int
       val toInt: int -> Int.int
       val toLarge: int -> LargeInt.int
    end
@@ -36,6 +52,30 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
    struct
       open I
          
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = 'a -> int
+             val fInt8 = I.fromInt8Unsafe
+             val fInt16 = I.fromInt16Unsafe
+             val fInt32 = I.fromInt32Unsafe
+             val fInt64 = I.fromInt64Unsafe
+             val fIntInf = I.fromIntInfUnsafe)
+      in
+         val fromIntUnsafe = S.f
+      end
+      local
+         structure S =
+            LargeInt_ChooseInt
+            (type 'a t = 'a -> int
+             val fInt8 = I.fromInt8Unsafe
+             val fInt16 = I.fromInt16Unsafe
+             val fInt32 = I.fromInt32Unsafe
+             val fInt64 = I.fromInt64Unsafe
+             val fIntInf = I.fromIntInfUnsafe)
+      in
+         val fromLargeUnsafe = S.f
+      end
       local
          structure S =
             Int_ChooseInt
@@ -59,6 +99,30 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
              val fIntInf = I.fromIntInf)
       in
          val fromLarge = S.f
+      end
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = int -> 'a
+             val fInt8 = I.toInt8Unsafe
+             val fInt16 = I.toInt16Unsafe
+             val fInt32 = I.toInt32Unsafe
+             val fInt64 = I.toInt64Unsafe
+             val fIntInf = I.toIntInfUnsafe)
+      in
+         val toIntUnsafe = S.f
+      end
+      local
+         structure S =
+            LargeInt_ChooseInt
+            (type 'a t = int -> 'a
+             val fInt8 = I.toInt8Unsafe
+             val fInt16 = I.toInt16Unsafe
+             val fInt32 = I.toInt32Unsafe
+             val fInt64 = I.toInt64Unsafe
+             val fIntInf = I.toIntInfUnsafe)
+      in
+         val toLargeUnsafe = S.f
       end
       local
          structure S =

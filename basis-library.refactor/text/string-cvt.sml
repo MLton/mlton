@@ -10,7 +10,7 @@ structure StringCvt: STRING_CVT_EXTRA =
    struct
       open Reader
 
-      val wordFromInt = Primitive.Word32.fromInt
+      val wordFromInt = Word.fromInt
 
       datatype radix = BIN | OCT | DEC | HEX
 
@@ -29,7 +29,7 @@ structure StringCvt: STRING_CVT_EXTRA =
          
       type ('a, 'b) reader = 'b -> ('a * 'b) option
 
-      open Primitive.Int
+      open Int
 
       structure Char = Char0
       structure String = String0
@@ -177,8 +177,8 @@ structure StringCvt: STRING_CVT_EXTRA =
 
       fun wdigits radix reader state =
          let 
-            val op + = Primitive.Word32.+
-            val op * = Primitive.Word32.*
+            val op + = Word.+
+            val op * = Word.*
             val r = radixToWord radix
             fun loop (accum, state) =
                case reader state of

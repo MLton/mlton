@@ -62,7 +62,6 @@ in
    ../list/list-pair.sml
    ../arrays-and-vectors/slice.sig
    ../arrays-and-vectors/sequence.sig
-   ../arrays-and-vectors/seq-index1.sml
    ../arrays-and-vectors/sequence.fun
    ../arrays-and-vectors/vector-slice.sig
    ../arrays-and-vectors/vector.sig
@@ -81,16 +80,16 @@ in
    ../arrays-and-vectors/mono-array2.sig
    ../arrays-and-vectors/mono-array2.fun
    ../arrays-and-vectors/mono.sml
+   ../text/string0.sml
+   ../text/char0.sml
+   ../util/reader.sig
+   ../util/reader.sml
+   ../text/string-cvt.sig
+   ../text/string-cvt.sml
+   ../general/bool.sig
+   ../general/bool.sml
+   ../integer/integer.sig
 (*
-      ../../text/string0.sml
-      ../../text/char0.sml
-      ../../misc/reader.sig
-      ../../misc/reader.sml
-      ../../text/string-cvt.sig
-      ../../text/string-cvt.sml
-      ../../general/bool.sig
-      ../../general/bool.sml
-      ../../integer/integer.sig
       ../../integer/int.sml
       ../../text/char.sig
       ../../text/char.sml
