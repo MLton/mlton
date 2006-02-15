@@ -11,20 +11,21 @@ signature INT_INF =
       val andb: int * int -> int
       val notb: int -> int
       val << : int * Word.word -> int
-      val ~>> : int * Word.word -> int
+      val ~>> : int * Word.word -> int 
    end
 
 signature INT_INF_EXTRA =
    sig
       include INT_INF
 
+      structure BigWord : WORD
+      structure SmallInt : INTEGER
+
       val areSmall: int * int -> bool
-      val fromInt64: Int64.int -> int
       val gcd: int * int -> int 
       val isSmall: int -> bool
       datatype rep =
-         Big of Word.word Vector.vector
-       | Small of Int.int
+         Big of BigWord.word Vector.vector
+       | Small of SmallInt.int
       val rep: int -> rep
-      val toInt64: int -> Int64.int
    end

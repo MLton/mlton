@@ -19,13 +19,10 @@ in
    ann "allowRebindEquals true" in
       prim1.sml
    end 
-   local
-      ../util/integral-comparisons.sml
-   in
-      prim-char.sml
-      prim-word.sml
-      prim-int.sml
-   end
+   ../util/integral-comparisons.sml
+   prim-char.sml
+   prim-word.sml
+   prim-int.sml
    local ../config/bind-for-config0.sml in ann "forceUsed" in
       ../config/choose.sml
    end end

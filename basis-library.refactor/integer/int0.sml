@@ -21,18 +21,15 @@ signature INTEGER0 =
       val abs: int -> int
       val div: int * int -> int
       val mod: int * int -> int
-      val power: {base:int, exp: int} -> int
       val quot: int * int -> int
       val rem: int * int -> int
 
+      val power: {base:int, exp: int} -> int
       val << : int * Primitive.Word32.word -> int
       val rol : int * Primitive.Word32.word -> int
       val ror : int * Primitive.Word32.word -> int
       val ~>> : int * Primitive.Word32.word -> int
       val >> : int * Primitive.Word32.word -> int
-
-      val sign': int -> Primitive.Int32.int
-      val sameSign: int * int -> bool
 
       (* Overflow checking, signed interp. *)
       val fromInt8: Primitive.Int8.int -> int
@@ -177,16 +174,6 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                  in loop (exp, one)
                  end
 
-              
-      val sign': int -> Primitive.Int32.int =
-         fn i => if i = zero
-                    then 0
-                    else if i < zero
-                            then ~1
-                            else 1
-                               
-      fun sameSign (x, y) = sign' x = sign' y
-
       local
          fun 'a make {fromIntUnsafe: 'a -> int, 
                       toIntUnsafe: int -> 'a,
@@ -244,19 +231,19 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
       local
          fun 'a make {fromWordUnsafe: 'a -> int, fromWordXUnsafe: 'a -> int,
                       toWordUnsafe: int -> 'a, toWordXUnsafe: int -> 'a,
-                      other : {wordSize': Primitive.Int32.int,
+                      other : {wordSize: Primitive.Int32.int,
                                gt: 'a * 'a -> bool,
                                lt: 'a * 'a -> bool}} =
             let
                fun fromWord w =
                   if detectOverflow
-                     andalso Primitive.Int32.>= (#wordSize' other, precision')
+                     andalso Primitive.Int32.>= (#wordSize other, precision')
                      andalso (#gt other) (w, toWordUnsafe maxInt')
                      then raise Overflow
                      else fromWordUnsafe w
                fun fromWordX w =
                   if detectOverflow
-                     andalso Primitive.Int32.> (#wordSize' other, precision')
+                     andalso Primitive.Int32.> (#wordSize other, precision')
                      andalso (#lt other) (toWordUnsafe maxInt', w)
                      andalso (#lt other) (w, toWordUnsafe maxInt')
                      then raise Overflow
@@ -273,7 +260,7 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                   fromWordXUnsafe = fromWord8XUnsafe,
                   toWordUnsafe = toWord8Unsafe,
                   toWordXUnsafe =toWord8XUnsafe,
-                  other = {wordSize' = Primitive.Word8.wordSize',
+                  other = {wordSize = Primitive.Word8.wordSize,
                            lt = Primitive.Word8.<,
                            gt = Primitive.Word8.>}}
          val (fromWord16, fromWord16X, toWord16, toWord16X) =
@@ -281,7 +268,7 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                   fromWordXUnsafe = fromWord16XUnsafe,
                   toWordUnsafe = toWord16Unsafe,
                   toWordXUnsafe =toWord16XUnsafe,
-                  other = {wordSize' = Primitive.Word16.wordSize',
+                  other = {wordSize = Primitive.Word16.wordSize,
                            lt = Primitive.Word16.<,
                            gt = Primitive.Word16.>}}
          val (fromWord32, fromWord32X, toWord32, toWord32X) =
@@ -289,7 +276,7 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                   fromWordXUnsafe = fromWord32XUnsafe,
                   toWordUnsafe = toWord32Unsafe,
                   toWordXUnsafe =toWord32XUnsafe,
-                  other = {wordSize' = Primitive.Word32.wordSize',
+                  other = {wordSize = Primitive.Word32.wordSize,
                            lt = Primitive.Word32.<,
                            gt = Primitive.Word32.>}}
          val (fromWord64, fromWord64X, toWord64, toWord64X) =
@@ -297,7 +284,7 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
                   fromWordXUnsafe = fromWord64XUnsafe,
                   toWordUnsafe = toWord64Unsafe,
                   toWordXUnsafe =toWord64XUnsafe,
-                  other = {wordSize' = Primitive.Word64.wordSize',
+                  other = {wordSize = Primitive.Word64.wordSize,
                            lt = Primitive.Word64.<,
                            gt = Primitive.Word64.>}}
       end

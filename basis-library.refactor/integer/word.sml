@@ -10,48 +10,10 @@ functor Word (W: PRE_WORD_EXTRA): WORD_EXTRA =
 struct
 
 open W
-structure PW = Primitive.Word
 
-val detectOverflow = Primitive.detectOverflow
+val wordSize = Primitive.Int32.toInt wordSize
 
-(* These are overriden in patch.sml after int-inf.sml has been defined. *)
-val toLargeInt: word -> LargeInt.int = fn _ => raise Fail "toLargeInt"
-val toLargeIntX: word -> LargeInt.int = fn _ => raise Fail "toLargeIntX"
-val fromLargeInt: LargeInt.int -> word = fn _ => raise Fail "fromLargeInt"
-
-val wordSizeWord: Word.word = PW.fromInt wordSize
-val wordSizeMinusOneWord: Word.word = PW.fromInt (Int.-? (wordSize, 1))
-val zero: word = fromInt 0
-
-val toLargeWord = toLarge
-val toLargeWordX = toLargeX
-val fromLargeWord = fromLarge
-
-fun toInt w =
-   if detectOverflow
-      andalso Int.>= (wordSize, Int.precision')
-      andalso w > fromInt Int.maxInt'
-      then raise Overflow
-   else W.toInt w
-                      
-fun toIntX w =
-  if detectOverflow
-     andalso Int.> (wordSize, Int.precision')
-     andalso fromInt Int.maxInt' < w
-     andalso w < fromInt Int.minInt'
-     then raise Overflow
-  else W.toIntX w
-
-local
-   fun make f (w, w') =
-      if Primitive.safe andalso w' = zero
-         then raise Div
-      else f (w, w')
-in
-   val op div = make (op div)
-   val op mod = make (op mod)
-end
-
+(*
 fun << (i, n) 
   = if PW.>=(n ,wordSizeWord)
       then zero
@@ -66,8 +28,7 @@ fun ~>> (i, n)
   = if PW.<(n, wordSizeWord)
       then W.~>>(i, n)
       else W.~>>(i, wordSizeMinusOneWord)
-
-val {compare, min, max} = Util.makeCompare(op <)
+*)
 
 fun fmt radix (w: word): string =
    let val radix = fromInt (StringCvt.radixToInt radix)
@@ -154,6 +115,3 @@ structure Word8 = Word (Primitive.Word8)
 structure Word16 = Word (Primitive.Word16)
 structure Word32 = Word (Primitive.Word32)
 structure Word64 = Word (Primitive.Word64)
-structure Word = Word32
-structure WordGlobal: WORD_GLOBAL = Word
-open WordGlobal

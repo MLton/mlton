@@ -89,20 +89,31 @@ in
    ../general/bool.sig
    ../general/bool.sml
    ../integer/integer.sig
+   ../integer/int.sml
+   ../integer/word.sig
+   ../integer/word.sml
+   ../integer/int-inf.sig
 (*
-      ../../integer/int.sml
-      ../../text/char.sig
-      ../../text/char.sml
-      ../../text/substring.sig
-      ../../text/substring.sml
-      ../../text/string.sig
-      ../../text/string.sml
+   ../integer/int-inf.sml
+   local in ann "forceUsed" in
+      ../config/default/$(DEFAULT_INT)
+      ../config/default/$(DEFAULT_WORD)
+      ../config/default/large-int.sml
+      ../config/default/large-word.sml
+   end end
+   ../integer/int-global.sml
+   ../integer/word-global.sml
+   ../text/char.sig
+   ../text/char.sml
+   ../text/substring.sig
+   ../text/substring.sml
+   ../text/string.sig
+   ../text/string.sml
+*)
+
+(*
       ../../misc/C.sig
       ../../misc/C.sml
-      ../../integer/word.sig
-      ../../integer/word.sml
-      ../../integer/int-inf.sig
-      ../../integer/int-inf.sml
       ../../real/IEEE-real.sig
       ../../real/IEEE-real.sml
       ../../real/math.sig

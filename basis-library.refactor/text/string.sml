@@ -63,7 +63,7 @@ val _ =
 
 structure NullString =
    struct
-      open NullString
+      open Primitive.NullString8
 
       val nullTerm = fromString o String.nullTerm
    end

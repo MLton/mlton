@@ -10,7 +10,7 @@ signature WORD0 =
    sig
       include PRIM_WORD
 
-      val wordSizeWord': Primitive.Word32.word
+      val wordSizeWord: Primitive.Word32.word
 
       val zero: word
       val one: word
@@ -30,11 +30,13 @@ signature WORD0 =
       val fromInt32: Primitive.Int32.int -> word
       val fromInt64: Primitive.Int64.int -> word
 
+(*
       (* Lowbits or zero extend. *)
       val fromInt8Z: Primitive.Int8.int -> word
       val fromInt16Z: Primitive.Int16.int -> word
       val fromInt32Z: Primitive.Int32.int -> word
       val fromInt64Z: Primitive.Int64.int -> word
+*)
 
       (* Lowbits or zero extend. *)
       val fromWord8: Primitive.Word8.word -> word
@@ -80,8 +82,8 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
 
       val detectOverflow = Primitive.Controls.detectOverflow
 
-      val wordSizeWord' = Primitive.Word32.fromInt32Unsafe wordSize'
-      val wordSizeMinusOneWord' = Primitive.Word32.- (wordSizeWord', 0w1)
+      val wordSizeWord = Primitive.Word32.fromInt32Unsafe wordSize
+      val wordSizeMinusOneWord = Primitive.Word32.- (wordSizeWord, 0w1)
 
       val zero: word = fromWord32Unsafe 0w0
       val one: word = fromWord32Unsafe 0w1
@@ -97,20 +99,20 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
       end
 
       fun << (w, n) =
-         if Primitive.Word32.>= (n, wordSizeWord')
+         if Primitive.Word32.>= (n, wordSizeWord)
             then zero
             else <<? (w, n)
       fun >> (w, n) =
-         if Primitive.Word32.>= (n, wordSizeWord')
+         if Primitive.Word32.>= (n, wordSizeWord)
             then zero
             else >>? (w, n)
       fun ~>> (w, n) =
-         if Primitive.Word32.< (n, wordSizeWord')
+         if Primitive.Word32.< (n, wordSizeWord)
             then ~>>? (w, n)
-            else ~>>? (w, wordSizeMinusOneWord')
+            else ~>>? (w, wordSizeMinusOneWord)
       fun rol (w, n) =
          let
-            val n = Primitive.Word32.remUnsafe (n, wordSizeWord')
+            val n = Primitive.Word32.remUnsafe (n, wordSizeWord)
          in
             if n = 0w0
                then w
@@ -118,7 +120,7 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
          end
       fun ror (w, n) =
          let
-            val n = Primitive.Word32.remUnsafe (n, wordSizeWord')
+            val n = Primitive.Word32.remUnsafe (n, wordSizeWord)
          in
             if n = 0w0
                then w
@@ -126,7 +128,7 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
          end
 
       local
-         fun 'a make {fromIntUnsafe: 'a -> word, fromIntZUnsafe: 'a -> word,
+         fun 'a make {fromIntUnsafe: 'a -> word, (* fromIntZUnsafe: 'a -> word, *)
                       toIntUnsafe: word -> 'a, toIntXUnsafe: word -> 'a,
                       other : {precision': Primitive.Int32.int,
                                maxInt': 'a,
@@ -134,51 +136,51 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
             let
                fun toInt w =
                   if detectOverflow
-                     andalso Primitive.Int32.>= (wordSize', #precision' other)
+                     andalso Primitive.Int32.>= (wordSize, #precision' other)
                      andalso w > fromIntUnsafe (#maxInt' other)
                      then raise Overflow
                      else toIntUnsafe w
                fun toIntX w =
                   if detectOverflow
-                     andalso Primitive.Int32.> (wordSize', #precision' other)
+                     andalso Primitive.Int32.> (wordSize, #precision' other)
                      andalso fromIntUnsafe (#maxInt' other) < w
                      andalso w < fromIntUnsafe (#minInt' other)
                      then raise Overflow
                      else toIntXUnsafe w
             in
                (fromIntUnsafe,
-                fromIntZUnsafe,
+                (* fromIntZUnsafe, *)
                 toInt,
                 toIntX)
             end
       in
-         val (fromInt8, fromInt8Z, toInt8, toInt8X) = 
+         val (fromInt8, (* fromInt8Z, *) toInt8, toInt8X) = 
             make {fromIntUnsafe = fromInt8Unsafe,
-                  fromIntZUnsafe = fromInt8ZUnsafe,
+                  (* fromIntZUnsafe = fromInt8ZUnsafe, *)
                   toIntUnsafe = toInt8Unsafe,
                   toIntXUnsafe = toInt8XUnsafe,
                   other = {precision' = Primitive.Int8.precision',
                            maxInt' = Primitive.Int8.maxInt',
                            minInt' = Primitive.Int8.minInt'}}
-         val (fromInt16, fromInt16Z, toInt16, toInt16X) = 
+         val (fromInt16, (* fromInt16Z, *) toInt16, toInt16X) = 
             make {fromIntUnsafe = fromInt16Unsafe,
-                  fromIntZUnsafe = fromInt16ZUnsafe,
+                  (* fromIntZUnsafe = fromInt16ZUnsafe, *)
                   toIntUnsafe = toInt16Unsafe,
                   toIntXUnsafe = toInt16XUnsafe,
                   other = {precision' = Primitive.Int16.precision',
                            maxInt' = Primitive.Int16.maxInt',
                            minInt' = Primitive.Int16.minInt'}}
-         val (fromInt32, fromInt32Z, toInt32, toInt32X) = 
+         val (fromInt32, (* fromInt32Z, *) toInt32, toInt32X) = 
             make {fromIntUnsafe = fromInt32Unsafe,
-                  fromIntZUnsafe = fromInt32ZUnsafe,
+                  (* fromIntZUnsafe = fromInt32ZUnsafe, *)
                   toIntUnsafe = toInt32Unsafe,
                   toIntXUnsafe = toInt32XUnsafe,
                   other = {precision' = Primitive.Int32.precision',
                            maxInt' = Primitive.Int32.maxInt',
                            minInt' = Primitive.Int32.minInt'}}
-         val (fromInt64, fromInt64Z, toInt64, toInt64X) = 
+         val (fromInt64, (* fromInt64Z, *) toInt64, toInt64X) = 
             make {fromIntUnsafe = fromInt64Unsafe,
-                  fromIntZUnsafe = fromInt64ZUnsafe,
+                  (* fromIntZUnsafe = fromInt64ZUnsafe, *)
                   toIntUnsafe = toInt64Unsafe,
                   toIntXUnsafe = toInt64XUnsafe,
                   other = {precision' = Primitive.Int64.precision',

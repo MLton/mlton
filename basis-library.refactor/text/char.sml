@@ -15,7 +15,7 @@ structure Char: CHAR_EXTRA =
             NONE => NONE
           | SOME (c, state) =>
                if #"@" <= c andalso c <= #"_"
-                  then SOME (chr (ord c -? ord #"@"), state)
+                  then SOME (chr (Int.-? (ord c, ord #"@")), state)
                else NONE
 
       fun formatChar reader state =
@@ -160,7 +160,7 @@ structure Char: CHAR_EXTRA =
       fun padLeft (s: string, n: int): string =
          let
             val m = String.size s
-            val diff = n -? m
+            val diff = Int.-? (n, m)
          in if Int.> (diff, 0)
                then String.concat [String.new (diff, #"0"), s]
             else if diff = 0
@@ -189,7 +189,7 @@ structure Char: CHAR_EXTRA =
               | _ =>
                    if c < #" "
                       then (String.concat
-                            ["\\^", String0.str (chr (ord c +? ord #"@"))])
+                            ["\\^", String0.str (chr (Int.+? (ord c, ord #"@")))])
                    else String.concat 
                         ["\\", padLeft (Int.fmt StringCvt.DEC (ord c), 3)])
       

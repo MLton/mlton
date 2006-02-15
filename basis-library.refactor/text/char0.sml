@@ -55,8 +55,7 @@ structure Char0 =
 
       fun chrOpt c =
          if Primitive.Controls.safe 
-            andalso (Int.< (c, 0) orelse Int.> (c, maxOrd))
-            (* andalso Int.gtu (c, maxOrd) *)
+            andalso Int.gtu (c, maxOrd)
             then NONE
          else SOME (chrUnsafe c)
 
