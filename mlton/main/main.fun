@@ -614,7 +614,7 @@ fun commandLine (args: string list): unit =
                                              | SOME n => n)}
            | Native =>
                 if isSome (!coalesce)
-                   then usage "can't use -coalesce and -native true"
+                   then usage "can't use -coalesce and -codegen native"
                 else ChunkPerFunc)
       val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
                  then usage "must use native codegen with -ieee-fp true"
