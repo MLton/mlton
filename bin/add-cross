@@ -34,24 +34,24 @@ set -e
 # cross-compiler target will be installed.
 
 die () {
-	echo >&2 "$1"
-	exit 1
+        echo >&2 "$1"
+        exit 1
 }
 
 usage () {
-	die "usage: $name <crossTarget> <crossArch> <crossOS> <machine>"
+        die "usage: $name <crossTarget> <crossArch> <crossOS> <machine>"
 }
 
 case "$#" in
 4)
-	crossTarget="$1"
-	crossArch="$2"
-	crossOS="$3"
-	machine="$4"
-	;;
+        crossTarget="$1"
+        crossArch="$2"
+        crossOS="$3"
+        machine="$4"
+        ;;
 *)
-	usage
-	;;
+        usage
+        ;;
 esac
 
 name=`basename $0`
@@ -81,20 +81,38 @@ ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
 ( cd $src && tar cf - bin runtime ) | 
-	ssh $machine "cd $tmp && tar xf - && cd runtime &&
-		../bin/mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
+        ssh $machine "cd $tmp && tar xf - && cd runtime &&
+                ../bin/mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
 ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
-	( cd $lib/$crossTarget && tar xf - )
+        ( cd $lib/$crossTarget && tar xf - )
 ( cd $src &&
-	mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
-		mlbpathmap targetmap )
+        mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
+                mlbpathmap targetmap )
+
+case "$crossOS" in
+mingw)
+	suf='.exe'
+;;
+*)
+	suf=''
+;;
+esac
+
+case "$crossOS" in
+mingw)
+	libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
+;;
+solaris)
+        libs='-lrt -lnsl -lsocket'
+;;
+esac
 
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
 cd $original
 $src/build/bin/mlton -build-constants true | 
-	ssh $machine "cd $tmp/runtime &&
-			cat >$exe.c && 
-			gcc -I. -o $exe $exe.c libmlton.a -lgmp"
-ssh $machine "$tmp/runtime/$exe" >"$lib/$crossTarget/constants"
+        ssh $machine "cd $tmp/runtime &&
+                        cat >$exe.c && 
+                        gcc -I. -o $exe $exe.c libmlton.a -lgmp -lm $libs"
+ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"

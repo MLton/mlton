@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Option: OPTION =
 struct
 
@@ -16,15 +17,22 @@ fun fold (opt, b, f) =
       NONE => b
     | SOME x => f (x, b)
 
+fun exists (z, f) =
+   case z of
+      NONE => false
+    | SOME x => f x
+
 fun forall (z, f) =
    case z of
       NONE => true
     | SOME x => f x
-	 
-fun app (opt, f) =
+         
+fun foreach (opt, f) =
    case opt of
       NONE => ()
     | SOME x => f x
+
+val app = foreach
 
 fun map (opt, f) =
    case opt of
@@ -52,7 +60,7 @@ fun layout layoutX opt =
       open Layout
    in
       case opt of
-	 NONE => str "None"
+         NONE => str "None"
        | SOME x => seq [str "Some ", layoutX x]
    end
 

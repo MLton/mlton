@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature SOURCE_POS_STRUCTS = 
@@ -18,27 +19,13 @@ signature SOURCE_POS =
       type t
 
       val bogus: t
-      val column: t -> int
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val file: t -> File.t
-      val isBasis: t -> bool
       val line: t -> int
       val make: {column: int,
-		 file: File.t,
-		 line: int} -> t
+                 file: File.t,
+                 line: int} -> t
       val posToString: t -> string
       val toString: t -> string
    end
-
-
-functor TestSourcePos (S: SOURCE_POS): sig end = 
-struct
-
-val _ = print "TestSourcePos\n"
-
-open S
-
-val _ = Assert.assert ("SourcePos", fn () => true)
-
-end

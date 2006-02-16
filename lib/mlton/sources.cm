@@ -1,9 +1,13 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 Library
 
-(* from sml-nj-lib *)
-functor SplayMapFn
-(* end from sml-nj-lib *)
-   
 (* from mlyacc-lib *)
 signature LR_TABLE
 signature TOKEN
@@ -68,7 +72,6 @@ structure DirectedSubGraph
 structure DisjointSet
 structure DotColor
 structure Dot
-structure DynamicWind
 structure Engine
 structure Error
 structure Escape
@@ -178,7 +181,7 @@ functor Pair
 functor PolyEnv
 functor Ring
 functor RingWithIdentity
-functor SplayMonoEnv
+(*functor SplayMonoEnv*)
 functor Sum
 functor Tree
 functor UniqueId
@@ -188,7 +191,6 @@ functor UnorderedSet
 is
 
 ../mlyacc/sources.cm
-../smlnj/sources.cm
 basic/sources.cm
 set/sources.cm
 env/sources.cm

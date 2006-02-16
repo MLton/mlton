@@ -1,62 +1,63 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../ssa/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../ssa/sources.mlb
 
-    runtime.sig
-    runtime.fun
-    pointer-tycon.sig
-    pointer-tycon.fun
-    object-type.sig
-    scale.sig
-    scale.fun
-    rep-type.sig
-    rep-type.fun
-    switch.sig
-    switch.fun
-    err.sml
-    rssa.sig
-    rssa.fun
-    representation.sig
-    packed-representation.fun
-    ssa-to-rssa.sig
-    ssa-to-rssa.fun
-    implement-handlers.sig
-    implement-handlers.fun
-    limit-check.sig
-    limit-check.fun
-    signal-check.sig
-    signal-check.fun
-    machine.sig
-    machine.fun
-    profile.sig
-    profile.fun
-    live.sig
-    live.fun
-    allocate-registers.sig
-    allocate-registers.fun
-    equivalence-graph.sig
-    equivalence-graph.fun
-    chunkify.sig
-    chunkify.fun
-    parallel-move.sig
-    parallel-move.fun
-    backend.sig
-    backend.fun
+   runtime.sig
+   runtime.fun
+   pointer-tycon.sig
+   pointer-tycon.fun
+   object-type.sig
+   scale.sig
+   scale.fun
+   rep-type.sig
+   rep-type.fun
+   switch.sig
+   switch.fun
+   err.sml
+   rssa.sig
+   rssa.fun
+   representation.sig
+   packed-representation.fun
+   ssa-to-rssa.sig
+   ssa-to-rssa.fun
+   implement-handlers.sig
+   implement-handlers.fun
+   limit-check.sig
+   limit-check.fun
+   signal-check.sig
+   signal-check.fun
+   machine.sig
+   machine.fun
+   profile.sig
+   profile.fun
+   live.sig
+   live.fun
+   allocate-registers.sig
+   allocate-registers.fun
+   equivalence-graph.sig
+   equivalence-graph.fun
+   chunkify.sig
+   chunkify.fun
+   parallel-move.sig
+   parallel-move.fun
+   backend.sig
+   backend.fun
 in
-    signature MACHINE
-    signature REP_TYPE
-    signature RUNTIME
+   signature MACHINE
+   signature REP_TYPE
+   signature RUNTIME
 
-    functor Backend
-    functor Machine
+   functor Backend
+   functor Machine
 end

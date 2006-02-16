@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor PointerTycon (S: POINTER_TYCON_STRUCTS): POINTER_TYCON =
@@ -52,7 +52,7 @@ local
 in
    fun wordVector (b: Bits.t): t =
       case Bits.toInt b of
-	 8 => word8Vector
+         8 => word8Vector
        | 16 => word16Vector
        | 32 => word32Vector
        | _ => Error.bug "PointerTycon.wordVector"

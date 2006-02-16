@@ -1,0 +1,364 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>PortingMLton - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      PortingMLton
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Porting MLton to a new target platform (architecture or OS) involves the following steps. 
+    <ol type="1">
+
+    <li>
+<p>
+Make the necessary changes to the scripts, runtime system, Basis  Library implementation, and compiler. 
+</p>
+</li>
+    <li class="gap">
+<p>
+Get the regressions working using a cross compiler. 
+</p>
+</li>
+    <li class="gap">
+<p>
+Cross compile MLton and bootstrap on the target. 
+</p>
+</li>
+
+    </ol>
+
+
+<p>
+MLton has a native code generator only for X86, so, if you are porting to another architecture, you must use the C code generator.  These notes do not cover building a new native code generator. 
+</p>
+<h2 id="head-54fc2e14a2d5b38e69a028f12f443994b939305a">What code to change</h2>
+
+    <ul>
+
+    <li>
+<p>
+ Scripts 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ In <tt>bin/platform</tt>, add a new case to handle the output of   <tt>uname</tt>.  
+</p>
+</li>
+        <li class="gap">
+<p>
+ In <tt>bin/upgrade-basis</tt>, 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ add new stubs in <tt>structure&nbsp;MLton.Platform.OS</tt>. 
+</p>
+</li>
+            <li>
+<p>
+ add a new case to set <tt>$os</tt>. 
+</p>
+</li>
+            <li>
+<p>
+ add a new case to set <tt>MLton.Platform.Arch.t</tt> and <tt>all</tt> 
+</p>
+</li>
+
+            </ul>
+
+
+
+        </ul>
+
+
+    <li class="gap">
+<p>
+ Runtime system 
+</p>
+<p>
+ The goal of this step is to be able to successfully run <tt>make</tt> in  the <tt>runtime</tt> directory on the target machine. 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ In <tt>platform.h</tt>, add a new case to include    <tt>platform/&lt;os&gt;.h</tt> 
+</p>
+</li>
+            <li class="gap">
+<p>
+ In <tt>platform/&lt;os&gt;.[ch]</tt>, implement any    platform-dependent functions that the runtime needs. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ In <tt>basis/Real/class.c</tt>, add the architecture specific code    to implement <tt>Real&lt;N&gt;.class</tt> (i.e. to determine the class of a    floating point number.  It would be nice to implement this code    (portably) in the Basis Library implementation some day. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ Add rounding mode control to IEEEReal.c for the new arch. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ Compile and install the <a href="GnuMP">GnuMP</a>.  This varies from platform to    platform.  In <tt>platform/&lt;os&gt;.h</tt>, you need to include the    appropriate <tt>gmp.h</tt>. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ Make sure the definition of <tt>ReturnToC</tt> in    <tt>include/x86-main.h</tt> is correct. 
+</p>
+</li>
+
+            </ul>
+
+
+    <li class="gap">
+<p>
+ Basis Library implementation (<tt>basis-library/*</tt>) 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ In <tt>misc/primitive.sml</tt>, 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ If necessary, add a new variant to the     <tt>MLton.Platform.Arch.t</tt> datatype. 
+</p>
+</li>
+                <li class="gap">
+<p>
+ If necessary, add a new variant to the <tt>MLton.Platform.OS.t</tt>     datatype.  
+</p>
+</li>
+                <li class="gap">
+<p>
+ modify the constants that define <tt>host</tt> to match with     <tt>MLton_Platform_OS_host</tt>, as set in     <tt>runtime/platform/&lt;os&gt;.h</tt>. 
+</p>
+</li>
+
+                </ul>
+
+
+            <li class="gap">
+<p>
+ In <tt>mlton/platform.{sig,sml}&nbsp;</tt> add a new variant. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ Look at all the uses of <tt>MLton.Platform</tt> in the Basis    Library implementation and see if you need to do anything special.  You might use    the following command to see where to look. 
+<pre>   find basis-library -type f | xargs grep 'MLton\.Platform'</pre>   If in doubt, leave the code alone and wait to see what happens when    you run the regression tests.  Here's some that will likely need to    be modified. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ <tt>real/pack-real.sml</tt>: definition of isBigEndian 
+</p>
+</li>
+
+                </ul>
+
+
+
+            </ul>
+
+
+    <li class="gap">
+<p>
+ Compiler 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ In <tt>lib/mlton-stubs/</tt>, update <tt>mlton.sml</tt> and   <tt>platform.sig</tt> to add any new variants.  
+</p>
+</li>
+        <li class="gap">
+<p>
+ In <tt>mlton/main/main.fun</tt>, add code to set <tt>linkWithGmp</tt>. 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-d7908c004a8540632014119d432f4daa14496746">Running the regressions with a cross compiler</h2>
+<p>
+When porting to a new platform, it is always best to get all (or as many as possible) of the regressions working before moving to a self compile.  It is easiest to do this by modifying and rebuilding the compiler on a working machine and then running the regressions with a cross compiler.  It is not easy to build a gcc cross compiler, so we recommend generating the C and assembly on a working machine (using MLton's <tt>-target</tt> and <tt>-stop&nbsp;g</tt> flags, copying the generated files to the target machine, then compiling and linking there. 
+</p>
+
+    <ol type="1">
+
+    <li>
+<p>
+Remake the compiler on a working machine. 
+</p>
+</li>
+    <li class="gap">
+<p>
+Use <tt>bin/add-cross</tt> to add support for the new target.  In  particular, this should create <tt>build/lib/&lt;target&gt;/</tt> with the  platform-specific necessary cross-compilation information. 
+</p>
+</li>
+    <li class="gap">
+<p>
+Run the regression tests with the cross-compiler.  To cross-compile  all the tests, do 
+<pre> bin/regression -cross &lt;target&gt;</pre> This will create all the executables.  Then, copy  <tt>bin/regression</tt> and the <tt>regression</tt> directory to the target  machine, and do 
+<pre> bin/regression -run-only</pre> This should run all the tests.  
+</p>
+</li>
+
+    </ol>
+
+
+<p>
+Repeat this step, interleaved with appropriate compiler modifications, until all the regressions pass. 
+</p>
+<h2 id="head-89ec4ec2bf400e823f3ca49d0cb938b0fedd7bab">Bootstrap</h2>
+<p>
+Once you've got all the regressions working, you can build MLton for the new target.  As with the regressions, the idea for bootstrapping is to generate the C and assembly on a working machine, copy it to the target machine, and then compile and link there.  Here's the sequence of steps.  
+</p>
+
+    <ol type="1">
+
+    <li>
+<p>
+On a working machine, with the newly rebuilt compiler, in the  <tt>mlton</tt> directory, do: 
+<pre> mlton -stop g -target i386-mingw mlton.cm</pre>
+</p>
+</li>
+    <li class="gap">
+<p>
+Copy to the target machine. 
+</p>
+</li>
+    <li class="gap">
+<p>
+On the target machine, move the libraries to the right place.  That is, in <tt>build/lib</tt>, do: 
+<pre> rm -rf self target-map
+ mv i386-mingw self</pre>
+</p>
+</li>
+    <li class="gap">
+<p>
+On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like: 
+<pre> gcc -c -Ibuild/lib/include -O1 -w mlton/mlton.*.[cS]
+ gcc -o build/lib/mlton-compile \
+        -Lbuild/lib/self \
+        -L/usr/local/lib \
+        mlton.*.o \
+        -lmlton -lgmp -lgdtoa -lm</pre>
+</p>
+</li>
+    <li class="gap">
+<p>
+At this point, MLton should be working and you can finish the rest  of a usual make on the target machine. 
+<pre> make script world targetmap tools install</pre>
+</p>
+</li>
+
+    </ol>
+
+
+<p>
+There are other details to get right, like making sure that the tools directories were clean so that the tools are rebuilt on the new platform, but hopefully this structure works.  Once you've got a compiler on the target machine, you should test it by running all the regressions normally (i.e. without the <tt>-cross</tt> flag) and by running a couple rounds of self compiles. 
+</p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+<p>
+The above description is based on the following emails sent to the MLton list. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a class="external" href="http://mlton.org/pipermail/mlton/2002-October/013110.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2002-October/013110.html</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://mlton.org/pipermail/mlton/2004-July/016029.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/pipermail/mlton/2004-July/016029.html</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-01 23:34:15 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

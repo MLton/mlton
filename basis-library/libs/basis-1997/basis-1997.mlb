@@ -1,19 +1,25 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 ann  
    "deadCode true"
-   "sequenceUnit true"
-   "warnMatch true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused true" "forceUsed"
 in
    local
       ../basis-2002/basis-2002.mlb
       ../../basis-2002.mlb
       local
-        ../basis-extra/basis-extra.mlb
+         ../basis-extra/basis-extra.mlb
       in
-        signature SML90
-        structure SML90
+         signature SML90
+         structure SML90
       end
-
       arrays-and-vectors/vector.sig
       arrays-and-vectors/array.sig
       arrays-and-vectors/vector-array-convert.fun
@@ -62,7 +68,6 @@ in
       io/bin-stream-io.sig
       io/bin-io.sig
       io/bin-io-convert.fun
-
       top-level/basis.sig
       top-level/basis.sml
    in
@@ -92,5 +97,5 @@ in
       signature UNIX_1997
 
       structure Basis1997
-  end
+   end
 end

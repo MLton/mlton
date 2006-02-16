@@ -1,8 +1,8 @@
 #include "platform.h"
 
 Int Posix_Process_exitStatus (Status s) {
-	int i;
+        int i;
 
-	i = s;
-	return WEXITSTATUS (i);
+        i = s;
+        return WEXITSTATUS (i);
 }

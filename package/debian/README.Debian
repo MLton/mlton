@@ -1,0 +1,33 @@
+mlton for Debian
+----------------
+
+                   NOTE TO PORTERS AND AUTOBUILDERS
+
+MLton is self-hosting, ie building MLton requires a working ML
+compiler, and the Makefiles assume that this is MLton itself.  This
+means MLton build-depends upon itself.  Please don't whine about this
+fact (eg file bugs) unless you have something constructive to suggest.
+
+You can build MLton with older versions of itself, as long as the
+command-line switches haven't changed too much.  You can also
+bootstrap with SML/NJ.  See the User Guide for details.
+
+It is easy enough to manually build: fetch the latest linux binary tgz
+from www.mlton.org, symbolic link the binaries it contains into
+/usr/bin/ and its library directory as /usr/lib/mlton, and you're good
+to go.
+
+                        HARDWARE REQUIREMENTS
+
+Compiling MLton requires at least 256M of actual RAM.  Thus, if your
+machine has less than this, it is likely that self-compilation will
+take a very long time due to paging.  Even if you have enough memory,
+there simply may not be enough available, due to memory consumed by
+other processes.  In this case, you may see an ``Out of memory''
+message, or self-compilation may become extremely slow.  The only fix
+is to make sure that enough memory is available.
+
+Now, get out there and have a MLton of fun!
+
+ -- Barak Pearlmutter <bap@cs.unm.edu>, Fri, 12 Oct 2001 11:31:16 -0600
+ -- Stephen Weeks <sweeks@sweeks.com>, Fri, 11 Jul 2003 12:27:26 -0700

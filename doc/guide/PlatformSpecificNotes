@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>PlatformSpecificNotes - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      PlatformSpecificNotes
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Here are notes about using MLton on the following platforms. <h2 id="head-fe3daeee99f491988f6fd6066389c8167a7797fd">Operating Systems</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="RunningOnCygwin">Cygwin</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnDarwin">Darwin</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnFreeBSD">FreeBSD</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnMinGW">MinGW</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnNetBSD">NetBSD</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnOpenBSD">OpenBSD</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnSolaris">Solaris</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a10f3b5aa08c9646632d8e35bf3374804be6df80">Architectures</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="RunningOnPowerPC">PowerPC</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnSparc">Sparc</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="PortingMLton">PortingMLton</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-01 23:27:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

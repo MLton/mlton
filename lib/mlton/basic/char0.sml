@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Char0 =
 struct
 
@@ -38,8 +39,8 @@ fun digitToInt (c: t): int option =
 fun fromDigit (d: int): t =
    if let open Int in 0 <= d andalso d < 10 end
       then chr (d + ord #"0")
-   else Error.bug "fromDigit"
-	 
+   else Error.bug "Char0.fromDigit"
+         
 fun output (c, out) = TextIO.output (out, toString c)
 
 val numChars = ord maxChar + 1
@@ -53,10 +54,10 @@ fun toHexDigit (c: t): int =
    if #"0" <= c andalso c <= #"9"
       then ord c - ord #"0"
    else if #"a" <= c andalso c <= #"f"
-	   then ord c - ord #"a" + 10
-	else if #"A" <= c andalso c <= #"F"
-		then ord c - ord #"A" + 10
-	     else Error.bug "charToHexDigit"
+           then ord c - ord #"a" + 10
+        else if #"A" <= c andalso c <= #"F"
+                then ord c - ord #"A" + 10
+             else Error.bug "Char0.charToHexDigit"
 
 fun fromHexDigit (n: int): char = String.sub ("0123456789ABCDEF", n)
 

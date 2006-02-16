@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature SEQUENCE =
@@ -12,7 +12,7 @@ signature SEQUENCE =
       type 'a elt
 
       structure Slice : SLICE where type 'a sequence = 'a sequence
-	                        and type 'a elt = 'a elt
+                                and type 'a elt = 'a elt
 
       val maxLen: int
       val fromList: 'a elt list -> 'a sequence

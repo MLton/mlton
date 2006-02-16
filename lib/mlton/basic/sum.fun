@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor Sum(S: SUM_STRUCTS): SUM =
 struct
 
@@ -15,11 +16,11 @@ datatype t =
 
 val outX =
    fn X x => x
-    | _ => Error.bug "outX"
+    | _ => Error.bug "Sum.outX"
 
 val outY =
    fn Y y => y
-    | _ => Error.bug "outY"
+    | _ => Error.bug "Sum.outY"
 
 val map =
    fn (X x, f, _) => f x

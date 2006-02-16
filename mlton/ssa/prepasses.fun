@@ -1,16 +1,16 @@
-(* Copyright (C) 2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor PrePasses (S: PREPASSES_STRUCTS): PREPASSES = 
 struct
 
 open S
 
 type int = Int.t
-type word = Word.t
 
 open Exp Transfer
 
@@ -32,32 +32,32 @@ struct
 structure LabelInfo =
    struct
       datatype t = T of {args: (Var.t * Type.t) vector,
-			 inDeg: int ref,
-			 mustBreak: bool,
-			 outDeg: int ref}
+                         inDeg: int ref,
+                         mustBreak: bool,
+                         outDeg: int ref}
 
       local
-	 fun make f (T r) = f r
-	 fun make' f = (make f, ! o (make f))
+         fun make f (T r) = f r
+         fun make' f = (make f, ! o (make f))
       in
-	 val args = make #args
-	 val (inDeg', inDeg) = make' #inDeg
-	 val mustBreak = make #mustBreak
-	 val (outDeg', outDeg) = make' #outDeg
+         val args = make #args
+         val (inDeg', inDeg) = make' #inDeg
+         val mustBreak = make #mustBreak
+         val (outDeg', outDeg) = make' #outDeg
       end
 
       fun new (args, mustBreak): t = T {args = args, 
-					inDeg = ref 0, 
-					mustBreak = mustBreak,
-					outDeg = ref 0}
+                                        inDeg = ref 0, 
+                                        mustBreak = mustBreak,
+                                        outDeg = ref 0}
    end
 
 fun breakFunction (f, {codeMotion: bool}) =
    let
       val {get = labelInfo: Label.t -> LabelInfo.t, 
-	   set = setLabelInfo, ...} =
-	 Property.getSetOnce
-	 (Label.plist, Property.initRaise ("CriticalEdges.labelInfo", Label.layout))
+           set = setLabelInfo, ...} =
+         Property.getSetOnce
+         (Label.plist, Property.initRaise ("CriticalEdges.labelInfo", Label.layout))
       val argsLabel = LabelInfo.args o labelInfo
       val inDeg = LabelInfo.inDeg o labelInfo
       val inDeg' = LabelInfo.inDeg' o labelInfo
@@ -66,92 +66,92 @@ fun breakFunction (f, {codeMotion: bool}) =
       val outDeg' = LabelInfo.outDeg' o labelInfo
 
       val {args, blocks, mayInline,
-	   name, raises, returns, start} = Function.dest f
+           name, raises, returns, start} = Function.dest f
 
       val _ = 
-	 Vector.foreach
-	 (blocks, fn Block.T {args, label, transfer, ...} =>
-	  let
-	     val mustBreak =
-		case transfer of
-		   Arith _ => true
-		 | Call _ => true
-		 | Runtime _ => true
-		 | _ => false
-	  in
-	     setLabelInfo (label, LabelInfo.new (args, mustBreak))
-	  end)
+         Vector.foreach
+         (blocks, fn Block.T {args, label, transfer, ...} =>
+          let
+             val mustBreak =
+                case transfer of
+                   Arith _ => true
+                 | Call _ => true
+                 | Runtime _ => true
+                 | _ => false
+          in
+             setLabelInfo (label, LabelInfo.new (args, mustBreak))
+          end)
       val _ =
-	 Vector.foreach
-	 (blocks, fn Block.T {label, transfer, ...} =>
-	  let
-	     val outDeg' = outDeg' label
-	     fun doit l =
-		(Int.inc outDeg'
-		 ; Int.inc (inDeg' l))
-	  in
-	     Transfer.foreachLabel
-	     (transfer, doit)
-	  end)
-	 
+         Vector.foreach
+         (blocks, fn Block.T {label, transfer, ...} =>
+          let
+             val outDeg' = outDeg' label
+             fun doit l =
+                (Int.inc outDeg'
+                 ; Int.inc (inDeg' l))
+          in
+             Transfer.foreachLabel
+             (transfer, doit)
+          end)
+         
       val newBlocks = ref []
       fun newBlock l =
-	 let
-	    val l' = Label.newString "L_crit"
-	    val args =
-	       Vector.map
-	       (argsLabel l, fn (x, ty) =>
-		(Var.new x, ty))
-	    val _ =
-	       List.push
-	       (newBlocks,
-		Block.T {args = args,
-			 label = l',
-			 statements = Vector.new0 (),
-			 transfer = Goto {dst = l,
-					  args = Vector.map(args, #1)}})
-	 in
-	    l'
-	 end
+         let
+            val l' = Label.newString "L_crit"
+            val args =
+               Vector.map
+               (argsLabel l, fn (x, ty) =>
+                (Var.new x, ty))
+            val _ =
+               List.push
+               (newBlocks,
+                Block.T {args = args,
+                         label = l',
+                         statements = Vector.new0 (),
+                         transfer = Goto {dst = l,
+                                          args = Vector.map(args, #1)}})
+         in
+            l'
+         end
       val blocks =
-	 Vector.map
-	 (blocks, fn b as Block.T {args, label, statements, transfer} =>
-	  if (codeMotion andalso mustBreak label) 
-	     orelse outDeg label >= 2
-	     then let
-		     fun doit t =
-			Transfer.replaceLabel
-			(t, fn l =>
-			 if inDeg l > 1 
-			    then newBlock l
-			    else l)
-		  in
-		     Block.T {args = args,
-			      label = label,
-			      statements = statements,
-			      transfer = doit transfer}
-		  end
-	     else b)
+         Vector.map
+         (blocks, fn b as Block.T {args, label, statements, transfer} =>
+          if (codeMotion andalso mustBreak label) 
+             orelse outDeg label >= 2
+             then let
+                     fun doit t =
+                        Transfer.replaceLabel
+                        (t, fn l =>
+                         if inDeg l > 1 
+                            then newBlock l
+                            else l)
+                  in
+                     Block.T {args = args,
+                              label = label,
+                              statements = statements,
+                              transfer = doit transfer}
+                  end
+             else b)
    in
       Function.new {args = args,
-		    blocks = Vector.concat [blocks, Vector.fromList (!newBlocks)],
-		    mayInline = mayInline,
-		    name = name,
-		    raises = raises,
-		    returns = returns,
-		    start = start}
+                    blocks = Vector.concat [blocks, Vector.fromList (!newBlocks)],
+                    mayInline = mayInline,
+                    name = name,
+                    raises = raises,
+                    returns = returns,
+                    start = start}
    end
 
 fun break (Program.T {datatypes, globals, functions, main}, codeMotion) =
    let
       val functions = 
-	 List.revMap (functions, fn f => 
-		      breakFunction (f, codeMotion))
+         List.revMap (functions, fn f => 
+                      breakFunction (f, codeMotion))
    in
       Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = functions,
-		 main = main}
+                 globals = globals,
+                 functions = functions,
+                 main = main}
    end
 end
 
@@ -165,64 +165,93 @@ struct
 fun eliminateFunction f =
    let
       val {args, blocks, mayInline, name, raises, returns, start} =
-	 Function.dest f
+         Function.dest f
       val {get = isLive, set = setLive, rem} =
-	 Property.getSetOnce (Label.plist, Property.initConst false)
+         Property.getSetOnce (Label.plist, Property.initConst false)
       val _ = Function.dfs (f, fn Block.T {label, ...} =>
-			    (setLive (label, true)
-			     ; fn () => ()))
+                            (setLive (label, true)
+                             ; fn () => ()))
       val f =
-	 if Vector.forall (blocks, isLive o Block.label)
-	    then f
-	 else
-	    let 
-	       val blocks =
-		  Vector.keepAll
-		  (blocks, isLive o Block.label)
-	    in
-	       Function.new {args = args,
-			     blocks = blocks,
-			     mayInline = mayInline,
-			     name = name,
-			     raises = raises,
-			     returns = returns,
-			     start = start}
-	    end
+         if Vector.forall (blocks, isLive o Block.label)
+            then f
+         else
+            let 
+               val blocks =
+                  Vector.keepAll
+                  (blocks, isLive o Block.label)
+            in
+               Function.new {args = args,
+                             blocks = blocks,
+                             mayInline = mayInline,
+                             name = name,
+                             raises = raises,
+                             returns = returns,
+                             start = start}
+            end
        val _ = Vector.foreach (blocks, rem o Block.label)
    in
      f
    end
 
 fun eliminate (Program.T {datatypes, globals, functions, main}) =
-   let
-      val functions = List.revMap (functions, eliminateFunction)
-   in
-      Program.T {datatypes = datatypes,
-		 globals = globals,
-		 functions = functions,
-		 main = main}
-   end
+   Program.T {datatypes = datatypes,
+              globals = globals,
+              functions = List.revMap (functions, eliminateFunction),
+              main = main}
 end
 
 val eliminateDeadBlocksFunction = DeadBlocks.eliminateFunction
 val eliminateDeadBlocks = DeadBlocks.eliminate
 
+
 structure Reverse =
 struct
 
-fun reverseFunctions (program as Program.T {globals, datatypes, functions, main}) =
-   let
-      val program =
-	 Program.T {datatypes = datatypes,
-		    globals = globals,
-		    functions = List.rev functions,
-		    main = main}
-   in
-      program
-   end
-
+fun reverseFunctions (Program.T {globals, datatypes, functions, main}) =
+   Program.T {datatypes = datatypes,
+              globals = globals,
+              functions = List.rev functions,
+              main = main}
 end
 
 val reverseFunctions = Reverse.reverseFunctions
+
+
+structure DropProfile =
+struct
+
+fun dropFunction f =
+   let
+      val {args, blocks, mayInline, name, raises, returns, start} =
+         Function.dest f
+      val blocks =
+         Vector.map
+         (blocks, fn Block.T {args, label, statements, transfer} =>
+          Block.T {args = args,
+                   label = label,
+                   statements = Vector.keepAll
+                                (statements, 
+                                 fn Statement.T {exp = Exp.Profile _, ...} => false
+                                  | _ => true),
+                   transfer = transfer})
+   in
+      Function.new {args = args,
+                    blocks = blocks,
+                    mayInline = mayInline,
+                    name = name,
+                    raises = raises,
+                    returns = returns,
+                    start = start}
+   end
+
+fun drop (Program.T {datatypes, globals, functions, main}) =
+   (Control.profile := Control.ProfileNone
+    ; Program.T {datatypes = datatypes,
+                 globals = globals,
+                 functions = List.map (functions, dropFunction),
+                 main = main})
+end
+
+val dropProfile = DropProfile.drop
 
 end

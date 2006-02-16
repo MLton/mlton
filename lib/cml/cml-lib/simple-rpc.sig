@@ -15,18 +15,18 @@ signature SIMPLE_RPC =
       type 'a event = 'a CML.event
 
       val mkRPC : ('a -> 'b) -> 
-	 {call     : 'a -> 'b,
-	  entryEvt : unit event}
-	 
+         {call     : 'a -> 'b,
+          entryEvt : unit event}
+         
       val mkRPC_In : (('a * 'c) -> 'b) -> 
-	 {call     : 'a -> 'b,
-	  entryEvt : 'c -> unit event}
+         {call     : 'a -> 'b,
+          entryEvt : 'c -> unit event}
 
       val mkRPC_Out : ('a -> ('b * 'c)) -> 
-	 {call     : 'a -> 'b,
-	  entryEvt : 'c event}
+         {call     : 'a -> 'b,
+          entryEvt : 'c event}
 
       val mkRPC_InOut : (('a * 'c) -> ('b * 'd)) -> 
-	 {call     : 'a -> 'b,
-	  entryEvt : 'c -> 'd event}
+         {call     : 'a -> 'b,
+          entryEvt : 'c -> 'd event}
   end

@@ -1,22 +1,22 @@
 signature DATE =
    sig
       datatype weekday =
-	 Mon | Tue | Wed | Thu | Fri | Sat | Sun
+         Mon | Tue | Wed | Thu | Fri | Sat | Sun
 
       datatype month =
-	 Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
-	 
+         Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
+         
       type date
 
       exception Date
       
       val date: {year: int,
-		 month: month,
-		 day: int,
-		 hour: int,
-		 minute: int,
-		 second: int,
-		 offset: Time.time option} -> date 
+                 month: month,
+                 day: int,
+                 hour: int,
+                 minute: int,
+                 second: int,
+                 offset: Time.time option} -> date 
 
       val year: date -> int 
       val month: date -> month 

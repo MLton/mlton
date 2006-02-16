@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor Const (S: CONST_STRUCTS): CONST = 
@@ -21,17 +21,17 @@ structure SmallIntInf =
       val maxSmall: IntInf.t = 0x3FFFFFFF
 
       fun isSmall (i: IntInf.t): bool =
-	 minSmall <= i andalso i <= maxSmall
+         minSmall <= i andalso i <= maxSmall
 
       fun toWord (i: IntInf.t): word option =
-	 if isSmall i
-	    then SOME (Word.orb (0w1,
-				 Word.<< (Word.fromInt (IntInf.toInt i),
-					  0w1)))
-	 else NONE
+         if isSmall i
+            then SOME (Word.orb (0w1,
+                                 Word.<< (Word.fromInt (IntInf.toInt i),
+                                          0w1)))
+         else NONE
 
       fun fromWord (w: word): IntInf.t =
-	 IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
+         IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
    end
 
 datatype t =
@@ -57,7 +57,7 @@ in
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
-end	 
+end      
 
 val toString = Layout.toString o layout
 
@@ -79,6 +79,6 @@ fun equals (c, c') =
 val equals = Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
 
 val lookup: ({default: string option, name: string} * ConstType.t -> t) ref =
-   ref (fn _ => Error.bug "Const.lookup not set")
+   ref (fn _ => Error.bug "Const.lookup: not set")
 
 end

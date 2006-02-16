@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonVector - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonVector
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_VECTOR =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> unfoldi: int * 'b * (int * 'b -&gt; 'a * 'b) -&gt; 'a vector
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>unfoldi&nbsp;(n,&nbsp;b,&nbsp;f)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  constructs a vector <em>v</em> of a length <tt>n</tt>, whose elements   <em>v<sub>i</sub></em> are determined by the equations <em>b<sub>0</sub> = b</em> and   <em>(v<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. </ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-01 23:14:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

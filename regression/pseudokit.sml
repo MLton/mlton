@@ -13,8 +13,8 @@ functor Tools (): TOOLS = struct structure FinMapEq = FinMapEq() end
 
 (*
 functor Basics(structure Tools : sig
-				   structure FinMapEq : sig type map val dom : map -> Set.Set end
-				 end) =
+                                   structure FinMapEq : sig type map val dom : map -> Set.Set end
+                                 end) =
 *)
 
 functor Basics(structure Tools : TOOLS) =

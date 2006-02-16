@@ -15,8 +15,8 @@ signature ARRAY_SLICE =
       val collate: ('a * 'a -> order) -> 'a slice * 'a slice -> order
       val copy: {src: 'a slice, dst: 'a Array.array, di: int} -> unit
       val copyVec: {di: int,
-		    dst: 'a Array.array,
-		    src: 'a VectorSlice.slice} -> unit
+                    dst: 'a Array.array,
+                    src: 'a VectorSlice.slice} -> unit
       val exists: ('a -> bool) -> 'a slice -> bool
       val find: ('a -> bool) -> 'a slice -> 'a option
       val findi: (int * 'a -> bool) -> 'a slice -> (int * 'a) option

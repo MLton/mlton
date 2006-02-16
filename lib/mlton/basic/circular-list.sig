@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature CIRCULAR_LIST_STRUCTS =
    sig
       structure Elt: DOUBLY_LINKED
@@ -12,9 +13,9 @@ signature CIRCULAR_LIST_STRUCTS =
 signature CIRCULAR_LIST =
    sig
       include CIRCULAR_LIST_STRUCTS
-	 
+         
       type 'a t = 'a Elt.t Pointer.t
-	 
+         
       val delete: 'a t * 'a Elt.t -> unit
       val deleteEach: 'a t * ('a Elt.t -> unit) -> unit
       val empty: unit -> 'a t

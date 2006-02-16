@@ -1,3 +1,10 @@
+(* Copyright (C) 2003-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 signature MLTON_POINTER =
    sig
       eqtype t
@@ -5,7 +12,7 @@ signature MLTON_POINTER =
       val add: t * word -> t
       val compare: t * t -> order
       val diff: t * t -> word
-      val free: t -> unit
+(*      val free: t -> unit *)
       val getInt8: t * int -> Int8.int
       val getInt16: t * int -> Int16.int
       val getInt32: t * int -> Int32.int

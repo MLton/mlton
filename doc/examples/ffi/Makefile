@@ -1,6 +1,14 @@
+## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ #    Jagannathan, and Stephen Weeks.
+ # Copyright (C) 1997-2000 NEC Research Institute.
+ #
+ # MLton is released under a BSD-style license.
+ # See the file MLton-LICENSE for details.
+ ##
+
 PATH = ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -default-ann 'allowExport true' -default-ann 'allowImport true'
+mlton = mlton -default-ann 'allowFFI true'
 
 .PHONY: all
 all: import import2 export iimport test_quot

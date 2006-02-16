@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature UNIVERSE =
    sig
       include SET
@@ -11,7 +12,7 @@ signature UNIVERSE =
       structure B: T
 
       datatype elt =
-	 Base of B.t
+         Base of B.t
        | Pair of elt * elt
        | Set of t
       sharing type elt = E.t
@@ -23,10 +24,10 @@ signature UNIVERSE =
       val cross: t * t -> t
       val project1: t -> t
       val project2: t -> t
-	 
+         
       val Union: t -> t
-   (*	val Cross: t -> t *)
-	 
+   (*   val Cross: t -> t *)
+         
       val lookup: t * E.t -> E.t option
       val update: t * E.t * E.t -> t
       val updateSet: t * t -> t

@@ -6,7 +6,7 @@
 functor LocalAssert(val assert: bool): ASSERT =
    struct
       fun make f =
-	 if assert then f else fn _ => ()
+         if assert then f else fn _ => ()
       val assert = make Assert.assert
       val assert' = make Assert.assert'
       val assertAtomic = make Assert.assertAtomic

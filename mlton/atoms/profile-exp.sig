@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 type word = Word.t
@@ -17,7 +17,7 @@ signature PROFILE_EXP =
       include PROFILE_EXP_STRUCTS
 
       datatype t =
-	 Enter of SourceInfo.t
+         Enter of SourceInfo.t
        | Leave of SourceInfo.t
 
       val equals: t * t -> bool

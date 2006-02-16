@@ -1,22 +1,23 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 local
    structure H = BinaryHeap(structure O = Int
-			    open Int
-			    fun inject x = x
-			    fun project x = x
-			    val largest = Int.maxInt
-			    val smallest = Int.minInt)
+                            open Int
+                            fun inject x = x
+                            fun project x = x
+                            val largest = Int.maxInt
+                            val smallest = Int.minInt)
    open H
    val h = new[(1, "1"), (2, "2"), (3, "3")]
    val _ =
       while not(isEmpty h) do
-	 (print(deleteMin h)
-	  ; print "\n")
+         (print(deleteMin h)
+          ; print "\n")
 in
 end
 
@@ -39,7 +40,7 @@ val _ = i 2 ;
 val _ = i 3 ;
    
 val h = new (ListUtil.reverse (ListUtil.map (ListUtil.fromTo 1 10)
-			       (fn x => (x, x)))) ;
+                               (fn x => (x, x)))) ;
 
 val _ = p h ;
 
@@ -64,8 +65,8 @@ isEmpty h ;
 min h ;
 
 ListUtil.foreach (ListUtil.fromTo 1 10) (fn i =>
-					 (insert h (11 * i) (11 * i) ;
-					  ())) ;
+                                         (insert h (11 * i) (11 * i) ;
+                                          ())) ;
 
 min h ;
 

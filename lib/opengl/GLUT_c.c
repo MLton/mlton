@@ -1,6 +1,5 @@
 /* Glut-export.c */
-#include <GL/gl.h>
-#include <GL/glut.h>
+#include "platform.h"
 #include "GLUT_h.h"
 
 int callGlutCreateMenu ()
@@ -60,7 +59,7 @@ Pointer mlton_glut_stroke_mono_roman(void)
 {
   return ((Pointer) GLUT_STROKE_MONO_ROMAN);
 }
-	    
+            
 Pointer mlton_glut_bitmap_9_by_15(void)
 {
   return ((Pointer) GLUT_BITMAP_9_BY_15);

@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor MLBFrontEnd (S: MLB_FRONT_END_STRUCTS): MLB_FRONT_END = 
@@ -17,39 +17,39 @@ open S
  *)
 
 val lexAndParseProgOrMLBRef: (File.t * Region.t -> Ast.Basdec.node) ref =
-   ref (fn _ => Error.bug "lexAndParseProgOrMLB")
+   ref (fn _ => Error.bug "MLBFrontEnd.lexAndParseProgOrMLB")
 
 val lexAndParseProgOrMLB = fn f => !lexAndParseProgOrMLBRef f
 
 structure LrVals = MLBLrValsFun (structure Token = LrParser.Token
-			 	 structure Ast = Ast
-				 val lexAndParseProgOrMLB = lexAndParseProgOrMLB)
+                                 structure Ast = Ast
+                                 val lexAndParseProgOrMLB = lexAndParseProgOrMLB)
 structure Lex = MLBLexFun (structure Tokens = LrVals.Tokens)
 structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
-			       structure Lex = Lex
-			       structure LrParser = LrParser)
+                               structure Lex = Lex
+                               structure LrParser = LrParser)
 
 fun lexAndParse (source: Source.t, ins: In.t) =
    let
       val stream =
-	 Parse.makeLexer (fn n => In.inputN (ins, n))
-	 {source = source}
+         Parse.makeLexer (fn n => In.inputN (ins, n))
+         {source = source}
       val lookahead = 30
       val result =
-	 (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
-			   Control.errorStr (Region.make {left = left,
-							  right = right},
-					     s),
-			   ())))
-	 handle _ =>
-	    let
-	       val i = Source.lineStart source
-	       val _ = 
-		  Control.errorStr (Region.make {left = i, right = i},
-				    "parse error")
-	    in
-	       Ast.Basdec.empty
-	    end
+         (#1 (Parse.parse (lookahead, stream, fn (s, left, right) =>
+                           Control.errorStr (Region.make {left = left,
+                                                          right = right},
+                                             s),
+                           ())))
+         handle _ =>
+            let
+               val i = Source.lineStart source
+               val _ = 
+                  Control.errorStr (Region.make {left = i, right = i},
+                                    "parse error")
+            in
+               Ast.Basdec.empty
+            end
       val () = Ast.Basdec.checkSyntax result
    in 
       result
@@ -72,7 +72,7 @@ fun lexAndParseString (s: String.t) =
 
 val lexAndParseString =
     Trace.trace ("MLBFrontEnd.lexAndParseString", String.layout,
-		 Ast.Basdec.layout)
+                 Ast.Basdec.layout)
     lexAndParseString
 
 val lexAndParseString =
@@ -82,192 +82,220 @@ val lexAndParseString =
       val relativize = SOME cwd
       val state = {cwd = cwd, relativize = relativize, seen = []}
       val psi : (File.t * Ast.Basdec.t Promise.t) HashSet.t =
-	 HashSet.new {hash = String.hash o #1}
+         HashSet.new {hash = String.hash o #1}
       local
-	 fun make (file: File.t) =
-	    if File.canRead file
-	       then
-		  List.keepAllMap
-		  (File.lines file, fn line =>
-		   if String.forall (line, Char.isSpace)
-		      then NONE
-		   else 
-		      case String.tokens (line, Char.isSpace) of
-			 [var, path] => SOME {var = var, path = path}
-		       | _ => Error.bug (concat ["strange mlb path mapping: ", 
-						 file, ":: ", line]))
-	    else []
-	 val pathMap =
-	    (List.rev o List.concat)
-	    [make (concat [!Control.libDir, "/mlb-path-map"]),
-	     case OS.Process.getEnv "HOME" of
-		NONE => []
-	      | SOME path => make (concat [path, "/.mlton/mlb-path-map"]),
-	     [{var = "LIB_MLTON_DIR", 
-	       path = OS.Path.mkAbsolute {path = !Control.libDir,
-					  relativeTo = cwd}}]]
-	 fun peekPathMap var' =
-	    case List.peek (pathMap, fn {var,...} =>
-			    var = var') of
-	       NONE => NONE
-	     | SOME {path, ...} => SOME path
+         fun make (file: File.t) =
+            if not (File.canRead file) then
+               Error.bug (concat ["can't read MLB path map file: ", file])
+            else
+               List.keepAllMap
+               (File.lines file, fn line =>
+                if String.forall (line, Char.isSpace)
+                   then NONE
+                else 
+                   case String.tokens (line, Char.isSpace) of
+                      [var, path] => SOME {var = var, path = path}
+                    | _ => Error.bug (concat ["strange mlb path mapping: ", 
+                                              file, ":: ", line]))
+         val pathMap =
+            List.rev
+            (List.concat
+             [List.concat (List.map (!Control.mlbPathMaps, make)),
+              [{var = "LIB_MLTON_DIR", 
+                path = !Control.libDir},
+               {var = "TARGET_ARCH",
+                path = String.toLower (MLton.Platform.Arch.toString
+                                       (!Control.targetArch))},
+               {var = "TARGET_OS",
+                path = String.toLower (MLton.Platform.OS.toString
+                                       (!Control.targetOS))}]])
+         fun peekPathMap var' =
+            case List.peek (pathMap, fn {var,...} =>
+                            var = var') of
+               NONE => NONE
+             | SOME {path, ...} => SOME path
       in
-	 val peekPathMap =
-	    Trace.trace ("MLBFrontEnd.peekPathMap", 
-			 String.layout,
-			 Option.layout Dir.layout)
-	    peekPathMap
+         val peekPathMap =
+            Trace.trace ("MLBFrontEnd.peekPathMap", 
+                         String.layout,
+                         Option.layout Dir.layout)
+            peekPathMap
       end
-      fun regularize {fileOrig, cwd, relativize} =
-	 let
-	    val fileExp = 
-	       let
-		  fun loop (s, acc, accs) =
-		     case s of
-			[] => String.concat (List.rev
-					     (String.fromListRev acc :: accs))
-		      | (#"$")::(#"(")::s => 
-			   let
-			      val accs = (String.fromListRev acc)::accs
-			      fun loopVar (s, acc) =
-				 case s of
-				    [] => Error.bug "regularize"
-				  | (#")")::s => (s, String.fromListRev acc)
-				  | c::s => loopVar (s, c::acc)
-			      val (s, var) = loopVar (s, [])
-			   in
-			      case peekPathMap var of
-				 NONE => loop (s, [], accs)
-			       | SOME path => 
-				    loop ((String.explode path) @ s, [], accs)
-			   end
-		      | c::s => loop (s, c::acc, accs)
-	       in
-		  loop (String.explode fileOrig, [], [])
-	       end
-	    val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
-	    val fileAbs = OS.Path.mkCanonical fileAbs
-	    val relativize =
-	       if OS.Path.isAbsolute fileExp
-		  then NONE
-		  else relativize
-	    val fileUse =
-	       case relativize of
-		  NONE => fileAbs
-		| SOME d => OS.Path.mkRelative {path = fileAbs, relativeTo = d}
-	 in
-	    {fileAbs = fileAbs,
-	     fileUse = fileUse,
-	     relativize = relativize}
-	 end
+      fun expandPathVars (path, seen, region) =
+         let
+            fun loop (s, acc, accs) =
+               case s of
+                  [] => String.concat (List.rev
+                                       (String.fromListRev acc :: accs))
+                | #"$" :: #"(" :: s => 
+                     let
+                        val accs = String.fromListRev acc :: accs
+                        fun loopVar (s, acc) =
+                           case s of
+                              [] => Error.bug "MLBFrontEnd.lexAndParseString.expandPathVars"
+                            | #")" :: s => (s, String.fromListRev acc)
+                            | c :: s => loopVar (s, c :: acc)
+                        val (s, var) = loopVar (s, [])
+                     in
+                        if List.exists (seen, fn x => x = var)
+                           then
+                              let
+                                 open Layout
+                              in
+                                 Control.error
+                                 (region,
+                                  str "Cyclic MLB path variables",
+                                  List.layout Layout.str (var :: seen))
+                                 ; loop (s, [], accs)
+                              end
+                        else
+                           case peekPathMap var of
+                              NONE =>
+                                 let
+                                    open Layout
+                                 in
+                                    Control.error
+                                    (region,
+                                     seq [str "Undefined MLB path variable: ",
+                                          str var],
+                                     empty)
+                                    ; loop (s, [], accs)
+                                 end
+                            | SOME path => 
+                                 loop (s, [],
+                                       expandPathVars (path, var :: seen, region)
+                                       :: accs)
+                     end
+                | c :: s => loop (s, c :: acc, accs)
+         in
+            loop (String.explode path, [], [])
+         end
+      fun regularize {fileOrig, cwd, region, relativize} =
+         let
+            val fileExp = expandPathVars (fileOrig, [], region)
+            val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
+            val fileAbs = OS.Path.mkCanonical fileAbs
+            val relativize =
+               if OS.Path.isAbsolute fileExp
+                  then NONE
+                  else relativize
+            val fileUse =
+               case relativize of
+                  NONE => fileAbs
+                | SOME d => OS.Path.mkRelative {path = fileAbs, relativeTo = d}
+         in
+            {fileAbs = fileAbs,
+             fileUse = fileUse,
+             relativize = relativize}
+         end
       val regularize =
-	 Trace.trace ("MLBFrontEnd.regularize", 
-		      fn {fileOrig, cwd, relativize} =>
-		      Layout.record
-		      [("fileOrig", File.layout fileOrig),
-		       ("cwd", Dir.layout cwd),
-		       ("relativize", Option.layout Dir.layout relativize)],
-		      fn {fileAbs, fileUse, relativize} =>
-		      Layout.record
-		      [("fileAbs", File.layout fileAbs),
-		       ("fileUse", File.layout fileUse),
-		       ("relativize", Option.layout Dir.layout relativize)])
-	 regularize
+         Trace.trace ("MLBFrontEnd.lexAndParseString.regularize", 
+                      fn {fileOrig, cwd, relativize, ...} =>
+                      Layout.record
+                      [("fileOrig", File.layout fileOrig),
+                       ("cwd", Dir.layout cwd),
+                       ("relativize", Option.layout Dir.layout relativize)],
+                      fn {fileAbs, fileUse, relativize} =>
+                      Layout.record
+                      [("fileAbs", File.layout fileAbs),
+                       ("fileUse", File.layout fileUse),
+                       ("relativize", Option.layout Dir.layout relativize)])
+         regularize
       fun lexAndParseProg {fileAbs: File.t, fileUse: File.t, 
-			   fail: String.t -> Ast.Program.t} =
-	 Ast.Basdec.Prog
-	 ({fileAbs = fileAbs, fileUse = fileUse},
-	  Promise.delay
-	  (fn () =>
-	   Control.checkFile
-	   (fileUse, fail, fn () => FrontEnd.lexAndParseFile fileUse)))
-      and lexAndParseMLB {cwd: Dir.t, relativize: Dir.t option,
-			  seen: (File.t * File.t * Region.t) list,
-			  fileAbs: File.t, fileUse: File.t,
-			  fail: String.t -> Ast.Basdec.t, reg: Region.t} =
-	 Ast.Basdec.MLB
-	 ({fileAbs = fileAbs, fileUse = fileUse},
-	  Promise.delay
-	  (fn () =>
-	   Control.checkFile
-	   (fileUse, fail, fn () =>
-	    let
-	       val seen' = (fileAbs, fileUse, reg) :: seen
-	    in
-	       if List.exists (seen, fn (fileAbs', _, _) => 
-			       String.equals (fileAbs, fileAbs'))
-		  then (let open Layout
-			in 
-			   Control.error 
-			   (reg, seq [str "Basis forms a cycle with ", 
-				      File.layout fileUse],
-			    align (List.map (seen', fn (_, f, r) => 
-					     seq [Region.layout r, 
-						  str ": ", 
-						  File.layout f])))
-			   ; Ast.Basdec.empty
-			end)
-	       else 
-		  let
-		     val (_, basdec) =
-			HashSet.lookupOrInsert
-			(psi, String.hash fileAbs, fn (fileAbs', _) =>
-			 String.equals (fileAbs, fileAbs'), fn () =>
-			 let
-			    val cwd = OS.Path.dir fileAbs
-			    val basdec =
-			       Promise.delay
-			       (fn () =>
-				wrapLexAndParse
-				({cwd = cwd,
-				  relativize = relativize,
-				  seen = seen'},
-				 lexAndParseFile, fileUse))
-			 in
-			    (fileAbs, basdec)
-			 end)
-		  in
-		     Promise.force basdec
-		  end
-	    end)))
+                           fail: String.t -> Ast.Program.t} =
+         Ast.Basdec.Prog
+         ({fileAbs = fileAbs, fileUse = fileUse},
+          Promise.delay
+          (fn () =>
+           Control.checkFile
+           (fileUse, fail, fn () => FrontEnd.lexAndParseFile fileUse)))
+      and lexAndParseMLB {relativize: Dir.t option,
+                          seen: (File.t * File.t * Region.t) list,
+                          fileAbs: File.t, fileUse: File.t,
+                          fail: String.t -> Ast.Basdec.t, reg: Region.t} =
+         Ast.Basdec.MLB
+         ({fileAbs = fileAbs, fileUse = fileUse},
+          Promise.delay
+          (fn () =>
+           Control.checkFile
+           (fileUse, fail, fn () =>
+            let
+               val seen' = (fileAbs, fileUse, reg) :: seen
+            in
+               if List.exists (seen, fn (fileAbs', _, _) => 
+                               String.equals (fileAbs, fileAbs'))
+                  then (let open Layout
+                        in 
+                           Control.error 
+                           (reg, seq [str "Basis forms a cycle with ", 
+                                      File.layout fileUse],
+                            align (List.map (seen', fn (_, f, r) => 
+                                             seq [Region.layout r, 
+                                                  str ": ", 
+                                                  File.layout f])))
+                           ; Ast.Basdec.empty
+                        end)
+               else 
+                  let
+                     val (_, basdec) =
+                        HashSet.lookupOrInsert
+                        (psi, String.hash fileAbs, fn (fileAbs', _) =>
+                         String.equals (fileAbs, fileAbs'), fn () =>
+                         let
+                            val cwd = OS.Path.dir fileAbs
+                            val basdec =
+                               Promise.delay
+                               (fn () =>
+                                wrapLexAndParse
+                                ({cwd = cwd,
+                                  relativize = relativize,
+                                  seen = seen'},
+                                 lexAndParseFile, fileUse))
+                         in
+                            (fileAbs, basdec)
+                         end)
+                  in
+                     Promise.force basdec
+                  end
+            end)))
       and lexAndParseProgOrMLB {cwd, relativize, seen}
-	                       (fileOrig: File.t, reg: Region.t) =
-	 let
-	    val {fileAbs, fileUse, relativize, ...} = 
-	       regularize {cwd = cwd,
-			   fileOrig = fileOrig,
-			   relativize = relativize}
-	    fun fail default msg =
-	       let
-		  val () = Control.error (reg, Layout.str msg, Layout.empty)
-	       in
-		  default
-	       end
-	    val mlbExts = ["mlb"]
-	    val progExts = ["ML","fun","sig","sml"]
-	    fun err () = fail (Ast.Basdec.Seq []) "has an unknown extension"
-	 in
-	    case File.extension fileUse of
-	       NONE => err ()
-	     | SOME s =>
-		  if List.contains (mlbExts, s, String.equals)
-		     then lexAndParseMLB {cwd = cwd,
-					  relativize = relativize,
-					  seen = seen,
-					  fileAbs = fileAbs,
-					  fileUse = fileUse,
-					  fail = fail Ast.Basdec.empty,
-					  reg = reg}
-		  else if List.contains (progExts, s, String.equals)
-		     then lexAndParseProg {fileAbs = fileAbs,
-					   fileUse = fileUse,
-					   fail = fail Ast.Program.empty}
-		  else err ()
-	 end
+                               (fileOrig: File.t, reg: Region.t) =
+         let
+            val {fileAbs, fileUse, relativize, ...} = 
+               regularize {cwd = cwd,
+                           fileOrig = fileOrig,
+                           region = reg,
+                           relativize = relativize}
+            fun fail default msg =
+               let
+                  val () = Control.error (reg, Layout.str msg, Layout.empty)
+               in
+                  default
+               end
+            val mlbExts = ["mlb"]
+            val progExts = ["ML","fun","sig","sml"]
+            fun err () = fail (Ast.Basdec.Seq []) "has an unknown extension"
+         in
+            case File.extension fileUse of
+               NONE => err ()
+             | SOME s =>
+                  if List.contains (mlbExts, s, String.equals)
+                     then lexAndParseMLB {relativize = relativize,
+                                          seen = seen,
+                                          fileAbs = fileAbs,
+                                          fileUse = fileUse,
+                                          fail = fail Ast.Basdec.empty,
+                                          reg = reg}
+                  else if List.contains (progExts, s, String.equals)
+                     then lexAndParseProg {fileAbs = fileAbs,
+                                           fileUse = fileUse,
+                                           fail = fail Ast.Program.empty}
+                  else err ()
+         end
       and wrapLexAndParse (state, lexAndParse, arg) =
-	 Ref.fluidLet
-	 (lexAndParseProgOrMLBRef, lexAndParseProgOrMLB state, fn () =>
-	  lexAndParse arg)
+         Ref.fluidLet
+         (lexAndParseProgOrMLBRef, lexAndParseProgOrMLB state, fn () =>
+          lexAndParse arg)
       val dec = wrapLexAndParse (state, lexAndParseString, s)
    in
       dec

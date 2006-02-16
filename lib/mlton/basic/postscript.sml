@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Postscript: POSTSCRIPT =
 struct
 
@@ -14,13 +15,13 @@ structure Char =
       open Char
 
       fun escapePostscript c =
-	 if isPrint c
-	    then (case c of
-		     #"\\" => "\\\\"
-		   | #"(" => "\\("
-		   | #")" => "\\)"
-		   | _ => toString c)
-	 else escapeC c
+         if isPrint c
+            then (case c of
+                     #"\\" => "\\\\"
+                   | #"(" => "\\("
+                   | #")" => "\\)"
+                   | _ => toString c)
+         else escapeC c
    end
 
 structure String =
@@ -343,23 +344,23 @@ val toString =
 fun programString(os: t list): string =
    let
       fun loop(os: t list,
-	       lineLen: int,
-	       line: string list,
-	       lines: string list): string =
-	 let
-	    fun newLine() = concat("\n" :: rev line) :: lines
-	 in case os of
-	    [] => concat(rev(newLine()))
-	  | oper :: os =>
-	       let
-		  val oper = toString oper
-		  val m = String.size oper
-		  val lineLen = m + 1 + lineLen
-	       in if lineLen > 80
-		     then loop(os, m + 1, [" ", oper], newLine())
-		  else loop(os, lineLen, " " :: oper :: line, lines)
-	       end
-	 end
+               lineLen: int,
+               line: string list,
+               lines: string list): string =
+         let
+            fun newLine() = concat("\n" :: rev line) :: lines
+         in case os of
+            [] => concat(rev(newLine()))
+          | oper :: os =>
+               let
+                  val oper = toString oper
+                  val m = String.size oper
+                  val lineLen = m + 1 + lineLen
+               in if lineLen > 80
+                     then loop(os, m + 1, [" ", oper], newLine())
+                  else loop(os, lineLen, " " :: oper :: line, lines)
+               end
+         end
    in loop(os, 0, [], ["%!PS\n"])
    end
 
@@ -378,10 +379,10 @@ val userBase =
    pageHeight - margin - dateHeight - userHeight * (1.0 + userRatio) / 2.0
    
 fun makeHeader{
-	       host: string,
-	       job: string,
-	       user: string
-	       }: string =
+               host: string,
+               job: string,
+               user: string
+               }: string =
    let val now = Date.now()
       val time = string(concat["Time: ", Date.fmt(now, "%I:%M:%S %p")])
    in programString

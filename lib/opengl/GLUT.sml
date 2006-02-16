@@ -243,35 +243,35 @@ structure GLUT :> GLUT =
 
 
             (* Create Menu callback *)
-            val gCreateMenuFA = _export "glutCreateMenuArgument": int -> unit;
+            val gCreateMenuFA = _export "glutCreateMenuArgument": (int -> unit) -> unit;
             val callGCreateMenuF = _import "callGlutCreateMenu": unit -> int;
 
             (* Display function callback *)
-            val gDisplayFA = _export "glutDisplayFuncArgument": unit -> unit;
+            val gDisplayFA = _export "glutDisplayFuncArgument": (unit -> unit) -> unit;
             val callGDisplayF = _import "callGlutDisplayFunc": unit -> unit;
 
             (* Idle function callback *)
-            val gIdleFA = _export "glutIdleFuncArgument": unit -> unit;
+            val gIdleFA = _export "glutIdleFuncArgument": (unit -> unit) -> unit;
             val callGIdleF = _import "callGlutIdleFunc": unit -> unit;
 
             (* Reshape function callback *)
-            val gReshapeFA = _export "glutReshapeFuncArgument": int * int -> unit;
+            val gReshapeFA = _export "glutReshapeFuncArgument": (int * int -> unit) -> unit;
             val callGReshapeF = _import "callGlutReshapeFunc": unit -> unit;
 
             (* Keyboard function callback *)
-            val gKbdFA = _export "glutKeyboardFuncArgument": char * int * int -> unit;
+            val gKbdFA = _export "glutKeyboardFuncArgument": (char * int * int -> unit) -> unit;
             val callGKbdF = _import "callGlutKeyboardFunc": unit -> unit;
 
             (* Mouse function callback *)
-            val gMouseFA = _export "glutMouseFuncArgument": GLenum * GLenum * int * int -> unit;
+            val gMouseFA = _export "glutMouseFuncArgument": (GLenum * GLenum * int * int -> unit) -> unit;
             val callGMouseF = _import "callGlutMouseFunc": unit -> unit;
 
             (* Special function callback *)
-            val gSpecFA = _export "glutSpecialFuncArgument": int * int * int -> unit;
+            val gSpecFA = _export "glutSpecialFuncArgument": (int * int * int -> unit) -> unit;
             val callGSpecF = _import "callGlutSpecialFunc": unit -> unit;
 
             (* Visibility function callback *)
-            val gVisibilityFA = _export "glutVisibilityFuncArgument": Word32.word -> unit;
+            val gVisibilityFA = _export "glutVisibilityFuncArgument": (Word32.word -> unit) -> unit;
             val callGVisibilityF = _import "callGlutVisibilityFunc": unit -> unit;
 
 
@@ -319,7 +319,7 @@ structure GLUT :> GLUT =
             fun glutVisibilityFunc (vis: Word32.word -> unit) = ( gVisibilityFA vis; callGVisibilityF ())
 
             val c_glutGetModifiers = _import "glutGetModifiers" stdcall: unit -> GL.GLenum;
-	    fun glutGetModifiers () = c_glutGetModifiers () :  GL.GLenum;
+            fun glutGetModifiers () = c_glutGetModifiers () :  GL.GLenum;
 
             val c_glutDestroyMenu = _import "glutDestroyMenu" stdcall: int -> unit;
             fun glutDestroyMenu (a:int) = c_glutDestroyMenu (a): unit;
@@ -369,10 +369,10 @@ structure GLUT :> GLUT =
 
             val glutCreateWindow = _import "glutCreateWindow" stdcall: string -> int;
 
-	    val c_glutCreateSubWindow = _import "glutCreateSubWindow" stdcall: int * int * int * int * int -> int;
-	    fun glutCreateSubWindow (a:int) (b:int) (c:int) (d:int) (e:int) = c_glutCreateSubWindow (a, b, c, d, e) :int
+            val c_glutCreateSubWindow = _import "glutCreateSubWindow" stdcall: int * int * int * int * int -> int;
+            fun glutCreateSubWindow (a:int) (b:int) (c:int) (d:int) (e:int) = c_glutCreateSubWindow (a, b, c, d, e) :int
 
-	    val glutDestroyWindow = _import "glutDestroyWindow" stdcall: int -> unit;
+            val glutDestroyWindow = _import "glutDestroyWindow" stdcall: int -> unit;
 
             val glutMainLoop = _import "glutMainLoop" stdcall: unit -> unit;
 

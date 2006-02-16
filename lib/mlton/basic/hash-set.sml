@@ -1,36 +1,37 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure HashSet: HASH_SET =
 struct
 
 datatype 'a t =
    T of {buckets: 'a list array ref,
-	 hash: 'a -> word,
-	 mask: word ref,
-	 numItems: int ref}
+         hash: 'a -> word,
+         mask: word ref,
+         numItems: int ref}
    
 fun 'a newWithBuckets {hash, numBuckets: int}: 'a t =
    let
       val mask: word = Word.fromInt numBuckets - 0w1
    in
       T {buckets = ref (Array.new (numBuckets, [])),
-	 hash = hash,
-	 numItems = ref 0,
-	 mask = ref mask}
+         hash = hash,
+         numItems = ref 0,
+         mask = ref mask}
    end
 
 val initialSize: int = Int.pow (2, 6)
 
 fun new {hash} = newWithBuckets {hash = hash,
-				 numBuckets = initialSize}
+                                 numBuckets = initialSize}
 
 fun newOfSize {hash, size} =
    newWithBuckets {hash = hash,
-		   numBuckets = 4 * Int.roundUpToPowerOfTwo size}
+                   numBuckets = 4 * Int.roundUpToPowerOfTwo size}
 
 fun size (T {numItems, ...}) = !numItems
 
@@ -45,10 +46,10 @@ fun stats () =
    in align
       [seq [str "numPeeks = ", Int.layout (!numPeeks)],
        seq [str "average position in bucket = ",
-	    str let open Real
-		in format (fromInt (!numLinks) / fromInt (!numPeeks),
-			   Format.fix (SOME 3))
-		end]]
+            str let open Real
+                in format (fromInt (!numLinks) / fromInt (!numPeeks),
+                           Format.fix (SOME 3))
+                end]]
    end
 
 fun stats' (T {buckets, numItems, ...}) =
@@ -58,60 +59,60 @@ fun stats' (T {buckets, numItems, ...}) =
        val numb' = numb - 1
        val avg = let open Real in (fromInt numi / fromInt numb) end
        val (min,max,total)
-	 = Array.fold
-	   (!buckets,
-	    (Int.maxInt, Int.minInt, 0.0),
-	    fn (l,(min,max,total)) 
-	     => let
-		  val n = List.length l
-		  val d = (Real.fromInt n) - avg
-		in
-		  (Int.min(min,n),
-		   Int.max(max,n),
-		   total + d * d)
-		end)
+         = Array.fold
+           (!buckets,
+            (Int.maxInt, Int.minInt, 0.0),
+            fn (l,(min,max,total)) 
+             => let
+                  val n = List.length l
+                  val d = (Real.fromInt n) - avg
+                in
+                  (Int.min(min,n),
+                   Int.max(max,n),
+                   total + d * d)
+                end)
        val stdd = let open Real in Math.sqrt(total / (fromInt numb')) end
        val rfmt = fn r => Real.format (r, Real.Format.fix (SOME 3))
    in align
       [seq [str "numItems = ", Int.layout numi],
        seq [str "numBuckets = ", Int.layout numb],
        seq [str "avg = ", str (rfmt avg),
-	    str " stdd = ", str (rfmt stdd),
-	    str " min = ", Int.layout min, 
-	    str " max = ", Int.layout max]]
+            str " stdd = ", str (rfmt stdd),
+            str " min = ", Int.layout min, 
+            str " max = ", Int.layout max]]
    end
 
 fun resize (T {buckets, hash, mask, ...}, size: int, newMask: word): unit =
    let
       val newBuckets = Array.new (size, [])
    in Array.foreach (!buckets, fn r =>
-		     List.foreach (r, fn a =>
-				   let val j = index (hash a, newMask)
-				   in Array.update
-				      (newBuckets, j,
-				       a :: Array.sub (newBuckets, j))
-				   end))
+                     List.foreach (r, fn a =>
+                                   let val j = index (hash a, newMask)
+                                   in Array.update
+                                      (newBuckets, j,
+                                       a :: Array.sub (newBuckets, j))
+                                   end))
       ; buckets := newBuckets
       ; mask := newMask
    end
-   	       
+               
 fun maybeGrow (s as T {buckets, mask, numItems, ...}): unit =
    let
       val n = Array.length (!buckets)
    in if !numItems * 4 > n
-	 then resize (s,
-		      n * 2,
-		      (* The new mask depends on growFactor being 2. *)
-		      Word.orb (0w1, Word.<< (!mask, 0w1)))
+         then resize (s,
+                      n * 2,
+                      (* The new mask depends on growFactor being 2. *)
+                      Word.orb (0w1, Word.<< (!mask, 0w1)))
       else ()
    end
 
 fun removeAll (T {buckets, numItems, ...}, p) =
    Array.modify (!buckets, fn elts =>
-		 List.fold (elts, [], fn (a, ac) =>
-			    if p a
-			       then (Int.dec numItems; ac)
-			    else a :: ac))
+                 List.fold (elts, [], fn (a, ac) =>
+                            if p a
+                               then (Int.dec numItems; ac)
+                            else a :: ac))
 
 fun remove (T {buckets, mask, numItems, ...}, w, p) =
    let
@@ -139,22 +140,23 @@ fun peek (t, w, p) = peekGen (t, w, p, fn _ => NONE, SOME)
  *    let
  *       val j = index (hash a, !mask)
  *       val _ =
- * 	 Array.update (buckets, j,
- * 		       a :: (List.remove (Array.sub (buckets, j),
- * 					  fn a' => equals (a, a'))))
+ *       Array.update (buckets, j,
+ *                     a :: (List.remove (Array.sub (buckets, j),
+ *                                        fn a' => equals (a, a'))))
  *    in ()
  *    end
  *)
 
-fun insertIfNew (table as T {buckets, numItems, ...}, w, p, f, g) =
+fun insertIfNew (table as T {buckets, numItems, ...}, w, p, f, 
+                 g: 'a -> unit) =
    let
       fun no (j, b) =
-	 let val a = f ()
-	    val _ = Int.inc numItems
-	    val _ = Array.update (!buckets, j, a :: b)
-	    val _ = maybeGrow table
-	 in a
-	 end
+         let val a = f ()
+            val _ = Int.inc numItems
+            val _ = Array.update (!buckets, j, a :: b)
+            val _ = maybeGrow table
+         in a
+         end
       fun yes x = (g x; x)
    in peekGen (table, w, p, no, yes)
    end
@@ -167,8 +169,8 @@ fun fold (T {buckets, ...}, b, f) =
 
 local
    structure F = Fold (type 'a t = 'a t
-		       type 'a elt = 'a
-		       val fold = fold)
+                       type 'a elt = 'a
+                       val fold = fold)
    open F
 in
    val foreach = foreach
@@ -185,10 +187,10 @@ fun fromList (l, {hash, equals}) =
    let
       val s = new {hash = hash}
       val () =
-	 List.foreach (l, fn a =>
-		       ignore (lookupOrInsert (s, hash a,
-					       fn b => equals (a, b),
-					       fn _ => a)))
+         List.foreach (l, fn a =>
+                       ignore (lookupOrInsert (s, hash a,
+                                               fn b => equals (a, b),
+                                               fn _ => a)))
    in
       s
    end

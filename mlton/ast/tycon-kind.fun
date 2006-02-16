@@ -1,3 +1,10 @@
+(* Copyright (C) 2003-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 functor TyconKind (S: TYCON_KIND_STRUCTS): TYCON_KIND = 
 struct
 
@@ -16,7 +23,7 @@ val equals =
     | (Nary, Nary) => true
     | _ => false
 
-val equals = Trace.trace2 ("Kind.equals", layout, layout, Bool.layout) equals
-	 
+val equals = Trace.trace2 ("TyconKind.equals", layout, layout, Bool.layout) equals
+         
 end
 

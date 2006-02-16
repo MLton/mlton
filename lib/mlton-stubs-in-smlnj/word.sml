@@ -1,9 +1,17 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure LargeWord: WORD = Word32
    
 signature WORD =
    sig
       eqtype word
-	 
+         
       val * : word * word -> word 
       val + : word * word -> word 
       val - : word * word -> word 
@@ -30,9 +38,9 @@ signature WORD =
       val notb: word -> word 
       val orb: word * word -> word 
       val scan:
-	 StringCvt.radix
-	 -> (char, 'a) StringCvt.reader
-	 -> (word, 'a) StringCvt.reader
+         StringCvt.radix
+         -> (char, 'a) StringCvt.reader
+         -> (word, 'a) StringCvt.reader
       val toInt: word -> Int32.int 
       val toIntX: word -> Int32.int 
       val toLarge: word -> LargeWord.word
@@ -49,40 +57,40 @@ signature WORD =
 functor FixWord (W: PERVASIVE_WORD): WORD =
    struct
       local
-	 open W
+         open W
       in
-	 type word = word
-	 val op * = op *
-	 val op + = op +
-	 val op - = op -
-	 val op < = op <
-	 val op <= = op <=
-	 val op > = op >
-	 val op >= = op >=
-	 val ~ = ~
-	 val andb = andb
-	 val compare = compare
-	 val op div = op div
-	 val fromString = fromString
-	 val max = max
-	 val min = min
-	 val op mod = op mod
-	 val notb = notb
-	 val orb = orb
-	 val scan = scan
-	 val xorb = xorb
+         type word = word
+         val op * = op *
+         val op + = op +
+         val op - = op -
+         val op < = op <
+         val op <= = op <=
+         val op > = op >
+         val op >= = op >=
+         val ~ = ~
+         val andb = andb
+         val compare = compare
+         val op div = op div
+         val fromString = fromString
+         val max = max
+         val min = min
+         val op mod = op mod
+         val notb = notb
+         val orb = orb
+         val scan = scan
+         val xorb = xorb
       end
    
       val wordSize = Pervasive.Int32.fromInt W.wordSize
-	 
+         
       local
-	 fun fix (f: word * Word31.word -> word)
-	    (w: word, w': Word32.word): word =
-	    f (w, Word31.fromLargeWord w')
+         fun fix (f: word * Word31.word -> word)
+            (w: word, w': Word32.word): word =
+            f (w, Word31.fromLargeWord w')
       in
-	 val << = fix W.<<
-	 val >> = fix W.>>
-	 val ~>> = fix W.~>>
+         val << = fix W.<<
+         val >> = fix W.>>
+         val ~>> = fix W.~>>
       end
       val fromInt = W.fromLargeInt o Pervasive.Int32.toLarge
       val fromLarge = W.fromLargeWord o LargeWord.toLargeWord
@@ -97,11 +105,11 @@ functor FixWord (W: PERVASIVE_WORD): WORD =
       val toLargeWordX = LargeWord.fromLargeWord o W.toLargeWordX
       val toLargeX = toLargeWordX
       local
-	 (* Bug in SML/NJ -- they use lower instead of upper case. *)
-	 val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
+         (* Bug in SML/NJ -- they use lower instead of upper case. *)
+         val toUpper = Pervasive.String.translate (Char.toString o Char.toUpper)
       in
-	 fun fmt r i = toUpper (W.fmt r i)
-	 val toString = toUpper o W.toString
+         fun fmt r i = toUpper (W.fmt r i)
+         val toString = toUpper o W.toString
       end
 
       fun ~ (w: word) = fromInt 0 - w

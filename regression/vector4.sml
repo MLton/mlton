@@ -8,10 +8,10 @@ val v1 = fromList[1,2,3]
 val v2 = fromList[1,2,3]
 
 val _ = assert("vector equality",
-	       v1 = v2
-	       andalso fromList[v1, v2] = fromList[v2, v1]
-	       andalso v1 <> fromList[1,2]
-	       andalso v1 <> fromList[1,2,4])
+               v1 = v2
+               andalso fromList[v1, v2] = fromList[v2, v1]
+               andalso v1 <> fromList[1,2]
+               andalso v1 <> fromList[1,2,4])
 
 open Array
 

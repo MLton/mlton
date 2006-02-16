@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature SUM_STRUCTS =
    sig
       structure X: T
@@ -13,9 +14,9 @@ signature SUM_STRUCTS =
 signature SUM =
    sig
       include SUM_STRUCTS
-	 
+         
       datatype t =
-	 X of X.t
+         X of X.t
        | Y of Y.t
 
       val equals: t * t -> bool

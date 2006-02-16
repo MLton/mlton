@@ -1,0 +1,21 @@
+Installation instructions for ML-Lex
+-------------------------------------
+
+ML-Lex will normally be automatically
+installed as part of the SML/NJ system
+by the SML/NJ installer.
+
+To install by hand (e.g., if you make
+your own modifications), run the
+
+    ./build
+
+script in this directory and then move
+the file
+
+    ml-lex.$ARCH-$OS
+
+to the heap-file directory.
+
+Running ./build requires a properly
+functioning installation of SML/NJ.

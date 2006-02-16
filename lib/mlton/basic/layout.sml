@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Layout: LAYOUT =
 struct
 
@@ -19,7 +20,7 @@ fun switch {detailed = d,normal = n} x =
 structure String = String0
 
 datatype t = T of {length: int,
-		   tree: tree}
+                   tree: tree}
 and tree =
    Empty
   | String of string
@@ -51,18 +52,18 @@ fun seq ts =
 local
    fun make force ts =
       let
-	 fun loop ts =
-	    case ts of
-	       [] => (ts, 0)
-	     | t :: ts =>
-		  let val (ts, n) = loop ts
-		  in case length t of
-		     0 => (ts, n)
-		   | n' => (t :: ts, n + n' + 1)
-		  end
-	 val (ts, len) = loop ts
+         fun loop ts =
+            case ts of
+               [] => (ts, 0)
+             | t :: ts =>
+                  let val (ts, n) = loop ts
+                  in case length t of
+                     0 => (ts, n)
+                   | n' => (t :: ts, n + n' + 1)
+                  end
+         val (ts, len) = loop ts
       in case len of
-	 0 => empty
+         0 => empty
        | _ => T {length = len - 1, tree = Align {force = force, rows = ts}}
       end
 in
@@ -76,114 +77,114 @@ val tabSize: int = 8
 
 fun blanks (n: int): string =
    concat [String.make (n div tabSize, #"\t"),
-	   String.make (n mod tabSize, #" ")]
+           String.make (n mod tabSize, #" ")]
 
 fun outputTree (t, out) =
    let val print = Out.outputc out
       fun loop (T {tree, length}) =
-	 (print "(length "
-	  ; print (Int.toString length)
-	  ; print ")"
-	  ; (case tree of
-		Empty => print "Empty"
-	      | String s => (print "(String "; print s; print ")")
-	      | Sequence ts => loops ("Sequence", ts)
-	      | Align {rows, ...} => loops ("Align", rows)
-	      | Indent (t, n) => (print "(Indent "
-				  ; print (Int.toString n)
-				  ; print " "
-				  ; loop t
-				  ; print ")")))
+         (print "(length "
+          ; print (Int.toString length)
+          ; print ")"
+          ; (case tree of
+                Empty => print "Empty"
+              | String s => (print "(String "; print s; print ")")
+              | Sequence ts => loops ("Sequence", ts)
+              | Align {rows, ...} => loops ("Align", rows)
+              | Indent (t, n) => (print "(Indent "
+                                  ; print (Int.toString n)
+                                  ; print " "
+                                  ; loop t
+                                  ; print ")")))
       and loops (s, ts) = (print "("
-			   ; print s
-			   ; app (fn t => (print " " ; loop t)) ts
-			   ; print ")")
+                           ; print s
+                           ; app (fn t => (print " " ; loop t)) ts
+                           ; print ")")
    in loop t
    end
 
 fun toString t =
    let
       fun loop (T {tree, ...}, accum) =
-	 case tree of
-	    Empty => accum
-	  | String s => s :: accum
-	  | Sequence ts => fold (ts, accum, loop)
-	  | Align {rows, ...} =>
-	       (case rows of
-		   [] => accum
-		 | t :: ts =>
-		      fold (ts, loop (t, accum), fn (t, ac) =>
-			    loop (t, " " :: ac)))
-	  | Indent (t, _) => loop (t, accum)
+         case tree of
+            Empty => accum
+          | String s => s :: accum
+          | Sequence ts => fold (ts, accum, loop)
+          | Align {rows, ...} =>
+               (case rows of
+                   [] => accum
+                 | t :: ts =>
+                      fold (ts, loop (t, accum), fn (t, ac) =>
+                            loop (t, " " :: ac)))
+          | Indent (t, _) => loop (t, accum)
    in
       String.concat (rev (loop (t, [])))
    end
 
 fun print {tree: t,
-	   print: string -> unit,
-	   lineWidth: int} =
+           print: string -> unit,
+           lineWidth: int} =
    let
       (*val _ = outputTree (t, out)*)
       fun newline () = print "\n"
 
       fun outputCompact (t, {at, printAt = _}) =
-	 let
-	    fun loop (T {tree, ...}) =
-	       case tree of
-		  Empty => ()
-		| String s => print s
-		| Sequence ts => app loop ts
-		| Indent (t, _) => loop t
-		| Align {rows, ...} =>
-		     case rows of
-			[] => ()
-		      | t :: ts => (loop t
-				    ; app (fn t => (print " "; loop t)) ts)
-	    val at = at + length t
-	 in loop t
-	    ; {at = at, printAt = at}
-	 end
+         let
+            fun loop (T {tree, ...}) =
+               case tree of
+                  Empty => ()
+                | String s => print s
+                | Sequence ts => app loop ts
+                | Indent (t, _) => loop t
+                | Align {rows, ...} =>
+                     case rows of
+                        [] => ()
+                      | t :: ts => (loop t
+                                    ; app (fn t => (print " "; loop t)) ts)
+            val at = at + length t
+         in loop t
+            ; {at = at, printAt = at}
+         end
 
       fun loop (t as T {length, tree}, state as {at, printAt}) =
-	 let
-	    fun prePrint () =
-	       if at >= printAt
-		  then () (* can't back up *)
-	       else print (blanks (printAt - at))
-	 in (*Out.print (concat ["at ", Int.toString at,
-	     * "  printAt ", Int.toString printAt,
+         let
+            fun prePrint () =
+               if at >= printAt
+                  then () (* can't back up *)
+               else print (blanks (printAt - at))
+         in (*Out.print (concat ["at ", Int.toString at,
+             * "  printAt ", Int.toString printAt,
              * "\n"]);
-	     *)
-	    (*outputTree (t, Out.error)*)
-	    case tree of
-	       Empty => state
-	     | Indent (t, n) => loop (t, {at = at, printAt = printAt + n})
-	     | Sequence ts => fold (ts, state, loop)
-	     | String s =>
-		  (prePrint ()
-		   ; print s
-		   ; let val at = printAt + length
-		     in {at = at, printAt = at}
-		     end)
-	     | Align {force, rows} =>
-		  if not force andalso printAt + length <= lineWidth
-		     then (prePrint ()
-			   ; outputCompact (t, state))
-		  else (case rows of
-			   [] => state
-			 | t :: ts =>
-			      fold
-			      (ts, loop (t, state), fn (t, _) =>
-			       (newline ()
-				; loop (t, {at = 0, printAt = printAt}))))
-	 end
+             *)
+            (*outputTree (t, Out.error)*)
+            case tree of
+               Empty => state
+             | Indent (t, n) => loop (t, {at = at, printAt = printAt + n})
+             | Sequence ts => fold (ts, state, loop)
+             | String s =>
+                  (prePrint ()
+                   ; print s
+                   ; let val at = printAt + length
+                     in {at = at, printAt = at}
+                     end)
+             | Align {force, rows} =>
+                  if not force andalso printAt + length <= lineWidth
+                     then (prePrint ()
+                           ; outputCompact (t, state))
+                  else (case rows of
+                           [] => state
+                         | t :: ts =>
+                              fold
+                              (ts, loop (t, state), fn (t, _) =>
+                               (newline ()
+                                ; loop (t, {at = 0, printAt = printAt}))))
+         end
    in ignore (loop (tree, {at = 0, printAt = 0}))
    end
 
 fun outputWidth (t, width, out) =
    print {tree = t,
-	  lineWidth = width,
-	  print = Out.outputc out}
+          lineWidth = width,
+          print = Out.outputc out}
 
 local
    val defaultWidth: int = 80
@@ -203,11 +204,11 @@ fun separate (ts, s) =
    case ts of
       [] => []
     | t :: ts => t :: (let val s = str s
-			   fun loop [] = []
-			     | loop (t :: ts) = s :: t:: (loop ts)
-		       in loop ts
-		       end)
-	 
+                           fun loop [] = []
+                             | loop (t :: ts) = s :: t:: (loop ts)
+                       in loop ts
+                       end)
+         
 fun separateLeft (ts, s) =
    case ts of
       [] => []
@@ -216,18 +217,18 @@ fun separateLeft (ts, s) =
 
 fun separateRight (ts, s) =
    rev (let val ts = rev ts
-	in case ts of
-	   [] => []
-	 | [_] => ts
-	 | t :: ts => t :: (map (fn t => seq [t, str s]) ts)
-	end)
+        in case ts of
+           [] => []
+         | [_] => ts
+         | t :: ts => t :: (map (fn t => seq [t, str s]) ts)
+        end)
 
 fun alignPrefix (ts, prefix) =
    case ts of
       [] => empty
     | t :: ts =>
-	 mayAlign [t, indent (mayAlign (map (fn t => seq [str prefix, t]) ts),
-			      ~ (String.size prefix))]
+         mayAlign [t, indent (mayAlign (map (fn t => seq [str prefix, t]) ts),
+                              ~ (String.size prefix))]
 
 local
    fun sequence (start, finish, sep) ts =

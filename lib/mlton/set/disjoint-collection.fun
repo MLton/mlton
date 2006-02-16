@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                        Disjoint Collection                        *)
@@ -26,21 +26,21 @@ structure Value :
    end =
    struct
       datatype 'a t = T of {value: 'a,
-			    elt: 'a t S.t D.t option ref}
+                            elt: 'a t S.t D.t option ref}
 
       fun value(T{value, ...}) = value
-	 
+         
       fun elt(T{elt=ref(SOME d), ...}) = d
-	| elt _ = Error.error "Value.elt"
+        | elt _ = Error.error "DisjointCollection.Value.elt"
 
       fun set v = D.value(elt v)
 
       fun new v = let val r = ref NONE
-		      val v = T{value = v, elt = r}
-		      val d = D.new(S.singleton v)
-		  in (r := SOME d ;
-		      v)
-		  end
+                      val v = T{value = v, elt = r}
+                      val d = D.new(S.singleton v)
+                  in (r := SOME d ;
+                      v)
+                  end
       fun copy(T{elt, ...}, v) = T{value = v, elt = elt}
    end
 structure V = Value
@@ -67,7 +67,7 @@ structure S =
 (* ------------------------------------------------- *)
 
 datatype 'a t = T of {sets: 'a S.t CL.t,
-		      numSets: int ref}
+                      numSets: int ref}
 
 fun sets (T{sets, ...}) = sets
 fun numSetsRef (T{numSets, ...}) = numSets
@@ -76,7 +76,7 @@ fun incNumSets c = numSetsRef c := numSets c + 1
 fun decNumSets c = numSetsRef c := numSets c - 1
 
 fun empty() = T{sets = CL.empty(),
-		numSets = ref 0}
+                numSets = ref 0}
    
 fun addSingleton(c, v) =
    let val v = V.new v
@@ -84,10 +84,10 @@ fun addSingleton(c, v) =
        CL.insert(sets c, V.elt v) ;
        V.set v)
    end
-		    
+                    
 fun new vs = let val c = empty()
-	     in (c, List.map(vs, fn v => addSingleton(c, v)))
-	     end
+             in (c, List.map(vs, fn v => addSingleton(c, v)))
+             end
 
 fun randomSet(T{sets, ...}) = D.value(CL.first sets)
 
@@ -100,9 +100,9 @@ fun union(c, s, s') =
        val d' = S.elt r'
     in if S.equals(r, r') then ()
        else (decNumSets c ;
-	     S.union(r, r') ;
-	     CL.delete(sets c,
-		       if S.isRepresentative r then d' else d))
+             S.union(r, r') ;
+             CL.delete(sets c,
+                       if S.isRepresentative r then d' else d))
     end
 
 end

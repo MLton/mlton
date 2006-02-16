@@ -29,18 +29,18 @@ signature UNSAFE_MONO_VECTOR =
 signature UNSAFE =
    sig
       structure Array:
-	 sig
-	    val create: int * 'a -> 'a array
-	    val sub: 'a array * int -> 'a
-	    val update: 'a array * int * 'a -> unit
-	 end
+         sig
+            val create: int * 'a -> 'a array
+            val sub: 'a array * int -> 'a
+            val update: 'a array * int * 'a -> unit
+         end
       structure CharArray: UNSAFE_MONO_ARRAY
       structure CharVector: UNSAFE_MONO_VECTOR
       structure Real64Array: UNSAFE_MONO_ARRAY
       structure Vector:
-	 sig
-	    val sub: 'a vector * int -> 'a
-	 end
+         sig
+            val sub: 'a vector * int -> 'a
+         end
       structure Word8Array: UNSAFE_MONO_ARRAY
       structure Word8Vector: UNSAFE_MONO_VECTOR
    end

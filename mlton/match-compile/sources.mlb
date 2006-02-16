@@ -1,20 +1,21 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
-local
-    ../../lib/mlton/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
 
-    nested-pat.sig
-    nested-pat.fun
-    match-compile.sig
-    match-compile.fun
+local
+   ../../lib/mlton/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+
+   nested-pat.sig
+   nested-pat.fun
+   match-compile.sig
+   match-compile.fun
 in
-    functor MatchCompile
-    functor NestedPat
+   functor MatchCompile
+   functor NestedPat
 end

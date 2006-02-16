@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature LOCAL_FLATTEN_STRUCTS = 
    sig
       include SHRINK
@@ -17,15 +18,3 @@ signature LOCAL_FLATTEN =
       (* Intraprocedural flattening. *)
       val flatten: Program.t -> Program.t
    end
-
-
-functor TestLocalFlatten (S: LOCAL_FLATTEN): sig end = 
-struct
-
-val _ = print "TestLocalFlatten\n"
-
-open S
-
-val _ = Assert.assert ("LocalFlatten", fn () => true)
-
-end

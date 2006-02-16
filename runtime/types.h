@@ -1,8 +1,8 @@
-/* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  */
 
 /* Can't use _TYPES_H_ because MSVCRT uses it.  So, we use _MLTON_TYPES_H_. */
@@ -13,8 +13,16 @@
 /* We need these because in header files for exported SML functions, types.h is
  * included without platform.h.
  */
+#ifndef _ISOC99_SOURCE
 #define _ISOC99_SOURCE
+#endif
+#if (defined (__OpenBSD__))
+#include <inttypes.h>
+#elif (defined (__sun__))
+#include <sys/int_types.h>
+#else
 #include <stdint.h>
+#endif
 
 typedef int8_t Int8;
 typedef int16_t Int16;

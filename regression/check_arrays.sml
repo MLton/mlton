@@ -8,7 +8,7 @@ fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN";
 fun range (from, to) p = 
     let open Int 
     in
-	(from > to) orelse (p from) andalso (range (from+1, to) p)
+        (from > to) orelse (p from) andalso (range (from+1, to) p)
     end;
 
 fun checkrange bounds = check o range bounds;
@@ -44,22 +44,22 @@ fun try_with n =
      (dot ();
       if Word8Array.sub (a, !i) <> 0w42
       then impossible ("check 1 failed: it is "
-		       ^ Int.toString (Word8.toInt (Word8Array.sub (a, !i))))
+                       ^ Int.toString (Word8.toInt (Word8Array.sub (a, !i))))
       else ();
       i := !i + 1);
    phase "\ncheck length:";
    if Word8Array.length a <> n then
      impossible ("length was "
-		 ^ Int.toString (Word8Array.length a)
-		 ^ " and not "
-		 ^ Int.toString n)
+                 ^ Int.toString (Word8Array.length a)
+                 ^ " and not "
+                 ^ Int.toString n)
    else ();
    phase "\ncheck foldr:";
    if (Word8Array.foldr (fn (e,a) => Word8.toInt e + a) 0 a) <> Word8Array.length a * 42 then
      impossible ("foldr check failed: it was "
-		 ^ Int.toString (Word8Array.foldr (fn (e,a) => Word8.toInt e + a) 0 a)
-		 ^ " and not "
-		 ^ Int.toString (Word8Array.length a * 42))
+                 ^ Int.toString (Word8Array.foldr (fn (e,a) => Word8.toInt e + a) 0 a)
+                 ^ " and not "
+                 ^ Int.toString (Word8Array.length a * 42))
    else ();
    phase "\ninit:";
    i := 0;
@@ -73,9 +73,9 @@ fun try_with n =
      (dot ();
       if Word8Array.sub (a, !i) <> (0w2 * (Word8.fromInt (!i) mod 0w20))
       then impossible (concat["check 2 failed: found ",
-			      (Int.toString o Word8.toInt)(Word8Array.sub (a, !i)),
-			      " and not ",
-			      (Int.toString o Word8.toInt)(0w2 * (Word8.fromInt (!i) mod 0w20))])
+                              (Int.toString o Word8.toInt)(Word8Array.sub (a, !i)),
+                              " and not ",
+                              (Int.toString o Word8.toInt)(0w2 * (Word8.fromInt (!i) mod 0w20))])
       else ();
       i := !i - 1);
    print "    \tok"
@@ -119,16 +119,16 @@ fun try_with n =
    phase "\ncheck length:";
    if Array.length a <> n then
      impossible ("length was "
-		 ^ Int.toString (Array.length a)
-		 ^ " and not "
-		 ^ Int.toString n)
+                 ^ Int.toString (Array.length a)
+                 ^ " and not "
+                 ^ Int.toString n)
    else ();
    phase "\ncheck foldr:";
    if Array.foldr (op +) 0 a <> Array.length a * 42 then
      impossible ("foldr check failed: it was "
-		 ^ Int.toString (Array.foldr (op +) 0 a)
-		 ^ " and not "
-		 ^ Int.toString (Array.length a * 42))
+                 ^ Int.toString (Array.foldr (op +) 0 a)
+                 ^ " and not "
+                 ^ Int.toString (Array.length a * 42))
    else ();
    phase "\ninit:";
    i := 0;
@@ -191,9 +191,9 @@ fun try_with n =
    phase "\ncheck length:";
    if CharArray.length a <> n then
      impossible ("length was "
-		 ^ Int.toString (CharArray.length a)
-		 ^ " and not "
-		 ^ Int.toString n)
+                 ^ Int.toString (CharArray.length a)
+                 ^ " and not "
+                 ^ Int.toString n)
    else ();
    phase "\ncheck foldr:";
    if CharArray.foldr f b_init a <> x_summasumarum then

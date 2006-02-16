@@ -3,7 +3,7 @@ signature S =
    sig
       type t
       structure Z:
-	 sig
-	    datatype u = U
-	 end where type u = t
+         sig
+            datatype u = U
+         end where type u = t
    end

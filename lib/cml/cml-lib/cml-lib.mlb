@@ -1,20 +1,20 @@
 ann
-  "sequenceUnit true"
-  "warnMatch true"
-  "warnUnused true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused true"
 in
-local
-  $(SML_LIB)/basis/basis.mlb
-  ../core-cml/core-cml.mlb
-  multicast.sig
-  multicast.sml
-  simple-rpc.sig
-  simple-rpc.sml
-in
-  signature MULTICAST
-  structure Multicast
+   local
+      $(SML_LIB)/basis/basis.mlb
+      ../core-cml/core-cml.mlb
+      multicast.sig
+      multicast.sml
+      simple-rpc.sig
+      simple-rpc.sml
+   in
+      signature MULTICAST
+      structure Multicast
 
-  signature SIMPLE_RPC
-  structure SimpleRPC
-end
+      signature SIMPLE_RPC
+      structure SimpleRPC
+   end
 end

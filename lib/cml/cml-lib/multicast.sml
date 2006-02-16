@@ -20,56 +20,56 @@ structure Multicast : MULTICAST =
       type 'a event = 'a CML.event
 
       datatype 'a request = 
-	 Message of 'a 
+         Message of 'a 
        | NewPort 
       datatype 'a mc_state = MCState of ('a * 'a mc_state SV.ivar)
       datatype 'a port =
-	 Port of (('a * 'a mc_state SV.ivar) CML.chan * 'a mc_state SV.ivar SV.mvar)
+         Port of (('a * 'a mc_state SV.ivar) CML.chan * 'a mc_state SV.ivar SV.mvar)
       datatype 'a mchan = 
-	 MChan of ('a request CML.chan * 'a port CML.chan)
+         MChan of ('a request CML.chan * 'a port CML.chan)
 
     fun mkPort cv = 
        let
-	  val outCh = CML.channel()
-	  val stateVar = SV.mVarInit cv
-	  fun tee cv = 
-	     let
-		val (MCState(v, nextCV)) = SV.iGet cv
-	     in
-		CML.send (outCh, (v, nextCV))
-		; tee nextCV
-	     end
-	  val _ = CML.spawn (fn () => tee cv)
+          val outCh = CML.channel()
+          val stateVar = SV.mVarInit cv
+          fun tee cv = 
+             let
+                val (MCState(v, nextCV)) = SV.iGet cv
+             in
+                CML.send (outCh, (v, nextCV))
+                ; tee nextCV
+             end
+          val _ = CML.spawn (fn () => tee cv)
        in
-	  Port(outCh, stateVar)
+          Port(outCh, stateVar)
        end
     
     fun mChannel () = 
        let
           val reqCh = CML.channel() 
-	  and replyCh = CML.channel()
+          and replyCh = CML.channel()
           fun server cv = 
-	     case (CML.recv reqCh) of 
-		NewPort => 
-		   (CML.send (replyCh, mkPort cv)
-		    ; server cv)
-	      | (Message m) => 
-		   let
-		      val nextCV = SV.iVar()
-		   in
-		      SV.iPut (cv, MCState(m, nextCV))
-		      ; server nextCV
-		   end
-	  val _ = CML.spawn (fn () => server (SV.iVar()))
+             case (CML.recv reqCh) of 
+                NewPort => 
+                   (CML.send (replyCh, mkPort cv)
+                    ; server cv)
+              | (Message m) => 
+                   let
+                      val nextCV = SV.iVar()
+                   in
+                      SV.iPut (cv, MCState(m, nextCV))
+                      ; server nextCV
+                   end
+          val _ = CML.spawn (fn () => server (SV.iVar()))
        in
-	  MChan(reqCh, replyCh)
+          MChan(reqCh, replyCh)
        end
 
     fun multicast (MChan(ch, _), m) = CML.send (ch, Message m)
 
     fun port (MChan(reqCh, replyCh)) = 
        (CML.send (reqCh, NewPort)
-	; CML.recv replyCh)
+        ; CML.recv replyCh)
        
     fun copy (Port(_, stateV)) = mkPort(SV.mGet stateV)
        

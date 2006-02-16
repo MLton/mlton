@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Pervasive.Int.int
 
 signature DATE_STRUCTS = 
@@ -15,27 +16,27 @@ signature DATE =
       type t
 
       structure Weekday:
-	 sig
-	    datatype t = Mon | Tue | Wed | Thu | Fri | Sat | Sun
-	 end
+         sig
+            datatype t = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+         end
       
       structure Month:
-	 sig
-	    datatype t =
-	       Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
+         sig
+            datatype t =
+               Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
 
-	    val toInt: t -> int
-	 end
+            val toInt: t -> int
+         end
       
       exception Date
       val compare: t * t -> order
       val date: {year: int,
-		 month: Month.t,
-		 day: int,
-		 hour: int,
-		 minute: int,
-		 second: int,
-		 offset: Time.t option} -> t 
+                 month: Month.t,
+                 day: int,
+                 hour: int,
+                 minute: int,
+                 second: int,
+                 offset: Time.t option} -> t 
       val day: t -> int 
       val fmt: t * string -> string 
       val fromString: string -> t option 

@@ -1,0 +1,35 @@
+local
+   $(SML_LIB)/basis/basis.mlb
+
+   ../memory/memory.mlb
+
+   ../c.sig
+   ../c-debug.sig
+   c-int.sig
+   c-int.sml
+   c.sml
+   c-debug.sml
+
+   ../zstring.sig
+   zstring.sml
+   tag.sml
+in
+   structure Tag
+
+   structure MLRep
+   signature C
+   structure C
+   signature C_INT
+   structure C_Int
+   signature C_DEBUG
+   structure C_Debug
+
+   signature ZSTRING
+   structure ZString
+
+   signature DYN_LINKAGE
+   structure DynLinkage
+
+   signature CMEMORY
+   structure CMemory
+end

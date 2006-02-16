@@ -8,7 +8,7 @@ structure LLV =
 
   datatype 'a tr = TR of 'a exp * info | K of 'a -> int
        and 'a exp = SWITCH_I of ('a, int) switch
-	          | SWITCH_S of ('a, string) switch
+                  | SWITCH_S of ('a, string) switch
                   | STRING of string * 'a
        and ('a,'c) switch = SWITCH of 'a tr * ('c * 'a tr) list
 
@@ -29,11 +29,11 @@ datatype 'a pgm = PGM of string * 'a tr
     and llvExp(e: mulexp) : mulexp_llv =
       let 
         fun llv_switch(SWITCH(e,branches)) =
-  	  (* Note: e is trivial *)
-  	  let val branches' = map (fn (c,e) => (c,llv e)) branches
-  	  in  
+          (* Note: e is trivial *)
+          let val branches' = map (fn (c,e) => (c,llv e)) branches
+          in  
                SWITCH(llv e, branches')
-  	  end
+          end
       in
       case e of
        SWITCH_I(switch) => 

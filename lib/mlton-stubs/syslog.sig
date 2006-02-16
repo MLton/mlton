@@ -1,3 +1,11 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 (* From Tom 7 <twm@andrew.cmu.edu>. *)
 (* A rather complete interface to the syslog facilities. 
  *
@@ -9,7 +17,7 @@
 signature MLTON_SYSLOG =
    sig
       type openflag
-	 
+         
       val CONS     : openflag
       val NDELAY   : openflag
       val PERROR   : openflag

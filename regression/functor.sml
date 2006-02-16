@@ -9,9 +9,9 @@ functor G(A : A) =
   struct type t = A.t val b = A.a end
 
 functor H(A : sig type t type s val a : s
-	          sharing type t = s 
-	          val pr : t -> string 
-	      end) =
+                  sharing type t = s 
+                  val pr : t -> string 
+              end) =
   struct
     structure A1 : sig type t val pr : t -> string end = A
     structure A2 = F(A1)

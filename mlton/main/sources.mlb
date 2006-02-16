@@ -1,33 +1,34 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
-local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../backend/sources.mlb
-    ../closure-convert/sources.mlb
-    ../cm/sources.mlb
-    ../codegen/sources.mlb
-    ../control/sources.mlb
-    ../core-ml/sources.mlb
-    ../defunctorize/sources.mlb
-    ../elaborate/sources.mlb
-    ../front-end/sources.mlb
-    ../ssa/sources.mlb
-    ../xml/sources.mlb
 
-    lookup-constant.sig
-    lookup-constant.fun
-    compile.sig
-    compile.fun
-    main.sig
-    main.fun
-    main.sml
+local
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../backend/sources.mlb
+   ../closure-convert/sources.mlb
+   ../cm/sources.mlb
+   ../codegen/sources.mlb
+   ../control/sources.mlb
+   ../core-ml/sources.mlb
+   ../defunctorize/sources.mlb
+   ../elaborate/sources.mlb
+   ../front-end/sources.mlb
+   ../ssa/sources.mlb
+   ../xml/sources.mlb
+
+   lookup-constant.sig
+   lookup-constant.fun
+   compile.sig
+   compile.fun
+   main.sig
+   main.fun
+   main.sml
 in
-    structure Main
+   structure Main
 end

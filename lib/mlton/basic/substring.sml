@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Substring: SUBSTRING =
    struct
       open Pervasive.Substring
@@ -13,21 +14,21 @@ structure Substring: SUBSTRING =
       val length = size
 
       val substring =
-	 fn (s, {start, length}) => substring (s, start, length)
+         fn (s, {start, length}) => substring (s, start, length)
 
       val base =
-	 fn ss => let val (s, start, length) = base ss
-		  in (s, {start = start, length = length})
-		  end
+         fn ss => let val (s, start, length) = base ss
+                  in (s, {start = start, length = length})
+                  end
 
       val toString = string
-	 
+         
       val layout = String1.layout o toString
 
       fun endOf ss =
-	 let
-	    val (_, {start, length}) = base ss
-	 in
-	    start + length
-	 end
+         let
+            val (_, {start, length}) = base ss
+         in
+            start + length
+         end
    end

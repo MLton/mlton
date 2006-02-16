@@ -1,3 +1,6 @@
+#include <fenv.h>
+#include <stdint.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -19,16 +22,14 @@
 #include <termios.h>
 #include <values.h>
 
+#define HAS_FEROUND TRUE
+#define HAS_FPCLASSIFY TRUE
 #define HAS_PTRACE TRUE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
-#ifdef __i386__
 #define HAS_TIME_PROFILING TRUE
-#else
-#define HAS_TIME_PROFILING FALSE
-#endif
-#define HAS_WEAK 1
 
 #define MLton_Platform_OS_host "linux"
 

@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                           CircularQueue                           *)
@@ -16,9 +16,9 @@ structure I = A.I
 open I
    
 datatype 'a t = T of {size: I.t ref,
-		      elts: 'a option A.t,
-		      front: I.t ref,
-		      back: I.t ref}
+                      elts: 'a option A.t,
+                      front: I.t ref,
+                      back: I.t ref}
 
 fun sizeRef(T{size=s, ...}) = s
 fun incSize(T{size=s, ...}) = s := add1(!s)
@@ -31,18 +31,18 @@ fun backRef(T{back=b, ...}) = b
 fun maxSize d = A.size(elts d)
    
 fun empty maxSize = T{size = ref zero,
-		      elts = A.new(maxSize, NONE),
-		      front = ref zero,
-		      back = ref zero}
+                      elts = A.new(maxSize, NONE),
+                      front = ref zero,
+                      back = ref zero}
 
 fun isEmpty d = isZero(size d)
 
 fun isFull d = size d = maxSize d
 
 fun inc(q, r) = let val r = r q
-	      in r := add1(!r) mod maxSize q
-	      end
-	   
+              in r := add1(!r) mod maxSize q
+              end
+           
 fun incFront q = inc(q, frontRef)
 fun incBack q = inc(q, backRef)
 
@@ -50,18 +50,18 @@ exception Enque
 fun enque(q as T{size, elts, front, back}, x) =
    if isFull q then raise Enque
    else (if isEmpty q then (front := zero ; back := zero)
-	 else (incBack q ;
-	       incSize q ;
-	       A.update(elts, !back, SOME x)))
+         else (incBack q ;
+               incSize q ;
+               A.update(elts, !back, SOME x)))
 
 exception Deque
 fun deque(q as T{size, elts, front, ...}) =
    if isEmpty q then raise Deque
    else case A.sub(elts, !front) of
-	   NONE => raise Deque
-	 | SOME x => (incFront q ;
-		      decSize q ;
-		      x)
+           NONE => raise Deque
+         | SOME x => (incFront q ;
+                      decSize q ;
+                      x)
 
 end
 

@@ -23,14 +23,31 @@
 
 #include "setenv.h"
 
+#define FE_TONEAREST 0
+#define FE_DOWNWARD 1
+#define FE_UPWARD 2
+#define FE_TOWARDZERO 3
+int fegetround ();
+void fesetround (int mode);
+int fpclassify64 (double d);
+
+#define HAS_FEROUND TRUE
+#define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY64 TRUE
 #define HAS_PTRACE TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT FALSE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK 1
 
 #define MLton_Platform_OS_host "solaris"
 
 #define LOG_AUTHPRIV LOG_AUTH
 #define LOG_PERROR 0
+
+int fpclassify32 (float f);
+int fpclassify64 (double d);
+int signbit32 (float f);
+int signbit64 (double f);
+

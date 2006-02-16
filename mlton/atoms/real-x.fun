@@ -1,9 +1,10 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor RealX (S: REAL_X_STRUCTS): REAL_X = 
 struct
 
@@ -24,19 +25,19 @@ fun size r =
    case r of
       Real32 _ => R32
     | Real64 _ => R64
-	 
+         
 fun make (r: string, s: RealSize.t): t option =
    let
       fun doit (fromString, isFinite, con): t option =
-	 case fromString r of
-	    NONE => Error.bug "unexpected real constant"
-	  | SOME r =>
-	       if isFinite r
-		  then SOME (con r)
-	       else NONE
+         case fromString r of
+            NONE => Error.bug "RealX.make: unexpected real constant"
+          | SOME r =>
+               if isFinite r
+                  then SOME (con r)
+               else NONE
    in
       case s of
-	 R32 => doit (Real32.fromString, Real32.isFinite, Real32)
+         R32 => doit (Real32.fromString, Real32.isFinite, Real32)
        | R64 => doit (Real64.fromString, Real64.isFinite, Real64)
    end
 
@@ -47,17 +48,17 @@ fun make (r: string, s: RealSize.t): t option =
 fun equals (r, r') =
    case (r, r') of
       (Real32 r, Real32 r') =>
-	 let
-	    open Real32
-	 in
-	    equals (r, r') andalso signBit r = signBit r'
-	 end
+         let
+            open Real32
+         in
+            equals (r, r') andalso signBit r = signBit r'
+         end
     | (Real64 r, Real64 r') =>
-	 let
-	    open Real64
-	 in
-	    equals (r, r') andalso signBit r = signBit r'
-	 end
+         let
+            open Real64
+         in
+            equals (r, r') andalso signBit r = signBit r'
+         end
     | _ => false
 
 fun toString r =

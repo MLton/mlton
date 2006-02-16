@@ -3,13 +3,13 @@ signature STRING_CVT =
       datatype radix = BIN | OCT | DEC | HEX
 
       datatype realfmt =
-	 SCI of int option 
+         SCI of int option 
        | FIX of int option 
        | GEN of int option 
        | EXACT
-	 
+         
       type ('a, 'b) reader = 'b -> ('a * 'b) option
-	 
+         
       val padLeft: char -> int -> string -> string 
       val padRight: char -> int -> string -> string 
 
@@ -21,7 +21,7 @@ signature STRING_CVT =
 
       type cs
       val scanString:
-	 ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
+         ((char, cs) reader -> ('a, cs) reader) -> string -> 'a option
    end
 
 signature STRING_CVT_EXTRA =

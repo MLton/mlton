@@ -19,13 +19,13 @@ structure Nucleic : sig
 
 fun math_atan2 y x =
       if (x > 0.0)
-	then Math.atan (y / x)
+        then Math.atan (y / x)
       else if Real.==(x, 0.0)
-	then if y < 0.0
-	  then constant_minus_pi2
+        then if y < 0.0
+          then constant_minus_pi2
           else Math.atan (y / x) + constant_minus_pi
       else if Real.==(x, 0.0)
-	then constant_pi2
+        then constant_pi2
         else (Math.atan (y / x) + constant_pi)
 
 (* -- POINTS ----------------------------------------------------------------*)
@@ -3463,180 +3463,180 @@ fun anticodon_constraint (i,t,n) partial_inst
 (* Anticodon*)
 
     fun anticodon () =
-	  queue_to_list (search [] (anticodon_domains ()) anticodon_constraint)
+          queue_to_list (search [] (anticodon_domains ()) anticodon_constraint)
 
     fun anticodon_length () = length(anticodon())
 
 
     fun pseudoknot_domains () =
        [
-	reference rA  23,
-	wc_Dumas  rU   8 23,
-	helix3'   rG  22 23,
-	wc_Dumas  rC   9 22,
-	helix3'   rG  21 22,
-	wc_Dumas  rC  10 21,
-	helix3'   rC  20 21,
-	wc_Dumas  rG  11 20,
-	helix3'   rU' 19 20, (* <-. *)
-	wc_Dumas  rA  12 19, (*   | Distance *)
+        reference rA  23,
+        wc_Dumas  rU   8 23,
+        helix3'   rG  22 23,
+        wc_Dumas  rC   9 22,
+        helix3'   rG  21 22,
+        wc_Dumas  rC  10 21,
+        helix3'   rC  20 21,
+        wc_Dumas  rG  11 20,
+        helix3'   rU' 19 20, (* <-. *)
+        wc_Dumas  rA  12 19, (*   | Distance *)
 (*                                | Constraint *)
 (* ; Helix 1               ;      | 4.0 Angstroms *)
-	helix3'   rC   3 19, (*   | *)
-	wc_Dumas  rG  13  3, (*   | *)
-	helix3'   rC   2  3, (*   | *)
-	wc_Dumas  rG  14  2, (*   | *)
-	helix3'   rC   1  2, (*   | *)
-	wc_Dumas  rG' 15  1, (*   | *)
+        helix3'   rC   3 19, (*   | *)
+        wc_Dumas  rG  13  3, (*   | *)
+        helix3'   rC   2  3, (*   | *)
+        wc_Dumas  rG  14  2, (*   | *)
+        helix3'   rC   1  2, (*   | *)
+        wc_Dumas  rG' 15  1, (*   | *)
 (*                                | *)
 (* L2 LOOP                        | *)
-	p_o3'     rUs 16 15, (*   | *)
-	p_o3'     rCs 17 16, (*   | *)
-	p_o3'     rAs 18 17, (* <-' *)
+        p_o3'     rUs 16 15, (*   | *)
+        p_o3'     rCs 17 16, (*   | *)
+        p_o3'     rAs 18 17, (* <-' *)
 (*                                  *)
 (* L1 LOOP *)
-	helix3'   rU   7  8, (* <-. *)
-	p_o3'     rCs  4  3, (*   | Constraint *)
-	stacked5' rU   5  4, (*   | 4.5 Angstroms *)
-	stacked5' rC   6  5 (* <-' *)
-	]
+        helix3'   rU   7  8, (* <-. *)
+        p_o3'     rCs  4  3, (*   | Constraint *)
+        stacked5' rU   5  4, (*   | 4.5 Angstroms *)
+        stacked5' rC   6  5 (* <-' *)
+        ]
 
        fun pseudoknot_constraint (i, t, n) partial_inst =
-	  case i of
-	     18 =>
-		let
-		   val p = atom_pos nuc_P (get_var 19 partial_inst)
-		   val o3' = atom_pos nuc_O3' (i, t, n)
-		in
-		   pt_dist p o3' <= 4.0
-		end
-	   | 6 =>
-		let
-		   val p = atom_pos nuc_P (get_var 7 partial_inst)
-		   val o3' = atom_pos nuc_O3' (i, t, n)
-		in
-		   pt_dist p o3' <= 4.5
-		end
-	   | _ => true
+          case i of
+             18 =>
+                let
+                   val p = atom_pos nuc_P (get_var 19 partial_inst)
+                   val o3' = atom_pos nuc_O3' (i, t, n)
+                in
+                   pt_dist p o3' <= 4.0
+                end
+           | 6 =>
+                let
+                   val p = atom_pos nuc_P (get_var 7 partial_inst)
+                   val o3' = atom_pos nuc_O3' (i, t, n)
+                in
+                   pt_dist p o3' <= 4.5
+                end
+           | _ => true
 
        fun pseudoknot () =
-	  search [] (pseudoknot_domains ()) pseudoknot_constraint
+          search [] (pseudoknot_domains ()) pseudoknot_constraint
 
        fun maximum (xs: real list) =
-	  let
-	     fun loop (m, l) =
-		case l of
-		   [] => m
-		 | x :: l => loop (if x > m then x else m, l)
-	  in
-	     case xs of
-		[] => raise Fail "bug"
-	      | x :: xs => loop (x, xs)
-	  end
+          let
+             fun loop (m, l) =
+                case l of
+                   [] => m
+                 | x :: l => loop (if x > m then x else m, l)
+          in
+             case xs of
+                [] => raise Fail "bug"
+              | x :: xs => loop (x, xs)
+          end
        
        fun list_of_common_atoms n =
-	  [
-	   nuc_P    n,
-	   nuc_O1P  n,
-	   nuc_O2P  n,
-	   nuc_O5'  n,
-	   nuc_C5'  n,
-	   nuc_H5'  n,
-	   nuc_H5'' n,
-	   nuc_C4'  n,
-	   nuc_H4'  n,
-	   nuc_O4'  n,
-	   nuc_C1'  n,
-	   nuc_H1'  n,
-	   nuc_C2'  n,
-	   nuc_H2'' n,
-	   nuc_O2'  n,
-	   nuc_H2'  n,
-	   nuc_C3'  n,
-	   nuc_H3'  n,
-	   nuc_O3'  n,
-	   nuc_N1   n,
-	   nuc_N3   n,
-	   nuc_C2   n,
-	   nuc_C4   n,
-	   nuc_C5   n,
-	   nuc_C6   n
-	   ]
+          [
+           nuc_P    n,
+           nuc_O1P  n,
+           nuc_O2P  n,
+           nuc_O5'  n,
+           nuc_C5'  n,
+           nuc_H5'  n,
+           nuc_H5'' n,
+           nuc_C4'  n,
+           nuc_H4'  n,
+           nuc_O4'  n,
+           nuc_C1'  n,
+           nuc_H1'  n,
+           nuc_C2'  n,
+           nuc_H2'' n,
+           nuc_O2'  n,
+           nuc_H2'  n,
+           nuc_C3'  n,
+           nuc_H3'  n,
+           nuc_O3'  n,
+           nuc_N1   n,
+           nuc_N3   n,
+           nuc_C2   n,
+           nuc_C4   n,
+           nuc_C5   n,
+           nuc_C6   n
+           ]
 
        fun list_of_specific_atoms n =
-	  if is_A n
-	     then [
-		   rA_N6   n,
-		   rA_N7   n,
-		   rA_N9   n,
-		   rA_C8   n,
-		   rA_H2   n,
-		   rA_H61  n,
-		   rA_H62  n,
-		   rA_H8   n
-		   ]
-	  else if is_C n
-	     then [
-		   rC_N4   n,
-		   rC_O2   n,
-		   rC_H41  n,
-		   rC_H42  n,
-		   rC_H5   n,
-		   rC_H6   n
-		   ]
+          if is_A n
+             then [
+                   rA_N6   n,
+                   rA_N7   n,
+                   rA_N9   n,
+                   rA_C8   n,
+                   rA_H2   n,
+                   rA_H61  n,
+                   rA_H62  n,
+                   rA_H8   n
+                   ]
+          else if is_C n
+             then [
+                   rC_N4   n,
+                   rC_O2   n,
+                   rC_H41  n,
+                   rC_H42  n,
+                   rC_H5   n,
+                   rC_H6   n
+                   ]
           else if is_G n
-	     then [
-		   rG_N2   n,
-		   rG_N7   n,
-		   rG_N9   n,
-		   rG_C8   n,
-		   rG_O6   n,
-		   rG_H1   n,
-		   rG_H21  n,
-		   rG_H22  n,
-		   rG_H8   n
-		   ]
-	  else [
-		rU_O2   n,
-		rU_O4   n,
-		rU_H3   n,
-		rU_H5   n,
-		rU_H6   n
-		]
+             then [
+                   rG_N2   n,
+                   rG_N7   n,
+                   rG_N9   n,
+                   rG_C8   n,
+                   rG_O6   n,
+                   rG_H1   n,
+                   rG_H21  n,
+                   rG_H22  n,
+                   rG_H8   n
+                   ]
+          else [
+                rU_O2   n,
+                rU_O4   n,
+                rU_H3   n,
+                rU_H5   n,
+                rU_H6   n
+                ]
 
        fun list_of_atoms n =
-	  List.@ (list_of_common_atoms n,
-		  list_of_specific_atoms n)
-	  
+          List.@ (list_of_common_atoms n,
+                  list_of_specific_atoms n)
+          
        fun var_most_distant_atom (i, t, n) =
-	  let
-	     fun distance pos =
-		let
-		   val (x, y, z) = tfo_apply t pos
-		in
-		   Real.Math.sqrt (x * x + y * y + z * z)
-		end
-	  in
-	     maximum (List.map distance (list_of_atoms n))
-	  end
+          let
+             fun distance pos =
+                let
+                   val (x, y, z) = tfo_apply t pos
+                in
+                   Real.Math.sqrt (x * x + y * y + z * z)
+                end
+          in
+             maximum (List.map distance (list_of_atoms n))
+          end
     
        fun sol_most_distant_atom s =
-	  maximum (List.map var_most_distant_atom s)
+          maximum (List.map var_most_distant_atom s)
        
        fun most_distant_atom sols =
-	  maximum (List.map sol_most_distant_atom sols)
+          maximum (List.map sol_most_distant_atom sols)
        
        fun doit () =
-	  let
-	     val result = most_distant_atom (pseudoknot ())
-	     val x = result / 33.797594890762724
-	     val _ =
-		if x > 0.999999 andalso x < 1.000001
-		   then ()
-		else raise Fail "bug"
-	  in
-	     ()
-	  end
+          let
+             val result = most_distant_atom (pseudoknot ())
+             val x = result / 33.797594890762724
+             val _ =
+                if x > 0.999999 andalso x < 1.000001
+                   then ()
+                else raise Fail "bug"
+          in
+             ()
+          end
 end;
 
 signature BMARK =
@@ -3655,12 +3655,12 @@ structure Main : BMARK =
     val doit =
        fn size =>
        let
-	  fun loop n =
-	     if n = 0
-		then ()
-	     else (doit();
-		   loop(n-1))
+          fun loop n =
+             if n = 0
+                then ()
+             else (doit();
+                   loop(n-1))
        in
-	  loop size
+          loop size
        end
   end;

@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Outstream0 =
 struct
 
@@ -32,20 +33,22 @@ fun set (o1: t, o2:t): unit =
    TextIO.setOutstream (o1, TextIO.getOutstream o2)
    
 fun fluidLet (s1, s2, thunk) =
-   let val old = TextIO.getOutstream s1
-   in set (s1, s2)
-      ; DynamicWind.wind (thunk, fn () => TextIO.setOutstream (s1, old))
+   let
+      val old = TextIO.getOutstream s1
+      val () = set (s1, s2)
+   in
+      Exn0.finally (thunk, fn () => TextIO.setOutstream (s1, old))
    end
 
 fun withClose (out: t, f: t -> 'a): 'a =
-   DynamicWind.wind (fn () => f out, fn () => close out)
+   Exn0.finally (fn () => f out, fn () => close out)
 
 local
    fun 'a withh (f, p: t -> 'a, openn): 'a =
       let
-	 val out = openn f handle IO.Io _ => Error.bug ("cannot open " ^ f)
+         val out = openn f handle IO.Io _ => Error.bug ("OutStream0.withh: cannot open " ^ f)
       in
-	 withClose (out, p)
+         withClose (out, p)
       end
 in
    fun 'a withOut (f, p: t -> 'a): 'a = withh (f, p, openOut)

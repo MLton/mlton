@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor WordX (S: WORD_X_STRUCTS): WORD_X = 
@@ -18,12 +18,12 @@ val modulus: WordSize.t -> IntInf.t =
 
 local
    datatype t = T of {size: WordSize.t,
-		      value: IntInf.t}
+                      value: IntInf.t}
 in
    type t = t
    fun make (i: IntInf.t, s: WordSize.t) =
       T {size = s,
-	 value = i mod modulus s}
+         value = i mod modulus s}
    fun dest (T r) = r
 end
 
@@ -42,7 +42,7 @@ fun toIntInfX w =
       val m = modulus (size w)
    in
       if v >= m div 2
-	 then v - m
+         then v - m
       else v
    end
 
@@ -58,12 +58,12 @@ local
    val make: (IntInf.t * Word.t -> IntInf.t) -> t * t -> t =
       fn f => fn (w, w') =>
       let
-	 val s = size w
-	 val v' = value w'
+         val s = size w
+         val v' = value w'
       in
-	 if v' >= Bits.toIntInf (WordSize.bits s)
-	    then zero s
-	 else make (f (value w, Word.fromIntInf v'), s)
+         if v' >= Bits.toIntInf (WordSize.bits s)
+            then zero s
+         else make (f (value w, Word.fromIntInf v'), s)
       end
 in
    val lshift = make IntInf.<<
@@ -121,8 +121,8 @@ fun ~>> (w, w') =
       val s = size w
       val b = WordSize.bits s
       val shift = if shift > Bits.toIntInf b
-		     then Bits.toWord b
-		  else Word.fromIntInf shift
+                     then Bits.toWord b
+                  else Word.fromIntInf shift
    in
       make (IntInf.~>> (toIntInfX w, shift), s)
    end
@@ -157,8 +157,8 @@ fun ror (w, w') =
 
 fun splice {hi, lo} =
    fromIntInf (value lo
-	       + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
-	       WordSize.+ (size hi, size lo))
+               + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
+               WordSize.+ (size hi, size lo))
    
 fun split (w, {lo}) =
    let
@@ -173,44 +173,44 @@ fun bitIsSet (w, i: int) =
    1 = IntInf.rem (IntInf.~>> (value w, Word.fromInt i), 2)
 
 local
-   val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t -> t =
-      fn f => fn (w, w') =>
+   val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t -> t =
+      fn (f,name) => fn (w, w') =>
       if WordSize.equals (size w, size w')
-	 then make (f (value w, value w'), size w)
-      else raise Fail "WordX binary"
+         then make (f (value w, value w'), size w)
+      else Error.bug (concat ["WordX.", name])
 in
-   val add = make IntInf.+
-   val sub = make IntInf.-
-   val andb = make IntInf.andb
-   val orb = make IntInf.orb
-   val xorb = make IntInf.xorb
+   val add = make (IntInf.+, "add")
+   val sub = make (IntInf.-, "sub")
+   val andb = make (IntInf.andb, "andb")
+   val orb = make (IntInf.orb, "orb")
+   val xorb = make (IntInf.xorb, "xorb")
 end
 
 fun neg w = make (~ (toIntInfX w), size w)
 
 local
-   val make: (IntInf.t * IntInf.t -> IntInf.t) -> t * t * {signed: bool}-> t =
-      fn f => fn (w, w', s) =>
+   val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t * {signed: bool}-> t =
+      fn (f,name) => fn (w, w', s) =>
       if WordSize.equals (size w, size w')
-	 then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
-      else raise Fail "WordX binary"
+         then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
+      else Error.bug (concat ["WordX.", name])
 in
-   val mul = make IntInf.*
-   val quot = make IntInf.quot
-   val rem = make IntInf.rem
+   val mul = make (IntInf.*, "mul")
+   val quot = make (IntInf.quot, "quot")
+   val rem = make (IntInf.rem, "rem")
 end
 
 local
-   val make: (IntInf.t * IntInf.t -> 'a) -> t * t * {signed: bool} -> 'a =
-      fn f => fn (w, w', sg) =>
+   val make: ((IntInf.t * IntInf.t -> 'a) * string) -> t * t * {signed: bool} -> 'a =
+      fn (f,name) => fn (w, w', sg) =>
       if WordSize.equals (size w, size w')
-	 then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
-      else Error.bug "WordX compare"
+         then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
+      else Error.bug (concat ["WordX.", name])
 in
-   val lt = make IntInf.<
-   val le = make IntInf.<=
-   val gt = make IntInf.>
-   val ge = make IntInf.>=
+   val lt = make (IntInf.<, "lt")
+   val le = make (IntInf.<=, "le")
+   val gt = make (IntInf.>, "gt")
+   val ge = make (IntInf.>=, "ge")
 end
 
 fun layoutSg {signed} = Layout.record [("signed", Bool.layout signed)]

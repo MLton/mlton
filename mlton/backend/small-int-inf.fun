@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor SmallIntInf(S: SMALL_INT_INF_STRUCTS): SMALL_INT_INF = 
 struct
 
@@ -25,15 +26,15 @@ fun toMLstring w = Int.toString(Word.toIntX(Word.~>>(w, 0w1)))
 fun fromString (str: string): t option =
    if IntInf.<= (minSmall, v) andalso IntInf.<= (v, maxSmall)
       then let val w = Word.fromInt (IntInf.toInt v)
-	       val res = Word.orb (0w1, Word.<< (w, 0w1))
-	   in SOME res
-	   end
+               val res = Word.orb (0w1, Word.<< (w, 0w1))
+           in SOME res
+           end
    else NONE
 
 (* val fromString =
  *    Trace.trace("SmallIntInf.fromString",
- * 	       String.layout,
- * 	       Option.layout layout) fromString
+ *             String.layout,
+ *             Option.layout layout) fromString
  *)
 
 (*

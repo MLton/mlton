@@ -97,12 +97,12 @@ of oldsets *)
                         
     fun add_S (S,(found_fixpt, oldsets)) : bool * 'a set list =
       let
-	val (found_fixpt1, _, L1, S1) = 
+        val (found_fixpt1, _, L1, S1) = 
           foldl add (found_fixpt, false, oldsets, emptyset) S
        in 
-	 case S1 of 
-	   [] => (found_fixpt andalso found_fixpt1, L1)
-	 | _  => (found_fixpt andalso found_fixpt1, S1::L1)
+         case S1 of 
+           [] => (found_fixpt andalso found_fixpt1, L1)
+         | _  => (found_fixpt andalso found_fixpt1, S1::L1)
       end
 
    in

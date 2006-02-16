@@ -1,3 +1,6 @@
+#include <fenv.h>
+#include <stdint.h>
+
 #include <windows.h> // lots of stuff depends on this
 #include <io.h>
 #include <limits.h>
@@ -11,12 +14,17 @@
 #include <ws2tcpip.h>
 #undef max
 
+#define HAS_FEROUND TRUE
+// As of 20051104, MinGW has fpclassify, but it is broken.  In particular, it
+// classifies subnormals as normals.  So, we disable it here, which causes the
+// runtime to use our own version.
+#define HAS_FPCLASSIFY FALSE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
 #define HAS_TIME_PROFILING FALSE
-#define HAS_WEAK FALSE
 
 #define MLton_Platform_OS_host "mingw"
 
@@ -55,7 +63,7 @@ int mkstemp (char *template);
 
 #define MSG_DONTWAIT 0
 
-#define SHUT_RD	SD_RECEIVE
+#define SHUT_RD SD_RECEIVE
 #define SHUT_WR SD_SEND
 #define SHUT_RDWR SD_BOTH
 
@@ -80,12 +88,12 @@ int gettimeofday (struct timeval *tv, struct timezone *tz);
 #define ITIMER_PROF    2                /*generates sigprof */ 
 
 struct itimerval {
-	struct timeval it_interval;
-	struct timeval it_value;
+        struct timeval it_interval;
+        struct timeval it_value;
 };
 int setitimer (int which,
-		 const struct itimerval *value,
-		 struct itimerval *ovalue);
+                 const struct itimerval *value,
+                 struct itimerval *ovalue);
 
 /* ------------------------------------------------- */
 /*                   MLton.Rlimit                    */
@@ -110,8 +118,8 @@ int setitimer (int which,
 typedef unsigned long rlim_t;
 
 struct rlimit {
-	rlim_t	rlim_cur;
-	rlim_t	rlim_max;
+        rlim_t  rlim_cur;
+        rlim_t  rlim_max;
 };
 
 int getrlimit (int resource, struct rlimit *rlim);
@@ -136,9 +144,9 @@ int getrusage (int who, struct rusage *usage);
 /* ------------------------------------------------- */
 
 struct pollfd {
- 	short events;
-	int fd;
- 	short revents;
+        short events;
+        int fd;
+        short revents;
 };
 
 int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
@@ -190,11 +198,11 @@ int symlink (const char *oldpath, const char *newpath);
 /* ------------------------------------------------- */
 
 struct flock {
-	off_t l_len;
-	pid_t l_pid;
-	off_t l_start;
-	short l_type;
-	short l_whence;
+        off_t l_len;
+        pid_t l_pid;
+        off_t l_start;
+        short l_type;
+        short l_whence;
 };
 
 int fcntl (int fd, int cmd, ...);
@@ -230,18 +238,18 @@ int pipe (int filedes[2]);
 #define _SC_VERSION 7
 
 struct tms {
-	int tms_utime;
-	int tms_stime;
-	int tms_cutime;
-	int tms_cstime;
+        int tms_utime;
+        int tms_stime;
+        int tms_cutime;
+        int tms_cstime;
 };
 
 struct utsname {
-	char machine[20];
-	char nodename[256];
-	char release[20];
-	char sysname[20];
-	char version[20];
+        char machine[20];
+        char nodename[256];
+        char release[20];
+        char sysname[20];
+        char version[20];
 };
 
 char *ctermid (char *s);
@@ -257,6 +265,7 @@ pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
 int setgid (gid_t gid);
+int setgroups (size_t size, gid_t *list);
 int setpgid (pid_t pid, pid_t pgid);
 pid_t setsid (void);
 int setuid (uid_t uid);
@@ -269,8 +278,8 @@ int uname (struct utsname *buf);
 /*                   Posix.Process                   */
 /* ------------------------------------------------- */
 
-#define EXECVE(path, args, env) 	\
-	execve (path, (const char* const*)args, (const char* const*)env)
+#define EXECVE(path, args, env)         \
+        execve (path, (const char* const*)args, (const char* const*)env)
 #define EXECVP(file, args)  execvp (file, (const char* const*) args)
 #define SPAWN_MODE _P_NOWAIT
 
@@ -296,6 +305,11 @@ int alarm (int secs);
 pid_t fork (void);
 int kill (pid_t pid, int sig);
 int pause (void);
+struct timespec {
+ time_t tv_sec;
+ long tv_nsec;
+};
+int nanosleep (const struct timespec *req, struct timespec *rem);
 unsigned int sleep (unsigned int seconds);
 pid_t wait (int *status);
 pid_t waitpid (pid_t pid, int *status, int options);
@@ -322,24 +336,24 @@ pid_t waitpid (pid_t pid, int *status, int options);
 #define SIGCONT 25
 #define SIGUSR1 25
 #define SIGUSR2 26
-#define SIGVTALRM 26	/* virtual time alarm */
-#define SIGPROF 27	/* profiling time alarm */
+#define SIGVTALRM 26    /* virtual time alarm */
+#define SIGPROF 27      /* profiling time alarm */
 
 #define _NSIG 32
 
 typedef void (*_sig_func_ptr)();
 
 struct sigaction {
-	int		sa_flags;
-	sigset_t	sa_mask;
-	_sig_func_ptr	sa_handler;
+        int             sa_flags;
+        sigset_t        sa_mask;
+        _sig_func_ptr   sa_handler;
 };
 
-#define SIGTOMASK(sn)	(1 << ((sn)-1))
+#define SIGTOMASK(sn)   (1 << ((sn)-1))
 
 int sigaction (int signum, 
-			const struct sigaction *act, 
-			struct sigaction *oldact);
+                        const struct sigaction *act, 
+                        struct sigaction *oldact);
 int sigaddset (sigset_t *set, int signum);
 int sigdelset (sigset_t *set, int signum);
 int sigemptyset (sigset_t *set);
@@ -354,18 +368,18 @@ int sigsuspend (const sigset_t *mask);
 /* ------------------------------------------------- */
 
 struct group {
- 	gid_t   gr_gid;
-	char    **gr_mem;
- 	char    *gr_name;
-	char    *gr_passwd;
+        gid_t   gr_gid;
+        char    **gr_mem;
+        char    *gr_name;
+        char    *gr_passwd;
 };
 
 struct passwd {
-	char    *pw_dir;
-	gid_t   pw_gid;
-	char    *pw_name;
-	char    *pw_shell;
-	uid_t   pw_uid;
+        char    *pw_dir;
+        gid_t   pw_gid;
+        char    *pw_name;
+        char    *pw_shell;
+        uid_t   pw_uid;
 };
 
 struct group *getgrgid (gid_t gid);
@@ -472,16 +486,16 @@ struct passwd *getpwuid (uid_t uid);
 #define TCSADRAIN       3
 #define TCSADFLUSH      4
 
-typedef unsigned char	cc_t;
-typedef unsigned int	speed_t;
-typedef unsigned int	tcflag_t;
+typedef unsigned char   cc_t;
+typedef unsigned int    speed_t;
+typedef unsigned int    tcflag_t;
 
 struct termios {
-	cc_t c_cc[NCCS];
-	tcflag_t c_cflag;
-	tcflag_t c_iflag;
-	tcflag_t c_lflag;
-	tcflag_t c_oflag;
+        cc_t c_cc[NCCS];
+        tcflag_t c_cflag;
+        tcflag_t c_iflag;
+        tcflag_t c_lflag;
+        tcflag_t c_oflag;
 };
 
 speed_t cfgetispeed (struct termios *termios_p);
@@ -502,13 +516,13 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /* ------------------------------------------------- */
 
 #define MSG_DONTWAIT 0
-#define UNIX_PATH_MAX	108
+#define UNIX_PATH_MAX   108
 
-typedef unsigned short	sa_family_t;
+typedef unsigned short  sa_family_t;
 
 struct sockaddr_un {
-	sa_family_t sun_family;
-	char sun_path[UNIX_PATH_MAX];
+        sa_family_t sun_family;
+        char sun_path[UNIX_PATH_MAX];
 };
 
 int ioctl (int d, int request, ...);

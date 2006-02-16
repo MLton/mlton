@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure IO: IO =
    struct
       exception BlockingNotSupported
@@ -12,17 +13,17 @@ structure IO: IO =
       exception ClosedStream
 
       exception Io of {cause : exn,
-		       function : string,
-		       name : string}
+                       function : string,
+                       name : string}
 
       val _ =
-	 General.addExnMessager
-	 (fn e =>
-	  case e of
-	     Io {cause, function, name, ...} => 
-   	        SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
-			      exnMessage cause])
-	   | _ => NONE)
+         General.addExnMessager
+         (fn e =>
+          case e of
+             Io {cause, function, name, ...} => 
+                SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
+                              exnMessage cause])
+           | _ => NONE)
       
       exception NonblockingNotSupported
 

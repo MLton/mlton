@@ -7,19 +7,19 @@ structure List =
 
 val int =
    List.map (["Int", "IntInf", "LargeInt", "FixedInt", "Position"]
-	     @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
-			 fn i => concat ["Int", Int.toString i]),
-	     fn s => concat [s, ".int"])
+             @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
+                         fn i => concat ["Int", Int.toString i]),
+             fn s => concat [s, ".int"])
 
 val real =
    List.map (["Real", "Real32", "Real64", "LargeReal"],
-	     fn s => concat [s, ".real"])
+             fn s => concat [s, ".real"])
 
 val word =
    List.map (["Word", "LargeWord", "SysWord"]
-	     @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
-			 fn i => concat ["Word", Int.toString i]),
-	     fn s => concat [s, ".word"])
+             @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
+                         fn i => concat ["Word", Int.toString i]),
+             fn s => concat [s, ".word"])
 
 val text = ["Char.char", "String.string"]
 
@@ -53,8 +53,8 @@ val () =
     List.foreach
     (class, fn c =>
      print (concat ["fun f (x: ", c, ") = ",
-		    case ty of
-		      Binary => concat ["x ", f,  " x"]
-		    | Compare => concat ["x ", f, " x"]
-		    | Unary => concat [f, " x"],
-	            "\n"])))
+                    case ty of
+                      Binary => concat ["x ", f,  " x"]
+                    | Compare => concat ["x ", f, " x"]
+                    | Unary => concat [f, " x"],
+                    "\n"])))

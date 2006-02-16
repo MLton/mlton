@@ -1,3 +1,4 @@
+f.raise exnHistory3.sml 5.18
 f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5
@@ -10,6 +11,7 @@ f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5
 ZZZ
+f.raise exnHistory3.sml 5.18
 f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5
 f exnHistory3.sml 3.5

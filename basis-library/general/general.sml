@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure General: GENERAL_EXTRA =
    struct
       type unit = unit
@@ -31,23 +32,23 @@ structure General: GENERAL_EXTRA =
       val exnName = Primitive.Exn.name
 
       local
-	 val messagers: (exn -> string option) list ref = ref []
+         val messagers: (exn -> string option) list ref = ref []
       in
-	 val addExnMessager: (exn -> string option) -> unit =
-	    fn f => messagers := f :: !messagers
-	    
-	 val rec exnMessage: exn -> string =
-	    fn e =>
-	    let
-	       val rec find =
-		  fn [] => exnName e
-		   | m :: ms =>
-			case m e of
-			   NONE => find ms
-			 | SOME s => s
-	    in
-	       find (!messagers)
-	    end
+         val addExnMessager: (exn -> string option) -> unit =
+            fn f => messagers := f :: !messagers
+            
+         val rec exnMessage: exn -> string =
+            fn e =>
+            let
+               val rec find =
+                  fn [] => exnName e
+                   | m :: ms =>
+                        case m e of
+                           NONE => find ms
+                         | SOME s => s
+            in
+               find (!messagers)
+            end
       end
    end
 

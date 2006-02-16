@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature INTEGER_STRUCTS =
    sig
       eqtype int
@@ -34,8 +35,8 @@ signature INTEGER_STRUCTS =
       val rem: int * int -> int
       val sameSign: int * int -> bool 
       val scan: StringCvt.radix
-	 -> (char, 'a) StringCvt.reader
-	 -> (int, 'a) StringCvt.reader
+         -> (char, 'a) StringCvt.reader
+         -> (int, 'a) StringCvt.reader
       val sign: int -> Pervasive.Int.int 
       val toInt: int -> Pervasive.Int.int 
       val toIntInf: int -> Pervasive.IntInf.int
@@ -81,7 +82,7 @@ signature INTEGER =
       val quotRem: t * t -> t * t
       val rem: t * t -> t
       val scan: (StringCvt.radix * (char, 'a) StringCvt.reader)
-	 -> (t, 'a) StringCvt.reader
+         -> (t, 'a) StringCvt.reader
       (* smallest (i, f) is the smallest j >= i such that f j *)
       val smallest: t * (t -> bool) -> t
       (* val sum: {from: t, to: t, term: t -> t} -> t *)

@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor FlatLattice (S: FLAT_LATTICE_STRUCTS): FLAT_LATTICE =
 struct
 
@@ -13,30 +14,30 @@ open S
 structure Elt =
    struct
       datatype t =
-	 Bottom
+         Bottom
        | Point of Point.t
        | Top
 
       local
-	 open Layout
+         open Layout
       in
-	 val layout =
-	    fn Bottom => str "Bottom"
-	     | Point p => Point.layout p
-	     | Top => str "Top"
+         val layout =
+            fn Bottom => str "Bottom"
+             | Point p => Point.layout p
+             | Top => str "Top"
       end
    end
 datatype z = datatype Elt.t
    
 datatype t = T of {lessThan: t list ref,
-		   upperBound: Point.t option ref,
-		   value: Elt.t ref}
+                   upperBound: Point.t option ref,
+                   value: Elt.t ref}
 
 fun layout (T {value, ...}) = Elt.layout (!value)
 
 fun new () = T {lessThan = ref [],
-		upperBound = ref NONE,
-		value = ref Bottom}
+                upperBound = ref NONE,
+                value = ref Bottom}
    
 val isBottom =
    fn (T {value = ref Bottom, ...}) => true
@@ -63,20 +64,20 @@ fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
    let
       fun continue e = List.forall (!lessThan, fn z => up (z, e))
       fun setTop () =
-	 not (isSome (!upperBound))
-	 andalso (value := Top
-		  ; continue Top)
+         not (isSome (!upperBound))
+         andalso (value := Top
+                  ; continue Top)
    in
       case (!value, e) of
-	 (_, Bottom) => true
+         (_, Bottom) => true
        | (Top, _) => true
        | (_, Top) => setTop ()
        | (Bottom, Point p) =>
-	    (value := Point p
-	     ; (case !upperBound of
-		   NONE => continue (Point p)
-		 | SOME p' =>
-		      Point.equals (p, p') andalso continue (Point p)))
+            (value := Point p
+             ; (case !upperBound of
+                   NONE => continue (Point p)
+                 | SOME p' =>
+                      Point.equals (p, p') andalso continue (Point p)))
        | (Point p, Point p') => Point.equals (p, p') orelse setTop ()
    end
 
@@ -98,10 +99,10 @@ val lowerBound =
 fun upperBound (T {upperBound = r, value, ...}, p): bool =
    case !r of
       NONE => (r := SOME p
-	       ; (case !value of
-		     Bottom => true
-		   | Point p' => Point.equals (p, p')
-		   | Top => false))
+               ; (case !value of
+                     Bottom => true
+                   | Point p' => Point.equals (p, p')
+                   | Top => false))
     | SOME p' => Point.equals (p, p')
 
 val upperBound =

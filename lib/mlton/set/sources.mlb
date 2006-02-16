@@ -1,22 +1,29 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 ann  
-   "sequenceUnit true"
-   "warnMatch true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
    "warnUnused false" "forceUsed"
 in
-local
-    $(SML_LIB)/basis/basis.mlb
-    ../basic/sources.mlb
+   local
+      $(SML_LIB)/basis/basis.mlb
+      ../basic/sources.mlb
 
-    disjoint.sig
-    disjoint.fun
-    set.sig
-    unordered.fun
-    ordered-unique-set.fun
-in
-    signature SET
+      disjoint.sig
+      disjoint.fun
+      set.sig
+      unordered.fun
+      ordered-unique-set.fun
+   in
+      signature SET
 
-    structure DisjointSet
-    functor OrderedUniqueSet
-    functor UnorderedSet
-end
+      structure DisjointSet
+      functor OrderedUniqueSet
+      functor UnorderedSet
+   end
 end

@@ -36,8 +36,8 @@ signature EVENT_EXTRA =
       type 'a status
       val enabled : {prio : int, doitFn : unit -> 'a} -> 'a status
       val blocked : ({transId : TransID.trans_id,
-		      cleanUp : unit -> unit,
-		      next : unit -> Scheduler.rdy_thread} -> 'a) -> 'a status
+                      cleanUp : unit -> unit,
+                      next : unit -> Scheduler.rdy_thread} -> 'a) -> 'a status
       val bevt : (unit -> 'a status) -> 'a event
 
       val atomicCVarSet : CVar.cvar -> unit

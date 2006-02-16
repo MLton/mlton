@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor UnsafeMonoArray (A: MONO_ARRAY_EXTRA): UNSAFE_MONO_ARRAY =
@@ -26,18 +26,18 @@ functor UnsafeMonoVector (V: MONO_VECTOR_EXTRA): UNSAFE_MONO_VECTOR =
 structure Unsafe: UNSAFE =
    struct
       structure Array =
-	 struct
-	    val sub = Array.unsafeSub
-	    val update = Array.unsafeUpdate
-	    val create = Array.array
-	 end
+         struct
+            val sub = Array.unsafeSub
+            val update = Array.unsafeUpdate
+            val create = Array.array
+         end
       structure CharArray = UnsafeMonoArray (CharArray)
       structure CharVector = UnsafeMonoVector (CharVector)
       structure Real64Array = UnsafeMonoArray (Real64Array)
       structure Vector =
-      	 struct
-	    val sub = Vector.unsafeSub
-	 end
+         struct
+            val sub = Vector.unsafeSub
+         end
       structure Word8Array = UnsafeMonoArray (Word8Array)
       structure Word8Vector = UnsafeMonoVector (Word8Vector)
    end

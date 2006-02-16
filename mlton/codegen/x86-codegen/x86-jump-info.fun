@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor x86JumpInfo(S: X86_JUMP_INFO_STRUCTS) : X86_JUMP_INFO =
@@ -28,18 +28,18 @@ struct
       
   fun newJumpInfo ()
     = let
-	val {get : Label.t -> status ref, ...}
-	  = Property.get(Label.plist, 
-			 Property.initFun (fn _ => ref (Count 0)))
+        val {get : Label.t -> status ref, ...}
+          = Property.get(Label.plist, 
+                         Property.initFun (fn _ => ref (Count 0)))
       in
-	T {get = get}
+        T {get = get}
       end
 
   local
     fun doit (status_ref, maybe_fn)
       = case !status_ref
-	  of None => ()
-	   | Count i => status_ref := (maybe_fn i)
+          of None => ()
+           | Count i => status_ref := (maybe_fn i)
   in
     fun incNear (T {get}, label)
       = doit (get label, fn i => Count (i+1))
@@ -51,23 +51,23 @@ struct
   fun getNear (T {get}, label) = !(get label)
 
   fun completeJumpInfo {chunk = Chunk.T {blocks, ...},
-			jumpInfo: t}
+                        jumpInfo: t}
     = List.foreach
       (blocks,
        fn Block.T {entry, transfer,...}
         => (case entry
-	      of Entry.Jump _ => ()
-	       | Entry.Func {label, ...} => forceNear (jumpInfo, label)
-	       | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
-	       | Entry.Handler {label, ...} => forceNear (jumpInfo, label)
-	       | Entry.CReturn {label, func, ...}
-	       => if CFunction.maySwitchThreads func
-		    then forceNear (jumpInfo, label)
-		    else ();
-	    List.foreach
-	    (Transfer.nearTargets transfer,
-	     fn label 
-	      => incNear (jumpInfo, label))))
+              of Entry.Jump _ => ()
+               | Entry.Func {label, ...} => forceNear (jumpInfo, label)
+               | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
+               | Entry.Handler {label, ...} => forceNear (jumpInfo, label)
+               | Entry.CReturn {label, func, ...}
+               => if CFunction.maySwitchThreads func
+                    then forceNear (jumpInfo, label)
+                    else ();
+            List.foreach
+            (Transfer.nearTargets transfer,
+             fn label 
+              => incNear (jumpInfo, label))))
 
   val (completeJumpInfo, completeJumpInfo_msg)
     = tracer
@@ -75,45 +75,45 @@ struct
       completeJumpInfo
 
   fun verifyJumpInfo {chunk as Chunk.T {blocks, ...}, 
-		      jumpInfo: t}
+                      jumpInfo: t}
     = let
-	local
-	  val {get : Label.t -> status ref,
-	       destroy}
-	    = Property.destGet(Label.plist,
-			       Property.initFun (fn _ => ref (Count 0)))
-	in
-	  val jumpInfo' = T {get = get}
-	  val destroy = destroy
-	end
-	val _ = completeJumpInfo {chunk = chunk,
-				  jumpInfo = jumpInfo'}
+        local
+          val {get : Label.t -> status ref,
+               destroy}
+            = Property.destGet(Label.plist,
+                               Property.initFun (fn _ => ref (Count 0)))
+        in
+          val jumpInfo' = T {get = get}
+          val destroy = destroy
+        end
+        val _ = completeJumpInfo {chunk = chunk,
+                                  jumpInfo = jumpInfo'}
 
-	val verified 
-	  = List.forall
-	    (blocks,
-	     fn Block.T {entry,...}
-	      => let
-		   val label = Entry.label entry
-		 in 
-		   if status_eq(getNear(jumpInfo, label), 
-				getNear(jumpInfo', label))
-		     then true
-		     else (print "verifyJumpInfo: ";
-			   print (Label.toString label);
-			   print "\n";
-			   print "jumpInfo: ";	
-			   print (status_toString (getNear(jumpInfo, label)));
-			   print "\n";
-			   print "jumpInfo': ";
-			   print (status_toString (getNear(jumpInfo', label)));
-			   print "\n";
-			   false)
-		 end)
+        val verified 
+          = List.forall
+            (blocks,
+             fn Block.T {entry,...}
+              => let
+                   val label = Entry.label entry
+                 in 
+                   if status_eq(getNear(jumpInfo, label), 
+                                getNear(jumpInfo', label))
+                     then true
+                     else (print "verifyJumpInfo: ";
+                           print (Label.toString label);
+                           print "\n";
+                           print "jumpInfo: ";  
+                           print (status_toString (getNear(jumpInfo, label)));
+                           print "\n";
+                           print "jumpInfo': ";
+                           print (status_toString (getNear(jumpInfo', label)));
+                           print "\n";
+                           false)
+                 end)
 
-	val _ = destroy ()
+        val _ = destroy ()
       in
-	verified
+        verified
       end
 
   val (verifyJumpInfo, verifyJumpInfo_msg)

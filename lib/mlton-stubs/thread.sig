@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 type int = Int.int
@@ -10,18 +10,18 @@ type int = Int.int
 signature MLTON_THREAD =
    sig
       structure AtomicState :
-	 sig
-	    datatype t = NonAtomic | Atomic of int
-	 end
+         sig
+            datatype t = NonAtomic | Atomic of int
+         end
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
       val atomically: (unit -> 'a) -> 'a
       val atomicState: unit -> AtomicState.t
 
       structure Runnable :
-	 sig
-	    type t
-	 end
+         sig
+            type t
+         end
 
       type 'a t
 

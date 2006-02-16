@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature POLY_SET =
    sig
       structure I: INTEGER
@@ -11,7 +12,7 @@ signature POLY_SET =
       type 'a t
 
       val empty: {equal: 'a * 'a -> bool,
-		   output: 'a * Out.t -> unit} -> 'a t
+                   output: 'a * Out.t -> unit} -> 'a t
 
       val size: 'a t -> I.t
       val foreach: 'a t * ('a -> unit) -> unit
@@ -32,7 +33,7 @@ signature POLY_SET =
 
       val add: 'a t * 'a -> 'a t
       val remove: 'a t * 'a -> 'a t
-	 
+         
       val contains: 'a t * 'a -> bool
       val isEmpty: 'a t -> bool
 

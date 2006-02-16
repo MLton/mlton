@@ -1,9 +1,9 @@
 (* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature PRIM_TYCONS_SUBSTRUCTS =
@@ -45,13 +45,15 @@ signature PRIM_TYCONS =
       val int: IntSize.t -> tycon
       val ints: (tycon * IntSize.t) vector
       val intInf: tycon
+      val isBool: tycon -> bool
       val isCharX: tycon -> bool
+      val isExn: tycon -> bool
       val isIntX: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:
-	 tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
-	 -> Layout.t * {isChar: bool, needsParen: bool}
+         tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
+         -> Layout.t * {isChar: bool, needsParen: bool}
       val list: tycon
       val pointer: tycon
       val prims: (tycon * Kind.t * AdmitsEquality.t) list

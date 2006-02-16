@@ -1,52 +1,59 @@
-local
-  basis basis_lib = bas $(SML_LIB)/basis/basis.mlb end
-  basis mlton_lib = bas ../lib/mlton/sources.mlb end
-  basis smlnj_lib = bas $(SMLNJ_LIB)/Util/smlnj-lib.mlb end
-  basis pp_lib = bas $(SMLNJ_LIB)/PP/pp-lib.mlb end
-  basis regexp_lib = bas $(SMLNJ_LIB)/RegExp/regexp-lib.mlb end
-  basis ckit_lib = bas $(CKIT_LIB)/ckit-lib.mlb end
+(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
 
-  local open basis_lib in
-    endian.sml
-    endian-big.sml
-    endian-little.sml
-    sizes-ppc.sml
-    sizes-sparc.sml
-    sizes-x86.sml
-  end
-  local open basis_lib pp_lib in
-    cpif-dev.sml
-    pp.sml
-  end
-  local open mlton_lib ckit_lib in
-    control.sig
-    control.sml
-  end
-  local open basis_lib in
-    spec.sml
-  end 
-  local 
-    open basis_lib smlnj_lib 
-    sets-and-maps.sml
-  in
-    structure IntListMap
-    structure IntMap = IntRedBlackMap
-    structure LargeIntSet
-    structure StringMap
-    structure StringSet
-  end
-  local open basis_lib ckit_lib in
-    ast-to-spec.sml
-    hash.sml
-  end
-  local open mlton_lib ckit_lib in
-    gen.sml
-  end
-  
-  local open mlton_lib regexp_lib in
-    main.sml
-  end
+local
+   basis basis_lib = bas $(SML_LIB)/basis/basis.mlb end
+   basis mlton_lib = bas ../lib/mlton/sources.mlb end
+   basis smlnj_lib = bas $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb end
+   basis pp_lib = bas $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb end
+   basis regexp_lib = bas $(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb end
+   basis ckit_lib = bas $(SML_LIB)/ckit-lib/src/ckit-lib.mlb end
+
+   local open basis_lib in
+      endian.sml
+      endian-big.sml
+      endian-little.sml
+      sizes-ppc.sml
+      sizes-sparc.sml
+      sizes-x86.sml
+   end
+   local open basis_lib pp_lib in
+      cpif-dev.sml
+      pp.sml
+   end
+   local open mlton_lib ckit_lib in
+      control.sig
+      control.sml
+   end
+   local open basis_lib in
+      spec.sml
+   end 
+   local 
+      open basis_lib smlnj_lib 
+      sets-and-maps.sml
+   in
+      structure IntListMap
+      structure IntMap = IntRedBlackMap
+      structure LargeIntSet
+      structure StringMap
+      structure StringSet
+   end
+   local open basis_lib ckit_lib in
+      ast-to-spec.sml
+      hash.sml
+   end
+   local open mlton_lib ckit_lib in
+      gen.sml
+   end
+   
+   local open mlton_lib regexp_lib in
+      main.sml
+   end
 in
-  structure Main
+   structure Main
 end
 

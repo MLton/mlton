@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure File:> FILE =
 struct
 
@@ -25,7 +26,7 @@ fun withh (file, p, openn, close) =
    let
       val stream = openn file
    in
-      DynamicWind.wind (fn () => p stream, fn () => close stream)
+      Exn.finally (fn () => p stream, fn () => close stream)
    end 
 
 fun withOut (f, p) = withh (f, p, Out.openOut, Out.close)
@@ -49,8 +50,8 @@ end
 fun remove f =
    if doesExist f
       then (FS.remove f
-	    handle e => Error.bug (concat ["remove ", f, ": ",
-					   Layout.toString (Exn.layout e)]))
+            handle e => Error.bug (concat ["File.remove: ", f, ": ",
+                                           Layout.toString (Exn.layout e)]))
    else ()
 
 local
@@ -65,8 +66,8 @@ end
 fun sameContents (f1, f2) =
    size f1 = size f2
    andalso withIn (f1, fn in1 =>
-		   withIn (f2, fn in2 =>
-			   In.sameContents (in1, in2)))
+                   withIn (f2, fn in2 =>
+                           In.sameContents (in1, in2)))
 
 fun output (file, out) = Out.output (out, file)
    
@@ -84,7 +85,7 @@ fun copy (source, dest) =
    
 fun concat (sources, dest) =
    withOut (dest, fn out =>
-	   List.foreach (sources, fn f => outputContents (f, out)))
+           List.foreach (sources, fn f => outputContents (f, out)))
 
 val temp = MLton.TextIO.mkstemps
 
@@ -100,18 +101,18 @@ fun withTemp f =
    let
       val name = tempName {prefix = "/tmp/file", suffix = ""}
    in
-      DynamicWind.wind (fn () => f name, fn () => remove name)
+      Exn.finally (fn () => f name, fn () => remove name)
    end
    
-fun withTempOut' (z, f, g) =
+fun withTempOut' (z, f: Out.t -> unit, g) =
    let
       val (name, out) = temp z
    in
-      DynamicWind.wind (fn () =>
-			(DynamicWind.wind (fn () => f out,
-					   fn () => Out.close out)
-			 ; g name),
-			fn () => remove name)
+      Exn.finally (fn () =>
+                   (Exn.finally (fn () => f out,
+                                 fn () => Out.close out)
+                    ; g name),
+                   fn () => remove name)
    end
 
 fun withTempOut (f, g) =
@@ -125,7 +126,7 @@ fun withOutIn (fout, fin) =
 
 fun withStringIn (s, fin) =
    withOutIn (fn out => Out.output (out, s),
-	      fin)
+              fin)
 
 fun create f = withOut (f, fn _ => ())
 

@@ -36,31 +36,31 @@ structure Main : KB =
   struct
 *)
     fun length l = let
-	  fun j(k, nil) = k
-	    | j(k, a::x) = j(k+1,x)
-	  in
-	    j(0,l)
-	  end
+          fun j(k, nil) = k
+            | j(k, a::x) = j(k+1,x)
+          in
+            j(0,l)
+          end
     fun op @ (nil, l) = l
       | op @ (a::r, l) = a :: (r@l)
     fun rev l = let
-	  fun f (nil, h) = h
-	    | f (a::r, h) = f(r, a::h)
-	  in
-	    f(l,nil)
-	  end
+          fun f (nil, h) = h
+            | f (a::r, h) = f(r, a::h)
+          in
+            f(l,nil)
+          end
     fun app f = let
-	  fun app_rec [] = ()
+          fun app_rec [] = ()
             | app_rec (a::L) = (f a; app_rec L)
         in
-	  app_rec
+          app_rec
         end
     fun map f = let
-	  fun map_rec [] = []
+          fun map_rec [] = []
             | map_rec (a::L) = f a :: map_rec L
           in
-	    map_rec
-  	  end
+            map_rec
+          end
 
 (******* Quelques definitions du prelude CAML **************)
 
@@ -239,7 +239,7 @@ fun matching term1 term2 =
           else
             (v,M) :: subst
         | match_rec subst (Term(op1,sons1), Term(op2,sons2)) =
-	  if op1 = op2 then it_list2 match_rec subst sons1 sons2
+          if op1 = op2 then it_list2 match_rec subst sons1 sons2
                        else raise FailMatching
         | match_rec _ _ = raise FailMatching
   in match_rec [] (term1,term2)
@@ -265,7 +265,7 @@ fun unify ((term1 as (Var n1)), term2) =
       else [(n2,term1)]
   | unify (Term(op1,sons1), Term(op2,sons2)) =
       if op1 = op2 then 
-	it_list2 (fn s => fn (t1,t2) => compsubst (unify(substitute s t1,
+        it_list2 (fn s => fn (t1,t2) => compsubst (unify(substitute s t1,
                                                          substitute s t2)) s)
                  [] sons1 sons2
       else raise FailUnify
@@ -287,7 +287,7 @@ fun pretty_term (Var n) =
       else
        (print_string oper;
         case sons of
-	     []   => ()
+             []   => ()
           | t::lt =>(print_string "(";
                      pretty_term t;
                      app (fn t => (print_string ","; pretty_term t)) lt;
@@ -314,7 +314,7 @@ fun mk_rule M N =
 fun check_rules x =
   it_list (fn n => fn (k,_) =>
              if k = n+1 then k
-	     else raise Fail (*failwith "Rule numbers not in sequence"*)
+             else raise Fail (*failwith "Rule numbers not in sequence"*)
           ) 0 x
 
 fun pretty_rule (k,(n,(M,N))) =
@@ -339,10 +339,10 @@ fun reduce L M t =
 fun reducible L =
   let
      fun redrec M =
-	(matching L M; true)
-	handle _ =>
-	   case M of Term(_,sons) => exists redrec sons
-	 |        _     => false
+        (matching L M; true)
+        handle _ =>
+           case M of Term(_,sons) => exists redrec sons
+         |        _     => false
   in redrec
   end
 
@@ -356,15 +356,15 @@ fun mreduce rules M =
 fun mrewrite1 rules =
   let
      fun rewrec M =
-	(mreduce rules M)
-	handle _ =>
-	   let fun tryrec [] = raise FailMrewrite1 (*failwith "mrewrite1"*)
-		 | tryrec (son::rest) =
-		   (rewrec son :: rest) handle _ => son :: tryrec rest
-	   in case M of
-	      Term(f, sons) => Term(f, tryrec sons)
-	    | _ => raise FailMrewrite1 (*failwith "mrewrite1"*)
-	   end
+        (mreduce rules M)
+        handle _ =>
+           let fun tryrec [] = raise FailMrewrite1 (*failwith "mrewrite1"*)
+                 | tryrec (son::rest) =
+                   (rewrec son :: rest) handle _ => son :: tryrec rest
+           in case M of
+              Term(f, sons) => Term(f, tryrec sons)
+            | _ => raise FailMrewrite1 (*failwith "mrewrite1"*)
+           end
   in rewrec
   end
 
@@ -373,7 +373,7 @@ fun mrewrite1 rules =
 fun mrewrite_all rules M =
   let
      fun rew_loop M =
-	rew_loop(mrewrite1 rules M)  handle  _ => M
+        rew_loop(mrewrite1 rules M)  handle  _ => M
   in rew_loop M
   end
 

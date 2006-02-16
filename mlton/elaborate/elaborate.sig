@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature ELABORATE_STRUCTS = 
    sig
       structure Ast: AST
@@ -24,6 +25,6 @@ signature ELABORATE =
       structure Env: ELABORATE_ENV
 
       val elaborateMLB:
-	 Ast.Basdec.t * {addPrim: Env.t -> CoreML.Dec.t list}
-	 -> Env.t * (CoreML.Dec.t list * bool) vector
+         Ast.Basdec.t * {addPrim: Env.t -> CoreML.Dec.t list}
+         -> Env.t * (CoreML.Dec.t list * bool) vector
   end

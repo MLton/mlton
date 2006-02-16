@@ -1,15 +1,16 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Mark: MARK =
 struct
 
 datatype t =
    T of {string: string,
-	 pos: int}
+         pos: int}
 
 fun pos (T {pos, ...}) = pos
 
@@ -37,7 +38,7 @@ fun backwardChars (T {string, pos},n) =
       else T {string = string, pos = pos}
    end
 fun backwardChar m = backwardChars (m, 1)
-val backwardChar = Trace.trace ("backwardChar", layout, layout) backwardChar
+val backwardChar = Trace.trace ("Mark.backwardChar", layout, layout) backwardChar
 
 exception ForwardChars
 fun forwardChars (T {string, pos},n) =
@@ -46,7 +47,7 @@ fun forwardChars (T {string, pos},n) =
       else T {string = string, pos = pos}
    end
 fun forwardChar m = forwardChars (m, 1)
-val forwardChar = Trace.trace ("forwardChar", layout, layout) forwardChar
+val forwardChar = Trace.trace ("Mark.forwardChar", layout, layout) forwardChar
 
 fun charAt (T {string, pos}) = String.sub (string, pos)
    
@@ -55,8 +56,8 @@ fun lookingAtChar (m, c) = Char.equals (charAt m, c)
 local
    fun searchChar move (m, c) =
       let
-	 fun loop m =
-	    if lookingAtChar (m, c) then m else loop (move m)
+         fun loop m =
+            if lookingAtChar (m, c) then m else loop (move m)
       in loop m
       end
 in 
@@ -77,15 +78,15 @@ fun numColumns m = diff (eol m, bol m)
 local
    fun moveLines move =
       let
-	 fun moves (m as T {string, pos}, n: int) =
-	 let
-	    val c = whatColumn m
-	    fun loop (m, n) =
-	       if n <= 0 then forwardChars (m, Int.min (c, numColumns m))
-	       else loop (move m, n - 1)
-	 in loop (bol m, n)
-	 end
-	  fun move m = moves (m, 1)
+         fun moves (m as T {string, pos}, n: int) =
+         let
+            val c = whatColumn m
+            fun loop (m, n) =
+               if n <= 0 then forwardChars (m, Int.min (c, numColumns m))
+               else loop (move m, n - 1)
+         in loop (bol m, n)
+         end
+          fun move m = moves (m, 1)
       in (move, moves)
       end
 in
@@ -98,24 +99,24 @@ fun lookingAtString (T {string, pos}, string') =
       val len = String.size string
       val len' = String.size string'
       fun loop (pos, pos') =
-	 pos < len
-	 andalso (pos' >= len'
-		  orelse (Char.equals (String.sub (string, pos),
-				       String.sub (string', pos'))
-			  andalso loop (pos + 1, pos' + 1)))
+         pos < len
+         andalso (pos' >= len'
+                  orelse (Char.equals (String.sub (string, pos),
+                                       String.sub (string', pos'))
+                          andalso loop (pos + 1, pos' + 1)))
    in loop (pos, 0)
    end
 val lookingAtString =
-   Trace.trace2 ("lookingAtString", layout, String.layout, Bool.layout)
+   Trace.trace2 ("Mark.lookingAtString", layout, String.layout, Bool.layout)
    lookingAtString
 
 exception Search
 fun makeSearch move (m, s) =
    let
       fun search m =
-	 if lookingAtString (m, s)
-	    then forwardChars (m, String.size s)
-	 else (search (move m) handle _ => raise Search)
+         if lookingAtString (m, s)
+            then forwardChars (m, String.size s)
+         else (search (move m) handle _ => raise Search)
    in search m
    end
 
@@ -124,7 +125,7 @@ val searchBackward = makeSearch backwardChar
 
 fun skip p =
    let fun skip m = if p (charAt m) then skip (forwardChar m)
-		    else m
+                    else m
    in skip
    end
 
@@ -150,7 +151,7 @@ val int = num (Int.fromString, Int)
 exception Real
 val real = num (Real.fromString, Real)
 
-val real = Trace.trace ("real", layout, Layout.tuple2 (layout, Real.layout)) real
+val real = Trace.trace ("Mark.real", layout, Layout.tuple2 (layout, Real.layout)) real
 
 val op < = fn (m, m') => pos m < pos m'
 

@@ -1,11 +1,11 @@
-(* This code is not working -- it is not even in sources.cm *)
-
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
+(* This code is not working -- it is not even in sources.cm *)
 structure HashTable: HASH_TABLE =
 struct
 
@@ -15,7 +15,7 @@ type ('a, 'b) t = ('a * 'b) Set.t
 
 fun ('a, 'b) new {equals, hash}: ('a, 'b) t =
    Set.new {equals = fn ((a, _), (a', _)) => equals (a, a')
-	    hash = hash o #1}
+            hash = hash o #1}
 
 local
    open Set
@@ -33,13 +33,13 @@ fun update (T {buckets = ref buckets, equals, mask, ...}, w, a, b) =
    let
       val j = index (w, !mask)
       val _ =
-	 Array.update
-	 (buckets, j,
-	  (w, a, b)
-	  :: List.fold (Array.sub (buckets, j), [], fn (z as (w', a', _), ac) =>
-			if Word.equals (w, w') andalso equals (a, a')
-			   then ac
-			else z :: ac))
+         Array.update
+         (buckets, j,
+          (w, a, b)
+          :: List.fold (Array.sub (buckets, j), [], fn (z as (w', a', _), ac) =>
+                        if Word.equals (w, w') andalso equals (a, a')
+                           then ac
+                        else z :: ac))
    in ()
    end
 
@@ -48,12 +48,12 @@ fun peek(t, w, i) = peekGen(t, w, i, fn _ => NONE, SOME)
 fun lookupGen (table as T {buckets, numItems, ...}, w, i, x, yes) =
    let
       fun no (j, b) =
-	 let val x = x ()
-	    val _ = Int.inc numItems
-	    val _ = Array.update (!buckets, j, (w, i, x) :: b)
-	    val _ = maybeGrow table
-	 in x
-	 end
+         let val x = x ()
+            val _ = Int.inc numItems
+            val _ = Array.update (!buckets, j, (w, i, x) :: b)
+            val _ = maybeGrow table
+         in x
+         end
    in peekGen (table, w, i, no, yes)
    end
 
@@ -65,7 +65,7 @@ fun insertIfNew (table, w, i, x, yes) =
    
 fun foldi(T{buckets, ...}, b, f) =
    Array.fold(!buckets, b, fn (r, b) =>
-	      List.fold(r, b, fn ((_, i, x), b) => f(i, x, b)))
+              List.fold(r, b, fn ((_, i, x), b) => f(i, x, b)))
 
 fun listItemsi t = foldi(t, [], fn (i, x, l) => (i, x) :: l)
 
@@ -96,8 +96,8 @@ fun mapi (T{numItems, mask, equals, buckets}, f) =
       mask = ref (!mask),
       equals = equals,
       buckets = ref (Array.map (!buckets, fn r =>
-				List.revMap (r, fn (w, i, x) =>
-					     (w, i, f (i, x)))))}
+                                List.revMap (r, fn (w, i, x) =>
+                                             (w, i, f (i, x)))))}
 
 fun map (t, f) = mapi (t, f o #2)
 

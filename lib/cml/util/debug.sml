@@ -17,16 +17,16 @@ structure Debug : DEBUG =
       val debugFlg = false
 
       fun sayDebug (msgs: (unit -> string) list, 
-		    msg: unit -> string) =
-	 if debugFlg
-	    then let
-		    val msgs = List.map (fn f => f ()) msgs
-		    val msg = concat [String.concatWith " " msgs, " :: ", msg ()]
-		 in
-		    C.atomicBegin ();
-		    TextIO.print (concat [msg, "\n"]);
-		    C.atomicEnd ()
-		 end
-	    else ()
+                    msg: unit -> string) =
+         if debugFlg
+            then let
+                    val msgs = List.map (fn f => f ()) msgs
+                    val msg = concat [String.concatWith " " msgs, " :: ", msg ()]
+                 in
+                    C.atomicBegin ();
+                    TextIO.print (concat [msg, "\n"]);
+                    C.atomicEnd ()
+                 end
+            else ()
       fun sayDebug' (msg: string) = sayDebug ([], fn () => msg)
    end

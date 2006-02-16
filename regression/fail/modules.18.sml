@@ -1,9 +1,9 @@
 structure T =
    struct
       structure X =
-	 struct
-	    type t = int
-	 end
+         struct
+            type t = int
+         end
    end
 signature S =
    sig

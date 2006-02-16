@@ -12,9 +12,9 @@ val _ = a := !a - 1
 val _ = b := !b - 1
 
 val _ = print(concat["a = ", Int.toString(!a),
-		     "  b = ", Int.toString(!b),
-		     "\n"])
+                     "  b = ", Int.toString(!b),
+                     "\n"])
 
 val _ = if !a = 0
-	   then ()
-	else throw (valOf(!r)) ()
+           then ()
+        else throw (valOf(!r)) ()

@@ -8,30 +8,30 @@ bin="$root/bin"
 
 case `$bin/host-os` in
 cygwin|freebsd|linux)
-	grepFlags='-q'
+        grepFlags='-q'
 ;;
 sun)
-	grepFlags=''
+        grepFlags=''
 ;;
 esac
 
+ignore='.ignore'
 doit () {
-	rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out
-	if [ -r .cvsignore ]; then
-		for f in `cat .cvsignore`; do rm -rf $f; done
-	fi
-	for f in `ls`; do
-		if [ -d $f ]; then
-			cd $f;
-			if [ -r Makefile ] && 
-				grep $grepFlags '^clean:' Makefile ; then 
-				$bin/mmake clean
-			else
-				doit
-			fi && 
-			cd ..;
-		fi
-	done
+        rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
+        if [ -r $ignore ]; then
+                for f in `cat $ignore`; do rm -rf $f; done
+        fi
+        for f in `ls`; do
+                if [ -d $f ]; then
+                        cd $f
+                        if [ -r Makefile ]; then
+				$bin/mmake clean || doit
+                        else
+                                doit
+                        fi
+                        cd ..
+                fi
+        done
 }
 
 doit
@@ -39,9 +39,9 @@ doit
 # This script removes all the junk files created when compiling with MLton's
 # various -keep flags.
 
-#/bin/rm -f *.basis *.chunks *.const *.core-ml *.dot *.flat *.flow 	\
-#	*.inline *.local-flatten *.mono *.o *.once-graph *.once-vars	\
-#	*.post-useless *.raise-to-jump *.redundant *.reg *.rep *.ssa	\
-#	*.sxml *.sxml.poly *.threshold[0-9] *.unused-args *.useless *.xml
+#/bin/rm -f *.basis *.chunks *.const *.core-ml *.dot *.flat *.flow      \
+#       *.inline *.local-flatten *.mono *.o *.once-graph *.once-vars    \
+#       *.post-useless *.raise-to-jump *.redundant *.reg *.rep *.ssa    \
+#       *.sxml *.sxml.poly *.threshold[0-9] *.unused-args *.useless *.xml
 #
 #/bin/rm -f *~ core mlmon.out

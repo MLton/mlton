@@ -52,34 +52,34 @@ end = struct
     type int = I.int
 
     local
-	val to   = W.fromLargeInt o I.toLarge
-	val from = I.fromLarge o W.toLargeIntX
-	fun bop f (x, y) = from (f (to x, to y)) (* binary op *)
-	fun uop f x = from (f (to x))	         (* unary op *)
-	fun sop f (x, y) = from (f (to x, y))    (* shift-like op *)
-	fun cop f (x, y) = f (to x, to y)        (* comparison-like op *)
+        val to   = W.fromLargeInt o I.toLarge
+        val from = I.fromLarge o W.toLargeIntX
+        fun bop f (x, y) = from (f (to x, to y)) (* binary op *)
+        fun uop f x = from (f (to x))            (* unary op *)
+        fun sop f (x, y) = from (f (to x, y))    (* shift-like op *)
+        fun cop f (x, y) = f (to x, to y)        (* comparison-like op *)
     in
         val ++ = bop W.+
-	val -- = bop W.-
-	val ** = bop W.*
-	val udiv = bop W.div
-	val umod = bop W.mod
-	val andb = bop W.andb
-	val orb = bop W.orb
-	val xorb = bop W.xorb
-	val notb = uop W.notb
+        val -- = bop W.-
+        val ** = bop W.*
+        val udiv = bop W.div
+        val umod = bop W.mod
+        val andb = bop W.andb
+        val orb = bop W.orb
+        val xorb = bop W.xorb
+        val notb = uop W.notb
 
-	val umax = bop W.max
-	val umin = bop W.min
+        val umax = bop W.max
+        val umin = bop W.min
 
-	val << = sop W.<<
-	val >> = sop W.>>
-	val ~>> = sop W.~>>
+        val << = sop W.<<
+        val >> = sop W.>>
+        val ~>> = sop W.~>>
 
-	val ulg = cop W.<
-	val ule = cop W.<=
-	val ugt = cop W.>
-	val uge = cop W.>=
-	val ucompare = cop W.compare
+        val ulg = cop W.<
+        val ule = cop W.<=
+        val ugt = cop W.>
+        val uge = cop W.>=
+        val ucompare = cop W.compare
     end
 end

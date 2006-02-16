@@ -9,13 +9,13 @@ signature UNIX_SOCK =
       val toAddr: string -> sock_addr
       val fromAddr: sock_addr -> string
       structure Strm : 
-	 sig
-	    val socket: unit -> 'mode stream_sock
-	    val socketPair: unit -> 'mode stream_sock * 'mode stream_sock
-	 end
+         sig
+            val socket: unit -> 'mode stream_sock
+            val socketPair: unit -> 'mode stream_sock * 'mode stream_sock
+         end
       structure DGrm : 
-	 sig
-	    val socket: unit -> dgram_sock
-	    val socketPair: unit -> dgram_sock * dgram_sock
-	 end
+         sig
+            val socket: unit -> dgram_sock
+            val socketPair: unit -> dgram_sock * dgram_sock
+         end
    end

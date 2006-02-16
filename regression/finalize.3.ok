@@ -1,0 +1,7 @@
+before test 4
+before GC 4a
+after GC 4a
+invoking touch
+before GC 4b
+test 4: finalizer
+after GC 4b

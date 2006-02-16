@@ -9,7 +9,7 @@ struct
     | INT of int
     | CON of string
     | REF of term option ref
-	
+        
   exception BadArg of string
 end;
 
@@ -23,29 +23,29 @@ struct
       val trail_counter = ref 0
   in
       fun unwind_trail (0, tr) = tr
-	| unwind_trail (n, r::tr) =
-	  ( r := NONE ; unwind_trail (n-1, tr) )
-	| unwind_trail (_, nil) =
-	  raise BadArg "unwind_trail"
+        | unwind_trail (n, r::tr) =
+          ( r := NONE ; unwind_trail (n-1, tr) )
+        | unwind_trail (_, nil) =
+          raise BadArg "unwind_trail"
 
       fun reset_trail () = ( global_trail := nil )
 
       fun trail func =
-	  let 
-	      val tc0 = !trail_counter
-	  in
-	      ( func () ;
-	       global_trail := 
-	         unwind_trail (!trail_counter-tc0, !global_trail) ;
-	       trail_counter := tc0 )
-	  end
-	
+          let 
+              val tc0 = !trail_counter
+          in
+              ( func () ;
+               global_trail := 
+                 unwind_trail (!trail_counter-tc0, !global_trail) ;
+               trail_counter := tc0 )
+          end
+        
       fun bind (r, t) =
-	  ( r := SOME t ;
-	   global_trail := r::(!global_trail) ;
-	   trail_counter := !trail_counter+1 )
+          ( r := SOME t ;
+           global_trail := r::(!global_trail) ;
+           trail_counter := !trail_counter+1 )
   end (* local *)
-end; (* Trail *)	
+end; (* Trail *)        
 
 (* unify.sml *)
 
@@ -57,57 +57,57 @@ struct
       | same_ref _ = false
 
     fun occurs_check r t =
-	let
-	    fun oc (STR(_,ts)) = ocs ts
-	      | oc (REF(r')) = 
-		(case !r' of
-		     SOME(s) => oc s
-		   | _ => r <> r')
-	      | oc (CON _) = true
-	      | oc (INT _) = true
-	    and ocs nil = true
-	      | ocs (t::ts) = oc t andalso ocs ts
-	in
-	    oc t
-	end
+        let
+            fun oc (STR(_,ts)) = ocs ts
+              | oc (REF(r')) = 
+                (case !r' of
+                     SOME(s) => oc s
+                   | _ => r <> r')
+              | oc (CON _) = true
+              | oc (INT _) = true
+            and ocs nil = true
+              | ocs (t::ts) = oc t andalso ocs ts
+        in
+            oc t
+        end
     fun deref (t as (REF(x))) = 
-	(case !x of 
-	     SOME(s) => deref s
-	   | _ => t)
+        (case !x of 
+             SOME(s) => deref s
+           | _ => t)
       | deref t = t
     fun unify' (REF(r), t) sc = unify_REF (r,t) sc
       | unify' (s, REF(r)) sc = unify_REF (r,s) sc
       | unify' (STR(f,ts), STR(g,ss)) sc =
-	if (f = g)
-	    then unifys (ts,ss) sc
-	else ()
+        if (f = g)
+            then unifys (ts,ss) sc
+        else ()
       | unify' (CON(f), CON(g)) sc =
-	if (f = g) then
-	    sc ()
-	else
-	    ()
+        if (f = g) then
+            sc ()
+        else
+            ()
       | unify' (INT(f), INT(g)) sc =
-	if (f = g) then
-	    sc ()
-	else
-	    ()
+        if (f = g) then
+            sc ()
+        else
+            ()
       | unify' (_, _) sc = ()
     and unifys (nil, nil) sc = sc ()
       | unifys (t::ts, s::ss) sc =
-	unify' (deref(t), deref(s))
-	(fn () => unifys (ts, ss) sc)
+        unify' (deref(t), deref(s))
+        (fn () => unifys (ts, ss) sc)
       | unifys _ sc = ()
     and unify_REF (r, t) sc =
-	if same_ref (r, t)
-	    then sc ()
-	else if occurs_check r t
-		 then ( bind(r, t) ; sc () )
-	     else ()
+        if same_ref (r, t)
+            then sc ()
+        else if occurs_check r t
+                 then ( bind(r, t) ; sc () )
+             else ()
   in
     val deref = deref
     fun unify (s, t) = unify' (deref(s), deref(t))
   end (* local *)
-end; (* Unify *)	 
+end; (* Unify *)         
 
 (* data.sml *)
 
@@ -350,19 +350,19 @@ structure Main : BMARK =
     exception Done 
 
     fun testit strm = Data.exists(fn Z => Data.solution2 Z (fn () => raise Done))
-	  handle Done => TextIO.output(strm, "yes\n")
+          handle Done => TextIO.output(strm, "yes\n")
 
     fun doit () = Data.exists(fn Z => Data.solution2 Z (fn () => raise Done))
-	  handle Done => ()
+          handle Done => ()
 
     val doit =
        fn size =>
        let
-	  fun loop n =
-	     if n = 0
-		then ()
-	     else (doit();
-		   loop(n-1))
+          fun loop n =
+             if n = 0
+                then ()
+             else (doit();
+                   loop(n-1))
        in loop size
        end
 

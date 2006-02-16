@@ -38,5 +38,5 @@ fun mk_tree 0 = Lf
                 in Br(n,t,t)
                 end
 val it = if search (fn _ => false) (mk_tree 20) then print "true\n"
-	 else print "false\n"
+         else print "false\n"
 

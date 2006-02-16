@@ -23,7 +23,7 @@ local val r = ref 0
 in
 fun etst s e1 e2 =
       prl (int_to_string (r := !r + 1; !r)
-	   ^ (if e1 = e2 then " ok" else " * n o t   o k ! *"))
+           ^ (if e1 = e2 then " ok" else " * n o t   o k ! *"))
 end
 
 val () = etst "1" ("" < "abc") true;         (*den ene tom*)
@@ -50,25 +50,25 @@ val () = etst "6" ("" >= "") true;
 val () = etst "6" ("" <= "") true;
 val () = etst "6" ("" = "") true;
 val () = etst "6" ("" <> "") false;
-val () = etst "7" ("abc" < "abcd") true;    (*den ene længere*)
+val () = etst "7" ("abc" < "abcd") true;    (*den ene lngere*)
 val () = etst "8" ("abc" > "abcd") false;
 val () = etst "8" ("abc" >= "abcd") false;
 val () = etst "8" ("abc" <= "abcd") true;
 val () = etst "8" ("abc" = "abcd") false;
 val () = etst "8" ("abc" <> "abcd") true;
-val () = etst "-" ("abcd" < "abc") false;   (*den anden længere*)
+val () = etst "-" ("abcd" < "abc") false;   (*den anden lngere*)
 val () = etst "-" ("abcd" > "abc") true;
 val () = etst "-" ("abcd" >= "abc") true;
 val () = etst "-" ("abcd" <= "abc") false;
 val () = etst "-" ("abcd" = "abc") false;
 val () = etst "-" ("abcd" <> "abc") true;
-val () = etst "-" ("abc" < "abd") true;     (*lige lange, sidste størst*)
+val () = etst "-" ("abc" < "abd") true;     (*lige lange, sidste strst*)
 val () = etst "-" ("abc" > "abd") false;
 val () = etst "-" ("abc" >= "abd") false;
 val () = etst "-" ("abc" <= "abd") true;
 val () = etst "-" ("abc" = "abd") false;
 val () = etst "-" ("abc" <> "abd") true;
-val () = etst "-" ("abd" < "abc") false;    (*lige lange, første størst*)
+val () = etst "-" ("abd" < "abc") false;    (*lige lange, frste strst*)
 val () = etst "-" ("abd" > "abc") true;
 val () = etst "-" ("abd" >= "abc") true;
 val () = etst "-" ("abd" <= "abc") false;
@@ -83,17 +83,17 @@ fun repeat 0 s = ""
   | repeat n s = s ^ repeat (n-1) s
 val long = repeat  50 "Der laa den Ridder i Graesset og drev.\n\
                       \Hejsa, nu sadler vi af.\n\
-		      \Der laa hans Harnisk, hans Skjold og Vaerge,\n\
-		      \Hans Tanker de floej over alle Bjerge.\n\
-		      \De floej paa Skyer gennem Luften den blaa ---\n\
-		      \Den Rejse man bruger ej Vaaben paa.\n\
-		      \\n\
-		      \Den Ridder han laa, hvor han steded sig foerst\n\
-		      \Han kendte ej Sult, han kendte ej Toerst\n\
-		      \Og Solen kom og Stedet og gik;\n\
-		      \Han lytted som efter en sagte Musik.\n\
-		      \\n\
-		      \\n"
+                      \Der laa hans Harnisk, hans Skjold og Vaerge,\n\
+                      \Hans Tanker de floej over alle Bjerge.\n\
+                      \De floej paa Skyer gennem Luften den blaa ---\n\
+                      \Den Rejse man bruger ej Vaaben paa.\n\
+                      \\n\
+                      \Den Ridder han laa, hvor han steded sig foerst\n\
+                      \Han kendte ej Sult, han kendte ej Toerst\n\
+                      \Og Solen kom og Stedet og gik;\n\
+                      \Han lytted som efter en sagte Musik.\n\
+                      \\n\
+                      \\n"
 
 val () = etst "1" (long ^ "" < long ^ "abc") true;         (*den ene tom*)
 val () = etst "2" (long ^ "" > long ^ "abc") false;
@@ -119,25 +119,25 @@ val () = etst "6" (long ^ "" >= long ^ "") true;
 val () = etst "6" (long ^ "" <= long ^ "") true;
 val () = etst "6" (long ^ "" = long ^ "") true;
 val () = etst "6" (long ^ "" <> long ^ "") false;
-val () = etst "7" (long ^ "abc" < long ^ "abcd") true;    (*den ene længere*)
+val () = etst "7" (long ^ "abc" < long ^ "abcd") true;    (*den ene lngere*)
 val () = etst "8" (long ^ "abc" > long ^ "abcd") false;
 val () = etst "8" (long ^ "abc" >= long ^ "abcd") false;
 val () = etst "8" (long ^ "abc" <= long ^ "abcd") true;
 val () = etst "8" (long ^ "abc" = long ^ "abcd") false;
 val () = etst "8" (long ^ "abc" <> long ^ "abcd") true;
-val () = etst "-" (long ^ "abcd" < long ^ "abc") false;   (*den anden længere*)
+val () = etst "-" (long ^ "abcd" < long ^ "abc") false;   (*den anden lngere*)
 val () = etst "-" (long ^ "abcd" > long ^ "abc") true;
 val () = etst "-" (long ^ "abcd" >= long ^ "abc") true;
 val () = etst "-" (long ^ "abcd" <= long ^ "abc") false;
 val () = etst "-" (long ^ "abcd" = long ^ "abc") false;
 val () = etst "-" (long ^ "abcd" <> long ^ "abc") true;
-val () = etst "-" (long ^ "abc" < long ^ "abd") true;     (*lige lange, sidste størst*)
+val () = etst "-" (long ^ "abc" < long ^ "abd") true;     (*lige lange, sidste strst*)
 val () = etst "-" (long ^ "abc" > long ^ "abd") false;
 val () = etst "-" (long ^ "abc" >= long ^ "abd") false;
 val () = etst "-" (long ^ "abc" <= long ^ "abd") true;
 val () = etst "-" (long ^ "abc" = long ^ "abd") false;
 val () = etst "-" (long ^ "abc" <> long ^ "abd") true;
-val () = etst "-" (long ^ "abd" < long ^ "abc") false;    (*lige lange, første størst*)
+val () = etst "-" (long ^ "abd" < long ^ "abc") false;    (*lige lange, frste strst*)
 val () = etst "-" (long ^ "abd" > long ^ "abc") true;
 val () = etst "-" (long ^ "abd" >= long ^ "abc") true;
 val () = etst "-" (long ^ "abd" <= long ^ "abc") false;

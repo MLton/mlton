@@ -1,15 +1,16 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Int:
    sig
       include INTEGER
 
       type int
-	 
+         
       val maxInt: t
       val minInt: t
       val roundDownToPowerOfTwo: t -> t
@@ -19,22 +20,22 @@ structure Int:
    struct
       structure Int = Pervasive.Int
       structure I = Integer(open Int
-			    fun divMod(a, b) = (a div b, a mod b)
-			    fun quotRem(a, b) = (quot(a, b), rem(a, b))
-			    val toIntInf = Pervasive.IntInf.fromInt)
+                            fun divMod(a, b) = (a div b, a mod b)
+                            fun quotRem(a, b) = (quot(a, b), rem(a, b))
+                            val toIntInf = Pervasive.IntInf.fromInt)
       open I
 
       fun roundDownToPowerOfTwo (i: t): t =
-	 Word.toInt (Word.roundDownToPowerOfTwo (Word.fromInt i))
+         Word.toInt (Word.roundDownToPowerOfTwo (Word.fromInt i))
 
       fun roundUpToPowerOfTwo (i: t): t =
-	 let
-	    val i' = roundDownToPowerOfTwo i
-	 in
-	    if i = i'
-	       then i
-	    else i' * 2
-	 end
+         let
+            val i' = roundDownToPowerOfTwo i
+         in
+            if i = i'
+               then i
+            else i' * 2
+         end
 
       type int = t
       val maxInt = valOf Int.maxInt

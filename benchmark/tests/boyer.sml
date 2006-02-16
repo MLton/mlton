@@ -909,8 +909,8 @@ val term =
               Prop (get "implies",[Var 23, Var 22])])
 
     fun testit outstrm = if tautp (apply_subst subst term)
-	  then TextIO.output (outstrm, "Proved!\n")
-	  else TextIO.output (outstrm, "Cannot prove!\n")
+          then TextIO.output (outstrm, "Proved!\n")
+          else TextIO.output (outstrm, "Cannot prove!\n")
 
     fun doit () = (tautp (apply_subst subst term); ())
 
@@ -921,11 +921,11 @@ structure Main =
     val doit = 
        fn n =>
        let
-	  fun loop n =
-	     if n = 0
-	        then ()
-	     else (Main.doit ();
-		   loop(n-1))
+          fun loop n =
+             if n = 0
+                then ()
+             else (Main.doit ();
+                   loop(n-1))
        in loop n
        end
   end;

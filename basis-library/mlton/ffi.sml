@@ -1,3 +1,10 @@
+(* Copyright (C) 2003-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure MLtonFFI: MLTON_FFI =
 struct
 
@@ -45,7 +52,7 @@ val getBool = intToBool o getInt32
 val getChar8 = Primitive.Char.fromInt8 o getInt8
 val getChar16 = Primitive.Char2.fromInt16 o getInt16
 val getChar32 = Primitive.Char4.fromInt32 o getInt32
-	       
+               
 fun boolToInt (b: bool): int = if b then 1 else 0
 
 val setBool = setInt32 o boolToInt

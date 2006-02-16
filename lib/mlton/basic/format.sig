@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature FORMAT =
@@ -27,7 +28,7 @@ open S
 
 val _ =
    Assert.assert
-   ("format", fn () => 
+   ("TestFormat", fn () => 
     "abc" = format (lit "abc")
     andalso "abc" = format string "abc"
     andalso "abc" = format (lit "a" o lit "b" o lit "c")

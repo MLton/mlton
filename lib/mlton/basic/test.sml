@@ -1,22 +1,23 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Z =
    struct
       val _ =
-	 let open Trace.Immediate
-	 in debug := Out Out.error
-	    ; flagged()
-	    ; ["concat"]
-	    ; ["Uri.fromString", "Uri.resolve", "Uri.relativize",
-	       "Authority.equals"]
-	    ; ["Uri.fromString", "Uri.resolve", "Uri.toString",
-		  "Uri.relativize", "Uri.checkResolve"]
-	    ; ["Regexp.match"]
-	 end
+         let open Trace.Immediate
+         in debug := Out Out.error
+            ; flagged()
+            ; ["concat"]
+            ; ["Uri.fromString", "Uri.resolve", "Uri.relativize",
+               "Authority.equals"]
+            ; ["Uri.fromString", "Uri.resolve", "Uri.toString",
+                  "Uri.relativize", "Uri.checkResolve"]
+            ; ["Regexp.match"]
+         end
    end
 structure Z = TestBase64 (Base64)
 structure Z = TestBinarySearch (BinarySearch)

@@ -1,0 +1,364 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>RunningOnMinGW - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      RunningOnMinGW
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, a library for porting Unix applications to Windows.  Some library functionality is missing or changed. 
+    <ul>
+
+    <li>
+<p>
+ The C function <tt>getrusage</tt> is implemented by a stub   that always sets the time to zero.  Hence  <tt>MLton.Rusage.rusage</tt> will return times of zero.  Also,   the times printed by the runtime system will be zeroes.  
+</p>
+</li>
+    <li class="gap">
+<p>
+ Many functions are unimplemented and will <tt>raise&nbsp;SysErr</tt>. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <tt>IS.IO.poll</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>MLton.Itimer.set</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>MLton.ProcEnv.setgroups</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.chown</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.fchown</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.fpathconf</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.link</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.mkfifo</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.pathconf</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.readlink</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.FileSys.symlink</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.dupfd</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.getfd</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.getfl</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.getlk</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.setfd</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.setfl</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.setlk</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.IO.setlkw</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.ctermid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getegid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.geteuid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getgid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getgroups</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getlogin</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getpgrp</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getpid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getppid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.getuid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.setgid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.setpgid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.setsid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.setuid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.sysconf</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.times</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.ProcEnv.ttyname</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.exece</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.execp</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.exit</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.fork</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.getgrnam</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.getpwuid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.kill</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.pause</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.waitpid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.Process.waitpid_nh</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.SysDB.getgrgid</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.drain</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.flow</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.flush</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.getattr</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.getpgrp</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.sendbreak</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.setattr</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>Posix.TTY.TC.setpgrp</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>UnixSock.fromAddr</tt> 
+</p>
+</li>
+        <li>
+<p>
+ <tt>UnixSock.toAddr</tt> 
+</p>
+</li>
+</ul>
+
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-02 01:32:16 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

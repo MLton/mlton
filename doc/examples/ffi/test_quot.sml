@@ -1,7 +1,7 @@
 
 val c_quot = _import "c_quot": Int8.int * Int8.int -> Int8.int;
 
-val sml_quot = _export "sml_quot": Int8.int * Int8.int -> Int8.int;
+val sml_quot = _export "sml_quot": (Int8.int * Int8.int -> Int8.int) -> unit;
 val _ = sml_quot Int8.quot
 
 val call_sml_quot = _import "call_sml_quot": unit -> unit;
@@ -28,6 +28,6 @@ val bad_z =
 
 val () = 
    print (concat [" bad_z = ", Int8.toString bad_z, "\n",
-		  "     z = ", Int8.toString z, "\n",
-		  "   c_z = ", Int8.toString c_z, "\n"])
+                  "     z = ", Int8.toString z, "\n",
+                  "   c_z = ", Int8.toString c_z, "\n"])
 val () = call_sml_quot ()

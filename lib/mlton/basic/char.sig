@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Pervasive.Int.int
 type word8 = Pervasive.Word8.word
    
@@ -66,7 +67,7 @@ functor TestChar (S: CHAR): sig end =
    struct
       open S
       val _ =
-	 Assert.assert
-	 ("Char", fn () =>
-	  "\\000" = escapeC #"\000")
+         Assert.assert
+         ("TestChar", fn () =>
+          "\\000" = escapeC #"\000")
    end

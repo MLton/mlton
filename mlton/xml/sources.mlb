@@ -1,51 +1,50 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 local
-    ../../lib/mlton/sources.mlb
-    ../../lib/smlnj/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
 
-    xml-type.sig
-    xml-tree.sig
-    xml-tree.fun
-    type-check.sig
-    type-check.fun
-    scc-funs.sig
-    scc-funs.fun
-    simplify-types.sig
-    simplify-types.fun
-    shrink.sig
-    shrink.fun
-    xml-simplify.sig
-    xml-simplify.fun
-    xml.sig
-    xml.fun
-    sxml-exns.sig
-    monomorphise.sig
-    monomorphise.fun
-    sxml-tree.sig
-    implement-exceptions.sig
-    implement-exceptions.fun
-    implement-suffix.sig
-    implement-suffix.fun
-    polyvariance.sig
-    polyvariance.fun
-    sxml-simplify.sig
-    sxml-simplify.fun
-    sxml.sig
-    sxml.fun
+   xml-type.sig
+   xml-tree.sig
+   xml-tree.fun
+   type-check.sig
+   type-check.fun
+   scc-funs.sig
+   scc-funs.fun
+   simplify-types.sig
+   simplify-types.fun
+   shrink.sig
+   shrink.fun
+   xml-simplify.sig
+   xml-simplify.fun
+   xml.sig
+   xml.fun
+   sxml-exns.sig
+   monomorphise.sig
+   monomorphise.fun
+   sxml-tree.sig
+   implement-exceptions.sig
+   implement-exceptions.fun
+   implement-suffix.sig
+   implement-suffix.fun
+   polyvariance.sig
+   polyvariance.fun
+   sxml-simplify.sig
+   sxml-simplify.fun
+   sxml.sig
+   sxml.fun
 in
-    signature SXML
-    signature XML
-    signature XML_TYPE
+   signature SXML
+   signature XML
 
-    functor Monomorphise
-    functor Xml
-    functor Sxml
+   functor Monomorphise
+   functor Xml
+   functor Sxml
 end

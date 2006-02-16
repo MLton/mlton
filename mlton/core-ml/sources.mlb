@@ -1,22 +1,23 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
-local
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../../lib/mlton/sources.mlb
 
-    core-ml.sig
-    core-ml.fun
-    dead-code.sig
-    dead-code.fun
+local
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../../lib/mlton/sources.mlb
+
+   core-ml.sig
+   core-ml.fun
+   dead-code.sig
+   dead-code.fun
 in
-    signature CORE_ML
-    functor CoreML
-    functor DeadCode
+   signature CORE_ML
+   functor CoreML
+   functor DeadCode
 end

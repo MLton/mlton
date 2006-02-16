@@ -1,200 +1,200 @@
-/* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  */
 
 #include "platform.h"
 
 void die (char *fmt, ...) {
-	va_list	args;
+        va_list args;
 
-	fflush(stdout);
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	va_end(args);
-	fprintf(stderr, "\n");
-	exit(1);
+        fflush(stdout);
+        va_start(args, fmt);
+        vfprintf(stderr, fmt, args);
+        va_end(args);
+        fprintf(stderr, "\n");
+        exit(1);
 }
 
 void diee (char * fmt, ...) {
-	va_list	args;
+        va_list args;
 
-	fflush(stdout);
-	va_start(args, fmt);
-	vfprintf(stderr, fmt, args);
-	va_end(args);
-	
-	fprintf(stderr, " (%s)\n", strerror(errno));
-	exit(1);
+        fflush(stdout);
+        va_start(args, fmt);
+        vfprintf(stderr, fmt, args);
+        va_end(args);
+        
+        fprintf(stderr, " (%s)\n", strerror(errno));
+        exit(1);
 }
 
 void asfail(char *file, int line, char *prop) {
-	fflush(stdout);
-	fprintf(stderr, "%s:%d: assert(%s) failed.\n", file, line, prop);
-	abort();
+        fflush(stdout);
+        fprintf(stderr, "%s:%d: assert(%s) failed.\n", file, line, prop);
+        abort();
 }
 
 string boolToString (bool b) {
-	return b ? "TRUE" : "FALSE";
+        return b ? "TRUE" : "FALSE";
 }
 
 #define BUF_SIZE 81
 string intToCommaString (int n) {
-	static char buf[BUF_SIZE];
-	int i;
-	
-	i = BUF_SIZE - 1;
-	buf[i--] = '\000';
-	
-	if (0 == n)
-		buf[i--] = '0';
- 	else if (INT_MIN == n) {
-		/* must treat INT_MIN specially, because I negate stuff later */
-		strcpy (buf + 1, "-2,147,483,648");
-		i = 0;
-	} else {
-		int m;
-	
- 		if (n > 0) m = n; else m = -n;
-	
-		while (m > 0) {
- 			buf[i--] = m % 10 + '0';
-			m = m / 10;
- 			if (i % 4 == 0 and m > 0) buf[i--] = ',';
- 		}
- 		if (n < 0) buf[i--] = '-';
- 	}
- 	return buf + i + 1;
+        static char buf[BUF_SIZE];
+        int i;
+        
+        i = BUF_SIZE - 1;
+        buf[i--] = '\000';
+        
+        if (0 == n)
+                buf[i--] = '0';
+        else if (INT_MIN == n) {
+                /* must treat INT_MIN specially, because I negate stuff later */
+                strcpy (buf + 1, "-2,147,483,648");
+                i = 0;
+        } else {
+                int m;
+        
+                if (n > 0) m = n; else m = -n;
+        
+                while (m > 0) {
+                        buf[i--] = m % 10 + '0';
+                        m = m / 10;
+                        if (i % 4 == 0 and m > 0) buf[i--] = ',';
+                }
+                if (n < 0) buf[i--] = '-';
+        }
+        return buf + i + 1;
 }
 
 void *scalloc (size_t nmemb, size_t size) {
-	void *res;
+        void *res;
 
-	res = calloc (nmemb, size);
-	if (NULL == res)
-		die ("calloc (%s, %s) failed.\n", 
-			uintToCommaString (nmemb),
-			uintToCommaString (size));
-	return res;
+        res = calloc (nmemb, size);
+        if (NULL == res)
+                die ("calloc (%s, %s) failed.\n", 
+                        uintToCommaString (nmemb),
+                        uintToCommaString (size));
+        return res;
 }
 
 void sclose (int fd) {
-	unless (0 == close (fd)) 
-		diee ("unable to close %d", fd);
+        unless (0 == close (fd)) 
+                diee ("unable to close %d", fd);
 }
 
 void sfclose (FILE *file) {
-	unless (0 == fclose (file))
-		diee ("unable to close file");
+        unless (0 == fclose (file))
+                diee ("unable to close file");
 }
 
 FILE *sfopen (char *fileName, char *mode) {
-	FILE *file;
-	
-	if (NULL == (file = fopen ((char*)fileName, mode)))
-		diee ("sfopen unable to open file %s", fileName);
-	return file;
+        FILE *file;
+        
+        if (NULL == (file = fopen ((char*)fileName, mode)))
+                diee ("sfopen unable to open file %s", fileName);
+        return file;
 }
 
 void sfread (void *ptr, size_t size, size_t nmemb, FILE *file) {
-	size_t bytes;
+        size_t bytes;
 
-	bytes = size * nmemb;
-	if (0 == bytes) return;
-	unless (1 == fread (ptr, bytes, 1, file))
-		diee("sfread failed");
+        bytes = size * nmemb;
+        if (0 == bytes) return;
+        unless (1 == fread (ptr, bytes, 1, file))
+                diee("sfread failed");
 }
 
 uint sfreadUint (FILE *file) {
-	uint n;
+        uint n;
 
-	sfread (&n, sizeof(uint), 1, file);
-	return n;
+        sfread (&n, sizeof(uint), 1, file);
+        return n;
 }
 
 void sfwrite (void *ptr, size_t size, size_t nmemb, FILE *file) {
-	size_t bytes;
+        size_t bytes;
 
-	bytes = size * nmemb;
-	if (0 == bytes) return;
-	unless (1 == fwrite (ptr, size * nmemb, 1, file))
-		diee ("sfwrite failed");
+        bytes = size * nmemb;
+        if (0 == bytes) return;
+        unless (1 == fwrite (ptr, size * nmemb, 1, file))
+                diee ("sfwrite failed");
 }
 
 void *smalloc (size_t length) {
-	void *res;
+        void *res;
 
-	res = malloc (length);
-	if (NULL == res)
-		die ("Unable to malloc %s bytes.\n", uintToCommaString (length));
-	return res;
+        res = malloc (length);
+        if (NULL == res)
+                die ("Unable to malloc %s bytes.\n", uintToCommaString (length));
+        return res;
 }
 
 int smkstemp (char *template) {
-	int fd;
+        int fd;
 
-	fd = mkstemp (template);
-	if (-1 == fd)
-		diee ("unable to make temporary file");
-	return fd;
+        fd = mkstemp (template);
+        if (-1 == fd)
+                diee ("unable to make temporary file");
+        return fd;
 }
 
 void swrite (int fd, const void *buf, size_t count) {
-	if (0 == count) return;
-	unless (count == write (fd, buf, count))
-		diee ("swrite failed");
+        if (0 == count) return;
+        unless (count == write (fd, buf, count))
+                diee ("swrite failed");
 }
 
 void swriteUint (int fd, uint n) {
-	swrite (fd, &n, sizeof(uint));
+        swrite (fd, &n, sizeof(uint));
 }
 
 string uintToCommaString (uint n) {
-	static char buf1[BUF_SIZE];
-	static char buf2[BUF_SIZE];
-	static char buf3[BUF_SIZE];
-	static char buf4[BUF_SIZE];
-	static char buf5[BUF_SIZE];
-	static char *bufs[] = {buf1, buf2, buf3, buf4, buf5};
-	static int bufIndex = 0;
-	static char *buf;
-	int i;
+        static char buf1[BUF_SIZE];
+        static char buf2[BUF_SIZE];
+        static char buf3[BUF_SIZE];
+        static char buf4[BUF_SIZE];
+        static char buf5[BUF_SIZE];
+        static char *bufs[] = {buf1, buf2, buf3, buf4, buf5};
+        static int bufIndex = 0;
+        static char *buf;
+        int i;
 
-	buf = bufs[bufIndex++];
-	bufIndex %= 5;
+        buf = bufs[bufIndex++];
+        bufIndex %= 5;
 
-	i = BUF_SIZE - 1;
-	buf[i--] = '\000';
-	if (0 == n)
-		buf[i--] = '0';
+        i = BUF_SIZE - 1;
+        buf[i--] = '\000';
+        if (0 == n)
+                buf[i--] = '0';
         else {
-		while (n > 0) {
- 			buf[i--] = n % 10 + '0';
-			n = n / 10;
- 			if (i % 4 == 0 and n > 0) buf[i--] = ',';
- 		}
- 	}
- 	return buf + i + 1;
+                while (n > 0) {
+                        buf[i--] = n % 10 + '0';
+                        n = n / 10;
+                        if (i % 4 == 0 and n > 0) buf[i--] = ',';
+                }
+        }
+        return buf + i + 1;
 }
 
 string ullongToCommaString (ullong n) {
-	static char buf[BUF_SIZE];
-	int i;
-	
-	i = BUF_SIZE - 1;
-	buf[i--] = '\000';
-	
-	if (0 == n)
-		buf[i--] = '0';
+        static char buf[BUF_SIZE];
+        int i;
+        
+        i = BUF_SIZE - 1;
+        buf[i--] = '\000';
+        
+        if (0 == n)
+                buf[i--] = '0';
         else {
-		while (n > 0) {
- 			buf[i--] = n % 10 + '0';
-			n = n / 10;
- 			if (i % 4 == 0 and n > 0) buf[i--] = ',';
- 		}
- 	}
- 	return buf + i + 1;
+                while (n > 0) {
+                        buf[i--] = n % 10 + '0';
+                        n = n / 10;
+                        if (i % 4 == 0 and n > 0) buf[i--] = ',';
+                }
+        }
+        return buf + i + 1;
 }
 

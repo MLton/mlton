@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 (*
  * This is based on
  *   Functional Unparsing
@@ -24,7 +25,7 @@ val lit: string -> ('a, 'a) t = fn s => fn (k, ss) => k (s :: ss)
 val eol: ('a, 'a) t = fn z => lit "\n" z
 
 (* val concat =
- *    Trace.trace ("concat", List.layout String.layout, String.layout) concat
+ *    Trace.trace ("Format.concat", List.layout String.layout, String.layout) concat
  *)
    
 val format: (string, 'a) t -> 'a = fn f => f (concat o rev, [])
@@ -35,13 +36,13 @@ val list: ('a, 'b -> 'a) t -> ('a, 'b list -> 'a) t =
    fn f => fn (k, ss) =>
    fn [] => k ("[]" :: ss)
     | x :: xs =>
-	 let
-	    fun loop xs ss =
-	       case xs of
-		  [] => k ("]" :: ss)
-		| x :: xs => f (loop xs, ", " :: ss) x
-	 in f (loop xs, "[" :: ss) x
-	 end
+         let
+            fun loop xs ss =
+               case xs of
+                  [] => k ("]" :: ss)
+                | x :: xs => f (loop xs, ", " :: ss) x
+         in f (loop xs, "[" :: ss) x
+         end
 
 val op o: ('a, 'b) t * ('c, 'a) t -> ('c, 'b) t =
    fn (f, g) => fn (k, ss) => f (fn ss => g (k, ss), ss)

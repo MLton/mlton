@@ -1,6 +1,16 @@
+## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ #    Jagannathan, and Stephen Weeks.
+ # Copyright (C) 1997-2000 NEC Research Institute.
+ #
+ # MLton is released under a BSD-style license.
+ # See the file MLton-LICENSE for details.
+ ##
+
 SRC = $(shell cd .. && pwd)
 BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
+HOST_ARCH = $(shell $(SRC)/bin/host-arch)
+HOST_OS = $(shell $(SRC)/bin/host-os)
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
@@ -13,16 +23,22 @@ FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE = mlton.mlb
-  FLAGS += -default-ann 'sequenceUnit true'
+  FLAGS += -default-ann 'sequenceNonUnit warn'
+  FLAGS += -default-ann 'warnUnused true'
 else
-ifeq (cygwin, $(shell $(SRC)/bin/host-os))
+ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
   # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
+  FILE = mlton.cm
+else
+ifeq (mingw, $(HOST_OS))
+  # Ditto for MinGW.
   FILE = mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
   FILE = mlton-stubs.cm
+endif
 endif
 endif
 
@@ -52,20 +68,25 @@ SOURCES =			\
 .PHONY: all
 all: $(AOUT)
 
-front-end/ml.lex.sml front-end/ml.grm.sig front-end/ml.grm.sml front-end/mlb.lex.sml front-end/mlb.grm.sig front-end/mlb.grm.sml:
-	$(MAKE) -C front-end
+front-end/ml.lex.sml: front-end/ml.lex
+	$(MAKE) -C front-end ml.lex.sml
+front-end/ml.grm.sig front-end/ml.grm.sml: front-end/ml.grm
+	$(MAKE) -C front-end ml.grm.sig ml.grm.sml
+front-end/mlb.lex.sml: front-end/mlb.lex
+	$(MAKE) -C front-end mlb.lex.sml
+front-end/mlb.grm.sig front-end/mlb.grm.sml: front-end/mlb.grm
+	$(MAKE) -C front-end mlb.grm.sig mlb.grm.sml
 
 $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
 	@echo 'Compiling mlton (takes a while)'
 	mlton $(FLAGS) $(FILE)
-	size $(AOUT)
 
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
 $(UP):
-	$(SRC)/bin/upgrade-basis "$(PATH)" >$(UP)
+	$(SRC)/bin/upgrade-basis "$(PATH)" "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
 
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
@@ -81,14 +102,7 @@ clean:
 # Manager (CM) installed.  You may need to replace the following with
 # 'sml-cm'.
 #
-SMLNJ_VERSION = 110.4[59]
 SML	= sml
-
-.PHONY: check-nj-version
-check-nj-version:
-	if ! echo | $(SML) | grep -q $(SMLNJ_VERSION); then	\
-		echo You must use SML/NJ $(SMLNJ_VERSION);	\
-	fi
 
 .PHONY: def-use
 def-use:
@@ -96,7 +110,6 @@ def-use:
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -108,7 +121,6 @@ nj-mlton: $(SOURCES)
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -122,7 +134,6 @@ nj-mlton-dual: $(SOURCES)
 
 .PHONY: nj-mlton-quad
 nj-mlton-quad: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -138,7 +149,6 @@ nj-mlton-quad: $(SOURCES)
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
-	$(MAKE) check-nj-version
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -157,4 +167,5 @@ nj-whole: $(SOURCES)
 
 .PHONY: warn
 warn:
-	mlton -stop tc -default-ann 'warnUnused true' $(FILE)
+	mlton -stop tc -default-ann 'warnUnused true' $(FILE) \
+		>/tmp/z.warn 2>&1

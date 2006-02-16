@@ -1,139 +1,145 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 ann "forceUsed" in
-local
-    basic/sources.mlb
-    set/sources.mlb
-    env/sources.mlb
-in
-    signature ARRAY
-    signature ENV
-    signature ERROR
-    signature EUCLIDEAN_RING
-    signature INTEGER
-    signature INT_INF
-    signature LIST
-    (*signature MONO_CONTAINER *)
-    signature MONO_ENV
-    signature OPTION
-    signature ORDER
-    signature ORDERED_RING
-    signature POLY_CACHE
-    signature PROMISE
-    signature REAL
-    signature RING
-    signature RING_WITH_IDENTITY
-    signature SET
-    signature STRING
-    signature T
-    signature UNIQUE_ID
+   local
+      basic/sources.mlb
+      set/sources.mlb
+      env/sources.mlb
+   in
+      signature ARRAY
+      signature ENV
+      signature ERROR
+      signature EUCLIDEAN_RING
+      signature INTEGER
+      signature INT_INF
+      signature LIST
+      (*signature MONO_CONTAINER *)
+      signature MONO_ENV
+      signature OPTION
+      signature ORDER
+      signature ORDERED_RING
+      signature POLY_CACHE
+      signature PROMISE
+      signature REAL
+      signature RING
+      signature RING_WITH_IDENTITY
+      signature SET
+      signature STRING
+      signature T
+      signature UNIQUE_ID
 
-    structure AppendList
-    structure Array
-    structure Array2
-    structure Assert
-    structure Base64
-    structure BinarySearch
-    structure Bool
-    structure Buffer
-    structure Char
-    structure CharArray
-    structure CharVector
-    structure ChoicePattern
-    structure ClearablePromise
-    structure CommandLine
-    structure Computation
-    structure Counter
-    structure Date
-    structure Dir
-    structure DirectedGraph
-    structure DisjointSet
-    structure DotColor
-    structure Dot
-    structure DynamicWind
-    structure Error
-    structure Escape
-    structure Exn
-    structure File
-    structure FileDesc
-    structure FixedPoint
-    structure Function
-    structure HashSet
-(*    structure Http *)
-    structure In
-    structure Int
-    structure Int32
-    structure IntInf
-    structure InsertionSort
-    structure Justify
-    structure LargeInt
-    structure LargeWord
-    structure Layout
-    structure List
-    (* structure MergeSortList *)
-    (* structure MergeSortVector *)
-    structure MLton
-    structure Option
-    structure OS
-    structure Out
-    structure Pervasive
-    structure Pid
-    structure PolyCache
-    structure Popt
-    structure Position
-    structure Power
-    structure Process
-    structure Promise
-    structure Property
-    structure PropertyList
-    structure Queue
-    structure QuickSort
-    structure Random
-    structure Real
-    structure RealVector
-    structure Real32
-    structure Real64
-    structure Ref
-    structure Regexp
-    structure Relation
-    structure Result
-    structure Sexp
-    structure Signal
-    structure SMLofNJ
-    structure Stream
-    structure String
-    structure StringCvt
-    structure Substring
-    structure SysWord
-    structure Time
-    structure Trace
-    structure Tree
-    structure TwoListQueue
-    structure Unit
-    structure Vector
-    structure Word
-    structure Word8
-    structure Word8Array
-    structure Word8Vector
-    structure Word32
+      structure AppendList
+      structure Array
+      structure Array2
+      structure Assert
+      structure Base64
+      structure BinarySearch
+      structure Bool
+      structure Buffer
+      structure Char
+      structure CharArray
+      structure CharVector
+      structure ChoicePattern
+      structure ClearablePromise
+      structure CommandLine
+      structure Computation
+      structure Counter
+      structure Date
+      structure Dir
+      structure DirectedGraph
+      structure DisjointSet
+      structure DotColor
+      structure Dot
+      structure Error
+      structure Escape
+      structure Exn
+      structure File
+      structure FileDesc
+      structure FixedPoint
+      structure Function
+      structure HashSet
+      (*    structure Http *)
+      structure In
+      structure Int
+      structure Int32
+      structure IntInf
+      structure InsertionSort
+      structure Justify
+      structure LargeInt
+      structure LargeWord
+      structure Layout
+      structure List
+      (* structure MergeSortList *)
+      (* structure MergeSortVector *)
+      structure MLton
+      structure Option
+      structure OS
+      structure Out
+      structure Pervasive
+      structure Pid
+      structure PolyCache
+      structure Popt
+      structure Position
+      structure Power
+      structure Process
+      structure Promise
+      structure Property
+      structure PropertyList
+      structure Queue
+      structure QuickSort
+      structure Random
+      structure Real
+      structure RealVector
+      structure Real32
+      structure Real64
+      structure Ref
+      structure Regexp
+      structure Relation
+      structure Result
+      structure Sexp
+      structure Signal
+      structure SMLofNJ
+      structure Stream
+      structure String
+      structure StringCvt
+      structure Substring
+      structure SysWord
+      structure Time
+      structure Trace
+      structure Tree
+      structure TwoListQueue
+      structure Unit
+      structure Vector
+      structure Word
+      structure Word8
+      structure Word8Array
+      structure Word8Vector
+      structure Word32
 
-    (* functor BinaryHeap *)
-    functor Control
-    functor Env
-    functor EuclideanRing
-    functor IntUniqueId
-    functor MakeMonoEnv
-    functor MonoArray
-    functor MonoEnv
-    functor MonoVector
-    functor OrderedField
-    functor OrderedUniqueSet
-    functor PolyEnv
-    functor Ring
-    functor RingWithIdentity
-    functor Tree
-    functor UniqueId
-    functor UniqueSet
-    functor UnorderedSet
-    
-    $(SML_LIB)/basis/pervasive.mlb
-end
+      (* functor BinaryHeap *)
+      functor Control
+      functor Env
+      functor EuclideanRing
+      functor IntUniqueId
+      functor MakeMonoEnv
+      functor MonoArray
+      functor MonoEnv
+      functor MonoVector
+      functor OrderedField
+      functor OrderedUniqueSet
+      functor PolyEnv
+      functor Ring
+      functor RingWithIdentity
+      functor Tree
+      functor UniqueId
+      functor UniqueSet
+      functor UnorderedSet
+      
+      $(SML_LIB)/basis/pervasive.mlb
+   end
 end

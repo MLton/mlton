@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type word = Word.t
    
 signature CONST_STRUCTS = 
@@ -21,14 +22,14 @@ signature CONST =
       structure ConstType: CONST_TYPE
 
       structure SmallIntInf:
-	 sig
-	    val fromWord: word -> IntInf.t
-	    val isSmall: IntInf.t -> bool
-	    val toWord: IntInf.t -> word option
-	 end
+         sig
+            val fromWord: word -> IntInf.t
+            val isSmall: IntInf.t -> bool
+            val toWord: IntInf.t -> word option
+         end
 
       datatype t =
-	 IntInf of IntInf.t
+         IntInf of IntInf.t
        | Real of RealX.t
        | Word of WordX.t
        | WordVector of WordXVector.t
@@ -41,7 +42,7 @@ signature CONST =
        * _command_line_const.  It is set in main/compile.fun.
        *)
       val lookup: ({default: string option,
-		    name: string} * ConstType.t -> t) ref
+                    name: string} * ConstType.t -> t) ref
       val real: RealX.t -> t
       val string: string -> t
       val toString: t -> string

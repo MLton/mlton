@@ -50,7 +50,7 @@ signature PRE_WORD_EXTRA =
 signature WORD =
    sig
       include PRE_WORD
-	 
+         
       val compare: word * word -> order 
       val fmt: StringCvt.radix -> word -> string 
       val fromLargeInt: LargeInt.int -> word
@@ -59,8 +59,8 @@ signature WORD =
       val max: word * word -> word
       val min: word * word -> word 
       val scan: (StringCvt.radix
-		 -> (char, 'a) StringCvt.reader
-		 -> (word, 'a) StringCvt.reader)
+                 -> (char, 'a) StringCvt.reader
+                 -> (word, 'a) StringCvt.reader)
       val toLargeInt: word -> LargeInt.int 
       val toLargeIntX: word -> LargeInt.int 
       val toLargeWord: word -> LargeWord.word 

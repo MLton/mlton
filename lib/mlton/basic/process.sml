@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Process: PROCESS =
 struct
 
@@ -18,10 +19,10 @@ fun system s =
       val status = OS.Process.system s
    in
       if status = OS.Process.success
-	 then ()
+         then ()
       else if status = OS.Process.failure
-	      then raise Fail (concat ["command failed: ", s])
-	   else raise Fail "strange return"
+              then Error.bug (concat ["Process.system: command failed: ", s])
+           else Error.bug (concat ["Process.system: strange return: ", s])
    end
 
 structure Command =
@@ -42,13 +43,13 @@ structure PosixStatus =
       type t = exit_status
 
       fun toString (s: t): string =
-	 case s of
-	    W_EXITED => "exited"
-	  | W_EXITSTATUS w => concat ["exit status ", Word8.toString w]
-	  | W_SIGNALED s => concat ["signal ",
-				    SysWord.toString (Posix.Signal.toWord s)]
-	  | W_STOPPED s => concat ["stop signal ",
-				   SysWord.toString (Posix.Signal.toWord s)]
+         case s of
+            W_EXITED => "exited"
+          | W_EXITSTATUS w => concat ["exit status ", Word8.toString w]
+          | W_SIGNALED s => concat ["signal ",
+                                    SysWord.toString (Posix.Signal.toWord s)]
+          | W_STOPPED s => concat ["stop signal ",
+                                   SysWord.toString (Posix.Signal.toWord s)]
 
       val layout = Layout.str o toString
    end
@@ -68,14 +69,14 @@ val succeed = Trace.trace ("Process.succeed", Unit.layout, Unit.layout) succeed
 (* This song and dance is so that succeed can have the right type, unit -> 'a,
  * instead of unit -> unit.
  *)
-val succeed: unit -> 'a = fn () => (succeed (); raise Fail "can't get here")
+val succeed: unit -> 'a = fn () => (succeed (); Error.bug "Process.succeed")
 
 fun fork (c: unit -> unit): Pid.t =
    case Posix.Process.fork () of
       NONE => (Trace.Immediate.inChildProcess ()
-	       ; let open OS.Process
-		 in exit ((c (); success) handle _ => failure)
-		 end)
+               ; let open OS.Process
+                 in exit ((c (); success) handle _ => failure)
+                 end)
     | SOME pid => pid
 
 val fork = Trace.trace ("Process.fork", Command.layout, Pid.layout) fork
@@ -88,8 +89,8 @@ fun forkIn (c: Out.t -> unit): Pid.t * In.t =
    let
       val {infd, outfd} = FileDesc.pipe ()
       val pid = fork (fn () =>
-		      (FileDesc.close infd
-		       ; c (MLton.TextIO.newOut (outfd, pname))))
+                      (FileDesc.close infd
+                       ; c (MLton.TextIO.newOut (outfd, pname))))
       val _ = FileDesc.close outfd
    in
       (pid, MLton.TextIO.newIn (infd, pname))
@@ -99,8 +100,8 @@ fun forkOut (c: In.t -> unit): Pid.t * Out.t =
    let
       val {infd, outfd} = FileDesc.pipe ()
       val pid = fork (fn () =>
-		      (FileDesc.close outfd
-		       ; c (MLton.TextIO.newIn (infd, pname))))
+                      (FileDesc.close outfd
+                       ; c (MLton.TextIO.newIn (infd, pname))))
       val _ = FileDesc.close infd
    in
       (pid, MLton.TextIO.newOut (outfd, pname))
@@ -111,9 +112,9 @@ fun forkInOut (c: In.t * Out.t -> unit): Pid.t * In.t * Out.t =
       val {infd = in1, outfd = out1} = FileDesc.pipe ()
       val {infd = in2, outfd = out2} = FileDesc.pipe ()
       val pid = fork (fn () =>
-		      (closes [in1, out2]
-		       ; c (MLton.TextIO.newIn (in2, pname),
-			    MLton.TextIO.newOut (out1, pname))))
+                      (closes [in1, out2]
+                       ; c (MLton.TextIO.newIn (in2, pname),
+                            MLton.TextIO.newOut (out1, pname))))
       val _ = closes [in2, out1]
    in (pid,
        MLton.TextIO.newIn (in1, pname),
@@ -123,14 +124,14 @@ fun forkInOut (c: In.t * Out.t -> unit): Pid.t * In.t * Out.t =
 fun wait (p: Pid.t): unit =
    let val (p', s) = Posix.Process.waitpid (Posix.Process.W_CHILD p, [])
    in if p <> p'
-	 then raise Fail (concat ["wait expected pid ",
-				  Pid.toString p,
-				  " but got pid ",
-				  Pid.toString p'])
+         then Error.bug (concat ["Process.wait: expected pid ",
+                                  Pid.toString p,
+                                  " but got pid ",
+                                  Pid.toString p'])
       else ()
-	 ; (case s of
-	       PosixStatus.W_EXITED => ()
-	     | _ => raise Fail (concat [PosixStatus.toString s]))
+         ; (case s of
+               PosixStatus.W_EXITED => ()
+             | _ => raise Fail (concat [PosixStatus.toString s]))
    end
 
 val wait = Trace.trace ("Process.wait", Pid.layout, Unit.layout) wait
@@ -145,50 +146,50 @@ structure Posix =
    struct
       open Posix
       structure Process =
-	 struct
-	    open Process
+         struct
+            open Process
 
-	    val wait =
-	       Trace.trace ("Posix.Process.wait", Unit.layout,
-			   Layout.tuple2 (Pid.layout, PosixStatus.layout))
-	       wait
-	 end
+            val wait =
+               Trace.trace ("Process.Posix.Process.wait", Unit.layout,
+                           Layout.tuple2 (Pid.layout, PosixStatus.layout))
+               wait
+         end
    end
 
 fun waits (pids: Pid.t list): unit =
    case pids of
       [] => ()
     | _ =>
-	 let
-	    val (pid, status) = Posix.Process.wait ()
-	    val pids =
-	       case status of
-		  Posix.Process.W_EXITED =>
-		     List.keepAll (pids, fn p => p <> pid)
-		| _ => raise Fail (concat ["child ",
-					   Pid.toString pid,
-					   " failed with ",
-					   PosixStatus.toString status])
-	 in waits pids
-	 end
+         let
+            val (pid, status) = Posix.Process.wait ()
+            val pids =
+               case status of
+                  Posix.Process.W_EXITED =>
+                     List.keepAll (pids, fn p => p <> pid)
+                | _ => Error.bug (concat ["Process.waits: child ",
+                                          Pid.toString pid,
+                                          " failed with ",
+                                          PosixStatus.toString status])
+         in waits pids
+         end
 
 fun pipe (cs: command list, ins: In.t, out: Out.t): unit =
    let
       fun loop (cs: command list,
-	       ins: In.t,
-	       maybeClose,
-	       pids: Pid.t list): unit =
-	 case cs of
-	    [] => ()
-	  | [c] => let val pid = fork (fn () => c (ins, out))
-		       val _ = maybeClose ()
-		   in waits (pid :: pids)
-		   end
-	  | c :: cs =>
-	       let val (pid, ins) = forkIn (fn out => c (ins, out))
-		  val _ = maybeClose ()
-	       in loop (cs, ins, fn _ => In.close ins, pid :: pids)
-	       end
+               ins: In.t,
+               maybeClose,
+               pids: Pid.t list): unit =
+         case cs of
+            [] => ()
+          | [c] => let val pid = fork (fn () => c (ins, out))
+                       val _ = maybeClose ()
+                   in waits (pid :: pids)
+                   end
+          | c :: cs =>
+               let val (pid, ins) = forkIn (fn out => c (ins, out))
+                  val _ = maybeClose ()
+               in loop (cs, ins, fn _ => In.close ins, pid :: pids)
+               end
    in loop (cs, ins, fn _ => (), [])
    end
 
@@ -199,23 +200,23 @@ fun exec (c: string, a: string list, ins: In.t, out: Out.t): unit =
       open FileDesc
    in
       if MLton.isMLton
-	 then (move {from = MLton.TextIO.inFd ins,
-		     to = stdin}
-	       ; move {from = MLton.TextIO.outFd out,
-		       to = stdout}
-	       ; move {from = MLton.TextIO.outFd Out.error,
-		       to = stderr})
+         then (move {from = MLton.TextIO.inFd ins,
+                     to = stdin}
+               ; move {from = MLton.TextIO.outFd out,
+                       to = stdout}
+               ; move {from = MLton.TextIO.outFd Out.error,
+                       to = stderr})
       else ()
       ; (Posix.Process.execp (c, c :: a)
-	 handle _ => (Out.output (Out.error,
-				  (concat ("unable to exec "
-					   :: List.separate (c :: a, " "))))
-		      ; OS.Process.exit OS.Process.failure))
+         handle _ => (Out.output (Out.error,
+                                  (concat ("unable to exec "
+                                           :: List.separate (c :: a, " "))))
+                      ; OS.Process.exit OS.Process.failure))
    end
 
 val exec =
    Trace.trace4 ("Process.exec", String.layout, List.layout String.layout,
-		 In.layout, Out.layout, Unit.layout)
+                 In.layout, Out.layout, Unit.layout)
    exec
 
 fun call (c, a) (ins, out) = run (fn () => exec (c, a, ins, out))
@@ -233,19 +234,19 @@ val doesSucceed =
    Trace.trace ("Process.doesSucceed", Function.layout, Bool.layout)
    doesSucceed
 
-fun makeCommandLine commandLine args =
+fun makeCommandLine (commandLine: string list -> unit) args =
    ((commandLine args; OS.Process.success)
     handle e =>
        let
-	  val out = Out.error
-	  open Layout
+          val out = Out.error
+          open Layout
        in
-	  output (Exn.layout e, out)
-	  ; List.foreach (Exn.history e, fn s =>
-			  (Out.output (out, "\n\t")
-			   ; Out.output (out, s)))
-	  ; Out.newline out
-	  ; OS.Process.failure
+          output (Exn.layout e, out)
+          ; List.foreach (Exn.history e, fn s =>
+                          (Out.output (out, "\n\t")
+                           ; Out.output (out, s)))
+          ; Out.newline out
+          ; OS.Process.failure
        end)
 
 fun makeMain z (): unit =
@@ -260,9 +261,9 @@ in
    fun su (name: string): unit =
       let val p = getpwnam name
       in setgid (Passwd.gid p)
-	 ; setuid (Passwd.uid p)
+         ; setuid (Passwd.uid p)
       end
-   val su = Trace.trace ("su", String.layout, Unit.layout) su
+   val su = Trace.trace ("Process.su", String.layout, Unit.layout) su
    fun userName () = Passwd.name (getpwuid (getuid ()))
 end
 
@@ -272,7 +273,7 @@ local
    val z = Posix.ProcEnv.uname ()
    fun lookup s =
       case List.peek (z, fn (s', _) => s = s') of
-	 NONE => fail (concat [s, " unknown"])
+         NONE => fail (concat [s, " unknown"])
        | SOME (_, s) => s
 in
    fun hostName () = lookup "nodename"
@@ -282,7 +283,7 @@ val getEnv = Posix.ProcEnv.getenv
 
 fun glob (s: string): string list =
    String.tokens (collect (call ("bash", ["-c", "ls " ^ s])),
-		 fn c => c = #"\n")
+                 fn c => c = #"\n")
 
 fun usage {usage: string, msg: string}: 'a =
    fail (concat [msg, "\n", "Usage: ", commandName (), " ", usage])
@@ -292,9 +293,9 @@ val sleep = Posix.Process.sleep
 fun watch (f: unit -> unit) =
    let
       fun loop () =
-	 wait (fork f)
-	 handle _ => (messageStr "watcher noticed child failure"
-		      ; loop ())
+         wait (fork f)
+         handle _ => (messageStr "watcher noticed child failure"
+                      ; loop ())
    in loop ()
    end
 
@@ -314,11 +315,11 @@ local
 in
    fun try (f: unit -> 'a, msg: string): 'a =
       let
-	 fun loop (delay: Time.t): 'a =
-	    if Time.> (delay, maxDelay)
-	       then fail msg
-	    else (f () handle _ => (ignore (sleep delay)
-				   ; loop (Time.+ (delay, delay))))
+         fun loop (delay: Time.t): 'a =
+            if Time.> (delay, maxDelay)
+               then fail msg
+            else (f () handle _ => (ignore (sleep delay)
+                                   ; loop (Time.+ (delay, delay))))
       in loop delay
       end
 end
@@ -328,20 +329,20 @@ structure State =
       datatype t = DiskSleep | Running | Sleeping | Traced | Zombie
 
       fun fromString s =
-	 case s of
-	    "D" => SOME DiskSleep
-	  | "R" => SOME Running
-	  | "S" => SOME Sleeping
-	  | "T" => SOME Traced
-	  | "Z" => SOME Zombie
-	  | _ => NONE
+         case s of
+            "D" => SOME DiskSleep
+          | "R" => SOME Running
+          | "S" => SOME Sleeping
+          | "T" => SOME Traced
+          | "Z" => SOME Zombie
+          | _ => NONE
 
       val toString =
-	 fn DiskSleep => "DiskSleep"
-	  | Running => "Running"
-	  | Sleeping => "Sleeping"
-	  | Traced => "Traced"
-	  | Zombie => "Zombie"
+         fn DiskSleep => "DiskSleep"
+          | Running => "Running"
+          | Sleeping => "Sleeping"
+          | Traced => "Traced"
+          | Zombie => "Zombie"
 
       val layout = Layout.str o toString
    end
@@ -354,34 +355,35 @@ fun ps () =
     List.fold
     (Dir.lsDirs ".", [], fn (d, ac) =>
      case Pid.fromString d of
-	NONE => ac
+        NONE => ac
       | SOME pid =>
-	   case String.tokens (hd (File.lines ("/proc"/d/"stat")),
-			       Char.isSpace) of
-	      _ :: name :: state :: ppid :: pgrp :: _ =>
-		 {(* drop the ( ) around the name *)
-		  name = String.substring (name, 1, String.size name - 2),
-		  pgrp = valOf (Pid.fromString pgrp),
-		  pid = pid,
-		  ppid = valOf (Pid.fromString ppid),
-		  state = valOf (State.fromString state)
-		  } :: ac
-	    | _ => fail "ps"))
+           case String.tokens (hd (File.lines ("/proc"/d/"stat")),
+                               Char.isSpace) of
+              _ :: name :: state :: ppid :: pgrp :: _ =>
+                 {(* drop the ( ) around the name *)
+                  name = String.substring (name, 1, String.size name - 2),
+                  pgrp = valOf (Pid.fromString pgrp),
+                  pid = pid,
+                  ppid = valOf (Pid.fromString ppid),
+                  state = valOf (State.fromString state)
+                  } :: ac
+            | _ => fail "ps"))
 
 val ps =
    Trace.trace
-   ("ps", Unit.layout,
+   ("Process.ps", Unit.layout,
     List.layout (fn {name, pid, state, ...} =>
-		 Layout.record [("pid", Pid.layout pid),
-				("name", String.layout name),
-				("state", State.layout state)]))
+                 Layout.record [("pid", Pid.layout pid),
+                                ("name", String.layout name),
+                                ("state", State.layout state)]))
    ps
 
 fun callWithIn (name, args, f: In.t -> 'a) =
    let
       val (pid, ins) =
-	 forkIn (fn out => In.withNull (fn ins => call (name, args) (ins, out)))
-   in DynamicWind.wind
+         forkIn (fn out => In.withNull (fn ins => call (name, args) (ins, out)))
+   in
+      Exn.finally
       (fn () => In.withClose (ins, f),
        fn () => wait pid)
    end
@@ -389,16 +391,17 @@ fun callWithIn (name, args, f: In.t -> 'a) =
 fun callWithOut (name, args, f: Out.t -> 'a) =
    let
       val (pid, out) =
-	 forkOut
-	 (fn ins => Out.withNull (fn out => call (name, args) (ins, out)))
-   in DynamicWind.wind
+         forkOut
+         (fn ins => Out.withNull (fn out => call (name, args) (ins, out)))
+   in
+      Exn.finally
       (fn () => Out.withClose (out, f),
        fn () => wait pid)
    end
 
 (*
- * text	   data	    bss	    dec	    hex	filename
- * 3272995	 818052	  24120	4115167	 3ecadf	mlton
+ * text    data     bss     dec     hex filename
+ * 3272995       818052   24120 4115167  3ecadf mlton
  *)
 fun size (f: File.t): {text: int, data: int, bss: int}  =
    let
@@ -407,22 +410,22 @@ fun size (f: File.t): {text: int, data: int, bss: int}  =
       File.withTemp
       (fn sizeRes =>
        let
-	  val _ = OS.Process.system (concat ["size ", f, ">", sizeRes])
+          val _ = OS.Process.system (concat ["size ", f, ">", sizeRes])
        in
-	  File.withIn
-	  (sizeRes, fn ins =>
-	   case In.lines ins of
-	      [_, nums] =>
-		 (case String.tokens (nums, Char.isSpace) of
-		     text :: data :: bss :: _ =>
-			(case (Int.fromString text,
-			       Int.fromString data,
-			       Int.fromString bss) of
-			    (SOME text, SOME data, SOME bss) =>
-			       {text = text, data = data, bss = bss}
-			  | _ => fail ())
-		   | _ => fail ())
-	    | _ => fail ())
+          File.withIn
+          (sizeRes, fn ins =>
+           case In.lines ins of
+              [_, nums] =>
+                 (case String.tokens (nums, Char.isSpace) of
+                     text :: data :: bss :: _ =>
+                        (case (Int.fromString text,
+                               Int.fromString data,
+                               Int.fromString bss) of
+                            (SOME text, SOME data, SOME bss) =>
+                               {text = text, data = data, bss = bss}
+                          | _ => fail ())
+                   | _ => fail ())
+            | _ => fail ())
        end)
    end
 

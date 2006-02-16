@@ -1,20 +1,21 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature NESTED_PAT_STRUCTS = 
    sig
       include ATOMS
       structure Type:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val layout: t -> Layout.t
-	    val tuple: t vector -> t
-	 end
+            val layout: t -> Layout.t
+            val tuple: t vector -> t
+         end
    end
 
 signature NESTED_PAT = 
@@ -23,16 +24,16 @@ signature NESTED_PAT =
       
       datatype t = T of {pat: node, ty: Type.t}
       and node =
-	 Con of {arg: t option,
-		 con: Con.t,
-		 targs: Type.t vector}
-	| Const of {const: Const.t,
-		    isChar: bool,
-		    isInt: bool}
-	| Layered of Var.t * t
-	| Tuple of t vector
-	| Var of Var.t
-	| Wild
+         Con of {arg: t option,
+                 con: Con.t,
+                 targs: Type.t vector}
+        | Const of {const: Const.t,
+                    isChar: bool,
+                    isInt: bool}
+        | Layered of Var.t * t
+        | Tuple of t vector
+        | Var of Var.t
+        | Wild
 
       (* isRefutable p iff p contains a constant, constructor or variable. *)
       val isRefutable: t -> bool

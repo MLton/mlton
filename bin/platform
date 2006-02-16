@@ -7,19 +7,19 @@ dir=`dirname $0`
 bin=`cd $dir && pwd`
 
 die () {
-	echo >&2 "$1"
-	exit 1
+        echo >&2 "$1"
+        exit 1
 }
 
 usage () {
-	die "usage: $name"
+        die "usage: $name"
 }
 
 case "$#" in
 0)
 ;;
 *)
-	usage
+        usage
 ;;
 esac
 
@@ -27,31 +27,31 @@ uname=`uname`
 
 case "$uname" in
 CYGWIN*)
-	HOST_OS='cygwin'
+        HOST_OS='cygwin'
 ;;
 Darwin)
-	HOST_OS='darwin'
+        HOST_OS='darwin'
 ;;
 FreeBSD*)
-	HOST_OS='freebsd'
+        HOST_OS='freebsd'
 ;;
 Linux)
-	HOST_OS='linux'
+        HOST_OS='linux'
 ;;
 MINGW*)
-	HOST_OS='mingw'
+        HOST_OS='mingw'
 ;;
 NetBSD*)
-	HOST_OS='netbsd'
+        HOST_OS='netbsd'
 ;;
 OpenBSD*)
-	HOST_OS='openbsd'
+        HOST_OS='openbsd'
 ;;
 SunOS)
-	HOST_OS='solaris'
+        HOST_OS='solaris'
 ;;
 *)
-	die "Unknown OS $uname."
+        die "Unknown OS $uname."
 ;;
 esac
 
@@ -60,47 +60,50 @@ arch=`uname -m`
 case "$arch" in
 alpha*)
 # not certain about this one; no alpha access
-	HOST_ARCH=alpha
+        HOST_ARCH=alpha
 ;;
 x86_64*)
-	HOST_ARCH=amd64
+        HOST_ARCH=amd64
+;;
+i?86_64)
+        HOST_ARCH=amd64
 ;;
 arm*)
-	HOST_ARCH=arm
+        HOST_ARCH=arm
 ;;
 parisc*)
-	HOST_ARCH=hppa
+        HOST_ARCH=hppa
 ;;
 ia64*)
-	HOST_ARCH=ia64
+        HOST_ARCH=ia64
 ;;
 m68k*)
-	HOST_ARCH=m68k
+        HOST_ARCH=m68k
 ;;
 mips*)
 # big-endian and little-endian detect via headers
-	HOST_ARCH=mips
+        HOST_ARCH=mips
 ;;
 ppc*)
-	HOST_ARCH=powerpc
+        HOST_ARCH=powerpc
 ;;
 Power*)
-	HOST_ARCH=powerpc
+        HOST_ARCH=powerpc
 ;;
 s390*)
-	HOST_ARCH=s390
+        HOST_ARCH=s390
 ;;
 sparc*)
-	HOST_ARCH=sparc
+        HOST_ARCH=sparc
 ;;
 sun*)
-	HOST_ARCH=sparc
+        HOST_ARCH=sparc
 ;;
 i?86)
-	HOST_ARCH=x86
+        HOST_ARCH=x86
 ;;
 *)
-	die "Unknown arch $arch."
+        die "Unknown arch $arch."
 ;;
 esac
 

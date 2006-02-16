@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature LONGID_STRUCTS =
    sig
       structure Id: AST_ID
@@ -19,10 +20,10 @@ signature LONGID =
       include T
 
       datatype node = T of {strids: Strid.t list,
-			    id: Id.t}
+                            id: Id.t}
 
       include WRAPPED sharing type node' = node
-		      sharing type obj = t
+                      sharing type obj = t
 
       val bogus: t
       val fromSymbols: Symbol.t list * Region.t -> t

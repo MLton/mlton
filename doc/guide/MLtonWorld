@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonWorld - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonWorld
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_WORLD =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> status </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Clone</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Original</FONT>
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> load: string -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> save: string -&gt; status
+      <B><FONT COLOR="#A020F0">val</FONT></B> saveThread: string * Thread.Runnable.t -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>datatype&nbsp;status</tt> 
+</p>
+</li>
+
+        <ul>
+
+  specifies whether a world is original or restarted (a clone). 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>load&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  loads the saved computation from file <tt>f</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>save&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  saves the entire state of the computation to the file <tt>f</tt>.  The   computation can then be restarted at a later time using   <tt>World.load</tt> or the <tt>load-world</tt>    <a href="RunTimeOptions">runtime option</a>.  The call to <tt>save</tt> in the   original computation returns <tt>Original</tt> and the call in the   restarted world returns <tt>Clone</tt>.  
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>saveThread&nbsp;(f,&nbsp;rt)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  saves the entire state of the computation to the file <tt>f</tt> that   will resume with thread <tt>rt</tt> upon restart.  
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-0f01ed56a1e32a05e5ef96e4d779f34784af9a96">Example</h2>
+<p>
+Suppose that <tt>save-world.sml</tt> contains the following. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">open</FONT></B> MLton.World
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+   <B><FONT COLOR="#A020F0">case</FONT></B> save <FONT COLOR="#BC8F8F"><B>&quot;world&quot;</FONT></B> <B><FONT COLOR="#A020F0">of</FONT></B>
+      Original =&gt; print <FONT COLOR="#BC8F8F"><B>&quot;I am the original\n&quot;</FONT></B>
+    | Clone =&gt; print <FONT COLOR="#BC8F8F"><B>&quot;I am the clone\n&quot;</FONT></B>
+</PRE>
+ 
+</p>
+<p>
+Then, if we compile <tt>save-world.sml</tt> and run it, the <tt>Original</tt> branch will execute, and a file named <tt>world</tt> will be created. 
+<pre>% mlton save-world.sml
+% save-world
+I am the original
+</pre>
+</p>
+<p>
+We can then load <tt>world</tt> using the <tt>load-world</tt> <a href="RunTimeOptions">run time option</a>. 
+</p>
+
+<pre>% save-world @MLton load-world world --
+I am the clone
+</pre></div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-01 23:17:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

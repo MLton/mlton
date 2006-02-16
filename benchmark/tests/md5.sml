@@ -19,22 +19,22 @@ structure MD5 :> MD5 =
     structure W32 = Word32
     structure W8V = 
       struct
-	open Word8Vector
-	fun extract (vec, s, l) =
-	   let
-	      val n =
-		 case l of
-		    NONE => length vec - s
-		  | SOME i => i
-	   in
-	      tabulate (n, fn i => sub (vec, s + i))
-	   end
+        open Word8Vector
+        fun extract (vec, s, l) =
+           let
+              val n =
+                 case l of
+                    NONE => length vec - s
+                  | SOME i => i
+           in
+              tabulate (n, fn i => sub (vec, s + i))
+           end
       end
     type word64  = {hi:W32.word,lo:W32.word}
     type word128 = {A:W32.word, B:W32.word, C:W32.word,  D:W32.word}
     type md5state = {digest:word128,
-		       mlen:word64, 
-		        buf:Word8Vector.vector}
+                       mlen:word64, 
+                        buf:Word8Vector.vector}
 
 
 
@@ -50,13 +50,13 @@ structure MD5 :> MD5 =
   
     fun packLittle wrds = let
       fun loop [] = []
-	| loop (w::ws) = let
-	    val b0 = Word8.fromLarge (W32.toLarge w)
-	    val b1 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w8)))
-	    val b2 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w16)))
-	    val b3 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w24)))
-	  in b0::b1::b2::b3:: (loop ws)
-	  end
+        | loop (w::ws) = let
+            val b0 = Word8.fromLarge (W32.toLarge w)
+            val b1 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w8)))
+            val b2 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w16)))
+            val b3 = Word8.fromLarge (W32.toLarge (W32.>> (w,0w24)))
+          in b0::b1::b2::b3:: (loop ws)
+          end
     in W8V.fromList (loop wrds)
     end
     
@@ -80,9 +80,9 @@ structure MD5 :> MD5 =
     fun PADDING i =  W8V.tabulate (i,(fn 0 => 0wx80 | _ => 0wx0))
 
     fun F (x,y,z) = W32.orb (W32.andb (x,y),
-			   W32.andb (W32.notb x,z))
+                           W32.andb (W32.notb x,z))
     fun G (x,y,z) = W32.orb (W32.andb (x,z),
-			   W32.andb (y,W32.notb z))
+                           W32.andb (y,W32.notb z))
     fun H (x,y,z) = W32.xorb (x,W32.xorb (y,z))
     fun I (x,y,z) = W32.xorb (y,W32.orb (x,W32.notb z))
     fun ROTATE_LEFT (x,n) =
@@ -93,7 +93,7 @@ structure MD5 :> MD5 =
       val a = ROTATE_LEFT (a,s)
     in W32.+ (a,b)
     end
-			    
+                            
     val FF = XX F
     val GG = XX G
     val HH = XX H
@@ -101,26 +101,26 @@ structure MD5 :> MD5 =
 
     val empty_buf = W8V.tabulate (0,(fn x => raise (Fail "buf")))
     val init = {digest= {A=0wx67452301,
-			B=0wxefcdab89,
-			C=0wx98badcfe,
-			D=0wx10325476},
-		mlen=w64_zero,
-		buf=empty_buf} : md5state
+                        B=0wxefcdab89,
+                        C=0wx98badcfe,
+                        D=0wx10325476},
+                mlen=w64_zero,
+                buf=empty_buf} : md5state
 
     fun update ({buf,digest,mlen}:md5state,input) = let
       val inputLen = W8V.length input
       val needBytes = 64 - W8V.length buf
       fun loop (i,digest) =
-	if i + 63 < inputLen then
-	  loop (i + 64,transform (digest,i,input))
-	else (i,digest)
+        if i + 63 < inputLen then
+          loop (i + 64,transform (digest,i,input))
+        else (i,digest)
       val (buf,(i,digest)) =
-	if inputLen >= needBytes then  let
-	  val buf = W8V.concat [buf,W8V.extract (input,0,SOME needBytes)]
-	  val digest = transform (digest,0,buf)
-	in (empty_buf,loop (needBytes,digest))
-	end
-	else (buf,(0,digest))
+        if inputLen >= needBytes then  let
+          val buf = W8V.concat [buf,W8V.extract (input,0,SOME needBytes)]
+          val digest = transform (digest,0,buf)
+        in (empty_buf,loop (needBytes,digest))
+        end
+        else (buf,(0,digest))
       val buf = W8V.concat [buf, W8V.extract (input,i,SOME (inputLen-i))]
       val mlen = mul8add (mlen,inputLen)
     in {buf=buf,digest=digest,mlen=mlen}
@@ -160,7 +160,7 @@ structure MD5 :> MD5 =
       val d = FF (d, a, b, c, x_13, S12, 0wxfd987193) (* 14 *)
       val c = FF (c, d, a, b, x_14, S13, 0wxa679438e) (* 15 *)
       val b = FF (b, c, d, a, x_15, S14, 0wx49b40821) (* 16 *)
-	  
+          
       (* Round 2 *)
       val a = GG (a, b, c, d, x_01, S21, 0wxf61e2562) (* 17 *)
       val d = GG (d, a, b, c, x_06, S22, 0wxc040b340) (* 18 *)
@@ -178,7 +178,7 @@ structure MD5 :> MD5 =
       val d = GG (d, a, b, c, x_02, S22, 0wxfcefa3f8) (* 30 *)
       val c = GG (c, d, a, b, x_07, S23, 0wx676f02d9) (* 31 *)
       val b = GG (b, c, d, a, x_12, S24, 0wx8d2a4c8a) (* 32 *)
-	  
+          
       (* Round 3 *)
       val a = HH (a, b, c, d, x_05, S31, 0wxfffa3942) (* 33 *)
       val d = HH (d, a, b, c, x_08, S32, 0wx8771f681) (* 34 *)
@@ -196,7 +196,7 @@ structure MD5 :> MD5 =
       val d = HH (d, a, b, c, x_12, S32, 0wxe6db99e5) (* 46 *)
       val c = HH (c, d, a, b, x_15, S33, 0wx1fa27cf8) (* 47 *)
       val b = HH (b, c, d, a, x_02, S34, 0wxc4ac5665) (* 48 *)
-	  
+          
       (* Round 4 *)
       val a = II (a, b, c, d, x_00, S41, 0wxf4292244) (* 49 *)
       val d = II (d, a, b, c, x_07, S42, 0wx432aff97) (* 50 *)
@@ -225,8 +225,8 @@ structure MD5 :> MD5 =
     val hxd = "0123456789abcdef"
     fun toHexString v = let
       fun byte2hex (b,acc) =
-	(String.sub (hxd,(Word8.toInt b) div 16))::
-	(String.sub (hxd,(Word8.toInt b) mod 16))::acc
+        (String.sub (hxd,(Word8.toInt b) div 16))::
+        (String.sub (hxd,(Word8.toInt b) mod 16))::acc
       val digits = Word8Vector.foldr byte2hex [] v
     in String.implode (digits)
     end
@@ -241,17 +241,17 @@ structure Test =
        ("message digest", "f96b697d7cb7938d525a2f31aaf161d0"),
        ("abcdefghijklmnopqrstuvwxyz", "c3fcd3d76192e4007dfb496cca67e13b"),
        ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-	"d174ab98d277d9f5a5611c2c9f419d9f"),
+        "d174ab98d277d9f5a5611c2c9f419d9f"),
        ("12345678901234567890123456789012345678901234567890123456789012345678901234567890",
-	"57edf4a22be3c955ac49da2e2107b67a")]
+        "57edf4a22be3c955ac49da2e2107b67a")]
    
     fun do_tests () =  let
       fun f (x,s) = let
-	val mstate = MD5.update (MD5.init,Byte.stringToBytes x)
-	val hash = MD5.final (mstate)
+        val mstate = MD5.update (MD5.init,Byte.stringToBytes x)
+        val hash = MD5.final (mstate)
       in print ("   input: "^x^"\n");
-	print ("expected: "^s^"\n");
-	print ("produced: "^MD5.toHexString (hash)^"\n")
+        print ("expected: "^s^"\n");
+        print ("produced: "^MD5.toHexString (hash)^"\n")
       end
     in List.app f tests
     end
@@ -260,9 +260,9 @@ structure Test =
     fun time_test () = let
       val block = Word8Vector.tabulate (BLOCK_LEN,Word8.fromInt)
       fun loop (n,s) =
-	if n < BLOCK_COUNT then
-	  loop (n+1,MD5.update (s,block))
-	else s
+        if n < BLOCK_COUNT then
+          loop (n+1,MD5.update (s,block))
+        else s
     in
        loop (0,MD5.init)
     end
@@ -271,8 +271,8 @@ structure Test =
 structure Main =
    struct
       fun doit n =
-	 if n = 0
-	    then ()
-	 else (Test.time_test ()
-	       ; doit (n - 1))
+         if n = 0
+            then ()
+         else (Test.time_test ()
+               ; doit (n - 1))
    end

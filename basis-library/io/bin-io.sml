@@ -1,3 +1,10 @@
+(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure BinIO: BIN_IO_EXTRA =
    ImperativeIOExtra
    (structure Array = Word8Array
@@ -12,5 +19,5 @@ structure BinIO: BIN_IO_EXTRA =
     val mkWriter = Posix.IO.mkBinWriter
     val someElem = 0wx0: Word8.word
     val xlatePos = SOME {fromInt = fn i => i,
-			 toInt = fn i => i})
+                         toInt = fn i => i})
        

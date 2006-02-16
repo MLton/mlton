@@ -9,7 +9,7 @@ structure S:
    end where type S1.t = int =
    struct
       structure S1: SIG =
-	 struct
-	    type t = real
-	 end
+         struct
+            type t = real
+         end
    end

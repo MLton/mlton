@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Pervasive.Int.int
 type word = Pervasive.Word.word
 
@@ -32,7 +33,7 @@ open S
 
 val _ =
    Assert.assert
-   ("Word", fn () =>
+   ("TestWord32", fn () =>
     List.forall
     ([(4, 0wxabcdabcd, 0wxbcdabcda),
       (8, 0wxabcdabcd, 0wxcdabcdab),

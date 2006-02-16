@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Printf - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+<link rel="Appendix" title="printf.sml" href="http://mlton.org/pages/Printf/attachments/printf.sml">
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Printf
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Programmers coming from C or Java often ask if  <a href="StandardML">Standard ML</a> has a <tt>printf</tt> function.  It does not. However, it is possible to write your own.  In practice, however, it is not so important to do so - it is much more common to use a style in which you convert values to strings and concatenate to form the final the string, as in 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [<FONT COLOR="#BC8F8F"><B>&quot;var = &quot;</FONT></B>, Int.toString var, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+</PRE>
+<p>
+ 
+</p>
+<p>
+Here is the signature for a <tt>printf</tt> function with user definable formats (defined by <tt>newFormat</tt>). 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> PRINTF =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) t
+
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> ` : string -&gt; ('a, 'a) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> newFormat: ('a -&gt; string) -&gt; ('a -&gt; 'b, 'c) t * string -&gt; ('b, 'c) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> printf: (unit, 'a) t -&gt; 'a
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+A structure matching <tt>PRINTF</tt> could be used as follows. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">functor</FONT></B> TestPrintf (S: PRINTF) =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> S
+
+      <I><FONT COLOR="#B22222">(* define some formats (the names are mnemonics of C's %c %d %s %f) *)</FONT></I>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> C z = newFormat Char.toString z
+      <B><FONT COLOR="#A020F0">fun</FONT></B> D z = newFormat Int.toString z
+      <B><FONT COLOR="#A020F0">fun</FONT></B> S z = newFormat (<B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt; s) z
+      <B><FONT COLOR="#A020F0">fun</FONT></B> F z = newFormat Real.toString z
+
+      <B><FONT COLOR="#A020F0">infix</FONT></B> C F D S
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = printf (`<FONT COLOR="#BC8F8F"><B>&quot;here's a string &quot;</FONT></B>S<FONT COLOR="#BC8F8F"><B>&quot; and an int &quot;</FONT></B>D<FONT COLOR="#BC8F8F"><B>&quot;.\n&quot;</FONT></B>) <FONT COLOR="#BC8F8F"><B>&quot;foo&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">13</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = printf (`<FONT COLOR="#BC8F8F"><B>&quot;here's a char &quot;</FONT></B>C<FONT COLOR="#BC8F8F"><B>&quot;.\n&quot;</FONT></B>) #<FONT COLOR="#BC8F8F"><B>&quot;c&quot;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = printf (`<FONT COLOR="#BC8F8F"><B>&quot;here's a real &quot;</FONT></B>F<FONT COLOR="#BC8F8F"><B>&quot;.\n&quot;</FONT></B>) <B><FONT COLOR="#5F9EA0">13.0</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+With no special compiler support, SML's type system ensures that the format characters (<tt>C</tt>, <tt>D</tt>, <tt>F</tt>, <tt>S</tt>) are supplied the correct type of argument.  Try modifying the above code to see what error you get if you pass the wrong type. 
+</p>
+<p>
+The real trick is in implementing <tt>PRINTF</tt>.  Here is an implementation based on <a href = "References#Danvy98"> Functional Unparsing</a>. 
+</p>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Printf:&gt; PRINTF =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> out </FONT></B>=<FONT COLOR="#228B22"><B> TextIO.outstream
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> output = TextIO.output
+
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) t </FONT></B>=<FONT COLOR="#228B22"><B> (out -&gt; 'a) -&gt; (out -&gt; 'b)
+
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fprintf (out, f) = f (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; ()) out
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> printf f = fprintf (TextIO.stdOut, f)
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> ` s k = <B><FONT COLOR="#A020F0">fn</FONT></B> out =&gt; (output (out, s); k out)
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> newFormat f (a, b) k =
+         a (<B><FONT COLOR="#A020F0">fn</FONT></B> out =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt;
+            (output (out, f s)
+             ; output (out, b)
+             ; k out))
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+To make a complete program and test the above code, we can apply the <tt>TestPrintf</tt> functor to our implementation. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = TestPrintf (Printf)
+</PRE>
+ 
+</p>
+<p>
+Running the complete code prints out the following. 
+<pre>here's a string foo and an int 13.
+here's a char c.
+here's a real 13.
+</pre>
+</p>
+<h2 id="head-12c4ffe1d987164a4bedf6ab2aac597a113e181c">Efficiency</h2>
+<p>
+<tt>printf</tt> is rarely a bottleneck in programs.  However, you may be curious how the above implementation performs compared with the string-based C one.  Fortunately, MLton's aggressive optimization inlines away all the wrapper functions, leaving only the coercions interspersed with calls to <tt>print</tt>.  Thus, with MLton, the processing of the format characters occurs at compile time, which should be even faster than C's approach of processing the format characters at run time. 
+</p>
+<p>
+For example, MLton expands the above program into something like the following. 
+<pre>(print "here's a string "
+ ; print "foo"
+ ; print " and an int "
+ ; print (Int.toString 13)
+ ; print ".\n"
+ ; print "here's a char "
+ ; print (Char.toString #"c")
+ ; print ".\n"
+ ; print "here's a real "
+ ; print (Real.toString 13.0)
+ ; print ".\n")
+</pre>
+</p>
+<p>
+If you're fluent in MLton's intermediate languages, you can compile the program with <tt>-keep-pass&nbsp;polyvariance</tt> and look at the IL to confirm this. 
+</p>
+<h2 id="head-a479c9c34e878d07b4d67a73a48f432ad7dc53c8">Download</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Printf/attachments/printf.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">printf.sml</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="PrintfGentle">PrintfGentle</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-01-30 23:56:46 by <span title="cfs38.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

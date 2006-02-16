@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature ABSTRACT_VALUE_STRUCTS = 
@@ -18,26 +19,26 @@ signature ABSTRACT_VALUE =
       include ABSTRACT_VALUE_STRUCTS
 
       structure Lambda:
-	 sig
-	    type t
-	       
-	    val dest: t -> Sxml.Lambda.t
-	    val layout: t -> Layout.t
-	 end
+         sig
+            type t
+               
+            val dest: t -> Sxml.Lambda.t
+            val layout: t -> Layout.t
+         end
 
       structure Lambdas:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val equals: t * t -> bool
-	    val plist: t -> PropertyList.t
-	    val toList: t -> Lambda.t list
-	 end
+            val equals: t * t -> bool
+            val plist: t -> PropertyList.t
+            val toList: t -> Lambda.t list
+         end
 
       type t
 
       datatype dest =
-	 Array of t
+         Array of t
        | Lambdas of Lambdas.t
        | Ref of t
        | Tuple of t vector
@@ -60,8 +61,8 @@ signature ABSTRACT_VALUE =
       val lambda: Sxml.Lambda.t * Sxml.Type.t (* The type of the lambda. *) -> t
       val layout: t -> Layout.t
       val primApply: {prim: Sxml.Type.t Sxml.Prim.t,
-		      args: t vector,
-		      resultTy: Sxml.Type.t} -> t
+                      args: t vector,
+                      resultTy: Sxml.Type.t} -> t
       val select: t * int -> t
       val serialValue: Sxml.Type.t -> t
       (* In tuple vs, there must be one argument that is not Type _. *)

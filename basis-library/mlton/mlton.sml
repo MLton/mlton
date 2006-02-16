@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure MLton: MLTON =
 struct
 
@@ -32,6 +33,7 @@ fun size x =
 
 (* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 
+val debug = Primitive.debug
 val eq = Primitive.eq
 (* val errno = Primitive.errno *)
 val safe = Primitive.safe
@@ -88,15 +90,15 @@ structure OS =
       open OS
 
       structure FileSys =
-	 struct
-	    open FileSys
+         struct
+            open FileSys
 
-	    fun tmpName () =
-	       let
-		  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
-		  val _ = TextIO.closeOut out
-	       in
-		  f
-	       end
-	 end
+            fun tmpName () =
+               let
+                  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
+                  val _ = TextIO.closeOut out
+               in
+                  f
+               end
+         end
    end

@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 structure TwoListQueue:> QUEUE =
@@ -21,11 +21,11 @@ fun toList q = foldr (q, [], op ::)
 fun deque (T (l, r)) =
    let
       val (l, r) = (case l of
-		       [] => (rev r, [])
-		     | _ =>  (l, r))
+                       [] => (rev r, [])
+                     | _ =>  (l, r))
    in
       case l of
-	 [] => NONE
+         [] => NONE
        | x :: l => SOME (T (l, r), x)
    end
 

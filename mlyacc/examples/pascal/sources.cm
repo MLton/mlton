@@ -1,0 +1,14 @@
+Group is
+
+#if defined (NEW_CM)
+  $/basis.cm
+  $/ml-yacc-lib.cm
+#else
+  ml-yacc-lib.cm
+#endif
+
+  pascal.grm
+  pascal.lex
+
+  parser.sml
+

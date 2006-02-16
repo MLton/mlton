@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                           TwoListQueue                            *)
@@ -17,8 +17,8 @@ datatype 'a t = T of 'a L.t * 'a L.t
    
 fun destruct(T(l, r)) =
    let val (l, r) = if L.isEmpty l
-		      then (L.reverse r, L.empty())
-		   else (l, r)
+                      then (L.reverse r, L.empty())
+                   else (l, r)
    in case L.destruct l of
       NONE => NONE
     | SOME(x, l) => SOME(x, T(l, r))

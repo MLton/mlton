@@ -1,3 +1,10 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure BasisExtra :> BASIS_EXTRA = 
    struct
       (* Required structures *)
@@ -239,21 +246,21 @@ structure BasisExtra :> BASIS_EXTRA =
       structure MLton = MLton
       structure SMLofNJ = SMLofNJ
       structure Unsafe = Unsafe
-	 
+         
       open ArrayGlobal
-	   BoolGlobal
-	   CharGlobal
-	   IntGlobal
-	   GeneralGlobal
-	   ListGlobal
-	   OptionGlobal
-	   RealGlobal
-	   StringGlobal
-	   RealGlobal
-	   SubstringGlobal
-	   TextIOGlobal
-	   VectorGlobal
-	   WordGlobal
+           BoolGlobal
+           CharGlobal
+           IntGlobal
+           GeneralGlobal
+           ListGlobal
+           OptionGlobal
+           RealGlobal
+           StringGlobal
+           RealGlobal
+           SubstringGlobal
+           TextIOGlobal
+           VectorGlobal
+           WordGlobal
       val real = real
       val op = = op =
       val op <> = op <>

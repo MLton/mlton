@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor IntSize (S: INT_SIZE_STRUCTS): INT_SIZE =
@@ -29,20 +29,20 @@ val sizes: Bits.t list =
    Vector.toList
    (Vector.keepAllMap
     (Vector.tabulate (65, fn i => if isValidSize i
-				     then SOME (Bits.fromInt i)
-				  else NONE),
+                                     then SOME (Bits.fromInt i)
+                                  else NONE),
      fn i => i))
 
 fun make i = T {bits = i}
 
 val allVector = Vector.tabulate (65, fn i =>
-				  if isValidSize i
-				     then SOME (make (Bits.fromInt i))
-				  else NONE)
+                                  if isValidSize i
+                                     then SOME (make (Bits.fromInt i))
+                                  else NONE)
 
 fun I (b: Bits.t): t =
    case Vector.sub (allVector, Bits.toInt b) handle Subscript => NONE of
-      NONE => Error.bug (concat ["strange int size: ", Bits.toString b])
+      NONE => Error.bug (concat ["IntSize.I: strange int size: ", Bits.toString b])
     | SOME s => s
 
 val all = List.map (sizes, I)
@@ -63,15 +63,15 @@ fun roundUpToPrim s =
    let
       val bits = Bits.toInt (bits s)
       val bits =
-	 if bits <= 8
-	    then 8
-	 else if bits <= 16
-		 then 16
-	      else if bits <= 32
-		      then 32
-		   else if bits = 64
-			   then 64
-			else Error.bug "IntSize.roundUpToPrim"
+         if bits <= 8
+            then 8
+         else if bits <= 16
+                 then 16
+              else if bits <= 32
+                      then 32
+                   else if bits = 64
+                           then 64
+                        else Error.bug "IntSize.roundUpToPrim"
    in
       I (Bits.fromInt bits)
    end
@@ -84,9 +84,9 @@ datatype prim = I8 | I16 | I32 | I64
 
 val primOpt =
    memoize (fn T {bits, ...} =>
-	    List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
-			  fn (b, p) =>
-			  if b = Bits.toInt bits then SOME p else NONE))
+            List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
+                          fn (b, p) =>
+                          if b = Bits.toInt bits then SOME p else NONE))
 
 fun prim s =
    case primOpt s of

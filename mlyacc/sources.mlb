@@ -1,10 +1,17 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 local
-  src/sources.mlb
-  local
-    ../lib/mlton/sources.mlb
-  in
-    main.sml
-  end
+   src/sources.mlb
+   local
+      ../lib/mlton/sources.mlb
+   in
+      main.sml
+   end
 in
-  structure Main
+   structure Main
 end

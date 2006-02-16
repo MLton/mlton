@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature ATOMS_STRUCTS =
    sig
       structure Field: FIELD
@@ -50,11 +51,11 @@ signature ATOMS' =
       sharing Const = Prim.Const
       sharing IntSize = Tycon.IntSize
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
-	 = Tycon.RealSize
+         = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
-	 = WordX.WordSize
+         = WordX.WordSize
       sharing WordX = Const.WordX = WordXVector.WordX
       sharing WordXVector = Const.WordXVector
    end
@@ -62,7 +63,7 @@ signature ATOMS' =
 signature ATOMS =
    sig
       structure Atoms: ATOMS'
-	 
+         
       include ATOMS'
 
       (* For each structure, like CFunction, I would like to write two sharing

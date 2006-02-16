@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor HashType (S: HASH_TYPE_STRUCTS): HASH_TYPE = 
@@ -14,125 +14,125 @@ open S
 structure Type =
    struct
       datatype t =
-	 T of {
-	       hash: Word.t,
-	       plist: PropertyList.t,
-	       tree: tree
-	       }
+         T of {
+               hash: Word.t,
+               plist: PropertyList.t,
+               tree: tree
+               }
       and tree =
-	 Var of Tyvar.t
-	| Con of Tycon.t * t vector
+         Var of Tyvar.t
+        | Con of Tycon.t * t vector
 
       local
-	 fun make f (T r) = f r
+         fun make f (T r) = f r
       in
-	 val hash = make #hash
-	 val plist = make #plist
-	 val tree = make #tree
+         val hash = make #hash
+         val plist = make #plist
+         val tree = make #tree
       end
 
       local
-	 open Layout
+         open Layout
       in
-	 val rec layoutTree =
-	    fn Var a => Tyvar.layout a
-	     | Con (c, ts) =>
-		  seq [Tycon.layout c,
-		       Vector.layout (layoutTree o tree) ts]
+         val rec layoutTree =
+            fn Var a => Tyvar.layout a
+             | Con (c, ts) =>
+                  seq [Tycon.layout c,
+                       Vector.layout (layoutTree o tree) ts]
       end
 
       structure Dest =
-	 struct
-	    datatype dest = datatype tree
-	    val dest = tree
-	 end
+         struct
+            datatype dest = datatype tree
+            val dest = tree
+         end
       open Dest
 
       fun deConOpt t =
-	 case dest t of
-	    Con x => SOME x
-	  | _ => NONE
+         case dest t of
+            Con x => SOME x
+          | _ => NONE
 
       fun makeHom {con, var} =
-	 let
-	    val {get, destroy, ...} =
-	       Property.destGet
-	       (plist,
-		Property.initRec
-		(fn (t, get) =>
-		 case dest t of
-		    Var a => var (t, a)
-		  | Con (c, ts) => con (t, c, Vector.map (ts, get))))
-	 in {hom = get, destroy = destroy}
-	 end
+         let
+            val {get, destroy, ...} =
+               Property.destGet
+               (plist,
+                Property.initRec
+                (fn (t, get) =>
+                 case dest t of
+                    Var a => var (t, a)
+                  | Con (c, ts) => con (t, c, Vector.map (ts, get))))
+         in {hom = get, destroy = destroy}
+         end
 
       fun hom {ty, var, con} =
-	 let
-	    val {hom, destroy} = makeHom {var = var o #2,
-					  con = fn (_, c, xs) => con (c, xs)}
-	    val res = hom ty
-	    val _ = destroy ()
-	 in res
-	 end
+         let
+            val {hom, destroy} = makeHom {var = var o #2,
+                                          con = fn (_, c, xs) => con (c, xs)}
+            val res = hom ty
+            val _ = destroy ()
+         in res
+         end
 
       fun makeMonoHom {con} =
-	 makeHom {var = fn _ => Error.bug "makeMonoHom saw type variable",
-		  con = con}
+         makeHom {var = fn _ => Error.bug "HashType.Type.makeMonoHom: type variable",
+                  con = con}
 
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
-		      
+                      
       fun layout (ty: t): Layout.t =
-	 #1 (hom {con = Tycon.layoutApp,
-		  ty = ty,
-		  var = fn a => (Tyvar.layout a, {isChar = false,
-						  needsParen = false})})
+         #1 (hom {con = Tycon.layoutApp,
+                  ty = ty,
+                  var = fn a => (Tyvar.layout a, {isChar = false,
+                                                  needsParen = false})})
 
       val toString = Layout.toString o layout
-	 
+         
       local
-	 val same: tree * tree -> bool =
-	    fn (Var a, Var a') => Tyvar.equals (a, a')
-	     | (Con (c, ts), Con (c', ts')) =>
-		  Tycon.equals (c, c')
-		  andalso Vector.equals (ts, ts', equals)
-	     | _ => false
-	 val same =
-	    Trace.trace2 ("Type.same", layoutTree, layoutTree, Bool.layout)
-	    same
-	 val table: t HashSet.t = HashSet.new {hash = hash}
+         val same: tree * tree -> bool =
+            fn (Var a, Var a') => Tyvar.equals (a, a')
+             | (Con (c, ts), Con (c', ts')) =>
+                  Tycon.equals (c, c')
+                  andalso Vector.equals (ts, ts', equals)
+             | _ => false
+         val same =
+            Trace.trace2 ("HashType.Type.same", layoutTree, layoutTree, Bool.layout)
+            same
+         val table: t HashSet.t = HashSet.new {hash = hash}
       in
-	 fun lookup (hash, tr) =
-	    HashSet.lookupOrInsert (table, hash,
-				    fn t => same (tr, tree t),
-				    fn () => T {hash = hash,
-						plist = PropertyList.new (),
-						tree = tr})
+         fun lookup (hash, tr) =
+            HashSet.lookupOrInsert (table, hash,
+                                    fn t => same (tr, tree t),
+                                    fn () => T {hash = hash,
+                                                plist = PropertyList.new (),
+                                                tree = tr})
 
-	 fun stats () =
-	    let open Layout
-	    in align [seq [str "num distinct types = ",
-			   Int.layout (HashSet.size table)],
-		      Control.sizeMessage ("hash table", table)]
-	    end
+         fun stats () =
+            let open Layout
+            in align [seq [str "num distinct types = ",
+                           Int.layout (HashSet.size table)],
+                      Control.sizeMessage ("hash table", table)]
+            end
       end
 
       fun var a = lookup (Tyvar.hash a, Var a)
 
       local
-	 val generator: Word.t = 0wx5555
+         val generator: Word.t = 0wx5555
       in
-	 fun con (c, ts) =
-	    lookup (Vector.fold (ts, Tycon.hash c, fn (t, w) =>
-				 Word.xorb (w * generator, hash t)),
-		    Con (c, ts))
-	 val con = Trace.trace2 ("Type.con",
-				 Tycon.layout,
-				 Vector.layout layout,
-				 layout) con
+         fun con (c, ts) =
+            lookup (Vector.fold (ts, Tycon.hash c, fn (t, w) =>
+                                 Word.xorb (w * generator, hash t)),
+                    Con (c, ts))
+         val con = Trace.trace2 ("HashType.Type.con",
+                                 Tycon.layout,
+                                 Vector.layout layout,
+                                 layout) con
       end
    end
 structure Ops = TypeOps (structure Tycon = Tycon
-			 open Type)
+                         open Type)
 open Type Ops
 
 val string = word8Vector
@@ -142,7 +142,7 @@ fun ofConst c =
       datatype z = datatype Const.t
    in
       case c of
-	 IntInf _ => intInf
+         IntInf _ => intInf
        | Real r => real (RealX.size r)
        | Word w => word (WordX.size w)
        | WordVector v => vector (word (WordXVector.elementSize v))
@@ -156,30 +156,30 @@ fun isUnit t =
 fun substitute (ty, v) =
    if Vector.isEmpty v
       then ty (* This optimization is important so that monotypes
-	       * are not substituted inside of.
-	       *)
+               * are not substituted inside of.
+               *)
    else 
       hom {ty = ty,
-	   var = fn a => (case Vector.peek (v, fn (a', _) =>
-					    Tyvar.equals (a, a')) of
-			     NONE => var a
-			   | SOME (_, ty) => ty),
-	   con = con}
+           var = fn a => (case Vector.peek (v, fn (a', _) =>
+                                            Tyvar.equals (a, a')) of
+                             NONE => var a
+                           | SOME (_, ty) => ty),
+           con = con}
 
 (* val substitute =
- *    Trace.trace2 ("substitute", layout,
- * 		List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
- * 		layout) substitute		
+ *    Trace.trace2 ("HashType.substitute", layout,
+ *              List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
+ *              layout) substitute              
  *)
 
 (* fun equalss (ts: t list): t option =
  *    case ts of
  *       t :: ts =>
- * 	 let fun loop [] = SOME t
- * 	       | loop (t' :: ts) = if equals (t, t') then loop ts else NONE
- * 	 in loop ts
- * 	 end
- *     | [] => Error.bug "equals"
+ *       let fun loop [] = SOME t
+ *             | loop (t' :: ts) = if equals (t, t') then loop ts else NONE
+ *       in loop ts
+ *       end
+ *     | [] => Error.bug "HashType.equals"
  *)
 
 local
@@ -197,41 +197,41 @@ end
 fun tycon t =
    case dest t of
       Con (c, _) => c
-    | _ => Error.bug "Type.tycon saw type variable"
+    | _ => Error.bug "HashType.tycon: type variable"
 
 fun containsTycon (ty, tycon) =
    hom {ty = ty,
-	var = fn _ => false,
-	con = fn (tycon', bs) => (Tycon.equals (tycon, tycon')
-				  orelse Vector.exists (bs, fn b => b))}
+        var = fn _ => false,
+        con = fn (tycon', bs) => (Tycon.equals (tycon, tycon')
+                                  orelse Vector.exists (bs, fn b => b))}
 
 fun checkPrimApp {args, prim, result, targs}: bool =
    let
       datatype z = datatype Prim.Name.t
       fun done (args', result') =
-	 Vector.equals (args, Vector.fromList args', equals)
-	 andalso equals (result, result')
+         Vector.equals (args, Vector.fromList args', equals)
+         andalso equals (result, result')
       fun targ i = Vector.sub (targs, i)
       fun oneTarg f =
-	 1 = Vector.length targs
-	 andalso done (f (targ 0))
+         1 = Vector.length targs
+         andalso done (f (targ 0))
       local
-	 fun make f s = let val t = f s in done ([t], t) end
+         fun make f s = let val t = f s in done ([t], t) end
       in
-	 val realUnary = make real
-	 val wordUnary = make word
+         val realUnary = make real
+         val wordUnary = make word
       end
       local
-	 fun make f s = let val t = f s in done ([t, t], t) end
+         fun make f s = let val t = f s in done ([t, t], t) end
       in
-	 val realBinary = make real
-	 val wordBinary = make word
+         val realBinary = make real
+         val wordBinary = make word
       end
       local
-	 fun make f s = let val t = f s in done ([t, t], bool) end
+         fun make f s = let val t = f s in done ([t, t], bool) end
       in
-	 val realCompare = make real
-	 val wordCompare = make word
+         val realCompare = make real
+         val wordCompare = make word
       end
       fun intInfBinary () = done ([intInf, intInf, defaultWord], intInf)
       fun intInfShift () = done ([intInf, defaultWord, defaultWord], intInf)
@@ -243,7 +243,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
       fun wordShift s = done ([word s, defaultWord], word s)
    in
       case Prim.name prim of
-	 Array_array => oneTarg (fn targ => ([defaultWord], array targ))
+         Array_array => oneTarg (fn targ => ([defaultWord], array targ))
        | Array_array0Const => oneTarg (fn targ => ([], array targ))
        | Array_length => oneTarg (fn t => ([array t], defaultWord))
        | Array_sub => oneTarg (fn t => ([array t, defaultWord], t))
@@ -336,7 +336,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Weak_new => oneTarg (fn t => ([t], weak t))
        | Word8Array_subWord => done ([word8Array, defaultWord], defaultWord)
        | Word8Array_updateWord =>
-	    done ([word8Array, defaultWord, defaultWord], unit)
+            done ([word8Array, defaultWord, defaultWord], unit)
        | Word8Vector_subWord => done ([word8Vector, defaultWord], defaultWord)
        | WordVector_toIntInf => done ([wordVector], intInf)
        | Word_add s => wordBinary s
@@ -363,8 +363,8 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Word_toWord (s, s', _) => done ([word s], word s')
        | Word_xorb s => wordBinary s
        | World_save => done ([defaultWord], unit)
-       | _ => Error.bug (concat ["Type.checkPrimApp got strange prim: ",
-				 Prim.toString prim])
+       | _ => Error.bug (concat ["HashType.checkPrimApp: strange prim: ",
+                                 Prim.toString prim])
    end
 
 end

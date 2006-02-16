@@ -22,14 +22,17 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    datatype file_desc = datatype PosixPrimitive.file_desc
+    type file_desc = PosixPrimitive.FileDesc.t
 
     fun toFD (iod: iodesc): file_desc =
        valOf (Posix.FileSys.iodToFD iod)
 
+    val FD = PosixPrimitive.FileDesc.fromInt
+    val unFD = PosixPrimitive.FileDesc.toInt
+       
     fun fromInt i = Posix.FileSys.fdToIOD (FD i)
        
-    fun toInt iod = let val FD fd = toFD iod in fd end
+    val toInt: iodesc -> int = unFD o toFD
 
     val toWord = Posix.FileSys.fdToWord o toFD
        
@@ -41,28 +44,28 @@ structure OS_IO: OS_IO =
 
     structure Kind =
       struct
-	val file = K "FILE"
-	val dir = K "DIR"
-	val symlink = K "LINK"
-	val tty = K "TTY"
-	val pipe = K "PIPE"
-	val socket = K "SOCK"
-	val device = K "DEV"
+        val file = K "FILE"
+        val dir = K "DIR"
+        val symlink = K "LINK"
+        val tty = K "TTY"
+        val pipe = K "PIPE"
+        val socket = K "SOCK"
+        val device = K "DEV"
       end
 
   (* return the kind of I/O descriptor *)
     fun kind (iod) = let
-	  val stat = Posix.FileSys.fstat (toFD iod)
-	  in
-	    if      (Posix.FileSys.ST.isReg stat) then Kind.file
-	    else if (Posix.FileSys.ST.isDir stat) then Kind.dir
-	    else if (Posix.FileSys.ST.isChr stat) then Kind.tty
-	    else if (Posix.FileSys.ST.isBlk stat) then Kind.device (* ?? *)
-	    else if (Posix.FileSys.ST.isLink stat) then Kind.symlink
-	    else if (Posix.FileSys.ST.isFIFO stat) then Kind.pipe
-	    else if (Posix.FileSys.ST.isSock stat) then Kind.socket
-	    else K "UNKNOWN"
-	  end
+          val stat = Posix.FileSys.fstat (toFD iod)
+          in
+            if      (Posix.FileSys.ST.isReg stat) then Kind.file
+            else if (Posix.FileSys.ST.isDir stat) then Kind.dir
+            else if (Posix.FileSys.ST.isChr stat) then Kind.tty
+            else if (Posix.FileSys.ST.isBlk stat) then Kind.device (* ?? *)
+            else if (Posix.FileSys.ST.isLink stat) then Kind.symlink
+            else if (Posix.FileSys.ST.isFIFO stat) then Kind.pipe
+            else if (Posix.FileSys.ST.isSock stat) then Kind.socket
+            else K "UNKNOWN"
+          end
 
     type poll_flags = {rd: bool, wr: bool, pri: bool}
     datatype poll_desc = PollDesc of iodesc * poll_flags
@@ -83,11 +86,11 @@ structure OS_IO: OS_IO =
    * for the underlying I/O device, then the Poll exception is raised.
    *)
     fun pollIn (PollDesc (iod, {wr, pri, ...}: poll_flags)) =
-	  PollDesc (iod, {rd=true, wr=wr, pri=pri})
+          PollDesc (iod, {rd=true, wr=wr, pri=pri})
     fun pollOut (PollDesc (iod, {rd, pri, ...}: poll_flags)) =
-	  PollDesc (iod, {rd=rd, wr=true, pri=pri})
+          PollDesc (iod, {rd=rd, wr=true, pri=pri})
     fun pollPri (PollDesc (iod, {rd, wr, ...}: poll_flags)) =
-	  PollDesc (iod, {rd=rd, wr=wr, pri=true})
+          PollDesc (iod, {rd=rd, wr=wr, pri=true})
 
   (* polling function *)
     local
@@ -99,42 +102,42 @@ structure OS_IO: OS_IO =
       and wrBit : Word.word = Primitive.OS.IO.POLLOUT
       and priBit : Word.word = Primitive.OS.IO.POLLPRI
       fun fromPollDesc (PollDesc (iod, {rd, wr, pri})) =
-	    ( toInt iod,
-	      join (rd, rdBit, 
-	      join (wr, wrBit, 
+            ( toInt iod,
+              join (rd, rdBit, 
+              join (wr, wrBit, 
               join (pri, priBit, 0w0)))
-	    )
+            )
       fun toPollInfo (fd, w) = PollInfo (fromInt fd, {
-	      rd = test(w, rdBit), 
-	      wr = test(w, wrBit), 
+              rd = test(w, rdBit), 
+              wr = test(w, wrBit), 
               pri = test(w, priBit)
-	    })
+            })
     in
     fun poll (pds, timeOut) = let
-	  val (fds, eventss) = ListPair.unzip (List.map fromPollDesc pds)
-	  val fds = Vector.fromList fds
-	  val n = Vector.length fds
-	  val eventss = Vector.fromList eventss
+          val (fds, eventss) = ListPair.unzip (List.map fromPollDesc pds)
+          val fds = Vector.fromList fds
+          val n = Vector.length fds
+          val eventss = Vector.fromList eventss
           val timeOut =
-	     case timeOut of
-		NONE => ~1
-	      | SOME t =>
-		   if Time.< (t, Time.zeroTime)
-		      then let open PosixError in raiseSys inval end
-		   else (Int.fromLarge (Time.toMilliseconds t)
-			 handle Overflow => Error.raiseSys Error.inval)
-	  val reventss = Array.array (n, 0w0)
-	  val _ = Posix.Error.SysCall.simpleRestart
-	          (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))
-	  in
-	    Array.foldri
-	    (fn (i, w, l) => 
-	     if w <> 0w0
-	       then (toPollInfo (Vector.sub (fds, i), w))::l
-	       else l)
-	    []
-	    reventss
-	  end
+             case timeOut of
+                NONE => ~1
+              | SOME t =>
+                   if Time.< (t, Time.zeroTime)
+                      then let open PosixError in raiseSys inval end
+                   else (Int.fromLarge (Time.toMilliseconds t)
+                         handle Overflow => Error.raiseSys Error.inval)
+          val reventss = Array.array (n, 0w0)
+          val _ = Posix.Error.SysCall.simpleRestart
+                  (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))
+          in
+            Array.foldri
+            (fn (i, w, l) => 
+             if w <> 0w0
+               then (toPollInfo (Vector.sub (fds, i), w))::l
+               else l)
+            []
+            reventss
+          end
     end (* local *)
 
   (* check for conditions *)

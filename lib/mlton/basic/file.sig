@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature FILE =
    sig
       type t = string
@@ -50,5 +51,5 @@ signature FILE =
       val withTemp: (t -> 'a) -> 'a
       val withTempOut: (Out.t -> unit) * (t -> 'a) -> 'a
       val withTempOut':
-	 {prefix: string, suffix: string} * (Out.t -> unit) * (t -> 'a) -> 'a
+         {prefix: string, suffix: string} * (Out.t -> unit) * (t -> 'a) -> 'a
    end

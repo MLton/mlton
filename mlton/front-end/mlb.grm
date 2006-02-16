@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 type int = Int.t
@@ -27,7 +27,7 @@ type basbinds = {name: Basid.t, def: Basexp.t} list
     | ANN | PRIM | FILE of string | STRING of string
 
 %nonterm
-	 ann of string * Region.t
+         ann of string * Region.t
        | annPlus of (string * Region.t) list
        | annStar of (string * Region.t) list
        | basbinds of basbinds
@@ -132,10 +132,10 @@ basdecnode
         val extendRight = 
           let val right = valOf (Region.right (Basdec.region basdecs))
           in fn reg => Region.extendRight (reg, right)
-	  end
+          end
         fun mkAnn' ((ann,reg), basdecs) = Basdec.Ann (ann, reg, basdecs)
         fun mkAnn ((ann,reg), basdecsnode) : Basdec.node =
-	  mkAnn' ((ann,reg), Basdec.makeRegion (basdecsnode, extendRight reg))
+          mkAnn' ((ann,reg), Basdec.makeRegion (basdecsnode, extendRight reg))
         val (anns,ann) = List.splitLast annPlus
       in
         List.fold(anns, mkAnn'(ann, basdecs), mkAnn)

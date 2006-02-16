@@ -3,10 +3,10 @@ signature ARRAY2 =
       eqtype 'a array
 
       type 'a region = {base: 'a array,
-			row: int,
-			col: int,
-			nrows: int option,
-			ncols: int option}
+                        row: int,
+                        col: int,
+                        nrows: int option,
+                        ncols: int option}
 
       datatype traversal = RowMajor | ColMajor
 
@@ -21,9 +21,9 @@ signature ARRAY2 =
       val row: 'a array * int -> 'a vector 
       val column: 'a array * int -> 'a vector 
       val copy: {src: 'a region,
-		 dst: 'a array,
-		 dst_row: int,
-		 dst_col: int} -> unit
+                 dst: 'a array,
+                 dst_row: int,
+                 dst_col: int} -> unit
       val appi: traversal -> (int * int * 'a -> unit) -> 'a region -> unit 
       val app: traversal -> ('a -> unit) -> 'a array -> unit 
       val foldi: traversal -> (int * int * 'a * 'b -> 'b) -> 'b -> 'a region -> 'b 

@@ -1,3 +1,10 @@
+(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure Basis2002 = 
    struct
       structure Array = Array
@@ -24,8 +31,6 @@ structure Basis2002 =
       structure Math = Math
       structure OS = OS
       structure Option = Option
-      structure Pack32Big = Pack32Big
-      structure Pack32Little = Pack32Little
       structure Position = Position
       structure Posix = Posix
       structure Real = Real

@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 type int = Int.t
@@ -14,7 +14,7 @@ signature SCALE_STRUCTS =
 signature SCALE =
    sig
       include SCALE_STRUCTS
-	 
+         
       datatype t = One | Two | Four | Eight
 
       val fromInt: int -> t option

@@ -1,0 +1,1701 @@
+diff -Naur ckit/ckit-lib.mlb ckit-mlton/ckit-lib.mlb
+--- ckit/ckit-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ ckit-mlton/ckit-lib.mlb	2005-08-18 09:31:14.000000000 -0400
+@@ -0,0 +1 @@
++src/ckit-lib.mlb
+diff -Naur ckit/README.mlton ckit-mlton/README.mlton
+--- ckit/README.mlton	1969-12-31 19:00:00.000000000 -0500
++++ ckit-mlton/README.mlton	2005-08-17 19:41:36.000000000 -0400
+@@ -0,0 +1,13 @@
++The following changes were made to the ckit Library, in addition to
++deriving the {{{.mlb}}} file from the {{{.cm}}} files:
++ * {{{parser/parse-tree-sig.sml}}} (modified): Rewrote use of (sequential) {{{withtype}}} in signature.
++ * {{{parser/parse-tree.sml}}} (modified): Rewrote use of (sequential) {{{withtype}}}.
++ * {{{ast/ast-sig.sml}}} (modified): Rewrote use of {{{withtype}}} in signature.
++ * {{{ast/pp/pp-lib.sml}}} (modified): Rewrote use of ''or-patterns''.
++ * {{{ast/pp/pp-ast-ext-sig.sml}}} (modified): Rewrote use of {{{signature}}} in {{{local}}}.
++ * {{{ast/pp/pp-ast-adornment-sig.sml}}} (modified): Rewrote use of {{{signature}}} in {{{local}}}.
++ * {{{ast/type-util-sig.sml}}} (modified): Rewrote use of {{{signature}}} in {{{local}}}.
++ * {{{ast/type-util.sml}}} (modified): Rewrote use of ''or-patterns''.
++ * {{{ast/sizeof.sml}}} (modified): Rewrote use of ''or-patterns''.
++ * {{{ast/initializer-normalizer.sml}}} (modified): Rewrote use of ''or-patterns''.
++ * {{{ast/build-ast.sml}}} (modified): Rewrote use of ''or-patterns''.
+diff -Naur ckit/src/ast/ast-sig.sml ckit-mlton/src/ast/ast-sig.sml
+--- ckit/src/ast/ast-sig.sml	2001-10-31 15:22:41.000000000 -0500
++++ ckit-mlton/src/ast/ast-sig.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -67,7 +67,12 @@
+   datatype declaration
+     = TypeDecl of {shadow: {strct:bool} option, tid:tid}
+         (* placeholder to indicate where typedefs/enums/structs should be printed *)
+-    | VarDecl of id * initExpression option
++    | VarDecl of 
++        (* id *) {name: Symbol.symbol, uid: Pid.uid, 
++		  location: SourceMap.location, ctype: ctype, 
++		  stClass: storageClass, status: declStatus, 
++		  global: bool, kind: idKind} *
++        initExpression option
+ 
+ 
+   (* STATEMENTS *)
+@@ -106,15 +111,31 @@
+     | Assign of expression * expression
+     | Comma of expression * expression
+     | Sub of expression * expression          
+-    | Member of expression * member
+-    | Arrow of expression * member
++    | Member of 
++        expression * 
++	(* member *) {name: Symbol.symbol, uid : Pid.uid, 
++		      location : SourceMap.location, 
++		      ctype: ctype, kind: memberKind}
++    | Arrow of 
++        expression * 
++	(* member *) {name: Symbol.symbol, uid : Pid.uid, 
++		      location : SourceMap.location, 
++		      ctype: ctype, kind: memberKind}
+     | Deref of expression                     
+     | AddrOf of expression                    
+     | Binop of binop * expression * expression
+     | Unop of unop * expression
+     | Cast of ctype * expression
+-    | Id of id
+-    | EnumId of member * LargeInt.int
++    | Id of 
++	(* id *) {name: Symbol.symbol, uid: Pid.uid, 
++		  location: SourceMap.location, ctype: ctype, 
++		  stClass: storageClass, status: declStatus, 
++		  global: bool, kind: idKind}
++    | EnumId of 
++	(* member *) {name: Symbol.symbol, uid : Pid.uid, 
++		      location : SourceMap.location, 
++		      ctype: ctype, kind: memberKind} *
++	LargeInt.int
+     | SizeOf of ctype  (* not used in compiler mode; sizeof expr becomes sizeof (typeof expr)  *)
+     | ExprExt of (expression, statement, binop, unop) AstExt.expressionExt
+     | ErrorExpr
+@@ -131,7 +152,13 @@
+                                        * signednessTag
+     | Array of (LargeInt.int * expression) option * ctype
+     | Pointer of ctype
+-    | Function of ctype * (ctype * id option) list
++    | Function of 
++        ctype * 
++	(ctype * 
++	 (* id *) {name: Symbol.symbol, uid: Pid.uid, 
++		   location: SourceMap.location, ctype: ctype, 
++		   stClass: storageClass, status: declStatus, 
++		   global: bool, kind: idKind} option) list
+     | StructRef of tid (* reference to a tid bound by a struct decl *)
+     | UnionRef of tid  (* reference to a tid bound by a union decl *)
+     | EnumRef of tid   (* reference to a tid bound by a enumeration decl *)
+@@ -151,7 +178,7 @@
+     | UNIONmem
+     | ENUMmem of LargeInt.int
+ 
+-  withtype member =
++  type member =
+     {name: Symbol.symbol,  (* the name of the member *)
+      uid : Pid.uid,        (* unique identifier *)
+      location : SourceMap.location,
+diff -Naur ckit/src/ast/build-ast.sml ckit-mlton/src/ast/build-ast.sml
+--- ckit/src/ast/build-ast.sml	2003-08-28 17:58:39.000000000 -0400
++++ ckit-mlton/src/ast/build-ast.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -290,7 +290,8 @@
+ 	of SOME{ntype=NONE,...} => true
+ 	 | _ => false
+ 
+-  fun isPartialTy(Ast.StructRef tid | Ast.UnionRef tid) = isPartial tid
++  fun isPartialTy(Ast.StructRef tid) = isPartial tid
++    | isPartialTy(Ast.UnionRef tid) = isPartial tid
+     | isPartialTy _ = false
+ 
+ 
+@@ -443,7 +444,10 @@
+       case expr
+ 	of Ast.Member(Ast.EXPR (expr'', aid, _), _) => 
+ 	    isLval (expr'', lookAid aid)
+-	 | (Ast.Id _ | Ast.Sub _ | Ast.Arrow _ | Ast.Deref _) => true
++	 | Ast.Id _ => true
++	 | Ast.Sub _ => true
++	 | Ast.Arrow _ => true
++	 | Ast.Deref _ => true
+ 	 | _ => false
+ 
+   fun checkAssignableLval (expr, ty, s) =
+@@ -602,7 +606,9 @@
+        NB 2: if type is array then *do* generate errors when initializer is simple  *)
+ 
+ 
+-  fun TCInitializer(ctype as (Ast.TypeRef _ | Ast.Qual _), expr) =
++  fun TCInitializer(ctype as Ast.TypeRef _, expr) =
++        TCInitializer(getCoreType ctype, expr)  (* the following TCInitializer cases expect coretypes *)
++    | TCInitializer(ctype as Ast.Qual _, expr) =
+         TCInitializer(getCoreType ctype, expr)  (* the following TCInitializer cases expect coretypes *)
+     | TCInitializer (Ast.Array(opt, ctype), Ast.Aggregate exprs) = 
+ 	(case (opt, LargeInt.fromInt(List.length exprs))
+@@ -650,7 +656,11 @@
+ 	      error "empty union"
+ 	  | NONE => bug "TCInitializer: lookTid failed"
+ 	  | _ => error "TCInitializer: ill-formed UnionRef type")
+-    | TCInitializer (ty as (Ast.StructRef _ | Ast.UnionRef _), Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
++    | TCInitializer (ty as Ast.StructRef _, Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
++	if isAssignableTys {lhsTy=ty, rhsTy=lookAid aid, rhsExprOpt=SOME coreExp} 
++	  then ()
++	else error "type of initializer is incompatible with type of lval"
++    | TCInitializer (ty as Ast.UnionRef _, Ast.Simple(Ast.EXPR(coreExp, aid, _))) =
+ 	if isAssignableTys {lhsTy=ty, rhsTy=lookAid aid, rhsExprOpt=SOME coreExp} 
+ 	  then ()
+ 	else error "type of initializer is incompatible with type of lval"
+@@ -804,7 +814,9 @@
+             b) the object has static storage duration			      
+           *)
+ 	 (* Note: should really reduce constants arith exprs to simple constants *)
+-	  fun constCheck(Ast.EXPR((Ast.StringConst _ | Ast.IntConst _ | Ast.RealConst _),_,_)) = true
++	  fun constCheck(Ast.EXPR(Ast.StringConst _,_,_)) = true
++	    | constCheck(Ast.EXPR(Ast.IntConst _,_,_)) = true
++	    | constCheck(Ast.EXPR(Ast.RealConst _,_,_)) = true
+ 	    | constCheck(Ast.EXPR(Ast.QuestionColon(e1, e2, e3), _, _))
+ 	    = constCheck e1 andalso constCheck e2 andalso constCheck e3
+ 	    | constCheck(Ast.EXPR(Ast.Binop(_, e1, e2), _, _))
+@@ -2371,7 +2383,11 @@
+ 		  (case spec 
+ 		     of PT.Signed =>
+ 			 (case !kind
+-			    of SOME (Ast.FLOAT | Ast.DOUBLE | Ast.LONGDOUBLE) => 
++			    of SOME Ast.FLOAT => 
++				 error "illegal combination of signed with float/double/long double"
++			     | SOME Ast.DOUBLE => 
++				 error "illegal combination of signed with float/double/long double"
++			     | SOME Ast.LONGDOUBLE => 
+ 				 error "illegal combination of signed with float/double/long double"
+ 			     | _ => ();
+ 			  case !signed
+@@ -2379,7 +2395,11 @@
+ 			     | SOME _ => error "Multiple signed/unsigned")
+ 		      | PT.Unsigned =>
+ 			 (case !kind
+-			    of SOME (Ast.FLOAT | Ast.DOUBLE | Ast.LONGDOUBLE) => 
++			    of SOME Ast.FLOAT => 
++				 error "illegal combination of unsigned with float/double/long double"
++			     | SOME Ast.DOUBLE => 
++				 error "illegal combination of unsigned with float/double/long double"
++			     | SOME Ast.LONGDOUBLE => 
+ 				 error "illegal combination of unsigned with float/double/long double"
+ 			     | _ => ();
+ 			  case !signed
+@@ -2394,7 +2414,8 @@
+ 					  | _ => "illegal use of char specifier"))
+ 		      | PT.Short =>
+ 			 (case !kind
+-			    of (NONE | SOME Ast.INT) => (kind := SOME Ast.SHORT)
++			    of NONE => (kind := SOME Ast.SHORT)
++			     | SOME Ast.INT => (kind := SOME Ast.SHORT)
+ 			     | SOME ct =>
+ 				error (case ct
+ 					 of Ast.SHORT => "duplicate short specifier"
+@@ -2402,7 +2423,9 @@
+ 		      | PT.Int =>
+ 			 (case !kind
+ 			    of NONE => (kind := SOME Ast.INT)
+-			     | SOME (Ast.SHORT | Ast.LONG | Ast.LONGLONG) => ()
++			     | SOME Ast.SHORT => ()
++			     | SOME Ast.LONG => ()
++			     | SOME Ast.LONGLONG => ()
+ 			     | SOME ct =>
+ 				error (case ct
+ 					 of Ast.INT => "duplicate int specifier"
+@@ -2687,7 +2710,17 @@
+ 				   (case lookLocalScope sym
+ 				      of SOME(TAG{ctype=ty,location=loc',...}) => 
+ 					 (case ty
+-					    of (Ast.UnionRef tid | Ast.StructRef tid) => 
++					    of Ast.UnionRef tid => 
++					       if isPartial tid
++					       then SOME{tid=tid, alreadyDefined=false}
++					       else if repeated_declarations_ok
++					       then SOME{tid=tid, alreadyDefined=true}
++					       else (error("Redeclaration of type tag `"
++						       ^ tagname
++						       ^ "'; previous declaration at "
++						       ^ SM.locToString loc');
++						     NONE)
++					     | Ast.StructRef tid => 
+ 					       if isPartial tid
+ 					       then SOME{tid=tid, alreadyDefined=false}
+ 					       else if repeated_declarations_ok
+diff -Naur ckit/src/ast/initializer-normalizer.sml ckit-mlton/src/ast/initializer-normalizer.sml
+--- ckit/src/ast/initializer-normalizer.sml	2003-08-28 17:58:39.000000000 -0400
++++ ckit-mlton/src/ast/initializer-normalizer.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -156,7 +156,13 @@
+ 		   feed (unionNorm (ctype, fields), inits)
+ 		| SOME _ => fail "Incomplete type for union ref"
+ 		| NONE => fail "Inconsistent table for union ref")
+-	 | (Ast.Numeric _ | Ast.Pointer _ | Ast.Function _ | Ast.EnumRef _) =>
++	 | Ast.Numeric _ =>
++	    feed (scalarNorm ctype, inits)
++	 | Ast.Pointer _ =>
++	    feed (scalarNorm ctype, inits)
++	 | Ast.Function _ =>
++	    feed (scalarNorm ctype, inits)
++	 | Ast.EnumRef _ =>
+ 	    feed (scalarNorm ctype, inits)
+ 	 | Ast.Void => fail "Incomplete type: void"
+ 	 | Ast.Ellipses => fail "Cannot initialize ellipses"
+diff -Naur ckit/src/ast/pp/pp-ast-adornment-sig.sml ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml
+--- ckit/src/ast/pp/pp-ast-adornment-sig.sml	2000-04-05 14:34:56.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-ast-adornment-sig.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -1,14 +1,14 @@
+ (* Copyright (c) 1998 by Lucent Technologies *)
+ 
+-local 
++(* local *)
+   type 'a pp =  Tables.tidtab -> OldPrettyPrint.ppstream -> 'a -> unit
+ 
+   type ('aidinfo,'a,'b) adornment_pp = ('aidinfo -> 'a) -> 'aidinfo -> 'b
+-in
++(* in *)
+ signature PPASTADORNMENT = sig
+   type aidinfo
+   val ppExpressionAdornment: (aidinfo,Ast.coreExpression pp,Ast.expression pp) adornment_pp
+   val ppStatementAdornment : (aidinfo,Ast.coreStatement pp,Ast.statement pp) adornment_pp
+   val ppExternalDeclAdornment: (aidinfo,Ast.coreExternalDecl pp,Ast.externalDecl pp) adornment_pp
+ end
+-end
++(* end *)
+diff -Naur ckit/src/ast/pp/pp-ast-ext-sig.sml ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml
+--- ckit/src/ast/pp/pp-ast-ext-sig.sml	2000-04-05 14:34:56.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-ast-ext-sig.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -1,13 +1,13 @@
+ (* Copyright (c) 1998 by Lucent Technologies *)
+ 
+-local 
++(* local *)
+   type 'a pp =  Tables.tidtab -> OldPrettyPrint.ppstream -> 'a -> unit
+   type ('a, 'aidinfo) ppExt =
+        (('aidinfo -> Ast.expression pp) * ('aidinfo -> Ast.statement pp) *
+ 	('aidinfo -> Ast.binop pp) * ('aidinfo -> Ast.unop pp))
+        -> 'aidinfo
+        -> Tables.tidtab -> OldPrettyPrint.ppstream -> 'a -> unit
+-in
++(* in *)
+ 
+ signature PPASTEXT = sig
+   type aidinfo
+@@ -24,4 +24,4 @@
+        aidinfo) ppExt
+ end
+ 
+-end
++(* end *)
+diff -Naur ckit/src/ast/pp/pp-lib.sml ckit-mlton/src/ast/pp/pp-lib.sml
+--- ckit/src/ast/pp/pp-lib.sml	2000-04-05 14:34:57.000000000 -0400
++++ ckit-mlton/src/ast/pp/pp-lib.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -115,7 +115,10 @@
+ 
+   fun ppId pps ({name,uid,kind,stClass,global,...}: Ast.id) = 
+       case (stClass,global)
+-	of ((Ast.EXTERN,_) | (_, true)) => (* globals *)
++	of (Ast.EXTERN,_) => (* globals *)
++	     if !suppressPidGlobalUnderscores then ppSymbol' pps name
++	     else ppSymbol pps (name,uid)
++	 | (_, true) => (* globals *)
+ 	     if !suppressPidGlobalUnderscores then ppSymbol' pps name
+ 	     else ppSymbol pps (name,uid)
+ 	 | _ => ppSymbol pps (name,uid)
+diff -Naur ckit/src/ast/sizeof.sml ckit-mlton/src/ast/sizeof.sml
+--- ckit/src/ast/sizeof.sml	2000-04-05 14:34:55.000000000 -0400
++++ ckit-mlton/src/ast/sizeof.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -321,7 +321,9 @@
+   and process (sizesErrWarnBug as {sizes, err, warn, bug}) tidtab ty =
+       case ty
+ 	of Ast.TypeRef tid => processTid sizesErrWarnBug tidtab tid
+-	 | (Ast.StructRef tid | Ast.UnionRef tid) =>
++	 | Ast.StructRef tid =>
++	     processTid sizesErrWarnBug tidtab tid
++	 | Ast.UnionRef tid =>
+ 	     processTid sizesErrWarnBug tidtab tid
+ 	 | Ast.EnumRef _ => 
+ 	     let val {bits,align} = #int sizes
+diff -Naur ckit/src/ast/type-util-sig.sml ckit-mlton/src/ast/type-util-sig.sml
+--- ckit/src/ast/type-util-sig.sml	2001-10-31 15:22:41.000000000 -0500
++++ ckit-mlton/src/ast/type-util-sig.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -1,10 +1,10 @@
+ (* Copyright (c) 1998 by Lucent Technologies *)
+ 
+-local 
++(* local *)
+   type 'a type_util      = Tables.tidtab -> Ast.ctype               -> 'a 
+   type 'a type_mem_util  = Tables.tidtab -> Ast.ctype * Ast.member  -> 'a 
+   type 'a type_type_util = Tables.tidtab -> Ast.ctype * Ast.ctype -> 'a 
+-in
++(* in *)
+ 
+ signature TYPE_UTIL =
+ sig
+@@ -145,4 +145,4 @@
+ 
+ end (* signature TYPE_UTIL *)
+ 
+-end (* local *)
++(* end (* local *) *)
+diff -Naur ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
+--- ckit/src/ast/type-util.sml	2001-10-31 15:22:41.000000000 -0500
++++ ckit-mlton/src/ast/type-util.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -282,7 +282,8 @@
+   fun isStructOrUnion tidtab ty =
+     case reduceTypedef tidtab ty
+       of Ast.Qual (_,ty) => isStructOrUnion tidtab ty
+-       | (Ast.StructRef tid | Ast.UnionRef tid) => SOME tid
++       | Ast.StructRef tid => SOME tid
++       | Ast.UnionRef tid => SOME tid
+        | _ => NONE
+ 
+   fun isEnum tidtab (ty,member as {uid,kind=Ast.ENUMmem _,...}: Ast.member) =
+@@ -553,7 +554,9 @@
+ 	    | (Pointer ct1, Pointer ct2) => (case compose (ct1, ct2) of
+ 					       (SOME ct, eml) => (SOME(Pointer ct), eml)
+ 					     | (NONE, eml) => (NONE, eml))
+-	    | ((StructRef tid1, StructRef tid2) | (UnionRef tid1, UnionRef tid2)) =>
++	    | (StructRef tid1, StructRef tid2) =>
++		if Tid.equal (tid1, tid2) then (SOME ty1, nil) else (NONE, nil)
++	    | (UnionRef tid1, UnionRef tid2) =>
+ 		if Tid.equal (tid1, tid2) then (SOME ty1, nil) else (NONE, nil)
+ 	    | _ => (NONE, nil)
+ 	end
+@@ -651,8 +654,10 @@
+   fun conditionalExp tidtab {ty1, exp1Zero, ty2, exp2Zero} = (* for Eq and Neq *)
+     (case (usualUnaryCnv tidtab ty1, exp1Zero, usualUnaryCnv tidtab ty2, exp2Zero) of  
+        (Ast.Numeric _, _, Ast.Numeric _, _) => usualBinaryCnv tidtab (ty1, ty2) (* get common type *)
+-     | ((Ast.StructRef tid1, _, Ast.StructRef tid2, _) |
+-	(Ast.UnionRef tid1, _, Ast.UnionRef tid2, _)) =>
++     | (Ast.StructRef tid1, _, Ast.StructRef tid2, _) =>
++	  if Tid.equal (tid1, tid2) then SOME ty1
++	  else NONE
++     | (Ast.UnionRef tid1, _, Ast.UnionRef tid2, _) =>
+ 	  if Tid.equal (tid1, tid2) then SOME ty1
+ 	  else NONE
+      | (Ast.Void, _, Ast.Void, _) => SOME ty1
+@@ -745,9 +750,12 @@
+ 	     | ([Ast.Void], nil) => (nil, nil) (* bugfix 15/jun/99: a function with a single void argument
+                                                * is a function of no args  *)
+      *)
+-	     | ((_, nil, _) | (_, _, nil)) => ( ["Type Warning: function call has too few args"]
+-					       , nil
+-					       )
++	     | (_, nil, _) => (["Type Warning: function call has too few args"]
++                               , nil
++			       )
++	     | (_, _, nil) => (["Type Warning: function call has too few args"]
++			       , nil
++			       )
+ 	     | (nil, argl, _) => (["Type Warning: function call has too many args"]
+ 				  , List.map (functionArgConv tidtab) argl
+ 				  )
+diff -Naur ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
+--- ckit/src/ckit-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ ckit-mlton/src/ckit-lib.mlb	2005-11-21 11:29:39.000000000 -0500
+@@ -0,0 +1,876 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l24 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++  basis l71 = 
++    bas
++      (* $/pp-lib.cm ====> *) $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
++    end
++  basis l96 = 
++    bas
++      (* $/ml-yacc-lib.cm ====> *) $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = TextIO
++   end
++   local
++      variants/type-check-control-sig.sml
++   in
++      signature gs_1 = TYPECHECKCONTROL
++   end
++   local
++      variants/parse-control-sig.sml
++   in
++      signature gs_2 = PARSECONTROL
++   end
++   local
++      signature PARSECONTROL = gs_2
++      signature TYPECHECKCONTROL = gs_1
++      variants/config-sig.sml
++   in
++      signature gs_3 = CONFIG
++   end
++   local
++      signature CONFIG = gs_3
++      signature PARSECONTROL = gs_2
++      signature TYPECHECKCONTROL = gs_1
++      structure TextIO = gs_0
++      variants/ansic/config.sml
++   in
++      structure gs_4 = Config
++   end
++   local
++      open l24
++   in
++      functor gs_5 = HashTableFn
++   end
++   local
++      ast/uidtabimp-sig.sml
++   in
++      signature gs_6 = UIDTABIMP
++   end
++   local
++      open l4
++   in
++      structure gs_7 = Word
++   end
++   local
++      structure Word = gs_7
++      ast/uid-sig.sml
++   in
++      signature gs_8 = UID
++   end
++   local
++      functor HashTableFn = gs_5
++      signature UID = gs_8
++      signature UIDTABIMP = gs_6
++      ast/uidtabimp-fn.sml
++   in
++      functor gs_9 = UidtabImpFn
++   end
++   local
++      open l4
++   in
++      structure gs_10 = Int
++   end
++   local
++      structure Int = gs_10
++      signature UID = gs_8
++      structure Word = gs_7
++      ast/uid-fn.sml
++   in
++      functor gs_11 = UidFn
++   end
++   local
++      signature UID = gs_8
++      functor UidFn = gs_11
++      ast/aid.sml
++   in
++      structure gs_12 = Aid
++   end
++   local
++      structure Aid = gs_12
++      functor UidtabImpFn = gs_9
++      ast/aidtab.sml
++   in
++      structure gs_13 = Aidtab
++   end
++   local
++      open l24
++   in
++      structure gs_14 = Format
++   end
++   local
++      open l4
++   in
++      structure gs_15 = String
++   end
++   local
++      parser/util/sourcemap-sig.sml
++   in
++      signature gs_16 = SOURCE_MAP
++   end
++   local
++      structure Config = gs_4
++      structure Format = gs_14
++      structure Int = gs_10
++      signature SOURCE_MAP = gs_16
++      structure String = gs_15
++      parser/util/sourcemap.sml
++   in
++      structure gs_17 = SourceMap
++   end
++   local
++      open l71
++   in
++      functor gs_18 = PPStreamFn
++   end
++   local
++      open l71
++   in
++      structure gs_19 = StringToken
++   end
++   local
++      open l4
++   in
++      structure gs_20 = StringCvt
++   end
++   local
++      open l4
++   in
++      structure gs_21 = List
++   end
++   local
++      structure List = gs_21
++      functor PPStreamFn = gs_18
++      structure String = gs_15
++      structure StringCvt = gs_20
++      structure StringToken = gs_19
++      parser/util/old-pp.sml
++   in
++      signature gs_22 = OLD_PRETTYPRINT
++      structure gs_23 = OldPrettyPrint
++   end
++   local
++      structure Format = gs_14
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure SourceMap = gs_17
++      structure TextIO = gs_0
++      parser/util/error-sig.sml
++   in
++      signature gs_24 = ERROR
++   end
++   local
++      signature ERROR = gs_24
++      structure Format = gs_14
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure SourceMap = gs_17
++      structure TextIO = gs_0
++      parser/util/error.sml
++   in
++      structure gs_25 = Error
++   end
++   local
++      open l96
++   in
++      functor gs_26 = Join
++      functor gs_27 = JoinWithArg
++   end
++   local
++      open l96
++   in
++      structure gs_28 = LrParser
++   end
++   local
++      open l4
++   in
++      structure gs_29 = LargeInt
++   end
++   local
++      parser/extensions/c/parse-tree-ext.sml
++   in
++      structure gs_30 = ParseTreeExt
++   end
++   local
++      structure LargeInt = gs_29
++      structure ParseTreeExt = gs_30
++      structure SourceMap = gs_17
++      parser/parse-tree-sig.sml
++   in
++      signature gs_31 = PARSETREE
++   end
++   local
++      structure LargeInt = gs_29
++      signature PARSETREE = gs_31
++      structure ParseTreeExt = gs_30
++      structure SourceMap = gs_17
++      parser/parse-tree.sml
++   in
++      structure gs_32 = ParseTree
++   end
++   local
++      structure Error = gs_25
++      structure ParseTree = gs_32
++      parser/parser-sig.sml
++   in
++      signature gs_33 = PARSER
++   end
++   local
++      open l4
++   in
++      structure gs_34 = IntInf
++   end
++   local
++      open l4
++   in
++      structure gs_35 = CharVector
++   end
++   local
++      open l4
++   in
++      structure gs_36 = Vector
++   end
++   local
++      open l4
++   in
++      structure gs_37 = Real
++   end
++   local
++      open l4
++   in
++      structure gs_38 = Char
++   end
++   local
++      open l24
++   in
++      structure gs_39 = AtomTable
++   end
++   local
++      open l24
++   in
++      structure gs_40 = Atom
++   end
++   local
++      structure Atom = gs_40
++      structure AtomTable = gs_39
++      structure Config = gs_4
++      parser/grammar/tdefs.sml
++   in
++      signature gs_41 = TYPEDEFS
++      structure gs_42 = TypeDefs
++   end
++   local
++      open l96
++   in
++      signature gs_43 = ARG_LEXER
++      signature gs_44 = ARG_PARSER
++      signature gs_45 = LEXER
++      signature gs_46 = LR_PARSER
++      signature gs_47 = LR_TABLE
++      signature gs_48 = PARSER
++      signature gs_49 = PARSER_DATA
++      signature gs_50 = STREAM
++      signature gs_51 = TOKEN
++   end
++   local
++      signature ARG_LEXER = gs_43
++      signature ARG_PARSER = gs_44
++      signature LEXER = gs_45
++      signature LR_PARSER = gs_46
++      signature LR_TABLE = gs_47
++      structure LargeInt = gs_29
++      signature PARSER = gs_48
++      signature PARSER_DATA = gs_49
++      signature STREAM = gs_50
++      signature TOKEN = gs_51
++      parser/grammar/c.grm.sig
++   in
++      signature gs_52 = C_LRVALS
++      signature gs_53 = C_TOKENS
++   end
++   local
++      structure Atom = gs_40
++      structure AtomTable = gs_39
++      signature C_LRVALS = gs_52
++      signature C_TOKENS = gs_53
++      structure Config = gs_4
++      signature TYPEDEFS = gs_41
++      structure TypeDefs = gs_42
++      parser/grammar/tokentable.sml
++   in
++      signature gs_54 = TOKENTABLE
++      functor gs_55 = TokenTable
++   end
++   local
++      signature C_LRVALS = gs_52
++      signature C_TOKENS = gs_53
++      structure Char = gs_38
++      structure CharVector = gs_35
++      structure Int = gs_10
++      structure IntInf = gs_34
++      structure LargeInt = gs_29
++      structure Real = gs_37
++      structure SourceMap = gs_17
++      structure String = gs_15
++      structure StringCvt = gs_20
++      signature TOKENTABLE = gs_54
++      functor TokenTable = gs_55
++      structure Vector = gs_36
++      parser/grammar/c.lex.sml
++   in
++      functor gs_56 = CLexFun
++   end
++   local
++      open l4
++   in
++      structure gs_57 = Array
++   end
++   local
++      signature ARG_LEXER = gs_43
++      signature ARG_PARSER = gs_44
++      structure Array = gs_57
++      signature C_LRVALS = gs_52
++      signature C_TOKENS = gs_53
++      structure Char = gs_38
++      structure Error = gs_25
++      structure Int = gs_10
++      signature LEXER = gs_45
++      signature LR_PARSER = gs_46
++      signature LR_TABLE = gs_47
++      structure LargeInt = gs_29
++      structure List = gs_21
++      signature PARSER = gs_48
++      signature PARSER_DATA = gs_49
++      structure ParseTree = gs_32
++      signature STREAM = gs_50
++      structure SourceMap = gs_17
++      structure String = gs_15
++      signature TOKEN = gs_51
++      signature TYPEDEFS = gs_41
++      structure TypeDefs = gs_42
++      parser/grammar/c.grm.sml
++   in
++      functor gs_58 = LrValsFun
++   end
++   local
++      functor CLexFun = gs_56
++      structure Error = gs_25
++      functor Join = gs_26
++      functor JoinWithArg = gs_27
++      structure LrParser = gs_28
++      functor LrValsFun = gs_58
++      signature PARSER = gs_33
++      structure SourceMap = gs_17
++      signature TOKENTABLE = gs_54
++      signature TYPEDEFS = gs_41
++      structure TextIO = gs_0
++      functor TokenTable = gs_55
++      structure TypeDefs = gs_42
++      parser/parser.sml
++   in
++      structure gs_59 = Parser
++   end
++   local
++      open l24
++   in
++      structure gs_60 = HashString
++   end
++   local
++      signature UID = gs_8
++      functor UidFn = gs_11
++      ast/tid.sml
++   in
++      structure gs_61 = Tid
++   end
++   local
++      structure Tid = gs_61
++      ast/symbol-sig.sml
++   in
++      signature gs_62 = SYMBOL
++   end
++   local
++      structure HashString = gs_60
++      structure Int = gs_10
++      signature SYMBOL = gs_62
++      structure String = gs_15
++      structure Tid = gs_61
++      structure Word = gs_7
++      ast/symbol.sml
++   in
++      structure gs_63 = Symbol
++   end
++   local
++      signature UID = gs_8
++      functor UidFn = gs_11
++      ast/pid.sml
++   in
++      structure gs_64 = Pid
++   end
++   local
++      ast/extensions/c/ast-ext.sml
++   in
++      structure gs_65 = AstExt
++   end
++   local
++      structure Aid = gs_12
++      structure AstExt = gs_65
++      structure LargeInt = gs_29
++      structure Pid = gs_64
++      structure SourceMap = gs_17
++      structure Symbol = gs_63
++      structure Tid = gs_61
++      ast/ast-sig.sml
++   in
++      signature gs_66 = AST
++   end
++   local
++      signature AST = gs_66
++      structure Aid = gs_12
++      structure AstExt = gs_65
++      structure LargeInt = gs_29
++      structure Pid = gs_64
++      structure SourceMap = gs_17
++      structure Symbol = gs_63
++      structure Tid = gs_61
++      ast/ast.sml
++   in
++      structure gs_67 = Ast
++   end
++   local
++      structure Ast = gs_67
++      structure LargeInt = gs_29
++      structure Pid = gs_64
++      structure SourceMap = gs_17
++      structure Symbol = gs_63
++      structure Tid = gs_61
++      ast/bindings.sml
++   in
++      structure gs_68 = Bindings
++   end
++   local
++      open l24
++   in
++      functor gs_69 = BinaryMapFn
++   end
++   local
++      open l24
++   in
++      signature gs_70 = ORD_MAP
++   end
++   local
++      structure Tid = gs_61
++      functor UidtabImpFn = gs_9
++      ast/tidtab.sml
++   in
++      structure gs_71 = Tidtab
++   end
++   local
++      structure Aidtab = gs_13
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Tidtab = gs_71
++      ast/tables.sml
++   in
++      structure gs_72 = Tables
++   end
++   local
++      structure Aid = gs_12
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Error = gs_25
++      structure LargeInt = gs_29
++      signature ORD_MAP = gs_70
++      structure SourceMap = gs_17
++      structure Symbol = gs_63
++      structure Tables = gs_72
++      structure Tid = gs_61
++      ast/state-sig.sml
++   in
++      signature gs_73 = STATE
++   end
++   local
++      structure Aid = gs_12
++      structure Aidtab = gs_13
++      structure Ast = gs_67
++      functor BinaryMapFn = gs_69
++      structure Bindings = gs_68
++      structure Error = gs_25
++      structure LargeInt = gs_29
++      structure List = gs_21
++      structure Pid = gs_64
++      signature STATE = gs_73
++      structure SourceMap = gs_17
++      structure Symbol = gs_63
++      structure Tables = gs_72
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      ast/state.sml
++   in
++      structure gs_74 = State
++   end
++   local
++      ast/sizes-sig.sml
++   in
++      signature gs_75 = SIZES
++   end
++   local
++      signature SIZES = gs_75
++      ast/sizes.sml
++   in
++      structure gs_76 = Sizes
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Sizes = gs_76
++      structure State = gs_74
++      structure Tables = gs_72
++      structure TextIO = gs_0
++      structure Tidtab = gs_71
++      ast/parse-to-ast-sig.sml
++   in
++      signature gs_77 = PARSE_TO_AST
++   end
++   local
++      open l4
++   in
++      structure gs_78 = ListPair
++   end
++   local
++      open l4
++   in
++      structure gs_79 = Option
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Error = gs_25
++      structure ParseTree = gs_32
++      structure Sizes = gs_76
++      structure State = gs_74
++      structure Tables = gs_72
++      structure Tidtab = gs_71
++      ast/build-ast-sig.sml
++   in
++      signature gs_80 = BUILD_AST
++   end
++   local
++      structure Ast = gs_67
++      structure ParseTree = gs_32
++      structure ParseTreeExt = gs_30
++      structure State = gs_74
++      ast/cnv-ext-sig.sml
++   in
++      signature gs_81 = CNVEXT
++   end
++   local
++      structure Ast = gs_67
++      signature CNVEXT = gs_81
++      structure ParseTree = gs_32
++      structure ParseTreeExt = gs_30
++      structure State = gs_74
++      ast/extensions/c/cnv-ext.sml
++   in
++      structure gs_82 = CnvExt
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Pid = gs_64
++      structure Symbol = gs_63
++      ast/simplify-assign-ops.sml
++   in
++      structure gs_83 = SimplifyAssignOps
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure Tables = gs_72
++      structure Tid = gs_61
++      ast/pp/pp-ast-sig.sml
++   in
++      signature gs_84 = PP_AST
++   end
++   local
++      open l4
++   in
++      structure gs_85 = Int32
++   end
++   local
++      structure Ast = gs_67
++      structure Int = gs_10
++      structure Int32 = gs_85
++      structure LargeInt = gs_29
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure Pid = gs_64
++      structure Real = gs_37
++      structure String = gs_15
++      structure Symbol = gs_63
++      structure Tables = gs_72
++      structure TextIO = gs_0
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      ast/pp/pp-lib.sml
++   in
++      structure gs_86 = PPLib
++   end
++   local
++      structure Ast = gs_67
++      structure AstExt = gs_65
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure Tables = gs_72
++      ast/pp/pp-ast-ext-sig.sml
++   in
++      signature gs_87 = PPASTEXT
++   end
++   local
++      signature PPASTEXT = gs_87
++      ast/extensions/c/pp-ast-ext-fn.sml
++   in
++      functor gs_88 = PPAstExtFn
++   end
++   local
++      structure Ast = gs_67
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure Tables = gs_72
++      ast/pp/pp-ast-adornment-sig.sml
++   in
++      signature gs_89 = PPASTADORNMENT
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Int = gs_10
++      structure LargeInt = gs_29
++      structure List = gs_21
++      signature OLD_PRETTYPRINT = gs_22
++      structure OldPrettyPrint = gs_23
++      structure Option = gs_79
++      signature PPASTADORNMENT = gs_89
++      functor PPAstExtFn = gs_88
++      structure PPLib = gs_86
++      signature PP_AST = gs_84
++      structure Pid = gs_64
++      structure SourceMap = gs_17
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      ast/pp/pp-ast-fn.sml
++   in
++      functor gs_90 = PPAstFn
++   end
++   local
++      structure Ast = gs_67
++      signature PPASTADORNMENT = gs_89
++      functor PPAstFn = gs_90
++      ast/pp/pp-ast.sml
++   in
++      structure gs_91 = PPAst
++   end
++   local
++      structure Ast = gs_67
++      ast/ctype-eq.sml
++   in
++      structure gs_92 = CTypeEq
++   end
++   local
++      structure Ast = gs_67
++      structure Sizes = gs_76
++      structure Tables = gs_72
++      ast/sizeof-sig.sml
++   in
++      signature gs_93 = SIZEOF
++   end
++   local
++      structure Ast = gs_67
++      structure LargeInt = gs_29
++      structure Tables = gs_72
++      ast/type-util-sig.sml
++   in
++      signature gs_94 = TYPE_UTIL
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Config = gs_4
++      structure Int = gs_10
++      structure List = gs_21
++      structure PPAst = gs_91
++      structure PPLib = gs_86
++      structure Pid = gs_64
++      structure Symbol = gs_63
++      signature TYPE_UTIL = gs_94
++      structure Tables = gs_72
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      ast/type-util.sml
++   in
++      structure gs_95 = TypeUtil
++   end
++   local
++      structure Ast = gs_67
++      functor BinaryMapFn = gs_69
++      structure Bindings = gs_68
++      structure Config = gs_4
++      structure Int = gs_10
++      structure LargeInt = gs_29
++      structure List = gs_21
++      structure Pid = gs_64
++      signature SIZEOF = gs_93
++      structure Sizes = gs_76
++      structure Tables = gs_72
++      structure TextIO = gs_0
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      structure TypeUtil = gs_95
++      ast/sizeof.sml
++   in
++      structure gs_96 = Sizeof
++   end
++   local
++      structure ParseTree = gs_32
++      structure Real = gs_37
++      structure Tid = gs_61
++      ast/anonymous-structs.sml
++   in
++      structure gs_97 = AnonymousStructs
++      structure gs_98 = TyEq
++   end
++   local
++      structure Aid = gs_12
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure Tid = gs_61
++      ast/initializer-normalizer-sig.sml
++   in
++      signature gs_99 = INITIALIZER_NORMALIZER
++   end
++   local
++      structure Aid = gs_12
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      signature INITIALIZER_NORMALIZER = gs_99
++      structure LargeInt = gs_29
++      structure SourceMap = gs_17
++      structure String = gs_15
++      structure Tid = gs_61
++      ast/initializer-normalizer.sml
++   in
++      structure gs_100 = InitializerNormalizer
++   end
++   local
++      structure Aid = gs_12
++      structure Aidtab = gs_13
++      structure AnonymousStructs = gs_97
++      structure Ast = gs_67
++      signature BUILD_AST = gs_80
++      functor BinaryMapFn = gs_69
++      structure Bindings = gs_68
++      structure CTypeEq = gs_92
++      structure CnvExt = gs_82
++      structure Config = gs_4
++      structure Error = gs_25
++      structure InitializerNormalizer = gs_100
++      structure Int = gs_10
++      structure LargeInt = gs_29
++      structure List = gs_21
++      structure ListPair = gs_78
++      structure Option = gs_79
++      structure PPAst = gs_91
++      structure PPLib = gs_86
++      structure ParseTree = gs_32
++      structure ParseTreeExt = gs_30
++      structure Pid = gs_64
++      structure SimplifyAssignOps = gs_83
++      structure Sizeof = gs_96
++      structure Sizes = gs_76
++      structure SourceMap = gs_17
++      structure State = gs_74
++      structure String = gs_15
++      structure Symbol = gs_63
++      structure Tables = gs_72
++      structure TextIO = gs_0
++      structure Tid = gs_61
++      structure Tidtab = gs_71
++      structure TyEq = gs_98
++      structure TypeUtil = gs_95
++      structure Word = gs_7
++      ast/build-ast.sml
++   in
++      structure gs_101 = BuildAst
++   end
++   local
++      structure Ast = gs_67
++      structure Bindings = gs_68
++      structure BuildAst = gs_101
++      structure Error = gs_25
++      signature PARSE_TO_AST = gs_77
++      structure PPAst = gs_91
++      structure PPLib = gs_86
++      structure Parser = gs_59
++      structure Sizes = gs_76
++      structure State = gs_74
++      structure Tables = gs_72
++      structure TextIO = gs_0
++      structure Tidtab = gs_71
++      ast/parse-to-ast.sml
++   in
++      structure gs_102 = ParseToAst
++   end
++in
++   signature AST = gs_66
++   structure Aidtab = gs_13
++   structure Ast = gs_67
++   structure Bindings = gs_68
++   signature CONFIG = gs_3
++   structure Config = gs_4
++   signature PARSECONTROL = gs_2
++   signature PARSER = gs_33
++   signature PARSETREE = gs_31
++   signature PARSE_TO_AST = gs_77
++   structure PPAst = gs_91
++   signature PP_AST = gs_84
++   structure ParseToAst = gs_102
++   structure ParseTree = gs_32
++   structure Parser = gs_59
++   structure Pid = gs_64
++   signature SOURCE_MAP = gs_16
++   structure Sizeof = gs_96
++   structure Sizes = gs_76
++   structure SourceMap = gs_17
++   structure State = gs_74
++   structure Symbol = gs_63
++   signature TYPECHECKCONTROL = gs_1
++   structure Tables = gs_72
++   structure Tid = gs_61
++   structure Tidtab = gs_71
++   structure TypeUtil = gs_95
++   signature UID = gs_8
++   signature UIDTABIMP = gs_6
++end
++end
++
++end
+diff -Naur ckit/src/parser/grammar/c.grm.sml ckit-mlton/src/parser/grammar/c.grm.sml
+--- ckit/src/parser/grammar/c.grm.sml	2005-11-21 11:29:22.000000000 -0500
++++ ckit-mlton/src/parser/grammar/c.grm.sml	2005-11-21 11:29:23.000000000 -0500
+@@ -1866,10 +1866,11 @@
+ (T 5) $$ (T 4) $$ (T 3) $$ (T 2) $$ (T 1) $$ (T 0)end
+ structure Actions =
+ struct 
++type int = Int.int
+ exception mlyAction of int
+ local open Header in
+ val actions = 
+-fn (i392,defaultPos,stack,
++fn (i392:int,defaultPos,stack,
+     (srcMap):arg) =>
+ case (i392,stack)
+ of  ( 0, ( ( _, ( MlyValue.tu tu, tu1left, tu1right)) :: rest671)) =>
+diff -Naur ckit/src/parser/grammar/c.lex.sml ckit-mlton/src/parser/grammar/c.lex.sml
+--- ckit/src/parser/grammar/c.lex.sml	2005-11-21 11:29:21.000000000 -0500
++++ ckit-mlton/src/parser/grammar/c.lex.sml	2005-11-21 11:29:21.000000000 -0500
+@@ -1,3 +1,4 @@
++type int = Int.int
+ functor CLexFun(structure Tokens : C_TOKENS 
+ 			 structure TokTable : TOKENTABLE 
+ 			 sharing TokTable.Tokens = Tokens)=
+@@ -758,7 +759,7 @@
+ fun f x = x 
+ val s = map f (rev (tl (rev s))) 
+ exception LexHackingError 
+-fun look ((j,x)::r, i: int) = if i = j then x else look(r, i) 
++fun look ((j,x)::r, i) = if i = j then x else look(r, i) 
+   | look ([], i) = raise LexHackingError
+ fun g {fin=x, trans=i} = {fin=x, trans=look(s,i)} 
+ in Vector.fromList(map g 
+@@ -901,28 +902,29 @@
+ 	exception LexerError (* raised if illegal leaf action tried *)
+ end
+ 
+-fun makeLexer yyinput =
+-let	val yygone0=1
++type int = Int.int
++fun makeLexer (yyinput: int -> string) =
++let	val yygone0:int= ~1
+ 	val yyb = ref "\n" 		(* buffer *)
+-	val yybl = ref 1		(*buffer length *)
+-	val yybufpos = ref 1		(* location of next character to use *)
+-	val yygone = ref yygone0	(* position in file of beginning of buffer *)
++	val yybl: int ref = ref 1		(*buffer length *)
++	val yybufpos: int ref = ref 1		(* location of next character to use *)
++	val yygone: int ref = ref yygone0	(* position in file of beginning of buffer *)
+ 	val yydone = ref false		(* eof found yet? *)
+-	val yybegin = ref 1		(*Current 'start state' for lexer *)
++	val yybegin: int ref = ref 1		(*Current 'start state' for lexer *)
+ 
+ 	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
+ 		 yybegin := x
+ 
+ fun lex (yyarg as ({comLevel,errWarn,sourceMap,charlist,stringstart})) =
+ let fun continue() : Internal.result = 
+-  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0) =
+-	let fun action (i,nil) = raise LexError
++  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0: int) =
++	let fun action (i: int,nil) = raise LexError
+ 	| action (i,nil::l) = action (i-1,l)
+ 	| action (i,(node::acts)::l) =
+ 		case node of
+ 		    Internal.N yyk => 
+-			(let fun yymktext() = substring(!yyb,i0,i-i0)
+-			     val yypos = i0+ !yygone
++			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
++			     val yypos: int = i0+ !yygone
+ 			open UserDeclarations Internal.StartStates
+  in (yybufpos := i; case yyk of 
+ 
+@@ -1018,30 +1020,30 @@
+ 
+ 		) end )
+ 
+-	val {fin,trans} = Unsafe.Vector.sub(Internal.tab, s)
++	val {fin,trans} = Vector.sub (Internal.tab, s)
+ 	val NewAcceptingLeaves = fin::AcceptingLeaves
+ 	in if l = !yybl then
+ 	     if trans = #trans(Vector.sub(Internal.tab,0))
+ 	       then action(l,NewAcceptingLeaves
+ ) else	    let val newchars= if !yydone then "" else yyinput 1024
+-	    in if (size newchars)=0
++	    in if (String.size newchars)=0
+ 		  then (yydone := true;
+ 		        if (l=i0) then UserDeclarations.eof yyarg
+ 		                  else action(l,NewAcceptingLeaves))
+ 		  else (if i0=l then yyb := newchars
+-		     else yyb := substring(!yyb,i0,l-i0)^newchars;
++		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
+ 		     yygone := !yygone+i0;
+-		     yybl := size (!yyb);
++		     yybl := String.size (!yyb);
+ 		     scan (s,AcceptingLeaves,l-i0,0))
+ 	    end
+-	  else let val NewChar = Char.ord(Unsafe.CharVector.sub(!yyb,l))
++	  else let val NewChar = Char.ord (CharVector.sub (!yyb,l))
+ 		val NewChar = if NewChar<128 then NewChar else 128
+-		val NewState = Char.ord(Unsafe.CharVector.sub(trans,NewChar))
++		val NewState = Char.ord (CharVector.sub (trans,NewChar))
+ 		in if NewState=0 then action(l,NewAcceptingLeaves)
+ 		else scan(NewState,NewAcceptingLeaves,l+1,i0)
+ 	end
+ 	end
+-	val start= if substring(!yyb,!yybufpos-1,1)="\n"
++	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
+ then !yybegin+1 else !yybegin
+ 	in scan(start,nil,!yybufpos,!yybufpos)
+     end
+diff -Naur ckit/src/parser/parse-tree-sig.sml ckit-mlton/src/parser/parse-tree-sig.sml
+--- ckit/src/parser/parse-tree-sig.sml	2000-04-05 14:35:01.000000000 -0400
++++ ckit-mlton/src/parser/parse-tree-sig.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -27,8 +27,10 @@
+     | ModAssign | XorAssign | OrAssign | AndAssign
+     | LshiftAssign | RshiftAssign 
+     | Uplus 
+-    | SizeofType of ctype
+-    | OperatorExt of operatorExt
++    | SizeofType of 
++        (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
++    | OperatorExt of 
++        ParseTreeExt.operatorExt
+ 
+   and expression
+     = EmptyExpr
+@@ -40,10 +42,17 @@
+     | Binop of operator * expression * expression
+     | QuestionColon of expression * expression * expression
+     | Call of expression * expression list
+-    | Cast of ctype * expression
++    | Cast of 
++        (* ctype *) {qualifiers : qualifier list, specifiers : specifier list} *
++	expression
+     | InitList of expression list
+     | MARKexpression of (SourceMap.location * expression)
+-    | ExprExt of expressionExt
++    | ExprExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.expressionExt
+ 
+   and specifier
+     = Void
+@@ -60,11 +69,15 @@
+     | Wholenum
+     | Saturate
+     | Nonsaturate
+-    | Array of expression * ctype
+-    | Pointer of ctype
++    | Array of 
++        expression *
++	(* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
++    | Pointer of 
++	(* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
+     | Function of
+-        {retType : ctype,  
+-	 params : (decltype * declarator) list}
++        {retType : (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},  
++	 params : ((* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++		   declarator) list}
+     | Enum of
+         {tagOpt : string option,
+ 	 enumerators : (string * expression) list,
+@@ -72,13 +85,19 @@
+     | Struct of
+         {isStruct : bool,   (* struct or union; true => struct *)
+ 	 tagOpt : string option,  (* optional tag *)
+-	 members: (ctype * (declarator * expression) list) list} (* member specs *)
++	 members: ((* ctype *) {qualifiers : qualifier list, specifiers : specifier list} * 
++		   (declarator * expression) list) list} (* member specs *)
+     | TypedefName of string
+     | StructTag of
+ 	{isStruct : bool,   (* ??? *)
+ 	 name : string}
+     | EnumTag of string 
+-    | SpecExt of specifierExt
++    | SpecExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++        ParseTreeExt.specifierExt
+ 
+   and declarator  (* constructor suffix: "Decr" *)
+     = EmptyDecr
+@@ -87,9 +106,17 @@
+     | ArrayDecr of declarator * expression
+     | PointerDecr of declarator
+     | QualDecr of qualifier * declarator
+-    | FuncDecr of declarator * (decltype * declarator) list
++    | FuncDecr of 
++        declarator * 
++	((* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++	 declarator) list
+     | MARKdeclarator of (SourceMap.location * declarator)
+-    | DecrExt of declaratorExt
++    | DecrExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.declaratorExt
+ 
+   (* supports extensions of C in which expressions contain statements *)
+   and statement
+@@ -110,25 +137,42 @@
+     | IfThenElse of expression * statement * statement
+     | Switch of expression * statement
+     | MARKstatement of (SourceMap.location * statement)
+-    | StatExt of statementExt
++    | StatExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.statementExt
+ 
+   and declaration
+-    = Declaration of decltype * (declarator * expression) list
++    = Declaration of 
++        (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++        (declarator * expression) list
+     | MARKdeclaration of (SourceMap.location * declaration)
+-    | DeclarationExt of declarationExt
++    | DeclarationExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.declarationExt
+ 
+   (* the top-level constructs in a translation unit (i.e. source file) *)
+   and externalDecl
+     = ExternalDecl of declaration
+     | FunctionDef of
+-       {retType : decltype,      (* return type *)
+-	funDecr : declarator,   (* function name declarator *)
+-        krParams : declaration list, (* K&R-style parameter declarations *)
+-        body : statement}        (* function body *)
++        {retType : (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, (* return type *)
++	 funDecr : declarator, (* function name declarator *)
++	 krParams : declaration list, (* K&R-style parameter declarations *)
++	 body : statement (* function body *)}
+     | MARKexternalDecl of (SourceMap.location * externalDecl)
+-    | ExternalDeclExt of externalDeclExt
++    | ExternalDeclExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.externalDeclExt
+ 
+-  withtype ctype =
++  type ctype =
+       {qualifiers : qualifier list,
+        specifiers : specifier list}
+   and decltype =
+@@ -137,7 +181,7 @@
+        storage : storage list}
+ 
+   (* extension types for basic constructs *)
+-  and externalDeclExt = 
++  type externalDeclExt = 
+       (specifier, declarator, ctype, decltype, operator, expression, statement)
+       ParseTreeExt.externalDeclExt
+   and declarationExt = 
+diff -Naur ckit/src/parser/parse-tree.sml ckit-mlton/src/parser/parse-tree.sml
+--- ckit/src/parser/parse-tree.sml	2000-04-05 14:35:01.000000000 -0400
++++ ckit-mlton/src/parser/parse-tree.sml	2005-08-17 19:41:36.000000000 -0400
+@@ -23,8 +23,10 @@
+     | ModAssign | XorAssign | OrAssign | AndAssign
+     | LshiftAssign | RshiftAssign 
+     | Uplus 
+-    | SizeofType of ctype
+-    | OperatorExt of operatorExt
++    | SizeofType of 
++        (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
++    | OperatorExt of 
++        ParseTreeExt.operatorExt
+ 
+   and expression
+     = EmptyExpr
+@@ -36,10 +38,17 @@
+     | Binop of operator * expression * expression
+     | QuestionColon of expression * expression * expression
+     | Call of expression * expression list
+-    | Cast of ctype * expression
++    | Cast of 
++        (* ctype *) {qualifiers : qualifier list, specifiers : specifier list} *
++	expression
+     | InitList of expression list
+     | MARKexpression of (SourceMap.location * expression)
+-    | ExprExt of expressionExt
++    | ExprExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.expressionExt
+ 
+   and specifier
+     = Void
+@@ -56,11 +65,15 @@
+     | Wholenum
+     | Saturate
+     | Nonsaturate
+-    | Array of expression * ctype
+-    | Pointer of ctype
++    | Array of 
++        expression *
++	(* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
++    | Pointer of 
++	(* ctype *) {qualifiers : qualifier list, specifiers : specifier list}
+     | Function of
+-        {retType : ctype, 
+-	 params : (decltype * declarator) list}
++        {retType : (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},  
++	 params : ((* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++		   declarator) list}
+     | Enum of
+         {tagOpt : string option,
+ 	 enumerators : (string * expression) list,
+@@ -68,13 +81,19 @@
+     | Struct of
+         {isStruct : bool,   (* struct or union; true => struct *)
+ 	 tagOpt : string option,  (* optional tag *)
+-	 members: (ctype * (declarator * expression) list) list} (* member specs *)
++	 members: ((* ctype *) {qualifiers : qualifier list, specifiers : specifier list} * 
++		   (declarator * expression) list) list} (* member specs *)
+     | TypedefName of string
+     | StructTag of
+ 	{isStruct : bool,   (* ??? *)
+ 	 name : string}
+     | EnumTag of string 
+-    | SpecExt of specifierExt
++    | SpecExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++        ParseTreeExt.specifierExt
+ 
+   and declarator  (* constructor suffix: "Decr" *)
+     = EmptyDecr
+@@ -83,9 +102,17 @@
+     | ArrayDecr of declarator * expression
+     | PointerDecr of declarator
+     | QualDecr of qualifier * declarator
+-    | FuncDecr of declarator * (decltype * declarator) list
++    | FuncDecr of 
++        declarator * 
++	((* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++	 declarator) list
+     | MARKdeclarator of (SourceMap.location * declarator)
+-    | DecrExt of declaratorExt
++    | DecrExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list},
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.declaratorExt
+ 
+   (* supports extensions of C in which expressions contain statements *)
+   and statement
+@@ -106,24 +133,41 @@
+     | IfThenElse of expression * statement * statement
+     | Switch of expression * statement
+     | MARKstatement of (SourceMap.location * statement)
+-    | StatExt of statementExt
++    | StatExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.statementExt
+ 
+   and declaration
+-    = Declaration of decltype * (declarator * expression) list
++    = Declaration of 
++        (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list} * 
++        (declarator * expression) list
+     | MARKdeclaration of (SourceMap.location * declaration)
+-    | DeclarationExt of declarationExt
++    | DeclarationExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.declarationExt
+ 
+   and externalDecl
+     = ExternalDecl of declaration
+     | FunctionDef of (* record? *)
+-       {retType : decltype,      (* return type *)
+-	funDecr : declarator,   (* function name declarator *)
+-        krParams : declaration list, (* K&R-style parameter declarations *)
+-        body : statement}        (* function body *)
++        {retType : (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, (* return type *)
++	 funDecr : declarator, (* function name declarator *)
++	 krParams : declaration list, (* K&R-style parameter declarations *)
++	 body : statement (* function body *)}
+     | MARKexternalDecl of (SourceMap.location * externalDecl)
+-    | ExternalDeclExt of externalDeclExt
++    | ExternalDeclExt of 
++        (specifier, declarator, 
++	 (* ctype *) {qualifiers : qualifier list, specifiers : specifier list}, 
++	 (* decltype *) {qualifiers : qualifier list, specifiers : specifier list, storage : storage list}, 
++	 operator, expression, statement)
++	ParseTreeExt.externalDeclExt
+ 
+-  withtype ctype =
++  type ctype =
+            {qualifiers : qualifier list,
+ 	    specifiers : specifier list}
+   and decltype =
+@@ -131,7 +175,7 @@
+        specifiers : specifier list,
+        storage : storage list}      
+ 
+-  and externalDeclExt = 
++  type externalDeclExt = 
+       (specifier, declarator, ctype, decltype, operator, expression, statement)
+       ParseTreeExt.externalDeclExt
+   and declarationExt = 

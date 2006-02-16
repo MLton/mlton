@@ -49,35 +49,35 @@ structure Array =
    struct
       local open Array
       in
-	 val array = array
-	 val copy = copy
-	 val of_list = fromList
-	 val length = length
-	 val sub = sub
-	 val update = update
-	 val unsafe_get = Array.sub
-	 val unsafe_set = Array.update
-	 val make = array
-	 fun map f a = Array.tabulate(length a, fn i => f(Array.sub(a, i)))
-	 val init = tabulate
+         val array = array
+         val copy = copy
+         val of_list = fromList
+         val length = length
+         val sub = sub
+         val update = update
+         val unsafe_get = Array.sub
+         val unsafe_set = Array.update
+         val make = array
+         fun map f a = Array.tabulate(length a, fn i => f(Array.sub(a, i)))
+         val init = tabulate
       end
    end
 
 fun for(a: int, b, f) =
    let
       fun loop a =
-	 if a > b
-	    then ()
-	 else (f a; loop(a + 1))
+         if a > b
+            then ()
+         else (f a; loop(a + 1))
    in loop a
    end
 
 fun forDown(b: int, a, f) =
    let
       fun loop b =
-	 if b < a
-	    then ()
-	 else (f b; loop(b - 1))
+         if b < a
+            then ()
+         else (f b; loop(b - 1))
    in loop b
    end
 
@@ -110,26 +110,26 @@ structure Hashtbl:
    end =
    struct
       datatype ('a, 'b) t = T of (string * 'b) list ref
-	    
+            
       fun create _ = T (ref [])
 
       fun add (T t) k d = t := (k, d) :: !t
 
       fun find (T (ref t)) k =
-	 case List.find (fn (k', _) => k = k') t of
-	    NONE => raise Not_found
-	  | SOME(_, d) => d
+         case List.find (fn (k', _) => k = k') t of
+            NONE => raise Not_found
+          | SOME(_, d) => d
    end
 
 structure List =
    struct
       local open List
       in
-	 val iter = app
-	 val map = map
-	 val filter = filter
-	 val nth = nth
-	 val rev = rev
+         val iter = app
+         val map = map
+         val filter = filter
+         val nth = nth
+         val rev = rev
       end
    end
 
@@ -203,21 +203,21 @@ type v = float * float * float * float
 
 val identity =
    Array.of_list[1.0, 0.0, 0.0, 0.0,
-		  0.0, 1.0, 0.0, 0.0,
-		  0.0, 0.0, 1.0, 0.0,
-		  0.0, 0.0, 0.0, 1.0]
+                  0.0, 1.0, 0.0, 0.0,
+                  0.0, 0.0, 1.0, 0.0,
+                  0.0, 0.0, 0.0, 1.0]
 
 fun translate(x, y, z) =
    Array.of_list[1.0, 0.0, 0.0, ~ x,
-		  0.0, 1.0, 0.0, ~ y,
-		  0.0, 0.0, 1.0, ~ z,
-		  0.0, 0.0, 0.0, 1.0]
+                  0.0, 1.0, 0.0, ~ y,
+                  0.0, 0.0, 1.0, ~ z,
+                  0.0, 0.0, 0.0, 1.0]
 
 fun unscale(x, y, z) =
    Array.of_list[ x,  0.0, 0.0, 0.0,
-		  0.0, y,  0.0, 0.0,
-		  0.0, 0.0, z,  0.0,
-		  0.0, 0.0, 0.0, 1.0]
+                  0.0, y,  0.0, 0.0,
+                  0.0, 0.0, z,  0.0,
+                  0.0, 0.0, 0.0, 1.0]
   
 fun scale(x, y, z) = unscale (1.0 / x, 1.0 / y, 1.0 / z)
 
@@ -231,9 +231,9 @@ fun rotatex t =
      val si = dsin t
   in
      Array.of_list[ 1.0,   0.0,  0.0, 0.0,
-		    0.0,   co,  si, 0.0,
-		    0.0, ~ si, co, 0.0,
-		    0.0,   0.0,  0.0, 1.0 ]
+                    0.0,   co,  si, 0.0,
+                    0.0, ~ si, co, 0.0,
+                    0.0,   0.0,  0.0, 1.0 ]
   end
 
 fun rotatey t =
@@ -242,9 +242,9 @@ fun rotatey t =
      val si = dsin t
   in
      Array.of_list[ co, 0.0, ~ si, 0.0,
-		    0.0, 1.0,   0.0,  0.0,
-		    si, 0.0,   co,  0.0,
-		    0.0, 0.0,   0.0,  1.0 ]
+                    0.0, 1.0,   0.0,  0.0,
+                    si, 0.0,   co,  0.0,
+                    0.0, 0.0,   0.0,  1.0 ]
   end
 
 fun rotatez t =
@@ -253,9 +253,9 @@ fun rotatez t =
      val si = dsin t
   in
      Array.of_list[   co,  si, 0.0, 0.0,
-		    ~ si, co, 0.0, 0.0,
-		    0.0,  0.0, 1.0, 0.0,
-		    0.0,  0.0, 0.0, 1.0 ]
+                    ~ si, co, 0.0, 0.0,
+                    0.0,  0.0, 1.0, 0.0,
+                    0.0,  0.0, 0.0, 1.0 ]
   end
 
 (*** Operations on matrices ***)
@@ -268,20 +268,20 @@ fun mul (m, m') =
      val m'' = Array.make (16, 0.0)
   in
      for(0, 3, fn i =>
-	 for(0, 3, fn j => let
-	    fun lp (4, s) = s
-	      | lp (k, s) = lp (k+1, s + get(m, i, k) * get(m', k, j))
-	    in
-	      set(m'', i, j, lp(0, 0.0))
-	    end))
+         for(0, 3, fn j => let
+            fun lp (4, s) = s
+              | lp (k, s) = lp (k+1, s + get(m, i, k) * get(m', k, j))
+            in
+              set(m'', i, j, lp(0, 0.0))
+            end))
      ; m''
   end
 
 fun transpose m =
   let val m' = Array.make (16, 0.0)
   in for(0, 3, fn i =>
-	 for(0, 3, fn j =>
-	     set (m', i, j, get (m, j, i))))
+         for(0, 3, fn j =>
+             set (m', i, j, get (m, j, i))))
      ; m'
   end
 
@@ -341,7 +341,7 @@ signature LEX_TOKEN =
       include LEX_TOKEN_STRUCTS
       
       datatype t =
-	 Binder of string
+         Binder of string
        | Bool of bool
        | Eof
        | Identifier of string
@@ -391,7 +391,7 @@ fun fail s = raise Fail s
 end (* end of user routines *)
 exception LexError (* raised if illegal leaf action tried *)
 structure Internal =
-	struct
+        struct
 
 datatype yyfinstate = N of int
 type statedata = {fin : yyfinstate list, trans: string}
@@ -616,8 +616,8 @@ in Vector.fromList(map g
 {fin = [(N 60),(N 62)], trans = 0}])
 end
 structure StartStates =
-	struct
-	datatype yystartstate = STARTSTATE of int
+        struct
+        datatype yystartstate = STARTSTATE of int
 
 (* start state definitions *)
 
@@ -627,49 +627,49 @@ val S = STARTSTATE 5;
 
 end
 type result = UserDeclarations.lexresult
-	exception LexerError (* raised if illegal leaf action tried *)
+        exception LexerError (* raised if illegal leaf action tried *)
 end
 
 type int = Int.int
 fun makeLexer (yyinput: int -> string) =
-let	val yygone0:int=1
-	val yyb = ref "\n" 		(* buffer *)
-	val yybl: int ref = ref 1		(*buffer length *)
-	val yybufpos: int ref = ref 1		(* location of next character to use *)
-	val yygone: int ref = ref yygone0	(* position in file of beginning of buffer *)
-	val yydone = ref false		(* eof found yet? *)
-	val yybegin: int ref = ref 1		(*Current 'start state' for lexer *)
+let     val yygone0:int=1
+        val yyb = ref "\n"              (* buffer *)
+        val yybl: int ref = ref 1               (*buffer length *)
+        val yybufpos: int ref = ref 1           (* location of next character to use *)
+        val yygone: int ref = ref yygone0       (* position in file of beginning of buffer *)
+        val yydone = ref false          (* eof found yet? *)
+        val yybegin: int ref = ref 1            (*Current 'start state' for lexer *)
 
-	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
-		 yybegin := x
+        val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
+                 yybegin := x
 
 fun lex (yyarg as (())) =
 let fun continue() : Internal.result = 
   let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0: int) =
-	let fun action (i: int,nil) = raise LexError
-	| action (i,nil::l) = action (i-1,l)
-	| action (i,(node::acts)::l) =
-		case node of
-		    Internal.N yyk => 
-			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
-			     val yypos: int = i0+ !yygone
-			fun REJECT() = action(i,acts::l)
-			open UserDeclarations Internal.StartStates
+        let fun action (i: int,nil) = raise LexError
+        | action (i,nil::l) = action (i-1,l)
+        | action (i,(node::acts)::l) =
+                case node of
+                    Internal.N yyk => 
+                        (let fun yymktext() = String.substring(!yyb,i0,i-i0)
+                             val yypos: int = i0+ !yygone
+                        fun REJECT() = action(i,acts::l)
+                        open UserDeclarations Internal.StartStates
  in (yybufpos := i; case yyk of 
 
-			(* Application actions *)
+                        (* Application actions *)
 
   11 => (Token.Lbrace)
 | 13 => (Token.Rbrace)
 | 20 => let val yytext=yymktext() in Token.Binder(String.extract(yytext, 1, NONE)) end
 | 35 => let val yytext=yymktext() in Token.Real(case Real.fromString yytext of
-				  NONE =>
-				     fail(concat["bad real constant ", yytext])
-				| SOME r => r) end
+                                  NONE =>
+                                     fail(concat["bad real constant ", yytext])
+                                | SOME r => r) end
 | 39 => let val yytext=yymktext() in Token.Int(case Int.fromString yytext of
-				NONE => 
-				   fail(concat["bad int constant ", yytext])
-			      | SOME i => i) end
+                                NONE => 
+                                   fail(concat["bad int constant ", yytext])
+                              | SOME i => i) end
 | 41 => (chars := []; YYBEGIN S; continue())
 | 43 => (YYBEGIN C; continue())
 | 49 => let val yytext=yymktext() in Token.Identifier yytext end
@@ -677,45 +677,45 @@ let fun continue() : Internal.result =
 | 55 => (YYBEGIN INITIAL; continue())
 | 58 => (continue())
 | 60 => (let val s = (implode(rev(!chars)) before chars := nil)
-	       in YYBEGIN INITIAL
-		  ; Token.String s
-	       end)
+               in YYBEGIN INITIAL
+                  ; Token.String s
+               end)
 | 62 => let val yytext=yymktext() in chars := String.sub(yytext, 0) :: !chars
-	       ; continue() end
+               ; continue() end
 | 7 => (Token.Lbracket)
 | 9 => (Token.Rbracket)
 | _ => raise Internal.LexerError
 
-		) end )
+                ) end )
 
-	val {fin,trans} = Vector.sub(Internal.tab, s)
-	val NewAcceptingLeaves = fin::AcceptingLeaves
-	in if l = !yybl then
-	     if trans = #trans(Vector.sub(Internal.tab,0))
-	       then action(l,NewAcceptingLeaves
-) else	    let val newchars= if !yydone then "" else yyinput 1024
-	    in if (String.size newchars)=0
-		  then (yydone := true;
-		        if (l=i0) then UserDeclarations.eof yyarg
-		                  else action(l,NewAcceptingLeaves))
-		  else (if i0=l then yyb := newchars
-		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
-		     yygone := !yygone+i0;
-		     yybl := String.size (!yyb);
-		     scan (s,AcceptingLeaves,l-i0,0))
-	    end
-	  else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
-		val NewChar = if NewChar<128 then NewChar else 128
-		val NewState = Char.ord(CharVector.sub(trans,NewChar))
-		in if NewState=0 then action(l,NewAcceptingLeaves)
-		else scan(NewState,NewAcceptingLeaves,l+1,i0)
-	end
-	end
+        val {fin,trans} = Vector.sub(Internal.tab, s)
+        val NewAcceptingLeaves = fin::AcceptingLeaves
+        in if l = !yybl then
+             if trans = #trans(Vector.sub(Internal.tab,0))
+               then action(l,NewAcceptingLeaves
+) else      let val newchars= if !yydone then "" else yyinput 1024
+            in if (String.size newchars)=0
+                  then (yydone := true;
+                        if (l=i0) then UserDeclarations.eof yyarg
+                                  else action(l,NewAcceptingLeaves))
+                  else (if i0=l then yyb := newchars
+                     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
+                     yygone := !yygone+i0;
+                     yybl := String.size (!yyb);
+                     scan (s,AcceptingLeaves,l-i0,0))
+            end
+          else let val NewChar = Char.ord(CharVector.sub(!yyb,l))
+                val NewChar = if NewChar<128 then NewChar else 128
+                val NewState = Char.ord(CharVector.sub(trans,NewChar))
+                in if NewState=0 then action(l,NewAcceptingLeaves)
+                else scan(NewState,NewAcceptingLeaves,l+1,i0)
+        end
+        end
 (*
-	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
+        val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
 then !yybegin+1 else !yybegin
 *)
-	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
+        in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
     end
 in continue end
   in lex
@@ -727,7 +727,7 @@ signature PROGRAM =
       (**** Basic types: programs, values, ... ****)
 
       datatype k =
-	 Acos | Addi | Addf | Apply | Asin | Clampf | Cone | Cos | Cube
+         Acos | Addi | Addf | Apply | Asin | Clampf | Cone | Cos | Cube
        | Cylinder | Difference | Divi | Divf | Eqi | Eqf | Floor | Frac
        | Get | Getx | Gety | Getz | If | Intersect | Length | Lessi | Lessf
        | Light | Modi | Muli | Mulf | Negi | Negf | Plane | Point
@@ -737,7 +737,7 @@ signature PROGRAM =
 
       (* Program tokens *)
       datatype t =
-	 Fun of t list
+         Fun of t list
        | Arr of t list
        | Ident of string
        | Binder of string
@@ -749,7 +749,7 @@ signature PROGRAM =
 
       (* internal representation of program tokens *)
       datatype t' =
-	 Fun' of t' list
+         Fun' of t' list
        | Arr' of t' list
        | Ident' of int (* index to environment stack *)
        | Binder'
@@ -758,48 +758,48 @@ signature PROGRAM =
      | Float' of float
      | Bool' of bool
      | String' of string
-	*)
+        *)
        | Prim' of k
        | Val' of v (* inlined value *)
 
       (* Values *)
       and v =
-	 VInt of int
-	| VFloat of float
-	| VBool of bool
-	| VStr of string
-	| VClos of v list * t' list
-	| VFun of (v list -> v list) (* XXX for the compiler *)
-	| VArr of v array
-	| VPoint of v * v * v (* XXX Maybe these should be floats? *)
-	| VObj of obj
-	| VLight of v * v
-	| VPtLight of v * v
-	| VStLight of v * v * v * v * v
+         VInt of int
+        | VFloat of float
+        | VBool of bool
+        | VStr of string
+        | VClos of v list * t' list
+        | VFun of (v list -> v list) (* XXX for the compiler *)
+        | VArr of v array
+        | VPoint of v * v * v (* XXX Maybe these should be floats? *)
+        | VObj of obj
+        | VLight of v * v
+        | VPtLight of v * v
+        | VStLight of v * v * v * v * v
 
       and obj =
-	 OObj of kind * closure ref
-	| OTransform of
-	  obj *
-	  Matrix.t *     (* World to object *)
-	  Matrix.t *     (* Object to world *)
-	  float *        (* Scale factor *)
-	  bool           (* Isometry? *)
-	| OUnion of obj * obj
-	| OInter of obj * obj
-	| ODiff of obj * obj
+         OObj of kind * closure ref
+        | OTransform of
+          obj *
+          Matrix.t *     (* World to object *)
+          Matrix.t *     (* Object to world *)
+          float *        (* Scale factor *)
+          bool           (* Isometry? *)
+        | OUnion of obj * obj
+        | OInter of obj * obj
+        | ODiff of obj * obj
 
       and kind =
-	 OSphere
-	| OCube
-	| OCylind
-	| OCone
-	| OPlane
+         OSphere
+        | OCube
+        | OCylind
+        | OCone
+        | OPlane
 
       and closure =
-	 Unopt of v (* Unoptimized function *)
-	| Opt of v
-	| Cst of (float * float * float * float * float * float)
+         Unopt of v (* Unoptimized function *)
+        | Opt of v
+        | Cst of (float * float * float * float * float * float)
 
       (* Translation of an identifier *)
       val translate : string -> t
@@ -976,43 +976,43 @@ structure Lex = Lex(structure Token = LexToken)
 fun read(ins: TextIO.instream): t list =
    let
       val lex: unit -> LexToken.t =
-	 Lex.makeLexer(fn n => TextIO.inputN(ins, n))()
+         Lex.makeLexer(fn n => TextIO.inputN(ins, n))()
       local
-	 val next: LexToken.t option ref = ref NONE
+         val next: LexToken.t option ref = ref NONE
       in
-	 fun token(): LexToken.t =
-	    case !next of
-	       NONE => lex()
-	     | SOME t => (next := NONE; t)
-	 fun save(t: LexToken.t): unit =
-	    next := SOME t
+         fun token(): LexToken.t =
+            case !next of
+               NONE => lex()
+             | SOME t => (next := NONE; t)
+         fun save(t: LexToken.t): unit =
+            next := SOME t
       end
       fun bad() = failwith "invalid input"
       fun many(done: LexToken.t -> bool): t list =
-	 let
-	    fun loop(ac: t list) =
-	       case one() of
-		  NONE => if done(token())
-			     then rev ac
-			  else bad()
-		| SOME t => loop(t :: ac)
-	 in loop []
-	 end
+         let
+            fun loop(ac: t list) =
+               case one() of
+                  NONE => if done(token())
+                             then rev ac
+                          else bad()
+                | SOME t => loop(t :: ac)
+         in loop []
+         end
       and one(): t option =
-	 let fun tok t = SOME t
-	 in case token() of
-	    LexToken.Binder x => tok(Binder x)
-	  | LexToken.Bool b => tok(Bool b)
-	  | LexToken.Identifier x => tok(translate x)
-	  | LexToken.Int i => tok(Int i)
-	  | LexToken.Lbrace =>
-	       SOME(Fun(many(fn LexToken.Rbrace => true | _ => false)))
-	  | LexToken.Lbracket =>
-	       SOME(Arr(many(fn LexToken.Rbracket => true | _ =>false)))
-	  | LexToken.Real r => tok(Float r)
-	  | LexToken.String s => tok(String s)
-	  | t => (save t; NONE)
-	 end
+         let fun tok t = SOME t
+         in case token() of
+            LexToken.Binder x => tok(Binder x)
+          | LexToken.Bool b => tok(Bool b)
+          | LexToken.Identifier x => tok(translate x)
+          | LexToken.Int i => tok(Int i)
+          | LexToken.Lbrace =>
+               SOME(Fun(many(fn LexToken.Rbrace => true | _ => false)))
+          | LexToken.Lbracket =>
+               SOME(Arr(many(fn LexToken.Rbracket => true | _ =>false)))
+          | LexToken.Real r => tok(Float r)
+          | LexToken.String s => tok(String s)
+          | t => (save t; NONE)
+         end
    in many(fn LexToken.Eof => true | _ => false)
    end
 
@@ -1070,9 +1070,9 @@ fun dump (file, (img, width)) =
      val f = open_out_bin file
   in output_string (f, "P6\n# PL Club - translated to SML\n")
      ; output_string (f, concat[Int.toString width, " ",
-			       Int.toString height, "\n255\n"])
+                               Int.toString height, "\n255\n"])
      ; output_string (f, Byte.unpackString (Word8ArraySlice.slice
-					    (img, 0, NONE)))
+                                            (img, 0, NONE)))
      ; close_out f
   end
 
@@ -1096,15 +1096,15 @@ end
 signature RENDER =
    sig
       include CAML
-	 
+         
       val apply : (Program.v * Program.v list -> Program.v list) ref
       val inline_closure : (Program.v -> Program.v) ref
 
       val f :
-	 (*amb:*)(float * float * float) * (*lights:*) Program.v array *
-	 (*obj:*)Program.obj * (*depth:*)int * (*fov:*)float *
-	 (*wid:*)int * (*ht:*)int *
-	 (*file:*)string -> unit
+         (*amb:*)(float * float * float) * (*lights:*) Program.v array *
+         (*obj:*)Program.obj * (*depth:*)int * (*fov:*)float *
+         (*wid:*)int * (*ht:*)int *
+         (*file:*)string -> unit
    end
 structure Render: RENDER =
 struct
@@ -1165,65 +1165,65 @@ fun intern_obj(m, m1, scale, isom, ob) =
   case ob of
     OObj (OSphere, f) =>
        if isom
-	  then
-	     let
-		val center = vmul (m1, origin)
-		val radius = scale * scale
-	     in
-		SBound (SObj (SSphere (center, radius), f, m), center, radius)
-	     end
+          then
+             let
+                val center = vmul (m1, origin)
+                val radius = scale * scale
+             in
+                SBound (SObj (SSphere (center, radius), f, m), center, radius)
+             end
        else
-	  let
-	     val center = vmul (m1, origin)
-	     val radius = scale * scale
-	  in
-	     SBound (SObj (SEllips, f, m), center, radius)
-	  end
+          let
+             val center = vmul (m1, origin)
+             val radius = scale * scale
+          in
+             SBound (SObj (SEllips, f, m), center, radius)
+          end
   | OObj (OCube, f) =>
       let
-	 val (nx, nx') = plane_eq(m, (1.0, 0.0, 0.0, 0.0))
-	 val (ny, ny') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
-	 val (nz, nz') = plane_eq(m, (0.0, 0.0, 1.0, 0.0))
-	 val c = SObj (SCube (nx', ny', nz'), f, m)
+         val (nx, nx') = plane_eq(m, (1.0, 0.0, 0.0, 0.0))
+         val (ny, ny') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
+         val (nz, nz') = plane_eq(m, (0.0, 0.0, 1.0, 0.0))
+         val c = SObj (SCube (nx', ny', nz'), f, m)
       in
-	 SBound (c, vmul (m1, cube_center), scale * scale * 0.75)
+         SBound (c, vmul (m1, cube_center), scale * scale * 0.75)
       end
   | OObj (OCylind, f) =>
       let
-	 val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
-	 val c = SObj (SCylind n', f, m)
+         val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
+         val c = SObj (SCylind n', f, m)
       in
-	 SBound (c, vmul(m1, cylinder_center), scale * scale * 1.25)
+         SBound (c, vmul(m1, cylinder_center), scale * scale * 1.25)
       end
   | OObj (OCone, f) =>
       let
-	 val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
-	 val c = SObj (SCone n', f, m)
+         val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
+         val c = SObj (SCone n', f, m)
       in
-	 SBound (c, vmul(m1, cone_center), scale * scale)
+         SBound (c, vmul(m1, cone_center), scale * scale)
       end
   | OObj (OPlane, f) =>
       let
-	 val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
+         val (n, n') = plane_eq(m, (0.0, 1.0, 0.0, 0.0))
       in
-	 SObj (SPlane (n, n'), f, m)
+         SObj (SPlane (n, n'), f, m)
       end
   | OTransform (o', m', m'1, scale', isom') =>
       intern_obj
         (Matrix.mul(m', m), Matrix.mul(m1, m'1),
-	 scale * scale', isom andalso isom', o')
+         scale * scale', isom andalso isom', o')
   | OUnion (o1, o2) =>
       SUnion (intern_obj(m, m1, scale, isom, o1),
-	      intern_obj(m, m1, scale, isom, o2))
+              intern_obj(m, m1, scale, isom, o2))
   | OInter (o1, o2) =>
       SInter (intern_obj(m, m1, scale, isom, o1),
-	      intern_obj(m, m1, scale, isom, o2))
+              intern_obj(m, m1, scale, isom, o2))
   | ODiff (ODiff (o1, o2), o3) =>
       (* Better to have unions that diffs for introducing bounds *)
       intern_obj(m, m1, scale, isom, (ODiff (o1, OUnion (o2, o3))))
   | ODiff (o1, o2) =>
       SDiff (intern_obj(m, m1, scale, isom, o1),
-	     intern_obj(m, m1, scale, isom, o2))
+             intern_obj(m, m1, scale, isom, o2))
 
 fun intern_lights a =
   Array.map
@@ -1265,25 +1265,25 @@ fun object_cost k : int =
 fun add_bound (r0, (x, r, cost, sc)) =
   if r0 < 0.0
      then
-	 if r < 0.0 orelse cost <= 1
-	    then (cost, sc)
-	 else
-	    (1, SBound (sc, x, r))
+         if r < 0.0 orelse cost <= 1
+            then (cost, sc)
+         else
+            (1, SBound (sc, x, r))
   else
      (* Cost of bounds *)
      let
-	val c0 = r0 + r * float cost 
-	(* Cost ofout bounds *)
-	val c1 = r0 * float cost
+        val c0 = r0 + r * float cost 
+        (* Cost ofout bounds *)
+        val c1 = r0 * float cost
      in
-	if c0 < c1 then
-	   (1, SBound (sc, x, r))
-	else
-	   (cost, sc)
+        if c0 < c1 then
+           (1, SBound (sc, x, r))
+        else
+           (cost, sc)
      end
 
 fun union_bound (dsc1 as (x1, r1, cost1, sc1),
-		 dsc2 as (x2, r2, cost2, sc2)) =
+                 dsc2 as (x2, r2, cost2, sc2)) =
   if r1 < 0.0 then
     let
        val (cost2', sc2') = add_bound(r1, dsc2)
@@ -1303,43 +1303,43 @@ fun union_bound (dsc1 as (x1, r1, cost1, sc1),
        val r2' = sqrt r2
     in
        if d + r2' <= r1' then
-	  let
-	     val (cost2', sc2') = add_bound (r1, dsc2)
-	  in
-	     (x1, r1, cost1 + cost2', SUnion (sc1, sc2'))
-	  end
+          let
+             val (cost2', sc2') = add_bound (r1, dsc2)
+          in
+             (x1, r1, cost1 + cost2', SUnion (sc1, sc2'))
+          end
        else if d + r1' <= r2' then
-	  let
-	     val (cost1', sc1') = add_bound (r2, dsc1)
-	  in
-	     (x2, r2, cost1' + cost2, SUnion (sc1', sc2))
-	  end
-	    else
-	       let
-		  val r' = (r1' + r2' + d) * 0.5
-		  val r = r' * r'
-		  val x = add_scaled (x1, (r' - r1') / d, sub(x2, x1))
-		  val (cost1', sc1') = add_bound (r, dsc1)
-		  val (cost2', sc2') = add_bound (r, dsc2)
-	       in
-		  (x, r, cost1' + cost2', SUnion (sc1', sc2'))
-	       end
+          let
+             val (cost1', sc1') = add_bound (r2, dsc1)
+          in
+             (x2, r2, cost1' + cost2, SUnion (sc1', sc2))
+          end
+            else
+               let
+                  val r' = (r1' + r2' + d) * 0.5
+                  val r = r' * r'
+                  val x = add_scaled (x1, (r' - r1') / d, sub(x2, x1))
+                  val (cost1', sc1') = add_bound (r, dsc1)
+                  val (cost2', sc2') = add_bound (r, dsc2)
+               in
+                  (x, r, cost1' + cost2', SUnion (sc1', sc2'))
+               end
     end
  
 fun union_radius (dsc1 as (x1, r1, cost1, sc1),
-		  dsc2 as (x2, r2, cost2, sc2)) =
+                  dsc2 as (x2, r2, cost2, sc2)) =
     let
        val d = sqrt (square (sub (x2, x1)))
        val r1' = sqrt r1
        val r2' = sqrt r2
     in
        if d + r2' <= r1' then r1 else
-	  if d + r1' <= r2' then r2 else
-	     let
-		val r' = (r1' + r2' + d) * 0.5
-	     in
-		r' * r'
-	     end
+          if d + r1' <= r2' then r2 else
+             let
+                val r' = (r1' + r2' + d) * 0.5
+             in
+                r' * r'
+             end
     end
 
 fun merge2 l =
@@ -1360,63 +1360,63 @@ fun opt_union l =
   | [sc1, sc2] => [union_bound(sc1, sc2)]
   | _ =>
        let
-	  val c = Array.of_list l
-	  val n = Array.length c
-	  val m = Array2.array(n, n, infinity)
-	  val _ =
-	     for(0, n - 1, fn i =>
-		 for(0, n - 1, fn j =>
-		     if i <> j
-			then Array2.update(m, i, j,
-					   union_radius
-					   (Array.sub(c, i), Array.sub(c, j)))
-		     else ()))
-	  val remain = Array.init (n, fn i => i)
-	  val _ =
-	     forDown
-	     (n - 1, 1, fn k =>
-	      let
-		 val gain = ref infinity
-		 val i0 = ref 0
-		 val j0 = ref 0
-		 val _ =
-		    for(0, k, fn i =>
-			for(0, k, fn j =>
-			    let
-			       val i' = Array.sub(remain, i)
-			       val j' = Array.sub(remain, j)
-			    in
-			       if Array2.sub(m, i', j') < !gain
-				  then 
-				     (gain := Array2.sub(m, i', j')
-				      ; i0 := i
-				      ; j0 := j)
-			       else ()
-			    end))
-		 val i = Array.sub(remain, !i0)
-		 val j = Array.sub(remain, !j0)
-	      in
-		 Array.update(remain, !j0, Array.sub(remain, k));
-		 Array.update(c, i,
-			      union_bound (Array.sub(c, i), Array.sub(c, j)));
-		 for(0, k - 1, fn j0 =>
-		     let
-			val j = Array.sub(remain, j0)
-		     in
-			if i <> j
-			   then
-			      (
-			       Array2.update
-			       (m, i, j,
-				union_radius
-				(Array.sub(c, i), Array.sub(c, j)));
-			       Array2.update
-			       (m, j, i,
-				union_radius
-				(Array.sub(c, i), Array.sub(c, j))))
-			else ()
-		     end)
-	      end)
+          val c = Array.of_list l
+          val n = Array.length c
+          val m = Array2.array(n, n, infinity)
+          val _ =
+             for(0, n - 1, fn i =>
+                 for(0, n - 1, fn j =>
+                     if i <> j
+                        then Array2.update(m, i, j,
+                                           union_radius
+                                           (Array.sub(c, i), Array.sub(c, j)))
+                     else ()))
+          val remain = Array.init (n, fn i => i)
+          val _ =
+             forDown
+             (n - 1, 1, fn k =>
+              let
+                 val gain = ref infinity
+                 val i0 = ref 0
+                 val j0 = ref 0
+                 val _ =
+                    for(0, k, fn i =>
+                        for(0, k, fn j =>
+                            let
+                               val i' = Array.sub(remain, i)
+                               val j' = Array.sub(remain, j)
+                            in
+                               if Array2.sub(m, i', j') < !gain
+                                  then 
+                                     (gain := Array2.sub(m, i', j')
+                                      ; i0 := i
+                                      ; j0 := j)
+                               else ()
+                            end))
+                 val i = Array.sub(remain, !i0)
+                 val j = Array.sub(remain, !j0)
+              in
+                 Array.update(remain, !j0, Array.sub(remain, k));
+                 Array.update(c, i,
+                              union_bound (Array.sub(c, i), Array.sub(c, j)));
+                 for(0, k - 1, fn j0 =>
+                     let
+                        val j = Array.sub(remain, j0)
+                     in
+                        if i <> j
+                           then
+                              (
+                               Array2.update
+                               (m, i, j,
+                                union_radius
+                                (Array.sub(c, i), Array.sub(c, j)));
+                               Array2.update
+                               (m, j, i,
+                                union_radius
+                                (Array.sub(c, i), Array.sub(c, j))))
+                        else ()
+                     end)
+              end)
        in [Array.sub(c, Array.sub(remain, 0))]
        end
 
@@ -1426,40 +1426,40 @@ fun optimize_rec sc =
       (origin, ~1.0, object_cost kind, sc)
   | SUnion _ =>
        let
-	  val l = List.map optimize_rec (flatten_union sc)
-	  val unbounded = List.filter (fn (_, r, _, _) => r < 0.0) l
-	  val bounded = List.filter (fn (_, r, _, _) => r >= 0.0) l
+          val l = List.map optimize_rec (flatten_union sc)
+          val unbounded = List.filter (fn (_, r, _, _) => r < 0.0) l
+          val bounded = List.filter (fn (_, r, _, _) => r >= 0.0) l
        in
-	  merge_union (opt_union bounded @ unbounded)
+          merge_union (opt_union bounded @ unbounded)
        end
   | SInter (sc1, sc2) =>
        let
-	  val (x1, r1, cost1, sc1) = optimize_rec sc1
-	  val (x2, r2, cost2, sc2) = optimize_rec sc2
+          val (x1, r1, cost1, sc1) = optimize_rec sc1
+          val (x2, r2, cost2, sc2) = optimize_rec sc2
        in
-	  (* XXX We could have a tighter bound... *)
-	  if r2 < 0.0 then
-	     (x2, r2, cost2, SInter (sc1, sc2))
-	  else if r1 < 0.0 then
-	     (x1, r1, cost1, SInter (sc2, sc1))
-	       else if r1 < r2 then
-		  (x1, r1, cost1, SInter (sc1, sc2))
-		    else
-		       (x2, r2, cost1, SInter (sc2, sc1))
+          (* XXX We could have a tighter bound... *)
+          if r2 < 0.0 then
+             (x2, r2, cost2, SInter (sc1, sc2))
+          else if r1 < 0.0 then
+             (x1, r1, cost1, SInter (sc2, sc1))
+               else if r1 < r2 then
+                  (x1, r1, cost1, SInter (sc1, sc2))
+                    else
+                       (x2, r2, cost1, SInter (sc2, sc1))
        end
   | SDiff (sc1, sc2) =>
        let
-	  val (x1, r1, cost1, sc1) = optimize_rec sc1
-	  val dsc2 as (x2, r2, cost2, sc2) = optimize_rec sc2
-	  val (cost2', sc2') = add_bound (r1, dsc2)
+          val (x1, r1, cost1, sc1) = optimize_rec sc1
+          val dsc2 as (x2, r2, cost2, sc2) = optimize_rec sc2
+          val (cost2', sc2') = add_bound (r1, dsc2)
        in
-	  (x1, r1, cost1, SDiff (sc1, sc2'))
+          (x1, r1, cost1, SDiff (sc1, sc2'))
        end
   | SBound (sc1, x, r) =>
        let
-	  val (_, _, cost1, sc1) = optimize_rec sc1
+          val (_, _, cost1, sc1) = optimize_rec sc1
        in
-	  (x, r, cost1, sc1)
+          (x, r, cost1, sc1)
        end
 
 fun optimize sc = #2 (add_bound (~1.0, optimize_rec sc))
@@ -1476,18 +1476,18 @@ fun union (l1, l2) : (float * scene * float * scene) list = (* ES: checked *)
     if t1' < t2
        then i1 :: union(r1, l2)
     else if t2' < t1
-	    then i2 :: union(l1, r2)
-	 else
-	    if t1 < t2 then
-	       if t1' < t2' then
-		  union(r1, (t1, o1, t2', o2')::r2)
-	       else
-		  union((t1, o1, t1', o1')::r1, r2)
-	    else
-	       if t1' < t2' then
-		  union(r1, ((t2, o2, t2', o2')::r2))
-	       else
-		  union((t2, o2, t1', o1')::r1, r2)
+            then i2 :: union(l1, r2)
+         else
+            if t1 < t2 then
+               if t1' < t2' then
+                  union(r1, (t1, o1, t2', o2')::r2)
+               else
+                  union((t1, o1, t1', o1')::r1, r2)
+            else
+               if t1' < t2' then
+                  union(r1, ((t2, o2, t2', o2')::r2))
+               else
+                  union((t2, o2, t1', o1')::r1, r2)
 
 fun inter (l1, l2) : (float * scene * float * scene) list = (* ES: checked *)
   case (l1, l2) of
@@ -1498,18 +1498,18 @@ fun inter (l1, l2) : (float * scene * float * scene) list = (* ES: checked *)
     if t1' <= t2
        then inter(r1, l2)
     else if t2' <= t1
-	    then inter(l1, r2)
-	 else
-	    if t1 < t2 then
-	       if t1' < t2' then
-		  (t2, o2, t1', o1') :: inter(r1, l2)
-	       else
-		  i2 :: inter(l1, r2)
-	    else
-	       if t1' < t2' then
-		  i1 :: inter(r1, l2)
-	       else
-		  (t1, o1, t2', o2') :: inter(l1, r2)
+            then inter(l1, r2)
+         else
+            if t1 < t2 then
+               if t1' < t2' then
+                  (t2, o2, t1', o1') :: inter(r1, l2)
+               else
+                  i2 :: inter(l1, r2)
+            else
+               if t1' < t2' then
+                  i1 :: inter(r1, l2)
+               else
+                  (t1, o1, t2', o2') :: inter(l1, r2)
 
 fun diff (l1, l2) : (float * scene * float * scene) list = (* ES: checked *)
   case (l1, l2) of
@@ -1520,18 +1520,18 @@ fun diff (l1, l2) : (float * scene * float * scene) list = (* ES: checked *)
     if t1' <= t2
        then i1 :: diff(r1, l2)
     else if t2' <= t1
-	    then diff(l1, r2)
-	 else
-	    if t1 < t2 then
-	       if t1' < t2' then
-		  (t1, o1, t2, o2) :: diff(r1, l2)
-	       else
-		  (t1, o1, t2, o2) :: diff((t2', o2', t1', o1') :: r1, r2)
-	    else
-	       if t1' < t2' then
-		  diff(r1, l2)
-	       else
-		  diff((t2', o2', t1', o1') :: r1, r2)
+            then diff(l1, r2)
+         else
+            if t1 < t2 then
+               if t1' < t2' then
+                  (t1, o1, t2, o2) :: diff(r1, l2)
+               else
+                  (t1, o1, t2, o2) :: diff((t2', o2', t1', o1') :: r1, r2)
+            else
+               if t1' < t2' then
+                  diff(r1, l2)
+               else
+                  diff((t2', o2', t1', o1') :: r1, r2)
 
 (* intersection of ray and object *)
 fun plane (orig, dir, scene, eq) : (float * scene * float * scene) list =
@@ -1542,15 +1542,15 @@ fun plane (orig, dir, scene, eq) : (float * scene * float * scene) list =
       val t = ~ porig / pdir
    in
       if porig < 0.0 then
-	 if t > 0.0 then
-	    [(0.0, scene, t, scene)]
-	 else
-	    [(0.0, scene, infinity, scene)]
+         if t > 0.0 then
+            [(0.0, scene, t, scene)]
+         else
+            [(0.0, scene, infinity, scene)]
       else
-	 if t > 0.0 then
-	    [(t, scene, infinity, scene)]
-	 else
-	    []
+         if t > 0.0 then
+            [(t, scene, infinity, scene)]
+         else
+            []
    end
 
 fun band (obj, x, v, i) : (float * scene * float * scene) list = (* ES: checked *)
@@ -1560,15 +1560,15 @@ fun band (obj, x, v, i) : (float * scene * float * scene) list = (* ES: checked 
       val t2' = if t1 >= t2 then t1 else t2
    in
       if t2' < 0.0 then
-	 []
+         []
       else
-	 let val t1' = if t1 <= t2 then t1 else t2
-	 in
-	    if t1' < 0.0 then
-	       [(0.0, obj, t2', obj)]
-	    else
-	       [(t1', obj, t2', obj)]
-	 end
+         let val t1' = if t1 <= t2 then t1 else t2
+         in
+            if t1' < 0.0 then
+               [(0.0, obj, t2', obj)]
+            else
+               [(t1', obj, t2', obj)]
+         end
    end
 
 fun cube (orig, dir, scene, m): (float * scene * float * scene) list =
@@ -1578,11 +1578,11 @@ fun cube (orig, dir, scene, m): (float * scene * float * scene) list =
       val v = vmul (m, dir)
    in
       case band (scene, x, v, #1) of
-	 [] => []
+         [] => []
        | l0 =>
-	    case inter (l0, band (scene, x, v, #2)) of
-	       [] => []
-	     | l1 => inter (l1, band (scene, x, v, #3))
+            case inter (l0, band (scene, x, v, #2)) of
+               [] => []
+             | l1 => inter (l1, band (scene, x, v, #3))
    end
 
 fun sphere (orig, dir, scene, x, r2): (float * scene * float * scene) list =
@@ -1596,18 +1596,18 @@ fun sphere (orig, dir, scene, x, r2): (float * scene * float * scene) list =
       val d2 = v2 - p * p / dir2
       val delta = r2 - d2
    in  if delta <= 0.0
-	  then []
+          then []
        else
-	  let
-	     val sq = sqrt (delta / dir2)
-	     val t1 = p / dir2 - sq
-	     val t2 = p / dir2 + sq
-	  in
-	     if t2 < 0.0
-		then []
-	     else
-		[(max_float (0.0, t1), scene, t2, scene)]
-	  end
+          let
+             val sq = sqrt (delta / dir2)
+             val t1 = p / dir2 - sq
+             val t2 = p / dir2 + sq
+          in
+             if t2 < 0.0
+                then []
+             else
+                [(max_float (0.0, t1), scene, t2, scene)]
+          end
    end
 
 fun ellipsoid (orig, dir, scene, m): (float * scene * float * scene) list =
@@ -1621,17 +1621,17 @@ fun ellipsoid (orig, dir, scene, m): (float * scene * float * scene) list =
       val delta = xv * xv - v2 * (x2 - 2.0)
    in
       if delta <= 0.0 then
-	 []
+         []
       else
-	 let
-	    val sq = sqrt delta
-	    val t1 = (~ xv - sq) / v2
-	    val t2 = (~ xv + sq) / v2
-	 in    if t2 < 0.0 then
-	    []
-	       else
-		  [(max_float (0.0, t1), scene, t2, scene)]
-	 end
+         let
+            val sq = sqrt delta
+            val t1 = (~ xv - sq) / v2
+            val t2 = (~ xv + sq) / v2
+         in    if t2 < 0.0 then
+            []
+               else
+                  [(max_float (0.0, t1), scene, t2, scene)]
+         end
    end
 
 fun cylinder (orig, dir, scene, m): (float * scene * float * scene) list =
@@ -1644,19 +1644,19 @@ fun cylinder (orig, dir, scene, m): (float * scene * float * scene) list =
       val delta = xv * xv - v2 * x2
    in
       if delta <= 0.0 then
-	 []
+         []
       else
-	 let
-	    val sq = sqrt delta
-	    val t1 = (~ xv - sq) / v2
-	    val t2 = (~ xv + sq) / v2
-	 in    if t2 < 0.0 then
-	    []
-	       else
-		  inter
-		  ([(max_float (0.0, t1), scene, t2, scene)],
-		   band (scene, x, v, #2))
-	 end
+         let
+            val sq = sqrt delta
+            val t1 = (~ xv - sq) / v2
+            val t2 = (~ xv + sq) / v2
+         in    if t2 < 0.0 then
+            []
+               else
+                  inter
+                  ([(max_float (0.0, t1), scene, t2, scene)],
+                   band (scene, x, v, #2))
+         end
    end
 
 fun cone (orig, dir, scene, m): (float * scene * float * scene) list = 
@@ -1669,30 +1669,30 @@ fun cone (orig, dir, scene, m): (float * scene * float * scene) list =
       val delta = xv * xv - v2 * x2
    in
       if delta <= 0.0 then
-	 []
+         []
       else
-	 let
-	    val sq = sqrt delta
-	    val t1 = (~ xv - sq) / v2
-	    val t2 = (~ xv + sq) / v2
-	 in
-	    if t1 <= t2 then
-	       if t2 < 0.0 then
-		  []
-	       else
-		  inter
-		  ([(max_float(0.0, t1), scene, t2, scene)],
-		   band (scene, x, v, #2))
-	    else
-	       inter
-	       (if t1 <= 0.0 then
-		   [(0.0, scene, infinity, scene)]
-		else if t2 <= 0.0 then
-		   [(t1, scene, infinity, scene)]
-		     else
-			[(0.0, scene, t2, scene), (t1, scene, infinity, scene)],
-	        band (scene, x, v, #2))
-	 end
+         let
+            val sq = sqrt delta
+            val t1 = (~ xv - sq) / v2
+            val t2 = (~ xv + sq) / v2
+         in
+            if t1 <= t2 then
+               if t2 < 0.0 then
+                  []
+               else
+                  inter
+                  ([(max_float(0.0, t1), scene, t2, scene)],
+                   band (scene, x, v, #2))
+            else
+               inter
+               (if t1 <= 0.0 then
+                   [(0.0, scene, infinity, scene)]
+                else if t2 <= 0.0 then
+                   [(t1, scene, infinity, scene)]
+                     else
+                        [(0.0, scene, t2, scene), (t1, scene, infinity, scene)],
+                band (scene, x, v, #2))
+         end
    end
 
 (* XXX Maybe we should check whether the sphere is completely behind us ? *)
@@ -1725,30 +1725,30 @@ fun find_all (orig, dir, scene) =
       plane (orig, dir, scene, eq)
   | SBound (sc, x, r2) =>
       if intersect (orig, dir, x, r2)
-	 then find_all (orig, dir, sc)
+         then find_all (orig, dir, sc)
       else []
   | SUnion (sc1, sc2) =>
       union (find_all (orig, dir, sc1), find_all (orig, dir, sc2))
   | SInter (sc1, sc2) =>
       let val l1 = find_all (orig, dir, sc1)
       in
-	 case l1 of
-	    [] => []
-	  | _ => inter(l1, find_all (orig, dir, sc2))
+         case l1 of
+            [] => []
+          | _ => inter(l1, find_all (orig, dir, sc2))
       end
   | SDiff (sc1, sc2) =>
       let val l1 = find_all(orig, dir, sc1)
       in
-	 case l1 of
-	    [] => []
-	  | _ => diff(l1, find_all(orig, dir, sc2))
+         case l1 of
+            [] => []
+          | _ => diff(l1, find_all(orig, dir, sc2))
       end
 
 fun filter_inter_list l =
   case l of
     (t, _, _, _)::r =>
        if t < epsilon
-	  then filter_inter_list r
+          then filter_inter_list r
        else l
   | _ => l
 
@@ -1756,7 +1756,7 @@ fun hit_from_inter bounded l0 =
   let val l = filter_inter_list l0
   in
      case l of
-	[] => false
+        [] => false
       | (t, _, _, _)::r => (not bounded orelse  t <= 1.0)
   end
 
@@ -1764,21 +1764,21 @@ fun hit(orig, dir, scene, bounded) =
   case scene of
     SObj (kind, _, m) =>
        (case
-	   (case kind of
-	       SSphere (x, r2) => sphere (orig, dir, scene, x, r2)
-	     | SEllips         => ellipsoid (orig, dir, scene, m)
-	     | SCube _         => cube (orig, dir, scene, m)
-	     | SCylind _       => cylinder (orig, dir, scene, m)
-	     | SCone _         => cone (orig, dir, scene, m)
-	     | SPlane (eq, _)  => plane (orig, dir, scene, eq)) of
-	       [] => false
-	     | [(t, _, _, _)] =>
-		  if bounded andalso t > 1.0
-		     then false
-		  else if t < epsilon
-			  then false
-		       else true
-	     | _ => true)
+           (case kind of
+               SSphere (x, r2) => sphere (orig, dir, scene, x, r2)
+             | SEllips         => ellipsoid (orig, dir, scene, m)
+             | SCube _         => cube (orig, dir, scene, m)
+             | SCylind _       => cylinder (orig, dir, scene, m)
+             | SCone _         => cone (orig, dir, scene, m)
+             | SPlane (eq, _)  => plane (orig, dir, scene, eq)) of
+               [] => false
+             | [(t, _, _, _)] =>
+                  if bounded andalso t > 1.0
+                     then false
+                  else if t < epsilon
+                          then false
+                       else true
+             | _ => true)
   | SBound (sc, x, r2) =>
       intersect (orig, dir, x, r2)  andalso hit (orig, dir, sc, bounded)
   | SUnion (sc1, sc2) =>
@@ -1786,17 +1786,17 @@ fun hit(orig, dir, scene, bounded) =
   | SInter (sc1, sc2) =>
       let val l1 = find_all (orig, dir, sc1)
       in
-	 case l1 of
-	    [] => false
-	  | _ => hit_from_inter bounded (inter(l1, find_all (orig, dir, sc2)))
+         case l1 of
+            [] => false
+          | _ => hit_from_inter bounded (inter(l1, find_all (orig, dir, sc2)))
       end
   | SDiff (sc1, sc2) =>
       let
-	 val l1 = find_all(orig, dir, sc1)
+         val l1 = find_all(orig, dir, sc1)
       in
-	 case l1 of
-	    [] => false
-	  | _ => hit_from_inter bounded (diff(l1, find_all(orig, dir, sc2)))
+         case l1 of
+            [] => false
+          | _ => hit_from_inter bounded (diff(l1, find_all(orig, dir, sc2)))
       end
 
 fun visible (desc: desc, orig, dir, bounded) =
@@ -1822,22 +1822,22 @@ fun angle (si, co) =
 fun texture_coord (kind, x: v) = (* section 3.6 *) (* ES: checked *)
    let
       fun ellipsOrSphere() =
-	 let
-	    val y = #2 x
-	    val v = (y + 1.0) * 0.5
-	 in
-	    if v < epsilon
-	       then [VFloat v, VFloat 0.0, VInt 0]
-	    else
-	       let
-		  val u = angle (#1 x, #3 x / sqrt (1.0 - y * y))
-	       in
-		  [VFloat v, VFloat u, VInt 0]
-	       end
-	 end
+         let
+            val y = #2 x
+            val v = (y + 1.0) * 0.5
+         in
+            if v < epsilon
+               then [VFloat v, VFloat 0.0, VInt 0]
+            else
+               let
+                  val u = angle (#1 x, #3 x / sqrt (1.0 - y * y))
+               in
+                  [VFloat v, VFloat u, VInt 0]
+               end
+         end
    in  (* [v; u; face] *)
       case kind of
-	 SEllips => ellipsOrSphere()
+         SEllips => ellipsOrSphere()
        | SSphere _ => ellipsOrSphere()
        | SCube _ =>
       if abs_float (#3 x) < epsilon then
@@ -1859,27 +1859,27 @@ fun texture_coord (kind, x: v) = (* section 3.6 *) (* ES: checked *)
         [VFloat (((#3 x) + 1.0) * 0.5), VFloat (((#1 x) + 1.0) * 0.5), VInt 1]
       else
         let
-	   val u = angle (#1 x, #3 x)
-	in
-	   [VFloat (#2 x), VFloat u, VInt 0]
-	end
+           val u = angle (#1 x, #3 x)
+        in
+           [VFloat (#2 x), VFloat u, VInt 0]
+        end
   | SCone _ =>
       let val v = (#2 x)
       in
-	 if abs_float v < epsilon then
-	    [VFloat v, VFloat 0.0, VInt 0]
-	 else
-	    if abs_float ((#2 x) - 1.0) < epsilon
-	       then
-		  [VFloat (((#3 x) + 1.0) * 0.5),
-		   VFloat (((#1 x) + 1.0) * 0.5),
-		   VInt 1]
-	    else
-	       let
-		  val u = angle (#1 x, (#3 x) / v)
-	       in
-		  [VFloat v, VFloat u, VInt 0]
-	       end
+         if abs_float v < epsilon then
+            [VFloat v, VFloat 0.0, VInt 0]
+         else
+            if abs_float ((#2 x) - 1.0) < epsilon
+               then
+                  [VFloat (((#3 x) + 1.0) * 0.5),
+                   VFloat (((#1 x) + 1.0) * 0.5),
+                   VInt 1]
+            else
+               let
+                  val u = angle (#1 x, (#3 x) / v)
+               in
+                  [VFloat v, VFloat u, VInt 0]
+               end
       end
   | SPlane _ =>
       [VFloat (#3 x), VFloat (#1 x), VInt 0]
@@ -1892,37 +1892,37 @@ fun normal (kind, m, x', x) =
   | SEllips =>
       let val (n0, n1, n2, _) = vmul (transpose m, x')
       in
-	 normalize(n0, n1, n2, 0.0)
+         normalize(n0, n1, n2, 0.0)
       end
   | SCylind n =>
       if abs_float (#2 x') < epsilon
-	 orelse abs_float (#2 x') - 1.0 < epsilon then
+         orelse abs_float (#2 x') - 1.0 < epsilon then
         n
       else
         (* XXX Could be optimized... *)
         let
-	   val (n0, n1, n2, _) = vmul (transpose m, (#1 x', 0.0, #3 x', 0.0))
-	in
-	   normalize(n0, n1, n2, 0.0)
-	end
+           val (n0, n1, n2, _) = vmul (transpose m, (#1 x', 0.0, #3 x', 0.0))
+        in
+           normalize(n0, n1, n2, 0.0)
+        end
   | SCone n =>
       if abs_float (#2 x') - 1.0 < epsilon
-	 then n
+         then n
       else
         let
-	   val (n0, n1, n2, _) =
-	      vmul (transpose m, (#1 x', ~(#2 x'), #3 x', 0.0))
-	in
-	   normalize(n0, n1, n2, 0.0)
-	end
+           val (n0, n1, n2, _) =
+              vmul (transpose m, (#1 x', ~(#2 x'), #3 x', 0.0))
+        in
+           normalize(n0, n1, n2, 0.0)
+        end
   | SCube (nx, ny, nz) =>
       if abs_float (#3 x') < epsilon
-	 orelse abs_float (#3 x') - 1.0 < epsilon
-	 then nz
+         orelse abs_float (#3 x') - 1.0 < epsilon
+         then nz
       else if abs_float (#1 x') < epsilon
- 	      orelse abs_float (#1 x') - 1.0 < epsilon
-	      then nx
-	   else ny
+              orelse abs_float (#1 x') - 1.0 < epsilon
+              then nx
+           else ny
   | SPlane (_, n) =>
       n
 
@@ -1939,7 +1939,7 @@ fun trace (desc: desc, depth: int, orig, dir) =
       val dir = normalize dir
    in
       case filter_inter_list (find_all(orig, dir, #scene desc)) of
-	 [] => black
+         [] => black
        | (t, ob, _, _) :: _ => trace_2(desc, depth, orig, dir, t, ob)
    end
 
@@ -1948,134 +1948,134 @@ and trace_2 (desc, depth: int, orig, dir, t, obj) =
       val x = add_scaled (orig, t, dir)
    in
       case obj of
-	 SObj (kind, f, m) =>
-	    let
-	       val x' = vmul (m, x)
-	       val (n, ks, kd, cr, cg, cb) =
-		  (case !f of
-		      Unopt g =>
-			 (* First we check whether the function would fail *)
-			 let
-			    val res = apply_surface_fun(g, texture_coord(kind, x'))
-			    fun stuck() = f := Opt (!inline_closure g)
-			 in
-			    (* Then, we check whether it is a constant function *)
-			    ((ignore (apply_surface_fun(g, 
-				      [VInt 0, VInt 0, VFloat 0.0]))
-			      ; f := Cst res)
-			     handle Stuck_computation _ => stuck()
-				  | Stuck_computation' => stuck())
-			    ; res
-			 end
-		    | Opt g =>
-			 apply_surface_fun (g, texture_coord (kind, x'))
-		    | Cst res =>
-			 res)
+         SObj (kind, f, m) =>
+            let
+               val x' = vmul (m, x)
+               val (n, ks, kd, cr, cg, cb) =
+                  (case !f of
+                      Unopt g =>
+                         (* First we check whether the function would fail *)
+                         let
+                            val res = apply_surface_fun(g, texture_coord(kind, x'))
+                            fun stuck() = f := Opt (!inline_closure g)
+                         in
+                            (* Then, we check whether it is a constant function *)
+                            ((ignore (apply_surface_fun(g, 
+                                      [VInt 0, VInt 0, VFloat 0.0]))
+                              ; f := Cst res)
+                             handle Stuck_computation _ => stuck()
+                                  | Stuck_computation' => stuck())
+                            ; res
+                         end
+                    | Opt g =>
+                         apply_surface_fun (g, texture_coord (kind, x'))
+                    | Cst res =>
+                         res)
                val nm = normal (kind, m, x', x)
-	       val p = prod (dir, nm)
-	       val nm = if p > 0.0 then neg nm else nm
-	       val p = ~(abs_float p)
-	       (* Ambient composant *)
-	       val (ar, ag, ab) = #amb desc
-	       val r = ref (kd * ar)
-	       val g = ref (kd * ag)
-	       val b = ref (kd * ab)
-		  (* Lights *)
-	       val lights = #lights desc
-	       val _ =
-		  for(0, Array.length lights - 1, fn i =>
-		      case (Array.sub(lights, i)) of
-			 Light (ldir, (lr, lg, lb)) =>
-			    let
-			       val p' = prod (ldir, nm)
-			    in
-			       if p' > 0.0 andalso visible (desc, x, ldir, false)
-				  then
-				     let
-					val int =
-					   if ks > epsilon then
-					      kd * p' +
-					      ks * prod (normalize
-							 (sub (ldir, dir)),
-							 nm) ** n
-					   else
-					      kd * p'
-				     in
-					r := !r + int * lr;
-					g := !g + int * lg;
-					b := !b + int * lb
-				     end
-			       else ()
-			    end
-		       | PtLight (src, (lr, lg, lb)) =>
-			    let
-			       val ldir = sub (src, x)
-			       val ldir' = normalize ldir
-			       val p' = prod (ldir', nm)
-			    in
-			       if p' > 0.0 andalso visible(desc, x, ldir, true)
-				  then
-				     let
-					val int =
-					   if ks > epsilon
-					      then
-						 kd * p' +
-						 ks * prod (normalize (sub (ldir', dir)),
-							    nm) ** n
-					   else
-					      kd * p'
-					val int = 100.0 * int / (99.0 + square ldir)
-				     in
-					r := !r + int * lr;
-					g := !g + int * lg;
-					b := !b + int * lb
-				     end
-			       else ()
-			    end
-		       | StLight (src, maindir, (lr, lg, lb), cutoff, exp) =>
-			    let
-			       val ldir = sub (src, x)
-			       val ldir' = normalize ldir
-			       val p' = prod (ldir', nm)
-			       val p'' = prod (ldir', maindir)
-			    in
-			       if p' > 0.0 andalso p'' > cutoff
-				  andalso visible(desc, x, ldir, true)
-				  then
-				     let
-					val int =
-					   if ks > epsilon
-					      then
-						 kd * p' +
-						 ks * prod (normalize (sub(ldir', dir)),
-							    nm) ** n
-					   else
-					      kd * p'
-					val int =
-					   100.0 * int / (99.0 + square ldir) *
-					   (p'' ** exp)
-				     in
-					r := !r + int * lr;
-					g := !g + int * lg;
-					b := !b + int * lb
-				     end
-			       else ()
-			    end)
-	       val _ =
-		  (* Reflexion *)
-		  if ks > epsilon  andalso depth > 0
-		     then
-			let
-			   val dir' = add_scaled (dir, ~2.0 * p, nm)
-			   val (r', g', b') = trace(desc, depth - 1, x, dir')
-			in
-			   r := !r + ks * r';
-			   g := !g + ks * g';
-			   b := !b + ks * b'
-			end
-		  else ()
-	    in (!r * cr, !g * cg, !b * cb)
-	    end
+               val p = prod (dir, nm)
+               val nm = if p > 0.0 then neg nm else nm
+               val p = ~(abs_float p)
+               (* Ambient composant *)
+               val (ar, ag, ab) = #amb desc
+               val r = ref (kd * ar)
+               val g = ref (kd * ag)
+               val b = ref (kd * ab)
+                  (* Lights *)
+               val lights = #lights desc
+               val _ =
+                  for(0, Array.length lights - 1, fn i =>
+                      case (Array.sub(lights, i)) of
+                         Light (ldir, (lr, lg, lb)) =>
+                            let
+                               val p' = prod (ldir, nm)
+                            in
+                               if p' > 0.0 andalso visible (desc, x, ldir, false)
+                                  then
+                                     let
+                                        val int =
+                                           if ks > epsilon then
+                                              kd * p' +
+                                              ks * prod (normalize
+                                                         (sub (ldir, dir)),
+                                                         nm) ** n
+                                           else
+                                              kd * p'
+                                     in
+                                        r := !r + int * lr;
+                                        g := !g + int * lg;
+                                        b := !b + int * lb
+                                     end
+                               else ()
+                            end
+                       | PtLight (src, (lr, lg, lb)) =>
+                            let
+                               val ldir = sub (src, x)
+                               val ldir' = normalize ldir
+                               val p' = prod (ldir', nm)
+                            in
+                               if p' > 0.0 andalso visible(desc, x, ldir, true)
+                                  then
+                                     let
+                                        val int =
+                                           if ks > epsilon
+                                              then
+                                                 kd * p' +
+                                                 ks * prod (normalize (sub (ldir', dir)),
+                                                            nm) ** n
+                                           else
+                                              kd * p'
+                                        val int = 100.0 * int / (99.0 + square ldir)
+                                     in
+                                        r := !r + int * lr;
+                                        g := !g + int * lg;
+                                        b := !b + int * lb
+                                     end
+                               else ()
+                            end
+                       | StLight (src, maindir, (lr, lg, lb), cutoff, exp) =>
+                            let
+                               val ldir = sub (src, x)
+                               val ldir' = normalize ldir
+                               val p' = prod (ldir', nm)
+                               val p'' = prod (ldir', maindir)
+                            in
+                               if p' > 0.0 andalso p'' > cutoff
+                                  andalso visible(desc, x, ldir, true)
+                                  then
+                                     let
+                                        val int =
+                                           if ks > epsilon
+                                              then
+                                                 kd * p' +
+                                                 ks * prod (normalize (sub(ldir', dir)),
+                                                            nm) ** n
+                                           else
+                                              kd * p'
+                                        val int =
+                                           100.0 * int / (99.0 + square ldir) *
+                                           (p'' ** exp)
+                                     in
+                                        r := !r + int * lr;
+                                        g := !g + int * lg;
+                                        b := !b + int * lb
+                                     end
+                               else ()
+                            end)
+               val _ =
+                  (* Reflexion *)
+                  if ks > epsilon  andalso depth > 0
+                     then
+                        let
+                           val dir' = add_scaled (dir, ~2.0 * p, nm)
+                           val (r', g', b') = trace(desc, depth - 1, x, dir')
+                        in
+                           r := !r + ks * r';
+                           g := !g + ks * g';
+                           b := !b + ks * b'
+                        end
+                  else ()
+            in (!r * cr, !g * cg, !b * cb)
+            end
        | _ => raise(Fail "assert false")
    end
 
@@ -2084,8 +2084,8 @@ fun conv c : int =
       val i = truncate (c * 256.0)
    in
       if i < 0 then 0 else
-	 if i >= 256 then 255 else
-	    i
+         if i >= 256 then 255 else
+            i
    end
 
 fun f (amb, lights, obj, depth: int, fov, wid, ht, file) =
@@ -2101,17 +2101,17 @@ fun f (amb, lights, obj, depth: int, fov, wid, ht, file) =
       val desc = { amb = amb, lights = intern_lights lights, scene = scene }
    in
       for(0, ht - 1, fn j =>
-	  for(0, wid - 1, fn i =>
-	      let
-		 val dir =
-		    (x0 + (float i + 0.5) * delta,
-		     y0 - (float j + 0.5) * delta,
-		     1.0,
-		     0.0)
-		 val (r, g, b) = trace(desc, depth, orig, dir)
-	      in
-		 Ppm.setp (img, i, j, conv r, conv g, conv b)
-	      end))
+          for(0, wid - 1, fn i =>
+              let
+                 val dir =
+                    (x0 + (float i + 0.5) * delta,
+                     y0 - (float j + 0.5) * delta,
+                     1.0,
+                     0.0)
+                 val (r, g, b) = trace(desc, depth, orig, dir)
+              in
+                 Ppm.setp (img, i, j, conv r, conv g, conv b)
+              end))
       ; Ppm.dump (file, img)
    end
 
@@ -2137,45 +2137,45 @@ fun lookup (env, s) : int =
   case env of
      [] => failwith ("Unbound variable \"" ^ s ^ "\"")
    | s' :: env' =>
-	if s = s'
-	   then 0
-	else 1 + (lookup(env', s))
+        if s = s'
+           then 0
+        else 1 + (lookup(env', s))
 
 (* XXX embed values *)
 fun conv (absenv, p) =
    case p of
       [] => []
     | Float x :: Float y :: Float z :: Prim Point :: r =>
-	 Val' (VPoint (VFloat x, VFloat y, VFloat z)) :: conv(absenv, r)
+         Val' (VPoint (VFloat x, VFloat y, VFloat z)) :: conv(absenv, r)
     | t :: r =>
-	 (case t of
-	     Fun p' => Fun' (conv(absenv, p')) :: conv(absenv, r)
-	   | Arr p' => Arr' (conv(absenv, p')) :: conv(absenv, r)
-	   | Ident s => Ident' (lookup(absenv, s)) :: conv(absenv, r)
-	   | Binder s => Binder' :: conv (s :: absenv, r)
-	   | Int i => Val' (VInt i) :: conv(absenv, r)
-	   | Float f => Val' (VFloat f) :: conv(absenv, r)
-	   | Bool b => Val' (VBool b) :: conv(absenv, r)
-	   | String s => Val' (VStr s) :: conv(absenv, r)
-	   | Prim k => Prim' k :: conv(absenv, r))
+         (case t of
+             Fun p' => Fun' (conv(absenv, p')) :: conv(absenv, r)
+           | Arr p' => Arr' (conv(absenv, p')) :: conv(absenv, r)
+           | Ident s => Ident' (lookup(absenv, s)) :: conv(absenv, r)
+           | Binder s => Binder' :: conv (s :: absenv, r)
+           | Int i => Val' (VInt i) :: conv(absenv, r)
+           | Float f => Val' (VFloat f) :: conv(absenv, r)
+           | Bool b => Val' (VBool b) :: conv(absenv, r)
+           | String s => Val' (VStr s) :: conv(absenv, r)
+           | Prim k => Prim' k :: conv(absenv, r))
 
 fun inline (offset, env, p) =
    case p of
       [] => []
     | t :: r =>
-	 let
-	    fun normal() = t :: inline(offset, env, r)
-	 in case t of
-	    Fun' p' => Fun' (inline(offset, env, p')) :: inline(offset, env, r)
-	  | Arr' p' => Arr' (inline(offset, env, p')) :: inline(offset, env, r)
-	  | Ident' i =>
-	       if i >= offset
-		  then Val' (List.nth (env, i - offset)) :: inline(offset, env, r)
-	       else normal()
-	  | Binder' => Binder' :: inline (1 + offset, env, r)
-	  | Prim' _ => normal()
-	  | Val' _ => normal()
-	 end
+         let
+            fun normal() = t :: inline(offset, env, r)
+         in case t of
+            Fun' p' => Fun' (inline(offset, env, p')) :: inline(offset, env, r)
+          | Arr' p' => Arr' (inline(offset, env, p')) :: inline(offset, env, r)
+          | Ident' i =>
+               if i >= offset
+                  then Val' (List.nth (env, i - offset)) :: inline(offset, env, r)
+               else normal()
+          | Binder' => Binder' :: inline (1 + offset, env, r)
+          | Prim' _ => normal()
+          | Val' _ => normal()
+         end
 
 val inline_closure =
    fn (VClos (env, p)) => VClos ([], inline(0, env, p))
@@ -2292,7 +2292,7 @@ fun eval (env, st, p) =
                            Matrix.scale (x, y, z),
                            Matrix.unscale (x, y, z),
                            Real.max (abs_float x,
-				     (Real.max (abs_float y, abs_float z))),
+                                     (Real.max (abs_float y, abs_float z))),
                            false)) :: st'),
         r)
   | (VFloat s :: VObj ob :: st', Prim' Uscale :: r) =>
@@ -2364,7 +2364,7 @@ fun f p =
       val st = eval([], [], (conv([], p)))
    in
       case st of
-	 [] => ()
+         [] => ()
        | _ => failwith "error"
    end handle Stuck_computation (env, st, p) => failwith "stuck"
       
@@ -2372,17 +2372,17 @@ end
 structure Main =
    struct
       fun doit () =
-	 Eval.f (Program.read (TextIO.openIn "DATA/chess.gml"))
-	 handle _ => ()
+         Eval.f (Program.read (TextIO.openIn "DATA/chess.gml"))
+         handle _ => ()
 
       val doit =
-	 fn n =>
-	 let
-	    fun loop n =
-	       if n = 0
-		  then ()
-	       else (doit();
-		     loop(n-1))
-	 in loop n
-	 end
+         fn n =>
+         let
+            fun loop n =
+               if n = 0
+                  then ()
+               else (doit();
+                     loop(n-1))
+         in loop n
+         end
    end

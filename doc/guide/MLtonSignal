@@ -1,0 +1,444 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>MLtonSignal - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      MLtonSignal
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_SIGNAL =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> signal </FONT></B>=<FONT COLOR="#228B22"><B> t
+
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Handler:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> default: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> handler: (Thread.Runnable.t -&gt; Thread.Runnable.t) -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> ignore: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> isDefault: t -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> isIgnore: t -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> simple: (unit -&gt; unit) -&gt; t
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Mask:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+               
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> all: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> allBut: signal list -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> block: t -&gt; unit
+            <B><FONT COLOR="#A020F0">val</FONT></B> getBlocked: unit -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> isMember: t * signal -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> none: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> setBlocked: t -&gt; unit
+            <B><FONT COLOR="#A020F0">val</FONT></B> some: signal list -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> unblock: t -&gt; unit
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> getHandler: t -&gt; Handler.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> handled: unit -&gt; Mask.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> prof: t
+      <B><FONT COLOR="#A020F0">val</FONT></B> restart: bool ref
+      <B><FONT COLOR="#A020F0">val</FONT></B> setHandler: t * Handler.t -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> suspend: Mask.t -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> vtalrm: t
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+<p>
+Signals handlers are functions from (runnable) threads to (runnable) threads.  When a signal arrives, the corresponding signal handler is invoked, its argument being the thread that was interrupted by the signal.  The signal handler runs asynchronously, in its own thread. The signal handler returns the thread that it would like to resume execution (this is often the thread that it was passed).  It is an error for a signal handler to raise an exception that is not handled within the signal handler itself. 
+</p>
+<p>
+A signal handler is never invoked while the running thread is in a critical section (see <a href="MLtonThread">MLtonThread</a>).  Invoking a signal handler implicitly enters a critical section and the normal return of a signal handler implicitly exits the critical section; hence, a signal handler is never interrupted by another signal handler. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>type&nbsp;t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the type of signals. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;Handler.t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the type of signal handlers. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.default</tt> 
+</p>
+</li>
+
+        <ul>
+
+  handles the signal with the default action. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.handler&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns a handler <tt>h</tt> such that when a signal <tt>s</tt> is handled   by <tt>h</tt>, <tt>f</tt> will be passed the thread that was interrupted by   <tt>s</tt> and should return the thread that will resume execution. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.ignore</tt> 
+</p>
+</li>
+
+        <ul>
+
+  is a handler that will ignore the signal. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.isDefault</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns true if the handler is the default handler. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.isIgnore</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns true if the handler is the ignore handler. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Handler.simple&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns a handler that executes <tt>f&nbsp;()</tt> and does not switch   threads. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>type&nbsp;Mask.t</tt> 
+</p>
+</li>
+
+        <ul>
+
+  the type of signal masks, which are sets of blocked signals. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.all</tt> 
+</p>
+</li>
+
+        <ul>
+
+  a mask of all signals. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.allBut&nbsp;l</tt> 
+</p>
+</li>
+
+        <ul>
+
+  a mask of all signals except for those in <tt>l</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.block&nbsp;m</tt> 
+</p>
+</li>
+
+        <ul>
+
+  blocks all signals in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.getBlocked&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  gets the signal mask <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.isMember&nbsp;(m,&nbsp;s)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns true if the signal <tt>s</tt> is in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.none</tt> 
+</p>
+</li>
+
+        <ul>
+
+  a mask of no signals. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.setBlocked&nbsp;m</tt> 
+</p>
+</li>
+
+        <ul>
+
+  sets the signal mask to <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.some&nbsp;l</tt> 
+</p>
+</li>
+
+        <ul>
+
+  a mask of the signals in <tt>l</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>Mask.unblock&nbsp;m</tt> 
+</p>
+</li>
+
+        <ul>
+
+  unblocks all signals in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getHandler&nbsp;s</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the current handler for signal <tt>s</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>handled&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  returns the signal mask <tt>m</tt> corresponding to the currently handled   signals; i.e., a signal is handled if and only if it is in <tt>m</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>prof</tt> 
+</p>
+</li>
+
+        <ul>
+
+  <tt>SIGPROF</tt>, the profiling signal. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>restart</tt> 
+</p>
+</li>
+
+        <ul>
+
+  dynamically determines the behavior of interrupted system calls; when   <tt>true</tt>, interrupted system calls are restarted; when <tt>false</tt>,   interrupted system calls raise <tt>OS.SysError</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>setHandler&nbsp;(s,&nbsp;h)</tt> 
+</p>
+</li>
+
+        <ul>
+
+  sets the handler for signal <tt>s</tt> to <tt>h</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>suspend&nbsp;m</tt> 
+</p>
+</li>
+
+        <ul>
+
+  temporarily sets the signal mask to <tt>m</tt> and suspends until an   unmasked signal is received and handled, at which point   <tt>suspend</tt> resets the mask and returns. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>vtalrm</tt> 
+</p>
+</li>
+
+        <ul>
+
+  <tt>SIGVTALRM</tt>, the signal for virtual timers. 
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-f8a475209a6f55001051eae0624aca8b3a75b651">Interruptible System Calls</h2>
+<p>
+Signal handling interacts in a non-trivial way with those functions in the <a href="BasisLibrary">Basis Library</a> that correspond directly to interruptible system calls (a subset of those functions that may raise <tt>OS.SysError</tt>).  The desire is that these functions should have predictable semantics.  The principal concerns are: 
+</p>
+
+    <ol type="1">
+
+    <li>
+<p>
+System calls that are interrupted by signals should, by default, be  restarted; the alternative is to raise   
+<pre> OS.SysError (Posix.Error.errorMsg Posix.Error.intr, 
+              SOME Posix.Error.intr)</pre> This behavior is determined dynamically by the value of <tt>Signal.restart</tt>. 
+</p>
+</li>
+    <li class="gap">
+<p>
+Signal handlers should always get a chance to run (when outside a  critical region).  If a system call is interrupted by a signal, then  the signal handler will run before the call is restarted or  <tt>OS.SysError</tt> is raised; that is, before the <tt>Signal.restart</tt>  check. 
+</p>
+</li>
+    <li class="gap">
+<p>
+A system call that must be restarted while in a critical section  will be restarted with the handled signals blocked (and the previously  blocked signals remembered).  This encourages the system call to  complete, allowing the program to make progress towards leaving the  critical section where the signal can be handled.  If the system call  completes, the set of blocked signals are restored to those previously  blocked. 
+</p>
+</li>
+</ol>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-02 04:22:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

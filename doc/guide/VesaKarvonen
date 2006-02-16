@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>VesaKarvonen - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      VesaKarvonen
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Vesa Karvonen is a student at the <a class="external" href="http://www.cs.helsinki.fi/index.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">University of Helsinki</a>. His interests lie in the design and implementation of programming languages. <p>
+Things he'd like to see for SML and hopes to be able to contribute towards: 
+</p>
+
+        <ul>
+
+        <li>
+<p>
+ A practical tool for documenting libraries. Preferably one that is   based on extracting the documentation from source code comments. 
+</p>
+</li>
+        <li class="gap">
+<p>
+ A good IDE. Possibly an enhanced SML mode (<tt>esml-mode</tt>) for Emacs.   Google for <a class="external" href="http://www.google.com/search?&amp;q=SLIME+video"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SLIME video</a> to   get an idea of what he'd like to see. Some specific notes: 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ show type at point 
+</p>
+</li>
+                <li>
+<p>
+ robust, consistent indentation 
+</p>
+</li>
+                <li>
+<p>
+ show documentation 
+</p>
+</li>
+                <li>
+<p>
+ jump to definition 
+</p>
+</li>
+
+                </ul>
+
+
+        <li class="gap">
+<p>
+ Documented and cataloged libraries. Perhaps something like   <a class="external" href="http://www.boost.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Boost</a>, but for SML libraries. 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-08-12 13:52:37 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+</body></html>

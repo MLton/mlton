@@ -51,8 +51,8 @@ signature MONO_VECTOR_EXTRA =
       include MONO_VECTOR_EXTRA_PRE
 
       structure MonoVectorSlice: MONO_VECTOR_SLICE_EXTRA 
-	 where type elem = elem
-	   and type vector = vector
+         where type elem = elem
+           and type vector = vector
    end
 
 signature EQTYPE_MONO_VECTOR_EXTRA =
@@ -60,8 +60,8 @@ signature EQTYPE_MONO_VECTOR_EXTRA =
       include MONO_VECTOR_EXTRA_PRE
 
       structure MonoVectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA 
-	 where type elem = elem
-	   and type vector = vector
+         where type elem = elem
+           and type vector = vector
 
       val fromPoly: elem Vector.vector -> vector 
       val toPoly: vector -> elem Vector.vector

@@ -41,10 +41,10 @@ signature PRE_REAL =
       val nextAfterUp: real -> real
       val precision: int
       val radix: int
-      val signBit: real -> bool
+      val signBit: real -> int
       val strto: NullString.t -> real
       val toInt: real -> int
-      val toLarge: real -> LargeReal.real	 
+      val toLarge: real -> LargeReal.real        
   end
 
 signature REAL_GLOBAL =

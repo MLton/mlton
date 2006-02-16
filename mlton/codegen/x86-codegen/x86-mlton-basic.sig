@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
 
 signature X86_MLTON_BASIC_STRUCTS =
@@ -50,30 +51,30 @@ signature X86_MLTON_BASIC =
      *)
     structure Classes :
       sig
-	val Heap : x86.MemLoc.Class.t
-	val Stack : x86.MemLoc.Class.t
-	val Locals : x86.MemLoc.Class.t
-	val Globals : x86.MemLoc.Class.t
+        val Heap : x86.MemLoc.Class.t
+        val Stack : x86.MemLoc.Class.t
+        val Locals : x86.MemLoc.Class.t
+        val Globals : x86.MemLoc.Class.t
 
-	val Temp : x86.MemLoc.Class.t
-	val StaticTemp : x86.MemLoc.Class.t
-	val CStack : x86.MemLoc.Class.t
-	val Code : x86.MemLoc.Class.t
+        val Temp : x86.MemLoc.Class.t
+        val StaticTemp : x86.MemLoc.Class.t
+        val CStack : x86.MemLoc.Class.t
+        val Code : x86.MemLoc.Class.t
 
-	val CStatic : x86.MemLoc.Class.t
-	val StaticNonTemp : x86.MemLoc.Class.t
-	  
-	val GCState : x86.MemLoc.Class.t
-	val GCStateHold : x86.MemLoc.Class.t
-	val GCStateVolatile : x86.MemLoc.Class.t
-	  
-	val allClasses : x86.ClassSet.t ref
-	val livenessClasses : x86.ClassSet.t ref
-	val holdClasses : x86.ClassSet.t ref
-	val volatileClasses : x86.ClassSet.t ref
-	val runtimeClasses : x86.ClassSet.t ref
-	val heapClasses : x86.ClassSet.t ref
-	val cstaticClasses : x86.ClassSet.t ref
+        val CStatic : x86.MemLoc.Class.t
+        val StaticNonTemp : x86.MemLoc.Class.t
+          
+        val GCState : x86.MemLoc.Class.t
+        val GCStateHold : x86.MemLoc.Class.t
+        val GCStateVolatile : x86.MemLoc.Class.t
+          
+        val allClasses : x86.ClassSet.t ref
+        val livenessClasses : x86.ClassSet.t ref
+        val holdClasses : x86.ClassSet.t ref
+        val volatileClasses : x86.ClassSet.t ref
+        val runtimeClasses : x86.ClassSet.t ref
+        val heapClasses : x86.ClassSet.t ref
+        val cstaticClasses : x86.ClassSet.t ref
       end
 
     (* CStack locations *)

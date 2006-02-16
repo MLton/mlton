@@ -4,7 +4,7 @@ val _ =
    case 2 of
       2 => 3
     | 3 => 4
-	 
+         
 val _ =
    case [] of
       [] => 1

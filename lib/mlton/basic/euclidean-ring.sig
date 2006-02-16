@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature EUCLIDEAN_RING_STRUCTS =
    sig
       include RING_WITH_IDENTITY
@@ -26,7 +27,7 @@ signature EUCLIDEAN_RING_STRUCTS =
 signature EUCLIDEAN_RING =
    sig
       include EUCLIDEAN_RING_STRUCTS
-	 
+         
       val div: t * t -> t
       val divides: t * t -> bool
       val extendedEuclid: t * t -> t * t * t

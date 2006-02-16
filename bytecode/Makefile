@@ -1,7 +1,24 @@
+## Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ #    Jagannathan, and Stephen Weeks.
+ #
+ # MLton is released under a BSD-style license.
+ # See the file MLton-LICENSE for details.
+ ##
+
+TARGET_ARCH = $(shell ../bin/host-arch)
+
 all: interpret.o interpret-gdb.o print-opcodes
 
-CC = gcc -std=c99
+CC = gcc -std=gnu99
 CFLAGS = -fomit-frame-pointer -I../runtime -I../include -Wall
+
+ifeq ($(TARGET_ARCH), amd64)
+CFLAGS += -mtune=opteron -m32 
+endif 
+
+ifeq ($(TARGET_OS), freebsd)
+CFLAGS += -I/usr/local/include
+endif
 
 interpret.o: interpret.c interpret.h opcode.h
 	$(CC) $(CFLAGS) -c -O2 interpret.c

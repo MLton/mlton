@@ -1,7 +1,7 @@
 signature MATH =
    sig
       type real
-	
+        
       val acos: real -> real 
       val asin: real -> real 
       val atan2: real * real -> real 

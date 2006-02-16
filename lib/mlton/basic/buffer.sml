@@ -1,16 +1,16 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 structure Buffer: BUFFER = 
 struct
 
 datatype 'a t = T of {dummy: 'a,
-		      elts: 'a array ref,
-		      length: int ref}
+                      elts: 'a array ref,
+                      length: int ref}
    
 fun new {dummy} =
    T {dummy = dummy,
@@ -33,17 +33,17 @@ fun ensureFree (T {dummy, elts, length, ...}, amount: int): unit =
       val maxLength = Array.length (!elts)
    in
       if amount <= maxLength - !length
-	 then ()
+         then ()
       else
-	 let
-	    val n = Int.max (maxLength * growFactor, !length + amount)
-	    val e = !elts
-	 in
-	    elts := Array.tabulate (n, fn i =>
-				    if i < maxLength
-				       then Array.sub (e, i)
-				    else dummy)
-	 end
+         let
+            val n = Int.max (maxLength * growFactor, !length + amount)
+            val e = !elts
+         in
+            elts := Array.tabulate (n, fn i =>
+                                    if i < maxLength
+                                       then Array.sub (e, i)
+                                    else dummy)
+         end
    end
 
 fun add (v as T {elts, length, ...}, e) =

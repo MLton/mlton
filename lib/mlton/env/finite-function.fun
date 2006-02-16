@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                                Env                                *)
@@ -33,8 +33,8 @@ fun peek(T l, d) =
 
 fun lookup ed = case peek ed of
    SOME r => r
- | NONE => Error.error "lookup"
-			 
+ | NONE => Error.error "Env.lookup"
+                         
 fun dom(T l) = L.map(l, #1)
 
 fun range(T l) = L.map(l, #2)
@@ -49,26 +49,26 @@ fun foreach(T ps, f) = L.foreach(ps, f)
    
 fun multiExtend(env, [], []) = env
   | multiExtend(env, d :: ds, r :: rs) = multiExtend(extend(env, d, r), ds, rs)
-  | multiExtend _ = Error.error "multiExtend"
+  | multiExtend _ = Error.error "Env.multiExtend"
 
 fun merge(e as T p, e' as T p', f) =
    let val leftAndBoth = L.map(p, fn (d, r) =>
-			       case peek(e', d) of
-				  NONE => (d, r)
-				| SOME r' => (d, f(r, r')))
+                               case peek(e', d) of
+                                  NONE => (d, r)
+                                | SOME r' => (d, f(r, r')))
       val right = L.keepAll(p',
-			    fn (d, _) =>
-			    case peek(e, d) of
-			       NONE => true
-			     | SOME _ => false)
+                            fn (d, _) =>
+                            case peek(e, d) of
+                               NONE => true
+                             | SOME _ => false)
    in T(leftAndBoth @ right)
    end
 
 fun output(T ps, outputR, out) =
    let val print = Out.outputc out
       fun outputDR((d, r), out) = (D.output(d, out) ;
-				  print "->" ;
-				  outputR(r, out))
+                                  print "->" ;
+                                  outputR(r, out))
    in (print "[" ;
        L.output(ps, ", ", outputDR, out) ;
        print "]")

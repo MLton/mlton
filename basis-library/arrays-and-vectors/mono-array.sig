@@ -34,10 +34,10 @@ signature MONO_ARRAY_EXTRA =
       include MONO_ARRAY
       type vector_slice
       structure MonoArraySlice: MONO_ARRAY_SLICE_EXTRA 
-	where type elem = elem
-	  and type array = array
-	  and type vector = vector
-	  and type vector_slice = vector_slice
+        where type elem = elem
+          and type array = array
+          and type vector = vector
+          and type vector_slice = vector_slice
 
       val concat: array list -> array
       val duplicate: array -> array

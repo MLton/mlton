@@ -1,9 +1,10 @@
-# Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
-#    Jagannathan, and Stephen Weeks.
-#
-# MLton is released under the GNU General Public License (GPL).
-# Please see the file MLton-LICENSE for license information.
-#
+## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ #    Jagannathan, and Stephen Weeks.
+ # Copyright (C) 1997-2000 NEC Research Institute.
+ #
+ # MLton is released under a BSD-style license.
+ # See the file MLton-LICENSE for details.
+ ##
 
 PATH = ../bin:$(shell echo $$PATH)
 
@@ -15,18 +16,27 @@ GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(
 FLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
-FLAGS += -mcpu=pentiumpro 
-ifeq ($(GCC_VERSION), 3)
+ifneq ($(findstring $(GCC_VERSION), 3 4),)
 FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 endif
-ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -mv8 -m32
+
+ifeq ($(TARGET_ARCH), amd64)
+FLAGS += -mtune=opteron -m32
 endif
+
+ifeq ($(TARGET_ARCH), sparc)
+FLAGS += -mcpu=v8 -m32
+endif
+
+ifeq ($(TARGET_OS), freebsd)
+FLAGS += -I/usr/local/include
+endif
+
 ifeq ($(TARGET_OS), solaris)
-FLAGS += -Wa,-xarch=v8plusa -fcall-used-g5 -fcall-used-g7 -funroll-all-loops -mcpu=ultrasparc
+FLAGS += -Wa,-xarch=v8plusa -funroll-all-loops -mcpu=ultrasparc
 endif
 
 ifeq ($(TARGET), self)
@@ -38,7 +48,7 @@ RANLIB = $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -std=c99
+CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=32 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
 
@@ -93,7 +103,7 @@ libgdtoa.a: gdtoa/arith.h
 	$(RANLIB) libgdtoa.a
 
 gdtoa/arithchk.c:
-	zcat gdtoa.tgz | tar xf -	
+	gzip -dc gdtoa.tgz | tar xf -	
 	patch -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
@@ -119,7 +129,9 @@ runtime.c: $(CFILES)
 # are class.c and gdtoa.c.  But there may be others.  So, we compile
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
-basis/Real/%.o: basis/Real/%.c
+basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h
+	$(CC) $(DEBUGFLAGS) -O1 -DASSERT=1 -c -o $@ $<
+basis/Real/%.o: basis/Real/%.c gdtoa/arith.h
 	$(CC) $(CFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
@@ -142,7 +154,7 @@ clean:
 gdtoa-patch:
 	cd gdtoa && $(MAKE) clean && rm -f &~
 	mv gdtoa gdtoa-new
-	zcat gdtoa.tgz | tar xf -
+	gzip -dc gdtoa.tgz | tar xf -
 	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0
 	rm -rf gdtoa
 	mv gdtoa-new gdtoa

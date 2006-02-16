@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor TypeOps (S: TYPE_OPS_STRUCTS): TYPE_OPS =
 struct
 
@@ -54,13 +55,14 @@ in
    val arrow = binary Tycon.arrow
 end
 
-val arrow = Trace.trace ("arrow", Layout.tuple2 (layout, layout), layout) arrow
+val arrow = 
+   Trace.trace ("TypeOps.arrow", Layout.tuple2 (layout, layout), layout) arrow
 
 fun deUnaryOpt tycon t =
    case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, tycon)
-			 then SOME (Vector.sub (ts, 0))
-		      else NONE
+                         then SOME (Vector.sub (ts, 0))
+                      else NONE
     | _ => NONE
 
 val deArrayOpt = deUnaryOpt Tycon.array
@@ -70,7 +72,7 @@ val deWeakOpt = deUnaryOpt Tycon.weak
 fun deUnary tycon t =
    case deUnaryOpt tycon t of
       SOME t => t
-    | NONE => Error.bug "deUnary"
+    | NONE => Error.bug "TypeOps.deUnary"
 
 val deArray = deUnary Tycon.array
 val deRef = deUnary Tycon.reff
@@ -94,7 +96,7 @@ val isTuple = Option.isSome o deTupleOpt
 fun deTuple t =
    case deTupleOpt t of
       SOME t => t
-    | NONE => Error.bug "detuple"
+    | NONE => Error.bug "TypeOps.deTuple"
 
 fun nth (t, n) = Vector.sub (deTuple t, n)
 
@@ -103,39 +105,41 @@ val unitRef = reff unit
 fun deTycon t =
    case deConOpt t of
       SOME (c, _) => c
-    | NONE => Error.bug "detycon"
+    | NONE => Error.bug "TypeOps.deTycon"
 
 fun deConConstOpt t =
    Option.map
    (deConOpt t, fn (c, ts) =>
     (c, Vector.map (ts, fn t =>
-		    case deConOpt t of
-		       SOME (c, _) => c
-		     | NONE => Error.bug "deConConstOpt")))
+                    case deConOpt t of
+                       SOME (c, _) => c
+                     | NONE => Error.bug "TypeOps.deConConstOpt")))
 
 fun deConConst t =
    case deConOpt t of
-      NONE => Error.bug "deConConst"
+      NONE => Error.bug "TypeOps.deConConst"
     | SOME (c, ts) => (c, Vector.map (ts, fn t =>
-				      case deConOpt t of
-					 NONE => Error.bug "deConConst"
-				       | SOME (c, _) => c))
+                                      case deConOpt t of
+                                         NONE => Error.bug "TypeOps.deConConst"
+                                       | SOME (c, _) => c))
 
 
 fun deArrowOpt t =
    case deConOpt t of
       SOME (c, ts) => if Tycon.equals (c, Tycon.arrow)
-			       then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
-			    else NONE
+                               then SOME (Vector.sub (ts, 0), Vector.sub (ts, 1))
+                            else NONE
     | _ => NONE
 
 fun deArrow t =
    case deArrowOpt t of
       SOME x => x
-    | NONE => Error.bug "Type.deArrow"
+    | NONE => Error.bug "TypeOps.deArrow"
 
 val dearrow =
-   Trace.trace ("deArrow", layout, Layout.tuple2 (layout, layout)) deArrow
+   Trace.trace 
+   ("TypeOps.deArrow", layout, Layout.tuple2 (layout, layout)) 
+   deArrow
 
 val arg = #1 o dearrow
 val result = #2 o dearrow

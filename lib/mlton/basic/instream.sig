@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Pervasive.Int.int
    
 signature INSTREAM =
@@ -32,7 +33,7 @@ signature INSTREAM =
       val layout: t -> Layout.t
       (* Each line includes the newline. *)
       val lines: t -> string list
-      val openIn: string -> t	 
+      val openIn: string -> t    
       val openString: string -> t
       val outputAll: t * Out.t -> unit
       val peekChar: t -> char option

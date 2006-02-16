@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Promise: PROMISE =
 struct
 
@@ -35,13 +36,13 @@ fun force (T r) =
    case !r of
       Evaluated x => x
     | Unevaluated th =>
-	 (let
-	     val _ = r := Evaluating
-	     val x = th ()
-	     val _ = r := Evaluated x
-	  in
-	     x
-	  end handle exn => (r := Unevaluated th; raise exn))
+         (let
+             val _ = r := Evaluating
+             val x = th ()
+             val _ = r := Evaluated x
+          in
+             x
+          end handle exn => (r := Unevaluated th; raise exn))
     | Evaluating => raise Force
 
 fun lazy th =

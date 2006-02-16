@@ -1,3 +1,11 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 Library
 
 signature INT_INF
@@ -33,8 +41,6 @@ structure Math
 structure MLton
 structure OS
 structure Option
-structure Pack32Big
-structure Pack32Little
 structure Position
 structure Posix
 structure Real
@@ -45,6 +51,7 @@ structure RealArray
 structure RealVector
 structure SML90
 structure SMLofNJ
+structure Socket
 structure String
 structure StringCvt
 structure Substring
@@ -74,6 +81,7 @@ array2.sml
 bin-io.sml
 char.sml
 date.sml
+ieee-real.sml
 int-inf.sml
 int.sml
 list.sml

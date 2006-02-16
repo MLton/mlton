@@ -1,0 +1,59 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+CP = cp -fpR
+
+configure: configure-stamp
+configure-stamp:
+	# Add here commands to configure the package.
+	touch configure-stamp
+
+build: configure-stamp build-stamp
+build-stamp:
+	# Add here commands to compile the package.
+	$(MAKE)
+	#/usr/bin/docbook-to-man debian/mlton.sgml > mlton.1
+	touch build-stamp
+
+clean:
+	rm -f build-stamp configure-stamp
+	# Add here commands to clean up after the build process.
+	-$(MAKE) clean
+
+BUILDDIR = $(CURDIR)/debian/mlton
+install: build
+	# Add here commands to install the package into debian/mlton.
+	$(MAKE) install post-install-debian DESTDIR=$(BUILDDIR) \
+		MAN_PREFIX_EXTRA=/share
+
+# Build architecture-independent files here.
+binary-indep: build install
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	# dh_installdeb
+	mkdir -p $(BUILDDIR)/DEBIAN
+	for f in postinst prerm; do 				\
+		$(CP) debian/mlton.$$f $(BUILDDIR)/DEBIAN/$$f;	\
+		chown root.root $(BUILDDIR)/DEBIAN/$$f;		\
+	done
+	# dh_shlibdeps
+	dpkg-shlibdeps \
+		-e$(BUILDDIR)/usr/bin/mllex \
+		-e$(BUILDDIR)/usr/bin/mlnlffigen \
+		-e$(BUILDDIR)/usr/bin/mlprof \
+		-e$(BUILDDIR)/usr/bin/mlyacc \
+		-e$(BUILDDIR)/usr/lib/mlton/mlton-compile 
+	# dh_gencontrol
+	dpkg-gencontrol -isp -P$(BUILDDIR)
+	# dh_md5sums
+	cd $(BUILDDIR) && \
+		find * -type f ! -regex '^DEBIAN/.*' -print0 | \
+			xargs -r0 md5sum >DEBIAN/md5sums
+	# dh_builddeb
+	dpkg-deb --build $(BUILDDIR) ../
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure

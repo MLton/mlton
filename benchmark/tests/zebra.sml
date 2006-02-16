@@ -120,8 +120,8 @@ val first = SOME 1
 val middle = SOME 3
 
 type 'a attribute = {poss: pos list,
-		     unknown: 'a list,
-		     known: (pos * 'a) list}
+                     unknown: 'a list,
+                     known: (pos * 'a) list}
 
 exception Done
 fun 'a fluidLet (r: 'a ref, x: 'a, f: unit -> 'b): 'b =
@@ -129,13 +129,13 @@ fun 'a fluidLet (r: 'a ref, x: 'a, f: unit -> 'b): 'b =
    in r := x
       ; (f () before r := old)
       handle Done => raise Done
-	   | e => (r := old; raise e)
+           | e => (r := old; raise e)
    end
 
 fun search () =
    let
       fun init (unknown: 'a list): 'a attribute ref =
-	 ref {poss = poss, unknown = unknown, known = []}
+         ref {poss = poss, unknown = unknown, known = []}
       val cigarettes = init [Blend, BlueMaster, Dunhill, PallMall, Prince]
       val colors = init [Blue, Green, Red, White, Yellow]
       val drinks = init [Beer, Coffee, Milk, Tea, Water]
@@ -143,7 +143,7 @@ fun search () =
       val pets = init [Bird, Cat, Dog, Horse, Zebra]
 
       fun ''a find (r: ''a attribute ref) (x: ''a): pos option =
-	 Option.map #1 (peek (#known (!r), fn (_, y) => x = y))
+         Option.map #1 (peek (#known (!r), fn (_, y) => x = y))
       val smoke = find cigarettes
       val color = find colors
       val drink = find drinks
@@ -151,83 +151,83 @@ fun search () =
       val pet = find pets
 
       fun display () =
-	 let
-	    fun loop (r: 'a attribute ref, toString) =
-	       (List.app (fn i =>
-			  let
-			     val x = #2 (valOf (peek (#known (!r),
-						   fn (j, _) => i = j)))
-			     val s = toString x
-			  in print s
-			     ; print (CharVector.tabulate (12 - size s,
-							 fn _ => #" "))
-			  end) poss 
-		; print "\n")
-	 in
-	    loop (cigarettes, cigaretteToString)
-	    ; loop (colors, colorToString)
-	    ; loop (drinks, drinkToString)
-	    ; loop (nationalities, nationalityToString)
-	    ; loop (pets, petToString)
-	 end
+         let
+            fun loop (r: 'a attribute ref, toString) =
+               (List.app (fn i =>
+                          let
+                             val x = #2 (valOf (peek (#known (!r),
+                                                   fn (j, _) => i = j)))
+                             val s = toString x
+                          in print s
+                             ; print (CharVector.tabulate (12 - size s,
+                                                         fn _ => #" "))
+                          end) poss 
+                ; print "\n")
+         in
+            loop (cigarettes, cigaretteToString)
+            ; loop (colors, colorToString)
+            ; loop (drinks, drinkToString)
+            ; loop (nationalities, nationalityToString)
+            ; loop (pets, petToString)
+         end
    
       fun make f =
-	 fn (SOME x, SOME y) => f (x, y)
-	  | _ => true
+         fn (SOME x, SOME y) => f (x, y)
+          | _ => true
       val same = make (op =)
       val adjacent = make (fn (x, y) => x = y - 1 orelse y = x - 1)
       val left = make (fn (x, y) => x = y - 1)
 
       val num = ref 0
       fun isConsistent (): bool =
-	 (num := !num + 1
-	  ;
-	 same (nat English, color Red)
-	 andalso same (nat Swede, pet Dog)
-	 andalso same (nat Dane, drink Tea)
-	 andalso left (color Green, color White)
-	 andalso same (color Green, drink Coffee)
-	 andalso same (smoke PallMall, pet Bird)
-	 andalso same (color Yellow, smoke Dunhill)
-	 andalso same (middle, drink Milk)
-	 andalso same (nat Norwegian, first)
-	 andalso adjacent (smoke Blend, pet Cat)
-	 andalso adjacent (pet Horse, smoke Dunhill)
-	 andalso same (drink Beer, smoke BlueMaster)
-	 andalso same (nat German, smoke Prince)
-	 andalso adjacent (nat Norwegian, color Blue)
-	 andalso adjacent (drink Water, smoke Blend)
-	  )
-	 
+         (num := !num + 1
+          ;
+         same (nat English, color Red)
+         andalso same (nat Swede, pet Dog)
+         andalso same (nat Dane, drink Tea)
+         andalso left (color Green, color White)
+         andalso same (color Green, drink Coffee)
+         andalso same (smoke PallMall, pet Bird)
+         andalso same (color Yellow, smoke Dunhill)
+         andalso same (middle, drink Milk)
+         andalso same (nat Norwegian, first)
+         andalso adjacent (smoke Blend, pet Cat)
+         andalso adjacent (pet Horse, smoke Dunhill)
+         andalso same (drink Beer, smoke BlueMaster)
+         andalso same (nat German, smoke Prince)
+         andalso adjacent (nat Norwegian, color Blue)
+         andalso adjacent (drink Water, smoke Blend)
+          )
+         
       fun tryEach (l, f) =
-	 let
-	    fun loop (l, ac) =
-	       case l of
-		  [] => ()
-		| x :: l => (f (x, l @ ac); loop (l, x :: ac))
-	 in loop (l, [])
-	 end
-	       
+         let
+            fun loop (l, ac) =
+               case l of
+                  [] => ()
+                | x :: l => (f (x, l @ ac); loop (l, x :: ac))
+         in loop (l, [])
+         end
+               
       fun try (r: 'a attribute ref,
-	      f: unit -> (('a attribute -> unit)
-			  * ( unit -> unit))) =
-	 let val {poss, unknown, known} = !r
-	 in case unknown of
-	    [] => ()
-	  | _ => 
-	       tryEach (unknown, fn (x, unknown) =>
-		       let val (each, done) = f ()
-		       in tryEach (poss, fn (p, poss) =>
-				  let val attr = {known = (p, x) :: known,
-						  unknown = unknown,
-						  poss = poss}
-				  in fluidLet
-				     (r, attr, fn () =>
-				      if isConsistent () then each attr else ())
-				  end)
-			  ; done ()
-		       end)
-	 end
+              f: unit -> (('a attribute -> unit)
+                          * ( unit -> unit))) =
+         let val {poss, unknown, known} = !r
+         in case unknown of
+            [] => ()
+          | _ => 
+               tryEach (unknown, fn (x, unknown) =>
+                       let val (each, done) = f ()
+                       in tryEach (poss, fn (p, poss) =>
+                                  let val attr = {known = (p, x) :: known,
+                                                  unknown = unknown,
+                                                  poss = poss}
+                                  in fluidLet
+                                     (r, attr, fn () =>
+                                      if isConsistent () then each attr else ())
+                                  end)
+                          ; done ()
+                       end)
+         end
 
       (* loop takes the current state and either
        *   - terminates in the same state if there is no consistent extension
@@ -236,50 +236,50 @@ fun search () =
       exception Inconsistent
       exception Continue of unit -> unit
       fun loop (): unit =
-	 let
-	    fun test r =
-	       try
-	       (r, fn () =>
-		let
-		   datatype 'a attrs = None | One of 'a | Many
-		   val attrs = ref None
-		   fun each a =
-		      case !attrs of
-			 None => attrs := One a
-		       | One _ => attrs := Many
-		       | Many => ()
-		   fun done () =
-		      case !attrs of
-			 None => raise Inconsistent
-		       | One a => raise (Continue (fn () => fluidLet (r, a, loop)))
-		       | Many => ()
-		in (each, done)
-		end)
-	    fun explore r =
-	       try (r, fn () =>
-		   let
-		      fun each _ = loop ()
-		      fun done () = raise Inconsistent
-		   in (each, done)
-		   end)
-	 in (test cigarettes
-	     ; test colors
-	     ; test drinks
-	     ; test nationalities
-	     ; test pets
-	     ; explore cigarettes
-	     ; explore colors
-	     ; explore drinks
-	     ; explore nationalities
-	     ; explore pets
-	     ; raise Done)
-	    handle Inconsistent => ()
-		 | Continue f => f ()
-	 end
-      val _ = 	 loop () handle Done => ()
+         let
+            fun test r =
+               try
+               (r, fn () =>
+                let
+                   datatype 'a attrs = None | One of 'a | Many
+                   val attrs = ref None
+                   fun each a =
+                      case !attrs of
+                         None => attrs := One a
+                       | One _ => attrs := Many
+                       | Many => ()
+                   fun done () =
+                      case !attrs of
+                         None => raise Inconsistent
+                       | One a => raise (Continue (fn () => fluidLet (r, a, loop)))
+                       | Many => ()
+                in (each, done)
+                end)
+            fun explore r =
+               try (r, fn () =>
+                   let
+                      fun each _ = loop ()
+                      fun done () = raise Inconsistent
+                   in (each, done)
+                   end)
+         in (test cigarettes
+             ; test colors
+             ; test drinks
+             ; test nationalities
+             ; test pets
+             ; explore cigarettes
+             ; explore colors
+             ; explore drinks
+             ; explore nationalities
+             ; explore pets
+             ; raise Done)
+            handle Inconsistent => ()
+                 | Continue f => f ()
+         end
+      val _ =    loop () handle Done => ()
       val _ = if 3342 = !num
-		 then ()
-	      else raise Fail "bug"
+                 then ()
+              else raise Fail "bug"
 (*      val _ = display () *)
    in ()
    end
@@ -287,12 +287,12 @@ fun search () =
 structure Main =
    struct
       fun doit n =
-	 let
-	    fun loop n =
-	       if n < 0
-		  then ()
-	       else (search ()
-		     ; loop (n - 1))
-	 in loop (n * 1000)
-	 end
+         let
+            fun loop n =
+               if n < 0
+                  then ()
+               else (search ()
+                     ; loop (n - 1))
+         in loop (n * 1000)
+         end
    end

@@ -1,16 +1,17 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature TRACE_CONTROL = 
    sig
       (* controls what tracing info is gathered *)
       val always: unit -> unit      (* always gather info *)
       val flagged: unit -> unit     (* only on flagged functions *)
       val never: unit -> unit       (* never gather info *)
-	 
+         
       (* value of newly created flag *)
       val default: bool ref
 
@@ -30,35 +31,35 @@ signature TRACE_CONTROL =
 signature TRACE =
    sig
       structure Immediate:
-	 sig
-	    include TRACE_CONTROL
+         sig
+            include TRACE_CONTROL
 
-	    datatype debug =
-	       None
-	     | Terminal
-	     | Out of Out.t
+            datatype debug =
+               None
+             | Terminal
+             | Out of Out.t
 
-	    (*
-	     * If !debug = Terminal, debugging messages are printed to /dev/tty.
-	     * If !debug = Out os, then messages will be sent to os.
-	     * If !debug = None, then messages will be ignored.
-	     *)
-	    val debug: debug ref
-	    val message: Layout.t -> unit
-	    val messageStr: string -> unit
-	    (* inChildProcess is called by Process so that trace will know if it
-	     * is in a child, and therefore it will prefix all messages with the
-	     * pid of the current process.
-	     *)
-	    val inChildProcess: unit -> unit
-	    (* !showTime = true iff messages are preceded by the current time *)
-	    val showTime: bool ref
-	 end
+            (*
+             * If !debug = Terminal, debugging messages are printed to /dev/tty.
+             * If !debug = Out os, then messages will be sent to os.
+             * If !debug = None, then messages will be ignored.
+             *)
+            val debug: debug ref
+            val message: Layout.t -> unit
+            val messageStr: string -> unit
+            (* inChildProcess is called by Process so that trace will know if it
+             * is in a child, and therefore it will prefix all messages with the
+             * pid of the current process.
+             *)
+            val inChildProcess: unit -> unit
+            (* !showTime = true iff messages are preceded by the current time *)
+            val showTime: bool ref
+         end
       structure Delayed:
-	 sig
-	    include TRACE_CONTROL
-	    val keepAll: bool ref
-	 end
+         sig
+            include TRACE_CONTROL
+            val keepAll: bool ref
+         end
       structure Time: TRACE_CONTROL
 
       val never: unit -> unit
@@ -67,7 +68,7 @@ signature TRACE =
       val traceable: unit -> string list
       val outputTraceable: unit -> unit
       val reset: unit -> unit
-	 
+         
       (*---------- Delayed Feedback ----------*)
       structure Computation: COMPUTATION
 
@@ -96,101 +97,101 @@ signature TRACE =
       val info: string -> info
 
       val traceInfo:
-	 info
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('a -> bool * ('b -> bool))
-	 -> ('a -> 'b)
-	 -> ('a -> 'b)
+         info
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('a -> bool * ('b -> bool))
+         -> ('a -> 'b)
+         -> ('a -> 'b)
 
       val traceInfo':
-	 info
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 -> ('a -> 'b)
-	 -> ('a -> 'b)
+         info
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         -> ('a -> 'b)
+         -> ('a -> 'b)
 
 (*       type ('a, 'b) check = ('a -> Layout.t) * ('a -> bool * 'b)
  * 
  *       type ('a, 'b) z =
- * 	 'a -> ((unit -> Layout.t)
- * 		* (unit -> bool)
- * 		* 'a
- * 		* 'b)
- * 	 
+ *       'a -> ((unit -> Layout.t)
+ *              * (unit -> bool)
+ *              * 'a
+ *              * 'b)
+ *       
  *       val traceInfo:
- * 	 info
- * 	 * ('a, ('b, unit) check) check
- * 	 -> ('a -> 'b)
- * 	 -> 'a
- * 	 -> 'b
+ *       info
+ *       * ('a, ('b, unit) check) check
+ *       -> ('a -> 'b)
+ *       -> 'a
+ *       -> 'b
  *)
 
       val assertTrue: 'a -> (bool * ('b -> bool))
 
       val traceAssert:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('a -> bool * ('b -> bool))
-	 -> ('a -> 'b)
-	 -> ('a -> 'b)
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('a -> bool * ('b -> bool))
+         -> ('a -> 'b)
+         -> ('a -> 'b)
 
       val trace:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 -> ('a -> 'b)
-	 -> ('a -> 'b)
-	 
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         -> ('a -> 'b)
+         -> ('a -> 'b)
+         
       val trace0:
-	 string
-	 * ('a -> Layout.t)
-	 -> (unit -> 'a)
-	 -> (unit -> 'a)
+         string
+         * ('a -> Layout.t)
+         -> (unit -> 'a)
+         -> (unit -> 'a)
 
       val trace2:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('c -> Layout.t)
-	 -> ('a * 'b -> 'c)
-	 -> ('a * 'b -> 'c)
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('c -> Layout.t)
+         -> ('a * 'b -> 'c)
+         -> ('a * 'b -> 'c)
 
       val trace3:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('c -> Layout.t)
-	 * ('d -> Layout.t)
-	 -> ('a * 'b * 'c -> 'd)
-	 -> ('a * 'b * 'c -> 'd)
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('c -> Layout.t)
+         * ('d -> Layout.t)
+         -> ('a * 'b * 'c -> 'd)
+         -> ('a * 'b * 'c -> 'd)
 
       val trace4:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('c -> Layout.t)
-	 * ('d -> Layout.t)
-	 * ('e -> Layout.t)
-	 -> ('a * 'b * 'c * 'd -> 'e)
-	 -> ('a * 'b * 'c * 'd -> 'e)
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('c -> Layout.t)
+         * ('d -> Layout.t)
+         * ('e -> Layout.t)
+         -> ('a * 'b * 'c * 'd -> 'e)
+         -> ('a * 'b * 'c * 'd -> 'e)
 
       val trace5:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 * ('c -> Layout.t)
-	 * ('d -> Layout.t)
-	 * ('e -> Layout.t)
-	 * ('f -> Layout.t)
-	 -> ('a * 'b * 'c * 'd * 'e -> 'f)
-	 -> ('a * 'b * 'c * 'd * 'e -> 'f)
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         * ('c -> Layout.t)
+         * ('d -> Layout.t)
+         * ('e -> Layout.t)
+         * ('f -> Layout.t)
+         -> ('a * 'b * 'c * 'd * 'e -> 'f)
+         -> ('a * 'b * 'c * 'd * 'e -> 'f)
 
       val traceRec:
-	 string
-	 * ('a -> Layout.t)
-	 * ('b -> Layout.t)
-	 -> (('a -> 'b) -> ('a -> 'b))
-	 -> 'a -> 'b 
+         string
+         * ('a -> Layout.t)
+         * ('b -> Layout.t)
+         -> (('a -> 'b) -> ('a -> 'b))
+         -> 'a -> 'b 
    end

@@ -1,9 +1,10 @@
 (* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature CONTROL =
    sig
       (* set all flags to their default values *)
@@ -31,9 +32,9 @@ signature CONTROL =
       val libhandle : string ref
 
       structure Linkage :
-	 sig
-	    datatype t = Dynamic | Static
-	 end
+         sig
+            datatype t = Dynamic | Static
+         end
       val linkage : Linkage.t ref
 
       val match : (string -> bool) ref
@@ -45,14 +46,14 @@ signature CONTROL =
       val prefix : string ref
 
       structure Target :
-	 sig
-	    type t
-	    val fromString : string -> t option
-	    val make: t -> {name: string, sizes: Sizes.sizes,
-			    endianShift: Endian.shift} option
-	 end
+         sig
+            type t
+            val fromString : string -> t option
+            val make: t -> {name: string, sizes: Sizes.sizes,
+                            endianShift: Endian.shift} option
+         end
       val target: {name: string, sizes: Sizes.sizes,
-		   endianShift: Endian.shift} option ref
+                   endianShift: Endian.shift} option ref
 
       val weight: {heavy: bool, light: bool} ref
 

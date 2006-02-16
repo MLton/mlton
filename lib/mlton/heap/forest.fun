@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 (* Forest of heap ordered trees.
  * Can be specialized to eager or lazy binomial heaps, fibonacci heaps.
  *)
@@ -18,22 +19,22 @@ struct
    (* Can't make child a circular list, because the elements aren't defined yet.
     *)
    datatype 'a t = T of {value: 'a Pointer.t,
-			 mark: bool ref,
-			 parent: 'a t Pointer.t,
-			 next: 'a t Pointer.t,
-			 prev: 'a t Pointer.t,
-			 child: 'a t Pointer.t,
-			 numChildren: int ref}
+                         mark: bool ref,
+                         parent: 'a t Pointer.t,
+                         next: 'a t Pointer.t,
+                         prev: 'a t Pointer.t,
+                         child: 'a t Pointer.t,
+                         numChildren: int ref}
 
    fun destruct(T{prev, value, next, ...}) = (prev, Pointer.! value, next)
 
    fun make p = T{value = p,
-		  mark = ref false,
-		  parent = Pointer.null(),
-		  next = Pointer.null(),
-		  prev = Pointer.null(),
-		  child = Pointer.null(),
-		  numChildren = ref 0}
+                  mark = ref false,
+                  parent = Pointer.null(),
+                  next = Pointer.null(),
+                  prev = Pointer.null(),
+                  child = Pointer.null(),
+                  numChildren = ref 0}
 
    fun new v = make(Pointer.new v)
 
@@ -70,14 +71,14 @@ structure Elt =
       fun setKey(e, k) = Pointer.:=(valuePtr e, (k, value e))
 
       fun siftUp e =
-	 if hasParent e
-	    then let val p = parent e
-		 in if Key.<(key e, key p)
-		       then (Pointer.swap(valuePtr e, valuePtr p) ;
-			     siftUp p)
-		    else ()
-		 end
-	 else ()
+         if hasParent e
+            then let val p = parent e
+                 in if Key.<(key e, key p)
+                       then (Pointer.swap(valuePtr e, valuePtr p) ;
+                             siftUp p)
+                    else ()
+                 end
+         else ()
    end
 
 (*--------------------------------------------------------*)
@@ -85,8 +86,8 @@ structure Elt =
 (*--------------------------------------------------------*)
 
 datatype 'a t = T of {size: int ref,
-		      roots: (Key.t * 'a) CircList.t,
-		      min: 'a Elt.t Pointer.t}
+                      roots: (Key.t * 'a) CircList.t,
+                      min: 'a Elt.t Pointer.t}
 
 fun sizeRef (T{size, ...}) = size
 fun size h = !(sizeRef h)
@@ -95,7 +96,7 @@ fun incSize h = Int.inc(sizeRef h)
 fun decSize h = Int.inc(sizeRef h)
 
 fun roots (T{roots, ...}) = roots
-						       
+                                                       
 fun min(T{min, ...}) = Pointer.! min
 
 fun clearMin(T{min, ...}) = Pointer.clear min
@@ -108,16 +109,16 @@ fun updateMin(T{min, ...}, e) =
 fun addRoot(h, e) =
    (CircList.insert(roots h, e)
     ; updateMin(h, e))
-		 
+                 
 fun isEmpty h = size h = 0
 
 local
     fun linkPC(parent, child) =
-	(Elt.incNumChildren parent
-	 ; CircList.insert(Elt.child parent, child)
-	 ; Elt.setParent(Elt.parent child, parent)
-	 ; Elt.unMark child
-	 ; parent)
+        (Elt.incNumChildren parent
+         ; CircList.insert(Elt.child parent, child)
+         ; Elt.setParent(Elt.parent child, parent)
+         ; Elt.unMark child
+         ; parent)
 in fun link(e, e') =
     (* pre: numChildren e = numChildren e' *)
    if Key.<(Elt.key e, Elt.key e')
@@ -126,12 +127,12 @@ in fun link(e, e') =
 end
 
 fun unlink e = let val p = Elt.parent e
-	       in Elt.decNumChildren p
-		  ; CircList.delete(Elt.child p, e)
-		  ; Elt.clearParent e
-		  ; Elt.unMark e
-	       end
-				
+               in Elt.decNumChildren p
+                  ; CircList.delete(Elt.child p, e)
+                  ; Elt.clearParent e
+                  ; Elt.unMark e
+               end
+                                
 local
    structure I = Int
    local open Real
@@ -143,16 +144,16 @@ in
       (clearMin h ;
        if size h = 0 then ()
        else let val a = Array.new(maxNumChildren h + 1, NONE)
-		fun insertIntoA e =
-		    let val n = Elt.numChildren e
-		    in case Array.sub(a,n) of
-			NONE => Array.update(a,n, SOME e)
-		      | SOME e' => (Array.update(a,n, NONE)
-				    ; insertIntoA(link(e, e')))
-		    end
-	    in CircList.deleteEach(roots h, insertIntoA)
-	       ; Array.foreach(a, fn NONE => () | SOME e => addRoot(h, e))
-	    end)
+                fun insertIntoA e =
+                    let val n = Elt.numChildren e
+                    in case Array.sub(a,n) of
+                        NONE => Array.update(a,n, SOME e)
+                      | SOME e' => (Array.update(a,n, NONE)
+                                    ; insertIntoA(link(e, e')))
+                    end
+            in CircList.deleteEach(roots h, insertIntoA)
+               ; Array.foreach(a, fn NONE => () | SOME e => addRoot(h, e))
+            end)
 end
 
 (*--------------------------------------------------------*)
@@ -160,8 +161,8 @@ end
 (*--------------------------------------------------------*)
 
 fun empty() = T{size = ref 0,
-		roots = CircList.empty(),
-		min = Pointer.null()}
+                roots = CircList.empty(),
+                min = Pointer.null()}
 
 fun insertLazy(h, k, v) =
    let val e = Elt.new(k, v)
@@ -180,8 +181,8 @@ fun newLazy kvs =
    end
 
 fun newEager kvs = let val h = newLazy kvs
-		   in (consolidate h ; h)
-		   end
+                   in (consolidate h ; h)
+                   end
 
 (*--------------------------------------------------------*)
 (*                       DeleteMin                        *)
@@ -209,17 +210,17 @@ fun cut(h, e, k) =
    if Elt.hasParent e
       andalso Key.<(k, Elt.key(Elt.parent e))
       then let val rs = roots h
-	       fun cut e = if Elt.hasParent e
-			      then let val p = Elt.parent e
-				   in unlink e
-				      ; CircList.insert(rs, e)
-				      ; if Elt.isMarked p
-					   then cut p
-					else Elt.mark p
-				   end
-			   else ()
-	   in cut e
-	   end
+               fun cut e = if Elt.hasParent e
+                              then let val p = Elt.parent e
+                                   in unlink e
+                                      ; CircList.insert(rs, e)
+                                      ; if Elt.isMarked p
+                                           then cut p
+                                        else Elt.mark p
+                                   end
+                           else ()
+           in cut e
+           end
    else ()
       
 fun decreaseKey(h, e, k) =
@@ -279,30 +280,30 @@ local
    fun sizeInHeap h = sizeInTrees (roots h)
    fun findMin h =
       let val min = ref NONE
-	 fun updateMin e = (case !min of
-			       NONE => min := SOME e
-			     | SOME e' => if Key.<(Elt.key e, Elt.key e')
-					     then min := SOME e
-					  else ())
+         fun updateMin e = (case !min of
+                               NONE => min := SOME e
+                             | SOME e' => if Key.<(Elt.key e, Elt.key e')
+                                             then min := SOME e
+                                          else ())
       in (CircList.foreach (roots h) updateMin ;
-	  case !min of
-	     SOME e => e
-	   | NONE => bug "findMin") 
+          case !min of
+             SOME e => e
+           | NONE => bug "findMin") 
       end
    fun isTreeWellFormed e =
       let fun isChildWellFormed e' = (Elt.equals(e, Elt.parent e')
-				      andalso Key.<=(Elt.key e, Elt.key e')
-				      andalso isTreeWellFormed e')
-	 val cs = CircList.T (Elt.children e)
+                                      andalso Key.<=(Elt.key e, Elt.key e')
+                                      andalso isTreeWellFormed e')
+         val cs = CircList.T (Elt.children e)
       in Elt.numChildren e = CircList.length cs
-	 andalso CircList.forall cs isChildWellFormed
+         andalso CircList.forall cs isChildWellFormed
       end
 in
    fun isFibonacciHeap h =
       CircList.forall (roots h) isTreeWellFormed
       andalso size h = sizeInHeap h
       andalso (isEmpty h
-	       orelse Key.equals(Elt.key (min h), Elt.key (findMin h)))
+               orelse Key.equals(Elt.key (min h), Elt.key (findMin h)))
 end
 *)
 end

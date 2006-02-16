@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+set -e
+
+dir=`dirname $0`
+
+for f in `find "$dir" -type f | grep -v '\.svn' | grep -v '~'`; do
+	if head -n 1 "$f" | grep -q '#!/usr/bin/env bash'; then
+		echo "Processing $f"
+		sed 's;#!/usr/bin/env bash;#!/usr/bin/env sh;' <$f >.tmp;
+		mv .tmp $f;
+	fi
+done

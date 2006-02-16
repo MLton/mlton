@@ -1,15 +1,16 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature LAYOUT =
    sig
       type int = Pervasive.Int.int
-	 
+         
       type t
-	 
+         
       (* layout the objects on separate lines*)
       val align: t list -> t
       val alignPrefix: t list * string -> t
@@ -54,8 +55,8 @@ signature LAYOUT =
       val tuple2: ('a -> t) * ('b -> t) -> 'a * 'b -> t
       val tuple3: ('a -> t) * ('b -> t) * ('c -> t) -> 'a * 'b * 'c -> t
       val tuple4: ('a -> t) * ('b -> t) * ('c -> t) * ('d -> t)
-	 -> 'a * 'b * 'c * 'd -> t
+         -> 'a * 'b * 'c * 'd -> t
       val tuple5: ('a -> t) * ('b -> t) * ('c -> t) * ('d -> t) * ('e -> t)
-	 -> ('a * 'b * 'c * 'd * 'e) -> t
+         -> ('a * 'b * 'c * 'd * 'e) -> t
       val vector: t vector -> t
    end

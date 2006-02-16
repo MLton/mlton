@@ -11,20 +11,20 @@
 structure Version : VERSION = 
    struct
       val version = {
-		     system = "Concurrent ML (MLton)",
-		     version_id = [1, 0, 10],
-		     date = "March, 2004"
-		     }
+                     system = "Concurrent ML (MLton)",
+                     version_id = [1, 0, 10],
+                     date = "March, 2004"
+                     }
 
       fun f ([], l) = l
-	| f ([x], l) = (Int.toString x)::l
-	| f (x::r, l) = (Int.toString x) :: "." :: f(r, l)
+        | f ([x], l) = (Int.toString x)::l
+        | f (x::r, l) = (Int.toString x) :: "." :: f(r, l)
 
       val banner = 
-	 concat (
-		 #system version :: 
-		 ", Version " ::
-		 f (#version_id version, [", ", #date version])
-		 )
+         concat (
+                 #system version :: 
+                 ", Version " ::
+                 f (#version_id version, [", ", #date version])
+                 )
    end
 

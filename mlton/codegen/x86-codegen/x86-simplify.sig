@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
 type word = Word.t
 
@@ -24,10 +25,10 @@ signature X86_SIMPLIFY =
     include X86_SIMPLIFY_STRUCTS
 
     val simplify : {chunk : x86.Chunk.t,
-		    optimize : int,
-		    delProfileLabel : x86.ProfileLabel.t -> unit,
-		    liveInfo : x86Liveness.LiveInfo.t,
-		    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
+                    optimize : int,
+                    delProfileLabel : x86.ProfileLabel.t -> unit,
+                    liveInfo : x86Liveness.LiveInfo.t,
+                    jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
 
     val simplify_totals : unit -> unit
   end

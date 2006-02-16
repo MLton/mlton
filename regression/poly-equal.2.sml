@@ -16,9 +16,9 @@ val _ =
     assert ("pair list equal", [(1,2), (3,4)] = [(1,2), (3,4)]) ;
     assert ("pair list not equal", [(1,2), (3,4)] <> [(1,2), (3,5)]) ;
     assert ("tree equal",
-	   let val t = Node (1, Leaf 2, Node (3, Leaf 4, Leaf 5))
-	   in t = t
-	   end))
+           let val t = Node (1, Leaf 2, Node (3, Leaf 4, Leaf 5))
+           in t = t
+           end))
 
     
 

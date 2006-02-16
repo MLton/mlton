@@ -22,10 +22,10 @@ exception Impossible
 fun seek (pred: char -> bool) (is: TextIO.instream): char list = 
   let fun readLoop() =
             (case explode (TextIO.inputN(is, 1)) of
-	       []  =>  []
-	     | [char] => char :: (if pred char then  []
-				  else readLoop())
-	     | _ => (print "lib.seek: impossible"; raise Impossible))
+               []  =>  []
+             | [char] => char :: (if pred char then  []
+                                  else readLoop())
+             | _ => (print "lib.seek: impossible"; raise Impossible))
   in readLoop()
   end
 

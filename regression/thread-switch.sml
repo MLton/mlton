@@ -19,21 +19,21 @@ fun loop (n: int, T t): unit =
       then switch (fn _ => valOf (!done))
    else
       let
-	 val (n, t) = switch (fn t' => prepare (t, (n - 1, T t')))
+         val (n, t) = switch (fn t' => prepare (t, (n - 1, T t')))
       in
-	 loop(n, t)
+         loop(n, t)
       end
    
 fun main () =
    let
       val numSwitches =
-	 case CommandLine.arguments () of
-	    [] => 1000
-	  | s :: _ => valOf (Int.fromString s)
+         case CommandLine.arguments () of
+            [] => 1000
+          | s :: _ => valOf (Int.fromString s)
    in
       switch (fn cur =>
-	      (done := SOME (prepare (cur, ()))
-	       ; prepare (new loop, (numSwitches, T (new loop)))))
+              (done := SOME (prepare (cur, ()))
+               ; prepare (new loop, (numSwitches, T (new loop)))))
       ; print "ok\n"
    end
 

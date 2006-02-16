@@ -1,13 +1,14 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor MakeMonoEnv(S: sig
-			   structure Env: ENV
-			   structure Range: T
-			end): MONO_ENV =
+                           structure Env: ENV
+                           structure Range: T
+                        end): MONO_ENV =
 struct
 
 open S
@@ -27,7 +28,7 @@ end
 
 functor MonoEnv(S: MONO_ENV_STRUCTS): MONO_ENV =
    MakeMonoEnv(structure Env = Env(S)
-	       structure Range = S.Range)
+               structure Range = S.Range)
 *)
 
 functor MonoEnv(S: MONO_ENV_STRUCTS): MONO_ENV =
@@ -49,5 +50,5 @@ BasicEnvToEnv
     case List.peek(l, equalTo d) of
        NONE => NONE
      | SOME (_, r) => SOME r
-	  )
+          )
 

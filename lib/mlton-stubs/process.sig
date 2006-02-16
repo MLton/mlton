@@ -1,3 +1,10 @@
+(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 signature MLTON_PROCESS =
    sig
       type pid
@@ -50,13 +57,13 @@ signature MLTON_PROCESS =
         end
       
       val create:
-	 {args: string list, 
-	  env: string list option, 
-	  path: string, 
-	  stderr: ('stderr, output) Param.t,
-	  stdin: ('stdin, input) Param.t,
-	  stdout: ('stdout, output) Param.t}
-	 -> ('stdin, 'stdout, 'stderr) t
+         {args: string list, 
+          env: string list option, 
+          path: string, 
+          stderr: ('stderr, output) Param.t,
+          stdin: ('stdin, input) Param.t,
+          stdout: ('stdout, output) Param.t}
+         -> ('stdin, 'stdout, 'stderr) t
       val getStderr: ('stdin, 'stdout, 'stderr) t -> ('stderr, input) Child.t
       val getStdin:  ('stdin, 'stdout, 'stderr) t -> ('stdin, output) Child.t
       val getStdout: ('stdin, 'stdout, 'stderr) t -> ('stdout, input) Child.t

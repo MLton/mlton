@@ -8,7 +8,7 @@ type lexresult= (svalue,pos) token
 val pos = ref 0
 fun eof () = Tokens.EOF(!pos,!pos)
 fun error (e,l : int,_) = TextIO.output (TextIO.stdOut, String.concat[
-	"line ", (Int.toString l), ": ", e, "\n"
+        "line ", (Int.toString l), ": ", e, "\n"
       ])
 
 %%

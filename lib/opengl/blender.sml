@@ -28,56 +28,56 @@ fun output (x : GLreal) (y : GLreal)  (text : string) : unit =
 fun display () :unit =
     (
      let 
-	 val a = (Real32.fromLarge IEEEReal.TO_NEAREST (Math.cos ( !s ) / 2.0 + 0.5))
-	 val b = (Real32.fromLarge IEEEReal.TO_NEAREST (0.5 - Math.cos ( !s * 0.95 ) / 2.0))
+         val a = (Real32.fromLarge IEEEReal.TO_NEAREST (Math.cos ( !s ) / 2.0 + 0.5))
+         val b = (Real32.fromLarge IEEEReal.TO_NEAREST (0.5 - Math.cos ( !s * 0.95 ) / 2.0))
      in
-	 glClear ( GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT );
-	 glEnable GL_LIGHT1;
-	 glDisable GL_LIGHT2;
-	 glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[a]));
-	 glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[a]));
+         glClear ( GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT );
+         glEnable GL_LIGHT1;
+         glDisable GL_LIGHT2;
+         glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[a]));
+         glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[a]));
 
-	 glPushMatrix ();
-	 glTranslatef (~0.3) (~0.3) 0.0;
-	 glRotatef (!angle1) 1.0 5.0 0.0;
-	 glCallList 1;        (* render ico display list *)
-	 glPopMatrix();
+         glPushMatrix ();
+         glTranslatef (~0.3) (~0.3) 0.0;
+         glRotatef (!angle1) 1.0 5.0 0.0;
+         glCallList 1;        (* render ico display list *)
+         glPopMatrix();
 
-	 glClear GL_DEPTH_BUFFER_BIT;
-	 glEnable GL_LIGHT2 ;
-	 glDisable GL_LIGHT1 ;
-	 glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[b]));
-	 glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[b]));
+         glClear GL_DEPTH_BUFFER_BIT;
+         glEnable GL_LIGHT2 ;
+         glDisable GL_LIGHT1 ;
+         glMaterialfv GL_FRONT GL_AMBIENT (Array.fromList (amb@[b]));
+         glMaterialfv GL_FRONT GL_DIFFUSE (Array.fromList (dif@[b]));
 
-	 glPushMatrix();
-	 glTranslatef 0.3 0.3 0.0;
-	 glRotatef (!angle2) 1.0 0.0 5.0;
-	 glCallList 1;        (* render ico display list *)
-	 glPopMatrix();
+         glPushMatrix();
+         glTranslatef 0.3 0.3 0.0;
+         glRotatef (!angle2) 1.0 0.0 5.0;
+         glCallList 1;        (* render ico display list *)
+         glPopMatrix();
 
-	 glPushAttrib GL_ENABLE_BIT;
-	 glDisable GL_DEPTH_TEST;
-	 glDisable GL_LIGHTING;
-	 glMatrixMode GL_PROJECTION;
-	 glPushMatrix();
-	 glLoadIdentity();
-	 gluOrtho2D 0.0 1500.0 0.0 1500.0;
-	 glMatrixMode GL_MODELVIEW;
-	 glPushMatrix();
-	 glLoadIdentity();
-	 (* Rotate text slightly to help show jaggies. *)
-	 glRotatef 4.0 0.0 0.0 1.0;
-	 output 200.0 225.0 "This is antialiased.";
-	 glDisable GL_LINE_SMOOTH;
-	 glDisable GL_BLEND;
-	 output 160.0 100.0 "This text is not.";
-	 glPopMatrix ();
-	 glMatrixMode GL_PROJECTION;
-	 glPopMatrix();
-	 glPopAttrib();
-	 glMatrixMode GL_MODELVIEW;
+         glPushAttrib GL_ENABLE_BIT;
+         glDisable GL_DEPTH_TEST;
+         glDisable GL_LIGHTING;
+         glMatrixMode GL_PROJECTION;
+         glPushMatrix();
+         glLoadIdentity();
+         gluOrtho2D 0.0 1500.0 0.0 1500.0;
+         glMatrixMode GL_MODELVIEW;
+         glPushMatrix();
+         glLoadIdentity();
+         (* Rotate text slightly to help show jaggies. *)
+         glRotatef 4.0 0.0 0.0 1.0;
+         output 200.0 225.0 "This is antialiased.";
+         glDisable GL_LINE_SMOOTH;
+         glDisable GL_BLEND;
+         output 160.0 100.0 "This text is not.";
+         glPopMatrix ();
+         glMatrixMode GL_PROJECTION;
+         glPopMatrix();
+         glPopAttrib();
+         glMatrixMode GL_MODELVIEW;
 
-	 glutSwapBuffers()
+         glutSwapBuffers()
      end
 )
 
@@ -129,13 +129,13 @@ fun main () =
 
   glMatrixMode GL_PROJECTION;
   gluPerspective (* field of view in degree *) 40.0
-		 (* aspect ratio *) 1.0
-		 (* Z near *) 1.0
-		 (* Z far *) 10.0;
+                 (* aspect ratio *) 1.0
+                 (* Z near *) 1.0
+                 (* Z far *) 10.0;
   glMatrixMode GL_MODELVIEW;
   gluLookAt 0.0 0.0 5.0  (* eye is at (0,0,5) *)
-	    0.0 0.0 0.0      (* center is at (0,0,0) *)
-	    0.0 1.0 0.0;      (* up is in positive Y direction *)
+            0.0 0.0 0.0      (* center is at (0,0,0) *)
+            0.0 1.0 0.0;      (* up is in positive Y direction *)
   glTranslatef 0.0 0.6 (~1.0);
 
   glutMainLoop()

@@ -1,44 +1,44 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
-local
-    ../../lib/mlton/sources.mlb
-    ../ast/sources.mlb
-    ../atoms/sources.mlb
-    ../control/sources.mlb
-    ../core-ml/sources.mlb
 
-    decs.sig
-    decs.fun
-    type-env.sig
-    type-env.fun
-    interface.sig
-    interface.fun
-    elaborate-env.sig
-    elaborate-env.fun
-    precedence-parse.sig
-    precedence-parse.fun
-    scope.sig
-    scope.fun
-    elaborate-core.sig
-    elaborate-core.fun
-    elaborate-sigexp.sig
-    elaborate-sigexp.fun
-    elaborate-modules.sig
-    elaborate-modules.fun
-    elaborate-programs.sig
-    elaborate-programs.fun
-    elaborate-mlbs.sig
-    elaborate-mlbs.fun
-    elaborate.sig
-    elaborate.fun
+local
+   ../../lib/mlton/sources.mlb
+   ../ast/sources.mlb
+   ../atoms/sources.mlb
+   ../control/sources.mlb
+   ../core-ml/sources.mlb
+
+   decs.sig
+   decs.fun
+   type-env.sig
+   type-env.fun
+   interface.sig
+   interface.fun
+   elaborate-env.sig
+   elaborate-env.fun
+   precedence-parse.sig
+   precedence-parse.fun
+   scope.sig
+   scope.fun
+   elaborate-core.sig
+   elaborate-core.fun
+   elaborate-sigexp.sig
+   elaborate-sigexp.fun
+   elaborate-modules.sig
+   elaborate-modules.fun
+   elaborate-programs.sig
+   elaborate-programs.fun
+   elaborate-mlbs.sig
+   elaborate-mlbs.fun
+   elaborate.sig
+   elaborate.fun
 in
-    signature CONST_TYPE
-    signature ELABORATE
-    functor Elaborate
-    functor TypeEnv
+   signature CONST_TYPE
+   functor Elaborate
+   functor TypeEnv
 end

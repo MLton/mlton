@@ -71,14 +71,14 @@ mads*)
       fun occurs3 x = 
           (* finds coords which occur exactly 3 times in coordlist x *)
           let
-	    fun diff x y = filter (fn x => not(member x y)) x  (* unfolded o *)
-	    fun f xover x3 x2 x1 [] = diff x3 xover
+            fun diff x y = filter (fn x => not(member x y)) x  (* unfolded o *)
+            fun f xover x3 x2 x1 [] = diff x3 xover
                 | f xover x3 x2 x1 (a::x) = 
                    if member a xover then f xover x3 x2 x1 x else
                    if member a x3 then f (a::xover) x3 x2 x1 x else
-		   if member a x2 then f xover (a::x3) x2 x1 x else
+                   if member a x2 then f xover (a::x3) x2 x1 x else
                    if member a x1 then f xover x3 (a::x2) x1 x else
-		                       f xover x3 x2 (a::x1) x
+                                       f xover x3 x2 (a::x1) x
            in f [] [] [] [] x end
 (*     in 
 *)
@@ -100,17 +100,17 @@ mads*)
                   fun isalive x = copy_bool(member x living) (* eta *)
                   fun liveneighbours x = length( filter isalive ( neighbours x)) (*eta*)
                   fun twoorthree n = n = 2 orelse n = 3
-	          val survivors = copy_list(filter (twoorthree o liveneighbours) living)
-	          val newnbrlist = copy_list(collect (fn z => filter (fn x => not( isalive x)) ( neighbours z)) living) (* unfolded o twice*)
-	          val newborn = copy_list(occurs3 newnbrlist)
-	       in mkgen (survivors @ newborn) end
+                  val survivors = copy_list(filter (twoorthree o liveneighbours) living)
+                  val newnbrlist = copy_list(collect (fn z => filter (fn x => not( isalive x)) ( neighbours z)) living) (* unfolded o twice*)
+                  val newborn = copy_list(occurs3 newnbrlist)
+               in mkgen (survivors @ newborn) end
               else gen
      end
 (*    end*)
 
     fun neighbours (i,j) = [(i-1,j-1),(i-1,j),(i-1,j+1),
-			    (i,j-1),(i,j+1),
-			    (i+1,j-1),(i+1,j),(i+1,j+1)]
+                            (i,j-1),(i,j+1),
+                            (i+1,j-1),(i+1,j),(i+1,j+1)]
 
     local val xstart = 0 and ystart = 0
           fun markafter n string = string ^ spaces n ^ "0"
@@ -138,12 +138,12 @@ mads*)
     val bail = [(0,0),(0,1),(1,0),(1,1)]
     fun barberpole n =
        let fun f i = if i = n then (n+n-1,n+n)::(n+n,n+n)::nil
-		     else (i+i,i+i+1)::(i+i+2,i+i+1)::f(i+1)
+                     else (i+i,i+i+1)::(i+i+2,i+i+1)::f(i+1)
         in (0,0)::(1,0):: f 0
        end
 
     val genB = mkgen(glider at (2,2) @ bail at (2,12)
-		     @ rotate (barberpole 4) at (5,20))
+                     @ rotate (barberpole 4) at (5,20))
 
     fun copy_whole_arg (p, g) = (p, copy g)
 

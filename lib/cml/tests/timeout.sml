@@ -9,29 +9,29 @@ struct
       RunCML.doit
       (fn () =>
        let
-	  fun make m () =
-	     (print (concat ["make: ", Int.toString m, " ",
-			     tidToString (getTid ()), "\n"])
-	      ; sync (timeOutEvt (Time.fromSeconds (Int.toLarge m)))
-	      ; print (concat ["finish: ", Int.toString m, " ",
-			       tidToString (getTid ()), "\n"]))
-	  fun loop m =
-	     if m <= 0
-		then ()
-		else let
-			val _ = spawn (make m)
-		     in
-			loop (m - 10)
-		     end
+          fun make m () =
+             (print (concat ["make: ", Int.toString m, " ",
+                             tidToString (getTid ()), "\n"])
+              ; sync (timeOutEvt (Time.fromSeconds (Int.toLarge m)))
+              ; print (concat ["finish: ", Int.toString m, " ",
+                               tidToString (getTid ()), "\n"]))
+          fun loop m =
+             if m <= 0
+                then ()
+                else let
+                        val _ = spawn (make m)
+                     in
+                        loop (m - 10)
+                     end
        in
-	  loop n
+          loop n
        end,
        SOME (Time.fromMilliseconds 10))
 
    fun doit n =
       let
-	 val x = doit' n
+         val x = doit' n
       in
-	 x
+         x
       end
 end

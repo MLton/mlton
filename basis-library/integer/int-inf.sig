@@ -23,7 +23,7 @@ signature INT_INF_EXTRA =
       val gcd: int * int -> int 
       val isSmall: int -> bool
       datatype rep =
-	 Big of Word.word Vector.vector
+         Big of Word.word Vector.vector
        | Small of Int.int
       val rep: int -> rep
       val toInt64: int -> Int64.int

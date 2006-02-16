@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature C_TYPE_STRUCTS = 
@@ -16,7 +16,7 @@ signature C_TYPE =
       include C_TYPE_STRUCTS
 
       datatype t =
-	 Int8
+         Int8
        | Int16
        | Int32
        | Int64

@@ -22,9 +22,9 @@ structure CPIFDev : sig
 end = struct
 
     datatype device =
-	DEV of { filename: string,
-		 buffer : string list ref,
-		 wid : int }
+        DEV of { filename: string,
+                 buffer : string list ref,
+                 wid : int }
 
     (* no style support *)
     type style = unit
@@ -39,20 +39,20 @@ end = struct
     (* Calculate the final output and compare it with the current
      * contents of the file.  If they do not coincide, write the file. *)
     fun closeOut (DEV { buffer = ref l, filename, ... }) = let
-	val s = concat (rev l)
-	fun write () = let
-	    val f = TextIO.openOut filename
-	in
-	    TextIO.output (f, s);
-	    TextIO.closeOut f
-	end
+        val s = concat (rev l)
+        fun write () = let
+            val f = TextIO.openOut filename
+        in
+            TextIO.output (f, s);
+            TextIO.closeOut f
+        end
     in
-	let val f = TextIO.openIn filename
-	    val s' = TextIO.inputAll f
-	in
-	    TextIO.closeIn f;
-	    if s = s' then () else write ()
-	end handle _ => write ()
+        let val f = TextIO.openIn filename
+            val s' = TextIO.inputAll f
+        in
+            TextIO.closeIn f;
+            if s = s' then () else write ()
+        end handle _ => write ()
     end
 
     (* maximum printing depth (in terms of boxes) *)

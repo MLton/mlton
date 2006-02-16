@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
 type word = Word.t
 
@@ -22,7 +23,7 @@ signature HASH_SET =
        * NOTE: f must not modify the hash set during its evaluation.
        *)
       val insertIfNew:
-	 'a t * word * ('a -> bool) * (unit -> 'a) * ('a -> unit) -> 'a
+         'a t * word * ('a -> bool) * (unit -> 'a) * ('a -> unit) -> 'a
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       (* lookupOrInsert (s, h, p, f)  looks in the set s for an entry with hash h
        * satisfying predicate p.  If the entry is there, it is returned.
@@ -36,7 +37,7 @@ signature HASH_SET =
        * creates a table that can handle size elements without resizing.
        *)
       val newOfSize: {hash: 'a -> word,
-		      size: int} -> 'a t
+                      size: int} -> 'a t
       val peek: 'a t * word * ('a -> bool) -> 'a option
       (* remove an entry.  Error if it's not there. *)
       val remove: 'a t * word * ('a -> bool) -> unit
@@ -54,6 +55,6 @@ struct
 
 open S
 
-val _ = Assert.assert("HashSet", fn () => true)
+val _ = Assert.assert("TestHashSet", fn () => true)
 
 end

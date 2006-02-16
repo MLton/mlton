@@ -22,7 +22,7 @@ structure Result :> RESULT =
       fun put (iv, v) = SV.iPut(iv, RES v)
       fun putExn (iv, ex) = SV.iPut(iv, EXN ex)
       fun wrap (RES v) = v
-	| wrap (EXN ex) = raise ex
+        | wrap (EXN ex) = raise ex
       fun get iv = wrap(SV.iGet iv)
       fun getEvt iv = CML.wrap(SV.iGetEvt iv, wrap)
   end

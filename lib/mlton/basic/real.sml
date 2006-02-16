@@ -1,15 +1,15 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor Real (Real: sig
-		       include PERVASIVE_REAL
-		       val one: real
-		       val zero: real
-		    end): REAL =
+                       include PERVASIVE_REAL
+                       val one: real
+                       val zero: real
+                    end): REAL =
 struct
 
 type real = Real.real
@@ -18,18 +18,18 @@ structure In = In0
 
 structure R = 
    OrderedRing (structure R = 
-		   RingWithIdentity (structure R =
-					Ring (type t = real
-					      open Real
-					      val layout = Layout.str o toString
-					      val equals = Real.==)
-				     open R Real)
-		open R Real
-		val {compare, ...} =
-		   Relation.lessEqual {< = op <, equals = equals})
+                   RingWithIdentity (structure R =
+                                        Ring (type t = real
+                                              open Real
+                                              val layout = Layout.str o toString
+                                              val equals = Real.==)
+                                     open R Real)
+                open R Real
+                val {compare, ...} =
+                   Relation.lessEqual {< = op <, equals = equals})
 
 structure F = OrderedField (open R Real
-			    fun inverse x = one / x)
+                            fun inverse x = one / x)
 open F Real
 open Math
 
@@ -65,8 +65,8 @@ fun choose(n, k) =
       val k = max (k, n - k)
    in
       prodFromTo {from = add1 k,
-		  term = fn i => i,
-		  to = n}
+                  term = fn i => i,
+                  to = n}
       / factorial (n - k)
    end
 
@@ -80,13 +80,18 @@ fun realPower(m, n) = exp(n * ln m)
 
 val ceiling = ceil
 
+structure Class =
+   struct
+      datatype t = datatype IEEEReal.float_class
+   end
+
 end
 
 structure Real64 = Real (open Real64
-			 val one: real = 1.0
-			 val zero: real = 0.0)
+                         val one: real = 1.0
+                         val zero: real = 0.0)
 structure Real = Real64
 structure Real32 = Real (open Real32
-			 val one: real = 1.0
-			 val zero: real = 0.0)
-			    
+                         val one: real = 1.0
+                         val zero: real = 0.0)
+                            

@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 type int = Int.t
@@ -18,9 +18,11 @@ signature FFI =
       include FFI_STRUCTS
 
       val addExport: {args: CType.t vector,
-		      convention: CFunction.Convention.t,
-		      name: string,
-		      res: CType.t option} -> int
+                      convention: CFunction.Convention.t,
+                      name: string,
+                      res: CType.t option} -> int
+      val addSymbol: {ty: CType.t,
+                      name: string} -> unit
       val declareExports: {print: string -> unit} -> unit
       val declareHeaders: {print: string -> unit} -> unit
       val numExports: unit -> int

@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature REGEXP_STRUCTS = 
@@ -15,60 +16,60 @@ signature REGEXP =
       include REGEXP_STRUCTS
 
       structure Save:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val new: unit -> t
-	 end
+            val new: unit -> t
+         end
 
       structure Match:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val all: t -> Substring.t
-	    val startLength: t -> {start: int, length: int}
-	    val exists: t * Save.t -> bool
-	    val funs: t -> {exists: Save.t -> bool,
-			    lookup: Save.t -> Substring.t,
-			    peek: Save.t -> Substring.t option}
-	    val length: t -> int
-	    val lookup: t * Save.t -> Substring.t
-	    val lookupString: t * Save.t -> String.t
-	    val peek: t * Save.t -> Substring.t option
-	    val peekString: t * Save.t -> String.t option
-	    val stringFuns: t -> {exists: Save.t -> bool,
-				  lookup: Save.t -> String.t,
-				  peek: Save.t -> String.t option}
-	 end
+            val all: t -> Substring.t
+            val startLength: t -> {start: int, length: int}
+            val exists: t * Save.t -> bool
+            val funs: t -> {exists: Save.t -> bool,
+                            lookup: Save.t -> Substring.t,
+                            peek: Save.t -> Substring.t option}
+            val length: t -> int
+            val lookup: t * Save.t -> Substring.t
+            val lookupString: t * Save.t -> String.t
+            val peek: t * Save.t -> Substring.t option
+            val peekString: t * Save.t -> String.t option
+            val stringFuns: t -> {exists: Save.t -> bool,
+                                  lookup: Save.t -> String.t,
+                                  peek: Save.t -> String.t option}
+         end
 
       structure Compiled:
-	 sig
-	    type t
+         sig
+            type t
 
-	    (* Find the first substring of s starting at or after index i that
-	     * matches r.  Return the first character and the character just
-	     * past the end of the substring.
-	     *)
-	    val findShort: t * string * int -> Match.t option
-	    val findLong: t * string * int -> Match.t option
-	    val foreachMatchShort: t * string * (Match.t -> unit) -> unit
-	    val layout: t -> Layout.t
-	    val layoutDot: t -> Layout.t
-	    val layoutDotToFile: t * File.t -> unit
-	    (* match (r, s, i)
-	     * Return the (shortest or longest) substring of s starting at index
-	     * i that matches r. 
-	     * The substring is represented by the index of the character just
-	     * past its end.
-	     * Return NONE if there is NO match.
-	     * All of the saves in the match will be set.
-	     *)
-	    val matchAll: t * string -> Match.t option
-	    val matchLong: t * string * int -> Match.t option
-	    val matchShort: t * string * int -> Match.t option
-	    val matchesAll: t * string -> bool
-	    val matchesPrefix: t * string -> bool
-	 end
+            (* Find the first substring of s starting at or after index i that
+             * matches r.  Return the first character and the character just
+             * past the end of the substring.
+             *)
+            val findShort: t * string * int -> Match.t option
+            val findLong: t * string * int -> Match.t option
+            val foreachMatchShort: t * string * (Match.t -> unit) -> unit
+            val layout: t -> Layout.t
+            val layoutDot: t -> Layout.t
+            val layoutDotToFile: t * File.t -> unit
+            (* match (r, s, i)
+             * Return the (shortest or longest) substring of s starting at index
+             * i that matches r. 
+             * The substring is represented by the index of the character just
+             * past its end.
+             * Return NONE if there is NO match.
+             * All of the saves in the match will be set.
+             *)
+            val matchAll: t * string -> Match.t option
+            val matchLong: t * string * int -> Match.t option
+            val matchShort: t * string * int -> Match.t option
+            val matchesAll: t * string -> bool
+            val matchesPrefix: t * string -> bool
+         end
 
       type t
 
@@ -119,53 +120,53 @@ val compile = if true then compileNFA else compileDFA
 
 val _ =
    Assert.assert
-   ("Regexp.save", fn () =>
+   ("TestRegexp.save", fn () =>
     let
        val s = Save.new ()
     in
        List.forall
        ([(save (seq [], s), "", ""),
-	 (save (star (oneOf "a"), s), "", ""),
-	 (seq [save (seq [], s), seq []], "", ""),
-	 (seq [oneOf "a", save (seq [], s)], "a", "")],
-	fn (r, s1, s2) =>
-	let
-	   val c = compile r
-	in
-	   case matchAll (c, s1) of
-	      NONE => false
-	    | SOME m => Match.lookupString (m, s) = s2
-	end)
+         (save (star (oneOf "a"), s), "", ""),
+         (seq [save (seq [], s), seq []], "", ""),
+         (seq [oneOf "a", save (seq [], s)], "a", "")],
+        fn (r, s1, s2) =>
+        let
+           val c = compile r
+        in
+           case matchAll (c, s1) of
+              NONE => false
+            | SOME m => Match.lookupString (m, s) = s2
+        end)
     end)
 
 val _ =
    Assert.assert
-   ("Regexp.doesMatchAll", fn () =>
+   ("TestRegexp.doesMatchAll", fn () =>
     List.forall ([(any, "a"),
-		  (anys, "abc")], 
-		 fn (r, s) => matchesAll (compile r, s)))
+                  (anys, "abc")], 
+                 fn (r, s) => matchesAll (compile r, s)))
 val tests =
    List.map ([
-	      ("\\a", "a"),
-	      ("^$", ""),
-	      ("abc", "abc"),
-	      (".", "a"),
-	      ("^foo$", "foo"),
-	      ("^...$", "foo"),
-	      ("^.*$", "foo"),
-	      ("^.*foo@bar\\.com$", "foo@bar.com"),
-	      ("(abc)","abc"),
-	      ("\\(abc\\)","(abc)"),
-	      ("(abc){2,4}$", "abcabc"),
-	      ("(abc){2,4}$", "abcabcabc"),
-	      ("(abc){2,4}$", "abcabcabcabc")
-	      ],
-	     fn (r, s) =>
-	     let
-		val opt = SOME (String.size s)
-	     in
-		(#1 (valOf (fromString r)), s, opt, opt)
-	     end)
+              ("\\a", "a"),
+              ("^$", ""),
+              ("abc", "abc"),
+              (".", "a"),
+              ("^foo$", "foo"),
+              ("^...$", "foo"),
+              ("^.*$", "foo"),
+              ("^.*foo@bar\\.com$", "foo@bar.com"),
+              ("(abc)","abc"),
+              ("\\(abc\\)","(abc)"),
+              ("(abc){2,4}$", "abcabc"),
+              ("(abc){2,4}$", "abcabcabc"),
+              ("(abc){2,4}$", "abcabcabcabc")
+              ],
+             fn (r, s) =>
+             let
+                val opt = SOME (String.size s)
+             in
+                (#1 (valOf (fromString r)), s, opt, opt)
+             end)
    @
    [
     (#1 (valOf (fromString "a")), "a", SOME 1, SOME 1),
@@ -189,7 +190,7 @@ val tests =
     (seq [string "ab", null], "abc", SOME 2, SOME 2),
     (or [string "a", string "ab", string "abc"], "abc", SOME 1, SOME 3),
     (seq [or [string "ab", null],
-	 or [string "abcde", string "cd"]], "abcde",
+         or [string "abcde", string "cd"]], "abcde",
      SOME 4, SOME 5),
     (star (or [null, char #"a"]), "aaa", SOME 0, SOME 3),
     (star (string "ab"), "ababab", SOME 0, SOME 6),
@@ -198,52 +199,52 @@ val tests =
     end,
     let val r = Save.new ()
     in (seq [string "a", save (string "bc", r), string "d"],
-	"abcd", SOME 4, SOME 4)
+        "abcd", SOME 4, SOME 4)
     end,
     let val s1 = Save.new ()
        val s2 = Save.new ()
     in (seq [save (string "a", s1),
-	    save (string "b", s2)],
-	"ab", SOME 2, SOME 2)
+            save (string "b", s2)],
+        "ab", SOME 2, SOME 2)
     end,
  let val s1 = Save.new ()
     val s2 = Save.new ()
  in (seq [save (string "a", s1),
-	  string "b",
-	  save (string "c", s2),
-	  string "d"],
+          string "b",
+          save (string "c", s2),
+          string "d"],
      "abcd",
      SOME 4, SOME 4)
  end,
 let val s1 = Save.new ()
 in (seq [string "a",
-	save (string "b", s1),
-	string "c"],
+        save (string "b", s1),
+        string "c"],
     "abc",
     SOME 3, SOME 3)
 end,
 let val s1 = Save.new ()
 in (seq [string "abc",
-	save (string "d", s1),
-	string "e"],
+        save (string "d", s1),
+        string "e"],
     "abcde",
     SOME 5, SOME 5)
 end,
 let val s1 = Save.new ()
    val s2 = Save.new ()
 in (seq [string "abc",
-	save (string "d", s1),
-	string "e",
-	save (string "f", s2)],
+        save (string "d", s1),
+        string "e",
+        save (string "f", s2)],
     "abcdef",
     SOME 6, SOME 6)
 end,
 let val s1 = Save.new ()
    val s2 = Save.new ()
 in (seq [string "abc",
-	save (string "d", s1),
-	string "e",
-	save (string "fgh", s2)],
+        save (string "d", s1),
+        string "e",
+        save (string "fgh", s2)],
     "abcdefgh",
     SOME 8, SOME 8)
 end
@@ -251,17 +252,17 @@ end
 
 val _ =
    Assert.assert
-   ("Regexp.match", fn () =>
+   ("Test.Regexp.match", fn () =>
     List.forall (tests,
-		 fn (r, s: string, i1, i2) =>
-		 let
-		    val r = compile r
-		    val _ = Compiled.layoutDotToFile (r, "/tmp/z.dot")
-		    fun doit m = Option.map (m (r, s, 0), Match.length)
-		 in
-		    i1 = doit matchShort
-		    andalso i2 = doit matchLong
-		 end))
+                 fn (r, s: string, i1, i2) =>
+                 let
+                    val r = compile r
+                    val _ = Compiled.layoutDotToFile (r, "/tmp/z.dot")
+                    fun doit m = Option.map (m (r, s, 0), Match.length)
+                 in
+                    i1 = doit matchShort
+                    andalso i2 = doit matchLong
+                 end))
 
 val tests =
    [(string "abc", "123abc", SOME (3: int, 6: int)),
@@ -276,10 +277,10 @@ val _ =
     List.forall
     (tests, fn (r, s, opt) =>
      opt = (Option.map
-	    (findShort (compile r, s, 0), fn m =>
-	     let val (_, {start, length}) = Substring.base (Match.all m)
-	     in (start, start + length)
-	     end))))
+            (findShort (compile r, s, 0), fn m =>
+             let val (_, {start, length}) = Substring.base (Match.all m)
+             in (start, start + length)
+             end))))
 
 val _ =
    Assert.assert
@@ -287,12 +288,12 @@ val _ =
     List.forall
     ([(SOME (2, 4), (string "cd", "abcdef", 0)),
       (SOME (2, 4), (seq [char #"c", star (isNotChar Char.isSpace)],
-		     "abcd fg", 0))],
+                     "abcd fg", 0))],
      fn (res, (r, s, i)) =>
      res =
      Option.map (findLong (compile r, s, i), fn m =>
-		 let val (_, {start, length}) = Substring.base (Match.all m)
-		 in (start, start + length)
-		 end)))
+                 let val (_, {start, length}) = Substring.base (Match.all m)
+                 in (start, start + length)
+                 end)))
    
 end

@@ -1,9 +1,9 @@
-/* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  */
 
 #ifndef _PLATFORM_H_
@@ -11,7 +11,13 @@
 
 #define _ISOC99_SOURCE
 #define _BSD_SOURCE
+
+/* Only enable _POSIX_C_SOURCE on platforms that don't have broken system
+ * headers.
+ */
+#if (defined (__linux__))
 #define _POSIX_C_SOURCE 200112L
+#endif
 
 #include <sys/types.h> // lots of includes depend on this
 #include <dirent.h>
@@ -31,20 +37,18 @@
 #include <utime.h>
 
 /* C99-specific headers */
-#include <fenv.h>
-#include <stdint.h>
 #include <inttypes.h>
 
 /* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 
- * but that is version 2.  We want gmp version 4, which the is installed in 
+ * but that is version 2.  We want gmp version 4, which is installed in 
  * /usr/local/include, and is ensured to exist because it is required by the
  * MLton package.
  * On NetBSD, we want gmp to be installed into the pkg tree (which represents
  * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
  * case, but we note that this should be changed so the makefile provides the
  * correct -I flags to the compiler.
- * As far as I can tell, gmp does not come with Mac OS X, so the user will
- * install it himself.
+ * On MacOS X, many users will use fink to install gmp, in which case gmp.h
+ * will be installed in /sw/include.
  */
 #include "gmp.h"
 
@@ -74,16 +78,60 @@
 #error unknown platform
 #endif
 
-#ifndef EXECVP
-#define EXECVP execvp
+#ifndef bool
+#define bool    int                     /* boolean type */
+#endif
+#define uint    unsigned int            /* short names for unsigned types */
+#define ulong   unsigned long
+#define ullong  unsigned long long      /* GCC extension */
+#define llong   long long               /* GCC extension */
+#define uchar   unsigned char
+#define ushort  unsigned short int
+#define not     !                       /* logical negation operator */
+#define and     &&                      /* logical conjunction */
+#define or      ||                      /* logical disjunction */
+#ifndef TRUE
+#define TRUE    (0 == 0)
+#endif
+#ifndef FALSE
+#define FALSE   (not TRUE)
+#endif
+#define loop    while (TRUE)            /* loop until break */
+#define EOS     '\0'                    /* end-of-string char */
+#ifndef NULL
+#define NULL    0                       /* invalid pointer */
 #endif
 
-#ifndef EXECVE
-#define EXECVE execve
+#define NEW(t, x)               x = (t)(smalloc (sizeof(*x)))
+#define ARRAY(t, a, s)  a = (t)(scalloc (s, sizeof(*a)))
+#define ARRAY_UNSAFE(t, a, s)   a = (t)(calloc (s, sizeof(*a)))
+
+#define string char*
+
+#define unless(p)       if (not (p))
+#define until(p)        while (not (p))
+#define cardof(a)       (sizeof(a) / sizeof(*(a)))
+#define endof(a)        ((a) + cardof(a))
+#define bitsof(a)       (sizeof(a) * 8)
+
+#ifndef max
+#define max(a, b) ((a)>(b)?(a):(b))
+#endif
+
+#ifndef min
+#define min(a, b) ((a)<(b)?(a):(b))
 #endif
 
 #ifndef MLton_Platform_OS_host
 #error MLton_Platform_OS_host not defined
+#endif
+
+#ifndef HAS_FPCLASSIFY
+#error HAS_FPCLASSIFY not defined
+#endif
+
+#ifndef HAS_FEROUND
+#error HAS_FEROUND not defined
 #endif
 
 #ifndef HAS_PTRACE
@@ -98,6 +146,10 @@
 #error HAS_SIGALTSTACK not defined
 #endif
 
+#ifndef HAS_SIGNBIT
+#error HAS_SIGNBIT not defined
+#endif
+
 #ifndef HAS_SPAWN
 #error HAS_SPAWN not defined
 #endif
@@ -106,14 +158,50 @@
 #error HAS_TIME_PROFILING not defined
 #endif
 
+#ifndef EXECVP
+#define EXECVP execvp
+#endif
+
+#ifndef EXECVE
+#define EXECVE execve
+#endif
+
+#if not HAS_FEROUND
+#ifndef FE_TONEAREST
+#define FE_TONEAREST 0
+#endif
+#ifndef FE_DOWNWARD
+#define FE_DOWNWARD 1
+#endif
+#ifndef FE_UPWARD
+#define FE_UPWARD 2
+#endif
+#ifndef FE_TOWARDZERO
+#define FE_TOWARDZERO 3
+#endif
+#endif
+
+#if not HAS_FPCLASSIFY
+#ifndef FP_INFINITE
+#define FP_INFINITE 1
+#endif
+#ifndef FP_NAN
+#define FP_NAN 0
+#endif
+#ifndef FP_NORMAL
+#define FP_NORMAL 4
+#endif
+#ifndef FP_SUBNORMAL
+#define FP_SUBNORMAL 3
+#endif
+#ifndef FP_ZERO
+#define FP_ZERO 2
+#endif
+#endif
+
 /* If HAS_TIME_PROFILING, then you must define these. */
 void *getTextStart ();
 void *getTextEnd ();
-
-/* HAS_WEAK is true if the platform supports the weak attribute. */
-#ifndef HAS_WEAK
-#error HAS_WEAK not defined
-#endif
 
 #ifndef SPAWN_MODE
 #define SPAWN_MODE 0
@@ -123,54 +211,12 @@ void *getTextEnd ();
 #define INT_MIN ((int)0x80000000)
 #endif
 #ifndef INT_MAX
-#define	INT_MAX ((int)0x7FFFFFFF)
-#endif
-
-#define	bool	int			/* boolean type */
-#define	uint	unsigned int		/* short names for unsigned types */
-#define	ulong	unsigned long
-#define	ullong	unsigned long long	/* GCC extension */
-#define	llong	long long		/* GCC extension */
-#define	uchar	unsigned char
-#define	ushort	unsigned short int
-#define	not	!			/* logical negation operator */
-#define	and	&&			/* logical conjunction */
-#define	or	||			/* logical disjunction */
-#ifndef TRUE
-#define	TRUE	(0 == 0)
-#endif
-#ifndef FALSE
-#define	FALSE	(not TRUE)
-#endif
-#define	loop	while (TRUE)		/* loop until break */
-#define	EOS	'\0'			/* end-of-string char */
-#ifndef	NULL
-#define	NULL	0			/* invalid pointer */
-#endif
-
-#define NEW(t, x)		x = (t)(smalloc (sizeof(*x)))
-#define ARRAY(t, a, s)	a = (t)(scalloc (s, sizeof(*a)))
-#define ARRAY_UNSAFE(t, a, s)	a = (t)(calloc (s, sizeof(*a)))
-
-#define string char*
-
-#define	unless(p)	if (not (p))
-#define	until(p)	while (not (p))
-#define	cardof(a)	(sizeof(a) / sizeof(*(a)))
-#define	endof(a)	((a) + cardof(a))
-#define	bitsof(a)	(sizeof(a) * 8)
-
-#ifndef max
-#define max(a, b) ((a)>(b)?(a):(b))
-#endif
-
-#ifndef min
-#define min(a, b) ((a)<(b)?(a):(b))
+#define INT_MAX ((int)0x7FFFFFFF)
 #endif
 
 enum {
-	DEBUG_MEM = FALSE,
-	DEBUG_SIGNALS = FALSE,
+        DEBUG_MEM = FALSE,
+        DEBUG_SIGNALS = FALSE,
 };
 
 #include "types.h"
@@ -184,12 +230,12 @@ string boolToString (bool b);
 void decommit (void *base, size_t length);
 /* issue error message and exit */
 extern void die (char *fmt, ...)
-			__attribute__ ((format(printf, 1, 2)))
-			__attribute__ ((noreturn));
+                        __attribute__ ((format(printf, 1, 2)))
+                        __attribute__ ((noreturn));
 /* issue error message and exit.  Also print strerror(errno). */
 extern void diee (char *fmt, ...)
-			__attribute__ ((format(printf, 1, 2)))
-			__attribute__ ((noreturn));
+                        __attribute__ ((format(printf, 1, 2)))
+                        __attribute__ ((noreturn));
 /*
  * fixedGetrusage() works just like getrusage().  We have a wrapper because on 
  * some platforms (e.g. Linux) we need to work around kernel bugs in getrusage.
@@ -232,17 +278,17 @@ string uintToCommaString (uint n);
 string ullongToCommaString (ullong n);
 
 static inline bool isBigEndian(void) {
-	union {
-		Word16 x;
-	        Word8 y;
-	} z;
-	
-	/* gcc optimizes the following code to just return the result. */
-	z.x = 0xABCDU;
-	if (z.y == 0xAB) return TRUE; /* big endian */
-	if (z.y == 0xCD) return FALSE; /* little endian */
-	die ("Could not detect endian --- neither big nor little!\n");
-	return 0;
+        union {
+                Word16 x;
+                Word8 y;
+        } z;
+        
+        /* gcc optimizes the following code to just return the result. */
+        z.x = 0xABCDU;
+        if (z.y == 0xAB) return TRUE; /* big endian */
+        if (z.y == 0xCD) return FALSE; /* little endian */
+        die ("Could not detect endian --- neither big nor little!\n");
+        return 0;
 }
 
 #define MLton_Platform_Arch_bigendian isBigEndian()
@@ -316,19 +362,14 @@ void GC_setSummary (Int b);
 /* ------------------------------------------------- */
 
 #define FE_NOSUPPORT -1
-#ifndef FE_TONEAREST
-#define FE_TONEAREST FE_NOSUPPORT
-#endif
-#ifndef FE_DOWNWARD
-#define FE_DOWNWARD FE_NOSUPPORT
-#endif
-#ifndef FE_UPWARD
-#define FE_UPWARD FE_NOSUPPORT
-#endif
-#ifndef FE_TOWARDZERO
-#define FE_TOWARDZERO FE_NOSUPPORT
-#endif
-
+/* Can't handle undefined rounding modes with code like the following.
+ *  #ifndef FE_TONEAREST
+ *  #define FE_TONEAREST FE_NOSUPPORT
+ *  #endif
+ * On some platforms, FE_* are defined via an enum, not the preprocessor,
+ * and hence don't show up as #defined.  In that case, the above code 
+ * overwrites them.
+ */
 void IEEEReal_setRoundingMode (Int mode);
 Int IEEEReal_getRoundingMode ();
 
@@ -339,20 +380,20 @@ Int IEEEReal_getRoundingMode ();
 /*
  * Third header word for bignums and strings.
  */
-#define	BIGMAGIC	GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
-#define	STRMAGIC	GC_objectHeader (STRING_TYPE_INDEX)
+#define BIGMAGIC        GC_objectHeader (WORD32_VECTOR_TYPE_INDEX)
+#define STRMAGIC        GC_objectHeader (STRING_TYPE_INDEX)
 
 /*
  * Layout of bignums.  Note, the value passed around is a pointer to
  * the isneg member.
  */
-typedef struct	bignum {
-	uint	counter,	/* used by GC. */
-		card,		/* one more than the number of limbs */
-		magic,		/* BIGMAGIC */
-		isneg;		/* iff bignum is negative */
-	ulong	limbs[0];	/* big digits, least significant first */
-}	bignum;
+typedef struct  bignum {
+        uint    counter,        /* used by GC. */
+                card,           /* one more than the number of limbs */
+                magic,          /* BIGMAGIC */
+                isneg;          /* iff bignum is negative */
+        ulong   limbs[0];       /* big digits, least significant first */
+}       bignum;
 
 /* All of these routines modify the frontier in gcState.  They assume that 
  * there are bytes bytes free, and allocate an array to store the result
@@ -389,8 +430,8 @@ Bool IntInf_equal (Pointer lhs, Pointer rhs);
 #define Itimer_virtual ITIMER_VIRTUAL
 
 void Itimer_set (Int which,
-			Int interval_tv_sec, Int interval_tv_usec,
-			Int value_tv_sec, Int value_tv_usec);
+                        Int interval_tv_sec, Int interval_tv_usec,
+                        Int value_tv_sec, Int value_tv_usec);
 
 /* ------------------------------------------------- */
 /*                       MLton                       */
@@ -423,7 +464,7 @@ Word MLton_size (Pointer p);
 #define MLton_Platform_Arch_host "m68k"
 #elif (defined (__mips__))
 #define MLton_Platform_Arch_host "mips"
-#elif (defined (__ppc__))
+#elif (defined (__ppc__)) || (defined (__powerpc__))
 #define MLton_Platform_Arch_host "powerpc"
 #elif (defined (__s390__))
 #define MLton_Platform_Arch_host "s390"
@@ -453,8 +494,6 @@ void MLton_Profile_setCurrent (Pointer d);
 /*           MLton.Process            */
 /* ---------------------------------- */
 
-Pid MLton_Process_create (NullString cmds, NullString args, NullString envs,
-				Fd in, Fd out, Fd err);
 Pid MLton_Process_cwait (Pid p, Pointer s);
 Int MLton_Process_spawne (NullString p, Pointer a, Pointer e);
 Int MLton_Process_spawnp (NullString p, Pointer a);
@@ -800,7 +839,7 @@ extern CstringArray Posix_ProcEnv_environ;
 #define Posix_ProcEnv_VERSION _SC_VERSION
 
 enum {
-	Posix_ProcEnv_numgroups = 100,
+        Posix_ProcEnv_numgroups = 100,
 };
 
 Pid Posix_ProcEnv_getpid ();
@@ -1044,9 +1083,9 @@ static inline void MLton_initSockets () {}
 #define NetHostDB_inAddrLen sizeof(struct in_addr)
 #define NetHostDB_INADDR_ANY INADDR_ANY
 #define Socket_sockAddrLenMax max(sizeof(struct sockaddr), \
-			      max(sizeof(struct sockaddr_un), \
-			      max(sizeof(struct sockaddr_in), \
-				  sizeof(struct sockaddr_in6))))
+                              max(sizeof(struct sockaddr_un), \
+                              max(sizeof(struct sockaddr_in), \
+                                  sizeof(struct sockaddr_in6))))
 #define Socket_AF_UNIX PF_UNIX
 #define Socket_AF_INET PF_INET
 #define Socket_AF_INET6 PF_INET6

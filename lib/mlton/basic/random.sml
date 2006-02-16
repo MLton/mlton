@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 structure Random: RANDOM =
@@ -27,13 +27,13 @@ local
 in
    fun bool () =
       let
-	 val i = !ri
-	 val b = 0w1 = Word.andb (0wx1, Word.>> (!rw, Word.fromInt i))
-	 val _ =
-	    if i = max
-	       then (rw := word ()
-		     ; ri := 0)
-	    else ri := 1 + i
+         val i = !ri
+         val b = 0w1 = Word.andb (0wx1, Word.>> (!rw, Word.fromInt i))
+         val _ =
+            if i = max
+               then (rw := word ()
+                     ; ri := 0)
+            else ri := 1 + i
       in b
       end
 end
@@ -66,20 +66,20 @@ local
 in
    fun wordLessThan (w: word): word =
       if w = 0w0
-	 then Error.bug "Random.word"
+         then Error.bug "Random.wordLessThan"
       else
-	 let
-	    val () =
-	       if w - 0w1 <= !max
-		  then ()
-	       else (r := MLton.Random.rand ()
-		     ; max := 0wxFFFFFFFF)
-	    val w' = !r
-	    val () = r := Word.div (w', w)
-	    val () = max := Word.div (!max, w)
-	 in
-	    Word.mod (w', w)
-	 end
+         let
+            val () =
+               if w - 0w1 <= !max
+                  then ()
+               else (r := MLton.Random.rand ()
+                     ; max := 0wxFFFFFFFF)
+            val w' = !r
+            val () = r := Word.div (w', w)
+            val () = max := Word.div (!max, w)
+         in
+            Word.mod (w', w)
+         end
 end
 
 fun natLessThan (n: int): int =
@@ -93,15 +93,15 @@ fun charFrom (s: string): char =
 fun nRandom {list, length, n} =
    let
       fun loop (need: int, length: int, xs: 'a list, ac: 'a list): 'a list =
-	 (Assert.assert ("Random.nRandom", fn () => need <= length)
-	  ; if need <= 0
-	       then ac
-	    else (case xs of
-		     [] => Error.bug "nRandom"
-		   | x :: xs =>
-			if natLessThan length < need
-			   then loop (need - 1, length - 1, xs, x :: ac)
-			else loop (need, length - 1, xs, ac)))
+         (Assert.assert ("Random.nRandom", fn () => need <= length)
+          ; if need <= 0
+               then ac
+            else (case xs of
+                     [] => Error.bug "nRandom"
+                   | x :: xs =>
+                        if natLessThan length < need
+                           then loop (need - 1, length - 1, xs, x :: ac)
+                        else loop (need, length - 1, xs, ac)))
    in loop (n, length, list, [])
    end
 
@@ -109,9 +109,9 @@ val nRandom = fn x =>
    Assert.assertFun
    ("nRandom", nRandom,
     fn {list, length, n} => (length = List.length list
-			     andalso 0 <= n
-			     andalso n <= length,
-			     fn l => n = List.length l))
+                             andalso 0 <= n
+                             andalso n <= length,
+                             fn l => n = List.length l))
    x
 
 fun list l =
@@ -119,7 +119,7 @@ fun list l =
       val n = List.length l
    in
       if n = 0
-	 then NONE
+         then NONE
       else SOME (List.nth (l, natLessThan n))
    end
 

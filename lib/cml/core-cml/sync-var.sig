@@ -17,7 +17,7 @@ signature SYNC_VAR =
       
       type 'a ivar  (* I-structure variable *)
       type 'a mvar  (* M-structure variable *)
-	 
+         
       exception Put (* raised on put operations to full cells *)
       
       val iVar     : unit -> 'a ivar
@@ -26,7 +26,7 @@ signature SYNC_VAR =
       val iGetEvt  : 'a ivar -> 'a CML.event
       val iGetPoll : 'a ivar -> 'a option
       val sameIVar : ('a ivar * 'a ivar) -> bool
-	 
+         
       val mVar      : unit -> 'a mvar
       val mVarInit  : 'a -> 'a mvar
       val mPut      : ('a mvar * 'a) -> unit

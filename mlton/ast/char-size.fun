@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor CharSize (S: CHAR_SIZE_STRUCTS): CHAR_SIZE = 
@@ -13,8 +13,6 @@ open S
 datatype t = C1 | C2 | C4
 
 val all = [C1, C2, C4]
-
-val stub = fn _ => raise Fail "CharSize"
 
 fun bits s =
    Bits.fromInt

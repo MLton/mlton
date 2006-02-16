@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature COMPILE_STRUCTS =
@@ -15,25 +15,25 @@ signature COMPILE =
       include COMPILE_STRUCTS
 
       val compileMLB: {input: File.t,
-		       outputC: unit -> {file: File.t,
-					 print: string -> unit,
-					 done: unit -> unit},
-		       outputCmm: unit -> {file: File.t,
-					   print: string -> unit,
-					   done: unit -> unit},
-		       outputS: unit -> {file: File.t,
-					 print: string -> unit,
-					 done: unit -> unit}} -> unit
+                       outputC: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit},
+                       outputCmm: unit -> {file: File.t,
+                                           print: string -> unit,
+                                           done: unit -> unit},
+                       outputS: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit}} -> unit
       val compileSML: {input: File.t list,
-		       outputC: unit -> {file: File.t,
-					 print: string -> unit,
-					 done: unit -> unit},
-		       outputCmm: unit -> {file: File.t,
-					   print: string -> unit,
-					   done: unit -> unit},
-		       outputS: unit -> {file: File.t,
-					 print: string -> unit,
-					 done: unit -> unit}} -> unit
+                       outputC: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit},
+                       outputCmm: unit -> {file: File.t,
+                                           print: string -> unit,
+                                           done: unit -> unit},
+                       outputS: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit}} -> unit
       val elaborateMLB: {input: File.t} -> unit
       val elaborateSML: {input: File.t list} -> unit
       val setCommandLineConstant: {name: string, value: string} -> unit

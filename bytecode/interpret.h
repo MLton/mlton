@@ -1,3 +1,10 @@
+/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ */
+
 #ifndef _INTERPRET_H_
 #define _INTERPRET_H_
 
@@ -5,9 +12,9 @@
 #include "types.h"
 #include "assert.h"
 
-#define regs(ty)				\
-	extern int ty##RegI;			\
-	extern ty ty##Reg[]
+#define regs(ty)                                \
+        extern int ty##RegI;                    \
+        extern ty ty##Reg[]
 
 regs(Real32);
 regs(Real64);
@@ -18,27 +25,27 @@ regs(Word64);
 
 #undef regs
 
-#define assertRegsEmpty()			\
-	do {					\
-		assert (0 == Word8RegI);	\
-		assert (0 == Word16RegI);	\
-		assert (0 == Word32RegI);	\
-		assert (0 == Word64RegI);	\
-		assert (0 == Real32RegI);	\
-		assert (0 == Real64RegI);	\
-	} while (0)
+#define assertRegsEmpty()                       \
+        do {                                    \
+                assert (0 == Word8RegI);        \
+                assert (0 == Word16RegI);       \
+                assert (0 == Word32RegI);       \
+                assert (0 == Word64RegI);       \
+                assert (0 == Real32RegI);       \
+                assert (0 == Real64RegI);       \
+        } while (0)
 
 struct NameOffsets {
-	Word32 codeOffset;  // An offset into code.
-	Word32 nameOffset;  // An offset into addressNames.
+        Word32 codeOffset;  // An offset into code.
+        Word32 nameOffset;  // An offset into addressNames.
 };
 
 typedef struct Bytecode {
-	char *addressNames;
-	Pointer code;
-	Word32 codeSize;
-	struct NameOffsets *nameOffsets;
-	Word32 nameOffsetsSize;
+        char *addressNames;
+        Pointer code;
+        Word32 codeSize;
+        struct NameOffsets *nameOffsets;
+        Word32 nameOffsetsSize;
 } *Bytecode;
 
 #define PopReg(ty) (assert (ty##RegI > 0), ty##Reg [--ty##RegI])

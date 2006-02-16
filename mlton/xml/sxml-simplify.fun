@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor SxmlSimplify (S: SXML_SIMPLIFY_STRUCTS): SXML_SIMPLIFY = 
 struct
 
@@ -22,21 +23,28 @@ fun polyvariance (rounds, small, product) p =
     fn () => Polyvariance.duplicate p)
 
 type pass = {name: string,
-	     doit: Program.t -> Program.t}
+             doit: Program.t -> Program.t}
 
-val sxmlPasses : pass list ref = ref
-   [
-    {name = "sxmlShrink1", doit = S.shrink},
-    {name = "implementSuffix", doit = ImplementSuffix.doit},
-    {name = "sxmlShrink2", doit = S.shrink},
-    {name = "implementExceptions", doit = ImplementExceptions.doit},
-    {name = "sxmlShrink3", doit = S.shrink},
+val sxmlPassesDefault =
+   {name = "sxmlShrink1", doit = S.shrink} ::
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", doit = S.shrink} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "sxmlShrink3", doit = S.shrink} ::
 (*
-    {name = "uncurry", doit = Uncurry.uncurry},
-    {name = "sxmlShrink4", doit = S.shrink},
+   {name = "uncurry", doit = Uncurry.uncurry} ::
+   {name = "sxmlShrink4", doit = S.shrink} ::
 *)
-    {name = "polyvariance", doit = Polyvariance.duplicate}
-   ]
+   {name = "polyvariance", doit = Polyvariance.duplicate} ::
+   nil
+
+val sxmlPassesMinimal =
+   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", doit = S.shrink} ::
+   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   nil
+
+val sxmlPasses : pass list ref = ref sxmlPassesDefault
 
 local
    type passGen = string -> pass option
@@ -44,74 +52,87 @@ local
    fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
-		    then SOME {name = name ^ "#" ^ 
-			       (Int.toString (Counter.next count)),
-			       doit = doit}
-		    else NONE
+                    then SOME {name = name ^ "#" ^ 
+                               (Int.toString (Counter.next count)),
+                               doit = doit}
+                    else NONE
       end
 
    val polyvariancePassGen =
       let
-	 val count = Counter.new 1
-	 fun nums s =
-	    if s = ""
-	       then SOME []
-	    else if String.sub (s, 0) = #"(" 
-	            andalso String.sub (s, String.size s - 1)= #")"
-	       then let
-		       val s = String.dropFirst (String.dropLast s)
-		    in
-		       case List.fold (String.split (s, #","), SOME [],
-				       fn (s,SOME nums) => (case Int.fromString s of
-							       SOME i => SOME (i::nums)
-							     | NONE => NONE)
-					| (_, NONE) => NONE) of
-			  SOME (l as _::_) => SOME (List.rev l)
-			| _ => NONE
-		    end
-	    else NONE
+         val count = Counter.new 1
+         fun nums s =
+            if s = ""
+               then SOME []
+            else if String.sub (s, 0) = #"(" 
+                    andalso String.sub (s, String.size s - 1)= #")"
+               then let
+                       val s = String.dropFirst (String.dropLast s)
+                    in
+                       case List.fold (String.split (s, #","), SOME [],
+                                       fn (s,SOME nums) => (case Int.fromString s of
+                                                               SOME i => SOME (i::nums)
+                                                             | NONE => NONE)
+                                        | (_, NONE) => NONE) of
+                          SOME (l as _::_) => SOME (List.rev l)
+                        | _ => NONE
+                    end
+            else NONE
       in
-	 fn s =>
-	 if String.hasPrefix (s, {prefix = "polyvariance"})
-	    then let
-		    fun mk (rounds, small, product) =
-		       SOME {name = concat ["polyvariance(", 
-					    Int.toString rounds, ",",
-					    Int.toString small, ",",
-					    Int.toString product, ")#",
-					    Int.toString (Counter.next count)],
-			     doit = polyvariance (rounds, small, product)}
-		    val s = String.dropPrefix (s, String.size "polyvariance")
-		 in
-		    case nums s of
-		       SOME [] => mk (2, 30, 300)
-		     | SOME [rounds, small, product] => mk (rounds, small, product)
-		     | _ => NONE
-		 end
+         fn s =>
+         if String.hasPrefix (s, {prefix = "polyvariance"})
+            then let
+                    fun mk (rounds, small, product) =
+                       SOME {name = concat ["polyvariance(", 
+                                            Int.toString rounds, ",",
+                                            Int.toString small, ",",
+                                            Int.toString product, ")#",
+                                            Int.toString (Counter.next count)],
+                             doit = polyvariance (rounds, small, product)}
+                    val s = String.dropPrefix (s, String.size "polyvariance")
+                 in
+                    case nums s of
+                       SOME [] => mk (2, 30, 300)
+                     | SOME [rounds, small, product] => mk (rounds, small, product)
+                     | _ => NONE
+                 end
          else NONE
       end
 
    val passGens =
       polyvariancePassGen ::
       (List.map([("sxmlShrink", S.shrink),
-		 ("implementExceptions", ImplementExceptions.doit), 
-		 ("implementSuffix", ImplementSuffix.doit)],
-		mkSimplePassGen))
+                 ("implementExceptions", ImplementExceptions.doit), 
+                 ("implementSuffix", ImplementSuffix.doit)],
+                mkSimplePassGen))
 
-   fun sxmlPassesSet s =
-      DynamicWind.withEscape
+   fun sxmlPassesSetCustom s =
+      Exn.withEscape
       (fn esc =>
        (let val ss = String.split (s, #":")
-	in
-	   sxmlPasses :=
-	   List.map(ss, fn s =>
-		    case (List.peekMap (passGens, fn gen => gen s)) of
-		       NONE => esc (Result.No s)
-		     | SOME pass => pass)
-	   ; Result.Yes ss
-	end))
+        in
+           sxmlPasses :=
+           List.map(ss, fn s =>
+                    case (List.peekMap (passGens, fn gen => gen s)) of
+                       NONE => esc (Result.No s)
+                     | SOME pass => pass)
+           ; Control.sxmlPasses := ss
+           ; Result.Yes ()
+        end))
+
+   datatype t = datatype Control.optimizationPasses
+   fun sxmlPassesSet opt =
+      case opt of
+         OptPassesDefault => (sxmlPasses := sxmlPassesDefault
+                              ; Control.sxmlPasses := ["default"]
+                              ; Result.Yes ())
+       | OptPassesMinimal => (sxmlPasses := sxmlPassesMinimal
+                              ; Control.sxmlPasses := ["minimal"]
+                              ; Result.Yes ())
+       | OptPassesCustom s => sxmlPassesSetCustom s
 in
    val _ = Control.sxmlPassesSet := sxmlPassesSet
+   val _ = List.push (Control.optimizationPassesSet, ("sxml", sxmlPassesSet))
 end
    
 fun stats p =
@@ -122,16 +143,16 @@ fun simplify p =
     ; (List.fold
        (!sxmlPasses, p, fn ({name, doit}, p) =>
       if List.exists (!Control.dropPasses, fn re =>
-		      Regexp.Compiled.matchesAll (re, name))
+                      Regexp.Compiled.matchesAll (re, name))
          then p
       else
          let
             val _ =
-	       let open Control
-	       in maybeSaveToFile
-		  ({name = name, suffix = "pre.sxml"},
-		   Control.No, p, Control.Layout Program.layout)
-	       end
+               let open Control
+               in maybeSaveToFile
+                  ({name = name, suffix = "pre.sxml"},
+                   Control.No, p, Control.Layout Program.layout)
+               end
             val p =
                Control.passTypeCheck
                {name = name,
@@ -146,14 +167,14 @@ fun simplify p =
          end)))
 
 val simplify = fn p => let
-			 (* Always want to type check the initial and final XML
-			  * programs, even if type checking is turned off, just
-			  * to catch bugs.
-			  *)
-			 val _ = typeCheck p
-			 val p' = simplify p
-			 val _ = typeCheck p'
-		       in
-			 p'
-		       end
+                         (* Always want to type check the initial and final XML
+                          * programs, even if type checking is turned off, just
+                          * to catch bugs.
+                          *)
+                         val _ = typeCheck p
+                         val p' = simplify p
+                         val _ = typeCheck p'
+                       in
+                         p'
+                       end
 end

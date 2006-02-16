@@ -1,9 +1,9 @@
-(* Copyright (C) 1999-2003 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature EQ_MONO =
@@ -15,9 +15,9 @@ signature EQ_MONO =
       structure VectorSlice: EQTYPE_MONO_VECTOR_SLICE_EXTRA
       sharing type Array.array = ArraySlice.array = Vector.array
       sharing type Array.elem = Array2.elem = ArraySlice.elem = Vector.elem
-	 = VectorSlice.elem
+         = VectorSlice.elem
       sharing type Array.vector = Array2.vector = ArraySlice.vector
-	 = Vector.vector = VectorSlice.vector
+         = Vector.vector = VectorSlice.vector
       sharing type ArraySlice.vector_slice = VectorSlice.slice
    end
 
@@ -26,10 +26,10 @@ functor EqMono (eqtype elem) =
       structure Vector = EqtypeMonoVector (type elem = elem)
       structure VectorSlice = Vector.MonoVectorSlice
       structure Array = MonoArray (type elem = elem
-				   structure V = Vector)
+                                   structure V = Vector)
       structure ArraySlice = Array.MonoArraySlice
       structure Array2 = MonoArray2 (type elem = elem
-				     structure V = Vector)
+                                     structure V = Vector)
    end
 
 functor Mono (type elem) =
@@ -37,10 +37,10 @@ functor Mono (type elem) =
       structure Vector = MonoVector (type elem = elem)
       structure VectorSlice = Vector.MonoVectorSlice
       structure Array = MonoArray (type elem = elem
-				   structure V = Vector)
+                                   structure V = Vector)
       structure ArraySlice = Array.MonoArraySlice
       structure Array2 = MonoArray2 (type elem = elem
-				     structure V = Vector)
+                                     structure V = Vector)
    end
 
 local

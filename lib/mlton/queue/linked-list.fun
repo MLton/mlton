@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                          QueueLinkedList                          *)
@@ -16,7 +16,7 @@ val {error, ...} = Error.errors("queue", "linked-list")
 structure L = MutableList
 
 datatype 'a t = T of {head: 'a L.t ref,
-		      tail: 'a L.t ref}
+                      tail: 'a L.t ref}
 
 fun empty() = T{head = ref(L.empty()), tail = ref(L.empty())}
 
@@ -33,8 +33,8 @@ fun deque(q as T{head, tail}) =
    case L.destruct(!head) of
       NONE => error "deque"
     | SOME(x, _) => (if L.eq(!head, !tail)
-		       then (head := L.empty() ; tail := L.empty())
-		    else head := L.tail(!head) ;
-		    x)
+                       then (head := L.empty() ; tail := L.empty())
+                    else head := L.tail(!head) ;
+                    x)
 
 end

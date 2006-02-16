@@ -1,3 +1,11 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 (* From Tom 7 <twm@andrew.cmu.edu>. *)
 (* Implementation of the SYSLOG interface using MLton FFI.
  * This will only work in MLton.
@@ -18,7 +26,7 @@ fun zt s = s ^ "\000"
 fun openlog (s, opt, fac) =
    let 
       val optf = 
-	 Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
+         Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
       val sys_strdup  = _import "strdup" : string -> word ;
       val sys_openlog = _import "openlog" : word * int * int -> unit ;
    in

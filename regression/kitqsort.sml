@@ -2,8 +2,8 @@
 
 (* quicksort-random.sml
  *
- * Input....:	Random list (pseudo-random integers)
- * Optimised:	'arg as ...' in quickSort'() and  partition(). 
+ * Input....:   Random list (pseudo-random integers)
+ * Optimised:   'arg as ...' in quickSort'() and  partition(). 
  *              Copying left-parts after partitioning inside quickSort'().
  *              `Bertelsen transformation' of argument to tail-recursive
  *              call to quickSort'().
@@ -52,23 +52,23 @@ fun app f [] = ()
     | quickSort' ([a], sorted) = ([], a::sorted)
     | quickSort' (a::bs, sorted) =  (* "a" is the pivot *)
         let 
-  	  fun partition (arg as (_, _, []: elem list)) = arg
-	    | partition (left, right, x::xr) =
-	        if x<=a then partition(x::left, right, xr)
-	                else partition(left, x::right, xr)
-	  val arg' =
-	    let val (left', right) = 
+          fun partition (arg as (_, _, []: elem list)) = arg
+            | partition (left, right, x::xr) =
+                if x<=a then partition(x::left, right, xr)
+                        else partition(left, x::right, xr)
+          val arg' =
+            let val (left', right) = 
                  let val (left, right, _) = partition([], [], bs)
                  in  (*forceResetting bs; *)
                      (copyList left, right)
                  end
                 val sorted' = #2 (quickSort'(right, sorted))
-	    in
-	      (left', a::sorted')
-	    end
-	in
-	  quickSort' arg'
-	end
+            in
+              (left', a::sorted')
+            end
+        in
+          quickSort' arg'
+        end
   fun quickSort l = #2 (quickSort'(l, []))
 
 
@@ -91,10 +91,10 @@ fun app f [] = ()
     | randomList' (i, seed, res) =
       let val res' = min+floor(seed*w) :: res
           (* NOTE: It is significant to use seed for
-	   * calculating res' before calling nextRand()... 
+           * calculating res' before calling nextRand()... 
            *)
       in
-	randomList'(i-1, nextRand seed, res')
+        randomList'(i-1, nextRand seed, res')
       end
   fun randomList n = #3 (randomList'(n, seed0(), []))
 

@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Instream0 =
 struct
 
@@ -23,9 +24,9 @@ val endOf = endOfStream
 fun foldChars (ins, a, f) =
    let
       fun loop a =
-	 case inputLine ins of
-	    NONE => a
-	  | SOME l => loop (String.fold (l, a, f))
+         case inputLine ins of
+            NONE => a
+          | SOME l => loop (String.fold (l, a, f))
    in
       loop a
    end
@@ -33,9 +34,9 @@ fun foldChars (ins, a, f) =
 fun foldLines (ins, ac, f) =
    let
       fun loop ac =
-	 case inputLine ins of
-	    NONE => ac
-	  | SOME l => loop (f (l, ac))
+         case inputLine ins of
+            NONE => ac
+          | SOME l => loop (f (l, ac))
    in loop ac
    end
 
@@ -46,22 +47,22 @@ fun inputTo (i: t, p: char -> bool): string =
       val maxListLength = 1000
       fun finish chars = String.rev (String.implode chars)
       fun loop (n, chars, strings) =
-	 case peekChar i of
-	    NONE => (chars, strings)
-	  | SOME c =>
-	       if p c
-		  then (chars, strings)
-	       else
-		  let
-		     val chars = c :: chars
-		     val _ = inputChar i
-		  in
-		     if n > 0
-			then loop (n - 1, chars, strings)
-		     else loop (maxListLength,
-				[],
-				finish chars :: strings)
-		  end
+         case peekChar i of
+            NONE => (chars, strings)
+          | SOME c =>
+               if p c
+                  then (chars, strings)
+               else
+                  let
+                     val chars = c :: chars
+                     val _ = inputChar i
+                  in
+                     if n > 0
+                        then loop (n - 1, chars, strings)
+                     else loop (maxListLength,
+                                [],
+                                finish chars :: strings)
+                  end
       val (chars, strings) = loop (maxListLength, [], [])
    in
       concat (rev (finish chars :: strings))
@@ -70,10 +71,10 @@ fun inputTo (i: t, p: char -> bool): string =
 fun sameContents (in1, in2) =
    let
       fun loop () =
-	 case (input1 in1, input1 in2) of
-	    (NONE, NONE) => true
-	  | (SOME c1, SOME c2) => Char.equals (c1, c2) andalso loop ()
-	  | _ => false
+         case (input1 in1, input1 in2) of
+            (NONE, NONE) => true
+          | (SOME c1, SOME c2) => Char.equals (c1, c2) andalso loop ()
+          | _ => false
    in loop ()
    end
 

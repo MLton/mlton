@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor OrderedRing(S: ORDERED_RING_STRUCTS):> ORDERED_RING where type t = S.t =
 struct
 
@@ -19,7 +20,7 @@ fun abs n = if isPositive n then n else ~ n
 
 fun foldl(from, to, b, f) =
    let fun fold(n, a) = if n > to then a
-		       else fold(add1 n, f(a,n))
+                       else fold(add1 n, f(a,n))
    in fold(from, b)
    end
 

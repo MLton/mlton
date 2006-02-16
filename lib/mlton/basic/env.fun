@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor Env (S: ENV_STRUCTS): ENV =
 struct
 
@@ -52,8 +53,8 @@ fun peek (T l, d) =
 fun lookup (env, d) = case peek (env, d) of
    SOME r => r
  | NONE => (Layout.output (Domain.layout d, Out.error) ;
-	    Out.newline Out.error ;
-	    Error.bug "lookup")
+            Out.newline Out.error ;
+            Error.bug "Env.lookup")
 
 fun restrict (env, ds) = new (ds, fn d => lookup (env, d))
 
@@ -61,7 +62,7 @@ fun multiExtend (env, ds, rs) =
    case (ds, rs) of
       ([], []) => env
     | (d :: ds, r :: rs) => multiExtend (extend (env, d, r), ds, rs)
-    | _ => Error.bug "multiExtend"
+    | _ => Error.bug "Env.multiExtend"
 
 fun foreach (e, f) = List.foreach (toList e, f o #2)
 fun foreachi (e, f) = List.foreach (toList e, f)
@@ -72,23 +73,23 @@ fun foralli (e, f) = List.forall (toList e, f)
 fun equals rangeEqual (e1, e2) =
    size e1 = size e2
    andalso foralli (e1, fn (d, r) =>
-		   case peek (e2, d) of
-		      NONE => false
-		    | SOME r' => rangeEqual (r, r'))
+                   case peek (e2, d) of
+                      NONE => false
+                    | SOME r' => rangeEqual (r, r'))
    
 fun layout layoutR (T ps) =
    let open Layout
    in seq [str "[",
-	  align (List.map (ps, fn (d, r) =>
-			 seq [Domain.layout d, str " -> ", layoutR r])),
-	  str"]"]
+          align (List.map (ps, fn (d, r) =>
+                         seq [Domain.layout d, str " -> ", layoutR r])),
+          str"]"]
    end
 
 fun maybeLayout (name, layoutR) env =
    if isEmpty env then Layout.empty
    else let open Layout
-	in seq [str name, str " = ", layout layoutR env]
-	end
+        in seq [str name, str " = ", layout layoutR env]
+        end
 
 end
 

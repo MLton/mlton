@@ -6,10 +6,10 @@
 signature FUN_PRIORITY_QUEUE_ARG =
    sig
       structure Key :
-	 sig
-	    type t
-	    val compare : t * t -> order
-	 end
+         sig
+            type t
+            val compare : t * t -> order
+         end
    end
 
 signature FUN_PRIORITY_QUEUE =
@@ -17,11 +17,11 @@ signature FUN_PRIORITY_QUEUE =
       include FUN_PRIORITY_QUEUE_ARG
 
       structure Elt:
-	 sig
-	    type 'a t
-	    val key: 'a t -> Key.t
-	    val value: 'a t -> 'a
-	 end
+         sig
+            type 'a t
+            val key: 'a t -> Key.t
+            val value: 'a t -> 'a
+         end
 
       type 'a t
 

@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature REPRESENTATION_STRUCTS = 
@@ -20,29 +21,29 @@ signature REPRESENTATION =
       include REPRESENTATION_STRUCTS
 
       val compute:
-	 Ssa.Program.t
-	 -> {diagnostic: unit -> unit,
-	     genCase: {cases: {con: Ssa.Con.t,
-			       dst: Rssa.Label.t,
-			       dstHasArg: bool} vector,
-		       default: Rssa.Label.t option,
-		       test: unit -> Rssa.Operand.t,
-		       tycon: Ssa.Tycon.t} -> (Rssa.Statement.t list
-					       * Rssa.Transfer.t
-					       * Rssa.Block.t list),
-	     object: {args: 'a vector,
-		      con: Ssa.Con.t option,
-		      dst: Rssa.Var.t * Rssa.Type.t,
-		      objectTy: Ssa.Type.t,
-		      oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list,
-	     objectTypes: (Rssa.PointerTycon.t * Rssa.ObjectType.t) vector,
-	     select: {base: Rssa.Operand.t Ssa.Base.t,
-		      baseTy: Ssa.Type.t,
-		      dst: Rssa.Var.t * Rssa.Type.t,
-		      offset: int} -> Rssa.Statement.t list,
-	     toRtype: Ssa.Type.t -> Rssa.Type.t option,
-	     update: {base: Rssa.Operand.t Ssa.Base.t,
-		      baseTy: Ssa.Type.t,
-		      offset: int,
-		      value: Rssa.Operand.t} -> Rssa.Statement.t list}
+         Ssa.Program.t
+         -> {diagnostic: unit -> unit,
+             genCase: {cases: {con: Ssa.Con.t,
+                               dst: Rssa.Label.t,
+                               dstHasArg: bool} vector,
+                       default: Rssa.Label.t option,
+                       test: unit -> Rssa.Operand.t,
+                       tycon: Ssa.Tycon.t} -> (Rssa.Statement.t list
+                                               * Rssa.Transfer.t
+                                               * Rssa.Block.t list),
+             object: {args: 'a vector,
+                      con: Ssa.Con.t option,
+                      dst: Rssa.Var.t * Rssa.Type.t,
+                      objectTy: Ssa.Type.t,
+                      oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list,
+             objectTypes: (Rssa.PointerTycon.t * Rssa.ObjectType.t) vector,
+             select: {base: Rssa.Operand.t Ssa.Base.t,
+                      baseTy: Ssa.Type.t,
+                      dst: Rssa.Var.t * Rssa.Type.t,
+                      offset: int} -> Rssa.Statement.t list,
+             toRtype: Ssa.Type.t -> Rssa.Type.t option,
+             update: {base: Rssa.Operand.t Ssa.Base.t,
+                      baseTy: Ssa.Type.t,
+                      offset: int,
+                      value: Rssa.Operand.t} -> Rssa.Statement.t list}
    end

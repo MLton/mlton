@@ -8,11 +8,11 @@ structure S:
    end =
    struct
       val f =
-	 let
-	    val r = ref NONE
-	 in
-	    fn z => (!r before (r := z))
-	 end
+         let
+            val r = ref NONE
+         in
+            fn z => (!r before (r := z))
+         end
    end
 
 val _ = S.f (SOME 13)

@@ -1,0 +1,2911 @@
+diff -Naur smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls-lib.mlb
+--- smlnj-lib/Controls/controls-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Controls/controls-lib.mlb	2005-11-21 11:37:31.000000000 -0500
+@@ -0,0 +1,170 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l11 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = Option
++   end
++   local
++      open l4
++   in
++      structure gs_1 = List
++   end
++   local
++      open l11
++   in
++      structure gs_2 = Atom
++   end
++   local
++      open l4
++   in
++      structure gs_3 = Int
++   end
++   local
++      controls-sig.sml
++   in
++      signature gs_4 = CONTROLS
++   end
++   local
++      open l11
++   in
++      structure gs_5 = AtomTable
++   end
++   local
++      structure Atom = gs_2
++      structure AtomTable = gs_5
++      structure Int = gs_3
++      structure List = gs_1
++      control-reps.sml
++   in
++      structure gs_6 = ControlReps
++   end
++   local
++      structure Atom = gs_2
++      signature CONTROLS = gs_4
++      structure ControlReps = gs_6
++      structure Int = gs_3
++      structure List = gs_1
++      structure Option = gs_0
++      controls.sml
++   in
++      structure gs_7 = Controls
++   end
++   local
++      open l11
++   in
++      structure gs_8 = ListMergeSort
++   end
++   local
++      structure Atom = gs_2
++      structure Controls = gs_7
++      control-set-sig.sml
++   in
++      signature gs_9 = CONTROL_SET
++   end
++   local
++      structure AtomTable = gs_5
++      signature CONTROL_SET = gs_9
++      structure ControlReps = gs_6
++      structure Controls = gs_7
++      structure ListMergeSort = gs_8
++      structure Option = gs_0
++      control-set.sml
++   in
++      structure gs_10 = ControlSet
++   end
++   local
++      structure ControlSet = gs_10
++      structure Controls = gs_7
++      registry-sig.sml
++   in
++      signature gs_11 = CONTROL_REGISTRY
++   end
++   local
++      open l4
++   in
++      structure gs_12 = String
++   end
++   local
++      open l4
++   in
++      structure gs_13 = Real
++   end
++   local
++      open l4
++   in
++      structure gs_14 = Char
++   end
++   local
++      open l4
++   in
++      structure gs_15 = Bool
++   end
++   local
++      structure Controls = gs_7
++      control-util-sig.sml
++   in
++      signature gs_16 = CONTROL_UTIL
++   end
++   local
++      structure Bool = gs_15
++      signature CONTROL_UTIL = gs_16
++      structure Char = gs_14
++      structure Controls = gs_7
++      structure Int = gs_3
++      structure List = gs_1
++      structure Real = gs_13
++      structure String = gs_12
++      control-util.sml
++   in
++      structure gs_17 = ControlUtil
++   end
++   local
++      open l4
++   in
++      structure gs_18 = OS
++   end
++   local
++      structure Atom = gs_2
++      structure AtomTable = gs_5
++      signature CONTROL_REGISTRY = gs_11
++      structure ControlReps = gs_6
++      structure ControlSet = gs_10
++      structure Controls = gs_7
++      structure List = gs_1
++      structure ListMergeSort = gs_8
++      structure OS = gs_18
++      registry.sml
++   in
++      structure gs_19 = ControlRegistry
++   end
++in
++   signature CONTROLS = gs_4
++   signature CONTROL_REGISTRY = gs_11
++   signature CONTROL_SET = gs_9
++   signature CONTROL_UTIL = gs_16
++   structure ControlRegistry = gs_19
++   structure ControlSet = gs_10
++   structure ControlUtil = gs_17
++   structure Controls = gs_7
++end
++end
++
++end
+diff -Naur smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/hash-cons-lib.mlb
+--- smlnj-lib/HashCons/hash-cons-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2005-11-21 11:37:34.000000000 -0500
+@@ -0,0 +1,144 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l8 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l4 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = PrimeSizes
++   end
++   local
++      open l8
++   in
++      structure gs_1 = Array
++   end
++   local
++      open l8
++   in
++      structure gs_2 = Word
++   end
++   local
++      open l8
++   in
++      structure gs_3 = List
++   end
++   local
++      hash-cons-sig.sml
++   in
++      signature gs_4 = HASH_CONS
++   end
++   local
++      structure Array = gs_1
++      signature HASH_CONS = gs_4
++      structure List = gs_3
++      structure PrimeSizes = gs_0
++      structure Word = gs_2
++      hash-cons.sml
++   in
++      structure gs_5 = HashCons
++   end
++   local
++      structure HashCons = gs_5
++      hash-cons-set-sig.sml
++   in
++      signature gs_6 = HASH_CONS_SET
++   end
++   local
++      structure HashCons = gs_5
++      hash-cons-map-sig.sml
++   in
++      signature gs_7 = HASH_CONS_MAP
++   end
++   local
++      open l4
++   in
++      structure gs_8 = WordRedBlackMap
++   end
++   local
++      signature HASH_CONS_SET = gs_6
++      structure HashCons = gs_5
++      structure List = gs_3
++      structure WordRedBlackMap = gs_8
++      hash-cons-set.sml
++   in
++      structure gs_9 = HashConsSet
++   end
++   local
++      open l8
++   in
++      structure gs_10 = Option
++   end
++   local
++      signature HASH_CONS_MAP = gs_7
++      structure HashCons = gs_5
++      structure Option = gs_10
++      structure WordRedBlackMap = gs_8
++      hash-cons-map.sml
++   in
++      structure gs_11 = HashConsMap
++   end
++   local
++      open l4
++   in
++      structure gs_12 = HashString
++   end
++   local
++      open l4
++   in
++      signature gs_13 = HASH_KEY
++   end
++   local
++      signature HASH_KEY = gs_13
++      structure HashCons = gs_5
++      hash-cons-ground-fn.sml
++   in
++      functor gs_14 = HashConsGroundFn
++   end
++   local
++      functor HashConsGroundFn = gs_14
++      structure HashString = gs_12
++      hash-cons-string.sml
++   in
++      structure gs_15 = HashConsString
++   end
++   local
++      open l4
++   in
++      structure gs_16 = Atom
++   end
++   local
++      structure Atom = gs_16
++      functor HashConsGroundFn = gs_14
++      hash-cons-atom.sml
++   in
++      structure gs_17 = HashConsAtom
++   end
++in
++   signature HASH_CONS = gs_4
++   signature HASH_CONS_MAP = gs_7
++   signature HASH_CONS_SET = gs_6
++   structure HashCons = gs_5
++   structure HashConsAtom = gs_17
++   functor HashConsGroundFn = gs_14
++   structure HashConsMap = gs_11
++   structure HashConsSet = gs_9
++   structure HashConsString = gs_15
++end
++end
++
++end
+diff -Naur smlnj-lib/HTML/html-attrs-fn.sml smlnj-lib-mlton/HTML/html-attrs-fn.sml
+--- smlnj-lib/HTML/html-attrs-fn.sml	2004-11-20 10:28:05.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-attrs-fn.sml	2005-08-17 20:13:04.000000000 -0400
+@@ -89,19 +89,24 @@
+ 		fun error () = (
+ 		      Err.badAttrVal ctx (attrName, attrValToString attrVal);
+ 		      NONE)
+-		fun cvt (AT_IMPLICIT, IMPLICIT) = SOME IMPLICIT
+-		  | cvt (AT_INSTANCE, IMPLICIT) = SOME(NAME attrName)
+-		  | cvt (AT_TEXT, v) = SOME v
+-		  | cvt (AT_NUMBER, v) = SOME v
+-		  | cvt (AT_NAMES names, (NAME s | STRING s)) = (
++		fun atNames (names, s) = (
+ 		      case (List.find (eqName s) names)
+ 		       of NONE => error()
+ 			| (SOME name) => SOME(NAME name)
+ 		      (* end case *))
+-		  | cvt (AT_IMPLICIT, (NAME s | STRING s)) =
++		fun atImplicit (s) = 
+ 		      if (s = attrName)
+ 			then SOME IMPLICIT
+ 			else error()
++
++		fun cvt (AT_IMPLICIT, IMPLICIT) = SOME IMPLICIT
++		  | cvt (AT_INSTANCE, IMPLICIT) = SOME(NAME attrName)
++		  | cvt (AT_TEXT, v) = SOME v
++		  | cvt (AT_NUMBER, v) = SOME v
++		  | cvt (AT_NAMES names, NAME s) = atNames (names, s)
++		  | cvt (AT_NAMES names, STRING s) = atNames (names, s)
++		  | cvt (AT_IMPLICIT, NAME s) = atImplicit (s)
++		  | cvt (AT_IMPLICIT, STRING s) = atImplicit (s)
+ 		  | cvt _ = error()
+ 		in
+ 		  case (HTbl.find attrTbl attrName)
+@@ -138,7 +143,8 @@
+ 	  val getFn = bindFindAttr (attrMap, attr)
+ 	  fun get attrVec = (case (getFn attrVec)
+ 		 of NONE => NONE
+-		  | (SOME((STRING s) | (NAME s))) => SOME s
++		  | SOME (STRING s) => SOME s
++		  | SOME (NAME s) => SOME s
+ 		  | _ => (
+ 		      Err.missingAttrVal (getContext attrVec) attr;
+ 		      NONE)
+@@ -162,31 +168,41 @@
+ 	  end
+     fun getNUMBER (attrMap, attr) = let
+ 	  val getFn = bindFindAttr (attrMap, attr)
+-	  fun get attrVec = (case (getFn attrVec)
++	  fun get attrVec = let
++	  fun doitStringName s = (case (Int.fromString s)
++		 of NONE =>  (
++		      Err.badAttrVal (getContext attrVec) (attr, s);
++		      NONE)
++		  | someN => someN
++		(* end case *))
++          in 
++             (case (getFn attrVec)
+ 		 of NONE => NONE
+-		  | (SOME((STRING s) | (NAME s))) => (case (Int.fromString s)
+-		       of NONE =>  (
+-			    Err.badAttrVal (getContext attrVec) (attr, s);
+-			    NONE)
+-			| someN => someN
+-		      (* end case *))
++		  | SOME (STRING s) => doitStringName s
++		  | SOME (NAME s) => doitStringName s
+ 		  | SOME IMPLICIT => raise Fail "getNUMBER: IMPLICIT unexpected"
+ 		(* end case *))
++          end
+ 	  in
+ 	    get
+ 	  end
+     fun getChar (attrMap, attr) = let
+ 	  val getFn = bindFindAttr (attrMap, attr)
+-	  fun get attrVec = (case (getFn attrVec)
+-		 of NONE => NONE
+-		  | (SOME((STRING s) | (NAME s))) =>
+-		      if (size s = 1) then SOME(String.sub(s, 0))
++	  fun get attrVec = let 
++	  fun doitStringName s =
++		if (size s = 1) then SOME(String.sub(s, 0))
+ (** NOTE: we should probably accept &#xx; as a character value **)
+-			else  (
+-			Err.badAttrVal (getContext attrVec) (attr, s);
+-			NONE)
++		  else  (
++		  Err.badAttrVal (getContext attrVec) (attr, s);
++		  NONE)
++          in 
++             (case (getFn attrVec)
++		 of NONE => NONE
++		  | SOME (STRING s) => doitStringName s
++		  | SOME (NAME s) => doitStringName s
+ 		  | SOME IMPLICIT => raise Fail "getChar: IMPLICIT unexpected"
+ 		(* end case *))
++	  end
+ 	  in
+ 	    get
+ 	  end
+diff -Naur smlnj-lib/HTML/html-cons-lib.mlb smlnj-lib-mlton/HTML/html-cons-lib.mlb
+--- smlnj-lib/HTML/html-cons-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-cons-lib.mlb	2005-08-17 20:13:04.000000000 -0400
+@@ -0,0 +1,9 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit warn"
++  "warnUnused false" "forceUsed"
++in
++
++
++end
+diff -Naur smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-elements-fn.sml
+--- smlnj-lib/HTML/html-elements-fn.sml	2005-11-17 15:53:08.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-elements-fn.sml	2005-11-17 15:55:26.000000000 -0500
+@@ -144,7 +144,8 @@
+    *   3) a string literal enclosed in ''
+    *)
+     fun scanAttrVal (ctx, attrName, ss) = let
+-	  fun isNameChar (#"." | #"-") = true
++	  fun isNameChar #"." = true
++	    | isNameChar #"-" = true
+ 	    | isNameChar c = (Char.isAlphaNum c)
+ 	  in
+ 	    case SS.getc ss
+diff -Naur smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
+--- smlnj-lib/HTML/html-gram.sml	2005-11-21 11:37:24.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-gram.sml	2005-11-21 11:37:24.000000000 -0500
+@@ -1226,10 +1226,11 @@
+ (T 3) $$ (T 2) $$ (T 0)end
+ structure Actions =
+ struct 
++type int = Int.int
+ exception mlyAction of int
+ local open Header in
+ val actions = 
+-fn (i392,defaultPos,stack,
++fn (i392:int,defaultPos,stack,
+     (ctx):arg) =>
+ case (i392,stack)
+ of  ( 0, ( ( _, ( _, _, EndHTML1right)) :: ( _, ( MlyValue.Body Body,
+diff -Naur smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
+--- smlnj-lib/HTML/html-lex.sml	2005-11-21 11:37:24.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-lex.sml	2005-11-21 11:37:24.000000000 -0500
+@@ -1,3 +1,4 @@
++type int = Int.int
+ functor HTMLLexFn (
+   structure Tokens : HTML_TOKENS
+   structure Err : HTML_ERROR
+@@ -484,7 +485,7 @@
+ fun f x = x 
+ val s = map f (rev (tl (rev s))) 
+ exception LexHackingError 
+-fun look ((j,x)::r, i: int) = if i = j then x else look(r, i) 
++fun look ((j,x)::r, i) = if i = j then x else look(r, i) 
+   | look ([], i) = raise LexHackingError
+ fun g {fin=x, trans=i} = {fin=x, trans=look(s,i)} 
+ in Vector.fromList(map g 
+@@ -559,30 +560,31 @@
+ 	exception LexerError (* raised if illegal leaf action tried *)
+ end
+ 
+-fun makeLexer yyinput =
+-let	val yygone0=1
+-	val yylineno = ref 0
++type int = Int.int
++fun makeLexer (yyinput: int -> string) =
++let	val yygone0:int= ~1
++	val yylineno: int ref = ref 0
+ 
+ 	val yyb = ref "\n" 		(* buffer *)
+-	val yybl = ref 1		(*buffer length *)
+-	val yybufpos = ref 1		(* location of next character to use *)
+-	val yygone = ref yygone0	(* position in file of beginning of buffer *)
++	val yybl: int ref = ref 1		(*buffer length *)
++	val yybufpos: int ref = ref 1		(* location of next character to use *)
++	val yygone: int ref = ref yygone0	(* position in file of beginning of buffer *)
+ 	val yydone = ref false		(* eof found yet? *)
+-	val yybegin = ref 1		(*Current 'start state' for lexer *)
++	val yybegin: int ref = ref 1		(*Current 'start state' for lexer *)
+ 
+ 	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
+ 		 yybegin := x
+ 
+ fun lex (yyarg as (errorFn, file)) =
+ let fun continue() : Internal.result = 
+-  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0) =
+-	let fun action (i,nil) = raise LexError
++  let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0: int) =
++	let fun action (i: int,nil) = raise LexError
+ 	| action (i,nil::l) = action (i-1,l)
+ 	| action (i,(node::acts)::l) =
+ 		case node of
+ 		    Internal.N yyk => 
+-			(let fun yymktext() = substring(!yyb,i0,i-i0)
+-			     val yypos = i0+ !yygone
++			(let fun yymktext() = String.substring(!yyb,i0,i-i0)
++			     val yypos: int = i0+ !yygone
+ 			val _ = yylineno := CharVectorSlice.foldli
+ 				(fn (_,#"\n", n) => n+1 | (_,_, n) => n) (!yylineno) (CharVectorSlice.slice (!yyb,i0,SOME(i-i0)))
+ 			open UserDeclarations Internal.StartStates
+@@ -636,30 +638,30 @@
+ 
+ 		) end )
+ 
+-	val {fin,trans} = Unsafe.Vector.sub(Internal.tab, s)
++	val {fin,trans} = Vector.sub (Internal.tab, s)
+ 	val NewAcceptingLeaves = fin::AcceptingLeaves
+ 	in if l = !yybl then
+ 	     if trans = #trans(Vector.sub(Internal.tab,0))
+ 	       then action(l,NewAcceptingLeaves
+ ) else	    let val newchars= if !yydone then "" else yyinput 1024
+-	    in if (size newchars)=0
++	    in if (String.size newchars)=0
+ 		  then (yydone := true;
+ 		        if (l=i0) then UserDeclarations.eof yyarg
+ 		                  else action(l,NewAcceptingLeaves))
+ 		  else (if i0=l then yyb := newchars
+-		     else yyb := substring(!yyb,i0,l-i0)^newchars;
++		     else yyb := String.substring(!yyb,i0,l-i0)^newchars;
+ 		     yygone := !yygone+i0;
+-		     yybl := size (!yyb);
++		     yybl := String.size (!yyb);
+ 		     scan (s,AcceptingLeaves,l-i0,0))
+ 	    end
+-	  else let val NewChar = Char.ord(Unsafe.CharVector.sub(!yyb,l))
+-		val NewState = Char.ord(Unsafe.CharVector.sub(trans,NewChar))
++	  else let val NewChar = Char.ord (CharVector.sub (!yyb,l))
++		val NewState = Char.ord (CharVector.sub (trans,NewChar))
+ 		in if NewState=0 then action(l,NewAcceptingLeaves)
+ 		else scan(NewState,NewAcceptingLeaves,l+1,i0)
+ 	end
+ 	end
+ (*
+-	val start= if substring(!yyb,!yybufpos-1,1)="\n"
++	val start= if String.substring(!yyb,!yybufpos-1,1)="\n"
+ then !yybegin+1 else !yybegin
+ *)
+ 	in scan(!yybegin (* start *),nil,!yybufpos,!yybufpos)
+diff -Naur smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
+--- smlnj-lib/HTML/html-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/HTML/html-lib.mlb	2005-11-21 11:37:38.000000000 -0500
+@@ -0,0 +1,300 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l5 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l46 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++  basis l35 = 
++    bas
++      (* $/ml-yacc-lib.cm ====> *) $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l5
++   in
++      structure gs_0 = General
++   end
++   local
++      open l5
++   in
++      structure gs_1 = String
++   end
++   local
++      open l5
++   in
++      structure gs_2 = List
++   end
++   local
++      open l5
++   in
++      structure gs_3 = Char
++   end
++   local
++      html-sig.sml
++   in
++      signature gs_4 = HTML
++   end
++   local
++      structure Char = gs_3
++      structure General = gs_0
++      signature HTML = gs_4
++      structure List = gs_2
++      structure String = gs_1
++      html.sml
++   in
++      structure gs_5 = HTML
++   end
++   local
++      structure HTML = gs_5
++      make-html.sml
++   in
++      structure gs_6 = MakeHTML
++   end
++   local
++      structure HTML = gs_5
++      html-defaults.sml
++   in
++      structure gs_7 = HTMLDefaults
++   end
++   local
++      html-error-sig.sml
++   in
++      signature gs_8 = HTML_ERROR
++   end
++   local
++      open l35
++   in
++      functor gs_9 = Join
++      functor gs_10 = JoinWithArg
++   end
++   local
++      open l35
++   in
++      structure gs_11 = LrParser
++   end
++   local
++      open l5
++   in
++      structure gs_12 = TextIO
++   end
++   local
++      open l46
++   in
++      structure gs_13 = Format
++   end
++   local
++      structure Format = gs_13
++      structure HTML = gs_5
++      signature HTML_ERROR = gs_8
++      structure List = gs_2
++      check-html-fn.sml
++   in
++      functor gs_14 = CheckHTMLFn
++   end
++   local
++      open l5
++   in
++      structure gs_15 = CharVector
++   end
++   local
++      open l5
++   in
++      structure gs_16 = CharVectorSlice
++   end
++   local
++      open l5
++   in
++      structure gs_17 = Vector
++   end
++   local
++      open l5
++   in
++      structure gs_18 = Int
++   end
++   local
++      open l5
++   in
++      structure gs_19 = Substring
++   end
++   local
++      open l46
++   in
++      functor gs_20 = HashTableFn
++   end
++   local
++      open l46
++   in
++      structure gs_21 = HashString
++   end
++   local
++      html-attr-vals.sml
++   in
++      structure gs_22 = HTMLAttrVals
++   end
++   local
++      structure HTML = gs_5
++      structure HTMLAttrVals = gs_22
++      html-attrs-sig.sml
++   in
++      signature gs_23 = HTML_ATTRS
++   end
++   local
++      open l35
++   in
++      signature gs_24 = ARG_LEXER
++      signature gs_25 = ARG_PARSER
++      signature gs_26 = LEXER
++      signature gs_27 = LR_PARSER
++      signature gs_28 = LR_TABLE
++      signature gs_29 = PARSER
++      signature gs_30 = PARSER_DATA
++      signature gs_31 = STREAM
++      signature gs_32 = TOKEN
++   end
++   local
++      signature ARG_LEXER = gs_24
++      signature ARG_PARSER = gs_25
++      structure HTMLAttrVals = gs_22
++      signature LEXER = gs_26
++      signature LR_PARSER = gs_27
++      signature LR_TABLE = gs_28
++      signature PARSER = gs_29
++      signature PARSER_DATA = gs_30
++      signature STREAM = gs_31
++      signature TOKEN = gs_32
++      html-gram.sig
++   in
++      signature gs_33 = HTML_LRVALS
++      signature gs_34 = HTML_TOKENS
++   end
++   local
++      structure Char = gs_3
++      signature HTML_ATTRS = gs_23
++      signature HTML_ERROR = gs_8
++      signature HTML_LRVALS = gs_33
++      signature HTML_TOKENS = gs_34
++      structure HashString = gs_21
++      functor HashTableFn = gs_20
++      structure List = gs_2
++      structure String = gs_1
++      structure Substring = gs_19
++      html-elements-fn.sml
++   in
++      functor gs_35 = HTMLElementsFn
++   end
++   local
++      structure Char = gs_3
++      structure CharVector = gs_15
++      structure CharVectorSlice = gs_16
++      functor HTMLElementsFn = gs_35
++      signature HTML_ATTRS = gs_23
++      signature HTML_ERROR = gs_8
++      signature HTML_LRVALS = gs_33
++      signature HTML_TOKENS = gs_34
++      structure Int = gs_18
++      structure List = gs_2
++      structure String = gs_1
++      structure Vector = gs_17
++      html-lex.sml
++   in
++      functor gs_36 = HTMLLexFn
++   end
++   local
++      open l5
++   in
++      structure gs_37 = Array
++   end
++   local
++      signature ARG_LEXER = gs_24
++      signature ARG_PARSER = gs_25
++      structure Array = gs_37
++      structure Char = gs_3
++      structure HTML = gs_5
++      structure HTMLAttrVals = gs_22
++      signature HTML_ATTRS = gs_23
++      signature HTML_LRVALS = gs_33
++      signature HTML_TOKENS = gs_34
++      structure Int = gs_18
++      signature LEXER = gs_26
++      signature LR_PARSER = gs_27
++      signature LR_TABLE = gs_28
++      structure List = gs_2
++      signature PARSER = gs_29
++      signature PARSER_DATA = gs_30
++      signature STREAM = gs_31
++      structure String = gs_1
++      signature TOKEN = gs_32
++      html-gram.sml
++   in
++      functor gs_38 = HTMLLrValsFn
++   end
++   local
++      structure Array = gs_37
++      structure Char = gs_3
++      structure HTML = gs_5
++      structure HTMLAttrVals = gs_22
++      signature HTML_ATTRS = gs_23
++      signature HTML_ERROR = gs_8
++      structure HashString = gs_21
++      functor HashTableFn = gs_20
++      structure Int = gs_18
++      structure List = gs_2
++      structure String = gs_1
++      html-attrs-fn.sml
++   in
++      functor gs_39 = HTMLAttrsFn
++   end
++   local
++      functor CheckHTMLFn = gs_14
++      structure HTML = gs_5
++      functor HTMLAttrsFn = gs_39
++      functor HTMLLexFn = gs_36
++      functor HTMLLrValsFn = gs_38
++      signature HTML_ERROR = gs_8
++      functor Join = gs_9
++      functor JoinWithArg = gs_10
++      structure LrParser = gs_11
++      structure TextIO = gs_12
++      html-parser-fn.sml
++   in
++      functor gs_40 = HTMLParserFn
++   end
++   local
++      open l46
++   in
++      structure gs_41 = ListFormat
++   end
++   local
++      structure Format = gs_13
++      structure HTML = gs_5
++      structure Int = gs_18
++      structure List = gs_2
++      structure ListFormat = gs_41
++      pr-html.sml
++   in
++      structure gs_42 = PrHTML
++   end
++in
++   signature HTML = gs_4
++   structure HTML = gs_5
++   structure HTMLDefaults = gs_7
++   functor HTMLParserFn = gs_40
++   signature HTML_ERROR = gs_8
++   structure MakeHTML = gs_6
++   structure PrHTML = gs_42
++end
++end
++
++end
+diff -Naur smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
+--- smlnj-lib/INet/inet-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/INet/inet-lib.mlb	2005-11-21 11:37:42.000000000 -0500
+@@ -0,0 +1,144 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l31 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = StringCvt
++   end
++   local
++      open l4
++   in
++      structure gs_1 = Word8Array
++   end
++   local
++      open l4
++   in
++      structure gs_2 = Word8Vector
++   end
++   local
++      open l4
++   in
++      structure gs_3 = NetHostDB
++   end
++   local
++      open l4
++   in
++      structure gs_4 = Socket
++   end
++   local
++      open l4
++   in
++      structure gs_5 = INetSock
++   end
++   local
++      structure INetSock = gs_5
++      structure NetHostDB = gs_3
++      structure Socket = gs_4
++      structure StringCvt = gs_0
++      structure Word8Array = gs_1
++      structure Word8Vector = gs_2
++      sock-util-sig.sml
++   in
++      signature gs_6 = SOCK_UTIL
++   end
++   local
++      open l4
++   in
++      structure gs_7 = UnixSock
++   end
++   local
++      open l31
++   in
++      structure gs_8 = ParserComb
++   end
++   local
++      open l4
++   in
++      structure gs_9 = Char
++   end
++   local
++      open l4
++   in
++      structure gs_10 = Word8VectorSlice
++   end
++   local
++      open l4
++   in
++      structure gs_11 = Word8ArraySlice
++   end
++   local
++      open l4
++   in
++      structure gs_12 = NetServDB
++   end
++   local
++      open l4
++   in
++      structure gs_13 = Byte
++   end
++   local
++      open l4
++   in
++      structure gs_14 = Int
++   end
++   local
++      open l4
++   in
++      structure gs_15 = OS
++   end
++   local
++      structure Byte = gs_13
++      structure Char = gs_9
++      structure INetSock = gs_5
++      structure Int = gs_14
++      structure NetHostDB = gs_3
++      structure NetServDB = gs_12
++      structure OS = gs_15
++      structure ParserComb = gs_8
++      signature SOCK_UTIL = gs_6
++      structure Socket = gs_4
++      structure StringCvt = gs_0
++      structure Word8Array = gs_1
++      structure Word8ArraySlice = gs_11
++      structure Word8Vector = gs_2
++      structure Word8VectorSlice = gs_10
++      sock-util.sml
++   in
++      structure gs_16 = SockUtil
++   end
++   local
++      signature SOCK_UTIL = gs_6
++      structure SockUtil = gs_16
++      structure Socket = gs_4
++      structure UnixSock = gs_7
++      unix-sock-util.sml
++   in
++      signature gs_17 = UNIX_SOCK_UTIL
++      structure gs_18 = UnixSockUtil
++   end
++in
++   signature SOCK_UTIL = gs_6
++   structure SockUtil = gs_16
++   signature UNIX_SOCK_UTIL = gs_17
++   structure UnixSockUtil = gs_18
++end
++end
++
++end
+diff -Naur smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
+--- smlnj-lib/PP/pp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/PP/pp-lib.mlb	2005-11-21 11:37:43.000000000 -0500
+@@ -0,0 +1,212 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l26 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++  basis l83 = 
++    bas
++      (* $/html-lib.cm ====> *) $(SML_LIB)/smlnj-lib/HTML/html-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = TextIO
++   end
++   local
++      src/pp-stream-sig.sml
++   in
++      signature gs_1 = PP_STREAM
++   end
++   local
++      signature PP_STREAM = gs_1
++      structure TextIO = gs_0
++      src/pp-debug-fn.sml
++   in
++      functor gs_2 = PPDebugFn
++   end
++   local
++      src/pp-device-sig.sml
++   in
++      signature gs_3 = PP_DEVICE
++   end
++   local
++      open l4
++   in
++      structure gs_4 = StringCvt
++   end
++   local
++      signature PP_DEVICE = gs_3
++      structure StringCvt = gs_4
++      structure TextIO = gs_0
++      devices/simple-textio-dev.sml
++   in
++      structure gs_5 = SimpleTextIODev
++   end
++   local
++      open l26
++   in
++      structure gs_6 = Format
++   end
++   local
++      open l26
++   in
++      structure gs_7 = Queue
++   end
++   local
++      open l26
++   in
++      structure gs_8 = ListFormat
++   end
++   local
++      open l4
++   in
++      structure gs_9 = String
++   end
++   local
++      open l4
++   in
++      structure gs_10 = Option
++   end
++   local
++      open l4
++   in
++      structure gs_11 = Int
++   end
++   local
++      src/pp-token-sig.sml
++   in
++      signature gs_12 = PP_TOKEN
++   end
++   local
++      structure Format = gs_6
++      structure Int = gs_11
++      structure ListFormat = gs_8
++      structure Option = gs_10
++      signature PP_DEVICE = gs_3
++      signature PP_STREAM = gs_1
++      signature PP_TOKEN = gs_12
++      structure Queue = gs_7
++      structure String = gs_9
++      structure TextIO = gs_0
++      src/pp-stream-fn.sml
++   in
++      functor gs_13 = PPStreamFn
++   end
++   local
++      signature PP_STREAM = gs_1
++      src/pp-desc-sig.sml
++   in
++      signature gs_14 = PP_DESC
++   end
++   local
++      signature PP_DESC = gs_14
++      signature PP_STREAM = gs_1
++      src/pp-desc-fn.sml
++   in
++      functor gs_15 = PPDescFn
++   end
++   local
++      signature PP_TOKEN = gs_12
++      structure String = gs_9
++      devices/string-token.sml
++   in
++      structure gs_16 = StringToken
++   end
++   local
++      functor PPStreamFn = gs_13
++      signature PP_STREAM = gs_1
++      structure SimpleTextIODev = gs_5
++      structure StringToken = gs_16
++      structure TextIO = gs_0
++      devices/textio-pp.sml
++   in
++      structure gs_17 = TextIOPP
++   end
++   local
++      open l26
++   in
++      structure gs_18 = ANSITerm
++   end
++   local
++      open l4
++   in
++      structure gs_19 = TextPrimIO
++   end
++   local
++      open l4
++   in
++      structure gs_20 = OS
++   end
++   local
++      structure ANSITerm = gs_18
++      structure OS = gs_20
++      signature PP_DEVICE = gs_3
++      structure StringCvt = gs_4
++      structure TextIO = gs_0
++      structure TextPrimIO = gs_19
++      devices/ansi-term-dev.sml
++   in
++      structure gs_21 = ANSITermDev
++   end
++   local
++      open l4
++   in
++      structure gs_22 = List
++   end
++   local
++      open l83
++   in
++      structure gs_23 = HTML
++   end
++   local
++      structure HTML = gs_23
++      structure List = gs_22
++      signature PP_DEVICE = gs_3
++      structure String = gs_9
++      devices/html-dev.sml
++   in
++      structure gs_24 = HTMLDev
++   end
++   local
++      structure ANSITermDev = gs_21
++      functor PPStreamFn = gs_13
++      signature PP_STREAM = gs_1
++      signature PP_TOKEN = gs_12
++      structure String = gs_9
++      structure TextIO = gs_0
++      devices/ansi-term-pp.sml
++   in
++      structure gs_25 = ANSITermPP
++   end
++in
++   structure ANSITermDev = gs_21
++   structure ANSITermPP = gs_25
++   structure HTMLDev = gs_24
++   functor PPDebugFn = gs_2
++   functor PPDescFn = gs_15
++   functor PPStreamFn = gs_13
++   signature PP_DESC = gs_14
++   signature PP_DEVICE = gs_3
++   signature PP_STREAM = gs_1
++   signature PP_TOKEN = gs_12
++   structure SimpleTextIODev = gs_5
++   structure StringToken = gs_16
++   structure TextIOPP = gs_17
++end
++end
++
++end
+diff -Naur smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/reactive-lib.mlb
+--- smlnj-lib/Reactive/reactive-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Reactive/reactive-lib.mlb	2005-11-21 11:37:43.000000000 -0500
+@@ -0,0 +1,70 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l12 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l8 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      reactive-sig.sml
++   in
++      signature gs_0 = REACTIVE
++   end
++   local
++      open l8
++   in
++      structure gs_1 = AtomBinaryMap
++   end
++   local
++      open l12
++   in
++      structure gs_2 = List
++   end
++   local
++      open l8
++   in
++      structure gs_3 = Atom
++   end
++   local
++      structure Atom = gs_3
++      instruction.sml
++   in
++      structure gs_4 = Instruction
++   end
++   local
++      structure Atom = gs_3
++      structure Instruction = gs_4
++      structure List = gs_2
++      machine.sml
++   in
++      structure gs_5 = Machine
++   end
++   local
++      structure AtomBinaryMap = gs_1
++      structure Instruction = gs_4
++      structure List = gs_2
++      structure Machine = gs_5
++      signature REACTIVE = gs_0
++      reactive.sml
++   in
++      structure gs_6 = Reactive
++   end
++in
++   signature REACTIVE = gs_0
++   structure Reactive = gs_6
++end
++end
++
++end
+diff -Naur smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
+--- smlnj-lib/README.mlton	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/README.mlton	2005-11-17 15:56:55.000000000 -0500
+@@ -0,0 +1,15 @@
++The following changes were made to the SML/NJ Library, in addition to
++deriving the {{{.mlb}}} files from the {{{.cm}}} files:
++ * {{{Util/redblack-set-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
++ * {{{Util/redblack-map-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
++ * {{{Util/graph-scc-fn.sml}}} (modified): Rewrote use of {{{where}}} structure specification.
++ * {{{Util/bit-array.sml}}} (modified): The computation of the {{{maxLen}}} is given by: {{{
++val maxLen = 8*Word8Array.maxLen
++}}} This is fine in SML/NJ where {{{Word8Array.maxLen}}} is 16777215, but in MLton, {{{Word8Array.maxLen}}} is equal to {{{valOf(Int.maxInt)}}}, so the computation overflows. To accomodate both SML/NJ and MLton, the computation is replaced by {{{
++val maxLen = (8*Word8Array.maxLen) handle Overflow => Word8Array.maxLen
++}}}
++ * {{{Util/engine.mlton.sml}}} (added, not exported): Implements {{{structure Engine}}}, providing time-limited, resumable computations using ["MLtonThread"], ["MLtonSignal"], and ["MLtonItimer"].
++ * {{{Util/time-limit.mlton.sml}}} (added): Implements {{{structure TimeLimit}}} using {{{structure Engine}}}.  The SML/NJ implementation of {{{structure TimeLimit}}} uses SML/NJ's first-class continuations, signals, and interval timer.
++ * {{{Util/time-limit.mlb}}} (added): Exports {{{structure TimeLimit}}}, which is ''not'' exported by {{{smlnj-lib.mlb}}}.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unecessarily including {{{structure TimeLimit}}}.
++ * {{{HTML/html-elements-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
++ * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
+diff -Naur smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-lib.mlb
+--- smlnj-lib/RegExp/regexp-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/RegExp/regexp-lib.mlb	2005-11-21 11:37:44.000000000 -0500
+@@ -0,0 +1,214 @@
++
++ann
++  "nonexhaustiveMatch ignore" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++  basis l16 = 
++    bas
++      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = StringCvt
++   end
++   local
++      open l4
++   in
++      structure gs_1 = List
++   end
++   local
++      structure List = gs_1
++      Glue/match-tree.sml
++   in
++      signature gs_2 = MATCH_TREE
++      structure gs_3 = MatchTree
++   end
++   local
++      open l16
++   in
++      functor gs_4 = ListSetFn
++   end
++   local
++      open l4
++   in
++      structure gs_5 = Char
++   end
++   local
++      open l16
++   in
++      signature gs_6 = ORD_SET
++   end
++   local
++      signature ORD_SET = gs_6
++      FrontEnd/syntax-sig.sml
++   in
++      signature gs_7 = REGEXP_SYNTAX
++   end
++   local
++      structure Char = gs_5
++      structure List = gs_1
++      functor ListSetFn = gs_4
++      signature REGEXP_SYNTAX = gs_7
++      FrontEnd/syntax.sml
++   in
++      structure gs_8 = RegExpSyntax
++   end
++   local
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure RegExpSyntax = gs_8
++      structure StringCvt = gs_0
++      BackEnd/engine-sig.sml
++   in
++      signature gs_9 = REGEXP_ENGINE
++   end
++   local
++      open l4
++   in
++      structure gs_10 = Array
++   end
++   local
++      open l16
++   in
++      functor gs_11 = ListMapFn
++   end
++   local
++      open l4
++   in
++      structure gs_12 = Array2
++   end
++   local
++      open l4
++   in
++      structure gs_13 = TextIO
++   end
++   local
++      open l4
++   in
++      structure gs_14 = ListPair
++   end
++   local
++      open l4
++   in
++      structure gs_15 = Int
++   end
++   local
++      structure Array = gs_10
++      structure Array2 = gs_12
++      structure Char = gs_5
++      structure Int = gs_15
++      structure List = gs_1
++      functor ListMapFn = gs_11
++      structure ListPair = gs_14
++      functor ListSetFn = gs_4
++      signature ORD_SET = gs_6
++      structure RegExpSyntax = gs_8
++      structure TextIO = gs_13
++      BackEnd/fsm.sml
++   in
++      signature gs_16 = DFA
++      structure gs_17 = Dfa
++      signature gs_18 = NFA
++      structure gs_19 = Nfa
++   end
++   local
++      structure Array = gs_10
++      signature DFA = gs_16
++      structure Dfa = gs_17
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      signature NFA = gs_18
++      structure Nfa = gs_19
++      signature REGEXP_ENGINE = gs_9
++      structure RegExpSyntax = gs_8
++      BackEnd/dfa-engine.sml
++   in
++      structure gs_20 = DfaEngine
++   end
++   local
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure StringCvt = gs_0
++      Glue/regexp-sig.sml
++   in
++      signature gs_21 = REGEXP
++   end
++   local
++      structure RegExpSyntax = gs_8
++      structure StringCvt = gs_0
++      FrontEnd/parser-sig.sml
++   in
++      signature gs_22 = REGEXP_PARSER
++   end
++   local
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      signature REGEXP = gs_21
++      signature REGEXP_ENGINE = gs_9
++      signature REGEXP_PARSER = gs_22
++      structure RegExpSyntax = gs_8
++      structure StringCvt = gs_0
++      Glue/regexp-fn.sml
++   in
++      functor gs_23 = RegExpFn
++   end
++   local
++      open l4
++   in
++      structure gs_24 = Word8
++   end
++   local
++      structure Char = gs_5
++      structure Int = gs_15
++      structure List = gs_1
++      signature REGEXP_PARSER = gs_22
++      structure RegExpSyntax = gs_8
++      structure StringCvt = gs_0
++      structure Word8 = gs_24
++      FrontEnd/awk-syntax.sml
++   in
++      structure gs_25 = AwkSyntax
++   end
++   local
++      open l4
++   in
++      structure gs_26 = Option
++   end
++   local
++      structure List = gs_1
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure Option = gs_26
++      signature REGEXP_ENGINE = gs_9
++      structure RegExpSyntax = gs_8
++      BackEnd/bt-engine.sml
++   in
++      structure gs_27 = BackTrackEngine
++   end
++in
++   structure AwkSyntax = gs_25
++   structure BackTrackEngine = gs_27
++   structure DfaEngine = gs_20
++   signature MATCH_TREE = gs_2
++   structure MatchTree = gs_3
++   signature REGEXP = gs_21
++   signature REGEXP_ENGINE = gs_9
++   signature REGEXP_PARSER = gs_22
++   signature REGEXP_SYNTAX = gs_7
++   functor RegExpFn = gs_23
++   structure RegExpSyntax = gs_8
++end
++end
++
++end
+diff -Naur smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
+--- smlnj-lib/smlnj-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/smlnj-lib.mlb	2005-08-17 20:13:05.000000000 -0400
+@@ -0,0 +1,13 @@
++local
++   Controls/controls-lib.mlb
++   HashCons/hash-cons-lib.mlb
++   HTML/html-lib.mlb
++   INet/inet-lib.mlb
++   PP/pp-lib.mlb
++   Reactive/reactive-lib.mlb
++   RegExp/regexp-lib.mlb
++   Unix/unix-lib.mlb
++   Util/smlnj-lib.mlb
++   Util/time-limit.mlb
++in 
++end
+diff -Naur smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
+--- smlnj-lib/Unix/unix-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Unix/unix-lib.mlb	2005-11-21 11:37:44.000000000 -0500
+@@ -0,0 +1,45 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb 
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = Substring
++   end
++   local
++      open l4
++   in
++      structure gs_1 = Posix
++   end
++   local
++      unix-env-sig.sml
++   in
++      signature gs_2 = UNIX_ENV
++   end
++   local
++      structure Posix = gs_1
++      structure Substring = gs_0
++      signature UNIX_ENV = gs_2
++      unix-env.sml
++   in
++      structure gs_3 = UnixEnv
++   end
++in
++   signature UNIX_ENV = gs_2
++   structure UnixEnv = gs_3
++end
++end
++
++end
+diff -Naur smlnj-lib/Util/bit-array.sml smlnj-lib-mlton/Util/bit-array.sml
+--- smlnj-lib/Util/bit-array.sml	2004-11-20 10:28:05.000000000 -0500
++++ smlnj-lib-mlton/Util/bit-array.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -47,7 +47,9 @@
+          * We maintain the invariant that all bits >= nbits are 0.
+          *)
+           type elem = bool
+-          val maxLen = 8*Word8Array.maxLen
++          val maxLen = (8*Word8Array.maxLen)
++	               handle Overflow => Word8Array.maxLen
++	               
+           datatype vector = BA of {nbits : int, bits : W8A.array}
+       
+           fun array (0,init) = BA{nbits=0,bits=W8A.array(0,0w0)}
+diff -Naur smlnj-lib/Util/engine.mlton.sml smlnj-lib-mlton/Util/engine.mlton.sml
+--- smlnj-lib/Util/engine.mlton.sml	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Util/engine.mlton.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -0,0 +1,99 @@
++(* Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
++ *    Jagannathan, and Stephen Weeks.
++ *
++ * MLton is released under the GNU General Public License (GPL).
++ * Please see the file MLton-LICENSE for license information.
++ *)
++
++signature ENGINE =
++   sig
++      type 'a t
++
++      datatype 'a res =
++	 Done of 'a
++       | Raise of exn
++       | TimeOut of 'a t
++
++      val new: (unit -> 'a) -> 'a t
++      val repeat: {thunk: unit -> 'a,
++		   limit: Time.time,
++		   tries: int} -> 'a option
++      val run: 'a t * Time.time -> 'a res
++      val timeLimit: Time.time * (unit -> 'a) -> 'a option
++   end
++
++structure Engine: ENGINE =
++struct
++
++open MLton
++
++datatype 'a t = T of {return: 'a res Thread.t option ref,
++		      thread: Thread.Runnable.t}
++and 'a res =
++   Done of 'a
++ | Raise of exn
++ | TimeOut of 'a t
++
++val which = Itimer.Real
++val signal = Itimer.signal which
++
++fun done (return): unit =
++   (return := NONE
++    ; Itimer.set (which, {value = Time.zeroTime,
++			  interval = Time.zeroTime})
++    ; Signal.setHandler (signal, Signal.Handler.default))
++
++fun new (f: unit -> 'a): 'a t =
++   let
++      val return = ref NONE
++      val thread =
++	 Thread.new
++	 (fn () =>
++	  let
++	     val res = Done (f ()) handle e => Raise e
++	     val ret = valOf (!return)
++	     val _ = done return
++	  in
++	     Thread.switch (fn _ => Thread.prepare (ret, res))
++	  end)
++      val thread = Thread.prepare (thread, ())
++   in
++      T {return = return, thread = thread}
++   end
++     
++fun run (T {return, thread}, time: Time.time): 'a res =
++   Thread.switch
++   (fn cur: 'a res Thread.t =>
++    let
++       val _ = return := SOME cur
++       fun handler (me: Thread.Runnable.t): Thread.Runnable.t =
++	  Thread.prepare
++	  (Thread.prepend (cur, fn () => (done return
++					  ; TimeOut (T {return = return,
++							thread = me}))),
++	   ())
++       val _ = Signal.setHandler (signal, Signal.Handler.handler handler)
++       val _ = Itimer.set (which, {value = time,
++				   interval = Time.zeroTime})
++    in
++       thread
++    end)
++
++fun timeLimit (t: Time.time, f: unit -> 'a): 'a option =
++   case run (new f, t) of
++      Done a => SOME a
++    | Raise e => raise e
++    | TimeOut _ => NONE
++
++fun repeat {thunk, limit, tries} =
++   let
++      fun loop (n: int) =
++	 if n <= 0
++	    then NONE
++	 else (case timeLimit (limit, thunk) of
++		  NONE => loop (n - 1)
++		| SOME a => SOME a)
++   in loop tries
++   end
++
++end
+diff -Naur smlnj-lib/Util/graph-scc-fn.sml smlnj-lib-mlton/Util/graph-scc-fn.sml
+--- smlnj-lib/Util/graph-scc-fn.sml	2005-08-04 22:26:29.000000000 -0400
++++ smlnj-lib-mlton/Util/graph-scc-fn.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -8,7 +8,7 @@
+  * author: Matthias Blume
+  *) 
+ 
+-functor GraphSCCFn (Nd: ORD_KEY) :> GRAPH_SCC where Nd = Nd =
++functor GraphSCCFn (Nd: ORD_KEY) :> GRAPH_SCC where type Nd.ord_key = Nd.ord_key =
+   struct
+     structure Nd = Nd
+ 
+diff -Naur smlnj-lib/Util/redblack-map-fn.sml smlnj-lib-mlton/Util/redblack-map-fn.sml
+--- smlnj-lib/Util/redblack-map-fn.sml	2004-11-20 10:28:05.000000000 -0500
++++ smlnj-lib-mlton/Util/redblack-map-fn.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -20,7 +20,7 @@
+  * its child will be a red leaf.
+  *)
+ 
+-functor RedBlackMapFn (K : ORD_KEY) :> ORD_MAP where Key = K =
++functor RedBlackMapFn (K : ORD_KEY) :> ORD_MAP where type Key.ord_key = K.ord_key =
+   struct
+ 
+     structure Key = K
+diff -Naur smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack-set-fn.sml
+--- smlnj-lib/Util/redblack-set-fn.sml	2004-11-20 10:28:05.000000000 -0500
++++ smlnj-lib-mlton/Util/redblack-set-fn.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -20,7 +20,7 @@
+  * its child will be a red leaf.
+  *)
+ 
+-functor RedBlackSetFn (K : ORD_KEY) :> ORD_SET where Key = K =
++functor RedBlackSetFn (K : ORD_KEY) :> ORD_SET where type Key.ord_key = K.ord_key =
+   struct
+ 
+     structure Key = K
+diff -Naur smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
+--- smlnj-lib/Util/smlnj-lib.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Util/smlnj-lib.mlb	2005-11-21 11:38:02.000000000 -0500
+@@ -0,0 +1,1099 @@
++
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit ignore"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  basis l4 = 
++    bas
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/unsafe.mlb $(SML_LIB)/basis/sml-nj.mlb
++    end
++in
++local
++   $(SML_LIB)/basis/pervasive.mlb
++   local
++      open l4
++   in
++      structure gs_0 = List
++   end
++   local
++      ord-key-sig.sml
++   in
++      signature gs_1 = ORD_KEY
++   end
++   local
++      signature ORD_KEY = gs_1
++      ord-set-sig.sml
++   in
++      signature gs_2 = ORD_SET
++   end
++   local
++      open l4
++   in
++      structure gs_3 = Int
++   end
++   local
++      lib-base-sig.sml
++   in
++      signature gs_4 = LIB_BASE
++   end
++   local
++      structure Int = gs_3
++      signature LIB_BASE = gs_4
++      lib-base.sml
++   in
++      structure gs_5 = LibBase
++   end
++   local
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_KEY = gs_1
++      signature ORD_SET = gs_2
++      list-set-fn.sml
++   in
++      functor gs_6 = ListSetFn
++   end
++   local
++      signature ORD_KEY = gs_1
++      ord-map-sig.sml
++   in
++      signature gs_7 = ORD_MAP
++   end
++   local
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_KEY = gs_1
++      signature ORD_MAP = gs_7
++      list-map-fn.sml
++   in
++      functor gs_8 = ListMapFn
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_SET = gs_2
++      int-binary-set.sml
++   in
++      structure gs_9 = IntBinarySet
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      signature ORD_MAP = gs_7
++      int-binary-map.sml
++   in
++      structure gs_10 = IntBinaryMap
++   end
++   local
++      prime-sizes.sml
++   in
++      structure gs_11 = PrimeSizes
++   end
++   local
++      open l4
++   in
++      structure gs_12 = Array
++   end
++   local
++      open l4
++   in
++      structure gs_13 = General
++   end
++   local
++      dynamic-array-sig.sml
++   in
++      signature gs_14 = DYNAMIC_ARRAY
++   end
++   local
++      structure Array = gs_12
++      signature DYNAMIC_ARRAY = gs_14
++      structure General = gs_13
++      structure Int = gs_3
++      dynamic-array.sml
++   in
++      structure gs_15 = DynamicArray
++   end
++   local
++      io-util-sig.sml
++   in
++      signature gs_16 = IO_UTIL
++   end
++   local
++      open l4
++   in
++      structure gs_17 = IntInf
++   end
++   local
++      splaytree-sig.sml
++   in
++      signature gs_18 = SPLAY_TREE
++   end
++   local
++      signature SPLAY_TREE = gs_18
++      splaytree.sml
++   in
++      structure gs_19 = SplayTree
++   end
++   local
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_KEY = gs_1
++      signature ORD_SET = gs_2
++      structure SplayTree = gs_19
++      splay-set-fn.sml
++   in
++      functor gs_20 = SplaySetFn
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_KEY = gs_1
++      signature ORD_MAP = gs_7
++      structure SplayTree = gs_19
++      splay-map-fn.sml
++   in
++      functor gs_21 = SplayMapFn
++   end
++   local
++      open l4
++   in
++      structure gs_22 = TextIO
++   end
++   local
++      structure Int = gs_3
++      structure List = gs_0
++      structure TextIO = gs_22
++      ansi-term.sml
++   in
++      structure gs_23 = ANSITerm
++   end
++   local
++      signature IO_UTIL = gs_16
++      structure TextIO = gs_22
++      io-util.sml
++   in
++      structure gs_24 = IOUtil
++   end
++   local
++      open l4
++   in
++      signature gs_25 = INT_INF
++   end
++   local
++      plist-sig.sml
++   in
++      signature gs_26 = PROP_LIST
++   end
++   local
++      open l4
++   in
++      structure gs_27 = String
++   end
++   local
++      open l4
++   in
++      structure gs_28 = Substring
++   end
++   local
++      open l4
++   in
++      structure gs_29 = StringCvt
++   end
++   local
++      open l4
++   in
++      structure gs_30 = Char
++   end
++   local
++      getopt-sig.sml
++   in
++      signature gs_31 = GET_OPT
++   end
++   local
++      structure Char = gs_30
++      signature GET_OPT = gs_31
++      structure Int = gs_3
++      structure List = gs_0
++      structure String = gs_27
++      structure StringCvt = gs_29
++      structure Substring = gs_28
++      getopt.sml
++   in
++      structure gs_32 = GetOpt
++   end
++   local
++      interval-domain-sig.sml
++   in
++      signature gs_33 = INTERVAL_DOMAIN
++   end
++   local
++      signature INTERVAL_DOMAIN = gs_33
++      interval-set-sig.sml
++   in
++      signature gs_34 = INTERVAL_SET
++   end
++   local
++      structure StringCvt = gs_29
++      parser-comb-sig.sml
++   in
++      signature gs_35 = PARSER_COMB
++   end
++   local
++      open l4
++   in
++      structure gs_36 = Word8
++   end
++   local
++      open l4
++   in
++      structure gs_37 = CharVector
++   end
++   local
++      open l4
++   in
++      structure gs_38 = LargeWord
++   end
++   local
++      open l4
++   in
++      structure gs_39 = LargeInt
++   end
++   local
++      open l4
++   in
++      structure gs_40 = Word
++   end
++   local
++      open l4
++   in
++      structure gs_41 = Real
++   end
++   local
++      open l4
++   in
++      structure gs_42 = LargeReal
++   end
++   local
++      atom-sig.sml
++   in
++      signature gs_43 = ATOM
++   end
++   local
++      open l4
++   in
++      structure gs_44 = Unsafe
++   end
++   local
++      structure Char = gs_30
++      structure Substring = gs_28
++      structure Unsafe = gs_44
++      structure Word = gs_40
++      hash-string.sml
++   in
++      structure gs_45 = HashString
++   end
++   local
++      signature ATOM = gs_43
++      structure Array = gs_12
++      structure HashString = gs_45
++      structure String = gs_27
++      structure Substring = gs_28
++      structure Word = gs_40
++      atom.sml
++   in
++      structure gs_46 = Atom
++   end
++   local
++      structure Atom = gs_46
++      structure Int = gs_3
++      structure LargeInt = gs_39
++      structure LargeReal = gs_42
++      structure LargeWord = gs_38
++      structure Real = gs_41
++      structure Word = gs_40
++      structure Word8 = gs_36
++      format-sig.sml
++   in
++      signature gs_47 = FORMAT
++   end
++   local
++      structure Int = gs_3
++      structure String = gs_27
++      structure StringCvt = gs_29
++      real-format.sml
++   in
++      structure gs_48 = RealFormat
++   end
++   local
++      structure Atom = gs_46
++      structure Char = gs_30
++      structure Int = gs_3
++      structure LargeInt = gs_39
++      structure LargeReal = gs_42
++      structure LargeWord = gs_38
++      structure Real = gs_41
++      structure StringCvt = gs_29
++      structure Substring = gs_28
++      structure Word = gs_40
++      structure Word8 = gs_36
++      fmt-fields.sml
++   in
++      structure gs_49 = FmtFields
++   end
++   local
++      structure Atom = gs_46
++      structure Char = gs_30
++      structure CharVector = gs_37
++      signature FORMAT = gs_47
++      structure FmtFields = gs_49
++      structure Int = gs_3
++      structure LargeInt = gs_39
++      structure LargeWord = gs_38
++      structure Real = gs_41
++      structure RealFormat = gs_48
++      structure String = gs_27
++      structure StringCvt = gs_29
++      structure Substring = gs_28
++      structure Word = gs_40
++      structure Word8 = gs_36
++      format.sml
++   in
++      structure gs_50 = Format
++   end
++   local
++      priority-sig.sml
++   in
++      signature gs_51 = PRIORITY
++   end
++   local
++      hash-key-sig.sml
++   in
++      signature gs_52 = HASH_KEY
++   end
++   local
++      signature HASH_KEY = gs_52
++      mono-hash-table-sig.sml
++   in
++      signature gs_53 = MONO_HASH_TABLE
++   end
++   local
++      structure Array = gs_12
++      structure Word = gs_40
++      hash-table-rep.sml
++   in
++      structure gs_54 = HashTableRep
++   end
++   local
++      structure Array = gs_12
++      structure HashTableRep = gs_54
++      signature MONO_HASH_TABLE = gs_53
++      structure Word = gs_40
++      int-hash-table.sml
++   in
++      structure gs_55 = IntHashTable
++   end
++   local
++      open l4
++   in
++      signature gs_56 = MONO_ARRAY
++   end
++   local
++      signature MONO_ARRAY = gs_56
++      bit-array-sig.sml
++   in
++      signature gs_57 = BIT_ARRAY
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_KEY = gs_1
++      signature ORD_SET = gs_2
++      redblack-set-fn.sml
++   in
++      functor gs_58 = RedBlackSetFn
++   end
++   local
++      structure Atom = gs_46
++      functor RedBlackSetFn = gs_58
++      atom-redblack-set.sml
++   in
++      structure gs_59 = AtomRedBlackSet
++   end
++   local
++      structure AtomRedBlackSet = gs_59
++      atom-set.sml
++   in
++      structure gs_60 = AtomSet
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_KEY = gs_1
++      signature ORD_MAP = gs_7
++      redblack-map-fn.sml
++   in
++      functor gs_61 = RedBlackMapFn
++   end
++   local
++      structure Atom = gs_46
++      functor RedBlackMapFn = gs_61
++      atom-redblack-map.sml
++   in
++      structure gs_62 = AtomRedBlackMap
++   end
++   local
++      structure AtomRedBlackMap = gs_62
++      atom-map.sml
++   in
++      structure gs_63 = AtomMap
++   end
++   local
++      structure List = gs_0
++      signature PROP_LIST = gs_26
++      plist.sml
++   in
++      structure gs_64 = PropList
++   end
++   local
++      open l4
++   in
++      structure gs_65 = Vector
++   end
++   local
++      char-map-sig.sml
++   in
++      signature gs_66 = CHAR_MAP
++   end
++   local
++      structure Array = gs_12
++      signature CHAR_MAP = gs_66
++      structure Char = gs_30
++      structure String = gs_27
++      structure Vector = gs_65
++      char-map.sml
++   in
++      structure gs_67 = CharMap
++   end
++   local
++      list-xprod-sig.sml
++   in
++      signature gs_68 = LIST_XPROD
++   end
++   local
++      signature ORD_KEY = gs_1
++      graph-scc-sig.sml
++   in
++      signature gs_69 = GRAPH_SCC
++   end
++   local
++      signature GRAPH_SCC = gs_69
++      structure List = gs_0
++      signature ORD_KEY = gs_1
++      functor RedBlackMapFn = gs_61
++      graph-scc-fn.sml
++   in
++      functor gs_70 = GraphSCCFn
++   end
++   local
++      structure Array = gs_12
++      signature HASH_KEY = gs_52
++      structure HashTableRep = gs_54
++      signature MONO_HASH_TABLE = gs_53
++      structure Word = gs_40
++      hash-table-fn.sml
++   in
++      functor gs_71 = HashTableFn
++   end
++   local
++      structure Atom = gs_46
++      functor HashTableFn = gs_71
++      atom-table.sml
++   in
++      structure gs_72 = AtomTable
++   end
++   local
++      structure StringCvt = gs_29
++      list-format-sig.sml
++   in
++      signature gs_73 = LIST_FORMAT
++   end
++   local
++      signature LIST_FORMAT = gs_73
++      structure String = gs_27
++      structure StringCvt = gs_29
++      list-format.sml
++   in
++      structure gs_74 = ListFormat
++   end
++   local
++      open l4
++   in
++      signature gs_75 = MONO_VECTOR
++   end
++   local
++      signature MONO_VECTOR = gs_75
++      bit-vector-sig.sml
++   in
++      signature gs_76 = BIT_VECTOR
++   end
++   local
++      signature PARSER_COMB = gs_35
++      structure StringCvt = gs_29
++      structure Substring = gs_28
++      parser-comb.sml
++   in
++      structure gs_77 = ParserComb
++   end
++   local
++      signature HASH_KEY = gs_52
++      mono-hash2-table-sig.sml
++   in
++      signature gs_78 = MONO_HASH2_TABLE
++   end
++   local
++      signature INTERVAL_DOMAIN = gs_33
++      signature INTERVAL_SET = gs_34
++      structure List = gs_0
++      interval-set-fn.sml
++   in
++      functor gs_79 = IntervalSetFn
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_SET = gs_2
++      structure Word = gs_40
++      word-redblack-set.sml
++   in
++      structure gs_80 = WordRedBlackSet
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_MAP = gs_7
++      structure Word = gs_40
++      word-redblack-map.sml
++   in
++      structure gs_81 = WordRedBlackMap
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_SET = gs_2
++      int-list-set.sml
++   in
++      structure gs_82 = IntListSet
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_MAP = gs_7
++      int-list-map.sml
++   in
++      structure gs_83 = IntListMap
++   end
++   local
++      open l4
++   in
++      structure gs_84 = OS
++   end
++   local
++      path-util-sig.sml
++   in
++      signature gs_85 = PATH_UTIL
++   end
++   local
++      structure OS = gs_84
++      signature PATH_UTIL = gs_85
++      path-util.sml
++   in
++      structure gs_86 = PathUtil
++   end
++   local
++      structure LibBase = gs_5
++      structure List = gs_0
++      signature ORD_KEY = gs_1
++      signature ORD_SET = gs_2
++      binary-set-fn.sml
++   in
++      functor gs_87 = BinarySetFn
++   end
++   local
++      structure LibBase = gs_5
++      signature ORD_KEY = gs_1
++      signature ORD_MAP = gs_7
++      binary-map-fn.sml
++   in
++      functor gs_88 = BinaryMapFn
++   end
++   local
++      open l4
++   in
++      structure gs_89 = ArraySlice
++   end
++   local
++      open l4
++   in
++      structure gs_90 = Math
++   end
++   local
++      open l4
++   in
++      structure gs_91 = PackWord32Big
++   end
++   local
++      open l4
++   in
++      structure gs_92 = Word8Vector
++   end
++   local
++      open l4
++   in
++      structure gs_93 = Word8Array
++   end
++   local
++      open l4
++   in
++      structure gs_94 = Word31
++   end
++   local
++      open l4
++   in
++      structure gs_95 = Byte
++   end
++   local
++      random-sig.sml
++   in
++      signature gs_96 = RANDOM
++   end
++   local
++      structure Array = gs_12
++      structure Byte = gs_95
++      structure LargeWord = gs_38
++      structure LibBase = gs_5
++      structure PackWord32Big = gs_91
++      signature RANDOM = gs_96
++      structure Word31 = gs_94
++      structure Word8Array = gs_93
++      structure Word8Vector = gs_92
++      random.sml
++   in
++      structure gs_97 = Random
++   end
++   local
++      structure Array = gs_12
++      structure ArraySlice = gs_89
++      structure Random = gs_97
++      structure Real = gs_41
++      structure Unsafe = gs_44
++      structure Word = gs_40
++      real-order-stats.sml
++   in
++      structure gs_98 = RealOrderStats
++   end
++   local
++      structure Array = gs_12
++      structure ArraySlice = gs_89
++      structure Math = gs_90
++      structure RealOrderStats = gs_98
++      structure Unsafe = gs_44
++      univariate-stats.sml
++   in
++      structure gs_99 = UnivariateStats
++   end
++   local
++      signature BIT_ARRAY = gs_57
++      structure Byte = gs_95
++      structure Int = gs_3
++      structure LibBase = gs_5
++      structure List = gs_0
++      structure Word = gs_40
++      structure Word8 = gs_36
++      structure Word8Array = gs_93
++      structure Word8Vector = gs_92
++      bit-array.sml
++   in
++      structure gs_100 = BitArray
++   end
++   local
++      structure Array = gs_12
++      signature MONO_ARRAY = gs_56
++      structure Vector = gs_65
++      mono-array-fn.sml
++   in
++      functor gs_101 = MonoArrayFn
++   end
++   local
++      signature MONO_ARRAY = gs_56
++      bsearch-fn.sml
++   in
++      functor gs_102 = BSearchFn
++   end
++   local
++      mono-dynamic-array-sig.sml
++   in
++      signature gs_103 = MONO_DYNAMIC_ARRAY
++   end
++   local
++      open l4
++   in
++      structure gs_104 = Bool
++   end
++   local
++      structure StringCvt = gs_29
++      format-comb-sig.sml
++   in
++      signature gs_105 = FORMAT_COMB
++   end
++   local
++      structure Bool = gs_104
++      structure Char = gs_30
++      signature FORMAT_COMB = gs_105
++      structure Int = gs_3
++      structure Real = gs_41
++      structure String = gs_27
++      structure StringCvt = gs_29
++      format-comb.sml
++   in
++      structure gs_106 = FormatComb
++   end
++   local
++      queue-sig.sml
++   in
++      signature gs_107 = QUEUE
++   end
++   local
++      fifo-sig.sml
++   in
++      signature gs_108 = FIFO
++   end
++   local
++      signature FIFO = gs_108
++      structure List = gs_0
++      fifo.sml
++   in
++      structure gs_109 = Fifo
++   end
++   local
++      structure Fifo = gs_109
++      signature QUEUE = gs_107
++      queue.sml
++   in
++      structure gs_110 = Queue
++   end
++   local
++      structure Array = gs_12
++      signature HASH_KEY = gs_52
++      structure HashTableRep = gs_54
++      signature MONO_HASH2_TABLE = gs_78
++      structure Word = gs_40
++      hash2-table-fn.sml
++   in
++      functor gs_111 = Hash2TableFn
++   end
++   local
++      structure Array = gs_12
++      structure HashTableRep = gs_54
++      signature MONO_HASH_TABLE = gs_53
++      structure Word = gs_40
++      word-hash-table.sml
++   in
++      structure gs_112 = WordHashTable
++   end
++   local
++      structure Atom = gs_46
++      structure AtomTable = gs_72
++      structure List = gs_0
++      keyword-fn.sml
++   in
++      functor gs_113 = KeywordFn
++   end
++   local
++      mono-priorityq-sig.sml
++   in
++      signature gs_114 = MONO_PRIORITYQ
++   end
++   local
++      structure List = gs_0
++      signature MONO_PRIORITYQ = gs_114
++      signature PRIORITY = gs_51
++      left-priorityq-fn.sml
++   in
++      functor gs_115 = LeftPriorityQFn
++   end
++   local
++      hash-table-sig.sml
++   in
++      signature gs_116 = HASH_TABLE
++   end
++   local
++      structure Array = gs_12
++      signature HASH_TABLE = gs_116
++      structure HashTableRep = gs_54
++      structure Word = gs_40
++      hash-table.sml
++   in
++      structure gs_117 = HashTable
++   end
++   local
++      structure General = gs_13
++      structure Int = gs_3
++      signature MONO_ARRAY = gs_56
++      signature MONO_DYNAMIC_ARRAY = gs_103
++      dynamic-array-fn.sml
++   in
++      functor gs_118 = DynamicArrayFn
++   end
++   local
++      signature MONO_ARRAY = gs_56
++      mono-array-sort-sig.sml
++   in
++      signature gs_119 = MONO_ARRAY_SORT
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      signature ORD_SET = gs_2
++      int-redblack-set.sml
++   in
++      structure gs_120 = IntRedBlackSet
++   end
++   local
++      structure Int = gs_3
++      structure LibBase = gs_5
++      signature ORD_MAP = gs_7
++      int-redblack-map.sml
++   in
++      structure gs_121 = IntRedBlackMap
++   end
++   local
++      array-sort-sig.sml
++   in
++      signature gs_122 = ARRAY_SORT
++   end
++   local
++      signature ARRAY_SORT = gs_122
++      structure Array = gs_12
++      structure Int = gs_3
++      structure Unsafe = gs_44
++      array-qsort.sml
++   in
++      structure gs_123 = ArrayQSort
++   end
++   local
++      uref-sig.sml
++   in
++      signature gs_124 = UREF
++   end
++   local
++      signature UREF = gs_124
++      simple-uref.sml
++   in
++      structure gs_125 = SimpleURef
++   end
++   local
++      listsort-sig.sml
++   in
++      signature gs_126 = LIST_SORT
++   end
++   local
++      signature LIST_SORT = gs_126
++      structure LibBase = gs_5
++      list-mergesort.sml
++   in
++      structure gs_127 = ListMergeSort
++   end
++   local
++      structure Int = gs_3
++      signature MONO_ARRAY = gs_56
++      signature MONO_ARRAY_SORT = gs_119
++      array-qsort-fn.sml
++   in
++      functor gs_128 = ArrayQSortFn
++   end
++   local
++      structure Atom = gs_46
++      functor BinarySetFn = gs_87
++      atom-binary-set.sml
++   in
++      structure gs_129 = AtomBinarySet
++   end
++   local
++      structure Atom = gs_46
++      functor BinaryMapFn = gs_88
++      atom-binary-map.sml
++   in
++      structure gs_130 = AtomBinaryMap
++   end
++   local
++      signature UREF = gs_124
++      uref.sml
++   in
++      structure gs_131 = URef
++   end
++   local
++      structure Atom = gs_46
++      structure Int = gs_3
++      structure LargeInt = gs_39
++      structure LargeReal = gs_42
++      structure LargeWord = gs_38
++      structure Real = gs_41
++      structure StringCvt = gs_29
++      structure Word = gs_40
++      structure Word8 = gs_36
++      scan-sig.sml
++   in
++      signature gs_132 = SCAN
++   end
++   local
++      structure Bool = gs_104
++      structure Char = gs_30
++      structure FmtFields = gs_49
++      structure Int = gs_3
++      structure LargeInt = gs_39
++      structure LargeReal = gs_42
++      signature SCAN = gs_132
++      structure StringCvt = gs_29
++      structure Substring = gs_28
++      structure Word8Array = gs_93
++      scan.sml
++   in
++      structure gs_133 = Scan
++   end
++   local
++      open l4
++   in
++      structure gs_134 = Int32
++   end
++   local
++      structure Word31 = gs_94
++      rand-sig.sml
++   in
++      signature gs_135 = RAND
++   end
++   local
++      structure Int32 = gs_134
++      structure LibBase = gs_5
++      signature RAND = gs_135
++      structure Real = gs_41
++      structure Word31 = gs_94
++      rand.sml
++   in
++      structure gs_136 = Rand
++   end
++   local
++      signature LIST_XPROD = gs_68
++      list-xprod.sml
++   in
++      structure gs_137 = ListXProd
++   end
++in
++   structure ANSITerm = gs_23
++   signature ARRAY_SORT = gs_122
++   signature ATOM = gs_43
++   structure ArrayQSort = gs_123
++   functor ArrayQSortFn = gs_128
++   structure Atom = gs_46
++   structure AtomBinaryMap = gs_130
++   structure AtomBinarySet = gs_129
++   structure AtomMap = gs_63
++   structure AtomRedBlackMap = gs_62
++   structure AtomRedBlackSet = gs_59
++   structure AtomSet = gs_60
++   structure AtomTable = gs_72
++   signature BIT_ARRAY = gs_57
++   signature BIT_VECTOR = gs_76
++   functor BSearchFn = gs_102
++   functor BinaryMapFn = gs_88
++   functor BinarySetFn = gs_87
++   structure BitArray = gs_100
++   signature CHAR_MAP = gs_66
++   structure CharMap = gs_67
++   signature DYNAMIC_ARRAY = gs_14
++   structure DynamicArray = gs_15
++   functor DynamicArrayFn = gs_118
++   signature FIFO = gs_108
++   signature FORMAT = gs_47
++   signature FORMAT_COMB = gs_105
++   structure Fifo = gs_109
++   structure Format = gs_50
++   structure FormatComb = gs_106
++   signature GET_OPT = gs_31
++   signature GRAPH_SCC = gs_69
++   structure GetOpt = gs_32
++   functor GraphSCCFn = gs_70
++   signature HASH_KEY = gs_52
++   signature HASH_TABLE = gs_116
++   functor Hash2TableFn = gs_111
++   structure HashString = gs_45
++   structure HashTable = gs_117
++   functor HashTableFn = gs_71
++   signature INTERVAL_DOMAIN = gs_33
++   signature INTERVAL_SET = gs_34
++   signature INT_INF = gs_25
++   structure IOUtil = gs_24
++   signature IO_UTIL = gs_16
++   structure IntBinaryMap = gs_10
++   structure IntBinarySet = gs_9
++   structure IntHashTable = gs_55
++   structure IntInf = gs_17
++   structure IntListMap = gs_83
++   structure IntListSet = gs_82
++   structure IntRedBlackMap = gs_121
++   structure IntRedBlackSet = gs_120
++   functor IntervalSetFn = gs_79
++   functor KeywordFn = gs_113
++   signature LIB_BASE = gs_4
++   signature LIST_FORMAT = gs_73
++   signature LIST_SORT = gs_126
++   signature LIST_XPROD = gs_68
++   functor LeftPriorityQFn = gs_115
++   structure LibBase = gs_5
++   structure ListFormat = gs_74
++   functor ListMapFn = gs_8
++   structure ListMergeSort = gs_127
++   functor ListSetFn = gs_6
++   structure ListXProd = gs_137
++   signature MONO_ARRAY_SORT = gs_119
++   signature MONO_DYNAMIC_ARRAY = gs_103
++   signature MONO_HASH2_TABLE = gs_78
++   signature MONO_HASH_TABLE = gs_53
++   signature MONO_PRIORITYQ = gs_114
++   functor MonoArrayFn = gs_101
++   signature ORD_KEY = gs_1
++   signature ORD_MAP = gs_7
++   signature ORD_SET = gs_2
++   signature PARSER_COMB = gs_35
++   signature PATH_UTIL = gs_85
++   signature PRIORITY = gs_51
++   signature PROP_LIST = gs_26
++   structure ParserComb = gs_77
++   structure PathUtil = gs_86
++   structure PrimeSizes = gs_11
++   structure PropList = gs_64
++   signature QUEUE = gs_107
++   structure Queue = gs_110
++   signature RAND = gs_135
++   signature RANDOM = gs_96
++   structure Rand = gs_136
++   structure Random = gs_97
++   structure RealOrderStats = gs_98
++   functor RedBlackMapFn = gs_61
++   functor RedBlackSetFn = gs_58
++   signature SCAN = gs_132
++   signature SPLAY_TREE = gs_18
++   structure Scan = gs_133
++   structure SimpleURef = gs_125
++   functor SplayMapFn = gs_21
++   functor SplaySetFn = gs_20
++   structure SplayTree = gs_19
++   signature UREF = gs_124
++   structure URef = gs_131
++   structure UnivariateStats = gs_99
++   structure WordHashTable = gs_112
++   structure WordRedBlackMap = gs_81
++   structure WordRedBlackSet = gs_80
++end
++end
++
++end
+diff -Naur smlnj-lib/Util/time-limit.mlb smlnj-lib-mlton/Util/time-limit.mlb
+--- smlnj-lib/Util/time-limit.mlb	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Util/time-limit.mlb	2005-08-17 20:13:05.000000000 -0400
+@@ -0,0 +1,16 @@
++ann
++  "nonexhaustiveMatch warn" "redundantMatch warn"
++  "sequenceNonUnit warn"
++  "warnUnused false" "forceUsed"
++in
++
++local
++  $(SML_LIB)/basis/basis.mlb
++  $(SML_LIB)/basis/mlton.mlb
++  engine.mlton.sml
++  time-limit.mlton.sml      
++in
++  structure TimeLimit = TimeLimit
++end
++
++end
+diff -Naur smlnj-lib/Util/time-limit.mlton.sml smlnj-lib-mlton/Util/time-limit.mlton.sml
+--- smlnj-lib/Util/time-limit.mlton.sml	1969-12-31 19:00:00.000000000 -0500
++++ smlnj-lib-mlton/Util/time-limit.mlton.sml	2005-08-17 20:13:05.000000000 -0400
+@@ -0,0 +1,24 @@
++(* time-limit.mlton.sml
++ * 
++ * Copyright (C) 1999-2004 Henry Cejtin, Matthew Fluet, Suresh
++ *    Jagannathan, and Stephen Weeks.
++ *
++ * MLton is released under the GNU General Public License (GPL).
++ * Please see the file MLton-LICENSE for license information.
++ *
++ *)
++
++structure TimeLimit:
++sig
++   exception TimeOut
++   val timeLimit : Time.time -> ('a -> 'b) -> 'a -> 'b
++end =
++struct
++   exception TimeOut
++
++   fun timeLimit t f x =
++      case Engine.run (Engine.new (fn () => f x), t) of
++	 Engine.Done res => res
++       | Engine.Raise exn => raise exn
++       | Engine.TimeOut _ => raise TimeOut
++end

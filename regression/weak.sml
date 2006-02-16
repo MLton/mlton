@@ -10,9 +10,9 @@ fun testIntInf (i: IntInf.int) =
    let
       val w = Weak.new i
       val _ =
-	 case Weak.get w of
-	    NONE => raise Fail "bug IntInf"
-	  | SOME i => print (concat [IntInf.toString i, "\n"])
+         case Weak.get w of
+            NONE => raise Fail "bug IntInf"
+          | SOME i => print (concat [IntInf.toString i, "\n"])
    in
       ()
    end

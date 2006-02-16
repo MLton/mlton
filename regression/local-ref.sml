@@ -6,7 +6,7 @@ in
      = let
           val _ = if !c mod 5 = 0
                     then print (concat [Int.toString (!c),
-					"th invocation of fib\n"])
+                                        "th invocation of fib\n"])
                     else ()
           val _ = c := !c + 1
        in

@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
 
 signature LINKED_LIST =
@@ -32,26 +33,26 @@ open S
    
 val _ = 
    Assert.assert
-   ("LinkedList", fn () =>
+   ("TestLinkedList", fn () =>
     List.forall ([[],
-		  [1],
-		  [1, 2],
-		  [1, 2, 3]],
-		 fn l =>
-		 l = toList (fromList l)
-		 andalso rev l = toList (let
-					    val l' = fromList l
-					    val _ = reverse l'
-					 in
-					    l'
-					 end)
-		 andalso
-		 let
-		    val l' = fromList l
-		    val l'' = fromList l
-		    val _ = splice (l', l'')
-		 in
-		    l @ l = toList l'
-		 end))
+                  [1],
+                  [1, 2],
+                  [1, 2, 3]],
+                 fn l =>
+                 l = toList (fromList l)
+                 andalso rev l = toList (let
+                                            val l' = fromList l
+                                            val _ = reverse l'
+                                         in
+                                            l'
+                                         end)
+                 andalso
+                 let
+                    val l' = fromList l
+                    val l'' = fromList l
+                    val _ = splice (l', l'')
+                 in
+                    l @ l = toList l'
+                 end))
 
 end

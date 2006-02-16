@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature X86_LIVE_TRANSFERS_STRUCTS =
   sig
     structure x86 : X86
@@ -25,15 +26,15 @@ signature X86_LIVE_TRANSFERS =
     type t
 
     val computeLiveTransfers : {chunk : x86.Chunk.t,
-				transferRegs : x86.Entry.t -> x86.Register.t list,
-				transferFltRegs : x86.Entry.t -> Int.t, 
-				liveInfo : x86Liveness.LiveInfo.t,
-				jumpInfo : x86JumpInfo.t,
-				loopInfo : x86LoopInfo.t} -> t
+                                transferRegs : x86.Entry.t -> x86.Register.t list,
+                                transferFltRegs : x86.Entry.t -> Int.t, 
+                                liveInfo : x86Liveness.LiveInfo.t,
+                                jumpInfo : x86JumpInfo.t,
+                                loopInfo : x86LoopInfo.t} -> t
     val computeLiveTransfers_totals : unit -> unit
 
     val getLiveTransfers : t * x86.Label.t -> 
                            ((x86.MemLoc.t * x86.Register.t * bool) list *
-			    (x86.MemLoc.t * bool) list)
+                            (x86.MemLoc.t * bool) list)
     val setLiveTransfersEmpty : t * x86.Label.t -> unit 
   end

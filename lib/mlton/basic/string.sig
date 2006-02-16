@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Pervasive.Int.int
    
 signature STRING =
@@ -114,7 +115,7 @@ open S
 
 val _ =
    Assert.assert
-   ("String", fn () =>
+   ("TestString", fn () =>
     dropl("abc", fn c => c = #"a") = "bc"
     andalso "\\000" = escapeC "\000"
     andalso "abc" = removeTrailing ("abc  ", Char.isSpace)

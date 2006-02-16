@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor TwoPointLattice (S: TWO_POINT_LATTICE_STRUCTS): TWO_POINT_LATTICE = 
 struct
 
@@ -58,7 +59,7 @@ fun from <= to =
       then ()
    else
       case (value from, value to) of
-	 (_, Top) => ()
+         (_, Top) => ()
        | (Top, _) => makeTop to
        | (Bottom hs, _) => hs := List.cons (fn () => makeTop to, !hs)
 
@@ -67,15 +68,15 @@ fun == (T s, T s') =
       then ()
    else
       let val e = Set.! s
-	 val e' = Set.! s'
-	 val _ = Set.union (s, s')
+         val e' = Set.! s'
+         val _ = Set.union (s, s')
       in
-	 case (e, e') of
-	    (Top, Top) => ()
-	  | (Bottom hs, Top) => (Set.:= (s, e'); runHandlers hs)
-	  | (Top, Bottom hs) => (Set.:= (s, e); runHandlers hs)
-	  | (Bottom hs, Bottom hs') =>
-	       Set.:= (s, Bottom (ref (List.append (!hs, !hs'))))
+         case (e, e') of
+            (Top, Top) => ()
+          | (Bottom hs, Top) => (Set.:= (s, e'); runHandlers hs)
+          | (Top, Bottom hs) => (Set.:= (s, e); runHandlers hs)
+          | (Bottom hs, Bottom hs') =>
+               Set.:= (s, Bottom (ref (List.append (!hs, !hs'))))
       end
 
 end

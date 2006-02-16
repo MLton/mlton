@@ -1,16 +1,17 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor TraceControl (structure StringMap: STRING_MAP
-		      datatype status = Always | Flagged | Never
-		      type flags
-		      val map: flags StringMap.t
-		      val getFlag: flags -> bool ref
-		      val default: bool ref
-		      val status: status) =
+                      datatype status = Always | Flagged | Never
+                      type flags
+                      val map: flags StringMap.t
+                      val getFlag: flags -> bool ref
+                      val default: bool ref
+                      val status: status) =
 struct
 
 val status = ref status
@@ -64,70 +65,70 @@ val delayedDefault = ref false
 val timeDefault = ref false
 
 type flags = {immediate: bool ref,
-	      delayed: bool ref,
-	      time: bool ref}
+              delayed: bool ref,
+              time: bool ref}
    
 val map = StringMap.new (fn () => {immediate = ref (!immediateDefault),
-				   delayed = ref (!delayedDefault),
-				   time = ref (!timeDefault)})
+                                   delayed = ref (!delayedDefault),
+                                   time = ref (!timeDefault)})
    
 fun traceable () = StringMap.domain map
 
 fun outputTraceable () =
    Layout.output (List.layout Layout.str (traceable ()),
-		 Out.standard)
+                 Out.standard)
 
 datatype status = Always | Flagged | Never
 
 structure Immediate =
    TraceControl (type flags = flags
-		 val map = map
-		 structure StringMap = StringMap
-		 datatype status = datatype status
-		 fun getFlag ({immediate, ...}: flags) = immediate
-		 val default = immediateDefault
-		 val status = Never)
+                 val map = map
+                 structure StringMap = StringMap
+                 datatype status = datatype status
+                 fun getFlag ({immediate, ...}: flags) = immediate
+                 val default = immediateDefault
+                 val status = Never)
 structure Delayed =
    struct
       structure C = 
-	 TraceControl (type flags = flags
-		      val map = map
-		      structure StringMap = StringMap
-		      datatype status = datatype status
-		      fun getFlag ({delayed, ...}: flags) = delayed
-		      val default = delayedDefault
-		      val status = Never)
+         TraceControl (type flags = flags
+                      val map = map
+                      structure StringMap = StringMap
+                      datatype status = datatype status
+                      fun getFlag ({delayed, ...}: flags) = delayed
+                      val default = delayedDefault
+                      val status = Never)
       open C
-	 
+         
       val keepAll = ref true
    end
 
 structure Time =
    TraceControl (type flags = flags
-		val map = map
-		structure StringMap = StringMap
-		datatype status = datatype status
-		fun getFlag ({time, ...}: flags) = time
-		val default = timeDefault
-		val status = Never)
+                val map = map
+                structure StringMap = StringMap
+                datatype status = datatype status
+                fun getFlag ({time, ...}: flags) = time
+                val default = timeDefault
+                val status = Never)
 
 fun never () = (Immediate.never ()
-	       ; Delayed.never ()
-	       ; Time.never ())
+               ; Delayed.never ()
+               ; Time.never ())
 
 fun always () = (Immediate.always ()
-		; Delayed.always ()
-		; Time.always ())
+                ; Delayed.always ()
+                ; Time.always ())
 
 fun flagged () = (Immediate.flagged ()
-		 ; Delayed.flagged ()
-		 ; Time.flagged ())
+                 ; Delayed.flagged ()
+                 ; Time.flagged ())
    
 fun reset () =
    StringMap.foreach (map, fn {immediate, delayed, time} =>
-		      (immediate := false
-		       ; delayed := false
-		       ; time := false))
+                      (immediate := false
+                       ; delayed := false
+                       ; time := false))
 
 (*---------------------------------------------------*)
 (*                 Delayed Feedback                  *)
@@ -149,41 +150,41 @@ fun clear () = currentComputation := empty ()
 fun finishedComputation () =
    case !currentComputation of
       Working ic => let val c = IC.finish ic
-		    in currentComputation := Finished c
-		       ; c
-		    end
+                    in currentComputation := Finished c
+                       ; c
+                    end
     | Finished c => c
 val computation = finishedComputation
 
 fun history () = Computation.output (finishedComputation (),
-				   Out.error)
+                                   Out.error)
 fun calls () = Computation.outputCalls (finishedComputation (),
-				      Out.error)
+                                      Out.error)
 fun times () = Computation.outputTimes (finishedComputation (),
-				      Out.error)
+                                      Out.error)
 fun inspect () = Computation.inspect (finishedComputation ())
 
 fun ic () =
    case !currentComputation of
       Finished _ => let val ic = emptyIc ()
-		    in currentComputation := Working ic
-		       ; ic
-		    end
+                    in currentComputation := Working ic
+                       ; ic
+                    end
     | Working ic => ic
 
 fun delayedCall (name, layoutArg, layoutAns) =
    {call = fn () =>
     let val comp = ic ()
        val comp = if !Delayed.keepAll orelse not (IC.atTopLevel comp)
-		     then comp
-		  else (clear (); ic ())
+                     then comp
+                  else (clear (); ic ())
     in IC.call (comp, name, layoutArg)
     end,
     raisee = fn (t, _) => IC.raisee (ic (), t),
     return = fn (ans, t) => IC.return (ic (),
-				     fn () => layoutAns ans,
-				     t)}
-	 
+                                     fn () => layoutAns ans,
+                                     t)}
+         
 (*---------------------------------------------------*)
 (*                Immediate Feedback                 *)
 (*---------------------------------------------------*)
@@ -193,7 +194,7 @@ structure Immediate =
       open Immediate
 
       datatype debug =
-	 None
+         None
        | Terminal
        | Out of Out.t
     
@@ -210,70 +211,70 @@ structure Immediate =
       fun inChildProcess () = (inChild := true; indentation := 0)
 
       fun message (l: Layout.t): unit =
-	 case !debug of
-	    None => ()
-	  | _ => 
-	       let
-		  val (out, done) =
-		     case !debug of
-			Terminal => (Out.openOut "/dev/tty", Out.close)
-		      | Out out => (out, Out.flush)
-		      | _ => raise Fail "message"
-		  open Layout
-	       in output (seq [if !inChild
-				then seq [Pid.layout (Pid.current ()), str ": "]
-			     else empty,
-			     if !showTime
-				then str (Date.fmt
-					  (Date.now (), "%b %d %H:%M:%S "))
-			     else empty,
-		             indent (l, !indentation)],
-			 out)
-		  ; Out.newline out
-		  ; done out
-	       end
-	 
+         case !debug of
+            None => ()
+          | _ => 
+               let
+                  val (out, done) =
+                     case !debug of
+                        Terminal => (Out.openOut "/dev/tty", Out.close)
+                      | Out out => (out, Out.flush)
+                      | _ => Error.bug "Trace.message"
+                  open Layout
+               in output (seq [if !inChild
+                                then seq [Pid.layout (Pid.current ()), str ": "]
+                             else empty,
+                             if !showTime
+                                then str (Date.fmt
+                                          (Date.now (), "%b %d %H:%M:%S "))
+                             else empty,
+                             indent (l, !indentation)],
+                         out)
+                  ; Out.newline out
+                  ; done out
+               end
+         
       fun finish (t, res) =
-	 (left ()
-	  ; message (let open Layout
-		    in case t of
-		       NONE => seq [str "==> ", res]
-		     | SOME t =>
-			  align [seq [str "==> time = ", Timer.layout t],
-				res]
-		    end))
+         (left ()
+          ; message (let open Layout
+                    in case t of
+                       NONE => seq [str "==> ", res]
+                     | SOME t =>
+                          align [seq [str "==> time = ", Timer.layout t],
+                                res]
+                    end))
 
       fun call (name, outArg, layoutAns) =
-	 let
-	    open Layout
-	    fun call () = (message (seq [str name, str " ==> ",
-					 outArg ()
-					 handle e =>
-					    seq [str "layout argument error: ",
-						 Exn.layout e]])
-			   ; right ())
-	    fun raisee (t, e) = finish (t, seq [str "raise: ", Exn.layout e])
-	    fun return (ans, t) =
-	       finish (t,
-		       layoutAns ans
-		       handle e => seq [str "layout answer error: ",
-					Exn.layout e])
-	 in {call = call,
-	     raisee = raisee,
-	     return = return}
-	 end
+         let
+            open Layout
+            fun call () = (message (seq [str name, str " ==> ",
+                                         outArg ()
+                                         handle e =>
+                                            seq [str "layout argument error: ",
+                                                 Exn.layout e]])
+                           ; right ())
+            fun raisee (t, e) = finish (t, seq [str "raise: ", Exn.layout e])
+            fun return (ans, t) =
+               finish (t,
+                       layoutAns ans
+                       handle e => seq [str "layout answer error: ",
+                                        Exn.layout e])
+         in {call = call,
+             raisee = raisee,
+             return = return}
+         end
 
       val message =
-	 fn l =>
-	 (left ()
-	  ; indentation := 1 + !indentation
-	  ; message l
-	  ; indentation := !indentation - 1
-	  ; right ())
-	 
+         fn l =>
+         (left ()
+          ; indentation := 1 + !indentation
+          ; message l
+          ; indentation := !indentation - 1
+          ; right ())
+         
       val messageStr = message o Layout.str
    end
-	 
+         
 (*---------------------------------------------------*)
 (*                  Instrumentation                  *)
 (*---------------------------------------------------*)
@@ -281,8 +282,8 @@ structure Immediate =
 type info = {name: string, flags: flags}
 
 val bogusInfo = {name = "bogus", flags = {delayed = ref false,
-					  immediate = ref false,
-					  time = ref false}}
+                                          immediate = ref false,
+                                          time = ref false}}
 
 val shouldTrace = Assert.debug
    
@@ -292,58 +293,58 @@ fun info name =
    else bogusInfo
 
 fun traceInfo ({name, flags = {immediate, delayed, time}},
-	       layoutArg, layoutAns, check) f a =
+               layoutArg, layoutAns, check) f a =
    if not shouldTrace
       then f a
    else 
       let
-	 val immediate = Immediate.isOn immediate
-	 val delayed = Delayed.isOn delayed
-	 val time = Time.isOn time
+         val immediate = Immediate.isOn immediate
+         val delayed = Delayed.isOn delayed
+         val time = Time.isOn time
       in
-	 if not (immediate orelse delayed orelse time orelse Assert.debug)
-	    then f a
-	 else let val outArg = fn () => layoutArg a
-		  val noCall = {call = fn _ => (),
-				raisee = fn _ => (),
-				return = fn _ => ()}
-		  val immed = if immediate
-				 then Immediate.call (name, outArg, layoutAns)
-			      else noCall
-		  val delay = if delayed
-				 then delayedCall (name, outArg, layoutAns)
-			      else noCall
-		  val _ = (#call delay ()
-			   ; #call immed ())
-		  val check =
-		     if Assert.debug
-			then let val (b, check) = check a
-				 val _ = Assert.assert (concat [name, " argument"],
-						       fn () => b)
-			     in check
-			     end
-		     else fn _ => true
-		  val startTime = if time then SOME (Timer.times ()) else NONE
-		  fun getTime () =
-		     case startTime of
-			NONE => NONE
-		      | SOME {self = {utime = u, stime = s}, ...} =>
-			   SOME (let val {self = {utime = u', stime = s'},
-					  ...} = Timer.times ()
-				in Timer.+ (Timer.- (u', u),
-					    Timer.- (s', s))
-				end)
-		  val ans = f a handle exn => let val t = getTime ()
-					      in #raisee delay (t, exn)
-						 ; #raisee immed (t, exn)
-						 ; raise exn
-					      end
-		  val t = getTime ()
-	      in #return delay (ans, t)
-		 ; #return immed (ans, t)
-		 ; Assert.assert (concat [name, " result"], fn () => check ans)
-		 ; ans
-	      end
+         if not (immediate orelse delayed orelse time orelse Assert.debug)
+            then f a
+         else let val outArg = fn () => layoutArg a
+                  val noCall = {call = fn _ => (),
+                                raisee = fn _ => (),
+                                return = fn _ => ()}
+                  val immed = if immediate
+                                 then Immediate.call (name, outArg, layoutAns)
+                              else noCall
+                  val delay = if delayed
+                                 then delayedCall (name, outArg, layoutAns)
+                              else noCall
+                  val _ = (#call delay ()
+                           ; #call immed ())
+                  val check =
+                     if Assert.debug
+                        then let val (b, check) = check a
+                                 val _ = Assert.assert (concat [name, " argument"],
+                                                       fn () => b)
+                             in check
+                             end
+                     else fn _ => true
+                  val startTime = if time then SOME (Timer.times ()) else NONE
+                  fun getTime () =
+                     case startTime of
+                        NONE => NONE
+                      | SOME {self = {utime = u, stime = s}, ...} =>
+                           SOME (let val {self = {utime = u', stime = s'},
+                                          ...} = Timer.times ()
+                                in Timer.+ (Timer.- (u', u),
+                                            Timer.- (s', s))
+                                end)
+                  val ans = f a handle exn => let val t = getTime ()
+                                              in #raisee delay (t, exn)
+                                                 ; #raisee immed (t, exn)
+                                                 ; raise exn
+                                              end
+                  val t = getTime ()
+              in #return delay (ans, t)
+                 ; #return immed (ans, t)
+                 ; Assert.assert (concat [name, " result"], fn () => check ans)
+                 ; ans
+              end
       end
 
 fun assertTrue _ = (true, fn _ => true)
@@ -356,7 +357,7 @@ fun traceAssert (name, layoutArg, layoutAns, check) =
    
 fun trace (name, layoutArg, layoutAns) =
    traceAssert (name, layoutArg, layoutAns, assertTrue)
-	       
+               
 fun ignore _ = Layout.empty
    
 fun traceCall s = trace (s, ignore, ignore)
@@ -364,13 +365,13 @@ fun traceCall s = trace (s, ignore, ignore)
 fun traceRec info =
    let val trace = trace info
    in fn f => let fun fix f a = trace (f (fix f)) a
-	      in fix f
-	      end
+              in fix f
+              end
    end
 
 fun trace0 (name, layoutAns) =
    trace (name, Unit.layout, layoutAns)
-	 
+         
 fun trace2 (name, layout1, layout2, layoutAns) =
    trace (name, Layout.tuple2 (layout1, layout2), layoutAns)
 

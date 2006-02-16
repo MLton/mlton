@@ -1,8 +1,8 @@
 #include "platform.h"
 
 Signal Posix_Process_stopSig (Status s) {
-	int i;
+        int i;
 
-	i = s;
-	return WSTOPSIG (i);
+        i = s;
+        return WSTOPSIG (i);
 }

@@ -2,10 +2,10 @@ signature S =
    sig
       type t
       structure S:
-	 sig
-	    type 'a t
-	    val x: 'a t
-	 end
+         sig
+            type 'a t
+            val x: 'a t
+         end
    end
 
 structure S:
@@ -17,16 +17,16 @@ structure S:
    end
 
 functor F (eqtype t
-	   datatype u = U of t
-	   eqtype v
-	   sharing type t = v) =
+           datatype u = U of t
+           eqtype v
+           sharing type t = v) =
    struct
       fun f (u: u) = u = u
    end
 
 functor F (type t
-	   eqtype u
-	   sharing type t = u) =
+           eqtype u
+           sharing type t = u) =
    struct
       fun f (x: t) = x = x
    end
@@ -85,9 +85,9 @@ signature S =
    sig
       type t
       structure Z:
-	 sig
-	    datatype u = U
-	 end
+         sig
+            datatype u = U
+         end
       sharing type Z.u = t
    end
 
@@ -95,24 +95,24 @@ signature S =
    sig
       eqtype t
       structure Z:
-	 sig
-	    datatype u = U
-	 end where type u = t
+         sig
+            datatype u = U
+         end where type u = t
    end
 
 structure S:
    sig
       eqtype t
       structure Z:
-	 sig
-	    datatype u = U
-	 end where type u = t
+         sig
+            datatype u = U
+         end where type u = t
    end =
    struct
       structure Z =
-	 struct
-	    datatype u = U
-	 end
+         struct
+            datatype u = U
+         end
       type t = Z.u
    end
 
@@ -125,8 +125,8 @@ functor F (val x: int) = struct val y = x end
 functor F (structure S: sig end) = struct open S end
 
 functor F (type t
-	   type u
-	   sharing type t = u) =
+           type u
+           sharing type t = u) =
    struct
       val id: t -> u = fn x => x
    end
@@ -134,14 +134,14 @@ functor F (type t
 functor F (eqtype t) = struct fun f (x: t) = x = x end
 
 functor F (structure S:
-	      sig
-		 type t
-	      end
-	   structure T:
-	      sig
-		 type t
-	      end
-	   sharing S = T) =
+              sig
+                 type t
+              end
+           structure T:
+              sig
+                 type t
+              end
+           sharing S = T) =
    struct
       val id: S.t -> T.t = fn x => x
    end
@@ -152,15 +152,15 @@ functor F (datatype 'a t = T of 'a * 'a) =
    end
 
 functor F (type ('a, 'b) t
-	   type 'a u = ('a, int) t
-	   val f: (bool, 'b) t -> real
-	   val u: bool u) =
+           type 'a u = ('a, int) t
+           val f: (bool, 'b) t -> real
+           val u: bool u) =
    struct
       val _ = f u
    end
-	      
+              
 functor F (datatype t = T
-	   datatype u = U of t) =
+           datatype u = U of t) =
    struct
       fun f (x: u) = x = x
    end

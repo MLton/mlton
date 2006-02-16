@@ -1,8 +1,8 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 signature REP_TYPE_STRUCTS =
@@ -48,20 +48,20 @@ signature REP_TYPE =
       val align: t * Bytes.t -> Bytes.t
       val andb: t * t -> t option
       val arrayOffsetIsOk: {base: t,
-			    index: t,
-			    offset: Bytes.t,
-			    pointerTy: PointerTycon.t -> ObjectType.t,
-			    result: t,
-			    scale: Scale.t} -> bool
+                            index: t,
+                            offset: Bytes.t,
+                            pointerTy: PointerTycon.t -> ObjectType.t,
+                            result: t,
+                            scale: Scale.t} -> bool
       val arshift: t * t -> t
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
-		     to: t,
-		     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
+                     to: t,
+                     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
       val checkPrimApp: {args: t vector,
-			 prim: t Prim.t,
-			 result: t option} -> bool
+                         prim: t Prim.t,
+                         result: t option} -> bool
       val char: t
       val cPointer: unit -> t
       val constant: WordX.t -> t
@@ -88,9 +88,9 @@ signature REP_TYPE =
       val ofGCField: Runtime.GCField.t -> t
       val ofWordVector: WordXVector.t -> t
       val offsetIsOk: {base: t,
-		       offset: Bytes.t,
-		       pointerTy: PointerTycon.t -> ObjectType.t,
-		       result: t} -> bool
+                       offset: Bytes.t,
+                       pointerTy: PointerTycon.t -> ObjectType.t,
+                       result: t} -> bool
       val orb: t * t -> t option
       val pointer: PointerTycon.t -> t
       val pointerHeader: PointerTycon.t -> t
@@ -112,8 +112,8 @@ signature REP_TYPE =
       val zero: Bits.t -> t
 
       structure BuiltInCFunction:
-	 sig
-	    val bug: t CFunction.t
-	    val gc: {maySwitchThreads: bool} -> t CFunction.t
-	 end
+         sig
+            val bug: t CFunction.t
+            val gc: {maySwitchThreads: bool} -> t CFunction.t
+         end
    end

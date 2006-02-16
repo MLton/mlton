@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature RECORD_STRUCTS = 
    sig
       val isSorted: bool
@@ -14,7 +15,7 @@ signature RECORD_STRUCTS =
 signature RECORD = 
    sig
       include RECORD_STRUCTS
-	 
+         
       type 'a t
 
       (* Create a record with the same fields but a new range.
@@ -32,10 +33,10 @@ signature RECORD =
       val fromVector: (Field.t * 'a) vector -> 'a t
       val isTuple: 'a t -> bool
       val layout: {record: 'a t,
-		   separator: string,
-		   extra: string,
-		   layoutTuple: 'a vector -> Layout.t,
-		   layoutElt: 'a -> Layout.t} -> Layout.t
+                   separator: string,
+                   extra: string,
+                   layoutTuple: 'a vector -> Layout.t,
+                   layoutElt: 'a -> Layout.t} -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       val peek: 'a t * Field.t -> 'a option
       (* range {1 = a, 2 = b, 3 = c} returns [a, b, c] *)

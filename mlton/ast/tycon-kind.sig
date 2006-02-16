@@ -1,3 +1,10 @@
+(* Copyright (C) 2003-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 type int = Int.t
 
 signature TYCON_KIND_STRUCTS = 
@@ -9,7 +16,7 @@ signature TYCON_KIND =
       include TYCON_KIND_STRUCTS
       
       datatype t =
-	 Arity of int
+         Arity of int
        | Nary
 
       val equals: t * t -> bool

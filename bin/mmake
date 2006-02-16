@@ -3,16 +3,16 @@
 set -e
 
 die () {
-	echo $1 >&2
-	exit 1
+        echo $1 >&2
+        exit 1
 }
 
 if gmake -v >/dev/null 2>&1; then
-	make='gmake'
+        make='gmake'
 elif make -v 2>&1 | grep -q GNU; then
-	make=`which make`
+        make=`which make`
 else
-	die 'Can'\''t find GNU make'
+        die 'Can'\''t find GNU make'
 fi
 
 exec $make "$@"

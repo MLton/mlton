@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 signature MONO_ENV_STRUCTS =
@@ -15,7 +16,7 @@ signature MONO_ENV_STRUCTS =
 signature BASIC_MONO_ENV =
    sig
       include MONO_ENV_STRUCTS
-	 
+         
       type t
       val extend: t * Domain.t * Range.t -> t
       val fromList: (Domain.t * Range.t) list -> t

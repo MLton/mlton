@@ -1,10 +1,11 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
- * Copyright (C) 1997-1999 NEC Research Institute.
+ * Copyright (C) 1997-2000 NEC Research Institute.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure String: STRING_EXTRA =
    struct
       open String0
@@ -12,11 +13,11 @@ structure String: STRING_EXTRA =
       val toLower = translate (str o Char.toLower)
 
       local
-	 fun make f = f (op = : char * char -> bool)
+         fun make f = f (op = : char * char -> bool)
       in
-	val isPrefix = make isPrefix
-	val isSubstring = make isSubvector
-	val isSuffix = make isSuffix
+        val isPrefix = make isPrefix
+        val isSubstring = make isSubvector
+        val isSuffix = make isSuffix
       end
       val compare = collate Char.compare
       val {<, <=, >, >=} = Util.makeOrder compare
@@ -25,24 +26,24 @@ structure String: STRING_EXTRA =
       val toCString = translate Char.toCString
 
       val scan: (char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader =
-	 fn reader =>
-	 let
-	    fun loop (state, cs) =
-	       case Char.scan reader state of
-		  NONE => SOME (implode (rev cs),
-				Char.formatSequences reader state)
-		| SOME (c, state) => loop (state, c :: cs)
-	 in
-	    fn state => loop (state, [])
-	 end
-	 
+         fn reader =>
+         let
+            fun loop (state, cs) =
+               case Char.scan reader state of
+                  NONE => SOME (implode (rev cs),
+                                Char.formatSequences reader state)
+                | SOME (c, state) => loop (state, c :: cs)
+         in
+            fn state => loop (state, [])
+         end
+         
       val fromString = StringCvt.scanString scan
-	 
+         
       fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
-	: (string, 'a) StringCvt.reader =
-	 fn state =>
-	 Option.map (fn (cs, state) => (implode cs, state))
-	 (Reader.list (scanChar reader) state)
+        : (string, 'a) StringCvt.reader =
+         fn state =>
+         Option.map (fn (cs, state) => (implode cs, state))
+         (Reader.list (scanChar reader) state)
 
       val fromCString = StringCvt.scanString (scanString Char.scanC)
 

@@ -1,8 +1,8 @@
-(* Copyright (C) 2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 
 functor Switch (S: SWITCH_STRUCTS): SWITCH =
@@ -11,41 +11,41 @@ struct
 open S
    
 fun isRedundant {cases: 'a vector,
-		 equals: 'a * 'a -> bool}: bool =
+                 equals: 'a * 'a -> bool}: bool =
    let
       val nCases = Vector.length cases
    in
       0 < nCases
       andalso let
-		 fun loop (i: int, prev: 'a): bool =
-		    i < nCases
-		    andalso let
-			       val cur = Vector.sub (cases, i)
-			    in
-			       equals (cur, prev)
-			       orelse loop (i + 1, cur)
-			    end
-	      in
-		 loop (1, Vector.sub (cases, 0))
-	      end
+                 fun loop (i: int, prev: 'a): bool =
+                    i < nCases
+                    andalso let
+                               val cur = Vector.sub (cases, i)
+                            in
+                               equals (cur, prev)
+                               orelse loop (i + 1, cur)
+                            end
+              in
+                 loop (1, Vector.sub (cases, 0))
+              end
    end
 
 datatype t =
    T of {cases: (WordX.t * Label.t) vector,
-	 default: Label.t option,
-	 size: WordSize.t,
-	 test: Use.t}
+         default: Label.t option,
+         size: WordSize.t,
+         test: Use.t}
 
 fun layout (T {cases, default, test, ...})= 
    let
       open Layout
    in
       seq [str "switch ",
-	   record [("test", Use.layout test),
-		   ("default", Option.layout Label.layout default),
-		   ("cases",
-		    Vector.layout (Layout.tuple2 (WordX.layout, Label.layout))
-		    cases)]]
+           record [("test", Use.layout test),
+                   ("default", Option.layout Label.layout default),
+                   ("cases",
+                    Vector.layout (Layout.tuple2 (WordX.layout, Label.layout))
+                    cases)]]
    end
 
 fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
@@ -55,25 +55,25 @@ fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
    in
       Vector.forall (cases, labelIsOk o #2)
       andalso (case default of
-		  NONE => true
-		| SOME l => labelIsOk l)
+                  NONE => true
+                | SOME l => labelIsOk l)
       andalso Vector.isSorted (cases, fn ((w, _), (w', _)) =>
-			       WordX.le (w, w', {signed = false}))
+                               WordX.le (w, w', {signed = false}))
       andalso not (isRedundant
-		   {cases = cases,
-		    equals = fn ((w, _), (w', _)) => WordX.equals (w, w')})
+                   {cases = cases,
+                    equals = fn ((w, _), (w', _)) => WordX.equals (w, w')})
       andalso
       if 0 = Vector.length cases
-	 then isSome default
+         then isSome default
       else
-	 let
-	    val casesTy =
-	       Type.sum (Vector.map (cases, fn (w, _) => Type.constant w))
-	 in
-	    Bits.equals (Type.width ty, Type.width casesTy)
-	    andalso not (Type.isPointer ty)
-	    andalso (isSome default orelse Type.isSubtype (ty, casesTy))
-	 end
+         let
+            val casesTy =
+               Type.sum (Vector.map (cases, fn (w, _) => Type.constant w))
+         in
+            Bits.equals (Type.width ty, Type.width casesTy)
+            andalso not (Type.isPointer ty)
+            andalso (isSome default orelse Type.isSubtype (ty, casesTy))
+         end
    end
 
 fun foldLabelUse (T {cases, default, test, ...}, a: 'a, {label, use}): 'a =
@@ -81,13 +81,13 @@ fun foldLabelUse (T {cases, default, test, ...}, a: 'a, {label, use}): 'a =
       val a = use (test, a)
       val a = Option.fold (default, a, label)
       val a = Vector.fold (cases, a, fn ((_, l), a) =>
-			   label (l, a))
+                           label (l, a))
    in
       a
    end
 
 fun foreachLabel (s, f) =
    foldLabelUse (s, (), {label = f o #1,
-			 use = fn _ => ()})
+                         use = fn _ => ()})
 
 end

@@ -1,10 +1,11 @@
-(* Copyright (C) 2004 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
- * 
- * Rewritten by wesley@terpstra.ca on 2004-11-23 to use MLtonProcess for the
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+(* Rewritten by wesley@terpstra.ca on 2004-11-23 to use MLtonProcess for the
  * implementation.
  *)
 
@@ -30,11 +31,11 @@ type ('in, 'out) proc = ('out, 'in, Process.none) Process.t
 local
    fun create {args, env, path} =
       Process.create {args = args,
-		      env = env,
-		      path = path,
-		      stderr = Param.self,
-		      stdin = Param.pipe,
-		      stdout = Param.pipe}
+                      env = env,
+                      path = path,
+                      stderr = Param.self,
+                      stdin = Param.pipe,
+                      stdout = Param.pipe}
 in
    fun execute (path, args) =
       create {args = args, env = NONE, path = path}

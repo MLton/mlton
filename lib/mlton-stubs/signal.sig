@@ -1,34 +1,42 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 signature MLTON_SIGNAL =
    sig
       type t
       type signal = t
 
       structure Handler:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val default: t
-	    val handler: (MLtonThread.Runnable.t -> MLtonThread.Runnable.t) -> t
-	    val ignore: t
-	    val isDefault: t -> bool
-	    val isIgnore: t -> bool
-	    val simple: (unit -> unit) -> t
-	 end
+            val default: t
+            val handler: (MLtonThread.Runnable.t -> MLtonThread.Runnable.t) -> t
+            val ignore: t
+            val isDefault: t -> bool
+            val isIgnore: t -> bool
+            val simple: (unit -> unit) -> t
+         end
 
       structure Mask:
-	 sig
-	    type t
-	       
-	    val all: t
-	    val allBut: signal list -> t
-	    val block: t -> unit
-	    val getBlocked: unit -> t
-	    val isMember: t * signal -> bool
-	    val none: t
-	    val setBlocked: t -> unit
-	    val some: signal list -> t
-	    val unblock: t -> unit
-	 end
+         sig
+            type t
+               
+            val all: t
+            val allBut: signal list -> t
+            val block: t -> unit
+            val getBlocked: unit -> t
+            val isMember: t * signal -> bool
+            val none: t
+            val setBlocked: t -> unit
+            val some: signal list -> t
+            val unblock: t -> unit
+         end
 
       val getHandler: t -> Handler.t
       val handled: unit -> Mask.t

@@ -1,15 +1,32 @@
 This is a grammar for Berkeley Pascal, hacked to be SLR, though that is
 not necessary because ML-Yacc supports LALR(1).
 
-To construct the parser, first use ML-Yacc on the file "pascal.grm" to create
-the files "pascal.grm.sig" and "pascal.grm.sml".  This can be done by loading
-ML-Yacc and typing ``ParseGen.parseGen "pascal.grm"''.  Then construct the
-lexer by using ML_Lex on the file pascal.lex (``LexGen.lexGen "pascal.lex"'').
+To construct the parser, make this your current directory and run
 
-Finally, load the background file "base.sml".  Then use "load.sml" to
-load all the files.  The end result is a structure Parser with four
-functions.   The function parse_prog will parse a program in a string.
-Then function parse_query will parse a query in a string.  The function
-parse_file will parse a program in a file.  The function top_parse will
-parse a query from the standard input.
+  CM.make "sources.cm";
+
+This will apply ML-Yacc to the file "pascal.grm" to create
+the files "pascal.grm.sig" and "pascal.grm.sml", then 
+ML_Lex will be applied to pascal.lex to produce pascal.lex.sml.
+
+Then these generated files will be compiled together with necessary
+components from the ML-Yacc library supplied by the ml-yacc-lib.cm
+file. 
+
+The end result is a structure Parser with two functions.  The
+function 
+
+  parse: string ->
+         PascalParser.result *
+         (Parser.PascalParser.svalue,PascalParser.pos) LrParser.Token.token 
+            LrParser.stream
+
+parses input from a file, while
+
+  keybd: unit ->
+         Parser.PascalParser.result *
+         (Parser.PascalParser.svalue,Parser.PascalParser.pos) 
+           LrParser.Token.token LrParser.stream
+
+parses from the standard input.
 

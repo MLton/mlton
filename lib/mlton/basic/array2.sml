@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Array2: ARRAY2 =
 struct
 
@@ -14,16 +15,16 @@ type 'a t = 'a array
 fun toList a =
    let
       fun loop (r, ac) =
-	 if r < 0
-	    then ac
-	 else loop (r - 1,
-		    let
-		       fun loop (c, ac) =
-			  if c < 0
-			     then ac
-			  else loop (c - 1, sub (a, r, c) :: ac)
-		    in loop (nCols a - 1, [])
-		    end :: ac)
+         if r < 0
+            then ac
+         else loop (r - 1,
+                    let
+                       fun loop (c, ac) =
+                          if c < 0
+                             then ac
+                          else loop (c - 1, sub (a, r, c) :: ac)
+                    in loop (nCols a - 1, [])
+                    end :: ac)
    in loop (nRows a - 1, [])
    end
    
@@ -35,9 +36,9 @@ fun wholeRegion a : 'a region =
 fun foralli (a, f) =
    let exception False
    in (appi RowMajor (fn (r, c, x) =>
-		      if f (r, c, x)
-			 then ()
-		      else raise False)
+                      if f (r, c, x)
+                         then ()
+                      else raise False)
        (wholeRegion a)
        ; true)
       handle False => false

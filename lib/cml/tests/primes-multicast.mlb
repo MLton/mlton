@@ -1,8 +1,8 @@
 local
-  $(SML_LIB)/basis/basis.mlb
-  ../cml.mlb
-  print.mlb
+   $(SML_LIB)/basis/basis.mlb
+   ../cml.mlb
+   print.mlb
 in
-  primes-multicast.sml 
-  run-main.sml
+   primes-multicast.sml 
+   run-main.sml
 end

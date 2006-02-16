@@ -1,3 +1,10 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 structure List =
    struct
       fun foreach (l, f) = List.app f l
@@ -8,14 +15,14 @@ structure List =
 val int =
    ["Int", "IntInf", "LargeInt", "FixedInt", "Position"]
    @ List.map (List.tabulate (31, fn i => i + 2) @ [64],
-	       fn i => concat ["Int", Int.toString i])
+               fn i => concat ["Int", Int.toString i])
 
 val real = ["Real", "Real32", "Real64", "LargeReal"]
 
 val word =
    ["Word", "LargeWord", "SysWord"]
    @ List.map (List.tabulate (32, fn i => i + 1) @ [64],
-	       fn i => concat ["Word", Int.toString i])
+               fn i => concat ["Word", Int.toString i])
 
 val text = ["Char", "String"]
 
@@ -50,9 +57,9 @@ val () =
     fn (prec, f, ty, class) =>
     (print (concat ["\n_overload ", Int.toString prec, " ", f, " : ", ty, "\n"])
      ; (case class of
-	   [] => ()
-	 | c :: class =>
-	      (print (concat ["as  ", c, ".", f, "\n"])
-	       ; List.foreach (class, fn c =>
-			       print (concat ["and ", c, ".", f, "\n"]))))))
+           [] => ()
+         | c :: class =>
+              (print (concat ["as  ", c, ".", f, "\n"])
+               ; List.foreach (class, fn c =>
+                               print (concat ["and ", c, ".", f, "\n"]))))))
    

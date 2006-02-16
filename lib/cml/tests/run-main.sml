@@ -2,8 +2,8 @@ val n =
    case CommandLine.arguments () of
       [] => 100
     | s::_ => (case Int.fromString s of
-		  NONE => 100
-		| SOME n => n)
+                  NONE => 100
+                | SOME n => n)
 
 val ts = Time.now ()
 val _ = Main.doit n

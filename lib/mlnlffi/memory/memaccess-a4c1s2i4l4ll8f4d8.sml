@@ -40,7 +40,7 @@ structure CMemAccess : CMEMACCESS = struct
 
     local 
        fun get g addr =
-	  g (addr, 0)
+          g (addr, 0)
     in
        val load_addr = get Ptr.getPointer
        val load_uchar = get Ptr.getWord8
@@ -59,7 +59,7 @@ structure CMemAccess : CMEMACCESS = struct
 
     local
        fun set s (addr, x) =
-	  s (addr, 0, x)
+          s (addr, 0, x)
     in
        val store_addr = set Ptr.setPointer
        val store_uchar = set Ptr.setWord8
@@ -80,10 +80,10 @@ structure CMemAccess : CMEMACCESS = struct
 
     (* this needs to be severely optimized... *)
     fun bcopy { from: addr, to: addr, bytes: word } =
-	if bytes > 0w0 then
-	    (store_uchar (to, load_uchar from);
-	     bcopy { from = from ++ 1, to = to ++ 1, bytes = bytes - 0w1 })
-	else ()
+        if bytes > 0w0 then
+            (store_uchar (to, load_uchar from);
+             bcopy { from = from ++ 1, to = to ++ 1, bytes = bytes - 0w1 })
+        else ()
 
     (* types used in C calling convention *)
     type cc_addr = MLton.Pointer.t

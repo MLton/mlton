@@ -1,3 +1,11 @@
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 functor Array
    (Array:
     sig
@@ -33,19 +41,19 @@ functor Array
       fun sub (a, i: Int.int) = Array.sub (a, toInt i)
       fun convertSlice (a, i, io) = (a, toInt i, toIntOpt io)
       local
-	 fun doit (f, {src, dst, di}) =
-	    f {di = toInt di, dst = dst, src = src}
+         fun doit (f, {src, dst, di}) =
+            f {di = toInt di, dst = dst, src = src}
       in
-	 fun copy (f, a) = doit (Array.copy, a)
-	 fun copyVec (f, a) = doit (Array.copyVec, a)
+         fun copy (f, a) = doit (Array.copy, a)
+         fun copyVec (f, a) = doit (Array.copyVec, a)
       end
       fun appi f a = Array.appi (fn (i, x) => f (fromInt i, x)) a
       local
-	 fun make fold f b a =
-	    fold (fn (i, a, b) => f (fromInt i, a, b)) b a
+         fun make fold f b a =
+            fold (fn (i, a, b) => f (fromInt i, a, b)) b a
       in
-	 fun foldli z = make Array.foldli z
-	 fun foldri z = make Array.foldri z
+         fun foldli z = make Array.foldli z
+         fun foldri z = make Array.foldri z
       end
       fun modifyi f a = Array.modifyi (fn (i, x) => f (fromInt i, x)) a
    end
@@ -53,38 +61,38 @@ functor Array
 structure Array =
    let 
       structure A = Array (open Array
-			   type 'a elem = 'a)
+                           type 'a elem = 'a)
    in struct open Array A end
    end
 
 functor MonoArray (A: MONO_ARRAY) =
    let
       structure A' = Array (open A
-			   type 'a array = array
-			   type 'a vector = vector
-			   type 'a elem = elem
-			   (* The following rebindings are because of an
-			    * SML/NJ bug.
-			    *)
-			   val app = app
-			   val appi = appi
-			   val array = array
-			   val copy = copy
-			   val copyVec = copyVec
-			   val fromList = fromList
-			   val length = length
-			   val modify = modify
-			   val modifyi = modifyi
-			   val sub = sub
-			   val tabulate = tabulate
-			   val update = update)
+                           type 'a array = array
+                           type 'a vector = vector
+                           type 'a elem = elem
+                           (* The following rebindings are because of an
+                            * SML/NJ bug.
+                            *)
+                           val app = app
+                           val appi = appi
+                           val array = array
+                           val copy = copy
+                           val copyVec = copyVec
+                           val fromList = fromList
+                           val length = length
+                           val modify = modify
+                           val modifyi = modifyi
+                           val sub = sub
+                           val tabulate = tabulate
+                           val update = update)
    in struct
-	 open A A'
-	 local open A
-	 in type array = array
-	    type vector = vector
-	    type elem = elem
-	 end
+         open A A'
+         local open A
+         in type array = array
+            type vector = vector
+            type elem = elem
+         end
       end
    end
 

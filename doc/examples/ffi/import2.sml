@@ -1,11 +1,10 @@
 (* main.sml *)
 
 (* Declare ffi to be implemented by calling the C function ffi. *)
-val ffi_addr = _import # "ffi" : MLton.Pointer.t;
+val ffi_addr = _address "ffi" : MLton.Pointer.t;
 val ffi_schema = _import * : MLton.Pointer.t -> real array * int ref * int -> char;
 open Array
 
-(* val size = _const "FFI_SIZE": int; *)
 val size = 10
 val a = tabulate (size, fn i => real i)
 val r = ref 0
@@ -16,16 +15,16 @@ val c = ffi_schema ffi_addr (a, r, n)
 
 val _ =
    print (if c = #"c" andalso !r = 45
-	     then "success\n"
-	  else "fail\n")
+             then "success\n"
+          else "fail\n")
 
-val n = _import "FFI_INT": int;
+val n = #1 (_symbol "FFI_INT": (unit -> int) * (int -> unit);) ()
 val _ = print (concat [Int.toString n, "\n"])
-val w = _import "FFI_WORD": word;
+val w = #1 (_symbol "FFI_WORD": (unit -> word) * (word -> unit);) ()
 val _ = print (concat [Word.toString w, "\n"])
-val b = _import "FFI_BOOL": bool;
+val b = #1 (_symbol "FFI_BOOL": (unit -> bool) * (bool -> unit);) ()
 val _ = print (concat [Bool.toString b, "\n"])
-val r = _import "FFI_REAL": real;
+val r = #1 (_symbol "FFI_REAL": (unit -> real) * (real -> unit);) ()
 val _ = print (concat [Real.toString r, "\n"])
 
 signature OPAQUE =
@@ -55,24 +54,24 @@ structure OpaqueReal :> OPAQUE =
       val toString = Real.toString
    end
 
-val n = _import "FFI_INT": OpaqueInt.t;
-val _ = print (concat [OpaqueInt.toString n, "\n"])
-val w = _import "FFI_WORD": OpaqueWord.t;
-val _ = print (concat [OpaqueWord.toString w, "\n"])
-val b = _import "FFI_BOOL": OpaqueBool.t;
-val _ = print (concat [OpaqueBool.toString b, "\n"])
-val r = _import "FFI_REAL": OpaqueReal.t;
-val _ = print (concat [OpaqueReal.toString r, "\n"])
+val (n, _) = _symbol "FFI_INT": (unit -> OpaqueInt.t) * (OpaqueInt.t -> unit);
+val _ = print (concat [OpaqueInt.toString (n ()), "\n"])
+val (w, _) = _symbol "FFI_WORD": (unit -> OpaqueWord.t) * (OpaqueWord.t -> unit);
+val _ = print (concat [OpaqueWord.toString (w ()), "\n"])
+val (b, _) = _symbol "FFI_BOOL": (unit -> OpaqueBool.t) * (OpaqueBool.t -> unit);
+val _ = print (concat [OpaqueBool.toString (b ()), "\n"])
+val (r, _) = _symbol "FFI_REAL": (unit -> OpaqueReal.t) * (OpaqueReal.t -> unit);
+val _ = print (concat [OpaqueReal.toString (r ()), "\n"])
 
-val n_addr = _import # "FFI_INT": MLton.Pointer.t;
+val n_addr = _address "FFI_INT": MLton.Pointer.t;
 val n = MLton.Pointer.getInt32 (n_addr, 0);
 val _ = print (concat [Int.toString n, "\n"])
-val w_addr = _import # "FFI_WORD": MLton.Pointer.t;
+val w_addr = _address "FFI_WORD": MLton.Pointer.t;
 val w = MLton.Pointer.getWord32 (w_addr, 0);
 val _ = print (concat [Word.toString w, "\n"])
-val b_addr = _import # "FFI_BOOL": MLton.Pointer.t;
+val b_addr = _address "FFI_BOOL": MLton.Pointer.t;
 val b = (MLton.Pointer.getInt32 (n_addr, 0)) <> 0
 val _ = print (concat [Bool.toString b, "\n"])
-val r_addr = _import # "FFI_REAL": MLton.Pointer.t;
+val r_addr = _address "FFI_REAL": MLton.Pointer.t;
 val r = MLton.Pointer.getReal64 (r_addr, 0)
 val _ = print (concat [Real.toString r, "\n"])

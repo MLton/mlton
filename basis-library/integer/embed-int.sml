@@ -1,28 +1,35 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
 signature EMBED_INT =
    sig
       eqtype int
       type big
-	 
+         
       val precision': Int.int
       val fromBigUnsafe: big -> int
       val toBig: int -> big
    end
 
 functor EmbedInt (structure Big: INTEGER_EXTRA
-		  structure Small: EMBED_INT where type big = Big.int): INTEGER =
+                  structure Small: EMBED_INT where type big = Big.int): INTEGER =
    struct
       val () = if Int.< (Small.precision', valOf Big.precision) then ()
-	       else raise Fail "EmbedWord"
+               else raise Fail "EmbedWord"
 
       open Small
 
       val shift = Word.fromInt (Int.- (valOf Big.precision, precision'))
 
       val extend: Big.int -> Big.int =
-	 fn i => Big.~>> (Big.<< (i, shift), shift)
+         fn i => Big.~>> (Big.<< (i, shift), shift)
 
       val toBig: Small.int -> Big.int = extend o Small.toBig
-	 
+         
       val precision = SOME precision'
 
       val maxIntBig = Big.>> (Big.fromInt ~1, Word.+ (shift, 0w1))
@@ -32,40 +39,40 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
       val mask = Big.>> (Big.fromInt ~1, shift)
 
       fun fromBig (i: Big.int): int =
-	 let
-	    val i' = Big.andb (i, mask)
-	 in
-	    if i = extend i'
-	       then fromBigUnsafe i'
-	    else raise Overflow
-	 end
-	       
+         let
+            val i' = Big.andb (i, mask)
+         in
+            if i = extend i'
+               then fromBigUnsafe i'
+            else raise Overflow
+         end
+               
       val maxInt = SOME (fromBig maxIntBig)
 
       val minInt = SOME (fromBig minIntBig)
-	 
+         
       local
-	 val make: (Big.int * Big.int -> Big.int) -> (int * int -> int) =
-	    fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
+         val make: (Big.int * Big.int -> Big.int) -> (int * int -> int) =
+            fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
       in
-	 val op * = make Big.*
-	 val op + = make Big.+
-	 val op - = make Big.-
-	 val op div = make Big.div
-	 val op mod = make Big.mod
-	 val quot = make Big.quot
-	 val rem = make Big.rem
+         val op * = make Big.*
+         val op + = make Big.+
+         val op - = make Big.-
+         val op div = make Big.div
+         val op mod = make Big.mod
+         val quot = make Big.quot
+         val rem = make Big.rem
       end
 
       local
-	 val make: (Big.int * Big.int -> 'a) -> (int * int -> 'a) =
-	    fn f => fn (x, y) => f (toBig x, toBig y)
+         val make: (Big.int * Big.int -> 'a) -> (int * int -> 'a) =
+            fn f => fn (x, y) => f (toBig x, toBig y)
       in
-	 val op < = make Big.<
-	 val op <= = make Big.<=
-	 val op > = make Big.>
-	 val op >= = make Big.>=
-	 val compare = make Big.compare
+         val op < = make Big.<
+         val op <= = make Big.<=
+         val op > = make Big.>
+         val op >= = make Big.>=
+         val compare = make Big.compare
       end
 
       val fromInt = fromBig o Big.fromInt
@@ -73,11 +80,11 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
       val toInt = Big.toInt o toBig
 
       local
-	 val make: (Big.int -> Big.int) -> (int -> int) =
-	    fn f => fn x => fromBig (f (toBig x))
+         val make: (Big.int -> Big.int) -> (int -> int) =
+            fn f => fn x => fromBig (f (toBig x))
       in
-	 val ~ = make Big.~
-	 val abs = make Big.abs
+         val ~ = make Big.~
+         val abs = make Big.abs
       end
 
       fun fmt r i = Big.fmt r (toBig i)
@@ -91,10 +98,10 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
       fun min (i, j) = if i <= j then i else j
 
       fun scan r reader state =
-	 Option.map
-	 (fn (i, state) => (fromBig i, state))
-	 (Big.scan r reader state)
-	 
+         Option.map
+         (fn (i, state) => (fromBig i, state))
+         (Big.scan r reader state)
+         
       val sign = Big.sign o toBig
 
       fun sameSign (x, y) = sign x = sign y
@@ -106,15 +113,15 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
 
 functor Embed8 (Small: EMBED_INT where type big = Int8.int): INTEGER =
    EmbedInt (structure Big = Int8
-	     structure Small = Small)
+             structure Small = Small)
 
 functor Embed16 (Small: EMBED_INT where type big = Int16.int): INTEGER =
    EmbedInt (structure Big = Int16
-	     structure Small = Small)
+             structure Small = Small)
 
 functor Embed32 (Small: EMBED_INT where type big = Int32.int): INTEGER =
    EmbedInt (structure Big = Int32
-	     structure Small = Small)
+             structure Small = Small)
 
 structure Int1 = Embed8 (Primitive.Int1)
 structure Int2 = Embed8 (Primitive.Int2)

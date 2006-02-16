@@ -25,15 +25,15 @@ structure Main : BMARK =
     val sum_iterations = ref 0
 
     fun loop1 i = if (i >= sz)
-	  then ()
-	  else let
+          then ()
+          else let
             val c_im : real = y_base - (delta * real i)
             fun loop2 j = if (j >= sz)
-		  then ()
-		  else let
+                  then ()
+                  else let
                     val c_re = x_base * (delta + real j)
-		    fun loop3 (count, z_re : real, z_im : real) = if (count < maxCount)
-			  then let
+                    fun loop3 (count, z_re : real, z_im : real) = if (count < maxCount)
+                          then let
                             val z_re_sq = z_re * z_re
                             val z_im_sq = z_im * z_im
                             in
@@ -47,12 +47,12 @@ structure Main : BMARK =
                                        z_re_im + z_re_im + c_im)
                                   end
                             end (* loop3 *)
-			  else count
-		    val count = loop3 (0, c_re, c_im)
-		    in
-		      sum_iterations := !sum_iterations + 1(*count*);
-		      loop2 (j+1)
-		    end
+                          else count
+                    val count = loop3 (0, c_re, c_im)
+                    in
+                      sum_iterations := !sum_iterations + 1(*count*);
+                      loop2 (j+1)
+                    end
             in
               loop2 0;
               loop1 (i+1)
@@ -61,9 +61,9 @@ structure Main : BMARK =
     fun doit () = (sum_iterations := 0; loop1 0)
 
     fun testit () = (
-	  sum_iterations := 0;
-	  loop1 0;
-	  print(int_to_string(!sum_iterations) ^ " iterations\n"))
+          sum_iterations := 0;
+          loop1 0;
+          print(int_to_string(!sum_iterations) ^ " iterations\n"))
 (*
   end (* Mandelbrot *)
 *)

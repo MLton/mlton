@@ -35,5 +35,5 @@ signature WORD_1997 =
       val fromString: string -> word option
       val scan: StringCvt.radix -> 
                 (char, 'a) StringCvt.reader -> 
-		(word, 'a) StringCvt.reader
+                (word, 'a) StringCvt.reader
    end

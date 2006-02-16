@@ -1,8 +1,8 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                               Type                                *)
@@ -36,16 +36,16 @@ fun combineToCompat combine a =
 
 structure Set =
     struct
-	type t = set
-	val combine = combineSet
-	val areCompatible = combineToCompat combine
+        type t = set
+        val combine = combineSet
+        val areCompatible = combineToCompat combine
     end
 
 structure Elt =
     struct
-	type t = elt
-	val combine = combineElt
-	val areCompatible = combineToCompat combine
+        type t = elt
+        val combine = combineElt
+        val areCompatible = combineToCompat combine
     end
 
 fun combineSetElt(EmptySet, t) = Set t

@@ -1,16 +1,16 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
 (*-------------------------------------------------------------------*)
 (*                              Number                               *)
 (*-------------------------------------------------------------------*)
 
 functor Number(structure I : INTEGER
-	       structure R : REAL
-	       val intToReal : I.t -> R.t) : NUMBER =
+               structure R : REAL
+               val intToReal : I.t -> R.t) : NUMBER =
 struct
 
 structure I = I
@@ -25,7 +25,7 @@ datatype t =
 val intToRat = R.fromInt
 
 fun ratToReal p = F./(intToReal(R.numerator p),
-		      intToReal(R.denominator p))
+                      intToReal(R.denominator p))
 
 fun toReal(Int m) = intToReal m
   | toReal(Rat p) = ratToReal p
@@ -63,8 +63,8 @@ struct
    val (op ~) = close(unary,I.~,R.~,F.~)
    val (op * ) = close(binary,I.*,R.*,F.* )
    val inverse = unary(Rat o R.inverse o intToRat,
-		       Rat o R.inverse,
-		       Real o F.inverse)
+                       Rat o R.inverse,
+                       Real o F.inverse)
 
    val compare = binary(I.compare,R.compare,F.compare)
    val op < = binary(I.<, R.<, F.<)
@@ -139,15 +139,15 @@ val (op ^) = fn (z,z') =>
    if isZero z' then one
    else case (z,z') of
       (Int m,Int n) => if I.isPositive n
-			  then Int(I.^(m,n))
-		       else Rat(R.inverse
-				(intToRat(I.^(m,I.~ n))))
+                          then Int(I.^(m,n))
+                       else Rat(R.inverse
+                                (intToRat(I.^(m,I.~ n))))
     | (Int m,_) => Real(F.^(intToReal m,toReal z'))
     | _ => Real(F.^(toReal z,toReal z'))
 
 fun random(Int m,Int n) = Int(I.random(m,n))
   | random(z,z') = Real(F.random(toReal z,toReal z'))
-				    
+                                    
 val toReal = F.toReal o toReal
 val fromReal = Real o F.fromReal
 val toInt = unaryIntOnly I.toInt
@@ -166,6 +166,6 @@ end
 
 (*
 structure Number = Number(structure I = BigInteger
-			  structure R = FloatReal
-			  val intToReal = I.toReal)
+                          structure R = FloatReal
+                          val intToReal = I.toReal)
 *)

@@ -9,11 +9,11 @@ fun display () = (
 
 fun main () = 
 (
-	 glutInit;
-	 glutCreateWindow "Short Test";
-	 glutDisplayFunc display;
-	 print("Click the close icon to close the window.");
-	 glutMainLoop()
+         glutInit();
+         glutCreateWindow "Short Test";
+         glutDisplayFunc display;
+         print("Click the close icon to close the window.");
+         glutMainLoop()
 )
 
 val _ = main();

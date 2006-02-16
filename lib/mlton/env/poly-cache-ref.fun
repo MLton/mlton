@@ -1,14 +1,15 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor PolyCache(): POLY_CACHE =
 struct
 
 datatype ('a, 'b) t = T of {equal: ('a * 'a) -> bool,
-			   elts: ('a * 'b ref) list ref}
+                           elts: ('a * 'b ref) list ref}
 
 fun fromList 
    
@@ -39,8 +40,8 @@ fun set(c, x, y) =
 fun getOrAdd(c, x, th) =
    case peek(c, x) of
       NONE => let val y = th()
-	      in addNew(c, x, y) ; y
-	      end
+              in addNew(c, x, y) ; y
+              end
     | SOME y => y
 
 fun eq(T{elts=r, ...}, T{elts=r', ...}) = r = r'

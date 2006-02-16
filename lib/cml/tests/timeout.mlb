@@ -1,8 +1,8 @@
 local
-  $(SML_LIB)/basis/basis.mlb
-  ../cml.mlb
-  print.mlb
+   $(SML_LIB)/basis/basis.mlb
+   ../cml.mlb
+   print.mlb
 in
-  timeout.sml 
-  run-main.sml
+   timeout.sml 
+   run-main.sml
 end

@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -18,11 +20,13 @@
 #include <syslog.h>
 #include <termios.h>
 
+#define HAS_FEROUND FALSE
+#define HAS_FPCLASSIFY TRUE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
+#define HAS_SIGNBIT TRUE
 #define HAS_SPAWN FALSE
 #define HAS_TIME_PROFILING TRUE
-#define HAS_WEAK 1
 
 #define MLton_Platform_OS_host "netbsd"

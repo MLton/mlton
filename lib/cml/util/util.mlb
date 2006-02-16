@@ -1,49 +1,49 @@
 ann
-  "sequenceUnit true"
-  "warnMatch true"
-  "warnUnused true" "forceUsed"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused true" "forceUsed"
 in
-local
-  $(SML_LIB)/basis/basis.mlb
-  $(SML_LIB)/basis/mlton.mlb
-  critical.sig
-  critical.sml
-  assert.sig
-  assert.sml
-  local-assert.fun
-  debug.sig
-  debug.sml
-  local-debug.fun
-(*
-  timeit.sig
-  timeit.sml
-*)
-  fun-queue.sig
-  fun-queue.sml
-  imp-queue.sig
-  imp-queue.sml
-  fun-priority-queue.sig
-  fun-priority-queue.fun
-in
-  signature CRITICAL
-  structure Critical
+   local
+      $(SML_LIB)/basis/basis.mlb
+      $(SML_LIB)/basis/mlton.mlb
+      critical.sig
+      critical.sml
+      assert.sig
+      assert.sml
+      local-assert.fun
+      debug.sig
+      debug.sml
+      local-debug.fun
+      (*
+      timeit.sig
+      timeit.sml
+       *)
+      fun-queue.sig
+      fun-queue.sml
+      imp-queue.sig
+      imp-queue.sml
+      fun-priority-queue.sig
+      fun-priority-queue.fun
+   in
+      signature CRITICAL
+      structure Critical
 
-  signature ASSERT
-  structure Assert
-  functor LocalAssert
+      signature ASSERT
+      structure Assert
+      functor LocalAssert
 
-  signature DEBUG
-  structure Debug
-  functor LocalDebug
+      signature DEBUG
+      structure Debug
+      functor LocalDebug
 
-  signature FUN_QUEUE
-  structure FunQueue
+      signature FUN_QUEUE
+      structure FunQueue
 
-  signature IMP_QUEUE
-  structure ImpQueue
+      signature IMP_QUEUE
+      structure ImpQueue
 
-  signature FUN_PRIORITY_QUEUE_ARG
-  signature FUN_PRIORITY_QUEUE
-  functor FunPriorityQueue
-end
+      signature FUN_PRIORITY_QUEUE_ARG
+      signature FUN_PRIORITY_QUEUE
+      functor FunPriorityQueue
+   end
 end

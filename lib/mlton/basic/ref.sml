@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 structure Ref: REF =
 struct
 
@@ -16,23 +17,25 @@ val (op :=) = op :=
 fun equals (r: 'a t, r') = r = r'
    
 fun swap (r, r') = let val v = !r
-		  in r := !r'; r' := v
-		  end
+                  in r := !r'; r' := v
+                  end
 
 fun getAndSet sel = (! o sel, fn (x, v) => sel x := v)
 
 fun ('a, 'b) fluidLet (r: 'a t, x: 'a, th: unit -> 'b): 'b =
-   let val old = !r
-   in r := x
-      ; DynamicWind.wind (th, fn () => r := old)
+   let
+      val old = !r
+      val () = r := x
+   in
+      Exn.finally (th, fn () => r := old)
    end
 
 fun getSet layout = 
    let val r = ref NONE
       fun get () =
-	 case !r of
-	    NONE => Error.bug "not available"
-	  | SOME v => v
+         case !r of
+            NONE => Error.bug "Ref.getSet.get: not available"
+          | SOME v => v
       fun set v = r := SOME v
       fun clear () = r := NONE
       val layout = fn () => layout (get ())
@@ -51,12 +54,12 @@ fun layout layoutX r = layoutX (!r)
 fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
    case !r of
       NONE =>
-	 let
-	    val a = f ()
-	    val () = r := SOME a
-	 in
-	    a
-	 end
+         let
+            val a = f ()
+            val () = r := SOME a
+         in
+            a
+         end
     | SOME a => a
    
 end

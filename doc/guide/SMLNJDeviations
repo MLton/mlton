@@ -1,0 +1,321 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>SMLNJDeviations - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20051202</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      SMLNJDeviations
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="DefinitionOfStandardML">Definition of SML</a>.  Some of these are documented in the  <a class="external" href="http://www.smlnj.org/doc/Conversion/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML '97 Conversion Guide</a>. Since MLton does not deviate from the Definition, you should look here if you are having trouble porting a program from MLton to SML/NJ or vice versa.  If you discover other deviations of SML/NJ that aren't listed here, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
+    <ul>
+
+    <li>
+<p>
+ SML/NJ allows spaces in long identifiers, as in <tt>S&nbsp;.&nbsp;x</tt>.  Section 2.5 of the Definition implies that <tt>S&nbsp;.&nbsp;x</tt> should be treated as three separate lexical items. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows <tt>=</tt> to be rebound by the declaration: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> = = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+</PRE>
+ This is explicitly forbidden on page 5 of the Definition. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ extends the syntax of the language to allow vector expressions and patterns like the following: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> v = #[<B><FONT COLOR="#5F9EA0">1</FONT></B>,<B><FONT COLOR="#5F9EA0">2</FONT></B>,<B><FONT COLOR="#5F9EA0">3</FONT></B>]
+<B><FONT COLOR="#A020F0">val</FONT></B> #[x,y,z] = v
+</PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ extends the syntax of the language to allow <em>or patterns</em> like the following: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> foo </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Foo</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Bar</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> (Foo x | Bar x) = Foo <B><FONT COLOR="#5F9EA0">13</FONT></B>
+</PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows higher-order functors, that is, functors can be components of structures and can be passed as functor arguments and returned as functor results.  As a consequence, SML/NJ allows abbreviated functor definitions, as in the following: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x: t
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> F (<B><FONT COLOR="#0000FF">structure</FONT></B> A: S): S = 
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> A.t * A.t
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x = (A.x, A.x)
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> G = F
+</PRE>
+  
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ extends the syntax of the language to allow functor and signature definitions to occur within the scope of <tt>local</tt> and <tt>structure</tt> declarations. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows duplicate type specifications in signatures when the duplicates are introduced by <tt>include</tt>, as in the following: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG1 =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG2 =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> v
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">include</FONT></B> SIG1
+      <B><FONT COLOR="#0000FF">include</FONT></B> SIG2
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ This is disallowed by rule 77 of the Definition. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows sharing constraints between type abbreviations in signatures, as in the following: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int * int
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> int * int
+      </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> u
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ These are disallowed by rule 78 of the Definition. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ disallows multiple <tt>where&nbsp;type</tt> specifications of the same type name, as in the following 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+     </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> t
+  </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> int
+</FONT></B></PRE>
+ This is allowed by rule 84 of the Definition. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows <tt>and</tt> in <tt>sharing</tt> specs in signatures, as in 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> v
+      </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> u
+      </FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> v
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ does not expand the <tt>withtype</tt> derived form as described by the Definition.  According to page 55 of the Definition, the type bindings of a <tt>withtype</tt> declaration are substituted simultaneously in the connected datatype.  Consider the following program. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> a </FONT></B>=<FONT COLOR="#228B22"><B>
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+  </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
+</FONT></B><B><FONT COLOR="#A020F0">withtype</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> int
+</FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> u
+</FONT></B></PRE>
+ According to the Definition, it should be expanded to the following. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> a </FONT></B>=<FONT COLOR="#228B22"><B>
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
+  </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B></PRE>
+ However, SML/NJ expands <tt>withtype</tt> bindings sequentially, meaning that earlier bindings are expanded within later ones.  Hence, the above program is expanded to the following. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> a </FONT></B>=<FONT COLOR="#228B22"><B>
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+  </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B></PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows <tt>withtype</tt> specifications in signatures. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ allows a <tt>where</tt> structure specification that is similar to a <tt>where&nbsp;type</tt> specification.  For example: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> T = S
+</PRE>
+ This is equivalent to: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> T.t </FONT></B>=<FONT COLOR="#228B22"><B> S.t
+</FONT></B></PRE>
+ SML/NJ also allows a definitional structure specification that is similar to a definitional type specification.  For example: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> = S
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ This is equivalent to the previous examples and to: 
+<pre class=code>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> S.t
+  </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ disallows binding non-datatypes with datatype replication.  For example, it rejects the following program that should be allowed according to the Definition. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) t </FONT></B>=<FONT COLOR="#228B22"><B> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> <B><FONT COLOR="#A020F0">datatype</FONT></B> t
+</FONT></B></PRE>
+ This idiom can be useful when one wants to rename a type without rewriting all the type arguments.  For example, the above would have to be written in SML/NJ as follows. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) t </FONT></B>=<FONT COLOR="#228B22"><B> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) u </FONT></B>=<FONT COLOR="#228B22"><B> ('a, 'b) t
+</FONT></B></PRE>
+ 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ disallows sharing a structure with one of its substructures.  For example, SML/NJ disallows the following. 
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> S:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+            </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> T: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">sharing</FONT></B> S = S.T
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+ This signature is allowed by the Definition. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ SML/NJ disallows polymorphic generalization of refutable patterns.  For example, SML/NJ disallows the following. 
+<pre class=code>
+<B><FONT COLOR="#A020F0">val</FONT></B> [x] = [[]]
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = (<B><FONT COLOR="#5F9EA0">1</FONT></B> :: x, <FONT COLOR="#BC8F8F"><B>&quot;one&quot;</FONT></B> :: x)
+</PRE>
+ 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-b075a95ec6d7bcb0b6a2ee7dbf5fac2093ba1e54">Deviations from the Basis Library Specification</h2>
+<p>
+Here are some deviations of SML/NJ from the Basis Library Specification.  
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ SML/NJ exposes the equality of the <tt>vector</tt> type in structures  such as <tt>Word8Vector</tt> that abstractly match <tt>MONO_VECTOR</tt>,  which says <tt>type&nbsp;vector</tt>, not <tt>eqtype&nbsp;vector</tt>.  So, for  example, SML/NJ accepts the following program: 
+<pre class=code>
+<B><FONT COLOR="#A020F0">fun</FONT></B> f (v: Word8Vector.vector) = v = v
+</PRE>
+ 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2005-12-02 04:25:13 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+</body></html>

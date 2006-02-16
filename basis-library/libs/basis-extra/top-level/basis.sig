@@ -78,51 +78,51 @@ signature BASIS_EXTRA =
 *)
       val valOf : 'a option -> 'a 
       val vector : 'a list -> 'a vector
-	
+        
       (* Required structures *)
-      structure Array : ARRAY	
-      structure ArraySlice : ARRAY_SLICE	
-      structure BinIO : BIN_IO	
-      structure BinPrimIO : PRIM_IO	
-      structure Bool : BOOL	
-      structure Byte : BYTE	
-      structure Char : CHAR	
-      structure CharArray : MONO_ARRAY	
-      structure CharArraySlice : MONO_ARRAY_SLICE	
-      structure CharVector : MONO_VECTOR	
-      structure CharVectorSlice : MONO_VECTOR_SLICE	
-      structure CommandLine : COMMAND_LINE	
-      structure Date : DATE	
-      structure General : GENERAL	
-      structure IEEEReal : IEEE_REAL	
-      structure Int : INTEGER	
-      structure IO : IO	
-      structure LargeInt : INTEGER	
-      structure LargeReal : REAL	
-      structure LargeWord : WORD	
-      structure List : LIST	
-      structure ListPair : LIST_PAIR	
-      structure Math : MATH	
-      structure Option : OPTION	
-      structure OS : OS	
-      structure Position : INTEGER	
-      structure Real : REAL	
-      structure StringCvt : STRING_CVT	
-      structure String : STRING	
-      structure Substring : SUBSTRING	
-      structure TextIO : TEXT_IO	
-      structure TextPrimIO : PRIM_IO	
-      structure Text : TEXT	
-      structure Time : TIME	
-      structure Timer : TIMER	
-      structure VectorSlice : VECTOR_SLICE	
-      structure Vector : VECTOR	
-      structure Word : WORD	
-      structure Word8Array : MONO_ARRAY	
-      structure Word8Array2 : MONO_ARRAY2	
-      structure Word8ArraySlice : MONO_ARRAY_SLICE	
-      structure Word8Vector : MONO_VECTOR	
-      structure Word8VectorSlice : MONO_VECTOR_SLICE	
+      structure Array : ARRAY   
+      structure ArraySlice : ARRAY_SLICE        
+      structure BinIO : BIN_IO  
+      structure BinPrimIO : PRIM_IO     
+      structure Bool : BOOL     
+      structure Byte : BYTE     
+      structure Char : CHAR     
+      structure CharArray : MONO_ARRAY  
+      structure CharArraySlice : MONO_ARRAY_SLICE       
+      structure CharVector : MONO_VECTOR        
+      structure CharVectorSlice : MONO_VECTOR_SLICE     
+      structure CommandLine : COMMAND_LINE      
+      structure Date : DATE     
+      structure General : GENERAL       
+      structure IEEEReal : IEEE_REAL    
+      structure Int : INTEGER   
+      structure IO : IO 
+      structure LargeInt : INTEGER      
+      structure LargeReal : REAL        
+      structure LargeWord : WORD        
+      structure List : LIST     
+      structure ListPair : LIST_PAIR    
+      structure Math : MATH     
+      structure Option : OPTION 
+      structure OS : OS 
+      structure Position : INTEGER      
+      structure Real : REAL     
+      structure StringCvt : STRING_CVT  
+      structure String : STRING 
+      structure Substring : SUBSTRING   
+      structure TextIO : TEXT_IO        
+      structure TextPrimIO : PRIM_IO    
+      structure Text : TEXT     
+      structure Time : TIME     
+      structure Timer : TIMER   
+      structure VectorSlice : VECTOR_SLICE      
+      structure Vector : VECTOR 
+      structure Word : WORD     
+      structure Word8Array : MONO_ARRAY 
+      structure Word8Array2 : MONO_ARRAY2       
+      structure Word8ArraySlice : MONO_ARRAY_SLICE      
+      structure Word8Vector : MONO_VECTOR       
+      structure Word8VectorSlice : MONO_VECTOR_SLICE    
 
       (* Optional structures *)
       structure Array2 : ARRAY2
@@ -319,6 +319,7 @@ signature BASIS_EXTRA =
 
       sharing type MLton.IntInf.t = IntInf.int
       sharing type MLton.Process.pid = Posix.Process.pid
+      sharing type MLton.ProcEnv.gid = Posix.ProcEnv.gid
       sharing type MLton.Signal.t = Posix.Signal.signal
       sharing type MLton.Word.t = Word.word
       sharing type MLton.Word8.t = Word8.word
@@ -327,7 +328,7 @@ signature BASIS_EXTRA =
       sharing Unsafe.Real64Array = Real64Array
       sharing Unsafe.Word8Array = Word8Array
       sharing Unsafe.Word8Vector = Word8Vector
-	 
+         
       (* ************************************************** *)
       (* ************************************************** *)
 
@@ -432,7 +433,7 @@ signature BASIS_EXTRA =
       sharing type Word8VectorSlice.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
-	
+        
       (* Optional structures *)
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.array = BoolArray.array
@@ -622,6 +623,10 @@ signature BASIS_EXTRA =
       sharing type Word64VectorSlice.vector = Word64Vector.vector
       sharing type Word64Array2.elem = Word64.word
       sharing type Word64Array2.vector = Word64Vector.vector
+      sharing type MLton.BinIO.instream = BinIO.instream
+      sharing type MLton.BinIO.outstream = BinIO.outstream
+      sharing type MLton.TextIO.instream = TextIO.instream
+      sharing type MLton.TextIO.outstream = TextIO.outstream
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
@@ -696,6 +701,9 @@ signature BASIS_EXTRA =
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
 
+   where type 'a MLton.Thread.t = 'a MLton.Thread.t
+   where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
+
    (* Types that must be exposed because constants denote them. *)
    where type Int1.int = Int1.int
    where type Int2.int = Int2.int
@@ -765,6 +773,3 @@ signature BASIS_EXTRA =
    where type Word31.word = Word31.word
    where type Word32.word = Word32.word
    where type Word64.word = Word64.word
-
-   where type 'a MLton.Thread.t = 'a MLton.Thread.t
-   where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t

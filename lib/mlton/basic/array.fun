@@ -1,14 +1,15 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor Array (S: sig
-		     include ARRAY_STRUCTS
-		     val unsafeSub: 'a t * int -> 'a
-		     val unsafeUpdate: 'a t * int * 'a -> unit
-		  end): ARRAY =
+                     include ARRAY_STRUCTS
+                     val unsafeSub: 'a t * int -> 'a
+                     val unsafeUpdate: 'a t * int * 'a -> unit
+                  end): ARRAY =
 struct
 
 open S
@@ -39,23 +40,23 @@ fun shuffleN (a, n) =
 fun shuffle a = shuffleN (a, length a)
 
 fun getAndSet a = (fn i => sub (a, i),
-		   fn (i, x) => update (a, i, x))
+                   fn (i, x) => update (a, i, x))
 
 fun fromListRev l =
    case l of
       [] => new0 ()
     | x :: l =>
-	 let
-	    val n = List.length l
-	    val a = new (n + 1, x)
-	    fun loop (l, i) =
-	       case l of
-		  [] => ()
-		| x :: l => (unsafeUpdate (a, i, x)
-			     ; loop (l, i - 1))
-	    val _ = loop (l, n - 1)
-	 in a
-	 end
+         let
+            val n = List.length l
+            val a = new (n + 1, x)
+            fun loop (l, i) =
+               case l of
+                  [] => ()
+                | x :: l => (unsafeUpdate (a, i, x)
+                             ; loop (l, i - 1))
+            val _ = loop (l, n - 1)
+         in a
+         end
 
 fun toVectorMap (a, f) = Vector.tabulate (length a, fn i => f (sub (a, i)))
 

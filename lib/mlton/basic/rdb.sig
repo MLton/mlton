@@ -1,40 +1,41 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 type int = Int.t
    
 (* Relational Data Base *)
 signature RDB =
    sig
       structure Value:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val bool: bool -> t
-	    val compare: t * t -> Relation.t
-	    val int: int -> t
-	    val real: real -> t
-	    val string: string -> t
-	    val toString: t -> string
-	 end
+            val bool: bool -> t
+            val compare: t * t -> Relation.t
+            val int: int -> t
+            val real: real -> t
+            val string: string -> t
+            val toString: t -> string
+         end
       structure Domain:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val bool: t
-	    val int: t
-	    val real: t
-	    val string: t
-	 end
+            val bool: t
+            val int: t
+            val real: t
+            val string: t
+         end
       structure Attribute:
-	 sig
-	    type t
+         sig
+            type t
 
-	    val new: string -> t
-	 end
+            val new: string -> t
+         end
 
       type t
 
@@ -43,12 +44,12 @@ signature RDB =
       val degree: t -> int
       val new: {heading: (Attribute.t * Domain.t) list} -> t
       val printTable: {rdb: t,
-		       row: Attribute.t,
-		       col: Attribute.t,
-		       entry: Attribute.t,
-		       out: Out.t} -> unit
+                       row: Attribute.t,
+                       col: Attribute.t,
+                       entry: Attribute.t,
+                       out: Out.t} -> unit
       val printTable': {rdb: t,
-			cols: Attribute.t list,
-			sortBy: Attribute.t,
-			out: Out.t} -> unit
+                        cols: Attribute.t list,
+                        sortBy: Attribute.t,
+                        out: Out.t} -> unit
    end

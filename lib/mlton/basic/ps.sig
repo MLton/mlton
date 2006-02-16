@@ -1,19 +1,20 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 signature PS =
    sig
       structure State =
-	 struct
-	    datatype t =
-	       Running | Sleeping
-	 end
+         struct
+            datatype t =
+               Running | Sleeping
+         end
 
       val ps: unit -> {pid: Pid.t,
-		       commandName: string,
-		       args: string list,
-		       state: State.t} list
+                       commandName: string,
+                       args: string list,
+                       state: State.t} list
    end

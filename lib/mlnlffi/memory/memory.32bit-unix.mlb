@@ -1,0 +1,25 @@
+local
+   $(SML_LIB)/basis/basis.mlb
+   $(SML_LIB)/basis/mlton.mlb
+
+   linkage.sig
+   ann "allowFFI true" in
+      linkage-libdl.sml
+   end
+   bitop-fn.sml
+   mlrep-i8i16i32i32i64f32f64.sml
+   memaccess.sig
+   memaccess-a4c1s2i4l4ll8f4d8.sml
+   memalloc.sig
+   ann "allowFFI true" in
+      memalloc-a4-unix.sml
+   end
+   memory.sig
+   memory.sml
+in
+   signature CMEMORY
+   structure CMemory
+   signature DYN_LINKAGE
+   structure DynLinkage
+   structure MLRep
+end

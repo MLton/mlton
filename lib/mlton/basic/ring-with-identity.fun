@@ -1,9 +1,10 @@
-(* Copyright (C) 1999-2002 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
- * MLton is released under the GNU General Public License (GPL).
- * Please see the file MLton-LICENSE for license information.
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
  *)
+
 functor RingWithIdentity (S: RING_WITH_IDENTITY_STRUCTS)
    :> RING_WITH_IDENTITY where type t = S.t = 
 struct
@@ -21,28 +22,28 @@ val powsInf = Power.simultaneousInf base
 local
    fun 'a
       make {zero: 'a, < : 'a * 'a -> bool, ~ : 'a -> 'a,
-	    power: {one: t,
-		    layout: t -> Layout.t,
-		    times: t * t -> t
-		    } -> (t * 'a) -> t}
+            power: {one: t,
+                    layout: t -> Layout.t,
+                    times: t * t -> t
+                    } -> (t * 'a) -> t}
       (i: 'a) : t =
       let
-	 val (i, fix) =
-	    if i < zero
-	       then (~ i, S.~)
-	    else (i, fn x => x)
+         val (i, fix) =
+            if i < zero
+               then (~ i, S.~)
+            else (i, fn x => x)
       val i = power{one = S.zero, layout = layout, times = op +} (one, i)
       in fix i
       end
 in
    val fromInt = make{zero = 0,
-		      < = op <,
-		      ~ = Pervasive.Int.~,
-		      power = Power.power}
+                      < = op <,
+                      ~ = Pervasive.Int.~,
+                      power = Power.power}
    val fromIntInf = make{zero = 0,
-			 < = IntInf.<,
-			 ~ = IntInf.~,
-			 power = Power.powerInf}
+                         < = IntInf.<,
+                         ~ = IntInf.~,
+                         power = Power.powerInf}
 end
 
 (* val fromIntInf =
@@ -67,20 +68,20 @@ val three = add1 two
 
 val pows =
    Trace.traceAssert
-   ("pows",
+   ("RingWithIdentity.pows",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.Int.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>
-						 ac * pow (b, e)))))
+                                                 ac * pow (b, e)))))
    pows
 
 val powsInf =
    Trace.traceAssert
-   ("powsInf",
+   ("RingWithIdentity.powsInf",
     List.layout (Layout.tuple2 (layout, Layout.str o Pervasive.IntInf.toString)),
     layout,
     fn l => (true, fn r => equals (r, List.fold (l, one, fn ((b, e), ac) =>
-						 ac * powInf (b, e)))))
+                                                 ac * powInf (b, e)))))
    powsInf
 
 end
