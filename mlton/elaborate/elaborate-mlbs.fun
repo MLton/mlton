@@ -261,6 +261,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                              else elabBasdec basdec, 
                              restore)
                          end
+                    | Other => elabBasdec basdec
                 end) basdec
       val _ = withDef (fn () => elabBasdec mlb)
    in

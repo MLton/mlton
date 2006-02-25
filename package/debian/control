@@ -7,7 +7,7 @@ Standards-Version: 3.6.2
 
 Package: mlton
 Architecture: hppa i386 powerpc sparc
-Depends: ${shlibs:Depends}, gcc, libgmp3-dev (>= 4.0.1)
+Depends: ${shlibs:Depends}, gcc, libc6-dev, libgmp3-dev (>= 4.0.1)
 Description: Optimizing compiler for Standard ML
  MLton (mlton.org) is a whole-program optimizing
  compiler for Standard ML.  MLton generates

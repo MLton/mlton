@@ -126,6 +126,8 @@ fun makeOptions {usage} =
                 concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
                         List.toString Control.Elaborate.Id.name ids, ".\n"])
           | Control.Elaborate.Good () => ()
+          | Control.Elaborate.Other =>
+               usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t
@@ -616,7 +618,7 @@ fun commandLine (args: string list): unit =
                                              | SOME n => n)}
            | Native =>
                 if isSome (!coalesce)
-                   then usage "can't use -coalesce and -native true"
+                   then usage "can't use -coalesce and -codegen native"
                 else ChunkPerFunc)
       val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
                  then usage "must use native codegen with -ieee-fp true"
@@ -772,7 +774,6 @@ fun commandLine (args: string list): unit =
                                (gcc,
                                 List.concat
                                 [targetOpts, 
-                                 ["-std=gnu99"],
                                  ["-o", output],
                                  if !debug then gccDebug else [],
                                  inputs,
@@ -798,6 +799,59 @@ fun commandLine (args: string list): unit =
                         in
                            ()
                         end
+                  fun mkOutputO (c: Counter.t, input: File.t): File.t =
+                     if stop = Place.O orelse !keepO
+                        then
+                           if !keepGenerated 
+                              orelse start = Place.Generated
+                              then
+                                 concat [File.base input,
+                                         ".o"]
+                              else 
+                                 suffix
+                                 (concat [".",
+                                          Int.toString
+                                          (Counter.next c),
+                                          ".o"])
+                        else temp ".o"
+                  fun compileC (c: Counter.t, input: File.t): File.t =
+                     let
+                        val (debugSwitches, switches) =
+                           (gccDebug @ ["-DASSERT=1"], ccOpts)
+                        val switches =
+                           if !debug
+                              then debugSwitches @ switches
+                              else switches
+                        val switches =
+                           targetOpts @ ("-std=gnu99" :: "-c" :: switches)
+                        val output = mkOutputO (c, input)
+                        val _ =
+                           System.system
+                           (gcc,
+                            List.concat [switches,
+                                         ["-o", output, input]])
+                     in
+                        output
+                     end
+                  fun compileS (c: Counter.t, input: File.t): File.t =
+                     let
+                        val (debugSwitches, switches) =
+                           ([asDebug], asOpts)
+                        val switches =
+                           if !debug
+                              then debugSwitches @ switches
+                              else switches
+                        val switches =
+                           targetOpts @ ("-c" :: switches)
+                        val output = mkOutputO (c, input)
+                        val _ =
+                           System.system
+                           (gcc,
+                            List.concat [switches,
+                                         ["-o", output, input]])
+                     in
+                        output
+                     end
                   fun compileCSO (inputs: File.t list): unit =
                      if List.forall (inputs, fn f =>
                                      SOME "o" = File.extension f)
@@ -806,7 +860,7 @@ fun commandLine (args: string list): unit =
                      let
                         val c = Counter.new 0
                         val oFiles =
-                           trace (Top, "Compile C and Assemble")
+                           trace (Top, "Compile and Assemble")
                            (fn () =>
                             List.fold
                             (inputs, [], fn (input, ac) =>
@@ -815,45 +869,15 @@ fun commandLine (args: string list): unit =
                              in
                                 if SOME "o" = extension
                                    then input :: ac
-                                else
-                                   let
-                                      val (debugSwitches, switches) =
-                                         if SOME "c" = extension
-                                            then
-                                               (gccDebug @ ["-DASSERT=1"],
-                                                ccOpts)
-                                         else ([asDebug], asOpts)
-                                      val switches =
-                                         if !debug
-                                            then debugSwitches @ switches
-                                         else switches
-                                      val switches =
-                                         targetOpts @ ("-std=gnu99" :: "-c" :: switches)
-                                      val output =
-                                         if stop = Place.O orelse !keepO
-                                            then
-                                               if !keepGenerated 
-                                                  orelse start = Place.Generated
-                                                  then
-                                                     concat [String.dropSuffix
-                                                             (input, 1),
-                                                             "o"]
-                                               else 
-                                                  suffix
-                                                  (concat [".",
-                                                           Int.toString
-                                                           (Counter.next c),
-                                                           ".o"])
-                                         else temp ".o"
-                                      val _ =
-                                         System.system
-                                         (gcc,
-                                          List.concat [switches,
-                                                       ["-o", output, input]])
-
-                                   in
-                                      output :: ac
-                                   end
+                                else if SOME "c" = extension
+                                   then (compileC (c, input)) :: ac
+                                else if SOME "s" = extension 
+                                        orelse SOME "S" = extension
+                                   then (compileS (c, input)) :: ac
+                                else Error.bug 
+                                     (concat
+                                      ["invalid extension: ",
+                                       Option.toString (fn s => s) extension])
                              end))
                            ()
                      in
