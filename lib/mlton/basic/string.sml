@@ -24,31 +24,24 @@ structure String: STRING =
                       end)
          end
 
-      fun concatV ss =
-         if 0 = Vector.length ss then
-            ""
-         else
-            let
-               fun str i =
-                  let
-                     val s = Vector.sub (ss, i)
-                  in
-                     (s, String.size s, i, 0)
-                  end
-            in
-               unfold
-               (Vector.fold (ss, 0, fn (s, n) => n + size s),
-                str 0, fn (s, n, i, j) =>
-                (String.sub (s, j),
-                 let
-                    val j = j + 1
-                 in
-                    if j = n then
-                       str (i + 1)
-                    else
-                       (s, n, i, j)
-                 end))
-            end
+      fun concatV ss = 
+         case Vector.length ss of
+            0 => ""
+          | 1 => Vector.sub (ss, 0)
+          | _ =>
+               let
+                  val n =
+                     Vector.fold (ss, 0, fn (s, n) => n + size s)
+                  val a = Array.new (n, #"a")
+                  val _ =
+                     Vector.fold
+                     (ss, 0, fn (s, i) =>
+                      fold (s, i, fn (c, i) =>
+                            (Array.update (a, i, c);
+                             i + 1)))
+               in
+                  tabulate (n, fn i => Array.sub (a, i))
+               end
 
       fun existsi (s, f) = Int.exists (0, size s, fn i => f (i, sub (s, i)))
 
