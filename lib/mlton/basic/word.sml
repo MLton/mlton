@@ -23,15 +23,7 @@ structure Word: WORD32 =
                  orb (w (2, 0w16), w (3, 0w24)))
          end
 
-      local
-         val wordSize = fromInt wordSize
-      in
-         fun rotateLeft (w: t, n: t) =
-            let val l = n mod wordSize
-               val r = wordSize - l
-            in orb (<< (w, l), >> (w, r))
-            end
-      end
+      val rotateLeft = MLton.Word.rol
 
       val fromWord = fn x => x
       val toWord = fn x => x

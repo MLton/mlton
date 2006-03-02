@@ -13,6 +13,8 @@ struct
 
 open S
 
+val size = length
+
 fun unfold (n, a, f) = unfoldi (n, a, f o #2)
    
 fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))

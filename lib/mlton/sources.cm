@@ -145,6 +145,7 @@ structure Substring
 structure SysWord
 structure Thread
 structure Time
+structure Timer
 structure Trace
 structure Tree
 structure TwoListQueue

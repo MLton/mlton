@@ -55,6 +55,7 @@ structure Substring
 structure SysWord
 structure TextIO
 structure Time
+structure Timer
 structure Unix
 structure Unsafe
 structure Vector
