@@ -27,6 +27,7 @@ signature STRING
 signature SUM
 signature T
 signature UNIQUE_ID
+signature VECTOR
 
 structure AppendList
 structure Array
