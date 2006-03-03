@@ -15,8 +15,7 @@ signature OPTION =
       
       val app: ('a -> unit) -> 'a option -> unit
       val compose: ('a -> 'b) * ('c -> 'a option) -> 'c -> 'b option 
-      val composePartial:
-         ('a -> 'b option) * ('c -> 'a option) -> 'c -> 'b option 
+      val composePartial: ('a -> 'b option) * ('c -> 'a option) -> 'c -> 'b option 
       val filter: ('a -> bool) -> 'a -> 'a option 
       val join: 'a option option -> 'a option 
       val map: ('a -> 'b) -> 'a option -> 'b option 

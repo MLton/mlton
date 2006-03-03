@@ -9,14 +9,12 @@
 (* The :> is to hide the type substring.  We must add the where's to make char
  * and string the same as the toplevel types.
  *)
-structure Substring
-   :> SUBSTRING_EXTRA
-   where type char = char
-   where type string = string
-   where type substring = CharVectorSlice.slice
-   =
+structure Substring :> SUBSTRING_EXTRA 
+                       where type char = char
+                       where type string = string
+                       where type substring = CharVectorSlice.slice =
    struct
-      open Substring0
+      open PreString.PreSubstring
 
       val size = length
       val extract = slice
@@ -35,6 +33,7 @@ structure Substring
         val position = make position
       end
       val compare = collate Char.compare
+
 (*
       type cs = int
          

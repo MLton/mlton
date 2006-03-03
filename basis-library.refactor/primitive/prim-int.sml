@@ -127,6 +127,7 @@ structure Int3 =
    struct
       open Int3
       type big = Int8.int
+      val fromBigUnsafe = _prim "WordU8_toWord3": big -> int;
       val precision' : Int32.int = 3
       val toBig = _prim "WordU3_toWord8": int -> big;
    end

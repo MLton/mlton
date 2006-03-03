@@ -75,12 +75,10 @@ signature INTEGER =
 
       val fmt: StringCvt.radix -> int -> string
       val toString: int -> string
-(*
       val scan: (StringCvt.radix 
                  -> (char, 'a) StringCvt.reader 
                  -> (int, 'a) StringCvt.reader)
       val fromString: string -> int option
-*)
    end
 
 signature INTEGER_EXTRA =

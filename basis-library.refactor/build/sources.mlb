@@ -19,14 +19,42 @@ in
 
    ../integer/int0.sml
    ../integer/word0.sml
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
+   local 
+      ../config/bind/int-prim.sml 
+      ../config/bind/pointer-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
       ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
       ../config/c/misc/$(CTYPES)
    end end
    ../integer/int-inf0.sml
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
+   local
+      local 
+         ../config/bind/int-prim.sml 
+         ../config/bind/intinf-prim.sml 
+         ../config/bind/word-prim.sml 
+      in ann "forceUsed" in
+         ../config/default/$(DEFAULT_INT)
+         ../config/default/$(DEFAULT_WORD)
+         ../config/default/large-int.sml
+         ../config/default/large-word.sml
+      end end
+   in
+      ../integer/int1.sml
+      ../integer/word1.sml
+   end
+
+   local 
+      ../config/bind/char-prim.sml 
+      ../config/bind/int-prim.sml 
+      ../config/bind/intinf-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/string-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
       ../config/default/$(DEFAULT_CHAR)
       ../config/default/$(DEFAULT_INT)
       ../config/default/$(DEFAULT_REAL)
@@ -34,23 +62,6 @@ in
       ../config/default/large-int.sml
       ../config/default/large-real.sml
       ../config/default/large-word.sml
-   end end
-   ../integer/int1.sml
-   ../integer/word1.sml
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
-      ../config/default/$(DEFAULT_CHAR)
-      ../config/default/$(DEFAULT_INT)
-      ../config/default/$(DEFAULT_REAL)
-      ../config/default/$(DEFAULT_WORD)
-      ../config/default/large-int.sml
-      ../config/default/large-real.sml
-      ../config/default/large-word.sml
-   end end
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
-      ../config/objptr/$(OBJPTR_REP)
-      ../config/header/$(HEADER_WORD)
-      ../config/seq/$(SEQ_INDEX)
-      ../config/c/misc/$(CTYPES)
    end end
    ../general/general.sig
    ../general/general.sml
@@ -60,6 +71,11 @@ in
    ../list/list.sml
    ../list/list-pair.sig
    ../list/list-pair.sml
+   local 
+      ../config/bind/int-prim.sml 
+   in ann "forceUsed" in
+      ../config/seq/$(SEQ_INDEX)
+   end end
    ../arrays-and-vectors/slice.sig
    ../arrays-and-vectors/sequence.sig
    ../arrays-and-vectors/sequence.fun
@@ -92,63 +108,82 @@ in
    ../integer/int.sml
    ../integer/word.sig
    ../integer/word.sml
-   local ../config/bind-for-config1.sml in ann "forceUsed" in
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
       ../config/c/misc/$(CTYPES)
    end end
    ../integer/int-inf.sig
    ../integer/int-inf.sml
-   local ../config/bind-for-config2.sml in ann "forceUsed" in
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/intinf-top.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
       ../config/default/$(DEFAULT_INT)
       ../config/default/$(DEFAULT_WORD)
+      ../config/default/fixed-int.sml
       ../config/default/large-int.sml
       ../config/default/large-word.sml
    end end
    ../integer/int-global.sml
    ../integer/word-global.sml
    ../top-level/arithmetic.sml
+   ../util/natural.sml
+   ../integer/embed-int.sml
+   ../integer/embed-word.sml
+   ../integer/pack-word.sig
+   (* ../integer/pack-word32.sml *)
 
-(*
    ../text/char.sig
    ../text/char.sml
-   ../text/substring.sig
-   ../text/substring.sml
    ../text/string.sig
    ../text/string.sml
-   local ../config/bind-for-config3.sml in ann "forceUsed" in
-      ../config/default/$(DEFAULT_CHAR)
+   ../text/substring.sig
+   ../text/substring.sml
+   ../text/char-global.sml
+   ../text/string-global.sml
+   ../text/substring-global.sml
+   ../text/byte.sig
+   ../text/byte.sml
+   ../text/text.sig
+   ../text/text.sml
+
+   ../real/IEEE-real.sig
+   ../real/IEEE-real.sml
+   (* ../../misc/C.sig *)
+   (* ../../misc/C.sml *)
+   ../real/math.sig
+   ../real/real.sig
+   (* ../../real/real.fun *)
+   ../real/pack-real.sig
+   (* ../real/pack-real.sml *)
+   (* ../real/real32.sml *)
+   (* ../real/real64.sml *)
+
+(*
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml 
+      ../config/bind/real-top.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/c/misc/$(CTYPES)
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
    end end
+*)
 
-      ../../misc/C.sig
-      ../../misc/C.sml
-      ../../real/IEEE-real.sig
-      ../../real/IEEE-real.sml
-      ../../real/math.sig
-      ../../real/real.sig
-      ../../real/real.fun
-      ../../integer/pack-word.sig
-      ../../integer/pack-word32.sml
-      ../../text/byte.sig
-      ../../text/byte.sml
-      ../../text/text.sig
-      ../../text/text.sml
-      ../../real/pack-real.sig
-      ../../real/pack-real.sml
-      ../../real/real32.sml
-      ../../real/real64.sml
-      ../../integer/patch.sml
-      ../../integer/embed-int.sml
-      ../../integer/embed-word.sml
-      ann "forceUsed" in
-         ../../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
-      end
+   ../util/unique-id.sig
+   ../util/unique-id.fun
+   ../util/cleaner.sig
+   ../util/cleaner.sml
 
-
-      (* misc/unique-id.sig *)
-      (* misc/unique-id.fun *)
-      ../../misc/cleaner.sig
-      ../../misc/cleaner.sml
-
+(*
       ../../system/pre-os.sml
       ../../system/time.sig
       ../../system/time.sml

@@ -1,8 +1,3 @@
-structure LargeReal =
-   struct
-      type real = real
-   end
-
 signature PRE_REAL_GLOBAL =
   sig
       type real
@@ -29,7 +24,7 @@ signature PRE_REAL =
       val abs: real -> real
       val class: real -> int
       val frexp: real * int ref -> real
-      val gdtoa: real * int * int * int ref -> Primitive.CString.t
+      val gdtoa: real * int * int * int ref -> C_String.t
       val fromInt: int -> real
       val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
       val ldexp: real * int -> real

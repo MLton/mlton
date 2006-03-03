@@ -43,13 +43,13 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                       (FE_TOWARDZERO, TO_ZERO)]
                   end
             in
-               val fromInt: int -> t =
+               val fromInt: C_Int.int -> t =
                   fn i =>
                   case List.find (fn (i', _) => i = i') modes of
                      NONE => raise Fail "IEEEReal.RoundingMode.fromInt"
                    | SOME (_, m) => m
                         
-               val toInt: t -> int =
+               val toInt: t -> C_Int.int =
                   fn m =>
                   let
                      open Prim.RoundingMode

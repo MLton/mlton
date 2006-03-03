@@ -211,15 +211,6 @@ structure Primitive =
             end
          end
 
-
-      structure String =
-         struct
-            val fromWord8Vector =
-               _prim "Word8Vector_toString": Word8.word vector -> string;
-            val toWord8Vector =
-               _prim "String_toWord8Vector": string -> Word8.word vector;
-         end
-
       structure TextIO =
          struct
             val bufSize = _command_line_const "TextIO.bufSize": int = 4096;

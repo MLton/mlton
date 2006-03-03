@@ -20,13 +20,26 @@ in
       prim1.sml
    end 
    ../util/integral-comparisons.sml
+   ../util/string-comparisons.sml
    prim-char.sml
    prim-word.sml
    prim-int.sml
-   local ../config/bind-for-choose.sml in ann "forceUsed" in
+   local 
+      ../config/bind/char-prim.sml 
+      ../config/bind/int-prim.sml 
+      ../config/bind/intinf-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/string-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
       ../config/choose.sml
    end end
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
+   local 
+      ../config/bind/int-prim.sml 
+      ../config/bind/pointer-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
       ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
@@ -34,6 +47,7 @@ in
    end end
    prim-intinf.sml
    prim-seq.sml
+   prim-string.sml
    prim-nullstring.sml
    prim-mlton.sml
    basis-ffi.sml

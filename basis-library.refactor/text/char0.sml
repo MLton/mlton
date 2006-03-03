@@ -11,8 +11,8 @@ structure PreChar8 =
       structure Prim = Primitive.Char8
       open Primitive.Char8
          
-      type char = char
-      type string = string
+      type char = Primitive.Char8.char
+      type string = Primitive.String8.string
 
       local
          structure S =
@@ -65,15 +65,13 @@ structure PreChar8 =
             NONE => raise Chr
           | SOME c => c
 
-      structure PreString = PreString
-
       fun oneOf s =
          let
             val a = Array.array (numChars, false)
-            val n = PreString.size s
+            val n = PreString8.size s
             fun loop i =
                if Int.>= (i, n) then ()
-               else (Array.update (a, ord (PreString.sub (s, i)), true)
+               else (Array.update (a, ord (PreString8.sub (s, i)), true)
                      ; loop (Int.+ (i, 1)))
          in loop 0
             ; fn c => Array.sub (a, ord c)

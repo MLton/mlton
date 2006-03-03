@@ -30,4 +30,3 @@ structure PreString8 =
       val explode = toList
    end
 structure PreString = PreString8
-structure PreSubstring8 = PreString.PreSubstring
