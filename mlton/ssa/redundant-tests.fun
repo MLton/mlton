@@ -192,11 +192,12 @@ fun simplify (Program.T {globals, datatypes, functions, main}) =
                                                          facts = ref [],
                                                          inDeg = ref 0}))
              (* Set up inDeg. *)
+             fun inc l = Int.inc (#inDeg (labelInfo l))
+             val () = inc start
              val _ =
                 Vector.foreach
                 (blocks, fn Block.T {transfer, ...} =>
-                 Transfer.foreachLabel
-                 (transfer, Int.inc o #inDeg o labelInfo))
+                 Transfer.foreachLabel (transfer, inc))
              (* Perform analysis, set up facts, and set up ancestor. *)
              fun loop (Tree.T (Block.T {label, statements, transfer, ...},
                                children),
