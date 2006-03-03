@@ -14,13 +14,13 @@ structure General: GENERAL_EXTRA =
       exception Bind = Bind
       exception Match = Match
       exception Chr
-      exception Div
-      exception Domain
+      exception Div = Div
+      exception Domain = Domain
       exception Fail of string
       exception Overflow = Overflow
       exception Size = Size
       exception Span
-      exception Subscript
+      exception Subscript = Subscript
 
       datatype order = datatype Primitive.Order.order
 

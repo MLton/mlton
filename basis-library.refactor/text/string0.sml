@@ -6,12 +6,12 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure String0 = 
+structure PreString8 = 
    struct
       open CharVector
       type char = elem
       type string = vector
-      structure Substring0 =
+      structure PreSubstring =
          struct
             open CharVectorSlice
             type char = elem
@@ -29,4 +29,5 @@ structure String0 =
       val implode = fromList
       val explode = toList
    end
-structure Substring0 = String0.Substring0
+structure PreString = PreString8
+structure PreSubstring8 = PreString.PreSubstring

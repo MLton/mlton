@@ -23,7 +23,7 @@ in
    prim-char.sml
    prim-word.sml
    prim-int.sml
-   local ../config/bind-for-config0.sml in ann "forceUsed" in
+   local ../config/bind-for-choose.sml in ann "forceUsed" in
       ../config/choose.sml
    end end
    local ../config/bind-for-config0.sml in ann "forceUsed" in

@@ -92,10 +92,13 @@ in
    ../integer/int.sml
    ../integer/word.sig
    ../integer/word.sml
+   local ../config/bind-for-config1.sml in ann "forceUsed" in
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/c/misc/$(CTYPES)
+   end end
    ../integer/int-inf.sig
-(*
    ../integer/int-inf.sml
-   local in ann "forceUsed" in
+   local ../config/bind-for-config2.sml in ann "forceUsed" in
       ../config/default/$(DEFAULT_INT)
       ../config/default/$(DEFAULT_WORD)
       ../config/default/large-int.sml
@@ -103,15 +106,19 @@ in
    end end
    ../integer/int-global.sml
    ../integer/word-global.sml
+   ../top-level/arithmetic.sml
+
+(*
    ../text/char.sig
    ../text/char.sml
    ../text/substring.sig
    ../text/substring.sml
    ../text/string.sig
    ../text/string.sml
-*)
+   local ../config/bind-for-config3.sml in ann "forceUsed" in
+      ../config/default/$(DEFAULT_CHAR)
+   end end
 
-(*
       ../../misc/C.sig
       ../../misc/C.sml
       ../../real/IEEE-real.sig
@@ -136,7 +143,6 @@ in
          ../../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       end
 
-      ../../top-level/arithmetic.sml
 
       (* misc/unique-id.sig *)
       (* misc/unique-id.fun *)

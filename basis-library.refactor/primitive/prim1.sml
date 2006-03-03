@@ -42,6 +42,7 @@ structure Exn =
       val name = _prim "Exn_name": exn -> String8.string;
 
       exception Div
+      exception Domain
       exception Fail8 of String8.string
       exception Fail16 of String16.string
       exception Fail32 of String32.string
@@ -84,6 +85,7 @@ val not = Primitive.Bool.not
 
 exception Bind = Primitive.Exn.Bind
 exception Div = Primitive.Exn.Div
+exception Domain = Primitive.Exn.Domain
 exception Match = Primitive.Exn.Match
 exception Overflow = Primitive.Exn.Overflow
 exception Size = Primitive.Exn.Size

@@ -13,7 +13,7 @@ structure Int8 = Int8
 structure Int16 = Int16
 structure Int32 = Int32
 structure Int64 = Int64
-structure IntInf = Primitive.IntInf
+structure IntInf = IntInf
 
 structure Pointer = Primitive.Pointer
 

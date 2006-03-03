@@ -48,12 +48,18 @@ signature PRE_WORD_EXTRA =
       val zero: word
 
       val wordSize: Primitive.Int32.int
+      val wordSizeWord: Primitive.Word32.word
+
+      val fromWord: Word.word -> word
+      val toWord: word -> Word.word
+      val toWordX: word -> Word.word
 
       val << : word * Primitive.Word32.word -> word
       val >> : word * Primitive.Word32.word -> word
       val ~>> : word * Primitive.Word32.word -> word
       val rol: word * Primitive.Word32.word -> word
       val ror: word * Primitive.Word32.word -> word
+      val log2 : word -> Primitive.Int32.int
    end
 
 signature WORD =
@@ -62,11 +68,9 @@ signature WORD =
 
       val wordSize: Int.int
 
-(*
       val << : word * Word.word -> word
       val >> : word * Word.word -> word
       val ~>> : word * Word.word -> word
-*)
          
       val fmt: StringCvt.radix -> word -> string
       val toString: word -> string
@@ -79,7 +83,13 @@ signature WORD =
 signature WORD_EXTRA =
    sig
       include WORD
+      val wordSizeWord: Word.word
+
+      val fromWord: Word.word -> word
+      val toWord: word -> Word.word
+      val toWordX: word -> Word.word
 
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
+      val log2 : word -> Primitive.Int32.int
    end

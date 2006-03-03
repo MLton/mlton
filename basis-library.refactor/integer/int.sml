@@ -13,6 +13,7 @@ open I
 
 val precision': Int.int = Primitive.Int32.toInt precision'
 val precision: Int.int option = SOME precision'
+val precisionWord': Word.word = Primitive.Word32.toWord precisionWord'
 
 val maxInt: int option = SOME maxInt'
 val minInt: int option = SOME minInt'
@@ -25,6 +26,21 @@ val sign: int -> Int.int =
           else (1: Int.int)
                
 fun sameSign (x, y) = sign x = sign y
+
+fun << (i, n) = 
+   if Word.>= (n, precisionWord')
+      then zero
+      else I.<< (i, Primitive.Word32.fromWord n)
+fun >> (i, n) = 
+   if Word.>= (n, precisionWord')
+      then zero
+      else I.>> (i, Primitive.Word32.fromWord n)
+fun ~>> (i, n) =
+   if Word.< (n, precisionWord')
+      then I.~>> (i, Primitive.Word32.fromWord n)
+      else I.~>> (i, Primitive.Word32.- (I.precisionWord', 0w1))
+fun rol (i, n) = I.rol (i, Primitive.Word32.fromWord n)
+fun ror (i, n) = I.ror (i, Primitive.Word32.fromWord n)
   
 (* fmt constructs a string to represent the integer by building it into a
  * statically allocated buffer.  For the most part, this is a textbook

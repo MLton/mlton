@@ -23,6 +23,7 @@ signature WORD0 =
       val rol : word * Primitive.Word32.word -> word
       val ror : word * Primitive.Word32.word -> word
       val ~>> : word * Primitive.Word32.word -> word
+      val log2 : word -> Primitive.Int32.int
 
       (* Lowbits or sign extend. *)
       val fromInt8: Primitive.Int8.int -> word
@@ -125,6 +126,23 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
             if n = 0w0
                then w
                else rorUnsafe (w, n)
+         end
+      fun log2 w =
+         let
+            fun loop (n, s, acc) =
+               if n = one
+                  then acc
+                  else let
+                          val (n, acc) =
+                            if n >= << (one, s)
+                               then (>> (n, s), Primitive.Word32.+ (acc, s))
+                               else (n, acc)
+                       in
+                          loop (n, Primitive.Word32.>>? (s, 0w1), acc)
+                       end
+         in
+            Primitive.Word32.toInt32Unsafe
+            (loop (w, Primitive.Word32.>>? (wordSizeWord, 0w1), 0w0))
          end
 
       local

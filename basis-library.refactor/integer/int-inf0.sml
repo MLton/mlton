@@ -15,13 +15,28 @@ signature INT_INF0 =
          Big of C_MPLimb.word vector
        | Small of ObjptrInt.int
       val rep: int -> rep
-      val areSmall: int * int -> bool
 
       val maxInt: int option
       val minInt: int option
 
       val zero: int
       val one: int
+      val negOne: int
+
+      structure Prim : 
+         sig
+            val isSmall: int -> bool
+            val areSmall: int * int -> bool
+            val dropTag: ObjptrWord.word -> ObjptrWord.word
+            val dropTagCoerce: int -> ObjptrWord.word
+            val dropTagCoerceInt: int -> ObjptrInt.int
+            val addTag: ObjptrWord.word -> ObjptrWord.word
+            val addTagCoerce: ObjptrWord.word -> int
+            val addTagCoerceInt: ObjptrInt.int -> int
+            val zeroTag: ObjptrWord.word -> ObjptrWord.word
+            val oneTag: ObjptrWord.word -> ObjptrWord.word
+            val oneTagCoerce: ObjptrWord.word -> int
+         end
 
       val abs: int -> int
       val +? : int * int -> int
@@ -51,7 +66,8 @@ signature INT_INF0 =
       val leu: int * int -> bool
       val gtu: int * int -> bool
       val geu: int * int -> bool
-
+      val isNeg: int -> bool
+               
       val andb: int * int -> int
       val << : int * Primitive.Word32.word -> int
       val notb: int -> int
@@ -59,7 +75,13 @@ signature INT_INF0 =
       val ~>> : int * Primitive.Word32.word -> int
       val xorb: int * int -> int
 
-      val toString8: int -> Primitive.String8.string
+      val mkCvt: ({base: Primitive.Int32.int,
+                   smallCvt: ObjptrInt.int -> Primitive.String8.string} 
+                  -> int -> Primitive.String8.string)
+      val mkLog2: ({fromSmall: {smallLog2: Primitive.Int32.int} -> 'a,
+                    fromLarge: {mostSigLimbLog2: Primitive.Int32.int,
+                                numLimbsMinusOne: SeqIndex.int} -> 'a}
+                   -> int -> 'a)
 
       (* Sign extend. *)
       val fromInt8Unsafe: Primitive.Int8.int -> int
@@ -149,7 +171,6 @@ structure IntInf : INT_INF0 =
       structure A = Primitive.Array
       structure V = Primitive.Vector
       structure S = SeqIndex
-
       structure W = struct
                        open ObjptrWord
                        local
@@ -186,7 +207,6 @@ structure IntInf : INT_INF0 =
                           val toObjptrIntX = S.f
                        end
                     end
-
       structure I = ObjptrInt
       structure MPLimb = C_MPLimb
       structure Sz = struct 
@@ -586,13 +606,13 @@ structure IntInf : INT_INF0 =
        * negation and absolute values are not fixnums. 
        * negBadIntInf is the negation (and absolute value) of that IntInf.int.
        *)
-      val badObjptrInt: I.int = I.~>>? (I.minInt', 0w1)
+      val badObjptrInt: I.int = I.~>> (I.minInt', 0w1)
       val badObjptrWord: W.word = W.fromObjptrInt badObjptrInt
       val badObjptrWordTagged: W.word = addTag badObjptrWord
       val badObjptrIntTagged: I.int = W.toObjptrIntX badObjptrWordTagged
       val negBadIntInf: bigInt = fromObjptrInt (I.~ badObjptrInt)
 
-      (* Given two ObjptrWord.word's, check if they have the same `high'/'sign' bit.
+      (* Given two ObjptrWord.word's, check if they have the same 'high'/'sign' bit.
        *)
       fun sameSignBit (lhs: W.word, rhs: W.word): bool =
          I.>= (W.toObjptrIntX (W.xorb (lhs, rhs)), 0)
@@ -707,9 +727,9 @@ structure IntInf : INT_INF0 =
          open I
 
          fun mod2 x = I.andb (x, 1)
-         fun div2 x = I.>>? (x, 0w1)
+         fun div2 x = I.>> (x, 0w1)
             
-         fun gcdInt (a, b, acc) =
+         fun smallGcd (a, b, acc) =
             case (a, b) of
                (0, _) => b * acc
              | (_, 0) => a * acc
@@ -728,26 +748,26 @@ structure IntInf : INT_INF0 =
                            if 0 = a_r2
                               then
                                  if 0 = b_r2
-                                    then gcdInt (a_2, b_2, acc + acc)
-                                    else gcdInt (a_2, b, acc)
+                                    then smallGcd (a_2, b_2, acc + acc)
+                                    else smallGcd (a_2, b, acc)
                               else
                                  if 0 = b_r2
-                                    then gcdInt (a, b_2, acc)
+                                    then smallGcd (a, b_2, acc)
                                     else
                                        if a >= b
-                                          then gcdInt (div2 (a - b), b, acc)
-                                          else gcdInt (a, div2 (b - a), acc)
+                                          then smallGcd (div2 (a - b), b, acc)
+                                          else smallGcd (a, div2 (b - a), acc)
                         end
       in
          fun bigGcd (lhs: bigInt, rhs: bigInt): bigInt =
             if areSmall (lhs, rhs)
-               then addTagCoerceInt (gcdInt (I.abs (dropTagCoerceInt lhs),
-                                             I.abs (dropTagCoerceInt rhs),
-                                             1))
-               else Prim.gcd (lhs, rhs, 
-                              reserve (S.max (numLimbs lhs, numLimbs rhs), 0))
+               then addTagCoerceInt 
+                    (smallGcd (I.abs (dropTagCoerceInt lhs),
+                               I.abs (dropTagCoerceInt rhs),
+                               1))
+               else Prim.gcd 
+                    (lhs, rhs, reserve (S.max (numLimbs lhs, numLimbs rhs), 0))
       end
-
 
       fun bigCompare (lhs: bigInt, rhs: bigInt): order =
          if areSmall (lhs, rhs)
@@ -789,18 +809,6 @@ structure IntInf : INT_INF0 =
 
       fun bigMax (lhs: bigInt, rhs: bigInt): bigInt =
          if bigLE (lhs, rhs) then rhs else lhs
-
-(*
-      fun bigSign' (arg: bigInt): Int32.int =
-         if isSmall arg
-            then I.sign' (dropTagCoerceInt arg)
-            else if bigIsNeg arg
-                    then ~1
-                    else 1
-
-      fun bigSameSign (lhs: bigInt, rhs: bigInt): bool =
-         bigSign' lhs = bigSign' rhs
-*)
 
       local
          fun bigLTU (lhs, rhs) =
@@ -903,17 +911,71 @@ structure IntInf : INT_INF0 =
                               reserve (S.max (1, S.- (numLimbs arg, shiftSize shift)), 0))
       end
 
-      fun bigToString8 (arg: bigInt): String8.string =
-         Prim.toString
-         (arg, 10, Sz.+ (bytesPerArrayHeader (* Array Header *),
-                         Sz.+ (0w2, (* sign *)
-                               Sz.* (0w10, Sz.fromSeqIndex (numLimbs arg)))))
+      fun mkBigCvt {base: Int32.int,
+                    smallCvt: I.int -> Primitive.String8.string}
+                   (arg: bigInt)
+                   : Primitive.String8.string =
+         if isSmall arg
+            then smallCvt (dropTagCoerceInt arg)
+            else let
+                    val bpd = Word32.log2 (Word32.fromInt32 base)
+                    val bpl = MPLimb.wordSize
+                    val dpl =
+                       Int32.+ (Int32.quot (bpl, bpd),
+                                if Int32.mod (bpl, bpd) = 0
+                                   then 0 else 1)
+                 in
+                    Prim.toString
+                    (arg, base, 
+                     Sz.+ (Sz.+ (bytesPerArrayHeader (* Array Header *),
+                                 0w1 (* sign *)),
+                           Sz.* (Sz.fromInt32 dpl, 
+                                 Sz.fromSeqIndex (numLimbs arg))))
+                 end
+
+      fun mkBigLog2 {fromSmall: {smallLog2: Primitive.Int32.int} -> 'a,
+                     fromLarge: {numLimbsMinusOne: SeqIndex.int,
+                                 mostSigLimbLog2: Primitive.Int32.int} -> 'a}
+                    (arg: bigInt) =
+         if bigLE (arg, 0)
+            then raise Domain
+            else if isSmall arg
+                    then fromSmall {smallLog2 = W.log2 (dropTagCoerce arg)}
+                    else let
+                            val v = Prim.toVector arg
+                            val n = V.length v
+                            val w = MPLimb.log2 (V.subUnsafe (v, S.- (n, 1)))
+                         in
+                            fromLarge {numLimbsMinusOne = S.- (n, 2),
+                                       mostSigLimbLog2 = w}
+                         end
 
       type int = bigInt
       type t = int
 
       val maxInt = NONE
       val minInt = NONE
+         
+      structure Prim = 
+         struct
+            val isSmall = isSmall
+            val areSmall = areSmall
+            val dropTag = dropTag
+            val dropTagCoerce = dropTagCoerce
+            val dropTagCoerceInt = dropTagCoerceInt
+            val addTag = addTag
+            val addTagCoerce = addTagCoerce
+            val addTagCoerceInt = addTagCoerceInt
+            val zeroTag = zeroTag
+            val oneTag = oneTag
+            val oneTagCoerce = oneTagCoerce
+
+            val numLimbs = numLimbs
+            val bytesPerArrayHeader = bytesPerArrayHeader
+            val reserve = reserve
+
+            val toString = Prim.toString
+        end
 
       val abs = bigAbs
       val op +? = bigAdd
@@ -943,6 +1005,7 @@ structure IntInf : INT_INF0 =
       val leu = bigLEU
       val gtu = bigGTU
       val geu = bigGEU
+      val isNeg = bigIsNeg
 
       val andb = bigAndb
       val << = bigLshift
@@ -951,7 +1014,8 @@ structure IntInf : INT_INF0 =
       val ~>> = bigRashift
       val xorb = bigXorb
 
-      val toString8 = bigToString8
+      val mkCvt = mkBigCvt
+      val mkLog2 = mkBigLog2
 end
 
 structure Char8 =
@@ -1046,366 +1110,3 @@ structure Word64 =
    end
 
 end
-
-(*
-(*
- * IntInf.int's either have a bottom bit of 1, in which case the top 31
- * bits are the signed integer, or else the bottom bit is 0, in which case
- * they point to an vector of Word.word's.  The first word is either 0,
- * indicating that the number is positive, or 1, indicating that it is
- * negative.  The rest of the vector contains the `limbs' (big digits) of
- * the absolute value of the number, from least to most significant.
- *)
-structure IntInf: INT_INF_EXTRA =
-   struct
-
-      (*
-       * bigInt toString and fmt.
-       * dpc is the maximum number of digits per `limb'.
-       *)
-      local
-         open StringCvt
-
-         fun cvt {base: smallInt,
-                  dpc: word,
-                  smallCvt: smallInt -> string}
-            (arg: bigInt)
-            : string =
-            if isSmall arg
-               then smallCvt (Word.toIntX (stripTag arg))
-            else Prim.toString (arg, base,
-                                Word.+
-                                (reserve (0, 0),
-                                 Word.+ (0w2, (* sign character *)
-                                         Word.* (dpc,
-                                                 Word.fromInt (bigSize arg)))))
-         val binCvt = cvt {base = 2, dpc = 0w32, smallCvt = Int.fmt BIN}
-         val octCvt = cvt {base = 8, dpc = 0w11, smallCvt = Int.fmt OCT}
-         val hexCvt = cvt {base = 16, dpc = 0w8, smallCvt = Int.fmt HEX}
-      in
-         val bigToString = cvt {base = 10,
-                                dpc = 0w10,
-                                smallCvt = Int.toString}
-         fun bigFmt radix =
-            case radix of
-               BIN => binCvt
-             | OCT => octCvt
-             | DEC => bigToString
-             | HEX => hexCvt
-      end
-
-      (*
-       * bigInt scan and fromString.
-       *)
-      local
-         open StringCvt
-
-         (*
-          * We use Word.word to store chunks of digits.
-          * smallToInf converts such a word to a fixnum bigInt.
-          * Thus, it can only represent values in [- 2^30, 2^30).
-          *)
-         fun smallToBig (arg: Word.word): bigInt =
-            Prim.fromWord (addTag arg)
-            
-            
-         (*
-          * Given a char, if it is a digit in the appropriate base,
-          * convert it to a word.  Otherwise, return NONE.
-          * Note, both a-f and A-F are accepted as hexadecimal digits.
-          *)
-         fun binDig (ch: char): Word.word option =
-            case ch of
-               #"0" => SOME 0w0
-             | #"1" => SOME 0w1
-             | _ => NONE
-
-         local
-            val op <= = Char.<=
-         in
-            fun octDig (ch: char): Word.word option =
-               if #"0" <= ch andalso ch <= #"7"
-                  then SOME (Word.fromInt (ord ch -? ord #"0"))
-               else NONE
-                  
-            fun decDig (ch: char): Word.word option =
-               if #"0" <= ch andalso ch <= #"9"
-                  then SOME (Word.fromInt (ord ch -? ord #"0"))
-               else NONE
-                  
-            fun hexDig (ch: char): Word.word option =
-               if #"0" <= ch andalso ch <= #"9"
-                  then SOME (Word.fromInt (ord ch -? ord #"0"))
-               else if #"a" <= ch andalso ch <= #"f"
-                       then SOME (Word.fromInt (ord ch -? (ord #"a" - 0xa)))
-                    else if #"A" <= ch andalso ch <= #"F"
-                            then SOME (Word.fromInt
-                                       (ord ch -? (ord #"A" - 0xA)))
-                         else
-                            NONE
-         end
-      
-         (*
-          * Given a digit converter and a char reader, return a digit
-          * reader.
-          *)
-         fun toDigR (charToDig: char -> Word.word option,
-                     cread: (char, 'a) reader)
-            (s: 'a)
-            : (Word.word * 'a) option =
-            case cread s of
-               NONE => NONE
-             | SOME (ch, s') =>
-                  case charToDig ch of
-                     NONE => NONE
-                   | SOME dig => SOME (dig, s')
-                        
-         (*
-          * A chunk represents the result of processing some digits.
-          * more is a bool indicating if there might be more digits.
-          * shift is base raised to the number-of-digits-seen power.
-          * chunk is the value of the digits seen.
-          *)
-         type chunk = {
-                       more: bool,
-                       shift: Word.word,
-                       chunk: Word.word
-                       }
-            
-         (*
-          * Given the base, the number of digits per chunk,
-          * a char reader and a digit reader, return a chunk reader.
-          *)
-         fun toChunkR (base: Word.word,
-                       dpc: smallInt,
-                       dread: (Word.word, 'a) reader)
-            : (chunk, 'a) reader =
-            let fun loop {left: smallInt,
-                          shift: Word.word,
-                          chunk: Word.word,
-                          s: 'a}
-               : chunk * 'a =
-               if left <= 0
-                  then ({more = true,
-                         shift = shift,
-                         chunk = chunk },
-                        s)
-               else
-                  case dread s of
-                     NONE => ({more = false,
-                               shift = shift,
-                               chunk = chunk},
-                              s)
-                   | SOME (dig, s') =>
-                        loop {
-                              left = left - 1,
-                              shift = Word.* (base, shift),
-                              chunk = Word.+ (Word.* (base,
-                                                      chunk),
-                                              dig),
-                              s = s'
-                              }
-                fun reader (s: 'a): (chunk * 'a) option =
-                   case dread s of
-                      NONE => NONE
-                    | SOME (dig, next) =>
-                         SOME (loop {left = dpc - 1,
-                                     shift = base,
-                                     chunk = dig,
-                                     s = next})
-            in reader
-            end
-         
-         (*
-          * Given a chunk reader, return an unsigned reader.
-          *)
-         fun toUnsR (ckread: (chunk, 'a) reader): (bigInt, 'a) reader =
-            let fun loop (more: bool, ac: bigInt, s: 'a) =
-               if more
-                  then case ckread s of
-                     NONE => (ac, s)
-                   | SOME ({more, shift, chunk}, s') =>
-                        loop (more,
-                              bigPlus (bigMul (smallToBig shift,
-                                               ac),
-                                       smallToBig chunk),
-                              s')
-               else (ac, s)
-                fun reader (s: 'a): (bigInt * 'a) option =
-                   case ckread s of
-                      NONE => NONE
-                    | SOME ({more, chunk, ...}, s') =>
-                         SOME (loop (more,
-                                     smallToBig chunk,
-                                     s'))
-            in reader
-            end
-         
-         (*
-          * Given a char reader and an unsigned reader, return an unsigned
-          * reader that includes skipping the option hex '0x'.
-          *)
-         fun toHexR (cread: (char, 'a) reader, uread: (bigInt, 'a) reader) 
-            s =
-            case cread s of
-               NONE => NONE
-             | SOME (c1, s1) =>
-                  if c1 = #"0" then
-                     case cread s1 of
-                        NONE => SOME (zero, s1)
-                      | SOME (c2, s2) =>
-                           if c2 = #"x" orelse c2 = #"X" then
-                              case uread s2 of 
-                                 NONE => SOME (zero, s1)
-                               | SOME x => SOME x
-                           else uread s
-                  else uread s
-
-         (*
-          * Given a char reader and an unsigned reader, return a signed
-          * reader.  This includes skipping any initial white space.
-          *)
-         fun toSign (cread: (char, 'a) reader, uread: (bigInt, 'a) reader)
-            : (bigInt, 'a) reader =
-            let
-               fun reader (s: 'a): (bigInt * 'a) option =
-                  case cread s of
-                     NONE => NONE
-                   | SOME (ch, s') =>
-                        if Char.isSpace ch then reader s'
-                        else
-                           let
-                              val (isNeg, s'') =
-                                 case ch of
-                                    #"+" => (false, s')
-                                  | #"-" => (true, s')
-                                  | #"~" => (true, s')
-                                  | _ => (false, s)
-                           in
-                              if isNeg then
-                                 case uread s'' of
-                                    NONE => NONE
-                                  | SOME (abs, s''') =>
-                                       SOME (bigNegate abs, s''')
-                              else uread s''
-                           end
-            in
-               reader
-            end
-                  
-         (*
-          * Base-specific conversions from char readers to
-          * bigInt readers.
-          *)
-         local
-            fun reader (base, dpc, dig)
-               (cread: (char, 'a) reader): (bigInt, 'a) reader =
-               let val dread = toDigR (dig, cread)
-                  val ckread = toChunkR (base, dpc, dread)
-                  val uread = toUnsR ckread
-                  val hread =
-                     if base = 0w16 then toHexR (cread, uread) else uread
-                  val reader = toSign (cread, hread)
-               in reader
-               end
-         in
-            fun binReader z = reader (0w2, 29, binDig) z
-            fun octReader z = reader (0w8, 9, octDig) z
-            fun decReader z = reader (0w10, 9, decDig) z
-            fun hexReader z = reader (0w16, 7, hexDig) z
-         end     
-      in
-         
-         local fun stringReader (pos, str) =
-            if pos >= String.size str
-               then NONE
-            else SOME (String.sub (str, pos), (pos + 1, str))
-               val reader = decReader stringReader
-         in
-            fun bigFromString str =
-               case reader (0, str) of
-                  NONE => NONE
-                | SOME (res, _) => SOME res
-         end
-      
-         fun bigScan radix =
-            case radix of
-               BIN => binReader
-             | OCT => octReader
-             | DEC => decReader
-             | HEX => hexReader
-      end
-
-      local
-         fun isEven (n: int) = Int.mod (Int.abs n, 2) = 0
-      in
-         fun pow (i: bigInt, j: int): bigInt =
-            if j < 0 then
-               if i = zero then
-                  raise Div
-               else
-                  if i = one then one
-                  else if i = negOne then if isEven j then one else negOne
-                  else zero
-            else
-               if j = 0 then one
-               else
-                  let
-                     fun square (n: bigInt): bigInt = bigMul (n, n)
-                     (* pow (j) returns (i ^ j) *)
-                     fun pow (j: int): bigInt =
-                        if j <= 0 then one
-                        else if isEven j then evenPow j
-                        else bigMul (i, evenPow (j - 1))
-                     (* evenPow (j) returns (i ^ j), assuming j is even *)
-                     and evenPow (j: int): bigInt =
-                        square (pow (Int.quot (j, 2)))
-                  in pow (j)
-                  end
-      end
-
-
-      (*
-       * bigInt log2
-       *)
-      structure Word =
-         struct
-            open Word
-            fun log2 (w: word): int =
-               let
-                  fun loop (n, s, ac): word =
-                     if n = 0w1
-                        then ac
-                     else
-                        let
-                           val (n, ac) =
-                              if n >= << (0w1, s)
-                                 then (>> (n, s), ac + s)
-                              else (n, ac)
-                        in
-                           loop (n, >> (s, 0w1), ac)
-                        end
-               in
-                  toInt (loop (w, 0w16, 0w0))
-               end
-         end
-
-      local
-         val bitsPerLimb: Int.int = 32
-      in
-         fun log2 (n: bigInt): Int.int =
-            if bigLE (n, 0)
-               then raise Domain
-            else
-               case rep n of
-                  Big v =>
-                     Int.+ (Int.* (bitsPerLimb, Int.- (Vector.length v, 2)),
-                            Word.log2 (Vector.sub (v, Int.- (Vector.length v, 1))))
-                | Small i => Word.log2 (Word.fromInt i)
-      end
-
-   
-   end
-
-structure LargeInt = IntInf
-*)

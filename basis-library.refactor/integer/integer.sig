@@ -43,6 +43,7 @@ signature PRE_INTEGER_EXTRA =
       val one: int
 
       val precision' : Primitive.Int32.int
+      val precisionWord' : Primitive.Word32.word
 
       val maxInt' : int
       val minInt' : int
@@ -74,10 +75,12 @@ signature INTEGER =
 
       val fmt: StringCvt.radix -> int -> string
       val toString: int -> string
+(*
       val scan: (StringCvt.radix 
                  -> (char, 'a) StringCvt.reader 
                  -> (int, 'a) StringCvt.reader)
       val fromString: string -> int option
+*)
    end
 
 signature INTEGER_EXTRA =
@@ -94,16 +97,12 @@ signature INTEGER_EXTRA =
       val ~? : int -> int
 
       val andb: int * int -> int
-(*
       val << : int * Word.word -> int
-*)
       val notb: int -> int
       val orb: int * int -> int
-(*
       val rol: int * Word.word -> int
       val ror: int * Word.word -> int
       val ~>> : int * Word.word -> int
       val >> : int * Word.word -> int
-*)
       val xorb: int * int -> int
    end

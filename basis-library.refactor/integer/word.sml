@@ -11,24 +11,23 @@ struct
 
 open W
 
-val wordSize = Primitive.Int32.toInt wordSize
+val wordSize: Int.int = Primitive.Int32.toInt wordSize
+val wordSizeWord: Word.word = Primitive.Word32.toWord wordSizeWord
 
-(*
-fun << (i, n) 
-  = if PW.>=(n ,wordSizeWord)
+fun << (w, n) = 
+   if Word.>= (n, wordSizeWord)
       then zero
-      else W.<<(i, n)
-
-fun >> (i, n) 
-  = if PW.>=(n, wordSizeWord)
+      else W.<< (w, Primitive.Word32.fromWord n)
+fun >> (w, n) = 
+   if Word.>= (n, wordSizeWord)
       then zero
-      else W.>>(i, n)
-
-fun ~>> (i, n) 
-  = if PW.<(n, wordSizeWord)
-      then W.~>>(i, n)
-      else W.~>>(i, wordSizeMinusOneWord)
-*)
+      else W.>> (w, Primitive.Word32.fromWord n)
+fun ~>> (w, n) =
+   if Word.< (n, wordSizeWord)
+      then W.~>> (w, Primitive.Word32.fromWord n)
+      else W.~>> (w, Primitive.Word32.- (W.wordSizeWord, 0w1))
+fun rol (w, n) = W.rol (w, Primitive.Word32.fromWord n)
+fun ror (w, n) = W.ror (w, Primitive.Word32.fromWord n)
 
 fun fmt radix (w: word): string =
    let val radix = fromInt (StringCvt.radixToInt radix)
@@ -36,7 +35,7 @@ fun fmt radix (w: word): string =
          let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
             val q = q div radix
          in if q = zero
-               then String0.implode chars
+               then PreString.implode chars
             else loop (q, chars)
          end
    in loop (w, [])

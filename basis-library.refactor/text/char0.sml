@@ -6,9 +6,10 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Char0 =
+structure PreChar8 =
    struct
-      open Char
+      structure Prim = Primitive.Char8
+      open Primitive.Char8
          
       type char = char
       type string = string
@@ -17,11 +18,11 @@ structure Char0 =
          structure S =
             Int_ChooseInt
             (type 'a t = 'a -> char
-             val fInt8 = Char.fromInt8Unsafe
-             val fInt16 = Char.fromInt16Unsafe
-             val fInt32 = Char.fromInt32Unsafe
-             val fInt64 = Char.fromInt64Unsafe
-             val fIntInf = Char.fromIntInfUnsafe)
+             val fInt8 = Prim.fromInt8Unsafe
+             val fInt16 = Prim.fromInt16Unsafe
+             val fInt32 = Prim.fromInt32Unsafe
+             val fInt64 = Prim.fromInt64Unsafe
+             val fIntInf = Prim.fromIntInfUnsafe)
       in
          val chrUnsafe = S.f
       end
@@ -29,16 +30,16 @@ structure Char0 =
          structure S =
             Int_ChooseInt
             (type 'a t = char -> 'a
-             val fInt8 = Char.toInt8Unsafe
-             val fInt16 = Char.toInt16Unsafe
-             val fInt32 = Char.toInt32Unsafe
-             val fInt64 = Char.toInt64Unsafe
-             val fIntInf = Char.toIntInfUnsafe)
+             val fInt8 = Prim.toInt8Unsafe
+             val fInt16 = Prim.toInt16Unsafe
+             val fInt32 = Prim.toInt32Unsafe
+             val fInt64 = Prim.toInt64Unsafe
+             val fIntInf = Prim.toIntInfUnsafe)
       in
          val ord = S.f
       end
 
-      val minChar:char = #"\000"
+      val minChar: char = #"\000"
       val numChars: int = 256
       val maxOrd: int = 255
       val maxChar:char = #"\255"
@@ -64,15 +65,15 @@ structure Char0 =
             NONE => raise Chr
           | SOME c => c
 
-      structure String = String0
+      structure PreString = PreString
 
       fun oneOf s =
          let
             val a = Array.array (numChars, false)
-            val n = String.size s
+            val n = PreString.size s
             fun loop i =
                if Int.>= (i, n) then ()
-               else (Array.update (a, ord (String.sub (s, i)), true)
+               else (Array.update (a, ord (PreString.sub (s, i)), true)
                      ; loop (Int.+ (i, 1)))
          in loop 0
             ; fn c => Array.sub (a, ord c)
@@ -118,3 +119,4 @@ structure Char0 =
          val toUpper = make (#"a", #"z", diff)
       end
    end
+structure PreChar = PreChar8
