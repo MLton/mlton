@@ -21,9 +21,7 @@ in
    end 
    ../util/integral-comparisons.sml
    ../util/string-comparisons.sml
-   prim-char.sml
-   prim-word.sml
-   prim-int.sml
+   ../util/real-comparisons.sml
    local 
       ../config/bind/char-prim.sml 
       ../config/bind/int-prim.sml 
@@ -34,6 +32,10 @@ in
    in ann "forceUsed" in
       ../config/choose.sml
    end end
+
+   prim-word.sml
+   prim-int.sml
+
    local 
       ../config/bind/int-prim.sml 
       ../config/bind/pointer-prim.sml 
@@ -45,11 +47,18 @@ in
       ../config/seq/$(SEQ_INDEX)
       ../config/c/misc/$(CTYPES)
    end end
-   prim-intinf.sml
    prim-seq.sml
-   prim-string.sml
    prim-nullstring.sml
+
+   prim-intinf.sml
+
+   prim-char.sml
+   prim-string.sml
+
+   prim-real.sml
+
    prim-mlton.sml
+
    basis-ffi.sml
    prim2.sml
 end
