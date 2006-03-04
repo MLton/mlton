@@ -39,6 +39,10 @@ test: test.mlb print.o $(shell $(MLTON) -mlb-path-map "../maps/header-word32.map
 		-mlb-path-map "../maps/default-int32.map" \
 		-mlb-path-map "../maps/default-real64.map" \
 		-mlb-path-map "../maps/default-word32.map" \
+		-const 'Exn.keepHistory true' \
+		-profile-include '<basis>' \
+		-profile-branch true \
+		-profile-raise true \
 		test.mlb print.o
 
 print.o: print.c

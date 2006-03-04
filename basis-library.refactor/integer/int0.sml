@@ -184,12 +184,12 @@ functor MkInt0 (I: PRIM_INTEGER): INTEGER0 =
             if detectOverflow andalso
                precision' <> #precision' other
                then if Primitive.Int32.< (precision', #precision' other)
-                       then (fn i =>
+                       then (fn (i : 'a) =>
                              if ((#lte other) (toIntUnsafe minInt', i)
-                                 andalso (#lte other) (toIntUnsafe maxInt', i))
+                                 andalso (#lte other) (i, toIntUnsafe maxInt'))
                                 then fromIntUnsafe i
                                 else raise Overflow, 
-                                   toIntUnsafe)
+                             toIntUnsafe)
                        else (fromIntUnsafe, 
                              fn i =>
                              if (fromIntUnsafe (#minInt' other) <= i
