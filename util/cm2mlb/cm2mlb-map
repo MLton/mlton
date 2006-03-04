@@ -26,3 +26,5 @@ $reactive-lib.cm      $(SML_LIB)/smlnj-lib/Reactive
 
 $ckit-lib.cm                 $(SML_LIB)/ckit-lib
 $ckit-lib.cm/ckit-lib.cm     $(SML_LIB)/ckit-lib/ckit-lib.mlb
+
+$SMLNJ-MLRISC     $(SML_LIB)/mlrisc-lib/mlb
