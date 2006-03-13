@@ -119,40 +119,42 @@ local
     * The most that will be required is for minInt in binary.
     *)
    val maxNumDigits = PI.+ (precision', 1)
-   val buf = CharArray.array (maxNumDigits, #"\000")
+   val one = One.make (fn () => CharArray.array (maxNumDigits, #"\000"))
 in
    fun fmt radix (n: int): string =
-      let
-         val radix = fromInt (StringCvt.radixToInt radix)
-         fun loop (q, i: Int.int) =
-            let
-               val _ =
-                  CharArray.update
-                  (buf, i, StringCvt.digitToChar (toInt (~? (rem (q, radix)))))
-               val q = quot (q, radix)
-            in
-               if q = zero
-                  then
-                     let
-                        val start =
-                           if n < zero
-                              then
-                                 let
-                                    val i = PI.- (i, 1)
-                                    val () = CharArray.update (buf, i, #"~")
-                                 in
-                                    i
-                                 end
-                           else i
-                     in
-                        CharArraySlice.vector
-                        (CharArraySlice.slice (buf, start, NONE))
-                     end
-               else loop (q, PI.- (i, 1))
-            end
-      in
-         loop (if n < zero then n else ~? n, PI.- (maxNumDigits, 1))
-      end
+      One.use
+      (one, fn buf =>
+       let
+          val radix = fromInt (StringCvt.radixToInt radix)
+          fun loop (q, i: Int.int) =
+             let
+                val _ =
+                   CharArray.update
+                   (buf, i, StringCvt.digitToChar (toInt (~? (rem (q, radix)))))
+                val q = quot (q, radix)
+             in
+                if q = zero
+                   then
+                      let
+                         val start =
+                            if n < zero
+                               then
+                                  let
+                                     val i = PI.- (i, 1)
+                                     val () = CharArray.update (buf, i, #"~")
+                                  in
+                                     i
+                                  end
+                            else i
+                      in
+                         CharArraySlice.vector
+                         (CharArraySlice.slice (buf, start, NONE))
+                      end
+                else loop (q, PI.- (i, 1))
+             end
+       in
+          loop (if n < zero then n else ~? n, PI.- (maxNumDigits, 1))
+       end)
 end      
 
 val toString = fmt StringCvt.DEC
