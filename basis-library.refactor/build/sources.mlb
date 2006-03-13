@@ -159,11 +159,17 @@ in
    (* ../../misc/C.sml *)
    ../real/math.sig
    ../real/real.sig
-   (* ../../real/real.fun *)
+   ../real/real.fun
    ../real/pack-real.sig
    (* ../real/pack-real.sml *)
    (* ../real/real32.sml *)
    (* ../real/real64.sml *)
+   local 
+      ../config/bind/real-top.sml 
+   in ann "forceUsed" in
+      ../config/default/$(DEFAULT_REAL)
+      ../config/default/large-real.sml
+   end end
 
 (*
    local 

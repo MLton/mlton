@@ -139,8 +139,8 @@
         }
 
 #define shift(kind, name, op)                                           \
-        Word##kind Word##kind##_##name (Word##kind w1, Word w2);        \
-        Word##kind Word##kind##_##name (Word##kind w1, Word w2) {       \
+        Word##kind Word##kind##_##name (Word##kind w1, Word32 w2);      \
+        Word##kind Word##kind##_##name (Word##kind w1, Word32 w2) {     \
                 return w1 op w2;                                        \
         }
 
@@ -163,12 +163,12 @@
         bothBinary (size, quot, /)                              \
         SmulCheckOverflows (size)                               \
         bothBinary (size, rem, %)                               \
-        Word##size Word##size##_rol (Word##size w1, Word w2);   \
-        Word##size Word##size##_rol (Word##size w1, Word w2) {  \
+        Word##size Word##size##_rol (Word##size w1, Word32 w2); \
+        Word##size Word##size##_rol (Word##size w1, Word32 w2) {\
                 return (w1 >> (size - w2)) | (w1 << w2);        \
         }                                                       \
-        Word##size Word##size##_ror (Word##size w1, Word w2);   \
-        Word##size Word##size##_ror (Word##size w1, Word w2) {  \
+        Word##size Word##size##_ror (Word##size w1, Word32 w2); \
+        Word##size Word##size##_ror (Word##size w1, Word32 w2) {\
                 return (w1 >> w2) | (w1 << (size - w2));        \
         }                                                       \
         shift (S##size, rshift, >>)                             \
