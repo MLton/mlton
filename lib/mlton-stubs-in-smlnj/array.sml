@@ -100,3 +100,77 @@ structure CharArray = MonoArray (CharArray)
 structure RealArray = MonoArray (RealArray)
 structure Real64Array = RealArray
 structure Word8Array = MonoArray (Word8Array)
+
+functor MonoArraySlice (S: MONO_ARRAY_SLICE) =
+   let
+      open OpenInt32
+   in
+      struct
+         type array = S.array
+         type elem = S.elem
+         type slice = S.slice
+         type vector = S.vector
+         type vector_slice = S.vector_slice
+
+         val all = S.all
+
+         val app = S.app
+
+         fun appi f = S.appi (fn (i, e) => f (fromInt i, e))
+
+         fun base s =
+            let
+               val (a, i, j) = S.base s
+            in
+               (a, fromInt i, fromInt j)
+            end
+         
+         val collate = S.collate
+
+         fun copy {di, dst, src} = S.copy {di = toInt di, dst = dst, src = src}
+
+         fun copyVec {di, dst, src} =
+            S.copyVec {di = toInt di, dst = dst, src = src}
+
+         val exists = S.exists
+
+         val find = S.find
+
+         fun findi f s =
+            case S.findi (fn (i, e) => f (fromInt i, e)) s of
+               NONE => NONE
+             | SOME (i, e) => SOME (fromInt i, e)
+                  
+         val foldl = S.foldl
+            
+         fun foldli f = S.foldli (fn (i, e, b) => f (fromInt i, e, b))
+            
+         val foldr = S.foldr
+
+         fun foldri f = S.foldri (fn (i, e, b) => f (fromInt i, e, b))
+
+         val full = S.full
+
+         val getItem = S.getItem
+
+         val isEmpty = S.isEmpty
+
+         val length = fromInt o S.length
+
+         val modify = S.modify
+
+         fun modifyi f = S.modifyi (fn (i, e) => f (fromInt i, e))
+
+         fun slice (a, i, j) = S.slice (a, toInt i, toIntOpt j)
+            
+         fun sub (s, i) = S.sub (s, toInt i)
+            
+         fun subslice (s, i, j) = S.subslice (s, toInt i, toIntOpt j)
+
+         fun update (s, i, e) = S.update (s, toInt i, e)
+
+         val vector = S.vector
+      end
+   end
+
+structure Word8ArraySlice = MonoArraySlice (Word8ArraySlice)

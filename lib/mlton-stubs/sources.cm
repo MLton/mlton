@@ -29,6 +29,7 @@ structure Int
 structure Int32
 structure Int64
 structure IntInf
+structure INetSock
 structure IO
 structure LargeInt
 structure LargeReal
@@ -49,6 +50,7 @@ structure RealArray
 structure RealVector
 structure SML90
 structure SMLofNJ
+structure Socket
 structure String
 structure StringCvt
 structure Substring
@@ -62,7 +64,9 @@ structure Vector
 structure Word
 structure Word8
 structure Word8Array
+structure Word8ArraySlice
 structure Word8Vector
+structure Word16
 structure Word32
 structure Word64
 

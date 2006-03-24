@@ -56,6 +56,7 @@ structure Base64
 structure BinarySearch
 structure Bool
 structure Buffer
+structure Byte
 structure Char
 structure CharArray
 structure CharBuffer
@@ -91,6 +92,7 @@ structure Int
 structure Int32
 structure IntInf
 structure InsertionSort
+structure INetSock
 structure Iterate
 structure Itimer
 structure Justify
@@ -139,6 +141,7 @@ structure Result
 structure Sexp
 structure Signal
 structure SMLofNJ
+structure Socket
 structure Stream
 structure String
 structure StringCvt
@@ -157,7 +160,9 @@ structure Vector
 structure Word
 structure Word8
 structure Word8Array
+structure Word8ArraySlice
 structure Word8Vector
+structure Word16
 structure Word32
    
 functor AlphaBeta
