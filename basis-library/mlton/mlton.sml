@@ -102,13 +102,3 @@ structure OS =
                end
          end
    end
-
-local
-   open MLton.Vector
-in
-   fun fib n =
-      Vector.create (n,
-                     fn {sub = fib, ...} =>
-                     (fn i => if i <= 1 then 1 else fib (i - 1) + fib (i - 2),
-                      ignore))
-end
