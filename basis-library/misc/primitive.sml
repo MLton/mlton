@@ -2262,3 +2262,5 @@ local
                "unhandled exception in Basis Library\000")))
 in
 end
+
+val op + = Primitive.Int.+
