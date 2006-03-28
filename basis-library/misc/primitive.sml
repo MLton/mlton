@@ -215,7 +215,6 @@ structure Primitive =
          _prim "MLton_installSignalHandler": unit -> unit;
       val safe = _command_line_const "MLton.safe": bool = true;
       val touch = _prim "MLton_touch": 'a -> unit;
-      val usesCallcc: bool ref = ref false;
 
       structure Stdio =
          struct
@@ -1293,7 +1292,16 @@ structure Primitive =
          struct
             open Real64
 
-            structure Class =
+            structure Class:>
+               sig
+                  eqtype t
+
+                  val inf: t
+                  val nan: t
+                  val normal: t
+                  val subnormal: t
+                  val zero: t
+               end =
                struct
                   type t = int
                      
@@ -1338,7 +1346,7 @@ structure Primitive =
             val == = _prim "Real64_equal": real * real -> bool;
             val ?= = _prim "Real64_qequal": real * real -> bool;
             val abs = _prim "Real64_abs": real -> real;
-            val class = _import "Real64_class": real -> int;
+            val class = _import "Real64_class": real -> Class.t;
             val frexp = _import "Real64_frexp": real * int ref -> real;
             val gdtoa =
                _import "Real64_gdtoa": real * int * int * int ref -> CString.t;
@@ -1412,7 +1420,7 @@ structure Primitive =
             val == = _prim "Real32_equal": real * real -> bool;
             val ?= = _prim "Real32_qequal": real * real -> bool;
             val abs = _prim "Real32_abs": real -> real;
-            val class = _import "Real32_class": real -> int;
+            val class = _import "Real32_class": real -> Real64.Class.t;
             fun frexp (r: real, ir: int ref): real =
                fromLarge (Real64.frexp (toLarge r, ir))
             val gdtoa =

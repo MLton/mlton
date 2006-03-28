@@ -32,6 +32,9 @@ functor Sequence (S: sig
 
       fun seq0 () = fromArray (array 0)
 
+      (* unfoldi depends on the fact that the runtime system fills in the array
+       * with reasonable bogus values.
+       *)
       fun unfoldi (n, b, f) =
          let
             val a = array n
@@ -45,42 +48,12 @@ functor Sequence (S: sig
                   in
                      loop (i +? 1, b')
                   end
-            val _ = loop (0, b)
+            val () = loop (0, b)
          in
             fromArray a
          end
 
-      (* Tabulate depends on the fact that the runtime system fills in the array
-       * with reasonable bogus values.
-       *)
-      fun tabulate (n, f) =
-(*
-         if !Primitive.usesCallcc
-            then
-               (* This code is careful to use a list to accumulate the 
-                * components of the array in case f uses callcc.
-                *)
-               let
-                  fun loop (i, l) =
-                     if i >= n
-                        then l
-                     else loop (i + 1, f i :: l)
-                  val l = loop (0, [])
-                  val a = array n
-                  fun loop (l, i) =
-                     case l of
-                        [] => ()
-                      | x :: l =>
-                           let val i = i -? 1
-                           in Array.update (a, i, x)
-                              ; loop (l, i)
-                           end
-               in loop (l, n)
-                  ; fromArray a
-               end
-         else
-*)
-            unfoldi (n, (), fn (i, ()) => (f i, ()))
+      fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
 
       fun new (n, x) = tabulate (n, fn _ => x)
 
