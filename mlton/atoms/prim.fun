@@ -1507,7 +1507,6 @@ fun ('a, 'b) apply (p: 'a t,
                               | MLton_equal => t
                               | Real_lt _ => f
                               | Real_le _ => t
-                              | Real_equal _ => t
                               | Real_qequal _ => t
                               | Word_andb _ => Var x
                               | Word_equal _ => t
