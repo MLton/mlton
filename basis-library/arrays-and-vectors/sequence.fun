@@ -39,21 +39,21 @@ functor Sequence (S: sig
          let
             val a = array n
             fun loop (i, b)  =
-               if i >= n
-                  then ()
+               if i >= n then
+                  b
                else
                   let
                      val (x, b') = f (i, b)
-                     val _ = Array.update (a, i, x)
+                     val () = Array.update (a, i, x)
                   in
                      loop (i +? 1, b')
                   end
-            val () = loop (0, b)
+            val b = loop (0, b)
          in
-            fromArray a
+            (fromArray a, b)
          end
 
-      fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
+      fun tabulate (n, f) = #1 (unfoldi (n, (), fn (i, ()) => (f i, ())))
 
       fun new (n, x) = tabulate (n, fn _ => x)
 
@@ -191,25 +191,26 @@ functor Sequence (S: sig
                in loop (min1, min2)
                end
             fun sequence (sl as T {seq, start, len}): 'a sequence =
-               if isMutable orelse (start <> 0 orelse len <> S.length seq)
-                  then map (fn x => x) sl
-               else seq
+               if isMutable orelse (start <> 0 orelse len <> S.length seq) then
+                  map (fn x => x) sl
+               else
+                  seq
             fun append (sl1: 'a slice, sl2: 'a slice): 'a sequence =
-               if length sl1 = 0
-                  then sequence sl2
-               else if length sl2 = 0
-                  then sequence sl1
+               if length sl1 = 0 then
+                  sequence sl2
+               else if length sl2 = 0 then
+                  sequence sl1
                else
                   let
                      val l1 = length sl1
                      val l2 = length sl2
                      val n = l1 + l2 handle Overflow => raise Size
                   in
-                     unfoldi (n, (0, sl1),
-                              fn (_, (i, sl)) =>
-                                  if i < length sl
-                                     then (unsafeSub (sl, i), (i +? 1, sl))
-                                  else (unsafeSub (sl2, 0), (1, sl2)))
+                     #1 (unfoldi (n, (0, sl1),
+                                  fn (_, (i, sl)) =>
+                                  if i < length sl then
+                                     (unsafeSub (sl, i), (i +? 1, sl))
+                                  else (unsafeSub (sl2, 0), (1, sl2))))
                   end
             fun concat (sls: 'a slice list): 'a sequence =
                case sls of
@@ -220,17 +221,19 @@ functor Sequence (S: sig
                         val n = List.foldl (fn (sl, s) => s + length sl) 0 sls'
                                 handle Overflow => raise Size
                      in
-                        unfoldi (n, (0, sl, sls),
-                                 fn (_, ac) =>
-                                 let
-                                    fun loop (i, sl, sls) =
-                                       if i < length sl
-                                          then (unsafeSub (sl, i), (i +? 1, sl, sls))
-                                       else case sls of
-                                               [] => raise Fail "concat bug"
-                                             | sl :: sls => loop (0, sl, sls)
-                                 in loop ac
-                                 end)
+                        #1 (unfoldi (n, (0, sl, sls),
+                                     fn (_, ac) =>
+                                     let
+                                        fun loop (i, sl, sls) =
+                                           if i < length sl then
+                                              (unsafeSub (sl, i),
+                                               (i +? 1, sl, sls))
+                                           else case sls of
+                                              [] => raise Fail "concat bug"
+                                            | sl :: sls => loop (0, sl, sls)
+                                     in
+                                        loop ac
+                                     end))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                let val sep = full sep

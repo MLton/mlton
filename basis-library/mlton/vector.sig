@@ -14,6 +14,6 @@ signature MLTON_VECTOR =
          int * ({sub: int -> 'a, update: int * 'a -> unit}
                 -> (int -> 'a) * (unit -> unit))
          -> 'a vector
-      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector * 'b
    end
    

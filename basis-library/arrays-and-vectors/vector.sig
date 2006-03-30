@@ -53,7 +53,7 @@ signature VECTOR_EXTRA =
       val duplicate: 'a vector -> 'a vector
       val fromArray: 'a array -> 'a vector
       val toList: 'a vector -> 'a list
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b vector
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a vector * 'b
       val vector: int * 'a -> 'a vector
 
       (* Deprecated *)

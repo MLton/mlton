@@ -62,7 +62,7 @@ signature SEQUENCE =
       val duplicate: 'a sequence -> 'a sequence
       val new: int * 'a elt -> 'a sequence
       val toList: 'a sequence -> 'a elt list
-      val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence
+      val unfoldi: int * 'a * (int * 'a -> 'b elt * 'a) -> 'b sequence * 'a
 
       (* Deprecated *)
       val checkSlice: 'a sequence * int * int option -> int
