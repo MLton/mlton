@@ -24,10 +24,16 @@ val (sub, up) =
       then (subVec, update)
    else (subVecRev, updateRev)
 
+fun check (size, i) =
+   if Int.< (i, 0) orelse Int.> (i, size -? bytesPerElem) then
+      raise Subscript
+   else
+      ()
+
 fun update (a, i, r) =
    let
+      val () = check (Word8Array.length a, i)
       val a = Word8Array.toPoly a
-      val _ = Array.checkSlice (a, i, SOME bytesPerElem)
    in
       up (a, i, r)
    end
@@ -42,8 +48,8 @@ end
 
 fun subVec (v, i) =
    let
+      val () = check (Word8Vector.length v, i)
       val v = Word8Vector.toPoly v
-      val _ = Vector.checkSlice (v, i, SOME bytesPerElem)
    in
       sub (v, i)
    end

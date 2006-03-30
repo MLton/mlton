@@ -456,18 +456,4 @@ functor Sequence (S: sig
         fun duplicate seq = make Slice.sequence seq
         fun toList seq = make Slice.toList seq
       end
-    
-      (* Deprecated *)
-      fun checkSliceMax (start: int, num: int option, max: int): int =
-         case num of
-            NONE => if Primitive.safe andalso (start < 0 orelse start > max)
-                       then raise Subscript
-                    else max
-          | SOME num =>
-               if Primitive.safe
-                  andalso (start < 0 orelse num < 0 orelse start > max -? num)
-                  then raise Subscript
-               else start +? num
-      (* Deprecated *)
-      fun checkSlice (s, i, opt) = checkSliceMax (i, opt, length s)
    end

@@ -28,10 +28,28 @@ structure Array2: ARRAY2 =
                         nrows: int option,
                         ncols: int option}
 
+      fun checkSliceMax (start: int, num: int option, max: int): int =
+         case num of
+            NONE =>
+               if Primitive.safe andalso (start < 0 orelse start > max) then
+                  raise Subscript
+               else
+                  max
+          | SOME num =>
+               if Primitive.safe
+                  andalso (start < 0
+                           orelse num < 0
+                           orelse start > max -? num) then
+                  raise Subscript
+               else
+                  start +? num
+
       fun checkRegion {base, row, col, nrows, ncols} =
-         let val (rows, cols) = dimensions base
-         in {stopRow = Array.checkSliceMax (row, nrows, rows),
-             stopCol = Array.checkSliceMax (col, ncols, cols)}
+         let
+            val (rows, cols) = dimensions base
+         in
+            {stopRow = checkSliceMax (row, nrows, rows),
+             stopCol = checkSliceMax (col, ncols, cols)}
          end
       
       fun wholeRegion (a: 'a array): 'a region =
