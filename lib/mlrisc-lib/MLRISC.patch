@@ -2544,15 +2544,15 @@ diff -Naur MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l50 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l9 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -3132,7 +3132,7 @@ diff -Naur MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 +    end
 +  basis l29 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -3844,15 +3844,15 @@ diff -Naur MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l16 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l37 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -4342,23 +4342,23 @@ diff -Naur MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l12 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l230 = 
 +    bas
-+      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Graphs.mlb
++      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb
 +    end
 +  basis l39 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +  basis l311 = 
 +    bas
-+      (* $MLTREE.cm(=$SMLNJ-MLRISC)/MLTREE.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLTREE.mlb
++      (* $MLTREE.cm(=$SMLNJ-MLRISC)/MLTREE.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLTREE.mlb
 +    end
 +in
 +local
@@ -5119,15 +5119,15 @@ diff -Naur MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 +local
 +  basis l8 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l16 = 
 +    bas
-+      (* $IA32.cm(=$SMLNJ-MLRISC)/IA32.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/IA32.mlb
++      (* $IA32.cm(=$SMLNJ-MLRISC)/IA32.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/IA32.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $Peephole.cm(=$SMLNJ-MLRISC)/Peephole.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Peephole.mlb
++      (* $Peephole.cm(=$SMLNJ-MLRISC)/Peephole.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Peephole.mlb
 +    end
 +in
 +local
@@ -5462,15 +5462,15 @@ diff -Naur MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 +    end
 +  basis l44 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l5 = 
 +    bas
-+      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Graphs.mlb
++      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb
 +    end
 +  basis l9 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -7171,15 +7171,15 @@ diff -Naur MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l42 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l68 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -7380,11 +7380,11 @@ diff -Naur MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 +local
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l14 = 
 +    bas
-+      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Graphs.mlb
++      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb
 +    end
 +in
 +local
@@ -7453,15 +7453,15 @@ diff -Naur MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l50 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l9 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -8032,15 +8032,15 @@ diff -Naur MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l53 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l29 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -8188,15 +8188,15 @@ diff -Naur MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 +    end
 +  basis l4 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l46 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l30 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
@@ -8728,19 +8728,19 @@ diff -Naur MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 +    end
 +  basis l66 = 
 +    bas
-+      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/MLRISC.mlb
++      (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
 +    end
 +  basis l5 = 
 +    bas
-+      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Control.mlb
++      (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
 +    end
 +  basis l12 = 
 +    bas
-+      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Graphs.mlb
++      (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb
 +    end
 +  basis l19 = 
 +    bas
-+      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) /home/fluet/mlton/smlnj-libs/MLRISC/MLRISC.cvs.HEAD-mlton/mlb/Lib.mlb
++      (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
 +    end
 +in
 +local
