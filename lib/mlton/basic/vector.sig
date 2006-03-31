@@ -14,7 +14,7 @@ signature VECTOR_STRUCTS =
 
       val length: 'a t -> int
       val sub: 'a t * int -> 'a
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a t * 'b
    end
 
 signature VECTOR =

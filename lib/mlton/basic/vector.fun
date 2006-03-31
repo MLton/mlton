@@ -17,7 +17,7 @@ val size = length
 
 fun unfold (n, a, f) = unfoldi (n, a, f o #2)
    
-fun tabulate (n, f) = unfoldi (n, (), fn (i, ()) => (f i, ()))
+fun tabulate (n, f) = #1 (unfoldi (n, (), fn (i, ()) => (f i, ())))
 
 fun fromArray a =
    tabulate (Pervasive.Array.length a, fn i => Pervasive.Array.sub (a, i))
@@ -457,36 +457,37 @@ fun 'a concat (vs: 'a t list): 'a t =
          let
             val n = List.fold (vs, 0, fn (v, s) => s + length v)
          in
-            unfold (n, (0, v, vs'),
-                    let
-                       fun loop (i, v, vs) =
-                          if i < length v
-                             then (sub (v, i), (i + 1, v, vs))
-                          else
-                             case vs of
-                                [] => Error.bug "Vector.concat"
-                              | v :: vs => loop (0, v, vs)
-                    in loop
-                    end)
+            #1 (unfold (n, (0, v, vs'),
+                        let
+                           fun loop (i, v, vs) =
+                              if i < length v
+                                 then (sub (v, i), (i + 1, v, vs))
+                              else
+                                 case vs of
+                                    [] => Error.bug "Vector.concat"
+                                  | v :: vs => loop (0, v, vs)
+                        in loop
+                        end))
          end
 
 fun concatV vs =
-   if 0 = length vs
-      then new0 ()
+   if 0 = length vs then
+      new0 ()
    else
       let
          val n = fold (vs, 0, fn (v, s) => s + length v)
          fun state i = (i, sub (vs, i), 0)
       in
-         unfold (n, state 0,
-                 let
-                    fun loop (i, v, j) =
-                       if j < length v
-                          then (sub (v, j), (i, v, j + 1))
-                       else loop (state (i + 1))
-                 in loop
-                 end)
-   end
+         #1 (unfold (n, state 0,
+                     let
+                        fun loop (i, v, j) =
+                           if j < length v then
+                              (sub (v, j), (i, v, j + 1))
+                           else
+                              loop (state (i + 1))
+                     in loop
+                     end))
+      end
 
 fun splitLast v =
    let
