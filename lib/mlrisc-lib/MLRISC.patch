@@ -2524,7 +2524,7 @@ diff -Naur MLRISC/library/hash-array.sml MLRISC-mlton/library/hash-array.sml
           val clear  : 'a array -> unit 
 diff -Naur MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 --- MLRISC/mlb/ALPHA.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/ALPHA.mlb	2006-03-04 12:08:27.000000000 -0500
++++ MLRISC-mlton/mlb/ALPHA.mlb	2006-03-30 21:16:50.000000000 -0500
 @@ -0,0 +1,476 @@
 +
 +ann
@@ -3004,7 +3004,7 @@ diff -Naur MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 +end
 diff -Naur MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 --- MLRISC/mlb/Control.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/Control.mlb	2006-03-04 12:08:27.000000000 -0500
++++ MLRISC-mlton/mlb/Control.mlb	2006-03-30 21:16:50.000000000 -0500
 @@ -0,0 +1,104 @@
 +
 +ann
@@ -3112,7 +3112,7 @@ diff -Naur MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 +end
 diff -Naur MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 --- MLRISC/mlb/Graphs.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/Graphs.mlb	2006-03-04 12:08:27.000000000 -0500
++++ MLRISC-mlton/mlb/Graphs.mlb	2006-03-30 21:16:51.000000000 -0500
 @@ -0,0 +1,708 @@
 +
 +ann
@@ -3824,7 +3824,7 @@ diff -Naur MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 +end
 diff -Naur MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 --- MLRISC/mlb/HPPA.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/HPPA.mlb	2006-03-04 12:08:28.000000000 -0500
++++ MLRISC-mlton/mlb/HPPA.mlb	2006-03-30 21:16:52.000000000 -0500
 @@ -0,0 +1,494 @@
 +
 +ann
@@ -4322,7 +4322,7 @@ diff -Naur MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 +end
 diff -Naur MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 --- MLRISC/mlb/IA32.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/IA32.mlb	2006-03-04 12:08:29.000000000 -0500
++++ MLRISC-mlton/mlb/IA32.mlb	2006-03-30 21:16:53.000000000 -0500
 @@ -0,0 +1,781 @@
 +
 +ann
@@ -5107,7 +5107,7 @@ diff -Naur MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 +end
 diff -Naur MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 --- MLRISC/mlb/IA32-Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/IA32-Peephole.mlb	2006-03-04 12:08:29.000000000 -0500
++++ MLRISC-mlton/mlb/IA32-Peephole.mlb	2006-03-30 21:16:53.000000000 -0500
 @@ -0,0 +1,60 @@
 +
 +ann
@@ -5171,7 +5171,7 @@ diff -Naur MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 +end
 diff -Naur MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 --- MLRISC/mlb/Lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/Lib.mlb	2006-03-04 12:08:29.000000000 -0500
++++ MLRISC-mlton/mlb/Lib.mlb	2006-03-30 21:16:54.000000000 -0500
 @@ -0,0 +1,267 @@
 +
 +ann
@@ -5442,7 +5442,7 @@ diff -Naur MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 +end
 diff -Naur MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 --- MLRISC/mlb/MLRISC.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/MLRISC.mlb	2006-03-04 12:08:30.000000000 -0500
++++ MLRISC-mlton/mlb/MLRISC.mlb	2006-03-30 21:16:56.000000000 -0500
 @@ -0,0 +1,1705 @@
 +
 +ann
@@ -7151,7 +7151,7 @@ diff -Naur MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 +end
 diff -Naur MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 --- MLRISC/mlb/MLTREE.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/MLTREE.mlb	2006-03-04 12:08:30.000000000 -0500
++++ MLRISC-mlton/mlb/MLTREE.mlb	2006-03-30 21:16:57.000000000 -0500
 @@ -0,0 +1,213 @@
 +
 +ann
@@ -7368,7 +7368,7 @@ diff -Naur MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 +end
 diff -Naur MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 --- MLRISC/mlb/Peephole.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/Peephole.mlb	2006-03-04 12:08:30.000000000 -0500
++++ MLRISC-mlton/mlb/Peephole.mlb	2006-03-30 21:16:57.000000000 -0500
 @@ -0,0 +1,61 @@
 +
 +ann
@@ -7433,7 +7433,7 @@ diff -Naur MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 +end
 diff -Naur MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 --- MLRISC/mlb/PPC.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/PPC.mlb	2006-03-04 12:08:31.000000000 -0500
++++ MLRISC-mlton/mlb/PPC.mlb	2006-03-30 21:16:57.000000000 -0500
 @@ -0,0 +1,575 @@
 +
 +ann
@@ -8012,7 +8012,7 @@ diff -Naur MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 +end
 diff -Naur MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 --- MLRISC/mlb/RA.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/RA.mlb	2006-03-04 12:08:31.000000000 -0500
++++ MLRISC-mlton/mlb/RA.mlb	2006-03-30 21:16:58.000000000 -0500
 @@ -0,0 +1,152 @@
 +
 +ann
@@ -8168,7 +8168,7 @@ diff -Naur MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 +end
 diff -Naur MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 --- MLRISC/mlb/SPARC.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/SPARC.mlb	2006-03-04 12:08:31.000000000 -0500
++++ MLRISC-mlton/mlb/SPARC.mlb	2006-03-30 21:16:58.000000000 -0500
 @@ -0,0 +1,540 @@
 +
 +ann
@@ -8712,7 +8712,7 @@ diff -Naur MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 +end
 diff -Naur MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 --- MLRISC/mlb/Visual.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlb/Visual.mlb	2006-03-04 12:08:31.000000000 -0500
++++ MLRISC-mlton/mlb/Visual.mlb	2006-03-30 21:16:59.000000000 -0500
 @@ -0,0 +1,252 @@
 +
 +ann
@@ -8968,7 +8968,7 @@ diff -Naur MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 +end
 diff -Naur MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
 --- MLRISC/mlrisc-lib.mlb	1969-12-31 19:00:00.000000000 -0500
-+++ MLRISC-mlton/mlrisc-lib.mlb	2006-03-04 12:08:31.000000000 -0500
++++ MLRISC-mlton/mlrisc-lib.mlb	2006-03-30 21:16:59.000000000 -0500
 @@ -0,0 +1,17 @@
 +(* DO NOT USE.  Only suitable for type-checking purposes. *)
 +local
