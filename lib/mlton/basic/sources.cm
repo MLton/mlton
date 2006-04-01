@@ -135,6 +135,7 @@ structure TwoListQueue
 structure Unimplemented
 structure Unit
 structure Unsafe
+structure Url
 structure Vector
 structure Word
 structure Word32
