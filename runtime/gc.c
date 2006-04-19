@@ -893,7 +893,7 @@ static inline bool isInFromSpace (GC_state s, pointer p) {
 static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 #if ASSERT
         unless (isInFromSpace (s, *p))
-                die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x);\n",
+                die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x;\n",
                         (uint)p, *(uint*)p);
         /* The following checks that intergenerational pointers have the
          * appropriate card marked.  Unfortunately, it doesn't work because
