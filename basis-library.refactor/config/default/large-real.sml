@@ -8,5 +8,5 @@
 structure LargeReal = Real64
 
 functor LargeReal_ChooseRealN (A: CHOOSE_REALN_ARG) :
-   sig val f : Real.real A.t end =
+   sig val f : LargeReal.real A.t end =
    ChooseRealN_Real64 (A)
