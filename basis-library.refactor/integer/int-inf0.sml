@@ -328,7 +328,6 @@ structure IntInf : INT_INF0 =
          val fromWord8Unsafe = fromWord8
          val fromWord8XUnsafe = fromWord8X
 
-
          val fromWordAux16 =
             make {toMPLimb = MPLimb.fromWord16,
                   toObjptrWord = ObjptrWord.fromWord16,
