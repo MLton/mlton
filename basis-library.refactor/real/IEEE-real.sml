@@ -151,8 +151,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             type exp = {digits: int list, negate: bool}
             fun 'b afterE (state: 'a,
                            failure: unit -> 'b,
-                           success: exp * 'a -> 'b)
-               : 'b =
+                           success: exp * 'a -> 'b) : 'b =
                case reader state of
                   NONE => failure ()
                 | SOME (c, state) =>
@@ -373,4 +372,3 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             else num
          end
    end
-

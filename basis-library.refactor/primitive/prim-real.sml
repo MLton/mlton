@@ -74,19 +74,23 @@ signature PRIM_REAL =
       val strto: Primitive.NullString8.t -> real
       val ~ : real -> real
 
+      (* Integer to float; depends on rounding mode. *)
       val fromInt8Unsafe: Primitive.Int8.int -> real
       val fromInt16Unsafe: Primitive.Int16.int -> real
       val fromInt32Unsafe: Primitive.Int32.int -> real
       val fromInt64Unsafe: Primitive.Int64.int -> real
 
+      (* Float to float; depends on rounding mode. *)
       val fromReal32Unsafe: Primitive.Real32.real -> real
       val fromReal64Unsafe: Primitive.Real64.real -> real
 
+      (* Float to integer, taking lowbits. *)
       val toInt8Unsafe: real -> Primitive.Int8.int
       val toInt16Unsafe: real -> Primitive.Int16.int
       val toInt32Unsafe: real -> Primitive.Int32.int
       val toInt64Unsafe: real -> Primitive.Int64.int
 
+      (* Float to float; depends on rounding mode. *)
       val toReal32Unsafe: real -> Primitive.Real32.real
       val toReal64Unsafe: real -> Primitive.Real64.real
    end

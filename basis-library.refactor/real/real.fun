@@ -12,7 +12,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
       local
          open IEEEReal
       in
-         datatype z = datatype float_class
+         datatype float_class = datatype float_class
          datatype rounding_mode = datatype rounding_mode
       end
       infix 4 == != ?=
