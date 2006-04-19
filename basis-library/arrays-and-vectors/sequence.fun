@@ -32,55 +32,28 @@ functor Sequence (S: sig
 
       fun seq0 () = fromArray (array 0)
 
+      (* unfoldi depends on the fact that the runtime system fills in the array
+       * with reasonable bogus values.
+       *)
       fun unfoldi (n, b, f) =
          let
             val a = array n
             fun loop (i, b)  =
-               if i >= n
-                  then ()
+               if i >= n then
+                  b
                else
                   let
                      val (x, b') = f (i, b)
-                     val _ = Array.update (a, i, x)
+                     val () = Array.update (a, i, x)
                   in
                      loop (i +? 1, b')
                   end
-            val _ = loop (0, b)
+            val b = loop (0, b)
          in
-            fromArray a
+            (fromArray a, b)
          end
 
-      (* Tabulate depends on the fact that the runtime system fills in the array
-       * with reasonable bogus values.
-       *)
-      fun tabulate (n, f) =
-(*
-         if !Primitive.usesCallcc
-            then
-               (* This code is careful to use a list to accumulate the 
-                * components of the array in case f uses callcc.
-                *)
-               let
-                  fun loop (i, l) =
-                     if i >= n
-                        then l
-                     else loop (i + 1, f i :: l)
-                  val l = loop (0, [])
-                  val a = array n
-                  fun loop (l, i) =
-                     case l of
-                        [] => ()
-                      | x :: l =>
-                           let val i = i -? 1
-                           in Array.update (a, i, x)
-                              ; loop (l, i)
-                           end
-               in loop (l, n)
-                  ; fromArray a
-               end
-         else
-*)
-            unfoldi (n, (), fn (i, ()) => (f i, ()))
+      fun tabulate (n, f) = #1 (unfoldi (n, (), fn (i, ()) => (f i, ())))
 
       fun new (n, x) = tabulate (n, fn _ => x)
 
@@ -218,25 +191,26 @@ functor Sequence (S: sig
                in loop (min1, min2)
                end
             fun sequence (sl as T {seq, start, len}): 'a sequence =
-               if isMutable orelse (start <> 0 orelse len <> S.length seq)
-                  then map (fn x => x) sl
-               else seq
+               if isMutable orelse (start <> 0 orelse len <> S.length seq) then
+                  map (fn x => x) sl
+               else
+                  seq
             fun append (sl1: 'a slice, sl2: 'a slice): 'a sequence =
-               if length sl1 = 0
-                  then sequence sl2
-               else if length sl2 = 0
-                  then sequence sl1
+               if length sl1 = 0 then
+                  sequence sl2
+               else if length sl2 = 0 then
+                  sequence sl1
                else
                   let
                      val l1 = length sl1
                      val l2 = length sl2
                      val n = l1 + l2 handle Overflow => raise Size
                   in
-                     unfoldi (n, (0, sl1),
-                              fn (_, (i, sl)) =>
-                                  if i < length sl
-                                     then (unsafeSub (sl, i), (i +? 1, sl))
-                                  else (unsafeSub (sl2, 0), (1, sl2)))
+                     #1 (unfoldi (n, (0, sl1),
+                                  fn (_, (i, sl)) =>
+                                  if i < length sl then
+                                     (unsafeSub (sl, i), (i +? 1, sl))
+                                  else (unsafeSub (sl2, 0), (1, sl2))))
                   end
             fun concat (sls: 'a slice list): 'a sequence =
                case sls of
@@ -247,17 +221,19 @@ functor Sequence (S: sig
                         val n = List.foldl (fn (sl, s) => s + length sl) 0 sls'
                                 handle Overflow => raise Size
                      in
-                        unfoldi (n, (0, sl, sls),
-                                 fn (_, ac) =>
-                                 let
-                                    fun loop (i, sl, sls) =
-                                       if i < length sl
-                                          then (unsafeSub (sl, i), (i +? 1, sl, sls))
-                                       else case sls of
-                                               [] => raise Fail "concat bug"
-                                             | sl :: sls => loop (0, sl, sls)
-                                 in loop ac
-                                 end)
+                        #1 (unfoldi (n, (0, sl, sls),
+                                     fn (_, ac) =>
+                                     let
+                                        fun loop (i, sl, sls) =
+                                           if i < length sl then
+                                              (unsafeSub (sl, i),
+                                               (i +? 1, sl, sls))
+                                           else case sls of
+                                              [] => raise Fail "concat bug"
+                                            | sl :: sls => loop (0, sl, sls)
+                                     in
+                                        loop ac
+                                     end))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                let val sep = full sep
@@ -480,18 +456,4 @@ functor Sequence (S: sig
         fun duplicate seq = make Slice.sequence seq
         fun toList seq = make Slice.toList seq
       end
-    
-      (* Deprecated *)
-      fun checkSliceMax (start: int, num: int option, max: int): int =
-         case num of
-            NONE => if Primitive.safe andalso (start < 0 orelse start > max)
-                       then raise Subscript
-                    else max
-          | SOME num =>
-               if Primitive.safe
-                  andalso (start < 0 orelse num < 0 orelse start > max -? num)
-                  then raise Subscript
-               else start +? num
-      (* Deprecated *)
-      fun checkSlice (s, i, opt) = checkSliceMax (i, opt, length s)
    end

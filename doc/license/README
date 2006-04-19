@@ -12,6 +12,7 @@ SML/NJ          NJ-LICENSE (BSD-style)          front-end mllex specification
                                                 Concurrent ML Library
                                                 CKit Library
                                                 mlnlffigen and MLNLFFI Library
+                                                MLRISC Library
 
 SML/NJ Lib	SMLNJ-LIB-LICENSE (BSD-style) 	SML/NJ Library
 

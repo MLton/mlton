@@ -11,7 +11,41 @@ structure String: STRING =
    struct
       open String1
 
+      fun unfold (n, a, f) =
+         let
+            val r = ref a
+         in
+            tabulate (n, fn _ =>
+                      let
+                         val (b, a) = f (!r)
+                         val () = r := a
+                      in
+                         b
+                      end)
+         end
+
+      fun concatV ss = 
+         case Vector.length ss of
+            0 => ""
+          | 1 => Vector.sub (ss, 0)
+          | _ =>
+               let
+                  val n =
+                     Vector.fold (ss, 0, fn (s, n) => n + size s)
+                  val a = Array.new (n, #"a")
+                  val _ =
+                     Vector.fold
+                     (ss, 0, fn (s, i) =>
+                      fold (s, i, fn (c, i) =>
+                            (Array.update (a, i, c);
+                             i + 1)))
+               in
+                  tabulate (n, fn i => Array.sub (a, i))
+               end
+
       fun existsi (s, f) = Int.exists (0, size s, fn i => f (i, sub (s, i)))
+
+      fun exists (s, f) = existsi (s, f o #2)
 
       fun keepAll (s: t, f: char -> bool): t =
          implode (List.rev

@@ -36,6 +36,7 @@ structure Pervasive =
       structure Real = Real
       structure Real32 = Real32
       structure Real64 = Real64
+      structure Socket = Socket
       structure String = String
       structure StringCvt = StringCvt
       structure Substring = Substring
@@ -47,6 +48,7 @@ structure Pervasive =
       structure Word = Word
       structure Word32 = Word32
       structure Word8 = Word8
+      structure Word16 = Word16
       structure Word8Array = Word8Array
 
       type unit = General.unit

@@ -421,7 +421,7 @@ structure Event : EVENT_EXTRA =
 
       (* walk the event group tree, collecting the base events (with associated
        * ack flags), and a list of flag sets.  A flag set is a (cvar * ack flag list)
-       * pairs, where the flags are those associated with the events covered by the
+       * pair, where the flags are those associated with the events covered by the
        * nack cvar.
        *)
       type ack_flg = bool ref
@@ -590,10 +590,7 @@ structure Event : EVENT_EXTRA =
                                   extRdy (backs, {prio = prio, doitFn = (doitFn, ackFlg)}::doitFns)
                              | _ => extRdy (backs, doitFns))
                end
-            val x =
-               case backs of
-                  [(bevt, _)] => syncOnBEvt bevt
-                | _ => (S.atomicBegin (); ext (backs, []))
+            val x = (S.atomicBegin (); ext (backs, []))
             val () = debug' "syncOnGrp(4)" (* NonAtomic *)
             val () = Assert.assertNonAtomic' "Event.syncOnGrp(4)"
          in

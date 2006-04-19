@@ -198,6 +198,7 @@ in
       signature STRING
       signature T
       signature UNIQUE_ID
+      signature VECTOR
 
       structure AppendList
       structure Array

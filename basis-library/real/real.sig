@@ -27,7 +27,7 @@ signature PRE_REAL =
       val ?= : real * real -> bool
       val ~ : real -> real
       val abs: real -> real
-      val class: real -> int
+      val class: real -> Primitive.Real64.Class.t
       val frexp: real * int ref -> real
       val gdtoa: real * int * int * int ref -> Primitive.CString.t
       val fromInt: int -> real

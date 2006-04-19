@@ -168,17 +168,19 @@ freebsd:
         # do not change "make" to "$(MAKE)" in the following line
 	cd $(BSDSRC)/package/freebsd && MAINTAINER_MODE=yes make build-package  
 
-LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
+LIBRARIES = ckit-lib cml mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
 
 .PHONY: libraries-no-check
 libraries-no-check:
 	mkdir -p $(LIB)/sml
 	cd $(LIB)/sml && rm -rf $(LIBRARIES)
 	$(MAKE) -C $(SRC)/lib/ckit-lib
+	$(MAKE) -C $(SRC)/lib/mlrisc-lib
 	$(MAKE) -C $(SRC)/lib/smlnj-lib
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
+	$(CP) $(SRC)/lib/mlrisc-lib/MLRISC/. $(LIB)/sml/mlrisc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
 	find $(LIB)/sml -type d -name .svn | xargs rm -rf
