@@ -60,9 +60,11 @@ local
     * The most that will be required is for minInt in binary.
     *)
    val maxNumDigits = Int.+ (precision', 1)
-   val buf = CharArray.array (maxNumDigits, #"\000")
+   val oneBuf = One.make (fn () => CharArray.array (maxNumDigits, #"\000"))
 in
    fun fmt radix (n: int): string =
+      One.use
+      (oneBuf, fn buf => 
       let
          val radix = fromInt (StringCvt.radixToInt radix)
          fun loop (q, i: Int.int) =
@@ -93,7 +95,7 @@ in
             end
       in
          loop (if n < zero then n else ~? n, Int.- (maxNumDigits, 1))
-      end
+      end)
 end      
 
 val toString = fmt StringCvt.DEC

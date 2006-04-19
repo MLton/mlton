@@ -60,6 +60,8 @@ structure Vector: VECTOR_EXTRA =
       val fromArray = Primitive.Vector.fromArray
 
       val vector = new
+
+      fun create (n, f) = generate (n, f)
    end
 structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice
 

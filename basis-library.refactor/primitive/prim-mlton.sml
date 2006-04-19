@@ -31,11 +31,6 @@ structure GCState =
          
       val gcState = #1 _symbol "gcStateAddress": t GetSet.t; ()
    end
-
-structure Callcc =
-   struct
-      val usesCallcc: bool ref = ref false
-   end
    
 structure CallStack =
    struct

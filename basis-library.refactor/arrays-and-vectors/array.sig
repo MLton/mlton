@@ -51,5 +51,5 @@ signature ARRAY_EXTRA =
       val concat: 'a array list -> 'a array
       val duplicate: 'a array -> 'a array
       val toList: 'a array -> 'a list
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array * 'b
    end

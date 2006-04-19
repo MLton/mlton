@@ -35,6 +35,8 @@ functor Sequence (S: sig
       fun wrap1 f = fn (i) => f (SeqIndex.toIntUnsafe i)
       fun wrap2 f = fn (i, x) => f (SeqIndex.toIntUnsafe i, x)
       fun wrap3 f = fn (i, x, y) => f (SeqIndex.toIntUnsafe i, x, y)
+      fun unwrap1 f = fn (i) => f (SeqIndex.fromIntUnsafe i)
+      fun unwrap2 f = fn (i, x) => f (SeqIndex.fromIntUnsafe i, x)
 
       type 'a sequence = 'a S.sequence
       type 'a elt = 'a S.elt
@@ -90,30 +92,70 @@ functor Sequence (S: sig
 
       fun seq0 () = S.fromArray (arrayUninit' 0)
 
+      fun generate' (n, f) =
+         let
+            val a = arrayUninit' n
+            val subLim = ref 0
+            fun sub i =
+               if Primitive.Controls.safe andalso geu (i, !subLim)
+                  then raise Subscript
+                  else Array.subUnsafe (a, i)
+            val updateLim = ref 0
+            fun update (i, x) =
+               if Primitive.Controls.safe andalso geu (i, !updateLim)
+                  then raise Subscript
+                  else Array.updateUnsafe (a, i, x)
+            val (tab, finish) = f {sub = sub, update = update}
+            fun loop i =
+               if i >= n
+                  then ()
+                  else let
+                          val () = Array.updateUnsafe (a, i, tab i)
+                          val () = subLim := i +? 1
+                          val () = updateLim := i +? 1
+                       in
+                          loop (i +? 1)
+                       end
+            val () = loop 0
+            val () = finish ()
+            val () = updateLim := 0
+         in
+            S.fromArray a
+         end 
+      fun generate (n, f) =
+         generate' (fromIntForLength n, 
+                    fn {sub, update} => 
+                    let 
+                       val (tab, finish) =
+                          f {sub = unwrap1 sub, update = unwrap2 update}
+                    in
+                       (wrap1 tab, finish)
+                    end)
+
       fun unfoldi' (n, b, f) =
          let
             val a = arrayUninit' n
             fun loop (i, b)  =
                if i >= n
-                  then ()
+                  then b
                else
                   let
                      val (x, b') = f (i, b)
-                     val _ = Array.updateUnsafe (a, i, x)
+                     val () = Array.updateUnsafe (a, i, x)
                   in
                      loop (i +? 1, b')
                   end
-            val _ = loop (0, b)
+            val b = loop (0, b)
          in
-            S.fromArray a
+            (S.fromArray a, b)
          end
       fun unfoldi (n, b, f) = unfoldi' (fromIntForLength n, b, wrap2 f)
       fun unfold (n, b, f) = unfoldi (n, b, f o #2)
 
       fun tabulate' (n, f) =
-         unfoldi' (n, (), fn (i, ()) => (f i, ()))
+         #1 (unfoldi' (n, (), fn (i, ()) => (f i, ())))
       fun tabulate (n, f) =
-         unfoldi (n, (), fn (i, ()) => (f i, ()))
+         #1 (unfoldi (n, (), fn (i, ()) => (f i, ())))
 
       fun new' (n, x) = tabulate' (n, fn _ => x)
       fun new (n, x) = tabulate (n, fn _ => x)
@@ -328,13 +370,13 @@ functor Sequence (S: sig
                      val l2 = length' sl2
                      val n = (l1 + l2) handle Overflow => raise Size
                   in
-                     unfoldi' (n, (0, sl1),
-                              fn (_, (i, sl)) =>
-                                  if SeqIndex.< (i, length' sl)
-                                     then (unsafeSub' (sl, i), 
-                                           (i +? 1, sl))
-                                  else (unsafeSub' (sl2, 0), 
-                                        (1, sl2)))
+                     #1 (unfoldi' 
+                         (n, (0, sl1), fn (_, (i, sl)) =>
+                          if SeqIndex.< (i, length' sl)
+                             then (unsafeSub' (sl, i), 
+                                   (i +? 1, sl))
+                             else (unsafeSub' (sl2, 0), 
+                                   (1, sl2))))
                   end
             fun concat (sls: 'a slice list): 'a sequence =
                case sls of
@@ -346,18 +388,18 @@ functor Sequence (S: sig
                            (List.foldl (fn (sl, s) => s +? length' sl) 0 sls')
                            handle Overflow => raise Size
                      in
-                        unfoldi' (n, (0, sl, sls),
-                                  fn (_, ac) =>
-                                  let
-                                     fun loop (i, sl, sls) =
-                                        if SeqIndex.< (i, length' sl)
-                                          then (unsafeSub' (sl, i), 
-                                                (i +? 1, sl, sls))
-                                       else case sls of
-                                               [] => raise Fail "Sequence.Slice.concat"
-                                             | sl :: sls => loop (0, sl, sls)
-                                 in loop ac
-                                 end)
+                        #1 (unfoldi' 
+                            (n, (0, sl, sls), fn (_, ac) =>
+                             let
+                                fun loop (i, sl, sls) =
+                                   if SeqIndex.< (i, length' sl)
+                                      then (unsafeSub' (sl, i), 
+                                            (i +? 1, sl, sls))
+                                      else case sls of
+                                         [] => raise Fail "Sequence.Slice.concat"
+                                       | sl :: sls => loop (0, sl, sls)
+                             in loop ac
+                             end))
                      end
             fun concatWith (sep: 'a sequence) (sls: 'a slice list): 'a sequence =
                let val sep = full sep
