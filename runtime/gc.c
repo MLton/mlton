@@ -880,11 +880,11 @@ static inline bool isInNursery (GC_state s, pointer p) {
         return s->nursery <= p and p < s->frontier;
 }
 
-#if ASSERT
-
 static inline bool isInOldGen (GC_state s, pointer p) {
         return s->heap.start <= p and p < s->heap.start + s->oldGenSize;
 }
+
+#if ASSERT
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
         return (isInOldGen (s, p) or isInNursery (s, p));
@@ -2094,6 +2094,13 @@ done:
         return res;
 }
 
+static inline void markIntergenerational (GC_state s, Pointer *pp) {
+        if (s->mutatorMarksCards
+                and isInOldGen (s, (pointer)pp)
+                and isInNursery (s, *pp))
+                markCard (s, (pointer)pp);
+}
+
 static inline void maybeSharePointer (GC_state s,
                                         Pointer *pp, 
                                         Bool shouldHashCons) {
@@ -2103,6 +2110,7 @@ static inline void maybeSharePointer (GC_state s,
                 fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
                                 (uint)pp, (uint)*pp);
         *pp = hashCons (s, *pp, FALSE); 
+        markIntergenerational (s, pp);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2377,6 +2385,8 @@ ret:
                 todo += index * POINTER_SIZE;
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 goto markNextInNormal;
         } else if (ARRAY_TAG == tag) {
                 arrayIndex = arrayCounter (cur);
@@ -2386,6 +2396,8 @@ ret:
                 todo += numNonPointers + index * POINTER_SIZE;
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 goto markNextInArray;
         } else {
                 assert (STACK_TAG == tag);
@@ -2396,6 +2408,8 @@ ret:
                 todo = top - layout->numBytes + frameOffsets [index + 1];
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 index++;
                 goto markInFrame;
         }
