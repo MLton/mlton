@@ -4,12 +4,12 @@
 #define DEBUG FALSE
 #endif
 
-static struct utsname utsname;
+static struct utsname mlton_utsname;
 
 Int Posix_ProcEnv_Uname_uname () {
         Int res;
         
-        res = uname (&utsname);
+        res = uname (&mlton_utsname);
         if (DEBUG)
                 fprintf (stderr, "%d = Posix_ProcEnv_Uname_uname ()\n",
                                 (int)res);
@@ -17,21 +17,21 @@ Int Posix_ProcEnv_Uname_uname () {
 }
 
 Cstring Posix_ProcEnv_Uname_sysname () {
-        return (Cstring)utsname.sysname;
+        return (Cstring)mlton_utsname.sysname;
 }
 
 Cstring Posix_ProcEnv_Uname_nodename () {
-        return (Cstring)utsname.nodename;
+        return (Cstring)mlton_utsname.nodename;
 }
 
 Cstring Posix_ProcEnv_Uname_release () {
-        return (Cstring)utsname.release;
+        return (Cstring)mlton_utsname.release;
 }
 
 Cstring Posix_ProcEnv_Uname_version () {
-        return (Cstring)utsname.version;
+        return (Cstring)mlton_utsname.version;
 }
 
 Cstring Posix_ProcEnv_Uname_machine () {
-        return (Cstring)utsname.machine;
+        return (Cstring)mlton_utsname.machine;
 }

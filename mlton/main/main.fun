@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -645,6 +645,7 @@ fun commandLine (args: string list): unit =
          case targetOS of
             Darwin => ()
           | FreeBSD => ()
+          | HPUX => ()
           | Linux => ()
           | NetBSD => ()
           | OpenBSD => ()
