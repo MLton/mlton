@@ -65,6 +65,20 @@ void markCard (GC_state s, pointer p) {
     *(pointerToCardMapAddr (s, p)) = 0x1;
 }
 
+void markIntergenerationalPointer (GC_state s, pointer *pp) {
+  if (s->mutatorMarksCards
+      and isPointerInOldGen (s, (pointer)pp)
+      and isPointerInNursery (s, *pp))
+    markCard (s, (pointer)pp);
+}
+
+void markIntergenerationalObjptr (GC_state s, objptr *opp) {
+  if (s->mutatorMarksCards
+      and isPointerInOldGen (s, (pointer)opp)
+      and isObjptrInNursery (s, *opp))
+    markCard (s, (pointer)opp);
+}
+
 void setCardMapAbsolute (GC_state s) {
   unless (s->mutatorMarksCards)
     return;

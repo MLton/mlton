@@ -63,6 +63,8 @@ static inline pointer pointerToCardMapAddr (GC_state s, pointer p);
 
 static inline bool isCardMarked (GC_state s, pointer p);
 static inline void markCard (GC_state s, pointer p);
+static inline void markIntergenerationalPointer (GC_state s, pointer *pp);
+static inline void markIntergenerationalObjptr (GC_state s, objptr *opp);
 
 static inline void setCardMapAbsolute (GC_state s);
 static inline pointer getCrossMapCardStart (GC_state s, pointer p);

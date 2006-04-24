@@ -236,7 +236,7 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
   pointer res;
 
   if (DEBUG_SHARE)
-    fprintf (stderr, "hashCons ("FMTPTR")\n", (uintptr_t)object);
+    fprintf (stderr, "hashConsPointer ("FMTPTR")\n", (uintptr_t)object);
   t = s->objectHashTable;
   header = getHeader (object);
   splitHeader(s, header, &tag, &hasIdentity, &bytesNonObjptrs, &numObjptrs);
@@ -281,10 +281,11 @@ void shareObjptr (GC_state s, objptr *opp) {
   
   p = objptrToPointer (*opp, s->heap.start);
   if (DEBUG_SHARE)
-    fprintf (stderr, "shareObjptrMaybe  opp = "FMTPTR"  *opp = "FMTOBJPTR"\n",
+    fprintf (stderr, "shareObjptr  opp = "FMTPTR"  *opp = "FMTOBJPTR"\n",
              (uintptr_t)opp, *opp);
   p = hashConsPointer (s, p, FALSE);
   *opp = pointerToObjptr (p, s->heap.start);
+  markIntergenerationalObjptr (s, opp);
 }
 
 void printBytesHashConsedMessage (GC_state s, uintmax_t total) {
