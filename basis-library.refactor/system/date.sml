@@ -98,7 +98,7 @@ structure Date :> DATE =
         ; Tm.setYDay tm_yday
         ; Tm.setYear tm_year)
         
-    fun mktime_ (t: tmoz): C_Time.t = (setTmBuf t; Prim.mkTime ())
+    fun mktime_ (t: tmoz): C_Time.t = C_Errno.check (setTmBuf t; Prim.mkTime ())
 
     (* The offset to add to local time to get UTC: positive West of UTC *)
     val localoffset: int = C_Double.round (Prim.localOffset ())

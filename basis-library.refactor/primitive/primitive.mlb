@@ -45,6 +45,7 @@ in
       ../config/objptr/$(OBJPTR_REP)
       ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
+      ../config/c/errno.sml
       ../config/c/misc/$(CTYPES)
    end end
    prim-seq.sml

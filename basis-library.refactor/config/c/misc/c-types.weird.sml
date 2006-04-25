@@ -125,4 +125,3 @@ structure C_MPLimb = struct open Word16 type t = word end
 functor C_MPLimb_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
 
 
-structure C_Errno = struct type 'a t = 'a end

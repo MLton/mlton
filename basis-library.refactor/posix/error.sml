@@ -178,8 +178,8 @@ structure PosixError: POSIX_ERROR_EXTRA =
 
       exception SysErr of string * syserror option
 
-      val toWord = SysWord.fromInt
-      val fromWord = SysWord.toInt
+      val toWord = SysWord.fromLargeInt o C_Int.toLarge
+      val fromWord = C_Int.fromLarge o SysWord.toLargeInt
 
       val cleared : syserror = 0
 
@@ -204,41 +204,42 @@ structure PosixError: POSIX_ERROR_EXTRA =
             NONE => NONE
           | SOME (n, _) => SOME n
 
-      fun errorMsg (n: int) =
+      fun errorMsg (n: C_Int.t) =
          let
             val cs = strError n
          in
-            if cs = Primitive.Pointer.null
+            if Primitive.MLton.Pointer.isNull cs
                then "Unknown error"
-            else COld.CS.toString cs
+            else CUtil.C_String.toString cs
          end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
 
       structure SysCall =
          struct
-            structure Thread = Primitive.Thread
+            structure Thread = Primitive.MLton.Thread
 
             val blocker: (unit -> (unit -> unit)) ref =
                ref (fn () => (fn () => ()))
                (* ref (fn () => raise Fail "blocker not installed") *)
             val restartFlag = ref true
 
-            val syscallErr: {clear: bool, restart: bool} * 
-                            (unit -> {return: int,
-                                      post: unit -> 'a,
-                                      handlers: (syserror * (unit -> 'a)) list}) -> 'a =
-               fn ({clear, restart}, f) =>
+            val syscallErr: {clear: bool, restart: bool, errVal: ''a} * 
+                            (unit -> {return: ''a C_Errno.t,
+                                      post: ''a -> 'b,
+                                      handlers: (syserror * (unit -> 'b)) list}) -> 'b =
+               fn ({clear, restart, errVal}, f) =>
                let
                   fun call (err: {errno: syserror,
-                                  handlers: (syserror * (unit -> 'a)) list} -> 'a): 'a =
+                                  handlers: (syserror * (unit -> 'b)) list} -> 'b): 'b =
                      let
                         val () = Thread.atomicBegin ()
                         val () = if clear then clearErrno () else ()
                         val {return, post, handlers} = 
                            f () handle exn => (Thread.atomicEnd (); raise exn)
+                        val return = C_Errno.check return
                      in
-                        if ~1 = return
+                        if errVal = return
                            then
                               (* Must getErrno () in the critical section. *)
                               let
@@ -247,24 +248,24 @@ structure PosixError: POSIX_ERROR_EXTRA =
                               in
                                  err {errno = e, handlers = handlers}
                               end
-                           else DynamicWind.wind (post, Thread.atomicEnd)
+                           else DynamicWind.wind (fn () => post return , Thread.atomicEnd)
                      end
-                  fun err {default: unit -> 'a, 
+                  fun err {default: unit -> 'b, 
                            errno: syserror, 
-                           handlers: (syserror * (unit -> 'a)) list}: 'a =
+                           handlers: (syserror * (unit -> 'b)) list}: 'b =
                      case List.find (fn (e',_) => errno = e') handlers of
                         NONE => default ()
                       | SOME (_, handler) => handler ()
                   fun errBlocked {errno: syserror,
-                                  handlers: (syserror * (unit -> 'a)) list}: 'a =
+                                  handlers: (syserror * (unit -> 'b)) list}: 'b =
                      err {default = fn () => raiseSys errno,
                           errno = errno, handlers = handlers}
                   fun errUnblocked
                      {errno: syserror,
-                      handlers: (syserror * (unit -> 'a)) list}: 'a =
+                      handlers: (syserror * (unit -> 'b)) list}: 'b =
                      err {default = fn () =>
                           if restart andalso errno = intr andalso !restartFlag
-                             then if Thread.canHandle () = 0
+                             then if Thread.canHandle () = 0w0
                                      then call errUnblocked
                                      else let val finish = !blocker ()
                                           in 
@@ -278,33 +279,49 @@ structure PosixError: POSIX_ERROR_EXTRA =
                end
 
             local
-               val simpleResult' = fn ({restart}, f) =>
+               val simpleResultAux = fn ({restart, errVal}, f) =>
                   syscallErr 
-                  ({clear = false, restart = restart}, fn () => 
+                  ({clear = false, restart = restart, errVal = errVal}, fn () => 
                    let val return = f () 
-                   in {return = return, post = fn () => return, handlers = []}
+                   in {return = return, 
+                       post = fn ret => ret, 
+                       handlers = []}
                    end)
             in
                val simpleResultRestart = fn f =>
-                  simpleResult' ({restart = true}, f)
+                  simpleResultAux ({restart = true, errVal = C_Int.fromInt ~1}, f)
                val simpleResult = fn f =>
-                  simpleResult' ({restart = false}, f)
+                  simpleResultAux ({restart = false, errVal = C_Int.fromInt ~1}, f)
+
+               val simpleResultRestart' = fn ({errVal}, f) =>
+                  simpleResultAux ({restart = true, errVal = errVal}, f)
+               val simpleResult' = fn ({errVal}, f) =>
+                  simpleResultAux ({restart = false, errVal = errVal}, f)
             end
          
             val simpleRestart = ignore o simpleResultRestart
             val simple = ignore o simpleResult
 
+            val simpleRestart' = fn ({errVal}, f) => 
+               ignore (simpleResultRestart' ({errVal = errVal}, f))
+            val simple' = fn ({errVal}, f) => 
+               ignore (simpleResult' ({errVal = errVal}, f))
+
+            val syscallRestart' = fn ({errVal}, f) => 
+               syscallErr 
+               ({clear = false, restart = true, errVal = errVal}, fn () => 
+                let val (return, post) = f () 
+                in {return = return, post = post, handlers = []}
+                end)
+            val syscall' = fn ({errVal}, f) =>
+               syscallErr 
+               ({clear = false, restart = false, errVal = errVal}, fn () => 
+                let val (return, post) = f () 
+                in {return = return, post = post, handlers = []}
+                end)
             val syscallRestart = fn f => 
-               syscallErr 
-               ({clear = false, restart = true}, fn () => 
-                let val (return, post) = f () 
-                in {return = return, post = post, handlers = []}
-                end)
-            val syscall = fn f =>
-               syscallErr 
-               ({clear = false, restart = false}, fn () => 
-                let val (return, post) = f () 
-                in {return = return, post = post, handlers = []}
-                end)
+               syscallRestart' ({errVal = C_Int.fromInt ~1}, f)
+            val syscall = fn f => 
+               syscall' ({errVal = C_Int.fromInt ~1}, f)
          end
    end

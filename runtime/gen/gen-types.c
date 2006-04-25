@@ -267,7 +267,6 @@ static char* cTypesHSuffix[] = {
 
 static char* cTypesSMLSuffix[] = {
   "",
-  "structure C_Errno = struct type 'a t = 'a end",
   NULL
 };
 
