@@ -9,6 +9,7 @@
 all: ckit/README.mlton
 
 ckit/README.mlton: ckit.tgz ckit.patch
+	rm -rf ckit
 	gzip -dc ckit.tgz | tar xf -
 	chmod -R a+r ckit
 	chmod -R g-s ckit
