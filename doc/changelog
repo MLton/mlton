@@ -1,9 +1,10 @@
 Here are the changes since version 20051202.
 
 * 2006-04-25
+  - Ported to HPPA-HPUX.
   - Fixed PackReal{,32,64}{Big,Little} to follow the Basis Library
     specification. 
-	
+
 * 2006-04-19
   - Fixed a bug in MLton.share that could cause a segfault.
 
