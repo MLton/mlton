@@ -24,15 +24,19 @@ val (sub, up) =
       then (subVec, update)
    else (subVecRev, updateRev)
 
-fun check (size, i) =
-   if Int.< (i, 0) orelse Int.> (i, size -? bytesPerElem) then
-      raise Subscript
-   else
-      ()
+fun offset (size, i) =
+   let
+      val off = Int.* (bytesPerElem, i)
+   in
+      if Int.< (i, 0) orelse Int.> (off, size -? bytesPerElem) 
+         then raise Subscript
+         else off
+   end
+   handle Overflow => raise Subscript
 
 fun update (a, i, r) =
    let
-      val () = check (Word8Array.length a, i)
+      val i = offset (Word8Array.length a, i)
       val a = Word8Array.toPoly a
    in
       up (a, i, r)
@@ -48,7 +52,7 @@ end
 
 fun subVec (v, i) =
    let
-      val () = check (Word8Vector.length v, i)
+      val i = offset (Word8Vector.length v, i)
       val v = Word8Vector.toPoly v
    in
       sub (v, i)
