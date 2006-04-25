@@ -185,23 +185,6 @@ void MLton_bug (Pointer msg) __attribute__ ((noreturn));
 extern Bool MLton_Platform_CygwinUseMmap;
 
 /* ------------------------------------------------- */
-/*                     PackReal                      */
-/* ------------------------------------------------- */
-
-Real32_t PackReal32_subArr (Array(Word8_t) v, Int offset);
-Real32_t PackReal32_subArrRev (Array(Word8_t) v, Int offset);
-Real64_t PackReal64_subArr (Array(Word8_t) v, Int offset);
-Real64_t PackReal64_subArrRev (Array(Word8_t) v, Int offset);
-Real32_t PackReal32_subVec (Vector(Word8_t) v, Int offset);
-Real32_t PackReal32_subVecRev (Vector(Word8_t) v, Int offset);
-Real64_t PackReal64_subVec (Vector(Word8_t) v, Int offset);
-Real64_t PackReal64_subVecRev (Vector(Word8_t) v, Int offset);
-void PackReal32_update (Array(Word8_t) a, Int offset, Real32_t r);
-void PackReal32_updateRev (Array(Word8_t) a, Int offset, Real32_t r);
-void PackReal64_update (Array(Word8_t) a, Int offset, Real64_t r);
-void PackReal64_updateRev (Array(Word8_t) a, Int offset, Real64_t r);
-
-/* ------------------------------------------------- */
 /*                     PackWord                      */
 /* ------------------------------------------------- */
 

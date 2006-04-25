@@ -1,11 +1,11 @@
 #include "platform.h"
 
-Real64_t Real64_modf (Real64_t x, Ref(Real64_t) exp);
-Real64_t Real64_modf (Real64_t x, Ref(Real64_t) exp) {
-  return modf (x, (Real64_t*)exp);
+#define binaryRealRealRef(g, h)                                 \
+Real64_t Real64_##g (Real64_t x, Ref(Real64_t) yp) {            \
+  return h (x, (Real64_t*)yp);                                  \
+}                                                               \
+Real32_t Real32_##g (Real32_t x, Ref(Real32_t) yp) {            \
+  return h##f (x, (Real32_t*)yp);                               \
 }
-
-Real32_t Real32_modf (Real32_t x, Ref(Real32_t) exp);
-Real32_t Real32_modf (Real32_t x, Ref(Real32_t) exp) {
-  return modff (x, (Real32_t*)exp);
-}
+binaryRealRealRef(modf, modf)
+#undef binaryRealRealRef

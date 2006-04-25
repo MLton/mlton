@@ -13,6 +13,7 @@ signature PRIM_REAL =
       type real
       type t = real
 
+      val realSize: Primitive.Int32.int
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
 
@@ -45,6 +46,7 @@ signature PRIM_REAL =
       val + : real * real -> real
       val - : real * real -> real
       val / : real * real -> real
+      val ~ : real -> real
       val < : real * real -> bool
       val <= : real * real -> bool
       val == : real * real -> bool
@@ -62,7 +64,6 @@ signature PRIM_REAL =
       val round: real -> real
       val signBit: real -> C_Int.t
       val strto: Primitive.NullString8.t -> real
-      val ~ : real -> real
 
       (* Integer to float; depends on rounding mode. *)
       val fromInt8Unsafe: Primitive.Int8.int -> real
@@ -93,6 +94,7 @@ structure Real32 : PRIM_REAL  =
    struct
       open Real32
          
+      val realSize : Int32.int = 32
       val precision : Int32.int = 24
       val radix : Int32.int = 2
 
@@ -174,6 +176,7 @@ structure Real64 : PRIM_REAL =
    struct
       open Real64
 
+      val realSize : Int32.int = 64
       val precision : Int32.int = 53
       val radix : Int32.int = 2
          

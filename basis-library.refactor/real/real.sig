@@ -27,6 +27,7 @@ signature PRE_REAL =
       val minNormalPos: real
       val minPos: real
 
+      val realSize: Primitive.Int32.int
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
 
@@ -132,4 +133,10 @@ signature REAL =
       val toManExp: real -> {man: real, exp: int}
       val toString: real -> string
       val unordered: real * real -> bool
+   end
+
+signature REAL_EXTRA =
+   sig
+      include REAL
+      val realSize: Int.int
    end

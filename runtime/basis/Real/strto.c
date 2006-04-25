@@ -3,7 +3,6 @@
 Real32_t gdtoa_strtof (char *s, char **endptr);
 Real64_t gdtoa_strtod (char *s, char **endptr);
 
-Real32_t Real32_strto (NullString8_t s);
 Real32_t Real32_strto (NullString8_t s) {
   char *endptr;
   Real32_t res;
@@ -13,10 +12,9 @@ Real32_t Real32_strto (NullString8_t s) {
   return res;
 }
 
-Real64_t Real64_strto (NullString8_t s);
 Real64_t Real64_strto (NullString8_t s) {
   char *endptr;
-  Real64 res;
+  Real64_t res;
   
   res = gdtoa_strtod ((char*)s, &endptr);
   assert (NULL != endptr);

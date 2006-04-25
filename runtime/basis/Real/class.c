@@ -1,7 +1,5 @@
 #include "platform.h"
 
-C_Int_t Real32_class (Real32_t f);
-
 #if HAS_FPCLASSIFY
 
 C_Int_t Real32_class (Real32_t f) {
@@ -55,8 +53,6 @@ C_Int_t Real32_class (Real32_t f) {
 
 #endif
 
-
-C_Int_t Real64_class (Real64_t d);
 
 #if HAS_FPCLASSIFY
 

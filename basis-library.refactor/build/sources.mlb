@@ -172,7 +172,7 @@ in
    ../real/real.sig
    ../real/real.sml
    ../real/pack-real.sig
-   (* ../real/pack-real.sml *)
+   ../real/pack-real.sml
    local 
       ../config/bind/real-top.sml 
    in ann "forceUsed" in

@@ -25,32 +25,6 @@ structure LargeWord = Word64
 structure Primitive =
    struct
 
-      structure PackReal32 =
-         struct
-            type real = Real32.real
-               
-            val subVec = _import "PackReal32_subVec": Word8.word vector * int -> real;
-            val subVecRev =
-               _import "PackReal32_subVecRev": Word8.word vector * int -> real;
-            val update =
-               _import "PackReal32_update": Word8.word array * int * real -> unit;
-            val updateRev =
-               _import "PackReal32_updateRev": Word8.word array * int * real -> unit;
-         end
-
-      structure PackReal64 =
-         struct
-            type real = Real64.real
-               
-            val subVec = _import "PackReal64_subVec": Word8.word vector * int -> real;
-            val subVecRev =
-               _import "PackReal64_subVecRev": Word8.word vector * int -> real;
-            val update =
-               _import "PackReal64_update": Word8.word array * int * real -> unit;
-            val updateRev =
-               _import "PackReal64_updateRev": Word8.word array * int * real -> unit;
-         end
-
       structure TextIO =
          struct
             val bufSize = _command_line_const "TextIO.bufSize": int = 4096;

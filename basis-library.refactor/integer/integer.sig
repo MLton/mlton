@@ -63,6 +63,11 @@ signature PRE_INTEGER_EXTRA =
       val ~>> : int * Primitive.Word32.word -> int
       val >> : int * Primitive.Word32.word -> int
       val xorb: int * int -> int
+
+      val ltu: int * int -> bool
+      val leu: int * int -> bool
+      val gtu: int * int -> bool
+      val geu: int * int -> bool
    end
 
 signature INTEGER =
@@ -103,4 +108,9 @@ signature INTEGER_EXTRA =
       val ~>> : int * Word.word -> int
       val >> : int * Word.word -> int
       val xorb: int * int -> int
+
+      val ltu: int * int -> bool
+      val leu: int * int -> bool
+      val gtu: int * int -> bool
+      val geu: int * int -> bool
    end

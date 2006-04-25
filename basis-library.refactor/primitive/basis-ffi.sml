@@ -204,6 +204,24 @@ val POLLOUT = _const "OS_IO_POLLOUT" : C_Short.t;
 val POLLPRI = _const "OS_IO_POLLPRI" : C_Short.t;
 end
 end
+structure PackReal32 = 
+struct
+val subArr = _import "PackReal32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
+val subArrRev = _import "PackReal32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
+val subVec = _import "PackReal32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
+val subVecRev = _import "PackReal32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
+val update = _import "PackReal32_update" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
+val updateRev = _import "PackReal32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
+end
+structure PackReal64 = 
+struct
+val subArr = _import "PackReal64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
+val subArrRev = _import "PackReal64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
+val subVec = _import "PackReal64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
+val subVecRev = _import "PackReal64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
+val update = _import "PackReal64_update" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
+val updateRev = _import "PackReal64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
+end
 structure Posix = 
 struct
 structure Error = 
@@ -893,6 +911,78 @@ val VSUSP = _const "Posix_TTY_V_VSUSP" : C_Int.t;
 val VTIME = _const "Posix_TTY_V_VTIME" : C_Int.t;
 end
 end
+end
+structure Real32 = 
+struct
+val abs = _import "Real32_abs" : Real32.t -> Real32.t;
+val class = _import "Real32_class" : Real32.t -> C_Int.t;
+val frexp = _import "Real32_frexp" : Real32.t * (C_Int.t) ref -> Real32.t;
+val gdtoa = _import "Real32_gdtoa" : Real32.t * C_Int.t * C_Int.t * (C_Int.t) ref -> C_String.t;
+val ldexp = _import "Real32_ldexp" : Real32.t * C_Int.t -> Real32.t;
+structure Math = 
+struct
+val acos = _import "Real32_Math_acos" : Real32.t -> Real32.t;
+val asin = _import "Real32_Math_asin" : Real32.t -> Real32.t;
+val atan = _import "Real32_Math_atan" : Real32.t -> Real32.t;
+val atan2 = _import "Real32_Math_atan2" : Real32.t * Real32.t -> Real32.t;
+val cos = _import "Real32_Math_cos" : Real32.t -> Real32.t;
+val cosh = _import "Real32_Math_cosh" : Real32.t -> Real32.t;
+val (eGet, eSet) = _symbol "Real32_Math_e": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val exp = _import "Real32_Math_exp" : Real32.t -> Real32.t;
+val ln = _import "Real32_Math_ln" : Real32.t -> Real32.t;
+val log10 = _import "Real32_Math_log10" : Real32.t -> Real32.t;
+val (piGet, piSet) = _symbol "Real32_Math_pi": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val pow = _import "Real32_Math_pow" : Real32.t * Real32.t -> Real32.t;
+val sin = _import "Real32_Math_sin" : Real32.t -> Real32.t;
+val sinh = _import "Real32_Math_sinh" : Real32.t -> Real32.t;
+val sqrt = _import "Real32_Math_sqrt" : Real32.t -> Real32.t;
+val tan = _import "Real32_Math_tan" : Real32.t -> Real32.t;
+val tanh = _import "Real32_Math_tanh" : Real32.t -> Real32.t;
+end
+val (maxFiniteGet, maxFiniteSet) = _symbol "Real32_maxFinite": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val (minNormalPosGet, minNormalPosSet) = _symbol "Real32_minNormalPos": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val (minPosGet, minPosSet) = _symbol "Real32_minPos": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val modf = _import "Real32_modf" : Real32.t * (Real32.t) ref -> Real32.t;
+val nextAfter = _import "Real32_nextAfter" : Real32.t * Real32.t -> Real32.t;
+val round = _import "Real32_round" : Real32.t -> Real32.t;
+val signBit = _import "Real32_signBit" : Real32.t -> C_Int.t;
+val strto = _import "Real32_strto" : NullString8.t -> Real32.t;
+end
+structure Real64 = 
+struct
+val abs = _import "Real64_abs" : Real64.t -> Real64.t;
+val class = _import "Real64_class" : Real64.t -> C_Int.t;
+val frexp = _import "Real64_frexp" : Real64.t * (C_Int.t) ref -> Real64.t;
+val gdtoa = _import "Real64_gdtoa" : Real64.t * C_Int.t * C_Int.t * (C_Int.t) ref -> C_String.t;
+val ldexp = _import "Real64_ldexp" : Real64.t * C_Int.t -> Real64.t;
+structure Math = 
+struct
+val acos = _import "Real64_Math_acos" : Real64.t -> Real64.t;
+val asin = _import "Real64_Math_asin" : Real64.t -> Real64.t;
+val atan = _import "Real64_Math_atan" : Real64.t -> Real64.t;
+val atan2 = _import "Real64_Math_atan2" : Real64.t * Real64.t -> Real64.t;
+val cos = _import "Real64_Math_cos" : Real64.t -> Real64.t;
+val cosh = _import "Real64_Math_cosh" : Real64.t -> Real64.t;
+val (eGet, eSet) = _symbol "Real64_Math_e": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val exp = _import "Real64_Math_exp" : Real64.t -> Real64.t;
+val ln = _import "Real64_Math_ln" : Real64.t -> Real64.t;
+val log10 = _import "Real64_Math_log10" : Real64.t -> Real64.t;
+val (piGet, piSet) = _symbol "Real64_Math_pi": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val pow = _import "Real64_Math_pow" : Real64.t * Real64.t -> Real64.t;
+val sin = _import "Real64_Math_sin" : Real64.t -> Real64.t;
+val sinh = _import "Real64_Math_sinh" : Real64.t -> Real64.t;
+val sqrt = _import "Real64_Math_sqrt" : Real64.t -> Real64.t;
+val tan = _import "Real64_Math_tan" : Real64.t -> Real64.t;
+val tanh = _import "Real64_Math_tanh" : Real64.t -> Real64.t;
+end
+val (maxFiniteGet, maxFiniteSet) = _symbol "Real64_maxFinite": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val (minNormalPosGet, minNormalPosSet) = _symbol "Real64_minNormalPos": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val (minPosGet, minPosSet) = _symbol "Real64_minPos": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val modf = _import "Real64_modf" : Real64.t * (Real64.t) ref -> Real64.t;
+val nextAfter = _import "Real64_nextAfter" : Real64.t * Real64.t -> Real64.t;
+val round = _import "Real64_round" : Real64.t -> Real64.t;
+val signBit = _import "Real64_signBit" : Real64.t -> C_Int.t;
+val strto = _import "Real64_strto" : NullString8.t -> Real64.t;
 end
 structure Socket = 
 struct

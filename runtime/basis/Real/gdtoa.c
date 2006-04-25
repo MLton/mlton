@@ -6,7 +6,6 @@
 #endif
 
 /* This code is patterned on g_dfmt from the gdtoa sources. */
-C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt);
 C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt) {
   ULong bits[1];
   int ex;
@@ -40,7 +39,6 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   return (C_String_t)result;
 }
 
-C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt);
 C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt) {
   ULong bits[2];
   int ex;

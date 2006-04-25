@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Real (R: PRE_REAL): REAL =
+functor Real (R: PRE_REAL): REAL_EXTRA =
    struct
       structure MLton = Primitive.MLton
       structure Prim = R
@@ -46,6 +46,7 @@ functor Real (R: PRE_REAL): REAL =
          val minNormalPos = minNormalPos
          val minPos = minPos
 
+         val realSize = Primitive.Int32.toInt realSize
          val precision = Primitive.Int32.toInt precision
          val radix = Primitive.Int32.toInt radix
 

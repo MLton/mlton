@@ -1,8 +1,5 @@
 #include "platform.h"
 
-C_Int_t Real32_signBit (Real32_t f);
-C_Int_t Real64_signBit (Real64_t d);
-
 #if HAS_SIGNBIT
 
 C_Int_t Real32_signBit (Real32_t f) {
