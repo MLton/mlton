@@ -17,12 +17,12 @@ structure OS =
                          val fromFD: C_Fd.t -> iodesc
                          val toFD: iodesc -> C_Fd.t
                       end = 
-                      struct
-                         type iodesc = C_Fd.t
+         struct
+            type iodesc = C_Fd.t
 
-                         val fromFD = fn z => z
-                         val toFD = fn z => z
-                      end
+            val fromFD = fn z => z
+            val toFD = fn z => z
+         end
    end
 
 structure PreOS = OS

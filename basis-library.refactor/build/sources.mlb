@@ -196,13 +196,12 @@ in
    ../util/cleaner.sig
    ../util/cleaner.sml
 
+   ../system/pre-os.sml
+   ../system/time.sig
+   ../system/time.sml
+   ../system/date.sig
+   ../system/date.sml
 (*
-      ../../system/pre-os.sml
-      ../../system/time.sig
-      ../../system/time.sml
-      ../../system/date.sig
-      ../../system/date.sml
-
       ../../io/io.sig
       ../../io/io.sml
       ../../io/prim-io.sig
