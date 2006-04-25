@@ -67,6 +67,20 @@ fun printWord64 w =
       printString s
       ; printString "\n"
    end
+fun printReal32 r = 
+   let
+      val s = Real32.fmt StringCvt.EXACT r
+   in
+      printString s
+      ; printString "\n"
+   end
+fun printReal64 r = 
+   let
+      val s = Real64.fmt StringCvt.EXACT r
+   in
+      printString s
+      ; printString "\n"
+   end
 
 
 
@@ -472,3 +486,11 @@ val _ = (printString "Word32.fromLargeInt (Int64.toLarge Int64.maxInt') = \n"
 val _ = (printString "Word64.fromLargeInt (Int64.toLarge Int64.maxInt') = \n"
          ; printWord64 (Word64.fromLargeInt (Int64.toLarge Int64.maxInt')))
 
+val _ = (printString "Real32.fromInt 1 = \n"
+         ; printReal32 (Real32.fromInt 1))
+val _ = (printString "Real64.fromInt 1 = \n"
+         ; printReal64 (Real64.fromInt 1))
+val _ = (printString "Real32.fromLarge 0.9 = \n"
+         ; printReal32 (Real32.fromLarge IEEEReal.TO_NEAREST 0.9))
+val _ = (printString "Real64.fromLarge 0.9 = \n"
+         ; printReal64 (Real64.fromLarge IEEEReal.TO_NEAREST 0.9))

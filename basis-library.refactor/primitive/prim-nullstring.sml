@@ -13,15 +13,13 @@ structure Primitive  = struct
 open Primitive
 
 (* NullString is used for strings that must be passed to C and hence must be
- * null terminated.  After the Primitive structure is defined,
- * NullString.fromString is replaced by a version that checks that the string
- * is indeed null terminated.  See the bottom of this file.
+ * null terminated.
  *)
 structure NullString8 :>
    sig
       type t
 
-      val empty: String8.string
+      val empty: t
       val fromString: String8.string -> t
    end =
    struct

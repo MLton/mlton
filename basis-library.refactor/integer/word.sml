@@ -29,6 +29,35 @@ fun ~>> (w, n) =
 fun rol (w, n) = W.rol (w, Primitive.Word32.fromWord n)
 fun ror (w, n) = W.ror (w, Primitive.Word32.fromWord n)
 
+local
+   (* Allocate a buffer large enough to hold any formatted word in any radix.
+    * The most that will be required is for maxWord in binary.
+    *)
+   val maxNumDigits = wordSize
+   val oneBuf = One.make (fn () => CharArray.array (maxNumDigits, #"\000"))
+in
+   fun fmt radix (w: word): string =
+      One.use
+      (oneBuf, fn buf =>
+      let
+         val radix = fromInt (StringCvt.radixToInt radix)
+         fun loop (q, i: Int.int) =
+            let
+               val _ =
+                  CharArray.update
+                  (buf, i, StringCvt.digitToChar (toInt (q mod radix)))
+               val q = q div radix
+            in
+               if q = zero
+                  then CharArraySlice.vector
+                       (CharArraySlice.slice (buf, i, NONE))
+                  else loop (q, Int.- (i, 1))
+            end
+      in
+         loop (w, Int.- (maxNumDigits, 1))
+      end)
+end
+
 fun fmt radix (w: word): string =
    let val radix = fromInt (StringCvt.radixToInt radix)
       fun loop (q, chars) =

@@ -25,7 +25,7 @@ HEADER_MAPS = header-word32.map header-word64.map
 SEQ_INDEX_MAPS = seqindex-int32.map seqindex-int64.map 
 CTYPES_MAPS = c-types.m32.map c-types.m64.map c-types.weird.map
 DEFAULT_CHAR_MAPS = default-char8.map
-DEFAULT_INT_MAPS = default-int32.map default-int64.map default-intinf.map 
+DEFAULT_INT_MAPS = default-int32.map default-int64.map default-int-inf.map 
 DEFAULT_REAL_MAPS = default-real32.map default-real64.map
 DEFAULT_WORD_MAPS = default-word32.map default-word64.map
 

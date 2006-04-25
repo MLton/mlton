@@ -34,7 +34,7 @@ in
    local
       local 
          ../config/bind/int-prim.sml 
-         ../config/bind/intinf-prim.sml 
+         ../config/bind/int-inf-prim.sml 
          ../config/bind/word-prim.sml 
       in ann "forceUsed" in
          ../config/default/$(DEFAULT_INT)
@@ -50,7 +50,7 @@ in
    local 
       ../config/bind/char-prim.sml 
       ../config/bind/int-prim.sml 
-      ../config/bind/intinf-prim.sml 
+      ../config/bind/int-inf-prim.sml 
       ../config/bind/real-prim.sml 
       ../config/bind/string-prim.sml 
       ../config/bind/word-prim.sml 
@@ -122,7 +122,7 @@ in
    ../integer/int-inf.sml
    local 
       ../config/bind/int-top.sml 
-      ../config/bind/intinf-top.sml 
+      ../config/bind/int-inf-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
       ../config/default/$(DEFAULT_INT)
@@ -139,6 +139,14 @@ in
    ../integer/embed-word.sml
    ../integer/pack-word.sig
    (* ../integer/pack-word32.sml *)
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/c/misc/$(CTYPES)
+   end end
 
    ../text/char.sig
    ../text/char.sml
@@ -154,25 +162,24 @@ in
    ../text/text.sig
    ../text/text.sml
 
+   ../text/nullstring.sml
+   ../util/CUtil.sig
+   ../util/CUtil.sml
+
    ../real/IEEE-real.sig
    ../real/IEEE-real.sml
-   (* ../../misc/C.sig *)
-   (* ../../misc/C.sml *)
    ../real/math.sig
    ../real/real.sig
-   ../real/real.fun
+   ../real/real.sml
    ../real/pack-real.sig
    (* ../real/pack-real.sml *)
-   (* ../real/real32.sml *)
-   (* ../real/real64.sml *)
    local 
       ../config/bind/real-top.sml 
    in ann "forceUsed" in
       ../config/default/$(DEFAULT_REAL)
       ../config/default/large-real.sml
    end end
-
-(*
+   ../real/real-global.sml
    local 
       ../config/bind/int-top.sml 
       ../config/bind/pointer-prim.sml 
@@ -183,7 +190,6 @@ in
       ../config/c/position.sml
       ../config/c/sys-word.sml
    end end
-*)
 
    ../util/unique-id.sig
    ../util/unique-id.fun

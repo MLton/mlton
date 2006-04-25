@@ -7,6 +7,6 @@
 
 structure SysWord = C_UIntmax
 
-functor SysWord_ChooseWordN (A: CHOOSE_WORD_ARG) :
+functor SysWord_ChooseWordN (A: CHOOSE_WORDN_ARG) :
    sig val f : SysWord.word A.t end =
    C_UIntmax_ChooseWordN (A)

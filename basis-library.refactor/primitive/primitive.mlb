@@ -25,7 +25,7 @@ in
    local 
       ../config/bind/char-prim.sml 
       ../config/bind/int-prim.sml 
-      ../config/bind/intinf-prim.sml 
+      ../config/bind/int-inf-prim.sml 
       ../config/bind/real-prim.sml 
       ../config/bind/string-prim.sml 
       ../config/bind/word-prim.sml 
@@ -50,7 +50,7 @@ in
    prim-seq.sml
    prim-nullstring.sml
 
-   prim-intinf.sml
+   prim-int-inf.sml
 
    prim-char.sml
    prim-string.sml

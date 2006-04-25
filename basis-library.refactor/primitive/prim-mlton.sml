@@ -190,6 +190,12 @@ structure Pointer =
    struct
       open Pointer
 
+      local
+         exception IsNull
+      in
+         val isNull : t -> bool = fn _ => raise IsNull
+      end
+
       val getInt8 = _prim "Pointer_getWord8": t * C_Ptrdiff.t -> Int8.int;
       val getInt16 = _prim "Pointer_getWord16": t * C_Ptrdiff.t -> Int16.int;
       val getInt32 = _prim "Pointer_getWord32": t * C_Ptrdiff.t -> Int32.int;

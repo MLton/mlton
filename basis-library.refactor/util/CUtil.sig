@@ -6,12 +6,12 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature C_OLD =
+signature C_UTIL =
    sig
       (* C char* *)
-      structure CS :
+      structure C_String :
          sig
-            type t
+            type t = C_String.t
 
             (* string must be null terminated *)
             val length: t -> int
@@ -25,9 +25,9 @@ signature C_OLD =
          end
 
       (* NULL terminated char** *)
-      structure CSS:
+      structure C_StringArray :
          sig
-            type t
+            type t = C_StringArray.t
 
             val fromList: string list -> NullString.t array
             (* extract first n strings from array *)

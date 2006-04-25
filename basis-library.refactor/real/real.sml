@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Real (R: PRE_REAL)(*: REAL*) =
+functor Real (R: PRE_REAL): REAL =
    struct
       structure MLton = Primitive.MLton
       structure Prim = R
@@ -52,12 +52,56 @@ functor Real (R: PRE_REAL)(*: REAL*) =
          val signBit = fn r => signBit r <> 0
       end
 
-      val zero = R.fromInt32Unsafe 0
-      val one = R.fromInt32Unsafe 1
-      val two = R.fromInt32Unsafe 2
+      local
+         fun 'a make {fromRealUnsafe: 'a -> real,
+                      toRealUnsafe: real -> 'a,
+                      other : {precision: Primitive.Int32.int}} =
+            if R.precision = #precision other
+               then (fromRealUnsafe,
+                     fn (m: rounding_mode) => fromRealUnsafe,
+                     toRealUnsafe,
+                     fn (m: rounding_mode) => toRealUnsafe)
+               else (fromRealUnsafe,
+                     fn (m: rounding_mode) => fn r =>
+                     IEEEReal.withRoundingMode (m, fn () => fromRealUnsafe r),
+                     toRealUnsafe,
+                     fn (m: rounding_mode) => fn r =>
+                     IEEEReal.withRoundingMode (m, fn () => toRealUnsafe r))
+      in
+         val (fromReal32,fromReal32M,toReal32,toReal32M) =
+            make {fromRealUnsafe = R.fromReal32Unsafe,
+                  toRealUnsafe = R.toReal32Unsafe,
+                  other = {precision = Primitive.Real32.precision}}
+         val (fromReal64,fromReal64M,toReal64,toReal64M) =
+            make {fromRealUnsafe = R.fromReal64Unsafe,
+                  toRealUnsafe = R.toReal64Unsafe,
+                  other = {precision = Primitive.Real64.precision}}
+      end
+      local
+         structure S =
+            LargeReal_ChooseRealN
+            (type 'a t = real -> 'a
+             val fReal32 = toReal32
+             val fReal64 = toReal64)
+      in
+         val toLarge = S.f
+      end
+      local
+         structure S =
+            LargeReal_ChooseRealN
+            (type 'a t = rounding_mode -> 'a -> real
+             val fReal32 = fromReal32M
+             val fReal64 = fromReal64M)
+      in
+         val fromLarge = S.f
+      end
 
-      val negOne = ~ one
+      val zero = fromLarge TO_NEAREST 0.0
+      val one = fromLarge TO_NEAREST 1.0
+      val two = fromLarge TO_NEAREST 2.0
+
       val half = one / two
+      val negOne = ~ one
 
       val posInf = one / zero
       val negInf = ~one / zero
@@ -105,19 +149,15 @@ functor Real (R: PRE_REAL)(*: REAL*) =
           | NAN => false
           | _ => true
                
-      fun isNan r = class r = NAN
+      val op == = Prim.==
+
+      val op != = not o op ==
+
+      fun isNan r = r != r
 
       fun isNormal r = class r = NORMAL
 
-      val op == =
-         fn (x, y) =>
-         case (class x, class y) of
-            (NAN, _) => false
-          | (_, NAN) => false
-          | (ZERO, ZERO) => true
-          | _ => R.== (x, y)
-
-      val op != = not o op ==
+      fun isNormal r = class r = NORMAL
 
       val op ?= =
          if MLton.Codegen.isNative
@@ -238,27 +278,32 @@ functor Real (R: PRE_REAL)(*: REAL*) =
              | ZERO => man
              | _ => fromManExp {exp = exp, man = man}
 
-      fun split x =
-         case class x of
-            INF => {frac = if x > zero then zero else ~zero,
-                    whole = x}
-          | NAN => {frac = nan, whole = nan}
-          | _ => 
-               let
-                  val int = ref zero
-                  val frac = R.modf (x, int)
-                  val whole = !int
-                  (* Some platforms' C libraries don't get sign of
-                   * zero right.  
-                   *)
-                  fun fix y =
-                     if class y = ZERO andalso not (sameSign (x, y))
-                        then ~ y
-                        else y
-               in
-                  {frac = fix frac,
-                   whole = fix whole}
-               end
+      local
+         val oneInt = One.make (fn () => ref zero)
+      in
+         fun split x =
+            case class x of
+               INF => {frac = if x > zero then zero else ~zero,
+                       whole = x}
+             | NAN => {frac = nan, whole = nan}
+             | _ => 
+                  One.use
+                  (oneInt, fn int =>
+                   let
+                      val frac = R.modf (x, int)
+                      val whole = !int
+                      (* Some platforms' C libraries don't get sign of
+                       * zero right.
+                       *)
+                      fun fix y =
+                         if class y = ZERO andalso not (sameSign (x, y))
+                            then ~ y
+                            else y
+                   in
+                      {frac = fix frac,
+                       whole = fix whole}
+                   end)
+      end
             
       val realMod = #frac o split
          
@@ -267,127 +312,9 @@ functor Real (R: PRE_REAL)(*: REAL*) =
             INF => raise Overflow
           | NAN => raise Div
           | _ => x
-               
-      local
-         fun 'a make {fromRealUnsafe: 'a -> real,
-                      toRealUnsafe: real -> 'a,
-                      other : {precision: Primitive.Int32.int}} =
-            if R.precision = #precision other
-               then (fromRealUnsafe,
-                     fn (m: rounding_mode) => fromRealUnsafe,
-                     toRealUnsafe,
-                     fn (m: rounding_mode) => toRealUnsafe)
-               else (fromRealUnsafe,
-                     fn (m: rounding_mode) => fn r =>
-                     IEEEReal.withRoundingMode (m, fn () => fromRealUnsafe r),
-                     toRealUnsafe,
-                     fn (m: rounding_mode) => fn r =>
-                     IEEEReal.withRoundingMode (m, fn () => toRealUnsafe r))
-      in
-         val (fromReal32,fromReal32M,toReal32,toReal32M) =
-            make {fromRealUnsafe = R.fromReal32Unsafe,
-                  toRealUnsafe = R.toReal32Unsafe,
-                  other = {precision = Primitive.Real32.precision}}
-         val (fromReal64,fromReal64M,toReal64,toReal64M) =
-            make {fromRealUnsafe = R.fromReal64Unsafe,
-                  toRealUnsafe = R.toReal64Unsafe,
-                  other = {precision = Primitive.Real64.precision}}
-      end
-      local
-         structure S =
-            LargeReal_ChooseRealN
-            (type 'a t = real -> 'a
-             val fReal32 = toReal32
-             val fReal64 = toReal64)
-      in
-         val toLarge = S.f
-      end
-      local
-         structure S =
-            LargeReal_ChooseRealN
-            (type 'a t = rounding_mode -> 'a -> real
-             val fReal32 = fromReal32M
-             val fReal64 = fromReal64M)
-      in
-         val fromLarge = S.f
-      end
 
       fun roundReal (x: real, m: rounding_mode): real =
          IEEEReal.withRoundingMode (m, fn () => R.round x)
-
-      local
-         fun 'a make {fromIntUnsafe: 'a -> real,
-                      toIntUnsafe: real -> 'a,
-                      other : {maxInt': 'a,
-                               minInt': 'a}} =
-            let
-               val maxInt' = #maxInt' other
-               val minInt' = #minInt' other
-               val maxInt = fromIntUnsafe maxInt'
-               val minInt = fromIntUnsafe minInt'
-            in
-               (fromIntUnsafe,
-                fn (m: rounding_mode) => fn i =>
-                IEEEReal.withRoundingMode (m, fn () => fromIntUnsafe i),
-                toIntUnsafe,
-                fn (m: rounding_mode) => fn x =>
-                case class x of
-                   INF => raise Overflow
-                 | NAN => raise Domain
-                 | _ => if minInt <= x
-                           then if x <= maxInt
-                                   then toIntUnsafe (roundReal (x, m))
-                        else if x < maxInt + one
-                           then (case m of
-                                    TO_NEGINF => maxInt'
-                                  | TO_POSINF => raise Overflow
-                                  | TO_ZERO => maxInt'
-                                  | TO_NEAREST =>
-                                       (* Depends on maxInt being odd. *)
-                                       if x - maxInt >= half
-                                          then raise Overflow
-                                          else maxInt')
-                           else raise Overflow
-                        else if x > minInt - one
-                           then (case m of
-                                    TO_NEGINF => raise Overflow
-                                  | TO_POSINF => minInt'
-                                  | TO_ZERO => minInt'
-                                  | TO_NEAREST =>
-                                       (* Depends on minInt being even. *)
-                                       if x - minInt < ~half
-                                          then raise Overflow
-                                          else minInt')
-                           else raise Overflow)
-            end
-      in
-         val (fromInt8,fromInt8M,toInt8,toInt8M) =
-            make {fromIntUnsafe = R.fromInt8Unsafe,
-                  toIntUnsafe = R.toInt8Unsafe,
-                  other = {maxInt' = Int8.maxInt',
-                           minInt' = Int8.minInt'}}
-         val (fromInt16,fromInt16M,toInt16,toInt16M) =
-            make {fromIntUnsafe = R.fromInt16Unsafe,
-                  toIntUnsafe = R.toInt16Unsafe,
-                  other = {maxInt' = Int16.maxInt',
-                           minInt' = Int16.minInt'}}
-         val (fromInt32,fromInt32M,toInt32,toInt32M) =
-            make {fromIntUnsafe = R.fromInt32Unsafe,
-                  toIntUnsafe = R.toInt32Unsafe,
-                  other = {maxInt' = Int32.maxInt',
-                           minInt' = Int32.minInt'}}
-         val (fromInt64,fromInt64M,toInt64,toInt64M) =
-            make {fromIntUnsafe = R.fromInt64Unsafe,
-                  toIntUnsafe = R.toInt64Unsafe,
-                  other = {maxInt' = Int64.maxInt',
-                           minInt' = Int64.minInt'}}
-      end
-
-(*
-      val floor = toInt TO_NEGINF
-      val ceil = toInt TO_POSINF
-      val trunc = toInt TO_ZERO
-      val round = toInt TO_NEAREST
 
       local
          fun round mode x =
@@ -403,16 +330,15 @@ functor Real (R: PRE_REAL)(*: REAL*) =
       end
 
       fun rem (x, y) =
-         case class x of
-            INF => nan
-          | NAN => nan
-          | ZERO => zero
-          | _ =>
-               case class y of
-                  INF => x
-                | NAN => nan
-                | ZERO => nan
-                | _ => x - realTrunc (x/y) * y
+         (case class x of
+             INF => nan
+           | NAN => nan
+           | ZERO => zero
+           | _ => (case class y of
+                      INF => x
+                    | NAN => nan
+                    | ZERO => nan
+                    | _ => x - realTrunc (x/y) * y))
 
       (* fromDecimal, scan, fromString: decimal -> binary conversions *)
       exception Bad
@@ -423,25 +349,24 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                   val exp =
                      if Int.< (exp, 0)
                         then concat ["-", Int.toString (Int.~ exp)]
-                     else Int.toString exp
+                        else Int.toString exp
 (*                val x = concat ["0.", digits, "E", exp, "\000"] *)
-                  val n  =
-                     Int.+ (4, Int.+ (List.length digits, String.size exp))
-                  val a = Array.rawArray n
-                  fun up (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
+                  val n  = Int.+ (4, Int.+ (List.length digits, String.size exp))
+                  val a = Array.arrayUninit n
+                  fun upd (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
                   val i = 0
-                  val i = up (i, #"0")
-                  val i = up (i, #".")
+                  val i = upd (i, #"0")
+                  val i = upd (i, #".")
                   val i =
                      List.foldl
                      (fn (d, i) =>
                       if Int.< (d, 0) orelse Int.> (d, 9)
                          then raise Bad
-                      else up (i, Char.chr (Int.+ (d, Char.ord #"0"))))
+                         else upd (i, Char.chr (Int.+ (d, Char.ord #"0"))))
                      i digits
-                  val i = up (i, #"E")
-                  val i = CharVector.foldl (fn (c, i) => up (i, c)) i exp
-                  val _ = up (i, #"\000")
+                  val i = upd (i, #"E")
+                  val i = CharVector.foldl (fn (c, i) => upd (i, c)) i exp
+                  val _ = upd (i, #"\000")
                   val x = Vector.fromArray a
                   val x = Prim.strto (NullString.fromString x)
                in
@@ -469,18 +394,18 @@ functor Real (R: PRE_REAL)(*: REAL*) =
       (* toDecimal, fmt, toString: binary -> decimal conversions. *)
       datatype mode = Fix | Gen | Sci
       local
-         val decpt: int ref = ref 0
+         val decpt: C_Int.int ref = ref 0
       in
          fun gdtoa (x: real, mode: mode, ndig: int) =
             let
-               val mode =
+               val mode : C_Int.int =
                   case mode of
                      Fix => 3
                    | Gen => 0
                    | Sci => 2
-               val cs = Prim.gdtoa (x, mode, ndig, decpt)
+               val cs = Prim.gdtoa (x, mode, C_Int.fromInt ndig, decpt)
             in
-               (cs, !decpt)
+               (cs, C_Int.toInt (!decpt))
             end
       end
    
@@ -505,10 +430,10 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                      if Int.< (i, 0)
                         then ac
                      else loop (Int.- (i, 1),
-                                (Int.- (Char.ord (COld.CS.sub (cs, i)),
+                                (Int.- (Char.ord (CUtil.C_String.sub (cs, i)),
                                         Char.ord #"0"))
                                 :: ac)
-                  val digits = loop (Int.- (COld.CS.length cs, 1), [])
+                  val digits = loop (Int.- (CUtil.C_String.length cs, 1), [])
                in
                   {class = c,
                    digits = digits,
@@ -518,19 +443,17 @@ functor Real (R: PRE_REAL)(*: REAL*) =
 
       datatype realfmt = datatype StringCvt.realfmt
 
-      fun add1 n = Int.+ (n, 1)
-         
       local
-         fun fix (sign: string, cs: COld.CS.t, decpt: int, ndig: int): string =
+         fun fix (sign: string, cs: CUtil.C_String.t, decpt: int, ndig: int): string =
             let
-               val length = COld.CS.length cs
+               val length = CUtil.C_String.length cs
             in
                if Int.< (decpt, 0)
                   then
                      concat [sign,
                              "0.",
                              String.new (Int.~ decpt, #"0"),
-                             COld.CS.toString cs,
+                             CUtil.C_String.toString cs,
                              String.new (Int.+ (Int.- (ndig, length),
                                                 decpt),
                                          #"0")]
@@ -542,7 +465,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                         else
                            String.tabulate (decpt, fn i =>
                                             if Int.< (i, length)
-                                               then COld.CS.sub (cs, i)
+                                               then CUtil.C_String.sub (cs, i)
                                             else #"0")
                   in
                      if 0 = ndig
@@ -556,7 +479,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                                   val j = Int.+ (i, decpt)
                                in
                                   if Int.< (j, length)
-                                     then COld.CS.sub (cs, j)
+                                     then CUtil.C_String.sub (cs, j)
                                   else #"0"
                                end)
                         in
@@ -567,9 +490,9 @@ functor Real (R: PRE_REAL)(*: REAL*) =
          fun sci (x: real, ndig: int): string =
             let
                val sign = if x < zero then "~" else ""
-               val (cs, decpt) = gdtoa (x, Sci, add1 ndig)
-               val length = COld.CS.length cs
-               val whole = String.tabulate (1, fn _ => COld.CS.sub (cs, 0))
+               val (cs, decpt) = gdtoa (x, Sci, Int.+ (1, ndig))
+               val length = CUtil.C_String.length cs
+               val whole = String.tabulate (1, fn _ => CUtil.C_String.sub (cs, 0))
                val frac =
                   if 0 = ndig
                      then ""
@@ -580,7 +503,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                                    val j = Int.+ (i, 1)
                                 in
                                    if Int.< (j, length)
-                                      then COld.CS.sub (cs, j)
+                                      then CUtil.C_String.sub (cs, j)
                                    else #"0"
                                 end)]
                val exp = Int.- (decpt, 1)
@@ -652,7 +575,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                               case opt of
                                  NONE => 6
                                | SOME n =>
-                                    if Primitive.safe andalso Int.< (n, 0)
+                                    if Primitive.Controls.safe andalso Int.< (n, 0)
                                        then raise Size
                                     else n
                         in
@@ -670,7 +593,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                               case opt of
                                  NONE => 12
                                | SOME n =>
-                                    if Primitive.safe andalso Int.< (n, 1)
+                                    if Primitive.Controls.safe andalso Int.< (n, 1)
                                        then raise Size
                                     else n
                         in
@@ -682,7 +605,7 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                               case opt of
                                  NONE => 6
                                | SOME n =>
-                                    if Primitive.safe andalso Int.< (n, 0)
+                                    if Primitive.Controls.safe andalso Int.< (n, 0)
                                        then raise Size
                                     else n
                         in
@@ -699,22 +622,91 @@ functor Real (R: PRE_REAL)(*: REAL*) =
    
       val toString = fmt (StringCvt.GEN NONE)
 
-      val fromLargeInt: LargeInt.int -> real =
+      local
+         fun 'a make {fromIntUnsafe: 'a -> real,
+                      toIntUnsafe: real -> 'a,
+                      other : {maxInt': 'a,
+                               minInt': 'a}} =
+            let
+               val maxInt' = #maxInt' other
+               val minInt' = #minInt' other
+               val maxInt = fromIntUnsafe maxInt'
+               val minInt = fromIntUnsafe minInt'
+            in
+               (fromIntUnsafe,
+                fn (m: rounding_mode) => fn i =>
+                IEEEReal.withRoundingMode (m, fn () => fromIntUnsafe i),
+                toIntUnsafe,
+                fn (m: rounding_mode) => fn x =>
+                case class x of
+                   INF => raise Overflow
+                 | NAN => raise Domain
+                 | _ => if minInt <= x
+                           then if x <= maxInt
+                                   then toIntUnsafe (roundReal (x, m))
+                        else if x < maxInt + one
+                           then (case m of
+                                    TO_NEGINF => maxInt'
+                                  | TO_POSINF => raise Overflow
+                                  | TO_ZERO => maxInt'
+                                  | TO_NEAREST =>
+                                       (* Depends on maxInt being odd. *)
+                                       if x - maxInt >= half
+                                          then raise Overflow
+                                          else maxInt')
+                           else raise Overflow
+                        else if x > minInt - one
+                           then (case m of
+                                    TO_NEGINF => raise Overflow
+                                  | TO_POSINF => minInt'
+                                  | TO_ZERO => minInt'
+                                  | TO_NEAREST =>
+                                       (* Depends on minInt being even. *)
+                                       if x - minInt < ~half
+                                          then raise Overflow
+                                          else minInt')
+                           else raise Overflow)
+            end
+      in
+         val (fromInt8,fromInt8M,toInt8,toInt8M) =
+            make {fromIntUnsafe = R.fromInt8Unsafe,
+                  toIntUnsafe = R.toInt8Unsafe,
+                  other = {maxInt' = Int8.maxInt',
+                           minInt' = Int8.minInt'}}
+         val (fromInt16,fromInt16M,toInt16,toInt16M) =
+            make {fromIntUnsafe = R.fromInt16Unsafe,
+                  toIntUnsafe = R.toInt16Unsafe,
+                  other = {maxInt' = Int16.maxInt',
+                           minInt' = Int16.minInt'}}
+         val (fromInt32,fromInt32M,toInt32,toInt32M) =
+            make {fromIntUnsafe = R.fromInt32Unsafe,
+                  toIntUnsafe = R.toInt32Unsafe,
+                  other = {maxInt' = Int32.maxInt',
+                           minInt' = Int32.minInt'}}
+         val (fromInt64,fromInt64M,toInt64,toInt64M) =
+            make {fromIntUnsafe = R.fromInt64Unsafe,
+                  toIntUnsafe = R.toInt64Unsafe,
+                  other = {maxInt' = Int64.maxInt',
+                           minInt' = Int64.minInt'}}
+      end
+
+      val fromIntInf: IntInf.int -> real =
          fn i =>
+(*
          fromInt (IntInf.toInt i)
          handle Overflow =>
+*)
             let
                val (i, sign) =
-                  if LargeInt.< (i, 0)
-                     then (LargeInt.~ i, true)
+                  if IntInf.< (i, 0)
+                     then (IntInf.~ i, true)
                   else (i, false)
-               val x = Prim.strto (NullString.fromString
-                                   (concat [LargeInt.toString i, "\000"]))
+               val x = Prim.strto (NullString.nullTerm (IntInf.toString i))
             in
                if sign then ~ x else x             
             end
-         
-      val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =
+
+      val toIntInfM: rounding_mode -> real -> LargeInt.int =
          fn mode => fn x =>
          case class x of
             INF => raise Overflow
@@ -730,13 +722,68 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                   case class x of
                      INF => raise Overflow
                    | _ => 
+(*
                         if minInt <= x andalso x <= maxInt
-                           then LargeInt.fromInt (Prim.toInt x)
+                           then IntInf.fromInt (Prim.toInt x)
                         else
-                           valOf
-                           (LargeInt.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+*)
+                           valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
                end
-         
+
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = 'a -> real
+             val fInt8 = fromInt8
+             val fInt16 = fromInt16
+             val fInt32 = fromInt32
+             val fInt64 = fromInt64
+             val fIntInf = fromIntInf)
+      in
+         val fromInt = S.f
+      end
+      local
+         structure S =
+            LargeInt_ChooseInt
+            (type 'a t = 'a -> real
+             val fInt8 = fromInt8
+             val fInt16 = fromInt16
+             val fInt32 = fromInt32
+             val fInt64 = fromInt64
+             val fIntInf = fromIntInf)
+      in
+         val fromLargeInt = S.f
+      end
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = rounding_mode -> real -> 'a
+             val fInt8 = toInt8M
+             val fInt16 = toInt16M
+             val fInt32 = toInt32M
+             val fInt64 = toInt64M
+             val fIntInf = toIntInfM)
+      in
+         val toInt = S.f
+      end
+      local
+         structure S =
+            LargeInt_ChooseInt
+            (type 'a t = rounding_mode -> real -> 'a
+             val fInt8 = toInt8M
+             val fInt16 = toInt16M
+             val fInt32 = toInt32M
+             val fInt64 = toInt64M
+             val fIntInf = toIntInfM)
+      in
+         val toLargeInt = S.f
+      end
+
+      val floor = toInt TO_NEGINF
+      val ceil = toInt TO_POSINF
+      val trunc = toInt TO_ZERO
+      val round = toInt TO_NEAREST
+
       structure Math =
          struct
             open Prim.Math
@@ -852,7 +899,6 @@ functor Real (R: PRE_REAL)(*: REAL*) =
                 | ZERO => x
                 | _ => R.Math.tanh x
          end
-*)
    end
 
 structure Real32 = Real (Primitive.Real32)

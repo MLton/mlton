@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure COld: C_OLD =
+structure CUtil: C_UTIL =
    struct
       open Int
          
@@ -15,7 +15,7 @@ structure COld: C_OLD =
             fun loop i =
                if term (sub (p, i))
                   then i
-               else loop (i +? 1)
+                  else loop (i +? 1)
          in loop 0
          end
 
@@ -23,25 +23,28 @@ structure COld: C_OLD =
                            sub: 'a * int -> 'b,
                            n: int) : 'b array =
          let
-            val a = Primitive.Array.array n
+            val a = Array.arrayUninit n
             fun loop i =
                if i >= n
                   then ()
-               else (Array.update (a, i, sub (s, i))
-                     ; loop (i + 1))
-         in loop 0;
+                  else (Array.update (a, i, sub (s, i))
+                        ; loop (i + 1))
+            val () = loop 0
+         in 
             a
          end
 
-      structure CS =
+      structure C_String =
          struct
-            type t = Pointer.t
+            type t = C_String.t
 
             fun sub (cs, i) =
-               Primitive.Char.fromWord8 (Primitive.Pointer.getWord8 (cs, i))
+               Primitive.Char8.fromWord8Unsafe 
+               (Primitive.MLton.Pointer.getWord8 (cs, C_Ptrdiff.fromInt i))
 
             fun update (cs, i, c) =
-               Primitive.Pointer.setWord8 (cs, i, Primitive.Char.toWord8 c)
+               Primitive.MLton.Pointer.setWord8 
+               (cs, C_Ptrdiff.fromInt i, Primitive.Char8.toWord8Unsafe c)
 
             fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
 
@@ -53,16 +56,17 @@ structure COld: C_OLD =
             fun toString cs = toStringOfLength (cs, length cs)
          end
       
-      structure CSS =
+      structure C_StringArray =
          struct
-            type t = Pointer.t
+            type t = C_StringArray.t
 
-            fun sub (css: t, i) = Primitive.Pointer.getPointer (css, i)
+            fun sub (css: t, i) = 
+               Primitive.MLton.Pointer.getPointer (css, C_Ptrdiff.fromInt i)
 
-            val length = makeLength (sub, Primitive.Pointer.isNull)
+            val length = makeLength (sub, Primitive.MLton.Pointer.isNull)
 
             val toArrayOfLength =
-               fn (css, n) => toArrayOfLength (css, CS.toString o sub, n)
+               fn (css, n) => toArrayOfLength (css, C_String.toString o sub, n)
 
             fun toArray css = toArrayOfLength (css, length css)
 
