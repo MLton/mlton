@@ -77,24 +77,6 @@
 #define EXECVE execve
 #endif
 
-#if not HAS_FPCLASSIFY
-#ifndef FP_INFINITE
-#define FP_INFINITE 1
-#endif
-#ifndef FP_NAN
-#define FP_NAN 0
-#endif
-#ifndef FP_NORMAL
-#define FP_NORMAL 4
-#endif
-#ifndef FP_SUBNORMAL
-#define FP_SUBNORMAL 3
-#endif
-#ifndef FP_ZERO
-#define FP_ZERO 2
-#endif
-#endif
-
 #ifndef SPAWN_MODE
 #define SPAWN_MODE 0
 #endif
@@ -245,31 +227,6 @@ void PackWord64_updateRev (Array(Word8_t) a, Int offset, Word64_t w);
 Word32 Word8Array_subWord32Rev (Pointer v, Int offset);
 void Word8Array_updateWord32Rev (Pointer a, Int offset, Word32 w);
 Word32 Word8Vector_subWord32Rev (Pointer v, Int offset);
-
-/* ------------------------------------------------- */
-/*                       Real                        */
-/* ------------------------------------------------- */
-
-Real64 Real64_modf (Real64 x, Real64 *exp);
-Real32 Real32_modf (Real32 x, Real32 *exp);
-Real64 Real64_frexp (Real64 x, Int *exp);
-C_String_t Real64_gdtoa (double d, int mode, int ndig, int *decpt);
-C_String_t Real32_gdtoa (float f, int mode, int ndig, int *decpt);
-Int Real32_class (Real32 f);
-Int Real64_class (Real64 d);
-Real32 Real32_strto (Pointer s);
-Real64 Real64_strto (Pointer s);
-Real64 Real64_nextAfter (Real64 x1, Real64 x2);
-Int Real32_signBit (Real32 f);
-Int Real64_signBit (Real64 d);
-#define ternary(size, name)                                     \
-        Real##size Real##size##_mul##name                       \
-                (Real##size r1, Real##size r2, Real##size r3);
-ternary(32, add)
-ternary(64, add)
-ternary(32, sub)
-ternary(64, sub)
-#undef ternary
 
 /* ------------------------------------------------- */
 /*                      Socket                       */

@@ -1,5 +1,30 @@
 #include "platform.h"
 
+#if not HAS_FPCLASSIFY
+#ifndef FP_INFINITE
+#define FP_INFINITE 1
+#endif
+#ifndef FP_NAN
+#define FP_NAN 0
+#endif
+#ifndef FP_NORMAL
+#define FP_NORMAL 4
+#endif
+#ifndef FP_SUBNORMAL
+#define FP_SUBNORMAL 3
+#endif
+#ifndef FP_ZERO
+#define FP_ZERO 2
+#endif
+#endif
+
+const C_Int_t IEEEReal_FloatClass_FP_INFINITE = FP_INFINITE;
+const C_Int_t IEEEReal_FloatClass_FP_NAN = FP_NAN;
+const C_Int_t IEEEReal_FloatClass_FP_NORMAL = FP_NORMAL;
+const C_Int_t IEEEReal_FloatClass_FP_SUBNORMAL = FP_SUBNORMAL;
+const C_Int_t IEEEReal_FloatClass_FP_ZERO = FP_ZERO;
+
+
 #define FE_NOSUPPORT -1
 
 /* Can't handle undefined rounding modes with code like the following.

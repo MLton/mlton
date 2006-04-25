@@ -108,30 +108,7 @@ functor Real (R: PRE_REAL): REAL =
 
       val nan = posInf + negInf
 
-      local
-         val classes =
-            let
-               open R.Class
-            in
-               (* order here is chosen based on putting the more
-                * commonly used classes at the front.  
-                *)
-               [(normal, NORMAL),
-                (zero, ZERO),
-                (inf, INF),
-                (nan, NAN),
-                (subnormal, SUBNORMAL)]
-            end
-      in
-         fun class x =
-            let
-               val i = R.class x
-            in
-               case List.find (fn (i', _) => i = i') classes of
-                  NONE => raise Fail "Real_class returned bogus integer"
-                | SOME (_, c) => c
-            end
-      end
+      val class = IEEEReal.mkClass R.class
    
       val abs =
          if MLton.Codegen.isNative

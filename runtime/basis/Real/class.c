@@ -1,18 +1,32 @@
 #include "platform.h"
 
+C_Int_t Real32_class (Real32_t f);
+
 #if HAS_FPCLASSIFY
 
-Int Real32_class (Real32 f) {
-        return fpclassify (f);
+C_Int_t Real32_class (Real32_t f) {
+  return fpclassify (f);
 }
 
 #elif HAS_FPCLASSIFY32
 
-Int Real32_class (Real32 f) {
-        return fpclassify32 (f);
+C_Int_t Real32_class (Real32_t f) {
+  return fpclassify32 (f);
 }
 
 #else
+
+/* This code assumes IEEE 754/854 and little endian.
+ *
+ * In memory, the 32 bits of a float are layed out as follows.
+ *
+ * d[0]  bits 7-0 of mantissa
+ * d[1]  bits 15-8 of mantissa
+ * d[2]  bit  0 of exponent
+ *       bits 22-16 of mantissa
+ * d[7]  sign bit
+ *       bits 7-2 of exponent
+ */
 
 /* masks for word 0 */
 #define EXPONENT_MASK32 0x7F800000
@@ -20,38 +34,40 @@ Int Real32_class (Real32 f) {
 #define SIGNBIT_MASK32  0x80000000
 #define MANTISSA_HIGHBIT_MASK32 0x00400000
 
-Int Real32_class (Real32 f) {
-        uint word0;
-        int res;
+C_Int_t Real32_class (Real32_t f) {
+  uint32_t word0;
+  int res;
 
-        word0 = ((uint *)&f)[0];  /* this generates a gcc warning */
-        if ((word0 & EXPONENT_MASK32) == EXPONENT_MASK32) {
-                if (word0 & MANTISSA_MASK32)
-                        res = FP_NAN;
-                else
-                        res = FP_INFINITE;
-        } else if (word0 & EXPONENT_MASK32)
-                res = FP_NORMAL;
-        else if (word0 & MANTISSA_MASK32)
-                res = FP_SUBNORMAL;
-        else
-                res = FP_ZERO;
-        return res;
+  word0 = ((uint32_t *)&f)[0];  /* this generates a gcc warning */
+  if ((word0 & EXPONENT_MASK32) == EXPONENT_MASK32) {
+    if (word0 & MANTISSA_MASK32)
+      res = FP_NAN;
+    else
+      res = FP_INFINITE;
+  } else if (word0 & EXPONENT_MASK32)
+    res = FP_NORMAL;
+  else if (word0 & MANTISSA_MASK32)
+    res = FP_SUBNORMAL;
+  else
+    res = FP_ZERO;
+  return res;
 }
 
 #endif
 
 
+C_Int_t Real64_class (Real64_t d);
+
 #if HAS_FPCLASSIFY
 
-Int Real64_class (Real64 d) {
-        return fpclassify (d);
+C_Int_t Real64_class (Real64_t d) {
+  return fpclassify (d);
 }
 
 #elif HAS_FPCLASSIFY64
 
-Int Real64_class (Real64 d) {
-        return fpclassify64 (d);
+C_Int_t Real64_class (Real64_t d) {
+  return fpclassify64 (d);
 }
 
 #else
@@ -72,16 +88,6 @@ Int Real64_class (Real64 d) {
  *       bits 51-48 of mantissa
  * d[7]  sign bit
  *       bits 10-4 of exponent
- *
- *
- * In memory, the 32 bits of a float are layed out as follows.
- *
- * d[0]  bits 7-0 of mantissa
- * d[1]  bits 15-8 of mantissa
- * d[2]  bit  0 of exponent
- *       bits 22-16 of mantissa
- * d[7]  sign bit
- *       bits 7-2 of exponent
  */
 
 /* masks for word 1 */
@@ -90,24 +96,24 @@ Int Real64_class (Real64 d) {
 #define SIGNBIT_MASK64  0x80000000
 #define MANTISSA_HIGHBIT_MASK64 0x00080000
 
-Int Real64_class (Real64 d) {
-        Word word0, word1;
-        Int res;
+C_Int_t Real64_class (Real64_t d) {
+  uint32_t word0, word1;
+  int res;
 
-        word0 = ((Word *)&d)[0];
-        word1 = ((Word *)&d)[1];
-        if ((word1 & EXPONENT_MASK64) == EXPONENT_MASK64) {
-                if (word0 or (word1 & MANTISSA_MASK64))
-                        res = FP_NAN;
-                else
-                        res = FP_INFINITE;
-        } else if (word1 & EXPONENT_MASK64)
-                res = FP_NORMAL;
-        else if (word0 or (word1 & MANTISSA_MASK64))
-                res = FP_SUBNORMAL;
-        else
-                res = FP_ZERO;
-        return res;
+  word0 = ((uint32_t*)&d)[0];
+  word1 = ((uint32_t*)&d)[1];
+  if ((word1 & EXPONENT_MASK64) == EXPONENT_MASK64) {
+    if (word0 or (word1 & MANTISSA_MASK64))
+      res = FP_NAN;
+    else
+      res = FP_INFINITE;
+  } else if (word1 & EXPONENT_MASK64)
+    res = FP_NORMAL;
+  else if (word0 or (word1 & MANTISSA_MASK64))
+    res = FP_SUBNORMAL;
+  else
+    res = FP_ZERO;
+  return res;
 }
 
 #else

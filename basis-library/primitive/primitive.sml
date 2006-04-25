@@ -928,11 +928,11 @@ structure Primitive =
                struct
                   type t = int
                      
-                  val inf = _const "FP_INFINITE": t;
-                  val nan = _const "FP_NAN": t;
-                  val normal = _const "FP_NORMAL": t;
-                  val subnormal = _const "FP_SUBNORMAL": t;
-                  val zero = _const "FP_ZERO": t;
+                  val inf = _const "IEEEReal_FloatClass_FP_INFINITE": t;
+                  val nan = _const "IEEEReal_FloatClass_FP_NAN": t;
+                  val normal = _const "IEEEReal_FloatClass_FP_NORMAL": t;
+                  val subnormal = _const "IEEEReal_FloatClass_FP_SUBNORMAL": t;
+                  val zero = _const "IEEEReal_FloatClass_FP_ZERO": t;
                end
             
             structure Math =

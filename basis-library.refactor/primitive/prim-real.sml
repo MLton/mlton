@@ -16,16 +16,6 @@ signature PRIM_REAL =
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
 
-      structure Class :
-         sig
-            eqtype t
-            val inf: t
-            val nan: t
-            val normal: t
-            val subnormal: t
-            val zero: t
-         end
-
       structure Math :
          sig
             type real
@@ -60,17 +50,17 @@ signature PRIM_REAL =
       val == : real * real -> bool
       val ?= : real * real -> bool
       val abs: real -> real
-      val class: real -> Class.t
-      val frexp: real * C_Int.int ref -> real
-      val gdtoa: real * C_Int.int * C_Int.int * C_Int.int ref -> C_String.t
-      val ldexp: real * C_Int.int -> real
+      val class: real -> C_Int.t
+      val frexp: real * C_Int.t ref -> real
+      val gdtoa: real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t
+      val ldexp: real * C_Int.t -> real
       val maxFinite: real
       val minNormalPos: real
       val minPos: real
       val modf: real * real ref -> real
       val nextAfter: real * real -> real
       val round: real -> real
-      val signBit: real -> C_Int.int
+      val signBit: real -> C_Int.t
       val strto: Primitive.NullString8.t -> real
       val ~ : real -> real
 
@@ -99,30 +89,13 @@ structure Primitive = struct
 
 open Primitive
 
-local
-
-   structure Class =
-      struct
-         type t = C_Int.int
-            
-         val inf = _const "FP_INFINITE": t;
-         val nan = _const "FP_NAN": t;
-         val normal = _const "FP_NORMAL": t;
-         val subnormal = _const "FP_SUBNORMAL": t;
-         val zero = _const "FP_ZERO": t;
-      end
-
-in
-
-structure Real32 =
+structure Real32 : PRIM_REAL  =
    struct
       open Real32
          
       val precision : Int32.int = 24
       val radix : Int32.int = 2
 
-      structure Class = Class
-         
       structure Math =
          struct
             type real = real
@@ -132,18 +105,18 @@ structure Real32 =
             val atan = _prim "Real32_Math_atan": real -> real;
             val atan2 = _prim "Real32_Math_atan2": real * real -> real;
             val cos = _prim "Real32_Math_cos": real -> real;
-            val cosh = _import "coshf": real -> real;
+            val cosh = _import "Real32_Math_cosh": real -> real;
             val e = #1 _symbol "Real32_Math_e": real GetSet.t; ()
             val exp = _prim "Real32_Math_exp": real -> real;
             val ln = _prim "Real32_Math_ln": real -> real;
             val log10 = _prim "Real32_Math_log10": real -> real;
             val pi = #1 _symbol "Real32_Math_pi": real GetSet.t; ()
-            val pow = _import "powf": real * real -> real;
+            val pow = _import "Real32_Math_pow": real * real -> real;
             val sin = _prim "Real32_Math_sin": real -> real;
-            val sinh = _import "sinhf": real -> real;
+            val sinh = _import "Real32_Math_sinh": real -> real;
             val sqrt = _prim "Real32_Math_sqrt": real -> real;
             val tan = _prim "Real32_Math_tan": real -> real;
-            val tanh = _import "tanhf": real -> real;
+            val tanh = _import "Real32_Math_tanh": real -> real;
          end
       
       val * = _prim "Real32_mul": real * real -> real;
@@ -152,24 +125,24 @@ structure Real32 =
       val + = _prim "Real32_add": real * real -> real;
       val - = _prim "Real32_sub": real * real -> real;
       val / = _prim "Real32_div": real * real -> real;
+      val ~ = _prim "Real32_neg": real -> real;
       val op < = _prim "Real32_lt": real * real -> bool;
       val op <= = _prim "Real32_le": real * real -> bool;
       val == = _prim "Real32_equal": real * real -> bool;
       val ?= = _prim "Real32_qequal": real * real -> bool;
       val abs = _prim "Real32_abs": real -> real;
-      val class = _import "Real32_class": real -> Class.t;
-      val frexp = _import "Real32_frexp": real * C_Int.int ref -> real;
-      val gdtoa = _import "Real32_gdtoa": real * C_Int.int * C_Int.int * C_Int.int ref -> C_String.t;
-      val ldexp = _prim "Real32_ldexp": real * C_Int.int -> real;
+      val class = _import "Real32_class": real -> C_Int.t;
+      val frexp = _import "Real32_frexp": real * C_Int.t ref -> real;
+      val gdtoa = _import "Real32_gdtoa": real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
+      val ldexp = _prim "Real32_ldexp": real * C_Int.t -> real;
       val maxFinite = #1 _symbol "Real32_maxFinite": real GetSet.t; ()
       val minNormalPos = #1 _symbol "Real32_minNormalPos": real GetSet.t; ()
       val minPos = #1 _symbol "Real32_minPos": real GetSet.t; ()
       val modf = _import "Real32_modf": real * real ref -> real;
       val nextAfter = _import "Real32_nextAfter": real * real -> real;
       val round = _prim "Real32_round": real -> real;
-      val signBit = _import "Real32_signBit": real -> C_Int.int;
+      val signBit = _import "Real32_signBit": real -> C_Int.t;
       val strto = _import "Real32_strto": NullString8.t -> real;
-      val ~ = _prim "Real32_neg": real -> real;
 
       val fromInt8Unsafe = _prim "WordS8_toReal32": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_toReal32": Int16.int -> real;
@@ -197,15 +170,13 @@ structure Real32 =
       end
    end
 
-structure Real64 =
+structure Real64 : PRIM_REAL =
    struct
       open Real64
 
       val precision : Int32.int = 53
       val radix : Int32.int = 2
          
-      structure Class = Class
-            
       structure Math =
          struct
             type real = real
@@ -215,44 +186,44 @@ structure Real64 =
             val atan = _prim "Real64_Math_atan": real -> real;
             val atan2 = _prim "Real64_Math_atan2": real * real -> real;
             val cos = _prim "Real64_Math_cos": real -> real;
-            val cosh = _import "cosh": real -> real;
+            val cosh = _import "Real64_Math_cosh": real -> real;
             val e = #1 _symbol "Real64_Math_e": real GetSet.t; ()
             val exp = _prim "Real64_Math_exp": real -> real;
             val ln = _prim "Real64_Math_ln": real -> real;
             val log10 = _prim "Real64_Math_log10": real -> real;
             val pi = #1 _symbol "Real64_Math_pi": real GetSet.t; ()
-            val pow = _import "pow": real * real -> real;
+            val pow = _import "Real64_Math_pow": real * real -> real;
             val sin = _prim "Real64_Math_sin": real -> real;
-            val sinh = _import "sinh": real -> real;
+            val sinh = _import "Real64_Math_sinh": real -> real;
             val sqrt = _prim "Real64_Math_sqrt": real -> real;
             val tan = _prim "Real64_Math_tan": real -> real;
-            val tanh = _import "tanh": real -> real;
+            val tanh = _import "Real64_Math_tanh": real -> real;
          end
-
+      
       val * = _prim "Real64_mul": real * real -> real;
       val *+ = _prim "Real64_muladd": real * real * real -> real;
       val *- = _prim "Real64_mulsub": real * real * real -> real;
       val + = _prim "Real64_add": real * real -> real;
       val - = _prim "Real64_sub": real * real -> real;
       val / = _prim "Real64_div": real * real -> real;
+      val ~ = _prim "Real64_neg": real -> real;
       val op < = _prim "Real64_lt": real * real -> bool;
       val op <= = _prim "Real64_le": real * real -> bool;
       val == = _prim "Real64_equal": real * real -> bool;
       val ?= = _prim "Real64_qequal": real * real -> bool;
       val abs = _prim "Real64_abs": real -> real;
-      val class = _import "Real64_class": real -> Class.t;
-      val frexp = _import "Real64_frexp": real * C_Int.int ref -> real;
-      val gdtoa = _import "Real64_gdtoa": real * C_Int.int * C_Int.int * C_Int.int ref -> C_String.t;
-      val ldexp = _prim "Real64_ldexp": real * C_Int.int -> real;
+      val class = _import "Real64_class": real -> C_Int.t;
+      val frexp = _import "Real64_frexp": real * C_Int.t ref -> real;
+      val gdtoa = _import "Real64_gdtoa": real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
+      val ldexp = _prim "Real64_ldexp": real * C_Int.t -> real;
       val maxFinite = #1 _symbol "Real64_maxFinite": real GetSet.t; ()
       val minNormalPos = #1 _symbol "Real64_minNormalPos": real GetSet.t; ()
       val minPos = #1 _symbol "Real64_minPos": real GetSet.t; ()
       val modf = _import "Real64_modf": real * real ref -> real;
       val nextAfter = _import "Real64_nextAfter": real * real -> real;
       val round = _prim "Real64_round": real -> real;
-      val signBit = _import "Real64_signBit": real -> C_Int.int;
+      val signBit = _import "Real64_signBit": real -> C_Int.t;
       val strto = _import "Real64_strto": NullString8.t -> real;
-      val ~ = _prim "Real64_neg": real -> real;
 
       val fromInt8Unsafe = _prim "WordS8_toReal64": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_toReal64": Int16.int -> real;
@@ -279,7 +250,5 @@ structure Real64 =
          open S
       end
    end
-
-end
 
 end

@@ -1,12 +1,11 @@
 #include "platform.h"
 
-Real64 Real64_modf (Real64 x, Real64 *exp) {
-        return modf (x, exp);
+Real64_t Real64_modf (Real64_t x, Ref(Real64_t) exp);
+Real64_t Real64_modf (Real64_t x, Ref(Real64_t) exp) {
+  return modf (x, (Real64_t*)exp);
 }
 
-Real32 Real32_modf (Real32 x, Real32 *exp) {
-        Real64 exp_, res;
-        res = modf ((Real64) x, &exp_);
-        *exp = (Real32)exp_;
-        return (Real32)res;
+Real32_t Real32_modf (Real32_t x, Ref(Real32_t) exp);
+Real32_t Real32_modf (Real32_t x, Ref(Real32_t) exp) {
+  return modff (x, (Real32_t*)exp);
 }

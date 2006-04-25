@@ -15,14 +15,39 @@ structure IEEEReal: IEEE_REAL_EXTRA =
       exception Unordered
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
 
+      structure Prim = PrimitiveFFI.IEEEReal
+
       datatype float_class =
          INF
        | NAN
        | NORMAL
        | SUBNORMAL
        | ZERO
-         
-      structure Prim = PrimitiveFFI.IEEEReal
+
+      local
+         val classes =
+            let
+               open Prim.FloatClass
+            in
+               (* order here is chosen based on putting the more
+                * commonly used classes at the front.  
+                *)
+               [(FP_NORMAL, NORMAL),
+                (FP_ZERO, ZERO),
+                (FP_INFINITE, INF),
+                (FP_NAN, NAN),
+                (FP_SUBNORMAL, SUBNORMAL)]
+            end
+      in
+         fun mkClass class x =
+            let
+               val i = class x
+            in
+               case List.find (fn (i', _) => i = i') classes of
+                  NONE => raise Fail "Real_class returned bogus integer"
+                | SOME (_, c) => c
+            end
+      end
 
       structure RoundingMode =
          struct

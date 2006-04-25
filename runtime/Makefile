@@ -184,6 +184,7 @@ basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	cd gen && mlton gen-basis-ffi.sml
 	cd gen && ./gen-basis-ffi 
 	cp gen/basis-ffi.h basis-ffi.h
+	cp gen/basis-ffi.sml ../basis-library.refactor/primitive/basis-ffi.sml
 	rm -f gen/gen-basis-ffi
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 

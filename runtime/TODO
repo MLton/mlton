@@ -16,15 +16,7 @@ and add primitives
 that correspond to bit-wise identities.
 
 basis/Int/Word.c
-basis/IntInf.c
 basis/MLton/allocTooLarge.c
 basis/MLton/bug.c
-basis/Real/Math.c
-basis/Real/class.c
-basis/Real/frexp.c
-basis/Real/gdtoa.c
-basis/Real/modf.c
-basis/Real/nextAfter.c
-basis/Real/real.c
-basis/Real/signBit.c
-basis/Real/strto.c
+basis/Real/PackReal.c
+basis/Int/PackWord.c

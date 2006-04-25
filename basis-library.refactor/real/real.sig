@@ -8,16 +8,6 @@ signature PRE_REAL =
   sig
       include PRE_REAL_GLOBAL
 
-      structure Class :
-         sig
-            eqtype t
-            val inf: t
-            val nan: t
-            val normal: t
-            val subnormal: t
-            val zero: t
-         end
-
       val * : real * real -> real
       val *+ : real * real * real -> real
       val *- : real * real * real -> real
@@ -40,9 +30,8 @@ signature PRE_REAL =
       val precision: Primitive.Int32.int
       val radix: Primitive.Int32.int
 
+      val class: real -> C_Int.t
       val signBit: real -> C_Int.t
-
-      val class: real -> Class.t
 
       val nextAfter: real * real -> real
 

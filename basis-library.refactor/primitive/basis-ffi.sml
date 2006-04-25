@@ -40,6 +40,14 @@ end
 end
 structure IEEEReal = 
 struct
+structure FloatClass = 
+struct
+val FP_INFINITE = _const "IEEEReal_FloatClass_FP_INFINITE" : C_Int.t;
+val FP_NAN = _const "IEEEReal_FloatClass_FP_NAN" : C_Int.t;
+val FP_NORMAL = _const "IEEEReal_FloatClass_FP_NORMAL" : C_Int.t;
+val FP_SUBNORMAL = _const "IEEEReal_FloatClass_FP_SUBNORMAL" : C_Int.t;
+val FP_ZERO = _const "IEEEReal_FloatClass_FP_ZERO" : C_Int.t;
+end
 val getRoundingMode = _import "IEEEReal_getRoundingMode" : unit -> C_Int.t;
 structure RoundingMode = 
 struct
