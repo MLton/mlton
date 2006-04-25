@@ -57,21 +57,18 @@ in
        ; Word8Vector.fromPoly (Vector.fromArray a))
 end
 
-fun subArr (v, i) =
-   let
-      val i = offset (i, Word8Array.length v)
-      val v = Word8Array.toPoly v
-   in
-      subA (v, i)
-   end
-
-fun subVec (v, i) =
-   let
-      val i = offset (i, Word8Vector.length v)
-      val v = Word8Vector.toPoly v
-   in
-      subV (v, i)
-   end
+local
+   fun make (sub, length, toPoly) (s, i) =
+      let
+         val i = offset (i, length s)
+         val s = toPoly s
+      in
+         sub (s, i)
+      end
+in
+   val subArr = make (subA, Word8Array.length, Word8Array.toPoly)
+   val subVec = make (subV, Word8Vector.length, Word8Vector.toPoly)
+end
 
 fun fromBytes v = subVec (v, 0)
 
@@ -103,7 +100,6 @@ local
    in
       val realSize = S.f
    end
-
    structure PackReal =
       struct
          type real = Real.real

@@ -27,7 +27,7 @@ void MLton_init (int argc, char **argv, GC_state s) {
   CommandLine_argv = (C_StringArray_t)(argv + start);
 }
 
-void MLton_exit (GC_state s, Int status) {
+void MLton_exit (GC_state s, C_Int_t status) {
   GC_done (s);
   exit (status);
 }

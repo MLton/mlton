@@ -138,7 +138,7 @@ in
    ../integer/embed-int.sml
    ../integer/embed-word.sml
    ../integer/pack-word.sig
-   (* ../integer/pack-word32.sml *)
+   ../integer/pack-word.sml
    local 
       ../config/bind/int-top.sml 
       ../config/bind/pointer-prim.sml 

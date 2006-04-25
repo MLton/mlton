@@ -222,6 +222,42 @@ val subVecRev = _import "PackReal64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t 
 val update = _import "PackReal64_update" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
 val updateRev = _import "PackReal64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
 end
+structure PackWord16 = 
+struct
+val subArr = _import "PackWord16_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
+val subArrRev = _import "PackWord16_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
+val subVec = _import "PackWord16_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
+val subVecRev = _import "PackWord16_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
+val update = _import "PackWord16_update" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
+val updateRev = _import "PackWord16_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
+end
+structure PackWord32 = 
+struct
+val subArr = _import "PackWord32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
+val subArrRev = _import "PackWord32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
+val subVec = _import "PackWord32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
+val subVecRev = _import "PackWord32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
+val update = _import "PackWord32_update" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
+val updateRev = _import "PackWord32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
+end
+structure PackWord64 = 
+struct
+val subArr = _import "PackWord64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
+val subArrRev = _import "PackWord64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
+val subVec = _import "PackWord64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
+val subVecRev = _import "PackWord64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
+val update = _import "PackWord64_update" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
+val updateRev = _import "PackWord64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
+end
+structure PackWord8 = 
+struct
+val subArr = _import "PackWord8_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
+val subArrRev = _import "PackWord8_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
+val subVec = _import "PackWord8_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
+val subVecRev = _import "PackWord8_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
+val update = _import "PackWord8_update" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
+val updateRev = _import "PackWord8_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
+end
 structure Posix = 
 struct
 structure Error = 

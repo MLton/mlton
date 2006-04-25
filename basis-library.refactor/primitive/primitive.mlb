@@ -56,6 +56,8 @@ in
    prim-string.sml
 
    prim-real.sml
+
+   prim-pack-word.sml
    prim-pack-real.sml
 
    prim-mlton.sml
@@ -65,5 +67,6 @@ in
 
    (* Check compatibility between primitives and runtime functions. *)
    check-real.sml
+   check-pack-word.sml
    check-pack-real.sml
 end
