@@ -63,7 +63,9 @@ static char* cTypesSMLPrefix[] = {
 
 static char* mlTypesHStd[] = {
   "/* ML types */",
-  "typedef unsigned char* /* uintptr_t */ Pointer;",
+  "typedef unsigned char* Pointer;",
+  // "typedef void* Pointer;",
+  // "typedef uintptr_t Pointer;",
   "#define Array(t) Pointer",
   "#define Ref(t) Pointer",
   "#define Vector(t) const Pointer",

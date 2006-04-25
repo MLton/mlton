@@ -44,7 +44,7 @@ GC_cardMapIndex sizeToCardMapIndex (size_t z) {
 size_t cardMapIndexToSize (GC_cardMapIndex i) {
   return (size_t)i << CARD_SIZE_LOG2;
 }
-pointer pointerToCardMapAddr (GC_state s, pointer p) {
+GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p) {
   pointer res;
   
   res = &s->generationalMaps.cardMapAbsolute[pointerToCardMapIndexAbsolute (p)];

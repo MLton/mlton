@@ -59,7 +59,7 @@ static void displayGenerationalMaps (GC_state s,
 static inline GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p);
 static inline GC_cardMapIndex sizeToCardMapIndex (size_t z);
 static inline size_t cardMapIndexToSize (GC_cardMapIndex i);
-static inline pointer pointerToCardMapAddr (GC_state s, pointer p);
+static inline GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p);
 
 static inline bool isCardMarked (GC_state s, pointer p);
 static inline void markCard (GC_state s, pointer p);

@@ -4,7 +4,7 @@
 
 * Use C99 <assert.h> instead of util/assert.{c,h}
 
-Fix PackWord{16,32,64}_{sub,upadate}{,Rev} to use byte offset; This
+Fix PackWord{16,32,64}_{sub,update}{,Rev} to use byte offset; This
 requires fixing the semantics of the primitives as well.
 
 Rename primitives to indicate that these are not bit-wise identities
@@ -18,5 +18,3 @@ that correspond to bit-wise identities.
 basis/Int/Word.c
 basis/MLton/allocTooLarge.c
 basis/MLton/bug.c
-basis/Real/PackReal.c
-basis/Int/PackWord.c
