@@ -1,6 +1,6 @@
 #include "platform.h"
 
-C_Errno_t(C_Int_t) Posix_ProcEnv_getgroupsN (void) {
+C_Int_t Posix_ProcEnv_getgroupsN (void) {
   return getgroups (0, (gid_t*)NULL);
 }
 

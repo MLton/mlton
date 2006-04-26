@@ -11,7 +11,8 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       structure Prim = PrimitiveFFI.Posix.ProcEnv
       structure Error = PosixError
       structure SysCall = Error.SysCall
-      structure CS = COld.CS
+      structure CS = CUtil.C_String
+      structure CSS = CUtil.C_StringArray
 
       type pid = C_PId.t
       type uid = C_UId.t
@@ -34,31 +35,27 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun setsid () = SysCall.simpleResult (Prim.setsid)
 
-      fun id x = x
-      val uidToWord = id 
-      val wordToUid = id
-      val gidToWord = id
-      val wordToGid = id
+      val uidToWord = SysWord.fromLarge o C_UId.toLarge
+      val wordToUid = C_UId.fromLarge o SysWord.toLarge
+      val gidToWord = SysWord.fromLarge o C_GId.toLarge
+      val wordToGid = C_GId.fromLarge o SysWord.toLarge
 
-      local
-         val n = Prim.getgroupsN ()
-         val a: word array = Primitive.Array.array n
-      in
-         fun getgroups () =
-            SysCall.syscall
-            (fn () =>
-             let val n = Prim.getgroups (n, a)
-             in (n, fn () => 
-                 ArraySlice.toList (ArraySlice.slice (a, 0, SOME n)))
-             end)
-      end
+      fun getgroups () =
+         SysCall.syscall
+         (fn () =>
+          let
+             val n = Prim.getgroupsN ()
+             val a: C_GId.t array = Array.arrayUninit (C_Int.toInt n)
+          in
+             (Prim.getgroups (n, a), fn n => 
+              ArraySlice.toList (ArraySlice.slice (a, 0, SOME (C_Int.toInt n))))
+          end)
 
       fun getlogin () =
-         let val cs = Prim.getlogin ()
-         in if Primitive.Pointer.isNull cs
-               then raise (Error.SysErr ("no login name", NONE))
-            else CS.toString cs
-         end
+         SysCall.syscall'
+         ({errVal = Primitive.MLton.Pointer.null}, fn () =>
+          (Prim.getlogin (), fn cs => 
+           CS.toString cs))
 
       fun setpgid {pid, pgid} =
          let
@@ -72,7 +69,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       fun uname () =
          SysCall.syscall
          (fn () =>
-          (Prim.uname (), fn () =>
+          (Prim.uname (), fn _ =>
            [("sysname", CS.toString (Prim.Uname.getSysName ())),
             ("nodename", CS.toString (Prim.Uname.getNodeName ())),
             ("release", CS.toString (Prim.Uname.getRelease ())),
@@ -213,14 +210,14 @@ structure PosixProcEnv: POSIX_PROC_ENV =
             case List.find (fn (_, s') => s = s') sysconfNames of
                NONE => Error.raiseSys Error.inval
              | SOME (n, _) =>
-                  (SysWord.fromInt o SysCall.simpleResult)
-                  (fn () => Prim.sysconf n)
+                  (SysWord.fromLargeInt o C_Long.toLarge o SysCall.simpleResult')
+                  ({errVal = C_Long.fromInt ~1}, fn () => Prim.sysconf n)
       end
                
       local
          structure Times = Prim.Times
 
-         val ticksPerSec = Int.toLarge (SysWord.toIntX (sysconf "CLK_TCK"))
+         val ticksPerSec = SysWord.toLargeIntX (sysconf "CLK_TCK")
 
          fun cvt (ticks: C_Clock.t) =
             Time.fromTicks (LargeInt.quot
@@ -229,25 +226,23 @@ structure PosixProcEnv: POSIX_PROC_ENV =
                              ticksPerSec))
       in
          fun times () =
-            SysCall.syscall 
-            (fn () =>
-             let val elapsed = Prim.times () 
-             in (0, fn () =>
-                 {elapsed = cvt elapsed,
-                  utime = cvt (Times.getUTime ()), 
-                  stime = cvt (Times.getSTime ()), 
-                  cutime = cvt (Times.getCUTime ()), 
-                  cstime = cvt (Times.getCSTime ())})
-             end)
+            SysCall.syscall'
+            ({errVal = C_Clock.fromInt ~1}, fn () =>
+             (Prim.times (), fn elapsed =>
+              {elapsed = cvt elapsed,
+               utime = cvt (Times.getUTime ()), 
+               stime = cvt (Times.getSTime ()), 
+               cutime = cvt (Times.getCUTime ()), 
+               cstime = cvt (Times.getCSTime ())}))
       end
 
-      fun environ () = COld.CSS.toList (Prim.environGet ())
+      fun environ () = CSS.toList (Prim.environGet ())
 
       fun getenv name =
          let
             val cs = Prim.getenv (NullString.nullTerm name)
          in
-            if Primitive.Pointer.isNull cs
+            if Primitive.MLton.Pointer.isNull cs
                then NONE
             else SOME (CS.toString cs)
          end
@@ -257,11 +252,8 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       fun isatty fd = Prim.isatty fd
 
       fun ttyname fd =
-         SysCall.syscall
-         (fn () =>
-          let val cs = Prim.ttyname fd
-          in 
-             (if Primitive.Pointer.isNull cs then ~1 else 0,
-              fn () => CS.toString cs)
-          end)
+         SysCall.syscall'
+         ({errVal = Primitive.MLton.Pointer.null}, fn () =>
+          (Prim.ttyname fd, fn cs => 
+           CS.toString cs))
    end

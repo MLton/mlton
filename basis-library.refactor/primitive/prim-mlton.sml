@@ -190,11 +190,12 @@ structure Pointer =
    struct
       open Pointer
 
-      local
-         exception IsNull
-      in
-         val isNull : t -> bool = fn _ => raise IsNull
-      end
+      val fromWord = _prim "WordU32_toWord32": Word32.word -> t;
+      val toWord = _prim "WordU32_toWord32": t -> Word32.word;
+               
+      val null: t = fromWord 0w0
+
+      fun isNull p = p = null
 
       val getInt8 = _prim "Pointer_getWord8": t * C_Ptrdiff.t -> Int8.int;
       val getInt16 = _prim "Pointer_getWord16": t * C_Ptrdiff.t -> Int16.int;

@@ -209,27 +209,30 @@ in
    ../io/io.sml
    ../io/prim-io.sig
    ../io/prim-io.fun
-(*
-      ../../posix/stub-mingw.sml
-      ../../posix/flags.sig
-      ../../posix/flags.sml
-      ../../posix/signal.sig
-      ../../posix/signal.sml
-      ../../posix/proc-env.sig
-      ../../posix/proc-env.sml
-      ../../posix/file-sys.sig
-      ../../posix/file-sys.sml
-      ../../posix/io.sig
-      ../../posix/io.sml
-      ../../posix/process.sig
-      ../../posix/process.sml
-      ../../posix/sys-db.sig
-      ../../posix/sys-db.sml
-      ../../posix/tty.sig
-      ../../posix/tty.sml
-      ../../posix/posix.sig
-      ../../posix/posix.sml
+   ../io/bin-prim-io.sml
+   ../io/text-prim-io.sml
 
+   ../posix/stub-mingw.sml
+   ../posix/flags.sig
+   ../posix/flags.sml
+   ../posix/signal.sig
+   ../posix/signal.sml
+   ../posix/proc-env.sig
+   ../posix/proc-env.sml
+   ../posix/file-sys.sig
+   (* ../posix/file-sys.sml *)
+   ../posix/io.sig
+   (* ../posix/io.sml *)
+   ../posix/process.sig
+   (* ../posix/process.sml *)
+   ../posix/sys-db.sig
+   (* ../posix/sys-db.sml *)
+   ../posix/tty.sig
+   (* ../posix/tty.sml *)
+   (* ../posix/posix.sig *)
+   (* ../posix/posix.sml *)
+
+(*
       ../../platform/cygwin.sml
 
       ../../io/stream-io.sig
