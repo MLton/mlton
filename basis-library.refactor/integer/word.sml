@@ -10,6 +10,7 @@ functor Word (W: PRE_WORD_EXTRA): WORD_EXTRA =
 struct
 
 open W
+type t = word
 
 val wordSize: Int.int = Primitive.Int32.toInt wordSize
 val wordSizeWord: Word.word = Primitive.Word32.toWord wordSizeWord

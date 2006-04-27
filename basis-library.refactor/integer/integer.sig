@@ -89,6 +89,7 @@ signature INTEGER =
 signature INTEGER_EXTRA =
    sig
       include INTEGER
+      type t = int
 
       val precision' : Int.int
       val maxInt' : int

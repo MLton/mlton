@@ -10,6 +10,7 @@ functor Integer (I: PRE_INTEGER_EXTRA) : INTEGER_EXTRA =
 struct
 
 open I
+type t = int
 
 val precision': Int.int = Primitive.Int32.toInt precision'
 val precision: Int.int option = SOME precision'

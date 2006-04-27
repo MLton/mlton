@@ -17,6 +17,7 @@ signature INT_INF =
 signature INT_INF_EXTRA =
    sig
       include INT_INF
+      type t = int
 
       structure BigWord : WORD
       structure SmallInt : INTEGER

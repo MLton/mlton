@@ -9,6 +9,7 @@
 structure IntInf: INT_INF_EXTRA =
    struct
       open Primitive.IntInf
+      type t = int
 
       structure BigWord = C_MPLimb
       structure SmallInt = ObjptrInt

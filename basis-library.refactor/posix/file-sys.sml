@@ -28,7 +28,6 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure Prim = PrimitiveFFI.Posix.FileSys
       open Prim
       structure Stat = Prim.Stat
-      structure Flags = BitFlags
 
       type file_desc = C_Fd.t
       type uid = C_UId.t
@@ -152,7 +151,13 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       structure S =
          struct
-            open S Flags
+            open S 
+            local 
+               structure Flags = BitFlags(structure W = C_Mode
+                                          val all = 0wxFFFF)
+            in
+               open Flags
+            end
             type mode = C_Mode.t
             val ifblk = IFBLK
             val ifchr = IFCHR
@@ -182,20 +187,20 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       structure O =
          struct
             open O Flags
-            val append = SysWord.fromInt APPEND
-            val binary = SysWord.fromInt BINARY
-            val creat = SysWord.fromInt CREAT
-            val dsync = SysWord.fromInt DSYNC
-            val excl = SysWord.fromInt EXCL
-            val noctty = SysWord.fromInt NOCTTY
-            val nonblock = SysWord.fromInt NONBLOCK
-            val rdonly = SysWord.fromInt RDONLY
-            val rdwr = SysWord.fromInt RDWR
-            val rsync = SysWord.fromInt RSYNC
-            val sync = SysWord.fromInt SYNC
-            val text = SysWord.fromInt TEXT
-            val trunc = SysWord.fromInt TRUNC
-            val wronly = SysWord.fromInt WRONLY
+            val append = APPEND
+            val binary = BINARY
+            val creat = CREAT
+            val dsync = DSYNC
+            val excl = EXCL
+            val noctty = NOCTTY
+            val nonblock = NONBLOCK
+            val rdonly = RDONLY
+            val rdwr = RDWR
+            val rsync = RSYNC
+            val sync = SYNC
+            val text = TEXT
+            val trunc = TRUNC
+            val wronly = WRONLY
          end
 
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR

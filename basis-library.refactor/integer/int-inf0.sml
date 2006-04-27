@@ -1072,6 +1072,7 @@ structure Word8 =
       open Word8
       val fromIntInfUnsafe = IntInf.toWord8Unsafe
       val fromIntInf = IntInf.toWord8
+      val fromIntInfZ = IntInf.toWord8
       val toIntInfUnsafe = IntInf.fromWord8Unsafe
       val toIntInf = IntInf.fromWord8
       val toIntInfXUnsafe = IntInf.fromWord8XUnsafe
@@ -1082,6 +1083,7 @@ structure Word16 =
       open Word16
       val fromIntInfUnsafe = IntInf.toWord16Unsafe
       val fromIntInf = IntInf.toWord16
+      val fromIntInfZ = IntInf.toWord16
       val toIntInfUnsafe = IntInf.fromWord16Unsafe
       val toIntInf = IntInf.fromWord16
       val toIntInfXUnsafe = IntInf.fromWord16XUnsafe
@@ -1092,6 +1094,7 @@ structure Word32 =
       open Word32
       val fromIntInfUnsafe = IntInf.toWord32Unsafe
       val fromIntInf = IntInf.toWord32
+      val fromIntInfZ = IntInf.toWord32
       val toIntInfUnsafe = IntInf.fromWord32Unsafe
       val toIntInf = IntInf.fromWord32
       val toIntInfXUnsafe = IntInf.fromWord32XUnsafe
@@ -1102,6 +1105,7 @@ structure Word64 =
       open Word64
       val fromIntInfUnsafe = IntInf.toWord64Unsafe
       val fromIntInf = IntInf.toWord64
+      val fromIntInfZ = IntInf.toWord64
       val toIntInfUnsafe = IntInf.fromWord64Unsafe
       val toIntInf = IntInf.fromWord64
       val toIntInfXUnsafe = IntInf.fromWord64XUnsafe

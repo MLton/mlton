@@ -29,6 +29,8 @@ in
       ../config/header/$(HEADER_WORD)
       ../config/seq/$(SEQ_INDEX)
       ../config/c/misc/$(CTYPES)
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
    end end
    ../integer/int-inf0.sml
    local
@@ -117,6 +119,8 @@ in
    in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
       ../config/c/misc/$(CTYPES)
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
    end end
    ../integer/int-inf.sig
    ../integer/int-inf.sml
@@ -146,6 +150,8 @@ in
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
       ../config/c/misc/$(CTYPES)
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
    end end
 
    ../text/char.sig
@@ -214,7 +220,7 @@ in
 
    ../posix/stub-mingw.sml
    ../posix/flags.sig
-   ../posix/flags.sml
+   (* ../posix/flags.sml *)
    ../posix/signal.sig
    ../posix/signal.sml
    ../posix/proc-env.sig

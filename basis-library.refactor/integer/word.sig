@@ -51,8 +51,13 @@ signature PRE_WORD_EXTRA =
       val wordSizeWord: Primitive.Word32.word
 
       val fromWord: Word.word -> word
+      val fromWordX: Word.word -> word
+      val fromSysWord: SysWord.word -> word
+      val fromSysWordX: SysWord.word -> word
       val toWord: word -> Word.word
       val toWordX: word -> Word.word
+      val toSysWord: word -> SysWord.word
+      val toSysWordX: word -> SysWord.word
 
       val << : word * Primitive.Word32.word -> word
       val >> : word * Primitive.Word32.word -> word
@@ -83,11 +88,18 @@ signature WORD =
 signature WORD_EXTRA =
    sig
       include WORD
+      type t = word
+
       val wordSizeWord: Word.word
 
       val fromWord: Word.word -> word
+      val fromWordX: Word.word -> word
+      val fromSysWord: SysWord.word -> word
+      val fromSysWordX: SysWord.word -> word
       val toWord: word -> Word.word
       val toWordX: word -> Word.word
+      val toSysWord: word -> SysWord.word
+      val toSysWordX: word -> SysWord.word
 
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
