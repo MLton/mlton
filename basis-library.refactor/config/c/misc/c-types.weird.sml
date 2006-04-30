@@ -44,9 +44,12 @@ functor C_Double_ChooseRealN (A: CHOOSE_REALN_ARG) = ChooseRealN_Real64 (A)
 structure C_Size = struct open Word16 type t = word end
 functor C_Size_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
 
-structure C_Pointer = Pointer
-structure C_String = Pointer
-structure C_StringArray = Pointer
+structure C_Pointer = struct open Word32 type t = word end
+functor C_Pointer_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_String = struct open Word32 type t = word end
+functor C_String_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_StringArray = struct open Word32 type t = word end
+functor C_StringArray_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* Generic integers *)
 structure C_Fd = C_Int
@@ -65,6 +68,10 @@ structure C_Intmax = struct open Int32 type t = int end
 functor C_Intmax_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
 structure C_UIntmax = struct open Word32 type t = word end
 functor C_UIntmax_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_Intptr = struct open Int32 type t = int end
+functor C_Intptr_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
+structure C_UIntptr = struct open Word32 type t = word end
+functor C_UIntptr_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <dirent.h> *)
 structure C_DirP = struct open Word16 type t = word end

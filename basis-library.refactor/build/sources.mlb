@@ -279,18 +279,18 @@ in
    ../mlton/rusage.sig
    ../mlton/rusage.sml
 
-(*
-      ../../system/process.sig
-      ../../system/process.sml
-      ../../system/io.sig
-      ../../system/io.sml
-      ../../system/os.sig
-      ../../system/os.sml
-      ../../system/unix.sig
-      ../../system/unix.sml
-      ../../system/timer.sig
-      ../../system/timer.sml
+   ../system/process.sig
+   ../system/process.sml
+   ../system/io.sig
+   ../system/io.sml
+   ../system/os.sig
+   ../system/os.sml
+   ../system/unix.sig
+   ../system/unix.sml
+   ../system/timer.sig
+   ../system/timer.sml
 
+(*
       ../../net/net.sig
       ../../net/net.sml
       ../../net/net-host-db.sig
@@ -307,7 +307,9 @@ in
       ../../net/inet-sock.sml
       ../../net/unix-sock.sig
       ../../net/unix-sock.sml
+*)
 
+(*
       ../../mlton/array.sig
       ../../mlton/cont.sig
       ../../mlton/cont.sml

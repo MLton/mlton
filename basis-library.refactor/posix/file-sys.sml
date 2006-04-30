@@ -33,10 +33,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       type uid = C_UId.t
       type gid = C_GId.t
 
-      val fdToWord = SysWord.fromLargeInt o C_Fd.toLarge
-      val wordToFD = C_Fd.fromLarge o SysWord.toLargeInt
-      val fdToIOD = OS.IO.fromFD
-      val iodToFD = SOME o OS.IO.toFD
+      val fdToWord = C_Fd.toSysWord
+      val wordToFD = C_Fd.fromSysWord
+      val fdToIOD = fn x => x
+      val iodToFD = SOME o (fn x => x)
 
       (*------------------------------------*)
       (*             dirstream              *)
