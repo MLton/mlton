@@ -499,7 +499,7 @@ val fcntl2 = _import "Posix_IO_fcntl2" : C_Fd.t * C_Int.t -> (C_Int.t) C_Errno.t
 val fcntl3 = _import "Posix_IO_fcntl3" : C_Fd.t * C_Int.t * C_Int.t -> (C_Int.t) C_Errno.t;
 structure FD = 
 struct
-val CLOEXEC = _const "Posix_IO_FD_CLOEXEC" : C_Fd.t;
+val CLOEXEC = _const "Posix_IO_FD_CLOEXEC" : C_Int.t;
 end
 structure FLock = 
 struct

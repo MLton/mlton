@@ -33,6 +33,7 @@ structure Controls =
       val debug = _command_line_const "MLton.debug": bool = false;
       val detectOverflow = _command_line_const "MLton.detectOverflow": bool = true;
       val safe = _command_line_const "MLton.safe": bool = true;
+      val bufSize = _command_line_const "TextIO.bufSize": Int32.int = 4096;
    end
 
 structure Exn =

@@ -228,15 +228,15 @@ in
    ../posix/file-sys.sig
    ../posix/file-sys.sml
    ../posix/io.sig
-   (* ../posix/io.sml *)
+   ../posix/io.sml
    ../posix/process.sig
-   (* ../posix/process.sml *)
+   ../posix/process.sml
    ../posix/sys-db.sig
-   (* ../posix/sys-db.sml *)
+   ../posix/sys-db.sml
    ../posix/tty.sig
-   (* ../posix/tty.sml *)
-   (* ../posix/posix.sig *)
-   (* ../posix/posix.sml *)
+   ../posix/tty.sml
+   ../posix/posix.sig
+   ../posix/posix.sml
 
 (*
       ../../platform/cygwin.sml

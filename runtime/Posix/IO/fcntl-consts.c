@@ -8,6 +8,6 @@ const C_Int_t Posix_IO_F_SETFD = F_SETFD;
 const C_Int_t Posix_IO_F_SETFL = F_SETFL;
 const C_Int_t Posix_IO_F_SETOWN = F_SETOWN;
 
-const C_Fd_t Posix_IO_FD_CLOEXEC = FD_CLOEXEC;
+const C_Int_t Posix_IO_FD_CLOEXEC = FD_CLOEXEC;
 
 const C_Int_t Posix_IO_O_ACCMODE = O_ACCMODE;
