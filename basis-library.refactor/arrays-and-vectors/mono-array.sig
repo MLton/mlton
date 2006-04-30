@@ -39,6 +39,8 @@ signature MONO_ARRAY_EXTRA =
           and type vector = vector
           and type vector_slice = vector_slice
 
+      val arrayUninit: int -> array
+
       val concat: array list -> array
       val duplicate: array -> array
       val fromPoly: elem Array.array -> array

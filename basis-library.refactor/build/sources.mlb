@@ -238,20 +238,20 @@ in
    ../posix/posix.sig
    ../posix/posix.sml
 
+   (* ../platform/cygwin.sml *)
+
+   ../io/stream-io.sig
+   ../io/stream-io.fun
+   ../io/imperative-io.sig
+   ../io/imperative-io.fun
+   ../io/bin-stream-io.sig
+   ../io/bin-io.sig
+   ../io/bin-io.sml
+   ../io/text-stream-io.sig
+   ../io/text-io.sig
+   ../io/text-io.sml
+
 (*
-      ../../platform/cygwin.sml
-
-      ../../io/stream-io.sig
-      ../../io/stream-io.fun
-      ../../io/imperative-io.sig
-      ../../io/imperative-io.fun
-      ../../io/bin-stream-io.sig
-      ../../io/bin-io.sig
-      ../../io/bin-io.sml
-      ../../io/text-stream-io.sig
-      ../../io/text-io.sig
-      ../../io/text-io.sml
-
       ../../system/path.sig
       ../../system/path.sml
       ../../system/file-sys.sig

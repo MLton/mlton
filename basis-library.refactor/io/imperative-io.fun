@@ -9,7 +9,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
    sig
       structure Array: sig
                           include MONO_ARRAY
-                          val rawArray: int -> array
+                          val arrayUninit: int -> array
                           val unsafeSub: array * int -> elem
                        end
       structure ArraySlice: MONO_ARRAY_SLICE
@@ -218,7 +218,7 @@ datatype instream = In of {augmentedReader: PIO.reader,
 
 local
    val augmentedReader = PIO.nullRd ()
-   val buf = A.rawArray 0
+   val buf = A.arrayUninit 0
    val first = ref 0
    val last = ref 0
    val reader = PIO.nullRd ()
@@ -373,7 +373,7 @@ fun inputN (ib as In {buf, first, last, ...}, n) =
                         (ib, "inputN", fn () =>
                          let
                             val readArr = readArr ib
-                            val inp = A.rawArray n
+                            val inp = A.arrayUninit n
                             fun fill k =
                                if k >= size
                                   then ()
