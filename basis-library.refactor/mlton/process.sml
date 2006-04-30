@@ -20,7 +20,7 @@ structure MLtonProcess =
       structure Mask = MLtonSignal.Mask
       structure SysCall = PosixError.SysCall
 
-      type pid = Pid.t
+      type pid = C_PId.t
 
       exception MisuseOfForget
       exception DoublyRedirected
@@ -254,9 +254,10 @@ structure MLtonProcess =
                  dquote]
 
       fun create (cmd, args, env, stdin, stdout, stderr) =
-         SysCall.syscall
-         (fn () =>
+         SysCall.simpleResult'
+         ({errVal = C_PId.fromInt ~1}, fn () =>
           let
+(*
              val cmd =
                 let
                    open MLton.Platform.OS
@@ -266,12 +267,10 @@ structure MLtonProcess =
                     | MinGW => cmd
                     | _ => raise Fail "create"
                 end
-             val p =
-                PrimitiveFFI.Windows.Process.create
-                (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
-             val p' = Pid.toInt p
+*)
           in
-             (p', fn () => p)
+             PrimitiveFFI.Windows.Process.create
+             (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
           end)
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
@@ -322,14 +321,12 @@ structure MLtonProcess =
             then
                let
                   val path = NullString.nullTerm path
-                  val args = COld.CSS.fromList args
-                  val env = COld.CSS.fromList env
+                  val args = CUtil.C_StringArray.fromList args
+                  val env = CUtil.C_StringArray.fromList env
                in
-                  SysCall.syscall
-                  (fn () =>
-                   let val pid = Prim.spawne (path, args, env)
-                   in (Pid.toInt pid, fn () => pid)
-                   end)
+                  SysCall.simpleResult'
+                  ({errVal = C_PId.fromInt ~1}, fn () =>
+                   Prim.spawne (path, args, env))
                end
          else
             case Posix.Process.fork () of
@@ -346,13 +343,11 @@ structure MLtonProcess =
             then
                let
                   val file = NullString.nullTerm file
-                  val args = COld.CSS.fromList args
+                  val args = CUtil.C_StringArray.fromList args
                in
-                  SysCall.syscall
-                  (fn () =>
-                   let val pid = Prim.spawnp (file, args)
-                   in (Pid.toInt pid, fn () => pid)
-                   end)
+                  SysCall.simpleResult'
+                  ({errVal = C_PId.fromInt ~1}, fn () =>
+                   Prim.spawnp (file, args))
                end
          else    
             case Posix.Process.fork () of

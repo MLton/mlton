@@ -18,8 +18,6 @@ val restart = SysCall.restartFlag
 type t = signal
 
 type how = C_Int.t
-
-(* val toString = SysWord.toString o toWord *)
    
 fun raiseInval () =
    let
@@ -30,8 +28,8 @@ fun raiseInval () =
 
 val validSignals = 
    Array.tabulate 
-   (Prim.NSIG, fn i => 
-    Prim.sigismember(fromInt i) <> ~1)
+   (C_Int.toInt Prim.NSIG, fn i => 
+    (C_Errno.check (Prim.sigismember(fromInt i))) <> (C_Int.fromInt ~1))
 
 structure Mask =
    struct
@@ -50,9 +48,9 @@ structure Mask =
          (Array.foldri
           (fn (i, b, sigs) =>
            if b
-              then if (Prim.sigismember(fromInt i)) = 1
-                      then (fromInt i)::sigs
-                      else sigs
+              then if (C_Errno.check (Prim.sigismember(fromInt i))) = (C_Int.fromInt ~1)
+                      then sigs
+                      else (fromInt i)::sigs
               else sigs)
           []
           validSignals)
@@ -103,7 +101,7 @@ local
    val r = ref false
 in
    fun initHandler (s: signal): Handler.t =
-      if 0 = Prim.isDefault (s, r)
+      if C_Errno.check (Prim.isDefault (s, r)) = C_Int.fromInt 0
          then if !r
                  then Default
               else Ignore
@@ -112,7 +110,7 @@ end
 
 val (getHandler, setHandler, handlers) =
    let
-      val handlers = Array.tabulate (Prim.NSIG, initHandler o fromInt)
+      val handlers = Array.tabulate (C_Int.toInt Prim.NSIG, initHandler o fromInt)
       val _ =
          Cleaner.addNew
          (Cleaner.atLoadWorld, fn () =>

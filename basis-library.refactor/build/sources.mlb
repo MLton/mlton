@@ -262,22 +262,22 @@ in
    ../general/sml90.sml
 
    ../mlton/pointer.sig
-   (* ../mlton/pointer.sml *)
-   (* ../mlton/call-stack.sig *)
-   (* ../mlton/call-stack.sml *)
-   (* ../mlton/exit.sml *)
-   (* ../mlton/exn.sig *)
-   (* ../mlton/exn.sml *)
-   (* ../mlton/thread.sig *)
-   (* ../mlton/thread.sml *)
-   (* ../mlton/signal.sig *)
-   (* ../mlton/signal.sml *)
-   (* ../mlton/process.sig *)
-   (* ../mlton/process.sml *)
-   (* ../mlton/gc.sig *)
-   (* ../mlton/gc.sml *)
-   (* ../mlton/rusage.sig *)
-   (* ../mlton/rusage.sml *)
+   ../mlton/pointer.sml
+   ../mlton/call-stack.sig
+   ../mlton/call-stack.sml
+   ../mlton/exit.sml
+   ../mlton/exn.sig
+   ../mlton/exn.sml
+   ../mlton/thread.sig
+   ../mlton/thread.sml
+   ../mlton/signal.sig
+   ../mlton/signal.sml
+   ../mlton/process.sig
+   ../mlton/process.sml
+   ../mlton/gc.sig
+   ../mlton/gc.sml
+   ../mlton/rusage.sig
+   ../mlton/rusage.sml
 
 (*
       ../../system/process.sig
