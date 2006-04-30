@@ -68,6 +68,9 @@ signature PRE_INTEGER_EXTRA =
       val leu: int * int -> bool
       val gtu: int * int -> bool
       val geu: int * int -> bool
+
+      val fromSysWord: SysWord.word -> int
+      val toSysWord: int -> SysWord.word
    end
 
 signature INTEGER =
@@ -114,4 +117,7 @@ signature INTEGER_EXTRA =
       val leu: int * int -> bool
       val gtu: int * int -> bool
       val geu: int * int -> bool
+
+      val fromSysWord: SysWord.word -> int
+      val toSysWord: int -> SysWord.word
    end

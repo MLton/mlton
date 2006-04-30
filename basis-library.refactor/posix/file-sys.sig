@@ -124,5 +124,5 @@ signature POSIX_FILE_SYS_EXTRA =
    sig
       include POSIX_FILE_SYS
 
-      val wordToOpenMode: SysWord.word -> open_mode
+      val flagsToOpenMode: O.flags -> open_mode
    end

@@ -220,13 +220,13 @@ in
 
    ../posix/stub-mingw.sml
    ../posix/flags.sig
-   (* ../posix/flags.sml *)
+   ../posix/flags.sml
    ../posix/signal.sig
    ../posix/signal.sml
    ../posix/proc-env.sig
    ../posix/proc-env.sml
    ../posix/file-sys.sig
-   (* ../posix/file-sys.sml *)
+   ../posix/file-sys.sml
    ../posix/io.sig
    (* ../posix/io.sml *)
    ../posix/process.sig

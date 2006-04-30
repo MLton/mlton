@@ -10,20 +10,20 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
       structure Error = PosixError
 
-      (* Patch to make Time look like it deals with Int.int
+      (* Patch to make Time look like it deals with C_Time.t
        * instead of LargeInt.int.
        *)
       structure Time =
          struct
             open Time
 
-            val fromSeconds = fromSeconds o LargeInt.fromInt
+            val fromSeconds = fromSeconds o C_Time.toLarge
 
             fun toSeconds t =
-               LargeInt.toInt (Time.toSeconds t)
+               C_Time.fromLarge (Time.toSeconds t)
                handle Overflow => Error.raiseSys Error.inval
          end
-      
+
       structure SysCall = Error.SysCall
       structure Prim = PrimitiveFFI.Posix.FileSys
       open Prim
@@ -151,13 +151,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       structure S =
          struct
-            open S 
-            local 
-               structure Flags = BitFlags(structure W = C_Mode
-                                          val all = 0wxFFFF)
-            in
-               open Flags
-            end
+            structure Flags = BitFlags(structure S = C_Mode)
+            open S Flags
             type mode = C_Mode.t
             val ifblk = IFBLK
             val ifchr = IFCHR
@@ -186,6 +181,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       structure O =
          struct
+            structure Flags = BitFlags(structure S = C_Int)
             open O Flags
             val append = APPEND
             val binary = BINARY
@@ -205,13 +201,13 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR
 
-      fun wordToOpenMode w =
-         if w = O.rdonly then O_RDONLY
-         else if w = O.wronly then O_WRONLY
-              else if w = O.rdwr then O_RDWR
-                   else raise Fail "wordToOpenMode: unknown word"
+      fun flagsToOpenMode f =
+         if f = O.rdonly then O_RDONLY
+         else if f = O.wronly then O_WRONLY
+              else if f = O.rdwr then O_RDWR
+                   else raise Fail "flagsToOpenMode: unknown flag"
                       
-      val openModeToWord =
+      val openModeToFlags =
          fn O_RDONLY => O.rdonly
           | O_WRONLY => O.wronly
           | O_RDWR => O.rdwr
@@ -219,12 +215,13 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       fun createf (pathname, openMode, flags, mode) =
          let
             val pathname = NullString.nullTerm pathname
-            val flags = Flags.flags [openModeToWord openMode,
-                                     flags,
-                                     O.creat]
+            val flags = O.Flags.flags [openModeToFlags openMode,
+                                       flags,
+                                       O.creat]
+            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
             val fd =
                SysCall.simpleResult
-               (fn () => Prim.open3 (pathname, SysWord.toInt flags, mode))
+               (fn () => Prim.open3 (pathname, flags, mode))
          in
             fd
          end
@@ -232,10 +229,11 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       fun openf (pathname, openMode, flags) =
          let 
             val pathname = NullString.nullTerm pathname
-            val flags = Flags.flags [openModeToWord openMode, flags]
+            val flags = O.Flags.flags [openModeToFlags openMode, flags]
+            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
             val fd = 
                SysCall.simpleResult
-               (fn () => Prim.open3 (pathname, SysWord.toInt flags, C_Mode.fromWord 0w0))
+               (fn () => Prim.open3 (pathname, flags, C_Mode.fromInt 0))
          in 
             fd
          end
@@ -278,7 +276,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                SysCall.syscall'
                ({errVal = C_SSize.fromInt ~1}, fn () =>
                 (Prim.readlink (path, buf, C_Size.fromInt size), fn len =>
-                 ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len))))
+                 ArraySlice.vector (ArraySlice.slice (buf, 0, SOME (C_SSize.toInt len)))))
             end
       end
 
@@ -362,7 +360,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       fun access (path: string, mode: access_mode list): bool =
          let 
-            val mode = SysWord.toInt (Flags.flags (map SysWord.fromInt (A.F_OK :: (map conv_access_mode mode))))
+            val mode = List.foldl C_Int.orb 0 (A.F_OK :: (map conv_access_mode mode))
             val path = NullString.nullTerm path
          in 
             SysCall.syscallErr

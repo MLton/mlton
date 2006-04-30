@@ -21,6 +21,16 @@ signature INT_FROM_TO_ARG =
       val fromInt32: Primitive.Int32.int -> int
       val fromInt64: Primitive.Int64.int -> int
       val fromIntInf: Primitive.IntInf.int -> int
+      (* Overflow checking, unsigned interp. *)
+      val fromWord8: Primitive.Word8.word -> int
+      val fromWord16: Primitive.Word16.word -> int
+      val fromWord32: Primitive.Word32.word -> int
+      val fromWord64: Primitive.Word64.word -> int
+      (* Overflow checking, signed interp. *)
+      val fromWord8X: Primitive.Word8.word -> int
+      val fromWord16X: Primitive.Word16.word -> int
+      val fromWord32X: Primitive.Word32.word -> int
+      val fromWord64X: Primitive.Word64.word -> int
       (* Lowbits or sign-extend. *)
       val toInt8Unsafe: int -> Primitive.Int8.int
       val toInt16Unsafe: int -> Primitive.Int16.int
@@ -33,6 +43,16 @@ signature INT_FROM_TO_ARG =
       val toInt32: int -> Primitive.Int32.int
       val toInt64: int -> Primitive.Int64.int
       val toIntInf: int -> Primitive.IntInf.int
+      (* Lowbits or zero extend. *)
+      val toWord8: int -> Primitive.Word8.word
+      val toWord16: int -> Primitive.Word16.word
+      val toWord32: int -> Primitive.Word32.word
+      val toWord64: int -> Primitive.Word64.word
+      (* Lowbits or sign extend. *)
+      val toWord8X: int -> Primitive.Word8.word
+      val toWord16X: int -> Primitive.Word16.word
+      val toWord32X: int -> Primitive.Word32.word
+      val toWord64X: int -> Primitive.Word64.word
    end
 
 signature INT_FROM_TO_RES =
@@ -41,17 +61,25 @@ signature INT_FROM_TO_RES =
 
       val fromIntUnsafe: Int.int -> int
       val fromInt: Int.int -> int
-      val fromLargeIntUnsafe: LargeInt.int -> int
-      val fromLargeUnsafe: LargeInt.int -> int
       val fromLargeInt: LargeInt.int -> int
       val fromLarge: LargeInt.int -> int
+      val fromWord: Word.word -> int
+      val fromWordX: Word.word -> int
+      val fromLargeWord: LargeWord.word -> int
+      val fromLargeWordX: LargeWord.word -> int
+      val fromSysWord: SysWord.word -> int
+      val fromSysWordX: SysWord.word -> int
 
       val toIntUnsafe: int -> Int.int
       val toInt: int -> Int.int
-      val toLargeIntUnsafe: int -> LargeInt.int
-      val toLargeUnsafe: int -> LargeInt.int
       val toLargeInt: int -> LargeInt.int
       val toLarge: int -> LargeInt.int
+      val toWord: int -> Word.word
+      val toWordX: int -> Word.word
+      val toLargeWord: int -> LargeWord.word
+      val toLargeWordX: int -> LargeWord.word
+      val toSysWord: int -> SysWord.word
+      val toSysWordX: int -> SysWord.word
    end
 
 functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
@@ -86,19 +114,6 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
          structure S =
             LargeInt_ChooseInt
             (type 'a t = 'a -> int
-             val fInt8 = I.fromInt8Unsafe
-             val fInt16 = I.fromInt16Unsafe
-             val fInt32 = I.fromInt32Unsafe
-             val fInt64 = I.fromInt64Unsafe
-             val fIntInf = I.fromIntInfUnsafe)
-      in
-         val fromLargeIntUnsafe = S.f
-         val fromLargeUnsafe = fromLargeIntUnsafe
-      end
-      local
-         structure S =
-            LargeInt_ChooseInt
-            (type 'a t = 'a -> int
              val fInt8 = I.fromInt8
              val fInt16 = I.fromInt16
              val fInt32 = I.fromInt32
@@ -107,6 +122,72 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
       in
          val fromLargeInt = S.f
          val fromLarge = fromLargeInt
+      end
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8
+             val fWord16 = I.fromWord16
+             val fWord32 = I.fromWord32
+             val fWord64 = I.fromWord64)
+      in
+         val fromWord = S.f
+      end
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8X
+             val fWord16 = I.fromWord16X
+             val fWord32 = I.fromWord32X
+             val fWord64 = I.fromWord64X)
+      in
+         val fromWordX = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8
+             val fWord16 = I.fromWord16
+             val fWord32 = I.fromWord32
+             val fWord64 = I.fromWord64)
+      in
+         val fromLargeWord = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8X
+             val fWord16 = I.fromWord16X
+             val fWord32 = I.fromWord32X
+             val fWord64 = I.fromWord64X)
+      in
+         val fromLargeWordX = S.f
+      end
+      local
+         structure S =
+            SysWord_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8
+             val fWord16 = I.fromWord16
+             val fWord32 = I.fromWord32
+             val fWord64 = I.fromWord64)
+      in
+         val fromSysWord = S.f
+      end
+      local
+         structure S =
+            SysWord_ChooseWordN
+            (type 'a t = 'a -> int
+             val fWord8 = I.fromWord8X
+             val fWord16 = I.fromWord16X
+             val fWord32 = I.fromWord32X
+             val fWord64 = I.fromWord64X)
+      in
+         val fromSysWordX = S.f
       end
 
       local
@@ -137,19 +218,6 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
          structure S =
             LargeInt_ChooseInt
             (type 'a t = int -> 'a
-             val fInt8 = I.toInt8Unsafe
-             val fInt16 = I.toInt16Unsafe
-             val fInt32 = I.toInt32Unsafe
-             val fInt64 = I.toInt64Unsafe
-             val fIntInf = I.toIntInfUnsafe)
-      in
-         val toLargeIntUnsafe = S.f
-         val toLargeUnsafe = toLargeIntUnsafe
-      end
-      local
-         structure S =
-            LargeInt_ChooseInt
-            (type 'a t = int -> 'a
              val fInt8 = I.toInt8
              val fInt16 = I.toInt16
              val fInt32 = I.toInt32
@@ -158,6 +226,72 @@ functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
       in
          val toLargeInt = S.f
          val toLarge = toLargeInt
+      end
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8
+             val fWord16 = I.toWord16
+             val fWord32 = I.toWord32
+             val fWord64 = I.toWord64)
+      in
+         val toWord = S.f
+      end
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8X
+             val fWord16 = I.toWord16X
+             val fWord32 = I.toWord32X
+             val fWord64 = I.toWord64X)
+      in
+         val toWordX = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8
+             val fWord16 = I.toWord16
+             val fWord32 = I.toWord32
+             val fWord64 = I.toWord64)
+      in
+         val toLargeWord = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8X
+             val fWord16 = I.toWord16X
+             val fWord32 = I.toWord32X
+             val fWord64 = I.toWord64X)
+      in
+         val toLargeWordX = S.f
+      end
+      local
+         structure S =
+            SysWord_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8
+             val fWord16 = I.toWord16
+             val fWord32 = I.toWord32
+             val fWord64 = I.toWord64)
+      in
+         val toSysWord = S.f
+      end
+      local
+         structure S =
+            SysWord_ChooseWordN
+            (type 'a t = int -> 'a
+             val fWord8 = I.toWord8X
+             val fWord16 = I.toWord16X
+             val fWord32 = I.toWord32X
+             val fWord64 = I.toWord64X)
+      in
+         val toSysWordX = S.f
       end
    end
 
