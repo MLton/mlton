@@ -251,17 +251,17 @@ in
    ../io/text-io.sig
    ../io/text-io.sml
 
+   ../system/path.sig
+   ../system/path.sml
+   ../system/file-sys.sig
+   ../system/file-sys.sml
+   ../system/command-line.sig
+   ../system/command-line.sml
+
+   ../general/sml90.sig
+   ../general/sml90.sml
+
 (*
-      ../../system/path.sig
-      ../../system/path.sml
-      ../../system/file-sys.sig
-      ../../system/file-sys.sml
-      ../../system/command-line.sig
-      ../../system/command-line.sml
-
-      ../../general/sml90.sig
-      ../../general/sml90.sml
-
       ../../mlton/pointer.sig
       ../../mlton/pointer.sml
       ../../mlton/call-stack.sig
