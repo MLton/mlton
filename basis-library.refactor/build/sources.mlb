@@ -21,7 +21,7 @@ in
    ../integer/word0.sml
    local 
       ../config/bind/int-prim.sml 
-      ../config/bind/pointer-prim.sml 
+      (* ../config/bind/pointer-prim.sml *)
       ../config/bind/real-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
@@ -113,7 +113,7 @@ in
    ../integer/word.sml
    local 
       ../config/bind/int-top.sml 
-      ../config/bind/pointer-prim.sml 
+      (* ../config/bind/pointer-prim.sml *)
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
@@ -145,7 +145,7 @@ in
    ../integer/pack-word.sml
    local 
       ../config/bind/int-top.sml 
-      ../config/bind/pointer-prim.sml 
+      (* ../config/bind/pointer-prim.sml *)
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
@@ -188,7 +188,7 @@ in
    ../real/real-global.sml
    local 
       ../config/bind/int-top.sml 
-      ../config/bind/pointer-prim.sml 
+      (* ../config/bind/pointer-prim.sml *)
       ../config/bind/real-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
@@ -261,25 +261,25 @@ in
    ../general/sml90.sig
    ../general/sml90.sml
 
-(*
-      ../../mlton/pointer.sig
-      ../../mlton/pointer.sml
-      ../../mlton/call-stack.sig
-      ../../mlton/call-stack.sml
-      ../../mlton/exit.sml
-      ../../mlton/exn.sig
-      ../../mlton/exn.sml
-      ../../mlton/thread.sig
-      ../../mlton/thread.sml
-      ../../mlton/signal.sig
-      ../../mlton/signal.sml
-      ../../mlton/process.sig
-      ../../mlton/process.sml
-      ../../mlton/gc.sig
-      ../../mlton/gc.sml
-      ../../mlton/rusage.sig
-      ../../mlton/rusage.sml
+   ../mlton/pointer.sig
+   (* ../mlton/pointer.sml *)
+   (* ../mlton/call-stack.sig *)
+   (* ../mlton/call-stack.sml *)
+   (* ../mlton/exit.sml *)
+   (* ../mlton/exn.sig *)
+   (* ../mlton/exn.sml *)
+   (* ../mlton/thread.sig *)
+   (* ../mlton/thread.sml *)
+   (* ../mlton/signal.sig *)
+   (* ../mlton/signal.sml *)
+   (* ../mlton/process.sig *)
+   (* ../mlton/process.sml *)
+   (* ../mlton/gc.sig *)
+   (* ../mlton/gc.sml *)
+   (* ../mlton/rusage.sig *)
+   (* ../mlton/rusage.sml *)
 
+(*
       ../../system/process.sig
       ../../system/process.sml
       ../../system/io.sig

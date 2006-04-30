@@ -38,7 +38,7 @@ in
 
    local 
       ../config/bind/int-prim.sml 
-      ../config/bind/pointer-prim.sml 
+      (* ../config/bind/pointer-prim.sml  *)
       ../config/bind/real-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in

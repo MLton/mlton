@@ -215,6 +215,11 @@ static char* mlTypesHStd[] = {
   writeString (cTypesSMLFd, " = Pointer");          \
   writeNewline (cTypesSMLFd);                       \
   } while (0)
+#undef ptrtype
+#define ptrtype(t, name)                            \
+  do {                                              \
+  systype(t, "Word", name);                         \
+  } while (0)
 
 #define aliastype(name1, bt, name2)                 \
   do {                                              \
@@ -312,7 +317,9 @@ int main (int argc, char* argv[]) {
   // chksystype(long double, "LongDouble");
   chksystype(size_t, "Size");
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  ptrtype(void*, "Pointer");
+  ptrtype(unsigned char*, "Pointer");
+  // ptrtype(void*, "Pointer");
+  // ptrtype(uintptr_t, "Pointer");
   ptrtype(char*, "String");
   ptrtype(char**, "StringArray");
 
@@ -330,6 +337,8 @@ int main (int argc, char* argv[]) {
   chksystype(ptrdiff_t, "Ptrdiff");
   chksystype(intmax_t, "Intmax");
   chksystype(uintmax_t, "UIntmax");
+  chksystype(intptr_t, "Intptr");
+  chksystype(uintptr_t, "UIntptr");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* from <dirent.h> */");
