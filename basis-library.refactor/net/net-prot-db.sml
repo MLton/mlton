@@ -11,29 +11,29 @@ structure NetProtDB: NET_PROT_DB =
 
       datatype entry = T of {name: string,
                              aliases: string list,
-                             protocol: int}
+                             protocol: C_Int.t}
 
       local
         fun make s (T r) = s r
       in
         val name = make #name
         val aliases = make #aliases
-        val protocol = make #protocol
+        val protocol = C_Int.toInt o (make #protocol)
       end
 
       local
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = COld.CS.toString (Prim.getEntryName ())
+                   val name = CUtil.C_String.toString (Prim.getEntryName ())
                    val numAliases = Prim.getEntryAliasesNum ()
                    fun fill (n, aliases) =
-                     if n < numAliases
+                     if C_Int.< (n, numAliases)
                        then let
                               val alias =
-                                COld.CS.toString (Prim.getEntryAliasesN n)
+                                CUtil.C_String.toString (Prim.getEntryAliasesN n)
                             in
-                              fill (n + 1, alias::aliases)
+                              fill (C_Int.+ (n, 1), alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
@@ -48,6 +48,6 @@ structure NetProtDB: NET_PROT_DB =
         fun getByName name = 
           get (Prim.getByName (NullString.nullTerm name))
         fun getByNumber proto = 
-          get (Prim.getByNumber proto)
+          get (Prim.getByNumber (C_Int.fromInt proto))
       end
    end

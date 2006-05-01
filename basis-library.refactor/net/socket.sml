@@ -7,8 +7,7 @@
 
 structure Socket:> SOCKET_EXTRA
    where type SOCK.sock_type = C_Int.t
-   where type pre_sock_addr = Word8.word array
-=
+   where type pre_sock_addr = Word8.word array =
 struct
 
 structure Prim = PrimitiveFFI.Socket
@@ -44,12 +43,11 @@ datatype active = ACTIVE (* phantom *)
 structure AF =
    struct
       type addr_family = NetHostDB.addr_family
-      val i2a = NetHostDB.intToAddrFamily
       val names = [
-                   ("UNIX", i2a Prim.AF.UNIX),
-                   ("INET", i2a Prim.AF.INET),
-                   ("INET6", i2a Prim.AF.INET6),
-                   ("UNSPEC", i2a Prim.AF.UNSPEC)
+                   ("UNIX", Prim.AF.UNIX),
+                   ("INET", Prim.AF.INET),
+                   ("INET6", Prim.AF.INET6),
+                   ("UNSPEC", Prim.AF.UNSPEC)
                    ]
       fun list () = names
       fun toString af' =

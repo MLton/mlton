@@ -117,6 +117,7 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
       ../config/objptr/$(OBJPTR_REP)
       ../config/c/misc/$(CTYPES)
       ../config/c/position.sml
@@ -149,6 +150,8 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
+      ../config/objptr/$(OBJPTR_REP)
       ../config/c/misc/$(CTYPES)
       ../config/c/position.sml
       ../config/c/sys-word.sml
@@ -192,6 +195,8 @@ in
       ../config/bind/real-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
+      ../config/objptr/$(OBJPTR_REP)
       ../config/c/misc/$(CTYPES)
       ../config/c/position.sml
       ../config/c/sys-word.sml
@@ -290,7 +295,6 @@ in
    ../system/timer.sig
    ../system/timer.sml
 
-   (*
    ../net/net.sig
    ../net/net.sml
    ../net/net-host-db.sig
@@ -300,14 +304,13 @@ in
    ../net/net-serv-db.sig
    ../net/net-serv-db.sml
    ../net/socket.sig
-   ../net/socket.sml
-   ../net/generic-sock.sig
-   ../net/generic-sock.sml
-   ../net/inet-sock.sig
-   ../net/inet-sock.sml
-   ../net/unix-sock.sig
-   ../net/unix-sock.sml
-    *)
+   (* ../net/socket.sml *)
+   (* ../net/generic-sock.sig *)
+   (* ../net/generic-sock.sml *)
+   (* ../net/inet-sock.sig *)
+   (* ../net/inet-sock.sml *)
+   (* ../net/unix-sock.sig *)
+   (* ../net/unix-sock.sml *)
 
    ../mlton/array.sig
    ../mlton/cont.sig
@@ -349,7 +352,6 @@ in
    ../mlton/word.sig
    ../mlton/world.sig
    ../mlton/world.sml
-(*
    ../mlton/mlton.sig
    ../mlton/mlton.sml
 
@@ -358,6 +360,7 @@ in
    ../sml-nj/unsafe.sig
    ../sml-nj/unsafe.sml
 
+(*
       top-level/basis.sig
       ann
          "allowRebindEquals true"

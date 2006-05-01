@@ -175,29 +175,23 @@ signature SOCKET_EXTRA =
 
     structure CtlExtra:
        sig
-          type level = int
-          type optname = int
-          type request = int
+          type level = C_Int.int
+          type optname = C_Int.int
+          type request = C_Int.int
 
-(*        val getSockOptWord: level * optname -> ('af, 'sock_type) sock -> word *)
-(*        val setSockOptWord:
- *           level * optname -> ('af, 'sock_type) sock * word -> unit
- *)
-          val getERROR:
-             ('af, 'sock_type) sock
-             -> (string * Posix.Error.syserror option) option
+          (* val getSockOptWord: level * optname -> ('af, 'sock_type) sock -> word *)
+          (* val setSockOptWord: level * optname -> ('af, 'sock_type) sock * word -> unit *)
+          val getERROR: ('af, 'sock_type) sock -> (string * Posix.Error.syserror option) option
           val getSockOptInt: level * optname -> ('af, 'sock_type) sock -> int
-          val setSockOptInt:
-             level * optname -> ('af, 'sock_type) sock * int -> unit
+          val setSockOptInt: level * optname -> ('af, 'sock_type) sock * int -> unit
           val getSockOptBool: level * optname -> ('af, 'sock_type) sock -> bool
-          val setSockOptBool:
-             level * optname -> ('af, 'sock_type) sock * bool -> unit
+          val setSockOptBool: level * optname -> ('af, 'sock_type) sock * bool -> unit
 
-(*        val getIOCtlWord: request -> ('af, 'sock_type) sock -> word *)
-(*        val setIOCtlWord: request -> ('af, 'sock_type) sock * word -> unit *)
+          (* val getIOCtlWord: request -> ('af, 'sock_type) sock -> word *)
+          (* val setIOCtlWord: request -> ('af, 'sock_type) sock * word -> unit *)
           val getIOCtlInt: request -> ('af, 'sock_type) sock -> int
-(*        val setIOCtlInt: request -> ('af, 'sock_type) sock * int -> unit *)
+          (* val setIOCtlInt: request -> ('af, 'sock_type) sock * int -> unit *)
           val getIOCtlBool: request -> ('af, 'sock_type) sock -> bool
-(*        val setIOCtlBool: request -> ('af, 'sock_type) sock * bool -> unit *)
+          (* val setIOCtlBool: request -> ('af, 'sock_type) sock * bool -> unit *)
        end
   end

@@ -27,16 +27,19 @@ fun shareAll () =
     ; GC.collect ())
  
 fun size x =
-   let val refOverhead = 8 (* header + indirect *)
-   in Primitive.MLton.size (ref x) - refOverhead
+   let
+      val refOverhead =
+         HeaderWord.wordSize + ObjptrWord.wordSize
+   in 
+      C_Size.toInt (Primitive.MLton.size (ref x)) - refOverhead
    end
 
 (* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 
-val debug = Primitive.debug
-val eq = Primitive.eq
+val debug = Primitive.Controls.debug
+val eq = Primitive.MLton.eq
 (* val errno = Primitive.errno *)
-val safe = Primitive.safe
+val safe = Primitive.Controls.safe
 
 structure Array = Array
 structure BinIO = MLtonIO (BinIO)
@@ -60,7 +63,7 @@ structure Random = MLtonRandom
 structure Rlimit = MLtonRlimit
 structure Rusage = MLtonRusage
 structure Signal = MLtonSignal
-structure Socket = MLtonSocket
+(* structure Socket = MLtonSocket *)
 structure Syslog = MLtonSyslog
 structure TextIO = MLtonIO (TextIO)
 structure Thread = MLtonThread
@@ -69,12 +72,12 @@ structure Weak = MLtonWeak
 structure World = MLtonWorld
 structure Word =
    struct
-      open Primitive.Word32
+      open Word32
       type t = word
    end
 structure Word8 =
    struct
-      open Primitive.Word8
+      open Word8
       type t = word
    end
 
