@@ -9,17 +9,16 @@
 structure MLtonCont:> MLTON_CONT =
 struct
 
-structure Thread = Primitive.Thread
-val gcState = Primitive.GCState.gcState
+structure Thread = Primitive.MLton.Thread
 
-(* This mess with dummy is so that if callcc is ever used anywhere in the
- * program, then Primitive.usesCallcc is set to true during basis library
- * evaluation.  This relies on the dead code elimination algorithm
- * (core-ml/dead-code.fun), which will keep dummy around only if callcc is used.
- *)
-val dummy =
-   (Primitive.usesCallcc := true
-    ; fn () => ())
+fun die (s: string): 'a =
+   (PrimitiveFFI.Stdio.print s
+    ; PrimitiveFFI.Posix.Process.exit 1
+    ; let exception DieFailed
+      in raise DieFailed
+      end)
+
+val gcState = Primitive.MLton.GCState.gcState
 
 type 'a t = (unit -> 'a) -> unit
 
@@ -58,7 +57,7 @@ fun callcc (f: 'a t -> 'a): 'a =
                            Thread.switchTo new
                         end)
                 end
-       end)
+       end
 
 fun ('a, 'b) throw' (k: 'a t, v: unit -> 'a): 'b =
    (k v; raise Fail "throw bug")

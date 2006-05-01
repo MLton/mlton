@@ -8,9 +8,9 @@
 
 structure MLtonWorld: MLTON_WORLD =
    struct
-      structure Prim = Primitive.World
+      structure Prim = Primitive.MLton.World
 
-      val gcState = Primitive.GCState.gcState
+      val gcState = Primitive.MLton.GCState.gcState
          
       datatype status = Clone | Original
 
@@ -24,8 +24,7 @@ structure MLtonWorld: MLTON_WORLD =
                let
                   open Posix.FileSys
                   val flags =
-                     O.flags [O.trunc,
-                              SysWord.fromInt PrimitiveFFI.Posix.FileSys.O.BINARY]
+                     O.flags [O.trunc, PrimitiveFFI.Posix.FileSys.O.BINARY]
                   val mode =
                      let
                         open S

@@ -8,9 +8,9 @@
 
 signature MLTON_RLIMIT =
    sig
-      type rlim = Word64.word
+      structure RLim : WORD
                
-      val infinity: rlim
+      val infinity: RLim.word
 
       type t
                
@@ -27,7 +27,7 @@ signature MLTON_RLIMIT =
       val numProcesses: t        (* NPROC   max number of processes *)
       val residentSetSize: t     (* RSS     max resident set size *)
  *)
-      
-      val get: t -> {hard: rlim, soft: rlim}
-      val set: t * {hard: rlim, soft: rlim} -> unit
+
+      val get: t -> {hard: RLim.word, soft: RLim.word}
+      val set: t * {hard: RLim.word, soft: RLim.word} -> unit
    end

@@ -229,7 +229,7 @@ structure Profile =
          struct
             type t = Pointer.t
                
-            (* val dummy:t = 0w0 *)
+            val dummy = Pointer.null
             val free = _import "GC_profileFree": GCState.t * t -> unit;
             val malloc = _import "GC_profileMalloc": GCState.t -> t;
             val write = _import "GC_profileWrite": GCState.t * t * C_Fd.t -> unit;
