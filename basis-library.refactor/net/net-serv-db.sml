@@ -32,8 +32,7 @@ structure NetServDB: NET_SERV_DB =
                    fun fill (n, aliases) =
                      if C_Int.< (n, numAliases)
                        then let
-                              val alias =
-                                CUtil.C_String.toString (Prim.getEntryAliasesN n)
+                              val alias = CUtil.C_String.toString (Prim.getEntryAliasesN n)
                             in
                               fill (C_Int.+ (n, 1), alias::aliases)
                             end

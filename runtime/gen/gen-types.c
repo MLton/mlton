@@ -257,13 +257,11 @@ static char* mlTypesHStd[] = {
   } while (0)
 
 static char* mlTypesHSuffix[] = {
-  "",
   "#endif /* _MLTON_MLTYPES_H_ */",
   NULL
 };
 
 static char* cTypesHSuffix[] = {
-  "",
   "#define C_Errno_t(t) t",
   "",
   "#endif /* _MLTON_CTYPES_H_ */",
@@ -271,7 +269,6 @@ static char* cTypesHSuffix[] = {
 };
 
 static char* cTypesSMLSuffix[] = {
-  "",
   NULL
 };
 

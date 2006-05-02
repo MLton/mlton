@@ -5,42 +5,45 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure NetHostDB:> NET_HOST_DB_EXTRA =
+structure NetHostDB: NET_HOST_DB_EXTRA =
    struct
       structure Prim = PrimitiveFFI.NetHostDB
 
-      (* network byte order (MSB) *)
+      (* network byte order (big-endian) *)
       type pre_in_addr = Word8.word array
       type in_addr = Word8.word vector
 
       val preInAddrToWord8Array = fn a => a
       val inAddrToWord8Vector = fn v => v
 
-      structure PW = PackWord32Big
+      val inAddrLen = C_Size.toInt Prim.inAddrSize
       fun new_in_addr () =
         let
-          val inAddrLen = C_Size.toInt Prim.inAddrSize
           val ia: pre_in_addr = Array.array (inAddrLen, 0wx0: Word8.word)
           fun finish () = Array.vector ia
         in
           (ia, finish)
         end
-(*
-      fun inAddrToWord (ia: in_addr) =
-        Word.fromLargeWord (PW.subVec (Word8Vector.fromPoly ia, 0))
-      fun wordToInAddr w =
-        let
-          val (ia, finish) = new_in_addr ()
-          val _ = PW.update (Word8Array.fromPoly ia, 0, Word.toLargeWord w)
-        in
-          finish ()
-        end
-      fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
-*)
+      fun any () =
+         let
+            val (wa, finish) = new_in_addr ()
+            fun loop (i, acc) =
+               if i >= inAddrLen
+                  then ()
+                  else let
+                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, (inAddrLen - 1) - i, w)
+                       in
+                          loop (i + 1, C_Int.>> (acc, 0w4))
+                       end
+         in
+            loop (0, Prim.INADDR_ANY)
+            ; finish ()
+         end
 
       type addr_family = C_Int.t
-      val intToAddrFamily = C_Int.fromInt
-      val addrFamilyToInt = C_Int.toInt
          
       datatype entry = T of {name: string,
                              aliases: string list,
@@ -80,10 +83,8 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
                      if C_Int.< (n, numAddrs)
                        then let
                               val addr = Word8Array.array (C_Int.toInt length, 0wx0)
-                              val _ =
-                                 Prim.getEntryAddrsN (n, Word8Array.toPoly addr)
-                              val addr =
-                                 Word8Vector.toPoly (Word8Array.vector addr)
+                              val _ = Prim.getEntryAddrsN (n, Word8Array.toPoly addr)
+                              val addr = Word8Vector.toPoly (Word8Array.vector addr)
                             in
                               fill (C_Int.+ (n, 1), addr::addrs)
                             end

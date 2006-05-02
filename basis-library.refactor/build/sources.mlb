@@ -304,13 +304,13 @@ in
    ../net/net-serv-db.sig
    ../net/net-serv-db.sml
    ../net/socket.sig
-   (* ../net/socket.sml *)
-   (* ../net/generic-sock.sig *)
-   (* ../net/generic-sock.sml *)
-   (* ../net/inet-sock.sig *)
-   (* ../net/inet-sock.sml *)
-   (* ../net/unix-sock.sig *)
-   (* ../net/unix-sock.sml *)
+   ../net/socket.sml
+   ../net/generic-sock.sig
+   ../net/generic-sock.sml
+   ../net/inet-sock.sig
+   ../net/inet-sock.sml
+   ../net/unix-sock.sig
+   ../net/unix-sock.sml
 
    ../mlton/array.sig
    ../mlton/cont.sig
@@ -359,19 +359,4 @@ in
    ../sml-nj/sml-nj.sml
    ../sml-nj/unsafe.sig
    ../sml-nj/unsafe.sml
-
-(*
-      top-level/basis.sig
-      ann
-         "allowRebindEquals true"
-      in 
-         top-level/basis.sml 
-      end
-   in
-      structure BasisExtra 
-      top-level/basis-sigs.sml
-      top-level/basis-funs.sml
-      top-level/top-level.sml 
-   end
-*)
 end
