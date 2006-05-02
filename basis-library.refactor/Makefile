@@ -20,10 +20,10 @@ clean:
 	../bin/clean
 
 
-OBJPTR_REP_MAPS = objptr-rep32.map objptr-rep64.map 
+OBJPTR_MAPS = objptr-rep32.map objptr-rep64.map 
 HEADER_MAPS = header-word32.map header-word64.map
-SEQ_INDEX_MAPS = seqindex-int32.map seqindex-int64.map 
-CTYPES_MAPS = c-types.m32.map c-types.m64.map c-types.weird.map
+SEQINDEX_MAPS = seqindex-int32.map seqindex-int64.map 
+CTYPES_MAPS = c-types.test-amd64-m32-linux.map c-types.test-amd64-m64-linux.map c-types.test-weird-weird.map c-types.amd64-linux.map c-types.x86-linux.map 
 DEFAULT_CHAR_MAPS = default-char8.map
 DEFAULT_INT_MAPS = default-int32.map default-int64.map default-int-inf.map 
 DEFAULT_REAL_MAPS = default-real32.map default-real64.map
@@ -31,9 +31,9 @@ DEFAULT_WORD_MAPS = default-word32.map default-word64.map
 
 .PHONY: type-check
 type-check:
-	for objptrrep in $(OBJPTR_REP_MAPS); do \
+	for objptrrep in $(OBJPTR_MAPS); do \
 	for header in $(HEADER_MAPS); do \
-	for seqindex in $(SEQ_INDEX_MAPS); do \
+	for seqindex in $(SEQINDEX_MAPS); do \
 	for ctypes in $(CTYPES_MAPS); do \
 	for defchar in $(DEFAULT_CHAR_MAPS); do \
 	for defint in $(DEFAULT_INT_MAPS); do \

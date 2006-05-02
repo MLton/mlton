@@ -1,0 +1,2 @@
+TARGET_ARCH test/amd64-m64
+TARGET_OS linux
