@@ -35,6 +35,9 @@ Darwin)
 FreeBSD*)
         HOST_OS='freebsd'
 ;;
+HP-UX)
+	HOST_OS='hpux'
+;;
 Linux)
         HOST_OS='linux'
 ;;
@@ -72,6 +75,9 @@ arm*)
         HOST_ARCH=arm
 ;;
 parisc*)
+        HOST_ARCH=hppa
+;;
+9000/*)
         HOST_ARCH=hppa
 ;;
 ia64*)

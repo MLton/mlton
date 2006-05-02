@@ -9,6 +9,7 @@
 all: MLRISC/README.mlton
 
 MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
+	rm -rf MLRISC
 	gzip -dc MLRISC.tgz | tar xf -
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC

@@ -25,7 +25,7 @@ static char* mlTypesHPrefix[] = {
   "#ifndef _ISOC99_SOURCE",
   "#define _ISOC99_SOURCE",
   "#endif",
-  "#if (defined (__OpenBSD__))",
+  "#if (defined (__hpux__) || defined (__OpenBSD__))",
   "#include <inttypes.h>",
   "#elif (defined (__sun__))",
   "#include <sys/int_types.h>",

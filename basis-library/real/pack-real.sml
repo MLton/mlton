@@ -24,15 +24,23 @@ val (sub, up) =
       then (subVec, update)
    else (subVecRev, updateRev)
 
-fun check (size, i) =
-   if Int.< (i, 0) orelse Int.> (i, size -? bytesPerElem) then
-      raise Subscript
-   else
-      ()
+fun offset (i, n) =
+   let
+      val i = Int.* (bytesPerElem, i)
+      val () =
+         if Primitive.safe
+            andalso (Primitive.Int.geu
+                     (Int.+ (i, Int.- (bytesPerElem, 1)), n)) then
+            raise Subscript
+         else
+            ()
+   in
+      i
+   end handle Overflow => raise Subscript
 
 fun update (a, i, r) =
    let
-      val () = check (Word8Array.length a, i)
+      val i = offset (i, Word8Array.length a)
       val a = Word8Array.toPoly a
    in
       up (a, i, r)
@@ -48,7 +56,7 @@ end
 
 fun subVec (v, i) =
    let
-      val () = check (Word8Vector.length v, i)
+      val i = offset (i, Word8Vector.length v)
       val v = Word8Vector.toPoly v
    in
       sub (v, i)

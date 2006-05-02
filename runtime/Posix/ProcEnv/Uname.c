@@ -1,27 +1,27 @@
 #include "platform.h"
 
-static struct utsname utsname;
+static struct utsname mlton_utsname;
 
 C_String_t Posix_ProcEnv_Uname_getSysName () {
-  return (C_String_t)utsname.sysname;
+  return (C_String_t)mlton_utsname.sysname;
 }
 
 C_String_t Posix_ProcEnv_Uname_getNodeName () {
-  return (C_String_t)utsname.nodename;
+  return (C_String_t)mlton_utsname.nodename;
 }
 
 C_String_t Posix_ProcEnv_Uname_getRelease () {
-  return (C_String_t)utsname.release;
+  return (C_String_t)mlton_utsname.release;
 }
 
 C_String_t Posix_ProcEnv_Uname_getVersion () {
-  return (C_String_t)utsname.version;
+  return (C_String_t)mlton_utsname.version;
 }
 
 C_String_t Posix_ProcEnv_Uname_getMachine () {
-  return (C_String_t)utsname.machine;
+  return (C_String_t)mlton_utsname.machine;
 }
 
 C_Errno_t(C_Int_t) Posix_ProcEnv_uname () {
-  return uname (&utsname);
+  return uname (&mlton_utsname);
 }
