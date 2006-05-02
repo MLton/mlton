@@ -27,7 +27,7 @@ in
    in ann "forceUsed" in
       ../config/objptr/$(OBJPTR_REP)
       ../config/header/$(HEADER_WORD)
-      ../config/seq/$(SEQ_INDEX)
+      ../config/seqindex/$(SEQ_INDEX)
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
@@ -77,7 +77,7 @@ in
    local 
       ../config/bind/int-prim.sml 
    in ann "forceUsed" in
-      ../config/seq/$(SEQ_INDEX)
+      ../config/seqindex/$(SEQ_INDEX)
    end end
    ../arrays-and-vectors/slice.sig
    ../arrays-and-vectors/sequence.sig
