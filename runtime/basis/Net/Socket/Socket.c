@@ -5,7 +5,7 @@ C_Errno_t(C_Int_t) Socket_accept (C_Sock_t s, Array(Word8_t) addr, Ref(C_Socklen
   return accept (s, (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
-C_Errno_t(C_Int_t) Socket_bind (C_Sock_t s, Array(Word8_t) addr, C_Socklen_t addrlen) {
+C_Errno_t(C_Int_t) Socket_bind (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {
   MLton_initSockets ();
   return bind (s, (struct sockaddr*)addr, (socklen_t)addrlen);
 }
