@@ -26,18 +26,7 @@ structure PreChar8 =
       in
          val chrUnsafe = S.f
       end
-      local
-         structure S =
-            Int_ChooseInt
-            (type 'a t = char -> 'a
-             val fInt8 = Prim.toInt8Unsafe
-             val fInt16 = Prim.toInt16Unsafe
-             val fInt32 = Prim.toInt32Unsafe
-             val fInt64 = Prim.toInt64Unsafe
-             val fIntInf = Prim.toIntInfUnsafe)
-      in
-         val ord = S.f
-      end
+      val ord = Primitive.Word8.toInt o Prim.toWord8Unsafe
 
       val minChar: char = #"\000"
       val numChars: int = 256
