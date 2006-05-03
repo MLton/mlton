@@ -180,8 +180,6 @@ in
    ../real/math.sig
    ../real/real.sig
    ../real/real.sml
-   ../real/pack-real.sig
-   ../real/pack-real.sml
    local 
       ../config/bind/real-top.sml 
    in ann "forceUsed" in
@@ -189,6 +187,8 @@ in
       ../config/default/large-real.sml
    end end
    ../real/real-global.sml
+   ../real/pack-real.sig
+   ../real/pack-real.sml
    local 
       ../config/bind/int-top.sml 
       (* ../config/bind/pointer-prim.sml *)

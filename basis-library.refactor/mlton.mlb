@@ -33,7 +33,7 @@ in
       signature MLTON_RLIMIT
       signature MLTON_RUSAGE
       signature MLTON_SIGNAL
-      signature MLTON_SOCKET
+      (* signature MLTON_SOCKET *)
       signature MLTON_SYSLOG
       signature MLTON_TEXT_IO
       signature MLTON_THREAD

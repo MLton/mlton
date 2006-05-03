@@ -6,5 +6,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
+val real = Real.fromInt
 structure RealGlobal: REAL_GLOBAL = Real
 open RealGlobal

@@ -222,7 +222,14 @@ nj-mlton-quad:
 mlbpathmap:
 	touch $(MLBPATHMAP)
 	( echo 'MLTON_ROOT $$(LIB_MLTON_DIR)/sml';	\
-	 echo 'SML_LIB $$(LIB_MLTON_DIR)/sml' ) 	\
+	  echo 'SML_LIB $$(LIB_MLTON_DIR)/sml';		\
+	  echo 'OBJPTR_REP objptr-rep32.sml';		\
+	  echo 'HEADER_WORD header-word32.sml';		\
+	  echo 'SEQ_INDEX seqindex-int32.sml';		\
+	  echo 'DEFAULT_CHAR default-char8.sml';	\
+	  echo 'DEFAULT_INT default-int32.sml';		\
+	  echo 'DEFAULT_REAL default-real64.sml';	\
+	  echo 'DEFAULT_WORD default-word32.sml'; ) 	\
 		>>$(MLBPATHMAP).tmp
 	mv $(MLBPATHMAP).tmp $(MLBPATHMAP)
 
