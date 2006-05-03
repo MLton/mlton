@@ -671,7 +671,7 @@ structure IntInf : INT_INF0 =
                     val numw = dropTagCoerce num
                     val numi = W.toObjptrIntX numw
                     val denw = dropTagCoerce den
-                    val deni = W.toObjptrIntX numw
+                    val deni = W.toObjptrIntX denw
                  in
                     if numw = badObjptrWord 
                        andalso deni = ~1
@@ -702,7 +702,7 @@ structure IntInf : INT_INF0 =
                     val numw = dropTagCoerce num
                     val numi = W.toObjptrIntX numw
                     val denw = dropTagCoerce den
-                    val deni = W.toObjptrIntX numw
+                    val deni = W.toObjptrIntX denw
                     val ansi = I.rem (numi, deni)
                     val answ = W.fromObjptrInt ansi
                     val ans = addTag answ
