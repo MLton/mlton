@@ -55,7 +55,9 @@ CFLAGS = -Wall -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
 GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
 DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
-WARNFLAGS = -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-function \
+WARNFLAGS = \
+	-pedantic -Wall -Wextra \
+	-Wno-unused-parameter -Wno-unused-function \
 	-Wformat-nonliteral \
 	-Wuninitialized -Winit-self \
 	-Wstrict-aliasing=2 \
