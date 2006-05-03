@@ -160,7 +160,7 @@ structure IntInf: INT_INF_EXTRA =
                                     chunk = W.+ (W.* (base, chunk), dig),
                                     s = s'}
                val digitsPerChunk = 
-                  Int32.div (Int32.- (Int32.fromInt W.wordSize, 2), W.log2 base)
+                  Int32.quot (Int32.- (Int32.fromInt W.wordSize, 3), W.log2 base)
                fun reader (s: 'a): (chunk * 'a) option =
                   case dread s of
                      NONE => NONE
@@ -181,12 +181,12 @@ structure IntInf: INT_INF_EXTRA =
                fun loop (more: bool, acc: int, s: 'a) =
                   if more
                      then case ckread s of
-                        NONE => (acc, s)
-                      | SOME ({more, shift, chunk}, s') =>
-                           loop (more,
-                                 ((Prim.addTagCoerce shift) * acc)
-                                 + (Prim.addTagCoerce chunk),
-                                 s')
+                             NONE => (acc, s)
+                           | SOME ({more, shift, chunk}, s') =>
+                                loop (more,
+                                      ((Prim.addTagCoerce shift) * acc)
+                                      + (Prim.addTagCoerce chunk),
+                                      s')
                      else (acc, s)
                fun reader (s: 'a): (int * 'a) option =
                   case ckread s of
@@ -238,11 +238,10 @@ structure IntInf: INT_INF_EXTRA =
                                     | #"~" => (true, s')
                                     | _ => (false, s)
                              in
-                                if isNeg then
-                                   case uread s'' of
-                                      NONE => NONE
-                                    | SOME (abs, s''') =>
-                                         SOME (~ abs, s''')
+                                if isNeg 
+                                   then case uread s'' of
+                                           NONE => NONE
+                                         | SOME (abs, s''') => SOME (~ abs, s''')
                                    else uread s''
                              end
             in
@@ -261,8 +260,7 @@ structure IntInf: INT_INF_EXTRA =
                   val dread = toDigR (dig, cread)
                   val ckread = toChunkR (base, dread)
                   val uread = toUnsR ckread
-                  val hread =
-                     if base = 0w16 then toHexR (cread, uread) else uread
+                  val hread = if base = 0w16 then toHexR (cread, uread) else uread
                   val reader = toSign (cread, hread)
                in 
                   reader
