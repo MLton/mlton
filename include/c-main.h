@@ -31,7 +31,7 @@ void MLton_callFromC () {                                               \
         s->atomicState += 3;                                            \
         /* Switch to the C Handler thread. */                           \
         GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
-        nextFun = *(int*)(s->stackTop - GC_RETURNADDRESS_SIZE);         \
+        nextFun = *(Word32*)(s->stackTop - GC_RETURNADDRESS_SIZE);      \
         cont.nextChunk = nextChunks[nextFun];                           \
         returnToC = FALSE;                                              \
         do {                                                            \
@@ -50,7 +50,7 @@ int main (int argc, char **argv) {                                      \
                 PrepFarJump(mc, ml);                                    \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextFun = *(int*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+                nextFun = *(Word32*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
                 cont.nextChunk = nextChunks[nextFun];                   \
         }                                                               \
         /* Trampoline */                                                \

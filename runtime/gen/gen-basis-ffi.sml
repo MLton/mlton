@@ -161,7 +161,8 @@ structure Entry =
       datatype t =
          Const of {name: Name.t,
                    ty: Type.t}
-       | Import of {name: Name.t,
+       | Import of {maybeStatic: bool,
+                    name: Name.t,
                     ty: {args: Type.t list,
                          ret: Type.t}}
        | Symbol of {name: Name.t,
@@ -185,14 +186,26 @@ structure Entry =
                 " ",
                 Name.toC name,
                 ";"]
-          | Import {name, ty = {args, ret}} =>
-               String.concat
-               [Type.toC ret,
-                " ",
-                Name.toC name,
-                "(",
-                String.concatWith "," (List.map Type.toC args),
-                ");"]
+          | Import {maybeStatic, name, ty = {args, ret}} =>
+               let
+                  val s =
+                     String.concat
+                     [Type.toC ret,
+                      " ",
+                      Name.toC name,
+                      "(",
+                      String.concatWith "," (List.map Type.toC args),
+                      ");"]
+               in
+                  if maybeStatic
+                     then String.concat
+                          ["#if (defined (MLTON_BASIS_FFI_STATIC))\n",
+                           "static ", s, "\n",
+                           "#else\n",
+                           s, "\n",
+                           "#endif"]
+                     else s
+               end
           | Symbol {name, ty} =>
                String.concat
                ["extern ",
@@ -211,7 +224,7 @@ structure Entry =
                 "\" : ",
                 Type.toML ty,
                 ";"]
-          | Import {name, ty = {args, ret}} =>
+          | Import {maybeStatic, name, ty = {args, ret}} =>
                String.concat
                ["val ",
                 Name.last name,
@@ -256,6 +269,10 @@ structure Entry =
          let
             val s = #2 (Substring.splitAt (s, 7))
             val s = Substring.droplSpace s
+            val (maybeStatic, s) = 
+               if Substring.isPrefix "static" s
+                  then (true, Substring.droplSpace (#2 (Substring.splitAt (s, 6))))
+                  else (false, s)
             val s = if Substring.isPrefix ":" s
                        then #2 (Substring.splitAt (s, 1))
                        else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
@@ -264,7 +281,8 @@ structure Entry =
                         then ()
                         else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
          in
-            Import {name = name,
+            Import {maybeStatic = maybeStatic,
+                    name = name,
                     ty = {args = args, ret = ret}}
          end
 

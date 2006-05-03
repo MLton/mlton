@@ -15,7 +15,7 @@ Word32 applyFFTemp;
 Word32 applyFFTemp2;
 Word32 checkTemp;
 Word32 cReturnTemp[16];
-Word32 c_stackP;
+Pointer c_stackP;
 Word32 divTemp;
 Word32 eq1Temp;
 Word32 eq2Temp;
@@ -63,7 +63,7 @@ static Word32 returnAddressToFrameIndex (Word32 w) {
 
 #define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                  \
 void MLton_jumpToSML (pointer jump) {                                   \
-        Word lc_stackP;                                                 \
+        Pointer lc_stackP;                                              \
                                                                         \
         if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \

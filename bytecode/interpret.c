@@ -6,6 +6,7 @@
  */
 
 #define MLTON_GC_INTERNAL_TYPES
+#define MLTON_BASIS_FFI_STATIC
 #include "platform.h"
 
 #include "interpret.h"
@@ -62,7 +63,7 @@ regs(Word64);
 
 #define quotRem1(qr, size)                                              \
         Word##size WordS##size##_##qr (Word##size w1, Word##size w2);
-#define quotRem2(qr)                            \
+#define quotRem2(qr)                                    \
         quotRem1 (qr, 8)                                \
         quotRem1 (qr, 16)                               \
         quotRem1 (qr, 32)                               \

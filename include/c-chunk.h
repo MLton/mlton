@@ -28,12 +28,12 @@
 #endif
 
 extern struct cont (*nextChunks []) ();
-extern Int nextFun;
-extern Int returnToC;
+extern int nextFun;
+extern int returnToC;
 extern struct GC_state gcState;
 
 #define GCState ((Pointer)&gcState)
-#define ExnStack *(Word*)(GCState + ExnStackOffset)
+#define ExnStack *(Word32*)(GCState + ExnStackOffset)
 #define FrontierMem *(Pointer*)(GCState + FrontierOffset)
 #define Frontier frontier
 #define StackBottom *(Pointer*)(GCState + StackBottomOffset)
@@ -174,7 +174,7 @@ extern struct GC_state gcState;
 
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(Word*)(StackTop - sizeof(Word));                  \
+                l_nextFun = *(Word32*)(StackTop - sizeof(Word32));              \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
                                         __FILE__, __LINE__, l_nextFun);         \
@@ -277,12 +277,12 @@ binaryReal(lt, <)
 #define Real64_neg(x) (-(x))
 
 typedef volatile union {
-        Word tab[2];
+        Word32 tab[2];
         Real64 d;
-} Real64Or2Words;
+} Real64Or2Word32s;
 
 static inline Real64 Real64_fetch (Real64 *dp) {
-        Real64Or2Words u;
+        Real64Or2Word32s u;
         Word32 *p;
 
         p = (Word32*)dp;
@@ -304,7 +304,7 @@ static inline void Real64_move (Real64 *dst, Real64 *src) {
 }
 
 static inline void Real64_store (Real64 *dp, Real64 d) {
-        Real64Or2Words u;
+        Real64Or2Word32s u;
         Word32 *p;
 
         p = (Word32*)dp;
@@ -335,7 +335,7 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
         }
 #define wordShift(size, name, op)                       \
         static inline Word##size Word##size##_##name    \
-                        (Word##size w1, Word w2) {      \
+                        (Word##size w1, Word32 w2) {    \
                 return w1 op w2;                        \
         }
 #define wordUnary(size, name, op)                                       \
@@ -362,13 +362,13 @@ static inline void Real64_store (Real64 *dp, Real64 d) {
         /* WordS_rshift isn't ANSI C, because ANSI doesn't guarantee sign       \
          * extension.  We use it anyway cause it always seems to work.          \
          */                                                                     \
-        static inline Word##size WordS##size##_rshift (WordS##size w, Word s) { \
+        static inline Word##size WordS##size##_rshift (WordS##size w, Word32 s) { \
                 return w >> s;                                                  \
         }                                                                       \
-        static inline Word##size Word##size##_rol (Word##size w1, Word w2) {    \
+        static inline Word##size Word##size##_rol (Word##size w1, Word32 w2) {  \
                 return (w1 >> (size - w2)) | (w1 << w2);                        \
         }                                                                       \
-        static inline Word##size Word##size##_ror (Word##size w1, Word w2) {    \
+        static inline Word##size Word##size##_ror (Word##size w1, Word32 w2) {  \
                 return (w1 >> w2) | (w1 << (size - w2));                        \
         }
 wordOps(8)
