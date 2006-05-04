@@ -265,10 +265,12 @@ structure IntInf : INT_INF0 =
 
       local
          fun 'a make {toMPLimb: 'a -> MPLimb.word,
-                      toObjptrWord: 'a -> ObjptrWord.word,
+                      toObjptrWordX: 'a -> ObjptrWord.word,
                       other : {wordSize: Int32.int,
                                zero: 'a,
+                               three: 'a,
                                eq: 'a * 'a -> bool,
+                               neg: 'a -> 'a,
                                rshift: 'a * Word32.word -> 'a}} 
                      (isneg, w) =
             if Int32.> (ObjptrWord.wordSize, #wordSize other)
@@ -278,13 +280,12 @@ structure IntInf : INT_INF0 =
                             (w, Word32.- (ObjptrWord.wordSizeWord, 0w2))
                       in
                          (#eq other) (upperBits, #zero other)
+                         orelse
+                         (isneg 
+                          andalso
+                          (#eq other) (upperBits, #three other))
                       end
-               then let
-                       val ans = toObjptrWord w
-                       val ans = if isneg then ObjptrWord.~ ans else ans
-                    in 
-                       Prim.fromWord (addTag ans)
-                    end
+               then Prim.fromWord (addTag (toObjptrWordX w))
                else let
                        fun loop (w, i, acc) =
                           if (#eq other) (w, (#zero other))
@@ -299,7 +300,9 @@ structure IntInf : INT_INF0 =
                                    loop (w, S.+ (i, 1), (i, limb) :: acc)
                                 end
                        val (n, acc) = 
-                          loop (w, 1, [(0, if isneg then 0w1 else 0w0)])
+                          if isneg 
+                             then loop ((#neg other) w, 1, [(0,0w1)])
+                             else loop (w, 1, [(0,0w0)])
                        val a = A.arrayUnsafe n
                        fun loop acc =
                           case acc of
@@ -313,16 +316,15 @@ structure IntInf : INT_INF0 =
       in
          val fromWordAux8 =
             make {toMPLimb = MPLimb.fromWord8,
-                  toObjptrWord = ObjptrWord.fromWord8,
+                  toObjptrWordX = ObjptrWord.fromWord8X,
                   other = {wordSize = Word8.wordSize,
                            zero = Word8.zero,
+                           three = 0w3,
                            eq = ((op =) : Word8.word * Word8.word -> bool),
+                           neg = Word8.~,
                            rshift = Word8.>>}}
          fun fromWord8 w = fromWordAux8 (false, w)
-         fun fromInt8 i =
-            if Int8.>= (i, 0)
-               then fromWordAux8 (false, Word8.fromInt8 i)
-               else fromWordAux8 (true, Word8.~ (Word8.fromInt8 i))
+         fun fromInt8 i = fromWordAux8 (Int8.< (i, 0), Word8.fromInt8 i)
          fun fromWord8X w = fromInt8 (Word8.toInt8X w)
          val fromInt8Unsafe = fromInt8
          val fromWord8Unsafe = fromWord8
@@ -330,16 +332,15 @@ structure IntInf : INT_INF0 =
 
          val fromWordAux16 =
             make {toMPLimb = MPLimb.fromWord16,
-                  toObjptrWord = ObjptrWord.fromWord16,
+                  toObjptrWordX = ObjptrWord.fromWord16X,
                   other = {wordSize = Word16.wordSize,
                            zero = Word16.zero,
+                           three = 0w3,
                            eq = ((op =) : Word16.word * Word16.word -> bool),
+                           neg = Word16.~,
                            rshift = Word16.>>}}
          fun fromWord16 w = fromWordAux16 (false, w)
-         fun fromInt16 i =
-            if Int16.>= (i, 0)
-               then fromWordAux16 (false, Word16.fromInt16 i)
-               else fromWordAux16 (true, Word16.~ (Word16.fromInt16 i))
+         fun fromInt16 i = fromWordAux16 (Int16.< (i, 0), Word16.fromInt16 i)
          fun fromWord16X w = fromInt16 (Word16.toInt16X w)
          val fromInt16Unsafe = fromInt16
          val fromWord16Unsafe = fromWord16
@@ -347,16 +348,15 @@ structure IntInf : INT_INF0 =
 
          val fromWordAux32 =
             make {toMPLimb = MPLimb.fromWord32,
-                  toObjptrWord = ObjptrWord.fromWord32,
+                  toObjptrWordX = ObjptrWord.fromWord32X,
                   other = {wordSize = Word32.wordSize,
                            zero = Word32.zero,
+                           three = 0w3,
                            eq = ((op =) : Word32.word * Word32.word -> bool),
+                           neg = Word32.~,
                            rshift = Word32.>>}}
          fun fromWord32 w = fromWordAux32 (false, w)
-         fun fromInt32 i =
-            if Int32.>= (i, 0)
-               then fromWordAux32 (false, Word32.fromInt32 i)
-               else fromWordAux32 (true, Word32.~ (Word32.fromInt32 i))
+         fun fromInt32 i = fromWordAux32 (Int32.< (i, 0), Word32.fromInt32 i)
          fun fromWord32X w = fromInt32 (Word32.toInt32X w)
          val fromInt32Unsafe = fromInt32
          val fromWord32Unsafe = fromWord32
@@ -364,16 +364,15 @@ structure IntInf : INT_INF0 =
 
          val fromWordAux64 =
             make {toMPLimb = MPLimb.fromWord64,
-                  toObjptrWord = ObjptrWord.fromWord64,
+                  toObjptrWordX = ObjptrWord.fromWord64X,
                   other = {wordSize = Word64.wordSize,
                            zero = Word64.zero,
+                           three = 0w3,
                            eq = ((op =) : Word64.word * Word64.word -> bool),
+                           neg = Word64.~,
                            rshift = Word64.>>}}
          fun fromWord64 w = fromWordAux64 (false, w)
-         fun fromInt64 i =
-            if Int64.>= (i, 0)
-               then fromWordAux64 (false, Word64.fromInt64 i)
-               else fromWordAux64 (true, Word64.~ (Word64.fromInt64 i))
+         fun fromInt64 i = fromWordAux64 (Int64.< (i, 0), Word64.fromInt64 i)
          fun fromWord64X w = fromInt64 (Word64.toInt64X w)
          val fromInt64Unsafe = fromInt64
          val fromWord64Unsafe = fromWord64
