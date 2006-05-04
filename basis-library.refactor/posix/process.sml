@@ -84,7 +84,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          struct
             structure Flags = BitFlags(structure S = C_Int)
             open W Flags
-            val continued = CONTINUED
+            (* val continued = CONTINUED *)
             val nohang = NOHANG
             val untraced = UNTRACED
          end

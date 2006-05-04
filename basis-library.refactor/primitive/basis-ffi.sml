@@ -726,7 +726,6 @@ val system = _import "Posix_Process_system" : NullString8.t -> (C_Status.t) C_Er
 val termSig = _import "Posix_Process_termSig" : C_Status.t -> C_Signal.t;
 structure W = 
 struct
-val CONTINUED = _const "Posix_Process_W_CONTINUED" : C_Int.t;
 val NOHANG = _const "Posix_Process_W_NOHANG" : C_Int.t;
 val UNTRACED = _const "Posix_Process_W_UNTRACED" : C_Int.t;
 end
