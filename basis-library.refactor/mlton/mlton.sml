@@ -29,7 +29,7 @@ fun shareAll () =
 fun size x =
    let
       val refOverhead =
-         HeaderWord.wordSize + ObjptrWord.wordSize
+         Int.div (HeaderWord.wordSize + ObjptrWord.wordSize, 8)
    in 
       C_Size.toInt (Primitive.MLton.size (ref x)) - refOverhead
    end
