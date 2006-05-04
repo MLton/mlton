@@ -69,7 +69,7 @@ endif
 basis-no-check:
 	mkdir -p $(LIB)/sml
 	rm -rf $(LIB)/sml/basis
-	$(CP) $(SRC)/basis-library/. $(LIB)/sml/basis
+	$(CP) $(SRC)/basis-library.refactor/. $(LIB)/sml/basis
 	find $(LIB)/sml/basis -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml/basis -type f -name .ignore | xargs rm -rf
 

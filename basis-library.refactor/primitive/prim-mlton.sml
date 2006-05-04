@@ -14,7 +14,7 @@ open Primitive
 
 structure MLton = struct
 
-val bug = _import "MLton_bug": NullString8.t -> unit;
+
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
 (* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 val halt = _prim "MLton_halt": C_Status.t -> unit;

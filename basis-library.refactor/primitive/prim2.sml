@@ -10,6 +10,12 @@ structure Primitive =
    struct
       open Primitive
 
+      structure MLton =
+         struct
+            open MLton
+            val bug = PrimitiveFFI.MLton.bug
+         end
+
       val dontInline: (unit -> 'a) -> 'a =
          fn f =>
          let

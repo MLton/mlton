@@ -61,6 +61,7 @@ val setRoundingMode = _import "IEEEReal_setRoundingMode" : C_Int.t -> unit;
 end
 structure MLton = 
 struct
+val bug = _import "MLton_bug" : NullString8.t -> unit;
 structure Itimer = 
 struct
 val PROF = _const "MLton_Itimer_PROF" : C_Int.t;

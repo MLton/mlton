@@ -192,7 +192,13 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 
 
 runtime.c: $(CFILES)
-	cat $(CFILES) >runtime.c
+	rm -f runtime.c
+	( echo "#define MLTON_GC_INTERNAL_TYPES"; 	\
+	  echo "#define MLTON_GC_INTERNAL_FUNCS";	\
+	  echo "#define MLTON_GC_INTERNAL_BASIS";	\
+	  echo "#include \"platform.h\""; )		\
+		> runtime.c
+	cat $(CFILES) >> runtime.c
 
 
 util/%-gdb.o: util/%.c util.h $(UTILHFILES)
