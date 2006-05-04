@@ -101,7 +101,7 @@ char* uintmaxToCommaString (uintmax_t n) {
 }
 
 char* sizeToBytesApproxString (size_t amount) {
-  static char* suffixs[] = {"", "K", "M", "G"};
+  static const char* suffixs[] = {"", "K", "M", "G"};
   static char buf1[BUF_SIZE];
   static char buf2[BUF_SIZE];
   static char buf3[BUF_SIZE];

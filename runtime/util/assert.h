@@ -10,7 +10,7 @@
 #endif
 
 /* Assertion failure routine */
-extern void asfail (char *file, int line, char *prop)
+extern void asfail (const char *file, int line, const char *prop)
                         __attribute__ ((noreturn));
 
 /* Assertion verifier */

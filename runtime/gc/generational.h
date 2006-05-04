@@ -74,7 +74,9 @@ static inline void clearCrossMap (GC_state s);
 static void createCardMapAndCrossMap (GC_state s);
 static void resizeCardMapAndCrossMap (GC_state s);
 
+#if ASSERT
 static bool isCrossMapOk (GC_state s);
+#endif
 static void updateCrossMap (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

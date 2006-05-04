@@ -49,7 +49,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   GC_objectTypeTag tag;
-  uint32_t index; /* The i'th pointer in the object (element) being marked. */
+  uint32_t objptrIndex; /* The i'th pointer in the object (element) being marked. */
   GC_header nextHeader;
   GC_header* nextHeaderp;
   GC_arrayCounter arrayIndex;
@@ -128,18 +128,18 @@ normalDone:
       goto ret;
     }
     todo = cur + bytesNonObjptrs;
-    index = 0;
+    objptrIndex = 0;
 markInNormal:
     if (DEBUG_DFS_MARK)
-      fprintf (stderr, "markInNormal  index = %"PRIu32"\n", index);
-    assert (index < numObjptrs);
+      fprintf (stderr, "markInNormal  objptrIndex = %"PRIu32"\n", objptrIndex);
+    assert (objptrIndex < numObjptrs);
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (not isPointer (next)) {
 markNextInNormal:
-      assert (index < numObjptrs);
-      index++;
-      if (index == numObjptrs) {
+      assert (objptrIndex < numObjptrs);
+      objptrIndex++;
+      if (objptrIndex == numObjptrs) {
         /* Done.  Clear out the counters and return. */
         *headerp = header & ~COUNTER_MASK;
         goto normalDone;
@@ -154,7 +154,7 @@ markNextInNormal:
         shareObjptr (s, (objptr*)todo);
       goto markNextInNormal;
     }
-    *headerp = (header & ~COUNTER_MASK) | (index << COUNTER_SHIFT);
+    *headerp = (header & ~COUNTER_MASK) | (objptrIndex << COUNTER_SHIFT);
     goto markNext;
   } else if (WEAK_TAG == tag) {
     /* Store the marked header and don't follow any pointers. */
@@ -163,7 +163,7 @@ markNextInNormal:
     /* When marking arrays:
      *   arrayIndex is the index of the element to mark.
      *   cur is the pointer to the array.
-     *   index is the index of the pointer within the element
+     *   objptrIndex is the index of the pointer within the element
      *     (i.e. the i'th pointer is at index i).
      *   todo is the start of the element.
      */
@@ -182,26 +182,26 @@ arrayDone:
     todo = cur;
 markArrayElt:
     assert (arrayIndex < getArrayLength (cur));
-    index = 0;
+    objptrIndex = 0;
     /* Skip to the first pointer. */
     todo += bytesNonObjptrs;
 markInArray:
     if (DEBUG_DFS_MARK)
-      fprintf (stderr, "markInArray arrayIndex = %"PRIu32" index = %"PRIu32"\n",
-               arrayIndex, index);
+      fprintf (stderr, "markInArray arrayIndex = %"PRIu32" objptrIndex = %"PRIu32"\n",
+               arrayIndex, objptrIndex);
     assert (arrayIndex < getArrayLength (cur));
-    assert (index < numObjptrs);
-    assert (todo == indexArrayAtPointerIndex (s, cur, arrayIndex, index));
+    assert (objptrIndex < numObjptrs);
+    assert (todo == indexArrayAtObjptrIndex (s, cur, arrayIndex, objptrIndex));
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (not (isPointer(next))) {
 markNextInArray:
       assert (arrayIndex < getArrayLength (cur));
-      assert (index < numObjptrs);
-      assert (todo == indexArrayAtPointerIndex (s, cur, arrayIndex, index));
+      assert (objptrIndex < numObjptrs);
+      assert (todo == indexArrayAtObjptrIndex (s, cur, arrayIndex, objptrIndex));
       todo += OBJPTR_SIZE;
-      index++;
-      if (index < numObjptrs)
+      objptrIndex++;
+      if (objptrIndex < numObjptrs)
         goto markInArray;
       arrayIndex++;
       if (arrayIndex < getArrayLength (cur))
@@ -220,7 +220,7 @@ markNextInArray:
     }
     /* Recur and mark next. */
     *getArrayCounterp (cur) = arrayIndex;
-    *headerp = (header & ~COUNTER_MASK) | (index << COUNTER_SHIFT);
+    *headerp = (header & ~COUNTER_MASK) | (objptrIndex << COUNTER_SHIFT);
     goto markNext;
   } else {
     assert (STACK_TAG == tag);
@@ -239,37 +239,37 @@ markInStack:
                (size_t)(top - getStackBottom (s, (GC_stack)cur)));
     if (top == getStackBottom (s, (GC_stack)(cur)))
       goto ret;
-    index = 0;
+    objptrIndex = 0;
     returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
     frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
     frameOffsets = frameLayout->offsets;
     ((GC_stack)cur)->markTop = top;
 markInFrame:
-    if (index == frameOffsets [0]) {
+    if (objptrIndex == frameOffsets [0]) {
       top -= frameLayout->size;
       goto markInStack;
     }
-    todo = top - frameLayout->size + frameOffsets [index + 1];
+    todo = top - frameLayout->size + frameOffsets [objptrIndex + 1];
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (DEBUG_DFS_MARK)
       fprintf (stderr,
                "    offset %u  todo "FMTPTR"  next = "FMTPTR"\n",
-               frameOffsets [index + 1],
+               frameOffsets [objptrIndex + 1],
                (uintptr_t)todo, (uintptr_t)next);
     if (not isPointer (next)) {
-      index++;
+      objptrIndex++;
       goto markInFrame;
     }
     nextHeaderp = getHeaderp (next);
     nextHeader = *nextHeaderp;
     if (mark == (nextHeader & MARK_MASK)) {
-      index++;
+      objptrIndex++;
       if (shouldHashCons)
         shareObjptr (s, (objptr*)todo);
       goto markInFrame;
     }
-    ((GC_stack)cur)->markIndex = index;
+    ((GC_stack)cur)->markIndex = objptrIndex;
     goto markNext;
   }
   assert (FALSE);
@@ -295,8 +295,8 @@ ret:
   assert (WEAK_TAG != tag);
   if (NORMAL_TAG == tag) {
     todo = cur + bytesNonObjptrs;
-    index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
-    todo += index * OBJPTR_SIZE;
+    objptrIndex = (header & COUNTER_MASK) >> COUNTER_SHIFT;
+    todo += objptrIndex * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;
@@ -307,8 +307,8 @@ ret:
   } else if (ARRAY_TAG == tag) {
     arrayIndex = getArrayCounter (cur);
     todo = cur + arrayIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-    index = (header & COUNTER_MASK) >> COUNTER_SHIFT;
-    todo += bytesNonObjptrs + index * OBJPTR_SIZE;
+    objptrIndex = (header & COUNTER_MASK) >> COUNTER_SHIFT;
+    todo += bytesNonObjptrs + objptrIndex * OBJPTR_SIZE;
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;
@@ -318,20 +318,20 @@ ret:
     goto markNextInArray;
   } else {
     assert (STACK_TAG == tag);
-    index = ((GC_stack)cur)->markIndex;
+    objptrIndex = ((GC_stack)cur)->markIndex;
     top = ((GC_stack)cur)->markTop;
     /* Invariant: top points just past a "return address". */
     returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
     frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
     frameOffsets = frameLayout->offsets;
-    todo = top - frameLayout->size + frameOffsets [index + 1];
+    todo = top - frameLayout->size + frameOffsets [objptrIndex + 1];
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;
     storeObjptrFromPointer (todo, next, s->heap.start);
     if (shouldHashCons)
       markIntergenerationalPointer (s, (pointer*)todo);
-    index++;
+    objptrIndex++;
     goto markInFrame;
   }
   assert (FALSE);

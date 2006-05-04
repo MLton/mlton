@@ -7,10 +7,10 @@
  */
 
 /* issue error message and exit */
-extern void die (char *fmt, ...)
+extern void die (const char *fmt, ...)
                         __attribute__ ((format(printf, 1, 2)))
                         __attribute__ ((noreturn));
 /* issue error message and exit.  Also print strerror(errno). */
-extern void diee (char *fmt, ...)
+extern void diee (const char *fmt, ...)
                         __attribute__ ((format(printf, 1, 2)))
                         __attribute__ ((noreturn));

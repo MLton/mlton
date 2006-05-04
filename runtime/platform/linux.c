@@ -20,7 +20,9 @@
  *  mips: ucp->m_context.sc_pc
  *  s390: ucp->m_context.sregs->regs.psw.addr
  */
-static void catcher (int sig, siginfo_t* sip, void* mystery) {
+static void catcher (__attribute__ ((unused)) int sig, 
+                     __attribute__ ((unused)) siginfo_t* sip, 
+                     void* mystery) {
 #if (defined (__x86_64__))
 #define REG_INDEX(NAME) (offsetof(struct sigcontext, NAME) / sizeof(greg_t))
 #ifndef REG_RIP

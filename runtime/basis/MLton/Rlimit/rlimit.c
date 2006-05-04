@@ -6,11 +6,11 @@ C_Errno_t(C_Int_t) MLton_Rlimit_get (C_Int_t r) {
   return getrlimit (r, &rlimit);
 }
 
-C_RLim_t MLton_Rlimit_getHard () {
+C_RLim_t MLton_Rlimit_getHard (void) {
   return rlimit.rlim_max;
 }
 
-C_RLim_t MLton_Rlimit_getSoft () {
+C_RLim_t MLton_Rlimit_getSoft (void) {
   return rlimit.rlim_cur;
 }
 

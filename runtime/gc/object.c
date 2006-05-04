@@ -93,7 +93,7 @@ void splitHeader(GC_state s, GC_header header,
  * If p points at the beginning of an object, then advanceToObjectData
  * returns a pointer to the start of the object data.
  */
-pointer advanceToObjectData (GC_state s, pointer p) {
+pointer advanceToObjectData (__attribute__ ((unused)) GC_state s, pointer p) {
   GC_header header;
   pointer res;
 

@@ -198,7 +198,7 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
 /* Apply f to the frame index of each frame in the current thread's stack. */
 void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
   pointer bottom;
-  GC_frameIndex index;
+  GC_frameIndex findex;
   GC_frameLayout layout;
   GC_returnAddress returnAddress;
   pointer top;
@@ -211,15 +211,15 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
              (uintptr_t)bottom, (uintptr_t)s->stackTop);
   for (top = s->stackTop; top > bottom; top -= layout->size) {
     returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
-    index = getFrameIndexFromReturnAddress (s, returnAddress);
+    findex = getFrameIndexFromReturnAddress (s, returnAddress);
     if (DEBUG_PROFILE)
-      fprintf (stderr, "top = "FMTPTR"  index = "FMTFI"\n",
-               (uintptr_t)top, index);
-    unless (index < s->frameLayoutsLength)
-      die ("top = "FMTPTR"  returnAddress = "FMTRA"  index = "FMTFI"\n",
-           (uintptr_t)top, (uintptr_t)returnAddress, index);
-    f (s, index);
-    layout = &(s->frameLayouts[index]);
+      fprintf (stderr, "top = "FMTPTR"  findex = "FMTFI"\n",
+               (uintptr_t)top, findex);
+    unless (findex < s->frameLayoutsLength)
+      die ("top = "FMTPTR"  returnAddress = "FMTRA"  findex = "FMTFI"\n",
+           (uintptr_t)top, (uintptr_t)returnAddress, findex);
+    f (s, findex);
+    layout = &(s->frameLayouts[findex]);
     assert (layout->size > 0);
   }
   if (DEBUG_PROFILE)

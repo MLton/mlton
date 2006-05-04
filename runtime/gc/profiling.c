@@ -245,7 +245,7 @@ void writeProfileCount (GC_state s, int fd,
 }
 
 void GC_profileWrite (GC_state s, GC_profileData p, int fd) {
-  char* kind;
+  const char* kind;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileWrite\n");
@@ -415,6 +415,7 @@ void initProfiling (GC_state s) {
       break;
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");
+      break;
     case PROFILE_TIME_FIELD:
     case PROFILE_TIME_LABEL:
       initProfilingTime (s);

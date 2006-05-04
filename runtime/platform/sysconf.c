@@ -1,11 +1,11 @@
-size_t GC_pageSize () {
+size_t GC_pageSize (void) {
   long int tmp;
 
   tmp = sysconf (_SC_PAGESIZE);
   return (size_t)tmp;
 }
 
-size_t GC_totalRam () {
+size_t GC_totalRam (void) {
   size_t pageSize = GC_pageSize ();
   long int tmp;
 
@@ -13,7 +13,7 @@ size_t GC_totalRam () {
   return pageSize * (size_t)tmp;
 }
 
-size_t GC_availRam () {
+size_t GC_availRam (void) {
   size_t pageSize = GC_pageSize ();
   long int tmp;
 

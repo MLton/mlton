@@ -309,9 +309,9 @@ copy:
     /* Write the heap to a file and try again. */
     int fd;
     char template[80];
-    char *tmpDefault;
+    const char *tmpDefault;
     char *tmpDir;
-    char *tmpVar;
+    const char *tmpVar;
     
 #if (defined (__MSVCRT__))
     tmpVar = "TEMP";

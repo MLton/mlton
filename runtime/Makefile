@@ -26,7 +26,11 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
+ifeq ($(findstring $(GCC_VERSION), 4),4)
 FLAGS += -m32 -mtune=opteron
+else
+FLAGS += -m32
+endif
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
@@ -51,31 +55,55 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CFLAGS = -Wall -I. -Iplatform $(FLAGS)
+CFLAGS = -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
-GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
 DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
-WARNFLAGS = \
-	-pedantic -Wall -Wextra \
-	-Wno-unused-parameter -Wno-unused-function \
-	-Wformat-nonliteral \
-	-Wuninitialized -Winit-self \
-	-Wstrict-aliasing=2 \
-	-Wfloat-equal \
-	-Wpointer-arith \
-	-Wbad-function-cast -Wcast-qual -Wcast-align \
-	-Waggregate-return \
-	-Wstrict-prototypes \
-	-Wmissing-noreturn -Wmissing-format-attribute \
-	-Wpacked \
-	-Wredundant-decls \
-	-Wnested-externs \
-	-Wmissing-prototypes \
-	-Wmissing-declarations 
-#	-Wconversion
-#	-Wshadow 
-OPTWARNFLAGS = $(WARNFLAGS) -Winline -Wdisabled-optimization 
-DEBUGWARNFLAGS = $(WARNFLAGS) -Wunused
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
+else
+GCOPTCFLAGS = 
+endif
+WARNCFLAGS  =
+WARNCFLAGS += -pedantic -Wall 
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+WARNCFLAGS += -Wextra
+else
+WARNCFLAGS += -W
+endif
+WARNCFLAGS += -Wformat=2
+# WARNCFLAGS += -Wswitch-default -Wswitch-enum
+WARNCFLAGS += -Wuninitialized 
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+WARNCFLAGS += -Winit-self 
+endif
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+WARNCFLAGS += -Wstrict-aliasing=2 
+endif
+WARNCFLAGS += -Wfloat-equal 
+WARNCFLAGS += -Wundef
+WARNCFLAGS += -Wshadow 
+WARNCFLAGS += -Wpointer-arith 
+WARNCFLAGS += -Wbad-function-cast -Wcast-qual -Wcast-align 
+WARNCFLAGS += -Wwrite-strings
+# WARNCFLAGS += -Wconversion 
+WARNCFLAGS += -Waggregate-return 
+WARNCFLAGS += -Wstrict-prototypes 
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+WARNCFLAGS += -Wold-style-definition
+endif
+WARNCFLAGS += -Wmissing-prototypes -Wmissing-declarations
+ifeq ($(findstring $(GCC_VERSION), 4),4)
+WARNCFLAGS += -Wmissing-field-initializers
+endif
+WARNCFLAGS += -Wmissing-noreturn 
+WARNCFLAGS += -Wmissing-format-attribute 
+# WARNCFLAGS += -Wpacked -Wpadded
+WARNCFLAGS += -Wredundant-decls 
+WARNCFLAGS += -Wnested-externs 
+WARNCFLAGS += -Wlong-long
+# WARNCFLAGS += -Wunreachable-code
+OPTWARNCFLAGS = $(WARNCFLAGS) -Winline -Wdisabled-optimization 
+DEBUGWARNCFLAGS = $(WARNCFLAGS)
 
 UTILCFILES =							\
 	$(shell find util -type f | grep '\.c$$')
@@ -136,7 +164,7 @@ all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
-		$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS)	\
+		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)	\
 			-Dstrtod=gdtoa_strtod		\
 			-Dstrtof=gdtoa_strtof		\
 			-w -O1 -c -DINFNAN_CHECK 	\
@@ -168,14 +196,14 @@ runtime.c: $(CFILES)
 
 
 util/%-gdb.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 util/%.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -c -o $@ $<
 
 c-types.h ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
 	rm -f c-types.h ml-types.h
-	$(CC) $(OPTCFLAGS) $(WARNFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
 	cd gen && ./gen-types
 	cp gen/c-types.h c-types.h
 	cp gen/c-types.sml ../basis-library.refactor/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
@@ -191,10 +219,10 @@ basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	rm -f gen/gen-basis-ffi gen/basis-ffi.h gen/basis-ffi.sml
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 gc.o: gc.c $(GCCFILES) $(HFILES) 
-	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a
@@ -203,15 +231,15 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h  $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 %.o: %.c $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNFLAGS) -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 %-gdb.o: %.S
 	$(CC) $(DEBUGCFLAGS) -c -o $@ $<

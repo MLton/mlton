@@ -27,7 +27,7 @@ C_Speed_t Posix_TTY_Termios_cfGetOSpeed (void) {
   return cfgetospeed (&termios);
 }
 
-C_Speed_t Posix_TTY_Termios_cfGetISpeed () {
+C_Speed_t Posix_TTY_Termios_cfGetISpeed (void) {
   return cfgetispeed (&termios);
 }
 

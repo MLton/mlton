@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-static void displayCol (FILE *out, int width, char *s) {
+static void displayCol (FILE *out, int width, const char *s) {
   int extra;
   int i;
   int len;
@@ -20,7 +20,7 @@ static void displayCol (FILE *out, int width, char *s) {
   fprintf (out, "%s\t", s);
 }
 
-static void displayCollectionStats (FILE *out, char *name, struct rusage *ru, 
+static void displayCollectionStats (FILE *out, const char *name, struct rusage *ru, 
                                     uintmax_t num, uintmax_t bytes) {
   uintmax_t ms;
   
@@ -43,7 +43,7 @@ void GC_done (GC_state s) {
   minorGC (s);
   out = stderr;
   if (s->controls.summary) {
-    uintmax_t time;
+    uintmax_t totalTime;
     uintmax_t gcTime;
     
     gcTime = rusageTime (&s->cumulativeStatistics.ru_gc);
@@ -64,12 +64,12 @@ void GC_done (GC_state s) {
        &s->cumulativeStatistics.ru_gcMinor, 
        s->cumulativeStatistics.numMinorGCs, 
        s->cumulativeStatistics.bytesCopiedMinor);
-    time = getCurrentTime () - s->startTime;
+    totalTime = getCurrentTime () - s->startTime;
     fprintf (out, "total GC time: %s ms (%.1f%%)\n",
              uintmaxToCommaString (gcTime), 
-             (0 == time) 
+             (0 == totalTime) 
              ? 0.0 
-             : 100.0 * ((double) gcTime) / (double)time);
+             : 100.0 * ((double) gcTime) / (double)totalTime);
     fprintf (out, "max pause: %s ms\n",
              uintmaxToCommaString (s->cumulativeStatistics.maxPause));
     fprintf (out, "total allocated: %s bytes\n",

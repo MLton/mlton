@@ -40,7 +40,7 @@ size_t sizeofStackInitial (GC_state s) {
 }
 
 /* Pointer to the bottommost word in use on the stack. */
-pointer getStackBottom (GC_state s, GC_stack stack) {
+pointer getStackBottom (__attribute__ ((unused)) GC_state s, GC_stack stack) {
   pointer res;
   
   res = ((pointer)stack) + sizeof (struct GC_stack);

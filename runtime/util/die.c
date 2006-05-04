@@ -7,7 +7,7 @@
 
 #include "util.h"
 
-void die (char *fmt, ...) {
+void die (const char *fmt, ...) {
   va_list args;
   
   fflush(stdout);
@@ -18,7 +18,7 @@ void die (char *fmt, ...) {
   exit(1);
 }
 
-void diee (char * fmt, ...) {
+void diee (const char * fmt, ...) {
   va_list args;
   
   fflush(stdout);

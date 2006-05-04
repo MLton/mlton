@@ -6,7 +6,7 @@ void MLton_Syslog_closelog(void) {
 
 /* openlog relies on the string being around forever. */
 void MLton_Syslog_openlog(NullString8_t s, C_Int_t o, C_Int_t f) {
-  char *s_ = strdup ((const char*)s);
+  const char *s_ = strdup ((const char*)s);
   if (s_ == NULL)
     s_ = "";
   openlog (s_, o, f);

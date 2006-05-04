@@ -1,6 +1,6 @@
 #include "platform.h"
 
-C_String_t Posix_ProcEnv_ctermid () {
+C_String_t Posix_ProcEnv_ctermid (void) {
   char *res = ctermid (NULL);
   return (C_String_t)res;
 }

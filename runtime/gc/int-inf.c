@@ -86,7 +86,8 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
 /*
  * Initialize an __mpz_struct to use the space provided by the heap.
  */
-void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
+void initIntInfRes (GC_state s, __mpz_struct *res, 
+                    __attribute__ ((unused)) size_t bytes) {
   GC_intInf bp;
 
   assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));

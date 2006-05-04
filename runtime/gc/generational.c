@@ -186,6 +186,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
   }
 }
 
+#if ASSERT
 /* isCrossMapOk is a slower, but easier to understand, way of
  * computing the crossMap.  updateCrossMap (below) incrementally
  * updates the crossMap, checking only the part of the old generation
@@ -223,6 +224,7 @@ loopObjects:
   GC_release (map, mapSize);
   return TRUE;
 }
+#endif
 
 void updateCrossMap (GC_state s) {
   GC_cardMapIndex cardIndex;

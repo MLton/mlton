@@ -84,7 +84,8 @@ GC_thread newThread (GC_state s, size_t reserved) {
   return thread;
 }
 
-static inline void setFrontier (GC_state s, pointer p, size_t bytes) {
+static inline void setFrontier (GC_state s, pointer p, 
+                                __attribute__ ((unused)) size_t bytes) {
   p = alignFrontier (s, p);
   assert ((size_t)(p - s->frontier) <= bytes);
   GC_profileAllocInc (s, p - s->frontier);

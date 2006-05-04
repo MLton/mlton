@@ -28,6 +28,7 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
   }
 }
 
+#if ASSERT
 bool invariantForGC (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "invariantForGC\n");
@@ -91,6 +92,7 @@ bool invariantForGC (GC_state s) {
     fprintf (stderr, "invariantForGC passed\n");
   return TRUE;
 }
+#endif
 
 bool invariantForMutatorFrontier (GC_state s) {
   GC_thread thread = getThreadCurrent(s);
@@ -104,6 +106,7 @@ bool invariantForMutatorStack (GC_state s) {
           <= getStackLimit (s, stack) + getStackTopFrameSize (s, stack));
 }
 
+#if ASSERT
 bool invariantForMutator (GC_state s, bool frontier, bool stack) {
   if (DEBUG)
     displayGCState (s, stderr);
@@ -114,3 +117,4 @@ bool invariantForMutator (GC_state s, bool frontier, bool stack) {
   assert (invariantForGC (s));
   return TRUE;
 }
+#endif

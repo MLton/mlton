@@ -46,7 +46,7 @@ static inline void writeUintptr (int fd, uintptr_t u) {
   write_safe (fd, &u, sizeof(uintptr_t));
 }
 
-static inline void writeString (int fd, char* s) {
+static inline void writeString (int fd, const char* s) {
   write_safe (fd, s, strlen(s));
 }
 
@@ -89,7 +89,7 @@ static inline void writeNewline (int fd) {
   writeString (fd, "\n");
 }
 
-static inline void writeStringWithNewline (int fd, char* s) {
+static inline void writeStringWithNewline (int fd, const char* s) {
   writeString (fd, s);
   writeNewline (fd);
 }

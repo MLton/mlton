@@ -35,7 +35,7 @@ static inline void fesetround (int mode) {
 
 #endif
 
-C_Int_t IEEEReal_getRoundingMode () {
+C_Int_t IEEEReal_getRoundingMode (void) {
   return fegetround ();
 }
 

@@ -47,9 +47,9 @@ GC_arrayCounter getArrayCounter (pointer a) {
   return *(getArrayCounterp (a));
 }
 
-pointer indexArrayAtPointerIndex (GC_state s, pointer a,
+pointer indexArrayAtObjptrIndex (GC_state s, pointer a,
                                   GC_arrayCounter arrayIndex,
-                                  uint32_t pointerIndex) {
+                                  uint32_t objptrIndex) {
   GC_header header;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
@@ -62,5 +62,5 @@ pointer indexArrayAtPointerIndex (GC_state s, pointer a,
   return a
     + (arrayIndex * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE)))
     + bytesNonObjptrs
-    + (pointerIndex * OBJPTR_SIZE);
+    + (objptrIndex * OBJPTR_SIZE);
 }

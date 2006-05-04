@@ -8,7 +8,7 @@
 #include "cenv.h"
 #include "util.h"
 
-static char* mlTypesHPrefix[] = {
+static const char* mlTypesHPrefix[] = {
   "/* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
@@ -36,7 +36,7 @@ static char* mlTypesHPrefix[] = {
   NULL
 };
 
-static char* cTypesHPrefix[] = {
+static const char* cTypesHPrefix[] = {
   "/* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
@@ -50,7 +50,7 @@ static char* cTypesHPrefix[] = {
   NULL
 };
 
-static char* cTypesSMLPrefix[] = {
+static const char* cTypesSMLPrefix[] = {
   "(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
@@ -61,7 +61,7 @@ static char* cTypesSMLPrefix[] = {
   NULL
 };
 
-static char* mlTypesHStd[] = {
+static const char* mlTypesHStd[] = {
   "/* ML types */",
   "typedef unsigned char* Pointer;",
   // "typedef void* Pointer;",
@@ -256,23 +256,24 @@ static char* mlTypesHStd[] = {
   writeNewline (cTypesSMLFd);                       \
   } while (0)
 
-static char* mlTypesHSuffix[] = {
+static const char* mlTypesHSuffix[] = {
   "#endif /* _MLTON_MLTYPES_H_ */",
   NULL
 };
 
-static char* cTypesHSuffix[] = {
+static const char* cTypesHSuffix[] = {
   "#define C_Errno_t(t) t",
   "",
   "#endif /* _MLTON_CTYPES_H_ */",
   NULL
 };
 
-static char* cTypesSMLSuffix[] = {
+static const char* cTypesSMLSuffix[] = {
   NULL
 };
 
-int main (int argc, char* argv[]) {
+int main (__attribute__ ((unused)) int argc, 
+          __attribute__ ((unused)) char* argv[]) {
   int mlTypesHFd, cTypesHFd, cTypesSMLFd;
 
   mlTypesHFd = open_safe ("ml-types.h", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
