@@ -149,8 +149,6 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /* ------------------------------------------------- */
 
 void MLton_allocTooLarge (void) __attribute__ ((noreturn));
-/* print a bug message and exit (2) */
-void MLton_bug (Pointer msg) __attribute__ ((noreturn));
 
 /* ---------------------------------- */
 /*           MLton.Platform           */

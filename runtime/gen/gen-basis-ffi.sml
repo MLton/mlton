@@ -161,7 +161,8 @@ structure Entry =
       datatype t =
          Const of {name: Name.t,
                    ty: Type.t}
-       | Import of {maybeStatic: bool,
+       | Import of {attr: {noreturn: bool,
+                           static: bool},
                     name: Name.t,
                     ty: {args: Type.t list,
                          ret: Type.t}}
@@ -186,7 +187,7 @@ structure Entry =
                 " ",
                 Name.toC name,
                 ";"]
-          | Import {maybeStatic, name, ty = {args, ret}} =>
+          | Import {attr = {noreturn, static}, name, ty = {args, ret}} =>
                let
                   val s =
                      String.concat
@@ -195,9 +196,13 @@ structure Entry =
                       Name.toC name,
                       "(",
                       String.concatWith "," (List.map Type.toC args),
-                      ");"]
+                      ")",
+                      if noreturn
+                         then " __attribute__ ((noreturn))"
+                         else "",
+                      ";"]
                in
-                  if maybeStatic
+                  if static
                      then String.concat
                           ["#if (defined (MLTON_BASIS_FFI_STATIC))\n",
                            "static ", s, "\n",
@@ -224,7 +229,7 @@ structure Entry =
                 "\" : ",
                 Type.toML ty,
                 ";"]
-          | Import {maybeStatic, name, ty = {args, ret}} =>
+          | Import {attr, name, ty = {args, ret}} =>
                String.concat
                ["val ",
                 Name.last name,
@@ -265,14 +270,25 @@ structure Entry =
                    ty = ret}
          end
 
+      fun parseImportAttr (s) =
+         let
+            fun loop (attr as {noreturn, static}, s) =
+               if Substring.isPrefix "noreturn" s
+                 then loop ({noreturn = true, static = static},
+                            Substring.droplSpace (#2 (Substring.splitAt (s, 8))))
+               else if Substring.isPrefix "static" s
+                 then loop ({noreturn = noreturn, static = true},
+                            Substring.droplSpace (#2 (Substring.splitAt (s, 6))))
+               else (attr, s)
+         in
+            loop ({noreturn = false, static = false}, s)
+         end
+
       fun parseImport (s, name) =
          let
             val s = #2 (Substring.splitAt (s, 7))
             val s = Substring.droplSpace s
-            val (maybeStatic, s) = 
-               if Substring.isPrefix "static" s
-                  then (true, Substring.droplSpace (#2 (Substring.splitAt (s, 6))))
-                  else (false, s)
+            val (attr, s) = parseImportAttr s
             val s = if Substring.isPrefix ":" s
                        then #2 (Substring.splitAt (s, 1))
                        else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
@@ -281,7 +297,7 @@ structure Entry =
                         then ()
                         else raise Fail (concat ["Entry.parseImport: \"", Substring.string s, "\""])
          in
-            Import {maybeStatic = maybeStatic,
+            Import {attr = attr,
                     name = name,
                     ty = {args = args, ret = ret}}
          end
