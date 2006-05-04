@@ -17,7 +17,7 @@ all: test
 .PHONY: clean
 clean:
 	find . -type f | egrep '.(old|ast|core-ml)$$' | xargs rm -f
-	../bin/clean
+	../../bin/clean
 
 
 OBJPTR_REP_MAPS = objptr-rep32.map
