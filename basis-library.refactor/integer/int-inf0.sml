@@ -268,22 +268,21 @@ structure IntInf : INT_INF0 =
                       toObjptrWordX: 'a -> ObjptrWord.word,
                       other : {wordSize: Int32.int,
                                zero: 'a,
-                               three: 'a,
                                eq: 'a * 'a -> bool,
                                neg: 'a -> 'a,
+                               notb: 'a -> 'a,
                                rshift: 'a * Word32.word -> 'a}} 
                      (isneg, w) =
             if Int32.> (ObjptrWord.wordSize, #wordSize other)
                orelse let
-                         val upperBits =
-                            (#rshift other)
-                            (w, Word32.- (ObjptrWord.wordSizeWord, 0w2))
+                         val shift = Word32.- (ObjptrWord.wordSizeWord, 0w2)
+                         val upperBits = (#rshift other) (w, shift)
+                         val upperZeroBits = #zero other
+                         val upperOneBits = (#rshift other) ((#notb other) (#zero other), shift)
                       in
-                         (#eq other) (upperBits, #zero other)
+                         (#eq other) (upperBits, upperZeroBits)
                          orelse
-                         (isneg 
-                          andalso
-                          (#eq other) (upperBits, #three other))
+                         (isneg andalso (#eq other) (upperBits, upperOneBits))
                       end
                then Prim.fromWord (addTag (toObjptrWordX w))
                else let
@@ -319,9 +318,9 @@ structure IntInf : INT_INF0 =
                   toObjptrWordX = ObjptrWord.fromWord8X,
                   other = {wordSize = Word8.wordSize,
                            zero = Word8.zero,
-                           three = 0w3,
                            eq = ((op =) : Word8.word * Word8.word -> bool),
                            neg = Word8.~,
+                           notb = Word8.notb,
                            rshift = Word8.>>}}
          fun fromWord8 w = fromWordAux8 (false, w)
          fun fromInt8 i = fromWordAux8 (Int8.< (i, 0), Word8.fromInt8 i)
@@ -335,9 +334,9 @@ structure IntInf : INT_INF0 =
                   toObjptrWordX = ObjptrWord.fromWord16X,
                   other = {wordSize = Word16.wordSize,
                            zero = Word16.zero,
-                           three = 0w3,
                            eq = ((op =) : Word16.word * Word16.word -> bool),
                            neg = Word16.~,
+                           notb = Word16.notb,
                            rshift = Word16.>>}}
          fun fromWord16 w = fromWordAux16 (false, w)
          fun fromInt16 i = fromWordAux16 (Int16.< (i, 0), Word16.fromInt16 i)
@@ -351,9 +350,9 @@ structure IntInf : INT_INF0 =
                   toObjptrWordX = ObjptrWord.fromWord32X,
                   other = {wordSize = Word32.wordSize,
                            zero = Word32.zero,
-                           three = 0w3,
                            eq = ((op =) : Word32.word * Word32.word -> bool),
                            neg = Word32.~,
+                           notb = Word32.notb,
                            rshift = Word32.>>}}
          fun fromWord32 w = fromWordAux32 (false, w)
          fun fromInt32 i = fromWordAux32 (Int32.< (i, 0), Word32.fromInt32 i)
@@ -367,9 +366,9 @@ structure IntInf : INT_INF0 =
                   toObjptrWordX = ObjptrWord.fromWord64X,
                   other = {wordSize = Word64.wordSize,
                            zero = Word64.zero,
-                           three = 0w3,
                            eq = ((op =) : Word64.word * Word64.word -> bool),
                            neg = Word64.~,
+                           notb = Word64.notb,
                            rshift = Word64.>>}}
          fun fromWord64 w = fromWordAux64 (false, w)
          fun fromInt64 i = fromWordAux64 (Int64.< (i, 0), Word64.fromInt64 i)
