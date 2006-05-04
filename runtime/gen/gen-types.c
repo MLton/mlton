@@ -372,7 +372,7 @@ int main (__attribute__ ((unused)) int argc,
   chksystype(suseconds_t, "SUSeconds");
   chksystype(time_t, "Time");
   chksystype(uid_t, "UId");
-  chksystype(useconds_t, "USeconds");
+  // chksystype(useconds_t, "USeconds");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* from <sys/socket.h> */");
