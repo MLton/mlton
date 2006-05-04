@@ -59,5 +59,5 @@ C_Errno_t(C_Time_t) Date_mkTime(void) {
 }
 
 C_Size_t Date_strfTime(Array(Char8_t) buf, C_Size_t n, NullString8_t fmt) {
-  return strftime((char*)(buf), n, (char*)(fmt), &tm_in);
+  return strftime((char*)(buf), n, (const char*)(fmt), &tm_in);
 }
