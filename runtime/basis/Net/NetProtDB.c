@@ -21,7 +21,7 @@ C_Int_t NetProtDB_getEntryProto(void) {
 }
 
 Bool_t NetProtDB_getByName(NullString8_t name) {
-  protoent = getprotobyname((char*)name);
+  protoent = getprotobyname((const char*)name);
   return (protoent != NULL and protoent->p_name != NULL);
 }
 

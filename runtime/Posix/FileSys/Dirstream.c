@@ -5,7 +5,7 @@ C_Errno_t(C_Int_t) Posix_FileSys_Dirstream_closeDir (C_DirP_t p) {
 }
 
 C_Errno_t(C_DirP_t) Posix_FileSys_Dirstream_openDir (NullString8_t p) {
-  DIR *res = opendir ((char *) p);
+  DIR *res = opendir ((const char *) p);
   return (C_Errno_t(C_DirP_t))res;
 }
 

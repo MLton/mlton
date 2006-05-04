@@ -61,7 +61,7 @@ C_Errno_t(C_Int_t) Posix_FileSys_Stat_fstat (C_Fd_t f) {
 }
 
 C_Errno_t(C_Int_t) Posix_FileSys_Stat_lstat (NullString8_t f) {
-  return lstat ((char*)f, &statbuf);
+  return lstat ((const char*)f, &statbuf);
 }
 
 C_Errno_t(C_Int_t) Posix_FileSys_Stat_stat (NullString8_t f) {

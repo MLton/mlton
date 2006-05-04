@@ -28,7 +28,7 @@ C_String_t NetServDB_getEntryProto(void) {
 }
 
 Bool_t NetServDB_getByName(NullString8_t name, NullString8_t proto) {
-  servent = getservbyname((char*)name, (char*)proto);
+  servent = getservbyname((const char*)name, (const char*)proto);
   return (servent != NULL and servent->s_name != NULL);
 }
 
@@ -37,7 +37,7 @@ Bool_t NetServDB_getByNameNull(NullString8_t name) {
 }
 
 Bool_t NetServDB_getByPort(C_Int_t port, NullString8_t proto) {
-  servent = getservbyport(port, (char*)proto);
+  servent = getservbyport(port, (const char*)proto);
   return (servent != NULL and servent->s_name != NULL);
 }
 
