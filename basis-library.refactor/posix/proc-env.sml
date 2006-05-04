@@ -120,7 +120,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
              (Prim.SC_GETPW_R_SIZE_MAX,"GETPW_R_SIZE_MAX"),
              (Prim.SC_HOST_NAME_MAX,"HOST_NAME_MAX"),
              (Prim.SC_IOV_MAX,"IOV_MAX"),
-             (Prim.SC_IPV6,"IPV6"),
+             (* (Prim.SC_IPV6,"IPV6"), *)
              (Prim.SC_JOB_CONTROL,"JOB_CONTROL"),
              (Prim.SC_LINE_MAX,"LINE_MAX"),
              (Prim.SC_LOGIN_NAME_MAX,"LOGIN_NAME_MAX"),
@@ -138,7 +138,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
              (Prim.SC_PAGE_SIZE,"PAGE_SIZE"),
              (Prim.SC_PRIORITIZED_IO,"PRIORITIZED_IO"),
              (Prim.SC_PRIORITY_SCHEDULING,"PRIORITY_SCHEDULING"),
-             (Prim.SC_RAW_SOCKETS,"RAW_SOCKETS"),
+             (* (Prim.SC_RAW_SOCKETS,"RAW_SOCKETS"), *)
              (Prim.SC_READER_WRITER_LOCKS,"READER_WRITER_LOCKS"),
              (Prim.SC_REALTIME_SIGNALS,"REALTIME_SIGNALS"),
              (Prim.SC_REGEXP,"REGEXP"),
