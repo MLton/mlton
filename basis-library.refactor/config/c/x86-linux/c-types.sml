@@ -112,8 +112,6 @@ structure C_Time = struct open Int32 type t = int end
 functor C_Time_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
 structure C_UId = struct open Word32 type t = word end
 functor C_UId_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
-structure C_USeconds = struct open Word32 type t = word end
-functor C_USeconds_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
 
 (* from <sys/socket.h> *)
 structure C_Socklen = struct open Word32 type t = word end
