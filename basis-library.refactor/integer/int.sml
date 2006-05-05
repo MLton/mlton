@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Integer (I: PRE_INTEGER_EXTRA) : INTEGER_EXTRA =
+functor Integer (I: PRE_INTEGER_EXTRA): INTEGER_EXTRA =
 struct
 
 open I

@@ -47,7 +47,7 @@ type-check-one:
 		-mlb-path-map "maps/$$defint" \
 		-mlb-path-map "maps/$$defreal" \
 		-mlb-path-map "maps/$$defword" \
-		build/sources.mlb; \
+		libs/all.mlb; \
 	done; done; done; done; done; done; done
 
 .PHONY: type-check
@@ -70,5 +70,5 @@ type-check:
 		-mlb-path-map "maps/$$defint" \
 		-mlb-path-map "maps/$$defreal" \
 		-mlb-path-map "maps/$$defword" \
-		build/sources.mlb; \
+		libs/all.mlb; \
 	done; done; done; done; done; done; done; done

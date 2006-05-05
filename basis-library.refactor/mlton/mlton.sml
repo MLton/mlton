@@ -72,7 +72,7 @@ structure Weak = MLtonWeak
 structure World = MLtonWorld
 structure Word =
    struct
-      open Word32
+      open Word
       type t = word
    end
 structure Word8 =
