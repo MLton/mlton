@@ -29,6 +29,27 @@ DEFAULT_INT_MAPS = default-int32.map default-int64.map default-int-inf.map
 DEFAULT_REAL_MAPS = default-real32.map default-real64.map
 DEFAULT_WORD_MAPS = default-word32.map default-word64.map
 
+.PHONY: type-check-one
+type-check-one:
+	for objptrrep in objptr-rep32.map; do \
+	for header in header-word32.map; do \
+	for seqindex in seqindex-int32.map; do \
+	for defchar in default-char8.map; do \
+	for defint in default-int32.map; do \
+	for defreal in default-real64.map; do \
+	for defword in default-word32.map; do \
+	echo "Type checking: $$objptrrep $$header $$seqindex $$ctypes $$defchar $$defint $$defreal $$defword"; \
+	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
+		-mlb-path-map "maps/$$objptrrep" \
+		-mlb-path-map "maps/$$header" \
+		-mlb-path-map "maps/$$seqindex" \
+		-mlb-path-map "maps/$$defchar" \
+		-mlb-path-map "maps/$$defint" \
+		-mlb-path-map "maps/$$defreal" \
+		-mlb-path-map "maps/$$defword" \
+		build/sources.mlb; \
+	done; done; done; done; done; done; done
+
 .PHONY: type-check
 type-check:
 	for objptrrep in $(OBJPTR_MAPS); do \

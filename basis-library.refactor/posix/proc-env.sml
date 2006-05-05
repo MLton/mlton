@@ -53,7 +53,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun getlogin () =
          SysCall.syscall'
-         ({errVal = Primitive.MLton.Pointer.null}, fn () =>
+         ({errVal = CUtil.C_Pointer.null}, fn () =>
           (Prim.getlogin (), fn cs => 
            CS.toString cs))
 
@@ -242,7 +242,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
          let
             val cs = Prim.getenv (NullString.nullTerm name)
          in
-            if Primitive.MLton.Pointer.isNull cs
+            if CUtil.C_Pointer.isNull cs
                then NONE
             else SOME (CS.toString cs)
          end
@@ -253,7 +253,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun ttyname fd =
          SysCall.syscall'
-         ({errVal = Primitive.MLton.Pointer.null}, fn () =>
+         ({errVal = CUtil.C_Pointer.null}, fn () =>
           (Prim.ttyname fd, fn cs => 
            CS.toString cs))
    end

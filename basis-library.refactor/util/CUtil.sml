@@ -9,6 +9,8 @@
 structure CUtil: C_UTIL =
    struct
       open Int
+
+      structure Pointer = Primitive.MLton.Pointer
          
       fun makeLength (sub, term) p =
          let
@@ -34,17 +36,26 @@ structure CUtil: C_UTIL =
             a
          end
 
+      structure C_Pointer =
+         struct
+            type t = C_Pointer.t
+            val null = Pointer.toWord Pointer.null
+            fun isNull p = p = null
+         end
+
       structure C_String =
          struct
             type t = C_String.t
 
             fun sub (cs, i) =
                Primitive.Char8.fromWord8Unsafe 
-               (Primitive.MLton.Pointer.getWord8 (cs, C_Ptrdiff.fromInt i))
+               (Pointer.getWord8 
+                (Pointer.fromWord cs, C_Ptrdiff.fromInt i))
 
             fun update (cs, i, c) =
-               Primitive.MLton.Pointer.setWord8 
-               (cs, C_Ptrdiff.fromInt i, Primitive.Char8.toWord8Unsafe c)
+               Pointer.setWord8 
+               (Pointer.fromWord cs, C_Ptrdiff.fromInt i, 
+                Primitive.Char8.toWord8Unsafe c)
 
             fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
 
@@ -61,9 +72,10 @@ structure CUtil: C_UTIL =
             type t = C_StringArray.t
 
             fun sub (css: t, i) = 
-               Primitive.MLton.Pointer.getPointer (css, C_Ptrdiff.fromInt i)
+               Pointer.getPointer 
+               (Pointer.fromWord css, C_Ptrdiff.fromInt i)
 
-            val length = makeLength (sub, Primitive.MLton.Pointer.isNull)
+            val length = makeLength (sub, Pointer.isNull)
 
             val toArrayOfLength =
                fn (css, n) => toArrayOfLength (css, C_String.toString o sub, n)

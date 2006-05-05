@@ -70,7 +70,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                   let
                      val res =
                         SysCall.syscallErr
-                        ({clear = true, restart = false, errVal = Primitive.MLton.Pointer.null}, fn () =>
+                        ({clear = true, restart = false, 
+                          errVal = CUtil.C_Pointer.null}, fn () =>
                          {return = Prim.readDir d,
                           post = fn cs => SOME cs,
                           handlers = [(Error.cleared, fn () => NONE),
@@ -132,7 +133,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             let
                val res =
                   SysCall.syscallErr
-                  ({clear = false, restart = false, errVal = Primitive.MLton.Pointer.null}, fn () =>
+                  ({clear = false, restart = false, 
+                    errVal = CUtil.C_Pointer.null}, fn () =>
                    {return = Prim.getcwd (!buffer, C_Size.fromInt (!size)),
                     post = fn _ => true,
                     handlers = [(Error.range, fn _ => false)]})

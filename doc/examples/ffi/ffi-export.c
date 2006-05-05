@@ -2,7 +2,7 @@
 #include "export.h"
 
 void g () {
-        Char c;
+        Char8 c;
 
         fprintf (stderr, "g starting\n");
         c = f (13, 17.15, 'a');
@@ -23,7 +23,7 @@ void g3 () {
         fprintf (stderr, "g3 done\n");
 }
 
-void g4 (Int i) {
+void g4 (Int32 i) {
         fprintf (stderr, "g4 (%d)\n", i);
         f4 (i);
 }

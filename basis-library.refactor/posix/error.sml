@@ -208,9 +208,10 @@ structure PosixError: POSIX_ERROR_EXTRA =
          let
             val cs = strError n
          in
-            if Primitive.MLton.Pointer.isNull cs
+            if Primitive.MLton.Pointer.isNull 
+               (Primitive.MLton.Pointer.fromWord cs)
                then "Unknown error"
-            else CUtil.C_String.toString cs
+               else CUtil.C_String.toString cs
          end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)

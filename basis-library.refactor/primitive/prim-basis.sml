@@ -432,12 +432,10 @@ structure Word64 =
    end
 
 (* Primitive Basis (MLton Extensions) *)
-(*
 structure Pointer =
    struct
       type t = pointer
    end
-*)
 structure Thread =
    struct
       type t = thread

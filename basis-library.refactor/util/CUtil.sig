@@ -8,6 +8,14 @@
 
 signature C_UTIL =
    sig
+      structure C_Pointer :
+         sig
+            type t = C_Pointer.t
+
+            val null: t
+            val isNull: t -> bool
+         end
+
       (* C char* *)
       structure C_String :
          sig
