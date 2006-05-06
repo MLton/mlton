@@ -18,23 +18,29 @@ structure INetSock:> INET_SOCK =
       val inetAF = PrimitiveFFI.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
-         if port < 0 orelse port >= 0x10000
-            then PosixError.raiseSys PosixError.inval
-            else let
-                    val port = Net.C_Int.hton (C_Int.fromInt port)
-                    val (sa, salen, finish) = Socket.new_sock_addr ()
-                    val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
-                                         port, sa, salen)
-                 in
-                    finish ()
-                 end
+         let
+            val port = C_Int.fromInt port
+            val port = Net.C_Int.hton port
+         in
+            if C_Int.< (port, 0) orelse C_Int.>= (port, 0x10000)
+               then PosixError.raiseSys PosixError.inval
+               else let
+                       val (sa, salen, finish) = Socket.new_sock_addr ()
+                       val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
+                                            port, sa, salen)
+                    in
+                       finish ()
+                    end
+         end
 
       fun any port = toAddr (NetHostDB.any (), port)
 
       fun fromAddr sa =
         let
-          val _ = Prim.fromAddr (Socket.unpackSockAddr sa)
-          val port = C_Int.toInt (Net.C_Int.ntoh (Prim.getPort ()))
+          val () = Prim.fromAddr (Socket.unpackSockAddr sa)
+          val port = Prim.getPort ()
+          val port = Net.C_Int.ntoh port
+          val port = C_Int.toInt port
           val (ia, finish) = NetHostDB.new_in_addr ()
           val _ = Prim.getInAddr (NetHostDB.preInAddrToWord8Array ia)
         in

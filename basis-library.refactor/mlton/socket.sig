@@ -6,14 +6,11 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type int = Int.int
-type word = Word.word
-
 signature MLTON_SOCKET =
    sig
       structure Address:
          sig
-            type t = word
+            type t
          end
 
       structure Ctl:
@@ -33,7 +30,7 @@ signature MLTON_SOCKET =
 
       structure Port:
          sig
-            type t = int
+            type t
          end
 
       type t

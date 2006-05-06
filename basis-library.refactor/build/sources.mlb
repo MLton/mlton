@@ -340,8 +340,8 @@ in
    (* ../mlton/ptrace.sml *)
    ../mlton/rlimit.sig
    ../mlton/rlimit.sml
-   (* ../mlton/socket.sig *)
-   (* ../mlton/socket.sml *)
+   ../mlton/socket.sig
+   ../mlton/socket.sml
    ../mlton/syslog.sig
    ../mlton/syslog.sml 
    ../mlton/vector.sig
