@@ -17,7 +17,6 @@ signature CHAR_SIZE =
 
       val all: t list
       val bits: t -> Bits.t
-      val default: t
       val equals: t * t -> bool
       val fromBits: Bits.t -> t
       val isInRange: t * IntInf.t -> bool

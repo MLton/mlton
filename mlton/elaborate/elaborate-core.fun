@@ -745,7 +745,7 @@ structure Type =
                      in
                         [Int8, Int16, Int32]
                      end)
-            @ sized (Tycon.int o IntSize.I,
+            @ sized (Tycon.int o IntSize.fromBits,
                      let
                         open CType
                      in

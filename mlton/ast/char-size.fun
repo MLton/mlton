@@ -21,8 +21,6 @@ fun bits s =
      | C2 => 16
      | C4 => 32)
 
-val default = C1
-
 val equals = op =
 
 fun fromBits b =

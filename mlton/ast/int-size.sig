@@ -22,9 +22,8 @@ signature INT_SIZE =
       val bytes: t -> Bytes.t
       val cardinality: t -> IntInf.t
       val compare: t * t -> Relation.t
-      val default: t
       val equals: t * t -> bool
-      val I : Bits.t -> t
+      val fromBits : Bits.t -> t
       val layout: t -> Layout.t
       val memoize: (t -> 'a) -> t -> 'a
       datatype prim = I8 | I16 | I32 | I64

@@ -426,10 +426,10 @@ structure Type =
                 | Word => Tycon.isWordX c
 
             val defaultTycon: t -> Tycon.t =
-               fn Char => Tycon.defaultChar
-                | Int => Tycon.defaultInt
-                | Real => Tycon.defaultReal
-                | Word => Tycon.defaultWord
+               fn Char => Tycon.defaultChar ()
+                | Int => Tycon.defaultInt ()
+                | Real => Tycon.defaultReal ()
+                | Word => Tycon.defaultWord ()
          end
       
       (* Tuples of length <> 1 are always represented as records.
@@ -1284,18 +1284,15 @@ structure Type =
 
       val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.pointer ()))
 
-      val defaultChar = con (Tycon.char CharSize.default, Vector.new0 ())
-      val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
-
       structure Overload =
          struct
             open Overload
                
             val defaultType =
-               fn Char => defaultChar
-                | Int => defaultInt
-                | Real => defaultReal
-                | Word => defaultWord
+               fn Char => con (Tycon.defaultChar (), Vector.new0 ())
+                | Int => con (Tycon.defaultInt (), Vector.new0 ())
+                | Real => con (Tycon.defaultReal (), Vector.new0 ())
+                | Word => con (Tycon.defaultWord (), Vector.new0 ())
          end
          
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
