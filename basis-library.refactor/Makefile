@@ -23,52 +23,41 @@ clean:
 OBJPTR_MAPS = objptr-rep32.map objptr-rep64.map 
 HEADER_MAPS = header-word32.map header-word64.map
 SEQINDEX_MAPS = seqindex-int32.map seqindex-int64.map 
-CTYPES_MAPS = c-types.test-amd64-m32-linux.map c-types.test-amd64-m64-linux.map c-types.test-weird-weird.map c-types.amd64-linux.map c-types.x86-linux.map 
-DEFAULT_CHAR_MAPS = default-char8.map
-DEFAULT_INT_MAPS = default-int32.map default-int64.map default-intinf.map 
-DEFAULT_REAL_MAPS = default-real32.map default-real64.map
-DEFAULT_WORD_MAPS = default-word32.map default-word64.map
+TARGET_ARCH = x86 amd64 
+TARGET_OS = linux 
+DEFAULT_CHAR = char8
+DEFAULT_INT = int32 int64 intinf
+DEFAULT_REAL = real32 real64
+DEFAULT_WORD = word32 word64
 
-.PHONY: type-check-one
-type-check-one:
-	for objptrrep in objptr-rep32.map; do \
-	for header in header-word32.map; do \
-	for seqindex in seqindex-int32.map; do \
-	for defchar in default-char8.map; do \
-	for defint in default-int32.map; do \
-	for defreal in default-real64.map; do \
-	for defword in default-word32.map; do \
-	echo "Type checking: $$objptrrep $$header $$seqindex $$ctypes $$defchar $$defint $$defreal $$defword"; \
+.PHONY: type-check-def
+type-check-def:
 	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
-		-mlb-path-map "maps/$$objptrrep" \
-		-mlb-path-map "maps/$$header" \
-		-mlb-path-map "maps/$$seqindex" \
-		-mlb-path-map "maps/$$defchar" \
-		-mlb-path-map "maps/$$defint" \
-		-mlb-path-map "maps/$$defreal" \
-		-mlb-path-map "maps/$$defword" \
 		libs/all.mlb; \
-	done; done; done; done; done; done; done
 
-.PHONY: type-check
-type-check:
+.PHONY: type-check-all
+type-check-all:
 	for objptrrep in $(OBJPTR_MAPS); do \
 	for header in $(HEADER_MAPS); do \
 	for seqindex in $(SEQINDEX_MAPS); do \
-	for ctypes in $(CTYPES_MAPS); do \
-	for defchar in $(DEFAULT_CHAR_MAPS); do \
-	for defint in $(DEFAULT_INT_MAPS); do \
-	for defreal in $(DEFAULT_REAL_MAPS); do \
-	for defword in $(DEFAULT_WORD_MAPS); do \
-	echo "Type checking: $$objptrrep $$header $$seqindex $$ctypes $$defchar $$defint $$defreal $$defword"; \
+	for targetarch in $(TARGET_ARCH); do \
+	for targetos in $(TARGET_OS); do \
+	for defchar in $(DEFAULT_CHAR); do \
+	for defint in $(DEFAULT_INT); do \
+	for defreal in $(DEFAULT_REAL); do \
+	for defword in $(DEFAULT_WORD); do \
+	if [ ! -r config/c/$$targetarch-$$targetos/c-types.sml ]; then \
+		break; \
+	fi; \
+	echo "Type checking: $$objptrrep $$header $$seqindex $$targetarch $$targetos $$defchar $$defint $$defreal $$defword"; \
 	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
 		-mlb-path-map "maps/$$objptrrep" \
 		-mlb-path-map "maps/$$header" \
 		-mlb-path-map "maps/$$seqindex" \
-		-mlb-path-map "maps/$$ctypes" \
-		-mlb-path-map "maps/$$defchar" \
-		-mlb-path-map "maps/$$defint" \
-		-mlb-path-map "maps/$$defreal" \
-		-mlb-path-map "maps/$$defword" \
+		-mlb-path-map "maps/c-types.$$targetarch-$$targetos.map" \
+		-default-type "$$defchar" \
+		-default-type "$$defint" \
+		-default-type "$$defreal" \
+		-default-type "$$defword" \
 		libs/all.mlb; \
-	done; done; done; done; done; done; done; done
+	done; done; done; done; done; done; done; done; done

@@ -1,6 +1,0 @@
-
-../build/sources.mlb
-ann "allowFFI true" in
-   exn.sml
-   test.sml
-end
