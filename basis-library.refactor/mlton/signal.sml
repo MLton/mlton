@@ -29,7 +29,11 @@ fun raiseInval () =
 val validSignals = 
    Array.tabulate 
    (C_Int.toInt Prim.NSIG, fn i => 
-    (C_Errno.check (Prim.sigismember(fromInt i))) <> (C_Int.fromInt ~1))
+    SysCall.syscallErr
+    ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+     {return = Prim.sigismember (fromInt i),
+      post = fn _ => true,
+      handlers = [(Error.inval, fn () => false)]}))
 
 structure Mask =
    struct
@@ -48,9 +52,16 @@ structure Mask =
          (Array.foldri
           (fn (i, b, sigs) =>
            if b
-              then if (C_Errno.check (Prim.sigismember(fromInt i))) = (C_Int.fromInt ~1)
-                      then sigs
-                      else (fromInt i)::sigs
+              then let
+                      val s = fromInt i
+                      val res =
+                         SysCall.simpleResult
+                         (fn () => Prim.sigismember s)
+                   in
+                      if res = C_Int.fromInt 1
+                         then s::sigs
+                         else sigs
+                   end
               else sigs)
           []
           validSignals)
@@ -101,11 +112,11 @@ local
    val r = ref false
 in
    fun initHandler (s: signal): Handler.t =
-      if C_Errno.check (Prim.isDefault (s, r)) = C_Int.fromInt 0
-         then if !r
-                 then Default
-              else Ignore
-      else InvalidSignal
+      SysCall.syscallErr
+      ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+       {return = Prim.isDefault (s, r),
+        post = fn _ => if !r then Default else Ignore,
+        handlers = [(Error.inval, fn () => InvalidSignal)]})
 end
 
 val (getHandler, setHandler, handlers) =

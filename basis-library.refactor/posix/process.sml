@@ -168,7 +168,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                handle Overflow => Error.raiseSys Error.inval)))
       in
          val alarm = wrap Prim.alarm
-(*       val sleep = wrap Prim.sleep *)
+         (* val sleep = wrap Prim.sleep *)
       end
 
       fun sleep (t: Time.time): Time.time =
