@@ -107,7 +107,21 @@ val lexAndParseString =
                                        (!Control.targetArch))},
                {var = "TARGET_OS",
                 path = String.toLower (MLton.Platform.OS.toString
-                                       (!Control.targetOS))}],
+                                       (!Control.targetOS))},
+               {var = "OBJPTR_REP",
+                path = "objptr-rep32.sml"},
+               {var = "HEADER_WORD",
+                path = "header-word32.sml"},
+               {var = "SEQINDEX_INT",
+                path = "seqindex-int32.sml"},
+               {var = "DEFAULT_CHAR",
+                path = !Control.defaultChar},
+               {var = "DEFAULT_INT",
+                path = !Control.defaultInt},
+               {var = "DEFAULT_REAL",
+                path = !Control.defaultReal},
+               {var = "DEFAULT_WORD",
+                path = !Control.defaultWord}],
               List.concat (List.map (!Control.mlbPathMaps, make))])
 
          fun peekPathMap var' =

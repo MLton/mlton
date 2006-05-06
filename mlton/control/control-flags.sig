@@ -47,6 +47,11 @@ signature CONTROL_FLAGS =
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
+      val defaultChar: string ref
+      val defaultInt: string ref
+      val defaultReal: string ref
+      val defaultWord: string ref
+
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
 

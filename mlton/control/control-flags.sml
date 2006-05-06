@@ -81,6 +81,19 @@ val debug = control {name = "debug",
                      default = false,
                      toString = Bool.toString}
 
+val defaultChar = control {name = "defaultChar",
+                           default = "default-char8.sml",
+                           toString = fn s => s}
+val defaultInt = control {name = "defaultInt",
+                          default = "default-int32.sml",
+                          toString = fn s => s}
+val defaultReal = control {name = "defaultReal",
+                           default = "default-real64.sml",
+                           toString = fn s => s}
+val defaultWord = control {name = "defaultWord",
+                           default = "default-word32.sml",
+                           toString = fn s => s}
+
 val diagPasses = 
    control {name = "diag passes",
             default = [],
