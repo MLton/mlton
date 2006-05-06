@@ -19,7 +19,7 @@ signature OS_PROCESS_EXTRA =
 
       structure Status:
          sig
-            type t
+            type t = status
 
             val fromInt: int -> t
             val fromPosix: Posix.Process.exit_status -> t

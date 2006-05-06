@@ -10,14 +10,13 @@ local
    structure Error = PosixError
    val stub: string * ('a -> 'b) -> ('a -> 'b) =
       fn (msg, f) => 
-      if let open Primitive.MLton.Platform.OS
-         in MinGW = host
-         end
-         then fn _ => (if true then ()
-                       else (Primitive.Stdio.print msg
-                             ; Primitive.Stdio.print "\n")
+      if let open Primitive.MLton.Platform.OS in MinGW = host end
+         then fn _ => (if true 
+                          then ()
+                          else (PrimitiveFFI.Stdio.print msg
+                                ; PrimitiveFFI.Stdio.print "\n")
                        ; Error.raiseSys Error.nosys)
-      else f
+         else f
 in
    structure PrimitiveFFI =
       struct

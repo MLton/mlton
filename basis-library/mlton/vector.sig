@@ -10,7 +10,7 @@ type int = Int.int
 
 signature MLTON_VECTOR =
    sig
-      val create:
+      val create: 
          int * ({sub: int -> 'a, update: int * 'a -> unit}
                 -> (int -> 'a) * (unit -> unit))
          -> 'a vector

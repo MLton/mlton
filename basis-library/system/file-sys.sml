@@ -34,7 +34,7 @@ structure OS_FileSys =
       val readLink = P_FSys.readlink
 
       (* the maximum number of links allowed *)
-      val maxLinks = 64
+      val maxLinks: int = 64
 
       structure P = OS_Path
 

@@ -70,34 +70,63 @@ signature POSIX_ERROR_EXTRA =
             val restartFlag: bool ref
 
             val syscallErr: 
-               {clear: bool, restart: bool} * 
-               (unit -> {return: int,
-                         post: unit -> 'a,
-                         handlers: (syserror * (unit -> 'a)) list}) -> 'a
+               {clear: bool, restart: bool, errVal: ''a} * 
+               (unit -> {return: ''a C_Errno.t,
+                         post: ''a -> 'b,
+                         handlers: (syserror * (unit -> 'b)) list}) -> 'b
 
-            (* clear = false, restart = false,
-             * post = fn () => (), handlers = []
+            (* clear = false, restart = false, errVal = ~1
+             * post = fn _ => (), handlers = []
              *)
-            val simple: (unit -> int) -> unit
-            (* clear = false, restart = true,
-             * post = fn () => (), handlers = []
+            val simple: (unit -> C_Int.t C_Errno.t) -> unit
+            (* clear = false, restart = false, 
+             * post = fn _ => (), handlers = []
              *)
-            val simpleRestart: (unit -> int) -> unit
-            (* clear = false, restart = false,
-             * post = fn () => return, handlers = []
+            val simple': {errVal: ''a} * (unit -> ''a C_Errno.t) -> unit
+
+            (* clear = false, restart = true, errVal = ~1
+             * post = fn _ => (), handlers = []
              *)
-            val simpleResult: (unit -> int) -> int
-            (* clear = false, restart = true,
-             * post = fn () => return, handlers = []
+            val simpleRestart: (unit -> C_Int.t C_Errno.t) -> unit
+            (* clear = false, restart = true, 
+             * post = fn _ => (), handlers = []
              *)
-            val simpleResultRestart: (unit -> int) -> int
-            (* clear = false, restart = false,
+            val simpleRestart': {errVal: ''a} * (unit -> ''a C_Errno.t) -> unit
+
+            (* clear = false, restart = false, errVal = ~1
+             * post = fn ret => ret, handlers = []
+             *)
+            val simpleResult: (unit -> C_Int.t C_Errno.t) -> C_Int.t
+            (* clear = false, restart = false, 
+             * post = fn ret => ret, handlers = []
+             *)
+            val simpleResult': {errVal: ''a} * (unit -> ''a C_Errno.t) -> ''a
+
+            (* clear = false, restart = true, errVal = ~1
+             * post = fn ret => ret, handlers = []
+             *)
+            val simpleResultRestart: (unit -> C_Int.t C_Errno.t) -> C_Int.t
+            (* clear = false, restart = true, 
+             * post = fn ret => ret, handlers = []
+             *)
+            val simpleResultRestart': {errVal: ''a} * (unit -> ''a C_Errno.t) -> ''a
+
+            (* clear = false, restart = false, errVal = ~1
              * handlers = []
              *)
-            val syscall: (unit -> int * (unit -> 'a)) -> 'a
-            (* clear = false, restart = true,
+            val syscall: (unit -> C_Int.t C_Errno.t * (C_Int.t -> 'a)) -> 'a
+            (* clear = false, restart = false, 
              * handlers = []
              *)
-            val syscallRestart: (unit -> int * (unit -> 'a)) -> 'a
+            val syscall': {errVal: ''a} * (unit -> ''a C_Errno.t * (''a -> 'b)) -> 'b
+
+            (* clear = false, restart = true, errVal = ~1
+             * handlers = []
+             *)
+            val syscallRestart: (unit -> C_Int.t C_Errno.t * (C_Int.t -> 'a)) -> 'a
+            (* clear = false, restart = true, 
+             * handlers = []
+             *)
+            val syscallRestart': {errVal: ''a} * (unit -> ''a C_Errno.t * (''a -> 'b)) -> 'b
          end
    end

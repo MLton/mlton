@@ -16,7 +16,7 @@ structure Port =
 
 structure Address =
    struct
-      type t = word
+      type t = NetHostDB.in_addr
    end
 
 structure Host =
@@ -26,7 +26,7 @@ structure Host =
       val get: NetHostDB.entry option -> t option =
         Option.map (fn entry => {name = NetHostDB.name entry})
 
-      val getByAddress = get o NetHostDB.getByAddr o NetHostDB.wordToInAddr
+      val getByAddress = get o NetHostDB.getByAddr
       val getByName = get o NetHostDB.getByName
    end
 
@@ -75,7 +75,7 @@ fun accept s =
       val (in_addr: NetHostDB.in_addr, port: int) = INetSock.fromAddr addr
       val (ins, out) = sockToIO sock
    in
-      (NetHostDB.inAddrToWord in_addr, port, ins, out)
+      (in_addr, port, ins, out)
    end
 
 fun connect (host, port) =

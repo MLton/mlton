@@ -21,7 +21,7 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
                       finalizers: ('a -> unit) list ref,
                       value: 'a ref}
 
-fun touch (T {value, ...}) = Primitive.touch value
+fun touch (T {value, ...}) = Primitive.MLton.Finalizable.touch value
    
 fun withValue (f as T {value, ...}, g) =
    DynamicWind.wind (fn () => g (!value),

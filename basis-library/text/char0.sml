@@ -6,50 +6,62 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Char0 =
+structure PreChar8 =
    struct
-      open Primitive.Int Primitive.Char
+      structure Prim = Primitive.Char8
+      open Primitive.Char8
          
-      type char = char
-      type string = string
+      type char = Primitive.Char8.char
+      type string = Primitive.String8.string
 
-      val minChar = #"\000"
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = 'a -> char
+             val fInt8 = Prim.fromInt8Unsafe
+             val fInt16 = Prim.fromInt16Unsafe
+             val fInt32 = Prim.fromInt32Unsafe
+             val fInt64 = Prim.fromInt64Unsafe
+             val fIntInf = Prim.fromIntInfUnsafe)
+      in
+         val chrUnsafe = S.f
+      end
+      val ord = Primitive.Word8.toInt o Prim.toWord8Unsafe
+
+      val minChar: char = #"\000"
       val numChars: int = 256
       val maxOrd: int = 255
-      val maxChar = #"\255"
+      val maxChar:char = #"\255"
 
       fun succ c =
-         if Primitive.safe andalso c = maxChar
+         if Primitive.Controls.safe andalso c = maxChar
             then raise Chr
-         else Primitive.Char.chr (ord c + 1)
+         else chrUnsafe (Int.+ (ord c, 1))
 
       fun pred c =
-         if Primitive.safe andalso c = minChar
+         if Primitive.Controls.safe andalso c = minChar
             then raise Chr
-         else Primitive.Char.chr (ord c - 1)
+         else chrUnsafe (Int.- (ord c, 1))
 
       fun chrOpt c =
-         if Primitive.safe andalso Primitive.Int.gtu (c, maxOrd)
+         if Primitive.Controls.safe 
+            andalso Int.gtu (c, maxOrd)
             then NONE
-         else SOME (Primitive.Char.chr c)
+         else SOME (chrUnsafe c)
 
       fun chr c =
          case chrOpt c of
             NONE => raise Chr
           | SOME c => c
 
-      val {compare, ...} = Util.makeCompare (op <)
-
-      structure String = String0
-
       fun oneOf s =
          let
             val a = Array.array (numChars, false)
-            val n = String.size s
+            val n = PreString8.size s
             fun loop i =
-               if Primitive.Int.>= (i, n) then ()
-               else (Array.update (a, ord (String.sub (s, i)), true)
-                     ; loop (i + 1))
+               if Int.>= (i, n) then ()
+               else (Array.update (a, ord (PreString8.sub (s, i)), true)
+                     ; loop (Int.+ (i, 1)))
          in loop 0
             ; fn c => Array.sub (a, ord c)
          end
@@ -65,20 +77,20 @@ structure Char0 =
          
       local
          val not = fn f => memoize (not o f)
-         infix or andd
-         fun f or g = memoize (fn c => f c orelse g c)
-         fun f andd g = memoize (fn c => f c andalso g c)
+         infix || &&
+         fun f || g = memoize (fn c => f c orelse g c)
+         fun f && g = memoize (fn c => f c andalso g c)
       in
          val isLower = oneOf "abcdefghijklmnopqrstuvwxyz"
          val isUpper = oneOf "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
          val isDigit = oneOf "0123456789"
-         val isAlpha = isUpper or isLower
-         val isHexDigit = isDigit or (oneOf "abcdefABCDEF")
-         val isAlphaNum = isAlpha or isDigit
+         val isAlpha = isUpper || isLower
+         val isHexDigit = isDigit || (oneOf "abcdefABCDEF")
+         val isAlphaNum = isAlpha || isDigit
          val isPrint = fn c => #" " <= c andalso c <= #"~"
          val isSpace = oneOf " \t\r\n\v\f"
-         val isGraph = (not isSpace) andd isPrint
-         val isPunct = isGraph andd (not isAlphaNum)
+         val isGraph = (not isSpace) && isPrint
+         val isPunct = isGraph && (not isAlphaNum)
          val isCntrl = not isPrint
          val isAscii = fn c => c < #"\128"
       end
@@ -86,12 +98,12 @@ structure Char0 =
       local
          fun make (lower, upper, diff) =
             memoize (fn c => if lower <= c andalso c <= upper
-                               then chr (ord c +? diff)
+                               then chr (Int.+? (ord c, diff))
                             else c)
-         val diff = ord #"A" - ord #"a"
+         val diff = Int.- (ord #"A", ord #"a")
       in
-         val toLower = make (#"A", #"Z", ~diff)
+         val toLower = make (#"A", #"Z", Int.~ diff)
          val toUpper = make (#"a", #"z", diff)
       end
    end
-
+structure PreChar = PreChar8

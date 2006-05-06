@@ -10,7 +10,7 @@ signature EMBED_INT =
       eqtype int
       type big
          
-      val precision': Int.int
+      val precision': Int32.int
       val fromBigUnsafe: big -> int
       val toBig: int -> big
    end
@@ -18,12 +18,18 @@ signature EMBED_INT =
 functor EmbedInt (structure Big: INTEGER_EXTRA
                   structure Small: EMBED_INT where type big = Big.int): INTEGER =
    struct
-      val () = if Int.< (Small.precision', valOf Big.precision) then ()
+      structure Small =
+         struct
+            open Small
+            val precision': Int.int = Int32.toInt precision'
+         end
+
+      val () = if Int.< (Small.precision', Big.precision') then ()
                else raise Fail "EmbedWord"
 
       open Small
 
-      val shift = Word.fromInt (Int.- (valOf Big.precision, precision'))
+      val shift = Word.fromInt (Int.- (Big.precision', precision'))
 
       val extend: Big.int -> Big.int =
          fn i => Big.~>> (Big.<< (i, shift), shift)

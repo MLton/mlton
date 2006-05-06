@@ -5,40 +5,45 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure NetHostDB:> NET_HOST_DB_EXTRA =
+structure NetHostDB: NET_HOST_DB_EXTRA =
    struct
       structure Prim = PrimitiveFFI.NetHostDB
 
-      (* network byte order (MSB) *)
+      (* network byte order (big-endian) *)
       type pre_in_addr = Word8.word array
       type in_addr = Word8.word vector
 
       val preInAddrToWord8Array = fn a => a
       val inAddrToWord8Vector = fn v => v
-         
-      structure PW = PackWord32Big
+
+      val inAddrLen = C_Size.toInt Prim.inAddrSize
       fun new_in_addr () =
         let
-          val inAddrLen = Word32.toIntX Prim.inAddrSize
           val ia: pre_in_addr = Array.array (inAddrLen, 0wx0: Word8.word)
           fun finish () = Array.vector ia
         in
           (ia, finish)
         end
-      fun inAddrToWord (ia: in_addr) =
-        Word.fromLargeWord (PW.subVec (Word8Vector.fromPoly ia, 0))
-      fun wordToInAddr w =
-        let
-          val (ia, finish) = new_in_addr ()
-          val _ = PW.update (Word8Array.fromPoly ia, 0, Word.toLargeWord w)
-        in
-          finish ()
-        end
-      fun any () = wordToInAddr (Word.fromInt Prim.INADDR_ANY)
-      type addr_family = C_Int.t
+      fun any () =
+         let
+            val (wa, finish) = new_in_addr ()
+            fun loop (i, acc) =
+               if i >= inAddrLen
+                  then ()
+                  else let
+                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, (inAddrLen - 1) - i, w)
+                       in
+                          loop (i + 1, C_Int.>> (acc, 0w4))
+                       end
+         in
+            loop (0, Prim.INADDR_ANY)
+            ; finish ()
+         end
 
-      val intToAddrFamily = fn z => z
-      val addrFamilyToInt = fn z => z
+      type addr_family = C_Int.t
          
       datatype entry = T of {name: string,
                              aliases: string list,
@@ -59,15 +64,15 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
         fun get (b: bool): entry option =
           if b
             then let
-                   val name = COld.CS.toString (Prim.getEntryName ())
+                   val name = CUtil.C_String.toString (Prim.getEntryName ())
                    val numAliases = Prim.getEntryAliasesNum ()
                    fun fill (n, aliases) =
-                     if n < numAliases
+                     if C_Int.< (n, numAliases)
                        then let
                               val alias =
-                                COld.CS.toString (Prim.getEntryAliasesN n)
+                                CUtil.C_String.toString (Prim.getEntryAliasesN n)
                             in
-                              fill (n + 1, alias::aliases)
+                              fill (C_Int.+ (n, 1), alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
@@ -75,15 +80,13 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
                    val length = Prim.getEntryLength ()
                    val numAddrs = Prim.getEntryAddrsNum ()
                    fun fill (n, addrs) =
-                     if n < numAddrs
+                     if C_Int.< (n, numAddrs)
                        then let
-                              val addr = Word8Array.array (length, 0wx0)
-                              val _ =
-                                 Prim.getEntryAddrsN (n, Word8Array.toPoly addr)
-                              val addr =
-                                 Word8Vector.toPoly (Word8Array.vector addr)
+                              val addr = Word8Array.array (C_Int.toInt length, 0wx0)
+                              val _ = Prim.getEntryAddrsN (n, Word8Array.toPoly addr)
+                              val addr = Word8Vector.toPoly (Word8Array.vector addr)
                             in
-                              fill (n + 1, addr::addrs)
+                              fill (C_Int.+ (n, 1), addr::addrs)
                             end
                        else List.rev addrs
                    val addrs = fill (0, [])
@@ -145,8 +148,8 @@ structure NetHostDB:> NET_HOST_DB_EXTRA =
                    end
           val l = loop (4, state, [])
           fun get1 w = 
-            (Word8.fromLarge (Word32.toLarge (Word32.andb (w, 0wxFF))),
-             Word32.>>(w, 0w8))
+            (Word8.fromLarge (Word.toLarge (Word.andb (w, 0wxFF))),
+             Word.>>(w, 0w8))
           fun get2 w =
             let 
               val (a,w) = get1 w

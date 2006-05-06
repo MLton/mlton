@@ -8,7 +8,6 @@
 
 structure PosixTTY: POSIX_TTY =
    struct
-      structure Cstring = COld.CS
       structure Prim = PrimitiveFFI.Posix.TTY
       open Prim
       structure Error = PosixError
@@ -21,27 +20,29 @@ structure PosixTTY: POSIX_TTY =
       structure V =
          struct
             open V
-            val nccs = NCCS
-            val eof = VEOF
-            val eol = VEOL
-            val erase = VERASE
-            val intr = VINTR
-            val kill = VKILL
-            val min = VMIN
-            val quit = VQUIT
-            val susp = VSUSP
-            val time = VTIME
-            val start = VSTART
-            val stop = VSTOP
+            val nccs = C_Int.toInt NCCS
+            val eof = C_Int.toInt VEOF
+            val eol = C_Int.toInt VEOL
+            val erase = C_Int.toInt VERASE
+            val intr = C_Int.toInt VINTR
+            val kill = C_Int.toInt VKILL
+            val min = C_Int.toInt VMIN
+            val quit = C_Int.toInt VQUIT
+            val susp = C_Int.toInt VSUSP
+            val time = C_Int.toInt VTIME
+            val start = C_Int.toInt VSTART
+            val stop = C_Int.toInt VSTOP
 
             type cc = C_CC.t array
 
-            val default = Byte.charToByte #"\000"
+            val default = C_CC.fromSysWord 0w0
 
-            fun new () = Array.array (NCCS, default)
+            fun new () = Array.array (nccs, default)
 
             fun updates (a, l) = 
-               List.app (fn (i, cc) => Array.update (a, i, Byte.charToByte cc)) l
+               List.app (fn (i, cc) => 
+                         Array.update (a, i, (C_CC.fromSysWord o Word8.toSysWord o Byte.charToByte) cc)) 
+                        l
 
             fun cc l = let val a = new ()
                        in updates (a, l)
@@ -55,12 +56,13 @@ structure PosixTTY: POSIX_TTY =
                   ; a'
                end
 
-            val sub = Byte.byteToChar o Array.sub
+            val sub = (Byte.byteToChar o Word8.fromSysWord o C_CC.toSysWord) o Array.sub
          end
       
+      structure Flags = BitFlags(structure S = C_TCFlag)
       structure I =
          struct
-            open I BitFlags
+            open I Flags
             val brkint = BRKINT
             val icrnl = ICRNL
             val ignbrk = IGNBRK
@@ -77,7 +79,7 @@ structure PosixTTY: POSIX_TTY =
       
       structure O =
          struct
-            open O BitFlags
+            open O Flags
             val bs0 = BS0
             val bs1 = BS1
             val bsdly = BSDLY
@@ -110,7 +112,7 @@ structure PosixTTY: POSIX_TTY =
       
       structure C =
          struct
-            open C BitFlags
+            open C Flags
             val clocal = CLOCAL
             val cread = CREAD
             val cs5 = CS5
@@ -126,7 +128,7 @@ structure PosixTTY: POSIX_TTY =
       
       structure L =
          struct
-            open L BitFlags
+            open L Flags
             val echo = ECHO
             val echoe = ECHOE
             val echok = ECHOK
@@ -157,10 +159,9 @@ structure PosixTTY: POSIX_TTY =
       val b75 = B75
       val b9600 = B9600
 
-      val compareSpeed = SysWord.compare
-      fun id x = x
-      val speedToWord = id
-      val wordToSpeed = id
+      val compareSpeed = C_Speed.compare
+      val speedToWord = C_Speed.toSysWord
+      val wordToSpeed = C_Speed.fromSysWord
 
       type termios = {iflag: I.flags,
                       oflag: O.flags,
@@ -170,6 +171,7 @@ structure PosixTTY: POSIX_TTY =
                       ispeed: speed,
                       ospeed: speed}
 
+      val id = fn x => x
       val termios = id
       val fieldsOf = id
 
@@ -230,7 +232,7 @@ structure PosixTTY: POSIX_TTY =
             fun getattr fd =
                SysCall.syscallRestart
                (fn () =>
-                (Prim.TC.getattr fd, fn () =>
+                (Prim.TC.getattr fd, fn _ =>
                  {iflag = Termios.getIFlag (),
                   oflag = Termios.getOFlag (),
                   cflag = Termios.getCFlag (),
@@ -252,10 +254,10 @@ structure PosixTTY: POSIX_TTY =
                  ; SysCall.simple (fn () => Termios.cfSetOSpeed ospeed)
                  ; SysCall.simple (fn () => Termios.cfSetISpeed ispeed)
                  ; Termios.setCC cc
-                 ; (Prim.TC.setattr (fd, a), fn () => ())))
+                 ; (Prim.TC.setattr (fd, a), fn _ => ())))
 
             fun sendbreak (fd, n) =
-               SysCall.simpleRestart (fn () => Prim.TC.sendbreak (fd, n))
+               SysCall.simpleRestart (fn () => Prim.TC.sendbreak (fd, C_Int.fromInt n))
 
             fun drain fd = SysCall.simpleRestart (fn () => Prim.TC.drain fd)
               
@@ -266,11 +268,9 @@ structure PosixTTY: POSIX_TTY =
                SysCall.simpleRestart (fn () => Prim.TC.flow (fd, n))
               
             fun getpgrp fd =
-               SysCall.syscallRestart
-               (fn () =>
-                let val pid = Prim.TC.getpgrp fd
-                in (Pid.toInt pid, fn () => pid)
-                end)
+               SysCall.simpleResultRestart'
+               ({errVal = C_PId.fromInt ~1}, fn () =>
+                Prim.TC.getpgrp fd)
               
             fun setpgrp (fd, pid) = 
                SysCall.simpleRestart (fn () => Prim.TC.setpgrp (fd, pid))

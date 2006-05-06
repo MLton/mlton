@@ -115,13 +115,13 @@ val lexAndParseString =
                {var = "SEQINDEX_INT",
                 path = "seqindex-int32.sml"},
                {var = "DEFAULT_CHAR",
-                path = !Control.defaultChar},
+                path = concat ["default-", !Control.defaultChar, ".sml"]},
                {var = "DEFAULT_INT",
-                path = !Control.defaultInt},
+                path = concat ["default-", !Control.defaultInt, ".sml"]},
                {var = "DEFAULT_REAL",
-                path = !Control.defaultReal},
+                path = concat ["default-", !Control.defaultReal, ".sml"]},
                {var = "DEFAULT_WORD",
-                path = !Control.defaultWord}],
+                path = concat ["default-", !Control.defaultWord, ".sml"]}],
               List.concat (List.map (!Control.mlbPathMaps, make))])
 
          fun peekPathMap var' =

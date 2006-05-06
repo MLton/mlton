@@ -13,7 +13,7 @@ structure Vector: VECTOR_EXTRA =
                               val fromArray = Primitive.Vector.fromArray
                               val isMutable = false
                               val length = Primitive.Vector.length
-                              val sub = Primitive.Vector.sub)
+                              val subUnsafe = Primitive.Vector.subUnsafe)
       open V
 
       type 'a vector = 'a vector
@@ -30,12 +30,30 @@ structure Vector: VECTOR_EXTRA =
          end
 
       fun update (v, i, x) = 
-        tabulate (length v,
-                  fn j => if i = j 
-                             then x
-                          else unsafeSub (v, j))
-
-      val unsafeSub = Primitive.Vector.sub
+         let
+            fun doit i =
+               tabulate' (length' v,
+                          fn j => if i = j 
+                                     then x 
+                                     else unsafeSub' (v, j))
+         in 
+            if Primitive.Controls.safe
+               then
+                  let
+                     val i = 
+                        (SeqIndex.fromInt i)
+                        handle Overflow => raise Subscript
+                  in
+                     if SeqIndex.geu (i, length' v)
+                        then raise Subscript
+                        else doit i
+                  end 
+               else let
+                       val i = SeqIndex.fromIntUnsafe i
+                    in 
+                       doit i
+                    end
+         end
 
       val isSubvector = isSubsequence
 
@@ -43,36 +61,10 @@ structure Vector: VECTOR_EXTRA =
 
       val vector = new
 
-      fun create (n, f) =
-         let
-            val a = Primitive.Array.array n
-            val subLim = ref 0
-            fun sub i =
-               if Primitive.safe andalso Primitive.Int.geu (i, !subLim) then
-                  raise Subscript
-               else
-                  Primitive.Array.sub (a, i)
-            val updateLim = ref 0
-            fun update (i, x) =
-               if Primitive.safe andalso Primitive.Int.geu (i, !updateLim) then
-                  raise Subscript
-               else
-                  Primitive.Array.update (a, i, x)
-            val (tab, finish) = f {sub = sub, update = update}
-            val () =
-               Util.naturalForeach
-               (n, fn i =>
-                (Primitive.Array.update (a, i, tab i);
-                 subLim := i + 1;
-                 updateLim := i + 1))
-            val () = finish ()
-            val () = updateLim := 0
-         in
-            fromArray a
-         end
+      fun create (n, f) = generate (n, f)
    end
 structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice
-   
+
 structure VectorGlobal: VECTOR_GLOBAL = Vector
 open VectorGlobal
 val vector = Vector.fromList

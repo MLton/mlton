@@ -7,7 +7,7 @@
 
 structure MLtonExn =
    struct
-      open Primitive.Exn
+      open Primitive.MLton.Exn
 
       type t = exn
          
@@ -42,7 +42,7 @@ structure MLtonExn =
          else fn _ => []
 
       local
-         val message = Primitive.Stdio.print
+         val message = PrimitiveFFI.Stdio.print
       in
          fun 'a topLevelHandler (exn: exn): 'a =
             (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
@@ -54,7 +54,7 @@ structure MLtonExn =
                           l)))
              ; Exit.exit Exit.Status.failure)
             handle _ => (message "Toplevel handler raised exception.\n"
-                         ; Primitive.halt Exit.Status.failure
+                         ; Primitive.MLton.halt Exit.Status.failure
                          (* The following raise is unreachable, but must be there
                           * so that the expression is of type 'a.
                           *)

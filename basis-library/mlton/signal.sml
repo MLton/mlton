@@ -18,8 +18,6 @@ val restart = SysCall.restartFlag
 type t = signal
 
 type how = C_Int.t
-
-(* val toString = SysWord.toString o toWord *)
    
 fun raiseInval () =
    let
@@ -30,8 +28,12 @@ fun raiseInval () =
 
 val validSignals = 
    Array.tabulate 
-   (Prim.NSIG, fn i => 
-    Prim.sigismember(fromInt i) <> ~1)
+   (C_Int.toInt Prim.NSIG, fn i => 
+    SysCall.syscallErr
+    ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+     {return = Prim.sigismember (fromInt i),
+      post = fn _ => true,
+      handlers = [(Error.inval, fn () => false)]}))
 
 structure Mask =
    struct
@@ -50,9 +52,16 @@ structure Mask =
          (Array.foldri
           (fn (i, b, sigs) =>
            if b
-              then if (Prim.sigismember(fromInt i)) = 1
-                      then (fromInt i)::sigs
-                      else sigs
+              then let
+                      val s = fromInt i
+                      val res =
+                         SysCall.simpleResult
+                         (fn () => Prim.sigismember s)
+                   in
+                      if res = C_Int.fromInt 1
+                         then s::sigs
+                         else sigs
+                   end
               else sigs)
           []
           validSignals)
@@ -103,16 +112,16 @@ local
    val r = ref false
 in
    fun initHandler (s: signal): Handler.t =
-      if 0 = Prim.isDefault (s, r)
-         then if !r
-                 then Default
-              else Ignore
-      else InvalidSignal
+      SysCall.syscallErr
+      ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+       {return = Prim.isDefault (s, r),
+        post = fn _ => if !r then Default else Ignore,
+        handlers = [(Error.inval, fn () => InvalidSignal)]})
 end
 
 val (getHandler, setHandler, handlers) =
    let
-      val handlers = Array.tabulate (Prim.NSIG, initHandler o fromInt)
+      val handlers = Array.tabulate (C_Int.toInt Prim.NSIG, initHandler o fromInt)
       val _ =
          Cleaner.addNew
          (Cleaner.atLoadWorld, fn () =>

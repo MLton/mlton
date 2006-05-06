@@ -11,9 +11,9 @@ structure CommandLine: COMMAND_LINE =
       structure Prim = PrimitiveFFI.CommandLine
          
       fun name () = 
-         COld.CS.toString (Prim.commandNameGet ())
+         CUtil.C_String.toString (Prim.commandNameGet ())
 
       fun arguments () =
-         (Array.toList o COld.CSS.toArrayOfLength) 
-         (Prim.argvGet (), Prim.argcGet ())
+         (Array.toList o CUtil.C_StringArray.toArrayOfLength) 
+         (Prim.argvGet (), C_Int.toInt (Prim.argcGet ()))
    end

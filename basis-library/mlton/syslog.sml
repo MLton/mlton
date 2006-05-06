@@ -70,20 +70,17 @@ in
    val WARNING = LOG_WARNING
 end
 
-fun zt s = s ^ "\000"
-
 val openlog = fn (s, opt, fac) =>
    let 
-      val optf = 
-         Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
+      val optf = foldl C_Int.orb 0 opt
    in
-     openlog (NullString.fromString (zt s), optf, fac)
+     openlog (NullString.nullTerm s, optf, fac)
    end
 
 val closelog = fn () => 
    closelog ()
 
 val log = fn (lev, msg) => 
-   syslog (lev, NullString.fromString (zt msg))
+   syslog (lev, NullString.nullTerm msg)
 
 end

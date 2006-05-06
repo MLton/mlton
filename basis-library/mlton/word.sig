@@ -5,8 +5,6 @@
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-
-type word = Word.word
    
 signature MLTON_WORD =
    sig

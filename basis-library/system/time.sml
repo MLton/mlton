@@ -23,12 +23,13 @@ exception Time
 val zeroTime = T 0
 
 fun fromReal r =
-   T (Real.toLargeInt IEEEReal.TO_NEAREST 
-      (Real.* (r, Real.fromLargeInt ticksPerSecond)))
+   T (LargeReal.toLargeInt IEEEReal.TO_NEAREST 
+      (LargeReal.* (r, LargeReal.fromLargeInt ticksPerSecond)))
    handle Overflow => raise Time
 
 fun toReal (T i) =
-   Real./ (Real.fromLargeInt i, Real.fromLargeInt ticksPerSecond)
+   LargeReal./ (LargeReal.fromLargeInt i, 
+                LargeReal.fromLargeInt ticksPerSecond)
 
 local
    fun make ticksPer =
@@ -87,7 +88,7 @@ in
 end
 
 val fmt: int -> time -> string =
-   fn n => (Real.fmt (StringCvt.FIX (SOME n))) o toReal
+   fn n => (LargeReal.fmt (StringCvt.FIX (SOME n))) o toReal
 
 val toString = fmt 3
 

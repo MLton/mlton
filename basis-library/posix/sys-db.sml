@@ -8,7 +8,6 @@
 
 structure PosixSysDB: POSIX_SYS_DB =
    struct
-      structure CS = COld.CS
       structure Prim = PrimitiveFFI.Posix.SysDB
       structure Error = PosixError
       structure SysCall = Error.SysCall
@@ -27,14 +26,14 @@ structure PosixSysDB: POSIX_SYS_DB =
             structure Passwd = Prim.Passwd
 
             fun fromC (f: unit -> bool): passwd =
-               SysCall.syscall
-               (fn () =>
-                (if f () then 0 else ~1,
-                 fn () => {name = CS.toString(Passwd.getName ()),
-                           uid = Passwd.getUId (),
-                           gid = Passwd.getGId (),
-                           home = CS.toString(Passwd.getDir ()),
-                           shell = CS.toString(Passwd.getShell ())}))
+               SysCall.syscall'
+               ({errVal = false}, fn () =>
+                (C_Errno.inject (f ()),
+                 fn _ => {name = CUtil.C_String.toString (Passwd.getName ()),
+                          uid = Passwd.getUId (),
+                          gid = Passwd.getGId (),
+                          home = CUtil.C_String.toString (Passwd.getDir ()),
+                          shell = CUtil.C_String.toString (Passwd.getShell ())}))
                
             val name: passwd -> string = #name
             val uid: passwd -> uid = #uid
@@ -59,12 +58,12 @@ structure PosixSysDB: POSIX_SYS_DB =
             structure Group = Prim.Group
 
             fun fromC (f: unit -> bool): group =
-               SysCall.syscall
-               (fn () =>
-                (if f () then 0 else ~1,
-                 fn () => {name = CS.toString(Group.getName ()),
-                           gid = Group.getGId (),
-                           members = COld.CSS.toList(Group.getMem ())}))
+               SysCall.syscall'
+               ({errVal = false}, fn () =>
+                (C_Errno.inject (f ()),
+                 fn _ => {name = CUtil.C_String.toString (Group.getName ()),
+                          gid = Group.getGId (),
+                          members = CUtil.C_StringArray.toList (Group.getMem ())}))
                   
             val name: group -> string = #name
             val gid: group -> gid = #gid

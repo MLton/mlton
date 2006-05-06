@@ -40,6 +40,14 @@ end
 end
 structure IEEEReal = 
 struct
+structure FloatClass = 
+struct
+val FP_INFINITE = _const "IEEEReal_FloatClass_FP_INFINITE" : C_Int.t;
+val FP_NAN = _const "IEEEReal_FloatClass_FP_NAN" : C_Int.t;
+val FP_NORMAL = _const "IEEEReal_FloatClass_FP_NORMAL" : C_Int.t;
+val FP_SUBNORMAL = _const "IEEEReal_FloatClass_FP_SUBNORMAL" : C_Int.t;
+val FP_ZERO = _const "IEEEReal_FloatClass_FP_ZERO" : C_Int.t;
+end
 val getRoundingMode = _import "IEEEReal_getRoundingMode" : unit -> C_Int.t;
 structure RoundingMode = 
 struct
@@ -53,6 +61,7 @@ val setRoundingMode = _import "IEEEReal_setRoundingMode" : C_Int.t -> unit;
 end
 structure MLton = 
 struct
+val bug = _import "MLton_bug" : NullString8.t -> unit;
 structure Itimer = 
 struct
 val PROF = _const "MLton_Itimer_PROF" : C_Int.t;
@@ -195,6 +204,60 @@ val POLLIN = _const "OS_IO_POLLIN" : C_Short.t;
 val POLLOUT = _const "OS_IO_POLLOUT" : C_Short.t;
 val POLLPRI = _const "OS_IO_POLLPRI" : C_Short.t;
 end
+end
+structure PackReal32 = 
+struct
+val subArr = _import "PackReal32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
+val subArrRev = _import "PackReal32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
+val subVec = _import "PackReal32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
+val subVecRev = _import "PackReal32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
+val update = _import "PackReal32_update" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
+val updateRev = _import "PackReal32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
+end
+structure PackReal64 = 
+struct
+val subArr = _import "PackReal64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
+val subArrRev = _import "PackReal64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
+val subVec = _import "PackReal64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
+val subVecRev = _import "PackReal64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
+val update = _import "PackReal64_update" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
+val updateRev = _import "PackReal64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
+end
+structure PackWord16 = 
+struct
+val subArr = _import "PackWord16_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
+val subArrRev = _import "PackWord16_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
+val subVec = _import "PackWord16_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
+val subVecRev = _import "PackWord16_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
+val update = _import "PackWord16_update" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
+val updateRev = _import "PackWord16_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
+end
+structure PackWord32 = 
+struct
+val subArr = _import "PackWord32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
+val subArrRev = _import "PackWord32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
+val subVec = _import "PackWord32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
+val subVecRev = _import "PackWord32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
+val update = _import "PackWord32_update" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
+val updateRev = _import "PackWord32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
+end
+structure PackWord64 = 
+struct
+val subArr = _import "PackWord64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
+val subArrRev = _import "PackWord64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
+val subVec = _import "PackWord64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
+val subVecRev = _import "PackWord64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
+val update = _import "PackWord64_update" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
+val updateRev = _import "PackWord64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
+end
+structure PackWord8 = 
+struct
+val subArr = _import "PackWord8_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
+val subArrRev = _import "PackWord8_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
+val subVec = _import "PackWord8_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
+val subVecRev = _import "PackWord8_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
+val update = _import "PackWord8_update" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
+val updateRev = _import "PackWord8_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
 end
 structure Posix = 
 struct
@@ -437,7 +500,7 @@ val fcntl2 = _import "Posix_IO_fcntl2" : C_Fd.t * C_Int.t -> (C_Int.t) C_Errno.t
 val fcntl3 = _import "Posix_IO_fcntl3" : C_Fd.t * C_Int.t * C_Int.t -> (C_Int.t) C_Errno.t;
 structure FD = 
 struct
-val CLOEXEC = _const "Posix_IO_FD_CLOEXEC" : C_Fd.t;
+val CLOEXEC = _const "Posix_IO_FD_CLOEXEC" : C_Int.t;
 end
 structure FLock = 
 struct
@@ -533,7 +596,6 @@ val SC_GETGR_R_SIZE_MAX = _const "Posix_ProcEnv_SC_GETGR_R_SIZE_MAX" : C_Int.t;
 val SC_GETPW_R_SIZE_MAX = _const "Posix_ProcEnv_SC_GETPW_R_SIZE_MAX" : C_Int.t;
 val SC_HOST_NAME_MAX = _const "Posix_ProcEnv_SC_HOST_NAME_MAX" : C_Int.t;
 val SC_IOV_MAX = _const "Posix_ProcEnv_SC_IOV_MAX" : C_Int.t;
-val SC_IPV6 = _const "Posix_ProcEnv_SC_IPV6" : C_Int.t;
 val SC_JOB_CONTROL = _const "Posix_ProcEnv_SC_JOB_CONTROL" : C_Int.t;
 val SC_LINE_MAX = _const "Posix_ProcEnv_SC_LINE_MAX" : C_Int.t;
 val SC_LOGIN_NAME_MAX = _const "Posix_ProcEnv_SC_LOGIN_NAME_MAX" : C_Int.t;
@@ -551,7 +613,6 @@ val SC_PAGE_SIZE = _const "Posix_ProcEnv_SC_PAGE_SIZE" : C_Int.t;
 val SC_PAGESIZE = _const "Posix_ProcEnv_SC_PAGESIZE" : C_Int.t;
 val SC_PRIORITIZED_IO = _const "Posix_ProcEnv_SC_PRIORITIZED_IO" : C_Int.t;
 val SC_PRIORITY_SCHEDULING = _const "Posix_ProcEnv_SC_PRIORITY_SCHEDULING" : C_Int.t;
-val SC_RAW_SOCKETS = _const "Posix_ProcEnv_SC_RAW_SOCKETS" : C_Int.t;
 val SC_RE_DUP_MAX = _const "Posix_ProcEnv_SC_RE_DUP_MAX" : C_Int.t;
 val SC_READER_WRITER_LOCKS = _const "Posix_ProcEnv_SC_READER_WRITER_LOCKS" : C_Int.t;
 val SC_REALTIME_SIGNALS = _const "Posix_ProcEnv_SC_REALTIME_SIGNALS" : C_Int.t;
@@ -663,7 +724,6 @@ val system = _import "Posix_Process_system" : NullString8.t -> (C_Status.t) C_Er
 val termSig = _import "Posix_Process_termSig" : C_Status.t -> C_Signal.t;
 structure W = 
 struct
-val CONTINUED = _const "Posix_Process_W_CONTINUED" : C_Int.t;
 val NOHANG = _const "Posix_Process_W_NOHANG" : C_Int.t;
 val UNTRACED = _const "Posix_Process_W_UNTRACED" : C_Int.t;
 end
@@ -885,6 +945,78 @@ val VSUSP = _const "Posix_TTY_V_VSUSP" : C_Int.t;
 val VTIME = _const "Posix_TTY_V_VTIME" : C_Int.t;
 end
 end
+end
+structure Real32 = 
+struct
+val abs = _import "Real32_abs" : Real32.t -> Real32.t;
+val class = _import "Real32_class" : Real32.t -> C_Int.t;
+val frexp = _import "Real32_frexp" : Real32.t * (C_Int.t) ref -> Real32.t;
+val gdtoa = _import "Real32_gdtoa" : Real32.t * C_Int.t * C_Int.t * (C_Int.t) ref -> C_String.t;
+val ldexp = _import "Real32_ldexp" : Real32.t * C_Int.t -> Real32.t;
+structure Math = 
+struct
+val acos = _import "Real32_Math_acos" : Real32.t -> Real32.t;
+val asin = _import "Real32_Math_asin" : Real32.t -> Real32.t;
+val atan = _import "Real32_Math_atan" : Real32.t -> Real32.t;
+val atan2 = _import "Real32_Math_atan2" : Real32.t * Real32.t -> Real32.t;
+val cos = _import "Real32_Math_cos" : Real32.t -> Real32.t;
+val cosh = _import "Real32_Math_cosh" : Real32.t -> Real32.t;
+val (eGet, eSet) = _symbol "Real32_Math_e": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val exp = _import "Real32_Math_exp" : Real32.t -> Real32.t;
+val ln = _import "Real32_Math_ln" : Real32.t -> Real32.t;
+val log10 = _import "Real32_Math_log10" : Real32.t -> Real32.t;
+val (piGet, piSet) = _symbol "Real32_Math_pi": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val pow = _import "Real32_Math_pow" : Real32.t * Real32.t -> Real32.t;
+val sin = _import "Real32_Math_sin" : Real32.t -> Real32.t;
+val sinh = _import "Real32_Math_sinh" : Real32.t -> Real32.t;
+val sqrt = _import "Real32_Math_sqrt" : Real32.t -> Real32.t;
+val tan = _import "Real32_Math_tan" : Real32.t -> Real32.t;
+val tanh = _import "Real32_Math_tanh" : Real32.t -> Real32.t;
+end
+val (maxFiniteGet, maxFiniteSet) = _symbol "Real32_maxFinite": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val (minNormalPosGet, minNormalPosSet) = _symbol "Real32_minNormalPos": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val (minPosGet, minPosSet) = _symbol "Real32_minPos": (unit -> (Real32.t)) * ((Real32.t) -> unit);
+val modf = _import "Real32_modf" : Real32.t * (Real32.t) ref -> Real32.t;
+val nextAfter = _import "Real32_nextAfter" : Real32.t * Real32.t -> Real32.t;
+val round = _import "Real32_round" : Real32.t -> Real32.t;
+val signBit = _import "Real32_signBit" : Real32.t -> C_Int.t;
+val strto = _import "Real32_strto" : NullString8.t -> Real32.t;
+end
+structure Real64 = 
+struct
+val abs = _import "Real64_abs" : Real64.t -> Real64.t;
+val class = _import "Real64_class" : Real64.t -> C_Int.t;
+val frexp = _import "Real64_frexp" : Real64.t * (C_Int.t) ref -> Real64.t;
+val gdtoa = _import "Real64_gdtoa" : Real64.t * C_Int.t * C_Int.t * (C_Int.t) ref -> C_String.t;
+val ldexp = _import "Real64_ldexp" : Real64.t * C_Int.t -> Real64.t;
+structure Math = 
+struct
+val acos = _import "Real64_Math_acos" : Real64.t -> Real64.t;
+val asin = _import "Real64_Math_asin" : Real64.t -> Real64.t;
+val atan = _import "Real64_Math_atan" : Real64.t -> Real64.t;
+val atan2 = _import "Real64_Math_atan2" : Real64.t * Real64.t -> Real64.t;
+val cos = _import "Real64_Math_cos" : Real64.t -> Real64.t;
+val cosh = _import "Real64_Math_cosh" : Real64.t -> Real64.t;
+val (eGet, eSet) = _symbol "Real64_Math_e": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val exp = _import "Real64_Math_exp" : Real64.t -> Real64.t;
+val ln = _import "Real64_Math_ln" : Real64.t -> Real64.t;
+val log10 = _import "Real64_Math_log10" : Real64.t -> Real64.t;
+val (piGet, piSet) = _symbol "Real64_Math_pi": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val pow = _import "Real64_Math_pow" : Real64.t * Real64.t -> Real64.t;
+val sin = _import "Real64_Math_sin" : Real64.t -> Real64.t;
+val sinh = _import "Real64_Math_sinh" : Real64.t -> Real64.t;
+val sqrt = _import "Real64_Math_sqrt" : Real64.t -> Real64.t;
+val tan = _import "Real64_Math_tan" : Real64.t -> Real64.t;
+val tanh = _import "Real64_Math_tanh" : Real64.t -> Real64.t;
+end
+val (maxFiniteGet, maxFiniteSet) = _symbol "Real64_maxFinite": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val (minNormalPosGet, minNormalPosSet) = _symbol "Real64_minNormalPos": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val (minPosGet, minPosSet) = _symbol "Real64_minPos": (unit -> (Real64.t)) * ((Real64.t) -> unit);
+val modf = _import "Real64_modf" : Real64.t * (Real64.t) ref -> Real64.t;
+val nextAfter = _import "Real64_nextAfter" : Real64.t * Real64.t -> Real64.t;
+val round = _import "Real64_round" : Real64.t -> Real64.t;
+val signBit = _import "Real64_signBit" : Real64.t -> C_Int.t;
+val strto = _import "Real64_strto" : NullString8.t -> Real64.t;
 end
 structure Socket = 
 struct

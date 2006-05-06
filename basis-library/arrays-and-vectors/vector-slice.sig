@@ -5,7 +5,6 @@ structure Vector =
 
 signature VECTOR_SLICE_GLOBAL =
    sig
-
    end
 
 signature VECTOR_SLICE =
@@ -27,10 +26,10 @@ signature VECTOR_SLICE =
       val appi: (int * 'a -> unit) -> 'a slice -> unit
       val app: ('a -> unit) -> 'a slice -> unit
       val mapi: (int * 'a -> 'b) -> 'a slice -> 'b Vector.vector
-      val map: ('a -> 'b) -> 'a slice -> 'b Vector.vector
+      val map: ('a -> 'b) -> 'a slice -> 'b Vector.vector 
       val foldli: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
-      val foldri: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val foldl: ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
+      val foldri: (int * 'a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val foldr: ('a * 'b -> 'b) -> 'b -> 'a slice -> 'b
       val findi: (int * 'a -> bool) -> 'a slice -> (int * 'a) option
       val find: ('a -> bool) -> 'a slice -> 'a option
@@ -43,8 +42,11 @@ signature VECTOR_SLICE_EXTRA =
    sig
       include VECTOR_SLICE
 
+      val unsafeSub': 'a slice * SeqIndex.int -> 'a
       val unsafeSub: 'a slice * int -> 'a
+      val unsafeSlice': 'a Vector.vector * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSlice: 'a Vector.vector * int * int option -> 'a slice
+      val unsafeSubslice': 'a slice * SeqIndex.int * SeqIndex.int option -> 'a slice
       val unsafeSubslice: 'a slice * int * int option -> 'a slice
 
       (* Used to implement Substring/String functions *)

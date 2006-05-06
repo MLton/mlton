@@ -10,34 +10,33 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
       structure Error = PosixError
 
-      (* Patch to make Time look like it deals with Int.int
+      (* Patch to make Time look like it deals with C_Time.t
        * instead of LargeInt.int.
        *)
       structure Time =
          struct
             open Time
 
-            val fromSeconds = fromSeconds o LargeInt.fromInt
+            val fromSeconds = fromSeconds o C_Time.toLarge
 
             fun toSeconds t =
-               LargeInt.toInt (Time.toSeconds t)
+               C_Time.fromLarge (Time.toSeconds t)
                handle Overflow => Error.raiseSys Error.inval
          end
-      
+
       structure SysCall = Error.SysCall
       structure Prim = PrimitiveFFI.Posix.FileSys
       open Prim
       structure Stat = Prim.Stat
-      structure Flags = BitFlags
 
       type file_desc = C_Fd.t
       type uid = C_UId.t
       type gid = C_GId.t
 
-      val fdToWord = Primitive.FileDesc.toWord
-      val wordToFD = Primitive.FileDesc.fromWord
-      val fdToIOD = OS.IO.fromFD
-      val iodToFD = SOME o OS.IO.toFD
+      val fdToWord = C_Fd.toSysWord
+      val wordToFD = C_Fd.fromSysWord
+      val fdToIOD = fn x => x
+      val iodToFD = SOME o (fn x => x)
 
       (*------------------------------------*)
       (*             dirstream              *)
@@ -58,15 +57,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             let
                val s = NullString.nullTerm s
             in
-               SysCall.syscall
-               (fn () =>
-                let
-                   val d = Prim.openDir s
-                   val p = Primitive.Pointer.fromWord d
-                in
-                   (if Primitive.Pointer.isNull p then ~1 else 0,
-                    fn () => DS (ref (SOME d)))
-                end)
+               SysCall.syscall'
+               ({errVal = C_DirP.fromWord 0w0}, fn () =>
+                (Prim.openDir s, fn d =>
+                 DS (ref (SOME d))))
             end
 
          fun readdir d =
@@ -76,31 +70,25 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                   let
                      val res =
                         SysCall.syscallErr
-                        ({clear = true, restart = false},
-                         fn () =>
-                         let
-                            val cs = Prim.readDir d
-                         in
-                            {return = if Primitive.Pointer.isNull cs
-                                         then ~1
-                                      else 0,
-                             post = fn () => SOME cs,
-                             handlers = [(Error.cleared, fn () => NONE),
-                                         (* MinGW sets errno to ENOENT when it
-                                          * returns NULL.
-                                          *)
-                                         (Error.noent, fn () => NONE)]}
-                         end)
+                        ({clear = true, restart = false, 
+                          errVal = CUtil.C_Pointer.null}, fn () =>
+                         {return = Prim.readDir d,
+                          post = fn cs => SOME cs,
+                          handlers = [(Error.cleared, fn () => NONE),
+                                      (* MinGW sets errno to ENOENT when it
+                                       * returns NULL.
+                                       *)
+                                      (Error.noent, fn () => NONE)]})
                   in
                      case res of
                         NONE => NONE
                       | SOME cs => 
                            let
-                              val s = COld.CS.toString cs
+                              val s = CUtil.C_String.toString cs
                            in
                               if s = "." orelse s = ".."
                                  then loop ()
-                              else SOME s
+                                 else SOME s
                            end
                   end
             in loop ()
@@ -108,16 +96,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
          fun rewinddir d =
             let val d = get d
-            in 
-               SysCall.syscallErr
-               ({clear = true, restart = false},
-                fn () =>
-                let val () = Prim.rewindDir d
-                in
-                   {return = ~1,
-                    post = fn () => (),
-                    handlers = [(Error.cleared, fn () => ())]}
-                end)
+            in Prim.rewindDir d
             end
 
          fun closedir (DS r) =
@@ -131,7 +110,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          val size: int ref = ref 1
-         fun make () = Primitive.Array.array (!size)
+         fun make () = Array.arrayUninit (!size)
          val buffer = ref (make ())
             
          fun extractToChar (a, c) =
@@ -140,7 +119,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                (* find the null terminator *)
                fun loop i =
                   if i >= n
-                     then raise Fail "String.extractFromC didn't find terminator"
+                     then raise Fail "extractToChar didn't find terminator"
                   else if c = Array.sub (a, i)
                           then i
                        else loop (i + 1)
@@ -151,21 +130,30 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          fun extract a = extractToChar (a, #"\000")
       in
          fun getcwd () =
-            if Primitive.Pointer.isNull (Prim.getcwd (!buffer, C_Size.fromInt (!size)))
-               then (size := 2 * !size
-                     ; buffer := make ()
-                     ; getcwd ())
-            else extract (!buffer)
+            let
+               val res =
+                  SysCall.syscallErr
+                  ({clear = false, restart = false, 
+                    errVal = CUtil.C_Pointer.null}, fn () =>
+                   {return = Prim.getcwd (!buffer, C_Size.fromInt (!size)),
+                    post = fn _ => true,
+                    handlers = [(Error.range, fn _ => false)]})
+            in
+               if res
+                  then extract (!buffer)
+                  else (size := 2 * !size
+                        ; buffer := make ()
+                        ; getcwd ())
+            end
       end
 
-      val FD = Primitive.FileDesc.fromInt
-
-      val stdin = FD 0
-      val stdout = FD 1
-      val stderr = FD 2
+      val stdin : C_Fd.t = 0
+      val stdout : C_Fd.t = 1
+      val stderr : C_Fd.t = 2
 
       structure S =
          struct
+            structure Flags = BitFlags(structure S = C_Mode)
             open S Flags
             type mode = C_Mode.t
             val ifblk = IFBLK
@@ -195,32 +183,33 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       structure O =
          struct
+            structure Flags = BitFlags(structure S = C_Int)
             open O Flags
-            val append = SysWord.fromInt APPEND
-            val binary = SysWord.fromInt BINARY
-            val creat = SysWord.fromInt CREAT
-            val dsync = SysWord.fromInt DSYNC
-            val excl = SysWord.fromInt EXCL
-            val noctty = SysWord.fromInt NOCTTY
-            val nonblock = SysWord.fromInt NONBLOCK
-            val rdonly = SysWord.fromInt RDONLY
-            val rdwr = SysWord.fromInt RDWR
-            val rsync = SysWord.fromInt RSYNC
-            val sync = SysWord.fromInt SYNC
-            val text = SysWord.fromInt TEXT
-            val trunc = SysWord.fromInt TRUNC
-            val wronly = SysWord.fromInt WRONLY
+            val append = APPEND
+            val binary = BINARY
+            val creat = CREAT
+            val dsync = DSYNC
+            val excl = EXCL
+            val noctty = NOCTTY
+            val nonblock = NONBLOCK
+            val rdonly = RDONLY
+            val rdwr = RDWR
+            val rsync = RSYNC
+            val sync = SYNC
+            val text = TEXT
+            val trunc = TRUNC
+            val wronly = WRONLY
          end
 
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR
 
-      fun wordToOpenMode w =
-         if w = O.rdonly then O_RDONLY
-         else if w = O.wronly then O_WRONLY
-              else if w = O.rdwr then O_RDWR
-                   else raise Fail "wordToOpenMode: unknown word"
+      fun flagsToOpenMode f =
+         if f = O.rdonly then O_RDONLY
+         else if f = O.wronly then O_WRONLY
+              else if f = O.rdwr then O_RDWR
+                   else raise Fail "flagsToOpenMode: unknown flag"
                       
-      val openModeToWord =
+      val openModeToFlags =
          fn O_RDONLY => O.rdonly
           | O_WRONLY => O.wronly
           | O_RDWR => O.rdwr
@@ -228,24 +217,27 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       fun createf (pathname, openMode, flags, mode) =
          let
             val pathname = NullString.nullTerm pathname
-            val flags = Flags.flags [openModeToWord openMode,
-                                     flags,
-                                     O.creat]
+            val flags = O.Flags.flags [openModeToFlags openMode,
+                                       flags,
+                                       O.creat]
+            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
             val fd =
                SysCall.simpleResult
-               (fn () => Prim.open3 (pathname, SysWord.toInt flags, mode))
+               (fn () => Prim.open3 (pathname, flags, mode))
          in
-            FD fd
+            fd
          end
 
       fun openf (pathname, openMode, flags) =
          let 
             val pathname = NullString.nullTerm pathname
-            val flags = Flags.flags [openModeToWord openMode, flags]
+            val flags = O.Flags.flags [openModeToFlags openMode, flags]
+            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
             val fd = 
                SysCall.simpleResult
-               (fn () => Prim.open3 (pathname, SysWord.toInt flags, Flags.empty))
-         in FD fd
+               (fn () => Prim.open3 (pathname, flags, C_Mode.fromInt 0))
+         in 
+            fd
          end
          
       fun creat (s, m) = createf (s, O_WRONLY, O.trunc, m)
@@ -283,13 +275,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             let 
                val path = NullString.nullTerm path
             in
-               SysCall.syscall
-               (fn () =>
-                let val len = Prim.readlink (path, buf, C_Size.fromInt size)
-                in
-                   (len, fn () =>
-                    ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len)))
-                end)
+               SysCall.syscall'
+               ({errVal = C_SSize.fromInt ~1}, fn () =>
+                (Prim.readlink (path, buf, C_Size.fromInt size), fn len =>
+                 ArraySlice.vector (ArraySlice.slice (buf, 0, SOME (C_SSize.toInt len)))))
             end
       end
 
@@ -357,7 +346,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       local
          fun make prim arg =
-            SysCall.syscall (fn () => (prim arg, fn () => ST.fromC ()))
+            SysCall.syscall (fn () => (prim arg, fn _ => ST.fromC ()))
       in
          val stat = (make Prim.Stat.stat) o NullString.nullTerm
          val lstat = (make Prim.Stat.lstat) o NullString.nullTerm
@@ -373,23 +362,19 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       fun access (path: string, mode: access_mode list): bool =
          let 
-            val mode = SysWord.toInt (Flags.flags (map SysWord.fromInt (A.F_OK :: (map conv_access_mode mode))))
+            val mode = List.foldl C_Int.orb 0 (A.F_OK :: (map conv_access_mode mode))
             val path = NullString.nullTerm path
          in 
             SysCall.syscallErr
-            ({clear = false, restart = false},
-             fn () =>
-             let val return = Prim.access (path, mode)
-             in
-                {return = return,
-                 post = fn () => true,
-                 handlers = [(Error.acces, fn () => false),
-                             (Error.loop, fn () => false),
-                             (Error.nametoolong, fn () => false),
-                             (Error.noent, fn () => false),
-                             (Error.notdir, fn () => false),
-                             (Error.rofs, fn () => false)]}
-             end)
+            ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+             {return = Prim.access (path, mode),
+              post = fn _ => true,
+              handlers = [(Error.acces, fn () => false),
+                          (Error.loop, fn () => false),
+                          (Error.nametoolong, fn () => false),
+                          (Error.noent, fn () => false),
+                          (Error.notdir, fn () => false),
+                          (Error.rofs, fn () => false)]})
          end
 
       local
@@ -412,7 +397,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                (fn () => 
                 (U.setAcTime a
                  ; U.setModTime m
-                 ; (U.utime f, fn () => 
+                 ; (U.utime f, fn _ => 
                     ())))
             end
       end
@@ -452,18 +437,12 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
          fun make prim (f, s) =
             SysCall.syscallErr
-            ({clear = true, restart = false},
-             fn () =>
-             let
-                val return = prim (f, convertProperty s)
-             in
-                {return = return,
-                 post = fn () => SOME (SysWord.fromInt return),
-                 handlers = [(Error.cleared, fn () => NONE)]}
-             end)
+            ({clear = true, restart = false, errVal = C_Long.fromInt ~1}, fn () =>
+             {return = prim (f, convertProperty s),
+              post = fn ret => SOME (SysWord.fromLargeInt (C_Long.toLarge ret)),
+              handlers = [(Error.cleared, fn () => NONE)]})
       in
-         val pathconf =
-            make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
+         val pathconf = make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
          val fpathconf = make Prim.fpathconf
       end
    end

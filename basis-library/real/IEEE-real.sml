@@ -15,14 +15,39 @@ structure IEEEReal: IEEE_REAL_EXTRA =
       exception Unordered
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
 
+      structure Prim = PrimitiveFFI.IEEEReal
+
       datatype float_class =
          INF
        | NAN
        | NORMAL
        | SUBNORMAL
        | ZERO
-         
-      structure Prim = PrimitiveFFI.IEEEReal
+
+      local
+         val classes =
+            let
+               open Prim.FloatClass
+            in
+               (* order here is chosen based on putting the more
+                * commonly used classes at the front.  
+                *)
+               [(FP_NORMAL, NORMAL),
+                (FP_ZERO, ZERO),
+                (FP_INFINITE, INF),
+                (FP_NAN, NAN),
+                (FP_SUBNORMAL, SUBNORMAL)]
+            end
+      in
+         fun mkClass class x =
+            let
+               val i = class x
+            in
+               case List.find (fn (i', _) => i = i') classes of
+                  NONE => raise Fail "Real_class returned bogus integer"
+                | SOME (_, c) => c
+            end
+      end
 
       structure RoundingMode =
          struct
@@ -43,13 +68,13 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                       (FE_TOWARDZERO, TO_ZERO)]
                   end
             in
-               val fromInt: int -> t =
+               val fromInt: C_Int.int -> t =
                   fn i =>
                   case List.find (fn (i', _) => i = i') modes of
                      NONE => raise Fail "IEEEReal.RoundingMode.fromInt"
                    | SOME (_, m) => m
                         
-               val toInt: t -> int =
+               val toInt: t -> C_Int.int =
                   fn m =>
                   let
                      open Prim.RoundingMode
@@ -151,8 +176,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             type exp = {digits: int list, negate: bool}
             fun 'b afterE (state: 'a,
                            failure: unit -> 'b,
-                           success: exp * 'a -> 'b)
-               : 'b =
+                           success: exp * 'a -> 'b) : 'b =
                case reader state of
                   NONE => failure ()
                 | SOME (c, state) =>
@@ -373,4 +397,3 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             else num
          end
    end
-

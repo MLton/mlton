@@ -9,14 +9,14 @@
 structure MLtonRlimit: MLTON_RLIMIT =
    struct
       open PrimitiveFFI.MLton.Rlimit
-      type rlim = C_RLim.t
+      structure RLim = C_RLim
       type t = C_Int.t
 
       val get =
          fn (r: t) =>
          PosixError.SysCall.syscall
          (fn () =>
-          (get r, fn () => 
+          (get r, fn _ => 
            {hard = getHard (),
             soft = getSoft ()}))
 

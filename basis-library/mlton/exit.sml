@@ -33,7 +33,7 @@ structure Exit =
             in
                if 0 <= i andalso i < 256
                   then (let open Cleaner in clean atExit end
-                        ; Primitive.halt status
+                        ; Primitive.MLton.halt status
                         ; raise Fail "exit")
                else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
                                         Int.toString i])

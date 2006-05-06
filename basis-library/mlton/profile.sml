@@ -10,7 +10,7 @@ struct
 
 structure P = Primitive.MLton.Profile
 
-val gcState = Primitive.GCState.gcState
+val gcState = Primitive.MLton.GCState.gcState
 
 val isOn = P.isOn
 
@@ -81,7 +81,7 @@ structure Data =
                         creat (file,
                                flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth])
                      end
-                  val _ = P.Data.write (gcState, raw, Posix.FileSys.fdToWord fd)
+                  val _ = P.Data.write (gcState, raw, fd)
                   val _ = Posix.IO.close fd
                in
                   ()

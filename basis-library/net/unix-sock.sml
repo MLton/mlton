@@ -14,7 +14,7 @@ structure UnixSock : UNIX_SOCK =
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock
       type sock_addr = unix Socket.sock_addr
-      val unixAF = NetHostDB.intToAddrFamily PrimitiveFFI.Socket.AF.UNIX
+      val unixAF = PrimitiveFFI.Socket.AF.UNIX
 
       fun toAddr s = 
         let
@@ -29,7 +29,6 @@ structure UnixSock : UNIX_SOCK =
       fun fromAddr sa = 
         let
           val sa = Socket.unpackSockAddr sa
-          val sa = Word8Vector.toPoly sa
           val len = Prim.pathLen sa
           val a = CharArray.array (C_Size.toInt len, #"\000")
           val _ = Prim.fromAddr (sa, CharArray.toPoly a, len)
@@ -40,13 +39,11 @@ structure UnixSock : UNIX_SOCK =
       structure Strm =
          struct
             fun socket () = GenericSock.socket (unixAF, Socket.SOCK.stream)
-            fun socketPair () =
-               GenericSock.socketPair (unixAF, Socket.SOCK.stream)
+            fun socketPair () = GenericSock.socketPair (unixAF, Socket.SOCK.stream)
          end
       structure DGrm =
          struct
             fun socket () = GenericSock.socket (unixAF, Socket.SOCK.dgram)
-            fun socketPair () =
-               GenericSock.socketPair (unixAF, Socket.SOCK.dgram)
+            fun socketPair () = GenericSock.socketPair (unixAF, Socket.SOCK.dgram)
          end
    end

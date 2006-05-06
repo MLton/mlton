@@ -8,9 +8,16 @@
 structure MLtonThread:> MLTON_THREAD_EXTRA =
 struct
 
-structure Prim = Primitive.Thread
+structure Prim = Primitive.MLton.Thread
 
-val gcState = Primitive.GCState.gcState
+fun die (s: string): 'a =
+   (PrimitiveFFI.Stdio.print s
+    ; PrimitiveFFI.Posix.Process.exit 1
+    ; let exception DieFailed
+      in raise DieFailed
+      end)
+
+val gcState = Primitive.MLton.GCState.gcState
 
 structure AtomicState =
    struct
@@ -24,8 +31,8 @@ in
    val atomicEnd = atomicEnd
    val atomicState = fn () =>
       case canHandle () of
-         0 => AtomicState.NonAtomic
-       | n => AtomicState.Atomic n
+         0wx0 => AtomicState.NonAtomic
+       | w => AtomicState.Atomic (Word32.toInt w)
 end
 
 fun atomically f =
@@ -167,7 +174,7 @@ in
 
    fun setSignalHandler (f: Runnable.t -> Runnable.t): unit =
       let
-         val _ = Primitive.installSignalHandler ()
+         val _ = Primitive.MLton.installSignalHandler ()
          fun loop (): unit =
             let
                (* Atomic 1 *)
@@ -217,8 +224,9 @@ local
 in
    val register: int * (unit -> unit) -> unit =
       let
-         val exports = Array.array (Primitive.FFI.numExports, fn () =>
-                                    raise Fail "undefined export")
+         val exports = 
+            Array.array (Int32.toInt (Primitive.MLton.FFI.numExports), 
+                         fn () => raise Fail "undefined export")
          fun loop (): unit =
             let
                (* Atomic 2 *)
@@ -228,7 +236,7 @@ in
                      (* Atomic 1 *)
                      val _ = 
                         (* atomicEnd() after getting args *)
-                        (Array.sub (exports, Primitive.FFI.getOp ()) ())
+                        (Array.sub (exports, Int32.toInt (Primitive.MLton.FFI.getOp ())) ())
                         handle e => 
                            (TextIO.output 
                             (TextIO.stdErr, "Call from C to SML raised exception.\n")

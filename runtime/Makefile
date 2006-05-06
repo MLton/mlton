@@ -212,7 +212,7 @@ c-types.h ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
 	cd gen && ./gen-types
 	cp gen/c-types.h c-types.h
-	cp gen/c-types.sml ../basis-library.refactor/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+	cp gen/c-types.sml ../basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
 	cp gen/ml-types.h ml-types.h
 	rm -f gen/gen-types gen/c-types.h gen/c-types.sml gen/ml-types.h
 
@@ -221,7 +221,7 @@ basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	cd gen && mlton gen-basis-ffi.sml
 	cd gen && ./gen-basis-ffi 
 	cp gen/basis-ffi.h basis-ffi.h
-	cp gen/basis-ffi.sml ../basis-library.refactor/primitive/basis-ffi.sml
+	cp gen/basis-ffi.sml ../basis-library/primitive/basis-ffi.sml
 	rm -f gen/gen-basis-ffi gen/basis-ffi.h gen/basis-ffi.sml
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 

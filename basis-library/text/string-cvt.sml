@@ -10,7 +10,7 @@ structure StringCvt: STRING_CVT_EXTRA =
    struct
       open Reader
 
-      val wordFromInt = Primitive.Word32.fromInt
+      val wordFromInt = Word.fromInt
 
       datatype radix = BIN | OCT | DEC | HEX
 
@@ -29,27 +29,24 @@ structure StringCvt: STRING_CVT_EXTRA =
          
       type ('a, 'b) reader = 'b -> ('a * 'b) option
 
-      open Primitive.Int
-
-      structure Char = Char0
-      structure String = String0
+      open Int
 
       local
          fun pad f (c: char) i s =
             let
-               val n = String.size s
+               val n = PreString.size s
             in
                if n >= i
                   then s
-               else f (s, String0.vector (i -? n, c))
+               else f (s, PreString.vector (i -? n, c))
             end
       in
-         val padLeft = pad (fn (s, pad) => String.^ (pad, s))
-         val padRight = pad String.^
+         val padLeft = pad (fn (s, pad) => PreString.^ (pad, s))
+         val padRight = pad PreString.^
       end
 
       fun splitl p f src =
-         let fun done chars = String0.implode (rev chars)
+         let fun done chars = PreString.implode (rev chars)
             fun loop (src, chars) =
                case f src of
                   NONE => (done chars, src)
@@ -63,14 +60,14 @@ structure StringCvt: STRING_CVT_EXTRA =
       fun takel p f s = #1 (splitl p f s)
       fun dropl p f s = #2 (splitl p f s)
 
-      fun skipWS x = dropl Char.isSpace x
+      fun skipWS x = dropl PreChar.isSpace x
 
       type cs = int
 
       fun stringReader (s: string): (char, cs) reader =
-         fn i => if i >= String.size s
+         fn i => if i >= PreString.size s
                     then NONE
-                 else SOME (String.sub (s, i), i + 1)
+                 else SOME (PreString.sub (s, i), i + 1)
                     
       fun 'a scanString (f: ((char, cs) reader -> ('a, cs) reader)) (s: string)
         : 'a option =
@@ -80,14 +77,14 @@ structure StringCvt: STRING_CVT_EXTRA =
 
       local
          fun range (add: int, cmin: char, cmax: char): char -> int option =
-            let val min = Char.ord cmin
-            in fn c => if Char.<= (cmin, c) andalso Char.<= (c, cmax)
-                          then SOME (add +? Char.ord c -? min)
+            let val min = PreChar.ord cmin
+            in fn c => if PreChar.<= (cmin, c) andalso PreChar.<= (c, cmax)
+                          then SOME (add +? PreChar.ord c -? min)
                        else NONE
             end
 
          fun 'a combine (ds: (char -> 'a option) list): char -> 'a option =
-            Char.memoize
+            PreChar.memoize
             (fn c =>
              let
                 val rec loop =
@@ -99,9 +96,9 @@ structure StringCvt: STRING_CVT_EXTRA =
              in loop ds
              end)
             
-         val bin = Char.memoize (range (0, #"0", #"1"))
-         val oct = Char.memoize (range (0, #"0", #"7"))
-         val dec = Char.memoize (range (0, #"0", #"9"))
+         val bin = PreChar.memoize (range (0, #"0", #"1"))
+         val oct = PreChar.memoize (range (0, #"0", #"7"))
+         val dec = PreChar.memoize (range (0, #"0", #"9"))
          val hex = combine [range (0, #"0", #"9"),
                             range (10, #"a", #"f"),
                             range (10, #"A", #"F")]
@@ -177,8 +174,8 @@ structure StringCvt: STRING_CVT_EXTRA =
 
       fun wdigits radix reader state =
          let 
-            val op + = Primitive.Word32.+
-            val op * = Primitive.Word32.*
+            val op + = Word.+
+            val op * = Word.*
             val r = radixToWord radix
             fun loop (accum, state) =
                case reader state of
@@ -195,5 +192,5 @@ structure StringCvt: STRING_CVT_EXTRA =
                 | SOME n => loop (n, state)
          end
 
-      fun digitToChar (n: int): char = String.sub ("0123456789ABCDEF", n)
+      fun digitToChar (n: int): char = PreString.sub ("0123456789ABCDEF", n)
    end

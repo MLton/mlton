@@ -8,9 +8,9 @@
 
 structure MLtonGC =
    struct
-      open Primitive.GC
+      open Primitive.MLton.GC
 
-      val gcState = Primitive.GCState.gcState
+      val gcState = Primitive.MLton.GCState.gcState
 
       val pack : unit -> unit =
          fn () => pack gcState

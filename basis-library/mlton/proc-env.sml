@@ -25,6 +25,6 @@ structure MLtonProcEnv: MLTON_PROC_ENV =
             val n = Vector.length v
          in
             PosixError.SysCall.simple
-            (fn () => PrimitiveFFI.Posix.ProcEnv.setgroups (n, v))
+            (fn () => PrimitiveFFI.Posix.ProcEnv.setgroups (C_Int.fromInt n, v))
          end
    end

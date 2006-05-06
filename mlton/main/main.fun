@@ -197,18 +197,18 @@ fun makeOptions {usage} =
        (Normal, "default-type", " '<ty><N>'", "set default type",
         SpaceString
         (fn s => (case s of
-                     "char8" => Control.defaultChar := "default-char8.sml"
-                   | "int8" => Control.defaultInt := "default-int8.sml"
-                   | "int16" => Control.defaultInt := "default-int16.sml"
-                   | "int32" => Control.defaultInt := "default-int32.sml"
-                   | "int64" => Control.defaultInt := "default-int64.sml"
-                   | "intinf" => Control.defaultInt := "default-intinf.sml"
-                   | "real32" => Control.defaultReal := "default-real32.sml"
-                   | "real64" => Control.defaultReal := "default-real64.sml"
-                   | "word8" => Control.defaultWord := "default-word8.sml"
-                   | "word16" => Control.defaultWord := "default-word16.sml"
-                   | "word32" => Control.defaultWord := "default-word32.sml"
-                   | "word64" => Control.defaultWord := "default-word64.sml"
+                     "char8" => Control.defaultChar := s
+                   | "int8" => Control.defaultInt := s
+                   | "int16" => Control.defaultInt := s
+                   | "int32" => Control.defaultInt := s
+                   | "int64" => Control.defaultInt := s
+                   | "intinf" => Control.defaultInt := s
+                   | "real32" => Control.defaultReal := s
+                   | "real64" => Control.defaultReal := s
+                   | "word8" => Control.defaultWord := s
+                   | "word16" => Control.defaultWord := s
+                   | "word32" => Control.defaultWord := s
+                   | "word64" => Control.defaultWord := s
                    | _ => usage (concat ["invalid -default-type flag: ", s])))),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
         SpaceString 

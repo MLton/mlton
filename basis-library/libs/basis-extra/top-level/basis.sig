@@ -362,10 +362,6 @@ signature BASIS_EXTRA =
       sharing type list = List.list
 *)
 
-      sharing type int = Int32.int
-      sharing type real = Real64.real
-      sharing type word = Word32.word
-
       (* Required structures *)
 (*
       sharing type BinIO.StreamIO.elem = Word8.word 
@@ -411,7 +407,7 @@ signature BASIS_EXTRA =
       sharing type Text.CharArray.array = CharArray.array
       sharing type Text.CharArraySlice.slice = CharArraySlice.slice
       sharing type Text.CharVectorSlice.slice = CharVectorSlice.slice
-(* redundant *)
+      (* redundant *)
 (*
       sharing type TextIO.elem = char
       sharing type TextIO.vector = string 
@@ -422,6 +418,7 @@ signature BASIS_EXTRA =
       sharing type TextPrimIO.pos = Position.int
       sharing type TextPrimIO.vector = CharVector.vector
       sharing type TextPrimIO.vector_slice = CharVectorSlice.slice
+      sharing type Word.word = word
       sharing type Word8Array.elem = Word8.word
       sharing type Word8Array.vector = Word8Vector.vector
       sharing type Word8ArraySlice.elem = Word8.word
@@ -476,7 +473,6 @@ signature BASIS_EXTRA =
       sharing type Int16VectorSlice.vector = Int16Vector.vector
       sharing type Int16Array2.elem = Int16.int
       sharing type Int16Array2.vector = Int16Vector.vector
-      sharing type Int32.int = Int.int
       sharing type Int32Array.elem = Int32.int
       sharing type Int32Array.vector = Int32Vector.vector
       sharing type Int32ArraySlice.elem = Int32.int
@@ -600,7 +596,6 @@ signature BASIS_EXTRA =
       sharing type Word16VectorSlice.vector = Word16Vector.vector
       sharing type Word16Array2.elem = Word16.word
       sharing type Word16Array2.vector = Word16Vector.vector
-      sharing type Word32.word = Word.word
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32ArraySlice.elem = Word32.word
@@ -645,11 +640,13 @@ signature BASIS_EXTRA =
    where type 'a vector = 'a vector
    where type char = char
    where type exn = exn
+   where type int = int
    where type order = order
    where type real = real
    where type string = string
    where type substring = substring
    where type unit = unit
+   where type word = word
 
    (* Types referenced in signatures by structure name *)
 (*
@@ -740,6 +737,7 @@ signature BASIS_EXTRA =
    where type Int64.int = Int64.int
    where type IntInf.int = IntInf.int
    where type Real32.real = Real32.real
+   where type Real64.real = Real64.real
    where type Word1.word = Word1.word
    where type Word2.word = Word2.word
    where type Word3.word = Word3.word
