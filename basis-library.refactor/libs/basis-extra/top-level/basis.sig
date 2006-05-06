@@ -362,10 +362,6 @@ signature BASIS_EXTRA =
       sharing type list = List.list
 *)
 
-      sharing type int = Int32.int
-      (* sharing type real = Real64.real *)
-      sharing type word = Word32.word
-
       (* Required structures *)
 (*
       sharing type BinIO.StreamIO.elem = Word8.word 
@@ -644,11 +640,13 @@ signature BASIS_EXTRA =
    where type 'a vector = 'a vector
    where type char = char
    where type exn = exn
+   where type int = int
    where type order = order
    where type real = real
    where type string = string
    where type substring = substring
    where type unit = unit
+   where type word = word
 
    (* Types referenced in signatures by structure name *)
 (*

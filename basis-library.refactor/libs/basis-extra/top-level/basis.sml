@@ -256,7 +256,6 @@ structure BasisExtra :> BASIS_EXTRA =
            OptionGlobal
            RealGlobal
            StringGlobal
-           RealGlobal
            SubstringGlobal
            TextIOGlobal
            VectorGlobal
