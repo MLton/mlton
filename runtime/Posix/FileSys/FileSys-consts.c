@@ -29,25 +29,85 @@ const C_Int_t Posix_FileSys_O_SYNC = O_SYNC;
 const C_Int_t Posix_FileSys_O_TEXT = O_TEXT;
 const C_Int_t Posix_FileSys_O_TRUNC = O_TRUNC;
 
+#ifndef _PC_FILESIZEBITS
+#define _PC_FILESIZEBITS -1
+#endif
 const C_Int_t Posix_FileSys_PC_FILESIZEBITS = _PC_FILESIZEBITS;
+#ifndef _PC_LINK_MAX
+#define _PC_LINK_MAX -1
+#endif
+#ifndef _PC_LINK_MAX
+#define _PC_LINK_MAX -1
+#endif
 const C_Int_t Posix_FileSys_PC_LINK_MAX = _PC_LINK_MAX;
+#ifndef _PC_MAX_CANON
+#define _PC_MAX_CANON -1
+#endif
 const C_Int_t Posix_FileSys_PC_MAX_CANON = _PC_MAX_CANON;
+#ifndef _PC_MAX_INPUT
+#define _PC_MAX_INPUT -1
+#endif
 const C_Int_t Posix_FileSys_PC_MAX_INPUT = _PC_MAX_INPUT;
+#ifndef _PC_NAME_MAX
+#define _PC_NAME_MAX -1
+#endif
 const C_Int_t Posix_FileSys_PC_NAME_MAX = _PC_NAME_MAX;
+#ifndef _PC_PATH_MAX
+#define _PC_PATH_MAX -1
+#endif
 const C_Int_t Posix_FileSys_PC_PATH_MAX = _PC_PATH_MAX;
+#ifndef _PC_PIPE_BUF
+#define _PC_PIPE_BUF -1
+#endif
 const C_Int_t Posix_FileSys_PC_PIPE_BUF = _PC_PIPE_BUF;
 // const C_Int_t Posix_FileSys_PC_2_SYMLINKS = _PC_2_SYMLINKS;
+#ifndef _PC_ALLOC_SIZE_MIN
+#define _PC_ALLOC_SIZE_MIN -1
+#endif
 const C_Int_t Posix_FileSys_PC_ALLOC_SIZE_MIN = _PC_ALLOC_SIZE_MIN;
+#ifndef _PC_REC_INCR_XFER_SIZE
+#define _PC_REC_INCR_XFER_SIZE -1
+#endif
 const C_Int_t Posix_FileSys_PC_REC_INCR_XFER_SIZE = _PC_REC_INCR_XFER_SIZE;
+#ifndef _PC_REC_MAX_XFER_SIZE
+#define _PC_REC_MAX_XFER_SIZE -1
+#endif
 const C_Int_t Posix_FileSys_PC_REC_MAX_XFER_SIZE = _PC_REC_MAX_XFER_SIZE;
+#ifndef _PC_REC_MIN_XFER_SIZE
+#define _PC_REC_MIN_XFER_SIZE -1
+#endif
 const C_Int_t Posix_FileSys_PC_REC_MIN_XFER_SIZE = _PC_REC_MIN_XFER_SIZE;
+#ifndef _PC_REC_XFER_ALIGN
+#define _PC_REC_XFER_ALIGN -1
+#endif
 const C_Int_t Posix_FileSys_PC_REC_XFER_ALIGN = _PC_REC_XFER_ALIGN;
+#ifndef _PC_SYMLINK_MAX
+#define _PC_SYMLINK_MAX -1
+#endif
 const C_Int_t Posix_FileSys_PC_SYMLINK_MAX = _PC_SYMLINK_MAX;
+#ifndef _PC_CHOWN_RESTRICTED
+#define _PC_CHOWN_RESTRICTED -1
+#endif
 const C_Int_t Posix_FileSys_PC_CHOWN_RESTRICTED = _PC_CHOWN_RESTRICTED;
+#ifndef _PC_NO_TRUNC
+#define _PC_NO_TRUNC -1
+#endif
 const C_Int_t Posix_FileSys_PC_NO_TRUNC = _PC_NO_TRUNC;
+#ifndef _PC_VDISABLE
+#define _PC_VDISABLE -1
+#endif
 const C_Int_t Posix_FileSys_PC_VDISABLE = _PC_VDISABLE;
+#ifndef _PC_ASYNC_IO
+#define _PC_ASYNC_IO -1
+#endif
 const C_Int_t Posix_FileSys_PC_ASYNC_IO = _PC_ASYNC_IO;
+#ifndef _PC_PRIO_IO
+#define _PC_PRIO_IO -1
+#endif
 const C_Int_t Posix_FileSys_PC_PRIO_IO = _PC_PRIO_IO;
+#ifndef _PC_SYNC_IO
+#define _PC_SYNC_IO -1
+#endif
 const C_Int_t Posix_FileSys_PC_SYNC_IO = _PC_SYNC_IO;
 
 const C_Mode_t Posix_FileSys_S_IFBLK = S_IFBLK;

@@ -212,28 +212,13 @@ int pipe (int filedes[2]);
 /*                   Posix.ProcEnv                   */
 /* ------------------------------------------------- */
 
-#define _SC_BOGUS 0xFFFFFFFF
-#define _SC_2_FORT_DEV _SC_BOGUS
-#define _SC_2_FORT_RUN _SC_BOGUS
-#define _SC_2_SW_DEV _SC_BOGUS
-#define _SC_2_VERSION _SC_BOGUS
 #define _SC_ARG_MAX 0
-#define _SC_BC_BASE_MAX _SC_BOGUS
-#define _SC_BC_DIM_MAX _SC_BOGUS
-#define _SC_BC_SCALE_MAX _SC_BOGUS
-#define _SC_BC_STRING_MAX _SC_BOGUS
 #define _SC_CHILD_MAX 1
 #define _SC_CLK_TCK 2
-#define _SC_COLL_WEIGHTS_MAX _SC_BOGUS
-#define _SC_EXPR_NEST_MAX _SC_BOGUS
 #define _SC_JOB_CONTROL 5
-#define _SC_LINE_MAX _SC_BOGUS
 #define _SC_NGROUPS_MAX 3
 #define _SC_OPEN_MAX 4
-#define _SC_RE_DUP_MAX _SC_BOGUS
 #define _SC_SAVED_IDS 6
-#define _SC_STREAM_MAX _SC_BOGUS
-#define _SC_TZNAME_MAX 20
 #define _SC_VERSION 7
 
 struct tms {
