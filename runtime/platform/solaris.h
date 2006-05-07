@@ -21,14 +21,13 @@
 #include <termios.h>
 #include <ucontext.h>
 
+#include "feround.h"
 #include "setenv.h"
 
 #define FE_TONEAREST 0
 #define FE_DOWNWARD 1
 #define FE_UPWARD 2
 #define FE_TOWARDZERO 3
-int fegetround (void);
-void fesetround (int mode);
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
