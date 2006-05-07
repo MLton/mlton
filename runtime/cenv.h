@@ -38,7 +38,13 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#if (defined(__hpux__) || defined (__OpenBSD__))
+#include <inttypes.h>
+#elif (defined (__sun__))
+#include <sys/int_types.h>
+#else
 #include <stdint.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
