@@ -20,6 +20,9 @@ C_Errno_t(C_Int_t) MLton_Process_spawnp (NullString8_t p, NullString8Array_t a) 
 }
 #else
 C_Errno_t(C_Int_t) MLton_Process_spawnp (__attribute__ ((unused)) NullString8_t p, 
+                                         __attribute__ ((unused)) NullString8Array_t a) __attribute__ ((noreturn));
+
+C_Errno_t(C_Int_t) MLton_Process_spawnp (__attribute__ ((unused)) NullString8_t p, 
                                          __attribute__ ((unused)) NullString8Array_t a) {
   die ("MLton_Process_spawnp not implemented");
 }
