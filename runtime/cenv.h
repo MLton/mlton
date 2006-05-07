@@ -71,6 +71,10 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #include <sys/stat.h>
 #include <sys/time.h>
 
+#if (defined (__sun__))
+#include <sys/socket.h>
+#endif
+
 #include "gmp.h"
 
 #endif /* _MLTON_CENV_H_ */
