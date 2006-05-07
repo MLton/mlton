@@ -27,9 +27,8 @@
 #define FE_DOWNWARD 1
 #define FE_UPWARD 2
 #define FE_TOWARDZERO 3
-int fegetround ();
+int fegetround (void);
 void fesetround (int mode);
-int fpclassify64 (double d);
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
