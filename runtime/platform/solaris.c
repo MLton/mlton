@@ -5,7 +5,6 @@
 #include "getText.c"
 #include "mkdir2.c"
 #include "mmap.c"
-#include "signbit.c"
 #include "ssmmap.c"
 #include "totalRam.sysconf.c"
 #include "setenv.putenv.c"

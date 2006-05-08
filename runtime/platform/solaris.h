@@ -46,8 +46,6 @@
 
 int fpclassify32 (float f);
 int fpclassify64 (double d);
-int signbit32 (float f);
-int signbit64 (double f);
 
 #ifndef PRIxPTR
 #define PRIxPTR "x"
