@@ -2,6 +2,7 @@
 #define _XOPEN_SOURCE_EXTENDED
 #endif
 
+#include <inttypes.h>
 #include <math.h>
 #include <signal.h>
 #include <sys/ptrace.h>
