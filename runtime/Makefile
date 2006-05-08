@@ -212,6 +212,7 @@ c-types.h ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
 	cd gen && ./gen-types
 	cp gen/c-types.h c-types.h
+	mkdir -p ../basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)
 	cp gen/c-types.sml ../basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
 	cp gen/ml-types.h ml-types.h
 	rm -f gen/gen-types gen/c-types.h gen/c-types.sml gen/ml-types.h
