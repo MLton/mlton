@@ -6,7 +6,7 @@
 #include "mkdir2.c"
 #include "mmap.c"
 #include "mmap-protect.c"
-#include "totalRam.sysconf.c"
+#include "sysconf.c"
 #include "setenv.putenv.c"
 
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
