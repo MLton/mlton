@@ -5,7 +5,7 @@
 #include "platform.h"
 
 #include "mkdir2.c"
-#include "ssmmap.c"
+#include "mmap-protect.c"
 #include "use-mmap.c"
 
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {

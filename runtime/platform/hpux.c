@@ -7,7 +7,7 @@
 #include <sys/pstat.h>
 #include <sys/newsig.h>
 
-#include "ssmmap.c"
+#include "mmap-protect.c"
 #include "use-mmap.c"
 #include "mkdir2.c"
 #include "setenv.putenv.c"
