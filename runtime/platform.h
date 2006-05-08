@@ -13,32 +13,6 @@
 #include "util.h"
 #include "gc.h"
 
-#if (defined (__APPLE_CC__))
-#define __Darwin__
-#endif
-
-#if (defined (__CYGWIN__))
-#include "platform/cygwin.h"
-#elif (defined (__Darwin__))
-#include "platform/darwin.h"
-#elif (defined (__FreeBSD__))
-#include "platform/freebsd.h"
-#elif (defined (__hpux__))
-#include "platform/hpux.h"
-#elif (defined (__linux__))
-#include "platform/linux.h"
-#elif (defined (__MINGW32__))
-#include "platform/mingw.h"
-#elif (defined (__NetBSD__))
-#include "platform/netbsd.h"
-#elif (defined (__OpenBSD__))
-#include "platform/openbsd.h"
-#elif (defined (__sun__))
-#include "platform/solaris.h"
-#else
-#error unknown platform
-#endif
-
 #ifndef MLton_Platform_OS_host
 #error MLton_Platform_OS_host not defined
 #endif

@@ -38,13 +38,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#if (defined(__hpux__) || defined (__OpenBSD__))
-#include <inttypes.h>
-#elif (defined (__sun__))
-#include <sys/int_types.h>
-#else
-#include <stdint.h>
-#endif
+// stdint.h (or approximate equivalent) comes from the n-way OS switch below.
+// #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,10 +66,33 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#if (defined (__sun__))
-#include <sys/socket.h>
+#include "gmp.h"
+
+
+#if (defined (__APPLE_CC__))
+#define __Darwin__
 #endif
 
-#include "gmp.h"
+#if (defined (__CYGWIN__))
+#include "platform/cygwin.h"
+#elif (defined (__Darwin__))
+#include "platform/darwin.h"
+#elif (defined (__FreeBSD__))
+#include "platform/freebsd.h"
+#elif (defined (__hpux__))
+#include "platform/hpux.h"
+#elif (defined (__linux__))
+#include "platform/linux.h"
+#elif (defined (__MINGW32__))
+#include "platform/mingw.h"
+#elif (defined (__NetBSD__))
+#include "platform/netbsd.h"
+#elif (defined (__OpenBSD__))
+#include "platform/openbsd.h"
+#elif (defined (__sun__))
+#include "platform/solaris.h"
+#else
+#error unknown platform
+#endif
 
 #endif /* _MLTON_CENV_H_ */
