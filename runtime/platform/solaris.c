@@ -2,7 +2,6 @@
 
 #include <ieeefp.h>
 
-#include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"
 #include "mmap.c"

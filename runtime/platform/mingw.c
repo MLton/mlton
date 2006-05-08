@@ -145,7 +145,7 @@ int setrlimit (int resource, const struct rlimit *rlp) {
  * MLton.
  */
 
-int fixedGetrusage (int who, struct rusage *usage) {
+int getrusage (int who, struct rusage *usage) {
         usage->ru_utime.tv_sec = 0;
         usage->ru_utime.tv_usec = 0;
         usage->ru_stime.tv_sec = 0;

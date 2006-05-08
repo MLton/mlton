@@ -8,7 +8,6 @@
 #include <sys/newsig.h>
 
 #include "ssmmap.c"
-#include "getrusage.c"
 #include "use-mmap.c"
 #include "mkdir2.c"
 #include "setenv.putenv.c"

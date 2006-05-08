@@ -4,7 +4,6 @@
 
 #include "platform.h"
 
-#include "getrusage.c"
 #include "mkdir2.c"
 #include "ssmmap.c"
 #include "use-mmap.c"

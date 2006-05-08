@@ -1,6 +1,5 @@
 #include "platform.h"
 
-#include "getrusage.c"
 #include "getText.c"
 #include "mkdir2.c"
 #include "showMem.linux.c"
