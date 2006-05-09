@@ -1,8 +1,5 @@
 #include "platform.h"
 
-Real32_t gdtoa_strtof (const char *s, char **endptr);
-Real64_t gdtoa_strtod (const char *s, char **endptr);
-
 Real32_t Real32_strto (NullString8_t s) {
   char *endptr;
   Real32_t res;

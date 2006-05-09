@@ -24,7 +24,7 @@ static float stringToFloat (char *s) {
   char *endptr;
   float f;
 
-  f = strtof (s, &endptr);
+  f = gdtoa_strtof (s, &endptr);
   if (s == endptr)
     die ("Invalid @MLton float: %s.", s);
   return f;
