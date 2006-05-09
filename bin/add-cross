@@ -113,6 +113,6 @@ cd $original
 $src/build/bin/mlton -build-constants true | 
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c && 
-                        gcc -I. -o $exe $exe.c libmlton.a -lgmp -lm $libs"
+                        gcc -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm $libs"
 ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
