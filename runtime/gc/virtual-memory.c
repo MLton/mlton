@@ -6,6 +6,17 @@
  * See the file MLton-LICENSE for details.
  */
 
+void *GC_mmapAnon_safe (void *p, size_t length) {
+        void *result;
+
+        result = GC_mmapAnon (p, length);
+        if ((void*)-1 == result) {
+                GC_displayMem ();
+                die ("Out of memory.");
+        }
+        return result;
+}
+
 static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
   if (DEBUG_DETAILED)
     fprintf (stderr, "GC_memcpy ("FMTPTR", "FMTPTR", %zu)\n",
