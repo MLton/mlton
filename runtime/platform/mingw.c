@@ -4,8 +4,24 @@
 
 #include "windows.c"
 
-void decommit (void *base, size_t length) {
+void GC_decommit (void *base, size_t length) {
         Windows_decommit (base, length);
+}
+
+void *GC_mmapAnon (void *start, size_t length) {
+        return Windows_mmapAnon (start, length);
+}
+
+void GC_release (void *base, size_t length) {
+        Windows_release (base);
+}
+
+Word32 GC_totalRam (GC_state s) {
+        MEMORYSTATUS memStat;
+
+        memStat.dwLength = sizeof(memStat);
+        GlobalMemoryStatus(&memStat);
+        return memStat.dwTotalPhys;
 }
 
 HANDLE fileDesHandle (int fd) {
@@ -30,22 +46,6 @@ int mkstemp (char *template) {
         if (0 == GetTempFileName (file_path, templ, 0, file_name))
                 diee ("unable to make temporary file");
         return _open (file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
-}
-
-void *mmapAnon (void *start, size_t length) {
-        return Windows_mmapAnon (start, length);
-}
-
-void release (void *base, size_t length) {
-        Windows_release (base);
-}
-
-Word32 totalRam (GC_state s) {
-        MEMORYSTATUS memStat;
-
-        memStat.dwLength = sizeof(memStat);
-        GlobalMemoryStatus(&memStat);
-        return memStat.dwTotalPhys;
 }
 
 /* ------------------------------------------------- */

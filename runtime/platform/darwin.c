@@ -8,15 +8,6 @@
 #include "mmap-protect.c"
 #include "use-mmap.c"
 
-static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
-        GC_handleSigProf ((pointer) ucp->uc_mcontext->ss.srr0);
-}
-
-void setSigProfHandler (struct sigaction *sa) {
-        sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
-        sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
 void *getTextEnd () {
         return (void*)(get_etext ());
 }
@@ -31,7 +22,7 @@ void *getTextStart () {
         return mh;
 }
 
-void showMem () {
+void GC_displayMem () {
         /* FIXME: this won't actually work. */
         static char buffer[256];
 
@@ -39,7 +30,18 @@ void showMem () {
         (void)system (buffer);
 }
 
-W32 totalRam (GC_state s) {
+static void catcher (__attribute__ ((unused)) int sig,  
+                        __attribute__ ((unused)) siginfo_t *sip, 
+                        ucontext_t *ucp) {
+        GC_handleSigProf ((pointer) ucp->uc_mcontext->ss.srr0);
+}
+
+void GC_setSigProfHandler (struct sigaction *sa) {
+        sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+        sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
+}
+
+W32 GC_totalRam (GC_state s) {
         int mem;
         size_t len;
 
