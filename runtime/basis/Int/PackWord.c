@@ -62,16 +62,3 @@ all (64)
 #undef mkSubSeqRev
 #undef mkUpdate
 #undef all
-
-
-Word32_t Word8Array_subWord32Rev (Array(Word8_t) a, C_Ptrdiff_t offset) {
-  return PackWord32_subArrRev (a, 4 * offset);
-}
-
-void Word8Array_updateWord32Rev (Array(Word8_t) a, C_Ptrdiff_t offset, Word32_t w) {
-  PackWord32_updateRev (a, 4 * offset, w);
-}
-
-Word32_t Word8Vector_subWord32Rev (Vector(Word8_t) v, C_Ptrdiff_t offset) {
-  return PackWord32_subVecRev (v, 4 * offset);
-}

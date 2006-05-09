@@ -203,15 +203,6 @@ void MLton_allocTooLarge (void) __attribute__ ((noreturn));
 extern Bool MLton_Platform_CygwinUseMmap;
 
 /* ------------------------------------------------- */
-/*                     PackWord                      */
-/* ------------------------------------------------- */
-
-/* Compat */
-Word32_t Word8Array_subWord32Rev (Array(Word8_t) a, C_Ptrdiff_t offset);
-void Word8Array_updateWord32Rev (Array(Word8_t) a, C_Ptrdiff_t offset, Word32_t w);
-Word32_t Word8Vector_subWord32Rev (Vector(Word8_t) v, C_Ptrdiff_t offset);
-
-/* ------------------------------------------------- */
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
