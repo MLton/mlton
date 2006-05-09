@@ -26,6 +26,7 @@
 // #include <complex.h>
 #include <ctype.h>
 #include <errno.h>
+// fenv.h (or approximate equivalent) comes from the n-way OS switch below.
 // #include <fenv.h>
 #include <float.h>
 #include <inttypes.h>
@@ -94,5 +95,7 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #else
 #error unknown platform
 #endif
+
+
 
 #endif /* _MLTON_CENV_H_ */
