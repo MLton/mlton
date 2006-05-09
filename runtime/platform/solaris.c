@@ -2,6 +2,7 @@
 
 #include <ieeefp.h>
 
+#include "float-math.c"
 #include "getText.c"
 #include "mkdir2.c"
 #include "mmap.c"

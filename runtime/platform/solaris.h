@@ -22,6 +22,7 @@
 #include <ucontext.h>
 
 #include "feround.h"
+#include "float-math.h"
 #include "setenv.h"
 
 #define FE_TONEAREST 0
