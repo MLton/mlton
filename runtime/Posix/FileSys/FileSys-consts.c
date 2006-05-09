@@ -60,7 +60,10 @@ const C_Int_t Posix_FileSys_PC_PATH_MAX = _PC_PATH_MAX;
 #define _PC_PIPE_BUF -1
 #endif
 const C_Int_t Posix_FileSys_PC_PIPE_BUF = _PC_PIPE_BUF;
-// const C_Int_t Posix_FileSys_PC_2_SYMLINKS = _PC_2_SYMLINKS;
+#ifndef _PC_2_SYMLINKS
+#define _PC_2_SYMLINKS -1
+#endif
+const C_Int_t Posix_FileSys_PC_TWO_SYMLINKS = _PC_2_SYMLINKS;
 #ifndef _PC_ALLOC_SIZE_MIN
 #define _PC_ALLOC_SIZE_MIN -1
 #endif

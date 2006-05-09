@@ -120,7 +120,10 @@ const C_Int_t Posix_ProcEnv_SC_CPUTIME = _SC_CPUTIME;
 #define _SC_FSYNC -1
 #endif
 const C_Int_t Posix_ProcEnv_SC_FSYNC = _SC_FSYNC;
-// const C_Int_t Posix_ProcEnv_SC_IPV6 = _SC_IPV6;
+#ifndef _SC_IPV6
+#define _SC_IPV6 -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_IPV6 = _SC_IPV6;
 #ifndef _SC_JOB_CONTROL
 #define _SC_JOB_CONTROL -1
 #endif
@@ -157,7 +160,10 @@ const C_Int_t Posix_ProcEnv_SC_PRIORITIZED_IO = _SC_PRIORITIZED_IO;
 #define _SC_PRIORITY_SCHEDULING -1
 #endif
 const C_Int_t Posix_ProcEnv_SC_PRIORITY_SCHEDULING = _SC_PRIORITY_SCHEDULING;
-// const C_Int_t Posix_ProcEnv_SC_RAW_SOCKETS = _SC_RAW_SOCKETS;
+#ifndef _SC_RAW_SOCKETS
+#define _SC_RAW_SOCKETS -1
+#endif
+const C_Int_t Posix_ProcEnv_SC_RAW_SOCKETS = _SC_RAW_SOCKETS;
 #ifndef _SC_READER_WRITER_LOCKS
 #define _SC_READER_WRITER_LOCKS -1
 #endif

@@ -405,29 +405,34 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       local
          local
             open Prim.PC
+            infixr 5 ::?
+            fun (n,s) ::? l =
+               if n = C_Int.fromInt ~1
+                  then l
+                  else (n,s) :: l
          in
             val properties =
-               [
-                (ALLOC_SIZE_MIN,"ALLOC_SIZE_MIN"),
-                (ASYNC_IO,"ASYNC_IO"),
-                (CHOWN_RESTRICTED,"CHOWN_RESTRICTED"),
-                (FILESIZEBITS,"FILESIZEBITS"),
-                (LINK_MAX,"LINK_MAX"),
-                (MAX_CANON,"MAX_CANON"),
-                (MAX_INPUT,"MAX_INPUT"),
-                (NAME_MAX,"NAME_MAX"),
-                (NO_TRUNC,"NO_TRUNC"),
-                (PATH_MAX,"PATH_MAX"),
-                (PIPE_BUF,"PIPE_BUF"),
-                (PRIO_IO,"PRIO_IO"),
-                (REC_INCR_XFER_SIZE,"REC_INCR_XFER_SIZE"),
-                (REC_MAX_XFER_SIZE,"REC_MAX_XFER_SIZE"),
-                (REC_MIN_XFER_SIZE,"REC_MIN_XFER_SIZE"),
-                (REC_XFER_ALIGN,"REC_XFER_ALIGN"),
-                (SYMLINK_MAX,"SYMLINK_MAX"),
-                (SYNC_IO,"SYNC_IO"),
-                (VDISABLE,"VDISABLE")
-               ]
+               (TWO_SYMLINKS,"2_SYMLINKS") ::?
+               (ALLOC_SIZE_MIN,"ALLOC_SIZE_MIN") ::?
+               (ASYNC_IO,"ASYNC_IO") ::?
+               (CHOWN_RESTRICTED,"CHOWN_RESTRICTED") ::?
+               (FILESIZEBITS,"FILESIZEBITS") ::?
+               (LINK_MAX,"LINK_MAX") ::?
+               (MAX_CANON,"MAX_CANON") ::?
+               (MAX_INPUT,"MAX_INPUT") ::?
+               (NAME_MAX,"NAME_MAX") ::?
+               (NO_TRUNC,"NO_TRUNC") ::?
+               (PATH_MAX,"PATH_MAX") ::?
+               (PIPE_BUF,"PIPE_BUF") ::?
+               (PRIO_IO,"PRIO_IO") ::?
+               (REC_INCR_XFER_SIZE,"REC_INCR_XFER_SIZE") ::?
+               (REC_MAX_XFER_SIZE,"REC_MAX_XFER_SIZE") ::?
+               (REC_MIN_XFER_SIZE,"REC_MIN_XFER_SIZE") ::?
+               (REC_XFER_ALIGN,"REC_XFER_ALIGN") ::?
+               (SYMLINK_MAX,"SYMLINK_MAX") ::?
+               (SYNC_IO,"SYNC_IO") ::?
+               (VDISABLE,"VDISABLE") ::?
+               []
          end
 
          fun convertProperty s =
