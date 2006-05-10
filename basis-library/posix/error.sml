@@ -93,89 +93,95 @@ structure PosixError: POSIX_ERROR_EXTRA =
       val wouldblock = EWOULDBLOCK
       val xdev = EXDEV
 
-      val errorNames =
-         [
-          (acces,"acces"),
-          (addrinuse,"addrinuse"),
-          (addrnotavail,"addrnotavail"),
-          (afnosupport,"afnosupport"),
-          (again,"again"),
-          (already,"already"),
-          (badf,"badf"),
-          (badmsg,"badmsg"),
-          (busy,"busy"),
-          (canceled,"canceled"),
-          (child,"child"),
-          (connaborted,"connaborted"),
-          (connrefused,"connrefused"),
-          (connreset,"connreset"),
-          (deadlk,"deadlk"),
-          (destaddrreq,"destaddrreq"),
-          (dom,"dom"),
-          (dquot,"dquot"),
-          (exist,"exist"),
-          (fault,"fault"),
-          (fbig,"fbig"),
-          (hostunreach,"hostunreach"),
-          (idrm,"idrm"),
-          (ilseq,"ilseq"),
-          (inprogress,"inprogress"),
-          (intr,"intr"),
-          (inval,"inval"),
-          (io,"io"),
-          (isconn,"isconn"),
-          (isdir,"isdir"),
-          (loop,"loop"),
-          (mfile,"mfile"),
-          (mlink,"mlink"),
-          (msgsize,"msgsize"),
-          (multihop,"multihop"),
-          (nametoolong,"nametoolong"),
-          (netdown,"netdown"),
-          (netreset,"netreset"),
-          (netunreach,"netunreach"),
-          (nfile,"nfile"),
-          (nobufs,"nobufs"),
-          (nodata,"nodata"),
-          (nodev,"nodev"),
-          (noent,"noent"),
-          (noexec,"noexec"),
-          (nolck,"nolck"),
-          (nolink,"nolink"),
-          (nomem,"nomem"),
-          (nomsg,"nomsg"),
-          (noprotoopt,"noprotoopt"),
-          (nospc,"nospc"),
-          (nosr,"nosr"),
-          (nostr,"nostr"),
-          (nosys,"nosys"),
-          (notconn,"notconn"),
-          (notdir,"notdir"),
-          (notempty,"notempty"),
-          (notsock,"notsock"),
-          (notsup,"notsup"),
-          (notty,"notty"),
-          (nxio,"nxio"),
-          (opnotsupp,"opnotsupp"),
-          (overflow,"overflow"),
-          (perm,"perm"),
-          (pipe,"pipe"),
-          (proto,"proto"),
-          (protonosupport,"protonosupport"),
-          (prototype,"prototype"),
-          (range,"range"),
-          (rofs,"rofs"),
-          (spipe,"spipe"),
-          (srch,"srch"),
-          (stale,"stale"),
-          (time,"time"),
-          (timedout,"timedout"),
-          (toobig,"toobig"),
-          (txtbsy,"txtbsy"),
-          (wouldblock,"wouldblock"),
-          (xdev,"xdev")
-         ]
-
+      local
+         infixr 5 ::?
+         fun (n,s) ::? l =
+            if n = C_Int.fromInt ~1
+               then l
+               else (n,s) :: l
+      in
+         val errorNames =
+            (acces,"acces") ::?
+            (addrinuse,"addrinuse") ::?
+            (addrnotavail,"addrnotavail") ::?
+            (afnosupport,"afnosupport") ::?
+            (again,"again") ::?
+            (already,"already") ::?
+            (badf,"badf") ::?
+            (badmsg,"badmsg") ::?
+            (busy,"busy") ::?
+            (canceled,"canceled") ::?
+            (child,"child") ::?
+            (connaborted,"connaborted") ::?
+            (connrefused,"connrefused") ::?
+            (connreset,"connreset") ::?
+            (deadlk,"deadlk") ::?
+            (destaddrreq,"destaddrreq") ::?
+            (dom,"dom") ::?
+            (dquot,"dquot") ::?
+            (exist,"exist") ::?
+            (fault,"fault") ::?
+            (fbig,"fbig") ::?
+            (hostunreach,"hostunreach") ::?
+            (idrm,"idrm") ::?
+            (ilseq,"ilseq") ::?
+            (inprogress,"inprogress") ::?
+            (intr,"intr") ::?
+            (inval,"inval") ::?
+            (io,"io") ::?
+            (isconn,"isconn") ::?
+            (isdir,"isdir") ::?
+            (loop,"loop") ::?
+            (mfile,"mfile") ::?
+            (mlink,"mlink") ::?
+            (msgsize,"msgsize") ::?
+            (multihop,"multihop") ::?
+            (nametoolong,"nametoolong") ::?
+            (netdown,"netdown") ::?
+            (netreset,"netreset") ::?
+            (netunreach,"netunreach") ::?
+            (nfile,"nfile") ::?
+            (nobufs,"nobufs") ::?
+            (nodata,"nodata") ::?
+            (nodev,"nodev") ::?
+            (noent,"noent") ::?
+            (noexec,"noexec") ::?
+            (nolck,"nolck") ::?
+            (nolink,"nolink") ::?
+            (nomem,"nomem") ::?
+            (nomsg,"nomsg") ::?
+            (noprotoopt,"noprotoopt") ::?
+            (nospc,"nospc") ::?
+            (nosr,"nosr") ::?
+            (nostr,"nostr") ::?
+            (nosys,"nosys") ::?
+            (notconn,"notconn") ::?
+            (notdir,"notdir") ::?
+            (notempty,"notempty") ::?
+            (notsock,"notsock") ::?
+            (notsup,"notsup") ::?
+            (notty,"notty") ::?
+            (nxio,"nxio") ::?
+            (opnotsupp,"opnotsupp") ::?
+            (overflow,"overflow") ::?
+            (perm,"perm") ::?
+            (pipe,"pipe") ::?
+            (proto,"proto") ::?
+            (protonosupport,"protonosupport") ::?
+            (prototype,"prototype") ::?
+            (range,"range") ::?
+            (rofs,"rofs") ::?
+            (spipe,"spipe") ::?
+            (srch,"srch") ::?
+            (stale,"stale") ::?
+            (time,"time") ::?
+            (timedout,"timedout") ::?
+            (toobig,"toobig") ::?
+            (txtbsy,"txtbsy") ::?
+            (wouldblock,"wouldblock") ::?
+            (xdev,"xdev") ::?
+            []
+      end
       exception SysErr of string * syserror option
 
       val toWord = SysWord.fromLargeInt o C_Int.toLarge
