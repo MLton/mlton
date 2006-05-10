@@ -66,7 +66,7 @@ static const char* mlTypesHStd[] = {
   // "typedef void* Pointer;",
   // "typedef uintptr_t Pointer;",
   // "typedef unsigned char* Pointer;",
-  "struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4)));",
+  "struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4), may_alias));",
   "typedef struct PointerAux* Pointer;",
   "#define Array(t) Pointer",
   "#define Ref(t) Pointer",
