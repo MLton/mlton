@@ -165,7 +165,6 @@ int poll (struct pollfd *ufds, unsigned int nfds, int timeout) {
 /*                   Posix.FileSys                   */
 /* ------------------------------------------------- */
 
-#if FALSE
 static void GetWin32FileName (int fd, char* fname) {
         HANDLE fh, fhmap;
         DWORD fileSize, fileSizeHi;
@@ -184,18 +183,16 @@ static void GetWin32FileName (int fd, char* fname) {
         }
         return; 
 }
-#endif
+
+int fchmod (int filedes, mode_t mode) {
+      char fname[MAX_PATH + 1];
+
+      GetWin32FileName (filedes, fname);
+      return _chmod (fname, mode);
+}
 
 int chown (const char *path, uid_t owner, gid_t group) {
         die ("chown not implemented");
-}
-
-int fchmod (int filedes, mode_t mode) {
-        die ("chown not implemented");
-//      char fname[MAX_PATH + 1];
-//
-//      GetWin32FileName (filedes, fname);
-//      return _chmod (fname, mode);
 }
 
 int fchown (int fd, uid_t owner, gid_t group) {
@@ -204,10 +201,6 @@ int fchown (int fd, uid_t owner, gid_t group) {
 
 long fpathconf (int filedes, int name) {
         die ("fpathconf not implemented");
-}
-
-int ftruncate (int fd, off_t length) {
-        return _chsize (fd, length);
 }
 
 int link (const char *oldpath, const char *newpath) {
@@ -310,9 +303,6 @@ pid_t getpgid(pid_t pid) {
 }
 pid_t getpgrp(void) {
         die ("getpgrp not implemented");
-}
-pid_t getpid (void) {
-        die ("getpid not implemented");
 }
 pid_t getppid (void) {
         die ("getppid not implemented");
@@ -747,4 +737,47 @@ void MLton_initSockets () {
                 version = MAKEWORD (2,2);
                 WSAStartup (version, &wsaData);
         }
+}
+
+/* ------------------------------------------------- */
+/*                      Socket                       */
+/* ------------------------------------------------- */
+
+static const char* logident = "<unknown>";
+static int logopt = LOG_PERROR;
+static int logfacility = LOG_LOCAL0;
+
+void openlog(const char* ident, int opt, int facility) {
+  logident = ident;
+  logopt = logopt;
+  logfacility = facility;
+}
+
+void closelog(void) {
+}
+
+void syslog(int priority, const char* fmt, const char* msg) {
+  static const char* severity[] = {
+    "debug", 
+    "informational", 
+    "notice", 
+    "warning", 
+    "error", 
+    "CRITICAL", 
+    "ALERT", 
+    "EMERGENCY"
+  };
+  
+  if (priority < 0) priority = LOG_DEBUG;
+  if (priority > LOG_EMERG) priority = LOG_EMERG;
+  
+  
+  /* !!! Use ReportEvent to log with windows */
+  
+  if ((logopt & LOG_PERROR) != 0) {
+    if ((logopt & LOG_PID) != 0)
+      fprintf("%s(%d): %s: %s\n", logident, getpid(), severity[priority], msg);
+    else
+      fprintf("%s: %s: %s\n", logident, severity[priority], msg);
+  }
 }

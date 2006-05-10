@@ -34,7 +34,7 @@ typedef short nlink_t; // type of st_nlink in sys/stat.h
 
 // bullshit typedefs:
 typedef int id_t; // waitid() doesn't exist on windows
-typedef short nfds_t; // poll() doesn't either
+typedef unsigned int nfds_t; // we have a fake poll() with this many fds
 
 int getpagesize (void);
 int mkstemp (char *template);
@@ -154,7 +154,7 @@ struct pollfd {
         short revents;
 };
 
-int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
+int poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 
 /* ------------------------------------------------- */
 /*                    Posix.Error                    */
@@ -520,33 +520,41 @@ int socketpair (int d, int type, int protocol, int sv[2]);
 /*                      Syslog                       */
 /* ------------------------------------------------- */
 
-#define LOG_ALERT 0
-#define LOG_AUTHPRIV 0
-#define LOG_CONS 0
-#define LOG_CRIT 0
-#define LOG_CRON 0
-#define LOG_DAEMON 0
+#define LOG_EMERG 7
+#define LOG_ALERT 6
+#define LOG_CRIT 5
+#define LOG_ERR 4
+#define LOG_WARNING 3
+#define LOG_NOTICE 2
+#define LOG_INFO 1
 #define LOG_DEBUG 0
-#define LOG_EMERG 0
-#define LOG_ERR 0
-#define LOG_INFO 0
-#define LOG_KERN 0
-#define LOG_LOCAL0 0
-#define LOG_LOCAL1 0
-#define LOG_LOCAL2 0
-#define LOG_LOCAL3 0
-#define LOG_LOCAL4 0
-#define LOG_LOCAL5 0
-#define LOG_LOCAL6 0
-#define LOG_LOCAL7 0
-#define LOG_LPR 0
-#define LOG_MAIL 0
-#define LOG_NDELAY 0
-#define LOG_NEWS 0
-#define LOG_NOTICE 0
-#define LOG_PERROR 0
-#define LOG_PID 0
-#define LOG_SYSLOG 0
-#define LOG_USER 0
-#define LOG_UUCP 0
-#define LOG_WARNING 0
+
+#define LOG_PID    0x01 /* include PID in output */
+#define LOG_CONS   0x02 /* dump to console (meaningless for windows?) */
+#define LOG_ODELAY 0x04 /* delay open; meaningless---always open */
+#define LOG_NDELAY 0x08 /* don't delay; meaningless */
+#define LOG_NOWAIT 0x10 /* ignored and obsolete anyways */
+#define LOG_PERROR 0x20 /* print to standard error, honoured */
+
+#define LOG_AUTH 1
+#define LOG_CRON 2
+#define LOG_DAEMON 3
+#define LOG_KERN 4
+#define LOG_LOCAL0 5
+#define LOG_LOCAL1 6
+#define LOG_LOCAL2 7
+#define LOG_LOCAL3 8
+#define LOG_LOCAL4 9
+#define LOG_LOCAL5 10
+#define LOG_LOCAL6 11
+#define LOG_LOCAL7 12
+#define LOG_LPR 13
+#define LOG_MAIL 14
+#define LOG_NEWS 15
+#define LOG_SYSLOG 16
+#define LOG_USER 17
+#define LOG_UUCP 18
+
+void openlog(const char* ident, int logopt, int facility);
+void closelog(void);
+void syslog(int priority, const char* fmt, const char* msg);
