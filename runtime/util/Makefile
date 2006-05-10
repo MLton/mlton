@@ -71,10 +71,10 @@ CFLAGS = -O2 $(CWFLAGS) -I. -D_FILE_OFFSET_BITS=64 $(FLAGS)
 DEBUGFLAGS = $(CFLAGS) -Wunused -gstabs+ -g2
 
 CFILES = 							\
-	$(shell find -type f | grep '\.c$$')
+	$(shell find . -type f | grep '\.c$$')
 
 HFILES = 							\
-	$(shell find -type f | grep '\.h$$')
+	$(shell find . -type f | grep '\.h$$')
 
 all: libgc.o libgc-gdb.o
 

@@ -489,7 +489,7 @@ const C_Int_t Posix_ProcEnv_SC_XOPEN_REALTIME_THREADS = _SC_XOPEN_REALTIME_THREA
 #define _SC_XOPEN_SHM -1
 #endif
 const C_Int_t Posix_ProcEnv_SC_XOPEN_SHM = _SC_XOPEN_SHM;
-#ifndef __SC_XOPEN_STREAMS
+#ifndef _SC_XOPEN_STREAMS
 #define _SC_XOPEN_STREAMS -1
 #endif
 #ifndef _SC_XOPEN_STREAMS

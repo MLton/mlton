@@ -32,3 +32,18 @@
 #define HAS_TIME_PROFILING TRUE
 
 #define MLton_Platform_OS_host "darwin"
+
+// MacOS doesn't support these... yet.
+#ifndef O_RSYNC
+#define O_RSYNC O_SYNC
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC O_SYNC
+#endif
+
+// MacOS only defines this if POSIX_C_SOURCE is defined.
+// However, defining that breaks half the osx system headers.
+// They couldn't possibly change the number at this point anyways.
+#ifndef SIGPOLL
+#define SIGPOLL 7
+#endif

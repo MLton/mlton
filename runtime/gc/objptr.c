@@ -23,7 +23,7 @@ pointer objptrToPointer (objptr O, pointer B) {
   uintptr_t P_;
   pointer P;
 
-  if GC_MODEL_USEBASE {
+  if (GC_MODEL_USEBASE) {
     B_ = (uintptr_t)B;
   } else {
     B_ = 0;
@@ -44,7 +44,7 @@ objptr pointerToObjptr (pointer P, pointer B) {
   uintptr_t O_;
   objptr O;
 
-  if GC_MODEL_USEBASE {
+  if (GC_MODEL_USEBASE) {
     B_ = (uintptr_t)B;
   } else {
     B_ = 0;
