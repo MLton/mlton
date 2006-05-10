@@ -351,7 +351,7 @@ typedef char *String;
 #define disp(ty)                                                \
         for (i = 0; i < ty##RegI; ++i)                          \
                 fprintf (stderr, "\n" #ty "Reg[%d] = 0x%08x",   \
-                                i, (uint)(ty##Reg[i]));
+                                i, (unsigned int)(ty##Reg[i]));
 
 void displayRegs () {
         int i;
@@ -473,8 +473,8 @@ static void disassemble (Bytecode b, Word32 codeOffset) {
 void MLton_Bytecode_interpret (Bytecode b, Word32 codeOffset) {
         if (DEBUG or DEBUG_BYTECODE) {
                 fprintf (stderr, "MLton_Bytecode_interpret (0x%08x, %u)\n",
-                                (uint)b,
-                                (uint)codeOffset);
+                                (unsigned int)b,
+                                (unsigned int)codeOffset);
                 disassemble (b, codeOffset);
                 fprintf (stderr, "interpret starting\n");
         }
