@@ -5,7 +5,7 @@
 C_Errno_t(C_Int_t) MLton_Process_spawnp (NullString8_t p, NullString8Array_t a) {
   const char      *path;
   const char      *asaved;
-  char            **args;
+  const char      **args;
   int             an;
   int             res;
 
