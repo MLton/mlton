@@ -15,9 +15,9 @@ C_Errno_t(C_Int_t) MLton_Process_spawne (NullString8_t p, NullString8Array_t a, 
   path = (const char *) p;
   args = (const char **) a;
   env = (const char **) e;
-  an = GC_arrayNumElements((pointer)a) - 1;
+  an = GC_getArrayLength((pointer)a) - 1;
   asaved = args[an];
-  en = GC_arrayNumElements((pointer)e) - 1;
+  en = GC_getArrayLength((pointer)e) - 1;
   esaved = env[en];
   args[an] = (const char *) NULL;
   env[en] = (const char *) NULL;
