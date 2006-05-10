@@ -9,23 +9,27 @@ const C_Int_t Posix_FileSys_O_RDONLY = O_RDONLY;
 const C_Int_t Posix_FileSys_O_RDWR = O_RDWR;
 const C_Int_t Posix_FileSys_O_WRONLY = O_WRONLY;
 
+const C_Int_t Posix_FileSys_O_APPEND = O_APPEND;
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-
-#ifndef O_TEXT
-#define O_TEXT 0
-#endif
-
-const C_Int_t Posix_FileSys_O_APPEND = O_APPEND;
 const C_Int_t Posix_FileSys_O_BINARY = O_BINARY;
 const C_Int_t Posix_FileSys_O_CREAT = O_CREAT;
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
 const C_Int_t Posix_FileSys_O_DSYNC = O_DSYNC;
 const C_Int_t Posix_FileSys_O_EXCL = O_EXCL;
 const C_Int_t Posix_FileSys_O_NOCTTY = O_NOCTTY;
 const C_Int_t Posix_FileSys_O_NONBLOCK = O_NONBLOCK;
+#ifndef O_RSYNC
+#define O_RSYNC 0
+#endif
 const C_Int_t Posix_FileSys_O_RSYNC = O_RSYNC;
 const C_Int_t Posix_FileSys_O_SYNC = O_SYNC;
+#ifndef O_TEXT
+#define O_TEXT 0
+#endif
 const C_Int_t Posix_FileSys_O_TEXT = O_TEXT;
 const C_Int_t Posix_FileSys_O_TRUNC = O_TRUNC;
 
