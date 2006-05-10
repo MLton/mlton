@@ -16,7 +16,7 @@ void GC_release (void *base, size_t length) {
         Windows_release (base);
 }
 
-Word32 GC_totalRam (GC_state s) {
+Word32 GC_totalRam (void) {
         MEMORYSTATUS memStat;
 
         memStat.dwLength = sizeof(memStat);
@@ -89,6 +89,7 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
 int setitimer (int which, 
                 const struct itimerval *value, 
                 struct itimerval *ovalue) {
+        // !!! perhaps used code from alarm?
         die ("setitimer not implemented");
 }
 
@@ -98,7 +99,7 @@ int setitimer (int which,
 
 static struct rlimit rlimits[RLIM_NLIMITS];
 
-static void initRlimits () {
+static void initRlimits (void) {
         static int done = FALSE;
         int lim;
 
@@ -191,6 +192,13 @@ int fchmod (int filedes, mode_t mode) {
       return _chmod (fname, mode);
 }
 
+int fchdir (int filedes) {
+      char fname[MAX_PATH + 1];
+
+      GetWin32FileName (filedes, fname);
+      return chdir (fname);
+}
+
 int chown (const char *path, uid_t owner, gid_t group) {
         die ("chown not implemented");
 }
@@ -213,14 +221,14 @@ int lstat (const char *file_name, struct stat *buf) {
 }
 
 int mkdir2 (const char *pathname, mode_t mode) {
-        return mkdir (pathname);
+        return mkdir (pathname, mode);
 }
 
 int mkfifo (const char *pathname, mode_t mode) {
         die ("mkfifo not implemented");
 }
 
-long pathconf (char *path, int name) {
+long pathconf (const char *path, int name) {
         die ("pathconf not implemented");
 }
 
@@ -231,6 +239,20 @@ int readlink (const char *path, char *buf, size_t bufsiz) {
 int symlink (const char *oldpath, const char *newpath) {
         die ("symlink not implemented");
 }
+
+int truncate (const char *path, off_t len) {
+  int fd;
+  
+  if ((fd = open(path, O_RDWR)) == -1)
+    return -1;
+  if (ftruncate(fd, len) < 0) {
+    close(fd);
+    return -1;
+  }
+  close(fd);
+  return 0;
+}
+
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
@@ -245,29 +267,29 @@ int fsync (int fd) {
 }
 
 int pipe (int filedes[2]) {
-        HANDLE read;
-        HANDLE write;
+        HANDLE read_h;
+        HANDLE write_h;
         
         /* We pass no security attributes (0), so the current policy gets
          * inherited. The pipe is set to NOT stay open in child processes.
          * This will be corrected using DuplicateHandle in create()
          * The 4k buffersize is choosen b/c that's what linux uses.
          */
-        if (!CreatePipe(&read, &write, 0, 4096)) {
+        if (!CreatePipe(&read_h, &write_h, 0, 4096)) {
                 errno = ENOMEM; /* fake errno: out of resources */
                 return -1;
         }
         /* This requires Win98+
          * Choosing text/binary mode is defered till a later setbin/text call
          */
-        filedes[0] = _open_osfhandle((long)read,  _O_RDONLY);
-        filedes[1] = _open_osfhandle((long)write, _O_WRONLY);
+        filedes[0] = _open_osfhandle((long)read_h,  _O_RDONLY);
+        filedes[1] = _open_osfhandle((long)write_h, _O_WRONLY);
         if (filedes[0] == -1 or filedes[1] == -1) {
                 if (filedes[0] == -1) 
-                        CloseHandle(read); 
+                        CloseHandle(read_h); 
                 else    close(filedes[0]);
                 if (filedes[1] == -1) 
-                        CloseHandle(write);
+                        CloseHandle(write_h);
                 else    close(filedes[1]);
                 
                 errno = ENFILE;
@@ -428,8 +450,9 @@ static UINT_PTR curr_timer = 0;
 static int curr_timer_dur = 0;
 static LARGE_INTEGER timer_start_val;
 
+
 VOID CALLBACK alarm_signalled(HWND window, UINT message,
-        UINT_PTR timer_id, DWORD time)
+        UINT_PTR timer_id, DWORD timestamp)
 {
     printf("Timer fired\n");
 }
@@ -565,19 +588,24 @@ int sigismember (const sigset_t *set, const int signum) {
         return (*set & SIGTOMASK(signum)) ? 1 : 0;
 }
 
+
+/* With a bit of work and a redirected signal() function, we could
+ * probably emulate these methods properly. AtM blocking is a lie.
+ */
+static sigset_t signals_blocked = 0;
+static sigset_t signals_pending = 0;
+
 int sigpending (sigset_t *set) {
-        die ("sigpending not implemented");
+        *set = signals_pending;
+        return 0;
 }
 
 int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
-
-        sigset_t opmask;
-
         if (oldset) {
-                //*oldset = opmask;
+                *oldset = signals_blocked;
         }
         if (set) {
-                sigset_t newmask = opmask;
+                sigset_t newmask = signals_blocked;
 
                 switch (how) {
                         case SIG_BLOCK:
@@ -595,24 +623,25 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
                         default:
                                 return -1;
                 }
-                //(void) set_signal_mask (newmask, opmask);
+                
+                signals_blocked = newmask;
         }
         return 0;
 }
 
 int sigsuspend (const sigset_t *mask) {
-        die ("sigsuspend not implemented");
+        die("sigsuspend is unimplemented, but could be hacked in if needed");
 }
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
 /* ------------------------------------------------- */
 
-void Posix_IO_setbin (Fd fd) {
+void Posix_IO_setbin (C_Fd_t fd) {
         _setmode (fd, _O_BINARY);
 }
 
-void Posix_IO_settext (Fd fd) {
+void Posix_IO_settext (C_Fd_t fd) {
         _setmode (fd, _O_TEXT);
 }
 
@@ -707,7 +736,7 @@ int tcsetpgrp (int fd, pid_t pgrpid) {
 /*                      Process                      */
 /* ------------------------------------------------- */
 
-Pid MLton_Process_cwait (Pid pid, Pointer status) {
+C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
         HANDLE h;
         
         h = (HANDLE)pid;
@@ -740,7 +769,7 @@ void MLton_initSockets () {
 }
 
 /* ------------------------------------------------- */
-/*                      Socket                       */
+/*                      Syslog                       */
 /* ------------------------------------------------- */
 
 static const char* logident = "<unknown>";
@@ -776,8 +805,8 @@ void syslog(int priority, const char* fmt, const char* msg) {
   
   if ((logopt & LOG_PERROR) != 0) {
     if ((logopt & LOG_PID) != 0)
-      fprintf("%s(%d): %s: %s\n", logident, getpid(), severity[priority], msg);
+      fprintf(stderr, "%s(%d): %s: %s\n", logident, getpid(), severity[priority], msg);
     else
-      fprintf("%s: %s: %s\n", logident, severity[priority], msg);
+      fprintf(stderr, "%s: %s: %s\n", logident, severity[priority], msg);
   }
 }

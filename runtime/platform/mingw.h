@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <psapi.h>
 #undef max
 
 #define HAS_FEROUND TRUE
@@ -58,6 +59,8 @@ int mkstemp (char *template);
 #define F_SETFD 2
 #define F_GETFL 3
 #define F_SETFL 4
+#define F_GETOWN 5
+#define F_SETOWN 6
 #define F_GETLK 7
 #define F_SETLK 8
 #define F_RDLCK 1
@@ -65,8 +68,6 @@ int mkstemp (char *template);
 #define F_UNLCK 3
 #define F_SETLKW 9
 #define FD_CLOEXEC 1
-
-#define MSG_DONTWAIT 0
 
 #define SHUT_RD SD_RECEIVE
 #define SHUT_WR SD_SEND
@@ -180,22 +181,34 @@ int poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 #define S_IXGRP 0000010
 #define S_IXOTH 0000001
 
+// Do not exist in a windows filesystem
+#define S_IFLNK 0
+#define S_IFSOCK 0
+#define S_ISVTX 0
+
 #define O_NOCTTY 0x8000
 #define O_NONBLOCK 0x4000
+
+// Synchronized writes? Safety of any kind? ... and windows?! hell no!
+#define O_SYNC 0
 
 #define S_ISLNK(m) FALSE
 #define S_ISSOCK(m) FALSE
 
 int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
+int fchdir (int filedes);
 int fchown (int fd, uid_t owner, gid_t group);
 long fpathconf (int filedes, int name);
 int link (const char *oldpath, const char *newpath);
 int lstat (const char *file_name, struct stat *buf);
 int mkfifo (const char *pathname, mode_t mode);
-long pathconf (char *path, int name);
+long pathconf (const char *path, int name);
 int readlink (const char *path, char *buf, size_t bufsiz);
 int symlink (const char *oldpath, const char *newpath);
+int truncate (const char *path, off_t len);
+
+#define mkdir(f, m) mkdir(f); chmod(f, m)
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
@@ -329,7 +342,7 @@ pid_t waitpid (pid_t pid, int *status, int options);
 
 #define _NSIG 32
 
-typedef void (*_sig_func_ptr)(void);
+typedef __p_sig_fn_t _sig_func_ptr;
 
 struct sigaction {
         int             sa_flags;
@@ -503,8 +516,17 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
+// Unimplemented on windows:
 #define MSG_DONTWAIT 0
-#define UNIX_PATH_MAX   108
+#define MSG_WAITALL 0
+#define MSG_EOR 0
+#define MSG_CTRUNC 0
+
+// Has a different name:
+#define MSG_TRUNC MSG_PARTIAL
+
+
+#define UNIX_PATH_MAX 108
 
 typedef unsigned short  sa_family_t;
 

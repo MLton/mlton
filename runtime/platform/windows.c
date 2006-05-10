@@ -1,10 +1,11 @@
 HANDLE fileDesHandle (int fd);
 
-static void displayMaps () {
+
+static void displayMaps (void) {
         MEMORY_BASIC_INFORMATION buf;
-        LPCVOID lpAddress;
-        char *state = "<unset>";
-        char *protect = "<unset>";
+        LPVOID lpAddress;
+        const char *state = "<unset>";
+        const char *protect = "<unset>";
 
         for (lpAddress = 0; lpAddress < (LPCVOID)0x80000000; ) {
                 VirtualQuery (lpAddress, &buf, sizeof (buf));
@@ -53,14 +54,14 @@ static void displayMaps () {
                         break;
                 }
                 fprintf(stderr, "0x%8x %10u  %s %s\n",
-                        (uint)buf.BaseAddress,
-                        (uint)buf.RegionSize,
+                        (unsigned int)buf.BaseAddress,
+                        (unsigned int)buf.RegionSize,
                         state, protect);
-                lpAddress += buf.RegionSize;
+                lpAddress = (unsigned char*)lpAddress + buf.RegionSize;
         }
 }
 
-void GC_displayMem () {
+void GC_displayMem (void) {
         MEMORYSTATUS ms; 
 
         ms.dwLength = sizeof (MEMORYSTATUS); 
@@ -72,7 +73,7 @@ void GC_displayMem () {
                          ms.dwAvailPageFile, 
                          ms.dwTotalVirtual, 
                          ms.dwAvailVirtual); 
-        showMaps ();
+        displayMaps ();
 }
 
 static HANDLE dupHandle (int fd) {
@@ -181,7 +182,7 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         return result;
 }
 
-Int Windows_Process_terminate (Pid pid, Int sig) {
+C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
         
         h = (HANDLE)pid;
