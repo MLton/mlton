@@ -5,6 +5,9 @@
 #include <inttypes.h>
 #include <math.h>
 #include <signal.h>
+#include <poll.h>
+#include <termios.h>
+#include <sys/resource.h>
 #include <sys/ptrace.h>
 #include <sys/poll.h>
 #include <sys/socket.h>

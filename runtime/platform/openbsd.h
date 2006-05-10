@@ -5,6 +5,9 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <pwd.h>
+#include <poll.h>
+#include <termios.h>
+#include <sys/resource.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/param.h>

@@ -60,10 +60,7 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #include <unistd.h>
 
 #include <dirent.h>
-#include <poll.h>
-#include <termios.h>
 #include <utime.h>
-#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 
