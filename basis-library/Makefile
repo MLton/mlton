@@ -32,7 +32,7 @@ DEFAULT_WORD = word32 word64
 
 .PHONY: type-check-def
 type-check-def:
-	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
+	"$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
 		libs/all.mlb; \
 
 .PHONY: type-check-all
@@ -50,7 +50,7 @@ type-check-all:
 		break; \
 	fi; \
 	echo "Type checking: $$objptrrep $$header $$seqindex $$targetarch $$targetos $$defchar $$defint $$defreal $$defword"; \
-	$(MLTON) -disable-ann deadCode -stop tc -show-types true \
+	"$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
 		-mlb-path-map "maps/$$objptrrep" \
 		-mlb-path-map "maps/$$header" \
 		-mlb-path-map "maps/$$seqindex" \

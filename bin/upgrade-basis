@@ -7,8 +7,8 @@ die () {
         exit 1
 }
 
-bin=`dirname $0`
-name=`basename $0`
+bin=`dirname "$0"`
+name=`basename "$0"`
 
 usage () {
         die "usage: $name <PATH> <ARCH> <OS>"
@@ -27,16 +27,16 @@ esac
 
 tmp="$$.sml"
 
-echo "val () = print \"I work\"" >$tmp
-if ! mlton $tmp 1>&2; then
+echo "val () = print \"I work\"" >"$tmp"
+if ! mlton "$tmp" 1>&2; then
         die "Error: cannot upgrade basis because the compiler doesn't work" 
 fi
 
 feature () {
         feature="$1"
         sml="$2"
-        echo "$feature" >$tmp
-        if ! mlton -stop tc $tmp >/dev/null 2>&1; then
+        echo "$feature" >"$tmp"
+        if ! mlton -stop tc "$tmp" >/dev/null 2>&1; then
                 echo "$sml"
         fi
 }
@@ -95,7 +95,7 @@ structure Word =
 structure Word32 = Word
 structure LargeWord = Word'
 
-eval `$bin/platform`
+eval `"$bin/platform"`
 case "$ARCH" in
 alpha)
         arch='Alpha'
@@ -237,5 +237,5 @@ structure MLton =
    end
 EOF
 
-rm -f $tmp
-rm -f `basename $tmp .sml`
+rm -f "$tmp"
+rm -f `basename "$tmp" .sml`

@@ -4,9 +4,9 @@
 
 set -e
 
-dir=`dirname $0`
-lib=`cd $dir/../lib && pwd`
-eval `$lib/platform`
+dir=`dirname "$0"`
+lib=`cd "$dir/../lib" && pwd`
+eval `"$lib/platform"`
 gcc='gcc'
 case "$HOST_OS" in
 mingw)
@@ -28,12 +28,12 @@ else
         njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 fi
 
-rargs=""
+declare -a rargs
 case "$1" in
 @MLton)
         shift
         while [ "$#" -gt 0 -a "$1" != "--" ]; do
-                rargs="$rargs $1"
+                rargs[${#rargs[@]}]="$1"
                 shift
         done
         if [ "$#" -gt 0 -a "$1" == "--" ]; then
@@ -49,7 +49,7 @@ esac
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
         if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 $rargs -- "$@"
+                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 "${rargs[@]}" -- "$@"
         elif [ -s "$njHeap" ]; then
                 exec "$nj" @SMLload="$njHeap" "$@"
         fi

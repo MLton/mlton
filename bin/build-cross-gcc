@@ -28,7 +28,7 @@ die () {
 }
 
 root=`pwd`
-name=`basename $0`
+name=`basename "$0"`
 
 usage () {
         die "usage: $name {cygwin|mingw|sun}"
@@ -101,7 +101,7 @@ sun)
                 die "Must create $prefix/$target/{include,lib}."
         fi
         # The GCC tools expect limits.h to be in sys-include, not include.
-        ( cd $prefix/$target && 
+        ( cd "$prefix/$target" && 
                 mkdir -p sys-include &&
                 mv include/limits.h sys-include )
 ;;
@@ -121,57 +121,57 @@ cygwin)
         exists $cygwin.tar
         exists $w32api.tar
         echo 'Copying include files and libraries needed by cross compiler.'
-        cd $root
+        cd "$root"
         mkdir -p cygwin
         cd cygwin
         tar x <../$cygwin.tar
         tar x <../$w32api.tar
-        mkdir -p $prefix/$target || 
+        mkdir -p "$prefix/$target" || 
                 die "Cannot create $prefix/$target."
-        (cd usr && tar c include lib) | (cd $prefix/$target/ && tar x)
+        (cd usr && tar c include lib) | (cd "$prefix/$target/" && tar x)
 ;;
 mingw)
         exists $mingw.tar
         exists $w32api.tar
         echo 'Copying include files and libraries needed by cross compiler.'
-        cd $root
+        cd "$root"
         mkdir -p mingw
         cd mingw
         tar x <../$mingw.tar
         tar x <../$w32api.tar
-        mkdir -p $prefix/$target || 
+        mkdir -p "$prefix/$target" || 
                 die "Cannot create $prefix/$target."
-        (tar c include lib) | (cd $prefix/$target/ && tar x)
+        (tar c include lib) | (cd "$prefix/$target/" && tar x)
 ;;
 *)
 ;;
 esac
 
 echo 'Building binutils.'
-cd $root
-if [ ! -d $binutils ]; then
+cd "$root"
+if [ ! -d "$binutils" ]; then
         tar x <$binutils.tar
 fi
 mkdir -p build-binutils
 cd build-binutils
-../$binutils/configure --prefix=$prefix --target=$target \
-        >$root/configure-binutils-log 2>&1 ||
+"../$binutils/configure" "--prefix=$prefix" "--target=$target" \
+        >"$root/configure-binutils-log" 2>&1 ||
         die "Configure of binutils failed."
-make all install >$root/build-binutils-log 2>&1 ||
+make all install >"$root/build-binutils-log" 2>&1 ||
         die "Build of binutils failed."
 
 echo 'Building gcc.'
-cd $root
-tar x <$gccTar
+cd "$root"
+tar x <"$gccTar"
 mkdir -p build-gcc
 cd build-gcc
-eval ../gcc-$gccVers/configure -v $configureGCCFlags \
+eval "../gcc-$gccVers/configure" -v $configureGCCFlags \
         --enable-languages=c \
-        --prefix=$prefix \
-        --target=$target \
-        >$root/configure-gcc-log 2>&1 || 
+        "--prefix=$prefix" \
+        "--target=$target" \
+        >"$root/configure-gcc-log" 2>&1 || 
         die "Configure of gcc failed."
-eval make $makeGCCFlags all install >$root/build-gcc-log 2>&1 || 
+eval make $makeGCCFlags all install >"$root/build-gcc-log" 2>&1 || 
         die "Build of gcc failed."
 
 echo 'Success.'

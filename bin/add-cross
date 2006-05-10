@@ -54,10 +54,10 @@ case "$#" in
         ;;
 esac
 
-name=`basename $0`
+name=`basename "$0"`
 original=`pwd`
-dir=`dirname $0`
-src=`cd $dir/.. && pwd`
+dir=`dirname "$0"`
+src=`cd "$dir/.." && pwd`
 
 PATH="$dir":$PATH
 
@@ -75,17 +75,17 @@ mkdir -p "$lib/$crossTarget" || die "Cannot write to $lib."
 
 tmp='/tmp/mlton-add-cross'
 
-( cd $src && mmake dirs )
+( cd "$src" && mmake dirs )
 
 ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
-( cd $src && tar cf - bin runtime ) | 
+( cd "$src" && tar cf - bin runtime ) | 
         ssh $machine "cd $tmp && tar xf - && cd runtime &&
                 ../bin/mmake COMPILE_FAST=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
 ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
-        ( cd $lib/$crossTarget && tar xf - )
-( cd $src &&
+        ( cd "$lib/$crossTarget" && tar xf - )
+( cd "$src" &&
         mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
                 mlbpathmap targetmap )
 
@@ -109,8 +109,8 @@ esac
 
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
-cd $original
-$src/build/bin/mlton -build-constants true | 
+cd "$original"
+"$src/build/bin/mlton" -build-constants true | 
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c && 
                         gcc -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm $libs"

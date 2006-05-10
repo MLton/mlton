@@ -9,8 +9,8 @@
 SRC = $(shell cd .. && pwd)
 BUILD = $(SRC)/build
 BIN = $(BUILD)/bin
-HOST_ARCH = $(shell $(SRC)/bin/host-arch)
-HOST_OS = $(shell $(SRC)/bin/host-os)
+HOST_ARCH = $(shell "$(SRC)/bin/host-arch")
+HOST_OS = $(shell "$(SRC)/bin/host-os")
 LIB = $(BUILD)/lib
 MLTON = mlton
 TARGET = self
@@ -20,7 +20,7 @@ PATH = $(BIN):$(shell echo $$PATH)
 
 FLAGS = @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
-ifeq (self, $(shell if [ -x $(BIN)/mlton ]; then echo self; fi))
+ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE = mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
@@ -42,15 +42,15 @@ endif
 endif
 endif
 
-ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -target self >/dev/null 2>&1 && echo new))
+ifeq (new,$(shell PATH="$(BIN):$$PATH"; mlton -target self >/dev/null 2>&1 && echo new))
   FLAGS += -target $(TARGET)
 else
   FLAGS += -host $(TARGET)
 endif
-ifeq (new,$(shell PATH=$(BIN):$$PATH; mlton -verbose 1 >/dev/null 2>&1 && echo new))
-  FLAGS += -verbose 2 -output $(AOUT)
+ifeq (new,$(shell PATH="$(BIN):$$PATH"; mlton -verbose 1 >/dev/null 2>&1 && echo new))
+  FLAGS += -verbose 2 -output "$(AOUT)"
 else
-  FLAGS += -v -o $(AOUT)
+  FLAGS += -v -o "$(AOUT)"
 endif
 FLAGS += $(COMPILE_ARGS)
 
@@ -86,7 +86,7 @@ $(AOUT): $(SOURCES)
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
 $(UP):
-	$(SRC)/bin/upgrade-basis "$(PATH)" "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
+	"$(SRC)/bin/upgrade-basis" "$(PATH)" "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
 
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
@@ -117,7 +117,7 @@ nj-mlton: $(SOURCES)
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
-	) | $(SML)
+	) | "$(SML)"
 
 .PHONY: nj-mlton-dual
 nj-mlton-dual: $(SOURCES)
@@ -130,7 +130,7 @@ nj-mlton-dual: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server2", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
-	) | $(SML)
+	) | "$(SML)"
 
 .PHONY: nj-mlton-quad
 nj-mlton-quad: $(SOURCES)
@@ -145,7 +145,7 @@ nj-mlton-quad: $(SOURCES)
 		echo 'val _ = CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server4", pathtrans = NONE, pref = 0};';\
 		echo 'CM.make "sources.cm";';					\
 		echo 'Main.exportNJ ("$(LIB)/mlton");'	\
-	) | $(SML)
+	) | "$(SML)"
 
 .PHONY: nj-whole
 nj-whole: $(SOURCES)
@@ -163,7 +163,7 @@ nj-whole: $(SOURCES)
 		echo 'val _ = Main.exportNJ ("$(SRC)/basis-library", "$(LIB)/mlton")';	\
 		echo 'end';							\
 	) >mlton.whole.sml
-	$(SML) <mlton.whole.sml
+	"$(SML)" <mlton.whole.sml
 
 .PHONY: warn
 warn:
