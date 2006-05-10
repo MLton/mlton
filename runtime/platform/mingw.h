@@ -29,6 +29,12 @@
 
 typedef unsigned short gid_t;
 typedef unsigned short uid_t;
+typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
+typedef short nlink_t; // type of st_nlink in sys/stat.h
+
+// bullshit typedefs:
+typedef int id_t; // waitid() doesn't exist on windows
+typedef short nfds_t; // poll() doesn't either
 
 int getpagesize (void);
 int mkstemp (char *template);
@@ -184,7 +190,6 @@ int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
 int fchown (int fd, uid_t owner, gid_t group);
 long fpathconf (int filedes, int name);
-int ftruncate (int fd, off_t length);
 int link (const char *oldpath, const char *newpath);
 int lstat (const char *file_name, struct stat *buf);
 int mkfifo (const char *pathname, mode_t mode);
@@ -244,7 +249,6 @@ int getgroups (int size, gid_t list[]);
 char *getlogin (void);
 pid_t getpgid(pid_t pid);
 pid_t getpgrp(void);
-pid_t getpid (void);
 pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
@@ -325,7 +329,7 @@ pid_t waitpid (pid_t pid, int *status, int options);
 
 #define _NSIG 32
 
-typedef void (*_sig_func_ptr)();
+typedef void (*_sig_func_ptr)(void);
 
 struct sigaction {
         int             sa_flags;
