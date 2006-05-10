@@ -282,9 +282,9 @@ runtime:
 	$(MAKE) -C runtime
 	$(CP) include/*.h "$(INC)/"
 	$(CP) runtime/*.a "$(LIB)/$(TARGET)/"
-	mv runtime/gen/c-types.sml \
+	cp runtime/gen/c-types.sml \
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
-	mv runtime/gen/basis-ffi.sml \
+	cp runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
 	mkdir -p "$(INC)/gc"
 	mkdir -p "$(INC)/util"
