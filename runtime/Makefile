@@ -71,8 +71,8 @@ else
 WARNCFLAGS += -W
 endif
 # -Wformat=2 implies -Wformat-nonliteral, which causes spurious warnings.
-# WARNCFLAGS += -Wformat=2
-WARNCFLAGS += -Wformat
+WARNCFLAGS += -Wformat=2
+WARNCFLAGS += -Wno-format-nonliteral
 # WARNCFLAGS += -Wswitch-default -Wswitch-enum
 WARNCFLAGS += -Wuninitialized 
 ifeq ($(findstring $(GCC_VERSION), 4),4)
