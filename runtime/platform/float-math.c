@@ -28,8 +28,8 @@ binaryReal(nextafter)
 binaryReal(pow)
 #undef binaryReal
 
-float frexpf(float x, int *exp) {
-        return (float)frexp((double)x, exp);
+float frexpf(float x, int *e) {
+        return (float)frexp((double)x, e);
 }
 
 float ldexpf (float x, int i) {
