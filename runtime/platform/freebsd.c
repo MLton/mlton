@@ -23,11 +23,12 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 }
 
-W32 GC_totalRam (GC_state s) {
-        int mem, len;
+size_t GC_totalRam (void) {
+        unsigned int mem;
+        size_t len;
 
         len = sizeof (int);
         if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
                 diee ("sysctl failed");
-        return mem;
+        return (size_t)mem;
 }
