@@ -1,4 +1,5 @@
 #include "platform.h"
+#include "gdtoa/gdtoa.h"
 
 Real32_t Real32_strto (NullString8_t s) {
   char *endptr;

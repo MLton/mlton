@@ -20,6 +20,10 @@ static bool stringToBool (char *s) {
 }
 #endif
 
+// From gdtoa/gdtoa.h.
+// Can't include the whole thing because it brings in too much junk.
+float gdtoa_strtof (const char *, char **);
+
 static float stringToFloat (char *s) {
   char *endptr;
   float f;

@@ -104,7 +104,7 @@ WARNCFLAGS += -Wredundant-decls
 WARNCFLAGS += -Wnested-externs 
 WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
-OPTWARNCFLAGS = $(WARNCFLAGS) -Winline -Wdisabled-optimization 
+OPTWARNCFLAGS = $(WARNCFLAGS) -Wdisabled-optimization 
 DEBUGWARNCFLAGS = $(WARNCFLAGS)
 
 UTILCFILES =							\
@@ -167,8 +167,6 @@ all:  libgdtoa.a libmlton.a libmlton-gdb.a
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
 		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)	\
-			-Dstrtod=gdtoa_strtod		\
-			-Dstrtof=gdtoa_strtof		\
 			-w -O1 -c -DINFNAN_CHECK 	\
 			*.c
 	$(AR) libgdtoa.a gdtoa/*.o
@@ -259,7 +257,7 @@ clean:
 
 .PHONY: gdtoa-patch
 gdtoa-patch:
-	cd gdtoa && $(MAKE) clean && rm -f &~
+	cd gdtoa && $(MAKE) clean && rm -f *~
 	mv gdtoa gdtoa-new
 	gzip -dc gdtoa.tgz | tar xf -
 	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0
