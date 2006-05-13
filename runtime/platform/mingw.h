@@ -19,6 +19,7 @@
 // classifies subnormals as normals.  So, we disable it here, which causes the
 // runtime to use our own version.
 #define HAS_FPCLASSIFY FALSE
+#define HAS_MSG_DONTWAIT TRUE
 #define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
@@ -60,8 +61,6 @@ int mkstemp (char *template);
 #define F_UNLCK 3
 #define F_SETLKW 9
 #define FD_CLOEXEC 1
-
-#define MSG_DONTWAIT 0
 
 #define SHUT_RD SD_RECEIVE
 #define SHUT_WR SD_SEND

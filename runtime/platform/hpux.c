@@ -1,17 +1,19 @@
 #include "platform.h"
 
-#include <sys/mman.h>
-#define MAP_ANON MAP_ANONYMOUS
 
+#include <sys/mman.h>
+#include <sys/newsig.h>
 #include <sys/param.h>
 #include <sys/pstat.h>
-#include <sys/newsig.h>
 
-#include "ssmmap.c"
+#define MAP_ANON MAP_ANONYMOUS
+
 #include "getrusage.c"
-#include "use-mmap.c"
 #include "mkdir2.c"
+#include "recv.nonblock.c"
 #include "setenv.putenv.c"
+#include "ssmmap.c"
+#include "use-mmap.c"
 
 W32 totalRam (GC_state s) {
         struct pst_static buf;

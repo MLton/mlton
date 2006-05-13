@@ -58,7 +58,9 @@
 #define __Darwin__
 #endif
 
-#if (defined (__CYGWIN__))
+#if (defined (_AIX))
+#include "platform/aix.h"
+#elif (defined (__CYGWIN__))
 #include "platform/cygwin.h"
 #elif (defined (__Darwin__))
 #include "platform/darwin.h"
@@ -160,6 +162,10 @@
 #error HAS_TIME_PROFILING not defined
 #endif
 
+#ifndef HAS_MSG_DONTWAIT
+#error HAS_MSG_DONTWAIT not defined
+#endif
+
 #ifndef EXECVP
 #define EXECVP execvp
 #endif
@@ -199,6 +205,17 @@
 #ifndef FP_ZERO
 #define FP_ZERO 2
 #endif
+#endif
+
+#if HAS_MSG_DONTWAIT
+#define mlton_recv recv
+#define mlton_recvfrom recvfrom
+#else
+/* Platform has no MSG_DONTWAIT flag for recv(), so these must be
+   defined to simulate that flag. */
+int mlton_recv(int s, void *buf, int len, int flags);
+int mlton_recvfrom(int s, void *buf, int len, int flags, void *from,
+                   socklen_t *fromlen);
 #endif
 
 /* If HAS_TIME_PROFILING, then you must define these. */

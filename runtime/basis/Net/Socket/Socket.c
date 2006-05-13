@@ -30,13 +30,13 @@ Int Socket_listen (Int s, Int backlog) {
 
 Int Socket_recv (Int s, Char *msg, Int start, Int len, Word flags) {
         MLton_initSockets ();
-        return recv (s, (void*)((char *)msg + start), (size_t)len, flags);
+        return mlton_recv (s, (void*)((char *)msg + start), (size_t)len, flags);
 }
 
 Int Socket_recvFrom (Int s, Char *msg, Int start, Int len, Word flags,
                     Char* addr, Int *addrlen) {
         MLton_initSockets ();
-        return recvfrom (s, (void*)((char *)msg + start), (size_t)len, flags,
+        return mlton_recvfrom (s, (void*)((char *)msg + start), (size_t)len, flags,
                                 (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 

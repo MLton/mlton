@@ -964,7 +964,8 @@ structure Primitive =
                   structure OS =
                      struct
                         datatype t =
-                           Cygwin
+                           AIX
+                         | Cygwin
                          | Darwin
                          | FreeBSD
                          | HPUX
@@ -976,7 +977,8 @@ structure Primitive =
 
                         val host: t =
                            case _const "MLton_Platform_OS_host": string; of
-                              "cygwin" => Cygwin
+                              "aix" => AIX
+                            | "cygwin" => Cygwin
                             | "darwin" => Darwin
                             | "freebsd" => FreeBSD
                             | "hpux" => HPUX

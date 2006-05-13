@@ -135,6 +135,9 @@ x86)
 esac
 
 case "$OS" in
+aix)
+        os='AIX'
+;;
 cygwin)
         os='Cygwin'
 ;;
@@ -209,10 +212,11 @@ structure MLton =
 
             structure OS =
                struct
-                  datatype t = Cygwin | Darwin | FreeBSD | HPUX | Linux | MinGW
-		             | NetBSD | OpenBSD | Solaris
+                  datatype t = AIX | Cygwin | Darwin | FreeBSD | HPUX | Linux
+                             | MinGW | NetBSD | OpenBSD | Solaris
 
-                  val all = [(Cygwin, "Cygwin"),
+                  val all = [(AIX, "AIX"),
+                             (Cygwin, "Cygwin"),
                              (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
 			     (HPUX, "HPUX"),
