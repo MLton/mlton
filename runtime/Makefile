@@ -50,7 +50,13 @@ endif
 
 CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
-DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
+DEBUGFLAGS = $(CFLAGS)
+ifneq ($(TARGET_ARCH), ia64)
+ifneq ($(TARGET_ARCH), powerpc)
+DEBUGFLAGS += -gstabs+
+endif
+endif
+DEBUGFLAGS += -g2
 
 CFILES = 							\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
