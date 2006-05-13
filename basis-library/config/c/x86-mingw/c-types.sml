@@ -94,8 +94,8 @@ structure C_GId = struct open Word16 type t = word end
 functor C_GId_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
 structure C_Id = struct open Int32 type t = int end
 functor C_Id_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
-structure C_INo = struct open Word16 type t = word end
-functor C_INo_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
+structure C_INo = struct open Int16 type t = int end
+functor C_INo_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int16 (A)
 structure C_Mode = struct open Word16 type t = word end
 functor C_Mode_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word16 (A)
 structure C_NLink = struct open Int16 type t = int end
