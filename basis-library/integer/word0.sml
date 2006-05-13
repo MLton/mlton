@@ -172,7 +172,7 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
       in
          val (fromInt8, fromInt8Z, toInt8, toInt8X) = 
             make {fromIntUnsafe = fromInt8Unsafe,
-                   fromIntZUnsafe = fromInt8ZUnsafe, 
+                  fromIntZUnsafe = fromInt8ZUnsafe, 
                   toIntUnsafe = toInt8Unsafe,
                   toIntXUnsafe = toInt8XUnsafe,
                   other = {precision' = Primitive.Int8.precision',
@@ -180,7 +180,7 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
                            minInt' = Primitive.Int8.minInt'}}
          val (fromInt16, fromInt16Z, toInt16, toInt16X) = 
             make {fromIntUnsafe = fromInt16Unsafe,
-                   fromIntZUnsafe = fromInt16ZUnsafe, 
+                  fromIntZUnsafe = fromInt16ZUnsafe, 
                   toIntUnsafe = toInt16Unsafe,
                   toIntXUnsafe = toInt16XUnsafe,
                   other = {precision' = Primitive.Int16.precision',
@@ -188,7 +188,7 @@ functor MkWord0 (W: PRIM_WORD): WORD0 =
                            minInt' = Primitive.Int16.minInt'}}
          val (fromInt32, fromInt32Z, toInt32, toInt32X) = 
             make {fromIntUnsafe = fromInt32Unsafe,
-                   fromIntZUnsafe = fromInt32ZUnsafe, 
+                  fromIntZUnsafe = fromInt32ZUnsafe, 
                   toIntUnsafe = toInt32Unsafe,
                   toIntXUnsafe = toInt32XUnsafe,
                   other = {precision' = Primitive.Int32.precision',
