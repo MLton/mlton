@@ -283,12 +283,12 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       end
 
       type dev = C_Dev.t
-      val wordToDev = C_Dev.fromLargeWord o SysWord.toLargeWord
-      val devToWord = SysWord.fromLargeWord o C_Dev.toLargeWord
+      val wordToDev = C_Dev.fromSysWord
+      val devToWord = C_Dev.toSysWord
 
       type ino = C_INo.t
-      val wordToIno = C_INo.fromLargeWord o SysWord.toLargeWord
-      val inoToWord = SysWord.fromLargeWord o C_INo.toLargeWord
+      val wordToIno = C_INo.fromSysWord
+      val inoToWord = C_INo.toSysWord
 
       structure ST =
          struct

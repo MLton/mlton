@@ -35,10 +35,10 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun setsid () = SysCall.simpleResult (Prim.setsid)
 
-      val uidToWord = SysWord.fromLarge o C_UId.toLarge
-      val wordToUid = C_UId.fromLarge o SysWord.toLarge
-      val gidToWord = SysWord.fromLarge o C_GId.toLarge
-      val wordToGid = C_GId.fromLarge o SysWord.toLarge
+      val uidToWord = C_UId.toSysWord
+      val wordToUid = C_UId.fromSysWord
+      val gidToWord = C_GId.toSysWord
+      val wordToGid = C_GId.fromSysWord
 
       fun getgroups () =
          SysCall.syscall
@@ -228,7 +228,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
          fun cvt (ticks: C_Clock.t) =
             Time.fromTicks (LargeInt.quot
-                            (LargeInt.* (C_Clock.toLarge ticks,
+                            (LargeInt.* (C_Clock.toLargeInt ticks,
                                          Time.ticksPerSecond),
                              ticksPerSec))
       in
