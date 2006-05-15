@@ -18,6 +18,7 @@ runOnly='false'
 short='false'
 skipTo=''
 declare -a flags
+declare -a extraFlags
 while [ "$#" -gt 0 ]; do
         case "$1" in
         -cross)
@@ -147,12 +148,11 @@ for f in *.sml; do
         ;;
 	esac
         echo "testing $f"
+        unset extraFlags
         case "$f" in
         exnHistory*)
-                extraFlags="-const 'Exn.keepHistory true'"
-        ;;
-        *)
-                extraFlags=""
+                extraFlags[${#extraFlags[@]}]="-const"
+                extraFlags[${#extraFlags[@]}]="Exn.keepHistory true"
         ;;
         esac
 	if (! $runOnly); then
@@ -167,7 +167,7 @@ for f in *.sml; do
                                 \"redundantMatch ignore\"
                         in $f.sml 
                         end" >"$mlb"
-                "$mlton" "${flags[@]}" $extraFlags -output "$f" "$mlb"
+                "$mlton" "${flags[@]}" "${extraFlags[@]}" -output "$f" "$mlb"
                 if [ "$?" -ne '0' ] || ((! $cross) && [ ! -x "$f" ]); then
                         compFail "$f"
                 fi
@@ -214,7 +214,7 @@ for f in *.sml; do
                                 /c/cygwin/bin/sed 's/$/\r/' <"$f.ok" >"$compare"
 			fi
                         if ! diff "$compare" "$tmp"; then
-                                echo "difference with ${flags[*]}"
+                                echo "difference with ${flags[*]} ${extraFlags[*]}"
                         fi
                 fi
         fi
