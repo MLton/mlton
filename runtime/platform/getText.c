@@ -2,9 +2,10 @@
 extern char _start;
 extern char etext;
 
-const void *GC_getTextStart (void) {
+void *GC_getTextStart (void) {
         return &_start;
 }
-const void *GC_getTextEnd (void) {
+
+void *GC_getTextEnd (void) {
         return &etext;
 }

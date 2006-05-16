@@ -8,11 +8,11 @@
 #include "mmap-protect.c"
 #include "use-mmap.c"
 
-const void *GC_getTextEnd (void) {
+void *GC_getTextEnd (void) {
         return (const void*)(long)(get_etext ());
 }
 
-const void *GC_getTextStart (void) {
+void *GC_getTextStart (void) {
         void *address;
         const struct mach_header *mh;
 
