@@ -46,9 +46,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          val minNormalPos = minNormalPos
          val minPos = minPos
 
-         val realSize = Primitive.Int32.toInt realSize
-         val precision = Primitive.Int32.toInt precision
-         val radix = Primitive.Int32.toInt radix
+         val realSize = Int32.toInt realSize
+         val precision = Int32.toInt precision
+         val radix = Int32.toInt radix
 
          val signBit = fn r => signBit r <> 0
       end

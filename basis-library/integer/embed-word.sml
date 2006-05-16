@@ -11,8 +11,8 @@ signature EMBED_WORD =
       type big
          
       val fromBigUnsafe: big -> word
+      val sizeInBits: Int32.int
       val toBig: word -> big
-      val wordSize: Int32.int
    end
 
 functor EmbedWord (structure Big: WORD
@@ -21,7 +21,7 @@ functor EmbedWord (structure Big: WORD
       structure Small =
          struct
             open Small
-            val wordSize: Int.int = Int32.toInt wordSize
+            val wordSize: Int.int = Int32.toInt sizeInBits
          end
 
       val () = if Int.< (Small.wordSize, Big.wordSize) then ()

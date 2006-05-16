@@ -18,25 +18,10 @@ structure Char8 =
          
       val < = _prim "WordU8_lt": char * char -> bool;
 
-      val fromInt8Unsafe = _prim "WordS8_toWord8": Int8.int -> char;
-      val fromInt16Unsafe = _prim "WordS16_toWord8": Int16.int -> char;
-      val fromInt32Unsafe = _prim "WordS32_toWord8": Int32.int -> char;
-      val fromInt64Unsafe = _prim "WordS64_toWord8": Int64.int -> char;
-
-      val fromWord8Unsafe = _prim "WordU8_toWord8": Word8.word -> char;
-      val fromWord16Unsafe = _prim "WordU16_toWord8": Word16.word -> char;
-      val fromWord32Unsafe = _prim "WordU32_toWord8": Word32.word -> char;
-      val fromWord64Unsafe = _prim "WordU64_toWord8": Word64.word -> char;
-
-      val toInt8Unsafe = _prim "WordS8_toWord8": char -> Int8.int;
-      val toInt16Unsafe = _prim "WordS8_toWord16": char -> Int16.int;
-      val toInt32Unsafe = _prim "WordS8_toWord32": char -> Int32.int;
-      val toInt64Unsafe = _prim "WordS8_toWord64": char -> Int64.int;
-
-      val toWord8Unsafe = _prim "WordU8_toWord8": char -> Word8.word;
-      val toWord16Unsafe = _prim "WordU8_toWord16": char -> Word16.word;
-      val toWord32Unsafe = _prim "WordU8_toWord32": char -> Word32.word;
-      val toWord64Unsafe = _prim "WordU8_toWord64": char -> Word64.word;
+      val idToWord8 = _prim "WordU8_toWord8": char -> Word8.word;
+      val idFromWord8 = _prim "WordU8_toWord8": Word8.word -> char;
+      val idToInt8 = _prim "WordS8_toWord8": char -> Int8.int;
+      val idFromInt8 = _prim "WordS8_toWord8": Int8.int -> char;
    end
 structure Char8 = 
    struct
@@ -54,25 +39,10 @@ structure Char16 =
          
       val < = _prim "WordU16_lt": char * char -> bool;
 
-      val fromInt8Unsafe = _prim "WordS8_toWord16": Int8.int -> char;
-      val fromInt16Unsafe = _prim "WordS16_toWord16": Int16.int -> char;
-      val fromInt32Unsafe = _prim "WordS32_toWord16": Int32.int -> char;
-      val fromInt64Unsafe = _prim "WordS64_toWord16": Int64.int -> char;
-
-      val fromWord8Unsafe = _prim "WordU8_toWord16": Word8.word -> char;
-      val fromWord16Unsafe = _prim "WordU16_toWord16": Word16.word -> char;
-      val fromWord32Unsafe = _prim "WordU32_toWord16": Word32.word -> char;
-      val fromWord64Unsafe = _prim "WordU64_toWord16": Word64.word -> char;
-
-      val toInt8Unsafe = _prim "WordS16_toWord8": char -> Int8.int;
-      val toInt16Unsafe = _prim "WordS16_toWord16": char -> Int16.int;
-      val toInt32Unsafe = _prim "WordS16_toWord32": char -> Int32.int;
-      val toInt64Unsafe = _prim "WordS16_toWord64": char -> Int64.int;
-
-      val toWord8Unsafe = _prim "WordU16_toWord8": char -> Word8.word;
-      val toWord16Unsafe = _prim "WordU16_toWord16": char -> Word16.word;
-      val toWord32Unsafe = _prim "WordU16_toWord32": char -> Word32.word;
-      val toWord64Unsafe = _prim "WordU16_toWord64": char -> Word64.word;
+      val idToWord16 = _prim "WordU16_toWord16": char -> Word16.word;
+      val idFromWord16 = _prim "WordU16_toWord16": Word16.word -> char;
+      val idToInt16 = _prim "WordS16_toWord16": char -> Int16.int;
+      val idFromInt16 = _prim "WordS16_toWord16": Int16.int -> char;
    end
 structure Char16 = 
    struct
@@ -90,25 +60,10 @@ structure Char32 =
          
       val < = _prim "WordU32_lt": char * char -> bool;
 
-      val fromInt8Unsafe = _prim "WordS8_toWord32": Int8.int -> char;
-      val fromInt16Unsafe = _prim "WordS16_toWord32": Int16.int -> char;
-      val fromInt32Unsafe = _prim "WordS32_toWord32": Int32.int -> char;
-      val fromInt64Unsafe = _prim "WordS64_toWord32": Int64.int -> char;
-
-      val fromWord8Unsafe = _prim "WordU8_toWord32": Word8.word -> char;
-      val fromWord16Unsafe = _prim "WordU16_toWord32": Word16.word -> char;
-      val fromWord32Unsafe = _prim "WordU32_toWord32": Word32.word -> char;
-      val fromWord64Unsafe = _prim "WordU64_toWord32": Word64.word -> char;
-
-      val toInt8Unsafe = _prim "WordS32_toWord8": char -> Int8.int;
-      val toInt16Unsafe = _prim "WordS32_toWord16": char -> Int16.int;
-      val toInt32Unsafe = _prim "WordS32_toWord32": char -> Int32.int;
-      val toInt64Unsafe = _prim "WordS32_toWord64": char -> Int64.int;
-
-      val toWord8Unsafe = _prim "WordU32_toWord8": char -> Word8.word;
-      val toWord16Unsafe = _prim "WordU32_toWord16": char -> Word16.word;
-      val toWord32Unsafe = _prim "WordU32_toWord32": char -> Word32.word;
-      val toWord64Unsafe = _prim "WordU32_toWord64": char -> Word64.word;
+      val idToWord32 = _prim "WordU32_toWord32": char -> Word32.word;
+      val idFromWord32 = _prim "WordU32_toWord32": Word32.word -> char;
+      val idToInt32 = _prim "WordS32_toWord32": char -> Int32.int;
+      val idFromInt32 = _prim "WordS32_toWord32": Int32.int -> char;
    end
 structure Char32 = 
    struct

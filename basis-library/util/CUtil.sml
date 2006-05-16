@@ -48,14 +48,14 @@ structure CUtil: C_UTIL =
             type t = C_String.t
 
             fun sub (cs, i) =
-               Primitive.Char8.fromWord8Unsafe 
+               Primitive.Char8.idFromWord8
                (Pointer.getWord8 
                 (Pointer.fromWord cs, C_Ptrdiff.fromInt i))
 
             fun update (cs, i, c) =
                Pointer.setWord8 
                (Pointer.fromWord cs, C_Ptrdiff.fromInt i, 
-                Primitive.Char8.toWord8Unsafe c)
+                Primitive.Char8.idToWord8 c)
 
             fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
 

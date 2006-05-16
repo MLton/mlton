@@ -255,7 +255,7 @@ structure MLtonProcess =
 
       fun create (cmd, args, env, stdin, stdout, stderr) =
          SysCall.simpleResult'
-         ({errVal = C_PId.fromInt ~1}, fn () =>
+         ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
           let
 (*
              val cmd =
@@ -325,7 +325,7 @@ structure MLtonProcess =
                   val env = CUtil.C_StringArray.fromList env
                in
                   SysCall.simpleResult'
-                  ({errVal = C_PId.fromInt ~1}, fn () =>
+                  ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                    Prim.spawne (path, args, env))
                end
          else
@@ -346,7 +346,7 @@ structure MLtonProcess =
                   val args = CUtil.C_StringArray.fromList args
                in
                   SysCall.simpleResult'
-                  ({errVal = C_PId.fromInt ~1}, fn () =>
+                  ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                    Prim.spawnp (file, args))
                end
          else    

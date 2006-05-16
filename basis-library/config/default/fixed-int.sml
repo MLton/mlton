@@ -7,6 +7,6 @@
 
 structure FixedInt = Int64
 
-functor FixedInt_ChooseIntN (A: CHOOSE_INT_ARG) :
+functor FixedInt_ChooseIntN (A: CHOOSE_INTN_ARG) :
    sig val f : FixedInt.int A.t end =
    ChooseIntN_Int64 (A)

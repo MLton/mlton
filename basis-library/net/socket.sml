@@ -14,8 +14,8 @@ structure Syscall = Error.SysCall
 structure FileSys = Posix.FileSys
 
 type sock = C_Sock.t
-val sockToWord = C_Sock.toSysWord
-val wordToSock = C_Sock.fromSysWord
+val sockToWord = C_Sock.castToSysWord
+val wordToSock = C_Sock.castFromSysWord
 val sockToFD = fn x => x
 val fdToSock = fn x => x
 
@@ -101,7 +101,7 @@ structure CtlExtra =
                              (wa, if isBigEndian
                                      then i
                                      else (intLen - 1) - i)
-                          val w = C_Int.fromSysWord (Word8.toSysWord w)
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
                           loop (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
                        end
@@ -115,7 +115,7 @@ structure CtlExtra =
                if i >= intLen
                   then ()
                   else let
-                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
                           val () =
                              Array.update
                              (wa, if isBigEndian
@@ -145,7 +145,7 @@ structure CtlExtra =
                              (wa, if isBigEndian
                                      then i
                                      else (sizeLen - 1) - i)
-                          val w = C_Size.fromSysWord (Word8.toSysWord w)
+                          val w = C_Size.castFromSysWord (Word8.castToSysWord w)
                        in
                           loop (i + 1, C_Size.andb (w, C_Size.<< (acc, 0w4)))
                        end
@@ -159,7 +159,7 @@ structure CtlExtra =
                if i >= sizeLen
                   then ()
                   else let
-                          val w = Word8.fromSysWord (C_Size.toSysWord acc)
+                          val w = Word8.castFromSysWord (C_Size.castToSysWord acc)
                           val () =
                              Array.update
                              (wa, if isBigEndian
@@ -185,7 +185,7 @@ structure CtlExtra =
                              (wa, if isBigEndian
                                      then i
                                      else (intLen - 1) - i)
-                          val w = C_Int.fromSysWord (Word8.toSysWord w)
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
                           loopBool (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
                        end
@@ -198,7 +198,7 @@ structure CtlExtra =
                              (wa, intLen + (if isBigEndian
                                                then i
                                                else (intLen - 1) - i))
-                          val w = C_Int.fromSysWord (Word8.toSysWord w)
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
                           loopInt (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
                        end
@@ -214,7 +214,7 @@ structure CtlExtra =
                if i >= intLen
                   then ()
                   else let
-                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
                           val () =
                              Array.update
                              (wa, if isBigEndian
@@ -227,7 +227,7 @@ structure CtlExtra =
                if i >= intLen
                   then ()
                   else let
-                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
                           val () =
                              Array.update
                              (wa, intLen + (if isBigEndian
@@ -509,7 +509,7 @@ local
                val (buf, i, sz) = base sl
             in
                (C_SSize.toInt o Syscall.simpleResultRestart')
-               ({errVal = C_SSize.fromInt ~1}, fn () => 
+               ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                 primSend (s, buf, C_Int.fromInt i, C_Size.fromInt sz, 
                           mk_out_flags out_flags))
             end
@@ -519,7 +519,7 @@ local
                val (buf, i, sz) = base sl
             in
                nonBlock
-               (C_SSize.fromInt ~1,
+               (C_SSize.castFromFixedInt ~1,
                 fn () =>
                 primSend (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
                           C_Int.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
@@ -532,7 +532,7 @@ local
                val (buf, i, sz) = base sl
             in
                Syscall.simpleRestart'
-               ({errVal = C_SSize.fromInt ~1}, fn () => 
+               ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                 primSendTo (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
                             mk_out_flags out_flags, 
                             sa, C_Socklen.fromInt (Vector.length sa)))
@@ -544,7 +544,7 @@ local
                val (buf, i, sz) = base sl
             in
                nonBlock 
-               (C_SSize.fromInt ~1,
+               (C_SSize.castFromFixedInt ~1,
                 fn () =>
                 primSendTo (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
                             C_Int.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags),
@@ -580,7 +580,7 @@ fun recvArr' (s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       (C_SSize.toInt o Syscall.simpleResultRestart')
-      ({errVal = C_SSize.fromInt ~1}, fn () => 
+      ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
        Prim.recv (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz, 
                   mk_in_flags in_flags))
    end
@@ -609,7 +609,7 @@ fun recvArrFrom' (s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
       val n =
          (C_SSize.toInt o Syscall.simpleResultRestart')
-         ({errVal = C_SSize.fromInt ~1}, fn () => 
+         ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
           Prim.recvFrom (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
                          mk_in_flags in_flags, 
                          sa, salen))
@@ -637,7 +637,7 @@ fun recvArrNB' (s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       nonBlock
-      (C_SSize.fromInt ~1,
+      (C_SSize.castFromFixedInt ~1,
        fn () => Prim.recv (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
                            mk_in_flagsNB in_flags),
        SOME o C_SSize.toInt, 
@@ -649,7 +649,7 @@ fun recvVecNB' (s, n, in_flags) =
       val a = Word8Array.arrayUninit n
    in
       nonBlock
-      (C_SSize.fromInt ~1,
+      (C_SSize.castFromFixedInt ~1,
        fn () => Prim.recv (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                            mk_in_flagsNB in_flags),
        fn bytesRead => SOME (getVec (a, n, C_SSize.toInt bytesRead)),
@@ -666,7 +666,7 @@ fun recvArrFromNB' (s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (C_SSize.fromInt ~1,
+      (C_SSize.castFromFixedInt ~1,
        fn () => Prim.recvFrom (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
                                mk_in_flagsNB in_flags, sa, salen),
        fn n => SOME (C_SSize.toInt n, finish ()),
@@ -679,7 +679,7 @@ fun recvVecFromNB' (s, n, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (C_SSize.fromInt ~1,
+      (C_SSize.castFromFixedInt ~1,
        fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                                mk_in_flagsNB in_flags, sa, salen),
        fn bytesRead => SOME (getVec (a, n, C_SSize.toInt bytesRead), finish ()),

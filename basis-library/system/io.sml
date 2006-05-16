@@ -28,7 +28,7 @@ structure OS_IO: OS_IO =
     val iodToFd = fn x => x
     val fdToIod = fn x => x
 
-    val iodescToWord = C_Fd.toSysWord
+    val iodescToWord = C_Fd.castToSysWord
        
   (* return a hash value for the I/O descriptor. *)
     val hash = SysWord.toWord o iodescToWord

@@ -33,6 +33,7 @@ in
       ../config/choose.sml
    end end
 
+   prim-iwconv.sml
    prim-word.sml
    prim-int.sml
 

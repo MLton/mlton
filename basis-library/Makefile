@@ -33,7 +33,7 @@ DEFAULT_WORD = word32 word64
 .PHONY: type-check-def
 type-check-def:
 	"$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
-		libs/all.mlb; \
+		libs/all.mlb; 
 
 .PHONY: type-check-all
 type-check-all:
@@ -63,4 +63,5 @@ type-check-all:
 		-default-type "$$defreal" \
 		-default-type "$$defword" \
 		libs/all.mlb; \
+	rm -f target.map; \
 	done; done; done; done; done; done; done; done; done

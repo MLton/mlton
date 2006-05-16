@@ -14,19 +14,8 @@ structure PreChar8 =
       type char = Primitive.Char8.char
       type string = Primitive.String8.string
 
-      local
-         structure S =
-            Int_ChooseInt
-            (type 'a t = 'a -> char
-             val fInt8 = Prim.fromInt8Unsafe
-             val fInt16 = Prim.fromInt16Unsafe
-             val fInt32 = Prim.fromInt32Unsafe
-             val fInt64 = Prim.fromInt64Unsafe
-             val fIntInf = Prim.fromIntInfUnsafe)
-      in
-         val chrUnsafe = S.f
-      end
-      val ord = Primitive.Word8.toInt o Prim.toWord8Unsafe
+      val chrUnsafe = Prim.idFromWord8 o Int.sextdToWord8
+      val ord = Int.zextdFromWord8 o Prim.idToWord8
 
       val minChar: char = #"\000"
       val numChars: int = 256
@@ -34,12 +23,14 @@ structure PreChar8 =
       val maxChar:char = #"\255"
 
       fun succ c =
-         if Primitive.Controls.safe andalso c = maxChar
+         if Primitive.Controls.safe 
+            andalso c = maxChar
             then raise Chr
          else chrUnsafe (Int.+ (ord c, 1))
 
       fun pred c =
-         if Primitive.Controls.safe andalso c = minChar
+         if Primitive.Controls.safe 
+            andalso c = minChar
             then raise Chr
          else chrUnsafe (Int.- (ord c, 1))
 

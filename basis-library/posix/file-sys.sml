@@ -17,10 +17,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          struct
             open Time
 
-            val fromSeconds = fromSeconds o C_Time.toLarge
+            val fromSeconds = fromSeconds o C_Time.toLargeInt
 
             fun toSeconds t =
-               C_Time.fromLarge (Time.toSeconds t)
+               C_Time.fromLargeInt (Time.toSeconds t)
                handle Overflow => Error.raiseSys Error.inval
          end
 
@@ -33,8 +33,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       type uid = C_UId.t
       type gid = C_GId.t
 
-      val fdToWord = C_Fd.toSysWord
-      val wordToFD = C_Fd.fromSysWord
+      val fdToWord = C_Fd.castToSysWord
+      val wordToFD = C_Fd.castFromSysWord
       val fdToIOD = fn x => x
       val iodToFD = SOME o (fn x => x)
 
@@ -58,7 +58,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                val s = NullString.nullTerm s
             in
                SysCall.syscall'
-               ({errVal = C_DirP.fromWord 0w0}, fn () =>
+               ({errVal = C_DirP.castFromSysWord 0w0}, fn () =>
                 (Prim.openDir s, fn d =>
                  DS (ref (SOME d))))
             end
@@ -220,7 +220,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             val flags = O.Flags.flags [openModeToFlags openMode,
                                        flags,
                                        O.creat]
-            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
+            val flags = C_Int.castFromSysWord (O.Flags.toWord flags)
             val fd =
                SysCall.simpleResult
                (fn () => Prim.open3 (pathname, flags, mode))
@@ -232,10 +232,10 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          let 
             val pathname = NullString.nullTerm pathname
             val flags = O.Flags.flags [openModeToFlags openMode, flags]
-            val flags = C_Int.fromSysWord (O.Flags.toWord flags)
+            val flags = C_Int.castFromSysWord (O.Flags.toWord flags)
             val fd = 
                SysCall.simpleResult
-               (fn () => Prim.open3 (pathname, flags, C_Mode.fromInt 0))
+               (fn () => Prim.open3 (pathname, flags, C_Mode.castFromSysWord 0wx0))
          in 
             fd
          end
@@ -276,19 +276,19 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                val path = NullString.nullTerm path
             in
                SysCall.syscall'
-               ({errVal = C_SSize.fromInt ~1}, fn () =>
+               ({errVal = C_SSize.castFromFixedInt ~1}, fn () =>
                 (Prim.readlink (path, buf, C_Size.fromInt size), fn len =>
                  ArraySlice.vector (ArraySlice.slice (buf, 0, SOME (C_SSize.toInt len)))))
             end
       end
 
       type dev = C_Dev.t
-      val wordToDev = C_Dev.fromSysWord
-      val devToWord = C_Dev.toSysWord
+      val wordToDev = C_Dev.castFromSysWord
+      val devToWord = C_Dev.castToSysWord
 
       type ino = C_INo.t
-      val wordToIno = C_INo.fromSysWord
-      val inoToWord = C_INo.toSysWord
+      val wordToIno = C_INo.castFromSysWord
+      val inoToWord = C_INo.castToSysWord
 
       structure ST =
          struct

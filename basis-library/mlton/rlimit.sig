@@ -8,9 +8,13 @@
 
 signature MLTON_RLIMIT =
    sig
-      structure RLim : WORD
+      structure RLim : sig
+                          type t
+                          val castFromSysWord: SysWord.word -> t
+                          val castToSysWord: t -> SysWord.word
+                       end
                
-      val infinity: RLim.word
+      val infinity: RLim.t
 
       type t
                
@@ -28,6 +32,6 @@ signature MLTON_RLIMIT =
       val residentSetSize: t     (* RSS     max resident set size *)
  *)
 
-      val get: t -> {hard: RLim.word, soft: RLim.word}
-      val set: t * {hard: RLim.word, soft: RLim.word} -> unit
+      val get: t -> {hard: RLim.t, soft: RLim.t}
+      val set: t * {hard: RLim.t, soft: RLim.t} -> unit
    end

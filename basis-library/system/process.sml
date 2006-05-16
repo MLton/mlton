@@ -32,7 +32,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
                in
                   case es of
                      W_EXITED => success
-                   | W_EXITSTATUS w => C_Status.fromSysWord (Word8.toSysWord w)
+                   | W_EXITSTATUS w => C_Status.castFromSysWord (Word8.castToSysWord w)
                    | W_SIGNALED _ => failure
                    | W_STOPPED _ => failure
                end

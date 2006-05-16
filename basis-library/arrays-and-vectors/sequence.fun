@@ -6,6 +6,61 @@
  * See the file MLton-LICENSE for details.
  *)
 
+structure SeqIndex =
+   struct
+      open SeqIndex
+
+      val maxLen' = maxInt'
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = 'a -> int
+             val fInt8 = SeqIndex.sextdFromInt8
+             val fInt16 = SeqIndex.sextdFromInt16
+             val fInt32 = SeqIndex.sextdFromInt32
+             val fInt64 = SeqIndex.sextdFromInt64
+             val fIntInf = SeqIndex.sextdFromIntInf)
+      in
+         val fromIntUnsafe = S.f
+      end
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = 'a -> int
+             val fInt8 = SeqIndex.schckFromInt8
+             val fInt16 = SeqIndex.schckFromInt16
+             val fInt32 = SeqIndex.schckFromInt32
+             val fInt64 = SeqIndex.schckFromInt64
+             val fIntInf = SeqIndex.schckFromIntInf)
+      in
+         val fromInt = S.f
+      end
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = int -> 'a
+             val fInt8 = SeqIndex.sextdToInt8
+             val fInt16 = SeqIndex.sextdToInt16
+             val fInt32 = SeqIndex.sextdToInt32
+             val fInt64 = SeqIndex.sextdToInt64
+             val fIntInf = SeqIndex.sextdToIntInf)
+      in
+         val toIntUnsafe = S.f
+      end
+      local
+         structure S =
+            Int_ChooseInt
+            (type 'a t = int -> 'a
+             val fInt8 = SeqIndex.schckToInt8
+             val fInt16 = SeqIndex.schckToInt16
+             val fInt32 = SeqIndex.schckToInt32
+             val fInt64 = SeqIndex.schckToInt64
+             val fIntInf = SeqIndex.schckToIntInf)
+      in
+         val toInt = S.f
+      end
+   end
+
 functor Sequence (S: sig
                         type 'a sequence 
                         type 'a elt
@@ -48,20 +103,20 @@ functor Sequence (S: sig
 
       local
          fun doit (toInt, fromInt, maxInt') =
-            (Array.maxLen', toInt Array.maxLen') 
+            (SeqIndex.maxLen', toInt SeqIndex.maxLen') 
             handle Overflow => (fromInt maxInt', maxInt')
          structure S =
             Int_ChooseInt
             (type 'a t = SeqIndex.int * 'a
-             val fInt8 = doit (SeqIndex.toInt8, SeqIndex.fromInt8,
+             val fInt8 = doit (SeqIndex.schckToInt8, SeqIndex.schckFromInt8,
                                Primitive.Int8.maxInt')
-             val fInt16 = doit (SeqIndex.toInt16, SeqIndex.fromInt16,
+             val fInt16 = doit (SeqIndex.schckToInt16, SeqIndex.schckFromInt16,
                                 Primitive.Int16.maxInt')
-             val fInt32 = doit (SeqIndex.toInt32, SeqIndex.fromInt32,
+             val fInt32 = doit (SeqIndex.schckToInt32, SeqIndex.schckFromInt32,
                                 Primitive.Int32.maxInt')
-             val fInt64 = doit (SeqIndex.toInt64, SeqIndex.fromInt64,
+             val fInt64 = doit (SeqIndex.schckToInt64, SeqIndex.schckFromInt64,
                                 Primitive.Int64.maxInt')
-             val fIntInf = (Array.maxLen', SeqIndex.toIntInf Array.maxLen'))
+             val fIntInf = (SeqIndex.maxLen', SeqIndex.schckToIntInf SeqIndex.maxLen'))
       in
          val (maxLen', maxLen) = S.f
       end

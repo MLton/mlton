@@ -22,13 +22,25 @@ structure Net : NET =
 
       structure Int32 =
          struct
-            val hton = Primitive.Word32.toInt32Unsafe o Word32.hton o Primitive.Word32.fromInt32Unsafe
-            val ntoh = Primitive.Word32.toInt32Unsafe o Word32.ntoh o Primitive.Word32.fromInt32Unsafe
+            val hton = 
+               Primitive.IntWordConv.idFromWord32ToInt32 
+               o Word32.hton 
+               o Primitive.IntWordConv.idFromInt32ToWord32
+            val ntoh = 
+               Primitive.IntWordConv.idFromWord32ToInt32 
+               o Word32.ntoh 
+               o Primitive.IntWordConv.idFromInt32ToWord32
          end
       structure Int16 =
          struct
-            val hton = Primitive.Word16.toInt16Unsafe o Word16.hton o Primitive.Word16.fromInt16Unsafe
-            val ntoh = Primitive.Word16.toInt16Unsafe o Word16.ntoh o Primitive.Word16.fromInt16Unsafe
+            val hton = 
+               Primitive.IntWordConv.idFromWord16ToInt16 
+               o Word16.hton 
+               o Primitive.IntWordConv.idFromInt16ToWord16
+            val ntoh = 
+               Primitive.IntWordConv.idFromWord16ToInt16 
+               o Word16.ntoh 
+               o Primitive.IntWordConv.idFromInt16ToWord16
          end
 
       structure C_Int =

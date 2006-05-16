@@ -6,29 +6,63 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Word (W: PRE_WORD_EXTRA): WORD_EXTRA =
+functor Word (W: PRIM_WORD) : WORD_EXTRA =
 struct
 
 open W
 type t = word
 
-val wordSize: Int.int = Primitive.Int32.toInt wordSize
-val wordSizeWord: Word.word = Primitive.Word32.toWord wordSizeWord
+val wordSize: Int.int = Primitive.Int32.zextdToInt sizeInBits
+val sizeInBitsWord = Primitive.Word32.zextdToWord sizeInBitsWord
 
-fun << (w, n) = 
-   if Word.>= (n, wordSizeWord)
+fun << (i, n) = 
+   if Word.>= (n, sizeInBitsWord)
       then zero
-      else W.<< (w, Primitive.Word32.fromWord n)
-fun >> (w, n) = 
-   if Word.>= (n, wordSizeWord)
+      else W.<<? (i, Primitive.Word32.zextdFromWord n)
+fun >> (i, n) = 
+   if Word.>= (n, sizeInBitsWord)
       then zero
-      else W.>> (w, Primitive.Word32.fromWord n)
-fun ~>> (w, n) =
-   if Word.< (n, wordSizeWord)
-      then W.~>> (w, Primitive.Word32.fromWord n)
-      else W.~>> (w, Primitive.Word32.- (W.wordSizeWord, 0w1))
-fun rol (w, n) = W.rol (w, Primitive.Word32.fromWord n)
-fun ror (w, n) = W.ror (w, Primitive.Word32.fromWord n)
+      else W.>>? (i, Primitive.Word32.zextdFromWord n)
+fun ~>> (i, n) =
+   if Word.< (n, sizeInBitsWord)
+      then W.~>>? (i, Primitive.Word32.zextdFromWord n)
+      else W.~>>? (i, Primitive.Word32.- (W.sizeInBitsWord, 0w1))
+fun rol (i, n) = W.rolUnsafe (i, Primitive.Word32.zextdFromWord n)
+fun ror (i, n) = W.rorUnsafe (i, Primitive.Word32.zextdFromWord n)
+
+val fromInt = W.sextdFromInt
+val toIntX = W.schckToInt
+fun toInt w =
+   let
+      val i = W.zchckToInt w
+   in
+      if Primitive.Controls.detectOverflow
+         andalso Int.< (i, 0)
+         then raise Overflow
+         else i
+   end
+val fromLargeInt = W.sextdFromLargeInt
+val toLargeIntX = W.schckToLargeInt
+fun toLargeInt w =
+   let
+      val i = W.zchckToLargeInt w
+   in
+      if Primitive.Controls.detectOverflow
+         andalso LargeInt.< (i, 0)
+         then raise Overflow
+         else i
+   end
+
+val fromLargeWord = W.zextdFromLargeWord
+val fromLarge = fromLargeWord
+val toLargeWordX = W.sextdToLargeWord
+val toLargeX = toLargeWordX
+val toLargeWord = W.zextdToLargeWord
+val toLarge = toLargeWord
+
+val fromWord = W.zextdFromWord
+val toWordX = W.sextdToWord
+val toWord = W.zextdToWord
 
 local
    (* Allocate a buffer large enough to hold any formatted word in any radix.

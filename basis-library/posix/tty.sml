@@ -35,13 +35,13 @@ structure PosixTTY: POSIX_TTY =
 
             type cc = C_CC.t array
 
-            val default = C_CC.fromSysWord 0w0
+            val default = C_CC.castFromSysWord 0w0
 
             fun new () = Array.array (nccs, default)
 
             fun updates (a, l) = 
                List.app (fn (i, cc) => 
-                         Array.update (a, i, (C_CC.fromSysWord o Word8.toSysWord o Byte.charToByte) cc)) 
+                         Array.update (a, i, (C_CC.castFromSysWord o Word8.castToSysWord o Byte.charToByte) cc)) 
                         l
 
             fun cc l = let val a = new ()
@@ -56,7 +56,7 @@ structure PosixTTY: POSIX_TTY =
                   ; a'
                end
 
-            val sub = (Byte.byteToChar o Word8.fromSysWord o C_CC.toSysWord) o Array.sub
+            val sub = (Byte.byteToChar o Word8.castFromSysWord o C_CC.castToSysWord) o Array.sub
          end
       
       structure Flags = BitFlags(structure S = C_TCFlag)
@@ -160,8 +160,8 @@ structure PosixTTY: POSIX_TTY =
       val b9600 = B9600
 
       val compareSpeed = C_Speed.compare
-      val speedToWord = C_Speed.toSysWord
-      val wordToSpeed = C_Speed.fromSysWord
+      val speedToWord = C_Speed.castToSysWord
+      val wordToSpeed = C_Speed.castFromSysWord
 
       type termios = {iflag: I.flags,
                       oflag: O.flags,
@@ -269,7 +269,7 @@ structure PosixTTY: POSIX_TTY =
               
             fun getpgrp fd =
                SysCall.simpleResultRestart'
-               ({errVal = C_PId.fromInt ~1}, fn () =>
+               ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 Prim.TC.getpgrp fd)
               
             fun setpgrp (fd, pid) = 

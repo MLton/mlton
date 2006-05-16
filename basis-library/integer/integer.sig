@@ -3,17 +3,18 @@ signature INTEGER_GLOBAL =
       eqtype int
    end
 
-signature PRE_INTEGER =
+signature INTEGER =
    sig
       include INTEGER_GLOBAL
+
+      val precision : Int.int option
+      val minInt : int option
+      val maxInt : int option
 
       val toLarge: int -> LargeInt.int
       val fromLarge: LargeInt.int -> int
       val toInt: int -> Int.int
       val fromInt: Int.int -> int
-
-      val minInt: int option
-      val maxInt: int option
 
       val + : int * int -> int
       val - : int * int -> int
@@ -33,53 +34,7 @@ signature PRE_INTEGER =
       val abs: int -> int
       val min: int * int -> int
       val max: int * int -> int         
-   end
 
-signature PRE_INTEGER_EXTRA =
-   sig
-      include PRE_INTEGER
-
-      val zero: int
-      val one: int
-
-      val precision' : Primitive.Int32.int
-      val precisionWord' : Primitive.Word32.word
-
-      val maxInt' : int
-      val minInt' : int
-
-      val *? : int * int -> int
-      val +? : int * int -> int
-      val -? : int * int -> int
-      val ~? : int -> int
-      val power: {base: int, exp: int} -> int
-
-      val andb: int * int -> int
-      val << : int * Primitive.Word32.word -> int
-      val notb: int -> int
-      val orb: int * int -> int
-      val rol: int * Primitive.Word32.word -> int
-      val ror: int * Primitive.Word32.word -> int
-      val ~>> : int * Primitive.Word32.word -> int
-      val >> : int * Primitive.Word32.word -> int
-      val xorb: int * int -> int
-
-      val ltu: int * int -> bool
-      val leu: int * int -> bool
-      val gtu: int * int -> bool
-      val geu: int * int -> bool
-
-      val toLargeInt: int -> LargeInt.int
-      val fromLargeInt: LargeInt.int -> int
-      val fromSysWord: SysWord.word -> int
-      val toSysWord: int -> SysWord.word
-   end
-
-signature INTEGER =
-   sig
-      include PRE_INTEGER
-
-      val precision: Int.int option
       val sign: int -> Int.int
       val sameSign: int * int -> bool
 
@@ -122,6 +77,8 @@ signature INTEGER_EXTRA =
 
       val toLargeInt: int -> LargeInt.int
       val fromLargeInt: LargeInt.int -> int
-      val fromSysWord: SysWord.word -> int
-      val toSysWord: int -> SysWord.word
+      val castFromFixedInt: FixedInt.int -> int
+      val castToFixedInt: int -> FixedInt.int
+      val castFromSysWord: SysWord.word -> int
+      val castToSysWord: int -> SysWord.word
    end

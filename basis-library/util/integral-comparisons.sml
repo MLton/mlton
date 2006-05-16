@@ -22,11 +22,11 @@ functor IntegralComparisons (type t
    end
 functor UnsignedIntegralComparisons (type int
                                      type word
-                                     val fromInt : int -> word
+                                     val idFromIntToWord : int -> word
                                      val < : word * word -> bool) =
    struct
       local
-         fun ltu (i: int, i': int) = < (fromInt i, fromInt i')
+         fun ltu (i: int, i': int) = < (idFromIntToWord i, idFromIntToWord i')
          structure S = IntegralComparisons (type t = int 
                                             val < = ltu)
       in

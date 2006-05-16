@@ -6,15 +6,15 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Integer (I: PRE_INTEGER_EXTRA): INTEGER_EXTRA =
+functor Integer (I: PRIM_INTEGER): INTEGER_EXTRA =
 struct
 
 open I
 type t = int
 
-val precision': Int.int = Primitive.Int32.toInt precision'
+val precision': Int.int = Primitive.Int32.zextdToInt sizeInBits
 val precision: Int.int option = SOME precision'
-val precisionWord': Word.word = Primitive.Word32.toWord precisionWord'
+val sizeInBitsWord = Primitive.Word32.zextdToWord sizeInBitsWord
 
 val maxInt: int option = SOME maxInt'
 val minInt: int option = SOME minInt'
@@ -29,20 +29,28 @@ val sign: int -> Int.int =
 fun sameSign (x, y) = sign x = sign y
 
 fun << (i, n) = 
-   if Word.>= (n, precisionWord')
+   if Word.>= (n, sizeInBitsWord)
       then zero
-      else I.<< (i, Primitive.Word32.fromWord n)
+      else I.<<? (i, Primitive.Word32.zextdFromWord n)
 fun >> (i, n) = 
-   if Word.>= (n, precisionWord')
+   if Word.>= (n, sizeInBitsWord)
       then zero
-      else I.>> (i, Primitive.Word32.fromWord n)
+      else I.>>? (i, Primitive.Word32.zextdFromWord n)
 fun ~>> (i, n) =
-   if Word.< (n, precisionWord')
-      then I.~>> (i, Primitive.Word32.fromWord n)
-      else I.~>> (i, Primitive.Word32.- (I.precisionWord', 0w1))
-fun rol (i, n) = I.rol (i, Primitive.Word32.fromWord n)
-fun ror (i, n) = I.ror (i, Primitive.Word32.fromWord n)
-  
+   if Word.< (n, sizeInBitsWord)
+      then I.~>>? (i, Primitive.Word32.zextdFromWord n)
+      else I.~>>? (i, Primitive.Word32.- (I.sizeInBitsWord, 0w1))
+fun rol (i, n) = I.rolUnsafe (i, Primitive.Word32.zextdFromWord n)
+fun ror (i, n) = I.rorUnsafe (i, Primitive.Word32.zextdFromWord n)
+
+val fromInt = I.schckFromInt
+val toInt = I.schckToInt
+
+val fromLargeInt = I.schckFromLargeInt
+val toLargeInt = I.schckToLargeInt
+val fromLarge = fromLargeInt
+val toLarge = toLargeInt
+
 (* fmt constructs a string to represent the integer by building it into a
  * statically allocated buffer.  For the most part, this is a textbook
  * algorithm: loop starting at the end of the buffer; we use rem to

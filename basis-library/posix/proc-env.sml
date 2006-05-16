@@ -35,10 +35,10 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun setsid () = SysCall.simpleResult (Prim.setsid)
 
-      val uidToWord = C_UId.toSysWord
-      val wordToUid = C_UId.fromSysWord
-      val gidToWord = C_GId.toSysWord
-      val wordToGid = C_GId.fromSysWord
+      val uidToWord = C_UId.castToSysWord
+      val wordToUid = C_UId.castFromSysWord
+      val gidToWord = C_GId.castToSysWord
+      val wordToGid = C_GId.castFromSysWord
 
       fun getgroups () =
          SysCall.syscall
@@ -234,7 +234,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       in
          fun times () =
             SysCall.syscall'
-            ({errVal = C_Clock.fromInt ~1}, fn () =>
+            ({errVal = C_Clock.castFromFixedInt ~1}, fn () =>
              (Prim.times (), fn elapsed =>
               {elapsed = cvt elapsed,
                utime = cvt (Times.getUTime ()), 

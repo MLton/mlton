@@ -31,7 +31,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
                if i >= inAddrLen
                   then ()
                   else let
-                          val w = Word8.fromSysWord (C_Int.toSysWord acc)
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
                           val () =
                              Array.update
                              (wa, (inAddrLen - 1) - i, w)

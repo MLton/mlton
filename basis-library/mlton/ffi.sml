@@ -50,16 +50,16 @@ fun intToBool (i: Int32.t): bool = i <> 0
    
 val getBool = intToBool o getInt32
 
-val getChar8 = Primitive.Char8.fromInt8Unsafe o getInt8
-val getChar16 = Primitive.Char16.fromInt16Unsafe o getInt16
-val getChar32 = Primitive.Char32.fromInt32Unsafe o getInt32
+val getChar8 = Primitive.Char8.idFromInt8 o getInt8
+val getChar16 = Primitive.Char16.idFromInt16 o getInt16
+val getChar32 = Primitive.Char32.idFromInt32 o getInt32
                
 fun boolToInt (b: bool): Int32.t = if b then 1 else 0
 
 val setBool = setInt32 o boolToInt
 
-val setChar8 = setInt8 o Primitive.Char8.toInt8Unsafe
-val setChar16 = setInt16 o Primitive.Char16.toInt16Unsafe
-val setChar32 = setInt32 o Primitive.Char32.toInt32Unsafe
+val setChar8 = setInt8 o Primitive.Char8.idToInt8
+val setChar16 = setInt16 o Primitive.Char16.idToInt16
+val setChar32 = setInt32 o Primitive.Char32.idToInt32
 
 end

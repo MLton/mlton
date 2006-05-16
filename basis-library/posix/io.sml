@@ -223,7 +223,7 @@ local
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
                val bytesRead =
                   SysCall.simpleResultRestart'
-                  ({errVal = C_SSize.fromInt ~1}, fn () => 
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                    primReadArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
                val bytesRead = C_SSize.toInt bytesRead
             in
@@ -234,7 +234,7 @@ local
                val buf = Array.arrayUninit n
                val bytesRead = 
                   SysCall.simpleResultRestart'
-                  ({errVal = C_SSize.fromInt ~1}, fn () => 
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                    primReadArr (fd, buf, C_Int.fromInt 0, C_Size.fromInt n))
                val bytesRead = C_SSize.toInt bytesRead
             in 
@@ -248,7 +248,7 @@ local
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
                val bytesWrote =
                   SysCall.simpleResultRestart'
-                  ({errVal = C_SSize.fromInt ~1}, fn () => 
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                    primWriteArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
                val bytesWrote = C_SSize.toInt bytesWrote
             in
@@ -259,7 +259,7 @@ local
                val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
                val bytesWrote =
                   SysCall.simpleResultRestart'
-                  ({errVal = C_SSize.fromInt ~1}, fn () => 
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
                    primWriteVec (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
                val bytesWrote = C_SSize.toInt bytesWrote
             in

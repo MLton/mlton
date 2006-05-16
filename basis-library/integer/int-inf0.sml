@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature INT_INF0 =
+signature PRIM_INT_INF =
    sig
       eqtype int
       type t = int
@@ -69,9 +69,11 @@ signature INT_INF0 =
       val isNeg: int -> bool
                
       val andb: int * int -> int
+      val <<? : int * Primitive.Word32.word -> int
       val << : int * Primitive.Word32.word -> int
       val notb: int -> int
       val orb: int * int -> int
+      val ~>>? : int * Primitive.Word32.word -> int
       val ~>> : int * Primitive.Word32.word -> int
       val xorb: int * int -> int
 
@@ -83,88 +85,251 @@ signature INT_INF0 =
                                 numLimbsMinusOne: SeqIndex.int} -> 'a}
                    -> int -> 'a)
 
-      (* Sign extend. *)
-      val fromInt8Unsafe: Primitive.Int8.int -> int
-      val fromInt16Unsafe: Primitive.Int16.int -> int
-      val fromInt32Unsafe: Primitive.Int32.int -> int
-      val fromInt64Unsafe: Primitive.Int64.int -> int
-      val fromIntInfUnsafe: Primitive.IntInf.int -> int
+      val zextdFromInt8: Primitive.Int8.int -> int
+      val zextdFromInt16: Primitive.Int16.int -> int
+      val zextdFromInt32: Primitive.Int32.int -> int
+      val zextdFromInt64: Primitive.Int64.int -> int
+      val zextdFromIntInf: Primitive.IntInf.int -> int
+      val zextdFromWord8: Primitive.Word8.word -> int
+      val zextdFromWord16: Primitive.Word16.word -> int
+      val zextdFromWord32: Primitive.Word32.word -> int
+      val zextdFromWord64: Primitive.Word64.word -> int
+      val zextdToInt8: int -> Primitive.Int8.int
+      val zextdToInt16: int -> Primitive.Int16.int
+      val zextdToInt32: int -> Primitive.Int32.int
+      val zextdToInt64: int -> Primitive.Int64.int
+      val zextdToIntInf: int -> Primitive.IntInf.int
+      val zextdToWord8: int -> Primitive.Word8.word
+      val zextdToWord16: int -> Primitive.Word16.word
+      val zextdToWord32: int -> Primitive.Word32.word
+      val zextdToWord64: int -> Primitive.Word64.word
 
-      (* Sign extend. *)
-      val fromInt8: Primitive.Int8.int -> int
-      val fromInt16: Primitive.Int16.int -> int
-      val fromInt32: Primitive.Int32.int -> int
-      val fromInt64: Primitive.Int64.int -> int
-      val fromIntInf: Primitive.IntInf.int -> int
+      val sextdFromInt8: Primitive.Int8.int -> int
+      val sextdFromInt16: Primitive.Int16.int -> int
+      val sextdFromInt32: Primitive.Int32.int -> int
+      val sextdFromInt64: Primitive.Int64.int -> int
+      val sextdFromIntInf: Primitive.IntInf.int -> int
+      val sextdFromWord8: Primitive.Word8.word -> int
+      val sextdFromWord16: Primitive.Word16.word -> int
+      val sextdFromWord32: Primitive.Word32.word -> int
+      val sextdFromWord64: Primitive.Word64.word -> int
+      val sextdToInt8: int -> Primitive.Int8.int
+      val sextdToInt16: int -> Primitive.Int16.int
+      val sextdToInt32: int -> Primitive.Int32.int
+      val sextdToInt64: int -> Primitive.Int64.int
+      val sextdToIntInf: int -> Primitive.IntInf.int
+      val sextdToWord8: int -> Primitive.Word8.word
+      val sextdToWord16: int -> Primitive.Word16.word
+      val sextdToWord32: int -> Primitive.Word32.word
+      val sextdToWord64: int -> Primitive.Word64.word
 
-      (* Zero extend. *)
-      val fromWord8Unsafe: Primitive.Word8.word -> int
-      val fromWord16Unsafe: Primitive.Word16.word -> int
-      val fromWord32Unsafe: Primitive.Word32.word -> int
-      val fromWord64Unsafe: Primitive.Word64.word -> int
+      val castFromInt8: Primitive.Int8.int -> int
+      val castFromInt16: Primitive.Int16.int -> int
+      val castFromInt32: Primitive.Int32.int -> int
+      val castFromInt64: Primitive.Int64.int -> int
+      val castFromIntInf: Primitive.IntInf.int -> int
+      val castFromWord8: Primitive.Word8.word -> int
+      val castFromWord16: Primitive.Word16.word -> int
+      val castFromWord32: Primitive.Word32.word -> int
+      val castFromWord64: Primitive.Word64.word -> int
+      val castToInt8: int -> Primitive.Int8.int
+      val castToInt16: int -> Primitive.Int16.int
+      val castToInt32: int -> Primitive.Int32.int
+      val castToInt64: int -> Primitive.Int64.int
+      val castToIntInf: int -> Primitive.IntInf.int
+      val castToWord8: int -> Primitive.Word8.word
+      val castToWord16: int -> Primitive.Word16.word
+      val castToWord32: int -> Primitive.Word32.word
+      val castToWord64: int -> Primitive.Word64.word
 
-      (* Zero extend. *)
-      val fromWord8: Primitive.Word8.word -> int
-      val fromWord16: Primitive.Word16.word -> int
-      val fromWord32: Primitive.Word32.word -> int
-      val fromWord64: Primitive.Word64.word -> int
+      val zchckFromInt8: Primitive.Int8.int -> int
+      val zchckFromInt16: Primitive.Int16.int -> int
+      val zchckFromInt32: Primitive.Int32.int -> int
+      val zchckFromInt64: Primitive.Int64.int -> int
+      val zchckFromIntInf: Primitive.IntInf.int -> int
+      val zchckFromWord8: Primitive.Word8.word -> int
+      val zchckFromWord16: Primitive.Word16.word -> int
+      val zchckFromWord32: Primitive.Word32.word -> int
+      val zchckFromWord64: Primitive.Word64.word -> int
+      val zchckToInt8: int -> Primitive.Int8.int
+      val zchckToInt16: int -> Primitive.Int16.int
+      val zchckToInt32: int -> Primitive.Int32.int
+      val zchckToInt64: int -> Primitive.Int64.int
+      val zchckToIntInf: int -> Primitive.IntInf.int
+      val zchckToWord8: int -> Primitive.Word8.word
+      val zchckToWord16: int -> Primitive.Word16.word
+      val zchckToWord32: int -> Primitive.Word32.word
+      val zchckToWord64: int -> Primitive.Word64.word
 
-      (* Sign extend. *)
-      val fromWord8XUnsafe: Primitive.Word8.word -> int
-      val fromWord16XUnsafe: Primitive.Word16.word -> int
-      val fromWord32XUnsafe: Primitive.Word32.word -> int
-      val fromWord64XUnsafe: Primitive.Word64.word -> int
+      val schckFromInt8: Primitive.Int8.int -> int
+      val schckFromInt16: Primitive.Int16.int -> int
+      val schckFromInt32: Primitive.Int32.int -> int
+      val schckFromInt64: Primitive.Int64.int -> int
+      val schckFromIntInf: Primitive.IntInf.int -> int
+      val schckFromWord8: Primitive.Word8.word -> int
+      val schckFromWord16: Primitive.Word16.word -> int
+      val schckFromWord32: Primitive.Word32.word -> int
+      val schckFromWord64: Primitive.Word64.word -> int
+      val schckToInt8: int -> Primitive.Int8.int
+      val schckToInt16: int -> Primitive.Int16.int
+      val schckToInt32: int -> Primitive.Int32.int
+      val schckToInt64: int -> Primitive.Int64.int
+      val schckToIntInf: int -> Primitive.IntInf.int
+      val schckToWord8: int -> Primitive.Word8.word
+      val schckToWord16: int -> Primitive.Word16.word
+      val schckToWord32: int -> Primitive.Word32.word
+      val schckToWord64: int -> Primitive.Word64.word
+   end
 
-      (* Sign extend. *)
-      val fromWord8X: Primitive.Word8.word -> int
-      val fromWord16X: Primitive.Word16.word -> int
-      val fromWord32X: Primitive.Word32.word -> int
-      val fromWord64X: Primitive.Word64.word -> int
+signature PRIM_INTWORD_CONV =
+   sig
+      include PRIM_INTWORD_CONV
 
-      (* Lowbits. *)
-      val toInt8Unsafe: int -> Primitive.Int8.int
-      val toInt16Unsafe: int -> Primitive.Int16.int
-      val toInt32Unsafe: int -> Primitive.Int32.int
-      val toInt64Unsafe: int -> Primitive.Int64.int
-      val toIntInfUnsafe: int -> Primitive.IntInf.int
+      val idFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
 
-      (* Overflow checking. *)
-      val toInt8: int -> Primitive.Int8.int
-      val toInt16: int -> Primitive.Int16.int
-      val toInt32: int -> Primitive.Int32.int
-      val toInt64: int -> Primitive.Int64.int
-      val toIntInf: int -> Primitive.IntInf.int
+      val zextdFromInt8ToIntInf: Primitive.Int8.int -> Primitive.IntInf.int
+      val zextdFromInt16ToIntInf: Primitive.Int16.int -> Primitive.IntInf.int
+      val zextdFromInt32ToIntInf: Primitive.Int32.int -> Primitive.IntInf.int
+      val zextdFromInt64ToIntInf: Primitive.Int64.int -> Primitive.IntInf.int
+      val zextdFromWord8ToIntInf: Primitive.Word8.word -> Primitive.IntInf.int
+      val zextdFromWord16ToIntInf: Primitive.Word16.word -> Primitive.IntInf.int
+      val zextdFromWord32ToIntInf: Primitive.Word32.word -> Primitive.IntInf.int
+      val zextdFromWord64ToIntInf: Primitive.Word64.word -> Primitive.IntInf.int
 
-      (* Lowbits. *)
-      val toWord8Unsafe: int -> Primitive.Word8.word
-      val toWord16Unsafe: int -> Primitive.Word16.word
-      val toWord32Unsafe: int -> Primitive.Word32.word
-      val toWord64Unsafe: int -> Primitive.Word64.word
+      val zextdFromIntInfToInt8: Primitive.IntInf.int -> Primitive.Int8.int
+      val zextdFromIntInfToInt16: Primitive.IntInf.int -> Primitive.Int16.int
+      val zextdFromIntInfToInt32: Primitive.IntInf.int -> Primitive.Int32.int
+      val zextdFromIntInfToInt64: Primitive.IntInf.int -> Primitive.Int64.int
+      val zextdFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
+      val zextdFromIntInfToWord8: Primitive.IntInf.int -> Primitive.Word8.word
+      val zextdFromIntInfToWord16: Primitive.IntInf.int -> Primitive.Word16.word
+      val zextdFromIntInfToWord32: Primitive.IntInf.int -> Primitive.Word32.word
+      val zextdFromIntInfToWord64: Primitive.IntInf.int -> Primitive.Word64.word
 
-      (* Lowbits. *)
-      val toWord8: int -> Primitive.Word8.word
-      val toWord16: int -> Primitive.Word16.word
-      val toWord32: int -> Primitive.Word32.word
-      val toWord64: int -> Primitive.Word64.word
 
-      (* Lowbits. *)
-      val toWord8XUnsafe: int -> Primitive.Word8.word
-      val toWord16XUnsafe: int -> Primitive.Word16.word
-      val toWord32XUnsafe: int -> Primitive.Word32.word
-      val toWord64XUnsafe: int -> Primitive.Word64.word
+      val sextdFromInt8ToIntInf: Primitive.Int8.int -> Primitive.IntInf.int
+      val sextdFromInt16ToIntInf: Primitive.Int16.int -> Primitive.IntInf.int
+      val sextdFromInt32ToIntInf: Primitive.Int32.int -> Primitive.IntInf.int
+      val sextdFromInt64ToIntInf: Primitive.Int64.int -> Primitive.IntInf.int
+      val sextdFromWord8ToIntInf: Primitive.Word8.word -> Primitive.IntInf.int
+      val sextdFromWord16ToIntInf: Primitive.Word16.word -> Primitive.IntInf.int
+      val sextdFromWord32ToIntInf: Primitive.Word32.word -> Primitive.IntInf.int
+      val sextdFromWord64ToIntInf: Primitive.Word64.word -> Primitive.IntInf.int
 
-      (* Lowbits. *)
-      val toWord8X: int -> Primitive.Word8.word
-      val toWord16X: int -> Primitive.Word16.word
-      val toWord32X: int -> Primitive.Word32.word
-      val toWord64X: int -> Primitive.Word64.word
+      val sextdFromIntInfToInt8: Primitive.IntInf.int -> Primitive.Int8.int
+      val sextdFromIntInfToInt16: Primitive.IntInf.int -> Primitive.Int16.int
+      val sextdFromIntInfToInt32: Primitive.IntInf.int -> Primitive.Int32.int
+      val sextdFromIntInfToInt64: Primitive.IntInf.int -> Primitive.Int64.int
+      val sextdFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
+      val sextdFromIntInfToWord8: Primitive.IntInf.int -> Primitive.Word8.word
+      val sextdFromIntInfToWord16: Primitive.IntInf.int -> Primitive.Word16.word
+      val sextdFromIntInfToWord32: Primitive.IntInf.int -> Primitive.Word32.word
+      val sextdFromIntInfToWord64: Primitive.IntInf.int -> Primitive.Word64.word
+
+
+      val castFromInt8ToIntInf: Primitive.Int8.int -> Primitive.IntInf.int
+      val castFromInt16ToIntInf: Primitive.Int16.int -> Primitive.IntInf.int
+      val castFromInt32ToIntInf: Primitive.Int32.int -> Primitive.IntInf.int
+      val castFromInt64ToIntInf: Primitive.Int64.int -> Primitive.IntInf.int
+      val castFromWord8ToIntInf: Primitive.Word8.word -> Primitive.IntInf.int
+      val castFromWord16ToIntInf: Primitive.Word16.word -> Primitive.IntInf.int
+      val castFromWord32ToIntInf: Primitive.Word32.word -> Primitive.IntInf.int
+      val castFromWord64ToIntInf: Primitive.Word64.word -> Primitive.IntInf.int
+
+      val castFromIntInfToInt8: Primitive.IntInf.int -> Primitive.Int8.int
+      val castFromIntInfToInt16: Primitive.IntInf.int -> Primitive.Int16.int
+      val castFromIntInfToInt32: Primitive.IntInf.int -> Primitive.Int32.int
+      val castFromIntInfToInt64: Primitive.IntInf.int -> Primitive.Int64.int
+      val castFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
+      val castFromIntInfToWord8: Primitive.IntInf.int -> Primitive.Word8.word
+      val castFromIntInfToWord16: Primitive.IntInf.int -> Primitive.Word16.word
+      val castFromIntInfToWord32: Primitive.IntInf.int -> Primitive.Word32.word
+      val castFromIntInfToWord64: Primitive.IntInf.int -> Primitive.Word64.word
+
+
+      val zchckFromInt8ToIntInf: Primitive.Int8.int -> Primitive.IntInf.int
+      val zchckFromInt16ToIntInf: Primitive.Int16.int -> Primitive.IntInf.int
+      val zchckFromInt32ToIntInf: Primitive.Int32.int -> Primitive.IntInf.int
+      val zchckFromInt64ToIntInf: Primitive.Int64.int -> Primitive.IntInf.int
+      val zchckFromWord8ToIntInf: Primitive.Word8.word -> Primitive.IntInf.int
+      val zchckFromWord16ToIntInf: Primitive.Word16.word -> Primitive.IntInf.int
+      val zchckFromWord32ToIntInf: Primitive.Word32.word -> Primitive.IntInf.int
+      val zchckFromWord64ToIntInf: Primitive.Word64.word -> Primitive.IntInf.int
+
+      val zchckFromIntInfToInt8: Primitive.IntInf.int -> Primitive.Int8.int
+      val zchckFromIntInfToInt16: Primitive.IntInf.int -> Primitive.Int16.int
+      val zchckFromIntInfToInt32: Primitive.IntInf.int -> Primitive.Int32.int
+      val zchckFromIntInfToInt64: Primitive.IntInf.int -> Primitive.Int64.int
+      val zchckFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
+      val zchckFromIntInfToWord8: Primitive.IntInf.int -> Primitive.Word8.word
+      val zchckFromIntInfToWord16: Primitive.IntInf.int -> Primitive.Word16.word
+      val zchckFromIntInfToWord32: Primitive.IntInf.int -> Primitive.Word32.word
+      val zchckFromIntInfToWord64: Primitive.IntInf.int -> Primitive.Word64.word
+
+
+      val schckFromInt8ToIntInf: Primitive.Int8.int -> Primitive.IntInf.int
+      val schckFromInt16ToIntInf: Primitive.Int16.int -> Primitive.IntInf.int
+      val schckFromInt32ToIntInf: Primitive.Int32.int -> Primitive.IntInf.int
+      val schckFromInt64ToIntInf: Primitive.Int64.int -> Primitive.IntInf.int
+      val schckFromWord8ToIntInf: Primitive.Word8.word -> Primitive.IntInf.int
+      val schckFromWord16ToIntInf: Primitive.Word16.word -> Primitive.IntInf.int
+      val schckFromWord32ToIntInf: Primitive.Word32.word -> Primitive.IntInf.int
+      val schckFromWord64ToIntInf: Primitive.Word64.word -> Primitive.IntInf.int
+
+      val schckFromIntInfToInt8: Primitive.IntInf.int -> Primitive.Int8.int
+      val schckFromIntInfToInt16: Primitive.IntInf.int -> Primitive.Int16.int
+      val schckFromIntInfToInt32: Primitive.IntInf.int -> Primitive.Int32.int
+      val schckFromIntInfToInt64: Primitive.IntInf.int -> Primitive.Int64.int
+      val schckFromIntInfToIntInf: Primitive.IntInf.int -> Primitive.IntInf.int
+      val schckFromIntInfToWord8: Primitive.IntInf.int -> Primitive.Word8.word
+      val schckFromIntInfToWord16: Primitive.IntInf.int -> Primitive.Word16.word
+      val schckFromIntInfToWord32: Primitive.IntInf.int -> Primitive.Word32.word
+      val schckFromIntInfToWord64: Primitive.IntInf.int -> Primitive.Word64.word
+   end
+signature PRIM_INTEGER =
+   sig
+      include PRIM_INTEGER
+
+      val zextdFromIntInf: Primitive.IntInf.int -> int
+      val zextdToIntInf: int -> Primitive.IntInf.int
+
+      val sextdFromIntInf: Primitive.IntInf.int -> int
+      val sextdToIntInf: int -> Primitive.IntInf.int
+
+      val castFromIntInf: Primitive.IntInf.int -> int
+      val castToIntInf: int -> Primitive.IntInf.int
+
+      val zchckFromIntInf: Primitive.IntInf.int -> int
+      val zchckToIntInf: int -> Primitive.IntInf.int
+
+      val schckFromIntInf: Primitive.IntInf.int -> int
+      val schckToIntInf: int -> Primitive.IntInf.int
+   end
+signature PRIM_WORD =
+   sig
+      include PRIM_WORD
+
+      val zextdFromIntInf: Primitive.IntInf.int -> word
+      val zextdToIntInf: word -> Primitive.IntInf.int
+
+      val sextdFromIntInf: Primitive.IntInf.int -> word
+      val sextdToIntInf: word -> Primitive.IntInf.int
+
+      val castFromIntInf: Primitive.IntInf.int -> word
+      val castToIntInf: word -> Primitive.IntInf.int
+
+      val zchckFromIntInf: Primitive.IntInf.int -> word
+      val zchckToIntInf: word -> Primitive.IntInf.int
+
+      val schckFromIntInf: Primitive.IntInf.int -> word
+      val schckToIntInf: word -> Primitive.IntInf.int
    end
 
 structure Primitive = struct
 
 open Primitive
 
-structure IntInf : INT_INF0 =
+structure IntInf =
    struct
       structure Prim = Primitive.IntInf
 
@@ -177,34 +342,23 @@ structure IntInf : INT_INF0 =
                           structure S =
                              ObjptrInt_ChooseIntN
                              (type 'a t = 'a -> ObjptrWord.word
-                              val fInt8 = ObjptrWord.fromInt8
-                              val fInt16 = ObjptrWord.fromInt16
-                              val fInt32 = ObjptrWord.fromInt32
-                              val fInt64 = ObjptrWord.fromInt64)
+                              val fInt8 = ObjptrWord.zextdFromInt8
+                              val fInt16 = ObjptrWord.zextdFromInt16
+                              val fInt32 = ObjptrWord.zextdFromInt32
+                              val fInt64 = ObjptrWord.zextdFromInt64)
                        in
-                          val fromObjptrInt = S.f
+                          val idFromObjptrInt = S.f
                        end
                        local
                           structure S =
                              ObjptrInt_ChooseIntN
                              (type 'a t = ObjptrWord.word -> 'a
-                              val fInt8 = ObjptrWord.toInt8
-                              val fInt16 = ObjptrWord.toInt16
-                              val fInt32 = ObjptrWord.toInt32
-                              val fInt64 = ObjptrWord.toInt64)
+                              val fInt8 = ObjptrWord.zextdToInt8
+                              val fInt16 = ObjptrWord.zextdToInt16
+                              val fInt32 = ObjptrWord.zextdToInt32
+                              val fInt64 = ObjptrWord.zextdToInt64)
                        in
-                          val toObjptrInt = S.f
-                       end
-                       local
-                          structure S =
-                             ObjptrInt_ChooseIntN
-                             (type 'a t = ObjptrWord.word -> 'a
-                              val fInt8 = ObjptrWord.toInt8X
-                              val fInt16 = ObjptrWord.toInt16X
-                              val fInt32 = ObjptrWord.toInt32X
-                              val fInt64 = ObjptrWord.toInt64X)
-                       in
-                          val toObjptrIntX = S.f
+                          val idToObjptrInt = S.f
                        end
                     end
       structure I = ObjptrInt
@@ -215,12 +369,23 @@ structure IntInf : INT_INF0 =
                            structure S =
                               SeqIndex_ChooseIntN
                               (type 'a t = 'a -> C_Size.word
-                               val fInt8 = C_Size.fromInt8
-                               val fInt16 = C_Size.fromInt16
-                               val fInt32 = C_Size.fromInt32
-                               val fInt64 = C_Size.fromInt64)
+                               val fInt8 = C_Size.zextdFromInt8
+                               val fInt16 = C_Size.zextdFromInt16
+                               val fInt32 = C_Size.zextdFromInt32
+                               val fInt64 = C_Size.zextdFromInt64)
                         in
-                           val fromSeqIndex = S.f
+                           val zextdFromSeqIndex = S.f
+                        end
+                        local
+                           structure S =
+                              SeqIndex_ChooseIntN
+                              (type 'a t = 'a -> C_Size.word
+                               val fInt8 = C_Size.sextdFromInt8
+                               val fInt16 = C_Size.sextdFromInt16
+                               val fInt32 = C_Size.sextdFromInt32
+                               val fInt64 = C_Size.sextdFromInt64)
+                        in
+                           val sextdFromSeqIndex = S.f
                         end
                      end
 
@@ -248,12 +413,12 @@ structure IntInf : INT_INF0 =
             then 1
             else bigNumLimbs i
 
-      fun dropTag (w: W.word): W.word = W.~>> (w, 0w1)
+      fun dropTag (w: W.word): W.word = W.~>>? (w, 0w1)
       fun dropTagCoerce (i: bigInt): W.word = dropTag (Prim.toWord i)
-      fun dropTagCoerceInt (i: bigInt): I.int = W.toObjptrIntX (dropTagCoerce i)
-      fun addTag (w: W.word): W.word = W.orb (W.<< (w, 0w1), 0w1)
+      fun dropTagCoerceInt (i: bigInt): I.int = W.idToObjptrInt (dropTagCoerce i)
+      fun addTag (w: W.word): W.word = W.orb (W.<<? (w, 0w1), 0w1)
       fun addTagCoerce (w: W.word): bigInt = Prim.fromWord (addTag w)
-      fun addTagCoerceInt (i: I.int): bigInt = addTagCoerce (W.fromObjptrInt i)
+      fun addTagCoerceInt (i: I.int): bigInt = addTagCoerce (W.idFromObjptrInt i)
       fun zeroTag (w: W.word): W.word = W.andb (w, W.notb 0w1)
       fun oneTag (w: W.word): W.word = W.orb (w, 0w1)
       fun oneTagCoerce (w: W.word): bigInt = Prim.fromWord (oneTag w)
@@ -264,42 +429,47 @@ structure IntInf : INT_INF0 =
             else Big (Prim.toVector i)
 
       local
-         fun 'a make {toMPLimb: 'a -> MPLimb.word,
-                      toObjptrWordX: 'a -> ObjptrWord.word,
-                      other : {wordSize: Int32.int,
+         fun 'a make {zextdToMPLimb: 'a -> MPLimb.word,
+                      zextdToObjptrWord: 'a -> ObjptrWord.word,
+                      sextdToObjptrWord: 'a -> ObjptrWord.word,
+                      other : {sizeInBits: Int32.int,
                                zero: 'a,
                                eq: 'a * 'a -> bool,
+                               isNeg: 'a -> bool,
                                neg: 'a -> 'a,
                                notb: 'a -> 'a,
-                               rshift: 'a * Word32.word -> 'a}} 
-                     (isneg, w) =
-            if Int32.> (ObjptrWord.wordSize, #wordSize other)
+                               rashift: 'a * Word32.word -> 'a,
+                               rshift: 'a * Word32.word -> 'a}}
+                     (sextd, w) =
+            if Int32.> (ObjptrWord.sizeInBits, #sizeInBits other)
                orelse let
-                         val shift = Word32.- (ObjptrWord.wordSizeWord, 0w2)
-                         val upperBits = (#rshift other) (w, shift)
-                         val upperZeroBits = #zero other
-                         val upperOneBits = (#rshift other) ((#notb other) (#zero other), shift)
+                         val shift = Word32.- (ObjptrWord.sizeInBitsWord, 0w2)
+                         val upperBits = (#rashift other) (w, shift)
+                         val zeroBits = #zero other
+                         val oneBits = (#notb other) zeroBits
                       in
-                         (#eq other) (upperBits, upperZeroBits)
+                         (#eq other) (upperBits, zeroBits)
                          orelse
-                         (isneg andalso (#eq other) (upperBits, upperOneBits))
+                         (sextd andalso (#eq other) (upperBits, oneBits))
                       end
-               then Prim.fromWord (addTag (toObjptrWordX w))
+               then if sextd
+                       then Prim.fromWord (addTag (sextdToObjptrWord w))
+                       else Prim.fromWord (addTag (zextdToObjptrWord w))
                else let
                        fun loop (w, i, acc) =
                           if (#eq other) (w, (#zero other))
                              then (i, acc)
                              else 
                                 let
-                                   val limb = toMPLimb w
+                                   val limb = zextdToMPLimb w
                                    val w = 
                                       (#rshift other) 
-                                      (w, MPLimb.wordSizeWord)
+                                      (w, MPLimb.sizeInBitsWord)
                                 in
                                    loop (w, S.+ (i, 1), (i, limb) :: acc)
                                 end
                        val (n, acc) = 
-                          if isneg 
+                          if sextd andalso (#isNeg other) w
                              then loop ((#neg other) w, 1, [(0,0w1)])
                              else loop (w, 1, [(0,0w0)])
                        val a = A.arrayUnsafe n
@@ -313,93 +483,128 @@ structure IntInf : INT_INF0 =
                        Prim.fromVector (V.fromArray a)
                     end
       in
-         val fromWordAux8 =
-            make {toMPLimb = MPLimb.fromWord8,
-                  toObjptrWordX = ObjptrWord.fromWord8X,
-                  other = {wordSize = Word8.wordSize,
+         fun extdFromWord8 (sextd, w) =
+            make {zextdToMPLimb = MPLimb.zextdFromWord8,
+                  zextdToObjptrWord = ObjptrWord.zextdFromWord8,
+                  sextdToObjptrWord = ObjptrWord.sextdFromWord8,
+                  other = {sizeInBits = Word8.sizeInBits,
                            zero = Word8.zero,
                            eq = ((op =) : Word8.word * Word8.word -> bool),
+                           isNeg = fn w => Int8.< (IntWordConv.idFromWord8ToInt8 w, 0),
                            neg = Word8.~,
                            notb = Word8.notb,
-                           rshift = Word8.>>}}
-         fun fromWord8 w = fromWordAux8 (false, w)
-         fun fromInt8 i = fromWordAux8 (Int8.< (i, 0), Word8.fromInt8 i)
-         fun fromWord8X w = fromInt8 (Word8.toInt8X w)
-         val fromInt8Unsafe = fromInt8
-         val fromWord8Unsafe = fromWord8
-         val fromWord8XUnsafe = fromWord8X
+                           rashift = Word8.~>>?,
+                           rshift = Word8.>>?}}
+                 (sextd, w)
+         fun zextdFromWord8 w = extdFromWord8 (false, w)
+         fun zextdFromInt8 i = zextdFromWord8 (IntWordConv.idFromInt8ToWord8 i)
+         fun sextdFromWord8 w = extdFromWord8 (true, w)
+         fun sextdFromInt8 i = sextdFromWord8 (IntWordConv.idFromInt8ToWord8 i)
+         val castFromInt8 = sextdFromInt8
+         val castFromWord8 = zextdFromWord8
+         val zchckFromInt8 = zextdFromInt8
+         val zchckFromWord8 = zextdFromWord8
+         val schckFromInt8 = sextdFromInt8
+         val schckFromWord8 = sextdFromWord8
 
-         val fromWordAux16 =
-            make {toMPLimb = MPLimb.fromWord16,
-                  toObjptrWordX = ObjptrWord.fromWord16X,
-                  other = {wordSize = Word16.wordSize,
+         fun extdFromWord16 (sextd, w) =
+            make {zextdToMPLimb = MPLimb.zextdFromWord16,
+                  zextdToObjptrWord = ObjptrWord.zextdFromWord16,
+                  sextdToObjptrWord = ObjptrWord.sextdFromWord16,
+                  other = {sizeInBits = Word16.sizeInBits,
                            zero = Word16.zero,
                            eq = ((op =) : Word16.word * Word16.word -> bool),
+                           isNeg = fn w => Int16.< (IntWordConv.idFromWord16ToInt16 w, 0),
                            neg = Word16.~,
                            notb = Word16.notb,
-                           rshift = Word16.>>}}
-         fun fromWord16 w = fromWordAux16 (false, w)
-         fun fromInt16 i = fromWordAux16 (Int16.< (i, 0), Word16.fromInt16 i)
-         fun fromWord16X w = fromInt16 (Word16.toInt16X w)
-         val fromInt16Unsafe = fromInt16
-         val fromWord16Unsafe = fromWord16
-         val fromWord16XUnsafe = fromWord16X
+                           rashift = Word16.~>>?,
+                           rshift = Word16.>>?}}
+                 (sextd, w)
+         fun zextdFromWord16 w = extdFromWord16 (false, w)
+         fun zextdFromInt16 i = zextdFromWord16 (IntWordConv.idFromInt16ToWord16 i)
+         fun sextdFromWord16 w = extdFromWord16 (true, w)
+         fun sextdFromInt16 i = sextdFromWord16 (IntWordConv.idFromInt16ToWord16 i)
+         val castFromInt16 = sextdFromInt16
+         val castFromWord16 = zextdFromWord16
+         val zchckFromInt16 = zextdFromInt16
+         val zchckFromWord16 = zextdFromWord16
+         val schckFromInt16 = sextdFromInt16
+         val schckFromWord16 = sextdFromWord16
 
-         val fromWordAux32 =
-            make {toMPLimb = MPLimb.fromWord32,
-                  toObjptrWordX = ObjptrWord.fromWord32X,
-                  other = {wordSize = Word32.wordSize,
+         fun extdFromWord32 (sextd, w) =
+            make {zextdToMPLimb = MPLimb.zextdFromWord32,
+                  zextdToObjptrWord = ObjptrWord.zextdFromWord32,
+                  sextdToObjptrWord = ObjptrWord.sextdFromWord32,
+                  other = {sizeInBits = Word32.sizeInBits,
                            zero = Word32.zero,
                            eq = ((op =) : Word32.word * Word32.word -> bool),
+                           isNeg = fn w => Int32.< (IntWordConv.idFromWord32ToInt32 w, 0),
                            neg = Word32.~,
                            notb = Word32.notb,
-                           rshift = Word32.>>}}
-         fun fromWord32 w = fromWordAux32 (false, w)
-         fun fromInt32 i = fromWordAux32 (Int32.< (i, 0), Word32.fromInt32 i)
-         fun fromWord32X w = fromInt32 (Word32.toInt32X w)
-         val fromInt32Unsafe = fromInt32
-         val fromWord32Unsafe = fromWord32
-         val fromWord32XUnsafe = fromWord32X
+                           rashift = Word32.~>>?,
+                           rshift = Word32.>>?}}
+                 (sextd, w)
+         fun zextdFromWord32 w = extdFromWord32 (false, w)
+         fun zextdFromInt32 i = zextdFromWord32 (IntWordConv.idFromInt32ToWord32 i)
+         fun sextdFromWord32 w = extdFromWord32 (true, w)
+         fun sextdFromInt32 i = sextdFromWord32 (IntWordConv.idFromInt32ToWord32 i)
+         val castFromInt32 = sextdFromInt32
+         val castFromWord32 = zextdFromWord32
+         val zchckFromInt32 = zextdFromInt32
+         val zchckFromWord32 = zextdFromWord32
+         val schckFromInt32 = sextdFromInt32
+         val schckFromWord32 = sextdFromWord32
 
-         val fromWordAux64 =
-            make {toMPLimb = MPLimb.fromWord64,
-                  toObjptrWordX = ObjptrWord.fromWord64X,
-                  other = {wordSize = Word64.wordSize,
+         fun extdFromWord64 (sextd, w) =
+            make {zextdToMPLimb = MPLimb.zextdFromWord64,
+                  zextdToObjptrWord = ObjptrWord.zextdFromWord64,
+                  sextdToObjptrWord = ObjptrWord.sextdFromWord64,
+                  other = {sizeInBits = Word64.sizeInBits,
                            zero = Word64.zero,
                            eq = ((op =) : Word64.word * Word64.word -> bool),
+                           isNeg = fn w => Int64.< (IntWordConv.idFromWord64ToInt64 w, 0),
                            neg = Word64.~,
                            notb = Word64.notb,
-                           rshift = Word64.>>}}
-         fun fromWord64 w = fromWordAux64 (false, w)
-         fun fromInt64 i = fromWordAux64 (Int64.< (i, 0), Word64.fromInt64 i)
-         fun fromWord64X w = fromInt64 (Word64.toInt64X w)
-         val fromInt64Unsafe = fromInt64
-         val fromWord64Unsafe = fromWord64
-         val fromWord64XUnsafe = fromWord64X
+                           rashift = Word64.~>>?,
+                           rshift = Word64.>>?}}
+                 (sextd, w)
+         fun zextdFromWord64 w = extdFromWord64 (false, w)
+         fun zextdFromInt64 i = zextdFromWord64 (IntWordConv.idFromInt64ToWord64 i)
+         fun sextdFromWord64 w = extdFromWord64 (true, w)
+         fun sextdFromInt64 i = sextdFromWord64 (IntWordConv.idFromInt64ToWord64 i)
+         val castFromInt64 = sextdFromInt64
+         val castFromWord64 = zextdFromWord64
+         val zchckFromInt64 = zextdFromInt64
+         val zchckFromWord64 = zextdFromWord64
+         val schckFromInt64 = sextdFromInt64
+         val schckFromWord64 = sextdFromWord64
 
-         fun fromIntInf i = i
-         fun fromIntInfUnsafe i = i
+         fun zextdFromIntInf ii = ii
+         fun sextdFromIntInf ii = ii
+         fun castFromIntInf ii = ii
+         fun zchckFromIntInf ii = ii
+         fun schckFromIntInf ii = ii
       end
 
       local
          structure S =
             ObjptrInt_ChooseIntN
             (type 'a t = 'a -> bigInt
-             val fInt8 = fromInt8
-             val fInt16 = fromInt16
-             val fInt32 = fromInt32
-             val fInt64 = fromInt64)
+             val fInt8 = sextdFromInt8
+             val fInt16 = sextdFromInt16
+             val fInt32 = sextdFromInt32
+             val fInt64 = sextdFromInt64)
       in
-         val fromObjptrInt = S.f
+         val sextdFromObjptrInt = S.f
       end
 
       local
          datatype 'a ans =
             Big of bool * bool * 'a
           | Small of ObjptrWord.word
-         fun 'a make {fromMPLimb: MPLimb.word -> 'a,
-                      other : {wordSize: Int32.int,
-                               wordSizeWord: Word32.word,
+         fun 'a make {zextdFromMPLimb: MPLimb.word -> 'a,
+                      other : {sizeInBits: Int32.int,
+                               sizeInBitsWord: Word32.word,
                                zero: 'a,
                                lshift: 'a * Word32.word -> 'a,
                                orb: 'a * 'a -> 'a}} i =
@@ -410,24 +615,24 @@ structure IntInf : INT_INF0 =
                        val n = V.length v
                        val isneg = V.subUnsafe (v, 0) <> 0w0
                     in
-                       if Int32.>= (MPLimb.wordSize, #wordSize other) 
+                       if Int32.>= (MPLimb.sizeInBits, #sizeInBits other) 
                           then let
                                   val limbsPer = 1
                                   val limb = V.subUnsafe (v, 1)
                                   val extra =
                                      S.> (n, S.+ (limbsPer, 1))
                                      orelse
-                                     (MPLimb.>> (limb, #wordSizeWord other)) <> 0w0
-                                  val ans = fromMPLimb limb
+                                     (MPLimb.>>? (limb, #sizeInBitsWord other)) <> 0w0
+                                  val ans = zextdFromMPLimb limb
                                in
                                   Big (isneg, extra, ans)
                                end
                           else let
                                   val limbsPer =
-                                     S.fromInt32 (Int32.quot (#wordSize other, 
-                                                              MPLimb.wordSize))
-                                  val extra =
-                                     S.> (n, S.+ (limbsPer, 1))
+                                     S.sextdFromInt32
+                                     (Int32.quot (#sizeInBits other,
+                                                  MPLimb.sizeInBits))
+                                  val extra = S.> (n, S.+ (limbsPer, 1))
                                   val ans =
                                      let
                                         fun loop (i, ans) =
@@ -437,8 +642,8 @@ structure IntInf : INT_INF0 =
                                                       val ans = 
                                                          (#orb other) 
                                                          ((#lshift other) 
-                                                          (ans, MPLimb.wordSizeWord),
-                                                          fromMPLimb limb)
+                                                          (ans, MPLimb.sizeInBitsWord),
+                                                          zextdFromMPLimb limb)
                                                    in
                                                       loop (S.- (i, 1), ans)
                                                    end
@@ -451,149 +656,223 @@ structure IntInf : INT_INF0 =
                                end
                     end
       in
-         val toWordAux8 =
-            make {fromMPLimb = MPLimb.toWord8,
-                  other = {wordSize = Word8.wordSize,
-                           wordSizeWord = Word8.wordSizeWord,
+         val chckToWord8Aux =
+            make {zextdFromMPLimb = MPLimb.zextdToWord8,
+                  other = {sizeInBits = Word8.sizeInBits,
+                           sizeInBitsWord = Word8.sizeInBitsWord,
                            zero = Word8.zero,
-                           lshift = Word8.<<,
+                           lshift = Word8.<<?,
                            orb = Word8.orb}}
-         fun toWord8X i =
-            case toWordAux8 i of
-               Small w => ObjptrWord.toWord8X w
+         fun sextdToWord8 i =
+            case chckToWord8Aux i of
+               Small w => ObjptrWord.sextdToWord8 w
              | Big (isneg, _, ans) => if isneg then Word8.~ ans else ans
-         fun toWord8 i = toWord8X i
-         fun toInt8 i =
-            case toWordAux8 i of
-               Small w => ObjptrWord.toInt8X w
-             | Big (isneg, extra, ans) =>
+         fun sextdToInt8 i = IntWordConv.idFromWord8ToInt8 (sextdToWord8 i)
+         val zextdToWord8 = sextdToWord8
+         fun zextdToInt8 i = IntWordConv.idFromWord8ToInt8 (zextdToWord8 i)
+         val castToWord8 = sextdToWord8
+         val castToInt8 = sextdToInt8
+         fun schckToWord8 i =
+            case chckToWord8Aux i of
+               Small w => ObjptrWord.schckToWord8 w
+             | Big (isneg, extra, ans) => 
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word8.toInt8X (Word8.~ ans)
-                          in
-                             if Int8.>= (ans, 0)
+                             val ans = Word8.~ ans
+                             val ans' = IntWordConv.idFromWord8ToInt8 ans
+                          in 
+                             if Int8.> (ans', 0)
                                 then raise Overflow
                                 else ans
                           end
-                  else Word8.toInt8 ans
-         val toWord8Unsafe = toWord8
-         val toWord8XUnsafe = toWord8X
-         fun toInt8Unsafe i = Word8.toInt8X (toWord8X i)
+                  else let
+                          val ans' = IntWordConv.idFromWord8ToInt8 ans
+                       in
+                          if Int8.< (ans', 0)
+                             then raise Overflow
+                             else ans
+                       end
+         fun schckToInt8 i = IntWordConv.idFromWord8ToInt8 (schckToWord8 i)
+         fun zchckToWord8 i =
+            case chckToWord8Aux i of
+               Small w => ObjptrWord.schckToWord8 w
+             | Big (isneg, extra, ans) => 
+                  if isneg orelse extra
+                     then raise Overflow
+                  else ans
+         fun zchckToInt8 i = IntWordConv.idFromWord8ToInt8 (zchckToWord8 i)
 
-         val toWordAux16 =
-            make {fromMPLimb = MPLimb.toWord16,
-                  other = {wordSize = Word16.wordSize,
-                           wordSizeWord = Word16.wordSizeWord,
+         val chckToWord16Aux =
+            make {zextdFromMPLimb = MPLimb.zextdToWord16,
+                  other = {sizeInBits = Word16.sizeInBits,
+                           sizeInBitsWord = Word16.sizeInBitsWord,
                            zero = Word16.zero,
-                           lshift = Word16.<<,
+                           lshift = Word16.<<?,
                            orb = Word16.orb}}
-         fun toWord16X i =
-            case toWordAux16 i of
-               Small w => ObjptrWord.toWord16X w
+         fun sextdToWord16 i =
+            case chckToWord16Aux i of
+               Small w => ObjptrWord.sextdToWord16 w
              | Big (isneg, _, ans) => if isneg then Word16.~ ans else ans
-         fun toWord16 i = toWord16X i
-         fun toInt16 i =
-            case toWordAux16 i of
-               Small w => ObjptrWord.toInt16X w
-             | Big (isneg, extra, ans) =>
+         fun sextdToInt16 i = IntWordConv.idFromWord16ToInt16 (sextdToWord16 i)
+         val zextdToWord16 = sextdToWord16
+         fun zextdToInt16 i = IntWordConv.idFromWord16ToInt16 (zextdToWord16 i)
+         val castToWord16 = sextdToWord16
+         val castToInt16 = sextdToInt16
+         fun schckToWord16 i =
+            case chckToWord16Aux i of
+               Small w => ObjptrWord.schckToWord16 w
+             | Big (isneg, extra, ans) => 
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word16.toInt16X (Word16.~ ans)
-                          in
-                             if Int16.>= (ans, 0)
+                             val ans = Word16.~ ans
+                             val ans' = IntWordConv.idFromWord16ToInt16 ans
+                          in 
+                             if Int16.> (ans', 0)
                                 then raise Overflow
                                 else ans
                           end
-                  else Word16.toInt16 ans
-         val toWord16Unsafe = toWord16
-         val toWord16XUnsafe = toWord16X
-         fun toInt16Unsafe i = Word16.toInt16X (toWord16X i)
-                           
-         val toWordAux32 =
-            make {fromMPLimb = MPLimb.toWord32,
-                  other = {wordSize = Word32.wordSize,
-                           wordSizeWord = Word32.wordSizeWord,
+                  else let
+                          val ans' = IntWordConv.idFromWord16ToInt16 ans
+                       in
+                          if Int16.< (ans', 0)
+                             then raise Overflow
+                             else ans
+                       end
+         fun schckToInt16 i = IntWordConv.idFromWord16ToInt16 (schckToWord16 i)
+         fun zchckToWord16 i =
+            case chckToWord16Aux i of
+               Small w => ObjptrWord.schckToWord16 w
+             | Big (isneg, extra, ans) => 
+                  if isneg orelse extra
+                     then raise Overflow
+                  else ans
+         fun zchckToInt16 i = IntWordConv.idFromWord16ToInt16 (zchckToWord16 i)
+
+         val chckToWord32Aux =
+            make {zextdFromMPLimb = MPLimb.zextdToWord32,
+                  other = {sizeInBits = Word32.sizeInBits,
+                           sizeInBitsWord = Word32.sizeInBitsWord,
                            zero = Word32.zero,
-                           lshift = Word32.<<,
+                           lshift = Word32.<<?,
                            orb = Word32.orb}}
-         fun toWord32X i =
-            case toWordAux32 i of
-               Small w => ObjptrWord.toWord32X w
+         fun sextdToWord32 i =
+            case chckToWord32Aux i of
+               Small w => ObjptrWord.sextdToWord32 w
              | Big (isneg, _, ans) => if isneg then Word32.~ ans else ans
-         fun toWord32 i = toWord32X i
-         fun toInt32 i =
-            case toWordAux32 i of
-               Small w => ObjptrWord.toInt32X w
-             | Big (isneg, extra, ans) =>
+         fun sextdToInt32 i = IntWordConv.idFromWord32ToInt32 (sextdToWord32 i)
+         val zextdToWord32 = sextdToWord32
+         fun zextdToInt32 i = IntWordConv.idFromWord32ToInt32 (zextdToWord32 i)
+         val castToWord32 = sextdToWord32
+         val castToInt32 = sextdToInt32
+         fun schckToWord32 i =
+            case chckToWord32Aux i of
+               Small w => ObjptrWord.schckToWord32 w
+             | Big (isneg, extra, ans) => 
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word32.toInt32X (Word32.~ ans)
-                          in
-                             if Int32.>= (ans, 0)
+                             val ans = Word32.~ ans
+                             val ans' = IntWordConv.idFromWord32ToInt32 ans
+                          in 
+                             if Int32.> (ans', 0)
                                 then raise Overflow
                                 else ans
                           end
-                  else Word32.toInt32 ans
-         val toWord32Unsafe = toWord32
-         val toWord32XUnsafe = toWord32X
-         fun toInt32Unsafe i = Word32.toInt32X (toWord32X i)
+                  else let
+                          val ans' = IntWordConv.idFromWord32ToInt32 ans
+                       in
+                          if Int32.< (ans', 0)
+                             then raise Overflow
+                             else ans
+                       end
+         fun schckToInt32 i = IntWordConv.idFromWord32ToInt32 (schckToWord32 i)
+         fun zchckToWord32 i =
+            case chckToWord32Aux i of
+               Small w => ObjptrWord.schckToWord32 w
+             | Big (isneg, extra, ans) => 
+                  if isneg orelse extra
+                     then raise Overflow
+                  else ans
+         fun zchckToInt32 i = IntWordConv.idFromWord32ToInt32 (zchckToWord32 i)
 
-         val toWordAux64 =
-            make {fromMPLimb = MPLimb.toWord64,
-                  other = {wordSize = Word64.wordSize,
-                           wordSizeWord = Word64.wordSizeWord,
+         val chckToWord64Aux =
+            make {zextdFromMPLimb = MPLimb.zextdToWord64,
+                  other = {sizeInBits = Word64.sizeInBits,
+                           sizeInBitsWord = Word64.sizeInBitsWord,
                            zero = Word64.zero,
-                           lshift = Word64.<<,
+                           lshift = Word64.<<?,
                            orb = Word64.orb}}
-         fun toWord64X i =
-            case toWordAux64 i of
-               Small w => ObjptrWord.toWord64X w
+         fun sextdToWord64 i =
+            case chckToWord64Aux i of
+               Small w => ObjptrWord.sextdToWord64 w
              | Big (isneg, _, ans) => if isneg then Word64.~ ans else ans
-         fun toWord64 i = toWord64X i
-         fun toInt64 i =
-            case toWordAux64 i of
-               Small w => ObjptrWord.toInt64X w
-             | Big (isneg, extra, ans) =>
+         fun sextdToInt64 i = IntWordConv.idFromWord64ToInt64 (sextdToWord64 i)
+         val zextdToWord64 = sextdToWord64
+         fun zextdToInt64 i = IntWordConv.idFromWord64ToInt64 (zextdToWord64 i)
+         val castToWord64 = sextdToWord64
+         val castToInt64 = sextdToInt64
+         fun schckToWord64 i =
+            case chckToWord64Aux i of
+               Small w => ObjptrWord.schckToWord64 w
+             | Big (isneg, extra, ans) => 
                   if extra
                      then raise Overflow
                   else if isneg
                      then let
-                             val ans = Word64.toInt64X (Word64.~ ans)
-                          in
-                             if Int64.>= (ans, 0)
+                             val ans = Word64.~ ans
+                             val ans' = IntWordConv.idFromWord64ToInt64 ans
+                          in 
+                             if Int64.> (ans', 0)
                                 then raise Overflow
                                 else ans
                           end
-                  else Word64.toInt64 ans
-         val toWord64Unsafe = toWord64
-         val toWord64XUnsafe = toWord64X
-         fun toInt64Unsafe i = Word64.toInt64X (toWord64X i)
+                  else let
+                          val ans' = IntWordConv.idFromWord64ToInt64 ans
+                       in
+                          if Int64.< (ans', 0)
+                             then raise Overflow
+                             else ans
+                       end
+         fun schckToInt64 i = IntWordConv.idFromWord64ToInt64 (schckToWord64 i)
+         fun zchckToWord64 i =
+            case chckToWord64Aux i of
+               Small w => ObjptrWord.schckToWord64 w
+             | Big (isneg, extra, ans) => 
+                  if isneg orelse extra
+                     then raise Overflow
+                  else ans
+         fun zchckToInt64 i = IntWordConv.idFromWord64ToInt64 (zchckToWord64 i)
 
-         fun toIntInf i = i
-         fun toIntInfUnsafe i = i
+         fun zextdToIntInf ii = ii
+         fun sextdToIntInf ii = ii
+         fun castToIntInf ii = ii
+         fun zchckToIntInf ii = ii
+         fun schckToIntInf ii = ii
       end
 
       local
-         val bytesPerMPLimb = Sz.fromInt32 (Int32.quot (MPLimb.wordSize, 8))
-         val bytesPerCounter = Sz.fromInt32 (Int32.quot (S.precision', 8))
-         val bytesPerLength = Sz.fromInt32 (Int32.quot (S.precision', 8))
-         val bytesPerHeader = Sz.fromInt32 (Int32.quot (HeaderWord.wordSize, 8))
+         val bytesPerMPLimb = Sz.zextdFromInt32 (Int32.quot (MPLimb.sizeInBits, 8))
+         val bytesPerCounter = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
+         val bytesPerLength = Sz.zextdFromInt32 (Int32.quot (S.sizeInBits, 8))
+         val bytesPerHeader = Sz.zextdFromInt32 (Int32.quot (HeaderWord.sizeInBits, 8))
       in
          val bytesPerArrayHeader =
-            Sz.+ (bytesPerCounter, Sz.+ (bytesPerLength, bytesPerHeader))
+            Sz.+ (bytesPerCounter, 
+            Sz.+ (bytesPerLength, 
+                  bytesPerHeader
+            ))
          (* Reserve heap space for a large IntInf.int with room for num + extra
           * `limbs'.  The reason for splitting this up is that extra is intended
           * to be a constant, and so can be combined at compile time.
           *)
          fun reserve (num: S.int, extra: S.int) =
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.fromSeqIndex num),
-            Sz.+ (Sz.* (bytesPerMPLimb, Sz.fromSeqIndex extra),
+            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex num),
+            Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex extra),
             Sz.+ (bytesPerMPLimb, (* isneg Field *)
                   bytesPerArrayHeader (* Array Header *)
             )))
@@ -603,16 +882,16 @@ structure IntInf : INT_INF0 =
        * negation and absolute values are not fixnums. 
        * negBadIntInf is the negation (and absolute value) of that IntInf.int.
        *)
-      val badObjptrInt: I.int = I.~>> (I.minInt', 0w1)
-      val badObjptrWord: W.word = W.fromObjptrInt badObjptrInt
+      val badObjptrInt: I.int = I.~>>? (I.minInt', 0w1)
+      val badObjptrWord: W.word = W.idFromObjptrInt badObjptrInt
       val badObjptrWordTagged: W.word = addTag badObjptrWord
-      val badObjptrIntTagged: I.int = W.toObjptrIntX badObjptrWordTagged
-      val negBadIntInf: bigInt = fromObjptrInt (I.~ badObjptrInt)
+      val badObjptrIntTagged: I.int = W.idToObjptrInt badObjptrWordTagged
+      val negBadIntInf: bigInt = sextdFromObjptrInt (I.~ badObjptrInt)
 
       (* Given two ObjptrWord.word's, check if they have the same 'high'/'sign' bit.
        *)
       fun sameSignBit (lhs: W.word, rhs: W.word): bool =
-         I.>= (W.toObjptrIntX (W.xorb (lhs, rhs)), 0)
+         I.>= (W.idToObjptrInt (W.xorb (lhs, rhs)), 0)
 
       (* Given a bignum bigint, test if it is (strictly) negative.
        *)
@@ -627,11 +906,11 @@ structure IntInf : INT_INF0 =
                   if areSmall (lhs, rhs)
                      then let
                              val lhsw = dropTagCoerce lhs
-                             val lhsi = W.toObjptrIntX lhsw
+                             val lhsi = W.idToObjptrInt lhsw
                              val rhsw = dropTagCoerce rhs
-                             val rhsi = W.toObjptrIntX rhsw
+                             val rhsi = W.idToObjptrInt rhsw
                              val ansi = smallOp (lhsi, rhsi)
-                             val answ = W.fromObjptrInt ansi
+                             val answ = W.idFromObjptrInt ansi
                              val ans = addTag answ
                           in
                              if sameSignBit (ans, answ)
@@ -667,16 +946,16 @@ structure IntInf : INT_INF0 =
          if areSmall (num, den)
             then let
                     val numw = dropTagCoerce num
-                    val numi = W.toObjptrIntX numw
+                    val numi = W.idToObjptrInt numw
                     val denw = dropTagCoerce den
-                    val deni = W.toObjptrIntX denw
+                    val deni = W.idToObjptrInt denw
                  in
                     if numw = badObjptrWord 
                        andalso deni = ~1
                        then negBadIntInf
                        else let
                                val ansi = I.quot (numi, deni)
-                               val answ = W.fromObjptrInt ansi
+                               val answ = W.idFromObjptrInt ansi
                                val ans = addTag answ
                             in 
                                Prim.fromWord ans
@@ -698,11 +977,11 @@ structure IntInf : INT_INF0 =
          if areSmall (num, den)
             then let 
                     val numw = dropTagCoerce num
-                    val numi = W.toObjptrIntX numw
+                    val numi = W.idToObjptrInt numw
                     val denw = dropTagCoerce den
-                    val deni = W.toObjptrIntX denw
+                    val deni = W.idToObjptrInt denw
                     val ansi = I.rem (numi, deni)
-                    val answ = W.fromObjptrInt ansi
+                    val answ = W.idFromObjptrInt ansi
                     val ans = addTag answ
                  in 
                     Prim.fromWord ans
@@ -724,7 +1003,7 @@ structure IntInf : INT_INF0 =
          open I
 
          fun mod2 x = I.andb (x, 1)
-         fun div2 x = I.>> (x, 0w1)
+         fun div2 x = I.>>? (x, 0w1)
             
          fun smallGcd (a, b, acc) =
             case (a, b) of
@@ -768,16 +1047,16 @@ structure IntInf : INT_INF0 =
 
       fun bigCompare (lhs: bigInt, rhs: bigInt): order =
          if areSmall (lhs, rhs)
-            then I.compare (W.toObjptrIntX (Prim.toWord lhs),
-                            W.toObjptrIntX (Prim.toWord rhs))
+            then I.compare (W.idToObjptrInt (Prim.toWord lhs),
+                            W.idToObjptrInt (Prim.toWord rhs))
             else Int32.compare (Prim.compare (lhs, rhs), 0)
 
       local
          fun make (smallTest, int32Test)
                   (lhs: bigInt, rhs: bigInt): bool =
             if areSmall (lhs, rhs)
-               then smallTest (W.toObjptrIntX (Prim.toWord lhs),
-                               W.toObjptrIntX (Prim.toWord rhs))
+               then smallTest (W.idToObjptrInt (Prim.toWord lhs),
+                               W.idToObjptrInt (Prim.toWord rhs))
                else int32Test (Prim.compare (lhs, rhs), 0)
       in
          val bigLT = make (I.<, Int32.<)
@@ -793,7 +1072,7 @@ structure IntInf : INT_INF0 =
                  in 
                     if argw = badObjptrWordTagged
                        then negBadIntInf
-                       else if I.< (W.toObjptrIntX argw, 0)
+                       else if I.< (W.idToObjptrInt argw, 0)
                                then Prim.fromWord (W.- (0w2, argw))
                                else arg
                  end
@@ -893,8 +1172,8 @@ structure IntInf : INT_INF0 =
             else Prim.notb (arg, reserve (numLimbs arg, 0))
 
       local
-         val bitsPerLimb = MPLimb.wordSizeWord
-         fun shiftSize shift = S.fromWord32 (Word32.div (shift, bitsPerLimb))
+         val bitsPerLimb = MPLimb.sizeInBitsWord
+         fun shiftSize shift = S.sextdFromWord32 (Word32.div (shift, bitsPerLimb))
       in
          fun bigLshift (arg: bigInt, shift: Word32.word): bigInt =
             if shift = 0wx0
@@ -915,8 +1194,8 @@ structure IntInf : INT_INF0 =
          if isSmall arg
             then smallCvt (dropTagCoerceInt arg)
             else let
-                    val bpd = Word32.log2 (Word32.fromInt32 base)
-                    val bpl = MPLimb.wordSize
+                    val bpd = Int32.log2 base
+                    val bpl = MPLimb.sizeInBits
                     val dpl =
                        Int32.+ (Int32.quot (bpl, bpd),
                                 if Int32.mod (bpl, bpd) = 0
@@ -926,8 +1205,8 @@ structure IntInf : INT_INF0 =
                     (arg, base, 
                      Sz.+ (Sz.+ (bytesPerArrayHeader (* Array Header *),
                                  0w1 (* sign *)),
-                           Sz.* (Sz.fromInt32 dpl, 
-                                 Sz.fromSeqIndex (numLimbs arg))))
+                           Sz.* (Sz.zextdFromInt32 dpl, 
+                                 Sz.zextdFromSeqIndex (numLimbs arg))))
                  end
 
       fun mkBigLog2 {fromSmall: {smallLog2: Primitive.Int32.int} -> 'a,
@@ -1005,9 +1284,11 @@ structure IntInf : INT_INF0 =
       val isNeg = bigIsNeg
 
       val andb = bigAndb
+      val <<? = bigLshift
       val << = bigLshift
       val notb = bigNotb
       val orb = bigOrb
+      val ~>>? = bigRashift
       val ~>> = bigRashift
       val xorb = bigXorb
 
@@ -1015,99 +1296,266 @@ structure IntInf : INT_INF0 =
       val mkLog2 = mkBigLog2
 end
 
-structure Char8 =
+structure IntWordConv : PRIM_INTWORD_CONV =
    struct
-      open Char8
-      fun fromIntInfUnsafe i = fromInt8Unsafe (IntInf.toInt8Unsafe i)
-      fun toIntInfUnsafe c = IntInf.fromInt8Unsafe (toInt8Unsafe c)
+      open IntWordConv
+
+      val idFromIntInfToIntInf = fn i => i
+
+
+      val zextdFromInt8ToIntInf = IntInf.zextdFromInt8
+      val zextdFromInt16ToIntInf = IntInf.zextdFromInt16
+      val zextdFromInt32ToIntInf = IntInf.zextdFromInt32
+      val zextdFromInt64ToIntInf = IntInf.zextdFromInt64
+      val zextdFromWord8ToIntInf = IntInf.zextdFromWord8
+      val zextdFromWord16ToIntInf = IntInf.zextdFromWord16
+      val zextdFromWord32ToIntInf = IntInf.zextdFromWord32
+      val zextdFromWord64ToIntInf = IntInf.zextdFromWord64
+
+      val zextdFromIntInfToInt8 = IntInf.zextdToInt8
+      val zextdFromIntInfToInt16 = IntInf.zextdToInt16
+      val zextdFromIntInfToInt32 = IntInf.zextdToInt32
+      val zextdFromIntInfToInt64 = IntInf.zextdToInt64
+      val zextdFromIntInfToIntInf = IntInf.zextdToIntInf
+      val zextdFromIntInfToWord8 = IntInf.zextdToWord8
+      val zextdFromIntInfToWord16 = IntInf.zextdToWord16
+      val zextdFromIntInfToWord32 = IntInf.zextdToWord32
+      val zextdFromIntInfToWord64 = IntInf.zextdToWord64
+
+
+      val sextdFromInt8ToIntInf = IntInf.sextdFromInt8
+      val sextdFromInt16ToIntInf = IntInf.sextdFromInt16
+      val sextdFromInt32ToIntInf = IntInf.sextdFromInt32
+      val sextdFromInt64ToIntInf = IntInf.sextdFromInt64
+      val sextdFromWord8ToIntInf = IntInf.sextdFromWord8
+      val sextdFromWord16ToIntInf = IntInf.sextdFromWord16
+      val sextdFromWord32ToIntInf = IntInf.sextdFromWord32
+      val sextdFromWord64ToIntInf = IntInf.sextdFromWord64
+
+      val sextdFromIntInfToInt8 = IntInf.sextdToInt8
+      val sextdFromIntInfToInt16 = IntInf.sextdToInt16
+      val sextdFromIntInfToInt32 = IntInf.sextdToInt32
+      val sextdFromIntInfToInt64 = IntInf.sextdToInt64
+      val sextdFromIntInfToIntInf = IntInf.sextdToIntInf
+      val sextdFromIntInfToWord8 = IntInf.sextdToWord8
+      val sextdFromIntInfToWord16 = IntInf.sextdToWord16
+      val sextdFromIntInfToWord32 = IntInf.sextdToWord32
+      val sextdFromIntInfToWord64 = IntInf.sextdToWord64
+
+
+      val castFromInt8ToIntInf = IntInf.castFromInt8
+      val castFromInt16ToIntInf = IntInf.castFromInt16
+      val castFromInt32ToIntInf = IntInf.castFromInt32
+      val castFromInt64ToIntInf = IntInf.castFromInt64
+      val castFromWord8ToIntInf = IntInf.castFromWord8
+      val castFromWord16ToIntInf = IntInf.castFromWord16
+      val castFromWord32ToIntInf = IntInf.castFromWord32
+      val castFromWord64ToIntInf = IntInf.castFromWord64
+
+      val castFromIntInfToInt8 = IntInf.castToInt8
+      val castFromIntInfToInt16 = IntInf.castToInt16
+      val castFromIntInfToInt32 = IntInf.castToInt32
+      val castFromIntInfToInt64 = IntInf.castToInt64
+      val castFromIntInfToIntInf = IntInf.castToIntInf
+      val castFromIntInfToWord8 = IntInf.castToWord8
+      val castFromIntInfToWord16 = IntInf.castToWord16
+      val castFromIntInfToWord32 = IntInf.castToWord32
+      val castFromIntInfToWord64 = IntInf.castToWord64
+
+
+      val zchckFromInt8ToIntInf = IntInf.zchckFromInt8
+      val zchckFromInt16ToIntInf = IntInf.zchckFromInt16
+      val zchckFromInt32ToIntInf = IntInf.zchckFromInt32
+      val zchckFromInt64ToIntInf = IntInf.zchckFromInt64
+      val zchckFromWord8ToIntInf = IntInf.zchckFromWord8
+      val zchckFromWord16ToIntInf = IntInf.zchckFromWord16
+      val zchckFromWord32ToIntInf = IntInf.zchckFromWord32
+      val zchckFromWord64ToIntInf = IntInf.zchckFromWord64
+
+      val zchckFromIntInfToInt8 = IntInf.zchckToInt8
+      val zchckFromIntInfToInt16 = IntInf.zchckToInt16
+      val zchckFromIntInfToInt32 = IntInf.zchckToInt32
+      val zchckFromIntInfToInt64 = IntInf.zchckToInt64
+      val zchckFromIntInfToIntInf = IntInf.zchckToIntInf
+      val zchckFromIntInfToWord8 = IntInf.zchckToWord8
+      val zchckFromIntInfToWord16 = IntInf.zchckToWord16
+      val zchckFromIntInfToWord32 = IntInf.zchckToWord32
+      val zchckFromIntInfToWord64 = IntInf.zchckToWord64
+
+
+      val schckFromInt8ToIntInf = IntInf.schckFromInt8
+      val schckFromInt16ToIntInf = IntInf.schckFromInt16
+      val schckFromInt32ToIntInf = IntInf.schckFromInt32
+      val schckFromInt64ToIntInf = IntInf.schckFromInt64
+      val schckFromWord8ToIntInf = IntInf.schckFromWord8
+      val schckFromWord16ToIntInf = IntInf.schckFromWord16
+      val schckFromWord32ToIntInf = IntInf.schckFromWord32
+      val schckFromWord64ToIntInf = IntInf.schckFromWord64
+
+      val schckFromIntInfToInt8 = IntInf.schckToInt8
+      val schckFromIntInfToInt16 = IntInf.schckToInt16
+      val schckFromIntInfToInt32 = IntInf.schckToInt32
+      val schckFromIntInfToInt64 = IntInf.schckToInt64
+      val schckFromIntInfToIntInf = IntInf.schckToIntInf
+      val schckFromIntInfToWord8 = IntInf.schckToWord8
+      val schckFromIntInfToWord16 = IntInf.schckToWord16
+      val schckFromIntInfToWord32 = IntInf.schckToWord32
+      val schckFromIntInfToWord64 = IntInf.schckToWord64
    end
-structure Char16 =
-   struct
-      open Char16
-      fun fromIntInfUnsafe i = fromInt16Unsafe (IntInf.toInt16Unsafe i)
-      fun toIntInfUnsafe c = IntInf.fromInt16Unsafe (toInt16Unsafe c)
-   end
-structure Char32 =
-   struct
-      open Char32
-      fun fromIntInfUnsafe i = fromInt32Unsafe (IntInf.toInt32Unsafe i)
-      fun toIntInfUnsafe c = IntInf.fromInt32Unsafe (toInt32Unsafe c)
-   end
-structure Int8 = 
+
+structure Int8 : PRIM_INTEGER =
    struct
       open Int8
-      val fromIntInfUnsafe = IntInf.toInt8Unsafe
-      val fromIntInf = IntInf.toInt8
-      val toIntInfUnsafe = IntInf.fromInt8Unsafe
-      val toIntInf = IntInf.fromInt8
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToInt8
+      val zextdToIntInf = IntWordConv.zextdFromInt8ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToInt8
+      val sextdToIntInf = IntWordConv.sextdFromInt8ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToInt8
+      val castToIntInf = IntWordConv.castFromInt8ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToInt8
+      val zchckToIntInf = IntWordConv.zchckFromInt8ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToInt8
+      val schckToIntInf = IntWordConv.schckFromInt8ToIntInf
    end
-structure Int16 = 
+structure Int16 : PRIM_INTEGER =
    struct
       open Int16
-      val fromIntInfUnsafe = IntInf.toInt16Unsafe
-      val fromIntInf = IntInf.toInt16
-      val toIntInfUnsafe = IntInf.fromInt16Unsafe
-      val toIntInf = IntInf.fromInt16
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToInt16
+      val zextdToIntInf = IntWordConv.zextdFromInt16ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToInt16
+      val sextdToIntInf = IntWordConv.sextdFromInt16ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToInt16
+      val castToIntInf = IntWordConv.castFromInt16ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToInt16
+      val zchckToIntInf = IntWordConv.zchckFromInt16ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToInt16
+      val schckToIntInf = IntWordConv.schckFromInt16ToIntInf
    end
-structure Int32 = 
+structure Int32 : PRIM_INTEGER =
    struct
       open Int32
-      val fromIntInfUnsafe = IntInf.toInt32Unsafe
-      val fromIntInf = IntInf.toInt32
-      val toIntInfUnsafe = IntInf.fromInt32Unsafe
-      val toIntInf = IntInf.fromInt32
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToInt32
+      val zextdToIntInf = IntWordConv.zextdFromInt32ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToInt32
+      val sextdToIntInf = IntWordConv.sextdFromInt32ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToInt32
+      val castToIntInf = IntWordConv.castFromInt32ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToInt32
+      val zchckToIntInf = IntWordConv.zchckFromInt32ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToInt32
+      val schckToIntInf = IntWordConv.schckFromInt32ToIntInf
    end
-structure Int64 = 
+structure Int64 : PRIM_INTEGER =
    struct
       open Int64
-      val fromIntInfUnsafe = IntInf.toInt64Unsafe
-      val fromIntInf = IntInf.toInt64
-      val toIntInfUnsafe = IntInf.fromInt64Unsafe
-      val toIntInf = IntInf.fromInt64
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToInt64
+      val zextdToIntInf = IntWordConv.zextdFromInt64ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToInt64
+      val sextdToIntInf = IntWordConv.sextdFromInt64ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToInt64
+      val castToIntInf = IntWordConv.castFromInt64ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToInt64
+      val zchckToIntInf = IntWordConv.zchckFromInt64ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToInt64
+      val schckToIntInf = IntWordConv.schckFromInt64ToIntInf
    end
-structure Word8 =
+structure Word8 : PRIM_WORD =
    struct
       open Word8
-      val fromIntInfUnsafe = IntInf.toWord8Unsafe
-      val fromIntInf = IntInf.toWord8
-      val fromIntInfZ = IntInf.toWord8
-      val toIntInfUnsafe = IntInf.fromWord8Unsafe
-      val toIntInf = IntInf.fromWord8
-      val toIntInfXUnsafe = IntInf.fromWord8XUnsafe
-      val toIntInfX = IntInf.fromWord8X
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToWord8
+      val zextdToIntInf = IntWordConv.zextdFromWord8ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToWord8
+      val sextdToIntInf = IntWordConv.sextdFromWord8ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToWord8
+      val castToIntInf = IntWordConv.castFromWord8ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToWord8
+      val zchckToIntInf = IntWordConv.zchckFromWord8ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToWord8
+      val schckToIntInf = IntWordConv.schckFromWord8ToIntInf
    end
-structure Word16 =
+structure Word16 : PRIM_WORD =
    struct
       open Word16
-      val fromIntInfUnsafe = IntInf.toWord16Unsafe
-      val fromIntInf = IntInf.toWord16
-      val fromIntInfZ = IntInf.toWord16
-      val toIntInfUnsafe = IntInf.fromWord16Unsafe
-      val toIntInf = IntInf.fromWord16
-      val toIntInfXUnsafe = IntInf.fromWord16XUnsafe
-      val toIntInfX = IntInf.fromWord16X
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToWord16
+      val zextdToIntInf = IntWordConv.zextdFromWord16ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToWord16
+      val sextdToIntInf = IntWordConv.sextdFromWord16ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToWord16
+      val castToIntInf = IntWordConv.castFromWord16ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToWord16
+      val zchckToIntInf = IntWordConv.zchckFromWord16ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToWord16
+      val schckToIntInf = IntWordConv.schckFromWord16ToIntInf
    end
-structure Word32 =
+structure Word32 : PRIM_WORD =
    struct
       open Word32
-      val fromIntInfUnsafe = IntInf.toWord32Unsafe
-      val fromIntInf = IntInf.toWord32
-      val fromIntInfZ = IntInf.toWord32
-      val toIntInfUnsafe = IntInf.fromWord32Unsafe
-      val toIntInf = IntInf.fromWord32
-      val toIntInfXUnsafe = IntInf.fromWord32XUnsafe
-      val toIntInfX = IntInf.fromWord32X
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToWord32
+      val zextdToIntInf = IntWordConv.zextdFromWord32ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToWord32
+      val sextdToIntInf = IntWordConv.sextdFromWord32ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToWord32
+      val castToIntInf = IntWordConv.castFromWord32ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToWord32
+      val zchckToIntInf = IntWordConv.zchckFromWord32ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToWord32
+      val schckToIntInf = IntWordConv.schckFromWord32ToIntInf
    end
-structure Word64 =
+structure Word64 : PRIM_WORD =
    struct
       open Word64
-      val fromIntInfUnsafe = IntInf.toWord64Unsafe
-      val fromIntInf = IntInf.toWord64
-      val fromIntInfZ = IntInf.toWord64
-      val toIntInfUnsafe = IntInf.fromWord64Unsafe
-      val toIntInf = IntInf.fromWord64
-      val toIntInfXUnsafe = IntInf.fromWord64XUnsafe
-      val toIntInfX = IntInf.fromWord64X
+
+      val zextdFromIntInf = IntWordConv.zextdFromIntInfToWord64
+      val zextdToIntInf = IntWordConv.zextdFromWord64ToIntInf
+
+      val sextdFromIntInf = IntWordConv.sextdFromIntInfToWord64
+      val sextdToIntInf = IntWordConv.sextdFromWord64ToIntInf
+
+      val castFromIntInf = IntWordConv.castFromIntInfToWord64
+      val castToIntInf = IntWordConv.castFromWord64ToIntInf
+
+      val zchckFromIntInf = IntWordConv.zchckFromIntInfToWord64
+      val zchckToIntInf = IntWordConv.zchckFromWord64ToIntInf
+
+      val schckFromIntInf = IntWordConv.schckFromIntInfToWord64
+      val schckToIntInf = IntWordConv.schckFromWord64ToIntInf
    end
+
+structure IntInf : PRIM_INT_INF = IntInf
 
 end

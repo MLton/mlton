@@ -19,7 +19,7 @@ structure Array =
       val array0Const = _prim "Array_array0Const": unit -> 'a array;
       val length = _prim "Array_length": 'a array -> SeqIndex.int;
       (* There is no maximum length on arrays, so maxLen' = SeqIndex.maxInt'. *)
-      val maxLen': SeqIndex.int = SeqIndex.maxInt'
+      (* val maxLen': SeqIndex.int = SeqIndex.maxInt' *)
       val subUnsafe = _prim "Array_sub": 'a array * SeqIndex.int -> 'a;
       val updateUnsafe = _prim "Array_update": 'a array * SeqIndex.int * 'a -> unit;
    end

@@ -10,8 +10,8 @@ signature EMBED_INT =
       eqtype int
       type big
          
-      val precision': Int32.int
       val fromBigUnsafe: big -> int
+      val sizeInBits: Int32.int
       val toBig: int -> big
    end
 
@@ -21,7 +21,7 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
       structure Small =
          struct
             open Small
-            val precision': Int.int = Int32.toInt precision'
+            val precision': Int.int = Int32.toInt sizeInBits
          end
 
       val () = if Int.< (Small.precision', Big.precision') then ()

@@ -16,14 +16,14 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       type signal = PosixSignal.signal
       type pid = C_PId.t
 
-      val wordToPid = C_PId.fromSysWord
-      val pidToWord = C_PId.toSysWord
+      val wordToPid = C_PId.castFromSysWord
+      val pidToWord = C_PId.castToSysWord
 
       fun fork () =
          SysCall.syscall'
-         ({errVal = C_PId.fromInt ~1}, fn () =>
+         ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
           (Prim.fork (), fn p =>
-           if p = C_PId.fromInt 0 then NONE else SOME p))
+           if p = C_PId.castFromFixedInt 0 then NONE else SOME p))
 
       val fork =
          if Primitive.MLton.Platform.OS.forkIsEnabled
@@ -73,7 +73,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          if Prim.ifExited status
             then (case Prim.exitStatus status of
                      0 => W_EXITED
-                   | n => W_EXITSTATUS (Word8.fromSysWord (C_Int.toSysWord n)))
+                   | n => W_EXITSTATUS (Word8.castFromSysWord (C_Int.castToSysWord n)))
          else if Prim.ifSignaled status
             then W_SIGNALED (Prim.termSig status)
          else if Prim.ifStopped status
@@ -98,14 +98,14 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                   andalso case wa of W_CHILD _ => true | _ => false
                val pid =
                   case wa of
-                     W_ANY_CHILD => C_PId.fromInt ~1
+                     W_ANY_CHILD => C_PId.castFromFixedInt ~1
                    | W_CHILD pid => pid
-                   | W_SAME_GROUP => C_PId.fromInt 0
+                   | W_SAME_GROUP => C_PId.castFromFixedInt 0
                    | W_GROUP pid => C_PId.~ pid
                val flags = W.flags flags
             in
                SysCall.simpleResultRestart'
-               ({errVal = C_PId.fromInt ~1}, fn () =>
+               ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 let
                    val pid = 
                       if useCwait 
@@ -128,7 +128,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             let
                val pid = wait (wa, status, W.nohang :: flags)
             in
-               if C_PId.fromInt 0 = pid
+               if C_PId.castFromFixedInt 0 = pid
                   then NONE
                else SOME (pid, getStatus ())
             end
@@ -140,7 +140,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          (* Posix.Process.exit does not call atExit cleaners, as per the basis
           * library spec.
           *)
-         (Prim.exit (C_Status.fromSysWord (Word8.toSysWord w))
+         (Prim.exit (C_Status.castFromSysWord (Word8.castToSysWord w))
           ; raise Fail "Posix.Process.exit")
 
       datatype killpid_arg  =
@@ -153,7 +153,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val pid =
                case ka of
                   K_PROC pid => pid
-                | K_SAME_GROUP => C_PId.fromInt ~1
+                | K_SAME_GROUP => C_PId.castFromFixedInt ~1
                 | K_GROUP pid => C_PId.~ pid
          in
             SysCall.simple (fn () => Prim.kill (pid, s))
@@ -177,13 +177,13 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val sec = LargeInt.quot (t, 1000000000)
             val nsec = LargeInt.rem (t, 1000000000)
             val (sec, nsec) =
-               (C_Time.fromLarge sec, C_Long.fromLarge nsec)
+               (C_Time.fromLargeInt sec, C_Long.fromLargeInt nsec)
                handle Overflow => Error.raiseSys Error.inval
             val secRem = ref sec
             val nsecRem = ref nsec
             fun remaining _ =
-               Time.+ (Time.fromSeconds (C_Time.toLarge (!secRem)),
-                       Time.fromNanoseconds (C_Long.toLarge (!nsecRem)))
+               Time.+ (Time.fromSeconds (C_Time.toLargeInt (!secRem)),
+                       Time.fromNanoseconds (C_Long.toLargeInt (!nsecRem)))
          in
             SysCall.syscallErr
             ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>

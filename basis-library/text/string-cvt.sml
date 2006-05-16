@@ -10,7 +10,7 @@ structure StringCvt: STRING_CVT_EXTRA =
    struct
       open Reader
 
-      val wordFromInt = Word.fromInt
+      val wordFromInt = Word.sextdFromInt
 
       datatype radix = BIN | OCT | DEC | HEX
 

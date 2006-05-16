@@ -17,8 +17,8 @@ in
    ../util/dynamic-wind.sig
    ../util/dynamic-wind.sml
 
-   ../integer/int0.sml
-   ../integer/word0.sml
+   ../integer/iwconv0.sml
+   ../integer/num0.sml
    local 
       ../config/bind/int-prim.sml 
       ../config/bind/pointer-prim.sml
@@ -29,8 +29,6 @@ in
       ../config/header/$(HEADER_WORD)
       ../config/seqindex/$(SEQINDEX_INT)
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
-      ../config/c/position.sml
-      ../config/c/sys-word.sml
    end end
    ../integer/int-inf0.sml
    local
@@ -41,12 +39,14 @@ in
       in ann "forceUsed" in
          ../config/default/$(DEFAULT_INT)
          ../config/default/$(DEFAULT_WORD)
+         ../config/default/fixed-int.sml
          ../config/default/large-int.sml
          ../config/default/large-word.sml
+         ../config/c/position.sml
+         ../config/c/sys-word.sml
       end end
    in
-      ../integer/int1.sml
-      ../integer/word1.sml
+      ../integer/num1.sml
    end
 
    local 
@@ -61,6 +61,7 @@ in
       ../config/default/$(DEFAULT_INT)
       ../config/default/$(DEFAULT_REAL)
       ../config/default/$(DEFAULT_WORD)
+      ../config/default/fixed-int.sml
       ../config/default/large-int.sml
       ../config/default/large-real.sml
       ../config/default/large-word.sml
@@ -207,6 +208,7 @@ in
    ../util/cleaner.sig
    ../util/cleaner.sml
 
+   ../config/c/sys-types.sml
    ../system/pre-os.sml
 
    ../posix/error.sig

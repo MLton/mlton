@@ -47,6 +47,11 @@ structure IntInf: INT_INF_EXTRA =
          val ~>> = make ~>>
       end
 
+      val fromInt = schckFromInt
+      val toInt = schckToInt
+      val fromLarge = schckFromLargeInt
+      val toLarge = schckToLargeInt
+
       local
          open StringCvt
 
@@ -305,7 +310,7 @@ structure IntInf: INT_INF_EXTRA =
                         else i * evenPow (Int.- (j, 1))
                      (* evenPow (j) returns (i ^ j), assuming j is even *)
                      and evenPow (j: Int.int): int =
-                        square (pow (Int.~>> (j, 0w1)))
+                        square (pow (Int.div (j, 2)))
                   in 
                      pow j
                   end

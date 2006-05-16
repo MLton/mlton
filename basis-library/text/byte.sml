@@ -8,18 +8,18 @@
 
 structure Byte: BYTE =
    struct
-      val byteToChar = Primitive.Char8.fromWord8Unsafe
+      val byteToChar = Primitive.Char8.idFromWord8
 
-      val bytesToString = Primitive.String8.fromWord8Vector o Word8Vector.toPoly
+      val bytesToString = Primitive.String8.idFromWord8Vector o Word8Vector.toPoly
 
-      val charToByte = Primitive.Char8.toWord8Unsafe
+      val charToByte = Primitive.Char8.idToWord8
 
       fun packString (a: Word8Array.array, i: int, s: substring): unit =
          Natural.foreach
          (Substring.size s, fn j =>
           Word8Array.update (a, i + j, charToByte (Substring.sub (s, j))))
 
-      val stringToBytes = Word8Vector.fromPoly o Primitive.String8.toWord8Vector
+      val stringToBytes = Word8Vector.fromPoly o Primitive.String8.idToWord8Vector
 
       local
          fun make (length, sub) s =

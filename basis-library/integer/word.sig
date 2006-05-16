@@ -3,9 +3,11 @@ signature WORD_GLOBAL =
       eqtype word
    end
 
-signature PRE_WORD =
+signature WORD =
    sig
       include WORD_GLOBAL
+
+      val wordSize: Int.int
 
       val toLarge: word -> LargeWord.word
       val toLargeX: word -> LargeWord.word
@@ -20,16 +22,19 @@ signature PRE_WORD =
       val toIntX: word -> int
       val fromInt: int -> word
          
-      val andb: word * word -> word
-      val orb: word * word -> word
-      val xorb: word * word -> word
-      val notb: word -> word
-         
       val + : word * word -> word
       val - : word * word -> word
       val * : word * word -> word
       val div: word * word -> word
       val mod: word * word -> word
+
+      val andb: word * word -> word
+      val << : word * Word.word -> word
+      val notb: word -> word
+      val orb: word * word -> word
+      val ~>> : word * Word.word -> word
+      val >> : word * Word.word -> word
+      val xorb: word * word -> word
          
       val compare: word * word -> order
       val < : word * word -> bool
@@ -40,42 +45,6 @@ signature PRE_WORD =
       val ~ : word -> word
       val min: word * word -> word
       val max: word * word -> word
-   end
-signature PRE_WORD_EXTRA =
-   sig
-      include PRE_WORD
-
-      val zero: word
-
-      val wordSize: Primitive.Int32.int
-      val wordSizeWord: Primitive.Word32.word
-
-      val fromWord: Word.word -> word
-      val fromWordX: Word.word -> word
-      val fromSysWord: SysWord.word -> word
-      val fromSysWordX: SysWord.word -> word
-      val toWord: word -> Word.word
-      val toWordX: word -> Word.word
-      val toSysWord: word -> SysWord.word
-      val toSysWordX: word -> SysWord.word
-
-      val << : word * Primitive.Word32.word -> word
-      val >> : word * Primitive.Word32.word -> word
-      val ~>> : word * Primitive.Word32.word -> word
-      val rol: word * Primitive.Word32.word -> word
-      val ror: word * Primitive.Word32.word -> word
-      val log2 : word -> Primitive.Int32.int
-   end
-
-signature WORD =
-   sig
-      include PRE_WORD
-
-      val wordSize: Int.int
-
-      val << : word * Word.word -> word
-      val >> : word * Word.word -> word
-      val ~>> : word * Word.word -> word
          
       val fmt: StringCvt.radix -> word -> string
       val toString: word -> string
@@ -90,18 +59,16 @@ signature WORD_EXTRA =
       include WORD
       type t = word
 
-      val wordSizeWord: Word.word
-
-      val fromWord: Word.word -> word
-      val fromWordX: Word.word -> word
-      val fromSysWord: SysWord.word -> word
-      val fromSysWordX: SysWord.word -> word
       val toWord: word -> Word.word
       val toWordX: word -> Word.word
-      val toSysWord: word -> SysWord.word
-      val toSysWordX: word -> SysWord.word
+      val fromWord: Word.word -> word
 
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
       val log2 : word -> Primitive.Int32.int
+
+      val castFromFixedInt: FixedInt.int -> word
+      val castToFixedInt: word -> FixedInt.int
+      val castFromSysWord: SysWord.word -> word
+      val castToSysWord: word -> SysWord.word
    end

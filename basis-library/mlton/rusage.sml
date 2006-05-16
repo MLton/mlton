@@ -17,9 +17,9 @@ structure MLtonRusage: MLTON_RUSAGE =
             fun toTime (sec, usec) =
                let
                   val time_sec =
-                     Time.fromSeconds (C_Time.toLarge (sec ()))
+                     Time.fromSeconds (C_Time.toLargeInt (sec ()))
                   val time_usec =
-                     Time.fromMicroseconds (C_SUSeconds.toLarge (usec ()))
+                     Time.fromMicroseconds (C_SUSeconds.toLargeInt (usec ()))
                in
                   Time.+ (time_sec, time_usec)
                end
