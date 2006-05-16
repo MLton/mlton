@@ -306,7 +306,7 @@ void setProfTimer (long usec) {
  * mlton/main/main.fun to make sure that time profiling is never
  * turned on.
  */
-static void initProfilingTime (GC_state s) __attribute__ ((noreturn));
+__attribute__ ((noreturn))
 void initProfilingTime (__attribute__ ((unused)) GC_state s) {
   die ("no time profiling");
 }
@@ -346,7 +346,6 @@ void GC_handleSigProf (pointer pc) {
   incForProfiling (s, 1, sourceSeqsIndex);
 }
 
-static void initProfilingTime (GC_state s);
 static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
