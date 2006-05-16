@@ -99,7 +99,7 @@ static inline void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex
 static void writeProfileCount (GC_state s, int fd, GC_profileData p, GC_profileMasterIndex i);
 
 static void setProfTimer (long usec);
-static void initProfilingTime (GC_state s) 
+static void initProfilingTime (GC_state s);
 static void atexitForProfiling (void);
 static void initProfiling (GC_state s);
 
