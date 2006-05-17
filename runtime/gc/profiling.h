@@ -123,5 +123,5 @@ void GC_profileDone (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 
-void GC_handleSigProf (pointer pc);
+void GC_handleSigProf (code_pointer pc);
 

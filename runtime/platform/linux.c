@@ -29,23 +29,23 @@ static void catcher (__attribute__ ((unused)) int sig,
 #define REG_RIP REG_INDEX(rip) /* seems to be 16 */
 #endif
         ucontext_t* ucp = (ucontext_t*)mystery;
-        GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[REG_RIP]);
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_RIP]);
 #elif (defined (__hppa__))
         ucontext_t* ucp = (ucontext_t*)mystery;
-        GC_handleSigProf ((pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
+        GC_handleSigProf ((code_pointer) (ucp->uc_mcontext.sc_iaoq[0] & ~0x3UL));
 #elif (defined (__ppc__)) || (defined (__powerpc__))
         ucontext_t* ucp = (ucontext_t*)mystery;
-        GC_handleSigProf ((pointer) ucp->uc_mcontext.regs->nip);
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.regs->nip);
 #elif (defined (__sparc__))
         struct sigcontext* scp = (struct sigcontext*)mystery;
 #if __WORDSIZE == 64
-        GC_handleSigProf ((pointer) scp->sigc_regs.tpc);
+        GC_handleSigProf ((code_pointer) scp->sigc_regs.tpc);
 #else
-        GC_handleSigProf ((pointer) scp->si_regs.pc);
+        GC_handleSigProf ((code_pointer) scp->si_regs.pc);
 #endif
 #elif (defined (__i386__))
         ucontext_t* ucp = (ucontext_t*)mystery;
-        GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[EIP]);
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[EIP]);
 #else
 #error Profiling handler is missing for this architecture
 #endif

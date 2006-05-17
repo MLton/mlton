@@ -8,17 +8,17 @@
 #include "mmap-protect.c"
 #include "use-mmap.c"
 
-void *GC_getTextEnd (void) {
-        return (const void*)(long)(get_etext ());
+code_pointer GC_getTextEnd (void) {
+        return (code_pointer)(long)(get_etext ());
 }
 
-void *GC_getTextStart (void) {
+code_pointer GC_getTextStart (void) {
         void *address;
         const struct mach_header *mh;
 
         _dyld_lookup_and_bind ("_main", &address, 0);
         mh = _dyld_get_image_header_containing_address (address);
-        return mh;
+        return (code_pointer)mh;
 }
 
 void GC_displayMem (void) {
@@ -30,9 +30,9 @@ void GC_displayMem (void) {
 }
 
 static void catcher (__attribute__ ((unused)) int sig,  
-                        __attribute__ ((unused)) siginfo_t *sip, 
-                        ucontext_t *ucp) {
-        GC_handleSigProf ((pointer) ucp->uc_mcontext->ss.srr0);
+                     __attribute__ ((unused)) siginfo_t *sip, 
+                     ucontext_t *ucp) {
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.srr0);
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {

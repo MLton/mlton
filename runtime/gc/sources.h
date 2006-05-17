@@ -36,7 +36,7 @@ typedef struct GC_source {
 } *GC_source;
 
 typedef struct GC_sourceLabel {
-  pointer label;
+  code_pointer label;
   GC_sourceSeqIndex sourceSeqIndex;
 } *GC_sourceLabel;
 
@@ -63,12 +63,12 @@ struct GC_sourceMaps {
    */
   struct GC_source *sources;
   uint32_t sourcesLength;
-  pointer textEnd;
+  code_pointer textEnd;
   /* An array of indices, one entry for each address in the text
    * segment, giving an index into sourceSeqs.
    */
   GC_sourceSeqIndex *textSources;
-  pointer textStart;
+  code_pointer textStart;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

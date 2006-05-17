@@ -12,14 +12,14 @@
 #include "mkdir2.c"
 #include "setenv.putenv.c"
 
-extern void *__text_start;
-extern void *etext;
+extern unsigned char __text_start;
+extern unsigned_char etext;
 
-void *getTextStart () {
+code_pointer getTextStart () {
         return &__text_start;
 }
 
-void *getTextEnd () {
+code_pointer getTextEnd () {
         return &etext;
 }
 
@@ -91,10 +91,10 @@ void GC_displayMem () {
 
 
 static void catcher (__attribute__ ((unused)) int sig,
-                        __attribute__ ((unused)) siginfo_t* sip,
-                        void* mystery) {
+                     __attribute__ ((unused)) siginfo_t* sip,
+                     void* mystery) {
         ucontext_t* ucp = (ucontext_t*)mystery;
-        GC_handleSigProf ((pointer) (ucp->uc_link));
+        GC_handleSigProf ((code_pointer) (ucp->uc_link));
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {

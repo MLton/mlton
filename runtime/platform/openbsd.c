@@ -8,9 +8,9 @@
 #include "use-mmap.c"
 
 static void catcher (__attribute__ ((unused)) int sig,
-                        __attribute__ ((unused)) siginfo_t *sip,
-                        ucontext_t *ucp) {
-        GC_handleSigProf ((pointer) ucp->sc_eip);
+                     __attribute__ ((unused)) siginfo_t *sip,
+                     ucontext_t *ucp) {
+        GC_handleSigProf ((code_pointer) ucp->sc_eip);
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {

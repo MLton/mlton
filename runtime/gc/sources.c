@@ -56,16 +56,16 @@ void sortSourceLabels (GC_state s) {
 
 void initTextSources (GC_state s) {
   GC_sourceLabelIndex i;
-  pointer p;
+  code_pointer p;
   GC_sourceSeqIndex sourceSeqIndex;
 
   sortSourceLabels (s);
   /* Initialize s->sourceMaps.textSources. */
-  s->sourceMaps.textEnd = (pointer)(GC_getTextEnd());
-  s->sourceMaps.textStart = (pointer)(GC_getTextStart());
+  s->sourceMaps.textEnd = GC_getTextEnd();
+  s->sourceMaps.textStart = GC_getTextStart();
   if (ASSERT)
     for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++) {
-      pointer label;
+      code_pointer label;
 
       label = s->sourceMaps.sourceLabels[i].label;
       assert (0 == label
@@ -73,7 +73,7 @@ void initTextSources (GC_state s) {
                   and label < s->sourceMaps.textEnd));
     }
   s->sourceMaps.textSources =
-    (uint32_t*)
+    (GC_sourceSeqIndex *)
     (calloc_safe((size_t)(s->sourceMaps.textEnd - s->sourceMaps.textStart), 
                  sizeof(*(s->sourceMaps.textSources))));
   p = s->sourceMaps.textStart;

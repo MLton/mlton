@@ -13,3 +13,5 @@ typedef pointerAux* pointer;
 
 #define POINTER_SIZE sizeof(pointer)
 #define FMTPTR "0x%016"PRIxPTR
+
+typedef const unsigned char* code_pointer;

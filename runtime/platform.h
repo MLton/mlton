@@ -149,8 +149,8 @@ void GC_setCygwinUseMmap (bool b);
 /*                Text Segment                       */
 /* ------------------------------------------------- */
 
-void *GC_getTextEnd (void);
-void *GC_getTextStart (void);
+code_pointer GC_getTextEnd (void);
+code_pointer GC_getTextStart (void);
 
 /* ------------------------------------------------- */
 /*                SigProf Handler                    */

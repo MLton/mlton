@@ -1,11 +1,11 @@
 /* To get the beginning and end of the text segment. */
-extern char _start;
-extern char etext;
+extern unsigned char _start;
+extern unsigned char etext;
 
-void *GC_getTextStart (void) {
+code_pointer GC_getTextStart (void) {
         return &_start;
 }
 
-void *GC_getTextEnd (void) {
+code_pointer GC_getTextEnd (void) {
         return &etext;
 }

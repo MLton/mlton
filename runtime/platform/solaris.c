@@ -71,7 +71,7 @@ void GC_displayMem () {
 static void catcher (__attribute__ ((unused)) int sig,
                      __attribute__ ((unused)) siginfo_t *sip, 
                      ucontext_t *ucp) {
-        GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[REG_PC]);
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_PC]);
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {

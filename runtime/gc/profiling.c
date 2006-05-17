@@ -315,7 +315,7 @@ void initProfilingTime (__attribute__ ((unused)) GC_state s) {
 
 static GC_state handleSigProfState;
 
-void GC_handleSigProf (pointer pc) {
+void GC_handleSigProf (code_pointer pc) {
   GC_frameIndex frameIndex;
   GC_state s;
   GC_sourceSeqIndex sourceSeqsIndex;
