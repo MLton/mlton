@@ -10,36 +10,36 @@ struct
 
 open S
 
-datatype t = C1 | C2 | C4
+datatype t = C8 | C16 | C32
 
-val all = [C1, C2, C4]
+val all = [C8, C16, C32]
 
 fun bits s =
    Bits.fromInt
    (case s of
-       C1 => 8
-     | C2 => 16
-     | C4 => 32)
+       C8 => 8
+     | C16 => 16
+     | C32 => 32)
 
 val equals = op =
 
 fun fromBits b =
    case Bits.toInt b of
-      8 => C1
-    | 16 => C2
-    | 32 => C4
+      8 => C8
+    | 16 => C16
+    | 32 => C32
     | _ => Error.bug "CharSize.frombits"
 
 val memoize =
    fn f =>
    let
-      val c1 = f C1
-      val c2 = f C2
-      val c4 = f C4
+      val c8 = f C8
+      val c16 = f C16
+      val c32 = f C32
    in
-      fn C1 => c1
-       | C2 => c2
-       | C4 => c4
+      fn C8 => c8
+       | C16 => c16
+       | C32 => c32
    end
 
 val cardinality = memoize (fn s => IntInf.pow (2, Bits.toInt (bits s)))

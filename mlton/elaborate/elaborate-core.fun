@@ -2616,11 +2616,15 @@ fun elaborateDec (d, {env = E, nest}) =
                                         if Tycon.equals (c, Tycon.bool)
                                            then ConstType.Bool
                                         else if Tycon.isIntX c
-                                           then ConstType.Word
+                                           then case Tycon.deIntX c of
+                                                   NONE => bug ()
+                                                 | SOME is => 
+                                                      ConstType.Word
+                                                      (WordSize.fromBits (IntSize.bits is))
                                         else if Tycon.isRealX c
-                                           then ConstType.Real
+                                           then ConstType.Real (Tycon.deRealX c)
                                         else if Tycon.isWordX c
-                                           then ConstType.Word
+                                           then ConstType.Word (Tycon.deWordX c)
                                         else if Tycon.equals (c, Tycon.vector)
                                            andalso 1 = Vector.length ts
                                            andalso
@@ -2628,7 +2632,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   (Vector.sub (ts, 0))) of
                                                NONE => false
                                              | SOME (c, _) => 
-                                                  Tycon.isCharX c)
+                                                  Tycon.isCharX c
+                                                  andalso (Tycon.deCharX c = CharSize.C8))
                                            then ConstType.String
                                         else bug ()
                                   val finish =

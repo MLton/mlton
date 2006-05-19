@@ -11,12 +11,12 @@ struct
 
 open S
 
-datatype t = Bool | Real | String | Word
+datatype t = Bool | Real of RealSize.t | String | Word of WordSize.t
 
 val toString =
    fn Bool => "Bool"
-    | Real => "Real"
+    | Real rs => "Real" ^ (RealSize.toString rs)
     | String => "String"
-    | Word => "Word"
+    | Word ws => "Word" ^ (WordSize.toString ws)
          
 end

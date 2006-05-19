@@ -445,7 +445,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          let
             fun get (name: string): Bytes.t =
                case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word) of
+                                    ConstType.Word WordSize.default) of
                   Const.Word w => Bytes.fromInt (WordX.toInt w)
                 | _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
          in

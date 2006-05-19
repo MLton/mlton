@@ -11,7 +11,10 @@ struct
 
 open S
 
-structure ConstType = ConstType ()
+structure ConstType = ConstType (struct
+                                    structure RealSize = RealX.RealSize
+                                    structure WordSize = WordX.WordSize
+                                 end)
 
 structure SmallIntInf =
    struct

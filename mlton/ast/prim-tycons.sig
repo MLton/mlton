@@ -37,10 +37,14 @@ signature PRIM_TYCONS =
       val arrow: tycon
       val bool: tycon
       val char: CharSize.t -> tycon
+      val deCharX: tycon -> CharSize.t
       val defaultChar: unit -> tycon
       val defaultInt: unit -> tycon
       val defaultReal: unit -> tycon
       val defaultWord: unit -> tycon
+      val deIntX: tycon -> IntSize.t option
+      val deRealX: tycon -> RealSize.t
+      val deWordX: tycon -> WordSize.t
       val exn: tycon
       val int: IntSize.t -> tycon
       val ints: (tycon * IntSize.t) vector

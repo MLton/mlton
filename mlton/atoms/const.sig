@@ -20,6 +20,8 @@ signature CONST =
       include CONST_STRUCTS
 
       structure ConstType: CONST_TYPE
+      sharing ConstType.RealSize = RealX.RealSize
+      sharing ConstType.WordSize = WordX.WordSize
 
       structure SmallIntInf:
          sig

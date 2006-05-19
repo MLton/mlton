@@ -8,13 +8,15 @@
 
 signature CONST_TYPE_STRUCTS =
    sig
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature CONST_TYPE =
    sig
       include CONST_TYPE_STRUCTS
          
-      datatype t = Bool | Real | String | Word
+      datatype t = Bool | Real of RealSize.t | String | Word of WordSize.t
 
       val toString: t -> string
    end

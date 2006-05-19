@@ -14,8 +14,6 @@ datatype t = R32 | R64
 
 val all = [R32, R64]
 
-val default = R64
-
 val compare =
    fn (R32, R32) => EQUAL
     | (R32, _) => LESS

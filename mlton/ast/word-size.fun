@@ -34,6 +34,8 @@ val one = fromBits (Bits.fromInt 1)
    
 val byte = fromBits (Bits.fromInt 8)
 
+val bool = fromBits (Bits.fromInt 32)
+
 val allVector = Vector.tabulate (65, fn i =>
                                   if isValidSize i
                                      then SOME (fromBits (Bits.fromInt i))

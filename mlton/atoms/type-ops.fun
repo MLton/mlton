@@ -33,7 +33,6 @@ in
    val word = WordSize.memoize (fn s => nullary (Tycon.word s))
 end
 
-val defaultReal = real RealSize.default
 val defaultWord = word WordSize.default
 
 local

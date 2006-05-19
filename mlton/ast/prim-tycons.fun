@@ -50,35 +50,39 @@ local
             memo
             (fn s =>
              case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
-                NONE => Error.bug "PrimTycons.make"
+                NONE => Error.bug "PrimTycons.make.fromSize"
               | SOME (tycon, _) => tycon)
          fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
+         fun de t = 
+            case Vector.peek (all, fn (t', _) => equals (t, t')) of
+               NONE => Error.bug "PrimTycons.make.de"
+             | SOME (_, s') => s'
          val prims =
             Vector.toListMap (all, fn (tycon, _) =>
                               (tycon, Arity 0, admitsEquality))
       in
-         (fromSize, all, is, prims)
+         (fromSize, all, is, de, prims)
       end
 in
-   val (char, _, isCharX, primChars) =
+   val (char, _, isCharX, deCharX, primChars) =
       let
          open CharSize
       in
          make ("char", all, bits, equals, memoize, Sometimes)
       end
-   val (int, ints, isIntX, primInts) =
+   val (int, ints, isIntX, deIntX, primInts) =
       let
          open IntSize
       in
          make ("int", all, bits, equals, memoize, Sometimes)
       end
-   val (real, reals, isRealX, primReals) =
+   val (real, reals, isRealX, deRealX, primReals) =
       let
          open RealSize
       in
          make ("real", all, bits, equals, memoize, Never)
       end
-   val (word, words, isWordX, primWords) =
+   val (word, words, isWordX, deWordX, primWords) =
       let
          open WordSize
       in
@@ -88,7 +92,7 @@ end
 
 val defaultChar = fn () => 
    case !Control.defaultChar of
-      "char8" => char CharSize.C1
+      "char8" => char CharSize.C8
     | _ => Error.bug "PrimTycons.defaultChar"
 val defaultInt = fn () => 
    case !Control.defaultInt of
@@ -112,6 +116,7 @@ val defaultWord = fn () =>
     | _ => Error.bug "PrimTycons.defaultWord"
 
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
+val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
 val prims =
    [(array, Arity 1, Always),

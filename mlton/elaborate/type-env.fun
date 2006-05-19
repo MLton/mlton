@@ -771,7 +771,7 @@ structure Type =
       open Ops Type
 
       fun char s = con (Tycon.char s, Vector.new0 ())
-      val string = con (Tycon.vector, Vector.new1 (char CharSize.C1))
+      val string = con (Tycon.vector, Vector.new1 (char CharSize.C8))
          
       val unit = tuple (Vector.new0 ())
 

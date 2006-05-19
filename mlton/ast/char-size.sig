@@ -13,7 +13,7 @@ signature CHAR_SIZE =
    sig
       include CHAR_SIZE_STRUCTS
       
-      datatype t = C1 | C2 | C4
+      datatype t = C8 | C16 | C32
 
       val all: t list
       val bits: t -> Bits.t
