@@ -6,13 +6,15 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type word = Word.word
-   
 signature MLTON_RLIMIT =
    sig
-      type rlim = word
+      structure RLim : sig
+                          type t
+                          val castFromSysWord: SysWord.word -> t
+                          val castToSysWord: t -> SysWord.word
+                       end
                
-      val infinity: rlim
+      val infinity: RLim.t
 
       type t
                
@@ -20,13 +22,16 @@ signature MLTON_RLIMIT =
       val cpuTime: t             (* CPU     CPU time in seconds *)
       val dataSize: t            (* DATA    max data size *)
       val fileSize: t            (* FSIZE   Maximum filesize *)
-      val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
       val numFiles: t            (* NOFILE  max number of open files *)  
-      val numProcesses: t        (* NPROC   max number of processes *)
-      val residentSetSize: t     (* RSS     max resident set size *)
       val stackSize: t           (* STACK   max stack size *)
       val virtualMemorySize: t   (* AS      virtual memory limit *)
-      
-      val get: t -> {hard: rlim, soft: rlim}
-      val set: t * {hard: rlim, soft: rlim} -> unit
+
+(* NOT STANDARD
+      val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
+      val numProcesses: t        (* NPROC   max number of processes *)
+      val residentSetSize: t     (* RSS     max resident set size *)
+ *)
+
+      val get: t -> {hard: RLim.t, soft: RLim.t}
+      val set: t * {hard: RLim.t, soft: RLim.t} -> unit
    end

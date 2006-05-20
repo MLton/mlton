@@ -389,22 +389,30 @@ structure MLton: MLTON =
 
       structure Rlimit =
          struct
-            type rlim = Word.word
+            structure RLim =
+               struct
+                  type t = SysWord.word
+                  val castFromSysWord = fn w => w
+                  val castToSysWord = fn w => w
+               end
 
             val infinity: rlim = 0w0
 
             type t = int
                
-            val cpuTime: t = 0
             val coreFileSize: t = 0
+            val cpuTime: t = 0
             val dataSize: t = 0
             val fileSize: t = 0
-            val lockedInMemorySize: t = 0
             val numFiles: t = 0
-            val numProcesses: t = 0
-            val residentSetSize: t = 0
             val stackSize: t = 0
             val virtualMemorySize: t = 0
+
+(* NOT STANDARD
+            val lockedInMemorySize: t = 0
+            val numProcesses: t = 0
+            val residentSetSize: t = 0
+*)
 
             fun get _ = raise Fail "Rlimit.get"
             fun set _ = raise Fail "Rlimit.set"
