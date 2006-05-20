@@ -398,7 +398,7 @@ structure MLton: MLTON =
                   val castToSysWord = fn w => w
                end
 
-            val infinity: rlim = 0w0
+            val infinity: RLim.t = 0w0
 
             type t = int
                
