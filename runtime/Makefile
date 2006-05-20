@@ -57,7 +57,13 @@ endif
 CC = gcc -std=gnu99
 CFLAGS = -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
-DEBUGCFLAGS = $(CFLAGS) -gstabs+ -g2 -O1 -DASSERT=1
+DEBUGCFLAGS = $(CFLAGS)
+ifneq ($(TARGET_ARCH), ia64)
+ifneq ($(TARGET_ARCH), powerpc)
+DEBUGCFLAGS += -gstabs+
+endif
+endif
+DEBUGCFLAGS += -g2 -O1 -DASSERT=1
 ifeq ($(findstring $(GCC_VERSION), 4),4)
 GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
 else

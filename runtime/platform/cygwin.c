@@ -4,6 +4,7 @@
 
 #include "mkdir2.c"
 #include "mmap.c"
+#include "recv.nonblock.c"
 #include "sysconf.c"
 #include "windows.c"
 

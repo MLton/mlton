@@ -71,7 +71,9 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #define __Darwin__
 #endif
 
-#if (defined (__CYGWIN__))
+#if (defined (_AIX))
+#include "platform/aix.h"
+#elif (defined (__CYGWIN__))
 #include "platform/cygwin.h"
 #elif (defined (__Darwin__))
 #include "platform/darwin.h"

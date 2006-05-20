@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -419,7 +419,7 @@ install-no-docs:
 		cd "$(TMAN)" && $(GZIP) $(MAN_PAGES);			\
 	fi
 	case "$(TARGET_OS)" in						\
-	cygwin|darwin|solaris)						\
+	aix|cygwin|darwin|solaris)					\
 	;;								\
 	*)								\
 		for f in "$(TLIB)/$(AOUT)$(EXE)" "$(TBIN)/$(LEX)$(EXE)"	\

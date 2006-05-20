@@ -210,7 +210,8 @@ structure MLton: MLTON =
             structure OS =
                struct
                   datatype t =
-                     Cygwin
+                     AIX
+                   | Cygwin
                    | Darwin
                    | FreeBSD
                    | HPUX
@@ -222,7 +223,8 @@ structure MLton: MLTON =
 
                   val host: t = Linux
 
-                  val all = [(Cygwin, "Cygwin"),
+                  val all = [(AIX, "AIX"),
+                             (Cygwin, "Cygwin"),
                              (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
                              (HPUX, "HPUX"),

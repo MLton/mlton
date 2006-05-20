@@ -1,16 +1,18 @@
 #include "platform.h"
 
-#include <sys/mman.h>
-#define MAP_ANON MAP_ANONYMOUS
 
+#include <sys/mman.h>
+#include <sys/newsig.h>
 #include <sys/param.h>
 #include <sys/pstat.h>
-#include <sys/newsig.h>
 
+#define MAP_ANON MAP_ANONYMOUS
+
+#include "mkdir2.c"
+#include "recv.nonblock.c"
+#include "setenv.putenv.c"
 #include "mmap-protect.c"
 #include "use-mmap.c"
-#include "mkdir2.c"
-#include "setenv.putenv.c"
 
 extern unsigned char __text_start;
 extern unsigned_char etext;

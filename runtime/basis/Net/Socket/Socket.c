@@ -29,10 +29,10 @@ C_Errno_t(C_Int_t) Socket_listen (C_Sock_t s, C_Int_t backlog) {
 }
 
 C_Errno_t(C_SSize_t) 
-     Socket_recv (C_Sock_t s, Array(Word8_t) msg, 
-                  C_Int_t start, C_Size_t len, C_Int_t flags) {
+Socket_recv (C_Sock_t s, Array(Word8_t) msg, 
+             C_Int_t start, C_Size_t len, C_Int_t flags) {
   MLton_initSockets ();
-  return recv (s, (void*)((char *)msg + start), len, flags);
+  return mlton_recv (s, (void*)((char *)msg + start), len, flags);
 }
 
 C_Errno_t(C_SSize_t) 
@@ -40,8 +40,8 @@ Socket_recvFrom (C_Sock_t s, Array(Word8_t) msg,
                  C_Int_t start, C_Size_t len, C_Int_t flags,
                  Array(Word8_t) addr, Ref(C_Socklen_t) addrlen) {
   MLton_initSockets ();
-  return recvfrom (s, (void*)((char *)msg + start), len, flags,
-                   (struct sockaddr*)addr, (socklen_t*)addrlen);
+  return mlton_recvfrom (s, (void*)((char *)msg + start), len, flags,
+                         (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
 static inline C_Errno_t(C_SSize_t)

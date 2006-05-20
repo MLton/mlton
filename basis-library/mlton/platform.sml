@@ -43,7 +43,8 @@ structure MLtonPlatform: MLTON_PLATFORM =
          struct
             open OS
 
-            val all = [(Cygwin, "Cygwin"),
+            val all = [(AIX, "AIX"),
+                       (Cygwin, "Cygwin"),
                        (Darwin, "Darwin"),
                        (FreeBSD, "FreeBSD"),
                        (HPUX, "HPUX"),

@@ -20,7 +20,8 @@ signature MLTON_PLATFORM =
       structure OS:
          sig
             datatype t =
-               Cygwin
+               AIX
+             | Cygwin
              | Darwin
              | FreeBSD
              | HPUX

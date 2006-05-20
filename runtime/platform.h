@@ -25,6 +25,10 @@
 #error HAS_FEROUND not defined
 #endif
 
+#ifndef HAS_MSG_DONTWAIT
+#error HAS_MSG_DONTWAIT not defined
+#endif
+
 #ifndef HAS_REMAP
 #error HAS_REMAP not defined
 #endif
@@ -210,6 +214,17 @@ extern Bool MLton_Platform_CygwinUseMmap;
 void MLton_initSockets (void);
 #else
 static inline void MLton_initSockets (void) {}
+#endif
+
+#if HAS_MSG_DONTWAIT
+#define mlton_recv recv
+#define mlton_recvfrom recvfrom
+#else
+/* Platform has no MSG_DONTWAIT flag for recv(), so these must be
+   defined to simulate that flag. */
+int mlton_recv(int s, void *buf, int len, int flags);
+int mlton_recvfrom(int s, void *buf, int len, int flags, void *from,
+                   socklen_t *fromlen);
 #endif
 
 /* ------------------------------------------------- */

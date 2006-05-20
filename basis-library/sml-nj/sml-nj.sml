@@ -30,7 +30,8 @@ structure SMLofNJ: SML_OF_NJ =
                   open MLton.Platform.OS
                in
                   case host of
-                     Cygwin => UNIX
+                     AIX => UNIX
+                   | Cygwin => UNIX
                    | Darwin => MACOS
                    | FreeBSD => UNIX
                    | HPUX => UNIX

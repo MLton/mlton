@@ -1,5 +1,13 @@
 Here are the changes since version 20051202.
 
+* 2006-05-11
+  - Ported to PowerPC-AIX.
+  - Fixed a bug in the runtime for the cases where nonblocking IO with
+    sockets was implemented using MSG_DONTWAIT.  This flag does not
+    exist on AIX, Cygwin, HPUX, and MinGW and was previously just
+    ignored.  Now the runtime simulates the flag for these platforms
+    (except MinGW, yet, where it's still ignored).
+
 * 2006-04-25
   - Ported to HPPA-HPUX.
   - Fixed PackReal{,32,64}{Big,Little} to follow the Basis Library

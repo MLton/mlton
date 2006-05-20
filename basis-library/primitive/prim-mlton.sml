@@ -154,7 +154,8 @@ structure Platform =
       structure OS =
          struct
             datatype t =
-               Cygwin
+               AIX
+             | Cygwin
              | Darwin
              | FreeBSD
              | HPUX
@@ -166,7 +167,8 @@ structure Platform =
                
             val host: t =
                case _const "MLton_Platform_OS_host": String8.string; of
-                  "cygwin" => Cygwin
+                  "aix" => AIX
+                | "cygwin" => Cygwin
                 | "darwin" => Darwin
                 | "freebsd" => FreeBSD
                 | "hpux" => HPUX

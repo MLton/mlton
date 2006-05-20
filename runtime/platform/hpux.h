@@ -26,7 +26,7 @@
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
-#define HAS_PTRACE FALSE
+#define HAS_MSG_DONTWAIT FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SIGNBIT TRUE
@@ -38,7 +38,8 @@
 #define LOG_PERROR 0
 #define LOG_AUTHPRIV LOG_AUTH
 
-#define MSG_DONTWAIT 0
+/* This should not conflict with existing flags. */
+#define MSG_DONTWAIT 0x1000000
 
 #ifndef PF_INET6
 /* Old versions of HP-UX don't have IPv6 support. */
