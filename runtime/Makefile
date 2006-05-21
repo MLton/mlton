@@ -83,10 +83,11 @@ DEBUGCFLAGS = $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
 WARNCFLAGS  =
 WARNCFLAGS += -pedantic -Wall 
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
+WARNCFLAGS += -W
+endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wextra
-else
-WARNCFLAGS += -W
 endif
 # -Wformat=2 implies -Wformat-nonliteral, which causes spurious warnings.
 WARNCFLAGS += -Wformat=2
