@@ -4,14 +4,6 @@
 
 * Use C99 <assert.h> instead of util/assert.{c,h}
 
-Replace Word8{Array,Vector}_{sub,update}{,Rev} primitives with
-PackWord{8,16,32,64}_{sub,update}{,Rev} primitives; possibly refine
-the semantics to use index offset rather than byte offset (the
-advantage of index offset is that we can take advantage of scaling in
-address modes).
-
-Avoid  SysWord.fromLarge o C_UId.toLarge  conversions.
-
 
 Rename primitives to indicate that these are not bit-wise identities
   Real_toWord
@@ -23,4 +15,3 @@ that correspond to bit-wise identities.
 
 basis/Int/Word.c
 basis/MLton/allocTooLarge.c
-basis/MLton/bug.c
