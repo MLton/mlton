@@ -11,30 +11,52 @@ PATH = ../bin:$(shell echo $$PATH)
 TARGET = self
 TARGET_ARCH = $(shell ../bin/host-arch)
 TARGET_OS = $(shell ../bin/host-os)
-GCC_VERSION = 							\
-	$(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
+GCC_MAJOR_VERSION =						\
+	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
+		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
+GCC_MINOR_VERSION =						\
+	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
+		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
+GCC_VERSION = $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
-FLAGS =
+FLAGS = 
 OPTFLAGS = -fomit-frame-pointer
+GCOPTFLAGS = 
+DEBUGFLAGS = 
+WARNFLAGS =
+OPTWARNFLAGS =
+DEBUGWARNFLAGS = 
 
 ifeq ($(TARGET_ARCH), x86)
-ifneq ($(findstring $(GCC_VERSION), 3 4),)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
 FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
+ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
+GCOPTFLAGS += --param inline-unit-growth=125 --param max-inline-insns-single=1000
+endif
+DEBUGFLAGS += -gstabs+
+OPTWARNFLAGS += -Winline
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-ifeq ($(findstring $(GCC_VERSION), 4),4)
-FLAGS += -m32 -mtune=opteron
-else
 FLAGS += -m32
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
+FLAGS += -mcpu=opteron
 endif
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
+FLAGS += -mtune=opteron
+endif
+ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
+GCOPTFLAGS += --param inline-unit-growth=75 --param max-inline-insns-single=1000
+endif
+DEBUGFLAGS += -gstabs+
+OPTWARNFLAGS += -Winline
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -m32 -mcpu=v8 
+FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
 endif
 
 ifeq ($(TARGET_OS), freebsd)
@@ -42,7 +64,7 @@ FLAGS += -I/usr/local/include
 endif
 
 ifeq ($(TARGET_OS), solaris)
-FLAGS += -Wa,-xarch=v8plusa -mcpu=ultrasparc -funroll-all-loops
+FLAGS += -funroll-all-loops
 endif
 
 ifeq ($(TARGET), self)
@@ -57,21 +79,11 @@ endif
 CC = gcc -std=gnu99
 CFLAGS = -I. -Iplatform $(FLAGS)
 OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
-DEBUGCFLAGS = $(CFLAGS)
-ifneq ($(TARGET_ARCH), ia64)
-ifneq ($(TARGET_ARCH), powerpc)
-DEBUGCFLAGS += -gstabs+
-endif
-endif
-DEBUGCFLAGS += -g2 -O1 -DASSERT=1
-ifeq ($(findstring $(GCC_VERSION), 4),4)
-GCOPTCFLAGS = --param inline-unit-growth=75 --param max-inline-insns-single=1000
-else
-GCOPTCFLAGS = 
-endif
+DEBUGCFLAGS = $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
+GCOPTCFLAGS = $(GCOPTFLAGS)
 WARNCFLAGS  =
 WARNCFLAGS += -pedantic -Wall 
-ifeq ($(findstring $(GCC_VERSION), 4),4)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wextra
 else
 WARNCFLAGS += -W
@@ -81,10 +93,10 @@ WARNCFLAGS += -Wformat=2
 WARNCFLAGS += -Wno-format-nonliteral
 # WARNCFLAGS += -Wswitch-default -Wswitch-enum
 WARNCFLAGS += -Wuninitialized 
-ifeq ($(findstring $(GCC_VERSION), 4),4)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Winit-self 
 endif
-ifeq ($(findstring $(GCC_VERSION), 4),4)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wstrict-aliasing=2 
 endif
 WARNCFLAGS += -Wfloat-equal 
@@ -96,11 +108,11 @@ WARNCFLAGS += -Wwrite-strings
 # WARNCFLAGS += -Wconversion 
 WARNCFLAGS += -Waggregate-return 
 WARNCFLAGS += -Wstrict-prototypes 
-ifeq ($(findstring $(GCC_VERSION), 4),4)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wold-style-definition
 endif
 WARNCFLAGS += -Wmissing-prototypes -Wmissing-declarations
-ifeq ($(findstring $(GCC_VERSION), 4),4)
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wmissing-field-initializers
 endif
 WARNCFLAGS += -Wmissing-noreturn 
@@ -110,8 +122,9 @@ WARNCFLAGS += -Wredundant-decls
 WARNCFLAGS += -Wnested-externs 
 WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
-OPTWARNCFLAGS = $(WARNCFLAGS) -Wdisabled-optimization 
-DEBUGWARNCFLAGS = $(WARNCFLAGS)
+WARNCFLAGS += $(WARNFLAGS)
+OPTWARNCFLAGS = $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
+DEBUGWARNCFLAGS = $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 
 UTILCFILES =							\
 	$(shell find util -type f | grep '\.c$$')
@@ -256,6 +269,23 @@ basis/Real/%.o: basis/Real/%.c gdtoa/arith.h  $(HFILES)
 
 %.o: %.S
 	$(CC) $(OPTCFLAGS) -c -o $@ $<
+
+.PHONY: flags
+flags:
+	echo TARGET = $(TARGET)
+	echo TARGET_ARCH = $(TARGET_ARCH)
+	echo TARGET_OS = $(TARGET_OS)
+	echo GCC_MAJOR_VERSION = $(GCC_MAJOR_VERSION)
+	echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
+	echo GCC_VERSION = $(GCC_VERSION)
+	echo FLAGS = $(FLAGS)
+	echo OPTFLAGS = $(OPTFLAGS)
+	echo GCOPTFLAGS = $(GCOPTFLAGS)
+	echo DEBUGFLAGS = $(DEBUGFLAGS)
+	echo WARNFLAGS = $(WARNFLAGS)
+	echo OPTWARNFLAGS = $(OPTWARNFLAGS)
+	echo DEBUGWARNFLAGS = $(DEBUGWARNFLAGS)
+
 
 .PHONY: clean
 clean:
