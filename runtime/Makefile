@@ -89,7 +89,7 @@ endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wextra
 endif
-# -Wformat=2 implies -Wformat-nonliteral, which causes spurious warnings.
+# -Wformat=2 implies -Wformat-nonliteral, which causes one spurious warning.
 WARNCFLAGS += -Wformat=2
 WARNCFLAGS += -Wno-format-nonliteral
 # WARNCFLAGS += -Wswitch-default -Wswitch-enum
