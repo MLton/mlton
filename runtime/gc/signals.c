@@ -18,7 +18,7 @@ void initSignalStack (GC_state s) {
   size_t ss_size = align (SIGSTKSZ, s->sysvals.pageSize);
   size_t psize = s->sysvals.pageSize;
   void *ss_sp = GC_mmapAnon_safe_protect (NULL, 2 * ss_size, psize, psize);
-  altstack.ss_sp = (unsigned char*)ss_sp + ss_size;
+  altstack.ss_sp = (typeof(altstack.ss_sp))((pointer)ss_sp + ss_size);
   altstack.ss_size = ss_size;
   altstack.ss_flags = 0;
   sigaltstack (&altstack, NULL);
