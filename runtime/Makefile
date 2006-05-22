@@ -157,6 +157,7 @@ HFILES = 							\
 	basis-ffi.h						\
 	platform.h						\
 	platform/$(TARGET_OS).h					\
+	platform/$(TARGET_ARCH).h				\
 	$(BASISHFILES)
 
 FILES = $(basename $(CFILES))

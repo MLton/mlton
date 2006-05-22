@@ -13,6 +13,10 @@
 #include "util.h"
 #include "gc.h"
 
+#ifndef MLton_Platform_Arch_host
+#error MLton_Platform_Arch_host not defined
+#endif
+
 #ifndef MLton_Platform_OS_host
 #error MLton_Platform_OS_host not defined
 #endif
@@ -113,11 +117,12 @@
 #include "basis-ffi.h"
 
 /* ---------------------------------------------------------------- */
-/*                        Runtime Init/Exit                         */
+/*                        Runtime Init/Exit/Alloc                   */
 /* ---------------------------------------------------------------- */
 
 void MLton_init (int argc, char **argv, GC_state s);
 __attribute__ ((noreturn)) void MLton_exit (GC_state s, C_Int_t status);
+__attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
@@ -173,39 +178,11 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
-__attribute__ ((noreturn)) void MLton_allocTooLarge (void);
-
 /* ---------------------------------- */
 /*           MLton.Platform           */
 /* ---------------------------------- */
 
 #define MLton_Platform_Arch_bigendian isBigEndian()
-
-#if (defined (__alpha__))
-#define MLton_Platform_Arch_host "alpha"
-#elif (defined (__x86_64__))
-#define MLton_Platform_Arch_host "amd64"
-#elif (defined (__arm__))
-#define MLton_Platform_Arch_host "arm"
-#elif (defined (__hppa__))
-#define MLton_Platform_Arch_host "hppa"
-#elif (defined (__ia64__))
-#define MLton_Platform_Arch_host "ia64"
-#elif (defined (__m68k__))
-#define MLton_Platform_Arch_host "m68k"
-#elif (defined (__mips__))
-#define MLton_Platform_Arch_host "mips"
-#elif (defined (__ppc__)) || (defined (__powerpc__))
-#define MLton_Platform_Arch_host "powerpc"
-#elif (defined (__s390__))
-#define MLton_Platform_Arch_host "s390"
-#elif (defined (__sparc__))
-#define MLton_Platform_Arch_host "sparc"
-#elif (defined (__i386__))
-#define MLton_Platform_Arch_host "x86"
-#else
-#error MLton_Platform_Arch_host not defined
-#endif
 
 extern Bool MLton_Platform_CygwinUseMmap;
 

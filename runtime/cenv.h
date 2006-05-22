@@ -67,6 +67,33 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #include "gmp.h"
 
 
+#if (defined (__alpha__))
+#include "platform/alpha.h"
+#elif (defined (__x86_64__))
+#include "platform/amd64.h"
+#elif (defined (__arm__))
+#include "platform/arm.h"
+#elif (defined (__hppa__))
+#include "platform/hppa.h"
+#elif (defined (__ia64__))
+#include "platform/ia64.h"
+#elif (defined (__m68k__))
+#include "platform/m68k.h"
+#elif (defined (__mips__))
+#include "platform/mips.h"
+#elif (defined (__ppc__)) || (defined (__powerpc__))
+#include "platform/powerpc.h"
+#elif (defined (__s390__))
+#include "platform/s390.h"
+#elif (defined (__sparc__))
+#include "platform/sparc.h"
+#elif (defined (__i386__))
+#include "platform/x86.h"
+#else
+#error unknown platform arch
+#endif
+
+
 #if (defined (__APPLE_CC__))
 #define __Darwin__
 #endif
@@ -92,9 +119,7 @@ COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
 #elif (defined (__sun__))
 #include "platform/solaris.h"
 #else
-#error unknown platform
+#error unknown platform os
 #endif
-
-
 
 #endif /* _MLTON_CENV_H_ */
