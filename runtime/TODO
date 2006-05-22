@@ -13,5 +13,4 @@ and add primitives
   Real_toWord, Word_toReal
 that correspond to bit-wise identities.
 
-basis/Int/Word.c
 basis/MLton/allocTooLarge.c
