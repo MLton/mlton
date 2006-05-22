@@ -286,13 +286,11 @@ runtime:
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
 	cp runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
-	mkdir -p "$(INC)/gc"
-	mkdir -p "$(INC)/util"
-	mkdir -p "$(INC)/platform"
 	$(CP) runtime/*.h "$(INC)/"
-	$(CP) runtime/gc/*.h "$(INC)/gc"
-	$(CP) runtime/util/*.h "$(INC)/util"
-	$(CP) runtime/platform/*.h "$(INC)/platform"
+	for d in basis basis/Real basis/Word gc platform util; do	\
+		mkdir -p "$(INC)/$$d";					\
+		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
+	done
 	$(CP) bytecode/interpret.h "$(INC)"
 	$(MAKE) -C bytecode
 	bytecode/print-opcodes >"$(LIB)/opcodes"
@@ -331,7 +329,7 @@ version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
 		package/debian/changelog				\
-		"$(SPEC)"							\
+		"$(SPEC)"						\
 		package/freebsd/Makefile				\
 		mlton/control/control-flags.sml;			\
 	do								\

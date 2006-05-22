@@ -30,20 +30,20 @@ void MLton_callFromC () {                                               \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         s = &gcState;                                                   \
         s->savedThread = s->currentThread;                              \
-        s->canHandle += 3;                                              \
+        s->atomicState += 3;                                            \
         /* Switch to the C Handler thread. */                           \
-        GC_switchToThread (s, s->callFromCHandler, 0);                  \
+        GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
         nextFun = *(int*)(s->stackTop - GC_RETURNADDRESS_SIZE);         \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
         GC_switchToThread (s, s->savedThread, 0);                       \
-        s->savedThread = BOGUS_THREAD;                                  \
+        s->savedThread = BOGUS_OBJPTR;                                  \
         if (DEBUG_CODEGEN)                                              \
                 fprintf (stderr, "MLton_callFromC done\n");             \
 }                                                                       \
 int main (int argc, char **argv) {                                      \
         int nextFun;                                                    \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.isOriginal) {                                       \
+        if (gcState.amOriginal) {                                       \
                 real_Init();                                            \
                 nextFun = ml;                                           \
         } else {                                                        \

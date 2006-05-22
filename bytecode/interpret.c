@@ -6,7 +6,7 @@
  */
 
 #define MLTON_GC_INTERNAL_TYPES
-#define MLTON_BASIS_FFI_STATIC
+#define MLTON_CODEGEN_STATIC_INLINE static inline
 #include "platform.h"
 
 #include "interpret.h"
@@ -60,18 +60,6 @@ regs(Word64);
 //
 
 #define R(ty, i) (ty##VReg [i])
-
-#define quotRem1(qr, size)                                              \
-        Word##size WordS##size##_##qr (Word##size w1, Word##size w2);
-#define quotRem2(qr)                                    \
-        quotRem1 (qr, 8)                                \
-        quotRem1 (qr, 16)                               \
-        quotRem1 (qr, 32)                               \
-        quotRem1 (qr, 64)
-quotRem2 (quot)
-quotRem2 (rem)
-#undef quotRem1
-#undef quotRem2
 
 //----------------------------------------------------------------------
 

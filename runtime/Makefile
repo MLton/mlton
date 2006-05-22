@@ -138,10 +138,12 @@ GCCFILES =							\
 GCHFILES =							\
 	$(shell find gc -type f | grep '\.h$$')
 
+BASISHFILES =							\
+	$(shell find basis -type f | grep '\.h$$')
+
 CFILES = 							\
 	$(UTILCFILES)						\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
-	$(shell find Posix -type f | grep '\.c$$')		\
 	gc.c							\
 	platform.c
 
@@ -154,7 +156,8 @@ HFILES = 							\
 	c-types.h						\
 	basis-ffi.h						\
 	platform.h						\
-	platform/$(TARGET_OS).h
+	platform/$(TARGET_OS).h					\
+	$(BASISHFILES)
 
 FILES = $(basename $(CFILES))
 
@@ -255,9 +258,9 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 # with -fno-strict-aliasing to prevent gcc from taking advantage of
 # this aspect of the C spec.
 basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 basis/Real/%.o: basis/Real/%.c gdtoa/arith.h  $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -O1 -fno-strict-aliasing -c -o $@ $<
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<

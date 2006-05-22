@@ -107,6 +107,9 @@
 
 #include "ml-types.h"
 #include "c-types.h"
+#ifndef MLTON_CODEGEN_STATIC_INLINE
+#define MLTON_CODEGEN_STATIC_INLINE /*static inline*/
+#endif
 #include "basis-ffi.h"
 
 /* ---------------------------------------------------------------- */
@@ -114,7 +117,7 @@
 /* ---------------------------------------------------------------- */
 
 void MLton_init (int argc, char **argv, GC_state s);
-void MLton_exit (GC_state s, C_Int_t status) __attribute__ ((noreturn));
+__attribute__ ((noreturn)) void MLton_exit (GC_state s, C_Int_t status);
 
 /* ---------------------------------------------------------------- */
 /*                        Utility libraries                         */
@@ -170,7 +173,7 @@ void GC_setSigProfHandler (struct sigaction *sa);
 /*                       MLton                       */
 /* ------------------------------------------------- */
 
-void MLton_allocTooLarge (void) __attribute__ ((noreturn));
+__attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 
 /* ---------------------------------- */
 /*           MLton.Platform           */
@@ -226,36 +229,5 @@ int mlton_recv(int s, void *buf, int len, int flags);
 int mlton_recvfrom(int s, void *buf, int len, int flags, void *from,
                    socklen_t *fromlen);
 #endif
-
-/* ------------------------------------------------- */
-/*                  Word{8,16,32,64}                 */
-/* ------------------------------------------------- */
-
-#define SaddCheckOverflows(size)                                        \
-        Bool WordS##size##_addCheckOverflows (WordS##size x, WordS##size y);
-#define UaddCheckOverflows(size)                                        \
-        Bool WordU##size##_addCheckOverflows (WordU##size x, WordU##size y);
-#define SmulCheckOverflows(size)                                        \
-        Bool WordS##size##_mulCheckOverflows (WordS##size x, WordS##size y);
-#define negCheckOverflows(size)                                         \
-        Bool Word##size##_negCheckOverflows (WordS##size x);
-#define SsubCheckOverflows(size)                                        \
-        Bool WordS##size##_subCheckOverflows (WordS##size x, WordS##size y);
-#define all(size)                                               \
-        SaddCheckOverflows (size)                               \
-        UaddCheckOverflows (size)                               \
-        SmulCheckOverflows (size)                               \
-        negCheckOverflows (size)                                \
-        SsubCheckOverflows (size)
-all (8)
-all (16)
-all (32)
-all (64)
-#undef SaddCheckOverflows
-#undef UaddCheckOverflows
-#undef SmulCheckOverflows
-#undef negCheckOverflows
-#undef SsubCheckOverflows
-#undef all
 
 #endif /* _MLTON_PLATFORM_H_ */
