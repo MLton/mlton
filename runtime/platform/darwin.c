@@ -22,10 +22,9 @@ code_pointer GC_getTextStart (void) {
 }
 
 void GC_displayMem (void) {
-        /* FIXME: this won't actually work. */
         static char buffer[256];
 
-        sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
+        sprintf (buffer, "/usr/bin/vmmap -w -interleaved %d\n", (int)getpid ());
         (void)system (buffer);
 }
 
@@ -40,12 +39,29 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 }
 
+size_t GC_pageSize (void) {
+        long int pageSize = sysconf(_SC_PAGESIZE);
+        return (size_t)pageSize;
+}
+
 size_t GC_totalRam (void) {
         int mem;
         size_t len;
 
         len = sizeof (int);
         if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
+                diee ("sysctl failed");
+        return mem;
+}
+
+// Not quite right... what does 'available' mean anyways?!
+// This returns the number of bytes available to userspace programs.
+size_t GC_availRam (void) {
+        int mem;
+        size_t len;
+
+        len = sizeof (int);
+        if (-1 == sysctlbyname ("hw.usermem", &mem, &len, NULL, 0))
                 diee ("sysctl failed");
         return mem;
 }
