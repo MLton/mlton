@@ -33,7 +33,7 @@ FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
 FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
-ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
+ifeq ($(findstring $(GCC_VERSION), 3.3 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param inline-unit-growth=125 --param max-inline-insns-single=1000
 endif
 DEBUGFLAGS += -gstabs+
@@ -60,6 +60,10 @@ FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
 endif
 
 ifeq ($(TARGET_OS), freebsd)
+FLAGS += -I/usr/local/include
+endif
+
+ifeq ($(TARGET_OS), openbsd)
 FLAGS += -I/usr/local/include
 endif
 

@@ -2,9 +2,9 @@
 
 #include "getText.c"
 #include "mkdir2.c"
-#include "showMem.linux.c"
+#include "displayMem.linux.c"
 #include "mmap-protect.c"
-#include "totalRam.sysctl.c"
+#include "sysctl.c"
 #include "use-mmap.c"
 
 static void catcher (__attribute__ ((unused)) int sig,
