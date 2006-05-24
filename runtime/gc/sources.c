@@ -54,6 +54,8 @@ void sortSourceLabels (GC_state s) {
               <= s->sourceMaps.sourceLabels[i].label);
 }
 
+#if HAS_TIME_PROFILING
+
 void initTextSources (GC_state s) {
   GC_sourceLabelIndex i;
   code_pointer p;
@@ -87,6 +89,7 @@ void initTextSources (GC_state s) {
     s->sourceMaps.textSources[p - s->sourceMaps.textStart] = sourceSeqIndex;
 }
 
+#endif
 
 void showSources (GC_state s) {
   uint32_t i;
