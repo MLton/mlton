@@ -11,7 +11,7 @@
 #define ROUNDING_CONTROL_MASK 0x0C00
 #define ROUNDING_CONTROL_SHIFT 10
 
-int fegetround () {
+int fegetround (void) {
         unsigned short controlWord;
 
         _FPU_GETCW (controlWord);
