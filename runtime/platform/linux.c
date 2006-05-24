@@ -7,6 +7,7 @@
 #include "displayMem.linux.c"
 #include "mmap-protect.c"
 #include "sysconf.c"
+#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 #ifndef EIP

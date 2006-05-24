@@ -307,39 +307,18 @@ copy:
     newHeap.oldGenSize = size;
     *curHeapp = newHeap;
   } else {
-    /* Write the heap to a file and try again. */
+    /* Write the heap to disk and try again. */
     int fd;
-    char template[80];
-    const char *tmpDefault;
-    char *tmpDir;
-    const char *tmpVar;
     
-#if (defined (__MSVCRT__))
-    tmpVar = "TEMP";
-    tmpDefault = "C:/WINNT/TEMP";
-#else
-    tmpVar = "TMPDIR";
-    tmpDefault = "/tmp";
-#endif
-    tmpDir = getenv (tmpVar);
-    strcpy (template, (NULL == tmpDir) ? tmpDefault : tmpDir);
-    strcat (template, "/FromSpaceXXXXXX");
-    fd = mkstemp_safe (template);
-    close_safe (fd);
-    if (s->controls.messages)
-      fprintf (stderr, "Paging heap from "FMTPTR" to %s.\n", 
-               (uintptr_t)orig, template);
-    fd = open_safe (template, O_WRONLY, S_IRUSR | S_IWUSR);
+    fd = tempFileDes ();
     write_safe (fd, orig, size);
-    close_safe (fd);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
-      fd = open_safe (template, O_RDONLY, S_IRUSR | S_IWUSR);
+      lseek (fd, 0, SEEK_SET);
       read_safe (fd, curHeapp->start, size);
       close_safe (fd);
-      unlink_safe (template);
     } else {
-      unlink_safe (template);
+      close_safe (fd);
       if (s->controls.messages)
         GC_displayMem ();
       die ("Out of memory.  Unable to allocate %s bytes.\n",

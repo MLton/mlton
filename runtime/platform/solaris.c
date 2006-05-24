@@ -9,6 +9,7 @@
 #include "mmap-protect.c"
 #include "sysconf.c"
 #include "setenv.putenv.c"
+#include "tempFileDes.mkstemp.c"
 
 int fegetround () {
         int mode;

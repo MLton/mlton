@@ -5,6 +5,7 @@
 #include "displayMem.linux.c"
 #include "mmap-protect.c"
 #include "sysctl.c"
+#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 static void catcher (__attribute__ ((unused)) int sig,

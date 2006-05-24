@@ -12,6 +12,7 @@
 #include "recv.nonblock.c"
 #include "setenv.putenv.c"
 #include "mmap-protect.c"
+#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 extern unsigned char __text_start;

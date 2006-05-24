@@ -14,6 +14,7 @@
 #include "mkdir2.c"
 #include "recv.nonblock.c"
 #include "ssmmap.c"
+#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 int fegetround(void)

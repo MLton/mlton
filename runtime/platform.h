@@ -129,6 +129,7 @@ __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 /* ---------------------------------------------------------------- */
 
 int mkdir2 (const char *pathname, mode_t mode);
+int tempFileDes (void);
 
 /* ---------------------------------------------------------------- */
 /*                        Garbage Collector                         */

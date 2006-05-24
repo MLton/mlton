@@ -3,6 +3,7 @@
 #include "getText.c"
 #include "mkdir2.c"
 #include "mmap-protect.c"
+#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 void GC_displayMem () {
