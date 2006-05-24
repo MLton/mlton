@@ -2,7 +2,7 @@ int tempFileDes (void) {
   int fd;
   char *template;
   const char *tmpDir;
-  const char *tag = "/FromSpaceXXXXXXXXXX";
+  const char *tag = "/TempFileXXXXXXXXXX";
   mode_t m;
 
   tmpDir = getenv ("TMP");
