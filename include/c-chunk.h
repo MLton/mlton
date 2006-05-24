@@ -196,8 +196,20 @@ extern struct GC_state gcState;
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
 #endif
-#define MLTON_CCODEGEN_HIDE(z) 
-#include "basis-ffi.h"
+/* Declare inlined math functions, since <math.h> isn't included.
+ */
+#ifndef MLTON_CODEGEN_MATHFN
+#define MLTON_CODEGEN_MATHFN(decl) decl
+#endif
+/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,
+ * because the gcc optimizer sometimes produces incorrect results when
+ * one of the arguments is a constant.  
+ * However, we need the declarations for Word-check.h
+ */
+#ifndef MLTON_CODEGEN_WORDSQUOTREM
+#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) decl
+#endif
+// #include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/Real/Real-ops.h"
 #include "basis/Real/Math-fns.h"

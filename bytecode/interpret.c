@@ -6,7 +6,22 @@
  */
 
 #define MLTON_GC_INTERNAL_TYPES
+#ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
+#endif
+/* No need to declare inlined math functions, since <math.h> comes
+ * with "platform.h".
+ */
+#ifndef MLTON_CODEGEN_MATHFN
+#define MLTON_CODEGEN_MATHFN(decl) 
+#endif
+/* WordS<N>_quot and WordS<N>_rem can be inlined with the
+ * bytecode-codegen, since they will be used in a context where the
+ * arguments are variables.
+ */
+#ifndef MLTON_CODEGEN_WORDSQUOTREM
+#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) func
+#endif
 #include "platform.h"
 
 #include "interpret.h"

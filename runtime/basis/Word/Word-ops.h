@@ -1,7 +1,10 @@
 
-#ifndef MLTON_CCODEGEN_HIDE
-#define MLTON_CCODEGEN_HIDE(z) z
+#ifndef MLTON_CODEGEN_WORDSQUOTREM
+#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) func
 #endif
+
+#define binaryDecl(kind, name)                                          \
+  Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);
 
 #define binary(kind, name, op)                                          \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -61,10 +64,14 @@ unary (size, neg, -)                            \
 unary (size, notb, ~)                           \
 /* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,   \ 
  * because the gcc optimizer sometimes produces incorrect results        \
- * when one of th arguments is a constant.                               \
+ * when one of the arguments is a constant.                              \
+ * However, we need the declarations for Word-check.h                    \
+ * WordS<N>_quot and WordS<N>_rem can be inlined with the                \
+ * bytecode-codegen, since they will be used in a context where the      \
+ * arguments are variables.                                              \
  */                                                                      \
-MLTON_CCODEGEN_HIDE(binary (S##size, quot, /))  \
-MLTON_CCODEGEN_HIDE(binary (S##size, rem, %))   \
+MLTON_CODEGEN_WORDSQUOTREM(binaryDecl (S##size, quot), binary (S##size, quot, /)) \
+MLTON_CODEGEN_WORDSQUOTREM(binaryDecl (S##size, rem), binary (S##size, rem, %))   \
 binary (U##size, quot, /)                       \
 binary (U##size, rem, %)                        \
 binary (size, orb, |)                           \
