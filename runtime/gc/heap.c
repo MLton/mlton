@@ -286,9 +286,9 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     pointer to;
     size_t remaining;
 
+    newHeap.oldGenSize = size;
     from = curHeapp->start + size;
     to = newHeap.start + size;
-    newHeap.oldGenSize = size;
     remaining = size;
 copy:                   
     assert (remaining == (size_t)(from - curHeapp->start)
