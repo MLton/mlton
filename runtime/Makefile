@@ -188,10 +188,6 @@ DEBUG_OBJS += $(foreach f, $(EXTRA_FILES), $(f)-gdb.o)
 
 all:  libgdtoa.a libmlton.a libmlton-gdb.a
 
-# When compiling gdtoa, we use defines to replace strto{d,f} with
-# gdtoa_strto{d,f} to avoid conflicts with the C library on some
-# platforms that define their own strto{d,f}.
-
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
 		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)	\
