@@ -2887,7 +2887,7 @@ copy:
         }
 done:
         unless (old == s->heap.start) {
-                translateHeap (s, old, s->heap.start, s->oldGenSize);
+                translateHeap (s, old, s->heap.start, size);
                 setCardMapForMutator (s);
         }
 }
