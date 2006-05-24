@@ -199,7 +199,7 @@ bool createHeap (GC_state s, GC_heap h,
     if (s->controls.messages)
       fprintf(stderr, 
               "[Requested %s cannot be satisfied, "
-              "backing off by %s (min size = %s).\n",
+              "backing off by %s (min size = %s).]\n",
               sizeToBytesApproxString (h->size),
               sizeToBytesApproxString (backoff), 
               sizeToBytesApproxString (minSize));
@@ -288,6 +288,7 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
 
     from = curHeapp->start + size;
     to = newHeap.start + size;
+    newHeap.oldGenSize = size;
     remaining = size;
 copy:                   
     assert (remaining == (size_t)(from - curHeapp->start)
@@ -347,7 +348,7 @@ copy:
   }
 done:
   unless (orig == s->heap.start) {
-    translateHeap (s, orig, s->heap.start, s->heap.oldGenSize);
+    translateHeap (s, orig, s->heap.start, size);
     setCardMapAbsolute (s);
   }
 }
