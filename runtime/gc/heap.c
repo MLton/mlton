@@ -286,7 +286,6 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     pointer to;
     size_t remaining;
 
-    newHeap.oldGenSize = size;
     from = curHeapp->start + size;
     to = newHeap.start + size;
     remaining = size;
@@ -305,6 +304,7 @@ copy:
       goto copy;
     }
     releaseHeap (s, curHeapp);
+    newHeap.oldGenSize = size;
     *curHeapp = newHeap;
   } else {
     /* Write the heap to a file and try again. */
@@ -348,7 +348,7 @@ copy:
   }
 done:
   unless (orig == s->heap.start) {
-    translateHeap (s, orig, s->heap.start, size);
+    translateHeap (s, orig, s->heap.start, s->heap.oldGenSize);
     setCardMapAbsolute (s);
   }
 }
