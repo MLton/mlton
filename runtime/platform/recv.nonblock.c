@@ -1,10 +1,10 @@
 /* Simulates MSG_DONTWAIT using fcntl() and O_NONBLOCK. */
 
-static void fd_modify(int fd, int flags, int add, int remove)
+static void fd_modify(int fd, int flags, int add, int shouldRemove)
 {
         if (flags & MSG_DONTWAIT) {
                 int f = fcntl(fd, F_GETFL);
-                fcntl(fd, F_SETFL, (f | add) & ~remove);
+                fcntl(fd, F_SETFL, (f | add) & ~shouldRemove);
         }
 }
 
