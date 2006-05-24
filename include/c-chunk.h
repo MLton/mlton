@@ -197,6 +197,7 @@ extern struct GC_state gcState;
 #define MLTON_CODEGEN_STATIC_INLINE static inline
 #endif
 #define MLTON_CCODEGEN_HIDE(z) 
+#include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/Real/Real-ops.h"
 #include "basis/Real/Math-fns.h"
