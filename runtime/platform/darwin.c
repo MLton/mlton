@@ -54,18 +54,6 @@ size_t GC_totalRam (void) {
         return mem;
 }
 
-// Not quite right... what does 'available' mean anyways?!
-// This returns the number of bytes available to userspace programs.
-size_t GC_availRam (void) {
-        int mem;
-        size_t len;
-
-        len = sizeof (int);
-        if (-1 == sysctlbyname ("hw.usermem", &mem, &len, NULL, 0))
-                diee ("sysctl failed");
-        return mem;
-}
-
 // This is not windows
 __attribute__ ((noreturn))
 C_Errno_t(C_PId_t) MLton_Process_cwait (__attribute__ ((unused)) C_PId_t pid, 

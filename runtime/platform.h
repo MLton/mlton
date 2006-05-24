@@ -153,7 +153,6 @@ void GC_decommit (void *base, size_t length);
 
 size_t GC_pageSize (void);
 size_t GC_totalRam (void);
-size_t GC_availRam (void);
 
 void GC_setCygwinUseMmap (bool b);
 
