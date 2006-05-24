@@ -2826,6 +2826,7 @@ static void growHeap (GC_state s, W32 desired, W32 minSize) {
                 uint remaining;
                 pointer to;
 
+                h2.oldGenSize = size;
                 from = old + size;
                 to = h2.start + size;
                 remaining = size;
