@@ -54,7 +54,7 @@
 COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
 COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
 COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
-COMPILE_TIME_ASSERT(char__is_signed, (double)((char)(-1)) < 0);
+COMPILE_TIME_ASSERT(char__is_signed, CHAR_MIN < 0);
 
 #include <fcntl.h>
 #include <unistd.h>
