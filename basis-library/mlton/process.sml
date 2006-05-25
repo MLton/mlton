@@ -257,7 +257,6 @@ structure MLtonProcess =
          SysCall.simpleResult'
          ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
           let
-(*
              val cmd =
                 let
                    open MLton.Platform.OS
@@ -267,7 +266,6 @@ structure MLtonProcess =
                     | MinGW => cmd
                     | _ => raise Fail "create"
                 end
-*)
           in
              PrimitiveFFI.Windows.Process.create
              (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)

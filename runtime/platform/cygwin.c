@@ -37,11 +37,11 @@ void GC_release (void *base, size_t length) {
 /*                      Cygwin                       */
 /* ------------------------------------------------- */
 
-char *Cygwin_toFullWindowsPath (char *path) {
+C_String_t Cygwin_toFullWindowsPath (NullString8_t path) {
         static char res[MAX_PATH];
 
         cygwin_conv_to_full_win32_path ((char*)path, &res[0]);
-        return &res[0];
+        return (C_String_t)&res[0];
 }
 
 /* ------------------------------------------------- */

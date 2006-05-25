@@ -1,6 +1,7 @@
 CommandLine.argc = _symbol : C_Int.t
 CommandLine.argv = _symbol : C_StringArray.t
 CommandLine.commandName = _symbol : C_String.t
+Cygwin.toFullWindowsPath = _import : NullString8.t -> C_String.t
 Date.Tm.getHour = _import : unit -> C_Int.t
 Date.Tm.getIsDst = _import : unit -> C_Int.t
 Date.Tm.getMDay = _import : unit -> C_Int.t

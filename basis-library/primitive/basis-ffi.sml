@@ -9,6 +9,10 @@ val (argcGet, argcSet) = _symbol "CommandLine_argc": (unit -> (C_Int.t)) * ((C_I
 val (argvGet, argvSet) = _symbol "CommandLine_argv": (unit -> (C_StringArray.t)) * ((C_StringArray.t) -> unit);
 val (commandNameGet, commandNameSet) = _symbol "CommandLine_commandName": (unit -> (C_String.t)) * ((C_String.t) -> unit);
 end
+structure Cygwin = 
+struct
+val toFullWindowsPath = _import "Cygwin_toFullWindowsPath" : NullString8.t -> C_String.t;
+end
 structure Date = 
 struct
 val gmTime = _import "Date_gmTime" : (C_Time.t) ref -> (C_Int.t) C_Errno.t;
