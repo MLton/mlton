@@ -35,7 +35,7 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   result = gdtoa (&fpi, ex, bits, &i, mode, ndig, (int*)decpt, NULL);
   if (DEBUG)
     fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
-             result, (double)f, mode, ndig, *((int*)decpt));
+             result, (double)f, (int)mode, (int)ndig, *((int*)decpt));
   return (C_String_t)result;
 }
 
@@ -69,6 +69,6 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   result = gdtoa (&fpi, ex, bits, &i, mode, ndig, (int*)decpt, NULL);
   if (DEBUG)
     fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
-             result, d, mode, ndig, *((int*)decpt));
+             result, d, (int)mode, (int)ndig, *((int*)decpt));
   return (C_String_t)result;
 }
