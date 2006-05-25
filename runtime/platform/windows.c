@@ -1,5 +1,30 @@
 HANDLE fileDesHandle (int fd);
 
+#define BUFSIZE 65536
+
+int tempFileDes (void) {
+  /* Based on http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating_and_using_a_temporary_file.asp
+   */  
+  HANDLE hTempFile; 
+  DWORD dwRetVal;
+  DWORD dwBufSize=BUFSIZE;
+  UINT uRetVal;
+  char szTempName[BUFSIZE];  
+  char lpPathBuffer[BUFSIZE];
+
+  dwRetVal = GetTempPath(dwBufSize, lpPathBuffer);
+  if (dwRetVal > dwBufSize)
+    diee ("GetTempPath failed with error %ld.\n", GetLastError());
+  uRetVal = GetTempFileName(lpPathBuffer, "TempFile", 0, szTempName);
+  if (0 == uRetVal)
+    diee ("GetTempFileName failed with error %ld.\n", GetLastError());
+  hTempFile = CreateFile((LPTSTR) szTempName, GENERIC_READ | GENERIC_WRITE,
+    0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+    NULL);                
+  if (hTempFile == INVALID_HANDLE_VALUE)
+    diee ("CreateFile failed with error %ld.\n", GetLastError());
+  return hTempFile;
+}
 
 static void displayMaps (void) {
         MEMORY_BASIC_INFORMATION buf;
@@ -108,7 +133,8 @@ static inline void Windows_decommit (void *base, size_t length) {
                 die ("VirtualFree decommit failed");
 }
 
-static inline void *Windows_mmapAnon (void *start, size_t length) {
+static inline void *Windows_mmapAnon (__atribute__ ((unused)) void *start,
+                                        size_t length) {
         void *res;
 
         /* Use "0" instead of "start" as the first argument to VirtualAlloc

@@ -48,12 +48,12 @@ char *Cygwin_toFullWindowsPath (char *path) {
 /*                       Posix                       */
 /* ------------------------------------------------- */
 
-void Posix_IO_setbin (Fd fd) {
+void Posix_IO_setbin (C_Fd_t fd) {
         /* cygwin has a different method for working with its fds */
         setmode (fd, O_BINARY);
 }
 
-void Posix_IO_settext (Fd fd) {
+void Posix_IO_settext (C_Fd_t fd) {
         /* cygwin has a different method for working with its fds */
         setmode (fd, O_TEXT);
 }
@@ -67,7 +67,7 @@ void Posix_IO_settext (Fd fd) {
  * is a secret magical pipe for sending signals and exit statuses over.
  * Screw that. We implement our own cwait using pure win32.
  */
-Pid MLton_Process_cwait (Pid pid, Pointer status) {
+C_Errno_t(C_PId_t) MLton_Process_cwait(C_PId_t pid, Ref(C_Status_t) status) {
         HANDLE h;
         
         h = (HANDLE)pid;

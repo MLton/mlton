@@ -36,4 +36,20 @@
 #define MSG_DONTWAIT 0x1000000
 #define PF_INET6 0
 
-struct sockaddr_in6 {};
+struct sockaddr_in6 {
+  int dummy; // quell gcc warnings about "struct has no members"
+};
+
+typedef unsigned int nfds_t;
+typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
+
+// /usr/include/cygwin/socket.h has this ifdef'd out for now.
+#define AF_INET6 23
+
+// Unimplemented on Cygwin
+#define MSG_WAITALL 0
+#define MSG_EOR 0
+
+
+
+
