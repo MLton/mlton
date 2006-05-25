@@ -129,7 +129,6 @@ __attribute__ ((noreturn)) void MLton_allocTooLarge (void);
 /* ---------------------------------------------------------------- */
 
 int mkdir2 (const char *pathname, mode_t mode);
-int tempFileDes (void);
 
 /* ---------------------------------------------------------------- */
 /*                        Garbage Collector                         */
@@ -156,6 +155,10 @@ size_t GC_pageSize (void);
 size_t GC_totalRam (void);
 
 void GC_setCygwinUseMmap (bool b);
+
+void diskBack_close (void *data);
+void diskBack_read (void *data, pointer buf, size_t size);
+void *diskBack_write (pointer buf, size_t size);
 
 /* ------------------------------------------------- */
 /*                Text Segment                       */

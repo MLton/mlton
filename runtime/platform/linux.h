@@ -36,4 +36,7 @@
 
 #define MLton_Platform_OS_host "linux"
 
+// environ is already defined if _GNU_SOURCE is.
+#ifndef _GNU_SOURCE
 extern char **environ; /* for Posix_ProcEnv_environ */
+#endif

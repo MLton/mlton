@@ -1,11 +1,11 @@
 #include "platform.h"
 
+#include "diskBack.unix.c"
 #include "getText.c"
 #include "mkdir2.c"
 #include "displayMem.linux.c"
 #include "mmap-protect.c"
 #include "sysctl.c"
-#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 static void catcher (__attribute__ ((unused)) int sig,

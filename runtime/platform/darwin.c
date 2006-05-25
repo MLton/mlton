@@ -4,9 +4,9 @@
 
 #include "platform.h"
 
+#include "diskBack.unix.c"
 #include "mkdir2.c"
 #include "mmap-protect.c"
-#include "tempFileDes.mkstemp.c"
 #include "use-mmap.c"
 
 code_pointer GC_getTextEnd (void) {

@@ -308,17 +308,15 @@ copy:
     *curHeapp = newHeap;
   } else {
     /* Write the heap to disk and try again. */
-    int fd;
+    void *data;
     
-    fd = tempFileDes ();
-    write_safe (fd, orig, size);
+    data = diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
-      lseek (fd, 0, SEEK_SET);
-      read_safe (fd, curHeapp->start, size);
-      close_safe (fd);
+      diskBack_read (data, curHeapp->start, size);
+      diskBack_close (data);
     } else {
-      close_safe (fd);
+      diskBack_close (data);
       if (s->controls.messages)
         GC_displayMem ();
       die ("Out of memory.  Unable to allocate %s bytes.\n",
