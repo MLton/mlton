@@ -6,6 +6,7 @@
  ##
 
 TARGET_ARCH = $(shell ../bin/host-arch)
+TARGET_OS = $(shell ../bin/host-os)
 
 all: interpret.o interpret-gdb.o print-opcodes
 
@@ -24,6 +25,10 @@ CFLAGS += -mtune=opteron -m32
 endif 
 
 ifeq ($(TARGET_OS), freebsd)
+CFLAGS += -I/usr/local/include
+endif
+
+ifeq ($(TARGET_OS), openbsd)
 CFLAGS += -I/usr/local/include
 endif
 
