@@ -36,4 +36,4 @@
 
 #define MLton_Platform_OS_host "linux"
 
-
+extern char **environ; /* for Posix_ProcEnv_environ */

@@ -33,3 +33,5 @@
 #define HAS_TIME_PROFILING TRUE
 
 #define MLton_Platform_OS_host "netbsd"
+
+extern char **environ; /* for Posix_ProcEnv_environ */

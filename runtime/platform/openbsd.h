@@ -71,3 +71,5 @@ typedef unsigned long long int uintmax_t;
 #ifndef PRIxPTR
 #define PRIxPTR "lx"
 #endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

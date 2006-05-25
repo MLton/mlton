@@ -50,3 +50,5 @@ int fpclassify64(double d);
 
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
+
+extern char **environ; /* for Posix_ProcEnv_environ */

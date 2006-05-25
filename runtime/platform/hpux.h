@@ -46,3 +46,5 @@
 struct sockaddr_in6 {};
 #define PF_INET6 0
 #endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

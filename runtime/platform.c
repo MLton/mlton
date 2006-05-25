@@ -13,8 +13,6 @@ void GC_setCygwinUseMmap (bool b) {
   MLton_Platform_CygwinUseMmap = b;
 }
 
-extern char **environ; /* for Posix_ProcEnv_environ */
-
 void MLton_init (int argc, char **argv, GC_state s) {
   int start;
 

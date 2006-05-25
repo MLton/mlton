@@ -55,3 +55,5 @@ int fpclassify64 (double d);
 #ifndef PRIxPTR
 #define PRIxPTR "x"
 #endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

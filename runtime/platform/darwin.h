@@ -40,3 +40,5 @@
 #ifndef SIGPOLL
 #define SIGPOLL 7
 #endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

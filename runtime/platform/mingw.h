@@ -581,3 +581,5 @@ int socketpair (int d, int type, int protocol, int sv[2]);
 void openlog(const char* ident, int logopt, int facility);
 void closelog(void);
 void syslog(int priority, const char* fmt, const char* msg);
+
+extern char **environ; /* for Posix_ProcEnv_environ */
