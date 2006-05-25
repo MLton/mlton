@@ -282,20 +282,17 @@ runtime:
 	$(MAKE) -C runtime
 	$(CP) include/*.h "$(INC)/"
 	$(CP) runtime/*.a "$(LIB)/$(TARGET)/"
-	cp runtime/gen/c-types.sml \
+	$(CP) runtime/gen/c-types.sml \
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
-	cp runtime/gen/basis-ffi.sml \
+	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
+	$(CP) runtime/bytecode/opcodes "$(LIB)/"
 	$(CP) runtime/*.h "$(INC)/"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
-	$(CP) bytecode/interpret.h "$(INC)"
-	$(MAKE) -C bytecode
-	bytecode/print-opcodes >"$(LIB)/opcodes"
-	ar r "$(LIB)/$(TARGET)/libmlton.a" bytecode/interpret.o 
-	ar r "$(LIB)/$(TARGET)/libmlton-gdb.a" bytecode/interpret-gdb.o 
+	$(CP) runtime/bytecode/interpret.h "$(INC)"
 	for x in "$(LIB)"/"$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script

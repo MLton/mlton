@@ -162,7 +162,7 @@
 
 #define opcodeGen(z)  #z,
 
-char *opcodeStrings [] = {
+const char *opcodeStrings [] = {
         opcodes ()
 };
 

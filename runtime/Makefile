@@ -148,10 +148,16 @@ GCHFILES =							\
 BASISHFILES =							\
 	$(shell find basis -type f | grep '\.h$$')
 
+BYTECFILES =							\
+	$(shell find bytecode -type f | grep '\.c$$')
+BYTEHFILES =							\
+	$(shell find bytecode -type f | grep '\.h$$')
+
 CFILES = 							\
 	$(UTILCFILES)						\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	gc.c							\
+	bytecode/interpret.c					\
 	platform.c
 
 HFILES = 							\
@@ -189,7 +195,9 @@ endif
 OBJS += $(foreach f, $(EXTRA_FILES), $(f).o)
 DEBUG_OBJS += $(foreach f, $(EXTRA_FILES), $(f)-gdb.o)
 
-all:  libgdtoa.a libmlton.a libmlton-gdb.a
+all:  libgdtoa.a libmlton.a libmlton-gdb.a 	\
+	gen/c-types.sml gen/basis-ffi.sml	\
+	bytecode/opcodes
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 					\
@@ -234,26 +242,45 @@ util/%-gdb.o: util/%.c util.h $(UTILHFILES)
 util/%.o: util/%.c util.h $(UTILHFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -c -o $@ $<
 
-c-types.h ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
-	rm -f c-types.h ml-types.h
+gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
+	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
 	cd gen && ./gen-types
-	mv gen/c-types.h c-types.h
-	mv gen/ml-types.h ml-types.h
 	rm -f gen/gen-types
 
-basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	rm -f basis-ffi.h
-	cd gen && mlton gen-basis-ffi.sml
+c-types.h ml-types.h: gen/c-types.h gen/ml-types.h
+	rm -f c-types.h ml-types.h
+	cp gen/c-types.h c-types.h
+	cp gen/ml-types.h ml-types.h
+
+gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
+	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
+	rm -f gen/basis-ffi.h gen/basis-ffi.sml
 	cd gen && ./gen-basis-ffi 
-	mv gen/basis-ffi.h basis-ffi.h
 	rm -f gen/gen-basis-ffi
+
+basis-ffi.h: gen/basis-ffi.h
+	rm -f basis-ffi.h
+	cp gen/basis-ffi.h basis-ffi.h
+
+bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h 
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
+	rm -f bytecode/opcodes
+	cd bytecode && ./print-opcodes > opcodes
+	rm -f bytecode/print-opcodes
+
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 gc.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
+
+bytecode/interpret-gdb.o: bytecode/interpret.c bytecode/opcode.h $(HFILES) 
+	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
+
+bytecode/interpret.o: bytecode/interpret.c bytecode/opcode.h $(HFILES) 
+	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a

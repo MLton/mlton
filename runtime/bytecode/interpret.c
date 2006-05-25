@@ -116,16 +116,16 @@ enum {
         case opcodeSymOfTy2 (ty, mode##ArrayOffset):                            \
         {                                                                       \
                 ArrayOffset arrayOffset;                                        \
-                Pointer base;                                                   \
-                Word32 index;                                                   \
-                Scale scale;                                                    \
+                Pointer arrayBase;                                              \
+                Word32 arrayIndex;                                              \
+                Scale arrayScale;                                               \
                 Fetch (ArrayOffset, arrayOffset);                               \
-                Fetch (Scale, scale);                                           \
+                Fetch (Scale, arrayScale);                                      \
                 if (disassemble) goto mainLoop;                                 \
-                index = PopReg (Word32);                                        \
-                base = (Pointer) (PopReg (Word32));                             \
+                arrayIndex = PopReg (Word32);                                   \
+                arrayBase = (Pointer) (PopReg (Word32));                        \
                 loadStore (mode, ty,                                            \
-                                *(ty*)(base + (index * scale) + arrayOffset));  \
+                                *(ty*)(arrayBase + (arrayIndex * arrayScale) + arrayOffset)); \
                 goto mainLoop;                                                  \
         }
 
@@ -357,7 +357,7 @@ typedef char *String;
                 fprintf (stderr, "\n" #ty "Reg[%d] = 0x%08x",   \
                                 i, (unsigned int)(ty##Reg[i]));
 
-void displayRegs () {
+static inline void displayRegs (void) {
         int i;
 
         disp (Word8);
@@ -368,11 +368,11 @@ void displayRegs () {
         disp (Real64);
 }
 
-static inline void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
+static void interpret (Bytecode b, Word32 codeOffset, Bool disassemble) {
         CallCIndex callCIndex;
         Pointer code;
         Pointer frontier;
-        int i;
+        unsigned int i;
         String name;
         String *offsetToLabel = NULL;
         Opcode opc;

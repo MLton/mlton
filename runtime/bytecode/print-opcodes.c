@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include "opcode.h"
 
-int main () {
+int main (__attribute__((unused)) int argc, 
+          __attribute__((unused)) char* argv[]) {
         Opcode opc;
-        int i;
+        unsigned int i;
 
         unless (cardof (opcodeStrings) < (1 << (8 * sizeof (opc))))
                 die ("too many opcodes\n");

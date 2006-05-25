@@ -27,7 +27,7 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
-extern struct cont (*nextChunks []) ();
+extern struct cont (*nextChunks []) (void);
 extern int nextFun;
 extern int returnToC;
 extern struct GC_state gcState;
