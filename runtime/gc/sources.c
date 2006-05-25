@@ -19,6 +19,8 @@ char* GC_sourceName (GC_state s, GC_sourceIndex i) {
   return getSourceName (s, i);
 }
 
+#if HAS_TIME_PROFILING
+
 int compareSourceLabels (const void *v1, const void *v2) {
   const struct GC_sourceLabel* l1 = (const struct GC_sourceLabel*)v1;
   const struct GC_sourceLabel* l2 = (const struct GC_sourceLabel*)v2;
@@ -53,8 +55,6 @@ void sortSourceLabels (GC_state s) {
       assert (s->sourceMaps.sourceLabels[i-1].label
               <= s->sourceMaps.sourceLabels[i].label);
 }
-
-#if HAS_TIME_PROFILING
 
 void initTextSources (GC_state s) {
   GC_sourceLabelIndex i;

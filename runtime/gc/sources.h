@@ -79,9 +79,11 @@ static inline GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_s
 
 static inline char* getSourceName (GC_state s, GC_sourceIndex i);
 
+#if HAS_TIME_PROFILING
 static inline int compareSourceLabels (const void *v1, const void *v2);
 static void sortSourceLabels (GC_state s);
 static void initTextSources (GC_state s);
+#endif
 
 static void showSources (GC_state s);
 
