@@ -2,7 +2,7 @@ HANDLE fileDesHandle (int fd);
 
 #define BUFSIZE 65536
 
-int tempFileDes (void) {
+static HANDLE tempFileDes (void) {
   /* Based on http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating_and_using_a_temporary_file.asp
    */  
   HANDLE hTempFile; 
@@ -14,16 +14,55 @@ int tempFileDes (void) {
 
   dwRetVal = GetTempPath(dwBufSize, lpPathBuffer);
   if (dwRetVal > dwBufSize)
-    diee ("GetTempPath failed with error %ld.\n", GetLastError());
+    die ("GetTempPath failed with error %ld\n", GetLastError());
   uRetVal = GetTempFileName(lpPathBuffer, "TempFile", 0, szTempName);
   if (0 == uRetVal)
-    diee ("GetTempFileName failed with error %ld.\n", GetLastError());
+    die ("GetTempFileName failed with error %ld\n", GetLastError());
   hTempFile = CreateFile((LPTSTR) szTempName, GENERIC_READ | GENERIC_WRITE,
     0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
     NULL);                
   if (hTempFile == INVALID_HANDLE_VALUE)
-    diee ("CreateFile failed with error %ld.\n", GetLastError());
+    die ("CreateFile failed with error %ld\n", GetLastError());
   return hTempFile;
+}
+
+typedef struct {
+  HANDLE handle;
+} *WriteToDiskData;
+
+void diskBack_read (void *data, pointer buf, size_t size) {
+  HANDLE h;
+  DWORD d;
+  DWORD dwBytesRead;
+
+  h = ((WriteToDiskData)data)->handle;
+  d = SetFilePointer (h, 0, NULL, FILE_BEGIN);
+  if (d == INVALID_SET_FILE_POINTER)
+    die ("SetFilePointer failed with error %ld\n", GetLastError());
+  unless (ReadFile(h, buf, size, &dwBytesRead, NULL))
+    die ("ReadFile failed with error %ld\n", GetLastError());
+}
+
+void diskBack_close (void *data) {
+  HANDLE h;
+
+  h = ((WriteToDiskData)data)->handle;
+  unless (CloseHandle (h))
+    die ("CloseHandle failed with error %ld.", GetLastError());
+  free (data);
+}
+
+void *diskBack_write (pointer buf, size_t size) {
+  HANDLE h;
+  WriteToDiskData d;
+  DWORD dwBytesWritten;
+
+  h = tempFileDes ();
+  unless (WriteFile (h, buf, size, &dwBytesWritten, NULL))
+    die ("WriteFile failed with error %ld\n", GetLastError());
+  d = (WriteToDiskData)(malloc_safe (sizeof(*d)));
+  d->handle = h;
+  return d;
 }
 
 static void displayMaps (void) {
@@ -133,7 +172,7 @@ static inline void Windows_decommit (void *base, size_t length) {
                 die ("VirtualFree decommit failed");
 }
 
-static inline void *Windows_mmapAnon (__atribute__ ((unused)) void *start,
+static inline void *Windows_mmapAnon (__attribute__ ((unused)) void *start,
                                         size_t length) {
         void *res;
 
