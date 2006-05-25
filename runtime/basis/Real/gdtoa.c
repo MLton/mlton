@@ -32,7 +32,7 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
     ex = 1;
   ex -= 0x7f + 23;
   i = STRTOG_Normal;
-  result = gdtoa (&fpi, ex, bits, &i, mode, ndig, (int*)decpt, NULL);
+  result = gdtoa (&fpi, ex, bits, &i, (int)mode, (int)ndig, (int*)decpt, NULL);
   if (DEBUG)
     fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
              result, (double)f, (int)mode, (int)ndig, *((int*)decpt));
