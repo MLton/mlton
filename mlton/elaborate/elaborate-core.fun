@@ -940,9 +940,10 @@ local
                            Type.defaultWord)
 
    fun mkAddress {expandedPtrTy: Type.t,
-                  name: string}: Cexp.t =
+                  name: string,
+                  cty: CType.t option }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol {name = name},
+               prim = Prim.ffiSymbol {name = name, cty = cty},
                result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,
@@ -1038,7 +1039,8 @@ in
              | _ => (error (); ())
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
-                       name = name}
+                       name = name,
+                       cty = NONE}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
          wrap (addrExp, elabedTy)
@@ -1099,7 +1101,8 @@ in
              | NONE => (error (); CType.word (WordSize.default, {signed = false}))
          val addrExp =
             mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
-                       name = name}
+                       name = name,
+                       cty = SOME ctypeCbTy}
          val () =
             if List.exists (attributes, fn attr =>
                             attr = SymbolAttribute.Alloc)
@@ -1220,7 +1223,8 @@ in
          val isBool = Type.isBool expandedCbTy
          val addrExp =
             mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
-                       name = name}
+                       name = name,
+                       cty = SOME ctypeCbTy}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
          wrap (mkFetch {ctypeCbTy = ctypeCbTy, 
