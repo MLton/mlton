@@ -9,7 +9,11 @@
 #include "windows.c"
 
 HANDLE fileDesHandle (int fd) {
-        return (HANDLE)(get_osfhandle (fd));
+  // The temporary prevents a "cast does not match function type" warning.
+  long t;
+
+  t = get_osfhandle (fd);
+  return (HANDLE)t;
 }
 
 void GC_decommit (void *base, size_t length) {

@@ -25,7 +25,11 @@ Word32 GC_totalRam (void) {
 }
 
 HANDLE fileDesHandle (int fd) {
-        return (HANDLE)(_get_osfhandle (fd));
+  // The temporary prevents a "cast does not match function type" warning.
+  long t;
+
+  t = _get_osfhandle (fd);
+  return (HANDLE)t;
 }
 
 int getpagesize (void) {
