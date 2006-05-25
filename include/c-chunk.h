@@ -204,12 +204,11 @@ extern struct GC_state gcState;
 /* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,
  * because the gcc optimizer sometimes produces incorrect results when
  * one of the arguments is a constant.  
- * However, we need the declarations for Word-check.h
  */
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) decl
+#define MLTON_CODEGEN_WORDSQUOTREM(func) 
 #endif
-// #include "basis-ffi.h"
+#include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/Real/Real-ops.h"
 #include "basis/Real/Math-fns.h"

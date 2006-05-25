@@ -1,10 +1,7 @@
 
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) func
+#define MLTON_CODEGEN_WORDSQUOTREM(func) func
 #endif
-
-#define binaryDecl(kind, name)                                          \
-  Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2);
 
 #define binary(kind, name, op)                                          \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -62,24 +59,23 @@ bothCompare (size, lt, <)                       \
 bothBinary (size, mul, *)                       \
 unary (size, neg, -)                            \
 unary (size, notb, ~)                           \
-/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,   \ 
- * because the gcc optimizer sometimes produces incorrect results        \
- * when one of the arguments is a constant.                              \
- * However, we need the declarations for Word-check.h                    \
- * WordS<N>_quot and WordS<N>_rem can be inlined with the                \
- * bytecode-codegen, since they will be used in a context where the      \
- * arguments are variables.                                              \
- */                                                                      \
-MLTON_CODEGEN_WORDSQUOTREM(binaryDecl (S##size, quot), binary (S##size, quot, /)) \
-MLTON_CODEGEN_WORDSQUOTREM(binaryDecl (S##size, rem), binary (S##size, rem, %))   \
+/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
+ * because the gcc optimizer sometimes produces incorrect results       \
+ * when one of the arguments is a constant.                             \
+ * WordS<N>_quot and WordS<N>_rem can be inlined with the               \
+ * bytecode-codegen, since they will be used in a context where the     \
+ * arguments are variables.                                             \
+ */                                                                     \
+MLTON_CODEGEN_WORDSQUOTREM(binary (S##size, quot, /))                   \
+MLTON_CODEGEN_WORDSQUOTREM(binary (S##size, rem, %))                    \
 binary (U##size, quot, /)                       \
 binary (U##size, rem, %)                        \
 binary (size, orb, |)                           \
 rol(size)                                       \
 ror(size)                                       \
-/* WordS<N>_rshift isn't ANSI C, because ANSI doesn't guarantee sign     \
- * extension.  We use it anyway cause it always seems to work.           \
- */                                                                      \
+/* WordS<N>_rshift isn't ANSI C, because ANSI doesn't guarantee sign    \
+ * extension.  We use it anyway cause it always seems to work.          \
+ */                                                                     \
 shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
 binary (size, sub, -)                           \

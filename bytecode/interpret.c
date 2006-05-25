@@ -9,6 +9,10 @@
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
 #endif
+#include "platform.h"
+
+#include "interpret.h"
+
 /* No need to declare inlined math functions, since <math.h> comes
  * with "platform.h".
  */
@@ -20,11 +24,8 @@
  * arguments are variables.
  */
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(decl, func) func
+#define MLTON_CODEGEN_WORDSQUOTREM(func) func
 #endif
-#include "platform.h"
-
-#include "interpret.h"
 #include "c-chunk.h"    // c-chunk.h must come before opcode.h because it
                         // redefines some opcode symbols
 #include "opcode.h"
