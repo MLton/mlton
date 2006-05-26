@@ -33,7 +33,7 @@ HANDLE fileDesHandle (int fd) {
   return (HANDLE)t;
 }
 
-int getpagesize (void) {
+size_t GC_pageSize (void) {
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
         return sysinfo.dwPageSize;
