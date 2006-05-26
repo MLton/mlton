@@ -20,6 +20,8 @@
 // classifies subnormals as normals.  So, we disable it here, which causes the
 // runtime to use our own version.
 #define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY32 FALSE
+#define HAS_FPCLASSIFY64 FALSE
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
