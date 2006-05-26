@@ -193,8 +193,9 @@ int poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 // Synchronized writes? Safety of any kind? ... and windows?! hell no!
 #define O_SYNC 0
 
-#define S_ISLNK(m) FALSE
-#define S_ISSOCK(m) FALSE
+// Use m to silence unused warnings
+#define S_ISLNK(m) (m?FALSE:FALSE)
+#define S_ISSOCK(m) (m?FALSE:FALSE)
 
 int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
@@ -581,5 +582,3 @@ int socketpair (int d, int type, int protocol, int sv[2]);
 void openlog(const char* ident, int logopt, int facility);
 void closelog(void);
 void syslog(int priority, const char* fmt, const char* msg);
-
-extern char **environ; /* for Posix_ProcEnv_environ */

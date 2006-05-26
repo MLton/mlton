@@ -12,7 +12,8 @@ void *GC_mmapAnon (void *start, size_t length) {
         return Windows_mmapAnon (start, length);
 }
 
-void GC_release (void *base, size_t length) {
+void GC_release (void *base, 
+                 __attribute__ ((unused)) size_t length) {
         Windows_release (base);
 }
 
@@ -90,10 +91,11 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
 /*                   MLton.Itimer                    */
 /* ------------------------------------------------- */
 
-int setitimer (int which, 
-                const struct itimerval *value, 
-                struct itimerval *ovalue) {
-        // !!! perhaps used code from alarm?
+__attribute__ ((noreturn))
+int setitimer (__attribute__ ((unused)) int which, 
+               __attribute__ ((unused)) const struct itimerval *value, 
+               __attribute__ ((unused)) struct itimerval *ovalue) {
+        // !!! perhaps use code from alarm?
         die ("setitimer not implemented");
 }
 
@@ -162,7 +164,10 @@ int getrusage (int who, struct rusage *usage) {
 /*                       OS.IO                       */
 /* ------------------------------------------------- */
 
-int poll (struct pollfd *ufds, unsigned int nfds, int timeout) {
+__attribute__ ((noreturn))
+int poll (__attribute__ ((unused)) struct pollfd *ufds, 
+          __attribute__ ((unused)) unsigned int nfds, 
+          __attribute__ ((unused)) int timeout) {
         die ("poll not implemented");
 }
 
@@ -174,8 +179,10 @@ static void GetWin32FileName (int fd, char* fname) {
         HANDLE fh, fhmap;
         DWORD fileSize, fileSizeHi;
         void* pMem = NULL;
-        
-        fh = (HANDLE)_get_osfhandle (fd);
+        long tmp;
+
+        tmp = _get_osfhandle (fd);
+        fh = (HANDLE)tmp;
         fileSize = GetFileSize (fh, &fileSizeHi);
         fhmap = CreateFileMapping (fh, NULL, PAGE_READONLY, 0, fileSize, NULL);
         if (fhmap) {
@@ -203,19 +210,29 @@ int fchdir (int filedes) {
       return chdir (fname);
 }
 
-int chown (const char *path, uid_t owner, gid_t group) {
+__attribute__ ((noreturn))
+int chown (__attribute__ ((unused)) const char *path, 
+           __attribute__ ((unused)) uid_t owner, 
+           __attribute__ ((unused)) gid_t group) {
         die ("chown not implemented");
 }
 
-int fchown (int fd, uid_t owner, gid_t group) {
+__attribute__ ((noreturn))
+int fchown (__attribute__ ((unused)) int fd, 
+            __attribute__ ((unused)) uid_t owner, 
+            __attribute__ ((unused)) gid_t group) {
         die ("fchown not implemented");
 }
 
-long fpathconf (int filedes, int name) {
+__attribute__ ((noreturn))
+long fpathconf (__attribute__ ((unused)) int filedes, 
+                __attribute__ ((unused)) int name) {
         die ("fpathconf not implemented");
 }
 
-int link (const char *oldpath, const char *newpath) {
+__attribute__ ((noreturn))
+int link (__attribute__ ((unused)) const char *oldpath, 
+          __attribute__ ((unused)) const char *newpath) {
         die ("link not implemented");
 }
 
@@ -228,19 +245,28 @@ int mkdir2 (const char *pathname, mode_t mode) {
         return mkdir (pathname, mode);
 }
 
-int mkfifo (const char *pathname, mode_t mode) {
+__attribute__ ((noreturn))
+int mkfifo (__attribute__ ((unused)) const char *pathname, 
+            __attribute__ ((unused)) mode_t mode) {
         die ("mkfifo not implemented");
 }
 
-long pathconf (const char *path, int name) {
+__attribute__ ((noreturn))
+long pathconf (__attribute__ ((unused)) const char *path, 
+               __attribute__ ((unused)) int name) {
         die ("pathconf not implemented");
 }
 
-int readlink (const char *path, char *buf, size_t bufsiz) {
+__attribute__ ((noreturn))
+int readlink (__attribute__ ((unused)) const char *path, 
+              __attribute__ ((unused)) char *buf, 
+              __attribute__ ((unused)) size_t bufsiz) {
         die ("readlink not implemented");
 }
 
-int symlink (const char *oldpath, const char *newpath) {
+__attribute__ ((noreturn))
+int symlink (__attribute__ ((unused)) const char *oldpath, 
+             __attribute__ ((unused)) const char *newpath) {
         die ("symlink not implemented");
 }
 
@@ -262,7 +288,10 @@ int truncate (const char *path, off_t len) {
 /*                     Posix.IO                      */
 /* ------------------------------------------------- */
 
-int fcntl (int fd, int cmd, ...) {
+__attribute__ ((noreturn))
+int fcntl (__attribute__ ((unused)) int fd, 
+           __attribute__ ((unused)) int cmd, 
+           ...) {
         die ("fcntl not implemented");
 }
 
@@ -306,33 +335,53 @@ int pipe (int filedes[2]) {
 /*                   Posix.ProcEnv                   */
 /* ------------------------------------------------- */
 
-char *ctermid (char *s) {
+__attribute__ ((noreturn))
+char *ctermid (__attribute__ ((unused)) char* s) {
         die ("*ctermid not implemented");
 }
+
+__attribute__ ((noreturn))
 gid_t getegid (void) {
         die ("getegid not implemented");
 }
+
+__attribute__ ((noreturn))
 uid_t geteuid (void) {
         die ("geteuid not implemented");
 }
+
+__attribute__ ((noreturn))
 gid_t getgid (void) {
         die ("getgid not implemented");
 }
-int getgroups (int size, gid_t list[]) {
+
+__attribute__ ((noreturn))
+int getgroups (__attribute__ ((unused)) int size, 
+               __attribute__ ((unused)) gid_t list[]) {
         die ("getgroups not implemented");
 }
+
+__attribute__ ((noreturn))
 char *getlogin (void) {
         die ("*getlogin not implemented");
 }
-pid_t getpgid(pid_t pid) {
+
+__attribute__ ((noreturn))
+pid_t getpgid(__attribute__ ((unused)) pid_t pid) {
         die ("getpgid not implemented");
 }
+
+__attribute__ ((noreturn))
 pid_t getpgrp(void) {
         die ("getpgrp not implemented");
 }
+
+__attribute__ ((noreturn))
 pid_t getppid (void) {
         die ("getppid not implemented");
 }
+
+__attribute__ ((noreturn))
 uid_t getuid (void) {
         die ("getuid not implemented");
 }
@@ -354,30 +403,45 @@ int setenv (const char *name, const char *value, int overwrite) {
         return 0;
 }
 
-int setgid (gid_t gid) {
+__attribute__ ((noreturn))
+int setgid (__attribute__ ((unused)) gid_t gid) {
         die ("setgid not implemented");
 }
 
-int setgroups (size_t size, gid_t *list) {
+__attribute__ ((noreturn))
+int setgroups (__attribute__ ((unused)) size_t size, 
+               __attribute__ ((unused)) gid_t *list) {
         die ("setgroups not implemented");
 }
 
-int setpgid (pid_t pid, pid_t pgid) {
+__attribute__ ((noreturn))
+int setpgid (__attribute__ ((unused)) pid_t pid, 
+             __attribute__ ((unused)) pid_t pgid) {
         die ("setpgid not implemented");
 }
+
+__attribute__ ((noreturn))
 pid_t setsid (void) {
         die ("setsid not implemented");
 }
-int setuid (uid_t uid) {
+
+__attribute__ ((noreturn))
+int setuid (__attribute__ ((unused)) uid_t uid) {
         die ("setuid not implemented");
 }
-long sysconf (int name) {
+
+__attribute__ ((noreturn))
+long sysconf (__attribute__ ((unused)) int name) {
         die ("sysconf not implemented");
 }
-clock_t times (struct tms *buf) {
+
+__attribute__ ((noreturn))
+clock_t times (__attribute__ ((unused)) struct tms *buf) {
         die ("times not implemented");
 }
-char *ttyname (int desc) {
+
+__attribute__ ((noreturn))
+char *ttyname (__attribute__ ((unused)) int desc) {
         die ("*ttyname not implemented");
 }
 
@@ -455,9 +519,10 @@ static int curr_timer_dur = 0;
 static LARGE_INTEGER timer_start_val;
 
 
-VOID CALLBACK alarm_signalled(HWND window, UINT message,
-        UINT_PTR timer_id, DWORD timestamp)
-{
+static VOID CALLBACK alarm_signalled(__attribute__ ((unused)) HWND window,
+                                     __attribute__ ((unused)) UINT message,
+                                     __attribute__ ((unused)) UINT_PTR timer_id,
+                                     __attribute__ ((unused)) DWORD timestamp) {
     printf("Timer fired\n");
 }
 
@@ -498,11 +563,15 @@ int alarm (int secs) {
         return remaining;
 }
 
+__attribute__ ((noreturn))
 pid_t fork (void) {
         die ("fork not implemented");
 }
 
-int kill (pid_t pid, int sig) {
+
+__attribute__ ((noreturn))
+int kill (__attribute__ ((unused)) pid_t pid, 
+          __attribute__ ((unused)) int sig) {
         die ("kill not implemented");
 }
 
@@ -513,6 +582,7 @@ int nanosleep (const struct timespec *req, struct timespec *rem) {
         return 0;
 }
 
+__attribute__ ((noreturn))
 int pause (void) {
         die ("pause not implemented");
 }
@@ -522,11 +592,15 @@ unsigned int sleep (unsigned int seconds) {
         return 0;
 }
 
-pid_t wait (int *status) {
+__attribute__ ((noreturn))
+pid_t wait (__attribute__ ((unused)) int *status) {
         die ("wait not implemented");
 }
 
-pid_t waitpid (pid_t pid, int *status, int options) {
+__attribute__ ((noreturn))
+pid_t waitpid (__attribute__ ((unused)) pid_t pid, 
+               __attribute__ ((unused)) int *status, 
+               __attribute__ ((unused)) int options) {
         die ("waitpid not implemented");
 }
 
@@ -633,7 +707,8 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
         return 0;
 }
 
-int sigsuspend (const sigset_t *mask) {
+__attribute__ ((noreturn))
+int sigsuspend (__attribute__ ((unused)) const sigset_t *mask) {
         die("sigsuspend is unimplemented, but could be hacked in if needed");
 }
 
@@ -658,15 +733,17 @@ static LPUSER_INFO_3 usrData = NULL;
 
 static struct passwd passwd;
 
-struct group *getgrgid (gid_t gid) {
+__attribute__ ((noreturn))
+struct group *getgrgid (__attribute__ ((unused)) gid_t gid) {
         die ("getgrgid not implemented");
 }
 
-struct group *getgrnam (const char *name) {
+__attribute__ ((noreturn))
+struct group *getgrnam (__attribute__ ((unused)) const char *name) {
         die ("getgrnam not implemented");
 }
 
-struct passwd *getpwnam (const char *name) {
+struct passwd *getpwnam (__attribute__ ((unused)) const char *name) {
         return NULL;
 //      unless (NERR_Success == 
 //                      NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
@@ -680,7 +757,8 @@ struct passwd *getpwnam (const char *name) {
         return &passwd;
 }
 
-struct passwd *getpwuid (uid_t uid) {
+__attribute__ ((noreturn))
+struct passwd *getpwuid (__attribute__ ((unused)) uid_t uid) {
         die ("getpwuid not implemented");
 }
 
@@ -688,51 +766,72 @@ struct passwd *getpwuid (uid_t uid) {
 /*                     Posix.TTY                     */
 /* ------------------------------------------------- */
 
-speed_t cfgetispeed (struct termios *termios_p) {
+__attribute__ ((noreturn))
+speed_t cfgetispeed (__attribute__ ((unused)) struct termios *termios_p) {
         die ("cfgetispeed not implemented");
 }
 
-speed_t cfgetospeed (struct termios *termios_p) {
+__attribute__ ((noreturn))
+speed_t cfgetospeed (__attribute__ ((unused)) struct termios *termios_p) {
         die ("cfgetospeed not implemented");
 }
 
-int cfsetispeed (struct termios *termios_p, speed_t speed) {
+__attribute__ ((noreturn))
+int cfsetispeed (__attribute__ ((unused)) struct termios *termios_p, 
+                 __attribute__ ((unused)) speed_t speed) {
         die ("cfsetispeed not implemented");
 }
 
-int cfsetospeed (struct termios *termios_p, speed_t speed) {
+__attribute__ ((noreturn))
+int cfsetospeed (__attribute__ ((unused)) struct termios *termios_p, 
+                 __attribute__ ((unused)) speed_t speed) {
         die ("cfsetospeed not implemented");
 }
 
-int tcdrain (int fd) {
+__attribute__ ((noreturn))
+int tcdrain (__attribute__ ((unused)) int fd) {
         die ("tcdrain not implemented");
 }
 
-int tcflow (int fd, int action) {
+__attribute__ ((noreturn))
+int tcflow (__attribute__ ((unused)) int fd, 
+            __attribute__ ((unused)) int action) {
         die ("tcflow not implemented");
 }
 
-int tcflush (int fd, int queue_selector) {
+__attribute__ ((noreturn))
+int tcflush (__attribute__ ((unused)) int fd, 
+             __attribute__ ((unused)) int queue_selector) {
         die ("tcflush not implemented");
 }
 
-int tcgetattr (int fd, struct termios *termios_p) {
+__attribute__ ((noreturn))
+int tcgetattr (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcgetattr not implemented");
 }
 
-pid_t tcgetpgrp (int fd) {
+__attribute__ ((noreturn))
+pid_t tcgetpgrp (__attribute__ ((unused)) int fd) {
         die ("tcgetpgrp not implemented");
 }
 
-int tcsendbreak (int fd, int duration) {
+__attribute__ ((noreturn))
+int tcsendbreak (__attribute__ ((unused)) int fd, 
+                 __attribute__ ((unused)) int duration) {
         die ("tcsendbreak not implemented");
 }
 
-int tcsetattr (int fd, int optional_actions, struct termios *termios_p) {
+__attribute__ ((noreturn))
+int tcsetattr (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) int optional_actions, 
+               __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcsetattr not implemented");
 }
 
-int tcsetpgrp (int fd, pid_t pgrpid) {
+__attribute__ ((noreturn))
+int tcsetpgrp (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) pid_t pgrpid) {
         die ("tcsetpgrp not implemented");
 }
 
@@ -752,11 +851,18 @@ C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
-int ioctl (int d, int request, ...) {
+__attribute__ ((noreturn))
+int ioctl (__attribute__ ((unused)) int d, 
+           __attribute__ ((unused)) int request, 
+           ...) {
         die ("ioctl not implemented");
 }
 
-int socketpair (int d, int type, int protocol, int sv[2]) {
+__attribute__ ((noreturn))
+int socketpair (__attribute__ ((unused)) int d, 
+                __attribute__ ((unused)) int type, 
+                __attribute__ ((unused)) int protocol, 
+                __attribute__ ((unused)) int sv[2]) {
         die ("socketpair not implemented");
 }
 
@@ -782,7 +888,7 @@ static int logfacility = LOG_LOCAL0;
 
 void openlog(const char* ident, int opt, int facility) {
   logident = ident;
-  logopt = logopt;
+  logopt = opt;
   logfacility = facility;
 }
 
