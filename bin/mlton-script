@@ -72,43 +72,39 @@ if [ -d '/sw/lib' ]; then
 fi
 
 doit "$lib" \
-        -cc "$gcc"                                              \
-        -cc-opt "-I$lib/include"                                \
-        -cc-opt '-O1'                                           \
-        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'  \
-	-mlb-path-map "$lib/mlb-path-map"			\
-        -target-as-opt amd64                                    \
-                '-m32
-                -mtune=opteron'                                 \
-        -target-cc-opt amd64                                    \
-                '-m32
-                -mtune=opteron'                                 \
-        -target-cc-opt darwin '-I/sw/include'                   \
-	-target-cc-opt freebsd '-I/usr/local/include'		\
-        -target-cc-opt solaris                                  \
+        -cc "$gcc"                                               \
+        -cc-opt "-I$lib/include"                                 \
+        -cc-opt '-O1'                                            \
+        -cc-opts '-fno-strict-aliasing -fomit-frame-pointer -w'  \
+        -mlb-path-map "$lib/mlb-path-map"                        \
+        -target-as-opts amd64 '-m32 -mtune=opteron'              \
+        -target-cc-opts amd64 '-m32 -mtune=opteron'              \
+        -target-cc-opts darwin '-I/sw/include'                   \
+        -target-cc-opts freebsd '-I/usr/local/include'           \
+        -target-cc-opts solaris                                  \
                 '-Wa,-xarch=v8plusa
-                -mcpu=ultrasparc'                               \
-        -target-cc-opt sparc '-mcpu=v8 -m32'                    \
-        -target-cc-opt x86                                      \
+                -mcpu=ultrasparc'                                \
+        -target-cc-opts sparc '-mcpu=v8 -m32'                    \
+        -target-cc-opts x86                                      \
                 '-fno-strength-reduce
                 -fschedule-insns
                 -fschedule-insns2
                 -malign-functions=5
                 -malign-jumps=2
-                -malign-loops=2'                                \
-        -target-link-opt aix '-lgmp'                            \
-        -target-link-opt amd64 '-m32'                           \
-        -target-link-opt cygwin '-lgmp'                         \
-        -target-link-opt darwin "$darwinLinkOpts -lgmp"         \
-        -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opt hpux '-lgmp'                           \
-        -target-link-opt linux '-lgmp'                          \
-        -target-link-opt mingw                                  \
-                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'  \
-        -target-link-opt netbsd                                 \
-                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'    \
-        -target-link-opt openbsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'    \
-        -link-opt '-lgdtoa -lm'                                 \
-        -profile-exclude '<basis>'                              \
+                -malign-loops=2'                                 \
+        -target-link-opts aix '-lgmp'                            \
+        -target-link-opts amd64 '-m32'                           \
+        -target-link-opts cygwin '-lgmp'                         \
+        -target-link-opts darwin "$darwinLinkOpts -lgmp"         \
+        -target-link-opts freebsd '-L/usr/local/lib/ -lgmp'      \
+        -target-link-opts hpux '-lgmp'                           \
+        -target-link-opts linux '-lgmp'                          \
+        -target-link-opts mingw                                  \
+                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'   \
+        -target-link-opts netbsd                                 \
+                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'     \
+        -target-link-opts openbsd '-L/usr/local/lib/ -lgmp'      \
+        -target-link-opts solaris '-lgmp -lnsl -lsocket -lrt'    \
+        -link-opts '-lgdtoa -lm'                                 \
+        -profile-exclude '<basis>'                               \
         "$@"

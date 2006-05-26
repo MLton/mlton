@@ -129,8 +129,12 @@ fun makeOptions {usage} =
           | Control.Elaborate.Other =>
                usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
-      fun push r = SpaceString (fn s => List.push (r, s))
       datatype z = datatype MLton.Platform.Arch.t
+      fun splitString f opts =
+        List.foreach (String.tokens (opts, Char.isSpace), f)
+      fun splitString2 f (target, opts) =
+        List.foreach (String.tokens (opts, Char.isSpace), 
+                      fn opt => f (target, opt))
    in
       List.map
       (
@@ -150,6 +154,10 @@ fun makeOptions {usage} =
        (Normal, "as-opt", " <opt>", "pass option to assembler",
         SpaceString (fn s =>
                      List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "as-opts", " <opts>", "pass options to assembler",
+        SpaceString 
+         (splitString (fn s =>
+                       List.push (asOpts, {opt = s, pred = OptPred.Yes})))),
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
         boolRef buildConstants),
@@ -158,6 +166,10 @@ fun makeOptions {usage} =
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
         SpaceString (fn s =>
                      List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "cc-opts", " <opts>", "pass options to C compiler",
+        SpaceString 
+         (splitString (fn s =>
+                       List.push (ccOpts, {opt = s, pred = OptPred.Yes})))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
         Int (fn n => coalesce := SOME n)),
        (Normal, "codegen",
@@ -289,6 +301,10 @@ fun makeOptions {usage} =
        (Normal, "link-opt", " <opt>", "pass option to linker",
         SpaceString (fn s =>
                      List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "link-opts", " <opts>", "pass options to linker",
+        SpaceString 
+         (splitString (fn s =>
+                       List.push (linkOpts, {opt = s, pred = OptPred.Yes})))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
         Int 
         (fn i => 
@@ -428,7 +444,7 @@ fun makeOptions {usage} =
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
-        push runtimeArgs),
+        SpaceString (fn s => List.push (runtimeArgs, s))),
        (Expert, "show-anns", " {false|true}", "show annotations",
         boolRef showAnns),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
@@ -481,14 +497,29 @@ fun makeOptions {usage} =
         (SpaceString2
          (fn (target, opt) =>
           List.push (asOpts, {opt = opt, pred = OptPred.Target target})))),
+       (Expert, "target-as-opts", " <target> <opts>", "target-dependent assembler options",
+        (SpaceString2
+         (splitString2 
+          (fn (target, opt) =>
+           List.push (asOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Normal, "target-cc-opt", " <target> <opt>", "target-dependent C compiler option",
         (SpaceString2
          (fn (target, opt) =>
           List.push (ccOpts, {opt = opt, pred = OptPred.Target target})))),
+       (Expert, "target-cc-opts", " <target> <opts>", "target-dependent C compiler options",
+        (SpaceString2
+         (splitString2
+          (fn (target, opt) =>
+           List.push (ccOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Normal, "target-link-opt", " <target> <opt>", "target-dependent linker option",
         (SpaceString2
          (fn (target, opt) =>
           List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
+       (Expert, "target-link-opts", " <target> <opts>", "target-dependent linker options",
+        (SpaceString2
+         (splitString2
+          (fn (target, opt) =>
+           List.push (linkOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
         boolRef typeCheck),
@@ -592,19 +623,18 @@ fun commandLine (args: string list): unit =
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
       fun addTargetOpts opts =
-         tokenize
-         (List.fold
-          (!opts, [], fn ({opt, pred}, ac) =>
-           if (case pred of
-                  OptPred.Target s =>
-                     let
-                        val s = String.toLower s
-                     in
-                        s = archStr orelse s = OSStr
-                     end
-                | OptPred.Yes => true)
-              then opt :: ac
-           else ac))
+         List.fold
+         (!opts, [], fn ({opt, pred}, ac) =>
+          if (case pred of
+                 OptPred.Target s =>
+                    let
+                       val s = String.toLower s
+                    in
+                       s = archStr orelse s = OSStr
+                    end
+               | OptPred.Yes => true)
+             then opt :: ac
+          else ac)
       val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
       val linkOpts =
@@ -788,13 +818,13 @@ fun commandLine (args: string list): unit =
                               trace (Top, "Link")
                               (fn () =>
                                System.system
-                               (gcc,
-                                List.concat
-                                [targetOpts, 
-                                 ["-o", output],
-                                 if !debug then gccDebug else [],
-                                 inputs,
-                                 linkOpts]))
+                                (gcc,
+                                 List.concat
+                                  [targetOpts,
+                                   ["-o", output],
+                                   if !debug then gccDebug else [],
+                                   inputs,
+                                   linkOpts]))
                               ()
                            (* gcc on Cygwin appends .exe, which I don't want, so
                             * move the output file to it's rightful place.
@@ -833,39 +863,34 @@ fun commandLine (args: string list): unit =
                         else temp ".o"
                   fun compileC (c: Counter.t, input: File.t): File.t =
                      let
-                        val (debugSwitches, switches) =
-                           (gccDebug @ ["-DASSERT=1"], ccOpts)
-                        val switches =
-                           if !debug
-                              then debugSwitches @ switches
-                              else switches
-                        val switches =
-                           targetOpts @ ("-std=gnu99" :: "-c" :: switches)
+                        val debugSwitches = gccDebug @ ["-DASSERT=1"]
                         val output = mkOutputO (c, input)
                         val _ =
                            System.system
-                           (gcc,
-                            List.concat [switches,
-                                         ["-o", output, input]])
+                            (gcc, 
+                             List.concat
+                             [targetOpts,
+                              [ "-std=gnu99", "-c" ],
+                              if !debug then debugSwitches else [],
+                              ccOpts,
+                              ["-o", output], 
+                              [input]])
                      in
                         output
                      end
                   fun compileS (c: Counter.t, input: File.t): File.t =
                      let
-                        val (debugSwitches, switches) =
-                           ([asDebug], asOpts)
-                        val switches =
-                           if !debug
-                              then debugSwitches @ switches
-                              else switches
-                        val switches =
-                           targetOpts @ ("-c" :: switches)
                         val output = mkOutputO (c, input)
                         val _ =
                            System.system
                            (gcc,
-                            List.concat [switches,
-                                         ["-o", output, input]])
+                            List.concat 
+                            [targetOpts,
+                             ["-c"],
+                             if !debug then [asDebug] else [],
+                             asOpts,
+                             ["-o", output], 
+                             [input]])
                      in
                         output
                      end

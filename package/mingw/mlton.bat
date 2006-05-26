@@ -26,13 +26,13 @@ if not exist %cc% (
 set world=%lib%\world.mlton
 set mlton=%lib%\mlton-compile.exe
 
-set ccopts=-I%lib%\include -O1 -fno-strict-aliasing -fomit-frame-pointer -w
+set ccopts=-O1 -fno-strict-aliasing -fomit-frame-pointer -w
 set ccopts=%ccopts% -fno-strength-reduce -fschedule-insns -fschedule-insns2
 set ccopts=%ccopts% -malign-functions=5 -malign-jumps=2 -malign-loops=2
 set linkopts=-lgdtoa -lm
 set linkopts=%linkopts% -lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32
 
-%mlton% @MLton load-world %world% ram-slop 0.5 -- %lib% -cc %cc% -cc-opt "%ccopts%" -mlb-path-map %lib%\mlb-path-map -link-opt "%linkopts%" %*
+%mlton% @MLton load-world %world% ram-slop 0.5 -- %lib% -cc %cc% -cc-opt "-I%lib%\include" -cc-opts "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opts "%linkopts%" %*
 goto :eof
 
 :setdir
