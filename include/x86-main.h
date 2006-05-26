@@ -66,7 +66,7 @@ void MLton_jumpToSML (pointer jump) {                                   \
         Pointer lc_stackP;                                              \
                                                                         \
         if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \
+                fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (unsigned int)jump); \
         lc_stackP = c_stackP;                                           \
         if (reserveEsp)                                                 \
                 __asm__ __volatile__                                    \
@@ -82,7 +82,7 @@ void MLton_jumpToSML (pointer jump) {                                   \
                 );                                                      \
         c_stackP = lc_stackP;                                           \
         if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (uint)jump); \
+                fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (unsigned int)jump); \
         return;                                                         \
 }                                                                       \
 void MLton_callFromC () {                                               \
