@@ -75,7 +75,7 @@ struct GC_sourceMaps {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static inline GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack);
+static inline GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s);
 
 static inline char* getSourceName (GC_state s, GC_sourceIndex i);
 

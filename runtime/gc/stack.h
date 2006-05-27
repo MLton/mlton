@@ -69,6 +69,8 @@ static inline pointer getStackBottom (GC_state s, GC_stack stack);
 static inline pointer getStackTop (GC_state s, GC_stack stack);
 static inline pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
 static inline pointer getStackLimit (GC_state s, GC_stack stack);
+static inline GC_frameIndex getCachedStackTopFrameIndex (GC_state s);
+static inline GC_frameLayout getCachedStackTopFrameLayout (GC_state s);
 static inline GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
 static inline GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
 static inline uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);

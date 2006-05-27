@@ -92,7 +92,7 @@ void enterFrameForProfiling (GC_state s, GC_frameIndex i) {
 }
 
 void GC_profileEnter (GC_state s) {
-  enterForProfiling (s, getStackTopFrameSourceSeqIndex (s, getStackCurrent (s)));
+  enterForProfiling (s, getCachedStackTopFrameSourceSeqIndex (s));
 }
 
 void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i) {
@@ -152,7 +152,7 @@ void leaveFrameForProfiling (GC_state s, GC_frameIndex i) {
 }
 
 void GC_profileLeave (GC_state s) {
-  leaveForProfiling (s, getStackTopFrameSourceSeqIndex (s, getStackCurrent (s)));
+  leaveForProfiling (s, getCachedStackTopFrameSourceSeqIndex (s));
 }
 
 
@@ -192,7 +192,7 @@ void GC_profileInc (GC_state s, size_t amount) {
   incForProfiling (s, amount,
                    s->amInGC
                    ? SOURCE_SEQ_GC
-                   : getStackTopFrameSourceSeqIndex (s, getStackCurrent (s)));
+                   : getCachedStackTopFrameSourceSeqIndex (s));
 }
 
 void GC_profileAllocInc (GC_state s, size_t amount) {
@@ -326,7 +326,7 @@ void GC_handleSigProf (code_pointer pc) {
   if (s->amInGC)
     sourceSeqsIndex = SOURCE_SEQ_GC;
   else {
-    frameIndex = getStackTopFrameIndex (s, getStackCurrent (s));
+    frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameLayouts[frameIndex].kind)
       sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
     else {

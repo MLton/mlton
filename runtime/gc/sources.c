@@ -6,8 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-GC_sourceSeqIndex getStackTopFrameSourceSeqIndex (GC_state s, GC_stack stack) {
-  return s->sourceMaps.frameSources[getStackTopFrameIndex (s, stack)];
+GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s) {
+  GC_frameIndex i;
+
+  i = getCachedStackTopFrameIndex (s);
+  assert(i < s->sourceMaps.frameSourcesLength);
+  return s->sourceMaps.frameSources[i];
 }
 
 char* getSourceName (GC_state s, GC_sourceIndex i) {
