@@ -69,6 +69,10 @@ ifeq ($(TARGET_OS), freebsd)
 FLAGS += -I/usr/local/include
 endif
 
+ifeq ($(TARGET_OS), netbsd)
+FLAGS += -I/usr/pkg/include
+endif
+
 ifeq ($(TARGET_OS), openbsd)
 FLAGS += -I/usr/local/include
 endif
