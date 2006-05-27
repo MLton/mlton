@@ -40,6 +40,9 @@ GCOPTFLAGS += --param inline-unit-growth=125
 OPTWARNFLAGS += -Winline
 endif
 endif
+ifeq ($(findstring $(GCC_VERSION), 4.1),$(GCC_VERSION))
+OPTWARNFLAGS += -Winline
+endif
 DEBUGFLAGS += -gstabs+
 endif
 
