@@ -153,10 +153,10 @@ static const char* mlTypesHStd[] = {
   do {                                              \
   char *btLower = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btLower); i++)      \
-    btLower[i] = tolower(bt[i]);                    \
+    btLower[i] = (char)(tolower((int)(bt[i])));     \
   char *btUpper = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btUpper); i++)      \
-    btUpper[i] = toupper(bt[i]);                    \
+    btUpper[i] = (char)(toupper((int)(bt[i])));     \
   writeString (cTypesHFd, "typedef ");              \
   writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
@@ -228,10 +228,10 @@ static const char* mlTypesHStd[] = {
   do {                                              \
   char *btLower = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btLower); i++)      \
-    btLower[i] = tolower(bt[i]);                    \
+    btLower[i] = (char)(tolower((int)(bt[i])));     \
   char *btUpper = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btUpper); i++)      \
-    btUpper[i] = toupper(bt[i]);                    \
+    btUpper[i] = (char)(toupper((int)(bt[i])));     \
   writeString (cTypesHFd, "typedef ");              \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name1);                   \
