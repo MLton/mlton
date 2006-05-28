@@ -1,6 +1,5 @@
 #include "platform.h"
 
-
 #include <sys/mman.h>
 #include <sys/newsig.h>
 #include <sys/param.h>
@@ -16,19 +15,19 @@
 #include "use-mmap.c"
 
 extern unsigned char __text_start;
-extern unsigned_char etext;
+extern unsigned char etext;
 
-code_pointer getTextStart () {
+code_pointer GC_getTextStart (void) {
         return &__text_start;
 }
 
-code_pointer getTextEnd () {
+code_pointer GC_getTextEnd (void) {
         return &etext;
 }
 
 struct pstnames {
         int type;
-        char *name;
+        const char *name;
 };
 
 static struct pstnames pst_type_names[] =
@@ -64,31 +63,31 @@ pst_filename(struct pst_vm_status vm)
 {
         static char fname[256];
 #ifdef PSTAT_FILEDETAILS
-        if (pstat_getpathname(fname, sizeof(fname), &vm.pst_fid) < 0)
+        if (pstat_getpathname (fname, sizeof (fname), &vm.pst_fid) < 0)
 #endif
-                strcpy(fname, "unknown");
+                strcpy (fname, "unknown");
         return fname;
 }
 
-void GC_displayMem () {
+void GC_displayMem (void) {
         int i;
         struct pst_vm_status buf;
-        size_t page_size = sysconf(_SC_PAGE_SIZE);
+        size_t page_size = sysconf (_SC_PAGE_SIZE);
 
         printf("va_start  va_end  perms   type   phys   filename\n");
         printf("--------+--------+-----+-------+------+-----------\n");
         for (i = 0;; i++) {
-                if (pstat_getprocvm (&buf, sizeof(buf), 0, i) < 0)
+                if (pstat_getprocvm (&buf, sizeof (buf), 0, i) < 0)
                         break;
                 printf("%p %p  %s%s%s  %-8s %4d   %s\n",
                        (void*)buf.pst_vaddr,
-                       (void*)buf.pst_vaddr + buf.pst_length * page_size - 1,
+                       (void*)(buf.pst_vaddr + buf.pst_length * page_size - 1),
                        (buf.pst_flags & PS_PROT_READ) ? "-" : "r",
                        (buf.pst_flags & PS_PROT_WRITE) ? "-" : "w",
                        (buf.pst_flags & PS_PROT_EXECUTE) ? "-" : "x",
-                       pst_type_name(buf.pst_type),
+                       pst_type_name (buf.pst_type),
                        buf.pst_phys_pages,
-                       pst_filename(buf));
+                       pst_filename (buf));
         }
 }
 
@@ -105,10 +104,10 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 }
 
-W32 GC_totalRam (GC_state s) {
+size_t GC_totalRam (void) {
         struct pst_static buf;
 
-        if (pstat_getstatic (&buf, sizeof(buf), 1, 0) < 0)
+        if (pstat_getstatic (&buf, sizeof (buf), 1, 0) < 0)
                 diee ("failed to get physical memory size");
         return buf.physical_memory * buf.page_size;
 }
