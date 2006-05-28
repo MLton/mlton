@@ -131,7 +131,6 @@ ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wmissing-field-initializers
 endif
 WARNCFLAGS += -Wmissing-noreturn 
-WARNCFLAGS += -Wmissing-format-attribute 
 # WARNCFLAGS += -Wpacked -Wpadded
 WARNCFLAGS += -Wredundant-decls 
 WARNCFLAGS += -Wnested-externs 
@@ -140,6 +139,13 @@ WARNCFLAGS += -Wlong-long
 WARNCFLAGS += $(WARNFLAGS)
 OPTWARNCFLAGS = $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
 DEBUGWARNCFLAGS = $(WARNCFLAGS) $(DEBUGWARNFLAGS)
+
+# GCC doesn't recognize the %I64 format specifier which means %ll on windows
+ifeq ($(TARGET_OS), mingw)
+WARNCFLAGS += -Wno-format
+else
+WARNCFLAGS += -Wmissing-format-attribute
+endif
 
 UTILCFILES =							\
 	$(shell find util -type f | grep '\.c$$')
