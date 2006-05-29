@@ -217,47 +217,6 @@ extern struct GC_state gcState;
 #include "basis/Word/Word-check.h"
 
 /* ------------------------------------------------- */
-/*                        Real                       */
-/* ------------------------------------------------- */
-
-typedef volatile union {
-        Word32 tab[2];
-        Real64 d;
-} Real64Or2Word32s;
-
-static inline Real64 Real64_fetch (Real64 *dp) {
-        Real64Or2Word32s u;
-        Word32 *p;
-
-        p = (Word32*)dp;
-        u.tab[0] = p[0];
-        u.tab[1] = p[1];
-        return u.d;
-}
-
-static inline void Real64_move (Real64 *dst, Real64 *src) {
-        Word32 *pd;
-        Word32 *ps;
-        Word32 t;
-
-        pd = (Word32*)dst;
-        ps = (Word32*)src;
-        t = ps[1];
-        pd[0] = ps[0];
-        pd[1] = t;              
-}
-
-static inline void Real64_store (Real64 *dp, Real64 d) {
-        Real64Or2Word32s u;
-        Word32 *p;
-
-        p = (Word32*)dp;
-        u.d = d;
-        p[0] = u.tab[0];
-        p[1] = u.tab[1];
-}
-
-/* ------------------------------------------------- */
 /*                        Word                       */
 /* ------------------------------------------------- */
 

@@ -86,3 +86,40 @@ binaryRealIntRef(frexp, frexp)
   }
 binaryRealInt(ldexp, ldexp)
 #undef binaryRealInt
+
+#if (defined (__hppa__) || defined (__sparc__))
+#define binaryRealRealRef(g, h)                                         \
+  MLTON_CODEGEN_MATHFN(Real32_t h##f (Real32_t x, Real32_t *yp);)       \
+    MLTON_CODEGEN_STATIC_INLINE                                         \
+  Real32_t Real32_##g (Real32_t x, Ref(Real32_t) yp) {                  \
+    /* Real32_t r, res; */                                              \
+    /* r = Real32_fetch (yp); */                                        \
+    /* res = h##f (x, &r); */                                           \
+    /* Real32_store (yp, r); */                                         \
+    /* return res; */                                                   \
+    return h##f (x, (Real32_t*)yp);                                     \
+  }                                                                     \
+  MLTON_CODEGEN_MATHFN(Real64_t h (Real64_t x, Real64_t *yp);)          \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Real64_t Real64_##g (Real64_t x, Ref(Real64_t) yp) {                  \
+    Real64_t r, res;                                                    \
+    /* r = Real64_fetch (yp); */                                        \
+    res = h (x, &r);                                                    \
+    Real64_store (yp, r);                                               \
+    return res;                                                         \
+  }
+#else
+#define binaryRealRealRef(g, h)                                         \
+  MLTON_CODEGEN_MATHFN(Real32_t h##f (Real32_t x, Real32_t *yp);)       \
+    MLTON_CODEGEN_STATIC_INLINE                                         \
+  Real32_t Real32_##g (Real32_t x, Ref(Real32_t) yp) {                  \
+    return h##f (x, (Real32_t*)yp);                                     \
+  }                                                                     \
+  MLTON_CODEGEN_MATHFN(Real64_t h (Real64_t x, Real64_t *yp);)          \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Real64_t Real64_##g (Real64_t x, Ref(Real64_t) yp) {                  \
+    return h (x, (Real64_t*)yp);                                        \
+  }
+#endif
+binaryRealRealRef(modf, modf)
+#undef binaryRealRealRef

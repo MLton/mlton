@@ -23,6 +23,40 @@
     return op r1;                                                       \
   }
 
+#define misaligned(size)                                                \
+  typedef volatile union {                                              \
+    Real##size##_t r;                                                   \
+    Word32_t ws[sizeof(Real##size##_t) / sizeof(Word32_t)];             \
+  } Real##size##OrWord32s;                                              \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Real##size##_t Real##size##_fetch (Ref(Real##size##_t) rp) {          \
+    Real##size##OrWord32s u;                                            \
+    Word32_t *wp;                                                       \
+    wp = (Word32_t*)rp;                                                 \
+    u.ws[0] = wp[0];                                                    \
+    if ((sizeof(Real##size##_t) / sizeof(Word32_t)) > 1)                \
+      u.ws[1] = wp[1];                                                  \
+    return u.r;                                                         \
+  }                                                                     \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  void Real##size##_store (Ref(Real##size##_t) rp, Real##size##_t r) {  \
+    Real##size##OrWord32s u;                                            \
+    Word32_t *wp;                                                       \
+    wp = (Word32_t*)rp;                                                 \
+    u.r = r;                                                            \
+    wp[0] = u.ws[0];                                                    \
+    if ((sizeof(Real##size##_t) / sizeof(Word32_t)) > 1)                \
+      wp[1] = u.ws[1];                                                  \
+    return;                                                             \
+  }                                                                     \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  void Real##size##_move (Ref(Real##size##_t) dst, Ref(Real##size##_t) src) { \
+    Real##size##_t r;                                                   \
+    r = Real##size##_fetch (src);                                       \
+    Real##size##_store (dst, r);                                        \
+    return;                                                             \
+  }
+
 #define all(size)                               \
 binary(size, add, +)                            \
 binary(size, div, /)                            \
@@ -33,12 +67,14 @@ compare(size, le, <=)                           \
 compare(size, lt, <)                            \
 ternary(size, add, +)                           \
 ternary(size, sub, -)                           \
-unary(size, neg, -)
+unary(size, neg, -)                             \
+misaligned(size)
 
 all(32)
 all(64)
 
 #undef all
+#undef misaligned
 #undef unary
 #undef ternary
 #undef compare
