@@ -43,7 +43,7 @@
         loadStoreContents (mode, ty)            \
         loadStoreGlobal (mode, ty, ty)          \
         loadStoreOffset (mode, ty)              \
-        loadStoreRegister (mode, ty, ty)                \
+        loadStoreRegister (mode, ty, ty)        \
         loadStoreStackOffset (mode, ty)
 
 #define loadStorePrims(mode)                            \
