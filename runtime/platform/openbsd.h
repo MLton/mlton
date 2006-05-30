@@ -38,38 +38,38 @@
 int fpclassify32 (float f);
 int fpclassify64 (double d);
 
-#ifndef PRIu8
-#define PRIu8 "hhu"
-#endif
-#ifndef PRIu16
-#define PRIu16 "hu"
-#endif
-#ifndef PRIx16
-#define PRIx16 "hx"
-#endif
-#ifndef PRId32
-#define PRId32 "d"
-#endif
-#ifndef PRIu32
-#define PRIu32 "u"
-#endif
-#ifndef PRIx32
-#define PRIx32 "x"
-#endif
-typedef long long int intmax_t;
-#ifndef INTMAX_MIN
-#define INTMAX_MIN LLONG_MIN
-#endif
-typedef unsigned long long int uintmax_t;
-#ifndef PRIuMAX
-#define PRIuMAX "llu"
-#endif
-#ifndef PRIxMAX
-#define PRIxMAX "llx"
-#endif
+/* #ifndef PRIu8 */
+/* #define PRIu8 "hhu" */
+/* #endif */
+/* #ifndef PRIu16 */
+/* #define PRIu16 "hu" */
+/* #endif */
+/* #ifndef PRIx16 */
+/* #define PRIx16 "hx" */
+/* #endif */
+/* #ifndef PRId32 */
+/* #define PRId32 "d" */
+/* #endif */
+/* #ifndef PRIu32 */
+/* #define PRIu32 "u" */
+/* #endif */
+/* #ifndef PRIx32 */
+/* #define PRIx32 "x" */
+/* #endif */
+/* typedef long long int intmax_t; */
+/* #ifndef INTMAX_MIN */
+/* #define INTMAX_MIN LLONG_MIN */
+/* #endif */
+/* typedef unsigned long long int uintmax_t; */
+/* #ifndef PRIuMAX */
+/* #define PRIuMAX "llu" */
+/* #endif */
+/* #ifndef PRIxMAX */
+/* #define PRIxMAX "llx" */
+/* #endif */
 
-#ifndef PRIxPTR
-#define PRIxPTR "lx"
-#endif
+/* #ifndef PRIxPTR */
+/* #define PRIxPTR "lx" */
+/* #endif */
 
 extern char **environ; /* for Posix_ProcEnv_environ */

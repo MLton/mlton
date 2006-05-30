@@ -86,8 +86,8 @@ structure C_RLim = struct open Word64 type t = word end
 functor C_RLim_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word64 (A)
 
 (* from <sys/types.h> *)
-structure C_Clock = struct open Word32 type t = word end
-functor C_Clock_ChooseWordN (A: CHOOSE_WORDN_ARG) = ChooseWordN_Word32 (A)
+structure C_Clock = struct open Int32 type t = int end
+functor C_Clock_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
 structure C_Dev = struct open Int32 type t = int end
 functor C_Dev_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int32 (A)
 structure C_GId = struct open Word32 type t = word end
