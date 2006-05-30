@@ -5,6 +5,7 @@
 #include "mkdir2.c"
 #include "displayMem.linux.c"
 #include "mmap-protect.c"
+#include "nonwin.c"
 #include "sysctl.c"
 #include "use-mmap.c"
 

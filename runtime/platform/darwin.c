@@ -7,6 +7,7 @@
 #include "diskBack.unix.c"
 #include "mkdir2.c"
 #include "mmap-protect.c"
+#include "nonwin.c"
 #include "use-mmap.c"
 
 code_pointer GC_getTextEnd (void) {
@@ -53,11 +54,4 @@ size_t GC_totalRam (void) {
         if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
                 diee ("sysctl failed");
         return mem;
-}
-
-// This is not windows
-__attribute__ ((noreturn))
-C_Errno_t(C_PId_t) MLton_Process_cwait (__attribute__ ((unused)) C_PId_t pid, 
-                                        __attribute__ ((unused)) Ref(C_Status_t) status) {
-        die("MLton_Process_cwait not implemented");
 }

@@ -81,6 +81,7 @@ doit "$lib" \
         -target-cc-opts amd64 '-m32 -mtune=opteron'              \
         -target-cc-opts darwin '-I/sw/include'                   \
         -target-cc-opts freebsd '-I/usr/local/include'           \
+        -target-cc-opts netbsd '-I/usr/pkg/include'              \
         -target-cc-opts solaris                                  \
                 '-Wa,-xarch=v8plusa
                 -mcpu=ultrasparc'                                \
@@ -102,7 +103,7 @@ doit "$lib" \
         -target-link-opts mingw                                  \
                 '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'   \
         -target-link-opts netbsd                                 \
-                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'     \
+                '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/ -lgmp'       \
         -target-link-opts openbsd '-L/usr/local/lib/ -lgmp'      \
         -target-link-opts solaris '-lgmp -lnsl -lsocket -lrt'    \
         -link-opts '-lgdtoa -lm'                                 \
