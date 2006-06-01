@@ -1,8 +1,8 @@
 #include <fenv.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <grp.h>
-#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>

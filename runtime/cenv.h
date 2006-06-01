@@ -29,7 +29,8 @@
 // fenv.h (or approximate equivalent) comes from the n-way OS switch below.
 // #include <fenv.h>
 #include <float.h>
-#include <inttypes.h>
+// inttypes.h (or approximate equivalent) comes from the n-way OS switch below.
+// #include <inttypes.h>
 #include <iso646.h>
 #include <limits.h>
 // #include <locale.h>

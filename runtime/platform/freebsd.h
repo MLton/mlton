@@ -1,16 +1,14 @@
 #include <fenv.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <grp.h>
-#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#include <pwd.h>
 #include <poll.h>
-#include <termios.h>
-#include <sys/resource.h>
+#include <pwd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/poll.h>

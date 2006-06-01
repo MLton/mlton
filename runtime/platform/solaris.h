@@ -1,13 +1,13 @@
+#include <inttypes.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <poll.h>
 #include <pwd.h>
 #include <strings.h>
-#include <poll.h>
-#include <termios.h>
-#include <sys/resource.h>
 #include <sys/filio.h> /* For FIONBIO, FIONREAD. */
 #include <sys/ioctl.h>
 #include <sys/mman.h>

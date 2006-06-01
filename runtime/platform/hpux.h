@@ -3,8 +3,9 @@
 #endif
 
 #include <fenv.h>
-#include <grp.h>
 #include <inttypes.h>
+
+#include <grp.h>
 #include <math.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -19,7 +20,6 @@
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <syslog.h>
-#include <termios.h>
 #include <termios.h>
 
 #include "setenv.h"

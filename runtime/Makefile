@@ -174,6 +174,7 @@ CFILES = 							\
 	platform.c
 
 HFILES = 							\
+	cenv.h							\
 	$(UTILHFILES)						\
 	util.h							\
 	$(GCHFILES)						\

@@ -1,3 +1,21 @@
+#define __ppc__
+
+#include <grp.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <pwd.h>
+#include <sys/ioctl.h>
+#include <sys/poll.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/syslog.h>
+#include <sys/times.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <sys/utsname.h>
+#include <termios.h>
+
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
 #define HAS_FPCLASSIFY64 TRUE
@@ -10,26 +28,6 @@
 #define HAS_TIME_PROFILING FALSE
 
 #define MLton_Platform_OS_host "aix"
-#define __ppc__
-
-#include <grp.h>
-#include <math.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <pwd.h>
-#include <sys/ioctl.h>
-#include <sys/poll.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/syslog.h>
-#include <sys/times.h>
-#include <sys/types.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <sys/utsname.h>
-#include <termios.h>
-
 
 #include "feround.h"
 
