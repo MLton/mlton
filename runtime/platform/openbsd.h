@@ -10,7 +10,6 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-#include <sys/poll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
