@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 
+* 2006-06-08
+  - Fixed a bug in the native codegen's implementation of the C-calling
+    convention.
+	
 * 2006-05-11
   - Ported to PowerPC-AIX.
   - Fixed a bug in the runtime for the cases where nonblocking IO with
