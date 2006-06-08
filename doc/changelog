@@ -20,6 +20,37 @@ Here are the changes since version 20051202.
 * 2006-04-19
   - Fixed a bug in MLton.share that could cause a segfault.
 
+* 2006-03-30
+  - Changed MLton.Vector.unfoldi to return the state in addition to the
+    result vector.
+
+* 2006-03-30
+  - Added MLton.Vector.create, a more powerful vector-creation function
+    than is available in the basis library.
+
+* 2006-03-04
+  - Added MLRISC from SML/NJ 110.57 to standard distribution.
+
+* 2006-03-03
+  - Fixed bug in simplifier that could eliminate an irredundant test.
+
+* 2006-03-02
+  - Ported a bugfix from SML/NJ for a bug with the combination of withNack
+    and never in CML. 
+
+* 2006-02-09
+  - Support compiler specific annotations in ML Basis files.  If an
+    annotation contains ":", then the text preceding the ":" is meant to
+    denote a compiler.  For MLton, if the text preceding the ":" is equal
+    to "mlton", then the remaining annotation is scanned as a normal
+    annotation.  If the text preceding the ":" is not-equal to "mlton",
+    then the annotation is ignored, and no warning is issued.
+
+* 2006-02-04
+  - Fixed bug in elaboration of functors; a program with a very large
+    number of functors could exhibit the error
+    "ElaborateEnv.functorClosure: firstTycons".
+	
 --------------------------------------------------------------------------------
 
 Here are the changes from version 20041109 to version 20051202.
@@ -85,7 +116,7 @@ Summary:
 
 * 2005-09-08
   - Fixed bug in type inference of flexible records that would show up
-    as "Type error: variable applied to wrong number of type args"
+    as "Type error: variable applied to wrong number of type args".
 
 * 2005-09-06
   - Fixed bug in Real.signBit, which had assumed that the underlying

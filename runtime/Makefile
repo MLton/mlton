@@ -131,6 +131,7 @@ ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wmissing-field-initializers
 endif
 WARNCFLAGS += -Wmissing-noreturn 
+WARNCFLAGS += -Wmissing-format-attribute
 # WARNCFLAGS += -Wpacked -Wpadded
 WARNCFLAGS += -Wredundant-decls 
 WARNCFLAGS += -Wnested-externs 
@@ -142,9 +143,7 @@ DEBUGWARNCFLAGS = $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 
 # GCC doesn't recognize the %I64 format specifier which means %ll on windows
 ifeq ($(TARGET_OS), mingw)
-WARNCFLAGS += -Wno-format
-else
-WARNCFLAGS += -Wmissing-format-attribute
+WARNCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
 
 UTILCFILES =							\
@@ -174,7 +173,7 @@ CFILES = 							\
 	platform.c
 
 HFILES = 							\
-	cenv.h							\
+        cenv.h                                                  \
 	$(UTILHFILES)						\
 	util.h							\
 	$(GCHFILES)						\
