@@ -1,9 +1,9 @@
 Here are the changes since version 20051202.
-
+	
 * 2006-06-08
   - Fixed a bug in the native codegen's implementation of the C-calling
     convention.
-	
+
 * 2006-05-11
   - Ported to PowerPC-AIX.
   - Fixed a bug in the runtime for the cases where nonblocking IO with
@@ -11,6 +11,10 @@ Here are the changes since version 20051202.
     exist on AIX, Cygwin, HPUX, and MinGW and was previously just
     ignored.  Now the runtime simulates the flag for these platforms
     (except MinGW, yet, where it's still ignored).
+
+* 2006-05-06
+  - Added -default-type '<ty><N>' for specyfying the binding of default
+    types in the Basis Library (e.g., Int.int).
 
 * 2006-04-25
   - Ported to HPPA-HPUX.
