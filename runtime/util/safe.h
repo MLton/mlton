@@ -54,11 +54,11 @@ static inline int open_safe (const char *fileName, int flags, mode_t mode) {
 
 static inline void read_safe (int fd, void *buf, size_t size) {
   ssize_t res;
+  size_t offset;
 
-  if (0 == size) return;
-  res = read (fd, buf, size);
-  if (res == -1 or (size_t)res != size)
-    diee ("read (_, _, _) failed.\n");
+  for (offset = 0; offset < size; offset += res)
+    if (0 >= (res = read (fd, (unsigned char*)buf+offset, size-offset)))
+      diee ("read (_, _, _) failed.\n");
 }
 
 static inline void unlink_safe (const char *pathname) {
@@ -72,9 +72,9 @@ static inline void unlink_safe (const char *pathname) {
 
 static inline void write_safe (int fd, const void *buf, size_t size) {
   ssize_t res;
+  size_t offset;
 
-  if (0 == size) return;
-  res = write (fd, buf, size);
-  if (res == -1 or (size_t)res != size)
-    diee ("write (_, _, _) failed.\n");
+  for (offset = 0; offset < size; offset += res)
+    if (0 >= (res = write (fd, (const unsigned char*)buf+offset, size-offset)))
+      diee ("write (_, _, _) failed.\n");
 }
