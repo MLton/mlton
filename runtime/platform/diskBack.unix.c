@@ -1,5 +1,6 @@
 static FILE *tempFileDes (void) {
   int fd;
+  FILE *f;
   char *template;
   const char *tmpDir;
   const char *tag = "/TempFileXXXXXXXXXX";
