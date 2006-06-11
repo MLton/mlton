@@ -27,8 +27,8 @@
 #define Vector(a, b, c, d) { a, b, c, d },
 #define EndVectors };
 
-#define LoadArray(a, fd) read_safe (fd, a, sizeof(*a) * cardof(a))
-#define SaveArray(a, fd) write_safe (fd, a, sizeof(*a) * cardof(a))
+#define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
+#define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 
 Pointer gcStateAddress;
 

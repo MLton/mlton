@@ -277,9 +277,11 @@ static const char* cTypesSMLSuffix[] = {
 
 int main (__attribute__ ((unused)) int argc, 
           __attribute__ ((unused)) char* argv[]) {
-  int mlTypesHFd, cTypesHFd, cTypesSMLFd;
+  FILE *mlTypesHFd;
+  FILE *cTypesHFd;
+  FILE *cTypesSMLFd;
 
-  mlTypesHFd = open_safe ("ml-types.h", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  mlTypesHFd = fopen_safe ("ml-types.h", "w");
   for (int i = 0; mlTypesHPrefix[i] != NULL; i++)
     writeStringWithNewline (mlTypesHFd, mlTypesHPrefix[i]);
   for (int i = 0; mlTypesHStd[i] != NULL; i++)
@@ -287,8 +289,8 @@ int main (__attribute__ ((unused)) int argc,
   for (int i = 0; mlTypesHSuffix[i] != NULL; i++)
     writeStringWithNewline (mlTypesHFd, mlTypesHSuffix[i]);
 
-  cTypesHFd= open_safe ("c-types.h", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  cTypesSMLFd = open_safe ("c-types.sml", O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  cTypesHFd = fopen_safe ("c-types.h", "w");
+  cTypesSMLFd = fopen_safe ("c-types.sml", "w");
 
   for (int i = 0; cTypesHPrefix[i] != NULL; i++) 
     writeStringWithNewline (cTypesHFd, cTypesHPrefix[i]);
@@ -399,6 +401,10 @@ int main (__attribute__ ((unused)) int argc,
     writeStringWithNewline (cTypesHFd, cTypesHSuffix[i]);
   for (int i = 0; cTypesSMLSuffix[i] != NULL; i++) 
     writeStringWithNewline (cTypesSMLFd, cTypesSMLSuffix[i]);
+  
+  fclose_safe(mlTypesHFd);
+  fclose_safe(cTypesHFd);
+  fclose_safe(cTypesSMLFd);
 
   return 0;
 }

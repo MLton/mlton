@@ -6,73 +6,73 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline char readChar (int fd) {
+static inline char readChar (FILE *f) {
   char res;
-  read_safe (fd, &res, sizeof(char));
+  fread_safe (&res, sizeof(char), 1, f);
   return res;
 }
 
-static inline size_t readSize (int fd) {
+static inline size_t readSize (FILE *f) {
   size_t res;
-  read_safe (fd, &res, sizeof(size_t));
+  fread_safe (&res, sizeof(size_t), 1, f);
   return res;
 }
 
-static inline uint32_t readUint32 (int fd) {
+static inline uint32_t readUint32 (FILE *f) {
   uint32_t res;
-  read_safe (fd, &res, sizeof(uint32_t));
+  fread_safe (&res, sizeof(uint32_t), 1, f);
   return res;
 }
 
-static inline uintptr_t readUintptr (int fd) {
+static inline uintptr_t readUintptr (FILE *f) {
   uintptr_t res;
-  read_safe (fd, &res, sizeof(uintptr_t));
+  fread_safe (&res, sizeof(uintptr_t), 1, f);
   return res;
 }
 
-static inline void writeChar (int fd, char c) {
-  write_safe (fd, &c, sizeof(char));
+static inline void writeChar (FILE *f, char c) {
+  fwrite_safe (&c, sizeof(char), 1, f);
 }
 
-static inline void writeSize (int fd, size_t z) {
-  write_safe (fd, &z, sizeof(size_t));
+static inline void writeSize (FILE *f, size_t z) {
+  fwrite_safe (&z, sizeof(size_t), 1, f);
 }
 
-static inline void writeUint32 (int fd, uint32_t u) {
-  write_safe (fd, &u, sizeof(uint32_t));
+static inline void writeUint32 (FILE *f, uint32_t u) {
+  fwrite_safe (&u, sizeof(uint32_t), 1, f);
 }
 
-static inline void writeUintptr (int fd, uintptr_t u) {
-  write_safe (fd, &u, sizeof(uintptr_t));
+static inline void writeUintptr (FILE *f, uintptr_t u) {
+  fwrite_safe (&u, sizeof(uintptr_t), 1, f);
 }
 
-static inline void writeString (int fd, const char* s) {
-  write_safe (fd, s, strlen(s));
+static inline void writeString (FILE *f, const char* s) {
+  fwrite_safe (s, 1, strlen(s), f);
 }
 
 #define BUF_SIZE 81
-static inline void writeUint32U (int fd, uint32_t u) {
+static inline void writeUint32U (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
 
   sprintf (buf, "%"PRIu32, u);
-  writeString (fd, buf);
+  writeString (f, buf);
 }
 
-static inline void writeUintmaxU (int fd, uintmax_t u) {
+static inline void writeUintmaxU (FILE *f, uintmax_t u) {
   static char buf[BUF_SIZE];
 
   sprintf (buf, "%"PRIuMAX, u);
-  writeString (fd, buf);
+  writeString (f, buf);
 }
 
-static inline void writeUint32X (int fd, uint32_t u) {
+static inline void writeUint32X (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
   
   sprintf (buf, "0x%08"PRIx32, u);
-  writeString (fd, buf);
+  writeString (f, buf);
 }
 
-static inline void writeUintmaxX (int fd, uintmax_t u) {
+static inline void writeUintmaxX (FILE *f, uintmax_t u) {
   static char buf[BUF_SIZE];
 
   if (sizeof(uintmax_t) == 4) {
@@ -82,15 +82,15 @@ static inline void writeUintmaxX (int fd, uintmax_t u) {
   } else {
     sprintf (buf, "0x%"PRIxMAX, u);
   }
-  writeString (fd, buf);
+  writeString (f, buf);
 }
 
-static inline void writeNewline (int fd) {
-  writeString (fd, "\n");
+static inline void writeNewline (FILE *f) {
+  writeString (f, "\n");
 }
 
-static inline void writeStringWithNewline (int fd, const char* s) {
-  writeString (fd, s);
-  writeNewline (fd);
+static inline void writeStringWithNewline (FILE *f, const char* s) {
+  writeString (f, s);
+  writeNewline (f);
 }
 #undef BUF_SIZE

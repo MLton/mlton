@@ -9,39 +9,25 @@
 structure MLtonWorld: MLTON_WORLD =
    struct
       structure Prim = Primitive.MLton.World
+      structure Error = PosixError
+      structure SysCall = Error.SysCall
 
       val gcState = Primitive.MLton.GCState.gcState
          
       datatype status = Clone | Original
 
       (* Need to worry about:
-       *   - open file descriptors
        *   - redetermine buffer status when restart
        *)
       fun save' (file: string): status =
          let
-            val fd =
-               let
-                  open Posix.FileSys
-                  val flags =
-                     O.flags [O.trunc, PrimitiveFFI.Posix.FileSys.O.BINARY]
-                  val mode =
-                     let
-                        open S
-                     in
-                        flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
-                     end
-               in
-                  createf (file, O_WRONLY, flags, mode)
-                  handle e =>
-                     raise Fail (concat ["MLton.World.save unable to open ",
-                                         file, " due to ",
-                                         General.exnMessage e])
-               end
-            val _ = Prim.save fd
+            val () = 
+               SysCall.simple' 
+                  ({ errVal = true }, 
+                   fn () => Prim.save (NullString.nullTerm file))
          in
             if Prim.getAmOriginal gcState
-               then (Posix.IO.close fd; Original)
+               then Original
             else (Prim.setAmOriginal (gcState, true)
                   ; Cleaner.clean Cleaner.atLoadWorld
                   ; Clone)

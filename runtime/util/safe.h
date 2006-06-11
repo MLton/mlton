@@ -16,12 +16,12 @@ static inline void *calloc_safe (size_t count, size_t size) {
   return res;
 }
 
-static inline void close_safe (int fd) {
+static inline void fclose_safe (FILE* f) {
   int res;
 
-  res = close (fd);
+  res = fclose (f);
   if (-1 == res)
-    diee ("close (%d) failed.\n", fd);
+    diee ("fclose (_) failed.\n");
   return;
 }
 
@@ -43,22 +43,22 @@ static inline int mkstemp_safe (char *template) {
   return fd;
 }
 
-static inline int open_safe (const char *fileName, int flags, mode_t mode) {
-  int res;
+static inline FILE *fopen_safe (const char *fileName, const char *mode) {
+  FILE *res;
 
-  res = open (fileName, flags, mode);
-  if (-1 == res)
-    diee ("open (%s,_,_) failed.\n", fileName);
+  res = fopen (fileName, mode);
+  if (0 == res)
+    diee ("fopen (%s, %s) failed.\n", fileName, mode);
   return res;
 }
 
-static inline void read_safe (int fd, void *buf, size_t size) {
-  ssize_t res;
-  size_t offset;
-
-  for (offset = 0; offset < size; offset += res)
-    if (0 >= (res = read (fd, (unsigned char*)buf+offset, size-offset)))
-      diee ("read (_, _, _) failed.\n");
+static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
+  size_t res;
+  
+  res = fread (buf, size, count, f);
+  if (res != count)
+    diee ("fread (_, %ld, %ld, _) failed (only read %ld).\n",
+          (long)size, (long)count, (long)res);
 }
 
 static inline void unlink_safe (const char *pathname) {
@@ -70,11 +70,11 @@ static inline void unlink_safe (const char *pathname) {
   return;
 }
 
-static inline void write_safe (int fd, const void *buf, size_t size) {
-  ssize_t res;
-  size_t offset;
+static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE *f) {
+  size_t res;
 
-  for (offset = 0; offset < size; offset += res)
-    if (0 >= (res = write (fd, (const unsigned char*)buf+offset, size-offset)))
-      diee ("write (_, _, _) failed.\n");
+  res = fwrite (buf, size, count, f);
+  if (res != count)
+      diee ("fwrite (_, %ld, %ld, _) failed (only wrote %ld).\n",
+            (long)size, (long)count, (long)res);
 }

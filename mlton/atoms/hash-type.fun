@@ -362,7 +362,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Word_toReal (s, s', _) => done ([word s], real s')
        | Word_toWord (s, s', _) => done ([word s], word s')
        | Word_xorb s => wordBinary s
-       | World_save => done ([defaultWord], unit)
+       | World_save => done ([string], bool)
        | _ => Error.bug (concat ["HashType.checkPrimApp: strange prim: ",
                                  Prim.toString prim])
    end

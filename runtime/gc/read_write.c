@@ -6,23 +6,23 @@
  * See the file MLton-LICENSE for details.
  */
 
-static inline objptr readObjptr (int fd) {
+static inline objptr readObjptr (FILE *f) {
   objptr res;
-  read_safe (fd, &res, sizeof(objptr));
+  fread_safe (&res, sizeof(objptr), 1, f);
   return res;
 }
 
-static inline pointer readPointer (int fd) {
+static inline pointer readPointer (FILE *f) {
   uintptr_t res;
-  read_safe (fd, &res, sizeof(uintptr_t));
+  fread_safe (&res, sizeof(uintptr_t), 1, f);
   return (pointer)res;
 }
 
-static inline void writeObjptr (int fd, objptr op) {
-  write_safe (fd, &op, sizeof(objptr));
+static inline void writeObjptr (FILE *f, objptr op) {
+  fwrite_safe (&op, sizeof(objptr), 1, f);
 }
 
-static inline void writePointer (int fd, pointer p) {
+static inline void writePointer (FILE *f, pointer p) {
   uintptr_t u = (uintptr_t)p;
-  write_safe (fd, &u, sizeof(uintptr_t));
+  fwrite_safe (&u, sizeof(uintptr_t), 1, f);
 }

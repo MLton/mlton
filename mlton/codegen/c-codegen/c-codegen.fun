@@ -246,19 +246,19 @@ fun outputDeclarations
       fun declareLoadSaveGlobals () =
          let
             val _ =
-               (print "static void saveGlobals (int fd) {\n"
+               (print "static int saveGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     print (concat ["\tSaveArray (global",
-                                   CType.toString t, ", fd);\n"])))
-                ; print "}\n")
+                                   CType.toString t, ", f);\n"])))
+                ; print "\treturn 0;\n}\n")
             val _ =
-               (print "static void loadGlobals (int fd) {\n"
+               (print "static int loadGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     print (concat ["\tLoadArray (global",
-                                   CType.toString t, ", fd);\n"])))
-                ; print "}\n")
+                                   CType.toString t, ", f);\n"])))
+                ; print "\treturn 0;\n}\n")
          in
             ()
          end

@@ -8,14 +8,15 @@
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void loadWorldFromFD (GC_state s, int fd);
-static void loadWorldFromFileName (GC_state s, char *fileName);
-static void saveWorldToFD (GC_state s, int fd);
+static void loadWorldFromFD (GC_state s, FILE *f);
+static void loadWorldFromFileName (GC_state s, const char *fileName);
+static int saveWorldToFD (GC_state s, FILE *f);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-void GC_saveWorld (GC_state s, int fd);
+/* 0 = success, 1 = failure (a bool) */
+uint32_t GC_saveWorld (GC_state s, NullString8_t fileName);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

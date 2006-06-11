@@ -316,7 +316,7 @@ structure World =
    struct
       val getAmOriginal = _import "GC_getAmOriginal": GCState.t -> bool;
       val setAmOriginal = _import "GC_setAmOriginal": GCState.t * bool -> unit;
-      val save = _prim "World_save": C_Fd.t -> unit;
+      val save = _prim "World_save": NullString8.t -> bool C_Errno.t;
    end
 
 end 

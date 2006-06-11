@@ -218,7 +218,7 @@ structure CFunction =
             writesStackTop = true}
 
       val worldSave =
-         T {args = Vector.new2 (gcState, Word32),
+         T {args = Vector.new2 (gcState, Type.wordVector (Bits.fromInt 8)),
             bytesNeeded = NONE,
             convention = Cdecl,
             ensuresBytesFree = false,
@@ -228,10 +228,10 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new2 (Pointer, Word32), NONE)
+                           (Vector.new2 (Pointer, Pointer), SOME bool)
                         end,
             readsStackTop = true,
-            return = unit,
+            return = Type.bool,
             target = Direct "GC_saveWorld",
             writesStackTop = true}
 

@@ -229,27 +229,27 @@ void GC_profileFree (GC_state s, GC_profileData p) {
   free (p);
 }
 
-void writeProfileCount (GC_state s, int fd,
+void writeProfileCount (GC_state s, FILE *f,
                         GC_profileData p, GC_profileMasterIndex i) {
-  writeUintmaxU (fd, p->countTop[i]);
+  writeUintmaxU (f, p->countTop[i]);
   if (s->profiling.stack) {
     GC_profileStack ps;
     
     ps = &(p->stack[i]);
-    writeString (fd, " ");
-    writeUintmaxU (fd, ps->ticks);
-    writeString (fd, " ");
-    writeUintmaxU (fd, ps->ticksGC);
+    writeString (f, " ");
+    writeUintmaxU (f, ps->ticks);
+    writeString (f, " ");
+    writeUintmaxU (f, ps->ticksGC);
   }
-  writeNewline (fd);
+  writeNewline (f);
 }
 
-void GC_profileWrite (GC_state s, GC_profileData p, int fd) {
+void GC_profileWrite (GC_state s, GC_profileData p, FILE *f) {
   const char* kind;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileWrite\n");
-  writeString (fd, "MLton prof\n");
+  writeString (f, "MLton prof\n");
   kind = "";
   switch (s->profiling.kind) {
   case PROFILE_ALLOC:
@@ -268,23 +268,23 @@ void GC_profileWrite (GC_state s, GC_profileData p, int fd) {
     kind = "time\n";
     break;
   }
-  writeString (fd, kind);
-  writeString (fd, s->profiling.stack ? "stack\n" : "current\n");
-  writeUint32X (fd, s->magic);
-  writeNewline (fd);
-  writeUintmaxU (fd, p->total);
-  writeString (fd, " ");
-  writeUintmaxU (fd, p->totalGC);
-  writeNewline (fd);
-  writeUint32U (fd, s->sourceMaps.sourcesLength);
-  writeNewline (fd);
+  writeString (f, kind);
+  writeString (f, s->profiling.stack ? "stack\n" : "current\n");
+  writeUint32X (f, s->magic);
+  writeNewline (f);
+  writeUintmaxU (f, p->total);
+  writeString (f, " ");
+  writeUintmaxU (f, p->totalGC);
+  writeNewline (f);
+  writeUint32U (f, s->sourceMaps.sourcesLength);
+  writeNewline (f);
   for (GC_sourceIndex i = 0; i < s->sourceMaps.sourcesLength; i++)
-    writeProfileCount (s, fd, p, 
+    writeProfileCount (s, f, p, 
                        (GC_profileMasterIndex)i);
-  writeUint32U (fd, s->sourceMaps.sourceNamesLength);
-  writeNewline (fd);
+  writeUint32U (f, s->sourceMaps.sourceNamesLength);
+  writeNewline (f);
   for (GC_sourceNameIndex i = 0; i < s->sourceMaps.sourceNamesLength; i++)
-    writeProfileCount (s, fd, p,  
+    writeProfileCount (s, f, p,  
                        (GC_profileMasterIndex)(i + s->sourceMaps.sourcesLength));
 }
 
@@ -387,17 +387,16 @@ static void initProfilingTime (GC_state s) {
 static GC_state atexitForProfilingState;
 
 void atexitForProfiling (void) {
-  int fd;
+  FILE *f;
   GC_state s;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "atexitForProfiling ()\n");
   s = atexitForProfilingState;
   if (s->profiling.isOn) {
-    fd = creat ("mlmon.out", 0666);
-    if (fd < 0)
-      diee ("Cannot create mlmon.out");
-    GC_profileWrite (s, s->profiling.data, fd);
+    f = fopen_safe ("mlmon.out", "wb");
+    GC_profileWrite (s, s->profiling.data, f);
+    fclose_safe (f);
   }
 }
 

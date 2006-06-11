@@ -1,4 +1,4 @@
-static int tempFileDes (void) {
+static FILE *tempFileDes (void) {
   int fd;
   char *template;
   const char *tmpDir;
@@ -16,39 +16,39 @@ static int tempFileDes (void) {
   strcat (template, tag);
   m = umask(077);
   fd = mkstemp_safe (template);
+  f = fdopen(f, "w+");
   (void)umask(m);
   unlink_safe (template);
   free (template);
-  return fd;
+  return f;
 }
 
 typedef struct {
-  int fd;
+  FILE *f;
 } *WriteToDiskData;
 
 void diskBack_read (void *data, pointer buf, size_t size) {
-  int fd;
+  FILE *f;
 
-  fd = ((WriteToDiskData)data)->fd;
-  lseek (fd, 0, SEEK_SET);
-  read_safe (fd, buf, size);
+  f = ((WriteToDiskData)data)->f;
+  fread_safe (buf, 1, size, f);
 }
 
 void diskBack_close (void *data) {
-  int fd;
+  FILE *f;
 
-  fd = ((WriteToDiskData)data)->fd;
-  close_safe (fd);
+  f = ((WriteToDiskData)data)->f;
+  fclose_safe (f);
   free (data);
 }
 
 void *diskBack_write (pointer buf, size_t size) {
-  int fd;
+  FILE *f;
   WriteToDiskData d;
 
-  fd = tempFileDes ();
-  write_safe (fd, buf, size);
+  f = tempFileDes ();
+  fwrite_safe (buf, 1, size, f);
   d = (WriteToDiskData)(malloc_safe (sizeof(*d)));
-  d->fd = fd;
+  d->f = f;
   return d;
 }
