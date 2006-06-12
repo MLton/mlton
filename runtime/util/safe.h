@@ -48,17 +48,17 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
   
   res = fread (buf, size, count, f);
   if (res != count)
-    diee ("fread (_, %ld, %ld, _) failed (only read %ld).\n",
-          (long)size, (long)count, (long)res);
+    diee ("fread (_, %zu, %zu, _) failed (only read %zu).\n",
+          size, count, res);
 }
 
 static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE *f) {
   size_t res;
-
+  
   res = fwrite (buf, size, count, f);
   if (res != count)
-      diee ("fwrite (_, %ld, %ld, _) failed (only wrote %ld).\n",
-            (long)size, (long)count, (long)res);
+    diee ("fwrite (_, %zu, %zu, _) failed (only wrote %zu).\n",
+          size, count, res);
 }
 
 static inline void *malloc_safe (size_t size) {
