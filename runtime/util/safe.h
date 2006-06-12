@@ -25,22 +25,13 @@ static inline void fclose_safe (FILE* f) {
   return;
 }
 
-static inline void *malloc_safe (size_t size) {
-  void *res;
-  
-  res = malloc (size);
-  if (NULL == res)
-    die ("malloc (%zu) failed.\n", size);
-  return res;
-}
+static inline FILE *fdopen_safe (int fd, const char *mode) {
+  FILE *res;
 
-static inline int mkstemp_safe (char *template) {
-  int fd;
-  
-  fd = mkstemp (template);
-  if (-1 == fd)
-    diee ("mkstemp (%s) failed.\n", template);
-  return fd;
+  res = fdopen (fd, mode);
+  if (0 == res)
+    diee ("fopen (%d, %s) failed.\n", fd, mode);
+  return res;
 }
 
 static inline FILE *fopen_safe (const char *fileName, const char *mode) {
@@ -61,15 +52,6 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
           (long)size, (long)count, (long)res);
 }
 
-static inline void unlink_safe (const char *pathname) {
-  int res;
-
-  res = unlink (pathname);
-  if (-1 == res)
-    diee ("unlink (%s) failed.\n", pathname);
-  return;
-}
-
 static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE *f) {
   size_t res;
 
@@ -77,4 +59,31 @@ static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE
   if (res != count)
       diee ("fwrite (_, %ld, %ld, _) failed (only wrote %ld).\n",
             (long)size, (long)count, (long)res);
+}
+
+static inline void *malloc_safe (size_t size) {
+  void *res;
+  
+  res = malloc (size);
+  if (NULL == res)
+    die ("malloc (%zu) failed.\n", size);
+  return res;
+}
+
+static inline int mkstemp_safe (char *template) {
+  int fd;
+  
+  fd = mkstemp (template);
+  if (-1 == fd)
+    diee ("mkstemp (%s) failed.\n", template);
+  return fd;
+}
+
+static inline void unlink_safe (const char *pathname) {
+  int res;
+
+  res = unlink (pathname);
+  if (-1 == res)
+    diee ("unlink (%s) failed.\n", pathname);
+  return;
 }

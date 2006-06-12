@@ -17,7 +17,7 @@ static FILE *tempFileDes (void) {
   strcat (template, tag);
   m = umask(077);
   fd = mkstemp_safe (template);
-  f = fdopen(f, "w+");
+  f = fdopen_safe (fd, "w+");
   (void)umask(m);
   unlink_safe (template);
   free (template);
