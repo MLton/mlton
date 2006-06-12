@@ -12,6 +12,7 @@
 #include "cenv.h"
 #include "util.h"
 #include "ml-types.h"
+#include "c-types.h"
 
 #include "gc/debug.h"
 

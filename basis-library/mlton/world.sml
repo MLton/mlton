@@ -24,7 +24,7 @@ structure MLtonWorld: MLTON_WORLD =
          let
             val () = 
                SysCall.simple' 
-               ({errVal = true}, 
+               ({errVal = false}, 
                 fn () => Prim.save (NullString.nullTerm file))
          in
             if Prim.getAmOriginal gcState

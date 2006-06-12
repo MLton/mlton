@@ -6,12 +6,12 @@
  * See the file MLton-LICENSE for details.
  */
 
-void loadWorldFromFD (GC_state s, FILE *f) {
+void loadWorldFromFILE (GC_state s, FILE *f) {
   uint32_t magic;
   pointer start;
         
   if (DEBUG_WORLD)
-    fprintf (stderr, "loadWorldFromFD\n");
+    fprintf (stderr, "loadWorldFromFILE\n");
   until (readChar (f) == '\000') ;
   magic = readUint32 (f);
   unless (s->magic == magic)
@@ -44,14 +44,14 @@ void loadWorldFromFileName (GC_state s, const char *fileName) {
   if (DEBUG_WORLD)
     fprintf (stderr, "loadWorldFromFileName (%s)\n", fileName);
   f = fopen_safe (fileName, "rb");
-  loadWorldFromFD (s, f);
+  loadWorldFromFILE (s, f);
   fclose_safe (f); 
 }
 
 /* Don't use 'safe' functions, because we don't want the ML program to die.
  * Instead, check return values, and propogate them up to SML for an exception.
  */
-int saveWorldToFD (GC_state s, FILE *f) {
+int saveWorldToFILE (GC_state s, FILE *f) {
   char buf[80];
   size_t len;
 
@@ -86,18 +86,24 @@ int saveWorldToFD (GC_state s, FILE *f) {
   return 0;
 }
 
-uint32_t GC_saveWorld (GC_state s, NullString8_t fileName) {
+C_Errno_t(Bool_t) GC_saveWorld (GC_state s, NullString8_t fileName) {
   FILE *f;
   
   enter (s);
-  f = fopen((const char*)fileName, "wb");
-  if (0 == f) {
+  f = fopen ((const char*)fileName, "wb");
+  if (f == 0) {
     leave (s);
-    return 1;
+    return (Bool_t)FALSE;
   }
-  if (saveWorldToFD (s, f) != 0) return 1;
-  if (fclose (f) != 0) return 1;
-  leave (s);
+  if (saveWorldToFILE (s, f) != 0) {
+    leave (s);
+    return (Bool_t)FALSE;
+  }
+  if (fclose (f) != 0) {
+    leave (s);
+    return (Bool_t)FALSE;
+  }
   
-  return 0;
+  leave (s);
+  return (Bool_t)TRUE;
 }
