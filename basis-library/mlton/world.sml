@@ -17,14 +17,15 @@ structure MLtonWorld: MLTON_WORLD =
       datatype status = Clone | Original
 
       (* Need to worry about:
+       *   - open file descriptors
        *   - redetermine buffer status when restart
        *)
       fun save' (file: string): status =
          let
             val () = 
                SysCall.simple' 
-                  ({ errVal = true }, 
-                   fn () => Prim.save (NullString.nullTerm file))
+               ({errVal = true}, 
+                fn () => Prim.save (NullString.nullTerm file))
          in
             if Prim.getAmOriginal gcState
                then Original
