@@ -82,6 +82,7 @@ doit "$lib" \
         -target-cc-opts darwin '-I/sw/include'                   \
         -target-cc-opts freebsd '-I/usr/local/include'           \
         -target-cc-opts netbsd '-I/usr/pkg/include'              \
+        -target-cc-opts openbsd '-I/usr/local/include'           \
         -target-cc-opts solaris                                  \
                 '-Wa,-xarch=v8plusa
                 -mcpu=ultrasparc'                                \
