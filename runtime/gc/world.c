@@ -52,11 +52,11 @@ void loadWorldFromFileName (GC_state s, const char *fileName) {
  * Instead, check return values, and propogate them up to SML for an exception.
  */
 int saveWorldToFILE (GC_state s, FILE *f) {
-  char buf[80];
+  char buf[128];
   size_t len;
 
   if (DEBUG_WORLD)
-    fprintf (stderr, "saveWorld.\n");
+    fprintf (stderr, "saveWorldToFILE\n");
   /* Compact the heap. */
   performGC (s, 0, 0, TRUE, TRUE);
   sprintf (buf,
