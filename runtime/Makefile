@@ -222,7 +222,7 @@ libgdtoa.a: gdtoa/arith.h
 
 gdtoa/arithchk.c:
 	gzip -dc gdtoa.tgz | tar xf -	
-	patch -p0 <gdtoa-patch
+	patch -s -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
 	cd gdtoa && $(CC) -o arithchk.out arithchk.c
@@ -341,7 +341,7 @@ clean:
 
 .PHONY: gdtoa-patch
 gdtoa-patch:
-	cd gdtoa && $(MAKE) clean && rm -f *~
+	cd gdtoa && $(MAKE) clean && rm -f *~ *.orig
 	mv gdtoa gdtoa-new
 	gzip -dc gdtoa.tgz | tar xf -
 	diff -P -C 2 -r gdtoa gdtoa-new >gdtoa-patch || exit 0

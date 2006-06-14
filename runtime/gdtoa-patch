@@ -14,7 +14,6 @@ diff -P -C 2 -r gdtoa/arithchk.c gdtoa-new/arithchk.c
 ! int main()
   {
   	Akind *a = 0;
-Binary files gdtoa/arithchk.out and gdtoa-new/arithchk.out differ
 diff -P -C 2 -r gdtoa/dtoa.c gdtoa-new/dtoa.c
 *** gdtoa/dtoa.c	2000-11-02 07:09:01.000000000 -0800
 --- gdtoa-new/dtoa.c	2006-05-24 17:04:27.987435180 -0700
