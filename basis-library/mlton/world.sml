@@ -26,7 +26,7 @@ structure MLtonWorld: MLTON_WORLD =
                SysCall.simple' 
                ({errVal = false}, 
                 fn () => (Prim.save (NullString.nullTerm file)
-                          ; Prim.saveStatus (gcState)))
+                          ; Prim.getSaveStatus (gcState)))
          in
             if Prim.getAmOriginal gcState
                then Original
