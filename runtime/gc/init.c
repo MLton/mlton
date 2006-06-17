@@ -222,7 +222,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
   assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
                      s->alignment));
-  // While the following asserts is manifestly true,
+  // While the following assert is manifestly true,
   // it checks the asserts in sizeofWeak.
   assert (sizeofWeak (s) == sizeofWeak (s));
 
@@ -286,6 +286,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->sysvals.totalRam = GC_totalRam ();
   s->sysvals.pageSize = GC_pageSize ();
   s->weaks = NULL;
+  s->saveWorldStatus = true;
 
   initSignalStack (s);
   worldFile = NULL;

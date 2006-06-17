@@ -49,6 +49,7 @@ struct GC_state {
                        * Thread interrupted by arrival of signal.
                        */
   int (*saveGlobals)(FILE *f); /* saves the globals to the file. */
+  bool saveWorldStatus; /* */
   struct GC_heap secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;

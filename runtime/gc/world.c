@@ -86,24 +86,30 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   return 0;
 }
 
-C_Errno_t(Bool_t) GC_saveWorld (GC_state s, NullString8_t fileName) {
+void GC_saveWorld (GC_state s, NullString8_t fileName) {
   FILE *f;
   
   enter (s);
   f = fopen ((const char*)fileName, "wb");
   if (f == 0) {
-    leave (s);
-    return (Bool_t)FALSE;
+    s->saveWorldStatus = false;
+    goto done;
   }
   if (saveWorldToFILE (s, f) != 0) {
-    leave (s);
-    return (Bool_t)FALSE;
+    s->saveWorldStatus = false;
+    goto done;
   }
   if (fclose (f) != 0) {
-    leave (s);
-    return (Bool_t)FALSE;
+    s->saveWorldStatus = false;
+    goto done;
   }
   
+  s->saveWorldStatus = true;
+done:
   leave (s);
-  return (Bool_t)TRUE;
+  return;
+}
+
+C_Errno_t(Bool_t) GC_getSaveWorldStatus (GC_state s) {
+  return (Bool_t)(s->saveWorldStatus);
 }

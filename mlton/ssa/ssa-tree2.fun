@@ -476,7 +476,7 @@ structure Type =
              | Word_toReal (s, s', _) => done ([word s], real s')
              | Word_toWord (s, s', _) => done ([word s], word s')
              | Word_xorb s => wordBinary s
-             | World_save => done ([string], bool)
+             | World_save => done ([string], unit)
              | _ => Error.bug (concat ["SsaTree2.Type.checkPrimApp got strange prim: ",
                                        Prim.toString prim])
          end

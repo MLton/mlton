@@ -228,10 +228,10 @@ structure CFunction =
             prototype = let
                            open CType
                         in
-                           (Vector.new2 (Pointer, Pointer), SOME bool)
+                           (Vector.new2 (Pointer, Pointer), NONE)
                         end,
             readsStackTop = true,
-            return = Type.bool,
+            return = unit,
             target = Direct "GC_saveWorld",
             writesStackTop = true}
 

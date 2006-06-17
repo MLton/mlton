@@ -316,7 +316,20 @@ structure World =
    struct
       val getAmOriginal = _import "GC_getAmOriginal": GCState.t -> bool;
       val setAmOriginal = _import "GC_setAmOriginal": GCState.t * bool -> unit;
-      val save = _prim "World_save": NullString8.t -> bool C_Errno.t;
+      val getSaveStatus = _import "GC_getSaveWorldStatus": GCState.t -> bool C_Errno.t;
+      (* save's result status is accesible via getSaveStatus ().
+       * It is not possible to have the type of save as
+       * NullString8.t -> bool C_Errno.t, because there are two
+       * different ways to return from the call to save.  One way is
+       * the direct obvious way, in the program instance that called
+       * save.  However, another way to return is in the program
+       * instance that loads the world.  Making save return a bool
+       * creates nasty bugs where the return code from the CCall
+       * expects to see a bool result according to the C return
+       * convention, but there isn't one when returning in the load
+       * world.  
+       *)
+      val save = _prim "World_save": NullString8.t -> unit;
    end
 
 end 
