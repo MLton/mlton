@@ -4,6 +4,7 @@ static FILE *tempFileDes (void) {
   char *template;
   const char *tmpDir;
   const char *tag = "/TempFileXXXXXXXXXX";
+  size_t tmpDirLen, tagLen;
   mode_t m;
 
   tmpDir = getenv ("TMP");
@@ -12,9 +13,11 @@ static FILE *tempFileDes (void) {
     if (NULL == tmpDir)
       tmpDir = "/var/tmp";
   }
-  template = malloc_safe (strlen(tmpDir) + strlen(tag) + 1);
-  strcpy (template, tmpDir);
-  strcat (template, tag);
+  tmpDirLen = strlen(tmpDir);
+  tagLen = strlen(tag);
+  template = malloc_safe (tmpDirLen + tagLen + 1);
+  strncpy (template, tmpDir, tmpDirLen + 1);
+  strncpy (template + tmpDirLen, tag, tagLen + 1);
   m = umask(077);
   fd = mkstemp_safe (template);
   f = fdopen_safe (fd, "w+");

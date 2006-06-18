@@ -32,27 +32,29 @@ char* intmaxToCommaString (intmax_t n) {
   if (0 == n)
     buf[i--] = '0';
   else if (INTMAX_MIN == n) {
+    const char* s;
     /* must treat INTMAX_MIN specially, because I negate stuff later */
     switch (sizeof(intmax_t)) {
     case 1:
-      strcpy (buf + 1, "-128");
+      s = "-128";
       break;
     case 2:
-      strcpy (buf + 1, "-32,768");
+      s = "-32,768";
       break;
     case 4:
-      strcpy (buf + 1, "-2,147,483,648");
+      s = "-2,147,483,648";
       break;
     case 8:
-      strcpy (buf + 1, "-9,223,372,036,854,775,808");
+      s = "-9,223,372,036,854,775,808";
       break;
     case 16:
-      strcpy (buf + 1, "-170,141,183,460,469,231,731,687,303,715,884,105,728");
+      s = "-170,141,183,460,469,231,731,687,303,715,884,105,728";
       break;
     default:
       die ("intmaxToCommaString: sizeof(intmax_t) = %zu", sizeof(intmax_t));
       break;
     }
+    strncpy (buf + 1, s, strlen(s) + 1);
     i = 0;
   } else {
     intmax_t m;
@@ -122,7 +124,7 @@ char* sizeToBytesApproxString (size_t amount) {
     amount /= factor;
     suffixIndex++;
   }
-  sprintf (buf, "%zu%s", amount, suffixs[suffixIndex]);
+  snprintf (buf, BUF_SIZE, "%zu%s", amount, suffixs[suffixIndex]);
   return buf;
 }
 #undef BUF_SIZE

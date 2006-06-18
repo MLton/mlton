@@ -66,7 +66,7 @@ int fpclassify64 (double d) {
 
 void GC_displayMem () {
         static char buffer[256];
-        sprintf (buffer, "pmap %d\n", (int)(getpid ()));
+        snprintf (buffer, cardof(buffer), "pmap %d\n", (int)(getpid ()));
         system (buffer);
 }
 

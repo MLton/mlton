@@ -11,7 +11,7 @@
 void GC_displayMem () {
         static char buffer[256];
 
-        sprintf (buffer, "/bin/cat /proc/%d/map\n", (int)getpid ());
+        snprintf (buffer, cardof(buffer), "/bin/cat /proc/%d/map\n", (int)getpid ());
         (void)system (buffer);
 }
 

@@ -26,7 +26,7 @@ code_pointer GC_getTextStart (void) {
 void GC_displayMem (void) {
         static char buffer[256];
 
-        sprintf (buffer, "/usr/bin/vmmap -w -interleaved %d\n", (int)getpid ());
+        snprintf (buffer, cardof(buffer), "/usr/bin/vmmap -w -interleaved %d\n", (int)getpid ());
         (void)system (buffer);
 }
 

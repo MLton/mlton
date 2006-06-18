@@ -59,10 +59,10 @@ int saveWorldToFILE (GC_state s, FILE *f) {
     fprintf (stderr, "saveWorldToFILE\n");
   /* Compact the heap. */
   performGC (s, 0, 0, TRUE, TRUE);
-  sprintf (buf,
-           "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %zu\n",
-           (uintptr_t)s->heap.start, 
-           s->lastMajorStatistics.bytesLive);
+  snprintf (buf, cardof(buf),
+            "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %zu\n",
+            (uintptr_t)s->heap.start, 
+            s->lastMajorStatistics.bytesLive);
   len = strlen(buf) + 1; /* +1 to get the '\000' */
   
   if (fwrite (buf, 1, len, f) != len) return -1;

@@ -54,21 +54,21 @@ static inline void writeString (FILE *f, const char* s) {
 static inline void writeUint32U (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
 
-  sprintf (buf, "%"PRIu32, u);
+  snprintf (buf, BUF_SIZE, "%"PRIu32, u);
   writeString (f, buf);
 }
 
 static inline void writeUintmaxU (FILE *f, uintmax_t u) {
   static char buf[BUF_SIZE];
 
-  sprintf (buf, "%"PRIuMAX, u);
+  snprintf (buf, BUF_SIZE, "%"PRIuMAX, u);
   writeString (f, buf);
 }
 
 static inline void writeUint32X (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
   
-  sprintf (buf, "0x%08"PRIx32, u);
+  snprintf (buf, BUF_SIZE, "0x%08"PRIx32, u);
   writeString (f, buf);
 }
 
@@ -76,11 +76,11 @@ static inline void writeUintmaxX (FILE *f, uintmax_t u) {
   static char buf[BUF_SIZE];
 
   if (sizeof(uintmax_t) == 4) {
-    sprintf (buf, "0x%08"PRIxMAX, u);
+    snprintf (buf, BUF_SIZE, "0x%08"PRIxMAX, u);
   } else if (sizeof(uintmax_t) == 8) {
-    sprintf (buf, "0x%016"PRIxMAX, u);
+    snprintf (buf, BUF_SIZE, "0x%016"PRIxMAX, u);
   } else {
-    sprintf (buf, "0x%"PRIxMAX, u);
+    snprintf (buf, BUF_SIZE, "0x%"PRIxMAX, u);
   }
   writeString (f, buf);
 }
