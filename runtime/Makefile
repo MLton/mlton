@@ -169,8 +169,11 @@ CFILES = 							\
 	$(UTILCFILES)						\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	gc.c							\
-	bytecode/interpret.c					\
 	platform.c
+
+ifneq ($(OMIT_BYTECODE), yes)
+CFILES += bytecode/interpret.c
+endif
 
 HFILES = 							\
 	cenv.h                                                  \
