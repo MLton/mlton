@@ -62,7 +62,7 @@ signature PRIM =
               *)
              | MLton_bug (* ssa to rssa *)
              | MLton_deserialize (* unused *)
-             | MLton_eq (* codegen *)
+             | MLton_eq (* ssa to rssa *)
              | MLton_equal (* polymorphic equality *)
              | MLton_halt (* ssa to rssa *)
              (* MLton_handlesSignals and MLton_installSignalHandler work together

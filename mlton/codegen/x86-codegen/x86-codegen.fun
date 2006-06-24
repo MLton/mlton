@@ -80,9 +80,8 @@ struct
     = let
          val reserveEsp =
             (* There is no sigaltstack on cygwin, we need to reserve %esp to
-             * hold the C stack pointer.  We need to do this even in programs
-             * that don't handle signals, since signals get used under the hood
-             * in Cygwin.
+             * hold the C stack pointer.  We only need to do this in programs
+             * that handle signals.
              *)
             handlesSignals andalso let open Control in !targetOS = Cygwin end
 
