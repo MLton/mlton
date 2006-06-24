@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 
+* 2006-06-24
+   - Fixed a bug in pass to flatten data structures.  Thanks to Joe Hurd
+     for the bug report.
+	
 * 2006-06-08
   - Fixed a bug in the native codegen's implementation of the C-calling
     convention.
