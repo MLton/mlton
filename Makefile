@@ -146,7 +146,7 @@ deb-spell:
 
 .PHONY: dirs
 dirs:
-	mkdir -p "$(BIN)" "$(LIB)/$(TARGET)" "$(INC)"
+	mkdir -p "$(BIN)" "$(LIB)/$(TARGET)/include" "$(INC)"
 
 .PHONY: docs
 docs: dirs
@@ -288,6 +288,7 @@ runtime:
 		basis-library/primitive/basis-ffi.sml
 	$(CP) runtime/bytecode/opcodes "$(LIB)/"
 	$(CP) runtime/*.h "$(INC)/"
+	mv "$(INC)/c-types.h" "$(LIB)/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\

@@ -80,10 +80,11 @@ tmp='/tmp/mlton-add-cross'
 ssh $machine "rm -rf $tmp && mkdir $tmp"
 
 echo 'Making runtime.' 
-( cd "$src" && tar cf - bin runtime ) | 
+( cd "$src" && tar cf - Makefile basis-library bin include runtime ) | 
         ssh $machine "cd $tmp && tar xf - && cd runtime &&
-                ../bin/mmake OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all"
-ssh $machine "cd $tmp/runtime && tar cf - *.a" | 
+                ../bin/mmake OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
+		cd .. && make dirs runtime"
+ssh $machine "cd $tmp/build/lib/self && tar cf - ." | 
         ( cd "$lib/$crossTarget" && tar xf - )
 ( cd "$src" &&
         mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
@@ -109,7 +110,6 @@ esac
 
 exe='print-constants'
 echo "Compiling and running print-constants on $machine."
-cd "$original"
 "$src/build/bin/mlton" -build-constants true | 
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c && 

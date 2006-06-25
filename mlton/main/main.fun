@@ -637,6 +637,7 @@ fun commandLine (args: string list): unit =
           else ac)
       val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
+      val ccOpts = concat ["-I", !libTargetDir, "/include"] :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir],
                        if !debugRuntime then "-lmlton-gdb" else "-lmlton"],
