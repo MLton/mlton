@@ -8,6 +8,7 @@
 #include "mkdir2.c"
 #include "mmap.c"
 #include "mmap-protect.c"
+#include "nonwin.c"
 #include "sysconf.c"
 #include "setenv.putenv.c"
 
