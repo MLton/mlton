@@ -31,6 +31,7 @@ structure Int16
 structure Int32
 structure Int64
 structure IntInf
+structure INetSock
 structure IO
 structure LargeInt
 structure LargeReal
@@ -58,6 +59,7 @@ structure Substring
 structure SysWord
 structure TextIO
 structure Time
+structure Timer
 structure Unix
 structure Unsafe
 structure Vector
@@ -67,6 +69,7 @@ structure Word16
 structure Word32
 structure Word64
 structure Word8Array
+structure Word8ArraySlice
 structure Word8Vector
 
 is
@@ -91,6 +94,7 @@ os.sml
 other.sml
 posix.sml
 real.sml
+socket.sml
 string-cvt.sml
 string.sml
 substring.sml

@@ -175,6 +175,16 @@ struct
                                then case String.fields (fn #"/" => true | _ => false) cmLibDescr of
                                        "$" :: (arcs as (arc0 :: _)) => 
                                           doitAnchoredPath (("$" ^ arc0) :: arcs)
+                                     | arc0 :: arcs =>
+                                          let
+                                             val arc0 =
+                                                case CharVector.findi (fn (_, #"(") => true | _ => false) arc0 of
+                                                   SOME (i, _) => 
+                                                      String.extract (arc0, i + 2, SOME (String.size arc0 - i - 3))
+                                                 | NONE => arc0
+                                          in 
+                                             doitAnchoredPath (arc0 :: arcs)
+                                          end
                                      | arcs => doitAnchoredPath arcs
                                else concat ["(* ", cmLibOSString, " ===> *) ", mlbLibDef ()]
                       in

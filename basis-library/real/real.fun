@@ -63,10 +63,11 @@ functor Real (R: PRE_REAL): REAL =
 
       val nan = posInf + negInf
 
+      structure Class = Primitive.Real64.Class
       local
          val classes =
             let
-               open Primitive.Real64.Class
+               open Class
             in
                (* order here is chosen based on putting the more commonly used
                 * classes at the front.
@@ -103,20 +104,14 @@ functor Real (R: PRE_REAL): REAL =
             INF => false
           | NAN => false
           | _ => true
-               
-      fun isNan r = class r = NAN
 
-      fun isNormal r = class r = NORMAL
-
-      val op == =
-         fn (x, y) =>
-         case (class x, class y) of
-            (NAN, _) => false
-          | (_, NAN) => false
-          | (ZERO, ZERO) => true
-          | _ => Prim.== (x, y)
+      val op == = Prim.==
 
       val op != = not o op ==
+
+      fun isNan r = r != r
+
+      fun isNormal r = class r = NORMAL
 
       val op ?= =
          if MLton.Codegen.isNative

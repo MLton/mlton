@@ -28,10 +28,28 @@ structure Array2: ARRAY2 =
                         nrows: int option,
                         ncols: int option}
 
+      fun checkSliceMax (start: int, num: int option, max: int): int =
+         case num of
+            NONE =>
+               if Primitive.safe andalso (start < 0 orelse start > max) then
+                  raise Subscript
+               else
+                  max
+          | SOME num =>
+               if Primitive.safe
+                  andalso (start < 0
+                           orelse num < 0
+                           orelse start > max -? num) then
+                  raise Subscript
+               else
+                  start +? num
+
       fun checkRegion {base, row, col, nrows, ncols} =
-         let val (rows, cols) = dimensions base
-         in {stopRow = Array.checkSliceMax (row, nrows, rows),
-             stopCol = Array.checkSliceMax (col, ncols, cols)}
+         let
+            val (rows, cols) = dimensions base
+         in
+            {stopRow = checkSliceMax (row, nrows, rows),
+             stopCol = checkSliceMax (col, ncols, cols)}
          end
       
       fun wholeRegion (a: 'a array): 'a region =
@@ -142,72 +160,12 @@ structure Array2: ARRAY2 =
       fun modify trv f a = modifyi trv (f o #3) (wholeRegion a)
 
       fun tabulate trv (rows, cols, f) =
-         if !Primitive.usesCallcc
-            then
-               (* All this mess is careful to construct a list representing
-                * the array and then convert the list to the array after all
-                * the calls to f have been made, in case f uses callcc.
-                *)
-               let
-                  val size =
-                     if Primitive.safe andalso (rows < 0 orelse cols < 0)
-                        then raise Size
-                     else rows * cols handle Overflow => raise Size
-                  val (rows', cols', f) =
-                     case trv of
-                        RowMajor => (rows, cols, f)
-                      | ColMajor => (cols, rows, fn (c, r) => f (r, c))
-                  fun loopr (r, l) =
-                     if r >= rows'
-                        then l
-                     else
-                        let
-                           fun loopc (c, l) =
-                              if c >= cols'
-                                 then l
-                              else loopc (c + 1, f (r, c) :: l)
-                        in loopr (r + 1, loopc (0, l))
-                        end
-                  val l = loopr (0, [])
-                  val a = Primitive.Array.array size
-               in case trv of
-                  RowMajor =>
-                     (* The list holds the elements in row major order,
-                      * but reversed.
-                      *)
-                     let
-                        val _ =
-                           List.foldl (fn (x, i) =>
-                                       (Primitive.Array.update (a, i, x)
-                                        ; i -? 1))
-                           (size -? 1) l
-                     in
-                        ()
-                     end
-                | ColMajor =>
-                     (* The list holds the elements in column major order,
-                      * but reversed.
-                      *)
-                     let
-                        val _ =
-                           List.foldl (fn (x, (spot, r)) =>
-                                       (Primitive.Array.update (a, spot, x)
-                                        ; if r = 0
-                                             then (spot -? 1 +? size -? cols,
-                                                   rows -? 1)
-                                          else (spot -? cols, r -? 1)))
-                           (size -? 1, rows -? 1)
-                           l
-                     in
-                        ()
-                     end
-                  ; {rows = rows, cols = cols, array = a}
-               end
-         else
-            let val a = arrayUninit (rows, cols)
-            in modifyi trv (fn (r, c, _) => f (r, c)) (wholeRegion a)
-               ; a
-            end
+         let
+            val a = arrayUninit (rows, cols)
+            val () = modifyi trv (fn (r, c, _) => f (r, c)) (wholeRegion a)
+         in
+            a
+         end
 
       fun copy {src = src as {base, row, col, ...}: 'a region,
                 dst, dst_row, dst_col} =

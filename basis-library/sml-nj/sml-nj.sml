@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -30,9 +30,11 @@ structure SMLofNJ: SML_OF_NJ =
                   open MLton.Platform.OS
                in
                   case host of
-                     Cygwin => UNIX
+                     AIX => UNIX
+                   | Cygwin => UNIX
                    | Darwin => MACOS
                    | FreeBSD => UNIX
+                   | HPUX => UNIX
                    | Linux => UNIX
                    | MinGW => WIN32
                    | NetBSD => UNIX
@@ -68,4 +70,3 @@ structure SMLofNJ: SML_OF_NJ =
              | Original => false
          end
    end
-   

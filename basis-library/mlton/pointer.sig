@@ -5,6 +5,9 @@
  * See the file MLton-LICENSE for details.
  *)
 
+type int = Int.int
+type word = Word.word
+
 signature MLTON_POINTER =
    sig
       eqtype t

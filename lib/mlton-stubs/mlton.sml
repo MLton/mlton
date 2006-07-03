@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -59,14 +59,16 @@ structure MLton: MLTON =
             fun unfoldi (n, a, f) =
                let
                   val r = ref a
+                  val a =
+                     tabulate (n, fn i =>
+                               let
+                                  val (b, a') = f (i, !r)
+                                  val _ = r := a'
+                               in
+                                  b
+                               end)
                in
-                  tabulate (n, fn i =>
-                            let
-                               val (b, a') = f (i, !r)
-                               val _ = r := a'
-                            in
-                               b
-                            end)
+                  (a, !r)
                end
          end
       
@@ -208,9 +210,11 @@ structure MLton: MLTON =
             structure OS =
                struct
                   datatype t =
-                     Cygwin
+                     AIX
+                   | Cygwin
                    | Darwin
                    | FreeBSD
+                   | HPUX
                    | Linux
                    | MinGW
                    | NetBSD
@@ -219,9 +223,11 @@ structure MLton: MLTON =
 
                   val host: t = Linux
 
-                  val all = [(Cygwin, "Cygwin"),
+                  val all = [(AIX, "AIX"),
+                             (Cygwin, "Cygwin"),
                              (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
+                             (HPUX, "HPUX"),
                              (Linux, "Linux"),
                              (MinGW, "MinGW"),
                              (NetBSD, "NetBSD"),
@@ -277,6 +283,8 @@ structure MLton: MLTON =
 
       structure ProcEnv =
          struct
+            type gid = Posix.ProcEnv.gid
+               
             fun setenv _ = raise Fail "setenv"
             fun setgroups _ = raise Fail "setgroups"
          end
@@ -568,17 +576,55 @@ structure MLton: MLTON =
          struct
             open Vector
 
+            fun create (n, f) =
+               let
+                  val r = ref (Array.fromList [])
+                  val lim = ref 0
+                  fun check i =
+                     if 0 <= i andalso i < !lim then () else raise Subscript
+                  val sub = fn i => (check i; Array.sub (!r, i))
+                  val update = fn (i, x) => (check i; Array.update (!r, i, x))
+                  val (tab, finish) = f {sub = sub, update = update}
+               in
+                  if 0 = n then
+                     (finish (); Vector.fromList [])
+                  else
+                     let
+                        val init = tab 0
+                        val a = Array.array (n, init)
+                        val () = r := a
+                        val () =
+                           Array.modifyi (fn (i, _) =>
+                                          let
+                                             val res =
+                                                if i = 0 then
+                                                   init
+                                                else
+                                                   tab i
+                                             val () = lim := i + 1
+                                          in
+                                             res
+                                          end)
+                           a
+                        val () = finish ()
+                     in
+                        Array.vector a
+                     end
+               end
+               
             fun unfoldi (n, a, f) =
                let
                   val r = ref a
+                  val v =
+                     tabulate (n, fn i =>
+                               let
+                                  val (b, a') = f (i, !r)
+                                  val _ = r := a'
+                               in
+                                  b
+                               end)
                in
-                  tabulate (n, fn i =>
-                            let
-                               val (b, a') = f (i, !r)
-                               val _ = r := a'
-                            in
-                               b
-                            end)
+                  (v, !r)
                end
          end
 

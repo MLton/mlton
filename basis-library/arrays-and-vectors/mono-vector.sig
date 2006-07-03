@@ -41,7 +41,7 @@ signature MONO_VECTOR_EXTRA_PRE =
       val toList: vector -> elem list
       val tokens: (elem -> bool) -> vector -> vector list
       val translate: (elem -> vector) -> vector -> vector
-      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector
+      val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector * 'a
       val unsafeSub: vector * int -> elem
       val vector: int * elem -> vector
    end

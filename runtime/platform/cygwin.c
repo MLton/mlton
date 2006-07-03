@@ -5,6 +5,7 @@
 #include "getrusage.c"
 #include "mkdir2.c"
 #include "mmap.c"
+#include "recv.nonblock.c"
 #include "totalRam.sysconf.c"
 #include "windows.c"
 

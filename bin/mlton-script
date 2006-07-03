@@ -97,10 +97,12 @@ doit "$lib" \
                 -malign-functions=5
                 -malign-jumps=2
                 -malign-loops=2'                                \
+        -target-link-opt aix '-lgmp'                            \
         -target-link-opt amd64 '-m32'                           \
         -target-link-opt cygwin '-lgmp'                         \
         -target-link-opt darwin "$darwinLinkOpts -lgmp"         \
         -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'      \
+        -target-link-opt hpux '-lgmp'                           \
         -target-link-opt linux '-lgmp'                          \
         -target-link-opt mingw                                  \
                 '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'  \

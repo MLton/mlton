@@ -1,4 +1,4 @@
-(* Copyright (C) 2003-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2003-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -20,9 +20,11 @@ signature MLTON_PLATFORM =
       structure OS:
          sig
             datatype t =
-               Cygwin
+               AIX
+             | Cygwin
              | Darwin
              | FreeBSD
+             | HPUX
              | Linux
              | MinGW
              | NetBSD

@@ -14,7 +14,7 @@ signature VECTOR_STRUCTS =
 
       val length: 'a t -> int
       val sub: 'a t * int -> 'a
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a t * 'b
    end
 
 signature VECTOR =
@@ -111,6 +111,7 @@ signature VECTOR =
       val removeDuplicates: 'a t * ('a * 'a -> bool) -> 'a t
       val removeFirst: 'a t * ('a -> bool) -> 'a t
       val rev: 'a t -> 'a t
+      val size: 'a t -> int
       val splitLast: 'a t -> 'a t * 'a
       val tabulate: int * (int -> 'a) -> 'a t
       val tabulator: int * (('a -> unit) -> unit) -> 'a t

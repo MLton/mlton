@@ -24,8 +24,13 @@ case "$#" in
 esac
 
 uname=`uname`
+arch_flag=-m
 
 case "$uname" in
+AIX)
+        HOST_OS='aix'
+        arch_flag=-p
+;;
 CYGWIN*)
         HOST_OS='cygwin'
 ;;
@@ -34,6 +39,9 @@ Darwin)
 ;;
 FreeBSD*)
         HOST_OS='freebsd'
+;;
+HP-UX)
+	HOST_OS='hpux'
 ;;
 Linux)
         HOST_OS='linux'
@@ -55,7 +63,7 @@ SunOS)
 ;;
 esac
 
-arch=`uname -m`
+arch=`uname $arch_flag`
 
 case "$arch" in
 alpha*)
@@ -74,6 +82,9 @@ arm*)
 parisc*)
         HOST_ARCH=hppa
 ;;
+9000/*)
+        HOST_ARCH=hppa
+;;
 ia64*)
         HOST_ARCH=ia64
 ;;
@@ -83,6 +94,9 @@ m68k*)
 mips*)
 # big-endian and little-endian detect via headers
         HOST_ARCH=mips
+;;
+powerpc)
+        HOST_ARCH=powerpc
 ;;
 ppc*)
         HOST_ARCH=powerpc

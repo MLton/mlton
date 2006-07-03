@@ -22,14 +22,16 @@ val (sub, up, subV) =
          Primitive.Word8Array.updateWordRev,
          Primitive.Word8Vector.subWordRev)
 
-fun start (i, n) = 
+fun offset (i, n) = 
    let
       val i = Int.* (bytesPerElem, i)
-      val _ =
+      val () =
          if Primitive.safe
-            andalso Primitive.Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n)
-            then raise Subscript
-         else ()
+            andalso (Primitive.Int.geu
+                     (Int.+ (i, Int.- (bytesPerElem, 1)), n)) then
+            raise Subscript
+         else
+            ()
    in
       i
    end handle Overflow => raise Subscript
@@ -37,7 +39,7 @@ fun start (i, n) =
 local
    fun make (sub, length, toPoly) (av, i) =
       let
-         val _ = start (i, length av)
+         val _ = offset (i, length av)
       in
          Word.toLarge (sub (toPoly av, i))
       end
@@ -51,7 +53,7 @@ end
 fun update (a, i, w) =
    let
       val a = Word8Array.toPoly a
-      val _ = start (i, Array.length a)
+      val _ = offset (i, Array.length a)
    in
       up (a, i, Word.fromLarge w)
    end

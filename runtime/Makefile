@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -50,7 +50,13 @@ endif
 
 CC = gcc -std=gnu99
 CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=32 $(FLAGS)
-DEBUGFLAGS = $(CFLAGS) -gstabs+ -g2
+DEBUGFLAGS = $(CFLAGS)
+ifneq ($(TARGET_ARCH), ia64)
+ifneq ($(TARGET_ARCH), powerpc)
+DEBUGFLAGS += -gstabs+
+endif
+endif
+DEBUGFLAGS += -g2
 
 CFILES = 							\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\

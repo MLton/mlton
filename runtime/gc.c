@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -332,7 +332,15 @@ static uint stopTiming (struct rusage *ru_start, struct rusage *ru_gc) {
 /* ---------------------------------------------------------------- */
 
 void GC_display (GC_state s, FILE *stream) {
-        fprintf (stream, "GC state\n\tcardMap = 0x%08x\n\toldGen = 0x%08x\n\toldGenSize = %s\n\toldGen + oldGenSize = 0x%08x\n\tnursery = 0x%08x\n\tfrontier = 0x%08x\n\tfrontier - nursery = %u\n\tlimitPlusSlop - frontier = %d\n",
+        fprintf (stream, "GC state\n"
+                 "\tcardMap = 0x%08x\n"
+                 "\toldGen = 0x%08x\n"
+                 "\toldGenSize = %s\n"
+                 "\toldGen + oldGenSize = 0x%08x\n"
+                 "\tnursery = 0x%08x\n"
+                 "\tfrontier = 0x%08x\n"
+                 "\tfrontier - nursery = %td\n"
+                 "\tlimitPlusSlop - frontier = %td\n",
                         (uint) s->cardMap,
                         (uint) s->heap.start,
                         uintToCommaString (s->oldGenSize),
@@ -343,7 +351,9 @@ void GC_display (GC_state s, FILE *stream) {
                         s->limitPlusSlop - s->frontier);
         fprintf (stream, "\tcanHandle = %d\n\tsignalsIsPending = %d\n", s->canHandle, s->signalIsPending);
         fprintf (stderr, "\tcurrentThread = 0x%08x\n", (uint) s->currentThread);
-        fprintf (stream, "\tstackBottom = 0x%08x\n\tstackTop - stackBottom = %u\n\tstackLimit - stackTop = %u\n",
+        fprintf (stream, "\tstackBottom = 0x%08x\n"
+                 "\tstackTop - stackBottom = %td\n"
+                 "\tstackLimit - stackTop = %td\n",
                         (uint)s->stackBottom,
                         s->stackTop - s->stackBottom,
                         (s->stackLimit - s->stackTop));
@@ -764,7 +774,7 @@ static inline pointer foreachPointerInObject (GC_state s, pointer p,
                         /* Invariant: top points just past a "return address". */
                         returnAddress = *(word*) (top - WORD_SIZE);
                         if (DEBUG) {
-                                fprintf (stderr, "  top = %d  return address = ",
+                                fprintf (stderr, "  top = %td  return address = ",
                                                 top - bottom);
                                 fprintf (stderr, "0x%08x.\n", returnAddress);
                         }
@@ -880,11 +890,11 @@ static inline bool isInNursery (GC_state s, pointer p) {
         return s->nursery <= p and p < s->frontier;
 }
 
-#if ASSERT
-
 static inline bool isInOldGen (GC_state s, pointer p) {
         return s->heap.start <= p and p < s->heap.start + s->oldGenSize;
 }
+
+#if ASSERT
 
 static inline bool isInFromSpace (GC_state s, pointer p) {
         return (isInOldGen (s, p) or isInNursery (s, p));
@@ -893,7 +903,7 @@ static inline bool isInFromSpace (GC_state s, pointer p) {
 static inline void assertIsInFromSpace (GC_state s, pointer *p) {
 #if ASSERT
         unless (isInFromSpace (s, *p))
-                die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x);\n",
+                die ("gc.c: assertIsInFromSpace p = 0x%08x  *p = 0x%08x;\n",
                         (uint)p, *(uint*)p);
         /* The following checks that intergenerational pointers have the
          * appropriate card marked.  Unfortunately, it doesn't work because
@@ -2094,6 +2104,13 @@ done:
         return res;
 }
 
+static inline void markIntergenerational (GC_state s, Pointer *pp) {
+        if (s->mutatorMarksCards
+                and isInOldGen (s, (pointer)pp)
+                and isInNursery (s, *pp))
+                markCard (s, (pointer)pp);
+}
+
 static inline void maybeSharePointer (GC_state s,
                                         Pointer *pp, 
                                         Bool shouldHashCons) {
@@ -2103,6 +2120,7 @@ static inline void maybeSharePointer (GC_state s,
                 fprintf (stderr, "maybeSharePointer  pp = 0x%08x  *pp = 0x%08x\n",
                                 (uint)pp, (uint)*pp);
         *pp = hashCons (s, *pp, FALSE); 
+        markIntergenerational (s, pp);
 }
 
 /* ---------------------------------------------------------------- */
@@ -2315,7 +2333,7 @@ markInStack:
                  */
                 assert (stackBottom (s, (GC_stack)cur) <= top);
                 if (DEBUG_MARK_COMPACT)
-                        fprintf (stderr, "markInStack  top = %d\n",
+                        fprintf (stderr, "markInStack  top = %td\n",
                                         top - stackBottom (s, (GC_stack)cur));
                                         
                 if (top == stackBottom (s, (GC_stack)(cur)))
@@ -2377,6 +2395,8 @@ ret:
                 todo += index * POINTER_SIZE;
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 goto markNextInNormal;
         } else if (ARRAY_TAG == tag) {
                 arrayIndex = arrayCounter (cur);
@@ -2386,6 +2406,8 @@ ret:
                 todo += numNonPointers + index * POINTER_SIZE;
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 goto markNextInArray;
         } else {
                 assert (STACK_TAG == tag);
@@ -2396,6 +2418,8 @@ ret:
                 todo = top - layout->numBytes + frameOffsets [index + 1];
                 prev = *(pointer*)todo;
                 *(pointer*)todo = next;
+                if (shouldHashCons)
+                        markIntergenerational (s, (pointer*)todo);
                 index++;
                 goto markInFrame;
         }
@@ -2540,7 +2564,8 @@ thread:
                                  * busted.
                                  */
                                 if (DEBUG_MARK_COMPACT)
-                                        fprintf (stderr, "compressing from 0x%08x to 0x%08x (length = %u)\n",
+                                        fprintf (stderr, "compressing from 0x%08x to 0x%08x "
+                                                 "(length = %td)\n",
                                                         (uint)endOfLastMarked,
                                                         (uint)front,
                                                         front - endOfLastMarked);
@@ -3364,7 +3389,7 @@ static GC_thread copyThread (GC_state s, GC_thread from, uint size) {
         from = s->savedThread;
         s->savedThread = BOGUS_THREAD;
         if (DEBUG_THREADS) {
-                fprintf (stderr, "free space = %u\n",
+                fprintf (stderr, "free space = %td\n",
                                 s->limitPlusSlop - s->frontier);
                 fprintf (stderr, "0x%08x = copyThread (0x%08x)\n", 
                                 (uint)to, (uint)from);

@@ -10,6 +10,9 @@ structure OpenInt32 =
    struct
       val toInt = Pervasive.Int32.toInt
       val fromInt = Pervasive.Int32.fromInt
+      val fromIntOpt =
+         fn NONE => NONE
+          | SOME i => SOME (fromInt i)
       val toIntOpt =
          fn NONE => NONE
           | SOME i => SOME (toInt i)

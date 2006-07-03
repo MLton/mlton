@@ -40,17 +40,11 @@ signature ARRAY_EXTRA =
 
       structure ArraySlice: ARRAY_SLICE_EXTRA 
 
-      val rawArray: int -> 'a array
-      val unsafeSub: 'a array * int -> 'a
-      val unsafeUpdate: 'a array * int * 'a -> unit
-
       val concat: 'a array list -> 'a array
       val duplicate: 'a array -> 'a array
+      val rawArray: int -> 'a array
       val toList: 'a array -> 'a list
-      val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b array
-
-      (* Deprecated *)
-      val checkSlice: 'a array * int * int option -> int
-      (* Deprecated *)
-      val checkSliceMax: int * int option * int -> int
+      val unfoldi: int * 'b * (int * 'b -> 'a * 'b) -> 'a array * 'b
+      val unsafeSub: 'a array * int -> 'a
+      val unsafeUpdate: 'a array * int * 'a -> unit
    end

@@ -26,6 +26,7 @@ signature STRING =
       val baseName: t * t -> t
       val compare: t * t -> Relation.t
       val concat: t list -> t
+      val concatV: t vector -> t
       val concatWith: t list * t -> t
       val contains: t * char -> bool
       val deleteSurroundingWhitespace: t -> t
@@ -41,6 +42,7 @@ signature STRING =
       val escapeC: t -> t
       val escapeSML: t -> t
       val existsi: t * (int * char -> bool) -> bool
+      val exists: t * (char -> bool) -> bool
       val explode: t -> char list
       (* extract (s, i, SOME j)
        * returns the substring of s of length j starting at i.
@@ -103,6 +105,7 @@ signature STRING =
       val toUpper: t -> t
       val tokens: t * (char -> bool) -> t list 
       val translate: t * (char -> t) -> t
+      val unfold: int * 'a * ('a -> char * 'a) -> t
    end
 
 

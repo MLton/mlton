@@ -668,6 +668,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                 ; result ())
             fun equal () =
                (Value.unify (arg 0, arg 1)
+                ; Value.dontFlatten (arg 0)
                 ; result ())
          in
             case Prim.name prim of
@@ -909,13 +910,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                                            end
                                   end
                          end)
-             | PrimApp {args, prim} =>
-                  let
-                     val () = simpleTree ()
-                  in
-                     doit (PrimApp {args = replaceVars args,
-                                    prim = prim})
-                  end
+             | PrimApp {args, prim} => simple ()
              | Select {base, offset} =>
                   (case var of
                       NONE => none ()

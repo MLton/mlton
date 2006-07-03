@@ -1128,7 +1128,8 @@ struct
                                     {src = arg,
                                      dst = c_stackPDerefFloat,
                                      size = size}]
-                            else if Size.eq (size, Size.BYTE)
+                            else if Size.eq (size, Size.BYTE) 
+                                    orelse Size.eq (size, Size.WORD)
                               then AppendList.fromList
                                    [Assembly.instruction_movx
                                     {oper = Instruction.MOVZX,

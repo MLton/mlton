@@ -1,4 +1,4 @@
-## Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  #
  # MLton is released under a BSD-style license.
@@ -11,6 +11,13 @@ all: interpret.o interpret-gdb.o print-opcodes
 
 CC = gcc -std=gnu99
 CFLAGS = -fomit-frame-pointer -I../runtime -I../include -Wall
+DEBUGFLAGS = $(CFLAGS)
+ifneq ($(TARGET_ARCH), ia64)
+ifneq ($(TARGET_ARCH), powerpc)
+DEBUGFLAGS += -gstabs+
+endif
+endif
+DEBUGFLAGS += -g2
 
 ifeq ($(TARGET_ARCH), amd64)
 CFLAGS += -mtune=opteron -m32 
@@ -24,7 +31,7 @@ interpret.o: interpret.c interpret.h opcode.h
 	$(CC) $(CFLAGS) -c -O2 interpret.c
 
 interpret-gdb.o: interpret.c interpret.h
-	$(CC) $(CFLAGS) -c -o $@ -gstabs+ -g2 -DASSERT=1 interpret.c
+	$(CC) $(DEBUGFLAGS) -c -o $@ -DASSERT=1 interpret.c
 
 print-opcodes: print-opcodes.c opcode.h
 	$(CC) $(CFLAGS) -o print-opcodes -I../runtime -L../runtime	\
