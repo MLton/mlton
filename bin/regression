@@ -115,7 +115,7 @@ case $crossTarget in
 ;;
 esac
 
-for f in real.sml; do
+for f in *.sml; do
         f=`basename "$f" .sml`
         if [ "$skipTo" != "" ]; then
                 if [ "$skipTo" != "$f" ]; then
