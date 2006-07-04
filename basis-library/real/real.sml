@@ -208,24 +208,15 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             (NAN, _) => nan
           | (_, NAN) => nan
           | (INF, _) => r
-          | (ZERO, ZERO) => r
+          | (ZERO, ZERO) => t (* want "t", not "r", to get the sign right *)
           | (ZERO, _) => if t > zero then minPos else ~minPos
           | _ =>
-               if r == t
-                  then r
+               if r == t then
+                  r
+               else if (r > t) = (r > zero) then
+                  R.nextAfterDown r
                else
-                  let
-                     fun doit (r, t) =
-                        if r == maxFinite andalso t == posInf
-                           then posInf
-                        else if r > t
-                                then R.nextAfter (r, negInf)
-                             else R.nextAfter (r, posInf)
-                  in
-                     if r > zero
-                        then doit (r, t)
-                     else ~ (doit (~r, ~t))
-                  end
+                  R.nextAfterUp r
                          
       fun toManExp x =
          case class x of

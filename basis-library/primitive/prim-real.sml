@@ -60,7 +60,8 @@ signature PRIM_REAL =
       val minNormalPos: real
       val minPos: real
       val modf: real * real ref -> real
-      val nextAfter: real * real -> real
+      val nextAfterDown: real -> real
+      val nextAfterUp: real -> real
       val round: real -> real
       val signBit: real -> C_Int.t
       val strto: Primitive.NullString8.t -> real
@@ -141,7 +142,8 @@ structure Real32 : PRIM_REAL  =
       val minNormalPos = #1 _symbol "Real32_minNormalPos": real GetSet.t; ()
       val minPos = #1 _symbol "Real32_minPos": real GetSet.t; ()
       val modf = _import "Real32_modf": real * real ref -> real;
-      val nextAfter = _import "Real32_nextAfter": real * real -> real;
+      val nextAfterDown = _import "Real32_nextAfterDown": real -> real;
+      val nextAfterUp = _import "Real32_nextAfterUp": real -> real;
       val round = _prim "Real32_round": real -> real;
       val signBit = _import "Real32_signBit": real -> C_Int.t;
       val strto = _import "Real32_strto": NullString8.t -> real;
@@ -223,7 +225,8 @@ structure Real64 : PRIM_REAL =
       val minNormalPos = #1 _symbol "Real64_minNormalPos": real GetSet.t; ()
       val minPos = #1 _symbol "Real64_minPos": real GetSet.t; ()
       val modf = _import "Real64_modf": real * real ref -> real;
-      val nextAfter = _import "Real64_nextAfter": real * real -> real;
+      val nextAfterDown = _import "Real64_nextAfterDown": real -> real;
+      val nextAfterUp = _import "Real64_nextAfterUp": real -> real;
       val round = _prim "Real64_round": real -> real;
       val signBit = _import "Real64_signBit": real -> C_Int.t;
       val strto = _import "Real64_strto": NullString8.t -> real;

@@ -22,8 +22,8 @@ C_Int_t Real32_class (Real32_t f) {
  * d[1]  bits 15-8 of mantissa
  * d[2]  bit  0 of exponent
  *       bits 22-16 of mantissa
- * d[7]  sign bit
- *       bits 7-2 of exponent
+ * d[3]  sign bit
+ *       bits 7-1 of exponent
  */
 
 /* masks for word 0 */

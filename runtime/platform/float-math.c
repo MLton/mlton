@@ -24,7 +24,6 @@ float func##f (float x, float y) {                      \
         return (float)(func((double)x, (double)y));     \
 }
 binaryReal(atan2)
-binaryReal(nextafter)
 binaryReal(pow)
 #undef binaryReal
 

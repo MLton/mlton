@@ -34,7 +34,8 @@ signature PRE_REAL =
       val class: real -> C_Int.t
       val signBit: real -> C_Int.t
 
-      val nextAfter: real * real -> real
+      val nextAfterDown: real -> real
+      val nextAfterUp: real -> real
 
       val frexp: real * C_Int.int ref -> real
       val ldexp: real * C_Int.int -> real

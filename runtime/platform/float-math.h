@@ -18,7 +18,6 @@ unaryReal(tanh)
 
 #define binaryReal(func) float func##f (float x, float y);
 binaryReal(atan2)
-binaryReal(nextafter)
 binaryReal(pow)
 #undef binaryReal
 
