@@ -71,7 +71,9 @@ structure Data =
          else if !isFreed then
             raise Fail "write of freed profile data"
          else
-            P.Data.write (gcState, raw, Primitive.NullString8.fromString file)
+            P.Data.write (gcState, raw,
+                          Primitive.NullString8.fromString
+                          (String.nullTerm file))
    end
 
 val r: Data.t ref = ref (Data.make P.Data.dummy)

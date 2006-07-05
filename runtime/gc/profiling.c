@@ -244,13 +244,13 @@ void writeProfileCount (GC_state s, FILE *f,
   writeNewline (f);
 }
 
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
+void GC_profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   FILE *f;
   const char* kind;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileWrite\n");
-  f = fopen_safe ((const char*)fileName, "wb");
+  f = fopen_safe (fileName, "wb");
   writeString (f, "MLton prof\n");
   kind = "";
   switch (s->profiling.kind) {
@@ -390,16 +390,14 @@ static void initProfilingTime (GC_state s) {
 static GC_state atexitForProfilingState;
 
 void atexitForProfiling (void) {
-  FILE *f;
   GC_state s;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "atexitForProfiling ()\n");
   s = atexitForProfilingState;
   if (s->profiling.isOn) {
-    f = fopen_safe ("mlmon.out", "wb");
-    GC_profileWrite (s, s->profiling.data, f);
-    fclose_safe (f);
+    fprintf (stderr, "profiling is on\n");
+    GC_profileWrite (s, s->profiling.data, "mlmon.out");
   }
 }
 

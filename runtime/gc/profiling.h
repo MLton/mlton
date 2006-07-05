@@ -116,7 +116,7 @@ GC_profileData GC_getProfileCurrent (GC_state s);
 void GC_setProfileCurrent (GC_state s, GC_profileData p);
 
 GC_profileData GC_profileMalloc (GC_state s);
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
+void GC_profileWrite (GC_state s, GC_profileData p, const char *fileName);
 void GC_profileFree (GC_state s, GC_profileData p);
 
 void GC_profileDone (GC_state s);
