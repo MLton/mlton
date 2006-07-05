@@ -244,11 +244,13 @@ void writeProfileCount (GC_state s, FILE *f,
   writeNewline (f);
 }
 
-void GC_profileWrite (GC_state s, GC_profileData p, FILE *f) {
+void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
+  FILE *f;
   const char* kind;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileWrite\n");
+  f = fopen_safe ((const char*)fileName, "wb");
   writeString (f, "MLton prof\n");
   kind = "";
   switch (s->profiling.kind) {
@@ -286,6 +288,7 @@ void GC_profileWrite (GC_state s, GC_profileData p, FILE *f) {
   for (GC_sourceNameIndex i = 0; i < s->sourceMaps.sourceNamesLength; i++)
     writeProfileCount (s, f, p,  
                        (GC_profileMasterIndex)(i + s->sourceMaps.sourcesLength));
+  fclose_safe (f);
 }
 
 

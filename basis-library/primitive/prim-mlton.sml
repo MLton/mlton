@@ -256,7 +256,8 @@ structure Profile =
             val dummy = Pointer.null
             val free = _import "GC_profileFree": GCState.t * t -> unit;
             val malloc = _import "GC_profileMalloc": GCState.t -> t;
-            val write = _import "GC_profileWrite": GCState.t * t * C_Fd.t -> unit;
+            val write =
+               _import "GC_profileWrite": GCState.t * t * NullString8.t -> unit;
          end
       val done = _import "GC_profileDone": GCState.t -> unit;
       val getCurrent = _import "GC_getProfileCurrent": GCState.t -> Data.t;

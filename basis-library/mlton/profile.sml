@@ -66,26 +66,12 @@ structure Data =
          end
 
       fun write (T {isFreed, raw, ...}, file) =
-         if not isOn
-            then ()
+         if not isOn then
+            ()
+         else if !isFreed then
+            raise Fail "write of freed profile data"
          else
-            if !isFreed
-               then raise Fail "write of freed profile data"
-            else
-               let
-                  val fd =
-                     let
-                        open Posix.FileSys
-                        open S
-                     in
-                        creat (file,
-                               flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth])
-                     end
-                  val _ = P.Data.write (gcState, raw, fd)
-                  val _ = Posix.IO.close fd
-               in
-                  ()
-               end
+            P.Data.write (gcState, raw, Primitive.NullString8.fromString file)
    end
 
 val r: Data.t ref = ref (Data.make P.Data.dummy)
