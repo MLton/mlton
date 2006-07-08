@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -55,7 +55,6 @@
 COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
 COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
 COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
-COMPILE_TIME_ASSERT(char__is_signed, CHAR_MIN < 0);
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -66,34 +65,6 @@ COMPILE_TIME_ASSERT(char__is_signed, CHAR_MIN < 0);
 #include <sys/time.h>
 
 #include "gmp.h"
-
-
-#if (defined (__alpha__))
-#include "platform/alpha.h"
-#elif (defined (__x86_64__))
-#include "platform/amd64.h"
-#elif (defined (__arm__))
-#include "platform/arm.h"
-#elif (defined (__hppa__))
-#include "platform/hppa.h"
-#elif (defined (__ia64__))
-#include "platform/ia64.h"
-#elif (defined (__m68k__))
-#include "platform/m68k.h"
-#elif (defined (__mips__))
-#include "platform/mips.h"
-#elif (defined (__ppc__)) || (defined (__powerpc__))
-#include "platform/powerpc.h"
-#elif (defined (__s390__))
-#include "platform/s390.h"
-#elif (defined (__sparc__))
-#include "platform/sparc.h"
-#elif (defined (__i386__))
-#include "platform/x86.h"
-#else
-#error unknown platform arch
-#endif
-
 
 #if (defined (__APPLE_CC__))
 #define __Darwin__
@@ -122,5 +93,33 @@ COMPILE_TIME_ASSERT(char__is_signed, CHAR_MIN < 0);
 #else
 #error unknown platform os
 #endif
+
+
+#if (defined (__alpha__))
+#include "platform/alpha.h"
+#elif (defined (__x86_64__))
+#include "platform/amd64.h"
+#elif (defined (__arm__))
+#include "platform/arm.h"
+#elif (defined (__hppa__))
+#include "platform/hppa.h"
+#elif (defined (__ia64__))
+#include "platform/ia64.h"
+#elif (defined (__m68k__))
+#include "platform/m68k.h"
+#elif (defined (__mips__))
+#include "platform/mips.h"
+#elif (defined (__ppc__)) || (defined (__powerpc__))
+#include "platform/powerpc.h"
+#elif (defined (__s390__))
+#include "platform/s390.h"
+#elif (defined (__sparc__))
+#include "platform/sparc.h"
+#elif (defined (__i386__))
+#include "platform/x86.h"
+#else
+#error unknown platform arch
+#endif
+
 
 #endif /* _MLTON_CENV_H_ */

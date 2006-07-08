@@ -36,17 +36,7 @@
 #define FE_UPWARD     2 // FP_RND_RP
 #define FE_DOWNWARD   3 // FP_RND_RM
 
-enum {
-        FP_NAN,
-        FP_INFINITE,
-        FP_ZERO,
-        FP_SUBNORMAL,
-        FP_NORMAL
-};
-
 int fpclassify64(double d);
 
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
-
-extern char **environ; /* for Posix_ProcEnv_environ */
