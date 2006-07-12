@@ -76,8 +76,8 @@ end
 structure Process = 
 struct
 val cwait = _import "MLton_Process_cwait" : C_PId.t * (C_Status.t) ref -> (C_PId.t) C_Errno.t;
-val spawne = _import "MLton_Process_spawne" : NullString8.t * NullString8Array.t * NullString8Array.t -> (C_Int.t) C_Errno.t;
-val spawnp = _import "MLton_Process_spawnp" : NullString8.t * NullString8Array.t -> (C_Int.t) C_Errno.t;
+val spawne = _import "MLton_Process_spawne" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
+val spawnp = _import "MLton_Process_spawnp" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
 end
 structure Rlimit = 
 struct
@@ -714,8 +714,8 @@ end
 structure Process = 
 struct
 val alarm = _import "Posix_Process_alarm" : C_UInt.t -> C_UInt.t;
-val exece = _import "Posix_Process_exece" : NullString8.t * NullString8Array.t * NullString8Array.t -> (C_Int.t) C_Errno.t;
-val execp = _import "Posix_Process_execp" : NullString8.t * NullString8Array.t -> (C_Int.t) C_Errno.t;
+val exece = _import "Posix_Process_exece" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
+val execp = _import "Posix_Process_execp" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
 val exit = _import "Posix_Process_exit" : C_Status.t -> unit;
 val exitStatus = _import "Posix_Process_exitStatus" : C_Status.t -> C_Int.t;
 val fork = _import "Posix_Process_fork" : unit -> (C_PId.t) C_Errno.t;

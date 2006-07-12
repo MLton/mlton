@@ -766,19 +766,29 @@ structure Type =
       val unary: Tycon.t list =
          [Tycon.array, Tycon.reff, Tycon.vector]
 
-      fun toCType (t: t): {ctype: CType.t, name: string} option =
+      fun toNullaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of
             NONE => NONE
           | SOME (c, ts) =>
                case List.peek (nullary, fn {tycon = c', ...} =>
                                Tycon.equals (c, c')) of
-                  NONE =>
-                     if List.exists (unary, fn c' => Tycon.equals (c, c'))
-                        andalso 1 = Vector.length ts
-                        andalso isSome (toCType (Vector.sub (ts, 0)))
-                        then SOME {ctype = CType.pointer, name = "Pointer"}
-                     else NONE
+                  NONE => NONE
                 | SOME {ctype, name, ...} => SOME {ctype = ctype, name = name}
+
+      fun toUnaryCType (t: t): {ctype: CType.t, name: string} option =
+         case deConOpt t of
+            NONE => NONE
+          | SOME (c, ts) =>
+               if List.exists (unary, fn c' => Tycon.equals (c, c'))
+                  andalso 1 = Vector.length ts
+                  andalso isSome (toNullaryCType (Vector.sub (ts, 0)))
+                  then SOME {ctype = CType.pointer, name = "Pointer"}
+                  else NONE
+
+      fun toCType (t: t): {ctype: CType.t, name: string} option =
+         case toNullaryCType t of
+            NONE => toUnaryCType t
+          | SOME {ctype, name} => SOME {ctype = ctype, name = name}
 
       val toCType =
          Trace.trace

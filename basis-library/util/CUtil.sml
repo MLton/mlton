@@ -50,19 +50,23 @@ structure CUtil: C_UTIL =
             fun sub (cs, i) =
                Primitive.Char8.idFromWord8
                (Pointer.getWord8 
-                (Pointer.fromWord cs, C_Ptrdiff.fromInt i))
+                (Pointer.fromWord cs, 
+                 C_Ptrdiff.fromInt i))
 
             fun update (cs, i, c) =
                Pointer.setWord8 
-               (Pointer.fromWord cs, C_Ptrdiff.fromInt i, 
+               (Pointer.fromWord cs, 
+                C_Ptrdiff.fromInt i, 
                 Primitive.Char8.idToWord8 c)
 
-            fun toCharArrayOfLength (cs, n) = toArrayOfLength (cs, sub, n)
-
-            fun toStringOfLength cs =
-               String.fromArray (CharArray.fromPoly (toCharArrayOfLength cs))
-
             val length = makeLength (sub, fn #"\000" => true | _ => false)
+
+            fun toCharArrayOfLength (cs, n) = 
+               toArrayOfLength (cs, sub, n)
+
+            fun toStringOfLength (cs, n) =
+               String.fromArray 
+               (CharArray.fromPoly (toCharArrayOfLength (cs, n)))
 
             fun toString cs = toStringOfLength (cs, length cs)
          end
@@ -73,32 +77,53 @@ structure CUtil: C_UTIL =
 
             fun sub (css: t, i) = 
                Pointer.getPointer 
-               (Pointer.fromWord css, C_Ptrdiff.fromInt i)
+               (Pointer.fromWord css, 
+                C_Ptrdiff.fromInt i)
 
             val length = makeLength (sub, Pointer.isNull)
 
-            val toArrayOfLength =
-               fn (css, n) => toArrayOfLength (css, C_String.toString o sub, n)
+            val toArrayOfLength = 
+               fn (css, n) => 
+               toArrayOfLength (css, C_String.toString o sub, n)
 
             fun toArray css = toArrayOfLength (css, length css)
 
             val toList = Array.toList o toArray
+         end
 
-            (* The C side converts the last element of the array, "",
-             * to the null terminator that C primitives expect.
-             * As far as C can tell, the other elements of the array
-             * are just char*'s.
-             *)
-            fun fromList l =
+      structure StringVector =
+         struct
+            type t = string * C_Pointer.t array * C_Size.t vector
+            val padVec =
+               Vector.fromList
+               ["\000\000\000",
+                "\000\000",
+                "\000",
+                "\000\000\000\000"]
+            fun fromList (l : string list) : t =
                let
-                  val a = Array.array (1 +? List.length l, NullString.empty)
-                  val _ =
-                     List.foldl (fn (s, i) =>
-                                 (Array.update (a, i, NullString.nullTerm s)
-                                  ; i +? 1))
-                     0 l
+                  val n = List.length l
+                  (* The C side updates the array with addresses
+                   * using the vector of offsets.
+                   *)
+                  val aPtr = Array.array (1 +? n, C_Pointer.null)
+                  val (vOff,(_,_,acc)) =
+                     Vector.unfoldi
+                     (n, (l, 0w0, []), fn (_, (l, off, acc)) =>
+                      let
+                         val s' = List.hd l
+                         val l' = List.tl l
+                         val n' = String.size s'
+
+                         val pad' = Vector.sub (padVec, Int.mod (n', 4))
+                         val sz' = n' + Vector.length pad'
+                         val off' = C_Size.+ (off, C_Size.fromInt sz')
+                      in
+                         (off, (l', off', pad'::s'::acc))
+                      end)
+                  val str = Vector.concat (List.rev acc)
                in
-                  a
+                  (str, aPtr, vOff)
                end
          end
    end

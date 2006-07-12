@@ -31,7 +31,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          else fn () => Error.raiseSys Error.nosys
 
       val conv = NullString.nullTerm
-      val convs = CUtil.C_StringArray.fromList
+      val convs = CUtil.StringVector.fromList
 
       fun exece (path, args, env): 'a =
          let
@@ -40,7 +40,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val env = convs env
          in
             (SysCall.simple
-             (fn () => Prim.exece (path, args, env))
+             (fn () => Prim.exece (path, 
+                                   #1 args, #2 args, #3 args, 
+                                   #1 env, #2 env, #3 env))
              ; raise Fail "Posix.Process.exece")
          end
          
@@ -53,7 +55,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val args = convs args
          in
             (SysCall.simple 
-             (fn () => Prim.execp (file, args))
+             (fn () => Prim.execp (file, 
+                                   #1 args, #2 args, #3 args))
              ; raise Fail "Posix.Process.execp")
          end
 

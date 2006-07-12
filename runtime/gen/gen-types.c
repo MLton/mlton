@@ -143,8 +143,6 @@ static const char* mlTypesHStd[] = {
   ""
   "typedef String8_t NullString8_t;",
   "typedef String8_t NullString8;",
-  "typedef Array(NullString8_t) NullString8Array_t;",
-  "typedef Array(NullString8_t) NullString8Array;",
   "",
   NULL
 };
