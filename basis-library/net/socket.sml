@@ -88,8 +88,10 @@ structure CtlExtra =
       type optvalVec = Word8.word vector
       type optvalArr = Word8.word array
 
+      val bitsPerByte = 8
+         
       val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-      val intLen = Int.quot (C_Int.precision', 4)
+      val intLen = Int.quot (C_Int.precision', bitsPerByte)
       fun unmarshalInt (wa: optvalArr) : C_Int.int =
          let
             fun loop (i, acc) =
@@ -133,7 +135,7 @@ structure CtlExtra =
          if (unmarshalInt wa) = 0 then false else true
       fun marshalBool (b: bool) : optvalVec = 
          marshalInt (if b then 1 else 0)
-      val sizeLen = Int.quot (C_Size.wordSize, 4)
+      val sizeLen = Int.quot (C_Size.wordSize, bitsPerByte)
       fun unmarshalSize (wa: optvalArr) : int =
          let
             fun loop (i, acc) =
