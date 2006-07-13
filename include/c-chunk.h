@@ -27,11 +27,6 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
-extern struct cont (*nextChunks []) (void);
-extern int nextFun;
-extern int returnToC;
-extern struct GC_state gcState;
-
 #define GCState ((Pointer)&gcState)
 #define ExnStack *(Word32*)(GCState + ExnStackOffset)
 #define FrontierMem *(Pointer*)(GCState + FrontierOffset)

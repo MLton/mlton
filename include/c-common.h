@@ -17,6 +17,11 @@ struct cont {
         void *nextChunk;
 };
 
+extern int nextFun;
+extern int returnToC;
+extern struct cont (*nextChunks []) (void);
+extern struct GC_state gcState;
+
 #define ChunkName(n) Chunk ## n
 
 #define DeclareChunk(n)                         \

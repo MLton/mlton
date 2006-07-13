@@ -19,7 +19,7 @@ static Word32 returnAddressToFrameIndex (Word32 w) {
 #define Main(al, mg, mfs, mmc, pk, ps, mc, ml)                          \
 /* Globals */                                                           \
 int nextFun;                                                            \
-bool returnToC;                                                         \
+int returnToC;                                                          \
 void MLton_callFromC () {                                               \
         struct cont cont;                                               \
         GC_state s;                                                     \
