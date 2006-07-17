@@ -14,6 +14,12 @@
 
 typedef uint8_t GC_cardMapElem;
 typedef uint8_t GC_crossMapElem;
+
+typedef uint8_t GC_cardMapStart __attribute__ ((aligned (4)));
+typedef uint8_t GC_crossMapStart __attribute__ ((aligned (4)));
+typedef GC_cardMapStart *GC_cardMap;
+typedef GC_crossMapStart *GC_crossMap;
+
 typedef size_t GC_cardMapIndex;
 typedef size_t GC_crossMapIndex;
 #define CARD_MAP_ELEM_SIZE sizeof(GC_cardMapElem)
@@ -31,8 +37,8 @@ struct GC_generationalMaps {
    * written since the last minor GC; hence, the corresponding card
    * must be traced at the next minor GC.
    */
-  GC_cardMapElem *cardMap;
-  GC_cardMapElem *cardMapAbsolute;
+  GC_cardMap cardMap;
+  GC_cardMap cardMapAbsolute;
   GC_cardMapIndex cardMapLength;
   /* crossMap is an array with cardinality equal to the size of the
    * heap divided by card size.  Each element in the array is
@@ -40,7 +46,7 @@ struct GC_generationalMaps {
    * the offset indicates the start of the last object in the
    * corresponding card from the start of the card.
    */
-  GC_crossMapElem *crossMap;
+  GC_crossMap crossMap;
   GC_crossMapIndex crossMapLength;
   /* crossMapValidSize the size of the prefix of the old generation
    * for which the crossMap is valid.

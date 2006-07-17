@@ -153,7 +153,7 @@ void createCardMapAndCrossMap (GC_state s) {
   s->generationalMaps.cardMap = 
     GC_mmapAnon_safe (NULL, totalMapSize);
   s->generationalMaps.crossMap = 
-    (GC_crossMapElem*)((pointer)s->generationalMaps.cardMap + cardMapSize);
+    (s->generationalMaps.cardMap + (cardMapSize / CARD_MAP_ELEM_SIZE));
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "cardMap = "FMTPTR"  crossMap = "FMTPTR"\n",
              (uintptr_t)s->generationalMaps.cardMap,
@@ -167,9 +167,9 @@ void resizeCardMapAndCrossMap (GC_state s) {
   if (s->mutatorMarksCards
       and (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)
           != align (sizeToCardMapIndex (s->heap.size), s->sysvals.pageSize)) {
-    GC_cardMapElem *oldCardMap;
+    GC_cardMap oldCardMap;
     size_t oldCardMapSize;
-    GC_crossMapElem *oldCrossMap;
+    GC_crossMap oldCrossMap;
     size_t oldCrossMapSize;
     
     oldCardMap = s->generationalMaps.cardMap;
