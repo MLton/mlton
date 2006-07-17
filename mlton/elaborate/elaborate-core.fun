@@ -769,11 +769,11 @@ structure Type =
       fun toNullaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of
             NONE => NONE
-          | SOME (c, ts) =>
-               case List.peek (nullary, fn {tycon = c', ...} =>
-                               Tycon.equals (c, c')) of
-                  NONE => NONE
-                | SOME {ctype, name, ...} => SOME {ctype = ctype, name = name}
+          | SOME (c, _) =>
+               Option.map
+               (List.peek (nullary, fn {tycon = c', ...} =>
+                           Tycon.equals (c, c')),
+                fn {ctype, name, ...} => {ctype = ctype, name = name})
 
       fun toUnaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of

@@ -830,7 +830,6 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                      NONE => bug ()
                    | SOME y => y
          end
-      fun replaceVars xs = Vector.map (xs, replaceVar)
       fun transformBind {exp, ty, var}: Statement.t list =
          let
             fun simpleTree () = Option.app (var, simpleVarTree)
@@ -910,7 +909,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                                            end
                                   end
                          end)
-             | PrimApp {args, prim} => simple ()
+             | PrimApp _ => simple ()
              | Select {base, offset} =>
                   (case var of
                       NONE => none ()
