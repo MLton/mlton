@@ -346,18 +346,18 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   assert (base == 2 || base == 8 || base == 10 || base == 16);
   fillIntInfArg (&gcState, arg, &argmpz, argspace);
   sp = (GC_string8)gcState.frontier;
-  str = mpz_get_str(sp->chars, base, &argmpz);
-  assert (str == sp->chars);
+  str = mpz_get_str((void*)&sp->chars, base, &argmpz);
+  assert (str == &sp->chars);
   size = strlen(str);
-  if (*sp->chars == '-')
-    *sp->chars = '~';
+  if (sp->chars.c[0] == '-')
+    sp->chars.c[0] = '~';
   if (base > 0)
     for (unsigned int i = 0; i < size; i++) {
-      char c = sp->chars[i];
+      char c = sp->chars.c[i];
       if (('a' <= c) && (c <= 'z'))
-        sp->chars[i] = c + ('A' - 'a');
+        sp->chars.c[i] = c + ('A' - 'a');
     }
-  setFrontier (&gcState, (pointer)(&sp->chars[size]), bytes);
+  setFrontier (&gcState, (pointer)&sp->chars + size, bytes);
   sp->counter = 0;
   sp->length = size;
   sp->header = GC_STRING8_HEADER;

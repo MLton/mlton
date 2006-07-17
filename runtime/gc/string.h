@@ -15,7 +15,10 @@ typedef struct GC_string8 {
   GC_arrayCounter counter;
   GC_arrayLength length;
   GC_header header;
-  char chars[1];
+  union {
+    char c[1];
+    pointerAux p;
+  } chars;
 } *GC_string8;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
