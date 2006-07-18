@@ -579,30 +579,42 @@ fun output {program as Machine.Program.T {chunks,
                then s
             else concat [s, " /* ", Label.toString l, " */"]
          end
-      val handleMisalignedReals =
+      val handleMisaligned =
          let
             open Control
          in
-            !align = Align4 andalso !targetArch = Sparc
+            !align = Align4
+            andalso (case !targetArch of
+                        HPPA => true
+                      | Sparc => true
+                      | _ => false)
          end
+      val handleMisaligned =
+         fn ty =>
+         handleMisaligned
+         andalso (Type.equals (ty, Type.real R64)
+                  orelse Type.equals (ty, Type.word (Bits.fromInt 64)))
       fun addr z = concat ["&(", z, ")"]
-      fun realFetch z = concat ["Real64_fetch(", addr z, ")"]
-      fun realMove {dst, src} =
-         concat ["Real64_move(", addr dst, ", ", addr src, ");\n"]
-      fun realStore {dst, src} =
-         concat ["Real64_store(", addr dst, ", ", src, ");\n"]
+      fun fetch (z, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_fetch(", addr z, ")"]
+      fun move' ({dst, src}, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_move(", addr dst, ", ", addr src, ");\n"]
+      fun store ({dst, src}, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_store(", addr dst, ", ", src, ");\n"]
       fun move {dst: string, dstIsMem: bool,
                 src: string, srcIsMem: bool,
                 ty: Type.t}: string =
-         if handleMisalignedReals
-            andalso Type.equals (ty, Type.real R64)
-            then
-               case (dstIsMem, srcIsMem) of
-                  (false, false) => concat [dst, " = ", src, ";\n"]
-                | (false, true) => concat [dst, " = ", realFetch src, ";\n"]
-                | (true, false) => realStore {dst = dst, src = src}
-                | (true, true) => realMove {dst = dst, src = src}
-         else concat [dst, " = ", src, ";\n"]
+         if handleMisaligned ty then
+            case (dstIsMem, srcIsMem) of
+               (false, false) => concat [dst, " = ", src, ";\n"]
+             | (false, true) => concat [dst, " = ", fetch (src, ty), ";\n"]
+             | (true, false) => store ({dst = dst, src = src}, ty)
+             | (true, true) => move' ({dst = dst, src = src}, ty)
+         else
+            concat [dst, " = ", src, ";\n"]
       local
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
@@ -641,11 +653,10 @@ fun output {program as Machine.Program.T {chunks,
          val operandToString = toString
       end
       fun fetchOperand (z: Operand.t): string =
-         if handleMisalignedReals
-            andalso Type.equals (Operand.ty z, Type.real R64)
-            andalso Operand.isMem z
-            then realFetch (operandToString z)
-         else operandToString z
+         if handleMisaligned (Operand.ty z) andalso Operand.isMem z then
+            fetch (operandToString z, Operand.ty z)
+         else
+            operandToString z
       fun outputStatement (s, print) =
          let
             datatype z = datatype Statement.t

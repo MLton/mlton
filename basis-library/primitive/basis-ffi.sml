@@ -1225,12 +1225,15 @@ type t = Word64.t
 val add = _import "Word64_add" : Word64.t * Word64.t -> Word64.t;
 val andb = _import "Word64_andb" : Word64.t * Word64.t -> Word64.t;
 val equal = _import "Word64_equal" : Word64.t * Word64.t -> Bool.t;
+val fetch = _import "Word64_fetch" : (Word64.t) ref -> Word64.t;
 val lshift = _import "Word64_lshift" : Word64.t * Word32.t -> Word64.t;
+val move = _import "Word64_move" : (Word64.t) ref * (Word64.t) ref -> unit;
 val neg = _import "Word64_neg" : Word64.t -> Word64.t;
 val notb = _import "Word64_notb" : Word64.t -> Word64.t;
 val orb = _import "Word64_orb" : Word64.t * Word64.t -> Word64.t;
 val rol = _import "Word64_rol" : Word64.t * Word32.t -> Word64.t;
 val ror = _import "Word64_ror" : Word64.t * Word32.t -> Word64.t;
+val store = _import "Word64_store" : (Word64.t) ref * Word64.t -> unit;
 val sub = _import "Word64_sub" : Word64.t * Word64.t -> Word64.t;
 val xorb = _import "Word64_xorb" : Word64.t * Word64.t -> Word64.t;
 end
