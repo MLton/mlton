@@ -113,6 +113,16 @@ fun hasNative () =
        | _ => false
    end
 
+fun defaultAlignIs8 () =
+   let
+      open Control
+   in
+      case !targetArch of
+         HPPA => true
+       | Sparc => true
+       | _ => false
+   end
+
 fun makeOptions {usage} = 
    let
       val usage = fn s => (ignore (usage s); raise Fail "unreachable")
@@ -139,10 +149,7 @@ fun makeOptions {usage} =
       List.map
       (
        [
-       (Normal, "align",
-        case !targetArch of
-           Sparc => " {8|4}"
-         | _ => " {4|8}",
+       (Normal, "align", if defaultAlignIs8 () then " {8|4}" else " {4|8}",
         "object alignment",
         (SpaceString (fn s =>
                       explicitAlign
@@ -572,10 +579,7 @@ fun commandLine (args: string list): unit =
       val targetArch = !targetArch
       val () =
          align := (case !explicitAlign of
-                      NONE => (case targetArch of
-                                  Sparc => Align8
-                                | HPPA => Align8
-                                | _ => Align4)
+                      NONE => if defaultAlignIs8 () then Align8 else Align4
                     | SOME a => a)
       val () =
          codegen := (case !explicitCodegen of
