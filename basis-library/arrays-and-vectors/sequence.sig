@@ -81,15 +81,13 @@ signature SEQUENCE =
                   ('a elt -> 'b elt) -> 'a sequence -> 'c
       val duplicate: 'a sequence -> 'a sequence
       val generate':
-         SeqIndex.int * ({sub: SeqIndex.int -> 'a elt, 
+         SeqIndex.int -> {done: unit -> 'a sequence,
+                          sub: SeqIndex.int -> 'a elt, 
                           update: SeqIndex.int * 'a elt -> unit}
-                         -> (SeqIndex.int -> 'a elt) * (unit -> unit))
-         -> 'a sequence
       val generate:
-         int * ({sub: int -> 'a elt, 
+         int -> {done: unit -> 'a sequence,
+                 sub: int -> 'a elt, 
                  update: int * 'a elt -> unit}
-                -> (int -> 'a elt) * (unit -> unit))
-         -> 'a sequence
       val newUninit': SeqIndex.int -> 'a sequence
       val newUninit: int -> 'a sequence
       val new': SeqIndex.int * 'a elt -> 'a sequence

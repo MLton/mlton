@@ -147,45 +147,51 @@ functor Sequence (S: sig
 
       fun seq0 () = S.fromArray (arrayUninit' 0)
 
-      fun generate' (n, f) =
+      fun generate' n =
+        let
+           val a = arrayUninit' n
+           val subLim = ref 0
+           fun sub i =
+              if Primitive.Controls.safe andalso geu (i, !subLim) then
+                 raise Subscript
+              else
+                 Array.subUnsafe (a, i)
+           val updateLim = ref 0
+           fun update (i, x) =
+              if Primitive.Controls.safe andalso geu (i, !updateLim) then
+                 if i = !updateLim andalso i < n then
+                    (Array.updateUnsafe (a, i, x);
+                     subLim := i + 1;
+                     updateLim := i + 1)
+                 else
+                    raise Subscript
+              else
+                 Array.updateUnsafe (a, i, x)
+           val gotIt = ref false
+           fun done () =
+              if !gotIt then
+                 raise Fail "already got vector"
+              else
+                 if n = !updateLim then
+                    (gotIt := true;
+                     updateLim := 0;
+                     S.fromArray a)
+                 else
+                    raise Fail "vector not full"
+        in
+           {done = done,
+            sub = sub,
+            update = update}
+        end
+     
+      fun generate n =
          let
-            val a = arrayUninit' n
-            val subLim = ref 0
-            fun sub i =
-               if Primitive.Controls.safe andalso geu (i, !subLim)
-                  then raise Subscript
-                  else Array.subUnsafe (a, i)
-            val updateLim = ref 0
-            fun update (i, x) =
-               if Primitive.Controls.safe andalso geu (i, !updateLim)
-                  then raise Subscript
-                  else Array.updateUnsafe (a, i, x)
-            val (tab, finish) = f {sub = sub, update = update}
-            fun loop i =
-               if i >= n
-                  then ()
-                  else let
-                          val () = Array.updateUnsafe (a, i, tab i)
-                          val () = subLim := i +? 1
-                          val () = updateLim := i +? 1
-                       in
-                          loop (i +? 1)
-                       end
-            val () = loop 0
-            val () = finish ()
-            val () = updateLim := 0
+            val {done, sub, update} = generate' (fromIntForLength n)
          in
-            S.fromArray a
-         end 
-      fun generate (n, f) =
-         generate' (fromIntForLength n, 
-                    fn {sub, update} => 
-                    let 
-                       val (tab, finish) =
-                          f {sub = unwrap1 sub, update = unwrap2 update}
-                    in
-                       (wrap1 tab, finish)
-                    end)
+            {done = done,
+             sub = unwrap1 sub,
+             update = unwrap2 update}
+         end
 
       fun unfoldi' (n, b, f) =
          let

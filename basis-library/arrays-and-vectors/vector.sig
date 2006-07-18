@@ -47,10 +47,9 @@ signature VECTOR_EXTRA =
       val fields: ('a -> bool) -> 'a vector -> 'a vector list
 
       val append: 'a vector * 'a vector -> 'a vector
-      val create: 
-         int * ({sub: int -> 'a, update: int * 'a -> unit}
-                -> (int -> 'a) * (unit -> unit))
-         -> 'a vector
+      val create: int -> {done: unit -> 'a vector,
+                          sub: int -> 'a,
+                          update: int * 'a -> unit}
       val duplicate: 'a vector -> 'a vector
       val tabulate': SeqIndex.int * (SeqIndex.int -> 'a) -> 'a vector 
       val toList: 'a vector -> 'a list

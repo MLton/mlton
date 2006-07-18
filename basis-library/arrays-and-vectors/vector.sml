@@ -61,7 +61,7 @@ structure Vector: VECTOR_EXTRA =
 
       val vector = new
 
-      fun create (n, f) = generate (n, f)
+      val create = generate
    end
 structure VectorSlice: VECTOR_SLICE_EXTRA = Vector.VectorSlice
 
