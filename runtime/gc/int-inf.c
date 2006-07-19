@@ -347,7 +347,7 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   fillIntInfArg (&gcState, arg, &argmpz, argspace);
   sp = (GC_string8)gcState.frontier;
   str = mpz_get_str((void*)&sp->chars, base, &argmpz);
-  assert (str == &sp->chars);
+  assert (str == (char*)&sp->chars);
   size = strlen(str);
   if (sp->chars.c[0] == '-')
     sp->chars.c[0] = '~';
