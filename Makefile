@@ -244,21 +244,17 @@ debugged:
 
 .PHONY: profiled
 profiled:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).alloc" COMPILE_ARGS="-profile alloc"
-	$(CP) "$(COMP)/$(AOUT).alloc" "$(LIB)/"
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).count" COMPILE_ARGS="-profile count"
-	$(CP) "$(COMP)/$(AOUT).count" "$(LIB)/"
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).time" COMPILE_ARGS="-profile time"
-	$(CP) "$(COMP)/$(AOUT).time" "$(LIB)/"
-	"$(LIB)/$(AOUT).alloc" @MLton -- "$(LIB)/world.alloc"
-	"$(LIB)/$(AOUT).count" @MLton -- "$(LIB)/world.count"
-	"$(LIB)/$(AOUT).time" @MLton -- "$(LIB)/world.time"
-	sed 's/mlton-compile/mlton-compile.alloc/' < "$(MLTON)" | sed 's/world.mlton/world.alloc.mlton/' > "$(MLTON).alloc"
-	sed 's/mlton-compile/mlton-compile.count/' < "$(MLTON)" | sed 's/world.mlton/world.count.mlton/' > "$(MLTON).count"
-	sed 's/mlton-compile/mlton-compile.time/' < "$(MLTON)" | sed 's/world.mlton/world.time.mlton/' > "$(MLTON).time"
-	chmod a+x "$(MLTON).alloc"
-	chmod a+x "$(MLTON).count"
-	chmod a+x "$(MLTON).time"
+	for t in alloc count time; do 					\
+ 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t" 		\
+			COMPILE_ARGS="-profile $$t";			\
+		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
+		"$(LIB)/$(AOUT).$$t" @MLton -- "$(LIB)/world.$$t";	\
+		sed "s/mlton-compile/mlton-compile.$$t/" 		\
+			<"$(MLTON)" | 					\
+			sed "s/world.mlton/world.$$t.mlton/" 		\
+			>"$(MLTON).$$t";				\
+		chmod a+x "$(MLTON).$$t";				\
+	done
 
 TOPDIR = 'TOPDIR-unset'
 SOURCEDIR = $(TOPDIR)/SOURCES/mlton-$(VERSION)
