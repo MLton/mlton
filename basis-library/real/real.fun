@@ -88,7 +88,7 @@ functor Real (R: PRE_REAL): REAL =
                 | SOME (_, c) => c
             end
       end
-   
+
       val abs =
          if MLton.Codegen.isNative
             then abs
@@ -98,7 +98,7 @@ functor Real (R: PRE_REAL): REAL =
                INF => posInf
              | NAN => x
              | _ => if signBit x then ~x else x
-         
+
       fun isFinite r =
          case class r of
             INF => false
@@ -175,7 +175,7 @@ functor Real (R: PRE_REAL): REAL =
              | I.LESS => G.LESS
              | I.UNORDERED => raise IEEEReal.Unordered
       end
-   
+
       fun unordered (x, y) = isNan x orelse isNan y
 
       val nextAfter: real * real -> real =
@@ -202,22 +202,23 @@ functor Real (R: PRE_REAL): REAL =
                         then doit (r, t)
                      else ~ (doit (~r, ~t))
                   end
-                         
+
       val toManExp =
          let
-            val r: int ref = ref 0
+            val one = One.make (fn () => ref 0)
          in
             fn x =>
             case class x of
                INF => {exp = 0, man = x}
              | NAN => {exp = 0, man = nan}
              | ZERO => {exp = 0, man = x}
-             | _ => 
-                  let
-                     val man = Prim.frexp (x, r)
-                  in
-                     {exp = !r, man = man}
-                  end
+             | _ =>
+                  One.use (one, fn r =>
+                     let
+                        val man = Prim.frexp (x, r)
+                     in
+                        {exp = !r, man = man}
+                     end)
          end
 
       fun fromManExp {exp, man} = Prim.ldexp (man, exp)
@@ -234,17 +235,17 @@ functor Real (R: PRE_REAL): REAL =
              | _ => fromManExp {exp = exp, man = man}
 
       local
-         val int = ref zero
+         val one = One.make (fn () => ref zero)
       in
          fun split x =
             case class x of
                INF => {frac = if x > zero then zero else ~zero,
                        whole = x}
              | NAN => {frac = nan, whole = nan}
-             | _ => 
+             | _ =>
                   let
-                     val frac = Prim.modf (x, int)
-                     val whole = !int
+                     val (frac, whole) = One.use (one, fn int =>
+                                            (Prim.modf (x, int), ! int))
                      (* Some platforms' C libraries don't get sign of zero right.
                       *)
                      fun fix y =
@@ -259,7 +260,7 @@ functor Real (R: PRE_REAL): REAL =
       end
 
       val realMod = #frac o split
-         
+
       fun checkFloat x =
          case class x of
             INF => raise Overflow
@@ -274,7 +275,7 @@ functor Real (R: PRE_REAL): REAL =
          TO_NEAREST
          (IEEEReal.withRoundingMode (m, fn () =>
                                      (Primitive.Real64.round (toLarge x))))
-         
+
       fun toInt mode x =
          case class x of
             INF => raise Overflow
@@ -305,7 +306,7 @@ functor Real (R: PRE_REAL): REAL =
                                       then raise Overflow
                                    else Int.minInt')
                     else raise Overflow
-      
+
       val floor = toInt TO_NEGINF
       val ceil = toInt TO_POSINF
       val trunc = toInt TO_ZERO
@@ -391,7 +392,7 @@ functor Real (R: PRE_REAL): REAL =
       (* toDecimal, fmt, toString: binary -> decimal conversions. *)
       datatype mode = Fix | Gen | Sci
       local
-         val decpt: int ref = ref 0
+         val one = One.make (fn () => ref 0)
       in
          fun gdtoa (x: real, mode: mode, ndig: int) =
             let
@@ -400,12 +401,12 @@ functor Real (R: PRE_REAL): REAL =
                      Fix => 3
                    | Gen => 0
                    | Sci => 2
-               val cs = Prim.gdtoa (x, mode, ndig, decpt)
             in
-               (cs, !decpt)
+               One.use (one, fn decpt =>
+                  (Prim.gdtoa (x, mode, ndig, decpt), !decpt))
             end
       end
-   
+
       fun toDecimal (x: real): IEEEReal.decimal_approx =
          case class x of
             INF => {class = INF,
@@ -420,7 +421,7 @@ functor Real (R: PRE_REAL): REAL =
                      digits = [],
                      exp = 0,
                      sign = signBit x}
-          | c => 
+          | c =>
                let
                   val (cs, exp) = gdtoa (x, Gen, 0)
                   fun loop (i, ac) =
@@ -441,7 +442,7 @@ functor Real (R: PRE_REAL): REAL =
       datatype realfmt = datatype StringCvt.realfmt
 
       fun add1 n = Int.+ (n, 1)
-         
+
       local
          fun fix (sign: string, cs: C.CS.t, decpt: int, ndig: int): string =
             let
@@ -457,7 +458,7 @@ functor Real (R: PRE_REAL): REAL =
                                                 decpt),
                                          #"0")]
                else
-                  let 
+                  let
                      val whole =
                         if decpt = 0
                            then "0"
@@ -522,7 +523,7 @@ functor Real (R: PRE_REAL): REAL =
             case class x of
                INF => if x > zero then "inf" else "~inf"
              | NAN => "nan"
-             | _ => 
+             | _ =>
                   let
                      val (prefix, x) =
                         if x < zero
@@ -618,7 +619,7 @@ functor Real (R: PRE_REAL): REAL =
                 | _ => doit x
             end
       end
-   
+
       val toString = fmt (StringCvt.GEN NONE)
 
       val fromLargeInt: LargeInt.int -> real =
@@ -633,9 +634,9 @@ functor Real (R: PRE_REAL): REAL =
                val x = Prim.strto (NullString.fromString
                                    (concat [LargeInt.toString i, "\000"]))
             in
-               if sign then ~ x else x             
+               if sign then ~ x else x
             end
-         
+
       val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int =
          fn mode => fn x =>
          case class x of
@@ -651,14 +652,14 @@ functor Real (R: PRE_REAL): REAL =
                in
                   case class x of
                      INF => raise Overflow
-                   | _ => 
+                   | _ =>
                         if minInt <= x andalso x <= maxInt
                            then LargeInt.fromInt (Prim.toInt x)
                         else
                            valOf
                            (LargeInt.fromString (fmt (StringCvt.FIX (SOME 0)) x))
                end
-         
+
       structure Math =
          struct
             open Prim.Math
@@ -666,7 +667,7 @@ functor Real (R: PRE_REAL): REAL =
             (* Patch functions to handle out-of-range args.  Many C math
              * libraries do not do what the SML Basis Spec requires.
              *)
-               
+
             local
                fun patch f x =
                   if x < ~one orelse x > one
@@ -761,13 +762,13 @@ functor Real (R: PRE_REAL): REAL =
                   INF => x
                 | ZERO => one
                 | _ => R.Math.cosh x
-                     
+
             fun sinh x =
                case class x of
                   INF => x
                 | ZERO => x
                 | _ => R.Math.sinh x
-                     
+
             fun tanh x =
                case class x of
                   INF => if x > zero then one else negOne
