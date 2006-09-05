@@ -31,22 +31,22 @@
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Real##size##_t Real##size##_fetch (Ref(Real##size##_t) rp) {          \
     Real##size##OrWord32s u;                                            \
-    Word32_t *wp;                                                       \
-    wp = (Word32_t*)rp;                                                 \
-    u.ws[0] = wp[0];                                                    \
+    Word32_t *wsp;                                                      \
+    wsp = (Word32_t*)rp;                                                \
+    u.ws[0] = wsp[0];                                                   \
     if ((sizeof(Real##size##_t) / sizeof(Word32_t)) > 1)                \
-      u.ws[1] = wp[1];                                                  \
+      u.ws[1] = wsp[1];                                                 \
     return u.r;                                                         \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   void Real##size##_store (Ref(Real##size##_t) rp, Real##size##_t r) {  \
     Real##size##OrWord32s u;                                            \
-    Word32_t *wp;                                                       \
-    wp = (Word32_t*)rp;                                                 \
+    Word32_t *wsp;                                                      \
+    wsp = (Word32_t*)rp;                                                \
     u.r = r;                                                            \
-    wp[0] = u.ws[0];                                                    \
+    wsp[0] = u.ws[0];                                                   \
     if ((sizeof(Real##size##_t) / sizeof(Word32_t)) > 1)                \
-      wp[1] = u.ws[1];                                                  \
+      wsp[1] = u.ws[1];                                                 \
     return;                                                             \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \

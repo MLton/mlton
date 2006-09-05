@@ -49,35 +49,35 @@ compare (U##size, name, op)
 
 #define misaligned(size)                                                \
   typedef volatile union {                                              \
-    Word##size##_t r;                                                   \
+    Word##size##_t w;                                                   \
     Word32_t ws[sizeof(Word##size##_t) / sizeof(Word32_t)];             \
   } Word##size##OrWord32s;                                              \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Word##size##_t Word##size##_fetch (Ref(Word##size##_t) rp) {          \
+  Word##size##_t Word##size##_fetch (Ref(Word##size##_t) wp) {          \
     Word##size##OrWord32s u;                                            \
-    Word32_t *wp;                                                       \
-    wp = (Word32_t*)rp;                                                 \
-    u.ws[0] = wp[0];                                                    \
+    Word32_t *wsp;                                                      \
+    wsp = (Word32_t*)wp;                                                \
+    u.ws[0] = wsp[0];                                                   \
     if ((sizeof(Word##size##_t) / sizeof(Word32_t)) > 1)                \
-      u.ws[1] = wp[1];                                                  \
-    return u.r;                                                         \
+      u.ws[1] = wsp[1];                                                 \
+    return u.w;                                                         \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  void Word##size##_store (Ref(Word##size##_t) rp, Word##size##_t r) {  \
+  void Word##size##_store (Ref(Word##size##_t) wp, Word##size##_t w) {  \
     Word##size##OrWord32s u;                                            \
-    Word32_t *wp;                                                       \
-    wp = (Word32_t*)rp;                                                 \
-    u.r = r;                                                            \
-    wp[0] = u.ws[0];                                                    \
+    Word32_t *wsp;                                                      \
+    wsp = (Word32_t*)wp;                                                \
+    u.w = w;                                                            \
+    wsp[0] = u.ws[0];                                                   \
     if ((sizeof(Word##size##_t) / sizeof(Word32_t)) > 1)                \
-      wp[1] = u.ws[1];                                                  \
+      wsp[1] = u.ws[1];                                                 \
     return;                                                             \
   }                                                                     \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   void Word##size##_move (Ref(Word##size##_t) dst, Ref(Word##size##_t) src) { \
-    Word##size##_t r;                                                   \
-    r = Word##size##_fetch (src);                                       \
-    Word##size##_store (dst, r);                                        \
+    Word##size##_t w;                                                   \
+    w = Word##size##_fetch (src);                                       \
+    Word##size##_store (dst, w);                                        \
     return;                                                             \
   }
 
@@ -123,10 +123,12 @@ all (64)
 misaligned(64)
 
 #undef all
-#undef binary
-#undef bothBinary
+#undef misaligned
+#undef unary
+#undef shift
+#undef ror
+#undef rol
 #undef bothCompare
 #undef compare
-#undef misaligned
-#undef shift
-#undef unary
+#undef bothBinary
+#undef binary
