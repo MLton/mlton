@@ -268,7 +268,7 @@ objptr IntInf_notb (objptr arg, size_t bytes) {
   return unary (arg, bytes, &mpz_com);
 }
 
-static objptr shary (objptr arg, uint32_t shift, size_t bytes,
+static objptr shary (objptr arg, Word32_t shift, size_t bytes,
                      void(*shop)(__mpz_struct *resmpz,
                                  __gmp_const __mpz_struct *argspace,
                                  unsigned long shift))
@@ -282,14 +282,14 @@ static objptr shary (objptr arg, uint32_t shift, size_t bytes,
   return finiIntInfRes (&gcState, &resmpz, bytes);
 }
 
-objptr IntInf_arshift (objptr arg, uint32_t shift, size_t bytes) {
+objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_arshift ("FMTOBJPTR", %"PRIu32", %zu)\n",
              arg, shift, bytes);
   return shary (arg, shift, bytes, &mpz_fdiv_q_2exp);
 }
 
-objptr IntInf_lshift (objptr arg, uint32_t shift, size_t bytes) {
+objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes) {
   if (DEBUG_INT_INF)
     fprintf (stderr, "IntInf_lshift ("FMTOBJPTR", %"PRIu32", %zu)\n",
              arg, shift, bytes);
