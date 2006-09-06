@@ -29,7 +29,7 @@ static inline GC_intInf toBignum (GC_state s, objptr arg) {
 
   assert (not isSmall(arg));
   bp = (GC_intInf)(objptrToPointer(arg, s->heap.start) 
-                   - offsetof(struct GC_intInf, isneg));
+                   - offsetof(struct GC_intInf, obj.body.isneg));
   if (DEBUG_INT_INF)
     fprintf (stderr, "bp->header = "FMTHDR"\n", bp->header);
   assert (bp->header == GC_INTINF_HEADER);
@@ -77,8 +77,8 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
   } else {
     bp = toBignum (s, arg);
     res->_mp_alloc = bp->length - 1;
-    res->_mp_d = (mp_limb_t*)(bp->limbs);
-    res->_mp_size = bp->isneg ? - res->_mp_alloc : res->_mp_alloc;
+    res->_mp_d = (mp_limb_t*)(bp->obj.body.limbs);
+    res->_mp_size = bp->obj.body.isneg ? - res->_mp_alloc : res->_mp_alloc;
   }
   assert ((res->_mp_size == 0) 
           or (res->_mp_d[(res->_mp_size < 0 
@@ -101,8 +101,8 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
   /* We have as much space for the limbs as there is to the end of the
    * heap.  Divide by (sizeof(mp_limb_t)) to get number of limbs.
    */
-  res->_mp_alloc = (s->limitPlusSlop - (pointer)bp->limbs) / (sizeof(mp_limb_t));
-  res->_mp_d = (mp_limb_t*)(bp->limbs);
+  res->_mp_alloc = (s->limitPlusSlop - (pointer)bp->obj.body.limbs) / (sizeof(mp_limb_t));
+  res->_mp_d = (mp_limb_t*)(bp->obj.body.limbs);
   res->_mp_size = 0; /* is this necessary? */
 }
 
@@ -128,22 +128,22 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   if (DEBUG_INT_INF_DETAILED)
     fprintf (stderr, "res --> %s\n",
              mpz_get_str (NULL, 10, res));
-  bp = (GC_intInf)((pointer)res->_mp_d - offsetof(struct GC_intInf, limbs));
-  assert (res->_mp_d == (mp_limb_t*)(bp->limbs));
+  bp = (GC_intInf)((pointer)res->_mp_d - offsetof(struct GC_intInf, obj.body.limbs));
+  assert (res->_mp_d == (mp_limb_t*)(bp->obj.body.limbs));
   size = res->_mp_size;
   if (size < 0) {
-    bp->isneg = TRUE;
+    bp->obj.body.isneg = TRUE;
     size = - size;
   } else
-    bp->isneg = FALSE;
+    bp->obj.body.isneg = FALSE;
   if (size <= 1) {
     uintmax_t val, ans;
 
     if (size == 0)
       val = 0;
     else
-      val = bp->limbs[0];
-    if (bp->isneg) {
+      val = bp->obj.body.limbs[0];
+    if (bp->obj.body.isneg) {
       /*
        * We only fit if val in [1, 2^(CHAR_BIT * OBJPTR_SIZE - 2)].
        */
@@ -158,11 +158,11 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
       return (objptr)(ans<<1 | 1);
     }
   }
-  setFrontier (s, (pointer)(&bp->limbs[size]), bytes);
+  setFrontier (s, (pointer)(&bp->obj.body.limbs[size]), bytes);
   bp->counter = 0;
   bp->length = size + 1; /* +1 for isneg field */
   bp->header = GC_INTINF_HEADER;
-  return pointerToObjptr ((pointer)&bp->isneg, s->heap.start);
+  return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
 
 static inline objptr binary (objptr lhs, objptr rhs, size_t bytes,
@@ -346,20 +346,20 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   assert (base == 2 || base == 8 || base == 10 || base == 16);
   fillIntInfArg (&gcState, arg, &argmpz, argspace);
   sp = (GC_string8)gcState.frontier;
-  str = mpz_get_str((void*)&sp->chars, base, &argmpz);
-  assert (str == (char*)&sp->chars);
+  str = mpz_get_str((void*)&sp->obj, base, &argmpz);
+  assert (str == (char*)&sp->obj);
   size = strlen(str);
-  if (sp->chars.c[0] == '-')
-    sp->chars.c[0] = '~';
+  if (sp->obj.body.chars[0] == '-')
+    sp->obj.body.chars[0] = '~';
   if (base > 0)
     for (unsigned int i = 0; i < size; i++) {
-      char c = sp->chars.c[i];
+      char c = sp->obj.body.chars[i];
       if (('a' <= c) && (c <= 'z'))
-        sp->chars.c[i] = c + ('A' - 'a');
+        sp->obj.body.chars[i] = c + ('A' - 'a');
     }
-  setFrontier (&gcState, (pointer)&sp->chars + size, bytes);
+  setFrontier (&gcState, (pointer)&sp->obj + size, bytes);
   sp->counter = 0;
   sp->length = size;
   sp->header = GC_STRING8_HEADER;
-  return pointerToObjptr ((pointer)&sp->chars, gcState.heap.start);
+  return pointerToObjptr ((pointer)&sp->obj, gcState.heap.start);
 }
