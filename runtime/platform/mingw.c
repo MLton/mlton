@@ -148,16 +148,32 @@ int setrlimit (int resource, const struct rlimit *rlp) {
 /*                   MLton.Rusage                    */
 /* ------------------------------------------------- */
 
-/* This is implemented to fill in the times with zeros, so that we can compile
- * MLton.
+/* GetProcessTimes and GetSystemTimeAsFileTime are documented at:
+ *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/getprocesstimes.asp
+ *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getsystemtimeasfiletime.asp
  */
-
 int getrusage (int who, struct rusage *usage) {
-        usage->ru_utime.tv_sec = 0;
-        usage->ru_utime.tv_usec = 0;
-        usage->ru_stime.tv_sec = 0;
-        usage->ru_stime.tv_usec = 0;
-        return 0;
+  FILETIME ct, et, kt, ut;
+  LARGE_INTEGER li, lj;
+  if (GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut)) {
+    usage->ru_utime.tv_sec = ut.dwHighDateTime;
+    usage->ru_utime.tv_usec = ut.dwLowDateTime/10;
+    usage->ru_stime.tv_sec = kt.dwHighDateTime;
+    usage->ru_stime.tv_usec = kt.dwLowDateTime/10;
+    return 0;
+  }
+  /* if GetProcessTimes failed, use real time [for Windows] */
+  GetSystemTimeAsFileTime(&ut);
+  li.LowPart = ut.dwLowDateTime;
+  li.HighPart = ut.dwHighDateTime;
+  lj.LowPart = Time_sec;
+  lj.HighPart = Time_usec;
+  li.QuadPart -= lj.QuadPart;
+  usage->ru_utime.tv_sec = li.HighPart;
+  usage->ru_utime.tv_usec = li.LowPart/10;
+  usage->ru_stime.tv_sec = 0;
+  usage->ru_stime.tv_usec = 0;
+  return 0;
 }
 
 /* ------------------------------------------------- */
