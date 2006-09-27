@@ -1105,49 +1105,56 @@ struct
                        = List.fold
                          (args, (AppendList.empty, 0),
                           fn ((arg, size), (assembly_args, size_args)) =>
-                          (AppendList.append
-                           (if Size.eq (size, Size.DBLE)
-                              then AppendList.fromList
-                                   [Assembly.instruction_binal
-                                    {oper = Instruction.SUB,
-                                     dst = c_stackP,
-                                     src = Operand.immediate_const_int 8,
-                                     size = pointerSize},
-                                    Assembly.instruction_pfmov
-                                    {src = arg,
-                                     dst = c_stackPDerefDouble,
-                                     size = size}]
-                            else if Size.eq (size, Size.SNGL)
-                              then AppendList.fromList
-                                   [Assembly.instruction_binal
-                                    {oper = Instruction.SUB,
-                                     dst = c_stackP,
-                                     src = Operand.immediate_const_int 4,
-                                     size = pointerSize},
-                                    Assembly.instruction_pfmov
-                                    {src = arg,
-                                     dst = c_stackPDerefFloat,
-                                     size = size}]
-                            else if Size.eq (size, Size.BYTE) 
-                                    orelse Size.eq (size, Size.WORD)
-                              then AppendList.fromList
-                                   [Assembly.instruction_movx
-                                    {oper = Instruction.MOVZX,
-                                     dst = applyFFTemp,
-                                     src = arg,
-                                     dstsize = wordSize,
-                                     srcsize = size},
-                                    Assembly.instruction_ppush
-                                    {src = applyFFTemp,
-                                     base = c_stackP,
-                                     size = wordSize}]
-                            else AppendList.single
-                                 (Assembly.instruction_ppush
-                                  {src = arg,
-                                   base = c_stackP,
-                                   size = size}),
-                                 assembly_args),
-                           (Size.toBytes size) + size_args))
+                          let
+                             val (assembly_arg, size_arg) =
+                                if Size.eq (size, Size.DBLE)
+                                   then (AppendList.fromList
+                                         [Assembly.instruction_binal
+                                          {oper = Instruction.SUB,
+                                           dst = c_stackP,
+                                           src = Operand.immediate_const_int 8,
+                                           size = pointerSize},
+                                          Assembly.instruction_pfmov
+                                          {src = arg,
+                                           dst = c_stackPDerefDouble,
+                                           size = size}],
+                                         Size.toBytes size)
+                                else if Size.eq (size, Size.SNGL)
+                                   then (AppendList.fromList
+                                         [Assembly.instruction_binal
+                                          {oper = Instruction.SUB,
+                                           dst = c_stackP,
+                                           src = Operand.immediate_const_int 4,
+                                           size = pointerSize},
+                                          Assembly.instruction_pfmov
+                                          {src = arg,
+                                           dst = c_stackPDerefFloat,
+                                           size = size}],
+                                         Size.toBytes size)
+                                else if Size.eq (size, Size.BYTE) 
+                                        orelse Size.eq (size, Size.WORD)
+                                   then (AppendList.fromList
+                                         [Assembly.instruction_movx
+                                          {oper = Instruction.MOVZX,
+                                           dst = applyFFTemp,
+                                           src = arg,
+                                           dstsize = wordSize,
+                                           srcsize = size},
+                                          Assembly.instruction_ppush
+                                          {src = applyFFTemp,
+                                           base = c_stackP,
+                                           size = wordSize}],
+                                         Size.toBytes wordSize)
+                                   else (AppendList.single
+                                         (Assembly.instruction_ppush
+                                          {src = arg,
+                                           base = c_stackP,
+                                           size = size}),
+                                         Size.toBytes size)
+                          in
+                             (AppendList.append (assembly_arg, assembly_args),
+                              size_arg + size_args)
+                          end)
                      val flush =
                         case frameInfo of
                            SOME (FrameInfo.T {size, ...}) =>
