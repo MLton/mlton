@@ -10,7 +10,11 @@
 #include "use-mmap.c"
 
 static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
+#if (defined(__powerpc__) || defined(__ppc__))
         GC_handleSigProf ((pointer) ucp->uc_mcontext->ss.srr0);
+#elif (defined(__i386__))
+        GC_handleSigProf ((pointer) ucp->uc_mcontext->ss.eip);
+#endif
 }
 
 void setSigProfHandler (struct sigaction *sa) {

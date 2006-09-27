@@ -1155,6 +1155,22 @@ struct
                              (AppendList.append (assembly_arg, assembly_args),
                               size_arg + size_args)
                           end)
+                     val (pushArgs, size_args) =
+                        let
+                           val space = 16 - (size_args mod 16)
+                        in
+                           if space = 16
+                              then (pushArgs, size_args)
+                              else (AppendList.append
+                                    (AppendList.single
+                                     (Assembly.instruction_binal
+                                      {oper = Instruction.SUB,
+                                       dst = c_stackP,
+                                       src = Operand.immediate_const_int space,
+                                       size = pointerSize}),
+                                     pushArgs),
+                                    size_args + space)
+                        end
                      val flush =
                         case frameInfo of
                            SOME (FrameInfo.T {size, ...}) =>

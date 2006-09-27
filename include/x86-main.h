@@ -49,7 +49,7 @@ Word32 wordTemp2L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-#if (defined (__CYGWIN__) || defined (__MSVCRT__))
+#if (defined (__CYGWIN__) || defined (__Darwin__) || defined (__MSVCRT__))
 #define ReturnToC "_Thread_returnToC"
 #elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
 #define ReturnToC "Thread_returnToC"

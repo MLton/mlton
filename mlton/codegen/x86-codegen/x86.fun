@@ -3509,7 +3509,7 @@ struct
              => seq [str ".long ",
                      seq (separate(List.map (ls, Immediate.layout), ","))]
              | String ss 
-             => seq [str ".string ",
+             => seq [str ".ascii ",
                      seq (separate(List.map
                                    (ss,
                                     fn s => seq [str "\"",
@@ -3517,7 +3517,7 @@ struct
                                                  str "\""]),
                                    ","))]
              | Global l 
-             => seq [str ".global ",
+             => seq [str ".globl ",
                      Label.layout l]
              | Local l 
              => seq [str ".local ", 
