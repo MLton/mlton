@@ -2,11 +2,7 @@ This is the license for MLton, a whole-program optimizing compiler for
 the Standard ML programming language.  Send comments and questions to
 MLton@mlton.org.
 
-MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
-
-Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
-   Jagannathan, and Stephen Weeks.
-Copyright (C) 1997-2000 by the NEC Research Institute
+MLton LICENSE AND DISCLAIMER.
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
