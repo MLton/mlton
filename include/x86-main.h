@@ -16,6 +16,7 @@ Word32 applyFFTemp2;
 Word32 checkTemp;
 Word32 cReturnTemp[16];
 Word32 c_stackP;
+Word32 c_stackPTrue;
 Word32 divTemp;
 Word32 eq1Temp;
 Word32 eq2Temp;
@@ -64,11 +65,12 @@ static Word32 returnAddressToFrameIndex (Word32 w) {
 #define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                  \
 void MLton_jumpToSML (pointer jump) {                                   \
         Word c_stackPLast;                                              \
-        Word c_stackPThis;                                              \
+        Word c_stackPLastTrue;                                          \
                                                                         \
         if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \
         c_stackPLast = c_stackP;                                        \
+        c_stackPLastTrue = c_stackPTrue;                                \
         if (reserveEsp)                                                 \
                 __asm__ __volatile__                                    \
                 ("pusha\n\t"                                            \
@@ -81,7 +83,7 @@ void MLton_jumpToSML (pointer jump) {                                   \
                  ".global "ReturnToC"\n"ReturnToC":\n\t"                \
                  "movl %0,%%esp\n\t"                                    \
                  "popa\n"                                               \
-                 : "=o" (c_stackPThis), "=o" (c_stackP)                 \
+                 : "=o" (c_stackPTrue), "=o" (c_stackP)                 \
                 : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
                 );                                                      \
         else                                                            \
@@ -96,10 +98,11 @@ void MLton_jumpToSML (pointer jump) {                                   \
                  ".global "ReturnToC"\n"ReturnToC":\n\t"                \
                  "movl %0,%%esp\n\t"                                    \
                  "popa\n"                                               \
-                 : "=o" (c_stackPThis), "=o" (c_stackP)                 \
+                 : "=o" (c_stackPTrue), "=o" (c_stackP)                 \
                 : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
                 );                                                      \
         c_stackP = c_stackPLast;                                        \
+        c_stackPTrue = c_stackPLastTrue;                                \
         if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (uint)jump); \
         return;                                                         \
