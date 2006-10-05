@@ -50,63 +50,12 @@ Word32 wordTemp2L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-#if (defined (__CYGWIN__) || defined (__Darwin__) || defined (__MSVCRT__))
-#define ReturnToC "_Thread_returnToC"
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-#define ReturnToC "Thread_returnToC"
-#else
-#error ReturnToC not defined
-#endif
-
 static Word32 returnAddressToFrameIndex (Word32 w) {
         return *((Word32*)(w - sizeof(Word32)));
 }
 
-#define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                  \
-void MLton_jumpToSML (pointer jump) {                                   \
-        Word c_stackPLast;                                              \
-        Word c_stackPLastTrue;                                          \
-                                                                        \
-        if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (uint)jump); \
-        c_stackPLast = c_stackP;                                        \
-        c_stackPLastTrue = c_stackPTrue;                                \
-        if (reserveEsp)                                                 \
-                __asm__ __volatile__                                    \
-                ("pusha\n\t"                                            \
-                 "movl %%esp,%0\n\t"                                    \
-                 "andl $-16,%%esp\n\t"                                  \
-                 "movl %%esp,%1\n\t"                                    \
-                 "movl %2,%%ebp\n\t"                                    \
-                 "movl %3,%%edi\n\t"                                    \
-                 "jmp *%4\n"                                            \
-                 ".global "ReturnToC"\n"ReturnToC":\n\t"                \
-                 "movl %0,%%esp\n\t"                                    \
-                 "popa\n"                                               \
-                 : "=o" (c_stackPTrue), "=o" (c_stackP)                 \
-                : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                      \
-        else                                                            \
-                __asm__ __volatile__                                    \
-                ("pusha\n\t"                                            \
-                 "movl %%esp,%0\n\t"                                    \
-                 "andl $-16,%%esp\n\t"                                  \
-                 "movl %%esp,%1\n\t"                                    \
-                 "movl %2,%%ebp\n\t"                                    \
-                 "movl %3,%%esp\n\t"                                    \
-                 "jmp *%4\n"                                            \
-                 ".global "ReturnToC"\n"ReturnToC":\n\t"                \
-                 "movl %0,%%esp\n\t"                                    \
-                 "popa\n"                                               \
-                 : "=o" (c_stackPTrue), "=o" (c_stackP)                 \
-                : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                      \
-        c_stackP = c_stackPLast;                                        \
-        c_stackPTrue = c_stackPLastTrue;                                \
-        if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (uint)jump); \
-        return;                                                         \
-}                                                                       \
+#define Main(al, mg, mfs, mmc, pk, ps, ml)                              \
+void MLton_jumpToSML (pointer jump);                                    \
 void MLton_callFromC () {                                               \
         pointer jump;                                                   \
         GC_state s;                                                     \

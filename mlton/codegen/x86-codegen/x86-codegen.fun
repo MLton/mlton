@@ -62,12 +62,6 @@ struct
   structure x86Validate
     = x86Validate (structure x86 = x86)
 
-  structure C =
-    struct
-      val truee = "TRUE"
-      val falsee = "FALSE"
-    end
-
   open x86
   fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
                                             main, ...},
@@ -137,7 +131,7 @@ struct
                           then String.dropPrefix (mainLabel, 1)
                        else mainLabel
                  in
-                    [mainLabel, if reserveEsp then C.truee else C.falsee]
+                    [mainLabel]
                  end
               fun declareLocals () =
                  List.foreach
@@ -179,6 +173,174 @@ struct
              x86.Assembly.label x86MLton.fileNameLabel,
              x86.Assembly.pseudoop_string [file]]
 
+        fun outputJumpToSML print =
+           let
+              val jumpToSML = x86.Label.fromString "MLton_jumpToSML"
+              val returnToC = x86.Label.fromString "Thread_returnToC"
+              val {frontierReg, stackTopReg} =
+                 if reserveEsp
+                    then {frontierReg = x86.Register.edi,
+                          stackTopReg = x86.Register.ebp}
+                    else {frontierReg = x86.Register.esp,
+                          stackTopReg = x86.Register.ebp}
+              val asm =
+                 [
+                  x86.Assembly.pseudoop_text (),
+                  x86.Assembly.pseudoop_p2align 
+                  (x86.Immediate.const_int 4, NONE, NONE),
+                  x86.Assembly.pseudoop_global jumpToSML,
+                  x86.Assembly.label jumpToSML,
+                  x86.Assembly.instruction_binal
+                  {oper = x86.Instruction.SUB,
+                   src = x86.Operand.immediate_const_int 28,
+                   dst = x86.Operand.register x86.Register.esp,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 32),
+                          base = SOME x86.Register.esp,
+                          index= NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.eax,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.ebp,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 24),
+                          base = SOME x86.Register.esp,
+                          index= NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.ebx,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 20),
+                          base = SOME x86.Register.esp,
+                          index= NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.edi,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 16),
+                          base = SOME x86.Register.esp,
+                          index= NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.esi,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 12),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
+                          base = NONE, index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebx,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.ebx,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 8),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.esp,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
+                          base = NONE, index = NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = (SOME o x86.Immediate.binexp)
+                                 {oper = x86.Immediate.Addition,
+                                  exp1 = x86.Immediate.label x86MLton.gcState_label,
+                                  exp2 = x86.Immediate.const_int 
+                                         (Bytes.toInt 
+                                          (Machine.Runtime.GCField.offset
+                                           Machine.Runtime.GCField.StackTop))},
+                          base = NONE, index = NONE, scale = NONE},
+                   dst = x86.Operand.register stackTopReg,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = (SOME o x86.Immediate.binexp)
+                                 {oper = x86.Immediate.Addition,
+                                  exp1 = x86.Immediate.label x86MLton.gcState_label,
+                                  exp2 = x86.Immediate.const_int 
+                                         (Bytes.toInt 
+                                          (Machine.Runtime.GCField.offset
+                                           Machine.Runtime.GCField.Frontier))},
+                          base = NONE, index = NONE, scale = NONE},
+                   dst = x86.Operand.register frontierReg,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_jmp
+                  {target = x86.Operand.register x86.Register.eax,
+                   absolute = true},
+                  x86.Assembly.pseudoop_p2align 
+                  (x86.Immediate.const_int 4, NONE, NONE),
+                  x86.Assembly.pseudoop_global returnToC,
+                  x86.Assembly.label returnToC,
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
+                          base = NONE, index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.esp,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 8),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebx,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = x86.Operand.register x86.Register.ebx,
+                   dst = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.label x86MLton.c_stackP),
+                          base = NONE, index = NONE, scale = NONE},
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 12),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.esi,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 16),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.edi,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 20),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebx,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_mov
+                  {src = (x86.Operand.address o x86.Address.T)
+                         {disp = SOME (x86.Immediate.const_int 24),
+                          base = SOME x86.Register.esp,
+                          index = NONE, scale = NONE},
+                   dst = x86.Operand.register x86.Register.ebp,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_binal
+                  {oper = x86.Instruction.ADD,
+                   src = x86.Operand.immediate_const_int 28,
+                   dst = x86.Operand.register x86.Register.esp,
+                   size = x86.Size.LONG},
+                  x86.Assembly.instruction_ret {src = NONE}
+                  ]
+           in
+              List.foreach
+              (asm,
+               fn asm => (Layout.print(Assembly.layout asm, print);
+                          print "\n"))
+           end
+
         val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = x86JumpInfo.newJumpInfo ()
 
@@ -193,6 +355,11 @@ struct
           = let
               val isMain 
                 = Machine.ChunkLabel.equals(#chunkLabel main, chunkLabel)
+
+              val () 
+                = if isMain
+                     then outputJumpToSML print
+                     else ()
 
               val {chunk}
                 = x86Translate.translateChunk 
@@ -243,7 +410,7 @@ struct
             in
               List.fold
               (validated_assembly,
-               0,
+               if isMain then 30 else 0,
                fn (block, n)
                 => List.fold
                    (block,
