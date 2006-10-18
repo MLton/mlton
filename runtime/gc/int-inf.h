@@ -24,11 +24,11 @@ typedef struct GC_intInf {
   } obj;
 } *GC_intInf;
 
-COMPILE_TIME_ASSERT(GC_intInf__fields_packed,
-                    offsetof(struct GC_intInf, obj) == sizeof(GC_arrayCounter) + sizeof(GC_arrayLength) + sizeof(GC_header));
-COMPILE_TIME_ASSERT(GC_intInf__isneg_packed,
+COMPILE_TIME_ASSERT(GC_intInf__obj_packed,
+                    offsetof(struct GC_intInf, obj) == offsetof(struct GC_intInf, counter) + sizeof(GC_arrayCounter) + sizeof(GC_arrayLength) + sizeof(GC_header));
+COMPILE_TIME_ASSERT(GC_intInf__obj_body_isneg_packed,
                     offsetof(struct GC_intInf, obj.body.isneg) == offsetof(struct GC_intInf, obj));
-COMPILE_TIME_ASSERT(GC_intInf__limbs_packed,
+COMPILE_TIME_ASSERT(GC_intInf_obj_body_limbs_packed,
                     offsetof(struct GC_intInf, obj.body.limbs) == offsetof(struct GC_intInf, obj) + sizeof(mp_limb_t));
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
