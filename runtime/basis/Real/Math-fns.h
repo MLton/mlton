@@ -90,7 +90,7 @@ binaryRealInt(ldexp, ldexp)
 #if (defined (__hppa__) || defined (__sparc__))
 #define binaryRealRealRef(g, h)                                         \
   MLTON_CODEGEN_MATHFN(Real32_t h##f (Real32_t x, Real32_t *yp);)       \
-    MLTON_CODEGEN_STATIC_INLINE                                         \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
   Real32_t Real32_##g (Real32_t x, Ref(Real32_t) yp) {                  \
     /* Real32_t r, res; */                                              \
     /* r = Real32_fetch (yp); */                                        \
@@ -116,7 +116,7 @@ binaryRealInt(ldexp, ldexp)
     return h##f (x, (Real32_t*)yp);                                     \
   }                                                                     \
   MLTON_CODEGEN_MATHFN(Real64_t h (Real64_t x, Real64_t *yp);)          \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+    MLTON_CODEGEN_STATIC_INLINE                                         \
   Real64_t Real64_##g (Real64_t x, Ref(Real64_t) yp) {                  \
     return h (x, (Real64_t*)yp);                                        \
   }
