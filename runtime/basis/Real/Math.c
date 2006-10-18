@@ -21,6 +21,7 @@ unaryReal(round, rint)
                 return (Real32)(Real64_Math_##f ((Real64)x, (Real64)y));        \
         }
 binaryReal(atan2, atan2)
+binaryReal(pow, pow)
 #undef binaryReal
 
 #define unaryReal(f, g)                                         \
@@ -35,12 +36,15 @@ unaryReal(acos, acos)
 unaryReal(asin, asin)
 unaryReal(atan, atan)
 unaryReal(cos, cos)
+unaryReal(cosh, cosh)
 unaryReal(exp, exp)
 unaryReal(ln, log)
 unaryReal(log10, log10)
 unaryReal(sin, sin)
+unaryReal(sinh, sinh)
 unaryReal(sqrt, sqrt)
 unaryReal(tan, tan)
+unaryReal(tanh, tanh)
 #undef unaryReal
 
 double ldexp (double x, int i);

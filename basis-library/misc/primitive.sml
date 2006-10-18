@@ -1325,18 +1325,18 @@ structure Primitive =
                   val atan = _prim "Real64_Math_atan": real -> real;
                   val atan2 = _prim "Real64_Math_atan2": real * real -> real;
                   val cos = _prim "Real64_Math_cos": real -> real;
-                  val cosh = _import "cosh": real -> real;
+                  val cosh = _import "Real64_Math_cosh": real -> real;
                   val e = #1 _symbol "Real64_Math_e": real GetSet.t; ()
                   val exp = _prim "Real64_Math_exp": real -> real;
                   val ln = _prim "Real64_Math_ln": real -> real;
                   val log10 = _prim "Real64_Math_log10": real -> real;
                   val pi = #1 _symbol "Real64_Math_pi": real GetSet.t; ()
-                  val pow = _import "pow": real * real -> real;
+                  val pow = _import "Real64_Math_pow": real * real -> real;
                   val sin = _prim "Real64_Math_sin": real -> real;
-                  val sinh = _import "sinh": real -> real;
+                  val sinh = _import "Real64_Math_sinh": real -> real;
                   val sqrt = _prim "Real64_Math_sqrt": real -> real;
                   val tan = _prim "Real64_Math_tan": real -> real;
-                  val tanh = _import "tanh": real -> real;
+                  val tanh = _import "Real64_Math_tanh": real -> real;
                end
 
             val * = _prim "Real64_mul": real * real -> real;
