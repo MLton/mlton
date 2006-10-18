@@ -11,14 +11,14 @@
 #define ROUNDING_CONTROL_MASK 0x0C00
 #define ROUNDING_CONTROL_SHIFT 10
 
-static inline int fegetround (void) {
+static inline C_Int_t fegetround (void) {
         unsigned short controlWord;
 
         _FPU_GETCW (controlWord);
         return (controlWord & ROUNDING_CONTROL_MASK) >> ROUNDING_CONTROL_SHIFT;
 }
 
-static inline void fesetround (int mode) {
+static inline void fesetround (C_Int_t mode) {
         unsigned short controlWord;
 
         _FPU_GETCW (controlWord);
