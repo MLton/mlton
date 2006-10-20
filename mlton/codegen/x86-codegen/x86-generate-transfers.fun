@@ -1976,7 +1976,7 @@ struct
         val assembly =
            if List.isEmpty data
               then assembly
-              else ((Assembly.pseudoop_data())::data)::assembly
+              else data::assembly
       in
          assembly
       end
