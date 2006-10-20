@@ -1717,6 +1717,8 @@ struct
       datatype t
         (* No operation *)
         = NOP
+        (* Halt *)
+        | HLT
         (* Integer binary arithmetic(w/o mult & div)/logic instructions.
          *)
         | BinAL of {oper: binal,
@@ -1990,6 +1992,8 @@ struct
           in 
             fn NOP
              => str "nop"
+             | HLT
+             => str "hlt"
              | BinAL {oper, src, dst, size}
              => bin (binal_layout oper, 
                      Size.layout size,
@@ -2260,6 +2264,8 @@ struct
         
       val uses_defs_kills
         = fn NOP
+           => {uses = [], defs = [], kills = []}
+           | HLT
            => {uses = [], defs = [], kills = []}
            | BinAL {src, dst, ...}
            => {uses = [src, dst], defs = [dst], kills = []}
@@ -2596,6 +2602,8 @@ struct
       val srcs_dsts
         = fn NOP
            => {srcs = NONE, dsts = NONE}
+           | HLT
+           => {srcs = NONE, dsts = NONE}
            | BinAL {src, dst, ...}
            => {srcs = SOME [src, dst], dsts = SOME [dst]}
            | pMD {src, dst, ...}
@@ -2785,6 +2793,8 @@ struct
       fun replace replacer
         = fn NOP
            => NOP
+           | HLT
+           => HLT
            | BinAL {oper, src, dst, size}
            => BinAL {oper = oper,
                      src = replacer {use = true, def = false} src,
@@ -2989,6 +2999,7 @@ struct
            => FBinASP {oper = oper}
 
       val nop = fn () => NOP
+      val hlt = fn () => HLT
       val binal = BinAL
       val pmd = pMD
       val md = MD
@@ -3451,6 +3462,7 @@ struct
       datatype t
         = Data
         | Text
+        | SymbolStub
         | Balign of Immediate.t * Immediate.t option * Immediate.t option
         | P2align of Immediate.t * Immediate.t option * Immediate.t option
         | Space of Immediate.t * Immediate.t
@@ -3459,6 +3471,7 @@ struct
         | Long of Immediate.t list
         | String of string list
         | Global of Label.t
+        | IndirectSymbol of Label.t
         | Local of Label.t
         | Comm of Label.t * Immediate.t * Immediate.t option
 
@@ -3468,6 +3481,7 @@ struct
           in
             fn Data => str ".data"
              | Text => str ".text"
+             | SymbolStub => str ".symbol_stub"
              | Balign (i,fill,max) 
              => seq [str ".balign ", 
                      Immediate.layout i,
@@ -3519,6 +3533,9 @@ struct
              | Global l 
              => seq [str ".globl ",
                      Label.layout l]
+             | IndirectSymbol l 
+             => seq [str ".indirect_symbol ",
+                     Label.layout l]
              | Local l 
              => seq [str ".local ", 
                      Label.layout l]
@@ -3551,6 +3568,7 @@ struct
           in
             fn Data => Data
              | Text => Text
+             | SymbolStub => SymbolStub
              | Balign (i,fill,max) => Balign (replacerImmediate i,
                                               Option.map(fill, replacerImmediate),
                                               Option.map(max, replacerImmediate))
@@ -3563,6 +3581,7 @@ struct
              | Long ls => Long (List.map(ls, replacerImmediate))
              | String ss => String ss
              | Global l => Global (replacerLabel l)
+             | IndirectSymbol l => IndirectSymbol (replacerLabel l)
              | Local l => Local (replacerLabel l)
              | Comm (l, i, a) => Comm (replacerLabel l, 
                                        replacerImmediate i,
@@ -3571,6 +3590,7 @@ struct
 
       val data = fn () => Data
       val text = fn () => Text
+      val symbol_stub = fn () => SymbolStub
       val balign = Balign
       val p2align = P2align
       val space = Space
@@ -3579,6 +3599,7 @@ struct
       val long = Long
       val string = String
       val global = Global
+      val indirect_symbol = IndirectSymbol
       val locall = Local
       val comm = Comm
     end
@@ -3648,6 +3669,7 @@ struct
       val pseudoop = PseudoOp
       val pseudoop_data = PseudoOp o PseudoOp.data
       val pseudoop_text = PseudoOp o PseudoOp.text
+      val pseudoop_symbol_stub = PseudoOp o PseudoOp.symbol_stub
       val pseudoop_balign = PseudoOp o PseudoOp.balign
       val pseudoop_p2align = PseudoOp o PseudoOp.p2align
       val pseudoop_space = PseudoOp o PseudoOp.space
@@ -3656,11 +3678,13 @@ struct
       val pseudoop_long = PseudoOp o PseudoOp.long
       val pseudoop_string = PseudoOp o PseudoOp.string
       val pseudoop_global = PseudoOp o PseudoOp.global
+      val pseudoop_indirect_symbol = PseudoOp o PseudoOp.indirect_symbol
       val pseudoop_local = PseudoOp o PseudoOp.locall
       val pseudoop_comm = PseudoOp o PseudoOp.comm
       val label = Label
       val instruction = Instruction
       val instruction_nop = Instruction o Instruction.nop
+      val instruction_hlt = Instruction o Instruction.hlt
       val instruction_binal = Instruction o Instruction.binal
       val instruction_pmd = Instruction o Instruction.pmd
       val instruction_md = Instruction o Instruction.md

@@ -424,6 +424,41 @@ struct
            else AppendList.single (Assembly.directive_unreserve 
                                    {registers = [Register.esp]})
 
+        val (mkCCallLabel, mkSymbolStubs) =
+           if !Control.targetOS = MLton.Platform.OS.Darwin
+              then 
+                 let
+                    val set: (word * String.t * Label.t) HashSet.t =
+                       HashSet.new {hash = #1}
+                    fun mkCCallLabel name =
+                       let
+                          val hash = String.hash name
+                       in
+                          (#3 o HashSet.lookupOrInsert)
+                          (set, hash,
+                           fn (hash', name', _) => hash = hash' andalso name = name',
+                           fn () => (hash, name, 
+                                     Label.newString (concat ["L_", name, "_stub"])))
+                       end
+                    fun mkSymbolStubs () =
+                       HashSet.fold
+                       (set, [], fn ((_, name, label), assembly) =>
+                        (Assembly.pseudoop_symbol_stub ()) ::
+                        (Assembly.label label) ::
+                        (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::
+                        (Assembly.instruction_hlt ()) ::
+                        (Assembly.instruction_hlt ()) ::
+                        (Assembly.instruction_hlt ()) ::
+                        (Assembly.instruction_hlt ()) ::
+                        (Assembly.instruction_hlt ()) ::
+                        assembly)
+                 in
+                    (mkCCallLabel, mkSymbolStubs)
+                 end
+              else
+                 (fn name => Label.fromString name,
+                  fn () => [])
+                 
         datatype z = datatype Entry.t
         datatype z = datatype Transfer.t
         fun generateAll (gef as GEF {effect,...})
@@ -434,12 +469,9 @@ struct
                 | SOME (Block.T {entry, profileLabel, statements, transfer})
                 => let
                      val _ = setLayoutInfo(label, NONE)
-
 (*
                      val isLoopHeader = fn _ => false
 *)
-
-                       
                      fun near label =
                         let
                            val align =
@@ -1293,11 +1325,12 @@ struct
                                     case convention of
                                        Cdecl => name
                                      | Stdcall => concat [name, "@", Int.toString size_args]
+                                 val target = mkCCallLabel name
                               in
                                  AppendList.fromList
                                  [Assembly.directive_ccall (),
                                   Assembly.instruction_call
-                                  {target = Operand.label (Label.fromString name),
+                                  {target = Operand.label target,
                                    absolute = false}]
                               end
                          | Indirect =>
@@ -1931,10 +1964,21 @@ struct
                       of [] => doit ()
                        | block => block::(doit ())))
         val assembly = doit ()
+        val symbol_stubs = mkSymbolStubs ()
         val _ = destLayoutInfo ()
         val _ = destProfileLabel ()
+
+        val assembly = [Assembly.pseudoop_text ()]::assembly
+        val assembly =
+           if List.isEmpty symbol_stubs
+              then assembly
+              else symbol_stubs :: assembly
+        val assembly =
+           if List.isEmpty data
+              then assembly
+              else ((Assembly.pseudoop_data())::data)::assembly
       in
-        data::assembly
+         assembly
       end
 
   val (generateTransfers, generateTransfers_msg)
