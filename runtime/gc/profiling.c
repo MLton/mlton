@@ -203,8 +203,7 @@ void GC_profileAllocInc (GC_state s, size_t amount) {
   }
 }
 
-
-GC_profileData GC_profileMalloc (GC_state s) {
+GC_profileData profileMalloc (GC_state s) {
   GC_profileData p;
   uint32_t profileMasterLength;
 
@@ -218,15 +217,25 @@ GC_profileData GC_profileMalloc (GC_state s) {
       (struct GC_profileStack *)
       (calloc_safe(profileMasterLength, sizeof(*(p->stack))));
   if (DEBUG_PROFILE)
-    fprintf (stderr, FMTPTR" = GC_profileMalloc ()\n", (uintptr_t)p);
+    fprintf (stderr, FMTPTR" = profileMalloc ()\n", (uintptr_t)p);
   return p;
 }
 
-void GC_profileFree (GC_state s, GC_profileData p) {
+GC_profileData GC_profileMalloc (GC_state s) {
+  return profileMalloc (s);
+}
+
+void profileFree (GC_state s, GC_profileData p) {
+  if (DEBUG_PROFILE)
+    fprintf (stderr, "profileFree ("FMTPTR")\n", (uintptr_t)p);
   free (p->countTop);
   if (s->profiling.stack)
     free (p->stack);
   free (p);
+}
+
+void GC_profileFree (GC_state s, GC_profileData p) {
+  profileFree (s, p);
 }
 
 void writeProfileCount (GC_state s, FILE *f,
@@ -244,13 +253,13 @@ void writeProfileCount (GC_state s, FILE *f,
   writeNewline (f);
 }
 
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
+void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   FILE *f;
   const char* kind;
 
   if (DEBUG_PROFILE)
-    fprintf (stderr, "GC_profileWrite\n");
-  f = fopen_safe ((const char*)fileName, "wb");
+    fprintf (stderr, "profileWrite("FMTPTR",%s)\n", (uintptr_t)p, fileName);
+  f = fopen_safe (fileName, "wb");
   writeString (f, "MLton prof\n");
   kind = "";
   switch (s->profiling.kind) {
@@ -291,6 +300,9 @@ void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
   fclose_safe (f);
 }
 
+void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
+  profileWrite (s, p, (const char*)fileName);
+}
 
 void setProfTimer (long usec) {
   struct itimerval iv;
@@ -352,7 +364,7 @@ void GC_handleSigProf (code_pointer pc) {
 static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
-  s->profiling.data = GC_profileMalloc (s);
+  s->profiling.data = profileMalloc (s);
   if (PROFILE_TIME_LABEL == s->profiling.kind) {
     initTextSources (s);
   } else {
@@ -397,7 +409,7 @@ void atexitForProfiling (void) {
   s = atexitForProfilingState;
   if (s->profiling.isOn) {
     fprintf (stderr, "profiling is on\n");
-    GC_profileWrite (s, s->profiling.data, "mlmon.out");
+    profileWrite (s, s->profiling.data, "mlmon.out");
   }
 }
 
@@ -410,7 +422,7 @@ void initProfiling (GC_state s) {
     switch (s->profiling.kind) {
     case PROFILE_ALLOC:
     case PROFILE_COUNT:
-      s->profiling.data = GC_profileMalloc (s);
+      s->profiling.data = profileMalloc (s);
       break;
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");

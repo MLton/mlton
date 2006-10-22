@@ -98,6 +98,10 @@ static inline void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex
 
 static void writeProfileCount (GC_state s, FILE *f, GC_profileData p, GC_profileMasterIndex i);
 
+GC_profileData profileMalloc (GC_state s);
+void profileWrite (GC_state s, GC_profileData p, const char* fileName);
+void profileFree (GC_state s, GC_profileData p);
+
 static void setProfTimer (long usec);
 static void initProfilingTime (GC_state s);
 static void atexitForProfiling (void);
