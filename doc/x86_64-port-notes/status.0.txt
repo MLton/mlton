@@ -1,0 +1,87 @@
+
+Notes on the status of the x86_64 port of MLton.
+=======================================================================
+
+Sources:
+
+Work is progressing on the x86_64 branch; interested parties may check
+out the latest revision with:
+
+svn co svn://mlton.org/mlton/branches/on-20050822-x86_64-branch mlton.x86_64
+
+and view the sources on the web at:
+
+http://mlton.org/cgi-bin/viewsvn.cgi/mlton/branches/on-20050822-x86_64-branch/
+
+
+Background:
+
+(* Representing 64-bit pointers. *)
+http://mlton.org/pipermail/mlton/2004-October/026162.html
+(* MLton GC overview *)
+http://mlton.org/pipermail/mlton/2005-July/027585.html
+
+
+Summary:
+
+Thus far, the garbage collector (and related services) have been
+rewritten to be native pointer size agnostic with configurable heap
+object pointer representation.  There are no known regressions with
+respect to the rewritten GC and the present 32-bit compiler.  The next
+step will be to make the Basis Library implementation agnostic to the
+native representation of primitive C-types (e.g., int, char*, etc.).
+This will ensure that the Basis Library implementation may be shared
+among 32-bit and 64-bit systems.  Following that, I believe that it
+will be possible to push changes through the compiler proper to
+support a C-codegen in which all pointers are 64-bit.  After shaking
+out bugs there, we should be able to consider supporting smaller
+ML-pointer representations.
+
+
+Details:
+
+Thus far, code modifications have been limited to the runtime/
+directory:
+
+http://mlton.org/cgi-bin/viewsvn.cgi/mlton/branches/on-20050822-x86_64-branch/runtime/
+
+The new gc/ sub-directory breaks down the GC implementation into
+smaller pieces.  For efficiency, they are #include-ed together to form
+a single compilation unit to feed to the C compiler.
+
+A key design decision has been to implement the GC in a manner that is
+agnostic to the native pointer size and to the desired ML-pointer
+representation.  The file model.h encapsulates the key attributes that
+describe an ML-pointer representation, and the files objptr.{h,c}
+encapsulate the conversions between native pointers and ML-pointers.
+In most places, such conversions are relatively routine.  One major
+exception is that some care must be taken with threading of internal
+pointers for the Jonker's mark-compact GC, since it must compensate
+for the possibility that an ML-pointer is not the same size as an
+ML-header.
+
+Similarly, any assumptions about the native WORD_SIZE has been
+removed.  All object sizes are measured in 8-bit bytes and stored in
+size_t variables.  Statistics are gathered in uintmax_t and intmax_t
+variables.
+
+The C-side of the Basis Library implementation is entirely agnostic to
+the representation of ML-objects (pointers, headers, etc.).  That is,
+the FFI assumes that all ML-objects are passed by their native pointer
+representation.  Consequently, all functions exported by the GC to the
+Basis Library are expressed in terms of native pointers.
+
+The one, and only, exception is that basis/IntInf.c requires some
+additional information about ML-header sizes, the layout of the
+GC_state struct, etc.  It isn't clear that there is signficant benefit
+to be had by making the implementation agnostic to these decisions.
+
+Some decisions need to be made about the representation and
+implementation of IntInf.int.  The salient point is that on a 64-bit
+system, a GMP limb is represented as a 64-bit object.  
+
+
+With regards to the next step, I believe it will be worthwile to
+follow the technique used in the MLNLFFI-library implemantation.
+There, we use two ML Basis path variables (TARGET_ARCH, TARGET_OS) to
+choose the correct ML representation for primitive C types.
