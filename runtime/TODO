@@ -5,12 +5,59 @@
 * Use C99 <assert.h> instead of util/assert.{c,h}
 
 
-Rename primitives to indicate that these are not bit-wise identities
-  Real_toWord
-  Real_toReal
-  Word_toReal
-and add primitives
-  Real_toWord, Word_toReal
-that correspond to bit-wise identities.
+(* make-pdf stuff; not really x86_64 specific *)
+http://mlton.org/pipermail/mlton/2006-May/028840.html
+ + http://mlton.org/pipermail/mlton/2006-June/028866.html
+
+(* drop ML 'bool' from FFI and add C 'bool' *)
+http://mlton.org/pipermail/mlton/2006-June/028927.html
+ + http://mlton.org/pipermail/mlton/2006-June/028940.html
+
+(* platform dependent c-types.h; change <build>/ layout *)
+http://mlton.org/pipermail/mlton/2006-June/028943.html
+ + http://mlton.org/pipermail/mlton/2006-June/028948.html
+
+(* Add basis-ffi.h to SVN; create .PHONY target to regenerate. *)
+http://mlton.org/pipermail/mlton/2006-June/028946.html
+ + http://mlton.org/pipermail/mlton/2006-June/028947.html
+
+(* Real/Word primitives; could delay *)
+http://mlton.org/pipermail/mlton/2006-July/028963.html
+ + Rename primitives to indicate that these are not bit-wise identities
+     Real_toWord, Real_toReal, Word_toReal
+   and add primitives
+     Real_toWord, Word_toReal
+   that correspond to bit-wise identities.
+ + Revision 4672 -- nextAfter
+
+(* PackWord primitives; could delay *)
+http://mlton.org/pipermail/mlton/2006-May/028833.html
+ + http://mlton.org/pipermail/mlton-user/2004-November/000556.html
+ + http://mlton.org/pipermail/mlton/2004-November/026246.html
+
+(* Fields in GC_state *)
+http://mlton.org/pipermail/mlton/2006-July/028965.html
+
+(* Char signedness *)
+http://mlton.org/pipermail/mlton/2006-July/028970.html
+ + http://mlton.org/pipermail/mlton/2006-July/028982.html
+
+(* auto-gen GC specific runtime imports *)
+http://mlton.org/pipermail/mlton/2006-July/028975.html
+
+Another minor thing I think we should do:
+ * rename arch amd64 to x86_64, to be consistent with gcc target
+
+
 
 basis/MLton/allocTooLarge.c
+
+
+
+Revision 4670 -- signalsIsPending
+
+Revision 4665 -- build/lib/<target>/include
+
+Revision 4658 -- convert 'int' to 'bool' by comparision with zero
+              -- revert when dropping 'bool' from FFI; comparision
+                 with zero will happen on the ML side.

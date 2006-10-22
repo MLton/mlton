@@ -16,7 +16,7 @@ struct GC_signalsInfo {
   /* TRUE iff a signal has been received but not handled by the
    * mutator.
    */
-  volatile Word32_t signalIsPending; 
+  volatile uint32_t signalIsPending; 
   /* The signals for which a mutator signal handler needs to run in
    * order to handle the signal.
    */
