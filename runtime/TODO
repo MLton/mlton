@@ -1,5 +1,4 @@
-* what type should be used for the size field in GC_heap?  I'm using
-        size_t currently, since that is the type needed by malloc.
+
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?
 
 * Use C99 <assert.h> instead of util/assert.{c,h}
@@ -16,6 +15,7 @@ http://mlton.org/pipermail/mlton/2006-June/028927.html
 (* platform dependent c-types.h; change <build>/ layout *)
 http://mlton.org/pipermail/mlton/2006-June/028943.html
  + http://mlton.org/pipermail/mlton/2006-June/028948.html
+ + Revision 4665 -- build/lib/<target>/include
 
 (* Add basis-ffi.h to SVN; create .PHONY target to regenerate. *)
 http://mlton.org/pipermail/mlton/2006-June/028946.html
@@ -54,9 +54,6 @@ basis/MLton/allocTooLarge.c
 
 
 
-Revision 4670 -- signalsIsPending
-
-Revision 4665 -- build/lib/<target>/include
 
 Revision 4658 -- convert 'int' to 'bool' by comparision with zero
               -- revert when dropping 'bool' from FFI; comparision
