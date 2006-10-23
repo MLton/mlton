@@ -96,6 +96,8 @@ static inline void leaveFrameForProfiling (GC_state s, GC_frameIndex i);
 
 static inline void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex);
 
+static inline char* profileIndexSourceName (GC_state s, GC_sourceIndex i);
+
 static void writeProfileCount (GC_state s, FILE *f, GC_profileData p, GC_profileMasterIndex i);
 
 GC_profileData profileMalloc (GC_state s);

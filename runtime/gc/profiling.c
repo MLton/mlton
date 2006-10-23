@@ -9,7 +9,11 @@
 GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, 
                                                        GC_sourceIndex i)
  {
-  return s->sourceMaps.sources[i].sourceNameIndex + s->sourceMaps.sourcesLength;
+  GC_profileMasterIndex pmi;
+  pmi = s->sourceMaps.sources[i].sourceNameIndex + s->sourceMaps.sourcesLength;
+  if (DEBUG_PROFILE)
+    fprintf (stderr, "%"PRIu32" = sourceIndexToProfileMasterIndex ("FMTSI")\n", pmi, i);
+  return pmi;
 }
 
 GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s, 
@@ -18,11 +22,20 @@ GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s,
   return i - s->sourceMaps.sourcesLength;
 }
 
+char* profileIndexSourceName (GC_state s, GC_sourceIndex i) {
+  char* res;
+
+  if (i < s->sourceMaps.sourcesLength)
+    res = getSourceName (s, i);
+  else
+    res = s->sourceMaps.sourceNames[profileMasterIndexToSourceNameIndex (s, i)];
+  return res;
+}
+
 GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterIndex i) {
   assert (s->profiling.data != NULL);
   return &(s->profiling.data->stack[i]);
 }
-
 
 static int profileDepth = 0;
 
@@ -32,7 +45,6 @@ static void profileIndent (void) {
   for (i = 0; i < profileDepth; ++i)
     fprintf (stderr, " ");
 }
-
 
 void addToStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   GC_profileData p;
@@ -103,7 +115,7 @@ void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   ps = getProfileStackInfo (s, i);
   if (DEBUG_PROFILE)
     fprintf (stderr, "removing %s from stack  ticksInc = %"PRIuMAX"  ticksGCInc = %"PRIuMAX"\n",
-             getSourceName (s, i), 
+             profileIndexSourceName (s, i), 
              p->total - ps->lastTotal,
              p->totalGC - ps->lastTotalGC);
   ps->ticks += p->total - ps->lastTotal;
@@ -129,7 +141,7 @@ void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   uint32_t *sourceSeq;
 
   if (DEBUG_PROFILE)
-    fprintf (stderr, "profileLeave ("FMTSSI")\n", sourceSeqIndex);
+    fprintf (stderr, "leaveForProfiling ("FMTSSI")\n", sourceSeqIndex);
   assert (s->profiling.stack);
   assert (sourceSeqIndex < s->sourceMaps.sourceSeqsLength);
   p = s->profiling.data;
@@ -457,11 +469,8 @@ void GC_profileDone (GC_state s) {
          profileMasterIndex++) {
       if (p->stack[profileMasterIndex].numOccurrences > 0) {
         if (DEBUG_PROFILE)
-          fprintf (stderr, "done leaving %s\n",
-                   (profileMasterIndex < s->sourceMaps.sourcesLength)
-                   ? getSourceName (s, (GC_sourceIndex)profileMasterIndex)
-                   : s->sourceMaps.sourceNames[
-                     profileMasterIndexToSourceNameIndex (s, profileMasterIndex)]);
+          fprintf (stderr, "done leaving %s\n", 
+                   profileIndexSourceName (s, profileMasterIndex));
         removeFromStackForProfiling (s, profileMasterIndex);
       }
     }
