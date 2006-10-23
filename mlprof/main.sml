@@ -108,10 +108,14 @@ structure AFile =
            master)]
 
       fun new {afile: File.t}: t =
-         if not (File.doesExist afile)
-            then Error.bug "does not exist"
-         else if not (File.canRun afile)
-            then Error.bug "can not run"
+         let
+            fun userBug m =
+               Error.bug (concat ["Error: executable '", afile, "' ", m, "."])
+         in
+         if not (File.doesExist afile) then
+            userBug "does not exist"
+         else if not (File.canRun afile) then
+            userBug "does not run"
          else
             Process.callWithIn
             (OS.Path.mkAbsolute {path = afile,
@@ -141,9 +145,8 @@ structure AFile =
                         source = source}
                     end)
                 val _ =
-                   if 0 = Vector.length master
-                      then
-                         Error.bug "doesn't appear to be compiled for profiling"
+                   if 0 = Vector.length master then
+                      userBug "is not compiled for profiling"
                    else ()
                 val sources =
                    vector
@@ -191,6 +194,7 @@ structure AFile =
                    name = afile,
                    split = split}
              end)
+         end
    end
 
 structure Kind =
@@ -1022,10 +1026,7 @@ fun commandLine args =
         | Result.Yes (afile :: files) =>
              let
                 val mlmonFiles = files @ !mlmonFiles 
-                val aInfo =
-                   AFile.new {afile = afile}
-                   handle e => die (concat ["Error in ", afile, ": ",
-                                            Exn.toString e])
+                val aInfo = AFile.new {afile = afile}
                 val _ =
                    if debug
                       then
@@ -1041,8 +1042,8 @@ fun commandLine args =
                     handle e =>
                        let
                           val msg =
-                             concat ["error in ", mlmonfile, ": ",
-                                     Exn.toString e]
+                             concat ["Error loading mlmon file '", mlmonfile,
+                                     "': ", Exn.toString e]
                        in
                           if !tolerant
                              then
