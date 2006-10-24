@@ -11,6 +11,9 @@ http://mlton.org/pipermail/mlton/2006-May/028840.html
 (* drop ML 'bool' from FFI and add C 'bool' *)
 http://mlton.org/pipermail/mlton/2006-June/028927.html
  + http://mlton.org/pipermail/mlton/2006-June/028940.html
+ + Revision 4658 -- convert 'int' to 'bool' by comparision with zero
+                 -- revert when dropping 'bool' from FFI; comparision
+                    with zero will happen on the ML side.
 
 (* platform dependent c-types.h; change <build>/ layout *)
 http://mlton.org/pipermail/mlton/2006-June/028943.html
@@ -51,10 +54,3 @@ Another minor thing I think we should do:
 
 
 basis/MLton/allocTooLarge.c
-
-
-
-
-Revision 4658 -- convert 'int' to 'bool' by comparision with zero
-              -- revert when dropping 'bool' from FFI; comparision
-                 with zero will happen on the ML side.
