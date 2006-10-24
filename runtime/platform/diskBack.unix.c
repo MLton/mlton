@@ -31,14 +31,14 @@ typedef struct {
   FILE *f;
 } *WriteToDiskData;
 
-void diskBack_read (void *data, pointer buf, size_t size) {
+void GC_diskBack_read (void *data, pointer buf, size_t size) {
   FILE *f;
 
   f = ((WriteToDiskData)data)->f;
   fread_safe (buf, 1, size, f);
 }
 
-void diskBack_close (void *data) {
+void GC_diskBack_close (void *data) {
   FILE *f;
 
   f = ((WriteToDiskData)data)->f;
@@ -46,7 +46,7 @@ void diskBack_close (void *data) {
   free (data);
 }
 
-void *diskBack_write (pointer buf, size_t size) {
+void *GC_diskBack_write (pointer buf, size_t size) {
   FILE *f;
   WriteToDiskData d;
 

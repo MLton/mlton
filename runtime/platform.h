@@ -156,9 +156,9 @@ size_t GC_totalRam (void);
 
 void GC_setCygwinUseMmap (bool b);
 
-void diskBack_close (void *data);
-void diskBack_read (void *data, pointer buf, size_t size);
-void *diskBack_write (pointer buf, size_t size);
+void GC_diskBack_close (void *data);
+void GC_diskBack_read (void *data, pointer buf, size_t size);
+void *GC_diskBack_write (pointer buf, size_t size);
 
 /* ------------------------------------------------- */
 /*                Text Segment                       */

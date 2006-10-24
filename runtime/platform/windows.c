@@ -1,4 +1,4 @@
-HANDLE fileDesHandle (int fd);
+iHANDLE fileDesHandle (int fd);
 
 #define BUFSIZE 65536
 
@@ -30,7 +30,7 @@ typedef struct {
   HANDLE handle;
 } *WriteToDiskData;
 
-void diskBack_read (void *data, pointer buf, size_t size) {
+void GC_diskBack_read (void *data, pointer buf, size_t size) {
   HANDLE h;
   DWORD d;
   DWORD dwBytesRead;
@@ -43,7 +43,7 @@ void diskBack_read (void *data, pointer buf, size_t size) {
     die ("ReadFile failed with error %ld\n", GetLastError());
 }
 
-void diskBack_close (void *data) {
+void GC_diskBack_close (void *data) {
   HANDLE h;
 
   h = ((WriteToDiskData)data)->handle;
@@ -52,7 +52,7 @@ void diskBack_close (void *data) {
   free (data);
 }
 
-void *diskBack_write (pointer buf, size_t size) {
+void *GC_diskBack_write (pointer buf, size_t size) {
   HANDLE h;
   WriteToDiskData d;
   DWORD dwBytesWritten;

@@ -310,13 +310,13 @@ copy:
     /* Write the heap to disk and try again. */
     void *data;
     
-    data = diskBack_write (orig, size);
+    data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
-      diskBack_read (data, curHeapp->start, size);
-      diskBack_close (data);
+      GC_diskBack_read (data, curHeapp->start, size);
+      GC_diskBack_close (data);
     } else {
-      diskBack_close (data);
+      GC_diskBack_close (data);
       if (s->controls.messages)
         GC_displayMem ();
       die ("Out of memory.  Unable to allocate %s bytes.\n",
