@@ -132,6 +132,6 @@ htmldoc --batch $book || true
 
 mv $pdf $src/doc/guide
 
-cd
+cd $dir
 
 rm -rf $tmp
