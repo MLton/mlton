@@ -1,9 +1,4 @@
 
-* Why does hash-table use malloc/free while generational maps use mmap/munmap?
-
-* Use C99 <assert.h> instead of util/assert.{c,h}
-
-
 (* make-pdf stuff; not really x86_64 specific *)
 http://mlton.org/pipermail/mlton/2006-May/028840.html
  + http://mlton.org/pipermail/mlton/2006-June/028866.html
@@ -38,9 +33,6 @@ http://mlton.org/pipermail/mlton/2006-May/028833.html
  + http://mlton.org/pipermail/mlton-user/2004-November/000556.html
  + http://mlton.org/pipermail/mlton/2004-November/026246.html
 
-(* Fields in GC_state *)
-http://mlton.org/pipermail/mlton/2006-July/028965.html
-
 (* Char signedness *)
 http://mlton.org/pipermail/mlton/2006-July/028970.html
  + http://mlton.org/pipermail/mlton/2006-July/028982.html
@@ -50,3 +42,8 @@ http://mlton.org/pipermail/mlton/2006-July/028975.html
 
 Another minor thing I think we should do:
  * rename arch amd64 to x86_64, to be consistent with gcc target
+
+
+* Why does hash-table use malloc/free while generational maps use mmap/munmap?
+
+* Use C99 <assert.h> instead of util/assert.{c,h}

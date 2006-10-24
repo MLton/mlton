@@ -9,6 +9,16 @@
 #if (defined (MLTON_GC_INTERNAL_TYPES))
 
 struct GC_state {
+  /* These fields are at the front because they are the most commonly
+   * referenced, and having them at smaller offsets may decrease code
+   * size and improve cache performance.
+   */
+  pointer frontier; /* heap.start <= frontier < limit */
+  pointer limit; /* limit = heap.start + heap.size */
+  pointer stackTop; /* Top of stack in current thread. */
+  pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
+  uint32_t exnStack;
+  /* Alphabetized fields follow. */
   size_t alignment; /* */
   bool amInGC;
   bool amOriginal;
@@ -21,11 +31,9 @@ struct GC_state {
   struct GC_controls controls;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
-  uint32_t exnStack;
   struct GC_forwardState forwardState;
   GC_frameLayout frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
-  pointer frontier; /* heap.start <= frontier < limit */
   struct GC_generationalMaps generationalMaps;
   objptr *globals;
   uint32_t globalsLength;
@@ -34,7 +42,6 @@ struct GC_state {
   struct GC_intInfInit *intInfInits;
   uint32_t intInfInitsLength;
   struct GC_lastMajorStatistics lastMajorStatistics;
-  pointer limit; /* limit = heap.start + heap.size */
   pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   int (*loadGlobals)(FILE *f); /* loads the globals from the file. */
   uint32_t magic; /* The magic number for this executable. */
@@ -55,8 +62,6 @@ struct GC_state {
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
-  pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
-  pointer stackTop; /* Top of stack in current thread. */
   uintmax_t startTime; /* The time when GC_init or GC_loadWorld was called. */
   struct GC_sysvals sysvals;
   struct GC_vectorInit *vectorInits;
