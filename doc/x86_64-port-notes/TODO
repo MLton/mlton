@@ -50,7 +50,3 @@ http://mlton.org/pipermail/mlton/2006-July/028975.html
 
 Another minor thing I think we should do:
  * rename arch amd64 to x86_64, to be consistent with gcc target
-
-
-
-basis/MLton/allocTooLarge.c
