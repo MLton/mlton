@@ -57,12 +57,14 @@ GC_objectHashTable allocHashTable (GC_state s) {
   t->elementsLengthMaxLog2 = 6;  // and its log base 2
   if (elementsLengthMax < t->elementsLengthMax) {
     if (DEBUG_SHARE)
-      fprintf (stderr, "too small -- using malloc\n");
+      fprintf (stderr, "elementsLengthMax too small -- using calloc\n");
     t->elementsIsInHeap = FALSE;
     t->elements = 
       (struct GC_objectHashElement *)
       (calloc_safe(t->elementsLengthMax, sizeof(*(t->elements))));
   } else {
+    if (DEBUG_SHARE)
+      fprintf (stderr, "elementsLengthMax big enough -- using heap\n");
     t->elementsIsInHeap = TRUE;
     t->elements = (struct GC_objectHashElement*)regionStart;
     // Find the largest power of two that fits.
