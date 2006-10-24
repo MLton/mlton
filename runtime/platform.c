@@ -29,3 +29,9 @@ void MLton_exit (GC_state s, C_Int_t status) {
   GC_done (s);
   exit (status);
 }
+
+void MLton_allocTooLarge (void) {
+  fprintf (stderr, "Out of memory: attempt to allocate more than %zu bytes.\n", 
+           (size_t)0x7FFFFFFF);
+  exit (2);
+}
