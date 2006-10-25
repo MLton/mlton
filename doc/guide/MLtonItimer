@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,16 +57,16 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_ITIMER =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B>
-         <FONT COLOR="#B8860B">Prof</FONT>
-       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Real</FONT>
-       </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">Virtual</FONT>
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_ITIMER <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+         Prof
+       <B><FONT COLOR="#5F9EA0">|</FONT></B> Real
+       <B><FONT COLOR="#5F9EA0">|</FONT></B> Virtual
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> set: t * {interval: Time.time, value: Time.time} -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> signal: t -&gt; Posix.Signal.signal
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> set: t <B><FONT COLOR="#5F9EA0">*</FONT></B> {interval: Time.time, value: Time.time} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> signal: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Posix.Signal.signal
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  

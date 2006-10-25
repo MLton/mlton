@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,7 +80,7 @@ Description</td>
 <td>
 <tt>SML_LIB</tt></td>
 <td>
-<tt>/usr/lib/mlton/sml</tt></td>
+path to system-wide libaries, usually <tt>/usr/lib/mlton/sml</tt></td>
 </tr>
  <tr>
 <td>
@@ -98,5 +104,5 @@ string representation of target operating system</td>
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:48:35 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-04-23 21:06:47 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

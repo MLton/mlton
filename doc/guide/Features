@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -80,7 +86,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li class="gap">
 <p>
- PowerPC 
+ <a href="RunningOnPowerPC">PowerPC</a> 
 </p>
 </li>
 
@@ -88,7 +94,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- Darwin (Mac OS X) 
+ <a href="RunningOnDarwin">Darwin</a> (Mac OS X) 
 </p>
 </li>
             <li>
@@ -110,32 +116,32 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- <a class="external" href="http://www.cygwin.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a>/Windows 
+ <a href="RunningOnCygwin">Cygwin</a>/Windows 
 </p>
 </li>
             <li>
 <p>
- <a class="external" href="http://www.freebsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>  
+ <a href="RunningOnFreeBSD">FreeBSD</a>  
 </p>
 </li>
             <li>
 <p>
- Linux (Debian, Red Hat, ...) 
+ <a href="RunningOnLinux">Linux</a> (Debian, Red Hat, ...) 
 </p>
 </li>
             <li>
 <p>
- <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>/Windows 
+ <a href="RunningOnMinGW">MinGW</a>/Windows 
 </p>
 </li>
             <li>
 <p>
- <a class="external" href="http://www.netbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 
+ <a href="RunningOnNetBSD">NetBSD</a> 
 </p>
 </li>
             <li>
 <p>
- <a class="external" href="http://www.openbsd.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 
+ <a href="RunningOnOpenBSD">OpenBSD</a> 
 </p>
 </li>
 
@@ -144,7 +150,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li class="gap">
 <p>
- Sparc 
+ <a href="RunningOnSparc">Sparc</a> 
 </p>
 </li>
 
@@ -157,7 +163,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
- Solaris 
+ <a href="RunningOnSolaris">Solaris</a> 
 </p>
 </li>
 
@@ -319,6 +325,11 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
     <li>
 <p>
  <a class="nonexistent" href="MLYacc">MLYacc</a> parser generator 
+</p>
+</li>
+    <li>
+<p>
+ <a class="nonexistent" href="MLNLFFIGEN">ML-NLFFIGEN</a> 
 </p>
 </li>
 
@@ -499,5 +510,5 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
 <p>
 <hr>
-Last edited on 2005-12-01 04:12:19 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-07-20 19:37:02 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

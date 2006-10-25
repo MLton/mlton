@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -89,6 +95,11 @@ Other sites that have a MLton page (or more).
 </li>
     <li>
 <p>
+ <a class="external" href="https://launchpad.net/distros/ubuntu/+source/mlton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Ubuntu</a> 
+</p>
+</li>
+    <li>
+<p>
  <a class="external" href="http://en.wikipedia.org/wiki/MLton"><img src="moin-www.png" alt="[WWW]" height="11" width="11">wikipedi</a> 
 </p>
 </li>
@@ -100,5 +111,5 @@ Other sites that have a MLton page (or more).
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:19:23 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-06-16 19:17:13 by <span title="adsl-71-141-6-144.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

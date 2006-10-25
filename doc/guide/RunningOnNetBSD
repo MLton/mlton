@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,7 +55,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on NetBSD. <h2 id="head-f540b96714cb4fb53f52a3c6b891109f21c9ec21">Installing the correct packages for NetBSD</h2>
+MLton runs fine on <a class="external" href="http://www.netbsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a>. <h2 id="head-f540b96714cb4fb53f52a3c6b891109f21c9ec21">Installing the correct packages for NetBSD</h2>
 <p>
 The NetBSD system installs 3rd party packages by a mechanism known as pkgsrc. This is a tree of Makefiles which when invoked downloads the source code, builds a package and installs it on the system. In order to run MLton on NetBSD, you will have to install several packages for it to work: 
 </p>
@@ -124,5 +130,5 @@ The result is that my laptop goes from a MLton compile where it swaps a lot to a
 
 <p>
 <hr>
-Last edited on 2005-12-02 01:34:02 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-07-20 19:36:43 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

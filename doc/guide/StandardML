@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -103,6 +109,11 @@ Standard ML (SML) is a programming language that combines excellent support for 
 </li>
     <li>
 <p>
+ <a href="Identifier">Identifier</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="OperatorPrecedence">OperatorPrecedence</a> 
 </p>
 </li>
@@ -129,6 +140,11 @@ Standard ML (SML) is a programming language that combines excellent support for 
 
     <ul>
 
+    <li>
+<p>
+ <a href="Fixpoints">Fixpoints</a> 
+</p>
+</li>
     <li>
 <p>
  <a href="ForLoops">ForLoops</a> 
@@ -246,5 +262,5 @@ Standard ML (SML) is a programming language that combines excellent support for 
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:34:06 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-08-03 11:19:55 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

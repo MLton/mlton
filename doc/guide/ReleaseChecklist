@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,6 +55,7 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
+<h2 id="head-03200545ac3b97defb6680f6be627d65f60d17a2">Before Packaging</h2>
 
     <ul>
 
@@ -76,7 +83,25 @@
 
     <li class="gap">
 <p>
+ Check man pages and set the dates if necessary. 
+</p>
+</li>
+    <li class="gap">
+<p>
  Update <tt>doc/changelog</tt> with a summary. 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-30db8ff616d944654421c7898cb9a50215bf78c0">After Packaging</h2>
+
+    <ul>
+
+    <li>
+<p>
+ tag the release in the SVN repository. 
 </p>
 </li>
     <li class="gap">
@@ -95,6 +120,11 @@
         <li>
 <p>
  <tt>changelog</tt> gets a copy of <tt>doc/changelog</tt>. 
+</p>
+</li>
+        <li>
+<p>
+ Put up MLton Guide. 
 </p>
 </li>
         <li>
@@ -188,5 +218,5 @@
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:24:34 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2005-12-03 04:51:01 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

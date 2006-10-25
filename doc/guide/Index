@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,16 +55,18 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C">C</a> | <a href="#D">D</a> | <a href="#E">E</a> | <a href="#F">F</a> | <a href="#G">G</a> | <a href="#H">H</a> | <a href="#I">I</a> | <a href="#J">J</a> | <a href="#K">K</a> | <a href="#L">L</a> | <a href="#M">M</a> | <a href="#O">O</a> | <a href="#P">P</a> | <a href="#R">R</a> | <a href="#S">S</a> | <a href="#T">T</a> | <a href="#U">U</a> | <a href="#V">V</a> | <a href="#W">W</a> | <a href="#X">X</a> | <a href="#Z">Z</a><br>
+There are 314 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C">C</a> | <a href="#D">D</a> | <a href="#E">E</a> | <a href="#F">F</a> | <a href="#G">G</a> | <a href="#H">H</a> | <a href="#I">I</a> | <a href="#J">J</a> | <a href="#K">K</a> | <a href="#L">L</a> | <a href="#M">M</a> | <a href="#N">N</a> | <a href="#O">O</a> | <a href="#P">P</a> | <a href="#R">R</a> | <a href="#S">S</a> | <a href="#T">T</a> | <a href="#U">U</a> | <a href="#V">V</a> | <a href="#W">W</a> | <a href="#X">X</a> | <a href="#Z">Z</a><br>
 </p><a name="A"><h3>A</h3></a><a href="AccessControl">AccessControl</a>
 <br><a href="AdmitsEquality">AdmitsEquality</a>
 <br><a href="Alice">Alice</a>
 <br><a href="AllocateRegisters">AllocateRegisters</a>
 <br><a href="AndreiFormiga">AndreiFormiga</a>
+<br><a href="ArrayLiteral">ArrayLiteral</a>
 <br><a href="AST">AST</a>
 <a name="B"><h3>B</h3></a><a href="BasisLibrary">BasisLibrary</a>
 <br><a href="Bug">Bug</a>
 <br><a href="Bugs20041109">Bugs20041109</a>
+<br><a href="Bugs20051202">Bugs20051202</a>
 <a name="C"><h3>C</h3></a><a href="CallGraph">CallGraph</a>
 <br><a href="CallingFromCToSML">CallingFromCToSML</a>
 <br><a href="CallingFromSMLToC">CallingFromSMLToC</a>
@@ -68,12 +76,14 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="CKitLibrary">CKitLibrary</a>
 <br><a href="Closure">Closure</a>
 <br><a href="ClosureConvert">ClosureConvert</a>
+<br><a href="CMinusMinus">CMinusMinus</a>
 <br><a href="CommonArg">CommonArg</a>
 <br><a href="CommonBlock">CommonBlock</a>
 <br><a href="CommonSubexp">CommonSubexp</a>
 <br><a href="CompilationManager">CompilationManager</a>
 <br><a href="CompilerOverview">CompilerOverview</a>
 <br><a href="CompileTimeOptions">CompileTimeOptions</a>
+<br><a href="CompilingWithSMLNJ">CompilingWithSMLNJ</a>
 <br><a href="ConcurrentML">ConcurrentML</a>
 <br><a href="ConcurrentMLImplementation">ConcurrentMLImplementation</a>
 <br><a href="ConstantPropagation">ConstantPropagation</a>
@@ -100,12 +110,16 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Enscript">Enscript</a>
 <br><a href="EqualityType">EqualityType</a>
 <br><a href="EqualityTypeVariable">EqualityTypeVariable</a>
+<br><a href="EtaExpansion">EtaExpansion</a>
 <br><a href="eXene">eXene</a>
 <br><a href="Experimental">Experimental</a>
 <a name="F"><h3>F</h3></a><a href="FAQ">FAQ</a>
 <br><a href="Features">Features</a>
 <br><a href="FirstClassPolymorphism">FirstClassPolymorphism</a>
+<br><a href="Fixpoints">Fixpoints</a>
 <br><a href="Flatten">Flatten</a>
+<br><a href="Fold">Fold</a>
+<br><a href="Fold01N">Fold01N</a>
 <br><a href="ForeignFunctionInterface">ForeignFunctionInterface</a>
 <br><a href="ForeignFunctionInterfaceSyntax">ForeignFunctionInterfaceSyntax</a>
 <br><a href="ForeignFunctionInterfaceTypes">ForeignFunctionInterfaceTypes</a>
@@ -142,12 +156,14 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <a name="J"><h3>J</h3></a><a href="JesperLouisAndersen">JesperLouisAndersen</a>
 <br><a href="JohnnyAndersen">JohnnyAndersen</a>
 <a name="K"><h3>K</h3></a><a href="KnownCase">KnownCase</a>
-<a name="L"><h3>L</h3></a><a href="LambdaFree">LambdaFree</a>
+<a name="L"><h3>L</h3></a><a href="LambdaCalculus">LambdaCalculus</a>
+<br><a href="LambdaFree">LambdaFree</a>
 <br><a href="LanguageChanges">LanguageChanges</a>
 <br><a href="Lazy">Lazy</a>
 <br><a href="Libraries">Libraries</a>
 <br><a href="License">License</a>
 <br><a href="LineDirective">LineDirective</a>
+<br><a href="LLVM">LLVM</a>
 <br><a href="LocalFlatten">LocalFlatten</a>
 <br><a href="LocalRef">LocalRef</a>
 <br><a href="LoopInvariant">LoopInvariant</a>
@@ -169,8 +185,10 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="MLBasisSyntaxAndSemantics">MLBasisSyntaxAndSemantics</a>
 <br><a href="MLj">MLj</a>
 <br><a href="MLKit">MLKit</a>
+<br><a href="MLmon">MLmon</a>
 <br><a href="MLNLFFI">MLNLFFI</a>
 <br><a href="MLNLFFIImplementation">MLNLFFIImplementation</a>
+<br><a href="MLRISCLibrary">MLRISCLibrary</a>
 <br><a href="MLtonArray">MLtonArray</a>
 <br><a href="MLtonBinIO">MLtonBinIO</a>
 <br><a href="MLtonCont">MLtonCont</a>
@@ -203,6 +221,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="MoscowML">MoscowML</a>
 <br><a href="Multi">Multi</a>
 <br><a href="Mutable">Mutable</a>
+<a name="N"><h3>N</h3></a><a href="NumericLiteral">NumericLiteral</a>
 <a name="O"><h3>O</h3></a><a href="ObjectOrientedProgramming">ObjectOrientedProgramming</a>
 <br><a href="OCaml">OCaml</a>
 <br><a href="OpenGL">OpenGL</a>
@@ -223,6 +242,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Polyvariance">Polyvariance</a>
 <br><a href="Poplog">Poplog</a>
 <br><a href="PortingMLton">PortingMLton</a>
+<br><a href="PortStatus">PortStatus</a>
 <br><a href="PrecedenceParse">PrecedenceParse</a>
 <br><a href="Printf">Printf</a>
 <br><a href="PrintfGentle">PrintfGentle</a>
@@ -236,6 +256,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Pronounce">Pronounce</a>
 <br><a href="PropertyList">PropertyList</a>
 <a name="R"><h3>R</h3></a><a href="RayRacine">RayRacine</a>
+<br><a href="Reachability">Reachability</a>
 <br><a href="Redundant">Redundant</a>
 <br><a href="RedundantTests">RedundantTests</a>
 <br><a href="References">References</a>
@@ -244,6 +265,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="ReleaseChecklist">ReleaseChecklist</a>
 <br><a href="RemoveUnused">RemoveUnused</a>
 <br><a href="Restore">Restore</a>
+<br><a href="Roadmap">Roadmap</a>
 <br><a href="RSSA">RSSA</a>
 <br><a href="RSSAShrink">RSSAShrink</a>
 <br><a href="RSSASimplify">RSSASimplify</a>
@@ -262,6 +284,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="SelfCompiling">SelfCompiling</a>
 <br><a href="Serialization">Serialization</a>
 <br><a href="ShowBasis">ShowBasis</a>
+<br><a href="ShowProf">ShowProf</a>
 <br><a href="Shrink">Shrink</a>
 <br><a href="SimplifyTypes">SimplifyTypes</a>
 <br><a href="SMLNET">SMLNET</a>
@@ -275,8 +298,10 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="SSA2">SSA2</a>
 <br><a href="SSA2Simplify">SSA2Simplify</a>
 <br><a href="SSASimplify">SSASimplify</a>
+<br><a href="Stabilizers">Stabilizers</a>
 <br><a href="StandardML">StandardML</a>
 <br><a href="StandardMLBooks">StandardMLBooks</a>
+<br><a href="StandardMLGotchas">StandardMLGotchas</a>
 <br><a href="StandardMLHistory">StandardMLHistory</a>
 <br><a href="StandardMLImplementations">StandardMLImplementations</a>
 <br><a href="StandardMLPortability">StandardMLPortability</a>
@@ -313,6 +338,7 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="TrustedGroup">TrustedGroup</a>
 <br><a href="TypeChecking">TypeChecking</a>
 <br><a href="TypeConstructor">TypeConstructor</a>
+<br><a href="TypeIndexedValues">TypeIndexedValues</a>
 <br><a href="TypeVariableScope">TypeVariableScope</a>
 <a name="U"><h3>U</h3></a><a href="Unicode">Unicode</a>
 <br><a href="UniversalType">UniversalType</a>
@@ -320,7 +346,9 @@ There are 292 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="UnsafeStructure">UnsafeStructure</a>
 <br><a href="Useless">Useless</a>
 <br><a href="Users">Users</a>
+<br><a href="Utilities">Utilities</a>
 <a name="V"><h3>V</h3></a><a href="ValueRestriction">ValueRestriction</a>
+<br><a href="VariableArityPolymorphism">VariableArityPolymorphism</a>
 <br><a href="Variant">Variant</a>
 <br><a href="VesaKarvonen">VesaKarvonen</a>
 <a name="W"><h3>W</h3></a><a href="WantedPages">WantedPages</a>

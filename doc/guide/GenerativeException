@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,21 +58,21 @@
 In <a href="StandardML">Standard ML</a>, exception declarations are said to be <em>generative</em>, because each time an exception declaration is evaluated, it yields a new exception. <p>
 The following program demonstrates the generativity of exceptions. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT>
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> e1 = E
-<B><FONT COLOR="#A020F0">fun</FONT></B> isE1 (e: exn): bool =
+<B><FONT COLOR="#A020F0">exception</FONT></B> E
+<B><FONT COLOR="#A020F0">val</FONT></B> e1 <B><FONT COLOR="#5F9EA0">=</FONT></B> E
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">isE1</FONT></I></B></FONT></B> (e: exn): <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">case</FONT></B> e <B><FONT COLOR="#A020F0">of</FONT></B>
-      E =&gt; true
-    | _ =&gt; false
-<B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT>
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> e2 = E
-<B><FONT COLOR="#A020F0">fun</FONT></B> isE2 (e: exn): bool =
+      E <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true
+    <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false
+<B><FONT COLOR="#A020F0">exception</FONT></B> E
+<B><FONT COLOR="#A020F0">val</FONT></B> e2 <B><FONT COLOR="#5F9EA0">=</FONT></B> E
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">isE2</FONT></I></B></FONT></B> (e: exn): <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">case</FONT></B> e <B><FONT COLOR="#A020F0">of</FONT></B>
-      E =&gt; true
-    | _ =&gt; false
-<B><FONT COLOR="#A020F0">fun</FONT></B> pb (b: bool): unit =
-   print (concat [Bool.toString b, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
-<B><FONT COLOR="#A020F0">val</FONT></B> () = (pb (isE1 e1)
+      E <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true
+    <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">pb</FONT></I></B></FONT></B> (b: <B><FONT COLOR="#228B22">bool</FONT></B>): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Bool.toString b, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> (pb (isE1 e1)
           ;pb (isE1 e2)
           ; pb (isE2 e1)
           ; pb (isE2 e2))
@@ -76,17 +82,17 @@ The following program demonstrates the generativity of exceptions.
 <p>
 A slight modification of the above program shows that even a single exception declaration yields a new exception each time it is evaluated. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f (): exn * (exn -&gt; bool) =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (): exn <B><FONT COLOR="#5F9EA0">*</FONT></B> (exn <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>) <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT>
-   </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B>
-      (E, <B><FONT COLOR="#A020F0">fn</FONT></B> E =&gt; true | _ =&gt; false)
+      <B><FONT COLOR="#A020F0">exception</FONT></B> E
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      (E, <B><FONT COLOR="#A020F0">fn</FONT></B> E <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false)
    <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> (e1, isE1) = f ()
-<B><FONT COLOR="#A020F0">val</FONT></B> (e2, isE2) = f ()
-<B><FONT COLOR="#A020F0">fun</FONT></B> pb (b: bool): unit =
-   print (concat [Bool.toString b, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
-<B><FONT COLOR="#A020F0">val</FONT></B> () = (pb (isE1 e1)
+<B><FONT COLOR="#A020F0">val</FONT></B> (e1, isE1) <B><FONT COLOR="#5F9EA0">=</FONT></B> f ()
+<B><FONT COLOR="#A020F0">val</FONT></B> (e2, isE2) <B><FONT COLOR="#5F9EA0">=</FONT></B> f ()
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">pb</FONT></I></B></FONT></B> (b: <B><FONT COLOR="#228B22">bool</FONT></B>): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Bool.toString b, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> (pb (isE1 e1)
           ; pb (isE1 e2)
           ; pb (isE2 e1)
           ; pb (isE2 e2))
@@ -97,20 +103,20 @@ A slight modification of the above program shows that even a single exception de
 <p>
 Exception generativity is required for type safety.  Consider the following valid SML program. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f (): ('a -&gt; exn) * (exn -&gt; 'a) =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (): ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> exn) <B><FONT COLOR="#5F9EA0">*</FONT></B> (exn <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
-   </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B>
-      (E, <B><FONT COLOR="#A020F0">fn</FONT></B> E x =&gt; x | _ =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <FONT COLOR="#BC8F8F"><B>&quot;f&quot;</FONT></B>)
+      <B><FONT COLOR="#A020F0">exception</FONT></B> E <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      (E, <B><FONT COLOR="#A020F0">fn</FONT></B> E x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;f&quot;</FONT></B>)
    <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">fun</FONT></B> cast (a: 'a): 'b =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">cast</FONT></I></B></FONT></B> (a: 'a): 'b <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> (make: 'a -&gt; exn, _) = f ()
-      <B><FONT COLOR="#A020F0">val</FONT></B> (_, get: exn -&gt; 'b) = f ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> (make: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> exn, _) <B><FONT COLOR="#5F9EA0">=</FONT></B> f ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> (_, get: exn <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">=</FONT></B> f ()
    <B><FONT COLOR="#A020F0">in</FONT></B>
       get (make a)
    <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = ((cast <B><FONT COLOR="#5F9EA0">13</FONT></B>): int -&gt; int) <B><FONT COLOR="#5F9EA0">14</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> ((cast 13): <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>) 14
 </PRE>
  
 </p>

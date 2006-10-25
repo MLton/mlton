@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -50,7 +56,10 @@
 </table>
 <div id="content" lang="en" dir="ltr">
 <a class="external" href="http://eclipse.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Eclipse</a> is an open, extensible IDE. <p>
-There has been some talk on the MLton mailing list about adding support to Eclipse for MLton/SML, and in particular, using <a href="http://eclipsefp.sourceforge.net/">http://eclipsefp.sourceforge.net/</a>.  So far, we are unaware of any progress along these lines. 
+<a class="external" href="http://www.cse.iitd.ernet.in/~csu02132/mldev/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML-Dev</a> is a plug-in for Eclipse, based on <a href="SMLNJ">SML/NJ</a>. 
+</p>
+<p>
+There has been some talk on the MLton mailing list about adding support to Eclipse for MLton/SML, and in particular, using <a href="http://eclipsefp.sourceforge.net/">http://eclipsefp.sourceforge.net/</a>.  We are unaware of any progress along those lines. 
 </p>
 </div>
 
@@ -58,5 +67,5 @@ There has been some talk on the MLton mailing list about adding support to Eclip
 
 <p>
 <hr>
-Last edited on 2005-03-08 06:46:15 by <span title="adsl-67-117-153-127.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-02-09 19:33:33 by <span title="ppp-71-139-169-226.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

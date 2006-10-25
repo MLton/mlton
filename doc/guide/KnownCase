@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -59,12 +65,12 @@ Uses <a href="Restore">Restore</a>.
 <p>
 For example, the program 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> last =
-   <B><FONT COLOR="#A020F0">fn</FONT></B> [] =&gt; <B><FONT COLOR="#5F9EA0">0</FONT></B>
-    | [x] =&gt; x
-    | _ :: l =&gt; last l
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> last <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">fn</FONT></B> [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 0
+    <B><FONT COLOR="#5F9EA0">|</FONT></B> [x] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
+    <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">::</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> last l
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#5F9EA0">1</FONT></B> + last [<B><FONT COLOR="#5F9EA0">2</FONT></B>, <B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>, <B><FONT COLOR="#5F9EA0">5</FONT></B>, <B><FONT COLOR="#5F9EA0">6</FONT></B>, <B><FONT COLOR="#5F9EA0">7</FONT></B>]
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> 1 <B><FONT COLOR="#5F9EA0">+</FONT></B> last [2, 3, 4, 5, 6, 7]
 </PRE>
  gives rise to the <a href="SSA">SSA</a> function 
 <pre>fun last_0 (x_142) = loopS_1 ()
@@ -102,9 +108,9 @@ For example, the program
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/known-case.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">known-case.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/known-case.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">known-case.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/known-case.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">known-case.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/known-case.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">known-case.fun</a>
  <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 One interesting aspect of KnownCase, is that it often has the effect of unrolling list traversals by one iteration, moving the <tt>nil</tt>/<tt>::</tt> check to the end of the loop, rather than the beginning. 

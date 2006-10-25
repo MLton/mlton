@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -49,11 +55,22 @@
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a class="external" href="http://www.polyml.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Poly/ML</a>  is a <a href="StandardMLImplementations">Standard ML Compiler</a>. </div>
+<a class="external" href="http://www.polyml.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Poly/ML</a>  is a <a href="StandardMLImplementations">Standard ML Compiler</a>. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href = "References#Matthews95">Matthews95</a> 
+</p>
+</li>
+</ul>
+
+</div>
 
 
 
 <p>
 <hr>
-Last edited on 2004-12-30 20:11:39 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-09-04 20:25:25 by <span title="ppp-71-139-189-102.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

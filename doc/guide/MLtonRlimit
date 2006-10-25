@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,25 +57,25 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RLIMIT =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> rlim </FONT></B>=<FONT COLOR="#228B22"><B> word
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_RLIMIT <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> rlim <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> t
                
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> coreFileSize: t        <I><FONT COLOR="#B22222">(* CORE    max core file size *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> coreFileSize: t        <I><FONT COLOR="#B22222">(* CORE    max core file size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> cpuTime: t             <I><FONT COLOR="#B22222">(* CPU     CPU time in seconds *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> dataSize: t            <I><FONT COLOR="#B22222">(* DATA    max data size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> fileSize: t            <I><FONT COLOR="#B22222">(* FSIZE   Maximum filesize *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> get: t -&gt; {hard: rlim, soft: rlim}
+      <B><FONT COLOR="#A020F0">val</FONT></B> get: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> {hard: rlim, soft: rlim}
       <B><FONT COLOR="#A020F0">val</FONT></B> infinity: rlim
       <B><FONT COLOR="#A020F0">val</FONT></B> lockedInMemorySize: t  <I><FONT COLOR="#B22222">(* MEMLOCK max locked address space *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> numFiles: t            <I><FONT COLOR="#B22222">(* NOFILE  max number of open files *)</FONT></I>  
       <B><FONT COLOR="#A020F0">val</FONT></B> numProcesses: t        <I><FONT COLOR="#B22222">(* NPROC   max number of processes *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> residentSetSize: t     <I><FONT COLOR="#B22222">(* RSS     max resident set size *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> set: t * {hard: rlim, soft: rlim} -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> set: t <B><FONT COLOR="#5F9EA0">*</FONT></B> {hard: rlim, soft: rlim} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
       <B><FONT COLOR="#A020F0">val</FONT></B> stackSize: t           <I><FONT COLOR="#B22222">(* STACK   max stack size *)</FONT></I>
       <B><FONT COLOR="#A020F0">val</FONT></B> virtualMemorySize: t   <I><FONT COLOR="#B22222">(* AS      virtual memory limit *)</FONT></I>
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  

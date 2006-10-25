@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -59,11 +65,11 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <p>
  MLton does not correctly parse case expressions nested within other  matches. For example, the following fails. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f <B><FONT COLOR="#5F9EA0">0</FONT></B> y =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> 0 y <B><FONT COLOR="#5F9EA0">=</FONT></B>
       <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B>
-         <B><FONT COLOR="#5F9EA0">1</FONT></B> =&gt; <B><FONT COLOR="#5F9EA0">2</FONT></B>
-       | _ =&gt; <B><FONT COLOR="#5F9EA0">3</FONT></B>
-  | f _ y = <B><FONT COLOR="#5F9EA0">4</FONT></B>
+         1 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 2
+       <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 3
+  <B><FONT COLOR="#5F9EA0">|</FONT></B> f _ y <B><FONT COLOR="#5F9EA0">=</FONT></B> 4
 </PRE>
    To do this in a program, simply parenthesize the case expression. 
 </p>
@@ -75,7 +81,7 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <p>
  MLton rejects rebinding of constructors with <tt>val&nbsp;rec</tt>  declarations, as in 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> NONE = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()
+ <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
 </PRE>
   The <a href="DefinitionOfStandardML"> Definition</a> (bizarrely) requires this  program to type check, but to raise <tt>Bind</tt>.  
 </p>
@@ -87,21 +93,21 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <p>
  MLton does not hide the equality aspect of types declared in  abstype declarations. So, MLton accepts programs like the following,  while the <a href="DefinitionOfStandardML"> Definition</a> rejects them. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">abstype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) =&gt; t1 = t2
+<B><FONT COLOR="#A020F0">abstype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t1 <B><FONT COLOR="#5F9EA0">=</FONT></B> t2
 
-<B><FONT COLOR="#A020F0">abstype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> a = T <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = a = a
+<B><FONT COLOR="#A020F0">abstype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> a
 </PRE>
   One consequence of this choice is that MLton accepts the following  program, in accordance with the <a href="DefinitionOfStandardML"> Definition</a>. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">abstype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq = <B><FONT COLOR="#A020F0">op</FONT></B> = <B><FONT COLOR="#A020F0">end</FONT></B>
- <B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) =&gt; eq (t1, t2)
+ <B><FONT COLOR="#A020F0">abstype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> eq (t1, t2)
 </PRE>
   Other implementations will typically reject this program, because  they make an early choice for the type of <tt>eq</tt> to be   <tt>''a&nbsp;*&nbsp;''a&nbsp;-&gt;&nbsp;bool</tt> instead of <tt>t&nbsp;*&nbsp;t&nbsp;-&gt;&nbsp;bool</tt>.  The choice  is understandable, since the <a href="DefinitionOfStandardML">Definition</a>  accepts the following program. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">abstype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq = <B><FONT COLOR="#A020F0">op</FONT></B> = <B><FONT COLOR="#A020F0">end</FONT></B>
- <B><FONT COLOR="#A020F0">val</FONT></B> _ = eq (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>)
+ <B><FONT COLOR="#A020F0">abstype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> eq (1, 2)
 </PRE>
  
 </p>

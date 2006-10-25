@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -64,7 +70,7 @@ Get the regressions working using a cross compiler.
 </li>
     <li class="gap">
 <p>
-Cross compile MLton and bootstrap on the target. 
+<a href="CrossCompiling"> Cross compile</a> MLton and bootstrap on the target. 
 </p>
 </li>
 
@@ -74,13 +80,16 @@ Cross compile MLton and bootstrap on the target.
 <p>
 MLton has a native code generator only for X86, so, if you are porting to another architecture, you must use the C code generator.  These notes do not cover building a new native code generator. 
 </p>
+<p>
+Some of the following steps will not be necessary if MLton already supports the architecture or operating system you are porting to. 
+</p>
 <h2 id="head-54fc2e14a2d5b38e69a028f12f443994b939305a">What code to change</h2>
 
     <ul>
 
     <li>
 <p>
- Scripts 
+ Scripts. 
 </p>
 </li>
 
@@ -88,7 +97,7 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
         <li>
 <p>
- In <tt>bin/platform</tt>, add a new case to handle the output of   <tt>uname</tt>.  
+ In <tt>bin/platform</tt>, add new cases to define <tt>$HOST_OS</tt> and   <tt>$HOST_ARCH</tt>. 
 </p>
 </li>
         <li class="gap">
@@ -101,17 +110,12 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
             <li>
 <p>
- add new stubs in <tt>structure&nbsp;MLton.Platform.OS</tt>. 
+ add new cases to set <tt>$arch</tt> and <tt>$os</tt>. 
 </p>
 </li>
             <li>
 <p>
- add a new case to set <tt>$os</tt>. 
-</p>
-</li>
-            <li>
-<p>
- add a new case to set <tt>MLton.Platform.Arch.t</tt> and <tt>all</tt> 
+ add new cases in the code for <tt>MLton.Platform</tt> to define    <tt>Arch.t</tt>, <tt>OS.t</tt>, <tt>Arch.all</tt>, and <tt>OS.all</tt>. 
 </p>
 </li>
 
@@ -124,7 +128,7 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
     <li class="gap">
 <p>
- Runtime system 
+ Runtime system. 
 </p>
 <p>
  The goal of this step is to be able to successfully run <tt>make</tt> in  the <tt>runtime</tt> directory on the target machine. 
@@ -135,12 +139,39 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
             <li>
 <p>
- In <tt>platform.h</tt>, add a new case to include    <tt>platform/&lt;os&gt;.h</tt> 
+ In <tt>platform.h</tt>, add a new case to include    <tt>platform/&lt;os&gt;.h</tt>. 
 </p>
 </li>
             <li class="gap">
 <p>
- In <tt>platform/&lt;os&gt;.[ch]</tt>, implement any    platform-dependent functions that the runtime needs. 
+ In <tt>platform/&lt;os&gt;.h</tt>: 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ include platform-specific includes. 
+</p>
+</li>
+                <li>
+<p>
+ define <tt>MLton_Platform_OS_host</tt>. 
+</p>
+</li>
+                <li>
+<p>
+ define all of the <tt>HAS_*</tt> macros. 
+</p>
+</li>
+
+                </ul>
+
+
+            <li class="gap">
+<p>
+ In <tt>platform/&lt;os&gt;.c</tt> implement any platform-dependent    functions that the runtime needs. 
 </p>
 </li>
             <li class="gap">
@@ -185,12 +216,12 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
                 <li>
 <p>
- If necessary, add a new variant to the     <tt>MLton.Platform.Arch.t</tt> datatype. 
+ Add a new variant to the <tt>MLton.Platform.Arch.t</tt> datatype. 
 </p>
 </li>
                 <li class="gap">
 <p>
- If necessary, add a new variant to the <tt>MLton.Platform.OS.t</tt>     datatype.  
+ Add a new variant to the <tt>MLton.Platform.OS.t</tt> datatype.  
 </p>
 </li>
                 <li class="gap">
@@ -205,6 +236,11 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
             <li class="gap">
 <p>
  In <tt>mlton/platform.{sig,sml}&nbsp;</tt> add a new variant. 
+</p>
+</li>
+            <li class="gap">
+<p>
+ In <tt>sml-nj/sml-nj.sml</tt>, modify <tt>getOSKind</tt>. 
 </p>
 </li>
             <li class="gap">
@@ -231,7 +267,7 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
     <li class="gap">
 <p>
- Compiler 
+ Compiler. 
 </p>
 </li>
 
@@ -239,12 +275,7 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
 
         <li>
 <p>
- In <tt>lib/mlton-stubs/</tt>, update <tt>mlton.sml</tt> and   <tt>platform.sig</tt> to add any new variants.  
-</p>
-</li>
-        <li class="gap">
-<p>
- In <tt>mlton/main/main.fun</tt>, add code to set <tt>linkWithGmp</tt>. 
+ In <tt>lib/mlton-stubs/</tt> run <tt>make&nbsp;links</tt> to ensure that   <tt>platform.sig</tt> has the changes made to the basis.  Then, update   <tt>mlton.sml</tt> to add any new variants in <tt>MLton.Platform</tt>. 
 </p>
 </li>
 
@@ -255,6 +286,19 @@ MLton has a native code generator only for X86, so, if you are porting to anothe
     </ul>
 
 
+<p>
+The string used to identify a particular architecture or operating system must be the same (except for possibly case of letters) in the scripts, runtime, and basis library.  In <tt>mlton/main/main.fun</tt>, MLton itself uses the basis library conversions to and from strings: 
+</p>
+
+        <ul>
+
+  <tt>MLton.Platform.{Arch,OS}.{from,to}String</tt>  
+        </ul>
+
+
+<p>
+If the there is a mismatch, you may see the error message  <tt>strange&nbsp;arch</tt> or <tt>strange&nbsp;os</tt>. 
+</p>
 <h2 id="head-d7908c004a8540632014119d432f4daa14496746">Running the regressions with a cross compiler</h2>
 <p>
 When porting to a new platform, it is always best to get all (or as many as possible) of the regressions working before moving to a self compile.  It is easiest to do this by modifying and rebuilding the compiler on a working machine and then running the regressions with a cross compiler.  It is not easy to build a gcc cross compiler, so we recommend generating the C and assembly on a working machine (using MLton's <tt>-target</tt> and <tt>-stop&nbsp;g</tt> flags, copying the generated files to the target machine, then compiling and linking there. 
@@ -296,7 +340,7 @@ Once you've got all the regressions working, you can build MLton for the new tar
     <li>
 <p>
 On a working machine, with the newly rebuilt compiler, in the  <tt>mlton</tt> directory, do: 
-<pre> mlton -stop g -target i386-mingw mlton.cm</pre>
+<pre> mlton -stop g -target &lt;target&gt; mlton.cm</pre>
 </p>
 </li>
     <li class="gap">
@@ -308,7 +352,7 @@ Copy to the target machine.
 <p>
 On the target machine, move the libraries to the right place.  That is, in <tt>build/lib</tt>, do: 
 <pre> rm -rf self target-map
- mv i386-mingw self</pre>
+ mv &lt;target&gt; self</pre>
 </p>
 </li>
     <li class="gap">
@@ -325,7 +369,7 @@ On the target machine, compile and link MLton.  That is, in the  mlton directory
     <li class="gap">
 <p>
 At this point, MLton should be working and you can finish the rest  of a usual make on the target machine. 
-<pre> make script world targetmap tools install</pre>
+<pre> make script constants targetmap mlbpathmap world libraries tools install</pre>
 </p>
 </li>
 
@@ -360,5 +404,5 @@ The above description is based on the following emails sent to the MLton list.
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:34:15 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-04-30 14:19:01 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
 </body></html>
