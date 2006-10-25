@@ -809,7 +809,7 @@ struct
             val data =
                if List.isEmpty data
                   then []
-                  else (Assembly.pseudoop_data())::data
+                  else (x86.Assembly.pseudoop_data())::data
           in
             x86.Chunk.T {data = data, blocks = x86Blocks}
           end
