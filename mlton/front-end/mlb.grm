@@ -198,7 +198,7 @@ basexp : basexpnode (Basexp.makeRegion'
 
 basexpnode : BAS basdecs END           (Basexp.Bas basdecs)
            | basid                     (Basexp.Var basid)
-           | LET basdec IN basexp END  (Basexp.Let (basdec, basexp))
+           | LET basdecs IN basexp END (Basexp.Let (basdecs, basexp))
 
 basid : id  (Basid.fromSymbol id)
 basids : basid ([basid])
