@@ -181,7 +181,7 @@ libraries-no-check:
 	$(CP) $(SRC)/lib/cml/. $(LIB)/sml/cml
 	$(CP) $(SRC)/lib/ckit-lib/ckit/. $(LIB)/sml/ckit-lib
 	$(CP) $(SRC)/lib/mlnlffi/. $(LIB)/sml/mlnlffi-lib
-	$(CP) $(SRC)/lib/mlrisc-lib/MLRISC/. $(LIB)/sml/mlrisc-lib
+	true || $(CP) $(SRC)/lib/mlrisc-lib/MLRISC/. $(LIB)/sml/mlrisc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
 	find $(LIB)/sml -type d -name .svn | xargs rm -rf
