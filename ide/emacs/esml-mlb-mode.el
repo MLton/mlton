@@ -345,12 +345,14 @@ by a space.")
           ("\\$([^)]*?)"
            . font-lock-warning-face)
           ;; unquoted path names
-          (,(concat "[-A-Za-z0-9_/.]*\\.\\("
+          (,(concat "[-A-Za-z0-9_/.]*[.]\\("
                     esml-mlb-path-suffix-regexp
-                    "\\)\\>")
+                    "\\)[ \t\n]")
            . font-lock-constant-face)
-          ("[-A-Za-z0-9_/.]*\\.[-A-Za-z0-9_/.]*"
+          ("[.][-A-Za-z0-9_]+[ \t\n]"
            . font-lock-warning-face)
+          ("[A-Za-z0-9_]*[-/.][-A-Za-z0-9_/]*"
+           . font-lock-constant-face)
           ;; keywords
           (,(concat "\\<\\(" (regexp-opt esml-mlb-keywords) "\\)\\>")
            . font-lock-keyword-face)
