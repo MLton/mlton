@@ -3481,7 +3481,8 @@ struct
           in
             fn Data => str ".data"
              | Text => str ".text"
-             | SymbolStub => str ".symbol_stub"
+             | SymbolStub 
+             => str ".section __IMPORT,__jump_table,symbol_stubs,self_modifying_code+pure_instructions,5"
              | Balign (i,fill,max) 
              => seq [str ".balign ", 
                      Immediate.layout i,
