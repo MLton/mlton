@@ -184,6 +184,7 @@ libraries-no-check:
 	true || $(CP) $(SRC)/lib/mlrisc-lib/MLRISC/. $(LIB)/sml/mlrisc-lib
 	$(CP) $(SRC)/lib/mlyacc/. $(LIB)/sml/mlyacc-lib
 	$(CP) $(SRC)/lib/smlnj-lib/smlnj-lib/. $(LIB)/sml/smlnj-lib
+	find $(LIB)/sml -type d -name .cm | xargs rm -rf
 	find $(LIB)/sml -type d -name .svn | xargs rm -rf
 	find $(LIB)/sml -type f -name .ignore | xargs rm -rf
 
