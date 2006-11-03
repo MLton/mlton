@@ -1,5 +1,5 @@
 #include "platform.h"
 
-Bool Posix_ProcEnv_isatty (C_Fd_t f) {
-  return 0 != isatty (f);
+C_Int_t Posix_ProcEnv_isatty (C_Fd_t f) {
+  return isatty (f);
 }

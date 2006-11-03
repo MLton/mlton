@@ -61,8 +61,8 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
       fun addr entry = hd (addrs entry)
 
       local
-        fun get (b: bool): entry option =
-          if b
+        fun get (i: C_Int.t): entry option =
+          if i <> C_Int.zero
             then let
                    val name = CUtil.C_String.toString (Prim.getEntryName ())
                    val numAliases = Prim.getEntryAliasesNum ()

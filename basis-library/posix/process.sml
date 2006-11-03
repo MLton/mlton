@@ -73,13 +73,13 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | W_STOPPED of signal 
 
       fun fromStatus status =
-         if Prim.ifExited status
+         if Prim.ifExited status <> C_Int.zero
             then (case Prim.exitStatus status of
                      0 => W_EXITED
                    | n => W_EXITSTATUS (Word8.castFromSysWord (C_Int.castToSysWord n)))
-         else if Prim.ifSignaled status
+         else if Prim.ifSignaled status <> C_Int.zero
             then W_SIGNALED (Prim.termSig status)
-         else if Prim.ifStopped status
+         else if Prim.ifStopped status <> C_Int.zero
             then W_STOPPED (Prim.stopSig status)
          else raise Fail "Posix.Process.fromStatus"
 

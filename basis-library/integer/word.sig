@@ -59,6 +59,9 @@ signature WORD_EXTRA =
       include WORD
       type t = word
 
+      val zero: word
+      val one: word
+
       val toWord: word -> Word.word
       val toWordX: word -> Word.word
       val fromWord: Word.word -> word

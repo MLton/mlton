@@ -25,16 +25,21 @@ structure PosixSysDB: POSIX_SYS_DB =
 
             structure Passwd = Prim.Passwd
 
-            fun fromC (f: unit -> bool): passwd =
-               SysCall.syscall'
-               ({errVal = false}, fn () =>
-                (C_Errno.inject (f ()),
-                 fn _ => {name = CUtil.C_String.toString (Passwd.getName ()),
-                          uid = Passwd.getUId (),
-                          gid = Passwd.getGId (),
-                          home = CUtil.C_String.toString (Passwd.getDir ()),
-                          shell = CUtil.C_String.toString (Passwd.getShell ())}))
-               
+            fun fromC (f: unit -> C_Int.t C_Errno.t, fname, fitem): passwd =
+               SysCall.syscallErr
+               ({clear = true, restart = false, errVal = C_Int.zero}, fn () =>
+                {return = f (),
+                 post = fn _ => {name = CUtil.C_String.toString (Passwd.getName ()),
+                                 uid = Passwd.getUId (),
+                                 gid = Passwd.getGId (),
+                                 home = CUtil.C_String.toString (Passwd.getDir ()),
+                                 shell = CUtil.C_String.toString (Passwd.getShell ())},
+                 handlers = [(Error.cleared, fn () => 
+                              raise Error.SysErr (concat ["Posix.SysDB.",
+                                                          fname,
+                                                          ": no group with ",
+                                                          fitem], NONE))]})
+
             val name: passwd -> string = #name
             val uid: passwd -> uid = #uid
             val gid: passwd -> gid = #gid
@@ -44,10 +49,11 @@ structure PosixSysDB: POSIX_SYS_DB =
 
       fun getpwnam name = 
          let val name = NullString.nullTerm name
-         in Passwd.fromC (fn () => Prim.getpwnam name)
+         in Passwd.fromC (fn () => Prim.getpwnam name, "getpwnam", "name")
          end
 
-      fun getpwuid uid = Passwd.fromC (fn () => Prim.getpwuid uid)
+      fun getpwuid uid = 
+         Passwd.fromC (fn () => Prim.getpwuid uid, "getpwuid", "user id")
 
       structure Group =
          struct
@@ -57,13 +63,18 @@ structure PosixSysDB: POSIX_SYS_DB =
 
             structure Group = Prim.Group
 
-            fun fromC (f: unit -> bool): group =
-               SysCall.syscall'
-               ({errVal = false}, fn () =>
-                (C_Errno.inject (f ()),
-                 fn _ => {name = CUtil.C_String.toString (Group.getName ()),
-                          gid = Group.getGId (),
-                          members = CUtil.C_StringArray.toList (Group.getMem ())}))
+            fun fromC (f: unit -> C_Int.t C_Errno.t, fname, fitem): group =
+               SysCall.syscallErr
+               ({clear = true, restart = false, errVal = C_Int.zero}, fn () =>
+                {return = f (),
+                 post = fn _ => {name = CUtil.C_String.toString (Group.getName ()),
+                                 gid = Group.getGId (),
+                                 members = CUtil.C_StringArray.toList (Group.getMem ())},
+                 handlers = [(Error.cleared, fn () => 
+                              raise Error.SysErr (concat ["Posix.SysDB.",
+                                                          fname,
+                                                          ": no group with ",
+                                                          fitem], NONE))]})
                   
             val name: group -> string = #name
             val gid: group -> gid = #gid
@@ -72,8 +83,9 @@ structure PosixSysDB: POSIX_SYS_DB =
 
       fun getgrnam name = 
          let val name = NullString.nullTerm name
-         in Group.fromC (fn () => Prim.getgrnam name)
+         in Group.fromC (fn () => Prim.getgrnam name, "getgrnam", "name")
          end
       
-      fun getgrgid gid = Group.fromC (fn () => Prim.getgrgid gid)
+      fun getgrgid gid = 
+         Group.fromC (fn () => Prim.getgrgid gid, "getgrgid", "group id")
    end

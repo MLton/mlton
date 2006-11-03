@@ -22,10 +22,10 @@ C_String_t Posix_SysDB_Passwd_getShell(void) {
   return (C_String_t)(passwd->pw_shell);
 }
 
-Bool_t Posix_SysDB_getpwnam(NullString8_t p) {
+C_Errno_t(C_Int_t) Posix_SysDB_getpwnam(NullString8_t p) {
   return NULL != (passwd = getpwnam((const char *) p));
 }
 
-Bool_t Posix_SysDB_getpwuid(C_UId_t u) {
+C_Errno_t(C_Int_t) Posix_SysDB_getpwuid(C_UId_t u) {
   return NULL != (passwd = getpwuid(u));
 }

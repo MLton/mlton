@@ -20,12 +20,12 @@ C_Int_t NetProtDB_getEntryProto(void) {
   return protoent->p_proto;
 }
 
-Bool_t NetProtDB_getByName(NullString8_t name) {
+C_Int_t NetProtDB_getByName(NullString8_t name) {
   protoent = getprotobyname((const char*)name);
-  return (protoent != NULL and protoent->p_name != NULL);
+  return (C_Int_t)(protoent != NULL and protoent->p_name != NULL);
 }
 
-Bool_t NetProtDB_getByNumber(C_Int_t proto) {
+C_Int_t NetProtDB_getByNumber(C_Int_t proto) {
   protoent = getprotobynumber(proto);
-  return (protoent != NULL and protoent->p_name != NULL);
+  return (C_Int_t)(protoent != NULL and protoent->p_name != NULL);
 }

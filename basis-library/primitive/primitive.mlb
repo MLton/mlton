@@ -31,6 +31,7 @@ in
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
       ../config/choose.sml
+      ../config/c/word-to-bool.sml
    end end
 
    prim-iwconv.sml

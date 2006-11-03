@@ -27,20 +27,20 @@ C_String_t NetServDB_getEntryProto(void) {
   return (C_String_t)(servent->s_proto);
 }
 
-Bool_t NetServDB_getByName(NullString8_t name, NullString8_t proto) {
+C_Int_t NetServDB_getByName(NullString8_t name, NullString8_t proto) {
   servent = getservbyname((const char*)name, (const char*)proto);
-  return (servent != NULL and servent->s_name != NULL);
+  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
 }
 
-Bool_t NetServDB_getByNameNull(NullString8_t name) {
+C_Int_t NetServDB_getByNameNull(NullString8_t name) {
   return NetServDB_getByName(name, (NullString8_t)NULL);
 }
 
-Bool_t NetServDB_getByPort(C_Int_t port, NullString8_t proto) {
+C_Int_t NetServDB_getByPort(C_Int_t port, NullString8_t proto) {
   servent = getservbyport(port, (const char*)proto);
-  return (servent != NULL and servent->s_name != NULL);
+  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
 }
 
-Bool_t NetServDB_getByPortNull(C_Int_t port) {
+C_Int_t NetServDB_getByPortNull(C_Int_t port) {
   return NetServDB_getByPort(port, (NullString8_t)NULL);
 }

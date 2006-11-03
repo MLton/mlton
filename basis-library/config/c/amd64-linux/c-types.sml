@@ -7,6 +7,7 @@
 
 
 (* C *)
+structure C_Bool = WordToBool (type t = Word8.word val zero: t = 0wx0 val one: t = 0wx1)
 structure C_Char = struct open Int8 type t = int end
 functor C_Char_ChooseIntN (A: CHOOSE_INTN_ARG) = ChooseIntN_Int8 (A)
 structure C_SChar = struct open Int8 type t = int end

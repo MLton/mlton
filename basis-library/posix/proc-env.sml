@@ -256,7 +256,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun ctermid () = CS.toString (Prim.ctermid ())
 
-      fun isatty fd = Prim.isatty fd
+      fun isatty fd = (Prim.isatty fd) <> C_Int.zero
 
       fun ttyname fd =
          SysCall.syscall'

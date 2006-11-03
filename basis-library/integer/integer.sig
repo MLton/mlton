@@ -51,6 +51,9 @@ signature INTEGER_EXTRA =
       include INTEGER
       type t = int
 
+      val zero: int
+      val one: int
+
       val precision' : Int.int
       val maxInt' : int
       val minInt' : int

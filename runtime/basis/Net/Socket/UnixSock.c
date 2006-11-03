@@ -23,7 +23,7 @@ void Socket_UnixSock_toAddr (NullString8_t path, C_Size_t pathlen, Array(Word8_t
 
 C_Size_t Socket_UnixSock_pathLen (Vector(Word8_t) addr) {
   size_t i;
-  struct sockaddr_un *sa = (struct sockaddr_un*)addr;
+  const struct sockaddr_un *sa = (const struct sockaddr_un*)addr;
 
   i = 0;
   if (sa->sun_path[i] == '\000') {

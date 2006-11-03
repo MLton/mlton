@@ -14,10 +14,10 @@ C_StringArray_t Posix_SysDB_Group_getMem(void) {
   return (C_StringArray_t)(group->gr_mem);
 }
 
-Bool_t Posix_SysDB_getgrgid(C_GId_t g) {
+C_Errno_t(C_Int_t) Posix_SysDB_getgrgid(C_GId_t g) {
   return NULL != (group = getgrgid ((gid_t)g));
 }
 
-Bool_t Posix_SysDB_getgrnam(NullString8_t s) {
+C_Errno_t(C_Int_t) Posix_SysDB_getgrnam(NullString8_t s) {
   return NULL != (group = getgrnam ((const char*)s));
 }

@@ -24,13 +24,13 @@ C_Errno_t(C_Int_t) Posix_Signal_default (C_Signal_t signum) {
   return sigaction (signum, &sa, NULL);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_isDefault (C_Int_t signum, Ref(Bool_t) isDef) {
+C_Errno_t(C_Int_t) Posix_Signal_isDefault (C_Int_t signum, Ref(C_Int_t) isDef) {
   int res;
   struct sigaction sa;
 
   sa.sa_flags = SA_FLAGS;
   res = sigaction (signum, NULL, &sa);
-  *((Bool_t*)isDef) = sa.sa_handler == SIG_DFL;
+  *((C_Int_t*)isDef) = sa.sa_handler == SIG_DFL;
   return res;
 }
 
@@ -44,13 +44,13 @@ C_Errno_t(C_Int_t) Posix_Signal_ignore (C_Signal_t signum) {
   return sigaction (signum, &sa, NULL);
 }
 
-C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(Bool_t) isIgn) {
+C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(C_Int_t) isIgn) {
   int res;
   struct sigaction sa;
 
   sa.sa_flags = SA_FLAGS;
   res = sigaction (signum, NULL, &sa);
-  *((Bool_t*)isIgn) = sa.sa_handler == SIG_IGN;
+  *((C_Int_t*)isIgn) = sa.sa_handler == SIG_IGN;
   return res;
 }
 
@@ -72,11 +72,11 @@ void Posix_Signal_handleGC (void) {
   GC_setGCSignalHandled (&gcState, TRUE);
 }
 
-Bool_t Posix_Signal_isPending (C_Int_t signum) {
+C_Int_t Posix_Signal_isPending (C_Int_t signum) {
   return sigismember (GC_getSignalsPendingAddr (&gcState), signum);
 }
 
-Bool_t Posix_Signal_isPendingGC (void) {
+C_Int_t Posix_Signal_isPendingGC (void) {
   return GC_getGCSignalPending (&gcState);
 }
 

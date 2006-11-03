@@ -7,7 +7,7 @@ C_Errno_t(C_Int_t) Socket_accept (C_Sock_t s, Array(Word8_t) addr, Ref(C_Socklen
 
 C_Errno_t(C_Int_t) Socket_bind (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {
   MLton_initSockets ();
-  return bind (s, (struct sockaddr*)addr, (socklen_t)addrlen);
+  return bind (s, (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
 C_Errno_t(C_Int_t) Socket_close(C_Sock_t s) {
@@ -16,11 +16,11 @@ C_Errno_t(C_Int_t) Socket_close(C_Sock_t s) {
 
 C_Errno_t(C_Int_t) Socket_connect (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {
   MLton_initSockets ();
-  return connect (s, (struct sockaddr*)addr, (socklen_t)addrlen);
+  return connect (s, (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
 C_Int_t Socket_familyOfAddr(Vector(Word8_t) addr) {
-  return ((struct sockaddr*)addr)->sa_family;
+  return ((const struct sockaddr*)addr)->sa_family;
 }
 
 C_Errno_t(C_Int_t) Socket_listen (C_Sock_t s, C_Int_t backlog) {
@@ -68,7 +68,7 @@ Socket_sendTo (C_Sock_t s, Pointer msg,
                Vector(Word8_t) addr, C_Socklen_t addrlen) {
   MLton_initSockets ();
   return sendto (s, (void*)((char *)msg + start), len, flags,
-                 (struct sockaddr*)addr, (socklen_t)addrlen);
+                 (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
 C_Errno_t(C_SSize_t) 
@@ -100,7 +100,7 @@ C_Errno_t(C_Int_t)
 Socket_Ctl_setSockOpt (C_Sock_t s, C_Int_t level, C_Int_t optname, 
                        Vector(Word8_t) optval, C_Socklen_t optlen) {
   MLton_initSockets ();
-  return setsockopt (s, level, optname, (void*)optval, (socklen_t)optlen);
+  return setsockopt (s, level, optname, (const void*)optval, (socklen_t)optlen);
 }
 
 C_Errno_t(C_Int_t) 
@@ -112,7 +112,7 @@ Socket_Ctl_getIOCtl (C_Sock_t s, C_Int_t request, Array(Word8_t) argp) {
 C_Errno_t(C_Int_t) 
 Socket_Ctl_setIOCtl (C_Sock_t s, C_Int_t request, Vector(Word8_t) argp) {
   MLton_initSockets ();
-  return ioctl (s, request, (void*)argp);
+  return ioctl (s, request, (const void*)argp);
 }
 
 C_Errno_t(C_Int_t) Socket_Ctl_getPeerName (C_Sock_t s, Array(Word8_t) name, Ref(C_Socklen_t) namelen) {

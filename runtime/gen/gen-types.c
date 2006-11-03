@@ -63,15 +63,15 @@ static const char* cTypesSMLPrefix[] = {
 
 static const char* mlTypesHStd[] = {
   "/* ML types */",
-  // "typedef void* Pointer;",
-  // "typedef uintptr_t Pointer;",
-  // "typedef unsigned char* Pointer;",
-  // "struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4), may_alias));",
+  "// typedef void* Pointer;",
+  "// typedef uintptr_t Pointer;",
+  "// typedef unsigned char* Pointer;",
+  "// struct PointerAux { unsigned char z[4]; } __attribute__ ((aligned (4), may_alias));",
   "typedef unsigned char PointerAux __attribute__ ((aligned (4), may_alias));",
   "typedef PointerAux* Pointer;",
   "#define Array(t) Pointer",
   "#define Ref(t) Pointer",
-  "#define Vector(t) const Pointer",
+  "#define Vector(t) Pointer",
   "",
   "typedef int8_t Int8_t;",
   "typedef int8_t Int8;",
@@ -147,6 +147,33 @@ static const char* mlTypesHStd[] = {
   NULL
 };
 
+#define booltype(t, bt, name)                       \
+  do {                                              \
+  writeString (cTypesHFd, "typedef ");              \
+  writeString (cTypesHFd, #t);                      \
+  writeString (cTypesHFd, " /* ");                  \
+  writeString (cTypesHFd, bt);                      \
+  writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
+  writeString (cTypesHFd, "_t");                    \
+  writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, "C_");                    \
+  writeString (cTypesHFd, name);                    \
+  writeString (cTypesHFd, "_t;");                   \
+  writeNewline (cTypesHFd);                         \
+  writeString (cTypesSMLFd, "structure C_");        \
+  writeString (cTypesSMLFd, name);                  \
+  writeString (cTypesSMLFd, " = WordToBool (");     \
+  writeString (cTypesSMLFd, "type t = ");           \
+  writeString (cTypesSMLFd, "Word");                \
+  writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
+  writeString (cTypesSMLFd, ".word");               \
+  writeString (cTypesSMLFd, " ");                   \
+  writeString (cTypesSMLFd, "val zero: t = 0wx0");  \
+  writeString (cTypesSMLFd, " ");                   \
+  writeString (cTypesSMLFd, "val one: t = 0wx1");   \
+  writeString (cTypesSMLFd, ")");                   \
+  writeNewline (cTypesSMLFd);                       \
+  } while (0)
 #define systype(t, bt, name)                        \
   do {                                              \
   char *btLower = strdup(bt);                       \
@@ -156,12 +183,12 @@ static const char* mlTypesHStd[] = {
   for (size_t i = 0; i < strlen(btUpper); i++)      \
     btUpper[i] = (char)(toupper((int)(bt[i])));     \
   writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
-  writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, " /* ");                  \
   writeString (cTypesHFd, bt);                      \
   writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
-  writeString (cTypesHFd, "_t ");                   \
+  writeString (cTypesHFd, "_t");                    \
+  writeString (cTypesHFd, " */ ");                  \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
@@ -203,10 +230,10 @@ static const char* mlTypesHStd[] = {
 #define ptrtype(t, name)                            \
   do {                                              \
   writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, "/* ");                   \
   writeString (cTypesHFd, #t);                      \
+  writeString (cTypesHFd, " /* ");                  \
+  writeString (cTypesHFd, "Pointer");               \
   writeString (cTypesHFd, " */ ");                  \
-  writeString (cTypesHFd, "Pointer ");              \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
@@ -298,6 +325,7 @@ int main (__attribute__ ((unused)) int argc,
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   writeStringWithNewline (cTypesHFd, "/* C */");
   writeStringWithNewline (cTypesSMLFd, "(* C *)");
+  booltype(_Bool, "Word", "Bool");
   chksystype(char, "Char");
   chksystype(signed char, "SChar");
   chksystype(unsigned char, "UChar");

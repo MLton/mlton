@@ -38,14 +38,14 @@ void NetHostDB_getEntryAddrsN(C_Int_t n, Array(Word8_t) addr) {
   return;
 }
 
-Bool_t NetHostDB_getByAddress(Vector(Word8_t) addr, C_Socklen_t len) {
+C_Int_t NetHostDB_getByAddress(Vector(Word8_t) addr, C_Socklen_t len) {
   hostent = gethostbyaddr((const char*)addr, len, AF_INET);
-  return (hostent != NULL and hostent->h_name != NULL);
+  return (C_Int_t)(hostent != NULL and hostent->h_name != NULL);
 }
 
-Bool_t NetHostDB_getByName(NullString8_t name) {
+C_Int_t NetHostDB_getByName(NullString8_t name) {
   hostent = gethostbyname((const char*)name);
-  return (hostent != NULL and hostent->h_name != NULL);
+  return (C_Int_t)(hostent != NULL and hostent->h_name != NULL);
 }
 
 C_Errno_t(C_Int_t) NetHostDB_getHostName(Array(Char8_t) buf, C_Size_t len) {

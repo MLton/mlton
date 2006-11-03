@@ -332,7 +332,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             end
 
             local
-               fun make prim s = prim (mode s)
+               fun make prim s = prim (mode s) <> C_Int.zero
             in
                val isDir = make Prim.ST.isDir
                val isChr = make Prim.ST.isChr

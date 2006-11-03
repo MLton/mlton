@@ -165,8 +165,8 @@ val ntohs = _import "Net_ntohs" : Word16.t -> Word16.t;
 end
 structure NetHostDB = 
 struct
-val getByAddress = _import "NetHostDB_getByAddress" : (Word8.t) vector * C_Socklen.t -> Bool.t;
-val getByName = _import "NetHostDB_getByName" : NullString8.t -> Bool.t;
+val getByAddress = _import "NetHostDB_getByAddress" : (Word8.t) vector * C_Socklen.t -> C_Int.t;
+val getByName = _import "NetHostDB_getByName" : NullString8.t -> C_Int.t;
 val getEntryAddrsN = _import "NetHostDB_getEntryAddrsN" : C_Int.t * (Word8.t) array -> unit;
 val getEntryAddrsNum = _import "NetHostDB_getEntryAddrsNum" : unit -> C_Int.t;
 val getEntryAddrType = _import "NetHostDB_getEntryAddrType" : unit -> C_Int.t;
@@ -180,8 +180,8 @@ val inAddrSize = _const "NetHostDB_inAddrSize" : C_Size.t;
 end
 structure NetProtDB = 
 struct
-val getByName = _import "NetProtDB_getByName" : NullString8.t -> Bool.t;
-val getByNumber = _import "NetProtDB_getByNumber" : C_Int.t -> Bool.t;
+val getByName = _import "NetProtDB_getByName" : NullString8.t -> C_Int.t;
+val getByNumber = _import "NetProtDB_getByNumber" : C_Int.t -> C_Int.t;
 val getEntryAliasesN = _import "NetProtDB_getEntryAliasesN" : C_Int.t -> C_String.t;
 val getEntryAliasesNum = _import "NetProtDB_getEntryAliasesNum" : unit -> C_Int.t;
 val getEntryName = _import "NetProtDB_getEntryName" : unit -> C_String.t;
@@ -189,10 +189,10 @@ val getEntryProto = _import "NetProtDB_getEntryProto" : unit -> C_Int.t;
 end
 structure NetServDB = 
 struct
-val getByName = _import "NetServDB_getByName" : NullString8.t * NullString8.t -> Bool.t;
-val getByNameNull = _import "NetServDB_getByNameNull" : NullString8.t -> Bool.t;
-val getByPort = _import "NetServDB_getByPort" : C_Int.t * NullString8.t -> Bool.t;
-val getByPortNull = _import "NetServDB_getByPortNull" : C_Int.t -> Bool.t;
+val getByName = _import "NetServDB_getByName" : NullString8.t * NullString8.t -> C_Int.t;
+val getByNameNull = _import "NetServDB_getByNameNull" : NullString8.t -> C_Int.t;
+val getByPort = _import "NetServDB_getByPort" : C_Int.t * NullString8.t -> C_Int.t;
+val getByPortNull = _import "NetServDB_getByPortNull" : C_Int.t -> C_Int.t;
 val getEntryAliasesN = _import "NetServDB_getEntryAliasesN" : C_Int.t -> C_String.t;
 val getEntryAliasesNum = _import "NetServDB_getEntryAliasesNum" : unit -> C_Int.t;
 val getEntryName = _import "NetServDB_getEntryName" : unit -> C_String.t;
@@ -453,13 +453,13 @@ val IXUSR = _const "Posix_FileSys_S_IXUSR" : C_Mode.t;
 end
 structure ST = 
 struct
-val isBlk = _import "Posix_FileSys_ST_isBlk" : C_Mode.t -> Bool.t;
-val isChr = _import "Posix_FileSys_ST_isChr" : C_Mode.t -> Bool.t;
-val isDir = _import "Posix_FileSys_ST_isDir" : C_Mode.t -> Bool.t;
-val isFIFO = _import "Posix_FileSys_ST_isFIFO" : C_Mode.t -> Bool.t;
-val isLink = _import "Posix_FileSys_ST_isLink" : C_Mode.t -> Bool.t;
-val isReg = _import "Posix_FileSys_ST_isReg" : C_Mode.t -> Bool.t;
-val isSock = _import "Posix_FileSys_ST_isSock" : C_Mode.t -> Bool.t;
+val isBlk = _import "Posix_FileSys_ST_isBlk" : C_Mode.t -> C_Int.t;
+val isChr = _import "Posix_FileSys_ST_isChr" : C_Mode.t -> C_Int.t;
+val isDir = _import "Posix_FileSys_ST_isDir" : C_Mode.t -> C_Int.t;
+val isFIFO = _import "Posix_FileSys_ST_isFIFO" : C_Mode.t -> C_Int.t;
+val isLink = _import "Posix_FileSys_ST_isLink" : C_Mode.t -> C_Int.t;
+val isReg = _import "Posix_FileSys_ST_isReg" : C_Mode.t -> C_Int.t;
+val isSock = _import "Posix_FileSys_ST_isSock" : C_Mode.t -> C_Int.t;
 end
 structure Stat = 
 struct
@@ -561,7 +561,7 @@ val getpgrp = _import "Posix_ProcEnv_getpgrp" : unit -> C_PId.t;
 val getpid = _import "Posix_ProcEnv_getpid" : unit -> C_PId.t;
 val getppid = _import "Posix_ProcEnv_getppid" : unit -> C_PId.t;
 val getuid = _import "Posix_ProcEnv_getuid" : unit -> C_UId.t;
-val isatty = _import "Posix_ProcEnv_isatty" : C_Fd.t -> Bool.t;
+val isatty = _import "Posix_ProcEnv_isatty" : C_Fd.t -> C_Int.t;
 val SC_2_C_BIND = _const "Posix_ProcEnv_SC_2_C_BIND" : C_Int.t;
 val SC_2_C_DEV = _const "Posix_ProcEnv_SC_2_C_DEV" : C_Int.t;
 val SC_2_CHAR_TERM = _const "Posix_ProcEnv_SC_2_CHAR_TERM" : C_Int.t;
@@ -719,9 +719,9 @@ val execp = _import "Posix_Process_execp" : NullString8.t * String8.t * (C_Point
 val exit = _import "Posix_Process_exit" : C_Status.t -> unit;
 val exitStatus = _import "Posix_Process_exitStatus" : C_Status.t -> C_Int.t;
 val fork = _import "Posix_Process_fork" : unit -> (C_PId.t) C_Errno.t;
-val ifExited = _import "Posix_Process_ifExited" : C_Status.t -> Bool.t;
-val ifSignaled = _import "Posix_Process_ifSignaled" : C_Status.t -> Bool.t;
-val ifStopped = _import "Posix_Process_ifStopped" : C_Status.t -> Bool.t;
+val ifExited = _import "Posix_Process_ifExited" : C_Status.t -> C_Int.t;
+val ifSignaled = _import "Posix_Process_ifSignaled" : C_Status.t -> C_Int.t;
+val ifStopped = _import "Posix_Process_ifStopped" : C_Status.t -> C_Int.t;
 val kill = _import "Posix_Process_kill" : C_PId.t * C_Signal.t -> (C_Int.t) C_Errno.t;
 val nanosleep = _import "Posix_Process_nanosleep" : (C_Time.t) ref * (C_Long.t) ref -> (C_Int.t) C_Errno.t;
 val pause = _import "Posix_Process_pause" : unit -> (C_Int.t) C_Errno.t;
@@ -742,10 +742,10 @@ val default = _import "Posix_Signal_default" : C_Signal.t -> (C_Int.t) C_Errno.t
 val handlee = _import "Posix_Signal_handlee" : C_Signal.t -> (C_Int.t) C_Errno.t;
 val handleGC = _import "Posix_Signal_handleGC" : unit -> unit;
 val ignore = _import "Posix_Signal_ignore" : C_Signal.t -> (C_Int.t) C_Errno.t;
-val isDefault = _import "Posix_Signal_isDefault" : C_Signal.t * (Bool.t) ref -> (C_Int.t) C_Errno.t;
-val isIgnore = _import "Posix_Signal_isIgnore" : C_Signal.t * (Bool.t) ref -> (C_Int.t) C_Errno.t;
-val isPending = _import "Posix_Signal_isPending" : C_Signal.t -> Bool.t;
-val isPendingGC = _import "Posix_Signal_isPendingGC" : unit -> Bool.t;
+val isDefault = _import "Posix_Signal_isDefault" : C_Signal.t * (C_Int.t) ref -> (C_Int.t) C_Errno.t;
+val isIgnore = _import "Posix_Signal_isIgnore" : C_Signal.t * (C_Int.t) ref -> (C_Int.t) C_Errno.t;
+val isPending = _import "Posix_Signal_isPending" : C_Signal.t -> C_Int.t;
+val isPendingGC = _import "Posix_Signal_isPendingGC" : unit -> C_Int.t;
 val NSIG = _const "Posix_Signal_NSIG" : C_Int.t;
 val resetPending = _import "Posix_Signal_resetPending" : unit -> unit;
 val SIG_BLOCK = _const "Posix_Signal_SIG_BLOCK" : C_Int.t;
@@ -789,10 +789,10 @@ val SIGXFSZ = _const "Posix_Signal_SIGXFSZ" : C_Signal.t;
 end
 structure SysDB = 
 struct
-val getgrgid = _import "Posix_SysDB_getgrgid" : C_GId.t -> Bool.t;
-val getgrnam = _import "Posix_SysDB_getgrnam" : NullString8.t -> Bool.t;
-val getpwnam = _import "Posix_SysDB_getpwnam" : NullString8.t -> Bool.t;
-val getpwuid = _import "Posix_SysDB_getpwuid" : C_GId.t -> Bool.t;
+val getgrgid = _import "Posix_SysDB_getgrgid" : C_GId.t -> (C_Int.t) C_Errno.t;
+val getgrnam = _import "Posix_SysDB_getgrnam" : NullString8.t -> (C_Int.t) C_Errno.t;
+val getpwnam = _import "Posix_SysDB_getpwnam" : NullString8.t -> (C_Int.t) C_Errno.t;
+val getpwuid = _import "Posix_SysDB_getpwuid" : C_GId.t -> (C_Int.t) C_Errno.t;
 structure Group = 
 struct
 val getGId = _import "Posix_SysDB_Group_getGId" : unit -> C_GId.t;

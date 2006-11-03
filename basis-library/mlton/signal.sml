@@ -109,13 +109,13 @@ structure Handler =
 datatype handler = datatype Handler.t
 
 local
-   val r = ref false
+   val r = ref C_Int.zero
 in
    fun initHandler (s: signal): Handler.t =
       SysCall.syscallErr
       ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
        {return = Prim.isDefault (s, r),
-        post = fn _ => if !r then Default else Ignore,
+        post = fn _ => if !r <> C_Int.zero then Default else Ignore,
         handlers = [(Error.inval, fn () => InvalidSignal)]})
 end
 
@@ -185,14 +185,18 @@ structure Handler =
                    val () = Mask.block (handled ())
                    val fs = 
                       case !gcHandler of
-                         Handler f => if Prim.isPendingGC () then [f] else []
+                         Handler f => if Prim.isPendingGC () <> C_Int.zero 
+                                         then [f] 
+                                         else []
                        | _ => []
                    val fs =
                       Array.foldri
                       (fn (s, h, fs) =>
                        case h of
                           Handler f =>
-                             if Prim.isPending (fromInt s) then f::fs else fs
+                             if Prim.isPending (fromInt s) <> C_Int.zero
+                                then f::fs 
+                                else fs
                         | _ => fs) fs handlers
                    val () = Prim.resetPending ()
                    val () = Mask.setBlocked mask
