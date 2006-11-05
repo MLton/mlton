@@ -1,6 +1,5 @@
 *.a
 gdtoa
 runtime.c
-basis-ffi.h
 c-types.h
 ml-types.h
