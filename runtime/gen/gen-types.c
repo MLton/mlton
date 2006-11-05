@@ -150,12 +150,13 @@ static const char* mlTypesHStd[] = {
 #define booltype(t, bt, name)                       \
   do {                                              \
   writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " /* ");                  \
+  writeString (cTypesHFd, #t);                      \
+  writeString (cTypesHFd, " */ ");                  \
   writeString (cTypesHFd, bt);                      \
   writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
   writeString (cTypesHFd, "_t");                    \
-  writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, " ");                     \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
@@ -183,12 +184,13 @@ static const char* mlTypesHStd[] = {
   for (size_t i = 0; i < strlen(btUpper); i++)      \
     btUpper[i] = (char)(toupper((int)(bt[i])));     \
   writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " /* ");                  \
+  writeString (cTypesHFd, #t);                      \
+  writeString (cTypesHFd, " */ ");                  \
   writeString (cTypesHFd, bt);                      \
   writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
   writeString (cTypesHFd, "_t");                    \
-  writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, " ");                     \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
@@ -230,10 +232,11 @@ static const char* mlTypesHStd[] = {
 #define ptrtype(t, name)                            \
   do {                                              \
   writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " /* ");                  \
-  writeString (cTypesHFd, "Pointer");               \
+  writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " */ ");                  \
+  writeString (cTypesHFd, "Pointer");               \
+  writeString (cTypesHFd, " ");                     \
   writeString (cTypesHFd, "C_");                    \
   writeString (cTypesHFd, name);                    \
   writeString (cTypesHFd, "_t;");                   \
