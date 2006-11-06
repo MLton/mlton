@@ -13,7 +13,7 @@ MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	gzip -dc MLRISC.tgz | tar xf -
 	chmod -R a+r MLRISC
 	chmod -R g-s MLRISC
-	patch -p0 <MLRISC.patch
+	patch -p0 < MLRISC.patch
 
 .PHONY: clean
 clean:
@@ -26,4 +26,3 @@ patch:
 	diff -Naur MLRISC MLRISC-mlton >MLRISC.patch || exit 0
 	rm -rf MLRISC
 	mv MLRISC-mlton MLRISC
-

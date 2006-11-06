@@ -19,3 +19,11 @@ ckit/README.mlton: ckit.tgz ckit.patch
 .PHONY: clean
 clean:
 	../../bin/clean
+
+.PHONY: patch
+patch:
+	mv ckit ckit-mlton
+	gzip -dc ckit.tgz | tar xf -
+	diff -Naur ckit ckit-mlton >ckit.patch || exit 0
+	rm -rf ckit
+	mv ckit-mlton ckit

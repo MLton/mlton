@@ -20,3 +20,11 @@ smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 .PHONY: clean
 clean:
 	../../bin/clean
+
+.PHONY: patch
+patch:
+	mv smlnj-lib smlnj-lib-mlton
+	gzip -dc smlnj-lib.tgz | tar xf -
+	diff -Naur smlnj-lib smlnj-lib-mlton >smlnj-lib.patch || exit 0
+	rm -rf smlnj-lib
+	mv smlnj-lib-mlton smlnj-lib
