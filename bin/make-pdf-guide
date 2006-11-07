@@ -29,7 +29,7 @@ pages='.pages'
 pdf='mlton-guide.pdf'
 script='.script'
 titlepage='title.html'
-tmp='/tmp/mlton-guide'
+tmp="/tmp/mlton-guide.$$"
 version=`date +%Y%m%d`
 
 rm -rf $tmp
