@@ -169,7 +169,7 @@ freebsd:
         # do not change "make" to "$(MAKE)" in the following line
 	cd $(BSDSRC)/package/freebsd && MAINTAINER_MODE=yes make build-package  
 
-LIBRARIES = ckit-lib cml mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
+LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
 
 .PHONY: libraries-no-check
 libraries-no-check:
