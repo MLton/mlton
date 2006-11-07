@@ -13,8 +13,17 @@ ckit/README.mlton: ckit.tgz ckit.patch
 	gzip -dc ckit.tgz | tar xf -
 	chmod -R a+r ckit
 	chmod -R g-s ckit
+	chmod a-x ckit/src/ast/simplify-assign-ops.sml
 	patch -s -p0 < ckit.patch
 
 .PHONY: clean
 clean:
 	../../bin/clean
+
+.PHONY: patch
+patch:
+	mv ckit ckit-mlton
+	gzip -dc ckit.tgz | tar xf -
+	diff -Naur ckit ckit-mlton >ckit.patch || exit 0
+	rm -rf ckit
+	mv ckit-mlton ckit

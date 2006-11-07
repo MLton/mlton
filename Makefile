@@ -168,7 +168,7 @@ freebsd:
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package  
 
-LIBRARIES = ckit-lib cml mlnlffi-lib mlrisc-lib mlyacc-lib smlnj-lib
+LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
 
 .PHONY: libraries-no-check
 libraries-no-check:
@@ -180,9 +180,10 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
 	$(CP) "$(SRC)/lib/ckit-lib/ckit/." "$(LIB)/sml/ckit-lib"
 	$(CP) "$(SRC)/lib/mlnlffi/." "$(LIB)/sml/mlnlffi-lib"
-	$(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
+	true || $(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
 	$(CP) "$(SRC)/lib/mlyacc/." "$(LIB)/sml/mlyacc-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
+	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
 	find "$(LIB)/sml" -type d -name .svn | xargs rm -rf
 	find "$(LIB)/sml" -type f -name .ignore | xargs rm -rf
 
@@ -245,7 +246,7 @@ debugged:
 .PHONY: profiled
 profiled:
 	for t in alloc count time; do 					\
- 		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t" 		\
+		$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).$$t" 		\
 			COMPILE_ARGS="-profile $$t";			\
 		$(CP) "$(COMP)/$(AOUT).$$t" "$(LIB)/";			\
 		"$(LIB)/$(AOUT).$$t" @MLton -- "$(LIB)/world.$$t";	\

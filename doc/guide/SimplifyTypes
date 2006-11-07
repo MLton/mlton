@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -134,9 +140,9 @@ This pass also removes Useless and Transparent constructors.
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a>
  
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
@@ -163,8 +169,8 @@ it removes uses of polymorphic equality that must return true
 <p>
 We must keep track of Transparent constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
-</FONT></B></PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> t <B><FONT COLOR="#228B22">vector</FONT></B>
+</PRE>
  Such a datatype has Cardinality.Many, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
 </p>
 <p>
@@ -173,13 +179,13 @@ Must do similar things for <tt>vectors</tt>.
 <p>
 Also, to eliminate as many Transparent constructors as possible, for something like the following, 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array
-       </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
-</FONT></B></PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#228B22">array</FONT></B>
+       <B><FONT COLOR="#A020F0">and</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> U <B><FONT COLOR="#A020F0">of</FONT></B> t <B><FONT COLOR="#228B22">vector</FONT></B>
+</PRE>
  we (arbitrarily) expand one of the datatypes first. The result will be something like 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> u </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array array
-</FONT></B></PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> U <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B>
+</PRE>
  where all uses of <tt>t</tt> are replaced by <tt>u&nbsp;array</tt>. 
 </p>
 </div>

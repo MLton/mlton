@@ -18,3 +18,11 @@ MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 .PHONY: clean
 clean:
 	../../bin/clean
+
+.PHONY: patch
+patch:
+	mv MLRISC MLRISC-mlton
+	gzip -dc MLRISC.tgz | tar xf -
+	diff -Naur MLRISC MLRISC-mlton >MLRISC.patch || exit 0
+	rm -rf MLRISC
+	mv MLRISC-mlton MLRISC

@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -69,25 +75,25 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <pre class=code><I><FONT COLOR="#B22222">(* main.sml *)</FONT></I>
 
 <I><FONT COLOR="#B22222">(* Declare ffi to be implemented by calling the C function ffi. *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> ffi = _import <FONT COLOR="#BC8F8F"><B>&quot;ffi&quot;</FONT></B>: real array * int ref * int -&gt; char;
-<B><FONT COLOR="#0000FF">open</FONT></B> Array
+<B><FONT COLOR="#A020F0">val</FONT></B> ffi <B><FONT COLOR="#5F9EA0">=</FONT></B> _import <B><FONT COLOR="#BC8F8F">&quot;ffi&quot;</FONT></B>: <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">char</FONT></B>;
+<B><FONT COLOR="#A020F0">open</FONT></B> Array
 
-<B><FONT COLOR="#A020F0">val</FONT></B> size = <B><FONT COLOR="#5F9EA0">10</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> a = tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; real i)
-<B><FONT COLOR="#A020F0">val</FONT></B> r = ref <B><FONT COLOR="#5F9EA0">0</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#5F9EA0">17</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> size <B><FONT COLOR="#5F9EA0">=</FONT></B> 10
+<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> i)
+<B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> 0
+<B><FONT COLOR="#A020F0">val</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> 17
 
 <I><FONT COLOR="#B22222">(* Call the C function *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> c = ffi (a, r, n)
+<B><FONT COLOR="#A020F0">val</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> ffi (a, r, n)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) = _symbol <FONT COLOR="#BC8F8F"><B>&quot;FFI_INT&quot;</FONT></B>: (unit -&gt; int) * (int -&gt; unit);
+<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) <B><FONT COLOR="#5F9EA0">=</FONT></B> _symbol <B><FONT COLOR="#BC8F8F">&quot;FFI_INT&quot;</FONT></B>: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>) <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>);
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [Int.toString (nGet ()), <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString (nGet ()), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
-   print (<B><FONT COLOR="#A020F0">if</FONT></B> c = #<FONT COLOR="#BC8F8F"><B>&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !r = <B><FONT COLOR="#5F9EA0">45</FONT></B>
-             <B><FONT COLOR="#A020F0">then</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;success\n&quot;</FONT></B>
-          <B><FONT COLOR="#A020F0">else</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;fail\n&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">if</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r <B><FONT COLOR="#5F9EA0">=</FONT></B> 45
+             <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
+          <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;fail\n&quot;</FONT></B>)
 </PRE>
  
 </p>
@@ -95,7 +101,7 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <tt>ffi-import.c</tt> is 
 </p>
 <p>
-<pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <FONT COLOR="#BC8F8F"><B>&quot;platform.h&quot;</FONT></B>
+<pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;platform.h&quot;</FONT></B>
 
 Int FFI_INT = 13;
 Word FFI_WORD = 0xFF;
@@ -103,18 +109,18 @@ Bool FFI_BOOL = TRUE;
 Real FFI_REAL = 3.14159;
 
 Char <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int n) {
-        <FONT COLOR="#228B22"><B>double</FONT></B> *ds = (<FONT COLOR="#228B22"><B>double</FONT></B>*)a1;
-        <FONT COLOR="#228B22"><B>int</FONT></B> *p = (<FONT COLOR="#228B22"><B>int</FONT></B>*)a2;
-        <FONT COLOR="#228B22"><B>int</FONT></B> i;
-        <FONT COLOR="#228B22"><B>double</FONT></B> sum;
+        <B><FONT COLOR="#228B22">double</FONT></B> *ds = (<B><FONT COLOR="#228B22">double</FONT></B>*)a1;
+        <B><FONT COLOR="#228B22">int</FONT></B> *p = (<B><FONT COLOR="#228B22">int</FONT></B>*)a2;
+        <B><FONT COLOR="#228B22">int</FONT></B> i;
+        <B><FONT COLOR="#228B22">double</FONT></B> sum;
 
         sum = 0.0;
         <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; GC_arrayNumElements (a1); ++i) {
                 sum += ds[i];
                 ds[i] += n;
         }
-        *p = (<FONT COLOR="#228B22"><B>int</FONT></B>)sum;
-        <B><FONT COLOR="#A020F0">return</FONT></B> <FONT COLOR="#BC8F8F"><B>'c'</FONT></B>;
+        *p = (<B><FONT COLOR="#228B22">int</FONT></B>)sum;
+        <B><FONT COLOR="#A020F0">return</FONT></B> <B><FONT COLOR="#BC8F8F">'c'</FONT></B>;
 }
 </PRE>
  
@@ -134,14 +140,14 @@ success
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
  
 </p>
 </li>
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
  
 </p>
 </li>

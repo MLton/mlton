@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -129,7 +135,17 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 </li>
         <li>
 <p>
+ Loop unrolling, especially for small loops 
+</p>
+</li>
+        <li>
+<p>
  Auto-vectorization, for MMX/SSE/3DNow/AltiVec (see the <a class="external" href="http://gcc.gnu.org/projects/tree-ssa/vectorization.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">work done on GCC</a>) 
+</p>
+</li>
+        <li>
+<p>
+ Optimize <tt>MLton_eq</tt>: pointer equality is necessarily false when one of the arguments is freshly allocated in the block 
 </p>
 </li>
 
@@ -159,5 +175,5 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 
 <p>
 <hr>
-Last edited on 2005-12-02 00:53:29 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-06-22 02:51:58 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

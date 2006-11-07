@@ -78,6 +78,7 @@ signature X86_MLTON_BASIC =
       end
 
     (* CStack locations *)
+    val c_stackP : x86.Label.t
     val c_stackPContents : x86.MemLoc.t
     val c_stackPContentsOperand : x86.Operand.t
     val c_stackPDerefOperand : x86.Operand.t

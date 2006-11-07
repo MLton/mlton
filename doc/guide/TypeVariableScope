@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,7 +57,7 @@
 <div id="content" lang="en" dir="ltr">
 In <a href="StandardML">Standard ML</a>, every type variable is <em>scoped</em> (or bound) at a particular point in the program.  A type variable can be either implicitly scoped or explicitly scoped.  For example, <tt>'a</tt> is implicitly scoped in 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#A020F0">val</FONT></B> id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
 <p>
  
@@ -61,7 +67,7 @@ and is implicitly scoped in
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> id = <B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a =&gt; x
+<B><FONT COLOR="#A020F0">val</FONT></B> id <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
 <p>
  
@@ -71,7 +77,7 @@ On the other hand, <tt>'a</tt> is explicitly scoped in
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#A020F0">val</FONT></B> 'a id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
 <p>
  
@@ -81,7 +87,7 @@ and is explicitly scoped in
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> id = <B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a =&gt; x
+<B><FONT COLOR="#A020F0">val</FONT></B> 'a id <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
 <p>
  
@@ -100,11 +106,11 @@ Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies pre
 <p>
  In this example, 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+ <B><FONT COLOR="#A020F0">val</FONT></B> id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
   <tt>'a</tt> is unguarded in <tt>val&nbsp;id</tt> and does not occur unguarded in  any containing declaration.  Hence, <tt>'a</tt> is scoped at   <tt>val&nbsp;id</tt> and the declaration is equivalent to the  following. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+ <B><FONT COLOR="#A020F0">val</FONT></B> 'a id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
  
 </p>
@@ -113,11 +119,11 @@ Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies pre
 <p>
  In this example, 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B> E x <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">exception</FONT></B> E <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">in</FONT></B> E x <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
   <tt>'a</tt> is unguarded in <tt>val&nbsp;f</tt> and does not occur unguarded in  any containing declaration.  Hence, <tt>'a</tt> is scoped at <tt>val&nbsp;f</tt>  and the declaration is equivalent to the following. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">exception</FONT></B><FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B> E x <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> 'a f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">exception</FONT></B> E <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">in</FONT></B> E x <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
 </p>
@@ -126,11 +132,11 @@ Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies pre
 <p>
  In this example (taken from the   <a href="DefinitionOfStandardML">Definition</a>), 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> x: int -&gt; int = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; z <B><FONT COLOR="#A020F0">in</FONT></B> id id <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> x: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> z <B><FONT COLOR="#A020F0">in</FONT></B> id id <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
   <tt>'a</tt> occurs unguarded in <tt>val&nbsp;id</tt>, but not in <tt>val&nbsp;x</tt>.  Hence, <tt>'a</tt> is implicitly scoped at <tt>val&nbsp;id</tt>, and the  declaration is equivalent to the following. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> x: int -&gt; int = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; z <B><FONT COLOR="#A020F0">in</FONT></B> id id <B><FONT COLOR="#A020F0">end</FONT></B>
+ <B><FONT COLOR="#A020F0">val</FONT></B> x: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> 'a id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> z <B><FONT COLOR="#A020F0">in</FONT></B> id id <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
 </p>
@@ -139,11 +145,11 @@ Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies pre
 <p>
  In this example, 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> f = (<B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a =&gt; x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y =&gt; y)
+ <B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y)
 </PRE>
   <tt>'a</tt> occurs unguarded in <tt>val&nbsp;f</tt> and does not occur unguarded  in any containing declaration.  Hence, <tt>'a</tt> is implicitly scoped  at <tt>val&nbsp;f</tt>, and the declaration is equivalent to the  following. 
 <pre class=code>
- <B><FONT COLOR="#A020F0">val</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> f = (<B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a =&gt; x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y =&gt; y)
+ <B><FONT COLOR="#A020F0">val</FONT></B> 'a f <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> x: 'a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y)
 </PRE>
   This does not type check due to the <a href="ValueRestriction">ValueRestriction</a>. 
 </p>
@@ -152,18 +158,18 @@ Section 4.6 of the <a href="DefinitionOfStandardML">Definition</a> specifies pre
 <p>
  In this example, 
 <pre class=code>
- <B><FONT COLOR="#A020F0">fun</FONT></B> f x =
+<B><FONT COLOR="#A020F0"> fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> g (y: 'a) = <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> y
+<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">g</FONT></I></B></FONT></B> (y: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> y
    <B><FONT COLOR="#A020F0">in</FONT></B>
       g x
    <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
   <tt>'a</tt> occurs unguarded in <tt>fun&nbsp;g</tt>, not in <tt>fun&nbsp;f</tt>.  Hence,  <tt>'a</tt> is implicitly scoped at <tt>fun&nbsp;g</tt>, and the declaration is  equivalent to 
 <pre class=code>
- <B><FONT COLOR="#A020F0">fun</FONT></B> f x =
+<B><FONT COLOR="#A020F0"> fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> g (y: 'a) = <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> y
+      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a g (y: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> y
    <B><FONT COLOR="#A020F0">in</FONT></B>
       g x
    <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -184,9 +190,9 @@ It is not allowed to scope a type variable within a declaration in which it is a
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> f (x: 'a) =
+<B><FONT COLOR="#A020F0">fun</FONT></B> 'a f (x: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> g (y: 'a) = y
+      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a g (y: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> y
    <B><FONT COLOR="#A020F0">in</FONT></B>
       ()
    <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -205,9 +211,9 @@ This is an error even if the scoping is implicit.  That is, the following progra
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f (x: 'a) =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (x: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> g (y: 'a) = y
+      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a g (y: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> y
    <B><FONT COLOR="#A020F0">in</FONT></B>
       ()
    <B><FONT COLOR="#A020F0">end</FONT></B>

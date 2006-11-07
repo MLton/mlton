@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,13 +57,13 @@
 <div id="content" lang="en" dir="ltr">
 In <a href="StandardML">Standard ML</a>, datatype declarations are said to be <em>generative</em>, because each time a datatype declaration is evaluated, it yields a new type.  Thus, any attempt to mix the types will lead to a type error at compile-time.  The following program, which does not type check, demonstrates this. 
 <pre class=code>
-<B><FONT COLOR="#0000FF">functor</FONT></B> F () =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">T</FONT>
-   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
-<B><FONT COLOR="#0000FF">structure</FONT></B> S1 = F ()
-<B><FONT COLOR="#0000FF">structure</FONT></B> S2 = F ()
-<B><FONT COLOR="#A020F0">val</FONT></B> _: S1.t -&gt; S2.t = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#5F9EA0">functor</FONT></B> F () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> S1 <B><FONT COLOR="#5F9EA0">=</FONT></B> F ()
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> S2 <B><FONT COLOR="#5F9EA0">=</FONT></B> F ()
+<B><FONT COLOR="#A020F0">val</FONT></B> _: S1.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> S2.t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
 </PRE>
 <p>
  
@@ -67,11 +73,11 @@ Generativity also means that two different datatype declarations define differen
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT>
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> a1 = A
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT>
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> a2 = A
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> a1 <B><FONT COLOR="#A020F0">else</FONT></B> a2
+<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B
+<B><FONT COLOR="#A020F0">val</FONT></B> a1 <B><FONT COLOR="#5F9EA0">=</FONT></B> A
+<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B
+<B><FONT COLOR="#A020F0">val</FONT></B> a2 <B><FONT COLOR="#5F9EA0">=</FONT></B> A
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> a1 <B><FONT COLOR="#A020F0">else</FONT></B> a2
 </PRE>
 <p>
  

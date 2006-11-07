@@ -3,7 +3,7 @@ Section: devel
 Priority: optional
 Maintainer: Stephen Weeks <sweeks@sweeks.com>
 Build-Depends: mlton (>= 20041109-1), htmldoc, libgmp3-dev (>= 4.0.1), tetex-bin, tetex-extra
-Standards-Version: 3.6.2
+Standards-Version: 3.7.2
 
 Package: mlton
 Architecture: hppa i386 powerpc sparc

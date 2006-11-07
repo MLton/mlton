@@ -33,7 +33,11 @@ void GC_displayMem (void) {
 static void catcher (__attribute__ ((unused)) int sig,  
                      __attribute__ ((unused)) siginfo_t *sip, 
                      ucontext_t *ucp) {
+#if (defined(__powerpc__) || defined(__ppc__))
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.srr0);
+#elif (defined(__i386__))
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.eip);
+#endif
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {

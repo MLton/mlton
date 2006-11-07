@@ -781,7 +781,6 @@ struct
         = let
             val data = ref []
             val addData = fn l => List.push (data, l)
-            val _ = addData [x86.Assembly.pseudoop_data ()]
             val {get = live : Label.t -> x86.Operand.t list,
                  set = setLive, 
                  rem = remLive, ...}
@@ -806,8 +805,11 @@ struct
                                      transInfo = transInfo}))
             val _ = Vector.foreach (blocks, fn Block.T {label, ...} =>
                                     remLive label)
-            val _ = addData [x86.Assembly.pseudoop_text ()]
             val data = List.concatRev (!data)
+            val data =
+               if List.isEmpty data
+                  then []
+                  else (x86.Assembly.pseudoop_data())::data
           in
             x86.Chunk.T {data = data, blocks = x86Blocks}
           end

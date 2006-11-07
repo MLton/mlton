@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 	
+* 2006-08-03
+   - Fixed a bug in the "useless" SSA optimization, caused by calling
+     an imported C function and then ignoring the result.
+
 * 2006-06-24
    - Fixed a bug in pass to flatten data structures.  Thanks to Joe Hurd
      for the bug report.

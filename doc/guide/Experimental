@@ -14,10 +14,18 @@
 <link rel="Start" href="Home">
 
 
+<link rel="Appendix" title="mlton-20051202-1.hppa-hpux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051202-1.hppa-hpux.tgz">
+<link rel="Appendix" title="mlton-20060513-1.powerpc-aix5.x.tar.gz" href="http://mlton.org/pages/Experimental/attachments/mlton-20060513-1.powerpc-aix5.x.tar.gz">
 </head>
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +33,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,11 +60,63 @@
 <p>
 This page is for experimental releases of MLton.  These versions are not as well tested as our <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">public releases</a>, and may not be available for our all our usual platforms. 
 </p>
+<h2 id="head-fcb8f83639f7ccb3b55dbb847345e5e539f3deb4">20060513 binary packages</h2>
+<p>
+This was built on AIX 5.1, should work on 5.2 and 5.3 as well. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ PowerPC 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20060513-1.powerpc-aix5.x.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">AIX 5.x</a> 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-ec8ff1f2507082ab65a958e37a30a259d47ee297">20051202 binary packages</h2>
+<p>
+This was built on HP-UX 11.00, should work on 11.11 and 11.23 as well. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ HPPA 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20051202-1.hppa-hpux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HP-UX 11.x</a> 
+</p>
+</li>
+</ul>
+
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-12-02 07:12:18 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-05-18 05:36:13 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
 </body></html>

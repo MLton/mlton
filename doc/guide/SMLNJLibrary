@@ -20,6 +20,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -27,7 +33,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -221,7 +227,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
     <li>
 <p>
  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a>
  
 </p>
 </li>
@@ -233,5 +239,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:43:32 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-03-04 17:06:17 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

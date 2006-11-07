@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Utilities - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton 20061025</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Utilities
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+This page is a collection of basic utilities used in the examples on various pages.  See 
+    <ul>
+
+    <li>
+<p>
+ <a href="InfixingOperators">InfixingOperators</a>, and 
+</p>
+</li>
+    <li>
+<p>
+ <a href="ProductType">ProductType</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+for longer discussions on some of these utilities. 
+</p>
+
+<pre class=code>
+<I><FONT COLOR="#B22222">(* Operator precedence table *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   8  <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B> <B><FONT COLOR="#5F9EA0">div</FONT></B> <B><FONT COLOR="#5F9EA0">mod</FONT></B>        <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   7  <B><FONT COLOR="#5F9EA0">+</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B> <B><FONT COLOR="#5F9EA0">^</FONT></B>              <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  6  <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#5F9EA0">@</FONT></B>               <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   5  <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">&lt;&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> &lt; <B><FONT COLOR="#5F9EA0">&lt;=</FONT></B>     <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   4  &lt;\ \<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  4  &lt;<B><FONT COLOR="#5F9EA0">/</FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   3  <B><FONT COLOR="#A020F0">o</FONT></B>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   2  <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B>
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  2  <B><FONT COLOR="#5F9EA0">|</FONT></B>&lt;
+<B><FONT COLOR="#A020F0">infix</FONT></B>   1  <B><FONT COLOR="#5F9EA0">:=</FONT></B>                 <I><FONT COLOR="#B22222">(* -2 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   0  <B><FONT COLOR="#A020F0">before</FONT></B> &amp;
+
+<I><FONT COLOR="#B22222">(* Some basic combinators *)</FONT></I>
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">const</FONT></I></B></FONT></B> x _ <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">cross</FONT></I></B></FONT></B> (f, g) (x, y) <B><FONT COLOR="#5F9EA0">=</FONT></B> (f x, g y)
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">curry</FONT></I></B></FONT></B> f x y <B><FONT COLOR="#5F9EA0">=</FONT></B> f (x, y)
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fail</FONT></I></B></FONT></B> e _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> e
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">id</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+
+<I><FONT COLOR="#B22222">(* Product type *)</FONT></I>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) product <B><FONT COLOR="#5F9EA0">=</FONT></B> &amp; <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
+
+<I><FONT COLOR="#B22222">(* Sum type *)</FONT></I>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) sum <B><FONT COLOR="#5F9EA0">=</FONT></B> INL <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> INR <B><FONT COLOR="#A020F0">of</FONT></B> 'b
+
+<I><FONT COLOR="#B22222">(* Some type shorthands *)</FONT></I>
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a uop <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a fix <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a uop <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a thunk <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a effect <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b) emb <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a)
+
+<I><FONT COLOR="#B22222">(* Infixing, sectioning, and application operators *)</FONT></I>
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">x</FONT></I></B></FONT></B> &lt;\ f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x, y)
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> \<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> f y
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x, y)
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">x</FONT></I></B></FONT></B> &lt;<B><FONT COLOR="#5F9EA0">/</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> f x
+
+<I><FONT COLOR="#B22222">(* Piping operators *)</FONT></I>
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>&lt;<B><FONT COLOR="#5F9EA0">/</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B>&lt; <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>\<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+</PRE>
+<p>
+ 
+</p>
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2006-08-13 14:40:14 by <span title="cs181143070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+</body></html>

@@ -355,7 +355,7 @@ structure Header =
            ("referer", SOME o Referer),
            ("retry-after", SOME o RetryAfter),
            ("server", SOME o Server),
-           ("set-cookie", SOME o Server),
+           ("set-cookie", SOME o SetCookie),
            ("trailer", SOME o Trailer),
            ("transfer-encoding", SOME o TransferEncoding),
            ("upgrade", SOME o Upgrade),

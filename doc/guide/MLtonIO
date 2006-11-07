@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,18 +57,18 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_IO =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> instream
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> outstream
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_IO <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> instream
+      <B><FONT COLOR="#A020F0">type</FONT></B> outstream
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> inFd: instream -&gt; Posix.IO.file_desc
-      <B><FONT COLOR="#A020F0">val</FONT></B> mkstemp: string -&gt; string * outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> mkstemps: {prefix: string, suffix: string} -&gt; string * outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> newIn: Posix.IO.file_desc * string -&gt; instream
-      <B><FONT COLOR="#A020F0">val</FONT></B> newOut: Posix.IO.file_desc * string -&gt; outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> outFd: outstream -&gt; Posix.IO.file_desc
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> inFd: instream <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Posix.IO.file_desc
+      <B><FONT COLOR="#A020F0">val</FONT></B> mkstemp: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> mkstemps: {prefix: <B><FONT COLOR="#228B22">string</FONT></B>, suffix: <B><FONT COLOR="#228B22">string</FONT></B>} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> newIn: Posix.IO.file_desc <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> instream
+      <B><FONT COLOR="#A020F0">val</FONT></B> newOut: Posix.IO.file_desc <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> outFd: outstream <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Posix.IO.file_desc
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  

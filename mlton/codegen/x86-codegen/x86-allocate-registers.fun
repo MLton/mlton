@@ -6792,6 +6792,45 @@ struct
                   {assembly
                    = AppendList.appends 
                      [assembly_pre,
+                      AppendList.single (Assembly.instruction instruction),
+                      assembly_post],
+                   registerAllocation = registerAllocation}
+                end
+             | HLT
+               (* Halt; p. 331 *)
+             => let
+                  val {uses,defs,kills} 
+                    = Instruction.uses_defs_kills instruction
+                  val {assembly = assembly_pre,
+                       registerAllocation}
+                    = RA.pre {uses = uses,
+                              defs = defs,
+                              kills = kills,
+                              info = info,
+                              registerAllocation = registerAllocation}
+
+                  val instruction 
+                    = Instruction.HLT
+
+                  val {uses = final_uses,
+                       defs = final_defs,
+                       ...}
+                    = Instruction.uses_defs_kills instruction
+
+                  val {assembly = assembly_post,
+                       registerAllocation}
+                    = RA.post {uses = uses,
+                               final_uses = final_uses,
+                               defs = defs,
+                               final_defs = final_defs,
+                               kills = kills,
+                               info = info,
+                               registerAllocation = registerAllocation}
+                in
+                  {assembly
+                   = AppendList.appends 
+                     [assembly_pre,
+                      AppendList.single (Assembly.instruction instruction),
                       assembly_post],
                    registerAllocation = registerAllocation}
                 end

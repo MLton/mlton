@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,9 +57,9 @@
 <div id="content" lang="en" dir="ltr">
 <a href="StandardML">Standard ML</a> requires types to be defined before they are used.  Because of type inference, the use of a type can be implicit; hence, this requirement is more subtle than it might appear.  For example, the following program is not type correct, because the type of <tt>r</tt> is <tt>t&nbsp;option&nbsp;ref</tt>, but <tt>t</tt> is defined after <tt>r</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> r = ref NONE
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT>
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> () = r := SOME A
+<B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B
+<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> A
 </PRE>
 <p>
  
@@ -69,18 +75,18 @@ MLton reports the following error, indicating that the type defined on line 2 is
 </pre><p>
 While the above example is benign, the following example shows how to cast an integer to a function by (implicitly) using a type before it is defined.  In the example, the ref cell <tt>r</tt> is of type  <tt>t&nbsp;option&nbsp;ref</tt>, where <tt>t</tt> is defined <em>after</em> <tt>r</tt>, as a parameter to functor <tt>F</tt>.  This example causes <a href="PolyML">PolyML</a> 4.1.3 to seg fault. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> r = ref NONE
-<B><FONT COLOR="#0000FF">functor</FONT></B> F (<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t
-           </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x: t) =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> () = r := SOME x
-      <B><FONT COLOR="#A020F0">fun</FONT></B> get () = valOf (!r)
-   <B><FONT COLOR="#0000FF">end</FONT></B>
-<B><FONT COLOR="#0000FF">structure</FONT></B> S1 = F (<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> unit -&gt; unit
-                  </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ())
-<B><FONT COLOR="#0000FF">structure</FONT></B> S2 = F (<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> int
-                  </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">13</FONT></B>)
-<B><FONT COLOR="#A020F0">val</FONT></B> () = S1.get () ()
+<B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+<B><FONT COLOR="#5F9EA0">functor</FONT></B> F (<B><FONT COLOR="#A020F0">type</FONT></B> t
+           <B><FONT COLOR="#A020F0">val</FONT></B> x: t) <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x
+<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">get</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> valOf (<B><FONT COLOR="#5F9EA0">!</FONT></B>r)
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> S1 <B><FONT COLOR="#5F9EA0">=</FONT></B> F (<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+                  <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ())
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> S2 <B><FONT COLOR="#5F9EA0">=</FONT></B> F (<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
+                  <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 13)
+<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> S1.get () ()
 </PRE>
  
 </p>

@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +61,7 @@ By contributing to this web site, you agree to dedicate your contribution to the
 </p>
 <h2 id="head-9ad052271e0186ed108ab51a2c5684a90c5a025a">Software</h2>
 <p>
-As of 20050812, The MLton software is licensed under the BSD-style license below.  By contributing code to the project, you agree to release the code under this license. 
+As of 20050812, MLton software is licensed under the BSD-style license below.  By contributing code to the project, you agree to release the code under this license.  Contributors can retain copyright to their contributions by asserting copyright in their code.  Contributors may also add to the list of copyright holders in <tt>doc/license/MLton-LICENSE</tt>, which appears below. 
 </p>
 <p>
 <pre class=code>This is the license for MLton, a whole-program optimizing compiler for
@@ -64,7 +70,7 @@ MLton@mlton.org.
 
 MLton COPYRIGHT NOTICE, LICENSE AND DISCLAIMER.
 
-Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
    Jagannathan, and Stephen Weeks.
 Copyright (C) 1997-2000 by the NEC Research Institute
 
@@ -73,17 +79,17 @@ documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
 both the copyright notice and this permission notice and warranty
 disclaimer appear in supporting documentation, and that the name of
-NEC, or any NEC entity not be used in advertising or publicity
-pertaining to distribution of the software without specific, written
-prior permission.
+the above copyright holders, or their entities, not be used in
+advertising or publicity pertaining to distribution of the software
+without specific, written prior permission.
 
-NEC disclaims all warranties with regard to this software, including
-all implied warranties of merchantability and fitness. In no event
-shall NEC be liable for any special, indirect or consequential damages
-or any damages whatsoever resulting from loss of use, data or profits,
-whether in an action of contract, negligence or other tortious action,
-arising out of or in connection with the use or performance of this
-software.
+The above copyright holders disclaim all warranties with regard to
+this software, including all implied warranties of merchantability and
+fitness. In no event shall the above copyright holders be liable for
+any special, indirect or consequential damages or any damages
+whatsoever resulting from loss of use, data or profits, whether in an
+action of contract, negligence or other tortious action, arising out
+of or in connection with the use or performance of this software.
 </PRE>
  
 </p>
@@ -93,5 +99,5 @@ software.
 
 <p>
 <hr>
-Last edited on 2005-08-12 17:57:33 by <span title="adsl-64-170-112-117.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-10-06 17:07:40 by <span title="ppp-71-139-195-163.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

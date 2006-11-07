@@ -9,6 +9,7 @@ signature MONO_VECTOR =
       val collate: (elem * elem -> order) -> vector * vector -> order
       val concat: vector list -> vector 
       val exists: (elem -> bool) -> vector -> bool
+      val find: (elem -> bool) -> vector -> elem option
       val findi: (int * elem -> bool) -> vector -> (int * elem) option
       val foldl: (elem * 'a -> 'a) -> 'a -> vector -> 'a 
       val foldli: (int * elem * 'a -> 'a) -> 'a -> vector -> 'a 

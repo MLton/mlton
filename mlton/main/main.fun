@@ -621,6 +621,7 @@ fun commandLine (args: string list): unit =
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
                                          Cygwin => true
+                                       | Darwin => true
                                        | MinGW => true
                                        | _ => false)
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)

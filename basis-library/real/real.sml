@@ -110,7 +110,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val nan = posInf + negInf
 
       val class = IEEEReal.mkClass R.class
-   
+
       val abs =
          if MLton.Codegen.isNative
             then abs
@@ -120,13 +120,13 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                INF => posInf
              | NAN => x
              | _ => if signBit x then ~x else x
-         
+
       fun isFinite r =
          case class r of
             INF => false
           | NAN => false
           | _ => true
-               
+
       val op == = Prim.==
 
       val op != = not o op ==
@@ -199,7 +199,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
              | I.LESS => G.LESS
              | I.UNORDERED => raise IEEEReal.Unordered
       end
-   
+
       fun unordered (x, y) = isNan x orelse isNan y
 
       val nextAfter: real * real -> real =
@@ -217,19 +217,22 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   R.nextAfterDown r
                else
                   R.nextAfterUp r
-                         
-      fun toManExp x =
-         case class x of
-            INF => {exp = 0, man = x}
-          | NAN => {exp = 0, man = nan}
-          | ZERO => {exp = 0, man = x}
-          | _ => 
-               let
-                  val r: C_Int.t ref = ref 0
-                  val man = R.frexp (x, r)
-               in
-                  {exp = C_Int.toInt (!r), man = man}
-               end
+
+      local
+         val one = One.make (fn () => ref (0 : C_Int.t))
+      in
+         fun toManExp x =
+            case class x of
+               INF => {exp = 0, man = x}
+             | NAN => {exp = 0, man = nan}
+             | ZERO => {exp = 0, man = x}
+             | _ => One.use (one, fn r =>
+                             let
+                                val man = R.frexp (x, r)
+                             in
+                                {exp = C_Int.toInt (!r), man = man}
+                             end)
+      end
 
       fun fromManExp {exp, man} = 
          (R.ldexp (man, C_Int.fromInt exp))
@@ -248,7 +251,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
              | _ => fromManExp {exp = exp, man = man}
 
       local
-         val oneInt = One.make (fn () => ref zero)
+         val one = One.make (fn () => ref zero)
       in
          fun split x =
             case class x of
@@ -256,26 +259,25 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                        whole = x}
              | NAN => {frac = nan, whole = nan}
              | _ => 
-                  One.use
-                  (oneInt, fn int =>
-                   let
-                      val frac = R.modf (x, int)
-                      val whole = !int
-                      (* Some platforms' C libraries don't get sign of
-                       * zero right.
-                       *)
-                      fun fix y =
-                         if class y = ZERO andalso not (sameSign (x, y))
-                            then ~ y
-                            else y
-                   in
-                      {frac = fix frac,
-                       whole = fix whole}
-                   end)
+                  let
+                     val (frac, whole) =
+                        One.use (one, fn int =>
+                                 (R.modf (x, int), !int))
+                     (* Some platforms' C libraries don't get sign of
+                      * zero right.
+                      *)
+                     fun fix y =
+                        if class y = ZERO andalso not (sameSign (x, y))
+                           then ~ y
+                           else y
+                  in
+                     {frac = fix frac,
+                      whole = fix whole}
+                  end
       end
-            
+
       val realMod = #frac o split
-         
+
       fun checkFloat x =
          case class x of
             INF => raise Overflow
@@ -363,7 +365,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       (* toDecimal, fmt, toString: binary -> decimal conversions. *)
       datatype mode = Fix | Gen | Sci
       local
-         val decpt: C_Int.int ref = ref 0
+         val one = One.make (fn () => ref (0: C_Int.int))
       in
          fun gdtoa (x: real, mode: mode, ndig: int) =
             let
@@ -372,12 +374,13 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      Fix => 3
                    | Gen => 0
                    | Sci => 2
-               val cs = Prim.gdtoa (x, mode, C_Int.fromInt ndig, decpt)
             in
-               (cs, C_Int.toInt (!decpt))
+               One.use (one, fn decpt =>
+                        (Prim.gdtoa (x, mode, ndig, decpt), 
+                         C_Int.toInt (!decpt)))
             end
       end
-   
+
       fun toDecimal (x: real): IEEEReal.decimal_approx =
          case class x of
             INF => {class = INF,
@@ -588,7 +591,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                 | _ => doit x
             end
       end
-   
+
       val toString = fmt (StringCvt.GEN NONE)
 
       local
@@ -672,7 +675,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   else (i, false)
                val x = Prim.strto (NullString.nullTerm (IntInf.toString i))
             in
-               if sign then ~ x else x             
+               if sign then ~ x else x
             end
 
       val toIntInfM: rounding_mode -> real -> LargeInt.int =
@@ -760,7 +763,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             (* Patch functions to handle out-of-range args.  Many C math
              * libraries do not do what the SML Basis Spec requires.
              *)
-               
+
             local
                fun patch f x =
                   if x < ~one orelse x > one
@@ -855,13 +858,13 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   INF => x
                 | ZERO => one
                 | _ => R.Math.cosh x
-                     
+
             fun sinh x =
                case class x of
                   INF => x
                 | ZERO => x
                 | _ => R.Math.sinh x
-                     
+
             fun tanh x =
                case class x of
                   INF => if x > zero then one else negOne

@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,20 +61,20 @@ Concurrent ML was originally implemented for SML/NJ.  It was ported to MLton in 
 <p>
 The implementation of CML in SML/NJ is built upon the first-class continuations of the <tt>SMLofNJ.Cont</tt> module. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a cont
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont -&gt; 'a) -&gt; 'a
-<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a -&gt; unit) -&gt; 'a cont
-<B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont -&gt; 'a -&gt; 'b
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a cont
+<B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#A020F0">val</FONT></B> isolate: ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a cont
+<B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b
 </PRE>
  
 </p>
 <p>
 The implementation of CML in MLton is built upon the first-class threads of the <a href="MLtonThread">MLtonThread</a> module. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a t
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> new: ('a -&gt; unit) -&gt; 'a t
-<B><FONT COLOR="#A020F0">val</FONT></B> prepare: 'a t * 'a -&gt; Runnable.t
-<B><FONT COLOR="#A020F0">val</FONT></B> switch: ('a t -&gt; Runnable.t) -&gt; 'a
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+<B><FONT COLOR="#A020F0">val</FONT></B> new: ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
+<B><FONT COLOR="#A020F0">val</FONT></B> prepare: 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Runnable.t
+<B><FONT COLOR="#A020F0">val</FONT></B> switch: ('a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Runnable.t) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
 </PRE>
  
 </p>
@@ -85,33 +91,33 @@ The "essence" of the port is to transform:
 <p>
 There was only one complicated transformation: blocking multiple base events.  In SML/NJ CML, the representation of base events is given by: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> 'a event_status
-  </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">ENABLED</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {prio: int, doFn: unit -&gt; 'a}
-  </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">BLOCKED</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {
-        transId: trans_id ref, 
-        cleanUp: unit -&gt; unit, 
-        next: unit -&gt; unit
-      } -&gt; 'a
-</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a base_evt </FONT></B>=<FONT COLOR="#228B22"><B> unit -&gt; 'a event_status
-</FONT></B></PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a event_status
+  <B><FONT COLOR="#5F9EA0">=</FONT></B> ENABLED <B><FONT COLOR="#A020F0">of</FONT></B> {prio: <B><FONT COLOR="#228B22">int</FONT></B>, doFn: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a}
+  <B><FONT COLOR="#5F9EA0">|</FONT></B> BLOCKED <B><FONT COLOR="#A020F0">of</FONT></B> {
+        transId: trans_id <B><FONT COLOR="#A020F0">ref</FONT></B>, 
+        cleanUp: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>, 
+        next: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      } <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a base_evt <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a event_status
+</PRE>
  
 </p>
 <p>
 When synchronizing on a set of base events, which are all blocked, we must invoke each <tt>BLOCKED</tt> function with the same transId and cleanUp (the transId is (checked and) set to CANCEL by the cleanUp function, which is invoked by the first enabled event; this "fizzles" every other event in the synchronization group that later becomes enabled). However, each <tt>BLOCKED</tt> function is implemented by a callcc, so that when the event is enabled, it throws back to the point of synchronization.  Hence, the next function (which doesn't return) is invoked by the <tt>BLOCKED</tt> function to escape the callcc and continue in the thread performing the synchronization.  In SML/NJ this is implemented as follows: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> ext ([], blockFns) = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; <B><FONT COLOR="#0000FF">let</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> throw = throw k
-      <B><FONT COLOR="#A020F0">val</FONT></B> (transId, setFlg) = mkFlg()
-      <B><FONT COLOR="#A020F0">fun</FONT></B> log [] = S.atomicDispatch ()
-        | log (blockFn:: r) =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">ext</FONT></I></B></FONT></B> ([], blockFns) <B><FONT COLOR="#5F9EA0">=</FONT></B> callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> throw <B><FONT COLOR="#5F9EA0">=</FONT></B> throw k
+      <B><FONT COLOR="#A020F0">val</FONT></B> (transId, setFlg) <B><FONT COLOR="#5F9EA0">=</FONT></B> mkFlg()
+<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">log</FONT></I></B></FONT></B> [] <B><FONT COLOR="#5F9EA0">=</FONT></B> S.atomicDispatch ()
+        <B><FONT COLOR="#5F9EA0">|</FONT></B> log (blockFn<B><FONT COLOR="#5F9EA0">::</FONT></B> r) <B><FONT COLOR="#5F9EA0">=</FONT></B>
             throw (blockFn {
-                transId = transId,
-                cleanUp = setFlg,
-                next = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; log r
+                transId <B><FONT COLOR="#5F9EA0">=</FONT></B> transId,
+                cleanUp <B><FONT COLOR="#5F9EA0">=</FONT></B> setFlg,
+                next <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> log r
               })
-      <B><FONT COLOR="#0000FF">in</FONT></B>
-        log blockFns; error <FONT COLOR="#BC8F8F"><B>&quot;[log]&quot;</FONT></B>
-      <B><FONT COLOR="#0000FF">end</FONT></B>)
+      <B><FONT COLOR="#A020F0">in</FONT></B>
+        log blockFns; error <B><FONT COLOR="#BC8F8F">&quot;[log]&quot;</FONT></B>
+      <B><FONT COLOR="#A020F0">end</FONT></B>)
 </PRE>
  (Note that <tt>S.atomicDispatch</tt> invokes the continuation of the next continuation on the ready queue.)  This doesn't map well to the MLton thread model.  Although it follows the  
 <pre>callcc (fn k =&gt; ... throw k v)
@@ -125,35 +131,35 @@ We need to think a little more about what this code is trying to do. Essentially
 <p>
 To accomplish the same effect in the MLton thread implementation, we have the following: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> 'a status </FONT></B>=<FONT COLOR="#228B22"><B>
-   <FONT COLOR="#B8860B">ENABLED</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {prio: int, doitFn: unit -&gt; 'a}
- </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">BLOCKED</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {transId: trans_id,
-               cleanUp: unit -&gt; unit,
-               next: unit -&gt; rdy_thread} -&gt; 'a
+<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a status <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   ENABLED <B><FONT COLOR="#A020F0">of</FONT></B> {prio: <B><FONT COLOR="#228B22">int</FONT></B>, doitFn: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a}
+ <B><FONT COLOR="#5F9EA0">|</FONT></B> BLOCKED <B><FONT COLOR="#A020F0">of</FONT></B> {transId: trans_id,
+               cleanUp: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>,
+               next: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> rdy_thread} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
 
-</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a base </FONT></B>=<FONT COLOR="#228B22"><B> unit -&gt; 'a status 
+<B><FONT COLOR="#A020F0">type</FONT></B> 'a base <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a status 
 
-</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> ext ([], blockFns): 'a =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">ext</FONT></I></B></FONT></B> ([], blockFns): 'a <B><FONT COLOR="#5F9EA0">=</FONT></B>
      S.atomicSwitch
-     (<B><FONT COLOR="#A020F0">fn</FONT></B> (t: 'a S.thread) =&gt;
-      <B><FONT COLOR="#0000FF">let</FONT></B>
-         <B><FONT COLOR="#A020F0">val</FONT></B> (transId, cleanUp) = TransID.mkFlg ()
-         <B><FONT COLOR="#A020F0">fun</FONT></B> log blockFns: S.rdy_thread =
+     (<B><FONT COLOR="#A020F0">fn</FONT></B> (t: 'a S.thread) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">let</FONT></B>
+         <B><FONT COLOR="#A020F0">val</FONT></B> (transId, cleanUp) <B><FONT COLOR="#5F9EA0">=</FONT></B> TransID.mkFlg ()
+<B><FONT COLOR="#A020F0">         fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">log</FONT></I></B></FONT></B> blockFns: S.rdy_thread <B><FONT COLOR="#5F9EA0">=</FONT></B>
             <B><FONT COLOR="#A020F0">case</FONT></B> blockFns <B><FONT COLOR="#A020F0">of</FONT></B>
-               [] =&gt; S.next ()
-             | blockFn::blockFns =&gt;
-                  (S.prep o S.new)
-                  (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
-                   <B><FONT COLOR="#0000FF">let</FONT></B> 
-                      <B><FONT COLOR="#A020F0">val</FONT></B> () = S.atomicBegin ()
-                      <B><FONT COLOR="#A020F0">val</FONT></B> x = blockFn {transId = transId,
-                                       cleanUp = cleanUp,
-                                       next = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; log blockFns}
-                   <B><FONT COLOR="#0000FF">in</FONT></B> S.switch(<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; S.prepVal (t, x))
-                   <B><FONT COLOR="#0000FF">end</FONT></B>)
-      <B><FONT COLOR="#0000FF">in</FONT></B>
+               [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> S.next ()
+             <B><FONT COLOR="#5F9EA0">|</FONT></B> blockFn<B><FONT COLOR="#5F9EA0">::</FONT></B>blockFns <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+                  (S.prep <B><FONT COLOR="#A020F0">o</FONT></B> S.new)
+                  (<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+                   <B><FONT COLOR="#A020F0">let</FONT></B> 
+                      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> S.atomicBegin ()
+                      <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> blockFn {transId <B><FONT COLOR="#5F9EA0">=</FONT></B> transId,
+                                       cleanUp <B><FONT COLOR="#5F9EA0">=</FONT></B> cleanUp,
+                                       next <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> log blockFns}
+                   <B><FONT COLOR="#A020F0">in</FONT></B> S.switch(<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> S.prepVal (t, x))
+                   <B><FONT COLOR="#A020F0">end</FONT></B>)
+      <B><FONT COLOR="#A020F0">in</FONT></B>
          log blockFns
-      <B><FONT COLOR="#0000FF">end</FONT></B>)
+      <B><FONT COLOR="#A020F0">end</FONT></B>)
 </PRE>
  
 </p>
@@ -165,15 +171,15 @@ Note that another way of thinking about what is going on is to consider each <tt
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> unsafePrepend (T r: 'a t, f: 'b -&gt; 'a): 'b t =
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">unsafePrepend</FONT></I></B></FONT></B> (T r: 'a t, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a): 'b t <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> t =
-         <B><FONT COLOR="#A020F0">case</FONT></B> !r <B><FONT COLOR="#A020F0">of</FONT></B>
-            Dead =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <FONT COLOR="#BC8F8F"><B>&quot;prepend to a Dead thread&quot;</FONT></B>
-          | New g =&gt; New (g o f)
-          | Paused (g, t) =&gt; Paused (<B><FONT COLOR="#A020F0">fn</FONT></B> h =&gt; g (f o h), t)
+      <B><FONT COLOR="#A020F0">val</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+         <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r <B><FONT COLOR="#A020F0">of</FONT></B>
+            Dead <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;prepend to a Dead thread&quot;</FONT></B>
+          <B><FONT COLOR="#5F9EA0">|</FONT></B> New g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> New (g <B><FONT COLOR="#A020F0">o</FONT></B> f)
+          <B><FONT COLOR="#5F9EA0">|</FONT></B> Paused (g, t) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Paused (<B><FONT COLOR="#A020F0">fn</FONT></B> h <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g (f <B><FONT COLOR="#A020F0">o</FONT></B> h), t)
    <B><FONT COLOR="#A020F0">in</FONT></B> <I><FONT COLOR="#B22222">(* r := Dead; *)</FONT></I>
-      T (ref t)
+      T (<B><FONT COLOR="#A020F0">ref</FONT></B> t)
    <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
@@ -250,14 +256,14 @@ John Reppy says that <a href = "References#MarlowEtAl01">MarlowEtAl01</a> and <a
 <p>
 Between <tt>CML.timeOutEvt</tt> and <tt>CML.kill</tt>, one could give an efficient solution to the recent comp.lang.ml post about terminating a function that doesn't complete in a given time. 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">fun</FONT></B> timeOut (f: unit -&gt; 'a, t: Time.time): 'a option =
+<B><FONT COLOR="#A020F0">  fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">timeOut</FONT></I></B></FONT></B> (f: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a, t: Time.time): 'a option <B><FONT COLOR="#5F9EA0">=</FONT></B>
     <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#A020F0">val</FONT></B> iv = SyncVar.iVar ()
-       <B><FONT COLOR="#A020F0">val</FONT></B> tid = CML.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; SyncVar.iPut (iv, f ()))
+       <B><FONT COLOR="#A020F0">val</FONT></B> iv <B><FONT COLOR="#5F9EA0">=</FONT></B> SyncVar.iVar ()
+       <B><FONT COLOR="#A020F0">val</FONT></B> tid <B><FONT COLOR="#5F9EA0">=</FONT></B> CML.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> SyncVar.iPut (iv, f ()))
     <B><FONT COLOR="#A020F0">in</FONT></B>
        CML.select 
-       [CML.wrap (CML.timeOutEvt t, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; (CML.kill tid; NONE)),
-        CML.wrap (SyncVar.iGetEvt iv, <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; SOME x)]
+       [CML.wrap (CML.timeOutEvt t, <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (CML.kill tid; <B><FONT COLOR="#5F9EA0">NONE</FONT></B>)),
+        CML.wrap (SyncVar.iGetEvt iv, <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x)]
     <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  

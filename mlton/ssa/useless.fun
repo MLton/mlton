@@ -520,6 +520,9 @@ fun useless (program: Program.t): Program.t =
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
                    | Array_update => update ()
+                   | FFI _ =>
+                        (Vector.foreach (args, deepMakeUseful);
+                         deepMakeUseful result)
                    | MLton_equal => Vector.foreach (args, deepMakeUseful)
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))

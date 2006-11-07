@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -81,7 +87,7 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
 
     <li>
 <p>
- RunningOnMinGW 
+ <a href="RunningOnMinGW">RunningOnMinGW</a> 
 </p>
 </li>
 </ul>
@@ -92,5 +98,5 @@ To run MLton cross-compiled executables on Windows, you must install the Cygwin 
 
 <p>
 <hr>
-Last edited on 2005-12-02 01:37:10 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-07-20 19:36:31 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

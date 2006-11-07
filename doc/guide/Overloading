@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -136,13 +142,13 @@ Other implementations may use a smaller context or different default types.
 <p>
  The following program is rejected. 
 <pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> S: 
-   <B><FONT COLOR="#0000FF">sig</FONT></B> 
-      <B><FONT COLOR="#A020F0">val</FONT></B> x: Word8.word 
-   <B><FONT COLOR="#0000FF">end</FONT></B> =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">0w0</FONT></B>
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> S: 
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B> 
+      <B><FONT COLOR="#A020F0">val</FONT></B> x: Word8.<B><FONT COLOR="#228B22">word</FONT></B> 
+   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 0w0
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
   The smallest enclosing structure declaration for <tt>0w0</tt> is   <tt>val&nbsp;x&nbsp;=&nbsp;0w0</tt>.  Hence, <tt>0w0</tt> receives the default type for  words, which is <tt>Word32.word</tt>. 
 </p>

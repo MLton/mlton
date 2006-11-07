@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,7 +57,7 @@
 <div id="content" lang="en" dir="ltr">
 Polymorphic equality is a built-in function in  <a href="StandardML">Standard ML</a> that compares two values of the same type for equality.  It is specified as 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> = : ''a * ''a -&gt; bool
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> : ''a <B><FONT COLOR="#5F9EA0">*</FONT></B> ''a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
 </PRE>
 <p>
  
@@ -150,8 +156,8 @@ Polymorphic equality of datatypes is structural.  Two values of the same datatyp
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
-</FONT></B></PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> t
+</PRE>
 <p>
  
 </p>
@@ -163,7 +169,7 @@ As polymorphic equality descends two values to compare them, it uses pointer equ
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int ref </FONT></B>|<FONT COLOR="#228B22"><B> </FONT></B>...
+<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> ...
 </PRE>
 <p>
  
@@ -174,12 +180,12 @@ then <tt>A&nbsp;(ref&nbsp;13)&nbsp;=&nbsp;A&nbsp;(ref&nbsp;13)</tt> is type corr
 <p>
 One weakness of the SML type system is that datatypes do not inherit the special property of the <tt>ref</tt> and <tt>array</tt> type constructors that allows them to be compared regardless of their component type.  For example, after declaring 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> 'a t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a ref
-</FONT></B></PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">ref</FONT></B>
+</PRE>
  one might expect to be able to compare two values of type  <tt>real&nbsp;t</tt>, because pointer comparison on a ref cell would suffice. Unfortunately, the type system can only express that a user-defined datatype <a href="AdmitsEquality">admits equality</a> or not.  In this case, <tt>t</tt> admits equality, which means that <tt>int&nbsp;t</tt> can be compared but that <tt>real&nbsp;t</tt> can not.  We can confirm this with the program 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> 'a t </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a ref
-</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f (x: real t, y: real t) = x = y
+<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">ref</FONT></B>
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (x: <B><FONT COLOR="#228B22">real</FONT></B> t, y: <B><FONT COLOR="#228B22">real</FONT></B> t) <B><FONT COLOR="#5F9EA0">=</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> y
 </PRE>
  on which MLton reports the following error. 
 <pre>Error: z.sml 2.34.

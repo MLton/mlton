@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,17 +57,17 @@
 <div id="content" lang="en" dir="ltr">
 Here's how <a href="Profiling">Profiling</a> works.  If profiling is on, the front end (elaborator) inserts <tt>Enter</tt> and <tt>Leave</tt> statements into the source program for function entry and exit.   For example, 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f n = <B><FONT COLOR="#A020F0">if</FONT></B> n = <B><FONT COLOR="#5F9EA0">0</FONT></B> <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#5F9EA0">1</FONT></B> + f (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> 0 <B><FONT COLOR="#A020F0">then</FONT></B> 0 <B><FONT COLOR="#A020F0">else</FONT></B> 1 <B><FONT COLOR="#5F9EA0">+</FONT></B> f (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1)
 </PRE>
 <p>
  becomes 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> f n = 
+<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> 
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> () = Enter <FONT COLOR="#BC8F8F"><B>&quot;f&quot;</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> res = (<B><FONT COLOR="#A020F0">if</FONT></B> n = <B><FONT COLOR="#5F9EA0">0</FONT></B> <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#5F9EA0">1</FONT></B> + f (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>))
-                <B><FONT COLOR="#A020F0">handle</FONT></B> e =&gt; (Leave <FONT COLOR="#BC8F8F"><B>&quot;f&quot;</FONT></B>; <B><FONT COLOR="#A020F0">raise</FONT></B> e)
-      <B><FONT COLOR="#A020F0">val</FONT></B> () = Leave <FONT COLOR="#BC8F8F"><B>&quot;f&quot;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> Enter <B><FONT COLOR="#BC8F8F">&quot;f&quot;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> res <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">if</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> 0 <B><FONT COLOR="#A020F0">then</FONT></B> 0 <B><FONT COLOR="#A020F0">else</FONT></B> 1 <B><FONT COLOR="#5F9EA0">+</FONT></B> f (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1))
+                <B><FONT COLOR="#A020F0">handle</FONT></B> e <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (Leave <B><FONT COLOR="#BC8F8F">&quot;f&quot;</FONT></B>; <B><FONT COLOR="#A020F0">raise</FONT></B> e)
+      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> Leave <B><FONT COLOR="#BC8F8F">&quot;f&quot;</FONT></B>
    <B><FONT COLOR="#A020F0">in</FONT></B> 
       res
    <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -73,7 +79,7 @@ Most of the middle of the compiler ignores, but preserves, <tt>Enter</tt> and <t
 </p>
 <p>
 There is the <tt>checkProf</tt> function in 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/ssa/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a>
 , which checks that the <tt>Enter</tt>/<tt>Leave</tt> statements match up. 
 </p>
 <p>

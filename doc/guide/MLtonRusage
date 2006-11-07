@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,14 +57,14 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RUSAGE =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> t </FONT></B>=<FONT COLOR="#228B22"><B> {utime: Time.time, <I><FONT COLOR="#B22222">(* user time *)</FONT></I>
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_RUSAGE <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> {utime: Time.time, <I><FONT COLOR="#B22222">(* user time *)</FONT></I>
                 stime: Time.time} <I><FONT COLOR="#B22222">(* system time *)</FONT></I>
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> measureGC: bool -&gt; unit         
-      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: unit -&gt; {children: t, gc: t, self: t}
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> measureGC: <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>         
+      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> {children: t, gc: t, self: t}
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -86,7 +92,7 @@
 
         <ul>
 
-  controls whether garbage collection time is measured during program   execution.  This affects the behavior of both <tt>rusage</tt> and   <tt>Timer.checkCPUTimes</tt>.  Note that garbage collection time is   always measured when either <tt>gc-messages</tt> or <tt>gc-summary</tt> is   given as a <a href="RunTimeOptions">runtime system option</a>. 
+  controls whether garbage collection time is separately measured   during program execution.  This affects the behavior of both   <tt>rusage</tt> and <tt>Timer.checkCPUTimes</tt>, both of which will   return gc times of zero with <tt>measureGC&nbsp;false</tt>.  Garbage   collection time is always measured when either <tt>gc-messages</tt> or   <tt>gc-summary</tt> is given as a    <a href="RunTimeOptions">runtime system option</a>. 
         </ul>
 
 
@@ -98,7 +104,7 @@
 
         <ul>
 
-  corresponds to the C <tt>getrusage</tt> function.  It returns the   resource usage of the exited children, the garbage collector, and   the process itself.  The process time (<tt>self</tt>) includes the gc   time.  </ul>
+  corresponds to the C <tt>getrusage</tt> function.  It returns the   resource usage of the exited children, the garbage collector, and   the process itself.  The <tt>self</tt> component includes the usage of   the <tt>gc</tt> component, regardless of whether <tt>measureGC</tt> is   <tt>true</tt> or <tt>false</tt>.  If <tt>rusage</tt> is used in a program,   either directly, or indirectly via the <tt>Timer</tt> structure, then   <tt>measureGC&nbsp;true</tt> is automatically called at the start of the   program (it can still be disable by user code later). </ul>
 
 </ul>
 
@@ -108,5 +114,5 @@
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:56:24 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-04-26 04:24:45 by <span title="ppp-71-139-198-197.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

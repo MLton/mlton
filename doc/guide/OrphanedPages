@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -52,9 +58,25 @@
 Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
 <ol>
 <li>
-<a href="Identifier">Identifier</a></li>
+<a href="CompilingWithSMLNJ">CompilingWithSMLNJ</a></li>
+<li>
+<a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
 <li>
 <a href="LanguageChanges">LanguageChanges</a></li>
+<li>
+<a href="MLmon">MLmon</a></li>
+<li>
+<a href="PortStatus">PortStatus</a></li>
+<li>
+<a href="PrintfGentle">PrintfGentle</a></li>
+<li>
+<a href="Roadmap">Roadmap</a></li>
+<li>
+<a href="ShowProf">ShowProf</a></li>
+<li>
+<a href="Stabilizers">Stabilizers</a></li>
+<li>
+<a href="StandardMLGotchas">StandardMLGotchas</a></li>
 <li>
 <a href="Survey">Survey</a></li>
 <li>

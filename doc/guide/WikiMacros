@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -62,9 +68,9 @@ Examples: <a href = "References#FluetWeeks01"> a paper</a>
 <p>
  <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
 , 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
  
 </p>
 </li>
@@ -82,13 +88,13 @@ Example:
  * See the file MLton-LICENSE for details.
  *)</FONT></I>
 
-<B><FONT COLOR="#0000FF">structure</FONT></B> Main = Main ()
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> Main <B><FONT COLOR="#5F9EA0">=</FONT></B> Main ()
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#0000FF">open</FONT></B> Trace.Immediate
+      <B><FONT COLOR="#A020F0">open</FONT></B> Trace.Immediate
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      debug := Out Out.error
+      debug <B><FONT COLOR="#5F9EA0">:=</FONT></B> Out Out.error
       ; flagged ()
       ; on []
    <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -100,9 +106,9 @@ Example:
 <p>
  <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
 , 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
  
 </p>
 </li>
@@ -110,7 +116,7 @@ Examples:
 <p>
  <tt>[[ViewSVNSDir(pathToDir)]]</tt> displays a link to the ViewCVS  page for <tt>pathToDir</tt>.   <br>
 Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20051202-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
  
 </p>
 </li>

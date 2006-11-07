@@ -16,6 +16,7 @@ Word32 applyFFTemp2;
 Word32 checkTemp;
 Word32 cReturnTemp[16];
 Pointer c_stackP;
+Word32 c_stackPTrue;
 Word32 divTemp;
 Word32 eq1Temp;
 Word32 eq2Temp;
@@ -49,42 +50,12 @@ Word32 wordTemp2L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-#if (defined (__CYGWIN__) || defined (__MSVCRT__))
-#define ReturnToC "_Thread_returnToC"
-#elif (defined (__FreeBSD__) || defined (__linux__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__sun__))
-#define ReturnToC "Thread_returnToC"
-#else
-#error ReturnToC not defined
-#endif
-
 static Word32 returnAddressToFrameIndex (Word32 w) {
         return *((Word32*)(w - sizeof(Word32)));
 }
 
-#define Main(al, mg, mfs, mmc, pk, ps, ml, reserveEsp)                  \
-void MLton_jumpToSML (pointer jump) {                                   \
-        Pointer lc_stackP;                                              \
-                                                                        \
-        if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) starting\n", (unsigned int)jump); \
-        lc_stackP = c_stackP;                                           \
-        if (reserveEsp)                                                 \
-                __asm__ __volatile__                                    \
-                ("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%edi\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
-                : "=o" (c_stackP)                                       \
-                : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                      \
-        else                                                            \
-                __asm__ __volatile__                                    \
-                ("pusha\nmovl %%esp,%0\nmovl %1,%%ebp\nmovl %2,%%esp\njmp *%3\n.global "ReturnToC"\n"ReturnToC":\nmovl %0,%%esp\npopa" \
-                : "=o" (c_stackP)                                       \
-                : "o" (gcState.stackTop), "o" (gcState.frontier), "r" (jump) \
-                );                                                      \
-        c_stackP = lc_stackP;                                           \
-        if (DEBUG_X86CODEGEN)                                           \
-                fprintf (stderr, "MLton_jumpToSML(0x%08x) done\n", (unsigned int)jump); \
-        return;                                                         \
-}                                                                       \
+#define Main(al, mg, mfs, mmc, pk, ps, ml)                              \
+void MLton_jumpToSML (pointer jump);                                    \
 void MLton_callFromC () {                                               \
         pointer jump;                                                   \
         GC_state s;                                                     \

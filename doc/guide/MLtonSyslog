@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,18 +57,18 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_SYSLOG =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> openflag
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_SYSLOG <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> openflag
          
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> CONS     : openflag
+      <B><FONT COLOR="#A020F0">val</FONT></B> CONS     : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> NDELAY   : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> PERROR   : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> PID      : openflag
 
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> facility
+      <B><FONT COLOR="#A020F0">type</FONT></B> facility
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> AUTHPRIV : facility
+      <B><FONT COLOR="#A020F0">val</FONT></B> AUTHPRIV : facility
       <B><FONT COLOR="#A020F0">val</FONT></B> CRON     : facility
       <B><FONT COLOR="#A020F0">val</FONT></B> DAEMON   : facility
       <B><FONT COLOR="#A020F0">val</FONT></B> KERN     : facility
@@ -81,9 +87,9 @@
       <B><FONT COLOR="#A020F0">val</FONT></B> USER     : facility
       <B><FONT COLOR="#A020F0">val</FONT></B> UUCP     : facility
 
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> loglevel
+      <B><FONT COLOR="#A020F0">type</FONT></B> loglevel
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> EMERG    : loglevel
+      <B><FONT COLOR="#A020F0">val</FONT></B> EMERG    : loglevel
       <B><FONT COLOR="#A020F0">val</FONT></B> ALERT    : loglevel
       <B><FONT COLOR="#A020F0">val</FONT></B> CRIT     : loglevel
       <B><FONT COLOR="#A020F0">val</FONT></B> ERR      : loglevel
@@ -92,10 +98,10 @@
       <B><FONT COLOR="#A020F0">val</FONT></B> INFO     : loglevel
       <B><FONT COLOR="#A020F0">val</FONT></B> DEBUG    : loglevel
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> closelog: unit -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> log: loglevel * string -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> openlog: string * openflag list * facility -&gt; unit
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> closelog: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> log: loglevel <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> openlog: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> openflag <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> facility <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  

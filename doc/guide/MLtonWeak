@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,19 +57,19 @@
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_WEAK =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><FONT COLOR="#228B22"><B> 'a t
+<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_WEAK <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> get: 'a t -&gt; 'a option
-      <B><FONT COLOR="#A020F0">val</FONT></B> new: 'a -&gt; 'a t
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> get: 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a option
+      <B><FONT COLOR="#A020F0">val</FONT></B> new: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
 </p>
 <p>
-A weak pointer is a pointer to an object that is nulled if the object becomes unreachable due to garbage collection.  The weak pointer does not itself cause the object it points to be retained by the garbage collector -- only other strong pointers can do that. For objects that are not allocated in the heap, like integers, a weak pointer will always be nulled.  So, if <tt>w:&nbsp;int&nbsp;Weak.t</tt> then <tt>Weak.get&nbsp;w&nbsp;=&nbsp;NONE</tt>. 
+A weak pointer is a pointer to an object that is nulled if the object becomes <a href="Reachability">unreachable</a> due to garbage collection.  The weak pointer does not itself cause the object it points to be retained by the garbage collector -- only other strong pointers can do that. For objects that are not allocated in the heap, like integers, a weak pointer will always be nulled.  So, if <tt>w:&nbsp;int&nbsp;Weak.t</tt> then <tt>Weak.get&nbsp;w&nbsp;=&nbsp;NONE</tt>. 
 </p>
 
     <ul>
@@ -110,5 +116,5 @@ A weak pointer is a pointer to an object that is nulled if the object becomes un
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:31:46 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-08-21 19:41:38 by <span title="ppp-71-139-165-239.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

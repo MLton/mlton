@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -51,41 +57,41 @@
 <div id="content" lang="en" dir="ltr">
 The <tt>MLton</tt> structure contains a lot of functionality that is not available in the <a href="BasisLibrary">Basis Library</a>.  As a warning, please keep in mind that the <tt>MLton</tt> structure and its substructures do change from release to release of MLton. 
 <pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> MLton:
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> eq: 'a * 'a -&gt; bool
-      <B><FONT COLOR="#A020F0">val</FONT></B> isMLton: bool
-      <B><FONT COLOR="#A020F0">val</FONT></B> share: 'a -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> shareAll: unit -&gt; unit
-      <B><FONT COLOR="#A020F0">val</FONT></B> size: 'a -&gt; int
+<B><FONT COLOR="#5F9EA0">structure</FONT></B> MLton:
+   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> eq: 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> isMLton: <B><FONT COLOR="#228B22">bool</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> share: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> shareAll: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> size: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
 
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Array: MLTON_ARRAY
-      <B><FONT COLOR="#0000FF">structure</FONT></B> BinIO: MLTON_BIN_IO
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Cont: MLTON_CONT
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Exn: MLTON_EXN
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Finalizable: MLTON_FINALIZABLE
-      <B><FONT COLOR="#0000FF">structure</FONT></B> GC: MLTON_GC
-      <B><FONT COLOR="#0000FF">structure</FONT></B> IntInf: MLTON_INT_INF
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Itimer: MLTON_ITIMER
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Platform: MLTON_PLATFORM
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Pointer: MLTON_POINTER
-      <B><FONT COLOR="#0000FF">structure</FONT></B> ProcEnv: MLTON_PROC_ENV
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Process: MLTON_PROCESS
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Profile: MLTON_PROFILE
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Random: MLTON_RANDOM
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Rlimit: MLTON_RLIMIT
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Rusage: MLTON_RUSAGE
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Signal: MLTON_SIGNAL
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Socket: MLTON_SOCKET
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Syslog: MLTON_SYSLOG
-      <B><FONT COLOR="#0000FF">structure</FONT></B> TextIO: MLTON_TEXT_IO
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Thread: MLTON_THREAD
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Vector: MLTON_VECTOR
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Weak: MLTON_WEAK
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Word: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> word </FONT></B>=<FONT COLOR="#228B22"><B> Word.word
-      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word8: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><FONT COLOR="#228B22"><B> word </FONT></B>=<FONT COLOR="#228B22"><B> Word8.word
-      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> World: MLTON_WORLD
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Array: MLTON_ARRAY
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> BinIO: MLTON_BIN_IO
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Cont: MLTON_CONT
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Exn: MLTON_EXN
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Finalizable: MLTON_FINALIZABLE
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> GC: MLTON_GC
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> IntInf: MLTON_INT_INF
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Itimer: MLTON_ITIMER
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Platform: MLTON_PLATFORM
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Pointer: MLTON_POINTER
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> ProcEnv: MLTON_PROC_ENV
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Process: MLTON_PROCESS
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Profile: MLTON_PROFILE
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Random: MLTON_RANDOM
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Rlimit: MLTON_RLIMIT
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Rusage: MLTON_RUSAGE
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signal: MLTON_SIGNAL
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Socket: MLTON_SOCKET
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Syslog: MLTON_SYSLOG
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> TextIO: MLTON_TEXT_IO
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Thread: MLTON_THREAD
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Vector: MLTON_VECTOR
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Weak: MLTON_WEAK
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Word: MLTON_WORD <B><FONT COLOR="#A020F0">where</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> Word.<B><FONT COLOR="#228B22">word</FONT></B>
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Word8: MLTON_WORD <B><FONT COLOR="#A020F0">where</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> Word8.<B><FONT COLOR="#228B22">word</FONT></B>
+      <B><FONT COLOR="#5F9EA0">structure</FONT></B> World: MLTON_WORLD
+   <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -297,59 +303,59 @@ This example, <tt>size.sml</tt>, demonstrates the application of <tt>MLton.size<
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> <FONT COLOR="#228B22"><B>'a</FONT></B> printSize (name: string, min: int, value: 'a): unit=
-   <B><FONT COLOR="#A020F0">if</FONT></B> MLton.size value &gt;= min
+<B><FONT COLOR="#A020F0">fun</FONT></B> 'a printSize (name: <B><FONT COLOR="#228B22">string</FONT></B>, min: <B><FONT COLOR="#228B22">int</FONT></B>, value: 'a): <B><FONT COLOR="#228B22">unit</FONT></B><B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">if</FONT></B> MLton.size value <B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> min
       <B><FONT COLOR="#A020F0">then</FONT></B>
-         (print <FONT COLOR="#BC8F8F"><B>&quot;The size of &quot;</FONT></B>
-          ; print name
-          ; print <FONT COLOR="#BC8F8F"><B>&quot; is &gt;= &quot;</FONT></B>
-          ; print (Int.toString min)
-          ; print <FONT COLOR="#BC8F8F"><B>&quot; bytes.\n&quot;</FONT></B>)
+         (<B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;The size of &quot;</FONT></B>
+          ; <B><FONT COLOR="#A020F0">print</FONT></B> name
+          ; <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot; is &gt;= &quot;</FONT></B>
+          ; <B><FONT COLOR="#A020F0">print</FONT></B> (Int.toString min)
+          ; <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot; bytes.\n&quot;</FONT></B>)
    <B><FONT COLOR="#A020F0">else</FONT></B> ()
 
-<B><FONT COLOR="#A020F0">val</FONT></B> l = [<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>, <B><FONT COLOR="#5F9EA0">3</FONT></B>, <B><FONT COLOR="#5F9EA0">4</FONT></B>]
+<B><FONT COLOR="#A020F0">val</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B> [1, 2, 3, 4]
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
    (
-    printSize (<FONT COLOR="#BC8F8F"><B>&quot;a char&quot;</FONT></B>, <B><FONT COLOR="#5F9EA0">0</FONT></B>, #<FONT COLOR="#BC8F8F"><B>&quot;c&quot;</FONT></B>)
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;an int list of length 4&quot;</FONT></B>, <B><FONT COLOR="#5F9EA0">48</FONT></B>, l)
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;a string of length 10&quot;</FONT></B>, <B><FONT COLOR="#5F9EA0">24</FONT></B>, <FONT COLOR="#BC8F8F"><B>&quot;0123456789&quot;</FONT></B>)
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;an int array of length 10&quot;</FONT></B>, <B><FONT COLOR="#5F9EA0">52</FONT></B>, Array.tabulate (<B><FONT COLOR="#5F9EA0">10</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#5F9EA0">0</FONT></B>))
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;a double array of length 10&quot;</FONT></B>,
-                 <B><FONT COLOR="#5F9EA0">92</FONT></B>, Array.tabulate (<B><FONT COLOR="#5F9EA0">10</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#5F9EA0">0.0</FONT></B>))
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;an array of length 10 of 2-ples of ints&quot;</FONT></B>,
-                 <B><FONT COLOR="#5F9EA0">92</FONT></B>, Array.tabulate (<B><FONT COLOR="#5F9EA0">10</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; (i, i + <B><FONT COLOR="#5F9EA0">1</FONT></B>)))
-    ; printSize (<FONT COLOR="#BC8F8F"><B>&quot;a useless function&quot;</FONT></B>, <B><FONT COLOR="#5F9EA0">0</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#5F9EA0">13</FONT></B>)
+    printSize (<B><FONT COLOR="#BC8F8F">&quot;a char&quot;</FONT></B>, 0, #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B>)
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;an int list of length 4&quot;</FONT></B>, 48, l)
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;a string of length 10&quot;</FONT></B>, 24, <B><FONT COLOR="#BC8F8F">&quot;0123456789&quot;</FONT></B>)
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;an int array of length 10&quot;</FONT></B>, 52, Array.tabulate (10, <B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 0))
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;a double array of length 10&quot;</FONT></B>,
+                 92, Array.tabulate (10, <B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 0.0))
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;an array of length 10 of 2-ples of ints&quot;</FONT></B>,
+                 92, Array.tabulate (10, <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (i, i <B><FONT COLOR="#5F9EA0">+</FONT></B> 1)))
+    ; printSize (<B><FONT COLOR="#BC8F8F">&quot;a useless function&quot;</FONT></B>, 0, <B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 13)
     )
 
 <I><FONT COLOR="#B22222">(* This is here so that the list is &quot;useful&quot;.
  * If it were removed, then the optimizer (remove-unused-constructors)
  * would remove l entirely.
  *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">if</FONT></B> <B><FONT COLOR="#5F9EA0">10</FONT></B> = foldl (<B><FONT COLOR="#A020F0">op</FONT></B> +) <B><FONT COLOR="#5F9EA0">0</FONT></B> l
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> 10 <B><FONT COLOR="#5F9EA0">=</FONT></B> foldl (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">+</FONT></B>) 0 l
            <B><FONT COLOR="#A020F0">then</FONT></B> ()
-        <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <FONT COLOR="#BC8F8F"><B>&quot;bug&quot;</FONT></B>
+        <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;bug&quot;</FONT></B>
    
-<B><FONT COLOR="#0000FF">local</FONT></B>
-   <B><FONT COLOR="#0000FF">open</FONT></B> MLton.Cont
-<B><FONT COLOR="#0000FF">in</FONT></B>
-   <B><FONT COLOR="#A020F0">val</FONT></B> rc: int option t option ref = ref NONE
-   <B><FONT COLOR="#A020F0">val</FONT></B> _ =
-      <B><FONT COLOR="#A020F0">case</FONT></B> callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k: int option t =&gt; (rc := SOME k; throw (k, NONE))) <B><FONT COLOR="#A020F0">of</FONT></B>
-         NONE =&gt; ()
-       | SOME i =&gt; print (concat [Int.toString i, <FONT COLOR="#BC8F8F"><B>&quot;\n&quot;</FONT></B>])
-<B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#A020F0">local</FONT></B>
+   <B><FONT COLOR="#A020F0">open</FONT></B> MLton.Cont
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> rc: <B><FONT COLOR="#228B22">int</FONT></B> option t option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">case</FONT></B> callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k: <B><FONT COLOR="#228B22">int</FONT></B> option t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (rc <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> k; throw (k, <B><FONT COLOR="#5F9EA0">NONE</FONT></B>))) <B><FONT COLOR="#A020F0">of</FONT></B>
+         <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
+       <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString i, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
-   (print <FONT COLOR="#BC8F8F"><B>&quot;The size of a continuation option ref is &quot;</FONT></B>
-    ; <B><FONT COLOR="#A020F0">if</FONT></B> MLton.size rc &gt; <B><FONT COLOR="#5F9EA0">1000</FONT></B>
-         <B><FONT COLOR="#A020F0">then</FONT></B> print <FONT COLOR="#BC8F8F"><B>&quot;&gt; 1000.\n&quot;</FONT></B>
-      <B><FONT COLOR="#A020F0">else</FONT></B> print <FONT COLOR="#BC8F8F"><B>&quot;&lt; 1000.\n&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   (<B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;The size of a continuation option ref is &quot;</FONT></B>
+    ; <B><FONT COLOR="#A020F0">if</FONT></B> MLton.size rc <B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 1000
+         <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&gt; 1000.\n&quot;</FONT></B>
+      <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&lt; 1000.\n&quot;</FONT></B>)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ =
-   <B><FONT COLOR="#A020F0">case</FONT></B> !rc <B><FONT COLOR="#A020F0">of</FONT></B>
-      NONE =&gt; ()
-    | SOME k =&gt; (rc := NONE; MLton.Cont.throw (k, SOME <B><FONT COLOR="#5F9EA0">13</FONT></B>))
+<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+   <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>rc <B><FONT COLOR="#A020F0">of</FONT></B>
+      <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
+    <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> k <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (rc <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>; MLton.Cont.throw (k, <B><FONT COLOR="#5F9EA0">SOME</FONT></B> 13))
 </PRE>
 <p>
  

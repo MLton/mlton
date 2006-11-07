@@ -18,6 +18,12 @@
 
 <body lang="en" dir="ltr">
 
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
 <table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
   <tr>
     <td style = "
@@ -25,7 +31,7 @@
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20051202</a>
+      <a class = mltona href="Home">MLton 20061025</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -53,44 +59,75 @@
 <pre>t1 * t2 * ... * tN
 </pre> and a product pattern is written as
 <pre>(p1, p2, ..., pN)
-</pre>In most situations the syntax is quite convenient. However, there are special circumstances under which the syntax for product patterns can be cumbersome. <p>
-The problem is best shown through parser combinators. A typical parser combinator library provides a combinator that has a type of the form 
-<pre>'a parser * 'b parser -&gt; ('a * 'b) parser
-</pre>and produces a parser for the concatenation of two parsers. When more than two parsers are concatenated, the result of the resulting parser is a nested structure of pairs 
-<pre>(...((p1, p2), p3)..., pN)
-</pre>which is somewhat cumbersome. 
+</pre><p>
+In most situations the syntax is quite convenient.  However, there are sitiuations where the syntax is cumbersome.  There are also situations in which it is useful to construct and destruct n-ary products inductively, especially when using <a href="Fold">Fold</a>. 
 </p>
 <p>
-One way around this problem is to use a product datatype 
+In such situations, it is useful to have a binary product datatype with an infix constructor defined as follows. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B><FONT COLOR="#228B22"><B> ('a, 'b) product </FONT></B>=<FONT COLOR="#228B22"><B> <FONT COLOR="#B8860B">&amp;</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
-</FONT></B></PRE>
- with an infix constructor 
-<pre class=code>
+<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) product <B><FONT COLOR="#5F9EA0">=</FONT></B> &amp; <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
 <B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
 </PRE>
  
 </p>
 <p>
-The type of the concatenation combinator then becomes 
-<pre>'a parser * 'b parser -&gt; ('a, 'b) product parser
+With these definitions, one can write an n-ary product as a nested binary product quite conveniently. 
+<pre>x1 &amp; x2 &amp; ... &amp; xn
 </pre>
 </p>
 <p>
-While this doesn't stop the nesting, it makes the pattern significantly easier to write. Instead of 
-<pre>(...((p1, p2), p3)..., pN)
-</pre>the pattern is written as 
-<pre>p1 &amp; p2 &amp; p3 &amp; ... &amp; pN
-</pre>which is considerably more concise. 
+Because of left associativity, this is the same as 
+<pre>(((x1 &amp; x2) &amp; ...) &amp; xn)
+</pre>
+</p>
+<p>
+Because <tt>&amp;</tt> is a constructor, the syntax can also be used for patterns. 
 </p>
 <p>
 The symbol <tt>&amp;</tt> is inspired by the Curry-Howard isomorphism: the proof of a conjunction <tt>(A&nbsp;&amp;&nbsp;B)</tt> is a pair of proofs <tt>(a,&nbsp;b)</tt>. 
 </p>
+<h2 id="head-058073812447f89d85b57e47ba6958fee7a17440">Example: parser combinators</h2>
+<p>
+A typical parser combinator library provides a combinator that has a type of the form. 
+</p>
+
+<pre>'a parser * 'b parser -&gt; ('a * 'b) parser
+</pre><p>
+and produces a parser for the concatenation of two parsers. When more than two parsers are concatenated, the result of the resulting parser is a nested structure of pairs 
+</p>
+
+<pre>(...((p1, p2), p3)..., pN)
+</pre><p>
+which is somewhat cumbersome. 
+</p>
+<p>
+By using a product type, the type of the concatenation combinator then becomes 
+</p>
+
+<pre>'a parser * 'b parser -&gt; ('a, 'b) product parser
+</pre><p>
+While this doesn't stop the nesting, it makes the pattern significantly easier to write. Instead of 
+</p>
+
+<pre>(...((p1, p2), p3)..., pN)
+</pre>the pattern is written as 
+<pre>p1 &amp; p2 &amp; p3 &amp; ... &amp; pN
+</pre>which is considerably more concise. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="VariableArityPolymorphism">VariableArityPolymorphism</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:23:58 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-03-21 22:04:54 by <span title="adsl-71-141-16-94.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>
