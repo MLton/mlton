@@ -1041,8 +1041,10 @@ fun commandLine (args: string list): unit =
                         Place.CM => compileCM input
                       | Place.SML =>
                            Control.checkFile
-                           (input, fn s => raise Fail s,
-                            fn () => compileSml [input])
+                           (input,
+                            {fail = fn s => raise Fail s,
+                             name = input,
+                             ok = fn () => compileSml [input]})
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
