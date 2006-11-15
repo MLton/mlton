@@ -47,7 +47,7 @@ clean:
 	../bin/clean
 
 .PHONY: docs
-docs: mllex.ps
+docs: mllex.pdf
 
 .PHONY: test
 test: $(NAME)

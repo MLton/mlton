@@ -440,8 +440,8 @@ install-docs:
 		; do 							\
 		$(CP) $(SRC)/regression/$$f.sml $(TEXM)/; 		\
 	done
-	$(GZIP) -c $(LEX)/$(LEX).ps >$(TDOC)/$(LEX).ps.gz
-	$(GZIP) -c $(YACC)/$(YACC).ps >$(TDOC)/$(YACC).ps.gz
+	$(CP) $(LEX)/$(LEX).pdf $(TDOC)
+	$(CP) $(YACC)/$(YACC).pdf $(TDOC)
 	find $(TDOC)/ -name .svn -type d | xargs rm -rf
 	find $(TDOC)/ -name .ignore -type f | xargs rm -rf
 	find $(TEXM)/ -name .svn -type d | xargs rm -rf
