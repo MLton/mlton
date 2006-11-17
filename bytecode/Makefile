@@ -23,6 +23,10 @@ ifeq ($(TARGET_ARCH), amd64)
 CFLAGS += -mtune=opteron -m32 
 endif 
 
+ifeq ($(TARGET_OS), darwin)
+CFLAGS += -I/sw/include
+endif
+
 ifeq ($(TARGET_OS), freebsd)
 CFLAGS += -I/usr/local/include
 endif

@@ -31,6 +31,10 @@ ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -mcpu=v8 -m32
 endif
 
+ifeq ($(TARGET_OS), darwin)
+FLAGS += -I/sw/include
+endif
+
 ifeq ($(TARGET_OS), freebsd)
 FLAGS += -I/usr/local/include
 endif
