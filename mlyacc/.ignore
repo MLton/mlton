@@ -1,5 +1,6 @@
 *.call-graph.dot
 *.ssa
+mlyacc.pdf
 mlyacc.ps
 mlyacc.sml
 mlyacc
