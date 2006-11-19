@@ -25,7 +25,7 @@ OPTFLAGS += -mtune=opteron
 endif
 
 ifeq ($(TARGET_OS), darwin)
-CFLAGS += -I/sw/include
+CFLAGS += -I/opt/local/include -I/sw/include
 endif
 
 ifeq ($(TARGET_OS), freebsd)

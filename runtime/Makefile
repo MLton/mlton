@@ -34,7 +34,7 @@ FLAGS += -mcpu=v8 -m32
 endif
 
 ifeq ($(TARGET_OS), darwin)
-FLAGS += -I/sw/include
+FLAGS += -I/opt/local/include -I/sw/include
 endif
 
 ifeq ($(TARGET_OS), freebsd)

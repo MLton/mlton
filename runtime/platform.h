@@ -39,16 +39,17 @@
 /* C99-specific headers */
 #include <inttypes.h>
 
-/* On FreeBSD and OpenBSD the default gmp.h is installed in /usr/include, 
- * but that is version 2.  We want gmp version 4, which is installed in 
- * /usr/local/include, and is ensured to exist because it is required by the
- * MLton package.
- * On NetBSD, we want gmp to be installed into the pkg tree (which represents
- * the FreeBSD ports tree). For now we use the same method as in the FreeBSD
- * case, but we note that this should be changed so the makefile provides the
- * correct -I flags to the compiler.
- * On MacOS X, many users will use fink to install gmp, in which case gmp.h
- * will be installed in /sw/include.
+/* On FreeBSD and OpenBSD the default gmp.h is installed in
+ * /usr/include, but that is version 2.  We want gmp version 4, which
+ * is installed in /usr/local/include, and is ensured to exist because
+ * it is required by the MLton package.
+ * On NetBSD, we want gmp to be installed into the pkg tree (which
+ * represents the FreeBSD ports tree). For now we use the same method
+ * as in the FreeBSD case, but we note that this should be changed so
+ * the makefile provides the correct -I flags to the compiler.
+ * On MacOS X, many users will use macports or fink to install gmp, in
+ * which case gmp.h will be installed in /opt/local/include or
+ * /sw/include, respectively.
  */
 #include "gmp.h"
 
