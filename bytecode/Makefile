@@ -20,8 +20,9 @@ endif
 DEBUGFLAGS += -g2
 
 ifeq ($(TARGET_ARCH), amd64)
-CFLAGS += -mtune=opteron -m32 
-endif 
+CFLAGS += -m32
+OPTFLAGS += -mtune=opteron
+endif
 
 ifeq ($(TARGET_OS), darwin)
 CFLAGS += -I/sw/include
@@ -32,13 +33,14 @@ CFLAGS += -I/usr/local/include
 endif
 
 interpret.o: interpret.c interpret.h opcode.h
-	$(CC) $(CFLAGS) -c -O2 interpret.c
+	$(CC) $(CFLAGS) -c -O2 $(OPTFLAGS) interpret.c
 
 interpret-gdb.o: interpret.c interpret.h
 	$(CC) $(DEBUGFLAGS) -c -o $@ -DASSERT=1 interpret.c
 
 print-opcodes: print-opcodes.c opcode.h
-	$(CC) $(CFLAGS) -o print-opcodes -I../runtime -L../runtime	\
+	$(CC) $(CFLAGS) $(OPTFLAGS) -o print-opcodes \
+		-I../runtime -L../runtime	\
 		print-opcodes.c -lmlton
 
 .PHONY: clean

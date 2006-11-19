@@ -13,18 +13,20 @@ TARGET_ARCH = $(shell ../bin/host-arch)
 TARGET_OS = $(shell ../bin/host-os)
 GCC_VERSION = $(shell gcc -v 2>&1 | grep 'gcc version' | sed 's/.*gcc version \(.\).*/\1/')
 
-FLAGS = -fomit-frame-pointer
+FLAGS =
+OPTFLAGS = -fomit-frame-pointer
 
 ifeq ($(TARGET_ARCH), x86)
 ifneq ($(findstring $(GCC_VERSION), 3 4),)
-FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
+OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
-FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
+OPTFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -mtune=opteron -m32
+FLAGS += -m32
+OPTFLAGS += -mtune=opteron
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
@@ -53,7 +55,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC = gcc -std=gnu99
-CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS)
+CFLAGS = -O2 -Wall -I. -Iplatform -D_FILE_OFFSET_BITS=64 $(FLAGS) $(OPTFLAGS)
 DEBUGFLAGS = $(CFLAGS)
 ifneq ($(TARGET_ARCH), ia64)
 ifneq ($(TARGET_ARCH), powerpc)
