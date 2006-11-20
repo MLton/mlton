@@ -108,7 +108,7 @@ struct
                fun closure () =
                   if List.length (!todo) = 0
                      then ()
-                     else DynamicWind.withEscape
+                     else Exn.withEscape
                           (fn esc =>
                            let
                               val (srcdescr,finish) = List.pop todo
@@ -640,7 +640,7 @@ struct
                       then
                          (comments := true;
                           loop args)
-                   else if String.isPrefix {prefix = "-D", string = flag}
+                   else if String.hasPrefix (flag, {prefix = "-D"})
                       then
                          (defines := String.extract (flag, 2, NONE) :: !defines
                           ; loop args)
