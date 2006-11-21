@@ -29,9 +29,9 @@ DEBUGWARNFLAGS =
 
 ifeq ($(TARGET_ARCH), x86)
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
-FLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
+OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 else
-FLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
+OPTFLAGS += -malign-loops=2 -malign-jumps=2 -malign-functions=5
 endif
 ifeq ($(findstring $(GCC_VERSION), 3.3 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param max-inline-insns-single=1000
@@ -49,10 +49,10 @@ endif
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m32
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
-FLAGS += -mcpu=opteron
+OPTFLAGS += -mcpu=opteron
 endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-FLAGS += -mtune=opteron
+OPTFLAGS += -mtune=opteron
 endif
 ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param inline-unit-growth=75 --param max-inline-insns-single=1000
@@ -63,6 +63,10 @@ endif
 
 ifeq ($(TARGET_ARCH), sparc)
 FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
+endif
+
+ifeq ($(TARGET_OS), darwin)
+FLAGS += -I/sw/include -I/opt/local/include
 endif
 
 ifeq ($(TARGET_OS), freebsd)

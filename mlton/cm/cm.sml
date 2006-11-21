@@ -73,17 +73,20 @@ fun cm {cmfile: File.t} =
                                         List.push (files, finalize m')
                                   in
                                      Control.checkFile
-                                     (m, fail, fn () =>
-                                      case File.suffix m of
-                                         SOME "cm" =>
-                                            loop (m, 0, relativize)
-                                       | SOME "sml" => sml ()
-                                       | SOME "sig" => sml ()
-                                       | SOME "fun" => sml ()
-                                       | SOME "ML" => sml ()
-                                       | _ =>
-                                            fail (concat ["MLton can't process ",
-                                                          m]))
+                                     (m,
+                                      {fail = fail,
+                                       name = m,
+                                       ok = fn () =>
+                                       case File.suffix m of
+                                          SOME "cm" =>
+                                             loop (m, 0, relativize)
+                                        | SOME "sml" => sml ()
+                                        | SOME "sig" => sml ()
+                                        | SOME "fun" => sml ()
+                                        | SOME "ML" => sml ()
+                                        | _ =>
+                                             fail (concat ["MLton can't process ",
+                                                           m])})
                                   end
                           end)
                 end)

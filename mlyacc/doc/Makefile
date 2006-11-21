@@ -6,7 +6,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
-all: mlyacc.ps
+all: mlyacc.pdf
 
 html/index.html: $(TEX_FILES)
 	mkdir -p html

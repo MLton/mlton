@@ -9,6 +9,8 @@ die () {
 
 if gsed --version >/dev/null 2>&1; then
         sed='gsed'
+elif gnused --version >/dev/null 2>&1; then
+        sed='gnused'
 elif sed --version 2>&1 | grep -q GNU; then
         sed=`which sed`
 else

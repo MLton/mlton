@@ -38,15 +38,21 @@ src/yacc.grm.sig src/yacc.grm.sml: src/yacc.grm
 doc/mlyacc.ps:
 	$(MAKE) -C doc mlyacc.ps
 
+doc/mlyacc.pdf:
+	$(MAKE) -C doc mlyacc.pdf
+
 mlyacc.ps: doc/mlyacc.ps
 	cp doc/mlyacc.ps .
+
+mlyacc.pdf: doc/mlyacc.pdf
+	cp doc/mlyacc.pdf .
 
 .PHONY: clean
 clean:
 	../bin/clean
 
 .PHONY: docs
-docs: mlyacc.ps
+docs: mlyacc.pdf
 
 .PHONY: test
 test: $(NAME)

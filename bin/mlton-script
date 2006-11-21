@@ -67,10 +67,6 @@ doit () {
 # You may need to add a line with -link-opt '-L/path/to/libgmp' so
 # that the linker can find libgmp.
 
-if [ -d '/sw/lib' ]; then
-        darwinLinkOpts='-L/sw/lib'
-fi
-
 doit "$lib" \
         -cc "$gcc"                                               \
         -cc-opt "-I$lib/include"                                 \
@@ -79,7 +75,7 @@ doit "$lib" \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opts amd64 '-m32 -mtune=opteron'              \
         -target-cc-opts amd64 '-m32 -mtune=opteron'              \
-        -target-cc-opts darwin '-I/sw/include'                   \
+        -target-cc-opts darwin '-I/opt/local/include -I/sw/include' \
         -target-cc-opts freebsd '-I/usr/local/include'           \
         -target-cc-opts netbsd '-I/usr/pkg/include'              \
         -target-cc-opts openbsd '-I/usr/local/include'           \
@@ -97,7 +93,7 @@ doit "$lib" \
         -target-link-opts aix '-lgmp'                            \
         -target-link-opts amd64 '-m32'                           \
         -target-link-opts cygwin '-lgmp'                         \
-        -target-link-opts darwin "$darwinLinkOpts -lgmp"         \
+        -target-link-opts darwin '-L/opt/local/lib -L/sw/lib -lgmp' \
         -target-link-opts freebsd '-L/usr/local/lib/ -lgmp'      \
         -target-link-opts hpux '-lgmp'                           \
         -target-link-opts linux '-lgmp'                          \
