@@ -21,6 +21,7 @@ structure CMemAlloc : CMEMALLOC = struct
     type addr = Ptr.t
     type addr' = addr
 
+(*
     structure DL = DynLinkage
 
     fun main's s = DL.lib_symbol (DL.main_lib, s)
@@ -37,8 +38,8 @@ structure CMemAlloc : CMEMALLOC = struct
         let val p_u = _import * : MLton.Pointer.t -> addr -> unit;
         in p_u (DL.addr free_h) a
         end
+*)
 
-(*
     fun sys_malloc (n : Word32.word) = 
         let val w_p = _import "malloc" : Word32.word -> addr;
             val a = w_p n
@@ -49,7 +50,6 @@ structure CMemAlloc : CMEMALLOC = struct
         let val p_u = _import "free" : addr -> unit;
         in p_u a
         end
-*)
 
     fun alloc bytes = sys_malloc bytes
     fun free a = sys_free a
