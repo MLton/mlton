@@ -6,14 +6,14 @@
  # See the file MLton-LICENSE for details.
  ##
 
-mlton = mlton
-mlprof = mlprof
-ALLOC_EX = list-rev
-COUNT_EX = tak
-MULT_EX = fib-tak
-TIME_EX = tak
+mlton := mlton
+mlprof := mlprof
+ALLOC_EX := list-rev
+COUNT_EX := tak
+MULT_EX := fib-tak
+TIME_EX := tak
 
-PATH = ../../../build/bin:$(shell echo $$PATH)
+PATH := ../../../build/bin:$(shell echo $$PATH)
 
 .PHONY: all
 all: profile-time profile-alloc profile-count profile-stack profile-multiple

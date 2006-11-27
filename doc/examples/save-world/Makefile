@@ -6,9 +6,9 @@
  # See the file MLton-LICENSE for details.
  ##
 
-PATH = ../../../build/bin:$(shell echo $$PATH)
+PATH := ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton
+mlton := mlton
 
 all: test
 

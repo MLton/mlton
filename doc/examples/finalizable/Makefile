@@ -5,9 +5,9 @@
  # See the file MLton-LICENSE for details.
  ##
 
-PATH = ../../../build/bin:$(shell echo $$PATH)
+PATH := ../../../build/bin:$(shell echo $$PATH)
 
-mlton = mlton -default-ann 'allowFFI true'
+mlton := mlton -default-ann 'allowFFI true'
 
 all:
 	$(mlton) finalizable.sml cons.c

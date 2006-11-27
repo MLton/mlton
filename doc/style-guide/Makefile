@@ -6,12 +6,12 @@
  # See the file MLton-LICENSE for details.
  ##
 
-TEX_FILES = \
+TEX_FILES := \
 	abstract.tex		\
 	main.tex		\
 	macros.tex		\
 
-FIG_FILES = \
+FIG_FILES := \
 
 all:	main.ps
 

@@ -6,17 +6,17 @@
  # See the file MLton-LICENSE for details.
  ##
 
-SRC = $(shell cd .. && pwd)
-BUILD = $(SRC)/build
-BIN = $(BUILD)/bin
-LIB = $(BUILD)/lib
-MLTON = mlton
-TARGET = self
-FLAGS = -target $(TARGET)	\
+SRC := $(shell cd .. && pwd)
+BUILD := $(SRC)/build
+BIN := $(BUILD)/bin
+LIB := $(BUILD)/lib
+MLTON := mlton
+TARGET := self
+FLAGS := -target $(TARGET)	\
 	-default-ann 'sequenceNonUnit warn' \
 	-default-ann 'warnUnused true'
-NAME = benchmark
-PATH = $(BIN):$(shell echo $$PATH)
+NAME := benchmark
+PATH := $(BIN):$(shell echo $$PATH)
 
 all: 	$(NAME)
 
@@ -40,19 +40,19 @@ install: $(NAME)
 tags:
 	etags *.fun *.sig *.sml
 
-BENCH = barnes-hut boyer checksum count-graphs DLXSimulator fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
-FPBENCH = barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
+BENCH := barnes-hut boyer checksum count-graphs DLXSimulator fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
+FPBENCH := barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
-BFLAGS = -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
-BFLAGS = -wiki -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
-BFLAGS = -mlton "$(BIN)/mlton"
+BFLAGS := -mlton "/usr/bin/mlton" -mlton "mlton -optimize-ssa {false,true}"
+BFLAGS := -wiki -mlton "/usr/bin/mlton" -mlkit -mosml -poly -smlnj
+BFLAGS := -mlton "$(BIN)/mlton"
 
 .PHONY: test
 test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
-QBENCH = $(BENCH)
-QBFLAGS = -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
+QBENCH := $(BENCH)
+QBFLAGS := -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
 
 .PHONY: qtest
 qtest: $(NAME)

@@ -5,19 +5,13 @@
  # See the file MLton-LICENSE for details.
  ##
 
-TARGET_ARCH = $(shell ../bin/host-arch)
+TARGET_ARCH := $(shell ../bin/host-arch)
+TARGET_OS := $(shell ../bin/host-os)
 
 all: interpret.o interpret-gdb.o print-opcodes
 
-CC = gcc -std=gnu99
-CFLAGS = -fomit-frame-pointer -I../runtime -I../include -Wall
-DEBUGFLAGS = $(CFLAGS)
-ifneq ($(TARGET_ARCH), ia64)
-ifneq ($(TARGET_ARCH), powerpc)
-DEBUGFLAGS += -gstabs+
-endif
-endif
-DEBUGFLAGS += -g2
+CC := gcc -std=gnu99
+CFLAGS := -fomit-frame-pointer -I../runtime -I../include -Wall
 
 ifeq ($(TARGET_ARCH), amd64)
 CFLAGS += -m32
@@ -31,6 +25,14 @@ endif
 ifeq ($(TARGET_OS), freebsd)
 CFLAGS += -I/usr/local/include
 endif
+
+DEBUGFLAGS := $(CFLAGS)
+ifneq ($(TARGET_ARCH), ia64)
+ifneq ($(TARGET_ARCH), powerpc)
+DEBUGFLAGS += -gstabs+
+endif
+endif
+DEBUGFLAGS += -g2
 
 interpret.o: interpret.c interpret.h opcode.h
 	$(CC) $(CFLAGS) -c -O2 $(OPTFLAGS) interpret.c

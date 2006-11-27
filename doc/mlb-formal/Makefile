@@ -5,7 +5,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
-TEX_FILES = \
+TEX_FILES := \
 	bib.bib			\
 	mlb-formal.tex
 
