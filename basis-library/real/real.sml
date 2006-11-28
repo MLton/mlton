@@ -374,6 +374,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      Fix => 3
                    | Gen => 0
                    | Sci => 2
+               val ndig : C_Int.int = C_Int.fromInt ndig
             in
                One.use (one, fn decpt =>
                         (Prim.gdtoa (x, mode, ndig, decpt), 

@@ -11,10 +11,7 @@ signature PRIM_INT_INF =
       eqtype int
       type t = int
 
-      datatype rep =
-         Big of C_MPLimb.word vector
-       | Small of ObjptrInt.int
-      val rep: int -> rep
+      val precision: Primitive.Int32.int option
 
       val maxInt: int option
       val minInt: int option
@@ -22,6 +19,11 @@ signature PRIM_INT_INF =
       val zero: int
       val one: int
       val negOne: int
+
+      datatype rep =
+         Big of C_MPLimb.word vector
+       | Small of ObjptrInt.int
+      val rep: int -> rep
 
       structure Prim : 
          sig
@@ -1228,6 +1230,8 @@ structure IntInf =
 
       type int = bigInt
       type t = int
+
+      val precision = NONE
 
       val maxInt = NONE
       val minInt = NONE

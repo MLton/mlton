@@ -37,6 +37,10 @@ fun toInt w =
       val i = W.zchckToInt w
    in
       if Primitive.Controls.detectOverflow
+         andalso (case Int.precision of
+                     NONE => false
+                   | SOME precision => 
+                        Int32.<= (precision, W.sizeInBits))
          andalso Int.< (i, 0)
          then raise Overflow
          else i
@@ -48,6 +52,10 @@ fun toLargeInt w =
       val i = W.zchckToLargeInt w
    in
       if Primitive.Controls.detectOverflow
+         andalso (case LargeInt.precision of
+                     NONE => false
+                   | SOME precision => 
+                        Int32.<= (precision, W.sizeInBits))
          andalso LargeInt.< (i, 0)
          then raise Overflow
          else i
