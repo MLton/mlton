@@ -95,7 +95,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC := gcc -std=gnu99
-CFLAGS := -I. -Iplatform $(FLAGS)
+CFLAGS := -I. -Iplatform -Ibasis -Ibasis/Word -Ibasis/Real -I../include -Ibytecode $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
@@ -150,34 +150,25 @@ ifeq ($(TARGET_OS), mingw)
 WARNCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
 
-UTILCFILES :=							\
-	$(shell find util -type f | grep '\.c$$')
 UTILHFILES :=							\
 	$(shell find util -type f | grep '\.h$$')
+UTILCFILES :=							\
+	$(shell find util -type f | grep '\.c$$')
 UTILOFILES := $(foreach f, $(UTILCFILES), $(basename $(f)).o)
 
-GCCFILES :=							\
-	$(shell find gc -type f | grep '\.c$$')
 GCHFILES :=							\
 	$(shell find gc -type f | grep '\.h$$')
+GCCFILES :=							\
+	$(shell find gc -type f | grep '\.c$$')
 
 BASISHFILES :=							\
 	$(shell find basis -type f | grep '\.h$$')
 
-BYTECFILES :=							\
-	$(shell find bytecode -type f | grep '\.c$$')
 BYTEHFILES :=							\
 	$(shell find bytecode -type f | grep '\.h$$')
+BYTECFILES :=							\
+	$(shell find bytecode -type f | grep '\.c$$')
 
-CFILES := 							\
-	$(UTILCFILES)						\
-	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
-	gc.c							\
-	platform.c
-
-ifneq ($(OMIT_BYTECODE), yes)
-CFILES += bytecode/interpret.c
-endif
 
 HFILES := 							\
 	cenv.h                                                  \
@@ -193,7 +184,11 @@ HFILES := 							\
 	platform/$(TARGET_ARCH).h				\
 	$(BASISHFILES)
 
-FILES := $(basename $(CFILES))
+CFILES := 							\
+	$(UTILCFILES)						\
+	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
+	gc.c							\
+	platform.c
 
 # EXTRA_CFILES is for files that we don't want compiled in the big
 # lump when compiling COMPILE_FAST.
@@ -202,6 +197,13 @@ EXTRA_CFILES :=			\
 	$(shell find basis/Real -type f | grep '\.c$$')	\
 	platform/$(TARGET_OS).c
 
+ifeq ($(OMIT_BYTECODE), yes)
+EXTRA_CFILES += bytecode/interpret.c
+else
+CFILES += bytecode/interpret.c
+endif
+
+FILES := $(basename $(CFILES))
 EXTRA_FILES := $(basename $(EXTRA_CFILES))
 
 ifeq ($(COMPILE_FAST), yes)
