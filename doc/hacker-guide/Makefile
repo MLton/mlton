@@ -6,7 +6,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
-TEX_FILES = \
+TEX_FILES := \
 	abstract.tex		\
 	basis-library.tex	\
 	main.tex		\
@@ -16,7 +16,7 @@ TEX_FILES = \
 	runtime.tex		\
 	sources.tex		\
 
-FIG_FILES = \
+FIG_FILES := \
 	structure.ps		\
 
 all:	main.ps

@@ -6,26 +6,26 @@
  # See the file MLton-LICENSE for details.
  ##
 
-PATH = ../bin:$(shell echo $$PATH)
+PATH := ../bin:$(shell echo $$PATH)
 
-TARGET = self
-TARGET_ARCH = $(shell ../bin/host-arch)
-TARGET_OS = $(shell ../bin/host-os)
-GCC_MAJOR_VERSION =						\
+TARGET := self
+TARGET_ARCH := $(shell ../bin/host-arch)
+TARGET_OS := $(shell ../bin/host-os)
+GCC_MAJOR_VERSION :=						\
 	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
-GCC_MINOR_VERSION =						\
+GCC_MINOR_VERSION :=						\
 	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
-GCC_VERSION = $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
+GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
-FLAGS = 
-OPTFLAGS = -fomit-frame-pointer
-GCOPTFLAGS = 
-DEBUGFLAGS = 
-WARNFLAGS =
-OPTWARNFLAGS =
-DEBUGWARNFLAGS = 
+FLAGS := 
+OPTFLAGS := -O2 -fomit-frame-pointer
+GCOPTFLAGS := 
+DEBUGFLAGS := 
+WARNFLAGS := 
+OPTWARNFLAGS := 
+DEBUGWARNFLAGS := 
 
 ifeq ($(TARGET_ARCH), x86)
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
@@ -86,20 +86,20 @@ FLAGS += -funroll-all-loops
 endif
 
 ifeq ($(TARGET), self)
-AR = ar rc
-RANLIB = ranlib
+AR := ar rc
+RANLIB := ranlib
 else
-AR = $(TARGET)-ar rc
-RANLIB = $(TARGET)-ranlib
+AR := $(TARGET)-ar rc
+RANLIB := $(TARGET)-ranlib
 FLAGS += -b $(TARGET)
 endif
 
-CC = gcc -std=gnu99
-CFLAGS = -I. -Iplatform $(FLAGS)
-OPTCFLAGS = $(CFLAGS) -O2 $(OPTFLAGS)
-DEBUGCFLAGS = $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
+CC := gcc -std=gnu99
+CFLAGS := -I. -Iplatform $(FLAGS)
+OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
+DEBUGCFLAGS := $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
-WARNCFLAGS  =
+WARNCFLAGS :=
 WARNCFLAGS += -pedantic -Wall 
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -W
@@ -142,34 +142,34 @@ WARNCFLAGS += -Wnested-externs
 WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
 WARNCFLAGS += $(WARNFLAGS)
-OPTWARNCFLAGS = $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
-DEBUGWARNCFLAGS = $(WARNCFLAGS) $(DEBUGWARNFLAGS)
+OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
+DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 
 # GCC doesn't recognize the %I64 format specifier which means %ll on windows
 ifeq ($(TARGET_OS), mingw)
 WARNCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
 
-UTILCFILES =							\
+UTILCFILES :=							\
 	$(shell find util -type f | grep '\.c$$')
-UTILHFILES =							\
+UTILHFILES :=							\
 	$(shell find util -type f | grep '\.h$$')
-UTILOFILES = $(foreach f, $(UTILCFILES), $(basename $(f)).o)
+UTILOFILES := $(foreach f, $(UTILCFILES), $(basename $(f)).o)
 
-GCCFILES =							\
+GCCFILES :=							\
 	$(shell find gc -type f | grep '\.c$$')
-GCHFILES =							\
+GCHFILES :=							\
 	$(shell find gc -type f | grep '\.h$$')
 
-BASISHFILES =							\
+BASISHFILES :=							\
 	$(shell find basis -type f | grep '\.h$$')
 
-BYTECFILES =							\
+BYTECFILES :=							\
 	$(shell find bytecode -type f | grep '\.c$$')
-BYTEHFILES =							\
+BYTEHFILES :=							\
 	$(shell find bytecode -type f | grep '\.h$$')
 
-CFILES = 							\
+CFILES := 							\
 	$(UTILCFILES)						\
 	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
 	gc.c							\
@@ -179,7 +179,7 @@ ifneq ($(OMIT_BYTECODE), yes)
 CFILES += bytecode/interpret.c
 endif
 
-HFILES = 							\
+HFILES := 							\
 	cenv.h                                                  \
 	$(UTILHFILES)						\
 	util.h							\
@@ -193,23 +193,23 @@ HFILES = 							\
 	platform/$(TARGET_ARCH).h				\
 	$(BASISHFILES)
 
-FILES = $(basename $(CFILES))
+FILES := $(basename $(CFILES))
 
 # EXTRA_CFILES is for files that we don't want compiled in the big
 # lump when compiling COMPILE_FAST.
 # Real/*.c can't be there because gcc -O2 messes some of them up.
-EXTRA_CFILES =			\
+EXTRA_CFILES :=			\
 	$(shell find basis/Real -type f | grep '\.c$$')	\
 	platform/$(TARGET_OS).c
 
-EXTRA_FILES = $(basename $(EXTRA_CFILES))
+EXTRA_FILES := $(basename $(EXTRA_CFILES))
 
 ifeq ($(COMPILE_FAST), yes)
-  OBJS = runtime.o
-  DEBUG_OBJS = runtime-gdb.o
+  OBJS := runtime.o
+  DEBUG_OBJS := runtime-gdb.o
 else
-  OBJS = $(foreach f, $(FILES), $(f).o)
-  DEBUG_OBJS = $(foreach f, $(FILES), $(f)-gdb.o)
+  OBJS := $(foreach f, $(FILES), $(f).o)
+  DEBUG_OBJS := $(foreach f, $(FILES), $(f)-gdb.o)
 endif
 
 OBJS += $(foreach f, $(EXTRA_FILES), $(f).o)

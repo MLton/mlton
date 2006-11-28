@@ -6,15 +6,15 @@
  # See the file MLton-LICENSE for details.
  ##
 
-SRC = $(shell cd .. && pwd)
-BUILD = $(SRC)/build
-BIN = $(BUILD)/bin
-LIB = $(BUILD)/lib
-MLTON = mlton
-TARGET = self
-FLAGS = -target $(TARGET) -default-ann 'sequenceNonUnit warn' -default-ann 'warnUnused true'
-NAME = mlprof
-PATH = $(BIN):$(shell echo $$PATH)
+SRC := $(shell cd .. && pwd)
+BUILD := $(SRC)/build
+BIN := $(BUILD)/bin
+LIB := $(BUILD)/lib
+MLTON := mlton
+TARGET := self
+FLAGS := -target $(TARGET) -default-ann 'sequenceNonUnit warn' -default-ann 'warnUnused true'
+NAME := mlprof
+PATH := $(BIN):$(shell echo $$PATH)
 
 all:	$(NAME)
 

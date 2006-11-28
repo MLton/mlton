@@ -6,46 +6,51 @@
  # See the file MLton-LICENSE for details.
  ##
 
-export TARGET = self
-export TARGET_ARCH = $(shell bin/host-arch)
-export TARGET_OS = $(shell bin/host-os)
-ROOT = $(shell pwd)
-BUILD = $(ROOT)/build
-SRC = $(ROOT)
-BIN = $(BUILD)/bin
-LIB = $(BUILD)/lib
-INC = $(LIB)/include
-COMP = $(SRC)/mlton
-MLTON = $(BIN)/mlton
-AOUT = mlton-compile
+export TARGET := self
+export TARGET_ARCH := $(shell bin/host-arch)
+export TARGET_OS := $(shell bin/host-os)
+ROOT := $(shell pwd)
+BUILD := $(ROOT)/build
+SRC := $(ROOT)
+BIN := $(BUILD)/bin
+LIB := $(BUILD)/lib
+INC := $(LIB)/include
+COMP := $(SRC)/mlton
+RUN := $(SRC)/runtime
+MLTON := $(BIN)/mlton
+AOUT := mlton-compile
 ifeq (mingw, $(TARGET_OS))
-EXE = .exe
+EXE := .exe
 else
-EXE =
+EXE :=
 endif
-MLBPATHMAP = $(LIB)/mlb-path-map
-TARGETMAP = $(LIB)/target-map
-SPEC = package/rpm/mlton.spec
-LEX = mllex
-PROF = mlprof
-YACC = mlyacc
-NLFFIGEN = mlnlffigen
-PATH = $(BIN):$(SRC)/bin:$(shell echo $$PATH)
-CP = /bin/cp -fpR
-GZIP = gzip --force --best
-RANLIB = ranlib
+MLBPATHMAP := $(LIB)/mlb-path-map
+TARGETMAP := $(LIB)/target-map
+SPEC := package/rpm/mlton.spec
+LEX := mllex
+PROF := mlprof
+YACC := mlyacc
+NLFFIGEN := mlnlffigen
+PATH := $(BIN):$(SRC)/bin:$(shell echo $$PATH)
+CP := /bin/cp -fpR
+GZIP := gzip --force --best
+RANLIB := ranlib
 
 # If we're compiling with another version of MLton, then we want to do
 # another round of compilation so that we get a MLton built without
 # stubs.
 ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
-	BOOTSTRAP_OTHER=true
+	BOOTSTRAP_OTHER:=true
 else
-	BOOTSTRAP_OTHER=false
+	BOOTSTRAP_OTHER:=false
 endif
 
-VERSION ?= $(shell date +%Y%m%d)
-RELEASE ?= 1
+ifeq ($(origin VERSION), undefined)
+	VERSION := $(shell date +%Y%m%d)
+endif
+ifeq ($(origin RELEASE), undefined)
+	RELEASE := 1
+endif
 
 .PHONY: all
 all:
@@ -108,7 +113,7 @@ constants:
 	./tmp >"$(LIB)/$(TARGET)/constants"
 	rm -f tmp tmp.c
 
-DEBSRC = mlton-$(VERSION).orig
+DEBSRC := mlton-$(VERSION).orig
 .PHONY: deb
 deb:
 	$(MAKE) clean clean-svn version
@@ -156,7 +161,7 @@ docs: dirs
 		bin/make-pdf-guide; \
 	fi
 
-BSDSRC = /tmp/mlton-$(VERSION)
+BSDSRC := /tmp/mlton-$(VERSION)
 .PHONY: freebsd
 freebsd:
 	$(MAKE) clean clean-svn version
@@ -168,7 +173,7 @@ freebsd:
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package  
 
-LIBRARIES = ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
+LIBRARIES := ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
 
 .PHONY: libraries-no-check
 libraries-no-check:
@@ -257,8 +262,8 @@ profiled:
 		chmod a+x "$(MLTON).$$t";				\
 	done
 
-TOPDIR = 'TOPDIR-unset'
-SOURCEDIR = $(TOPDIR)/SOURCES/mlton-$(VERSION)
+TOPDIR := 'TOPDIR-unset'
+SOURCEDIR := $(TOPDIR)/SOURCES/mlton-$(VERSION)
 .PHONY: rpms
 rpms:
 	$(MAKE) clean clean-svn version
@@ -352,44 +357,44 @@ world:
 # The TBIN and TLIB are where the files are going to be after installing.
 # The DESTDIR and is added onto them to indicate where the Makefile actually
 # puts them.
-DESTDIR = $(CURDIR)/install
-PREFIX = /usr
+DESTDIR := $(CURDIR)/install
+PREFIX := /usr
 ifeq ($(TARGET_OS), cygwin)
-PREFIX = /
+PREFIX := /
 endif
 ifeq ($(TARGET_OS), darwin)
-PREFIX = /usr/local
+PREFIX := /usr/local
 endif
 ifeq ($(TARGET_OS), mingw)
-PREFIX = /mingw
+PREFIX := /mingw
 endif
 ifeq ($(TARGET_OS), solaris)
-PREFIX = /usr/local
+PREFIX := /usr/local
 endif
-prefix = $(PREFIX)
-MAN_PREFIX_EXTRA =
-TBIN = $(DESTDIR)$(prefix)/bin
-ULIB = lib/mlton
-TLIB = $(DESTDIR)$(prefix)/$(ULIB)
-TMAN = $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
-TDOC = $(DESTDIR)$(prefix)/share/doc/mlton
+prefix := $(PREFIX)
+MAN_PREFIX_EXTRA :=
+TBIN := $(DESTDIR)$(prefix)/bin
+ULIB := lib/mlton
+TLIB := $(DESTDIR)$(prefix)/$(ULIB)
+TMAN := $(DESTDIR)$(prefix)$(MAN_PREFIX_EXTRA)/man/man1
+TDOC := $(DESTDIR)$(prefix)/share/doc/mlton
 ifeq ($(TARGET_OS), cygwin)
-TDOC = $(DESTDIR)$(prefix)/usr/share/doc/mlton
+TDOC := $(DESTDIR)$(prefix)/usr/share/doc/mlton
 endif
 ifeq ($(TARGET_OS), solaris)
-TDOC = $(DESTDIR)$(prefix)/doc/mlton
+TDOC := $(DESTDIR)$(prefix)/doc/mlton
 endif
-TEXM = $(TDOC)/examples
+TEXM := $(TDOC)/examples
 
-GZIP_MAN = true
+GZIP_MAN := true
 ifeq ($(TARGET_OS), solaris)
-GZIP_MAN = false
+GZIP_MAN := false
 endif
 
 .PHONY: install
 install: install-docs install-no-docs
 
-MAN_PAGES =  \
+MAN_PAGES :=  \
 	mllex.1 \
 	mlnlffigen.1 \
 	mlprof.1 \
@@ -447,7 +452,7 @@ install-docs:
 	find "$(TEXM)/" -name .svn -type d | xargs rm -rf
 	find "$(TEXM)/" -name .ignore -type f | xargs rm -rf
 
-TDOCBASE = $(DESTDIR)$(prefix)/share/doc-base
+TDOCBASE := $(DESTDIR)$(prefix)/share/doc-base
 
 .PHONY: post-install-debian
 post-install-debian:	

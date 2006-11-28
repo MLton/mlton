@@ -6,38 +6,38 @@
  # See the file MLton-LICENSE for details.
  ##
 
-SRC = $(shell cd .. && pwd)
-BUILD = $(SRC)/build
-BIN = $(BUILD)/bin
-HOST_ARCH = $(shell "$(SRC)/bin/host-arch")
-HOST_OS = $(shell "$(SRC)/bin/host-os")
-LIB = $(BUILD)/lib
-MLTON = mlton
-TARGET = self
-AOUT = mlton-compile
-UP = upgrade-basis.sml
-PATH = $(BIN):$(shell echo $$PATH)
+SRC := $(shell cd .. && pwd)
+BUILD := $(SRC)/build
+BIN := $(BUILD)/bin
+HOST_ARCH := $(shell "$(SRC)/bin/host-arch")
+HOST_OS := $(shell "$(SRC)/bin/host-os")
+LIB := $(BUILD)/lib
+MLTON := mlton
+TARGET := self
+AOUT := mlton-compile
+UP := upgrade-basis.sml
+PATH := $(BIN):$(shell echo $$PATH)
 
-FLAGS = @MLton max-heap 640m ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+FLAGS := @MLton max-heap 640m ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
-  FILE = mlton.mlb
+  FILE := mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
   FLAGS += -default-ann 'warnUnused true'
 else
 ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
   # fork, and fork doesn't work on Cygwin.  So, make without the stubs.
-  FILE = mlton.cm
+  FILE := mlton.cm
 else
 ifeq (mingw, $(HOST_OS))
   # Ditto for MinGW.
-  FILE = mlton.cm
+  FILE := mlton.cm
 else
   # We're compiling MLton with an older version of itself, so use the stubs for
   # the MLton structure.
-  FILE = mlton-stubs.cm
+  FILE := mlton-stubs.cm
 endif
 endif
 endif
@@ -54,7 +54,7 @@ else
 endif
 FLAGS += $(COMPILE_ARGS)
 
-SOURCES =			\
+SOURCES :=			\
 	$(FILE)			\
 	$(UP)			\
 	front-end/ml.lex.sml 	\
@@ -102,7 +102,7 @@ clean:
 # Manager (CM) installed.  You may need to replace the following with
 # 'sml-cm'.
 #
-SML	= sml
+SML	:= sml
 
 .PHONY: def-use
 def-use:

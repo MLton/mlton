@@ -18,7 +18,7 @@ code_pointer GC_getTextStart (void) {
         void *address;
         const struct mach_header *mh;
 
-        _dyld_lookup_and_bind ("_main", &address, 0);
+        _dyld_lookup_and_bind ("_main", &address, NULL);
         mh = _dyld_get_image_header_containing_address (address);
         return (code_pointer)mh;
 }

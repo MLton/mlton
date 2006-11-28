@@ -5,7 +5,7 @@
  # See the file MLton-LICENSE for details.
  ##
 
-GEN = generate-overloads
+GEN := generate-overloads
 
 overloads.sml: $(GEN).sml
 	mlton $(GEN).sml
