@@ -9,7 +9,7 @@
 structure CommandLine: COMMAND_LINE =
    struct
       structure Prim = PrimitiveFFI.CommandLine
-         
+
       fun name () = 
          CUtil.C_String.toString (Prim.commandNameGet ())
 

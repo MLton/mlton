@@ -258,7 +258,7 @@ structure Event : EVENT_EXTRA =
          in
             evt
          end
-      
+
 
       local
          val cnt = ref 0
@@ -341,7 +341,7 @@ structure Event : EVENT_EXTRA =
          in
             x
          end
-                  
+
       (* this function handles the case of synchronizing on a list of 
        * base events (w/o any negative acknowledgements).   It also handles 
        * the case of syncrhonizing on NEVER.

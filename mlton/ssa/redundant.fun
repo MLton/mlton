@@ -21,7 +21,7 @@ structure Element:
       structure Class:
          sig
             type t
-               
+
             val plist: t -> PropertyList.t
          end
 
@@ -130,7 +130,7 @@ structure Element:
       structure Refinement =
          struct
             type t = refinement
-               
+
             fun group (v: t, sel): t list =
                let
                   val classes = ref []
@@ -160,9 +160,9 @@ structure Element:
                           (class (#coarse (Vector.sub (v, 0)))),
                           v)
          end
-      
+
       val todo: Refinement.t list ref = ref []
-         
+
       fun refine (v: Refinement.t): unit =
          List.foreach
          (Refinement.group (v, #fine), fn v =>
@@ -207,11 +207,11 @@ structure Element:
    end
 
 structure Class = Element.Class
-   
+
 structure Eqrel:>
    sig
       type t
-         
+
       val classes: t -> int list list
       val element: t * int -> Element.t
       val elements: t -> Element.t vector
@@ -228,7 +228,7 @@ structure Eqrel:>
       val make = T
 
       fun elements (T v) = v
-         
+
       fun element (r, i) = Vector.sub (elements r, i)
 
       fun forceDistinct (T v) = Element.forceDistinct v
@@ -242,7 +242,7 @@ structure Eqrel:>
       fun unify (r, r') =
          (refine {coarse = r, fine = r'}
           ; refine {coarse = r', fine = r})
-         
+
       fun classes (T v) =
          let
             val classes = ref []
@@ -344,7 +344,7 @@ fun redundant (Program.T {datatypes, globals, functions, main}) =
                             *)
                            Vector.foreach (cases, fn (_, l) =>
                                            Eqrel.forceDistinct (labelInfo l))
-                                                        
+
                       | Goto {dst, args, ...} =>
                            Eqrel.refine {coarse = varEquiv args,
                                          fine = labelInfo dst}

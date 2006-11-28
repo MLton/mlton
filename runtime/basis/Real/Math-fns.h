@@ -17,7 +17,7 @@
 unaryReal(abs, fabs)
 unaryReal(round, rint)
 #undef unaryReal
-  
+
 #define binaryReal(g, h)                                        \
   MLTON_CODEGEN_MATHFN(Real64_t h(Real64_t x, Real64_t y);)     \
   MLTON_CODEGEN_STATIC_INLINE                                   \

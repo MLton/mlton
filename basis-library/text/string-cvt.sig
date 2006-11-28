@@ -7,9 +7,9 @@ signature STRING_CVT =
        | FIX of int option 
        | GEN of int option 
        | EXACT
-         
+
       type ('a, 'b) reader = 'b -> ('a * 'b) option
-         
+
       val padLeft: char -> int -> string -> string 
       val padRight: char -> int -> string -> string 
 

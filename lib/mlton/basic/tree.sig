@@ -21,7 +21,7 @@ signature TREE_STRUCTS =
 signature TREE =
    sig
       include TREE_STRUCTS
-         
+
       datatype 'a t = T of 'a * 'a t Seq.t
 
       val children: 'a t -> 'a t Seq.t

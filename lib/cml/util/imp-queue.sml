@@ -76,7 +76,7 @@ structure ImpQueue : IMP_QUEUE =
                          [] => true
                        | _ => false)
              | _ => false)
-             
+
       fun enque (T {back, ...}, x) = 
          (Assert.assertAtomic' ("ImpQueue.enque", NONE)
           ; back := x::(!back))

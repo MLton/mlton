@@ -27,7 +27,7 @@ signature POSIX_IO_1997 =
 
             val cloexec: flags 
          end
-      
+
       structure O:
          sig
             include POSIX_FLAGS_1997
@@ -36,9 +36,9 @@ signature POSIX_IO_1997 =
             val nonblock: flags 
             val sync: flags 
          end
-      
+
       datatype open_mode = O_RDONLY | O_WRONLY | O_RDWR
-         
+
       val dupfd: {old: file_desc, base: file_desc} -> file_desc 
       val getfd: file_desc -> FD.flags 
       val setfd: file_desc * FD.flags -> unit 
@@ -46,12 +46,12 @@ signature POSIX_IO_1997 =
       val setfl: file_desc * O.flags -> unit 
       val lseek: file_desc * Position.int * whence -> Position.int 
       val fsync: file_desc -> unit
-         
+
       datatype lock_type =
          F_RDLCK
        | F_WRLCK
        | F_UNLCK
-         
+
       structure FLock:
          sig
             type flock
@@ -68,7 +68,7 @@ signature POSIX_IO_1997 =
             val len: flock -> Position.int 
             val pid: flock -> pid option 
          end
-      
+
       val getlk: file_desc * FLock.flock -> FLock.flock 
       val setlk: file_desc * FLock.flock -> FLock.flock 
       val setlkw: file_desc * FLock.flock -> FLock.flock

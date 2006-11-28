@@ -8,7 +8,7 @@
 
 void GC_share (GC_state s, pointer object) {
   size_t total;
-  
+
   if (DEBUG_SHARE)
     fprintf (stderr, "GC_share "FMTPTR"\n", (uintptr_t)object);
   if (DEBUG_SHARE or s->controls.messages)

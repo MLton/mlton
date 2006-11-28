@@ -71,7 +71,7 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
         LARGE_INTEGER li;
         __int64 t;
         static bool tzInit = FALSE;
-        
+
         unless (tzInit) {
                 tzInit = TRUE;
                 _tzset();
@@ -288,7 +288,7 @@ int symlink (__attribute__ ((unused)) const char *oldpath,
 
 int truncate (const char *path, off_t len) {
   int fd;
-  
+
   if ((fd = open(path, O_RDWR)) == -1)
     return -1;
   if (ftruncate(fd, len) < 0) {
@@ -318,7 +318,7 @@ int fsync (int fd) {
 int pipe (int filedes[2]) {
         HANDLE read_h;
         HANDLE write_h;
-        
+
         /* We pass no security attributes (0), so the current policy gets
          * inherited. The pipe is set to NOT stay open in child processes.
          * This will be corrected using DuplicateHandle in create()
@@ -340,7 +340,7 @@ int pipe (int filedes[2]) {
                 if (filedes[1] == -1) 
                         CloseHandle(write_h);
                 else    close(filedes[1]);
-                
+
                 errno = ENFILE;
                 return -1;
         }
@@ -410,12 +410,12 @@ int setenv (const char *name, const char *value, int overwrite) {
                 errno = EEXIST;
                 return -1; /* previous mingw setenv was buggy and returned 0 */
         }
-        
+
         if (SetEnvironmentVariable (name, value)) {
                 errno = ENOMEM; /* this happens often in Windows.. */
                 return -1;
         }
-        
+
         return 0;
 }
 
@@ -549,7 +549,7 @@ int alarm (int secs) {
         LARGE_INTEGER timer_end_val, frequency;
         int remaining = 0;
         long elapse = secs * 1000;      /* win32 uses usecs */
-    
+
         /* Unsetting the alarm */
         if (secs == 0 && curr_timer == 0) {
             return 0;
@@ -717,7 +717,7 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
                         default:
                                 return -1;
                 }
-                
+
                 signals_blocked = newmask;
         }
         return 0;
@@ -857,7 +857,7 @@ int tcsetpgrp (__attribute__ ((unused)) int fd,
 
 C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* -1 on error, the casts here are due to bad types on both sides */
         return _cwait ((int*)status, (_pid_t)h, 0);
@@ -886,7 +886,7 @@ void MLton_initSockets () {
         static Bool isInitialized = FALSE;
         WORD version;
         WSADATA wsaData;
-        
+
         unless (isInitialized) {
                 isInitialized = TRUE;
                 version = MAKEWORD (2,2);
@@ -922,13 +922,13 @@ void syslog(int priority, const char* fmt, const char* msg) {
     "ALERT", 
     "EMERGENCY"
   };
-  
+
   if (priority < 0) priority = LOG_DEBUG;
   if (priority > LOG_EMERG) priority = LOG_EMERG;
-  
-  
+
+
   /* !!! Use ReportEvent to log with windows */
-  
+
   if ((logopt & LOG_PERROR) != 0) {
     if ((logopt & LOG_PID) != 0)
       fprintf(stderr, "%s(%d): %s: %s\n", logident, getpid(), severity[priority], msg);

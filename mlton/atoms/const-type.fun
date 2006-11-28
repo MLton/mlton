@@ -18,5 +18,5 @@ val toString =
     | Real rs => "Real" ^ (RealSize.toString rs)
     | String => "String"
     | Word ws => "Word" ^ (WordSize.toString ws)
-         
+
 end

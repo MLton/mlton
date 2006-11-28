@@ -74,7 +74,7 @@ signature RSSA =
             val zero: WordSize.t -> t
          end
       sharing Operand = Switch.Use
-    
+
       structure Statement:
          sig
             datatype t =
@@ -194,7 +194,7 @@ signature RSSA =
       structure Function:
          sig
             type t
-               
+
             val blocks: t -> Block.t vector
             val clear: t -> unit
             val dest: t -> {args: (Var.t * Type.t) vector,
@@ -218,7 +218,7 @@ signature RSSA =
                       start: Label.t} -> t
             val start: t -> Label.t
          end
-     
+
       structure Program:
          sig
             datatype t =

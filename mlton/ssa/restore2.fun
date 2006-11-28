@@ -425,14 +425,14 @@ fun restoreFunction {globals: Statement.t vector}
             (violations, fn x =>
              let
                val {enque, deque} = mkQueue ()
-                 
+
                val vi = varInfo x
                val index = VarInfo.index' vi
                val defSites = VarInfo.defSites' vi
                val _ = List.foreach
                        (defSites, fn l =>
                         enque (l, labelInfo l))
-                       
+
                fun doit (_,li) 
                  = Vector.foreach
                    (Promise.force (LabelInfo.df' li), fn l =>

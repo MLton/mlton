@@ -171,7 +171,7 @@ static inline objptr binary (objptr lhs, objptr rhs, size_t bytes,
                                           __gmp_const __mpz_struct *rhsspace)) {
   __mpz_struct lhsmpz, rhsmpz, resmpz;
   mp_limb_t lhsspace[LIMBS_PER_OBJPTR + 1], rhsspace[LIMBS_PER_OBJPTR + 1];
-  
+
   initIntInfRes (&gcState, &resmpz, bytes);
   fillIntInfArg (&gcState, lhs, &lhsmpz, lhsspace);
   fillIntInfArg (&gcState, rhs, &rhsmpz, rhsspace);

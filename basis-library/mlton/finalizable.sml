@@ -22,7 +22,7 @@ datatype 'a t = T of {afters: (unit -> unit) list ref,
                       value: 'a ref}
 
 fun touch (T {value, ...}) = Primitive.MLton.Finalizable.touch value
-   
+
 fun withValue (f as T {value, ...}, g) =
    DynamicWind.wind (fn () => g (!value),
                      fn () => touch f)

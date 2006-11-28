@@ -48,7 +48,7 @@ fun update (a, i, r) =
    in
       updA (a, i, r)
    end
-   
+
 local
    val a = Array.arrayUninit bytesPerElem
 in

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ALLOCATE_REGISTERS_STRUCTS = 
    sig
       structure Rssa: RSSA

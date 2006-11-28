@@ -98,7 +98,7 @@ void initTextSources (GC_state s) {
 void showSources (GC_state s) {
   uint32_t i;
   uint32_t j;
-  
+
   fprintf (stdout, "0x%08"PRIx32"\n", s->magic);
   fprintf (stdout, "%"PRIu32"\n", s->sourceMaps.sourceNamesLength);
   for (i = 0; i < s->sourceMaps.sourceNamesLength; i++)
@@ -111,7 +111,7 @@ void showSources (GC_state s) {
   fprintf (stdout, "%"PRIu32"\n", s->sourceMaps.sourceSeqsLength);
   for (i = 0; i < s->sourceMaps.sourceSeqsLength; i++) {
     uint32_t *sourceSeq;
-    
+
     sourceSeq = s->sourceMaps.sourceSeqs[i];
     for (j = 1; j <= sourceSeq[0]; j++)
       fprintf (stdout, "%"PRIu32" ", sourceSeq[j]);

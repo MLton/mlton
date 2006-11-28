@@ -10,7 +10,7 @@ struct
 
 structure Int = Pervasive.Int
 type int = Int.int
-  
+
 structure F =
    struct
       type 'a t = 'a list
@@ -35,9 +35,9 @@ fun dropPrefix (l: 'a t, n: int): 'a t =
       case l of
          [] => Error.bug "List.dropPrefix"
        | _ :: l => dropPrefix (l, n - 1)
-         
+
 fun dropSuffix (l, n: int) = rev (dropPrefix (rev l, n))
-   
+
 fun nth (l, i: int) =
    let
       fun loop (l, i) =
@@ -67,7 +67,7 @@ fun first l =
    case l of
       [] => Error.bug "List.first"
     | x :: _ => x
-         
+
 fun forall (l, f) =
    let
       fun loop l =
@@ -87,7 +87,7 @@ fun foralli (l, f) =
    in
       loop (l, 0)
    end
-   
+
 fun fold2 (l1, l2, b, f) =
    let
       fun loop (l1, l2, b) =
@@ -120,7 +120,7 @@ fun index (l, f) =
    in
       loop (l, 0)
    end
-            
+
 fun isEmpty l =
    case l of
       [] => true
@@ -160,7 +160,7 @@ fun peekMap (l, f) =
    end
 
 fun appendRev (l, l') = fold (l, l', op ::)
-   
+
 fun append (l, l') = appendRev (rev l, l')
 
 fun rev l = appendRev (l, [])
@@ -170,7 +170,7 @@ fun foldr (l, b, f) = fold (rev l, b, f)
 fun foldr2 (l1, l2, b, f) = fold2 (rev l1, rev l2, b, f)
 
 fun revMap (l, f) = fold (l, [], fn (x, l) => f x :: l)
-   
+
 fun map (l, f) = rev (revMap (l, f))
 
 fun map2 (l1, l2, f) =
@@ -286,7 +286,7 @@ fun pop r =
    case !r of
       [] => Error.bug "List.pop"
     | x :: l => (r := l; x)
-   
+
 fun push (r, x) = r := x :: !r
 
 fun remFst (l, f, notFound) =
@@ -348,7 +348,7 @@ fun 'a ordered {<= : 'a * 'a -> bool} =
               fn (y, (left, right)) =>
               if x <= y then (left, cons (y, right))
               else (cons (y, left), right))
-    
+
       local  
          val columnSize: int = 5
          val sort = insertionSort
@@ -389,10 +389,10 @@ fun 'a ordered {<= : 'a * 'a -> bool} =
             end
          in firstN (fold (s, [], insert),n)
          end
-      
+
       val smallest = choose (op <)
       val largest = choose (op >)
-    
+
       fun getFirst (l, extreme, name) =
          case extreme (l, 1) of
             x :: _ => x
@@ -457,7 +457,7 @@ fun 'a set {equals: 'a * 'a -> bool,
       fun intersect (s, s') = subset (s, fn x => contains (s', x))
       fun unions ss = fold (ss, [], op +)
       val size: 'a t -> int = length
-         
+
       val layout = fn vs =>
          let open Layout
          in seq [str "{",
@@ -466,7 +466,7 @@ fun 'a set {equals: 'a * 'a -> bool,
          end
 
       val remove = fn (s, x) => remove (s, equalTo x)
-   
+
       fun replace (s: 'a t, f): 'a t =
          fold (s, [], fn (x, s) => (case f x of
                                         NONE => s

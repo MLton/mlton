@@ -67,7 +67,7 @@ static inline void writeUintmaxU (FILE *f, uintmax_t u) {
 
 static inline void writeUint32X (FILE *f, uint32_t u) {
   static char buf[BUF_SIZE];
-  
+
   snprintf (buf, BUF_SIZE, "0x%08"PRIx32, u);
   writeString (f, buf);
 }

@@ -6,7 +6,7 @@
  *)
 
 type word = Word.t
-   
+
 signature SOURCE_INFO_STRUCTS =
    sig
    end
@@ -14,7 +14,7 @@ signature SOURCE_INFO_STRUCTS =
 signature SOURCE_INFO =
    sig
       include SOURCE_INFO_STRUCTS
-         
+
       type t
 
       val all: unit -> t list

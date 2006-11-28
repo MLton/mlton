@@ -49,7 +49,7 @@ structure Chunk =
    end
 
 datatype chunk = datatype Chunk.t
-   
+
 val chunk = control {name = "chunk",
                      default = Coalesce {limit = 4096},
                      toString = Chunk.toString}
@@ -68,7 +68,7 @@ structure Codegen =
    end
 
 datatype codegen = datatype Codegen.t
-   
+
 val codegen = control {name = "codegen",
                        default = Native,
                        toString = Codegen.toString}
@@ -128,7 +128,7 @@ structure Elaborate =
                 | Ignore => "ignore"
                 | Warn => "warn"
          end
-      
+
       structure DiagDI =
          struct
             datatype t =
@@ -218,7 +218,7 @@ structure Elaborate =
                                          concat (List.separate (cs, "|")),
                                          "}"]])))
          end
-         
+
       local 
          fun make ({choices: 'st list option,
                     default: 'st,
@@ -590,7 +590,7 @@ structure Elaborate =
          in
             Exn.finally (f, restore)
          end
-      
+
       val snapshot : unit -> (unit -> 'a) -> 'a = fn () =>
          let
             val withSaved = snapshot ()
@@ -614,11 +614,11 @@ val exportHeader =
    control {name = "export header",
             default = NONE,
             toString = Option.toString File.toString}
-   
+
 val exnHistory = control {name = "exn history",
                           default = false,
                           toString = Bool.toString}
-   
+
 structure GcCheck =
    struct
       datatype t =
@@ -693,7 +693,7 @@ val inputFile = control {name = "input file",
 val keepMachine = control {name = "keep Machine",
                            default = false,
                            toString = Bool.toString}
-   
+
 val keepRSSA = control {name = "keep RSSA",
                         default = false,
                         toString = Bool.toString}
@@ -727,7 +727,7 @@ val libDir = control {name = "lib dir",
 val libTargetDir = control {name = "lib target dir",
                             default = "<libTargetDir unset>",
                             toString = fn s => s} 
-   
+
 val loopPasses = control {name = "loop passes",
                           default = 1,
                           toString = Int.toString}
@@ -743,7 +743,7 @@ val maxFunctionSize = control {name = "max function size",
 val mlbPathMaps = control {name = "mlb path maps",
                            default = [],
                            toString = List.toString (fn s => s)}
-   
+
 structure Native =
    struct
       val commented = control {name = "native commented",
@@ -863,7 +863,7 @@ structure Profile =
    end
 
 datatype profile = datatype Profile.t
-   
+
 val profile = control {name = "profile",
                        default = ProfileNone,
                        toString = Profile.toString}
@@ -889,7 +889,7 @@ structure ProfileIL =
    end
 
 datatype profileIL = datatype ProfileIL.t
-   
+
 val profileIL = control {name = "profile IL",
                          default = ProfileSource,
                          toString = ProfileIL.toString}
@@ -913,7 +913,7 @@ val profileStack = control {name = "profile stack",
 val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}
-   
+
 val showDefUse = control {name = "show def-use",
                           default = NONE,
                           toString = Option.toString File.toString}
@@ -960,7 +960,7 @@ structure Target =
    end
 
 datatype target = datatype Target.t
-   
+
 val target = control {name = "target",
                       default = Self,
                       toString = Target.toString}
@@ -990,7 +990,7 @@ val targetOS = control {name = "target OS",
 val typeCheck = control {name = "type check",
                          default = false,
                          toString = Bool.toString}
-   
+
 structure Verbosity =
    struct
       datatype t =
@@ -1007,7 +1007,7 @@ structure Verbosity =
    end
 
 datatype verbosity = datatype Verbosity.t
-   
+
 val verbosity = control {name = "verbosity",
                          default = Silent,
                          toString = Verbosity.toString}

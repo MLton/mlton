@@ -297,7 +297,7 @@ struct
   structure Entry =
     struct
       structure Kind = Machine.Kind
-         
+
       fun toX86Blocks {label, kind, 
                        transInfo as {frameInfoToX86, live, liveInfo,
                                      ...}: transInfo}
@@ -417,7 +417,7 @@ struct
               => let
                    val (comment_begin,
                         comment_end) = comments statement
-                     
+
                    val dsts = Operand.toX86Operand dst
                    val srcs = Operand.toX86Operand src
                    (* Operand.toX86Operand returns multi-word 
@@ -490,7 +490,7 @@ struct
             statements = [],
             transfer = SOME (x86.Transfer.goto
                              {target = l})})
- 
+
       fun iff (test, a, b)
         = let
             val (test,testsize) =
@@ -594,7 +594,7 @@ struct
                  end
             else AppendList.empty
 
-         
+
       fun toX86Blocks {returns, transfer,
                        transInfo as {frameInfoToX86, ...}: transInfo}
         = (case transfer

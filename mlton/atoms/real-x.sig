@@ -6,7 +6,7 @@
  *)
 
 type word = Word.t
-   
+
 signature REAL_X_STRUCTS = 
    sig
       structure RealSize: REAL_SIZE

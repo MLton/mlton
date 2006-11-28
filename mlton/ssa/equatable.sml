@@ -25,7 +25,7 @@ fun layout (T s, f) =
 fun delay f =
    T (Set.singleton (Uncomputed {compute = f,
                                  whenComputed = ref AppendList.empty}))
-                                            
+
 fun new a = T (Set.singleton (Computed a))
 
 fun equals (T s, T s') = Set.equals (s, s')
@@ -41,7 +41,7 @@ fun value (T s) =
          in
             a
          end
-            
+
 fun equate (T s, T s', combine) =
    if Set.equals (s, s')
       then ()

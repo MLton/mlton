@@ -45,7 +45,7 @@ structure FD =
 structure O = PosixFileSys.O
 
 datatype open_mode = datatype PosixFileSys.open_mode
-         
+
 fun dupfd {base, old} =
    SysCall.simpleResultRestart 
    (fn () => Prim.fcntl3 (old, F_DUPFD, base))
@@ -57,7 +57,7 @@ fun getfd fd =
 fun setfd (fd, flags): unit =
    SysCall.simpleRestart
    (fn () => Prim.fcntl3 (fd, F_SETFD, flags))
-                            
+
 fun getfl fd : O.flags * open_mode =
    let 
       val n = SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
@@ -65,25 +65,25 @@ fun getfl fd : O.flags * open_mode =
       val mode = C_Int.andb (n, O_ACCMODE)
    in (flags, PosixFileSys.flagsToOpenMode mode)
    end
-      
+
 fun setfl (fd, flags: O.flags): unit  =
    SysCall.simpleRestart
    (fn () => Prim.fcntl3 (fd, F_SETFL, flags))
-         
+
 datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
 val whenceToInt =
    fn SEEK_SET => Prim.SEEK_SET
     | SEEK_CUR => Prim.SEEK_CUR
     | SEEK_END => Prim.SEEK_END
-                      
+
 fun lseek (fd, n: Position.int, w: whence): Position.int =
    SysCall.simpleResult'
    ({errVal = C_Off.fromInt ~1}, fn () =>
     Prim.lseek (fd, n, whenceToInt w))
-         
+
 fun fsync fd : unit = SysCall.simple (fn () => Prim.fsync fd)
-         
+
 val whenceToInt =
    fn SEEK_SET => Prim.FLock.SEEK_SET
     | SEEK_CUR => Prim.FLock.SEEK_CUR
@@ -113,7 +113,7 @@ fun intToLockType n =
    else if n = Prim.FLock.F_UNLCK
       then F_UNLCK
    else raise Fail "Posix.IO.intToLockType"
-         
+
 structure FLock =
    struct
       open FLock
@@ -123,7 +123,7 @@ structure FLock =
                     start: Position.int,
                     len: Position.int,
                     pid: pid option}
-                         
+
       fun flock l = l
       val ltype: flock -> lock_type = #ltype
       val whence: flock -> whence = #whence

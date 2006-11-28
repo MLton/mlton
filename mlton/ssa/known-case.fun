@@ -619,7 +619,7 @@ fun simplify (Program.T {globals, datatypes, functions, main})
                           | _ => Error.bug "KnownCase.rewriteCase: tyconValue"
                     val cons = TyconValue.cons tyconValue
                     val numCons = Vector.length cons
-                      
+
                     datatype z = None
                                | One of (Con.t * ConValue.v)
                                | Many
@@ -756,7 +756,7 @@ fun doMany ()
                                  = let
                                      val Block.T {args, ...} 
                                        = LabelInfo.block (labelInfo dst)
-                                       
+
                                      val label = Label.newNoname ()
                                      val args = Vector.map
                                                 (args, fn (_, ty) => 
@@ -913,7 +913,7 @@ val doMany
                           | SOME tyconValue => tyconValue
                    val cons = TyconValue.cons tyconValue
                    val numCons = Vector.length cons
-                     
+
                    val usedCons = Array.new (numCons, false)
                  in
                    Vector.foreach

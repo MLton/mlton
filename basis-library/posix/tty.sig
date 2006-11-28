@@ -17,7 +17,7 @@ signature POSIX_TTY =
             val start: int 
             val stop: int 
             val nccs: int
-               
+
             type cc
             val cc: (int * char) list -> cc 
             val update: cc * (int * char) list -> cc 
@@ -81,7 +81,7 @@ signature POSIX_TTY =
       val compareSpeed: speed * speed -> order 
       val speedToWord: speed -> SysWord.word 
       val wordToSpeed: SysWord.word -> speed
-         
+
       val b0: speed 
       val b50: speed 
       val b75: speed 
@@ -146,7 +146,7 @@ signature POSIX_TTY =
             val ion: flow_action 
 
             eqtype queue_sel
-               
+
             val iflush: queue_sel 
             val oflush: queue_sel 
             val ioflush: queue_sel 

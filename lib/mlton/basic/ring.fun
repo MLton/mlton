@@ -19,5 +19,5 @@ fun double n = n + n
 fun square n = n * n
 
 fun sum l = List.fold(l, zero, op +)
-   
+
 end

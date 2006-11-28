@@ -18,7 +18,7 @@ in
 end
 
 structure ElabControl = Control.Elaborate
-   
+
 fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
    if ElabControl.current c
       then ()
@@ -78,7 +78,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
          Env.snapshot E
       val emptySnapshot = fn (f: unit -> Env.Basis.t) =>
          emptySnapshot (fn () => withDef f)
-         
+
       val primBasis =
          emptySnapshot
          (fn () =>

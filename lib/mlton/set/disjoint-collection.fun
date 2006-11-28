@@ -29,7 +29,7 @@ structure Value :
                             elt: 'a t S.t D.t option ref}
 
       fun value(T{value, ...}) = value
-         
+
       fun elt(T{elt=ref(SOME d), ...}) = d
         | elt _ = Error.error "DisjointCollection.Value.elt"
 
@@ -77,14 +77,14 @@ fun decNumSets c = numSetsRef c := numSets c - 1
 
 fun empty() = T{sets = CL.empty(),
                 numSets = ref 0}
-   
+
 fun addSingleton(c, v) =
    let val v = V.new v
    in (incNumSets c ;
        CL.insert(sets c, V.elt v) ;
        V.set v)
    end
-                    
+
 fun new vs = let val c = empty()
              in (c, List.map(vs, fn v => addSingleton(c, v)))
              end
@@ -92,7 +92,7 @@ fun new vs = let val c = empty()
 fun randomSet(T{sets, ...}) = D.value(CL.first sets)
 
 fun random c = S.value(randomSet c)
-   
+
 fun union(c, s, s') =
     let val r = S.representative s
        val d = S.elt r

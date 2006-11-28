@@ -52,7 +52,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
              | SOME d => d
       in
          type dirstream = dirstream
-            
+
          fun opendir s =
             let
                val s = NullString.nullTerm s
@@ -104,7 +104,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                NONE => ()
              | SOME d => (SysCall.simple (fn () => Prim.closeDir d); r := NONE)
       end
-         
+
       fun chdir s =
          SysCall.simple (fn () => Prim.chdir (NullString.nullTerm s))
 
@@ -112,7 +112,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          val size: int ref = ref 1
          fun make () = Array.arrayUninit (!size)
          val buffer = ref (make ())
-            
+
          fun extractToChar (a, c) =
             let
                val n = Array.length a
@@ -126,7 +126,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             in
                ArraySlice.vector (ArraySlice.slice (a, 0, SOME (loop 0)))
             end
-         
+
          fun extract a = extractToChar (a, #"\000")
       in
          fun getcwd () =
@@ -208,7 +208,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          else if f = O.wronly then O_WRONLY
               else if f = O.rdwr then O_RDWR
                    else raise Fail "flagsToOpenMode: unknown flag"
-                      
+
       val openModeToFlags =
          fn O_RDONLY => O.rdonly
           | O_WRONLY => O.wronly
@@ -239,12 +239,12 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          in 
             fd
          end
-         
+
       fun creat (s, m) = createf (s, O_WRONLY, O.trunc, m)
 
       val umask = Prim.umask
 
- 
+
       local
          fun wrap p arg = (SysCall.simple (fn () => p arg); ())
          fun wrapRestart p arg = (SysCall.simpleRestart (fn () => p arg); ())

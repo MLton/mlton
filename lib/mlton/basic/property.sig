@@ -15,7 +15,7 @@ signature PROPERTY =
       val initFun: ('sym -> 'val) -> ('sym, 'val) init
       val initRaise: string * ('sym -> Layout.t) -> ('sym, 'val) init
       val initRec: ('sym * ('sym -> 'val) -> 'val) -> ('sym, 'val) init
-         
+
       val destGet:
          ('sym -> Plist.t) * ('sym, 'val) init
          -> {

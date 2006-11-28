@@ -14,7 +14,7 @@ structure Word: WORD32 =
       open Z
 
       val equals: t * t -> bool = op =
- 
+
       fun fromWord8s (f: int -> Word8.t): t =
          let
             fun w (i, shift) =

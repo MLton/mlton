@@ -31,7 +31,7 @@ GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex findex) {
 GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra) {
   GC_frameLayout layout;
   GC_frameIndex findex;
-  
+
   findex = getFrameIndexFromReturnAddress (s, ra);
   layout = getFrameLayoutFromFrameIndex(s, findex);
   return layout;

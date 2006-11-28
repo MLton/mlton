@@ -14,9 +14,9 @@ structure PosixTTY: POSIX_TTY =
       structure SysCall = Error.SysCall
 
       type pid = C_PId.t
-         
+
       type file_desc = C_Fd.t
-         
+
       structure V =
          struct
             open V
@@ -58,7 +58,7 @@ structure PosixTTY: POSIX_TTY =
 
             val sub = (Byte.byteToChar o Word8.castFromSysWord o C_CC.castToSysWord) o Array.sub
          end
-      
+
       structure Flags = BitFlags(structure S = C_TCFlag)
       structure I =
          struct
@@ -76,7 +76,7 @@ structure PosixTTY: POSIX_TTY =
             val ixon = IXON
             val parmrk = PARMRK
          end
-      
+
       structure O =
          struct
             open O Flags
@@ -109,7 +109,7 @@ structure PosixTTY: POSIX_TTY =
             val vt1 = VT1
             val vtdly = VTDLY
          end
-      
+
       structure C =
          struct
             open C Flags
@@ -125,7 +125,7 @@ structure PosixTTY: POSIX_TTY =
             val parenb = PARENB
             val parodd = PARODD
          end
-      
+
       structure L =
          struct
             open L Flags
@@ -193,9 +193,9 @@ structure PosixTTY: POSIX_TTY =
                 cc = cc,
                 ispeed = ispeed,
                 ospeed = ospeed}
-                
+
             val getispeed: termios -> speed = #ispeed
-               
+
             fun setispeed ({iflag, oflag, cflag, lflag, cc, ospeed, ...}: termios,
                           ispeed: speed): termios =
                {iflag = iflag,
@@ -206,9 +206,9 @@ structure PosixTTY: POSIX_TTY =
                 ispeed = ispeed,
                 ospeed = ospeed}
          end
-      
+
       structure Termios = Prim.Termios
-         
+
       structure TC =
          struct
             open Prim.TC 
@@ -260,18 +260,18 @@ structure PosixTTY: POSIX_TTY =
                SysCall.simpleRestart (fn () => Prim.TC.sendbreak (fd, C_Int.fromInt n))
 
             fun drain fd = SysCall.simpleRestart (fn () => Prim.TC.drain fd)
-              
+
             fun flush (fd, n) =
                SysCall.simpleRestart (fn () => Prim.TC.flush (fd, n))
-              
+
             fun flow (fd, n) =
                SysCall.simpleRestart (fn () => Prim.TC.flow (fd, n))
-              
+
             fun getpgrp fd =
                SysCall.simpleResultRestart'
                ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 Prim.TC.getpgrp fd)
-              
+
             fun setpgrp (fd, pid) = 
                SysCall.simpleRestart (fn () => Prim.TC.setpgrp (fd, pid))
          end

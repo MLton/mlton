@@ -94,7 +94,7 @@ open Primitive
 structure Real32 : PRIM_REAL  =
    struct
       open Real32
-         
+
       val realSize : Int32.int = 32
       val precision : Int32.int = 24
       val radix : Int32.int = 2
@@ -102,7 +102,7 @@ structure Real32 : PRIM_REAL  =
       structure Math =
          struct
             type real = real
-               
+
             val acos = _prim "Real32_Math_acos": real -> real;
             val asin = _prim "Real32_Math_asin": real -> real;
             val atan = _prim "Real32_Math_atan": real -> real;
@@ -121,7 +121,7 @@ structure Real32 : PRIM_REAL  =
             val tan = _prim "Real32_Math_tan": real -> real;
             val tanh = _import "Real32_Math_tanh": real -> real;
          end
-      
+
       val * = _prim "Real32_mul": real * real -> real;
       val *+ = _prim "Real32_muladd": real * real * real -> real;
       val *- = _prim "Real32_mulsub": real * real * real -> real;
@@ -181,11 +181,11 @@ structure Real64 : PRIM_REAL =
       val realSize : Int32.int = 64
       val precision : Int32.int = 53
       val radix : Int32.int = 2
-         
+
       structure Math =
          struct
             type real = real
-               
+
             val acos = _prim "Real64_Math_acos": real -> real;
             val asin = _prim "Real64_Math_asin": real -> real;
             val atan = _prim "Real64_Math_atan": real -> real;
@@ -204,7 +204,7 @@ structure Real64 : PRIM_REAL =
             val tan = _prim "Real64_Math_tan": real -> real;
             val tanh = _import "Real64_Math_tanh": real -> real;
          end
-      
+
       val * = _prim "Real64_mul": real * real -> real;
       val *+ = _prim "Real64_muladd": real * real * real -> real;
       val *- = _prim "Real64_mulsub": real * real * real -> real;

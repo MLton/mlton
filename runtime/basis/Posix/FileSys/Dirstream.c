@@ -12,7 +12,7 @@ C_Errno_t(C_DirP_t) Posix_FileSys_Dirstream_openDir (NullString8_t p) {
 C_Errno_t(C_String_t) Posix_FileSys_Dirstream_readDir (C_DirP_t d) {
   struct dirent *e;
   char *res;
-        
+
   e = readdir ((DIR *) d);
   res = (NULL == e) ? NULL : e->d_name;
   return (C_Errno_t(C_String_t))res;

@@ -13,7 +13,7 @@ structure MLtonWorld: MLTON_WORLD =
       structure SysCall = Error.SysCall
 
       val gcState = Primitive.MLton.GCState.gcState
-         
+
       datatype status = Clone | Original
 
       (* Need to worry about:
@@ -39,7 +39,7 @@ structure MLtonWorld: MLTON_WORLD =
          case save' file of
             Clone => MLtonThread.switch (fn _ => t)
           | Original => ()
-         
+
       fun save (file: string): status =
          if MLtonThread.amInSignalHandler ()
             then raise Fail "cannot call MLton.World.save within signal handler"

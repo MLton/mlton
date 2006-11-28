@@ -11,7 +11,7 @@ structure MLtonCallStack =
 
       val gcState = Primitive.MLton.GCState.gcState
       structure Pointer = MLtonPointer
-         
+
       val current: unit -> t =
          fn () =>
          if not keep

@@ -20,7 +20,7 @@ signature FLAT_LATTICE_STRUCTS =
 signature FLAT_LATTICE =
    sig
       include FLAT_LATTICE_STRUCTS
-         
+
       type t
 
       val <= : t * t -> bool

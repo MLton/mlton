@@ -22,7 +22,7 @@ local
 in
    structure Base = Base
 end
-   
+
 local
    open Runtime
 in
@@ -53,7 +53,7 @@ structure CFunction =
 
       datatype z = datatype Convention.t
       datatype z = datatype Target.t
-         
+
       val copyCurrentThread =
          T {args = Vector.new1 gcState,
             bytesNeeded = NONE,
@@ -180,7 +180,7 @@ structure CFunction =
             return = Type.bool,
             target = Direct "GC_weakCanGet",
             writesStackTop = false}
-         
+
       fun weakGet {arg, return} =
          T {args = Vector.new2 (gcState, arg),
             bytesNeeded = NONE,
@@ -198,7 +198,7 @@ structure CFunction =
             return = return,
             target = Direct "GC_weakGet",
             writesStackTop = false}
-                  
+
       fun weakNew {arg, return} =
          T {args = Vector.new3 (gcState, Word32, arg),
             bytesNeeded = NONE,
@@ -570,7 +570,7 @@ structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
 structure Type =
    struct
       open Type
-         
+
       fun scale (ty: t): Scale.t =
          case Scale.fromInt (Bytes.toInt (bytes ty)) of
             NONE => Error.bug "SsaToRssa.Type.scale"

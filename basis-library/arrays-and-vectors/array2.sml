@@ -152,7 +152,7 @@ structure Array2 (* : ARRAY2 *) =
             andalso (geu (r, rows) orelse geu (c, cols))
             then raise Subscript
             else unsafeSpot' (a, r, c)
-         
+
       fun unsafeSub' (a as {array, ...}: 'a array, r, c) =
          Array.unsafeSub' (array, unsafeSpot' (a, r, c))
       fun sub' (a as {array, ...}: 'a array, r, c) =

@@ -25,11 +25,11 @@ in
          structure MLton =
             struct
                open MLton
-                  
+
                structure Itimer =
                   struct
                      open Itimer
-                        
+
                      val set = stub ("set", set)
                   end
             end
@@ -53,7 +53,7 @@ in
                structure FileSys =
                   struct
                      open FileSys
-                        
+
                      val chown = stub ("chown", chown)
                      val fchown = stub ("fchown", fchown)
                      val fpathconf = stub ("fpathconf", fpathconf)
@@ -67,7 +67,7 @@ in
                structure IO =
                   struct
                      open IO
-                        
+
                      val fcntl2 = stub ("fcntl2", fcntl2)
                      val fcntl3 = stub ("fcntl3", fcntl3)
                   end
@@ -75,7 +75,7 @@ in
                structure ProcEnv =
                   struct
                      open ProcEnv
-                        
+
                      val ctermid = stub ("ctermid", ctermid)
                      val getegid = stub ("getegid", getegid)
                      val geteuid = stub ("geteuid", geteuid)
@@ -99,7 +99,7 @@ in
                structure Process =
                   struct
                      open Process
-                        
+
                      val exece = stub ("exece", exece)
                      val execp = stub ("execp", execp)
                      val exit = stub ("exit", exit)
@@ -112,7 +112,7 @@ in
                structure SysDB =
                   struct
                      open SysDB
-                        
+
                      val getgrgid = stub ("getgrgid", getgrgid)
                      val getgrnam = stub ("getgrnam", getgrnam)
                      val getpwuid = stub ("getpwuid", getpwuid)
@@ -121,7 +121,7 @@ in
                structure TTY =
                   struct
                      open TTY
-                        
+
                      structure TC =
                         struct
                            open TC
@@ -141,11 +141,11 @@ in
          structure Socket =
             struct
                open Socket
-                  
+
                structure UnixSock =
                   struct
                      open UnixSock
-                        
+
                      val toAddr = stub ("toAddr", toAddr)
                      val fromAddr = stub ("fromAddr", fromAddr)
                   end

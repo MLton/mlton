@@ -38,7 +38,7 @@ static size_t stringToBytes (char *s) {
   double d;
   char *endptr;
   size_t factor;
-        
+
   d = strtod (s, &endptr);
   if (s == endptr)
     goto bad;

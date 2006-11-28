@@ -11,7 +11,7 @@ structure CUtil: C_UTIL =
       open Int
 
       structure Pointer = Primitive.MLton.Pointer
-         
+
       fun makeLength (sub, term) p =
          let
             fun loop i =
@@ -70,7 +70,7 @@ structure CUtil: C_UTIL =
 
             fun toString cs = toStringOfLength (cs, length cs)
          end
-      
+
       structure C_StringArray =
          struct
             type t = C_StringArray.t

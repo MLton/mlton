@@ -8,7 +8,7 @@
 signature ORDERED_RING_STRUCTS =
    sig
       include RING_WITH_IDENTITY
-      
+
       val compare: t * t -> Relation.t
       val < : t * t -> bool
       val <= : t * t -> bool

@@ -14,7 +14,7 @@ open S
 structure AstModules = AstModules (S)
 
 open AstModules Layout
-   
+
 structure Program =
    struct
       datatype t = T of Topdec.t list list

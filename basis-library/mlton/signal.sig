@@ -26,7 +26,7 @@ signature MLTON_SIGNAL =
       structure Mask:
          sig
             type t
-               
+
             val all: t
             val allBut: signal list -> t
             val block: t -> unit

@@ -12,7 +12,7 @@ signature SEXP_STRUCTS =
 signature SEXP = 
    sig
       include SEXP_STRUCTS
-      
+
       datatype t =
          Atom of string
        | List of t list

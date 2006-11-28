@@ -73,7 +73,7 @@ void Posix_IO_settext (C_Fd_t fd) {
  */
 C_Errno_t(C_PId_t) MLton_Process_cwait(C_PId_t pid, Ref(C_Status_t) status) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* This all works on Win95+ */
         while (1) {

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature DOT =
    sig
       datatype color = datatype DotColor.t

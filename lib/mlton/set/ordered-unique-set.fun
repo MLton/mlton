@@ -275,7 +275,7 @@ fun subsets _ = Error.unimplemented "OrderedUniqueSet: subsets"
 
 fun subsetSize (T {elements = xs, ...}, p)
   = List.fold(xs, 0: int, fn (x, n) => if p x then n + 1 else n)
-                             
+
 fun toList (T {elements = xs, ...}) = xs
 
 fun union (T s1', T s2')

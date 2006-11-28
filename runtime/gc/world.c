@@ -9,7 +9,7 @@
 void loadWorldFromFILE (GC_state s, FILE *f) {
   uint32_t magic;
   pointer start;
-        
+
   if (DEBUG_WORLD)
     fprintf (stderr, "loadWorldFromFILE\n");
   until (readChar (f) == '\000') ;
@@ -40,7 +40,7 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
 
 void loadWorldFromFileName (GC_state s, const char *fileName) {
   FILE *f;
-        
+
   if (DEBUG_WORLD)
     fprintf (stderr, "loadWorldFromFileName (%s)\n", fileName);
   f = fopen_safe (fileName, "rb");
@@ -64,12 +64,12 @@ int saveWorldToFILE (GC_state s, FILE *f) {
             (uintptr_t)s->heap.start, 
             s->lastMajorStatistics.bytesLive);
   len = strlen(buf) + 1; /* +1 to get the '\000' */
-  
+
   if (fwrite (buf, 1, len, f) != len) return -1;
   if (fwrite (&s->magic, sizeof(uint32_t), 1, f) != 1) return -1;
   if (fwrite (&s->heap.start, sizeof(uintptr_t), 1, f) != 1) return -1;
   if (fwrite (&s->heap.oldGenSize, sizeof(size_t), 1, f) != 1) return -1;
-  
+
   /* atomicState must be saved in the heap, because the saveWorld may
    * be run in the context of a critical section, which will expect to
    * be in the same context when it is restored.
@@ -78,7 +78,7 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   if (fwrite (&s->callFromCHandlerThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->currentThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->signalHandlerThread, sizeof(objptr), 1, f) != 1) return -1;
-  
+
   if (fwrite (s->heap.start, 1, s->heap.oldGenSize, f) != s->heap.oldGenSize)
     return -1;
   if ((*(s->saveGlobals)) (f) != 0)
@@ -88,7 +88,7 @@ int saveWorldToFILE (GC_state s, FILE *f) {
 
 void GC_saveWorld (GC_state s, NullString8_t fileName) {
   FILE *f;
-  
+
   enter (s);
   f = fopen ((const char*)fileName, "wb");
   if (f == 0) {
@@ -103,7 +103,7 @@ void GC_saveWorld (GC_state s, NullString8_t fileName) {
     s->saveWorldStatus = false;
     goto done;
   }
-  
+
   s->saveWorldStatus = true;
 done:
   leave (s);

@@ -86,9 +86,9 @@ structure Control =
          ref (LoopHeaders {fullCFG = false,
                            loopExits = true})
    end
-   
+
 datatype z = datatype Transfer.t
-   
+
 structure CFunction =
    struct
       open CFunction Type.BuiltInCFunction
@@ -111,7 +111,7 @@ structure Transfer =
       datatype bytesAllocated =
          Big of Operand.t
        | Small of Bytes.t
-         
+
       fun bytesAllocated (t: t): bytesAllocated =
          case t of
             CCall {args, func, ...} =>
@@ -153,7 +153,7 @@ structure Block =
    end
 
 val extraGlobals: Var.t list ref = ref []
-   
+
 fun insertFunction (f: Function.t,
                     handlesSignals: bool,
                     blockCheckAmount: {blockIndex: int} -> Bytes.t,
@@ -539,7 +539,7 @@ fun isolateBigTransfers (f: Function.t): Function.t =
                     returns = returns,
                     start = start}
    end
-   
+
 fun insertCoalesce (f: Function.t, handlesSignals) =
    let
       val f = isolateBigTransfers f

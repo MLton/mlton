@@ -564,7 +564,7 @@ val {parse, usage} =
                    showExpert = fn () => !expert}
 
 val usage = fn s => (usage s; raise Fail "unreachable")
-   
+
 fun commandLine (args: string list): unit =
    let
       open Control
@@ -1112,10 +1112,10 @@ fun commandLine (args: string list): unit =
    end
 
 val commandLine = Process.makeCommandLine commandLine
-   
+
 fun exportNJ (file: File.t): unit =
    SMLofNJ.exportFn (file, fn (_, args) => commandLine args)
-   
+
 fun exportMLton (): unit =
    case CommandLine.arguments () of
       [worldFile] =>

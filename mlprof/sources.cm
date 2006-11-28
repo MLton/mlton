@@ -7,7 +7,7 @@
  *)
 
 Group
-   
+
 is
 
 ../lib/mlton/sources.cm

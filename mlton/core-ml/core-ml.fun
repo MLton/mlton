@@ -80,7 +80,7 @@ structure Pat =
       fun var (x, t) = make (Var x, t)
 
       fun tuple ps = make (Tuple ps, Type.tuple (Vector.map (ps, ty)))
-         
+
       local
          fun bool c = make (Con {arg = NONE, con = c, targs = Vector.new0 ()},
                             Type.bool)
@@ -93,12 +93,12 @@ structure Pat =
          case node p of
             Tuple v => 0 = Vector.length v
           | _ => false
-               
+
       fun isWild (p: t): bool =
          case node p of
             Wild => true
           | _ => false
-         
+
       fun isRefutable (p: t): bool =
          case node p of
             Con _ => true
@@ -197,7 +197,7 @@ in
          0 => empty
        | 1 => seq [str " ", Tyvar.layout (Vector.sub (ts, 0))]
        | _ => seq [str " ", tuple (Vector.toListMap (ts, Tyvar.layout))]
-         
+
    fun layoutConArg {arg, con} =
       seq [Con.layout con,
            case arg of
@@ -304,7 +304,7 @@ structure Exp =
       datatype node = datatype expNode
 
       datatype noMatch = datatype noMatch
-            
+
       val layout = layoutExp
 
       local
@@ -314,13 +314,13 @@ structure Exp =
          val node = make #node
          val ty = make #ty
       end
-            
+
       fun make (n, t) = Exp {node = n,
                              ty = t}
 
       fun var (x: Var.t, ty: Type.t): t =
          make (Var (fn () => x, fn () => Vector.new0 ()), ty)
-         
+
       fun isExpansive (e: t): bool =
          case node e of
             App (e1, e2) =>
@@ -381,7 +381,7 @@ structure Exp =
                 test = test}
 
       fun andAlso (e1, e2) = iff (e1, e2, falsee)
-         
+
       fun orElse (e1, e2) = iff (e1, truee, e2)
 
       fun whilee {expr, test} =

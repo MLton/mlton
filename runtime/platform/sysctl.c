@@ -2,7 +2,7 @@ size_t GC_pageSize (void) {
   int pageSize;
   size_t len;
   int mib[2];
-        
+
   mib[0] = CTL_HW;
   mib[1] = HW_PAGESIZE;
   len = sizeof(pageSize);
@@ -15,7 +15,7 @@ size_t GC_totalRam (void) {
   int physMem;
   size_t len;
   int mib[2];
-        
+
   mib[0] = CTL_HW;
   mib[1] = HW_PHYSMEM;
   len = sizeof(physMem);

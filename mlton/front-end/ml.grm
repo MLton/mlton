@@ -96,14 +96,14 @@ structure Exp =
          if 1 = Vector.length es
             then node (Vector.sub (es, 0))
          else Record (Record.tuple es)
-            
+
       val unit = tuple (Vector.new0 ())
    end
 
 structure Dec =
    struct
       open Dec
-         
+
       fun sequence (d1: t, d2: t): t =
          makeRegion (case (node d1, node d2) of
                         (SeqDec d1, SeqDec d2) => SeqDec (Vector.concat [d1, d2])
@@ -169,7 +169,7 @@ type exndesc = Con.t * Type.t option
 type strbind = {name: Strid.t,
                 def: Strexp.t,
                 constraint: SigConst.t}
-   
+
 type sigbind = Sigid.t * Sigexp.t
 
 type funbind = {name : Fctid.t,
@@ -179,10 +179,10 @@ type funbind = {name : Fctid.t,
 
 type vb = {pat: Pat.t,
            exp: Exp.t}
-   
+
 type rvb = {pat: Pat.t,
             match: Match.t}
-   
+
 fun ensureNonqualified (ss: Symbol.t list, r: Region.t): Symbol.t * Region.t =
    case ss of
       [s] => (s, r)
@@ -460,7 +460,7 @@ program: expsAndTopdecs (Program.T expsAndTopdecs)
 expsAndTopdecs:
     exp SEMICOLON expsAndTopdecs ([Topdec.fromExp exp] :: expsAndTopdecs)
   | topdecs (topdecs)
-    
+
 topdecs:
       ([])
   | topdec topdecs (consTopdec (topdec, topdecs))
@@ -554,7 +554,7 @@ strexpnode
      end)
   | strexp2node
     (strexp2node)
-    
+
 strexp1 : strexp COLON sigexp'    ((strexp,SigConst.Transparent,sigexp'))
         | strexp COLONGT sigexp'  ((strexp,SigConst.Opaque,sigexp'))
 
@@ -589,7 +589,7 @@ wherespecs'
   : WHERE wherespec              ([wherespec])
   | WHERE wherespec wherespecs'  (wherespec :: wherespecs')
   | WHERE wherespec andspecs     (wherespec :: andspecs)
-            
+
 andspecs
   : AND wherespec              ([wherespec])
   | AND wherespec andspecs     (wherespec :: andspecs)
@@ -622,7 +622,7 @@ sigconst :                 (SigConst.None)
 specs  :                   (Spec.makeRegion (Spec.Empty, Region.bogus))
        | SEMICOLON specs   (specs)
        | spec specs        (Spec.seq (spec, specs))
-                                
+
 spec : specnode (Spec.makeRegion' (specnode, specnodeleft, specnoderight))
 
 specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
@@ -643,10 +643,10 @@ specnode : VAL valdescs         (Spec.Val (Vector.fromList valdescs))
                                        (Equation.makeRegion' (sharespec,
                                                               sharespecleft,
                                                               sharespecright)))})
-           
+
 sharespec : SHARING TYPE longtyconeqns (Equation.Type longtyconeqns)
           | SHARING longstrideqns      (Equation.Structure longstrideqns)
-        
+
 longstrideqns : longstrid EQUALOP longstrid ([longstrid1,longstrid2])
               | longstrid EQUALOP longstrideqns (longstrid :: longstrideqns)
 
@@ -664,13 +664,13 @@ strdescs'' : strdescs'                 (strdescs')
 
 typdescs : typdesc               ([typdesc])
          | typdesc AND typdescs  (typdesc :: typdescs)
-           
+
 typdesc : tyvars tycon ({tyvars = tyvars,
                          tycon = tycon})
 
 valdescs : valdesc                ([valdesc])
          | valdesc AND valdescs   (valdesc :: valdescs)
-             
+
 valdesc : var COLON ty  (Con.ensureSpecify (Vid.toCon (Vid.fromVar var))
                          ; (var, ty))
 
@@ -713,7 +713,7 @@ fctarg : strid COLON sigexp  (FctArg.Structure (strid, sigexp))
 (*---------------------------------------------------*)
 (*                   Declarations                    *)
 (*---------------------------------------------------*)
-          
+
 decs :                  (Dec.makeRegion' (Dec.SeqDec (Vector.new0 ()),
                                           defaultPos, defaultPos))
      | dec decs         (Dec.sequence (dec,decs))
@@ -1125,7 +1125,7 @@ apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
 
 pats: ([])
     | pat commapats (pat :: commapats)
-      
+
 commapats : ([])
           | COMMA pat commapats (pat :: commapats)
 
@@ -1144,7 +1144,7 @@ patitem
 
 opaspat :         (NONE)
         | AS pat  (SOME pat)
-                                              
+
 (*---------------------------------------------------*)
 (*                       Types                       *)
 (*---------------------------------------------------*)
@@ -1173,7 +1173,7 @@ tlabel  : field COLON ty        (field, ty)
 
 tlabels : tlabel COMMA tlabels  (tlabel :: tlabels)
         | tlabel                ([tlabel])
-          
+
 tuple_ty : ty' ASTERISK tuple_ty        (ty' :: tuple_ty)
          | ty' ASTERISK ty'             ([ty'1, ty'2])
 
@@ -1195,7 +1195,7 @@ constOrBool
              | s => (error (#2 id, concat ["unknown boolean constant: ", s])
                      ; ok false)
          end)
-          
+
 const   : const'                (Const.makeRegion
                                  (const', reg (const'left, const'right)))
 
@@ -1208,7 +1208,7 @@ const'  : int                   (Const.Int int)
 string : STRING  (CharVector.tabulate
                   (Vector.length STRING, fn i =>
                    Char.fromInt (Int.fromIntInf (Vector.sub (STRING, i)))))
-          
+
 idNoAsterisk : longidNoAsterisk (ensureNonqualified longidNoAsterisk)
 
 id : idNoAsterisk  (idNoAsterisk)
@@ -1231,7 +1231,7 @@ longidNoAsterisk
 
 longidEqual : longid   (longid)
             | EQUALOP  (([Symbol.equal], reg (EQUALOPleft, EQUALOPright)))
-              
+
 vid : idEqual                  (Vid.fromSymbol idEqual)
 vidNoEqual : id                (Vid.fromSymbol id)
 vids : vid                     ([vid])

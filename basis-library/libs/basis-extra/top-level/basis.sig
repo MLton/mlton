@@ -30,7 +30,7 @@ signature BASIS_EXTRA =
       exception Size
       exception Span
       exception Subscript
- 
+
       (* Top-level values *)
       val = : ''a * ''a -> bool
       val <> : ''a * ''a -> bool
@@ -78,7 +78,7 @@ signature BASIS_EXTRA =
 *)
       val valOf : 'a option -> 'a 
       val vector : 'a list -> 'a vector
-        
+
       (* Required structures *)
       structure Array : ARRAY   
       structure ArraySlice : ARRAY_SLICE        
@@ -328,7 +328,7 @@ signature BASIS_EXTRA =
       sharing Unsafe.Real64Array = Real64Array
       sharing Unsafe.Word8Array = Word8Array
       sharing Unsafe.Word8Vector = Word8Vector
-         
+
       (* ************************************************** *)
       (* ************************************************** *)
 
@@ -430,7 +430,7 @@ signature BASIS_EXTRA =
       sharing type Word8VectorSlice.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
-        
+
       (* Optional structures *)
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.array = BoolArray.array

@@ -6,10 +6,10 @@ signature STREAM_IO_1997 =
       type reader
       type writer
 *)
-      
+
       type instream
       type outstream
- 
+
       type out_pos
       type pos (* = int *)
 

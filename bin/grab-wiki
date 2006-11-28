@@ -47,7 +47,7 @@ lynx -dump "$base/Index?action=titleindex" | \
 
 echo "Getting pages:" 
 wget -B "$base" -c -nv -i "$index"
- 
+
 echo "Getting CSS:"
 for f in common screen print; do
 	wget -c "$base/wiki/mlton/css/$f.css"

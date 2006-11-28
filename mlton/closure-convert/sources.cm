@@ -9,7 +9,7 @@
 Group
 
 functor ClosureConvert
-   
+
 is
 
 ../../lib/mlton/sources.cm

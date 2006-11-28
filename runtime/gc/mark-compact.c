@@ -18,7 +18,7 @@ void copyForThreadInternal (pointer dst, pointer src) {
     assert (0 == (OBJPTR_SIZE % GC_HEADER_SIZE));
     count = (OBJPTR_SIZE - GC_HEADER_SIZE) / GC_HEADER_SIZE;
     src = src + GC_HEADER_SIZE * count;
-    
+
     for (size_t i = 0; i <= count; i++) {
       *((GC_header*)dst) = *((GC_header*)src);
       dst += GC_HEADER_SIZE;
@@ -30,7 +30,7 @@ void copyForThreadInternal (pointer dst, pointer src) {
     assert (0 == (GC_HEADER_SIZE % OBJPTR_SIZE));
     count = (GC_HEADER_SIZE - OBJPTR_SIZE) / OBJPTR_SIZE;
     dst = dst + OBJPTR_SIZE * count;
-    
+
     for (size_t i = 0; i <= count; i++) {
       *((objptr*)dst) = *((objptr*)src);
       dst -= OBJPTR_SIZE;
@@ -73,7 +73,7 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
   if (WEAK_TAG == tag and 1 == numObjptrs) {
     GC_header objptrHeader;
     GC_weak w;
-    
+
     if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
@@ -258,7 +258,7 @@ unmark:
     do {
       pointer cur;
       objptr curObjptr;
-      
+
       copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
       cur = objptrToPointer (curObjptr, s->heap.start);
 

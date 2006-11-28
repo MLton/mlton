@@ -14,6 +14,6 @@ signature LOOP_INVARIANT_STRUCTS =
 signature LOOP_INVARIANT = 
    sig
       include LOOP_INVARIANT_STRUCTS
-      
+
       val loopInvariant: Program.t -> Program.t
    end

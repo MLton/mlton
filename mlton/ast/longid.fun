@@ -13,7 +13,7 @@ open S
 
 datatype node = T of {strids: Strid.t list,
                       id: Id.t}
-   
+
 type node' = node
 structure Wrap = Region.Wrap
 open Wrap
@@ -56,7 +56,7 @@ fun toId id =
    in
       id
    end
-   
+
 val equals =
    fn (id, id') =>
    let
@@ -65,7 +65,7 @@ val equals =
    in
       List.equals (ss, ss', Strid.equals) andalso Id.equals (i, i')
    end
-   
+
 fun long (strids, id) =
    makeRegion (T {strids = strids, id = id},
                case strids of

@@ -171,7 +171,7 @@ signature C = sig
     structure W : sig
         (* conversion "witness" values *)
         type ('from, 'to) witness
-        
+
         (* A small calculus for generating new witnesses.
          * Since the only witness constructors that do anything real are
          * rw and ro, all this calculus gives you is a way of changing
@@ -338,7 +338,7 @@ signature C = sig
 
         (* dimension of array type *)
         val dim : ('t, 'n) arr typ -> 'n Dim.dim
-                     
+
         (* RTTI for simple things *)
         val schar     :     schar typ
         val uchar     :     uchar typ
@@ -597,7 +597,7 @@ signature C = sig
 
     (* operations on (mostly) arrays *)
     structure Arr : sig
-        
+
         (* array subscript;
          * since we have RTTI, we can actually make this safe:  we raise
          * General.Subscript for out-of-bounds access;

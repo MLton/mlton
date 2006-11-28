@@ -17,7 +17,7 @@ struct
 
 structure L = AR.L
 open L.I
-   
+
 datatype 'a t = T of 'a AR.t * 'a L.t
 
 fun queue(l, r) =
@@ -25,7 +25,7 @@ fun queue(l, r) =
    else T(AR.appendReverse(l, r), L.empty())
 
 fun empty() = T(AR.empty(), L.empty())
-   
+
 fun isEmpty(T(l, _)) = AR.isEmpty l
 
 fun destruct(T(l, r)) =

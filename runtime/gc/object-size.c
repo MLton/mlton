@@ -10,7 +10,7 @@ size_t sizeofArrayNoHeader (GC_state s,
                             GC_arrayLength numElements,
                             uint16_t bytesNonObjptrs, uint16_t numObjptrs) {
   size_t result;
-        
+
   result = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
   /* Empty arrays have OBJPTR_SIZE bytes for the forwarding pointer. */
   if (0 == result) 
@@ -31,7 +31,7 @@ size_t sizeofObject (GC_state s, pointer p) {
   GC_header header;
   GC_objectTypeTag tag;
   uint16_t bytesNonObjptrs, numObjptrs;
-  
+
   header = getHeader (p);
   splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { 

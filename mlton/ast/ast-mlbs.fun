@@ -14,7 +14,7 @@ open S
 structure AstPrograms = AstPrograms (S)
 
 open AstPrograms Layout
-   
+
 val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node

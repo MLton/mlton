@@ -12,7 +12,7 @@ datatype t = T of {length: int ref,
                    chars: char array ref}
 
 val initChar = #"\013"
-   
+
 fun new () = T {length = ref 0,
               chars = ref (Array.array (1, initChar))}
 

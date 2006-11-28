@@ -19,7 +19,7 @@ in
 end
 
 val word = Trace.trace ("Random.word", Unit.layout, Word.layout) word
-   
+
 local
    val ri: int ref = ref 0
    val rw = ref (word ())

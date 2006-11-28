@@ -42,24 +42,24 @@ fun toString (T {elements, elementSize}): string =
                         loop (n, WordX.toIntInf w, ac)
                      end)))
    end
-   
+
 val layout = Layout.str o toString
 
 fun equals (v, v') = Vector.equals (elements v, elements v', WordX.equals)
 
 fun forall (v, f) = Vector.forall (elements v, f)
-   
+
 fun fromString s =
    T {elementSize = WordSize.byte,
       elements = Vector.tabulate (String.size s, fn i =>
                                   WordX.fromChar (String.sub (s, i)))}
-                                  
+
 fun length v = Vector.length (elements v)
 
 fun sub (v, i) = Vector.sub (elements v, i)
-   
+
 fun tabulate ({elementSize}, n, f) =
    T {elementSize = elementSize,
       elements = Vector.tabulate (n, f)}
-   
+
 end

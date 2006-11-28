@@ -14,7 +14,7 @@ signature GLOBALIZE_STRUCTS =
 signature GLOBALIZE = 
    sig
       include GLOBALIZE_STRUCTS
-      
+
       val globalize: {
                       program: Program.t,
                       lambdaFree: Lambda.t -> Var.t vector,

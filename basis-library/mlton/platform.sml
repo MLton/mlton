@@ -11,7 +11,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 
       fun peek (l, f) = List.find f l
       fun omap (opt, f) = Option.map f opt
-         
+
       structure Arch =
          struct
             open Arch
@@ -53,7 +53,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                        (NetBSD, "NetBSD"),
                        (OpenBSD, "OpenBSD"),
                        (Solaris, "Solaris")]
-               
+
             fun fromString s =
                let
                   val s = String.toLower s

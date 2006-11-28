@@ -123,7 +123,7 @@ structure Type =
         | Thread
         | Weak of t
         | Word of WordSize.t
-         
+
       local
          fun make f (T r) = f r
       in
@@ -143,7 +143,7 @@ structure Type =
          case dest t of
             Object {args, con = Vector} => SOME args
           | _ => NONE
-               
+
       val isVector: t -> bool = isSome o deVectorOpt
 
       fun isWeak t =
@@ -201,7 +201,7 @@ structure Type =
 
       val real: RealSize.t -> t =
          fn s => lookup (Tycon.hash (Tycon.real s), Real s)
-         
+
       val word: WordSize.t -> t =
          fn s => lookup (Tycon.hash (Tycon.word s), Word s)
 
@@ -239,7 +239,7 @@ structure Type =
          val array = make true
          val vector1 = make false
       end
-         
+
       val word8Vector = vector1 word8
 
       val string = word8Vector
@@ -256,13 +256,13 @@ structure Type =
          end
 
       fun conApp (con, args) = object {args = args, con = Con con}
-         
+
       fun tuple ts = object {args = ts, con = Tuple}
 
       fun reff t =
          object {args = Prod.make (Vector.new1 {elt = t, isMutable = true}),
                  con = Tuple}
-         
+
       val unit: t = tuple (Prod.empty ())
 
       val isUnit: t -> bool =
@@ -304,7 +304,7 @@ structure Type =
 structure Type =
    struct
       open Type
-         
+
       fun checkPrimApp {args, prim, result}: bool =
          let
             datatype z = datatype Prim.Name.t
@@ -541,7 +541,7 @@ structure Cases =
                Con l => Con (doit l)
              | Word (s, l) => Word (s, doit l)
          end
-      
+
       fun forall (c: t, f: Label.t -> bool): bool =
          let
             fun doit l = Vector.forall (l, fn (_, x) => f x)
@@ -652,7 +652,7 @@ structure Exp =
 
       val unit = Object {con = NONE,
                          args = Vector.new0 ()}
-         
+
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)
@@ -710,7 +710,7 @@ structure Exp =
                                    case global x of
                                       NONE => Var.layout x
                                     | SOME s => Layout.str s))
-         
+
       fun maySideEffect (e: t): bool =
          case e of
             Const _ => false
@@ -817,7 +817,7 @@ structure Statement =
           | _ => ()
 
       fun clear s = foreachDef (s, Var.clear o #1)
-         
+
       fun prettifyGlobals (v: t vector): Var.t -> string option =
          let
             val {get = global: Var.t -> string option, set = setGlobal, ...} =
@@ -864,7 +864,7 @@ structure Statement =
             Bind {exp, ...} => Exp.foreachVar (exp, f)
           | Profile _ => ()
           | Update {base, value, ...} => (Base.foreach (base, f); f value)
-               
+
       fun replaceDefsUses (s: t, {def: Var.t -> Var.t, use: Var.t -> Var.t}): t =
          case s of
             Bind {exp, ty, var} =>
@@ -881,7 +881,7 @@ structure Statement =
    end
 
 datatype z = datatype Statement.t
-   
+
 structure Handler =
    struct
       structure Label = Label
@@ -1056,7 +1056,7 @@ structure Transfer =
                   default = NONE,
                   test = test}
          end
-         
+
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
             fun vars xs = Vector.foreach (xs, var)
@@ -1088,7 +1088,7 @@ structure Transfer =
 
       fun foreachLabelVar (t, label, var) =
          foreachFuncLabelVar (t, fn _ => (), label, var)
-         
+
       fun foreachLabel (t, j) = foreachLabelVar (t, j, fn _ => ())
       fun foreachVar (t, v) = foreachLabelVar (t, fn _ => (), v)
 
@@ -1264,7 +1264,7 @@ structure Block =
                label: Label.t,
                statements: Statement.t vector,
                transfer: Transfer.t}
-         
+
       local
          fun make f (T r) = f r
       in
@@ -1273,7 +1273,7 @@ structure Block =
          val statements = make #statements
          val transfer = make #transfer
       end
-   
+
       fun layout (T {label, args, statements, transfer}) =
          let
             open Layout
@@ -1326,7 +1326,7 @@ structure Datatype =
 structure Function =
    struct
       structure CPromise = ClearablePromise
-     
+
       type dest = {args: (Var.t * Type.t) vector,
                    blocks: Block.t vector,
                    mayInline: bool,
@@ -1421,7 +1421,7 @@ structure Function =
          in
             ()
          end
-                            
+
       local
          structure Graph = DirectedGraph
          structure Node = Graph.Node
@@ -1694,7 +1694,7 @@ structure Function =
             align [layoutHeader f,
                    indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
          end
-      
+
       fun layouts (f: t, global, output: Layout.t -> unit): unit =
          let
             val {blocks, name, ...} = dest f
@@ -1935,7 +1935,7 @@ structure Program =
 structure Program =
    struct
       open Program
- 
+
       local
          structure Graph = DirectedGraph
          structure Node = Graph.Node
@@ -2021,7 +2021,7 @@ structure Program =
                l
             end
       end
-         
+
       fun layouts (p as T {datatypes, globals, functions, main},
                    output': Layout.t -> unit) =
          let
@@ -2174,7 +2174,7 @@ structure Program =
                globals = globals,
                main = main}
          end
-         
+
    end
 
 end

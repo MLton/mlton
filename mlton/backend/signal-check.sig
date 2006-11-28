@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature SIGNAL_CHECK_STRUCTS = 
    sig
       structure Rssa: RSSA

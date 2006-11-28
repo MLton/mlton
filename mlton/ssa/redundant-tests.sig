@@ -14,6 +14,6 @@ signature REDUNDANT_TESTS_STRUCTS =
 signature REDUNDANT_TESTS = 
    sig
       include REDUNDANT_TESTS_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

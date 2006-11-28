@@ -8,7 +8,7 @@
 signature POLY_CACHE =
    sig
       include FINITE_FUNCTION
-      
+
       val addNew: ('a, 'b) t * 'a * 'b -> unit
       val eq: ('a, 'b) t * ('a, 'b) t -> bool
       val fromList: {equal: 'a * 'a -> bool, elements: ('a * 'b) list} -> ('a, 'b) t

@@ -109,7 +109,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
           fn () => {exp = exp,
                     hash = hash,
                     var = var})
-         
+
       (* All of the globals are in scope, and never go out of scope. *)
       (* The hash-cons'ing of globals in ConstantPropagation ensures
        *  that each global is unique.

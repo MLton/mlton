@@ -19,7 +19,7 @@ signature DATE =
          sig
             datatype t = Mon | Tue | Wed | Thu | Fri | Sat | Sun
          end
-      
+
       structure Month:
          sig
             datatype t =
@@ -27,7 +27,7 @@ signature DATE =
 
             val toInt: t -> int
          end
-      
+
       exception Date
       val compare: t * t -> order
       val date: {year: int,

@@ -39,7 +39,7 @@ functor IEEERealConvert
 
      type decimal_approx = {kind: float_class, sign: bool,
                             digits: int list, exp: int}
- 
+
      val <<< = fn {kind, sign, digits, exp} =>
        {class = << kind, sign = sign, 
         digits = digits, exp = exp}

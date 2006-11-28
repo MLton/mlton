@@ -23,7 +23,7 @@ functor UnitUniqueId():> UNIQUE_ID =
       open Unit
 
       fun new() = ()
-         
+
       fun toString _ = ""
    end
 

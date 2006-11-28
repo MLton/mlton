@@ -44,13 +44,13 @@ structure Rep =
          Vector.map (ts, fromType)
 
       val tuplize: t -> unit = makeTop
-        
+
       val coerce = op <=
 
       fun coerces (rs, rs') = Vector.foreach2 (rs, rs', coerce)
 
       val unify = op ==
-        
+
       fun unifys (rs, rs') = Vector.foreach2 (rs, rs', unify)
    end
 

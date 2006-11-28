@@ -14,6 +14,6 @@ signature REDUNDANT_STRUCTS =
 signature REDUNDANT = 
    sig
       include REDUNDANT_STRUCTS
-      
+
       val redundant: Program.t -> Program.t
    end

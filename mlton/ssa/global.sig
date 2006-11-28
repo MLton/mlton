@@ -7,7 +7,7 @@
  *)
 
 type word = Word.t
-   
+
 signature GLOBAL_STRUCTS = 
    sig
       include SSA_TREE
@@ -16,7 +16,7 @@ signature GLOBAL_STRUCTS =
 signature GLOBAL = 
    sig
       include GLOBAL_STRUCTS
-      
+
       val make:
          unit -> {
                   new: Type.t * Exp.t -> Var.t,

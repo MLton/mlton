@@ -50,7 +50,7 @@ structure Edge =
           ; Edge {from = from,
                   to = to,
                   plist = PropertyList.new ()})
-          
+
       fun equals (e, e') = PropertyList.equals (plist e, plist e')
    end
 
@@ -109,7 +109,7 @@ structure DfsParam =
                 startTree: Node.t -> unit,
                 finishTree: Node.t -> unit,
                 finishDfs: unit -> unit}
-         
+
       fun ignore _ = ()
 
       fun finishNode f = {finishNode = f,
@@ -127,9 +127,9 @@ structure DfsParam =
                          startTree = ignore,
                          finishTree = ignore,
                          finishDfs = ignore}
-         
+
       fun seq f g a = (f a; g a)
-         
+
       fun combine ({startNode, finishNode,
                     handleTreeEdge, handleNonTreeEdge,
                     startTree, finishTree, finishDfs}: t,
@@ -197,7 +197,7 @@ fun supGraph (g as T {nodes, ...}) =
 fun nodes (T {nodes, nodeP, ...}) = List.keepAll(!nodes, nodeP)
 
 fun new () = T {nodes = ref [], nodeP = fn _ => true, edgeP = fn _ => true}
-   
+
 fun newNode (g as T {nodes, ...}) =
    let val n = Node.new g
    in List.push (nodes, n)
@@ -344,7 +344,7 @@ fun discoverFinishTimes g =
 (*--------------------------------------------------------*)
 (*
 fun maxNumEdges n = n * (n - 1)
-   
+
 fun random {numNodes,numEdges} =
    let val max = maxNumEdges numNodes
    in if numNodes < 0 orelse numEdges < 0 orelse numEdges > max
@@ -447,7 +447,7 @@ fun transpose g = let val (gt, p) = transposeParam g
 (*--------------------------------------------------------*)
 (*             Strongly Connected Components              *)
 (*--------------------------------------------------------*)
-   
+
 (* from Cormen, Leiserson, and Rivest 23.5 *)
 (*
 fun sccCLR g =
@@ -1017,7 +1017,7 @@ fun loopForest {headers, graph, root}
             (scc,
              fn n => let
                        val n' = newNode graph'
-                         
+
                        val {childSubGraphNode, graphNode, ...} 
                          = subGraphNodeInfo n
                      in

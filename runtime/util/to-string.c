@@ -22,13 +22,13 @@ char* intmaxToCommaString (intmax_t n) {
   static int bufIndex = 0;
   static char *buf;
   int i;
-  
+
   buf = bufs[bufIndex++];
   bufIndex %= 5;
-        
+
   i = BUF_SIZE - 1;
   buf[i--] = '\000';
-        
+
   if (0 == n)
     buf[i--] = '0';
   else if (INTMAX_MIN == n) {
@@ -58,12 +58,12 @@ char* intmaxToCommaString (intmax_t n) {
     i = 0;
   } else {
     intmax_t m;
-        
+
     if (n > 0) 
       m = n; 
     else 
       m = -n;
-        
+
     while (m > 0) {
       buf[i--] = m % 10 + '0';
       m = m / 10;
@@ -84,10 +84,10 @@ char* uintmaxToCommaString (uintmax_t n) {
   static int bufIndex = 0;
   static char *buf;
   int i;
-  
+
   buf = bufs[bufIndex++];
   bufIndex %= 5;
-  
+
   i = BUF_SIZE - 1;
   buf[i--] = '\000';
   if (0 == n)
@@ -114,7 +114,7 @@ char* sizeToBytesApproxString (size_t amount) {
   static char *buf;
   size_t factor = 1;
   int suffixIndex = 0;
-  
+
   buf = bufs[bufIndex++];
   bufIndex %= 5;
 

@@ -11,7 +11,7 @@ struct
 type t = exn
 
 val history = MLton.Exn.history
-   
+
 val name = General.exnName
 
 exception Bind = Bind

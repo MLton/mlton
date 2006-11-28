@@ -24,7 +24,7 @@ structure NullString8 :>
    end =
    struct
       type t = String8.string
- 
+
       fun fromString s =
          if #"\000" = Vector.subUnsafe (s, SeqIndex.- (Vector.length s, 1))
             then s

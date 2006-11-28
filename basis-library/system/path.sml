@@ -47,7 +47,7 @@ val isWindows =
    in 
       host = MinGW orelse host = Cygwin
    end
-      
+
 val volumeHack =
    let
       open Primitive.MLton.Platform.OS
@@ -57,7 +57,7 @@ val volumeHack =
 
 (* the path separator used in canonical paths *)
 val slash = if isWindows then "\\" else "/"
-      
+
 (* newer windows commands treat both / and \ as path separators
  * try echo sdfsdf > foo/bar under windows command.com -- it works
  * 
@@ -67,7 +67,7 @@ val slash = if isWindows then "\\" else "/"
  *)
 fun isslash c = c = #"/" orelse (isWindows andalso c = #"\\")
 fun iscolon c = c = #":"
-      
+
 (* Under cygwin, the special volume "/" denotes the cygwin pseudo-root
  *)
 fun isVolumeName v =
@@ -75,22 +75,22 @@ fun isVolumeName v =
     Char.isAlpha (v sub 0) andalso iscolon (v sub 1))
    orelse
    (volumeHack andalso v = "/")
-      
+
 fun volumeMatch (root, relative) =
    relative = ""
    orelse (isVolumeName root
            andalso isVolumeName relative
            andalso (Char.toUpper (root sub 0)
                     = Char.toUpper (relative sub 0)))
-       
+
 fun canonName a = 
    if isWindows
       then String.translate (str o Char.toLower) a
    else a
-  
+
 val parentArc  = ".."
 val currentArc = "."
-  
+
 (* Ahh joy. The SML basis library standard and Windows paths. 
  * 
  * The big problem with windows paths is "\foo""
@@ -101,7 +101,7 @@ fun validVolume {isAbs, vol} =
    if isWindows
       then isVolumeName vol orelse (not isAbs andalso vol = "")
    else vol = ""
-  
+
 fun fromString s =
    let
       val (vol, rest) = (* 4:foo has a volume of "4:" even tho invalid *)
@@ -119,7 +119,7 @@ fun fromString s =
    in
       {arcs = arcs, isAbs = isAbs, vol = vol}
    end
-      
+
 val getVolume = #vol o fromString
 val isAbsolute = #isAbs o fromString
 val isRelative = not o isAbsolute
@@ -129,7 +129,7 @@ fun isArc s =
    orelse (case fromString s of
               {arcs = [_], isAbs = false, vol = ""} => true
             | _ => false)
-  
+
 fun toString {arcs, isAbs, vol} =
    if not (validVolume {isAbs = isAbs, vol = vol})
       then raise Path
@@ -273,7 +273,7 @@ fun splitDirFile p =
    end
 
 val dir = #dir o splitDirFile
-   
+
 val file = #file o splitDirFile
 
 fun joinBaseExt {base, ext} =
@@ -305,12 +305,12 @@ fun isRoot path =
    case fromString path of
       {isAbs = true,  arcs=[""],  ...} => true
     | _ => false
-  
+
 fun fromUnixPath s = 
    if not isWindows then s
    else if Char.contains s (slash sub 0) then raise InvalidArc
    else String.translate (fn c => if c = #"/" then slash else str c) s
-     
+
 fun toUnixPath s = 
    if not isWindows then s
    else

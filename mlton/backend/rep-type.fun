@@ -178,9 +178,9 @@ structure Type =
       val isUnit: t -> bool = fn t => Bits.equals (Bits.zero, width t)
 
       val isUnit = Trace.trace ("RepType.Type.isUnit", layout, Bool.layout) isUnit
-         
+
       val isReal: t -> bool = isSome o deReal
- 
+
       val rec isSubtype: t * t -> bool =
          fn (t, t') =>
          if not (sameWidth (t, t'))
@@ -325,7 +325,7 @@ structure ObjectType =
       structure Runtime = Runtime
 
       type ty = Type.t
-         
+
       datatype t =
          Array of {elt: Type.t,
                    hasIdentity: bool}
@@ -435,7 +435,7 @@ structure ObjectType =
    end
 
 open Type
-   
+
 fun pointerHeader p =
    constant (WordX.fromIntInf
              (1 + 2 * Int.toIntInf (PointerTycon.index p),
@@ -444,7 +444,7 @@ fun pointerHeader p =
 fun arrayOffsetIsOk _ = true
 
 structure GCField = Runtime.GCField
-   
+
 fun ofGCField (f: GCField.t): t =
    let
       datatype z = datatype GCField.t
@@ -481,7 +481,7 @@ structure BuiltInCFunction =
 
       datatype z = datatype Convention.t
       datatype z = datatype Target.t
-         
+
       val bug = vanilla {args = Vector.new1 string,
                          name = "MLton_bug",
                          prototype = (Vector.new1 CType.pointer, NONE),
@@ -493,7 +493,7 @@ structure BuiltInCFunction =
          val Word32 = word (Bits.fromInt 32)
          val unit = unit
       end
-   
+
       local
          fun make b =
             T {args = let

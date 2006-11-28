@@ -37,7 +37,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
       sharing type ArraySlice.vector_slice
          = PrimIO.vector_slice
          = VectorSlice.slice
-         
+
       val chunkSize: int
       val fileTypeFlags: Posix.FileSys.O.flags list
       val line : {isLine: Vector.elem -> bool,
@@ -130,7 +130,7 @@ val stdErr = newOut {appendMode = true,
                      closeAtExit = false,
                      fd = PFS.stderr,
                      name = "<stderr>"}
-         
+
 val newOut = fn {appendMode, closeAtExit, fd, name} =>
    newOut {appendMode = appendMode,
            bufferMode = if Posix.ProcEnv.isatty fd
@@ -139,12 +139,12 @@ val newOut = fn {appendMode, closeAtExit, fd, name} =>
            closeAtExit = closeAtExit,
            fd = fd,
            name = name}
-         
+
 val stdOut = newOut {appendMode = true,
                      closeAtExit = false,
                      fd = PFS.stdout, 
                      name = "<stdout>"}
-   
+
 val newOut = fn {appendMode, fd, name} =>
    newOut {appendMode = appendMode,
            closeAtExit = true,
@@ -155,7 +155,7 @@ fun 'a protect' (function: string, name: string, f: unit -> 'a): 'a =
    f () handle e => raise IO.Io {cause = e,
                                  function = function,
                                  name = name}
-      
+
 local
    val readWrite =
       let
@@ -241,7 +241,7 @@ fun equalsIn (In {first = f, ...}, In {first = f', ...}) = f = f'
 fun augmentedReaderSel (In {augmentedReader = PIO.RD v, ...}, sel) = sel v
 
 fun readerSel (In {reader = PIO.RD v, ...}, sel) = sel v
-         
+
 fun inbufferName ib = readerSel (ib, #name)
 
 fun inFd ib =
@@ -252,7 +252,7 @@ fun inFd ib =
     | SOME ioDesc => valOf (Posix.FileSys.iodToFD ioDesc)
 
 val empty = V.tabulate (0, fn _ => someElem)
-   
+
 local
    fun make (sel, e: exn) ib =
       case augmentedReaderSel (ib, sel) of
@@ -268,7 +268,7 @@ fun 'a protect (ib, function: string, f: unit -> 'a): 'a =
    f () handle e => raise IO.Io {cause = e,
                                  function = function,
                                  name = inbufferName ib}
-      
+
 fun update (ib as In {buf, first, last, state, ...}) =
    let
       val i = readArr ib (AS.full buf)
@@ -560,7 +560,7 @@ fun canInput (ib as In {state, ...}, n) =
                          else (state := Open {eos = true}; 0))
                 end)
        | Stream s => SIO.canInput (s, n)
-                 
+
 fun lookahead (ib as In {buf, first, last, ...}) =
    let
       val f = !first
@@ -728,7 +728,7 @@ fun newIn {bufferContents, closeAtExit, fd, name} =
                     closed = false,
                     reader = reader}
    end
-     
+
 val newIn = fn (fd, name) =>
    newIn {bufferContents = NONE,
           closeAtExit = true,
@@ -736,7 +736,7 @@ val newIn = fn (fd, name) =>
           name = name}
 
 val stdIn = newIn (PFS.stdin, "<stdin>")
-         
+
 fun openIn file =
    protect'
    ("openIn", file, fn () =>

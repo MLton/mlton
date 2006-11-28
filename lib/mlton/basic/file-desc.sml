@@ -13,7 +13,7 @@ structure FileDesc: FILE_DESC =
 
       val toString = SysWord.fmt StringCvt.DEC o fdToWord
       val layout = Layout.str o toString
-         
+
       fun move {from, to} =
          if from <> to
             then (dup2 {old = from, new = to}
@@ -28,4 +28,4 @@ structure FileDesc: FILE_DESC =
             Exn.finally (f, fn () => move {from = copy, to = d1})
          end
    end
-   
+

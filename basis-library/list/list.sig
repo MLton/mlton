@@ -19,7 +19,7 @@ signature LIST_GLOBAL =
 signature LIST =
    sig
       include LIST_GLOBAL
-      
+
       val all: ('a -> bool) -> 'a list -> bool 
       val collate: ('a * 'a -> order) -> 'a list * 'a list -> order
       val concat: 'a list list -> 'a list 

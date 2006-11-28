@@ -705,7 +705,7 @@ struct
                                 transfer = transfer})
                        end
              | _ => Error.bug "x86Simplify.PeeholeBlock: elimAddSub1"
- 
+
         val (callback,elimAddSub1_msg) 
           = make_callback_msg "elimAddSub1"
       in
@@ -805,7 +805,7 @@ struct
                                 | Instruction.NO 
                                 => Transfer.Goto {target = truee}
                                 | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
-                                 
+
                          val statements
                            = List.fold(start,
                                        comments,
@@ -1191,7 +1191,7 @@ struct
                                 | Instruction.NO 
                                 => Transfer.Goto {target = truee}
                                 | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
-                                 
+
                          val statements
                            = List.fold(start,
                                        comments,
@@ -1701,12 +1701,12 @@ struct
                     transfer = Transfer.Iff {truee, falsee, ...}}
                  => let
                       val _ = x86JumpInfo.decNear(jumpInfo, falsee)
-                        
+
                       val statements 
                         = List.fold(start, 
                                     [],
                                     op ::)
-                        
+
                       val transfer = Transfer.goto {target = truee}
                     in 
                       SOME (Block.T {entry = entry,
@@ -1882,7 +1882,7 @@ struct
                  destroy}
               = Property.destGetSet(Label.plist, Property.initConst NONE)
             val changed = ref false
-              
+
             val labels
               = List.keepAllMap
                 (blocks,
@@ -1902,7 +1902,7 @@ struct
                              SOME label)
                        else NONE
                   | _ => NONE)
-                
+
             fun loop ()
               = if List.fold(labels,
                              false,
@@ -1920,7 +1920,7 @@ struct
                                                       true)))
                   then loop ()
                   else ()
-                    
+
             val _ = loop ()
 
             fun update target
@@ -2406,7 +2406,7 @@ struct
                                        dst = dst,
                                        size = size,
                                        age = age + 1})
-                               
+
                              val statements_forces
                                = List.revMap
                                  (forces,
@@ -2575,7 +2575,7 @@ struct
                               then (changed := !changed + 1; 
                                     memloc_src)
                               else memloc
-                                
+
                         val replacer
                           = fn {use,def} => fn operand
                              => case Operand.deMemloc operand
@@ -2608,7 +2608,7 @@ struct
                               doit(memloc_dst::(MemLoc.utilized memloc_dst),
                                    [])
                             end
-                                
+
                         val replacer
                           = fn {use,def} 
                              => fn operand
@@ -2977,12 +2977,12 @@ struct
                             = LivenessBlock.reLivenessStatements
                               {statements = List.rev start,
                                live = liveOut}
-                              
+
                           val {entry, ...}
                             = LivenessBlock.reLivenessEntry
                               {entry = entry,
                                live = live}
-                              
+
                           val statements
                             = List.concat [statements, finish]
                        in
@@ -3019,22 +3019,22 @@ struct
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.pMD
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.IMUL2
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.UnAL
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.SRAL
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | _ => false
@@ -3585,12 +3585,12 @@ struct
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.pFUnA
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.pFPTAN
                                       {dst = Operand.MemLoc memloc,...}),
-                
+
                 _)
              => x86Liveness.track memloc
              | (Assembly.Instruction (Instruction.pFBinAS
@@ -3797,7 +3797,7 @@ struct
                          transfer = transfer})
                 end
              | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltSelfMove"
- 
+
         val (callback,elimFltSelfMove_msg)
           = make_callback_msg "elimFltSelfMove"
       in

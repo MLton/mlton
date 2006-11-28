@@ -116,7 +116,7 @@ Weak objects have the following layout:
   unused word ::
   link word ::
   heap-pointer
-  
+
 
 The type index of a header word is an index into an array, where each
 element describes the layout of an object.  The 19 bits available for
@@ -220,7 +220,7 @@ Thoughts on 64-bits:
    certainly a number of design decisions.
 
  * What representation for heap pointers?
-   
+
    There is a preliminary proposal from Stephen:
      http://mlton.org/pipermail/mlton/2004-October/026162.html
 

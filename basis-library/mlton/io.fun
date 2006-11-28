@@ -32,5 +32,5 @@ fun mkstemps {prefix, suffix}: string * outstream =
    end
 
 fun mkstemp s = mkstemps {prefix = s, suffix = ""}
-   
+
 end

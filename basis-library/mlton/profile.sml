@@ -19,9 +19,9 @@ structure Data =
       datatype t = T of {isCurrent: bool ref,
                          isFreed: bool ref,
                          raw: P.Data.t}
-   
+
       val all: t list ref = ref []
-   
+
       local
          fun make f (T r) = f r
       in
@@ -52,7 +52,7 @@ structure Data =
          T {isCurrent = ref false,
             isFreed = ref false,
             raw = raw}
-         
+
       fun malloc (): t =
          let
             val array =

@@ -15,7 +15,7 @@ signature WORD_X_STRUCTS =
 signature WORD_X = 
    sig
       include WORD_X_STRUCTS
-         
+
       (* Words of all WordSize.t sizes. *)
       type t
 

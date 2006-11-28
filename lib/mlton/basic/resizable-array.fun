@@ -9,7 +9,7 @@ functor ResizableArray (): RESIZABLE_ARRAY =
 struct
 
 structure Array = Array
-   
+
 structure A' =
    struct
       datatype 'a t = T of {array: 'a option Array.t ref,
@@ -19,48 +19,48 @@ structure A' =
       fun lengthRef (T {length, ...}) = length
       fun length a = ! (lengthRef a)
       val shape = length
-         
+
       fun maxLength a = Array.length (getArray a)
       fun minLength a = Int.quot (maxLength a, 4)
-   
+
       fun invariant a =
          maxLength a >= 1
          andalso minLength a <= length a
          andalso length a <= maxLength a
-   
+
       fun incLength a = Int.inc (lengthRef a)
       fun decLength a = Int.dec (lengthRef a)
       fun maxIndex a = length a - 1
-   
+
       exception New = Array.New
 
       fun empty () =
          T {array = ref (Array.new (1, NONE)),
            length = ref 0}
-         
+
       fun new (s, x) =
          if s = 0 then empty ()
          else T {array = ref (Array.new (1, SOME x)),
                 length = ref s}
       val array = new
-            
+
       fun tabulate (s, f) =
          if s = 0 then empty ()
          else T {array = ref (Array.tabulate (s, fn i => SOME (f i))),
                 length = ref s}
-            
+
       fun subSafe (a, i) =
          case Array.sub (getArray a, i) of
             SOME x => x
           | NONE => Error.bug "ResizableArray.subSafe"
-                 
+
       fun sub (a, i) =
          if i < length a then subSafe (a, i)
          else Error.bug "ResizableArray.sub"
-            
+
       fun updateSafe (a, i, x) =
          Array.update (getArray a, i, SOME x)
-   
+
       fun update (a, i, x) =
          if i < length a then updateSafe (a, i, x)
          else Error.bug "ResizableArray.update"
@@ -104,7 +104,7 @@ fun addToEnd (a, x) =
    (if length a = maxLength a then grow a else ()
     ; updateSafe (a, length a, x)
     ; incLength a)
-       
+
 fun deleteLast a =
    if length a = 0
       then Error.bug "ResizableArray.deleteLast"

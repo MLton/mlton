@@ -32,7 +32,7 @@ val boolToString = Bool.toString
 val intToString = Int.toString
 val realToString = DotColor.realToString
 fun real2ToString (x, y) = concat [realToString x, ", ", realToString y]
-   
+
 structure Color = DotColor
 datatype color = datatype Color.t
 
@@ -59,7 +59,7 @@ val fontFamilyToString =
     | Helvetica => "Helvetica"
     | Symbol => "Symbol"
     | Times => "Times"
-         
+
 datatype fontWeight =
    Bold
     | Italic
@@ -69,9 +69,9 @@ val fontWeightToString =
    fn Bold => "Bold"
     | Italic => "Italic"
     | Roman => "Roman"
-         
+
 type fontName = fontFamily * fontWeight
-   
+
 fun fontNameToString (f, w) =
    concat [fontFamilyToString f, "-", fontWeightToString w]
 
@@ -92,7 +92,7 @@ datatype orientation =
 val orientationToString =
    fn Landscape => "landscape"
     | Portrait => "portrait"
-         
+
 datatype polygonOption =
    Distortion of real
     | Orientation of int
@@ -178,7 +178,7 @@ val styleToString =
 fun labelToString (l: (string * justify) list): string =
    concat (List.concatMap (l, fn (s, j) =>
                            [escapeString s, justifyToString j]))
-   
+
 structure EdgeOption =
    struct
       datatype t =

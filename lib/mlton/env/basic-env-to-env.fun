@@ -21,7 +21,7 @@ fun layout e =
    end
 
 val size = List.length o toList
-   
+
 val empty = fromList []
 
 fun domain e = List.revMap (toList e, #1)
@@ -33,7 +33,7 @@ fun new (ds, f) = fromList (List.map (ds, fn d => (d, f d)))
 fun map (e, f) = fromList (List.map (toList e, fn (d, r) => (d, f r)))
 
 fun mapi (e, f) = fromList (List.map(toList e, fn (d, r) => (d, f(d, r))))
-   
+
 fun env + env' =
    List.fold (toList env', env, fn ((d, r), env) => extend (env, d, r))
 
@@ -65,7 +65,7 @@ fun foreach(e, f) = List.foreach(toList e, f o #2)
 fun foreachi(e, f) = List.foreach(toList e, f)
 
 fun foralli(e, f) = List.forall(toList e, f)
-   
+
 val equals =
    fn (e1, e2) =>
    size e1 = size e2
@@ -73,5 +73,5 @@ val equals =
                    case peek(e2, d) of
                       NONE => false
                     | SOME r' => Range.equals(r, r'))
-   
+
 end

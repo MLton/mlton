@@ -41,7 +41,7 @@ in
 end
 
 val headers: string list ref = ref []
-      
+
 fun declareExports {print} =
    let
       val maxMap = CType.memo (fn _ => ref ~1)

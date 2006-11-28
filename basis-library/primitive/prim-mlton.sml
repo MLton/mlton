@@ -28,15 +28,15 @@ val installSignalHandler =
 structure GCState =
    struct
       type t = Pointer.t
-         
+
       val gcState = #1 _symbol "gcStateAddress": t GetSet.t; ()
    end
-   
+
 structure CallStack =
    struct
       (* The most recent caller is at index 0 in the array. *)
       datatype t = T of Word32.word array
-         
+
       val callStack =
          _import "GC_callStack": GCState.t * Word32.word array -> unit;
       val frameIndexSourceSeq =
@@ -50,14 +50,14 @@ structure CallStack =
 structure Codegen =
    struct
       datatype t = Bytecode | C | Native
-         
+
       val codegen =
          case _build_const "MLton_Codegen_codegen": Int32.int; of
             0 => Bytecode
           | 1 => C
           | 2 => Native
           | _ => raise Primitive.Exn.Fail8 "MLton_Codegen_codegen"
-               
+
       val isBytecode = codegen = Bytecode
       val isC = codegen = C
       val isNative = codegen = Native
@@ -132,7 +132,7 @@ structure Platform =
              | S390 
              | Sparc 
              | X86
-               
+
             val host: t =
                case _const "MLton_Platform_Arch_host": String8.string; of
                   "alpha" => Alpha
@@ -147,10 +147,10 @@ structure Platform =
                 | "sparc" => Sparc
                 | "x86" => X86
                 | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_Arch_host"
-                     
+
             val hostIsBigEndian = _const "MLton_Platform_Arch_bigendian": bool;
          end
-      
+
       structure OS =
          struct
             datatype t =
@@ -164,7 +164,7 @@ structure Platform =
              | NetBSD
              | OpenBSD
              | Solaris
-               
+
             val host: t =
                case _const "MLton_Platform_OS_host": String8.string; of
                   "aix" => AIX
@@ -178,14 +178,14 @@ structure Platform =
                 | "openbsd" => OpenBSD
                 | "solaris" => Solaris
                 | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_OS_host"
-                     
+
             val forkIsEnabled =
                case host of
                   Cygwin =>
                      #1 _symbol "MLton_Platform_CygwinUseMmap": bool GetSet.t; ()
                 | MinGW => false
                 | _ => true
-                     
+
             val useWindowsProcess = not forkIsEnabled
          end
    end
@@ -252,7 +252,7 @@ structure Profile =
       structure Data =
          struct
             type t = Pointer.t
-               
+
             val dummy = Pointer.null
             val free = _import "GC_profileFree": GCState.t * t -> unit;
             val malloc = _import "GC_profileMalloc": GCState.t -> t;
@@ -268,7 +268,7 @@ structure Thread =
    struct
       type preThread = PreThread.t
       type thread = Thread.t
-         
+
       val atomicBegin = _prim "Thread_atomicBegin": unit -> unit;
       val canHandle = _prim "Thread_canHandle": unit -> Word32.word;
       fun atomicEnd () = 
@@ -307,7 +307,7 @@ structure Thread =
 structure Weak =
    struct
       open Weak
-         
+
       val canGet = _prim "Weak_canGet": 'a t -> bool;
       val get = _prim "Weak_get": 'a t -> 'a;
       val new = _prim "Weak_new": 'a -> 'a t;

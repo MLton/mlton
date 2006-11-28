@@ -10,7 +10,7 @@ Library
 
 signature PERVASIVE_WORD
 structure Pervasive
-   
+
 is
 
 #if (defined (SMLNJ_VERSION))

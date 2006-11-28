@@ -8,9 +8,9 @@
 signature LAYOUT =
    sig
       type int = Pervasive.Int.int
-         
+
       type t
-         
+
       (* layout the objects on separate lines*)
       val align: t list -> t
       val alignPrefix: t list * string -> t

@@ -27,11 +27,11 @@ val eol: ('a, 'a) t = fn z => lit "\n" z
 (* val concat =
  *    Trace.trace ("Format.concat", List.layout String.layout, String.layout) concat
  *)
-   
+
 val format: (string, 'a) t -> 'a = fn f => f (concat o rev, [])
-   
+
 val int: ('a, int -> 'a) t = fn z => new Int.toString z
-   
+
 val list: ('a, 'b -> 'a) t -> ('a, 'b list -> 'a) t =
    fn f => fn (k, ss) =>
    fn [] => k ("[]" :: ss)
@@ -48,5 +48,5 @@ val op o: ('a, 'b) t * ('c, 'a) t -> ('c, 'b) t =
    fn (f, g) => fn (k, ss) => f (fn ss => g (k, ss), ss)
 
 val string: ('a, string -> 'a) t = fn z => new (fn s => s) z
-   
+
 end

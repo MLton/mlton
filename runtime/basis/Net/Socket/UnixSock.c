@@ -37,7 +37,7 @@ C_Size_t Socket_UnixSock_pathLen (Vector(Word8_t) addr) {
 void Socket_UnixSock_fromAddr (Vector(Word8_t) addr, Array(Char8_t) path, C_Size_t pathlen) {
   size_t i;
   const struct sockaddr_un *sa = (const struct sockaddr_un*)addr;
-  
+
   assert (sa->sun_family == AF_UNIX);
   for (i = 0; i < pathlen; i++) {
     ((char*)path)[i] = sa->sun_path[i];

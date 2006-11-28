@@ -9,7 +9,7 @@ signature EMBED_INT =
    sig
       eqtype int
       type big
-         
+
       val fromBigUnsafe: big -> int
       val sizeInBits: Int32.int
       val toBig: int -> big
@@ -35,7 +35,7 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
          fn i => Big.~>> (Big.<< (i, shift), shift)
 
       val toBig: Small.int -> Big.int = extend o Small.toBig
-         
+
       val precision = SOME precision'
 
       val maxIntBig = Big.>> (Big.fromInt ~1, Word.+ (shift, 0w1))
@@ -52,11 +52,11 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
                then fromBigUnsafe i'
             else raise Overflow
          end
-               
+
       val maxInt = SOME (fromBig maxIntBig)
 
       val minInt = SOME (fromBig minIntBig)
-         
+
       local
          val make: (Big.int * Big.int -> Big.int) -> (int * int -> int) =
             fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
@@ -107,7 +107,7 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
          Option.map
          (fn (i, state) => (fromBig i, state))
          (Big.scan r reader state)
-         
+
       val sign = Big.sign o toBig
 
       fun sameSign (x, y) = sign x = sign y

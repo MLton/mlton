@@ -53,16 +53,16 @@ end
 
 fun isAlphaNum (s: string): bool =
    String.forall (s, fn c => Char.isAlphaNum c orelse c = #"_")
-   
+
 fun clearPrintName (T {originalName, printName, ...}): unit =
    if isAlphaNum originalName
       then ()
    else printName := NONE
-   
+
 fun setPrintName (x, s) = printName x := SOME s
 
 val printNameAlphaNumeric: bool ref = ref false
-   
+
 fun toString (T {originalName, printName, ...}) =
    case !printName of
       NONE =>
@@ -105,7 +105,7 @@ fun toString (T {originalName, printName, ...}) =
     | SOME s => s
 
 val layout = String.layout o toString
-   
+
 fun equals (id, id') = Plist.equals (plist id, plist id')
 
 local
@@ -126,5 +126,5 @@ fun newNoname () = newString noname
 val bogus = newString "bogus"
 
 val clear = Plist.clear o plist
-   
+
 end

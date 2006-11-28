@@ -89,7 +89,7 @@ structure FuncInfo =
       val multiThreaded = make #multiThreaded
       val multiUsed = make #multiUsed
     end
-   
+
     fun new (): t = T {calls = Calls.new (),
                        threadCopyCurrent = ThreadCopyCurrent.new (),
                        multiUsed = MultiUsed.new (),
@@ -109,7 +109,7 @@ structure LabelInfo =
        val multiThreaded = make #multiThreaded
        val multiUsed = make #multiUsed
      end
-   
+
      fun new (): t = T {threadCopyCurrent = ThreadCopyCurrent.new (),
                         multiThreaded = MultiThreaded.new (),
                         multiUsed = MultiUsed.new ()}
@@ -126,7 +126,7 @@ structure VarInfo =
        val multiThreaded = make #multiThreaded
        val multiUsed = make #multiUsed
      end
-   
+
      fun new (): t = T {multiThreaded = MultiThreaded.new (),
                         multiUsed = MultiUsed.new ()}
    end

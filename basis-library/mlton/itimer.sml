@@ -9,7 +9,7 @@
 structure MLtonItimer =
    struct
       structure Prim = PrimitiveFFI.MLton.Itimer
-         
+
       datatype t = Prof | Real | Virtual
 
       val signal =

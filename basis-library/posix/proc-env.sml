@@ -18,7 +18,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       type uid = C_UId.t
       type gid = C_GId.t
       type file_desc = C_Fd.t
-         
+
       local
          open Prim
       in
@@ -220,7 +220,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
                   (SysWord.fromLargeInt o C_Long.toLarge o SysCall.simpleResult')
                   ({errVal = C_Long.fromInt ~1}, fn () => Prim.sysconf n)
       end
-               
+
       local
          structure Times = Prim.Times
 

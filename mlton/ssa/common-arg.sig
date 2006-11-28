@@ -14,6 +14,6 @@ signature COMMON_ARG_STRUCTS =
 signature COMMON_ARG = 
    sig
       include COMMON_ARG_STRUCTS
-      
+
       val eliminate: Program.t -> Program.t
    end

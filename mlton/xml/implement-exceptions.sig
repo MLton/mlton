@@ -14,6 +14,6 @@ signature IMPLEMENT_EXCEPTIONS_STRUCTS =
 signature IMPLEMENT_EXCEPTIONS = 
    sig
       include IMPLEMENT_EXCEPTIONS_STRUCTS
-      
+
       val doit: Program.t -> Program.t
    end

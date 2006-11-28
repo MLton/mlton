@@ -30,7 +30,7 @@ in
    val node = make #pat
    val ty = make #ty
 end
-   
+
 fun tuple ps =
    if 1 = Vector.length ps
       then Vector.sub (ps, 0)
@@ -67,7 +67,7 @@ fun make (p, t) =
     | _ => T {pat = p, ty = t}
 
 fun wild t = make (Wild, t)
-   
+
 fun isRefutable p =
    case node p of
       Wild => false
@@ -85,7 +85,7 @@ fun isVar p =
 val unit =
    T {pat = Tuple (Vector.new0 ()),
       ty = Type.tuple (Vector.new0 ())}
-   
+
 fun removeOthersReplace (p, {new, old}) =
    let
       fun loop (T {pat, ty}) =
@@ -121,7 +121,7 @@ fun removeOthersReplace (p, {new, old}) =
 val removeOthersReplace =
    Trace.trace ("NestedPat.removeOthersReplace", fn (p, _) => layout p, layout)
    removeOthersReplace
-   
+
 local
    val bogus = Var.newNoname ()
 in

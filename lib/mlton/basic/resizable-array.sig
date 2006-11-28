@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature RESIZABLE_ARRAY =
    sig
       include ARRAY

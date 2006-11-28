@@ -124,7 +124,7 @@ functor MonoArraySlice (S: MONO_ARRAY_SLICE) =
             in
                (a, fromInt i, fromInt j)
             end
-         
+
          val collate = S.collate
 
          fun copy {di, dst, src} = S.copy {di = toInt di, dst = dst, src = src}
@@ -140,11 +140,11 @@ functor MonoArraySlice (S: MONO_ARRAY_SLICE) =
             case S.findi (fn (i, e) => f (fromInt i, e)) s of
                NONE => NONE
              | SOME (i, e) => SOME (fromInt i, e)
-                  
+
          val foldl = S.foldl
-            
+
          fun foldli f = S.foldli (fn (i, e, b) => f (fromInt i, e, b))
-            
+
          val foldr = S.foldr
 
          fun foldri f = S.foldri (fn (i, e, b) => f (fromInt i, e, b))
@@ -162,9 +162,9 @@ functor MonoArraySlice (S: MONO_ARRAY_SLICE) =
          fun modifyi f = S.modifyi (fn (i, e) => f (fromInt i, e))
 
          fun slice (a, i, j) = S.slice (a, toInt i, toIntOpt j)
-            
+
          fun sub (s, i) = S.sub (s, toInt i)
-            
+
          fun subslice (s, i, j) = S.subslice (s, toInt i, toIntOpt j)
 
          fun update (s, i, e) = S.update (s, toInt i, e)

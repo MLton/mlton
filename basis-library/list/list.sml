@@ -9,7 +9,7 @@
 structure List: LIST =
   struct
      open Int
-        
+
      datatype list = datatype Primitive.List.list
 
      exception Empty
@@ -34,7 +34,7 @@ structure List: LIST =
      val getItem =
         fn [] => NONE
          | x :: r => SOME (x, r)
-   
+
      fun foldl f b l =
         let
            fun loop (l, b) =
@@ -45,7 +45,7 @@ structure List: LIST =
         end
 
      fun length l = foldl (fn (_, n) => n +? 1) 0 l
-     
+
      fun appendRev (l1, l2) = foldl (op ::) l2 l1
 
      val revAppend = appendRev
@@ -92,12 +92,12 @@ structure List: LIST =
                          else loop l
         in loop
         end
-     
+
      fun exists pred l =
         case find pred l of
            NONE => false
          | SOME _ => true
-     
+
      fun all pred = not o (exists (not o pred))
 
      fun tabulate (n, f) = 

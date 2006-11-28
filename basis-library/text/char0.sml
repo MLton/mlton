@@ -10,7 +10,7 @@ structure PreChar8 =
    struct
       structure Prim = Primitive.Char8
       open Primitive.Char8
-         
+
       type char = Primitive.Char8.char
       type string = Primitive.String8.string
 
@@ -65,7 +65,7 @@ structure PreChar8 =
          let val a = Array.tabulate (numChars, f o chr)
          in fn c => Array.sub (a, ord c)
          end
-         
+
       local
          val not = fn f => memoize (not o f)
          infix || &&

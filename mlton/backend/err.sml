@@ -23,7 +23,7 @@ structure Err =
          end
 
       exception E of t
-    
+
       fun check' (name: string,
                   ok: unit -> 'a option,
                   layout: unit -> Layout.t): 'a =
@@ -34,7 +34,7 @@ structure Err =
                                 name = name,
                                 obj = layout ()})
           | SOME a => a
-               
+
       fun boolToUnitOpt b = if b then SOME () else NONE
 
       fun check (name, ok, layout) =

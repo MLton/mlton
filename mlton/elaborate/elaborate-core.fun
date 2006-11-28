@@ -331,7 +331,7 @@ val unify =
    fn (t, t', preError, error) =>
    Type.unify (t, t', {error = Control.error o error,
                        preError = preError})
-   
+
 fun unifyList (trs: (Type.t * Region.t) vector,
                z,
                lay: unit -> Layout.t): Type.t =
@@ -1408,7 +1408,7 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
 
 structure ElabControl = Control.Elaborate
-   
+
 fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
    if ElabControl.current c
       then ()

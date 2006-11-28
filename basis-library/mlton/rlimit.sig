@@ -13,11 +13,11 @@ signature MLTON_RLIMIT =
                           val castFromSysWord: SysWord.word -> t
                           val castToSysWord: t -> SysWord.word
                        end
-               
+
       val infinity: RLim.t
 
       type t
-               
+
       val coreFileSize: t        (* CORE    max core file size *)
       val cpuTime: t             (* CPU     CPU time in seconds *)
       val dataSize: t            (* DATA    max data size *)

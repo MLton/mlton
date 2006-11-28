@@ -176,9 +176,9 @@ functor TestList (S: LIST): sig end =
 struct
 
 val _ = print "TestList\n"
-   
+
 open S
-   
+
 val _ =
    Assert.assert
    ("TestList", fn () =>

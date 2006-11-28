@@ -36,13 +36,13 @@ fun times (): times =
    end
 
 val zero = fromReal 0.0
-   
+
 val equals = op =
 
 val seconds = fromSeconds   
 
 fun minutes m = seconds (m * fromInt 60)
-   
+
 fun hours h = minutes (h * fromInt 60)
 
 fun days d = hours (d * LargeInt.fromInt 24)
@@ -50,7 +50,7 @@ fun days d = hours (d * LargeInt.fromInt 24)
 fun weeks w = days (w * LargeInt.fromInt 7)
 
 fun years y = days (y * LargeInt.fromInt 365)
-   
+
 val {min, max, ...} = Relation.compare compare
 
 val layout = Layout.str o toString

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ANALYZE_STRUCTS = 
    sig
       include DIRECT_EXP
@@ -16,7 +16,7 @@ signature ANALYZE_STRUCTS =
 signature ANALYZE = 
    sig
       include ANALYZE_STRUCTS
-      
+
       val analyze:
          {coerce: {from: 'a,
                    to: 'a} -> unit,

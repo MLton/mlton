@@ -9,7 +9,7 @@ structure Pretty: PRETTY =
 struct
 
 open Layout
-         
+
 fun casee {default, rules, test} =
    let
       val rules =
@@ -39,7 +39,7 @@ fun handlee {catch, handler, try} =
           seq [str "handle ", catch, str " => ", handler]]
 
 fun longid (ls, l) = seq (separate (ls @ [l], "."))
-   
+
 fun nest (prefix, x, y) =
    align [seq [str prefix, x],
           str "in",
@@ -47,7 +47,7 @@ fun nest (prefix, x, y) =
           str "end"]
 
 fun lett (d, e) = nest ("let ", d, e)
-         
+
 fun locall (d, d') = nest ("local ", d, d')
 
 fun primApp {args, prim, targs} =

@@ -12,7 +12,7 @@ structure String = String0
 structure Char = String.Char
 structure I = Pervasive.TextIO
 open I
-   
+
 type t = I.instream
 
 val standard = stdIn
@@ -30,7 +30,7 @@ fun foldChars (ins, a, f) =
    in
       loop a
    end
-   
+
 fun foldLines (ins, ac, f) =
    let
       fun loop ac =

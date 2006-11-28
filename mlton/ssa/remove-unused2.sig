@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature REMOVE_UNUSED2_STRUCTS = 
    sig
       include SHRINK2
@@ -16,6 +16,6 @@ signature REMOVE_UNUSED2_STRUCTS =
 signature REMOVE_UNUSED2 = 
    sig
       include REMOVE_UNUSED2_STRUCTS
-      
+
       val remove: Program.t -> Program.t
    end

@@ -16,6 +16,6 @@ signature MLB_FRONT_END_STRUCTS =
 signature MLB_FRONT_END = 
    sig
       include MLB_FRONT_END_STRUCTS
-         
+
       val lexAndParseString: String.t -> Ast.Basdec.t 
    end

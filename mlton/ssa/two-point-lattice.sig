@@ -16,7 +16,7 @@ signature TWO_POINT_LATTICE_STRUCTS =
 signature TWO_POINT_LATTICE = 
    sig
       include TWO_POINT_LATTICE_STRUCTS
-      
+
       type t
 
       val <= : t * t -> unit (* force rhs to be top if lhs is *)

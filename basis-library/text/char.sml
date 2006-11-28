@@ -9,7 +9,7 @@
 structure Char: CHAR_EXTRA =
    struct
       open PreChar
-                       
+
       fun control reader state =
          case reader state of
             NONE => NONE
@@ -35,7 +35,7 @@ structure Char: CHAR_EXTRA =
          in
             loop
          end
-                  
+
       val 'a formatSequences: (char, 'a) StringCvt.reader -> 'a -> 'a =
          fn reader =>
          let
@@ -192,7 +192,7 @@ structure Char: CHAR_EXTRA =
                             ["\\^", PreString.str (chr (Int.+? (ord c, ord #"@")))])
                    else PreString.concat 
                         ["\\", padLeft (Int.fmt StringCvt.DEC (ord c), 3)])
-      
+
       val toCString =
          memoize
          (fn c =>

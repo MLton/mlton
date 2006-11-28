@@ -194,7 +194,7 @@ signature PRIM =
 
             val layout: ('b -> Layout.t) -> ('a, 'b) t -> Layout.t
          end
-      
+
       type 'a t
       sharing type t = ApplyResult.prim
       val apply:

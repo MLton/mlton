@@ -8,7 +8,7 @@
 
 static inline void *calloc_safe (size_t count, size_t size) {
   void *res;
-  
+
   res = calloc (count, size);
   if (NULL == res)
     die ("calloc (%zu, %zu) failed.\n", 
@@ -45,7 +45,7 @@ static inline FILE *fopen_safe (const char *fileName, const char *mode) {
 
 static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
   size_t res;
-  
+
   res = fread (buf, size, count, f);
   if (res != count)
     diee ("fread (_, %zu, %zu, _) failed (only read %zu).\n",
@@ -54,7 +54,7 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
 
 static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE *f) {
   size_t res;
-  
+
   res = fwrite (buf, size, count, f);
   if (res != count)
     diee ("fwrite (_, %zu, %zu, _) failed (only wrote %zu).\n",
@@ -63,7 +63,7 @@ static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE
 
 static inline void *malloc_safe (size_t size) {
   void *res;
-  
+
   res = malloc (size);
   if (NULL == res)
     die ("malloc (%zu) failed.\n", size);
@@ -72,7 +72,7 @@ static inline void *malloc_safe (size_t size) {
 
 static inline int mkstemp_safe (char *template) {
   int fd;
-  
+
   fd = mkstemp (template);
   if (-1 == fd)
     diee ("mkstemp (%s) failed.\n", template);

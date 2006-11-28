@@ -1,5 +1,5 @@
 structure Profile = MLton.Profile
-   
+
 val fibData = Profile.Data.malloc ()
 val takData = Profile.Data.malloc ()
 
@@ -33,6 +33,6 @@ val _ = g 500
 fun done (data, file) =
    (Profile.Data.write (data, file)
     ; Profile.Data.free data)
-    
+
 val _ = done (fibData, "mlmon.fib.out")
 val _ = done (takData, "mlmon.tak.out")

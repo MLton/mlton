@@ -61,7 +61,7 @@ fun callcc (f: 'a t -> 'a): 'a =
 
 fun ('a, 'b) throw' (k: 'a t, v: unit -> 'a): 'b =
    (k v; raise Fail "throw bug")
-   
+
 fun ('a, 'b) throw (k: 'a t, v: 'a): 'b = throw' (k, fn () => v)
 
 fun prepend (k, f) v = throw' (k, f o v)

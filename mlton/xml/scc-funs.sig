@@ -18,6 +18,6 @@ signature SCC_FUNS_STRUCTS =
 signature SCC_FUNS = 
    sig
       include SCC_FUNS_STRUCTS
-      
+
       val sccFuns: Program.t -> Program.t
    end

@@ -7,7 +7,7 @@
  *)
 
 type word = Word.t
-   
+
 signature LOOKUP_CONSTANT_STRUCTS = 
    sig
       structure Const: CONST

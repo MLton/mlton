@@ -11,7 +11,7 @@ signature TRACE_CONTROL =
       val always: unit -> unit      (* always gather info *)
       val flagged: unit -> unit     (* only on flagged functions *)
       val never: unit -> unit       (* never gather info *)
-         
+
       (* value of newly created flag *)
       val default: bool ref
 
@@ -68,7 +68,7 @@ signature TRACE =
       val traceable: unit -> string list
       val outputTraceable: unit -> unit
       val reset: unit -> unit
-         
+
       (*---------- Delayed Feedback ----------*)
       structure Computation: COMPUTATION
 
@@ -143,7 +143,7 @@ signature TRACE =
          * ('b -> Layout.t)
          -> ('a -> 'b)
          -> ('a -> 'b)
-         
+
       val trace0:
          string
          * ('a -> Layout.t)

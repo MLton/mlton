@@ -30,11 +30,11 @@ signature BASIS_2002 =
       exception Size
       exception Span
       exception Subscript
- 
+
       (* Top-level values *)
       val = : ''a * ''a -> bool
       val <> : ''a * ''a -> bool
-        
+
       val ! : 'a ref -> 'a
       val := : 'a ref * 'a -> unit
       val @ : ('a list * 'a list) -> 'a list
@@ -310,7 +310,7 @@ signature BASIS_2002 =
       structure Word64ArraySlice : MONO_ARRAY_SLICE
       structure Word64Vector : MONO_VECTOR
       structure Word64VectorSlice : MONO_VECTOR_SLICE
-         
+
       (* ************************************************** *)
       (* ************************************************** *)
 
@@ -412,7 +412,7 @@ signature BASIS_2002 =
       sharing type Word8VectorSlice.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
-        
+
       (* Optional structures *)
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.array = BoolArray.array

@@ -77,20 +77,20 @@ structure VarInfo =
      datatype t = T of {used: Used.t}
 
      fun layout (T {used, ...}) = Used.layout used
-       
+
      local
        fun make f (T r) = f r
      in
        val used = make #used
      end
-   
+
      fun new (): t = T {used = Used.new ()}
-       
+
      val use = Used.use o used
      val isUsed = Used.isUsed o used
      fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
    end
- 
+
 structure TypeInfo = 
   struct
     datatype t = T of {deconed: bool ref}
@@ -135,7 +135,7 @@ structure ConInfo =
       = Layout.record [("args", Vector.layout (VarInfo.layout o #1) args),
                        ("coned", Coned.layout coned),
                        ("deconed", Deconed.layout deconed)]
-      
+
     local
       fun make f (T r) = f r
     in
@@ -145,14 +145,14 @@ structure ConInfo =
       val dummy = make #dummy
       val tycon = make #tycon
     end
-  
+
     val con = Coned.con o coned
     val isConed = Coned.isConed o coned
     fun whenConed (ci, th) = Coned.whenConed (coned ci, th)
 
     val decon = Deconed.decon o deconed
     val isDeconed = Deconed.isDeconed o deconed
-      
+
     fun new {args: Type.t vector, tycon: Tycon.t}: t
       = T {args = Vector.map (args, fn t => (VarInfo.new (), t)),
            coned = Coned.new (),
@@ -174,7 +174,7 @@ structure FuncInfo =
                        sideEffects: SideEffects.t,
                        used: Used.t,
                        wrappers: Block.t list ref}
-      
+
     fun layout (T {args, 
                    mayRaise, mayReturn, 
                    raises, returns, 
@@ -211,12 +211,12 @@ structure FuncInfo =
       val used = make #used
       val (wrappers', wrappers) = make' #wrappers
     end
-  
+
     val raisee = MayRaise.raisee o mayRaise'
     val mayRaise = MayRaise.mayRaise o mayRaise'
     fun whenRaises (fi, th) = MayRaise.whenRaises (mayRaise' fi, th)
     fun flowRaises (fi, fi') = MayRaise.<= (mayRaise' fi, mayRaise' fi')
-      
+
     val return = MayReturn.return o mayReturn'
     fun whenReturns (fi, th) = MayReturn.whenReturns (mayReturn' fi, th)
     val mayReturn = MayReturn.mayReturn o mayReturn'
@@ -255,7 +255,7 @@ structure LabelInfo =
     fun layout (T {args, used, ...}) 
       = Layout.record [("args", Vector.layout (VarInfo.layout o #1) args),
                        ("used", Used.layout used)]
-                                  
+
     fun new {args: (VarInfo.t * Type.t) vector, func: FuncInfo.t}: t 
       = T {args = args,
            func = func,
@@ -1153,5 +1153,5 @@ fun remove (Program.T {datatypes, globals, functions, main})
     in
       program
     end
- 
+
 end

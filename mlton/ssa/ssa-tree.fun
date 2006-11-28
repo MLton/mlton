@@ -23,7 +23,7 @@ structure Type =
          case Dest.dest t of
             Dest.Con x => x
           | _ => Error.bug "SsaTree.Type.tyconArgs"
-               
+
       datatype dest =
           Array of t
         | Datatype of Tycon.t
@@ -157,7 +157,7 @@ structure Cases =
                Con l => Con (doit l)
              | Word (s, l) => Word (s, doit l)
          end
-      
+
       fun forall (c: t, f: Label.t -> bool): bool =
          let
             fun doit l = Vector.forall (l, fn (_, x) => f x)
@@ -211,7 +211,7 @@ structure Exp =
        | Var of Var.t
 
       val unit = Tuple (Vector.new0 ())
-         
+
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)
@@ -265,7 +265,7 @@ structure Exp =
              | Tuple xs => layoutTuple xs
              | Var x => Var.layout x
          end
-               
+
       fun maySideEffect (e: t): bool =
          case e of
             ConApp _ => false
@@ -593,7 +593,7 @@ structure Transfer =
                   default = NONE,
                   test = test}
          end
-         
+
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
             fun vars xs = Vector.foreach (xs, var)
@@ -625,7 +625,7 @@ structure Transfer =
 
       fun foreachLabelVar (t, label, var) =
          foreachFuncLabelVar (t, fn _ => (), label, var)
-         
+
       fun foreachLabel (t, j) = foreachLabelVar (t, j, fn _ => ())
       fun foreachVar (t, v) = foreachLabelVar (t, fn _ => (), v)
 
@@ -801,7 +801,7 @@ structure Block =
                label: Label.t,
                statements: Statement.t vector,
                transfer: Transfer.t}
-         
+
       local
          fun make f (T r) = f r
       in
@@ -810,7 +810,7 @@ structure Block =
          val statements = make #statements
          val transfer = make #transfer
       end
-   
+
       fun layout (T {label, args, statements, transfer}) =
          let
             open Layout
@@ -868,7 +868,7 @@ structure Datatype =
 structure Function =
    struct
       structure CPromise = ClearablePromise
-     
+
       type dest = {args: (Var.t * Type.t) vector,
                    blocks: Block.t vector,
                    mayInline: bool,
@@ -964,7 +964,7 @@ structure Function =
          in
             ()
          end
-                            
+
       local
          structure Graph = DirectedGraph
          structure Node = Graph.Node
@@ -1232,7 +1232,7 @@ structure Function =
             align [layoutHeader f,
                    indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
          end
-      
+
       fun layouts (f: t, global, output: Layout.t -> unit): unit =
          let
             val {blocks, name, ...} = dest f
@@ -1483,7 +1483,7 @@ structure Program =
 structure Program =
    struct
       open Program
- 
+
       local
          structure Graph = DirectedGraph
          structure Node = Graph.Node
@@ -1569,7 +1569,7 @@ structure Program =
                l
             end
       end
-         
+
       fun layouts (p as T {datatypes, globals, functions, main},
                    output': Layout.t -> unit) =
          let
@@ -1755,7 +1755,7 @@ structure Program =
                globals = globals,
                main = main}
          end
-         
+
    end
 
 end

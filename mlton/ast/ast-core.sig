@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature AST_CORE_STRUCTS = 
    sig
       include AST_ATOMS
@@ -16,7 +16,7 @@ signature AST_CORE_STRUCTS =
 signature AST_CORE = 
    sig
       include AST_CORE_STRUCTS
-      
+
       structure Fixity:
          sig
             datatype t =
@@ -28,7 +28,7 @@ signature AST_CORE =
             val isInfix: t -> bool
             val layout: t -> Layout.t
          end
-         
+
       structure Fixop:
          sig
             datatype t = Op | None
@@ -37,7 +37,7 @@ signature AST_CORE =
       structure Pat:
          sig
             type t
-               
+
             structure Item:
                sig
                   type pat
@@ -64,7 +64,7 @@ signature AST_CORE =
              | Var of {fixop: Fixop.t,
                        name: Longvid.t}
              | Wild
-               
+
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
@@ -89,17 +89,17 @@ signature AST_CORE =
             structure ImportExportAttribute:
                sig
                   datatype t = Cdecl | Stdcall
-                     
+
                   val layout: t -> Layout.t
                end
-            
+
             structure SymbolAttribute:
                sig
                   datatype t = Alloc
-                     
+
                   val layout: t -> Layout.t
                end
-            
+
             datatype t =
                Address of {name: string,
                            ty: Type.t}
@@ -164,7 +164,7 @@ signature AST_CORE =
 
             include WRAPPED sharing type node' = node
                             sharing type obj = t
-               
+
             val app: t * t -> t
             val const: Const.t -> t
             val constraint: t * Type.t -> t
@@ -187,7 +187,7 @@ signature AST_CORE =
 
             val layout: t -> Layout.t
          end where type t = Exp.match
-      
+
       structure EbRhs:
          sig
             type t

@@ -85,7 +85,7 @@ signature INT_FROM_TO_RES =
 functor IntFromTo(I: INT_FROM_TO_ARG): INT_FROM_TO_RES where type int = I.int =
    struct
       open I
-         
+
       local
          structure S =
             Int_ChooseInt

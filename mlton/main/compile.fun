@@ -61,7 +61,7 @@ structure CoreML = CoreML (open Atoms
                                     makeHom {con = con,
                                              expandOpaque = true,
                                              var = var}
-                                    
+
                                  val layout = layoutPretty
                               end)
 structure Xml = Xml (open Atoms)
@@ -139,10 +139,10 @@ fun setCommandLineConstant (c as {name, value}) =
    in
       List.push (commandLineConstants, c)
    end
-   
+
 val allConstants: (string * ConstType.t) list ref = ref []
 val amBuildingConstants: bool ref = ref false
-   
+
 val lookupConstant =
    let
       val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
@@ -330,7 +330,7 @@ structure MLBString:>
       val fromFile = quoteFile
 
       val fromString = fn s => s
-         
+
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
    end
 
@@ -370,7 +370,7 @@ fun parseAndElaborateMLB (input: MLBString.t)
              (Const.lookup := lookupConstant
               ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
     display = displayEnvDecs}
-   
+
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
 (* ------------------------------------------------- *)
@@ -488,7 +488,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
    in
       xml
    end
-      
+
 fun preCodegen {input: MLBString.t}: Machine.Program.t =
    let
       val xml = elaborate {input = input}
@@ -609,7 +609,7 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
    in
       machine
    end
- 
+
 fun compile {input: MLBString.t, outputC, outputS}: unit =
    let
       val machine =

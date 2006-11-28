@@ -199,7 +199,7 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         int     result;
         STARTUPINFO si;
         PROCESS_INFORMATION proc;
-        
+
         cmd = (char*)cmds;
         arg = (char*)args;
         env = (char*)envs;
@@ -249,7 +249,7 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
 
 C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* We terminate with 'sig' for the _return_ code + 0x80
          * Then in the basis library I test for this to decide W_SIGNALED.

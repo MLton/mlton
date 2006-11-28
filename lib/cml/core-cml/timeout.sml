@@ -62,7 +62,7 @@ structure TimeOut : TIME_OUT_EXTRA =
                              ; true)
                        else false
          end
- 
+
       fun timeWait (time, txid, cleanUp, t) = 
          (Assert.assertAtomic' ("TimeOut.timeWait", NONE)
           ; timeQ := TQ.enqueAndClean(!timeQ, time, (txid, cleanUp, t), cleaner (fn () => ())))
@@ -101,7 +101,7 @@ structure TimeOut : TIME_OUT_EXTRA =
          in
             E.bevt pollFn
          end
-       
+
       fun atTimeEvt time = 
          let
             fun blockFn {transId, cleanUp, next} = 

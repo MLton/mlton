@@ -14,6 +14,6 @@ signature SIMPLIFY2_STRUCTS =
 signature SIMPLIFY2 = 
    sig
       include SIMPLIFY2_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

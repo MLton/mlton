@@ -15,7 +15,7 @@ signature CONST_TYPE_STRUCTS =
 signature CONST_TYPE =
    sig
       include CONST_TYPE_STRUCTS
-         
+
       datatype t = Bool | Real of RealSize.t | String | Word of WordSize.t
 
       val toString: t -> string

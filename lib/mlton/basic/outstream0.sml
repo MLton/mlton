@@ -14,7 +14,7 @@ open TextIO
 (*val output = fn (out, s) => (output (out, s); flushOut out) *)
 
 type t = outstream
-   
+
 val standard = stdOut
 val error = stdErr
 val close = closeOut
@@ -24,14 +24,14 @@ val flush = flushOut
 fun newline s = output (s, "\n")
 
 fun outputl (s, x) = (output (s, x); newline s)
-   
+
 fun print s = output (standard, s)
-   
+
 fun outputNothing _ = ()
 
 fun set (o1: t, o2:t): unit =
    TextIO.setOutstream (o1, TextIO.getOutstream o2)
-   
+
 fun fluidLet (s1, s2, thunk) =
    let
       val old = TextIO.getOutstream s1
@@ -56,7 +56,7 @@ in
 end
 
 fun 'a withNull (f: t -> 'a): 'a = withOut ("/dev/null", f)
-   
+
 fun ignore (out: t, f: unit -> 'a): 'a =
    withNull (fn out' => fluidLet (out, out', f))
 

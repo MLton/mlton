@@ -93,7 +93,7 @@ structure IntInf: INT_INF =
    end
 
 structure LargeInt = IntInf
-   
+
 structure Int =
    struct
       open PreInt

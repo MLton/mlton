@@ -75,7 +75,7 @@ structure PosixSysDB: POSIX_SYS_DB =
                                                           fname,
                                                           ": no group with ",
                                                           fitem], NONE))]})
-                  
+
             val name: group -> string = #name
             val gid: group -> gid = #gid
             val members: group -> string list = #members
@@ -85,7 +85,7 @@ structure PosixSysDB: POSIX_SYS_DB =
          let val name = NullString.nullTerm name
          in Group.fromC (fn () => Prim.getgrnam name, "getgrnam", "name")
          end
-      
+
       fun getgrgid gid = 
          Group.fromC (fn () => Prim.getgrgid gid, "getgrgid", "group id")
    end

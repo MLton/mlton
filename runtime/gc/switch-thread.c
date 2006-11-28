@@ -10,10 +10,10 @@ void switchToThread (GC_state s, objptr op) {
   if (DEBUG_THREADS) {
     GC_thread thread;
     GC_stack stack;
-    
+
     thread = (GC_thread)(objptrToPointer (op, s->heap.start));
     stack = (GC_stack)(objptrToPointer (thread->stack, s->heap.start));
-    
+
     fprintf (stderr, "switchToThread ("FMTOBJPTR")  used = %zu  reserved = %zu\n",
              op, stack->used, stack->reserved);
   }

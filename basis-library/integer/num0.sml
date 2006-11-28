@@ -53,10 +53,10 @@ signature PRIM_INTEGER =
 signature PRIM_WORD =
    sig
       include PRIM_WORD
-      
+
       val zero: word
       val one: word
-   
+
       val div: word * word -> word
       val mod: word * word -> word
 
@@ -164,7 +164,7 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                           andalso x = minInt' andalso y = ~one
                           then raise Overflow
                           else quotUnsafe (x, y)
-                       
+
             fun rem (x, y) =
                if Primitive.Controls.safe 
                   andalso y = zero
@@ -172,7 +172,7 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                   else if x = minInt' andalso y = ~one
                           then zero
                           else remUnsafe (x, y)
-                       
+
             fun x div y =
                if x >= zero
                   then if y > zero
@@ -190,7 +190,7 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                           else if y > zero
                                   then quotUnsafe (x +? one, y) -? one
                                   else raise Div
-                                     
+
             fun x mod y =
                if x >= zero
                   then if y > zero

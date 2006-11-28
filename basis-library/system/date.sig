@@ -5,11 +5,11 @@ signature DATE =
 
       datatype month =
          Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec
-         
+
       type date
 
       exception Date
-      
+
       val date: {year: int,
                  month: month,
                  day: int,

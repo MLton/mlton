@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ABSTRACT_VALUE_STRUCTS = 
    sig
       structure Sxml: SXML
@@ -21,7 +21,7 @@ signature ABSTRACT_VALUE =
       structure Lambda:
          sig
             type t
-               
+
             val dest: t -> Sxml.Lambda.t
             val layout: t -> Layout.t
          end

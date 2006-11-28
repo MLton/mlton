@@ -9,7 +9,7 @@ functor Switch (S: SWITCH_STRUCTS): SWITCH =
 struct
 
 open S
-   
+
 fun isRedundant {cases: 'a vector,
                  equals: 'a * 'a -> bool}: bool =
    let

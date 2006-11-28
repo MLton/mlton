@@ -11,7 +11,7 @@ static inline bool isBigEndian(void) {
     uint16_t x;
     uint8_t y;
   } z;
-  
+
   /* gcc optimizes the following code to just return the result. */
   z.x = 0xABCDU;
   if (z.y == 0xAB) return TRUE; /* big endian */

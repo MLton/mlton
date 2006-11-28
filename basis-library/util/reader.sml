@@ -10,7 +10,7 @@ structure Reader: READER =
 struct
 
 open Int
-   
+
 type ('a, 'b) reader = 'b -> ('a * 'b) option
 
 (* local
@@ -36,7 +36,7 @@ type ('a, 'b) reader = 'b -> ('a * 'b) option
  *    fun fields p = make (fn (field, fields) => (rev field) :: fields) p
  * end
  *)
-   
+
 fun list (reader: ('a, 'b) reader): ('a list, 'b) reader =
    fn state =>
    let
@@ -46,7 +46,7 @@ fun list (reader: ('a, 'b) reader): ('a list, 'b) reader =
           | SOME (a, state) => loop (state, a :: accum)
    in loop (state, [])
    end
-               
+
 fun readerN (reader: ('a, 'b) reader, n: int): ('a list, 'b) reader =
    fn (state :'b) =>
    let
@@ -71,7 +71,7 @@ fun ignore f reader =
    in loop
    end
 val _ = ignore
-   
+
 fun map (f: 'a -> 'c) (reader: ('a, 'b) reader): ('c, 'b) reader =
    fn (b: 'b) =>
    case reader b of
@@ -91,13 +91,13 @@ fun reader2 reader =
    map (fn [y, z] => (y, z) | _ => raise Fail "Reader.reader2")
    (readerN (reader, 2))
 val _ = reader2
-   
+
 fun reader3 reader =
    map (fn [x, y, z] => (x, y, z) | _ => raise Fail "Reader.reader3")
    (readerN (reader, 3))
-   
+
 fun reader4 reader =
    map (fn [w, x, y, z] => (w, x, y, z) | _ => raise Fail "Reader.reader4")
    (readerN (reader, 4))
-   
+
 end   

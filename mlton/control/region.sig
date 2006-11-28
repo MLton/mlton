@@ -13,7 +13,7 @@ signature REGION_STRUCTS =
 signature REGION = 
    sig
       include REGION_STRUCTS
-      
+
       type t
 
       val <= : t * t -> bool

@@ -12,9 +12,9 @@ struct
 open S
 
 type t = Word.t
-   
+
 fun hash x = x
-   
+
 val equals = op =
 
 fun toCstring w = "0x" ^ Word.toString w
@@ -70,5 +70,5 @@ fun fromString (str: string): t option =
  *)
 
 fun toWord x = x
-   
+
 end

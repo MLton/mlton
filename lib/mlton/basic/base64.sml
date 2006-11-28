@@ -8,7 +8,7 @@
 structure Base64: BASE64 =
    struct
       type int = Int.t
-         
+
       val chars =
          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
@@ -20,7 +20,7 @@ structure Base64: BASE64 =
          ("Base64.word8ToChar", Word8.layout, Char.layout,
           fn w => (0w0 <= w andalso w < 0w64, fn _ => true))
          word8ToChar
-         
+
       val charToWord8: char -> Word8.t option =
          Char.memoize(fn c =>
                       Option.map(String.peeki(chars, fn (_, c') => c = c'),
@@ -32,7 +32,7 @@ structure Base64: BASE64 =
          charToWord8
 
       val pad = #"="
-         
+
       fun 'a encodeGen{array: 'a,
                        length: 'a -> int,
                        sub: 'a * int -> Word8.t} =

@@ -46,7 +46,7 @@ size_t cardMapIndexToSize (GC_cardMapIndex i) {
 }
 GC_cardMapElem *pointerToCardMapAddr (GC_state s, pointer p) {
   GC_cardMapElem *res;
-  
+
   res = &s->generationalMaps.cardMapAbsolute[pointerToCardMapIndexAbsolute (p)];
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "pointerToCardMapAddr ("FMTPTR") = "FMTPTR"\n",
@@ -171,7 +171,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
     size_t oldCardMapSize;
     GC_crossMap oldCrossMap;
     size_t oldCrossMapSize;
-    
+
     oldCardMap = s->generationalMaps.cardMap;
     oldCardMapSize = s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE;
     oldCrossMap = s->generationalMaps.crossMap;
@@ -201,7 +201,7 @@ bool isCrossMapOk (GC_state s) {
   pointer front, back;
   GC_cardMapIndex cardIndex;
   pointer cardStart;
-  
+
   if (DEBUG)
     fprintf (stderr, "isCrossMapOk ()\n");
   mapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
@@ -232,7 +232,7 @@ void updateCrossMap (GC_state s) {
 
   pointer nextObject, objectStart;
   pointer oldGenEnd;
-  
+
   if (DEBUG_GENERATIONAL) {
     fprintf (stderr, "updateCrossMap starting\n");
     displayGenerationalMaps (s, &s->generationalMaps, stderr);
@@ -271,7 +271,7 @@ loopObjects:
      * Store it in the crossMap.
      */
     size_t offset;
-    
+
     offset = (objectStart - cardStart) / CROSS_MAP_OFFSET_SCALE;
     assert (offset < CROSS_MAP_EMPTY);
     if (DEBUG_GENERATIONAL)

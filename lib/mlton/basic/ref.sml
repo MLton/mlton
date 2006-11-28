@@ -15,7 +15,7 @@ val (op !) = (op !)
 val (op :=) = op :=
 
 fun equals (r: 'a t, r') = r = r'
-   
+
 fun swap (r, r') = let val v = !r
                   in r := !r'; r' := v
                   end
@@ -61,6 +61,6 @@ fun memoize (r: 'a option ref, f: unit -> 'a): 'a =
             a
          end
     | SOME a => a
-   
+
 end
 

@@ -33,7 +33,7 @@ functor Record
 functor Symbol
 functor TyconKind
 functor Tyvar
-   
+
 is
 
 ../../lib/mlton/sources.cm

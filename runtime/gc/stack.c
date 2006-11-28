@@ -42,7 +42,7 @@ size_t sizeofStackInitial (GC_state s) {
 /* Pointer to the bottommost word in use on the stack. */
 pointer getStackBottom (__attribute__ ((unused)) GC_state s, GC_stack stack) {
   pointer res;
-  
+
   res = ((pointer)stack) + sizeof (struct GC_stack);
   assert (isAligned ((size_t)res, s->alignment));
   return res;
@@ -66,7 +66,7 @@ pointer getStackLimit (GC_state s, GC_stack stack) {
 
 GC_frameIndex getCachedStackTopFrameIndex (GC_state s) {
   GC_frameIndex res;
-  
+
   res = 
     getFrameIndexFromReturnAddress 
     (s, *((GC_returnAddress*)(s->stackTop - GC_RETURNADDRESS_SIZE)));
@@ -82,7 +82,7 @@ GC_frameLayout getCachedStackTopFrameLayout (GC_state s) {
 
 GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack) {
   GC_frameIndex res;
-  
+
   res = 
     getFrameIndexFromReturnAddress 
     (s, *((GC_returnAddress*)(getStackTop (s, stack) - GC_RETURNADDRESS_SIZE)));
@@ -98,7 +98,7 @@ GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack) {
 
 uint16_t getStackTopFrameSize (GC_state s, GC_stack stack) {
   GC_frameLayout layout;
-  
+
   assert (not (isStackEmpty (stack)));
   layout = getStackTopFrameLayout (s, stack);
   return layout->size;
@@ -116,7 +116,7 @@ size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
 
 size_t alignStackReserved (GC_state s, size_t reserved) {
   size_t res;
-  
+
   res = alignWithExtra (s, reserved, GC_STACK_HEADER_SIZE + sizeof (struct GC_stack));
   if (DEBUG_STACKS)
     fprintf (stderr, "%zu = alignStackReserved (%zu)\n", res, reserved);
@@ -126,7 +126,7 @@ size_t alignStackReserved (GC_state s, size_t reserved) {
 
 size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
   size_t res;
-  
+
   res = 
     align (GC_STACK_HEADER_SIZE 
            + sizeof (struct GC_stack) 

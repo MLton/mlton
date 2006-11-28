@@ -16,9 +16,9 @@ fun new (): t = ref []
 fun addNew (cs, f) = cs := f :: (!cs)
 
 fun clean cs = app (fn c => c () handle _ => ()) (!cs)
-   
+
 val atExit = new ()
-   
+
 val atLoadWorld = new ()
 
 end

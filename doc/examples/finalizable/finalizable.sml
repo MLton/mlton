@@ -28,7 +28,7 @@ functor CList (structure F: MLTON_FINALIZABLE
           in
              c
           end)
-      
+
       fun sing n =
          let
             val c = F.new (Prim.sing n)
@@ -58,7 +58,7 @@ functor Test (structure CList: CLIST
             in
                f (n - 1)
             end
-            
+
       val l = CList.sing 2
       val l = CList.cons (2,l)
       val l = CList.cons (2,l)

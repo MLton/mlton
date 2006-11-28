@@ -26,7 +26,7 @@ structure StringCvt: STRING_CVT_EXTRA =
        | FIX of int option 
        | GEN of int option 
        | EXACT
-         
+
       type ('a, 'b) reader = 'b -> ('a * 'b) option
 
       open Int
@@ -68,7 +68,7 @@ structure StringCvt: STRING_CVT_EXTRA =
          fn i => if i >= PreString.size s
                     then NONE
                  else SOME (PreString.sub (s, i), i + 1)
-                    
+
       fun 'a scanString (f: ((char, cs) reader -> ('a, cs) reader)) (s: string)
         : 'a option =
          case f (stringReader s) 0 of
@@ -95,7 +95,7 @@ structure StringCvt: STRING_CVT_EXTRA =
                           | z => z
              in loop ds
              end)
-            
+
          val bin = PreChar.memoize (range (0, #"0", #"1"))
          val oct = PreChar.memoize (range (0, #"0", #"7"))
          val dec = PreChar.memoize (range (0, #"0", #"9"))
@@ -110,7 +110,7 @@ structure StringCvt: STRING_CVT_EXTRA =
              | DEC => dec
              | HEX => hex
       end
-   
+
       fun charToWDigit radix = (Option.map wordFromInt) o (charToDigit radix)
 
       fun digits (radix, max, accum) reader state =

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature CONTROL =
    sig
       include CONTROL_FLAGS
@@ -42,7 +42,7 @@ signature CONTROL =
       val errorThreshhold: int ref
       val numErrors: int ref
       val warning: Region.t * Layout.t * Layout.t -> unit
-         
+
       (*------------------------------------*)
       (*          Compiler Passes           *)
       (*------------------------------------*)
@@ -67,7 +67,7 @@ signature CONTROL =
                  style: style,
                  thunk: unit -> 'a,
                  display: 'a display} -> 'a
-         
+
       val passTypeCheck: {name: string,
                           suffix: string,
                           style: style,

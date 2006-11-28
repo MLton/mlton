@@ -9,7 +9,7 @@ functor DisjointSet ():> DISJOINT_SET =
 struct
 
 type int = Int.t
-   
+
 datatype 'a t = T of 'a parent ref
 and 'a parent =
    Parent of 'a t
@@ -27,7 +27,7 @@ val setRank =
     | _ => Error.bug "DisjointSet.setRootValue"
 
 fun incrementRank r = setRank (r, rank r + 1)
-   
+
 val parent =
    fn T (ref (Parent p)) => p
     | _ => Error.bug "DisjointSet.parent"    
@@ -41,25 +41,25 @@ val rootValue =
 val setRootValue =
    fn (T (r as ref (Root {rank, ...})), v) => r := Root {value = v, rank = rank}
     | _ => Error.bug "DisjointSet.setRootValue"
-    
+
 fun equal (T r, T r') = r = r'
-   
+
 val isRoot  =
    fn T (ref (Root _)) => true
     | _ => false
-    
+
 val isRepresentative = isRoot
-                        
+
 fun root s = if isRoot s then s
              else let val r = root (parent s)
                   in setParent (s, r)
                      ; r
                   end
-               
+
 val representative = root
 
 fun ! s = rootValue (root s)
-   
+
 fun s := v = setRootValue (root s, v)
 
 val equals = fn (s1, s2) => equal (root s1, root s2)

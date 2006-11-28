@@ -17,7 +17,7 @@ fun value d = #2(destruct d)
 fun nextp d = #3(destruct d)
 fun next d = Pointer.!(nextp d)
 fun setNext(d,d') = Pointer.:=(nextp d,d')
-   
+
 fun link(d, d') =
    (setNext(d, d')
     ; setPrev(d',d))
@@ -29,7 +29,7 @@ fun insertL(d, d') =
 fun insertR(d, d') =
    (if Pointer.isNull(nextp d) then () else link(d',next d)
     ; link(d, d'))
-   
+
 fun unlink d =
    (link(prev d,next d)
     ; Pointer.clear(prevp d)

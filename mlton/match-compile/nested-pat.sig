@@ -21,7 +21,7 @@ signature NESTED_PAT_STRUCTS =
 signature NESTED_PAT = 
    sig
       include NESTED_PAT_STRUCTS
-      
+
       datatype t = T of {pat: node, ty: Type.t}
       and node =
          Con of {arg: t option,

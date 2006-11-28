@@ -51,7 +51,7 @@ structure TextIO =
             "" => NONE
           | s => SOME s
    end'
-        
+
 feature 'fun f x : string option = OS.FileSys.readDir x' '
 structure OS =
    struct

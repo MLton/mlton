@@ -12,7 +12,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
       open Prim
 
       type syserror = C_Int.t
- 
+
       val acces = EACCES
       val addrinuse = EADDRINUSE
       val addrnotavail = EADDRNOTAVAIL
@@ -305,7 +305,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
                val simpleResult' = fn ({errVal}, f) =>
                   simpleResultAux ({restart = false, errVal = errVal}, f)
             end
-         
+
             val simpleRestart = ignore o simpleResultRestart
             val simple = ignore o simpleResult
 

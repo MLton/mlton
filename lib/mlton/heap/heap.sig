@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature HEAP_STRUCTS =
    sig
       structure Key: BOUNDED_ORDER
@@ -15,7 +15,7 @@ signature HEAP_STRUCTS =
 signature HEAP =
    sig
       include HEAP_STRUCTS
-         
+
       structure Elt:
          sig
             type 'a t
@@ -23,7 +23,7 @@ signature HEAP =
             val key: 'a t -> Key.t
             val value: 'a t -> 'a
          end
-      
+
       type 'a t
 
       val decreaseKey: 'a t * 'a Elt.t * Key.t -> unit

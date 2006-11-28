@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature PRECEDENCE_PARSE_STRUCTS =
    sig
       structure Ast: AST

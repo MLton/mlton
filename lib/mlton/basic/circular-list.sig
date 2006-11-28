@@ -13,9 +13,9 @@ signature CIRCULAR_LIST_STRUCTS =
 signature CIRCULAR_LIST =
    sig
       include CIRCULAR_LIST_STRUCTS
-         
+
       type 'a t = 'a Elt.t Pointer.t
-         
+
       val delete: 'a t * 'a Elt.t -> unit
       val deleteEach: 'a t * ('a Elt.t -> unit) -> unit
       val empty: unit -> 'a t

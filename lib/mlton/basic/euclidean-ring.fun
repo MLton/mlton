@@ -12,7 +12,7 @@ struct
 open S
 
 structure IntInf = Pervasive.IntInf
-   
+
 val divMod =
    Trace.traceAssert
    ("EuclideanRing.divMod",
@@ -132,7 +132,7 @@ structure Int =
       type t = int
       val layout = Layout.str o toString
    end
-   
+
 type factors = (t * Int.t) list
 
 fun factor(n: t): factors =
@@ -185,5 +185,5 @@ fun isPrime(r: t): bool =
 
 fun isComposite(r: t): bool =
    existsPrimeOfSmallerMetric(metric r, fn p => divides(p, r))
-   
+
 end

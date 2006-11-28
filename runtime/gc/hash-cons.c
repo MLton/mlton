@@ -30,7 +30,7 @@ GC_objectHashTable allocHashTable (GC_state s) {
   pointer regionStart;
   pointer regionEnd;
   GC_objectHashTable t;
-  
+
   t = (GC_objectHashTable)(malloc_safe (sizeof(*t)));
   // Try to use space in the heap for the elements.
   if (not (isHeapInit (&s->secondaryHeap))) {
@@ -109,7 +109,7 @@ pointer insertHashTableElem (__attribute__ ((unused)) GC_state s,
   uint32_t slot; // slot in the hash table we are considering
   unsigned int *p1;
   unsigned int *p2;
-  
+
   if (DEBUG_SHARE)
     fprintf (stderr, "insertHashTableElem ("FMTHASH", "FMTPTR", "FMTPTR", %s)\n",
              hash, 
@@ -188,7 +188,7 @@ void growHashTableMaybe (GC_state s, GC_objectHashTable t) {
   struct GC_objectHashElement *oldElements;
   uint32_t oldElementsLengthMax;
   uint32_t newElementsLengthMax;
-  
+
   if (not t->mayInsert or t->elementsLengthCur * 2 <= t->elementsLengthMax)
     return;
   oldElements = t->elements;
@@ -263,7 +263,7 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
   growHashTableMaybe (s, t);
   if (countBytesHashConsed and res != object) {
     size_t amount;
-    
+
     amount = max - object;
     if (ARRAY_TAG == tag)
       amount += GC_ARRAY_HEADER_SIZE;
@@ -280,7 +280,7 @@ done:
 
 void shareObjptr (GC_state s, objptr *opp) {
   pointer p;
-  
+
   p = objptrToPointer (*opp, s->heap.start);
   if (DEBUG_SHARE)
     fprintf (stderr, "shareObjptr  opp = "FMTPTR"  *opp = "FMTOBJPTR"\n",

@@ -15,7 +15,7 @@ signature BYTECODE_STRUCTS =
 signature BYTECODE = 
    sig
       include BYTECODE_STRUCTS
-      
+
       val implementsPrim: 'a Machine.Prim.t -> bool
       val output: {program: Machine.Program.t,
                    outputC: unit -> {file: File.t,

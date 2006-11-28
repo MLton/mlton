@@ -21,7 +21,7 @@ functor TestQuickSort (S: QUICK_SORT): sig end =
 struct
 
 val _ = print "TestQuickSort\n"
-   
+
 open S
 
 val _ =
@@ -29,5 +29,5 @@ val _ =
    ([Array.array (0, 0),
      Array.tabulate (100, fn _ => Random.natLessThan 10000)],
     fn a => ignore (sortArray (a, op <=)))
-   
+
 end

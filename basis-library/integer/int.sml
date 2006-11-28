@@ -25,7 +25,7 @@ val sign: int -> Int.int =
           else if i < zero
             then (~1: Int.int)
           else (1: Int.int)
-               
+
 fun sameSign (x, y) = sign x = sign y
 
 fun << (i, n) = 
@@ -108,7 +108,7 @@ in
 end      
 
 val toString = fmt StringCvt.DEC
-         
+
 fun scan radix reader s =
    let
       (* Works with the negative of the number so that minInt can be scanned. *)
@@ -161,7 +161,7 @@ fun scan radix reader s =
             | #"+" => negate s'
             | _ => negate s
   end
-      
+
 val fromString = StringCvt.scanString (scan StringCvt.DEC)
 
 end

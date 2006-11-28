@@ -11,7 +11,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
       val op + = Int.+
       val op - = Int.-
       val op * = Int.*
-         
+
       exception Unordered
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
 
@@ -73,7 +73,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                   case List.find (fn (i', _) => i = i') modes of
                      NONE => raise Fail "IEEEReal.RoundingMode.fromInt"
                    | SOME (_, m) => m
-                        
+
                val toInt: t -> C_Int.int =
                   fn m =>
                   let
@@ -126,7 +126,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
          end
 
       type decimal_approx = DecimalApprox.t
-         
+
       fun 'a scan reader (state: 'a) =
          let
             val state = StringCvt.skipWS reader state

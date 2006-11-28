@@ -38,7 +38,7 @@ signature POPT =
       val trueRef: bool ref -> t
 
       val trace: string * t
-         
+
       (* Parse the switches, applying the first matching t to each switch,
        * and return any remaining args.
        * Returns NONE if it encounters an error.

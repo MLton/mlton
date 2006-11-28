@@ -23,7 +23,7 @@ void rusagePlusMax (struct rusage *ru1,
   usec %= million;
   ru->ru_utime.tv_sec = sec;
   ru->ru_utime.tv_usec = usec;
-  
+
   sec = ru1->ru_stime.tv_sec + ru2->ru_stime.tv_sec;
   usec = ru1->ru_stime.tv_usec + ru2->ru_stime.tv_usec;
   sec += (usec / million);
@@ -45,7 +45,7 @@ void rusageMinusMax (struct rusage *ru1,
   usec %= million;
   ru->ru_utime.tv_sec = sec;
   ru->ru_utime.tv_usec = usec;
-  
+
   sec = (ru1->ru_stime.tv_sec - ru2->ru_stime.tv_sec) - 1;
   usec = ru1->ru_stime.tv_usec + million - ru2->ru_stime.tv_usec;
   sec += (usec / million);
@@ -68,7 +68,7 @@ uintmax_t rusageTime (struct rusage *ru) {
 /* Return time as number of milliseconds. */
 uintmax_t getCurrentTime (void) {
   struct rusage ru;
-  
+
   getrusage (RUSAGE_SELF, &ru);
   return rusageTime (&ru);
 }

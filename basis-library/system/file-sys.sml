@@ -109,7 +109,7 @@ structure OS_FileSys =
          P_FSys.utime (path, Option.map (fn t => {actime = t, modtime = t}) t)
 
       val remove = P_FSys.unlink
-         
+
       val rename = P_FSys.rename
 
       datatype access_mode = datatype Posix.FileSys.access_mode

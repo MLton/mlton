@@ -178,7 +178,7 @@ struct
                     size = srcsize}],
                 transfer = NONE}]
             end
-          
+
         fun movx oper
           = let
               val (dst,dstsize) = getDst1 ()
@@ -558,7 +558,7 @@ struct
                                  size = dstsize}],
                              transfer = NONE}]
             end
-          
+
         fun fbina oper
           = let
               val (dst,dstsize) = getDst1 ()

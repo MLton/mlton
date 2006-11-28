@@ -16,7 +16,7 @@ val detailed = ref false
 
 fun switch {detailed = d,normal = n} x =
    if !detailed then d x else n x
-      
+
 structure String = String0
 
 datatype t = T of {length: int,
@@ -41,7 +41,7 @@ fun str s =
     | _ => T {length = String.size s, tree = String s}
 
 fun fold (l, b, f) = foldl f b l
-   
+
 fun seq ts =
    let val len = fold (ts, 0, fn (t,n) => n + length t)
    in case len of
@@ -199,7 +199,7 @@ fun outputl (t, out) = (output (t, out); Out.newline out)
 fun makeOutput layoutX (x, out) = output (layoutX x, out)
 
 fun ignore _ = empty
-   
+
 fun separate (ts, s) =
    case ts of
       [] => []
@@ -208,7 +208,7 @@ fun separate (ts, s) =
                              | loop (t :: ts) = s :: t:: (loop ts)
                        in loop ts
                        end)
-         
+
 fun separateLeft (ts, s) =
    case ts of
       [] => []

@@ -8,7 +8,7 @@
 
 functor x86AllocateRegisters(S: X86_ALLOCATE_REGISTERS_STRUCTS) : X86_ALLOCATE_REGISTERS =
 struct
-  
+
   open S
   open x86
 
@@ -1465,7 +1465,7 @@ struct
                         raise Spill
                       end
                    | register::_ => register
-                        
+
             val values = valuesRegister {register = register,
                                          registerAllocation 
                                          = registerAllocation}
@@ -1544,7 +1544,7 @@ struct
                                    fn register'
                                     => Register.coincide(final_register,
                                                          register'))
-                                  
+
                               val {assembly = assembly_register,
                                    registerAllocation,
                                    ...}
@@ -1903,11 +1903,11 @@ struct
                                                          commit = NO},
                                                 registerAllocation 
                                                 = registerAllocation}
-                                
+
                                     val registerAllocation
                                       = commitPush {registerAllocation 
                                                     = registerAllocation}
-                                      
+
                                     val commit_saves 
                                       = List.removeDuplicates
                                         ((Operand.register register)::saves,
@@ -1924,11 +1924,11 @@ struct
                                                          saves = commit_saves,
                                                          registerAllocation 
                                                          = registerAllocation}
-                                  
+
                                     val registerAllocation
                                       = commitPop {registerAllocation 
                                                    = registerAllocation}
-                                      
+
                                     val registerAllocation
                                       = if List.contains
                                            (reserved,
@@ -1961,7 +1961,7 @@ struct
                                                          commit = NO},
                                                 registerAllocation 
                                                 = registerAllocation}
-                                      
+
                                     val registerAllocation
                                       = if List.contains
                                            (reserved,
@@ -2080,7 +2080,7 @@ struct
                                         end
 
                              val size = MemLoc.size memloc
-                               
+
                              val {address,
                                   assembly = assembly_address,
                                   registerAllocation}
@@ -2091,7 +2091,7 @@ struct
                                                   saves = saves,
                                                   registerAllocation 
                                                   = registerAllocation}
-                               
+
                              val registerAllocation
                                = fltupdate {value 
                                             = {fltregister = FltRegister.top,
@@ -2174,7 +2174,7 @@ struct
                                         end
 
                              val size = MemLoc.size memloc
-                               
+
                              val {address,
                                   assembly = assembly_address,
                                   registerAllocation}
@@ -2244,7 +2244,7 @@ struct
                                            registerAllocation 
                                            = registerAllocation}
                                         end
-                     
+
                              val {fltrename = fltrename_pop,
                                   registerAllocation}
                                = fltpop {registerAllocation 
@@ -2387,7 +2387,7 @@ struct
                                                     register,
                                                     Register.eq),
                          registerAllocation = registerAllocation}
-                        
+
             val all = valueFilter 
                       {filter = fn _ => true,
                        registerAllocation = registerAllocation}
@@ -2514,7 +2514,7 @@ struct
                        => let
                             val replacer = mkReplacer spillMap
                             val memloc' = MemLoc.replace replacer memloc
-                              
+
                             val {register,
                                  assembly = assembly_unspill,
                                  registerAllocation}
@@ -3034,7 +3034,7 @@ struct
                                    = remove 
                                      {memloc = memloc,
                                       registerAllocation = registerAllocation}
-                                   
+
                                  val registerAllocation
                                    = update 
                                      {value = {register = register',
@@ -3043,7 +3043,7 @@ struct
                                                sync = true,
                                                commit = NO},
                                       registerAllocation = registerAllocation}
-                                   
+
                                  val {register,
                                       assembly = assembly_force,
                                       registerAllocation}
@@ -3056,7 +3056,7 @@ struct
                                       saves = saves,
                                       force = force,
                                       registerAllocation = registerAllocation}
-                                     
+
                                in
                                  {register = register,
                                   assembly 
@@ -3137,7 +3137,7 @@ struct
                                       saves = saves,
                                       force = force,
                                       registerAllocation = registerAllocation}
-                                
+
                                in
                                  {register = register,
                                   assembly 
@@ -4082,13 +4082,13 @@ struct
                                       (final_uses_fltregisters,
                                        fltregister,
                                        FltRegister.eq)
-                                      
+
                                   val isDst
                                     = List.contains
                                       (final_defs_fltregisters,
                                        fltregister,
                                        FltRegister.eq)
-                                      
+
                                   val isDef = isDst
                                 in
                                   {fltregister = fltregister,
@@ -4168,7 +4168,7 @@ struct
                                       (final_defs_registers,
                                        register,
                                        Register.eq)
-                               
+
                                   val isDef = isDst
                                 in
                                   {register = register,
@@ -4395,7 +4395,7 @@ struct
                                                     commit = REMOVE 0}
                                               else value,
                                       registerAllocation = registerAllocation}
-                     
+
                         val {assembly = assembly_commit,
                              registerAllocation}
                           = commitRegisters {info = info,
@@ -4403,7 +4403,7 @@ struct
                                              saves = saves,
                                              registerAllocation 
                                              = registerAllocation}
-                          
+
                         val {address, assembly, registerAllocation}
                           = toAddressMemLoc {memloc = m,
                                              info = info,
@@ -4571,7 +4571,7 @@ struct
                                                   else value,
                                           registerAllocation 
                                           = registerAllocation}
-                     
+
                          val {assembly = assembly_commit,
                               fltrename = fltrename_commit,
                               registerAllocation}
@@ -4725,7 +4725,7 @@ struct
                     val {fltrename = fltrename',
                          registerAllocation}
                       = fltxch1 {registerAllocation = registerAllocation}
-                      
+
                     val {fltrename = fltrename'',
                          registerAllocation}
                       = fltxch' {fltregister = FltRegister.T i,
@@ -4976,7 +4976,7 @@ struct
                                      sync = sync,
                                      commit = NO},
                             registerAllocation = registerAllocation}
-                           
+
                        val {assembly = assembly_reserve,
                             registerAllocation}
                          = if reserve
@@ -5046,7 +5046,7 @@ struct
                  fn {memloc, ...} => Operand.memloc memloc)
 
             datatype u = None | Reg of Register.t | Mem of MemLoc.t
-              
+
             fun computeEdges' {reg,
                                registerAllocation}
               = List.revMap
@@ -5394,7 +5394,7 @@ struct
                             saves = saves, 
                             force = [register], 
                             registerAllocation = registerAllocation}
-                           
+
                        val {assembly = assembly_reserve,
                             registerAllocation}
                          = if reserve
@@ -6242,7 +6242,7 @@ struct
                                            immediate = true,
                                            label = false,
                                            address = false}
- 
+
                                 val {operand = final_src, 
                                      assembly = assembly_src,
                                      registerAllocation}
@@ -6347,7 +6347,7 @@ struct
                               force = [],
                               registerAllocation 
                               = registerAllocation}
-                           
+
                          val {operand = final_dst,
                               assembly = assembly_dst,
                               registerAllocation}
@@ -6468,7 +6468,7 @@ struct
                               immediate = true,
                               label = false,
                               address = false}
- 
+
                    val {operand = final_src2, 
                         assembly = assembly_src2,
                         registerAllocation}
@@ -6508,7 +6508,7 @@ struct
                                  kills = kills,
                                  info = info,
                                  registerAllocation = registerAllocation}
-                       
+
                     val {operand = final_src,
                          assembly = assembly_src,
                          registerAllocation,
@@ -6525,7 +6525,7 @@ struct
                           top = SOME false,
                           registerAllocation
                           = registerAllocation}
-                         
+
                     val {assembly = assembly_dst,
                          fltrename = fltrename_dst,
                          registerAllocation,
@@ -6542,19 +6542,19 @@ struct
                           top = NONE,
                           registerAllocation
                           = registerAllocation}
-                         
+
                     val final_src = (RA.fltrenameLift fltrename_dst) final_src
-                       
+
                     val instruction
                        = Instruction.FLD
                          {src = final_src,
                           size = srcsize}
-                         
+
                     val {uses = final_uses,
                          defs = final_defs,  
                          ...}
                        = Instruction.uses_defs_kills instruction
-                       
+
                     val {assembly = assembly_post,
                          registerAllocation}
                        = RA.post {uses = uses,
@@ -6575,7 +6575,7 @@ struct
                         assembly_post],
                        registerAllocation = registerAllocation}
                  end
-              
+
             fun default' ()
                = let
                     val {uses,defs,kills} 
@@ -6587,7 +6587,7 @@ struct
                                  kills = kills,
                                  info = info,
                                  registerAllocation = registerAllocation}
-                       
+
                     val {operand = final_src,
                          assembly = assembly_src,
                          registerAllocation,
@@ -6603,7 +6603,7 @@ struct
                           saves = [],
                           top = SOME true,
                           registerAllocation = registerAllocation}
-                         
+
                     val {operand = final_dst,
                          assembly = assembly_dst,
                          registerAllocation,
@@ -6619,27 +6619,27 @@ struct
                           saves = [src,final_src],
                           top = SOME false,
                           registerAllocation = registerAllocation}
-                         
+
                     val instruction
                        = Instruction.FST
                          {dst = final_dst,
                           size = dstsize,
                           pop = true}
-                         
+
                     val {fltrename = fltrename_pop,
                          registerAllocation}
                        = RA.fltpop {registerAllocation = registerAllocation}
-                       
+
                     val {uses = final_uses,
                          defs = final_defs,
                          ...}
                        = Instruction.uses_defs_kills instruction
-                       
+
                     val final_uses
                        = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                     val final_defs
                        = List.revMap(final_defs, RA.fltrenameLift fltrename_pop)
-                       
+
                     val {assembly = assembly_post,
                          registerAllocation}
                        = RA.post {uses = uses,
@@ -6696,7 +6696,7 @@ struct
                                                                  = commit_src},
                                                         registerAllocation 
                                                         = registerAllocation}
-                                                       
+
                                                   val {uses,defs,kills} 
                                                      = Instruction.uses_defs_kills
                                                        instruction
@@ -6709,12 +6709,12 @@ struct
                                                         info = info,
                                                         registerAllocation 
                                                         = registerAllocation}
-                                                       
+
                                                   val final_uses = []
                                                   val final_defs 
                                                      = [Operand.fltregister 
                                                         fltregister_src]
-                                                     
+
                                                   val {assembly = assembly_post,
                                                        registerAllocation}
                                                      = RA.post 
@@ -6868,19 +6868,19 @@ struct
                                             size = size,
                                             info = info,
                                             registerAllocation = registerAllocation}
-                          
+
                         val instruction 
                           = Instruction.BinAL
                             {oper = oper,
                              src = final_src,
                              dst = final_dst,
                              size = size}
-                            
+
                         val {uses = final_uses,
                              defs = final_defs,
                              ...}
                           = Instruction.uses_defs_kills instruction
-                          
+
                         val {assembly = assembly_post,
                              registerAllocation}
                           = RA.post {uses = uses,
@@ -7187,7 +7187,7 @@ struct
                                     force = [],
                                     registerAllocation 
                                     = registerAllocation}
- 
+
                                val {operand = final_src, 
                                     assembly = assembly_src,
                                     registerAllocation}
@@ -7214,18 +7214,18 @@ struct
                                    assembly_src],
                                 registerAllocation = registerAllocation}
                              end
-                          
+
                   val instruction 
                     = Instruction.IMUL2
                       {src = final_src,
                        dst = final_dst,
                        size = size}
-                      
+
                   val {uses = final_uses,
                        defs = final_defs,
                        ...}
                     = Instruction.uses_defs_kills instruction
-                    
+
                   val {assembly = assembly_post,
                        registerAllocation}
                     = RA.post {uses = uses,
@@ -8023,7 +8023,7 @@ struct
                              size = size,
                              info = info,
                              registerAllocation = registerAllocation}
-        
+
                         val isConst0
                           = fn Immediate.Const (Immediate.Char #"\000") => true
                              | Immediate.Const (Immediate.Int 0) => true
@@ -8085,7 +8085,7 @@ struct
                           = RA.remove
                             {memloc = memloc_dst,
                              registerAllocation = registerAllocation}
-                            
+
                         val registerAllocation
                           = RA.update
                             {value = {register = register_src,
@@ -9109,7 +9109,7 @@ struct
                              defs = final_defs,
                              ...}
                           = Instruction.uses_defs_kills instruction
- 
+
                         val final_uses
                           = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                         val final_defs
@@ -9168,7 +9168,7 @@ struct
                               kills = kills,
                               info = info,
                               registerAllocation = registerAllocation}
-                    
+
                   val {final_src2,
                        assembly_src1_src2,
                        pop,
@@ -9234,7 +9234,7 @@ struct
                                           top = SOME false,
                                           registerAllocation
                                           = registerAllocation}
-                                         
+
                                      val {operand = final_src1,
                                           assembly = assembly_src1,
                                           fltrename = fltrename_src1,
@@ -9251,7 +9251,7 @@ struct
                                         top = SOME true,
                                         registerAllocation
                                         = registerAllocation}
-                    
+
                                      val final_src2 
                                        = (RA.fltrenameLift fltrename_src1) final_src2
                                    in
@@ -9328,7 +9328,7 @@ struct
                        size = size,
                        pop = pop,
                        pop' = pop'}
-                            
+
                   val {fltrename = fltrename_pop,
                        registerAllocation}
                     = if pop
@@ -9362,7 +9362,7 @@ struct
                        defs = final_defs,
                        ...}
                     = Instruction.uses_defs_kills instruction
-                    
+
                   val final_uses
                     = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                   val final_defs
@@ -9472,7 +9472,7 @@ struct
                                           top = SOME false,
                                           registerAllocation
                                           = registerAllocation}
-                                         
+
                                      val {operand = final_src1,
                                           assembly = assembly_src1,
                                           fltrename = fltrename_src1,
@@ -9489,7 +9489,7 @@ struct
                                         top = SOME true,
                                         registerAllocation
                                         = registerAllocation}
-                    
+
                                      val final_src2 
                                        = (RA.fltrenameLift fltrename_src1) final_src2
                                    in
@@ -9576,7 +9576,7 @@ struct
                                        else default false
                                   | _ => default false
                              end
- 
+
                   val instruction
                     = Instruction.FUCOM
                       {src = final_src2,
@@ -9616,7 +9616,7 @@ struct
                        defs = final_defs,
                        ...}
                     = Instruction.uses_defs_kills instruction
-                    
+
                   val final_uses
                     = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                   val final_defs
@@ -9811,7 +9811,7 @@ struct
                                           top = SOME false,
                                           registerAllocation
                                           = registerAllocation}
-                                         
+
                                      val {operand = final_src,
                                           assembly = assembly_src,
                                           fltrename = fltrename_src,
@@ -9828,7 +9828,7 @@ struct
                                           top = SOME true,
                                           registerAllocation
                                           = registerAllocation}
-                    
+
                                      val final_dst 
                                        = (RA.fltrenameLift fltrename_src) final_dst
                                    in
@@ -9863,7 +9863,7 @@ struct
                                           top = SOME true,
                                           registerAllocation
                                           = registerAllocation}
-                                         
+
                                      val {operand = final_src,
                                           assembly = assembly_src,
                                           fltrename = fltrename_src,
@@ -9939,7 +9939,7 @@ struct
                                           top = SOME false,
                                           registerAllocation
                                           = registerAllocation}
-                                         
+
                                      val {operand = final_src,
                                           assembly = assembly_src,
                                           fltrename = fltrename_src,
@@ -10088,7 +10088,7 @@ struct
                        defs = final_defs,
                        ...}
                     = Instruction.uses_defs_kills instruction
-                    
+
                   val final_uses
                     = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                   val final_defs
@@ -10387,7 +10387,7 @@ struct
                        defs = final_defs,
                        ...}
                     = Instruction.uses_defs_kills instruction
-                    
+
                   val final_uses
                     = List.revMap(final_uses, RA.fltrenameLift fltrename_pop)
                   val final_defs
@@ -10797,7 +10797,7 @@ struct
                                      assembly''),
                          registerAllocation = registerAllocation}
                       end)
-                
+
             val assembly = AppendList.toList assembly
             val assembly = if !Control.Native.commented > 1
                              then (Assembly.comment

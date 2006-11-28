@@ -41,7 +41,7 @@ fun new (f: unit -> 'a): 'a t =
    in
       T {return = return, thread = thread}
    end
-     
+
 fun run (T {return, thread}, time: Time.t): 'a res =
    Thread.switch
    (fn cur: 'a res Thread.t =>

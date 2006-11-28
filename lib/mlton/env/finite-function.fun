@@ -13,7 +13,7 @@ struct
 
 structure D = D
 structure L = List
-   
+
 datatype 'a t = T of (D.t * 'a) L.t
 
 fun empty() = T(L.empty())
@@ -34,7 +34,7 @@ fun peek(T l, d) =
 fun lookup ed = case peek ed of
    SOME r => r
  | NONE => Error.error "Env.lookup"
-                         
+
 fun dom(T l) = L.map(l, #1)
 
 fun range(T l) = L.map(l, #2)
@@ -42,11 +42,11 @@ fun range(T l) = L.map(l, #2)
 fun remove(T ps, d) = T(L.removeFirst(ps, equal d))
 
 fun foldl(T l, b, f) = L.foldl(l, b, fn (b, (d, r)) => f(b, d, r))
-   
+
 fun e + e' = foldl(e', e, add)
 
 fun foreach(T ps, f) = L.foreach(ps, f)
-   
+
 fun multiExtend(env, [], []) = env
   | multiExtend(env, d :: ds, r :: rs) = multiExtend(extend(env, d, r), ds, rs)
   | multiExtend _ = Error.error "Env.multiExtend"

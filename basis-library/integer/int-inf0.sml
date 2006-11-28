@@ -69,7 +69,7 @@ signature PRIM_INT_INF =
       val gtu: int * int -> bool
       val geu: int * int -> bool
       val isNeg: int -> bool
-               
+
       val andb: int * int -> int
       val <<? : int * Primitive.Word32.word -> int
       val << : int * Primitive.Word32.word -> int
@@ -1006,7 +1006,7 @@ structure IntInf =
 
          fun mod2 x = I.andb (x, 1)
          fun div2 x = I.>>? (x, 0w1)
-            
+
          fun smallGcd (a, b, acc) =
             case (a, b) of
                (0, _) => b * acc
@@ -1129,7 +1129,7 @@ structure IntInf =
                        else if y > zero
                                then quot (x + one, y) - one
                                else raise Div
-                                  
+
          fun bigMod (x, y) =
             if x >= zero
                then if y > zero
@@ -1144,7 +1144,7 @@ structure IntInf =
                        else if y > zero
                                then rem (x + one, y) + (y - one)
                                else raise Div
-                                  
+
          fun bigDivMod (x, y) = (bigDiv (x, y), bigMod (x, y))
          fun bigQuotRem (x, y) = (bigQuot (x, y), bigRem (x, y))
       end
@@ -1235,7 +1235,7 @@ structure IntInf =
 
       val maxInt = NONE
       val minInt = NONE
-         
+
       structure Prim = 
          struct
             val isSmall = isSmall

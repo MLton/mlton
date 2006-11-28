@@ -50,7 +50,7 @@ structure Pat =
       datatype t = T of {arg: (Var.t * Type.t) option,
                          con: Con.t,
                          targs: Type.t vector}
-         
+
       local
          open Layout
       in
@@ -109,7 +109,7 @@ structure Cases =
                Con l => Con (doit l)
              | Word (s, l) => Word (s, doit l)
          end
-      
+
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
 
       fun foreach' (c: 'a t, f: 'a -> unit, fc: Pat.t -> unit): unit =
@@ -135,7 +135,7 @@ structure VarExp =
          val targs = make #targs
          val var = make #var
       end
-   
+
       fun layout (T {var, targs, ...}) =
          if !Control.showTypes
             then let open Layout
@@ -147,7 +147,7 @@ structure VarExp =
                  end
          else Var.layout var
    end
-   
+
 (*---------------------------------------------------*)
 (*           Expressions and Declarations            *)
 (*---------------------------------------------------*)
@@ -281,7 +281,7 @@ in
       align [seq [str "fn ", maybeConstrain (Var.layout arg, argType),
                   str " => "],
              layoutExp body]
-            
+
 end   
 
 structure Dec =
@@ -315,7 +315,7 @@ structure Exp =
          in Exp {decs = [Dec.MonoVal {var = var, ty = ty, exp = exp}],
                  result = VarExp.mono var}
          end
-      
+
       local
          fun make f (Exp {decs, result}, d) =
             Exp {decs = f (d, decs),
@@ -552,9 +552,9 @@ structure Lambda =
 
       fun dest (Lam {arg, argType, body, mayInline, ...}) =
          {arg = arg, argType = argType, body = body, mayInline = mayInline}
-         
+
       fun plist (Lam {plist, ...}) = plist
-         
+
       val layout = layoutLambda
       fun equals (f:t, f':t) = PropertyList.equals (plist f, plist f')
    end
@@ -578,16 +578,16 @@ structure DirectExp =
                        in Exp.prefix (k (VarExp.mono x, t),
                                       MonoVal {var = x, ty = t, exp = e})
                        end
-                    
+
             fun name (k: VarExp.t * Type.t -> Exp.t): t = nameGen k
 
             val id: t = name (fn (x, _) => Exp {decs = [], result = x})
-               
+
             fun return (k: t, xt) = k xt
          end
 
       type t = Cont.t -> Exp.t
-         
+
       fun send (e: t, k: Cont.t): Exp.t = e k
 
       fun toExp e = send (e, Cont.id)
@@ -600,11 +600,11 @@ structure DirectExp =
       fun sendName (e, k) = send (e, Cont.name k)
 
       fun simple (e: PrimExp.t * Type.t) k = Cont.return (k, e)
-         
+
       fun const c = simple (Const c, Type.ofConst c)
 
       val string = const o Const.string
-         
+
       fun varExp (x, t) = simple (Var x, t)
 
       fun var {var, targs, ty} =
@@ -671,7 +671,7 @@ structure DirectExp =
       fun convert2 (e1, e2, make) =
          converts (Vector.new2 (e1, e2),
                    fn xs => make (Vector.sub (xs, 0), Vector.sub (xs, 1)))
-         
+
       fun app {func, arg, ty} =
          convert2 (func, arg, fn ((func, _), (arg, _)) =>
                    (App {func = func, arg = arg}, ty))
@@ -687,7 +687,7 @@ structure DirectExp =
 
       fun raisee (exn: t, {extend: bool}, t: Type.t): t =
          convert (exn, fn (x, _) => (Raise {exn = x, extend = extend}, t))
-         
+
       fun handlee {try, catch, handler, ty} =
          simple (Handle {try = toExp try,
                          catch = catch,
@@ -766,14 +766,14 @@ structure DirectExp =
          send (exp, fn (exp, ty) =>
                Exp.prefix (send (body, k),
                            Dec.MonoVal {var = var, ty = ty, exp = exp}))
-         
+
       fun lambda {arg, argType, body, bodyType, mayInline} =
          simple (Lambda (Lambda.make {arg = arg,
                                       argType = argType,
                                       body = toExp body,
                                       mayInline = mayInline}),
                  Type.arrow (argType, bodyType))
-      
+
       fun detupleGen (e: PrimExp.t,
                       t: Type.t,
                       components: Var.t vector,
@@ -798,7 +798,7 @@ structure DirectExp =
                                                 offset = i}}
                          :: ac)))
                 end)
-         
+
       fun detupleBind {tuple, components, body} =
          fn k => send (tuple, fn (e, t) => detupleGen (e, t, components, body k))
 
@@ -827,7 +827,7 @@ structure DirectExp =
 structure Exp =
    struct
       open Exp
-         
+
       fun unit () =
          let open DirectExp
          in toExp (tuple {exps = Vector.new0 (), ty = Type.unit})

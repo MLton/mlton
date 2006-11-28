@@ -89,7 +89,7 @@ structure CtlExtra =
       type optvalArr = Word8.word array
 
       val bitsPerByte = 8
-         
+
       val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
       val intLen = Int.quot (C_Int.precision', bitsPerByte)
       fun unmarshalInt (wa: optvalArr) : C_Int.int =
@@ -244,7 +244,7 @@ structure CtlExtra =
              | SOME t => (loopBool (0, 1); loopInt (0, C_Int.fromLarge (Time.toSeconds t)))
             ; Array.vector wa
          end
-      
+
       local
          fun make (optlen: int,
                    marshal: 'a -> optvalVec,
@@ -490,7 +490,7 @@ fun select {rds: sock_desc list,
    end
 
 val ioDesc = sockDesc
- 
+
 type out_flags = {don't_route: bool, oob: bool}
 
 val no_out_flags = {don't_route = false, oob = false}
@@ -571,7 +571,7 @@ end
 type in_flags = {peek: bool, oob: bool}
 
 val no_in_flags = {peek = false, oob = false}
-            
+
 fun mk_in_flags {peek, oob} =
    C_Int.orb (if peek then Prim.MSG_PEEK else 0x0,
    C_Int.orb (if oob then Prim.MSG_OOB else 0x0,
@@ -591,7 +591,7 @@ fun getVec (a, n, bytesRead) =
    if n = bytesRead
       then Word8Vector.fromArray a
    else Word8ArraySlice.vector (Word8ArraySlice.slice (a, 0, SOME bytesRead))
-      
+
 fun recvVec' (sock, n, in_flags) =
    let
       val a = Word8Array.arrayUninit n
@@ -698,5 +698,5 @@ type ('af, 'sock_type) sock = sock
 type 'af sock_addr = sock_addr
 
 type 'mode stream = stream
-   
+
 end

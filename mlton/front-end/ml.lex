@@ -15,7 +15,7 @@
  *)
 
 type int = Int.t
-   
+
 type svalue = Tokens.svalue
 type pos = SourcePos.t
 type lexresult = (svalue, pos) Tokens.token
@@ -44,7 +44,7 @@ fun addString (s: string) =
 fun addChar (c: char) = addString (String.fromChar c)
 
 fun inc (ri as ref (i: int)) = ri := i + 1
-   
+
 fun dec (ri as ref (i: int)) = ri := i - 1
 
 fun error (source, left, right, msg) = 
@@ -352,4 +352,4 @@ hexnum={hexDigit}+;
                     ; continue ());
 <F>.            => (stringError (source, yypos, "unclosed string")
                     ; continue ());
-   
+

@@ -5,11 +5,11 @@
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
-   
+
 signature MLTON_WORD =
    sig
       type t
-         
+
       val rol: t * word -> t
       val ror: t * word -> t
    end

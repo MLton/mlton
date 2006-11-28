@@ -10,14 +10,14 @@ structure Assert: ASSERT =
       val debug = MLton.debug orelse (not MLton.isMLton)
 
       fun fail msg = Error.bug (concat ["assertion failure: ", msg])
-         
+
       fun assert (msg: string, f: unit -> bool): unit =
          if debug andalso not (f () handle _ => false)
             then fail msg
          else ()
 
       fun assert' (msg, b) = assert (msg, fn () => b)
-         
+
       val ('a, 'b) assertFun':
          string
          * ('a -> 'b)

@@ -8,7 +8,7 @@
 signature MLTON_INT_INF =
    sig
       type t
-     
+
       structure BigWord : WORD
       structure SmallInt : INTEGER
 

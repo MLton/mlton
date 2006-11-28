@@ -12,7 +12,7 @@ signature CHAR_SIZE_STRUCTS =
 signature CHAR_SIZE = 
    sig
       include CHAR_SIZE_STRUCTS
-      
+
       datatype t = C8 | C16 | C32
 
       val all: t list

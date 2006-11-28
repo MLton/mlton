@@ -71,9 +71,9 @@ fun choose(n, k) =
    end
 
 fun log (base, arg) = ln arg / ln base
-   
+
 val ln2 = ln two
-   
+
 fun log2 x = ln x / ln2
 
 fun realPower(m, n) = exp(n * ln m)
@@ -94,4 +94,4 @@ structure Real = Real64
 structure Real32 = Real (open Real32
                          val one: real = 1.0
                          val zero: real = 0.0)
-                            
+

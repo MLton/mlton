@@ -10,7 +10,7 @@ Group
 
 functor MatchCompile
 functor NestedPat
-   
+
 is
 
 ../atoms/sources.cm

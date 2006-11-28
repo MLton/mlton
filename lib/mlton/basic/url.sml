@@ -9,7 +9,7 @@ structure Url: URL =
 struct
 
 val escapeQuery = ref true
-   
+
 structure Char =
    struct
       open Char
@@ -84,12 +84,12 @@ structure Scheme =
           ("http", Http),
           ("https", Https),
           ("telnet", Telnet)]
-         
+
       val fromString =
          String.memoizeList (fn _ => Error.bug "Url.Scheme.fromString", map)
 
       val equals = op =
-         
+
       fun toString s =
          #1 (valOf (List.peek (map, fn (_, s') => equals (s, s'))))
 
@@ -111,7 +111,7 @@ structure Authority =
          {user = Option.map (user, String.toLower),
           host = String.toLower host,
           port = port}
-         
+
       fun equals ({user = u, host = h, port = p}: t,
                  {user = u', host = h', port = p'}: t): bool =
          Option.equals (u, u', String.equals)
@@ -162,7 +162,7 @@ structure Path =
          val isAbsolute = make #isAbsolute
          val path = make #path
       end
-            
+
       val root = {isAbsolute = true,
                   path = [],
                   file = ""}
@@ -190,7 +190,7 @@ datatype t =
   | News of string
   | Opaque of {scheme: string,
                rest: string}
-    
+
 fun addQuery (u: t, q) =
    case u of
       T {authority, fragment, path, query, scheme}=>
@@ -203,7 +203,7 @@ fun addQuery (u: t, q) =
                query = SOME q,
                scheme = scheme}
     | _ => Error.bug "Url.addQuery"
-   
+
 fun host (u: t): string =
    case u of
       T {authority = SOME {host, ...}, ...} => host
@@ -213,7 +213,7 @@ fun path (u: t): Path.t =
    case u of
       T {path = SOME p, ...} => p
     | _ => Error.bug "Url.path"
- 
+
 fun mo (opt, f) =
    case opt of
       NONE => ""
@@ -253,7 +253,7 @@ val layout =
     | u => layout u
 
 val equals = op =
-   
+
 structure Regexp =
    struct
       open Regexp
@@ -367,7 +367,7 @@ structure Regexp =
                            then unescape s
                         else s
                      end)
-         
+
       fun getAbsPath (m: Match.t): Path.t =
          case Match.peek (m, pathSegments') of
             NONE => Error.bug "Url.Regexp.getAbsPath"
@@ -433,7 +433,7 @@ fun getMatch (m: Regexp.Match.t): t =
 
 fun fromString (urlString: string): t option =
    Option.map (Regexp.Compiled.matchAll (Regexp.url(), urlString), getMatch)
-   
+
 val fromString =
    Trace.trace ("Url.fromString", String.layout, Option.layout layout)
    fromString
@@ -481,7 +481,7 @@ fun relativize {base = b, relative = r} =
               end
       else NONE
                         | _ => NONE
-   
+
 val relativize =
    Trace.trace ("Url.relativize",
                fn {base = b, relative = r} => Layout.tuple [layout b, layout r],

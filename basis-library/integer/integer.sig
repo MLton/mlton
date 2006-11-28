@@ -23,13 +23,13 @@ signature INTEGER =
       val mod: int * int -> int
       val quot: int * int -> int
       val rem: int * int -> int
-         
+
       val compare: int * int -> order
       val < : int * int -> bool
       val <= : int * int -> bool
       val > : int * int -> bool
       val >= : int * int -> bool
-         
+
       val ~ : int -> int
       val abs: int -> int
       val min: int * int -> int

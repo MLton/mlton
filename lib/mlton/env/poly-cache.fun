@@ -12,14 +12,14 @@ datatype ('a, 'b) t = T of {equal: ('a * 'a) -> bool,
                            elts: ('a * 'b) list ref}
 
 fun fromList{equal, elements} = T{equal = equal, elts = ref elements}
-   
+
 fun new{equal} = T{equal = equal, elts = ref []}
 
 fun toList(T{elts, ...}) = !elts
 
 fun size c = List.length(toList c)
 fun foreach(c, f) = List.foreach(toList c, f)
-   
+
 fun peek(T{equal, elts = ref l}, x) =
    case List.peek(l, fn (x', _) => equal(x, x')) of
       NONE => NONE
@@ -28,7 +28,7 @@ fun peek(T{equal, elts = ref l}, x) =
 fun lookup cx = valOf(peek cx)
 
 fun toFunction c a = lookup(c, a)
-   
+
 fun addNew(T{elts = r as ref l, ...}, x, y) = r := (x, y) :: l
 
 fun getOrAdd(c, x, th) =
@@ -39,7 +39,7 @@ fun getOrAdd(c, x, th) =
     | SOME y => y
 
 fun eq(T{elts=r, ...}, T{elts=r', ...}) = r = r'
-   
+
 end 
 
 structure PolyCache = PolyCache()

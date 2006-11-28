@@ -25,6 +25,6 @@ structure GenericSock : GENERIC_SOCK =
          end
 
       fun socket (af, st) = socket' (af, st, 0)
-         
+
       fun socketPair (af, st) = socketPair' (af, st, 0)
    end

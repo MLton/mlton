@@ -30,7 +30,7 @@ signature BASIS_1997 =
       exception Size
       exception Span
       exception Subscript
- 
+
       (* Top-level values *)
       val ! : 'a ref -> 'a
       val := : 'a ref * 'a -> unit

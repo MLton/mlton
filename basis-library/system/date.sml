@@ -5,14 +5,14 @@
  *  by sweeks@research.nj.nec.com on 1999-1-3 and
  *  by sweeks@acm.org on 2000-1-18.
  *)
- 
+
 (* Date -- 1995-07-03, 1998-04-07 *)
 
 structure Date :> DATE =
   struct
      structure Prim = PrimitiveFFI.Date
      structure Tm = Prim.Tm
-        
+
      (* Patch to make Time look like it deals with Int.int
       * instead of LargeInt.int.
       *)
@@ -97,7 +97,7 @@ structure Date :> DATE =
         ; Tm.setWDay tm_wday
         ; Tm.setYDay tm_yday
         ; Tm.setYear tm_year)
-        
+
     fun mktime_ (t: tmoz): C_Time.t = C_Errno.check (setTmBuf t; Prim.mkTime ())
 
     (* The offset to add to local time to get UTC: positive West of UTC *)
@@ -111,7 +111,7 @@ structure Date :> DATE =
     val fromwday: weekday -> int =
        fn Sun => 0 | Mon => 1 | Tue => 2 | Wed => 3 
         | Thu => 4 | Fri => 5 | Sat => 6
-             
+
     val tomonth: int -> month =
        fn 0 => Jan | 1 => Feb |  2 => Mar |  3 => Apr
         | 4 => May | 5 => Jun |  6 => Jul |  7 => Aug
@@ -122,7 +122,7 @@ structure Date :> DATE =
        fn Jan => 0 | Feb => 1 | Mar => 2  | Apr => 3
         | May => 4 | Jun => 5 | Jul => 6  | Aug => 7
         | Sep => 8 | Oct => 9 | Nov => 10 | Dec => 11
-        
+
     fun tmozToDate ({tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, 
                      tm_sec, tm_wday, tm_yday, tm_year}: tmoz) offset = 
        T {day = C_Int.toInt tm_mday,
@@ -199,7 +199,7 @@ structure Date :> DATE =
 
     (* Reingold: Find the number of days elapsed from the (imagined)
        Gregorian date Sunday, December 31, 1 BC to the given date. *)
-        
+
     fun todaynumber year month day = 
         let val prioryears = year - 1
         in
@@ -242,7 +242,7 @@ structure Date :> DATE =
     fun weekday daynumber = toweekday (daynumber mod 7)
 
     (* Normalize a date, disregarding leap seconds: *)
-   
+
     fun normalizedate yr0 mo0 dy0 hr0 mn0 sec0 offset =
         let val mn1    = mn0 + sec0 div 60
             val second = sec0 mod 60
@@ -368,7 +368,7 @@ structure Date :> DATE =
     val toString = fmt "%a %b %d %H:%M:%S %Y"
 
     type ('a, 'b) reader = ('a, 'b) Reader.reader
-       
+
     fun scan (reader: (char, 'a) reader): (t, 'a) reader =
        let
           type 'b t = ('b, 'a) reader
@@ -497,7 +497,7 @@ structure Date :> DATE =
                                   yearDay = dayinyear (year, month, day)}
                                ))))))))))))))))
        end
-       
+
     fun fromString s = StringCvt.scanString scan s
 
     (* Ignore timezone and DST when comparing dates: *)

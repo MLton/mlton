@@ -10,7 +10,7 @@ struct
 
 structure L = StrictList
 structure I = L.I
-   
+
 datatype 'a t =
    List of 'a L.t
  | Cons of 'a * 'a t ref
@@ -33,17 +33,17 @@ and rotate(l, r, a) =
      | (SOME(x, l), SOME(x', r)) =>
           Cons(x, ref(Rotated(l, r, L.cons(x', a))))
      | _ => raise Rotate)
-       
+
 fun appendReverse(l, r) = rotate(l, r, L.empty())
 
 fun isEmpty r = case destruct r of
    NONE => true
  | SOME _ => false
-      
+
 fun length(List l) = L.length l
   | length(Rotated(l, r, a)) = length l + L.length r + L.length a
   | length(Cons(x, ref r)) = length r + 1
-    
+
 fun output(r, sep, outElt, out) =
    let val print = Out.outputc out
       fun outputList l = L.output(sep, outElt)(l, out)

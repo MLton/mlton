@@ -6,7 +6,7 @@
  *)
 
 type word = Word.t
-   
+
 signature SYMBOL_STRUCTS = 
    sig
    end
@@ -14,7 +14,7 @@ signature SYMBOL_STRUCTS =
 signature SYMBOL = 
    sig
       include SYMBOL_STRUCTS
-      
+
       type t
 
       (* <= is alphabetical order *)

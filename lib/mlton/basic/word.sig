@@ -7,7 +7,7 @@
 
 type int = Pervasive.Int.int
 type word = Pervasive.Word.word
-   
+
 signature WORD =
    sig
       type t

@@ -35,7 +35,7 @@ void GC_copyCurrentThread (GC_state s) {
   GC_stack fromStack;
   GC_thread toThread;
   GC_stack toStack;
-        
+
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_copyCurrentThread\n");
   enter (s);

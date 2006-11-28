@@ -109,7 +109,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
      */
     if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
       GC_weak w;
-      
+
       w = (GC_weak)(s->forwardState.back + GC_NORMAL_HEADER_SIZE + (offsetofWeak (s)));
       if (DEBUG_WEAK)
         fprintf (stderr, "forwarding weak "FMTPTR" ",
@@ -168,7 +168,7 @@ void forwardInterGenerationalObjptrs (GC_state s) {
   size_t cardIndex, maxCardIndex;
   pointer cardStart, cardEnd;
   pointer objectStart;
-  
+
   if (DEBUG_GENERATIONAL)
     fprintf (stderr, "Forwarding inter-generational pointers.\n");
   updateCrossMap (s);
@@ -194,7 +194,7 @@ checkCard:
   assert (objectStart < oldGenStart + cardMapIndexToSize (cardIndex + 1));
   if (cardMap[cardIndex]) {
     pointer lastObject;
-    
+
     s->cumulativeStatistics.markedCards++;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "card %zu is marked  objectStart = "FMTPTR"\n", 

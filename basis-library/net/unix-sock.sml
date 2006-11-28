@@ -25,7 +25,7 @@ structure UnixSock : UNIX_SOCK =
         in 
           finish ()
         end
- 
+
       fun fromAddr sa = 
         let
           val sa = Socket.unpackSockAddr sa

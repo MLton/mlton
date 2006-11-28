@@ -28,7 +28,7 @@ structure GCField =
        | StackTop
 
       val equals: t * t -> bool = op =
-         
+
 (*       val ty =
  *       fn CanHandle => CType.defaultInt
  *        | CardMap => CType.pointer
@@ -144,7 +144,7 @@ structure RObjectType =
    end
 
 val maxTypeIndex = Int.pow (2, 19)
-   
+
 fun typeIndexToHeader typeIndex =
    (Assert.assert ("Runtime.header", fn () =>
                    0 <= typeIndex
@@ -177,7 +177,7 @@ val headerOffset = Bytes.~ Bytes.inWord
 fun normalSize {nonPointers, pointers} =
    Bytes.+ (Words.toBytes nonPointers,
             Bytes.scale (pointerSize, pointers))
- 
+
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 
 end

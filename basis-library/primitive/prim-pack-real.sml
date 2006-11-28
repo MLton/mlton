@@ -15,7 +15,7 @@ open Primitive
 structure PackReal32 =
    struct
       type real = Real32.real
-         
+
       val subArr = 
          _import "PackReal32_subArr": Word8.word array * C_Ptrdiff.t -> real;
       val subArrRev = 
@@ -33,7 +33,7 @@ structure PackReal32 =
 structure PackReal64 =
    struct
       type real = Real64.real
-         
+
       val subArr = 
          _import "PackReal64_subArr": Word8.word array * C_Ptrdiff.t -> real;
       val subArrRev = 

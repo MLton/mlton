@@ -14,7 +14,7 @@ signature CHAR_BUFFER_STRUCTS =
 signature CHAR_BUFFER = 
    sig
       include CHAR_BUFFER_STRUCTS
-      
+
       type t
 
       val new: unit -> t

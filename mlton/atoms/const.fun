@@ -50,7 +50,7 @@ val wordVector = WordVector
 
 val word8 = word o WordX.fromWord8 
 val string = wordVector o WordXVector.fromString
-   
+
 local
    open Layout
    fun wrap (pre, post, s) = seq [str pre, String.layout s, str post]
@@ -70,7 +70,7 @@ fun hash (c: t): word =
     | Real r => RealX.hash r
     | Word w => Word.fromIntInf (WordX.toIntInf w)
     | WordVector v => String.hash (WordXVector.toString v)
-   
+
 fun equals (c, c') =
    case (c, c') of
       (IntInf i, IntInf i') => IntInf.equals (i, i')

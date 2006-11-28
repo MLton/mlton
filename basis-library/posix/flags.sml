@@ -16,7 +16,7 @@ functor BitFlags(structure S : sig
                  end): BIT_FLAGS_EXTRA =
    struct
       type flags = S.t
-         
+
       val all: flags = S.castFromSysWord (SysWord.~ 0w1)
       val empty: flags = S.castFromSysWord 0w0
 

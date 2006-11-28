@@ -11,7 +11,7 @@ struct
 open S
 
 type int = Int.t
-   
+
 datatype t = T of {index: int ref}
 
 local
@@ -27,9 +27,9 @@ in
 end
 
 fun setIndex (T {index = r}, i) = r := i
-   
+
 fun fromIndex i = T {index = ref i}
-   
+
 fun compare (p, p') = Int.compare (index p, index p')
 
 fun equals (pt, pt') = index pt = index pt'

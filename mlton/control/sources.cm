@@ -9,7 +9,7 @@
 Group
 
 signature REGION
-   
+
 structure Bits
 structure Bytes
 structure Control

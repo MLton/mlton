@@ -38,7 +38,7 @@ void updateWeaksForCheneyCopy (GC_state s) {
 
 void swapHeapsForCheneyCopy (GC_state s) {
   struct GC_heap tempHeap;
-  
+
   tempHeap = s->secondaryHeap;
   s->secondaryHeap = s->heap;
   s->heap = tempHeap;

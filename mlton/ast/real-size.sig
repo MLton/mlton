@@ -12,7 +12,7 @@ signature REAL_SIZE_STRUCTS =
 signature REAL_SIZE = 
    sig
       include REAL_SIZE_STRUCTS
-      
+
       datatype t = R32 | R64
 
       val all: t list

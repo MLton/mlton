@@ -6,7 +6,7 @@
  *)
 
 type int = Int.int
-   
+
 signature MLTON_THREAD =
    sig
       structure AtomicState :

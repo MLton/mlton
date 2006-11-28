@@ -6,7 +6,7 @@
  *)
 
 type word = Word.t
-   
+
 signature PROFILE_EXP_STRUCTS =
    sig
       structure SourceInfo: SOURCE_INFO

@@ -430,7 +430,7 @@ int main (__attribute__ ((unused)) int argc,
     writeStringWithNewline (cTypesHFd, cTypesHSuffix[i]);
   for (int i = 0; cTypesSMLSuffix[i] != NULL; i++) 
     writeStringWithNewline (cTypesSMLFd, cTypesSMLSuffix[i]);
-  
+
   fclose_safe(mlTypesHFd);
   fclose_safe(cTypesHFd);
   fclose_safe(cTypesSMLFd);

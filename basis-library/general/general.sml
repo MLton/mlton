@@ -36,7 +36,7 @@ structure General: GENERAL_EXTRA =
       in
          val addExnMessager: (exn -> string option) -> unit =
             fn f => messagers := f :: !messagers
-            
+
          val rec exnMessage: exn -> string =
             fn e =>
             let

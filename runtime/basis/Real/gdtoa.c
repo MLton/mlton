@@ -48,7 +48,7 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   char *result;
   ULong sign;
   int x0, x1;
-  
+
   if (MLton_Platform_Arch_bigendian) {
     x0 = 0;
     x1 = 1;

@@ -36,12 +36,12 @@ structure Substring :> SUBSTRING_EXTRA
 
 (*
       type cs = int
-         
+
       fun reader (T {str, start, size}): (char, cs) Reader.reader =
          fn i => if i >= size
                     then NONE
                  else SOME (String.sub (str, start +? i), i + 1)
-                    
+
       fun 'a scanSubstring
          (f: (char, cs) Reader.reader -> ('a, int) Reader.reader)
          (ss: substring): 'a option =

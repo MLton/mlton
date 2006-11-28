@@ -16,6 +16,6 @@ signature SXML_SIMPLIFY_STRUCTS =
 signature SXML_SIMPLIFY = 
    sig
       include SXML_SIMPLIFY_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

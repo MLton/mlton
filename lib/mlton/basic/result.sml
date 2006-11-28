@@ -28,5 +28,5 @@ fun map(r, f) =
 val isNo = fn No _ => true | _ => false
 
 val isYes = fn Yes _ => true | _ => false
-   
+
 end

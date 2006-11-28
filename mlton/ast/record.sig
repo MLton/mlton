@@ -15,7 +15,7 @@ signature RECORD_STRUCTS =
 signature RECORD = 
    sig
       include RECORD_STRUCTS
-         
+
       type 'a t
 
       (* Create a record with the same fields but a new range.

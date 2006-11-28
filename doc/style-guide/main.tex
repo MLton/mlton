@@ -77,7 +77,7 @@ signature CLOSURE_CONVERT_STRUCTS =
 signature CLOSURE_CONVERT = 
    sig
       include CLOSURE_CONVERT_STRUCTS
-      
+
       val closureConvert: Sxml.Program.t -> Cps.Program.t
    end
 \end{verbatim}
@@ -383,7 +383,7 @@ signature VAR =
 signature EXP =
    sig
       structure Var: VAR
-         
+
       datatype t =
          Var of Var.t
        | Lam of Var.t * t
@@ -393,7 +393,7 @@ signature EXP =
 signature VAL =
    sig
       structure Var: VAR
-         
+
       type t
 
       val var: Var.t -> t
@@ -406,14 +406,14 @@ signature INTERP =
       structure Exp: EXP
       structure Val: VAL
       sharing Exp.Var = Val.Var
-     
+
       val eval: Exp.t -> Val.t
    end
 
 signature ENV =
    sig
       structure Var: VAR
-         
+
       type 'a t
 
       val lookup: 'a t * Var.t -> 'a

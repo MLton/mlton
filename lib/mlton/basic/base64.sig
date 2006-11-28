@@ -8,7 +8,7 @@
 (* Base64 encoding, as in RFC 1421 *)
 
 type int = Int.t
-   
+
 signature BASE64 =
    sig
       val decode: string -> string

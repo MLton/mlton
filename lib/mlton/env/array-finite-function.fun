@@ -23,7 +23,7 @@ structure Domain =
           fromInt = fn n => if n < size then inj(fromInt n)
                             else inj'(fromInt'(n - size))}
    end
-   
+
 datatype ('a, 'b) t =
    T of {domain: 'a Domain.t,
          array: 'b Array.t}
@@ -51,8 +51,8 @@ fun set(T{domain={toInt, ...}, array}, x, y) =
    Array.update(array, toInt x, y)
 
 fun toFunction f a = lookup(f, a)
-   
+
 end
 
 structure ArrayFiniteFunction = ArrayFiniteFunction()
-   
+

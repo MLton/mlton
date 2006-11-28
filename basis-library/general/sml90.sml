@@ -51,7 +51,7 @@ structure SML90:> SML90 =
          case TextIO.lookahead ins of
             NONE => ""
           | SOME c => str c
-               
+
       val std_in = TextIO.stdIn
       fun open_in f =
          TextIO.openIn f handle IO.Io _ => raise Io (concat ["Cannot open ", f])

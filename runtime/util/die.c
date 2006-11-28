@@ -9,7 +9,7 @@
 
 void die (const char *fmt, ...) {
   va_list args;
-  
+
   fflush(stdout);
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
@@ -20,12 +20,12 @@ void die (const char *fmt, ...) {
 
 void diee (const char * fmt, ...) {
   va_list args;
-  
+
   fflush(stdout);
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
   va_end(args);
-  
+
   fprintf(stderr, " (%s)\n", strerror(errno));
   exit(1);
 }

@@ -33,7 +33,7 @@ structure Host =
 type passiveSocket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
 type activeSocket = (INetSock.inet, Socket.active Socket.stream) Socket.sock
 type t = passiveSocket
-   
+
 val listen: unit -> Port.t * passiveSocket =
    fn () =>
    let
@@ -95,7 +95,7 @@ fun shutdown (fd: Posix.IO.file_desc, mode: Socket.shutdown_mode): unit =
 
 fun shutdownRead ins =
    shutdown (TextIO.inFd ins, Socket.NO_RECVS)
-   
+
 fun shutdownWrite out =
    (TextIO.flushOut out
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
@@ -103,5 +103,5 @@ fun shutdownWrite out =
 val fdToSock = Socket.fdToSock
 
 structure Ctl = Socket.CtlExtra
-   
+
 end

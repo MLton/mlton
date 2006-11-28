@@ -43,7 +43,7 @@ val rparen = ")"
 val isEmpty =
    fn "" => true
     | _ => false
-    
+
 val length = size
 
 fun last s = sub (s, length s - 1)
@@ -57,7 +57,7 @@ val fromChar = str
 fun contains (s, c) = Pervasive.Char.contains s c
 
 val equals: t * t -> bool = op =
-   
+
 val {compare, min, max, ...} = Relation0.lessEqual {< = PS.<, equals = equals}
 
 fun output (s, out) = Pervasive.TextIO.output (out, s)
@@ -65,7 +65,7 @@ fun output (s, out) = Pervasive.TextIO.output (out, s)
 val tabulate = CharVector.tabulate
 
 fun make (n, c) = tabulate (n, fn _ => c)
-   
+
 fun substring1 (s, {start, length}) =
    substring (s, start, length)
 
@@ -78,7 +78,7 @@ fun prefix (s, len) =
 fun suffix (s, len) =
    substring1 (s, {start = length s - len,
                   length = len})
-   
+
 fun dropPrefix (s,n) =
    substring1 (s, {start=n, length = length s - n})
 fun dropSuffix (s,n) =
@@ -172,7 +172,7 @@ fun dropTrailing (s, c) =
    end
 
 fun translateChar (s, f) = translate (s, fromChar o f)
-   
+
 fun toUpper s = translateChar (s, Char.toUpper)
 fun toLower s = translateChar (s, Char.toLower)
 
@@ -193,7 +193,7 @@ fun sort (l, f) =
                end
    in loop l
    end
-   
+
 fun alphabetize s = implode (sort (explode s, Char.<))
 
 fun fromCharArray (a: CharArray.array): t =

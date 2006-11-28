@@ -21,7 +21,7 @@ signature WORD =
       val toInt: word -> int
       val toIntX: word -> int
       val fromInt: int -> word
-         
+
       val + : word * word -> word
       val - : word * word -> word
       val * : word * word -> word
@@ -35,17 +35,17 @@ signature WORD =
       val ~>> : word * Word.word -> word
       val >> : word * Word.word -> word
       val xorb: word * word -> word
-         
+
       val compare: word * word -> order
       val < : word * word -> bool
       val <= : word * word -> bool
       val > : word * word -> bool
       val >= : word * word -> bool
-         
+
       val ~ : word -> word
       val min: word * word -> word
       val max: word * word -> word
-         
+
       val fmt: StringCvt.radix -> word -> string
       val toString: word -> string
       val scan: (StringCvt.radix

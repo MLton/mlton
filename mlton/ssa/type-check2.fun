@@ -13,7 +13,7 @@ open S
 
 type int = Int.t
 type word = Word.t
-   
+
 datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
@@ -184,7 +184,7 @@ val checkScopes = Control.trace (Control.Detail, "checkScopes") checkScopes
 structure Function =
    struct
       open Function
-         
+
       fun checkProf (f: t): unit =
          let
             val debug = false

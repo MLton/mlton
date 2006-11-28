@@ -36,7 +36,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isDefault (C_Int_t signum, Ref(C_Int_t) isDef) {
 
 C_Errno_t(C_Int_t) Posix_Signal_ignore (C_Signal_t signum) {
   struct sigaction sa;
-  
+
   sigdelset (GC_getSignalsHandledAddr (&gcState), signum);
   memset (&sa, 0, sizeof(sa));
   sa.sa_handler = SIG_IGN;

@@ -34,6 +34,6 @@ signature GENERAL =
 signature GENERAL_EXTRA =
    sig
       include GENERAL
-      
+
       val addExnMessager: (exn -> string option) -> unit
    end

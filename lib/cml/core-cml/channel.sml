@@ -22,13 +22,13 @@ structure Channel : CHANNEL_EXTRA =
    struct
       structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
-         
+
       structure Q = ImpQueue
       structure S = Scheduler
       structure E = Event
       fun debug msg = Debug.sayDebug ([S.atomicMsg, S.tidMsg], msg)
       fun debug' msg = debug (fn () => msg)
-         
+
       datatype trans_id = datatype TransID.trans_id
       datatype trans_id_state = datatype TransID.trans_id_state
 
@@ -168,7 +168,7 @@ structure Channel : CHANNEL_EXTRA =
          in
             E.bevt pollFn
          end
-      
+
       fun sendPoll (CHAN {prio, inQ, ...}, msg) = 
          let
             val () = Assert.assertNonAtomic' "Channel.sendPoll"
@@ -213,7 +213,7 @@ structure Channel : CHANNEL_EXTRA =
          in
             b
          end
-         
+
       fun recv (CHAN {prio, inQ, outQ}) =
          let
             val () = Assert.assertNonAtomic' "Channel.recv"
@@ -259,7 +259,7 @@ structure Channel : CHANNEL_EXTRA =
          in
             msg
          end
-         
+
       fun recvEvt (CHAN {prio, inQ, outQ}) = 
          let
             fun doitFn () = 
@@ -311,7 +311,7 @@ structure Channel : CHANNEL_EXTRA =
          in
             E.bevt pollFn
          end
-      
+
       fun recvPoll (CHAN {prio, outQ, ...}) = 
          let
             val () = Assert.assertNonAtomic' "Channel.recvPoll"

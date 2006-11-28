@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature TYPE_OPS_STRUCTS =
    sig
       structure Tycon: TYCON

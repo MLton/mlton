@@ -11,7 +11,7 @@ structure PosixSignal: POSIX_SIGNAL_EXTRA =
       open PrimitiveFFI.Posix.Signal
 
       type signal = C_Int.t
-         
+
       val abrt = SIGABRT
       val alrm = SIGALRM
       val bus = SIGBUS

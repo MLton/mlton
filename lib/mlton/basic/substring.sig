@@ -6,7 +6,7 @@
  *)
 
 type int = Pervasive.Int.int
-   
+
 signature SUBSTRING =
    sig
       type t

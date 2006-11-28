@@ -14,6 +14,6 @@ signature COMMON_SUBEXP_STRUCTS =
 signature COMMON_SUBEXP = 
    sig
       include COMMON_SUBEXP_STRUCTS
-      
+
       val eliminate: Program.t -> Program.t
    end

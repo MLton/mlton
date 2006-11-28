@@ -45,12 +45,12 @@ struct
         val Stack = new "Stack"
         val Locals = new "Locals"
         val Globals = new "Globals"
-          
+
         val Temp = MemLoc.Class.Temp    
         val StaticTemp = MemLoc.Class.StaticTemp
         val CStack = MemLoc.Class.CStack
         val Code = MemLoc.Class.Code
-          
+
         val CStatic = new "CStatic"
         val StaticNonTemp = new "StaticNonTemp"
 
@@ -177,7 +177,7 @@ struct
                      class = Classes.CStack}
   val c_stackPDerefFloatOperand
     = Operand.memloc c_stackPDerefFloat
-                                 
+
   val threadTemp = Label.fromString "threadTemp"
   val threadTempContents 
     = makeContents {base = Immediate.label threadTemp,
@@ -185,7 +185,7 @@ struct
                     class = Classes.StaticTemp}
   val threadTempContentsOperand
     = Operand.memloc threadTempContents
-    
+
   val statusTemp = Label.fromString "statusTemp"
   val statusTempContents 
     = makeContents {base = Immediate.label statusTemp,
@@ -412,7 +412,7 @@ struct
      Promise.lazy (fn () => Label.fromString (if !Control.labelsHaveExtra_
                                                  then "_LINE__"
                                               else "__LINE__"))
-                                         
+
   val fileLine
     = fn () => if !Control.debug
                  then Operand.immediate (Immediate.const_int 0)
@@ -459,7 +459,7 @@ struct
   val (_, gcState_exnStackContents,
        gcState_exnStackContentsOperand) =
      make (Field.ExnStack, wordSize, Classes.GCState)
-  
+
   val (_, gcState_frontierContents, 
        gcState_frontierContentsOperand) =
      make (Field.Frontier, pointerSize, Classes.GCStateHold)

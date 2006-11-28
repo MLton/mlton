@@ -34,7 +34,7 @@ compare (U##size, name, op)
   Word##size Word##size##_ror (Word##size w1, Word32 w2) {              \
     return (w1 >> w2) | (w1 << (size - w2));                            \
   }                                                                     \
-  
+
 #define shift(kind, name, op)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w1, Word32 w2) {           \

@@ -14,7 +14,7 @@ signature SHORTEST_PATH_STRUCTS =
 signature SHORTEST_PATH =
    sig
       include SHORTEST_PATH_STRUCTS
-         
+
       val shortestPath: {graph: t,
                          weight: Edge.t -> Weight.t,
                          source: Node.t}

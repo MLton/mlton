@@ -7,7 +7,7 @@
 
 structure Pointer: POINTER =
 struct
-   
+
 datatype 'a t = T of 'a option ref
 
 fun !(T r) =
@@ -16,9 +16,9 @@ fun !(T r) =
     | SOME v => v
 
 fun (T r) := v = Ref.:=(r, SOME v)
-   
+
 fun clear(T r) = Ref.:=(r, NONE)
-    
+
 fun copy(T r, T r') = Ref.:=(r, Ref.! r')
 
 fun eq(T r, T r') = Ref.equals(r, r')

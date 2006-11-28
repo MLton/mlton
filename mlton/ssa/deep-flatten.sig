@@ -13,6 +13,6 @@ signature DEEP_FLATTEN_STRUCTS =
 signature DEEP_FLATTEN = 
    sig
       include DEEP_FLATTEN_STRUCTS
-      
+
       val flatten: Program.t -> Program.t
    end

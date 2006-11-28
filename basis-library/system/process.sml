@@ -43,14 +43,14 @@ structure OS_Process: OS_PROCESS_EXTRA =
       val failure = Status.failure
       val success = Status.success
       fun isSuccess st = st = success
-         
+
       fun system cmd =
          Posix.Error.SysCall.simpleResult
          (fn () =>
           PrimitiveFFI.Posix.Process.system (NullString.nullTerm cmd))
 
       val atExit = MLtonProcess.atExit
-         
+
       val exit = MLtonProcess.exit
 
       fun terminate x = Posix.Process.exit (Word8.fromInt (Status.toInt x))

@@ -382,7 +382,7 @@ structure ProfFile =
                 total = total,
                 totalGC = totalGC}
           end)
-   
+
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
                  T {counts = c', kind = k', magic = m', total = t',
                     totalGC = g'}): t =
@@ -622,7 +622,7 @@ structure NodePred =
             vectorToNodes v
          end
    end
-   
+
 val keep: NodePred.t ref = ref NodePred.All
 
 val ticksPerSecond = 100.0
@@ -965,7 +965,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
    in
       ()
    end
-   
+
 fun makeOptions {usage} =
    let
       open Popt
@@ -1016,7 +1016,7 @@ val {parse, usage} =
                    showExpert = fn () => false}
 
 val die = Process.fail
-   
+
 fun commandLine args =
    let
       val rest = parse args

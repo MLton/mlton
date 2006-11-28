@@ -30,7 +30,7 @@ in
 end
 
 fun boolRef (r: bool ref): t = Bool (fn b => r := b)
-   
+
 fun intRef (r: int ref): t = Int (fn n => r := n)
 
 fun stringRef (r: string ref): t = String (fn s => r := s)
@@ -153,7 +153,7 @@ fun parse {switches: string list,
    end
 
 datatype optionStyle = Normal | Expert
-   
+
 fun makeUsage {mainUsage, makeOptions, showExpert} =
    let
       val usageRef: (string -> unit) option ref = ref NONE

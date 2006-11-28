@@ -110,7 +110,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
                     result = VarExp.mono(newVar)}
                  end)}
       end
-    
+
     fun uncurryFun(dec) = 
       let 
         fun lamExp(decs,result,args,types,newDecs,e) =
@@ -157,7 +157,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
                      in 
                        (var,  lamExp(decs, result, [arg], [argType], [],body))
                      end
-                   
+
         fun buildCurried (f,args,types,e) =
           let 
             val newVar = Var.newString("c")
@@ -198,7 +198,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
                then buildCurried(f,args,types,e)
                else ())
       end
-    
+
     fun replaceVar(decs,old,new) =
       let 
         fun compare(v) = if Var.equals(VarExp.var(v),old)
@@ -351,7 +351,7 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
                                   end)
                  | _ => Error.bug "Uncurry: uncurryApp")
       end
-    
+
     fun singleUse(var,decs) =
       let 
         fun compare(e) = (case e of
@@ -364,8 +364,8 @@ fun uncurry(program as Program.T{datatypes, body, overflow}) =
            MonoVal {var,ty,exp} => compare(exp)
          | _ => false)
       end
-                                       
-                     
+
+
     fun transform(body) =
       let 
         val {decs,result} = Exp.dest(body)

@@ -38,9 +38,9 @@ BasicEnvToEnv
  datatype t = T of (Domain.t * Range.t) List.t
 
  val fromList = T
-    
+
  fun toList(T l) = l
-    
+
  fun equalTo d (d', _) = Domain.equals(d, d')
 
  fun extend(T drs, d, r) =

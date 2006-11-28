@@ -104,7 +104,7 @@ signature AST_MODULES =
             val constrained: t * SigConst.t -> t
             val app: Fctid.t * t -> t
             val lett: strdec * t -> t
-               
+
             val layout: t -> Layout.t
          end
 
@@ -143,7 +143,7 @@ signature AST_MODULES =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
          end
-      
+
       structure Topdec:
          sig
             type t

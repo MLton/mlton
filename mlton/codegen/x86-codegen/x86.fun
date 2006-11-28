@@ -105,7 +105,7 @@ struct
              | FPIQ => str "fpiq"
           end
       val toString' = Layout.toString o layout'
-            
+
       val fromBytes : int -> t
         = fn 1 => BYTE
            | 2 => WORD
@@ -158,7 +158,7 @@ struct
            | FPIL => FPIL
            | FPIQ => FPIQ
            | _ => Error.bug "x86.Size.toFPI"
-        
+
       val eq = fn (s1, s2) => s1 = s2
       val lt = fn (s1, s2) => (toBytes s1) < (toBytes s2)
     end
@@ -469,7 +469,7 @@ struct
 
       datatype u
         = Const of const
-        
+
         | Label of Label.t
         | ImmedUnExp of {oper: un,
                          exp: t}
@@ -495,7 +495,7 @@ struct
         and layout
           = fn T {immediate, ...} => layoutU immediate
       end
- 
+
       val rec eqU
         = fn (Const c1, Const c2) => c1 = c2
            | (Label l1, Label l2) => Label.equals(l1, l2)
@@ -575,7 +575,7 @@ struct
       end
 
       val zero = fn i => eval i = SOME 0wx0
-    
+
       local 
         open Word
       in 
@@ -642,7 +642,7 @@ struct
     struct
       datatype t 
         = One | Two | Four | Eight
-        
+
       val layout
         = let
             open Layout
@@ -685,7 +685,7 @@ struct
            | Four => Immediate.const_int 4
            | Eight => Immediate.const_int 8
     end
-    
+
   structure Address =
     struct
       datatype t = T of {disp: Immediate.t option,
@@ -1122,7 +1122,7 @@ struct
                   then replaceU replacer memloc
                   else memloc'
               end
-            
+
       val rec sizeU = fn U {size, ...} => size
       and size = fn T {memloc, ...} => sizeU memloc
       val rec classU = fn U {class, ...} => class
@@ -1499,7 +1499,7 @@ struct
              | NEG => str "neg"
              | NOT => str "not"
           end
-            
+
       (* Integer shift/rotate arithmetic/logic instructions. *)
       datatype sral
         = SAL (* shift arithmetic left; p. 662 *)
@@ -1586,7 +1586,7 @@ struct
            | G   => L   | NG  => NL
            | GE  => LE  | NGE => NLE
            | c   => c
-        
+
       local 
         open Layout
       in
@@ -2261,7 +2261,7 @@ struct
              => seq [fbinasp_layout oper]
           end
       val toString = Layout.toString o layout
-        
+
       val uses_defs_kills
         = fn NOP
            => {uses = [], defs = [], kills = []}
@@ -2549,7 +2549,7 @@ struct
                        => (Register.T {reg = Register.EDX, part = Register.E},
                            Register.T {reg = Register.EAX, part = Register.E})
                        | _ => Error.bug "x86.Instruction.hints: MD, size"
-                        
+
                 val temp = MemLoc.temp {size = size}
               in 
                 [(temp, hi),
@@ -3078,7 +3078,7 @@ struct
               end
           val toString = Layout.toString o layout
         end
-      
+
       datatype t 
         (* Transfers *)
           (* Assert that a memloc is in a register with properties;
@@ -3613,7 +3613,7 @@ struct
         | PseudoOp of PseudoOp.t
         | Label of Label.t
         | Instruction of Instruction.t
-                                                           
+
       val layout
         = let
             open Layout
@@ -3771,7 +3771,7 @@ struct
                       frameInfo: FrameInfo.t option,
                       func: RepType.t CFunction.t,
                       label: Label.t}
-                                    
+
       val toString
         = fn Jump {label} => concat ["Jump::",
                                      Label.toString label]
@@ -3835,7 +3835,7 @@ struct
                   kills = []}
               end
            | _ => {uses = [], defs = [], kills = []}
-           
+
       val label
         = fn Jump {label, ...} => label
            | Func {label, ...} => label
@@ -4186,7 +4186,7 @@ struct
                     then Transfer.toString (valOf transfer)
                     else "NONE");
            print "\n")
- 
+
       val compress': t' list -> t' list =
          fn l =>
          List.fold

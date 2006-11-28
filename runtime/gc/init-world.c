@@ -26,7 +26,7 @@ size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
   size_t numBytes;
   size_t total;
-  
+
   total = 0;
   for (i = 0; i < s->intInfInitsLength; ++i) {
     total += sizeofIntInfFromString (s, s->intInfInits[i].mlstr);
@@ -137,7 +137,7 @@ void initWorld (GC_state s) {
   uint32_t i;
   pointer start;
   GC_thread thread;
-  
+
   for (i = 0; i < s->globalsLength; ++i)
     s->globals[i] = BOGUS_OBJPTR;
   s->lastMajorStatistics.bytesLive = sizeofInitialBytesLive (s);

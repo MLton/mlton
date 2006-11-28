@@ -831,7 +831,7 @@ signature X86 =
           | Comm of Label.t * Immediate.t * Immediate.t option
 
         val toString : t -> string
-          
+
         val data : unit -> t
         val text : unit -> t
         val symbol_stub : unit -> t

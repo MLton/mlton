@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature BINARY_SEARCH =
    sig
       (* largest(a, f)
@@ -30,7 +30,7 @@ functor TestBinarySearch (S: BINARY_SEARCH): sig end =
 struct
 
 open S
-   
+
 val _ =
    Assert.assert
    ("TestBinarySearch", fn () =>

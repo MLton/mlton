@@ -45,7 +45,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                                    #1 env, #2 env, #3 env))
              ; raise Fail "Posix.Process.exece")
          end
-         
+
       fun exec (path, args): 'a =
          exece (path, args, PosixProcEnv.environ ())
 

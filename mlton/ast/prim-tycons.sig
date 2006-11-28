@@ -30,7 +30,7 @@ signature PRIM_TYCONS_STRUCTS =
 signature PRIM_TYCONS =
    sig
       include PRIM_TYCONS_SUBSTRUCTS
-     
+
       type tycon
 
       val array: tycon

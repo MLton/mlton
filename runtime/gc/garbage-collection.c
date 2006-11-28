@@ -94,7 +94,7 @@ void performGC (GC_state s,
   size_t stackBytesRequested;
   struct rusage ru_start;
   size_t totalBytesRequested;
-        
+
   enterGC (s);
   if (DEBUG or s->controls.messages)
     fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old-gen bytes.\n",

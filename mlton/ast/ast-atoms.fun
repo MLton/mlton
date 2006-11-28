@@ -41,7 +41,7 @@ structure Tycon =
    end
 
 structure Var = AstId (structure Symbol = Symbol)
-   
+
 structure Con =
    struct
       structure Id = AstId (structure Symbol = Symbol)
@@ -84,7 +84,7 @@ structure Vid =
    struct
       structure I = AstId (structure Symbol = Symbol)
       open I
-         
+
       fun fromCon c = fromSymbol (Con.toSymbol c, Con.region c)
       fun fromVar x = fromSymbol (Var.toSymbol x, Var.region x)
       local
@@ -109,7 +109,7 @@ structure Longtycon =
       structure T = Longid (structure Id = Tycon
                             structure Strid = Strid
                             structure Symbol = Symbol)
-                            
+
       open T
 
       val arrow = short Tycon.arrow
@@ -120,27 +120,27 @@ structure Longtycon =
 structure Longvar = Longid (structure Id = Var
                             structure Strid = Strid
                             structure Symbol = Symbol)
-                           
+
 structure Longcon =
    struct
       structure L = Longid (structure Id = Con
                             structure Strid = Strid
                             structure Symbol = Symbol)
-                           
+
       open L
    end
 
 structure Longstrid = Longid (structure Id = Strid
                               structure Strid = Strid
                               structure Symbol = Symbol)
-                             
+
 
 structure Longvid =
    struct
       structure L = Longid (structure Id = Vid
                             structure Strid = Strid
                             structure Symbol = Symbol)
-                           
+
       open L
       fun fromLongcon (c: Longcon.t): t =
          let
@@ -241,7 +241,7 @@ structure Type =
             0 => tycon
           | 1 => seq [layoutArg (Vector.sub (args, 0)), str " ", tycon]
           | _ => seq [Vector.layout layoutArg args, str " ", tycon]
-               
+
       fun layout ty =
          case node ty of
             Var v => Tyvar.layout v
@@ -265,7 +265,7 @@ structure Type =
           | 1 => layout (Vector.sub (tys, 0))
           | _ => paren (mayAlign (separateLeft (Vector.toListMap (tys, layout),
                                                 "* ")))
-               
+
       fun layoutOption ty =
          case ty of
             NONE => empty
@@ -308,7 +308,7 @@ fun 'a layoutBind (bind: string,
 
 fun layoutAndsBind (prefix, bind, xs, layout) =
    layoutAnds (prefix, xs, layoutBind (bind, layout))
-   
+
 (*---------------------------------------------------*)
 (*                      TypBind                      *)
 (*---------------------------------------------------*)
@@ -336,7 +336,7 @@ structure TypBind =
                               Tyvar.layout),
               Type.layout def))
          end
-      
+
       val empty = makeRegion (T (Vector.new0 ()), Region.bogus)
 
       fun checkSyntax (b: t): unit =
@@ -370,7 +370,7 @@ structure DatBind =
       type t = node Wrap.t
       type node' = node
       type obj = t
-         
+
       fun layout (prefix, d) =
          let
             val T {datatypes, withtypes} = node d
@@ -437,7 +437,7 @@ structure DatatypeRhs =
       type t = node Wrap.t
       type node' = node
       type obj = t
-         
+
       fun layout d =
          case node d of
             DatBind d => DatBind.layout ("datatype", d)

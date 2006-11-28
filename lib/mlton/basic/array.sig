@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ARRAY_STRUCTS =
    sig
       include VECTOR_STRUCTS

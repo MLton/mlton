@@ -16,7 +16,7 @@ static struct in_addr fromAddr_in_addr;
 
 void Socket_INetSock_fromAddr (Vector(Word8_t) addr) {
   const struct sockaddr_in *sa = (const struct sockaddr_in*)addr;
-  
+
   assert(sa->sin_family == AF_INET);
   fromAddr_port = sa->sin_port;
   fromAddr_in_addr = sa->sin_addr;

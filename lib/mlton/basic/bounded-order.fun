@@ -13,20 +13,20 @@ struct
 
 structure O = O
 structure R = Relation
-   
+
 datatype t =
    Min
  | Max
  | Inject of O.t
-   
+
 val smallest = Min
 val largest = Max
 val inject = Inject
-   
+
 val project =
    fn Inject x => x
     | _ => Error.bug "BoundedOrder.project"
-    
+
 val compare =
    fn (Min, Min) => R.EQUAL
     | (Min, _) => R.LESS

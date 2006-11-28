@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature FORMAT =
    sig
       type ('a, 'b) t
@@ -35,5 +35,5 @@ val _ =
     andalso "abc" = format (string o string o string) "a" "b" "c"
     andalso "[a, b, c]" = format (list string) ["a", "b", "c"]
     andalso "[1, 2, 3]" = format (list int) [1, 2, 3])
-   
+
 end

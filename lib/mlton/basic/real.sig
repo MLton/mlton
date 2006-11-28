@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature REAL =
    sig
       structure Format:

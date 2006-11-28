@@ -43,7 +43,7 @@ structure Multicast : MULTICAST =
        in
           Port(outCh, stateVar)
        end
-    
+
     fun mChannel () = 
        let
           val reqCh = CML.channel() 
@@ -70,14 +70,14 @@ structure Multicast : MULTICAST =
     fun port (MChan(reqCh, replyCh)) = 
        (CML.send (reqCh, NewPort)
         ; CML.recv replyCh)
-       
+
     fun copy (Port(_, stateV)) = mkPort(SV.mGet stateV)
-       
+
     fun recvMsg stateV (v, nextCV) = 
        let val _ = SV.mSwap (stateV, nextCV)
        in v
        end
-       
+
     fun recv (Port(ch, stateV)) = recvMsg stateV (CML.recv ch)
     fun recvEvt (Port(ch, stateV)) = CML.wrap(CML.recvEvt ch, recvMsg stateV)
    end

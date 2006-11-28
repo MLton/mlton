@@ -74,17 +74,17 @@ structure WordX =
              | W64 => concat ["0x", toString w, "llu"]
          end
    end
-   
+
 structure C =
    struct
       val truee = "TRUE"
       val falsee = "FALSE"
 
       fun bool b = if b then truee else falsee
-         
+
       fun args (ss: string list): string
          = concat ("(" :: List.separate (ss, ", ") @ [")"])
-         
+
       fun callNoSemi (f: string, xs: string list, print: string -> unit): unit 
          = (print f
             ; print " ("

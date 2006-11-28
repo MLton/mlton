@@ -16,4 +16,4 @@ signature RESULT =
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
    end
-      
+

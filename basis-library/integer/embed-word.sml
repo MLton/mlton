@@ -9,7 +9,7 @@ signature EMBED_WORD =
    sig
       eqtype word
       type big
-         
+
       val fromBigUnsafe: big -> word
       val sizeInBits: Int32.int
       val toBig: word -> big
@@ -26,13 +26,13 @@ functor EmbedWord (structure Big: WORD
 
       val () = if Int.< (Small.wordSize, Big.wordSize) then ()
                else raise Fail "EmbedWord"
-                  
+
       open Small
 
       fun ones size =
          Big.- (Big.<< (Big.fromLarge 0w1, Word.fromInt size),
                 Big.fromLarge 0w1)
-         
+
       val maxWord = ones wordSize
 
       fun fromBig (w: Big.word): word =
@@ -45,7 +45,7 @@ functor EmbedWord (structure Big: WORD
 
       fun highBitIsSet (w: Big.word): bool =
          Big.> (w, ones (Int.- (wordSize, 1)))
-         
+
       fun toBigX (w: word): Big.word =
          let
             val w = toBig w
@@ -144,7 +144,7 @@ functor EmbedWord (structure Big: WORD
       val toLargeWord = toLarge
 
       val toLargeWordX = toLargeX
-         
+
       fun ~ w = fromLarge 0w0 - w
    end
 

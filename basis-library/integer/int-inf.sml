@@ -91,13 +91,13 @@ structure IntInf: INT_INF_EXTRA =
                   then SOME (W.fromInt (Int.- (PreChar.ord ch, 
                                                PreChar.ord #"0")))
                else NONE
-                  
+
             fun decDig (ch: char): W.word option =
                if #"0" <= ch andalso ch <= #"9"
                   then SOME (W.fromInt (Int.- (PreChar.ord ch, 
                                                PreChar.ord #"0")))
                else NONE
-                  
+
             fun hexDig (ch: char): W.word option =
                if #"0" <= ch andalso ch <= #"9"
                   then SOME (W.fromInt (Int.- (PreChar.ord ch, 
@@ -110,7 +110,7 @@ structure IntInf: INT_INF_EXTRA =
                                                Int.- (PreChar.ord #"A", 0xA))))
                else NONE
          end
-      
+
          (*
           * Given a digit converter and a char reader, return a digit
           * reader.
@@ -125,7 +125,7 @@ structure IntInf: INT_INF_EXTRA =
                   case charToDig ch of
                      NONE => NONE
                    | SOME dig => SOME (dig, s')
-                        
+
          (*
           * A chunk represents the result of processing some digits.
           * more is a bool indicating if there might be more digits.
@@ -177,7 +177,7 @@ structure IntInf: INT_INF_EXTRA =
             in 
                reader
             end
-         
+
          (*
           * Given a chunk reader, return an unsigned reader.
           *)
@@ -203,7 +203,7 @@ structure IntInf: INT_INF_EXTRA =
             in 
                reader
             end
-         
+
          (*
           * Given a char reader and an unsigned reader, return an unsigned
           * reader that includes skipping the option hex '0x'.
@@ -252,7 +252,7 @@ structure IntInf: INT_INF_EXTRA =
             in
                reader
             end
-                  
+
          (*
           * Base-specific conversions from char readers to
           * int readers.

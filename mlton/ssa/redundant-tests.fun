@@ -80,7 +80,7 @@ structure Fact =
          end
 
       datatype result = False | True | Unknown
-         
+
       fun determine (facts: t list, f: t): result =
          if List.contains (facts, f, equals)
             then True

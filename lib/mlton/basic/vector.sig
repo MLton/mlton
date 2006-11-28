@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature VECTOR_STRUCTS =
    sig
       type 'a t

@@ -6,11 +6,11 @@
  *)
 
 type int = Int.t
-   
+
 signature MERGE_SORT =
    sig
       type 'a t
-         
+
       (* The comparison function ('a * 'a -> bool) for any of these should
        * always be the <= funtion, not just <.
        * This is necessary to handle duplicate elements.
@@ -45,5 +45,5 @@ val _ =
          [3,5,6,7,8,1,2,3,6,4]],
         check)
     end)
-    
+
 end

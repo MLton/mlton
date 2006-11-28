@@ -8,7 +8,7 @@
 signature RING_WITH_IDENTITY_STRUCTS = 
    sig
       include RING
-         
+
       val one: t
    end
 

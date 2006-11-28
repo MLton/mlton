@@ -51,7 +51,7 @@ pointer GC_arrayAllocate (GC_state s,
     s->cumulativeStatistics.bytesAllocated += arraySize;
   } else {
     size_t bytesRequested;
-    
+
     bytesRequested = arraySize + ensureBytesFree;
     if (not hasHeapBytesFree (s, 0, bytesRequested)) {
       enter (s);
@@ -73,7 +73,7 @@ pointer GC_arrayAllocate (GC_state s,
   /* Initialize all pointers with BOGUS_OBJPTR. */
   if (1 <= numObjptrs and 0 < numElements) {
     pointer p;
-    
+
     if (0 == bytesNonObjptrs)
       for (p = frontier; p < last; p += OBJPTR_SIZE)
         *((objptr*)p) = BOGUS_OBJPTR;
@@ -85,7 +85,7 @@ pointer GC_arrayAllocate (GC_state s,
 
       for (p = frontier; p < last; ) {
         pointer next;
-        
+
         p += bytesNonObjptrs;
         next = p + bytesObjptrs;
         assert (next <= last);

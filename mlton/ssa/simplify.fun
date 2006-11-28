@@ -107,7 +107,7 @@ local
                                doit = doit}
                     else NONE
       end
-   
+
    val inlinePassGen =
       let
          val count = Counter.new 1

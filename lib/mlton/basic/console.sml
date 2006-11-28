@@ -11,7 +11,7 @@ struct
 (* Information from Chapter 20 of Linux Application Development,
  * by Johnson and Troan.
  *)
-   
+
 structure Background =
    struct
       datatype t = Black | Red | Green | Brown | Blue | Magenta | Cyan | Gray
@@ -23,7 +23,7 @@ structure Foreground =
          DarkGray | BrightRed | BrightGreen | Yellow | BrightBlue
        | BrightMagenta | BrightCyan | White
    end
-   
+
 val esc = "\027["
 
 structure CharRendition =
@@ -43,7 +43,7 @@ structure CharRendition =
        | ReverseVideoOff
        | Foreground of Foreground.t
        | Background of Background.t
-   
+
       fun set(l: t list): string =
          concat(esc
                 :: List.fold(rev l, [], fn (c, l) =>

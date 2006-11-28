@@ -41,9 +41,9 @@ structure String: STRING_EXTRA =
          in
             fn state => loop (state, [])
          end
-         
+
       val fromString = StringCvt.scanString scan
-         
+
       fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
         : (string, 'a) StringCvt.reader =
          fn state =>

@@ -115,7 +115,7 @@ struct
         val _ = destInfo ()
 
         val lf = Graph.loopForestSteensgaard (G, {root = root})
-          
+
         fun doit (f: unit LoopForest.t,
                   headers,
                   path)

@@ -42,7 +42,7 @@ val toString = name
 val layout = Layout.str o toString
 
 fun equals (s, s') = PropertyList.equals (plist s, plist s')
-   
+
 local
    fun make f (s, s') = f (name s, name s')
 in

@@ -183,7 +183,7 @@ functor Sequence (S: sig
             sub = sub,
             update = update}
         end
-     
+
       fun generate n =
          let
             val {done, sub, update} = generate' (fromIntForLength n)

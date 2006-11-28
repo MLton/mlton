@@ -35,11 +35,11 @@ bool invariantForGC (GC_state s) {
   /* Frame layouts */
   for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
     GC_frameLayout layout;
-    
+
     layout = &(s->frameLayouts[i]);
     if (layout->size > 0) {
       GC_frameOffsets offsets;
-      
+
       assert (layout->size <= s->maxFrameSize);
       offsets = layout->offsets;
     }

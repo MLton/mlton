@@ -8,7 +8,7 @@
 structure INetSock:> INET_SOCK =
    struct
       structure Prim = PrimitiveFFI.Socket.INetSock
-         
+
       datatype inet = INET (* a phantom type*)
       type 'sock_type sock = (inet, 'sock_type) Socket.sock
       type 'mode stream_sock = 'mode Socket.stream sock
@@ -52,18 +52,18 @@ structure INetSock:> INET_SOCK =
             fun socket' prot = GenericSock.socket' (inetAF, Socket.SOCK.dgram, prot)
             fun socket () = socket' 0
          end
-      
+
       structure TCP =
          struct
             structure Prim = Prim.Ctl
-               
+
             fun socket' prot = GenericSock.socket' (inetAF, Socket.SOCK.stream, prot)
             fun socket () = socket' 0
-               
+
             fun getNODELAY sock =
                Socket.CtlExtra.getSockOptBool
                (Prim.IPPROTO_TCP, Prim.TCP_NODELAY) sock
-               
+
             fun setNODELAY (sock, optval) =
                Socket.CtlExtra.setSockOptBool
                (Prim.IPPROTO_TCP, Prim.TCP_NODELAY) (sock,optval)

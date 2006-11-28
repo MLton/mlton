@@ -44,5 +44,5 @@ val layout = Layout.str o toString
 fun fmt(d, s) = Date.fmt s d
 
 fun scan(s, r) = Date.scan r s
-         
+
 end

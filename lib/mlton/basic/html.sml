@@ -112,7 +112,7 @@ structure Option =
 datatype t =
    T of {options: Option.t list,
          body: Element.t}
-  
+
 fun layout (T {options, body}) =
    let open Layout
    in align

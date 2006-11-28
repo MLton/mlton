@@ -6,7 +6,7 @@ signature TEXT_IO_GLOBAL =
 signature TEXT_IO =
    sig
       include TEXT_IO_GLOBAL
-         
+
       structure StreamIO: TEXT_STREAM_IO
 (*       where type elem = Char.char *)  (* redundant *)
          where type pos = TextPrimIO.pos

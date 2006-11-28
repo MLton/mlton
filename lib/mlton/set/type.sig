@@ -16,7 +16,7 @@ signature TYPE =
           | EltSet of set
 
         exception Incompatible
-        
+
         structure Set :
             sig
                 type t sharing type t = set
@@ -30,7 +30,7 @@ signature TYPE =
                 val combine: t * t -> t
                 val areCompatible: t * t -> bool
             end
-        
+
         val combineSetElt: set * elt -> set
         val areCompatibleSetElt: set * elt -> bool
     end

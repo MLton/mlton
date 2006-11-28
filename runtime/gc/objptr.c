@@ -33,7 +33,7 @@ pointer objptrToPointer (objptr O, pointer B) {
   P = (pointer)P_;
   if (DEBUG_DETAILED) 
     fprintf (stderr, "objptrToPointer ("FMTOBJPTR") = "FMTPTR"\n", O, (uintptr_t)P);
-  
+
   return P;
 }
 

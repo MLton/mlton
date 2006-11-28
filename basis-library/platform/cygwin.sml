@@ -35,4 +35,4 @@ structure Cygwin =
             loop (size cmd)
          end
    end
-            
+

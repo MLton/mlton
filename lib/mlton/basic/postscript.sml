@@ -188,7 +188,7 @@ datatype t =
 
 fun tildeToMinus s =
    String.translate(s, fn #"~" => "-" | c => Char.toString c)
-   
+
 val toString =
    fn int r => tildeToMinus(Int.toString(Real.round r))
     | real r => tildeToMinus(Real.toString r)
@@ -377,7 +377,7 @@ val dateBase = pageHeight - margin - dateHeight * (1.0 + dateRatio) / 2.0
 val userRatio = 0.6
 val userBase =
    pageHeight - margin - dateHeight - userHeight * (1.0 + userRatio) / 2.0
-   
+
 fun makeHeader{
                host: string,
                job: string,

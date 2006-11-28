@@ -7,7 +7,7 @@ signature OS_1997 =
       val errorMsg: syserror -> string 
       val errorName: syserror -> string
       val syserror: string -> syserror option
-         
+
       structure FileSys: OS_FILE_SYS_1997
       structure Path: OS_PATH_1997
       structure Process: OS_PROCESS_1997

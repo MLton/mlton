@@ -80,7 +80,7 @@ structure Type =
                   con = con}
 
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
-                      
+
       fun layout (ty: t): Layout.t =
          #1 (hom {con = Tycon.layoutApp,
                   ty = ty,
@@ -88,7 +88,7 @@ structure Type =
                                                   needsParen = false})})
 
       val toString = Layout.toString o layout
-         
+
       local
          val same: tree * tree -> bool =
             fn (Var a, Var a') => Tyvar.equals (a, a')
@@ -136,7 +136,7 @@ structure Ops = TypeOps (structure Tycon = Tycon
 open Type Ops
 
 val string = word8Vector
-   
+
 fun ofConst c =
    let
       datatype z = datatype Const.t

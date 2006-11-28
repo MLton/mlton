@@ -16,6 +16,6 @@ signature UNCURRY_STRUCTS =
 signature UNCURRY = 
    sig
       include UNCURRY_STRUCTS
-         
+
       val uncurry: Program.t -> Program.t
    end

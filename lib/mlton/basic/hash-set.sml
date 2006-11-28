@@ -13,7 +13,7 @@ datatype 'a t =
          hash: 'a -> word,
          mask: word ref,
          numItems: int ref}
-   
+
 fun 'a newWithBuckets {hash, numBuckets: int}: 'a t =
    let
       val mask: word = Word.fromInt numBuckets - 0w1
@@ -37,7 +37,7 @@ fun size (T {numItems, ...}) = !numItems
 
 fun index (w: word, mask: word): int =
    Word.toInt (Word.andb (w, mask))
-   
+
 val numPeeks: int ref = ref 0
 val numLinks: int ref = ref 0
 
@@ -95,7 +95,7 @@ fun resize (T {buckets, hash, mask, ...}, size: int, newMask: word): unit =
       ; buckets := newBuckets
       ; mask := newMask
    end
-               
+
 fun maybeGrow (s as T {buckets, mask, numItems, ...}): unit =
    let
       val n = Array.length (!buckets)

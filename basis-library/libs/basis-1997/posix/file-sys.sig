@@ -10,7 +10,7 @@ signature POSIX_FILE_SYS_1997 =
       (* identity functions *)
       val fdToIOD: file_desc -> OS.IO.iodesc
       val iodToFD: OS.IO.iodesc -> file_desc option
-         
+
       type dirstream
       val opendir: string -> dirstream
       val readdir: dirstream -> string
@@ -19,11 +19,11 @@ signature POSIX_FILE_SYS_1997 =
 
       val chdir: string -> unit
       val getcwd: unit -> string
-         
+
       val stdin: file_desc 
       val stdout: file_desc 
       val stderr: file_desc
-         
+
       structure S:
          sig
             eqtype mode
@@ -56,7 +56,7 @@ signature POSIX_FILE_SYS_1997 =
             val sync: flags 
             val trunc: flags 
          end
-         
+
        datatype open_mode  = O_RDONLY  | O_WRONLY  | O_RDWR
 
        val openf: string * open_mode * O.flags -> file_desc 
@@ -111,7 +111,7 @@ signature POSIX_FILE_SYS_1997 =
           A_READ
         | A_WRITE
         | A_EXEC
-          
+
        val access: string * access_mode list -> bool
        val chmod: string * S.mode -> unit
        val fchmod: file_desc * S.mode -> unit

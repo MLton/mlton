@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature MONO_ENV_STRUCTS =
    sig
       structure Domain: T
@@ -16,7 +16,7 @@ signature MONO_ENV_STRUCTS =
 signature BASIC_MONO_ENV =
    sig
       include MONO_ENV_STRUCTS
-         
+
       type t
       val extend: t * Domain.t * Range.t -> t
       val fromList: (Domain.t * Range.t) list -> t
@@ -27,7 +27,7 @@ signature BASIC_MONO_ENV =
 signature MONO_ENV = 
    sig
       include BASIC_MONO_ENV
-      
+
       val + : t * t -> t
       val domain: t -> Domain.t list
       val empty: t

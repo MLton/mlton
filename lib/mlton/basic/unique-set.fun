@@ -21,7 +21,7 @@ val _ = Assert.assert ("UniqueSet: cacheSize, bits", fn () =>
                        cacheSize >= 1 andalso bits >= 1)
 
 type elements = Element.t list
-   
+
 structure Tree: sig
                    structure Set:
                       sig
@@ -31,9 +31,9 @@ structure Tree: sig
                          val toList: t -> elements
                          val plist: t -> PropertyList.t
                       end
-                   
+
                    type t
-                      
+
                    val new: unit -> t
                    val insert: t * elements -> Set.t
                    val size: t -> int
@@ -43,7 +43,7 @@ structure Tree: sig
          struct
             open UniqueSetRep
             type t = Element.t t
-               
+
             fun new elements = T {elements = elements,
                                   plist = PropertyList.new()}
 
@@ -69,9 +69,9 @@ structure Tree: sig
             NONE => 0
           | SOME(Leaf _) => 1
           | SOME(Node{isIn, isNotIn, ...}) => size isIn + size isNotIn
-         
+
       fun contains(es, e) = List.exists(es, fn e' => Element.equals(e, e'))
-         
+
       fun insert(tree, elements) =
          let
             fun loop tree =
@@ -119,7 +119,7 @@ structure Tree: sig
                      end
          in loop tree
          end
-                     
+
    end
 
 open Tree.Set
@@ -131,7 +131,7 @@ val maxIndex = tableSize - 1
 val mask = Word.fromInt maxIndex
 
 val table = Array.tabulate(tableSize, fn _ => Tree.new())
-   
+
 fun hashToIndex(w: Word.t): int = Word.toInt(Word.andb(w, mask))
 
 fun intern(l: Element.t list, h: Word.t) =
@@ -140,7 +140,7 @@ fun intern(l: Element.t list, h: Word.t) =
 (* the hash of a set is the xorb of the hash of its members *)
 fun hash(l: Element.t list) =
    List.fold(l, 0w0, fn (e, w) => Word.xorb(w, Element.hash e))
-   
+
 fun fromList l =
    let val l = List.fold(l, [], fn (x, l) =>
                          if List.exists(l, fn x' => Element.equals(x, x'))
@@ -154,7 +154,7 @@ val empty = fromList []
 fun isEmpty s = equals(s, empty)
 
 fun foreach(s, f) = List.foreach(toList s, f)
-   
+
 fun singleton x = fromList [x]
 
 val cacheHits: int ref = ref 0
@@ -218,7 +218,7 @@ in
 end
 
 (* val fromList = Trace.trace("fromList", List.layout Element.layout, layout) fromList *)
-   
+
 fun traceBinary (name, f) = Trace.trace2 (name, layout, layout, layout) f
 
 val op + = traceBinary ("UniqueSet.+", op +)

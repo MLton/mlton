@@ -13,7 +13,7 @@ signature SMALL_INT_INF_STRUCTS =
 signature SMALL_INT_INF = 
    sig
       include SMALL_INT_INF_STRUCTS
-      
+
       type t
 
       val toCstring: t -> string

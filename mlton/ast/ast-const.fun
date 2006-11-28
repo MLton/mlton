@@ -10,7 +10,7 @@ functor AstConst (S: AST_CONST_STRUCTS): AST_CONST =
 struct
 
 open S Region.Wrap
-   
+
 datatype node =
    Bool of bool
  | Char of IntInf.t

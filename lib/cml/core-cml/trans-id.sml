@@ -14,7 +14,7 @@ structure TransID : TRANS_ID =
       structure Assert = LocalAssert(val assert = false)
 
       structure R = RepTypes
- 
+
 
       (* Transaction IDs are used to mark blocked threads in the various waiting
        * queues.  They are "cancelled" when some other event is selected.

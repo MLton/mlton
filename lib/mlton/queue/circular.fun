@@ -14,7 +14,7 @@ struct
 structure A = Array1D
 structure I = A.I
 open I
-   
+
 datatype 'a t = T of {size: I.t ref,
                       elts: 'a option A.t,
                       front: I.t ref,
@@ -29,7 +29,7 @@ fun frontRef(T{front=f, ...}) = f
 fun backRef(T{back=b, ...}) = b
 
 fun maxSize d = A.size(elts d)
-   
+
 fun empty maxSize = T{size = ref zero,
                       elts = A.new(maxSize, NONE),
                       front = ref zero,
@@ -42,7 +42,7 @@ fun isFull d = size d = maxSize d
 fun inc(q, r) = let val r = r q
               in r := add1(!r) mod maxSize q
               end
-           
+
 fun incFront q = inc(q, frontRef)
 fun incBack q = inc(q, backRef)
 

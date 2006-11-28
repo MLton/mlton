@@ -13,7 +13,7 @@ structure IntInf: INT_INF =
       open IntInf 
 
       val hash = String.hash o toString
-         
+
       local
          open Pervasive.IntInf
       in

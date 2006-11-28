@@ -15,6 +15,6 @@ signature SSA_TO_SSA2_STRUCTS =
 signature SSA_TO_SSA2 = 
    sig
       include SSA_TO_SSA2_STRUCTS
-      
+
       val convert: Ssa.Program.t -> Ssa2.Program.t
    end

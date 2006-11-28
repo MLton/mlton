@@ -6,7 +6,7 @@
  *)
 
 type int = Pervasive.Int.int
-   
+
 signature INSTREAM =
    sig
       type t

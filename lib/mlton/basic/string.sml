@@ -50,7 +50,7 @@ structure String: STRING =
       fun keepAll (s: t, f: char -> bool): t =
          implode (List.rev
                   (fold (s, [], fn (c, ac) => if f c then c :: ac else ac)))
-         
+
       fun memoizeList (init: string -> 'a, l: (t * 'a) list): t -> 'a =
          let
             val set: (word * t * 'a) HashSet.t = HashSet.new {hash = #1}

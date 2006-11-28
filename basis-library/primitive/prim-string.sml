@@ -21,5 +21,5 @@ structure String8 =
       val idToWord8Vector = 
          _prim "String_toWord8Vector": string -> Word8.word vector;
    end
-                      
+
 end

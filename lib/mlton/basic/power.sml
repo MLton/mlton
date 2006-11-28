@@ -40,7 +40,7 @@ fun for(a: Int.int, b: Int.int, f: Int.int -> unit) =
    let fun loop i = if i >= b then () else (f i; loop(i + 1))
    in loop a
    end
-         
+
 type 'a exponent =  {isZero: 'a -> bool,
                      divMod: 'a * 'a -> 'a * 'a,
                      two: 'a}
@@ -48,7 +48,7 @@ type 'a exponent =  {isZero: 'a -> bool,
 type 'a base = {one: 'a,
                 times: 'a * 'a -> 'a,
                 layout: 'a -> Layout.t}
-   
+
 fun ('a, 'b) make
    ({isZero, divMod, two}: 'a exponent)
    ({one, times, layout = _}: 'b base) =

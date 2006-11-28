@@ -29,7 +29,7 @@ end
 val extendRight =
    fn (Bogus, _) => Bogus
     | (T {left, ...}, right) => T {left = left, right = right}
-   
+
 val toString =
    fn Bogus => "Bogus"
     | T {left, right} =>
@@ -51,12 +51,12 @@ fun compare (r, r') =
     | (NONE, _) => LESS
     | (_, NONE) => GREATER
     | (SOME p, SOME p') => SourcePos.compare (p, p')
-         
+
 val compare =
    Trace.trace2 ("Region.compare", layout, layout, Relation.layout) compare
-         
+
 fun equals (r, r') = compare (r, r') = EQUAL
-   
+
 fun r <= r' =
    case compare (r, r') of
       EQUAL => true

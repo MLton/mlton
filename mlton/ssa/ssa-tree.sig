@@ -41,7 +41,7 @@ signature RETURN =
        | NonTail of {cont: Label.t,
                      handler: Handler.t}
        | Tail
-               
+
       val compose: t * t -> t
       val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
       val foreachHandler: t * (Label.t -> unit) -> unit
@@ -57,7 +57,7 @@ signature SSA_TREE =
       structure Type:
          sig
             include HASH_TYPE
-               
+
             datatype dest =
                Array of t
              | Datatype of Tycon.t
@@ -115,7 +115,7 @@ signature SSA_TREE =
             val profile: ProfileExp.t -> t
             val var: t -> Var.t option
          end
-      
+
       structure Cases:
          sig
             datatype t =
@@ -245,7 +245,7 @@ signature SSA_TREE =
             val profile: t * SourceInfo.t -> t
             val start: t -> Label.t
          end
-     
+
       structure Program:
          sig
             datatype t =

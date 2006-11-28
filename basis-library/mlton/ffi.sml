@@ -49,7 +49,7 @@ val register = MLtonThread.register
 val getChar8 = Primitive.Char8.idFromInt8 o getInt8
 val getChar16 = Primitive.Char16.idFromInt16 o getInt16
 val getChar32 = Primitive.Char32.idFromInt32 o getInt32
-               
+
 val setChar8 = setInt8 o Primitive.Char8.idToInt8
 val setChar16 = setInt16 o Primitive.Char16.idToInt16
 val setChar32 = setInt32 o Primitive.Char32.idToInt32

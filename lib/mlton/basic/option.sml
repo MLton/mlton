@@ -26,7 +26,7 @@ fun forall (z, f) =
    case z of
       NONE => true
     | SOME x => f x
-         
+
 fun foreach (opt, f) =
    case opt of
       NONE => ()

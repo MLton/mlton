@@ -12,7 +12,7 @@ struct
 open S Layout
 
 type int = Int.t
-   
+
 structure Field = Record.Field
 structure Wrap = Region.Wrap
 
@@ -28,14 +28,14 @@ structure Fixity =
       val isInfix =
          fn Nonfix => false
           | _ => true
-          
+
       val toString =
          fn Infix NONE => "infix"
           | Infix (SOME n) => "infix " ^ Int.toString n
           | Infixr NONE => "infixr"
           | Infixr (SOME n) => "infixr " ^ Int.toString n
           | Nonfix => "nonfix"
-               
+
       val layout = Layout.str o toString
    end
 
@@ -47,10 +47,10 @@ structure Fixop =
          fn Op => str "op "
           | None => empty
    end
-         
+
 fun layoutConstraint (t, ty) =
    mayAlign [seq [t, str ":"], Type.layout ty]
-   
+
 fun maybeConstrain (e, tyo) =
    case tyo of
       NONE => e
@@ -121,7 +121,7 @@ structure Pat =
       fun con c =
          if Con.equals (c, Con.nill) then emptyList
          else longvid (Longvid.short (Vid.fromCon c))
-                     
+
       fun app (c, p) =
          let
             val default = make (App (Longcon.short c, p))
@@ -144,7 +144,7 @@ structure Pat =
                    | _ => default
             else default
          end
-      
+
       fun tuple ps =
          if 1 = Vector.length ps
             then Vector.sub (ps, 0)
@@ -238,7 +238,7 @@ structure Eb =
             type t = node Wrap.t
             type node' = node
             type obj = t
-         
+
             fun layout rhs =
                case node rhs of
                   Def c => seq [str " = ", Longcon.layout c]
@@ -249,7 +249,7 @@ structure Eb =
                   Def _ => ()
                 | Gen to => Option.app (to, Type.checkSyntax)
          end
-      
+
       type t = Con.t * Rhs.t
 
       fun layout (exn, rhs) =
@@ -280,7 +280,7 @@ structure PrimKind =
 
             val layout = Layout.str o toString
          end
-      
+
       datatype t =
          Address of {name: string,
                      ty: Type.t}
@@ -432,7 +432,7 @@ val traceLayoutExp =
    Trace.traceInfo' (Trace.info "AstCore.layoutExp",
                      fn (e, _: bool) => Layout.str (expNodeName e),
                      Layout.ignore: Layout.t -> Layout.t)
-   
+
 fun layoutExp arg =
    traceLayoutExp
    (fn (e, isDelimited) =>
@@ -499,11 +499,11 @@ and layoutMatch m =
    in
       alignPrefix (Vector.toListMap (rules, layoutRule), "| ")
    end
-   
+
 and layoutRule (pat, exp) =
    mayAlign [seq [Pat.layoutF pat, str " =>"],
              layoutExpF exp]
-      
+
 and layoutDec d =
    case node d of
       Abstype {datBind, body} =>
@@ -538,10 +538,10 @@ and layoutVb {pat, exp} =
 
 and layoutRvb {pat, match, ...} =
    bind (Pat.layout pat, seq [str "fn ", layoutMatch match])
-   
+
 and layoutFb clauses =
    alignPrefix (Vector.toListMap (clauses, layoutClause), "| ")
-   
+
 and layoutClause ({pats, resultType, body}) =
    mayAlign [seq [maybeConstrain (Pat.layoutFlatApp pats,
                             resultType),
@@ -585,7 +585,7 @@ and checkSyntaxMatch (m: match): unit =
    in
       Vector.foreach (v, fn (p, e) => (Pat.checkSyntax p; checkSyntaxExp e))
    end
-      
+
 and checkSyntaxDec (d: dec): unit =
    case node d of
       Abstype {datBind, body} =>
@@ -620,7 +620,7 @@ and checkSyntaxDec (d: dec): unit =
           ; Vector.foreach (vbs, fn {exp, pat} =>
                             (checkSyntaxExp exp
                              ; Pat.checkSyntax pat)))
-          
+
 structure Match =
    struct
       open Match
@@ -656,13 +656,13 @@ structure Exp =
       fun longvid name =
          makeRegion (Var {name = name, fixop = Fixop.None},
                      Longvid.region name)
-         
+
       val var = longvid o Longvid.short o Vid.fromVar
 
       fun app (e1: t, e2: t): t =
          makeRegion (App (e1, e2),
                      Region.append (region e1, region e2))
-         
+
       fun lett (ds: dec vector, e: t, r: Region.t): t =
          makeRegion (Let (makeRegion (SeqDec ds, r), e), r)
 
@@ -694,9 +694,9 @@ structure Dec =
       type obj = t
 
       val checkSyntax = checkSyntaxDec
-         
+
       fun make n = makeRegion (n, Region.bogus)
-         
+
       val openn = make o Open
 
       fun exceptionn (exn: Con.t, to: Type.t option): t =
@@ -713,7 +713,7 @@ structure Dec =
             Region.bogus)))
 
       val seq = make o SeqDec
-         
+
       val empty = seq (Vector.new0 ())
 
       fun vall (tyvars, var, exp): t =
@@ -727,8 +727,8 @@ structure Dec =
          fun fromExp (e: Exp.t): t =
             vall (Vector.new0 (), it, e)
       end
-   
+
       val layout = layoutDec
    end
-   
+
 end

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature SWITCH_STRUCTS =
    sig
       structure Label: LABEL

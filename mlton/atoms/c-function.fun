@@ -54,7 +54,7 @@ datatype 'a t = T of {args: 'a vector,
                       return: 'a,
                       target: Target.t,
                       writesStackTop: bool}
-   
+
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
                maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
                return, target, writesStackTop, ...},
@@ -75,7 +75,7 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
     ("return", layoutType return),
     ("target", Target.layout target),
     ("writesStackTop", Bool.layout writesStackTop)]
-   
+
 local
    fun make f (T r) = f r
 in
@@ -111,7 +111,7 @@ fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
       return = f return,
       target = target,
       writesStackTop = writesStackTop}
-   
+
 fun isOk (T {ensuresBytesFree, mayGC, maySwitchThreads, modifiesFrontier,
              readsStackTop, return, writesStackTop, ...},
           {isUnit}): bool =

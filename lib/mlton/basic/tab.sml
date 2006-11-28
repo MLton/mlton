@@ -34,7 +34,7 @@ fun make(out, tab) =
       fun maybeResize() = if !index = size() then resize() else ()
 
       fun reset() = index := 0
-         
+
       fun indent() = Out.output(out, Array.sub(!tabs, !index))
 
       fun right() = (index := !index + 1 ;
@@ -42,16 +42,16 @@ fun make(out, tab) =
 
       fun left() = if !index = 0 then Error.bug "Tab.left"
                    else index := !index - 1
-                      
+
       fun output x =
          (indent() ;
           Out.output(out, x) ;
           Out.output(out, "\n"))
-         
+
    in {reset = reset,
        indent = indent,
        left = left,
        right = right}
    end
-                                    
+
 end

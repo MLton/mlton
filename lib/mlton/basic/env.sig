@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ENV_STRUCTS =
    sig
       structure Domain: T
@@ -15,7 +15,7 @@ signature ENV_STRUCTS =
 signature ENV =
    sig
       include ENV_STRUCTS
-      
+
       type 'a t
 
       val + : 'a t * 'a t -> 'a t

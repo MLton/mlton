@@ -14,6 +14,6 @@ signature SIMPLIFY_TYPES_STRUCTS =
 signature SIMPLIFY_TYPES = 
    sig
       include SIMPLIFY_TYPES_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

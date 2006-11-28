@@ -10,7 +10,7 @@ structure MLton: MLTON =
 struct
 
 val isMLton = true
-   
+
 (* The ref stuff is so that the (de)serializer always deals with pointers
  * to heap objects.
  *)
@@ -25,7 +25,7 @@ structure GC = MLtonGC
 fun shareAll () =
    (GC.setHashConsDuringGC true
     ; GC.collect ())
- 
+
 fun size x =
    let
       val refOverhead =

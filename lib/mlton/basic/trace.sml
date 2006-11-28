@@ -25,7 +25,7 @@ fun isOn b =
       Always => true
     | Flagged => !b
     | Never => false
-   
+
 val default = default
 
 fun flag name = getFlag (StringMap.lookup (map, name))
@@ -37,7 +37,7 @@ val whatsOff = whats false
 
 fun sets b () =
    StringMap.foreach (map, fn flags => getFlag flags := b)
-   
+
 val all = sets true
 val none = sets false
 
@@ -67,11 +67,11 @@ val timeDefault = ref false
 type flags = {immediate: bool ref,
               delayed: bool ref,
               time: bool ref}
-   
+
 val map = StringMap.new (fn () => {immediate = ref (!immediateDefault),
                                    delayed = ref (!delayedDefault),
                                    time = ref (!timeDefault)})
-   
+
 fun traceable () = StringMap.domain map
 
 fun outputTraceable () =
@@ -99,7 +99,7 @@ structure Delayed =
                       val default = delayedDefault
                       val status = Never)
       open C
-         
+
       val keepAll = ref true
    end
 
@@ -123,7 +123,7 @@ fun always () = (Immediate.always ()
 fun flagged () = (Immediate.flagged ()
                  ; Delayed.flagged ()
                  ; Time.flagged ())
-   
+
 fun reset () =
    StringMap.foreach (map, fn {immediate, delayed, time} =>
                       (immediate := false
@@ -142,7 +142,7 @@ datatype comp =
 
 val emptyIc = IC.empty
 fun empty () = Working (emptyIc ())
-   
+
 val currentComputation = ref (empty ())
 
 fun clear () = currentComputation := empty ()
@@ -184,7 +184,7 @@ fun delayedCall (name, layoutArg, layoutAns) =
     return = fn (ans, t) => IC.return (ic (),
                                      fn () => layoutAns ans,
                                      t)}
-         
+
 (*---------------------------------------------------*)
 (*                Immediate Feedback                 *)
 (*---------------------------------------------------*)
@@ -197,7 +197,7 @@ structure Immediate =
          None
        | Terminal
        | Out of Out.t
-    
+
       val debug = ref None
 
       val showTime = ref false
@@ -233,7 +233,7 @@ structure Immediate =
                   ; Out.newline out
                   ; done out
                end
-         
+
       fun finish (t, res) =
          (left ()
           ; message (let open Layout
@@ -271,10 +271,10 @@ structure Immediate =
           ; message l
           ; indentation := !indentation - 1
           ; right ())
-         
+
       val messageStr = message o Layout.str
    end
-         
+
 (*---------------------------------------------------*)
 (*                  Instrumentation                  *)
 (*---------------------------------------------------*)
@@ -286,7 +286,7 @@ val bogusInfo = {name = "bogus", flags = {delayed = ref false,
                                           time = ref false}}
 
 val shouldTrace = Assert.debug
-   
+
 fun info name =
    if shouldTrace
       then {name = name, flags = StringMap.lookup (map, name)}
@@ -348,20 +348,20 @@ fun traceInfo ({name, flags = {immediate, delayed, time}},
       end
 
 fun assertTrue _ = (true, fn _ => true)
-   
+
 fun traceInfo' (info, layoutArg, layoutAns) =
    traceInfo (info, layoutArg, layoutAns, assertTrue)
 
 fun traceAssert (name, layoutArg, layoutAns, check) =
    traceInfo (info name, layoutArg, layoutAns, check)
-   
+
 fun trace (name, layoutArg, layoutAns) =
    traceAssert (name, layoutArg, layoutAns, assertTrue)
-               
+
 fun ignore _ = Layout.empty
-   
+
 fun traceCall s = trace (s, ignore, ignore)
-   
+
 fun traceRec info =
    let val trace = trace info
    in fn f => let fun fix f a = trace (f (fix f)) a
@@ -371,7 +371,7 @@ fun traceRec info =
 
 fun trace0 (name, layoutAns) =
    trace (name, Unit.layout, layoutAns)
-         
+
 fun trace2 (name, layout1, layout2, layoutAns) =
    trace (name, Layout.tuple2 (layout1, layout2), layoutAns)
 

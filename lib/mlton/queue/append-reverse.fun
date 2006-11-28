@@ -10,7 +10,7 @@
 
 functor LazyAppendReverse(): APPEND_REVERSE =
 struct
-   
+
 structure L' = LazyListLength(LazyList)
 
 open L'
@@ -25,28 +25,28 @@ struct
 structure L' = LazyListLength(LazyList)
 
 open L'
-   
+
 val appendReverse = L'.appendReverseIncremental
 
 structure L = L'
-   
+
 end
 
 functor ExplicitAppendReverse(): APPEND_REVERSE =
 struct
 
 val {error, ...} = Error.errors("queue", "append-reverse")
-   
+
 structure L = StrictList
 structure I = L.I
-   
+
 datatype 'a t =
    List of 'a L.t
  | Cons of 'a * 'a t ref
  | Rot of 'a t * 'a L.t * 'a L.t
 
 fun empty() = List(L.empty())
-   
+
 fun destruct(List l) = (case L.destruct l of
                            NONE => NONE
                          | SOME(x, l) => SOME(x, List l))
@@ -61,17 +61,17 @@ and rot(l, r, a) =
      | (SOME(x, l), SOME(x', r)) =>
           Cons(x, ref(Rot(l, r, L.cons(x', a))))
      | _ => error "rot")
-       
+
 fun appendReverse(l, r) = rot(l, r, L.empty())
 
 fun isEmpty r = case destruct r of
    NONE => true
  | SOME _ => false
-      
+
 fun length(List l) = L.length l
   | length(Rot(l, r, a)) = length l + L.length r + L.length a
   | length(Cons(x, ref r)) = length r + 1
-    
+
 fun output(r, sep, outElt, out) =
    let val print = Out.outputc out
       fun outputList l = L.output(l, sep, outElt, out)

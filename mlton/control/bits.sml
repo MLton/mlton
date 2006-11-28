@@ -12,7 +12,7 @@ local
       sig
          type bytes
          type words
-            
+
          structure Bits:
             sig
                eqtype t
@@ -42,7 +42,7 @@ local
                val toWords: t -> words
                val zero: t
             end
-         
+
          structure Bytes:
             sig
                type t
@@ -75,7 +75,7 @@ local
                val wordAlign: t -> t
                val zero: t
             end
-         
+
          structure Words:
             sig
                type t
@@ -90,13 +90,13 @@ local
                val toBytes: t -> Bytes.t
                val zero: t
             end
-         
+
          sharing type bytes = Bytes.t
          sharing type words = Words.t
       end =
       struct
          val rem = IntInf.rem
-            
+
          fun align (b, {alignment = a}) =
             let
                val b = b + (a - 1)
@@ -109,15 +109,15 @@ local
                open IntInf
 
                val inByte: t = 8
-                  
+
                val inWord: t = 32
 
                val inPointer = inWord
 
                fun isByteAligned b = 0 = rem (b, inByte)
-                  
+
                fun isWordAligned b = 0 = rem (b, inWord)
-                  
+
                fun toBytes b =
                   if isByteAligned b
                      then quot (b, inByte)
@@ -148,7 +148,7 @@ local
                fun isWordAligned b = 0 = rem (b, inWord)
 
                fun scale (b, i) = b * Int.toIntInf i
-                  
+
                fun toBits b = b * Bits.inByte
 
                val toWord = Word.fromIntInf
@@ -164,7 +164,7 @@ local
             end
 
          type words = IntInf.t
-            
+
          structure Words =
             struct
                open IntInf
@@ -172,7 +172,7 @@ local
                type t = words
 
                val inPointer = Bytes.toWords Bytes.inPointer
-                  
+
                fun toBytes w = w * Bytes.inWord
             end
       end

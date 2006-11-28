@@ -10,7 +10,7 @@ structure MLtonExn =
       open Primitive.MLton.Exn
 
       type t = exn
-         
+
       val addExnMessager = General.addExnMessager
 
       val history: t -> string list =

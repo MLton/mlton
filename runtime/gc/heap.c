@@ -177,7 +177,7 @@ bool createHeap (GC_state s, GC_heap h,
     assert (isAligned (h->size, s->sysvals.pageSize));
     for (i = 0; i <= count; i++) {
       size_t address;
-      
+
       address = i * step;
       if (direction)
         address = highAddress - address;
@@ -309,7 +309,7 @@ copy:
   } else {
     /* Write the heap to disk and try again. */
     void *data;
-    
+
     data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {

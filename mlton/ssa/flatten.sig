@@ -14,6 +14,6 @@ signature FLATTEN_STRUCTS =
 signature FLATTEN = 
    sig
       include FLATTEN_STRUCTS
-      
+
       val flatten: Program.t -> Program.t
    end

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature WORD_SIZE_STRUCTS =
    sig
    end

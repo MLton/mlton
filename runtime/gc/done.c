@@ -10,7 +10,7 @@ static void displayCol (FILE *out, int width, const char *s) {
   int extra;
   int i;
   int len;
-  
+
   len = strlen (s);
   if (len < width) {
     extra = width - len;
@@ -23,7 +23,7 @@ static void displayCol (FILE *out, int width, const char *s) {
 static void displayCollectionStats (FILE *out, const char *name, struct rusage *ru, 
                                     uintmax_t num, uintmax_t bytes) {
   uintmax_t ms;
-  
+
   ms = rusageTime (ru);
   fprintf (out, "%s", name);
   displayCol (out, 7, uintmaxToCommaString (ms));
@@ -45,7 +45,7 @@ void GC_done (GC_state s) {
   if (s->controls.summary) {
     uintmax_t totalTime;
     uintmax_t gcTime;
-    
+
     gcTime = rusageTime (&s->cumulativeStatistics.ru_gc);
     fprintf (out, "GC type\t\ttime ms\t number\t\t  bytes\t      bytes/sec\n");
     fprintf (out, "-------------\t-------\t-------\t---------------\t---------------\n");

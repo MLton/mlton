@@ -50,7 +50,7 @@ structure Exn =
       exception Overflow
       exception Size
       exception Subscript
-      
+
       val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
          fn f => fn a => f a handle PrimOverflow => raise Overflow
    end

@@ -63,11 +63,11 @@ signature X86_MLTON_BASIC =
 
         val CStatic : x86.MemLoc.Class.t
         val StaticNonTemp : x86.MemLoc.Class.t
-          
+
         val GCState : x86.MemLoc.Class.t
         val GCStateHold : x86.MemLoc.Class.t
         val GCStateVolatile : x86.MemLoc.Class.t
-          
+
         val allClasses : x86.ClassSet.t ref
         val livenessClasses : x86.ClassSet.t ref
         val holdClasses : x86.ClassSet.t ref

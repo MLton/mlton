@@ -18,7 +18,7 @@ val restart = SysCall.restartFlag
 type t = signal
 
 type how = C_Int.t
-   
+
 fun raiseInval () =
    let
       open PosixError
@@ -74,7 +74,7 @@ structure Mask =
           | Some signals =>
                (SysCall.simple Prim.sigemptyset
                 ; List.app (fn s => SysCall.simple (fn () => Prim.sigaddset s)) signals)
-               
+
       local
          fun make (how: how) (m: t) =
             (write m; SysCall.simpleRestart (fn () => Prim.sigprocmask how))
@@ -143,7 +143,7 @@ fun handled () =
      case h of 
         Handler _ => (fromInt s)::sigs
       | _ => sigs) [] handlers)
-   
+
 structure Handler =
    struct
       open Handler

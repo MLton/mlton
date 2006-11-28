@@ -14,6 +14,6 @@ signature IMPLEMENT_SUFFIX_STRUCTS =
 signature IMPLEMENT_SUFFIX = 
    sig
       include IMPLEMENT_SUFFIX_STRUCTS
-      
+
       val doit: Program.t -> Program.t
    end

@@ -34,7 +34,7 @@ size_t sizeofGCStateCurrentStackUsed (GC_state s) {
 void setGCStateCurrentThreadAndStack (GC_state s) {
   GC_thread thread;
   GC_stack stack;
-  
+
   thread = getThreadCurrent (s);
   s->exnStack = thread->exnStack;
   stack = getStackCurrent (s);

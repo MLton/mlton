@@ -6,7 +6,7 @@
  *)
 
 type word = Pervasive.Word.word
-   
+
 functor MaxPow2ThatDivides (type t
 
                             val << : t * word -> t
@@ -22,7 +22,7 @@ functor MaxPow2ThatDivides (type t
    end =
    struct
       structure Word = Pervasive.Word
-         
+
       val maxPow2ThatDivides: t -> word =
          fn i =>
          let

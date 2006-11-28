@@ -18,13 +18,13 @@ open S
 open Dec PrimExp
 
 type int = Int.t
-   
+
 val traceShrinkExp =
    Trace.trace ("Xml.Shrink.shrinkExp", Exp.layout, Exp.layout)
 
 val traceShrinkLambda =
    Trace.trace ("Xml.Shrink.shrinkLambda", Lambda.layout, Lambda.layout)
-   
+
 fun inc (r: int ref, n) =
    let val n = !r + n
    in Assert.assert ("Xml.Shrink.inc", fn () => n >= 0)
@@ -81,7 +81,7 @@ structure VarInfo =
       fun delete i = inc (i, ~1)
 
       val delete = Trace.trace ("Xml.Shrink.VarInfo.delete", layout, Unit.layout) delete
-         
+
       fun deletes is = Vector.foreach (is, delete)
 
       val varExp =

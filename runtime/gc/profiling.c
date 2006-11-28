@@ -41,7 +41,7 @@ static int profileDepth = 0;
 
 static void profileIndent (void) {
   int i;
-  
+
   for (i = 0; i < profileDepth; ++i)
     fprintf (stderr, " ");
 }
@@ -64,7 +64,7 @@ void addToStackForProfiling (GC_state s, GC_profileMasterIndex i) {
 void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
   GC_profileData p;
   GC_profileStack ps;
-  
+
   p = s->profiling.data;
   ps = getProfileStackInfo (s, i);
   if (0 == ps->numOccurrences) {
@@ -255,7 +255,7 @@ void writeProfileCount (GC_state s, FILE *f,
   writeUintmaxU (f, p->countTop[i]);
   if (s->profiling.stack) {
     GC_profileStack ps;
-    
+
     ps = &(p->stack[i]);
     writeString (f, " ");
     writeUintmaxU (f, ps->ticks);
@@ -318,7 +318,7 @@ void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
 
 void setProfTimer (long usec) {
   struct itimerval iv;
-  
+
   iv.it_interval.tv_sec = 0;
   iv.it_interval.tv_usec = usec;
   iv.it_value.tv_sec = 0;

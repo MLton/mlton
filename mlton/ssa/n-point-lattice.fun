@@ -14,7 +14,7 @@ open S
 val N = List.length names - 1
 
 structure Set = DisjointSet
-   
+
 type value = int * (unit -> unit) AppendList.t ref List.t
 datatype t = T of value Set.t
 

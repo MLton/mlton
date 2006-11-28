@@ -8,7 +8,7 @@
 signature TIME = 
    sig
       exception Time
-      
+
       type int = Pervasive.LargeInt.int
 
       include ORDER

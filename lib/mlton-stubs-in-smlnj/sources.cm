@@ -12,7 +12,7 @@ signature INT_INF
 signature POSIX_SIGNAL
 signature REAL
 signature WORD
-   
+
 structure Array
 structure Array2
 structure BinIO

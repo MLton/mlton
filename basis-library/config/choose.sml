@@ -12,7 +12,7 @@ signature CHOOSE_CHARN_ARG =
       val fChar16: Char16.char t
       val fChar32: Char32.char t
    end
-   
+
 functor ChooseCharN_Char8 (A : CHOOSE_CHARN_ARG) : 
    sig val f : Char8.char A.t end = 
    struct val f = A.fChar8 end
@@ -92,7 +92,7 @@ signature CHOOSE_STRINGN_ARG =
       val fString16: String16.string t
       val fString32: String32.string t
    end
-   
+
 functor ChooseStringN_String8 (A : CHOOSE_STRINGN_ARG) : 
    sig val f : String8.string A.t end = 
    struct val f = A.fString8 end

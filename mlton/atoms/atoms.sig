@@ -63,7 +63,7 @@ signature ATOMS' =
 signature ATOMS =
    sig
       structure Atoms: ATOMS'
-         
+
       include ATOMS'
 
       (* For each structure, like CFunction, I would like to write two sharing

@@ -16,7 +16,7 @@ signature PRIM_INTEGER =
       val sizeInBits: Primitive.Int32.int
       val sizeInBitsWord: Primitive.Word32.word
       val precision: Primitive.Int32.int option
-       
+
       val +? : int * int -> int
       val + : int * int -> int
       val *? : int * int -> int
@@ -100,7 +100,7 @@ structure Int7 =
 structure Int8 =
    struct
       open Int8
-               
+
       val sizeInBits: Int32.int = 8
       val sizeInBitsWord: Word32.word = 
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
@@ -199,12 +199,12 @@ structure Int15 =
 structure Int16 =
    struct
       open Int16
-               
+
       val sizeInBits: Int32.int = 16
       val sizeInBitsWord: Word32.word = 
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
-         
+
       val +? = _prim "Word16_add": int * int -> int;
       val + =
          if Controls.detectOverflow
@@ -362,12 +362,12 @@ structure Int31 =
 structure Int32 =
    struct
       open Int32
-               
+
       val sizeInBits: Int32.int = 32
       val sizeInBitsWord: Word32.word = 
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
-         
+
       val +? = _prim "Word32_add": int * int -> int;
       val + =
          if Controls.detectOverflow
@@ -405,12 +405,12 @@ structure Int32 : PRIM_INTEGER =
 structure Int64 =
    struct
       open Int64
-               
+
       val sizeInBits: Int32.int = 64
       val sizeInBitsWord: Word32.word = 
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
-         
+
       val +? = _prim "Word64_add": int * int -> int;
       val + =
          if Controls.detectOverflow

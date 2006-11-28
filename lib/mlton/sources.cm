@@ -165,7 +165,7 @@ structure Word8ArraySlice
 structure Word8Vector
 structure Word16
 structure Word32
-   
+
 functor AlphaBeta
 (* functor BinaryHeap *)
 functor BitVectorSet
@@ -195,7 +195,7 @@ functor Tree
 functor UniqueId
 functor UniqueSet
 functor UnorderedSet
-   
+
 is
 
 ../mlyacc/sources.cm

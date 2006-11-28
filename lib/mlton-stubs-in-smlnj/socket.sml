@@ -5,7 +5,7 @@ structure Socket =
    in
       struct
          open Socket
-            
+
          structure Ctl =
             struct
                open Ctl
@@ -22,7 +22,7 @@ structure Socket =
                val setSNDBUF =
                   fn z => (setSNDBUF o (fn (s, i) => (s, toInt i))) z
             end
-         
+
          val listen = fn z => (listen o (fn (s, i) => (s, toInt i))) z
 
          val recvArr = fn z => (fromInt o recvArr) z

@@ -11,7 +11,7 @@ struct
 
 open S
 datatype z = datatype Transfer.t
-   
+
 (* A chunkifier that puts each function in its own chunk. *)
 fun chunkPerFunc (Program.T {functions, main, ...}) =
    Vector.fromListMap
@@ -22,7 +22,7 @@ fun chunkPerFunc (Program.T {functions, main, ...}) =
        {funcs = Vector.new1 name,
         labels = Vector.map (blocks, Block.label)}
     end)
-   
+
 (* A simple chunkifier that puts all code in the same chunk.
  *)
 fun oneChunk (Program.T {functions, main, ...}) =

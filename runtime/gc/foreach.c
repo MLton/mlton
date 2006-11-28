@@ -77,7 +77,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     size_t dataBytes;
     pointer last;
     GC_arrayLength numElements;
-    
+
     numElements = getArrayLength (p);
     dataBytes = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
     /* Must check 0 == dataBytes before 0 == numPointers to correctly
@@ -98,13 +98,13 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       else {
         /* Array with a mix of pointers and non-pointers. */
         size_t bytesObjptrs;
-        
+
         bytesObjptrs = numObjptrs * OBJPTR_SIZE;
 
         /* For each array element. */
         for ( ; p < last; ) {
           pointer next;
-          
+
           /* Skip the non-pointers. */
           p += bytesNonObjptrs;
           next = p + bytesObjptrs;

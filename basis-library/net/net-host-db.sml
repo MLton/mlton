@@ -44,7 +44,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
          end
 
       type addr_family = C_Int.t
-         
+
       datatype entry = T of {name: string,
                              aliases: string list,
                              addrType: addr_family,

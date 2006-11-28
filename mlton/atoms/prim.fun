@@ -17,7 +17,7 @@ struct
 open S
 
 type word = Word.t
-   
+
 local
    open Const
 in
@@ -327,7 +327,7 @@ fun toString (n: 'a t): string =
    end
 
 fun layout p = Layout.str (toString p)
-   
+
 val equals: 'a t * 'a t -> bool =
    fn (Array_array, Array_array) => true
     | (Array_array0Const, Array_array0Const) => true
@@ -1140,7 +1140,7 @@ structure ApplyResult =
  * A = B --> false
  * A x = B y --> false
  *)
-   
+
 fun ('a, 'b) apply (p: 'a t,
                     args: 'b ApplyArg.t list,
                     varEquals: 'b * 'b -> bool): ('a, 'b) ApplyResult.t =

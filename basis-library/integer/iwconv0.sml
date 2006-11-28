@@ -486,7 +486,7 @@ structure IntWordConv : PRIM_INTWORD_CONV =
       val castFromWord64ToWord16 = zextdFromWord64ToWord16
       val castFromWord64ToWord32 = zextdFromWord64ToWord32
       val castFromWord64ToWord64 = zextdFromWord64ToWord64
-         
+
       (* checked zero-extend or low-bits, 
        * Overflow if composed zero-extend not identity
        *)

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature APPEND_LIST = 
    sig
       type 'a t

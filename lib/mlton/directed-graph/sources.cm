@@ -9,7 +9,7 @@
 Library
 
 functor Dijkstra
-   
+
 is
 
 ../basic/sources.cm

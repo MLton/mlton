@@ -12,7 +12,7 @@ struct
 open S
 datatype z = datatype Exp.t
 datatype z = datatype Transfer.t
-   
+
 fun 'a analyze
    {coerce, conApp, const,
     filter, filterWord,

@@ -20,4 +20,4 @@ structure BinIO: BIN_IO_EXTRA =
     val someElem = 0wx0: Word8.word
     val xlatePos = SOME {fromInt = fn i => i,
                          toInt = fn i => i})
-       
+

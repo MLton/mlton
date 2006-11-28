@@ -8,7 +8,7 @@
 structure MyDirs: MY_DIRS =
    struct
       open Dir
-         
+
       fun dirs() =
          let
             val home = fromString "/home/sweeks/"
@@ -22,7 +22,7 @@ structure MyDirs: MY_DIRS =
          in {home = home, sml = sml, smlnj = smlnj, bin = bin,
              binFiles = binFiles, heap = heap, src = src, compiler = compiler}
          end
-      
+
       fun exportFn(name, f) =
          SMLofNJ.exportFn(File.toString(File.relative(#heap(dirs()),name)),
                           f)

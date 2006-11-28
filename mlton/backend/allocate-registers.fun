@@ -69,7 +69,7 @@ structure Allocation:
                           Layout.record [("offset", Bytes.layout offset),
                                          ("size", Bytes.layout size)])
                          alloc
-         
+
           fun size (T alloc) =
              case alloc of
                 [] => Bytes.zero
@@ -188,7 +188,7 @@ structure Allocation:
              in
                 loop (next, alloc)
              end
-             
+
           fun new (rs: Register.t list): t =
              let
                 fun sameType (r, r') =
@@ -229,7 +229,7 @@ structure Allocation:
                 reg
              end
        end
-    
+
        datatype t = T of {registers: Registers.t,
                           stack: Stack.t ref}
 
@@ -239,7 +239,7 @@ structure Allocation:
           val stack = ! o (make #stack)
           val stackSize = Stack.size o stack
        end
-    
+
        fun layout (T {registers, stack}) =
           Layout.record
           [("stack", Stack.layout (!stack)),
@@ -252,7 +252,7 @@ structure Allocation:
           in
              offset
           end
-       
+
        fun getRegister (T {registers, ...}, ty) =
           Registers.get (registers, ty)
 
@@ -562,5 +562,5 @@ val allocate =
     fn {function, ...} => Func.layout (Function.name function),
     Layout.ignore)
    allocate
-   
+
 end

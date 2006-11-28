@@ -12,7 +12,7 @@
  * with lots of option components.
  *)
 type int = Int.t
-   
+
 signature URL =
    sig
       structure Char:
@@ -21,7 +21,7 @@ signature URL =
 
             val escapeHex: t -> string
          end
-      
+
       structure Scheme:
          sig
             datatype t =
@@ -41,7 +41,7 @@ signature URL =
 
             val equals: t * t -> bool
          end
-     
+
       structure Path:
          sig
             type t = {isAbsolute: bool,

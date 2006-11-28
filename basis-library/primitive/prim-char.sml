@@ -15,7 +15,7 @@ open Primitive
 structure Char8 =
    struct
       open Char8
-         
+
       val < = _prim "WordU8_lt": char * char -> bool;
 
       val idToWord8 = _prim "WordU8_toWord8": char -> Word8.word;
@@ -36,7 +36,7 @@ structure Char8 =
 structure Char16 =
    struct
       open Char16
-         
+
       val < = _prim "WordU16_lt": char * char -> bool;
 
       val idToWord16 = _prim "WordU16_toWord16": char -> Word16.word;
@@ -57,7 +57,7 @@ structure Char16 =
 structure Char32 =
    struct
       open Char32
-         
+
       val < = _prim "WordU32_lt": char * char -> bool;
 
       val idToWord32 = _prim "WordU32_toWord32": char -> Word32.word;

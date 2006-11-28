@@ -9,7 +9,7 @@ functor SourceInfo (S: SOURCE_INFO_STRUCTS): SOURCE_INFO =
 struct
 
 open S
-   
+
 structure Pos =
    struct
       datatype t =
@@ -106,7 +106,7 @@ fun toString' (si, sep) =
                  sep, Pos.toString pos]
 
 fun toString si = toString' (si, " ")
-   
+
 val layout = Layout.str o toString
 
 val equals: t * t -> bool =
@@ -125,7 +125,7 @@ fun isC (s: t): bool =
    case info s of
       C _ => true
     | _ => false
-   
+
 val gc = fromC "gc"
 val gcArrayAllocate = fromC "GC_arrayAllocate"
 val main = fromC "main"
