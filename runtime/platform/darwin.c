@@ -27,13 +27,13 @@ void *getTextEnd () {
 }
 
 void *getTextStart () {
-        unsigned long address;
+        void *address;
         void *module;
-        struct mach_header *mh;
+        const struct mach_header *mh;
 
-        _dyld_lookup_and_bind ("_main", &address, &module);
+        _dyld_lookup_and_bind ("_main", &address, (NSModule*)&module);
         mh = _dyld_get_image_header_containing_address (address);
-        return mh;
+        return (void*)mh;
 }
 
 void showMem () {
