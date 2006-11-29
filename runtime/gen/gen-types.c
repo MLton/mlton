@@ -149,7 +149,7 @@ static const char* mlTypesHStd[] = {
 
 #define booltype(t, bt, name)                       \
   do {                                              \
-  writeString (cTypesHFd, "typedef ");              \
+  writeString (cTypesHFd, "typedef");               \
   writeString (cTypesHFd, " /* ");                  \
   writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " */ ");                  \

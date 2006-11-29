@@ -23,6 +23,7 @@ FLAGS :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 GCOPTFLAGS := 
 DEBUGFLAGS := 
+GCDEBUGFLAGS := 
 WARNFLAGS := 
 OPTWARNFLAGS := 
 DEBUGWARNFLAGS := 
@@ -95,10 +96,11 @@ FLAGS += -b $(TARGET)
 endif
 
 CC := gcc -std=gnu99
-CFLAGS := -I. -Iplatform -Ibasis -Ibasis/Word -Ibasis/Real -I../include -Ibytecode $(FLAGS)
+CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
+GCDEBUGCFLAGS = $(GCDEBUGFLAGS)
 WARNCFLAGS :=
 WARNCFLAGS += -pedantic -Wall 
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
@@ -151,80 +153,78 @@ WARNCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
 
 UTILHFILES :=							\
+	util.h							\
 	$(shell find util -type f | grep '\.h$$')
 UTILCFILES :=							\
 	$(shell find util -type f | grep '\.c$$')
-UTILOFILES := $(foreach f, $(UTILCFILES), $(basename $(f)).o)
+
+PLATFORMHFILES :=						\
+	platform.h						\
+	$(shell find platform -type f | grep '\.h$$')
 
 GCHFILES :=							\
+	gc.h							\
 	$(shell find gc -type f | grep '\.h$$')
 GCCFILES :=							\
 	$(shell find gc -type f | grep '\.c$$')
 
-BASISHFILES :=							\
-	$(shell find basis -type f | grep '\.h$$')
-
-BYTEHFILES :=							\
+BYTECODEHFILES :=						\
 	$(shell find bytecode -type f | grep '\.h$$')
-BYTECFILES :=							\
-	$(shell find bytecode -type f | grep '\.c$$')
 
-
-HFILES := 							\
-	cenv.h                                                  \
-	$(UTILHFILES)						\
-	util.h							\
-	$(GCHFILES)						\
-	gc.h							\
+BASISHFILES :=							\
 	ml-types.h						\
 	c-types.h						\
 	basis-ffi.h						\
-	platform.h						\
-	platform/$(TARGET_OS).h					\
-	platform/$(TARGET_ARCH).h				\
+	$(shell find basis -type f | grep '\.h$$')
+BASISCFILES :=							\
+	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)
+# REAL_BASISCFILES is for files that we don't want compiled in the
+# big lump when compiling COMPILE_FAST.
+# Real/*.c can't be there because gcc -O2 messes some of them up.
+REAL_BASISCFILES :=						\
+	$(shell find basis -type f | grep '\.c$$' | grep Real/)
+
+
+HFILES :=							\
+	cenv.h							\
+	$(UTILHFILES)						\
+	$(PLATFORMHFILES)					\
+	$(GCHFILES)						\
 	$(BASISHFILES)
 
-CFILES := 							\
-	$(UTILCFILES)						\
-	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)	\
-	gc.c							\
-	platform.c
-
-# EXTRA_CFILES is for files that we don't want compiled in the big
-# lump when compiling COMPILE_FAST.
-# Real/*.c can't be there because gcc -O2 messes some of them up.
-EXTRA_CFILES :=			\
-	$(shell find basis/Real -type f | grep '\.c$$')	\
-	platform/$(TARGET_OS).c
-
-ifeq ($(OMIT_BYTECODE), yes)
-EXTRA_CFILES += bytecode/interpret.c
-else
-CFILES += bytecode/interpret.c
-endif
-
-FILES := $(basename $(CFILES))
-EXTRA_FILES := $(basename $(EXTRA_CFILES))
+OBJS := 							\
+	util.o							\
+	gc.o							\
+	platform.o						\
+	platform/$(TARGET_OS).o					\
+	bytecode/interpret.o
+DEBUG_OBJS := 							\
+	util-gdb.o						\
+	gc-gdb.o						\
+	platform-gdb.o						\
+	platform/$(TARGET_OS)-gdb.o				\
+	bytecode/interpret-gdb.o
 
 ifeq ($(COMPILE_FAST), yes)
-  OBJS := runtime.o
-  DEBUG_OBJS := runtime-gdb.o
+  OBJS += basis.o basis/Real/real-basis.o
+  DEBUG_OBJS += basis-gdb.o basis/Real/real-basis-gdb.o
 else
-  OBJS := $(foreach f, $(FILES), $(f).o)
-  DEBUG_OBJS := $(foreach f, $(FILES), $(f)-gdb.o)
+  OBJS += 							\
+	$(foreach f, $(basename $(BASISCFILES)), $(f).o)	\
+	$(foreach f, $(basename $(REAL_BASISCFILES)), $(f).o)
+  DEBUG_OBJS += 						\
+	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)	\
+	$(foreach f, $(basename $(REAL_BASISCFILES)), $(f)-gdb.o)
 endif
 
-OBJS += $(foreach f, $(EXTRA_FILES), $(f).o)
-DEBUG_OBJS += $(foreach f, $(EXTRA_FILES), $(f)-gdb.o)
-
-all:  libgdtoa.a libmlton.a libmlton-gdb.a 	\
-	gen/c-types.sml gen/basis-ffi.sml	\
+all:  libgdtoa.a libmlton.a libmlton-gdb.a 			\
+	gen/c-types.sml gen/basis-ffi.sml			\
 	bytecode/opcodes
 
 libgdtoa.a: gdtoa/arith.h
-	cd gdtoa && 					\
-		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)	\
-			-w -O1 -c -DINFNAN_CHECK 	\
+	cd gdtoa && 						\
+		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)		\
+			-w -O1 -c -DINFNAN_CHECK 		\
 			*.c
 	$(AR) libgdtoa.a gdtoa/*.o
 	$(RANLIB) libgdtoa.a
@@ -248,24 +248,16 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 	$(RANLIB) libmlton-gdb.a
 
 
-runtime.c: $(CFILES)
-	rm -f runtime.c
-	( echo "#define MLTON_GC_INTERNAL_TYPES"; 	\
-	  echo "#define MLTON_GC_INTERNAL_FUNCS";	\
-	  echo "#define MLTON_GC_INTERNAL_BASIS";	\
-	  echo "#include \"platform.h\""; )		\
-		> runtime.c
-	cat $(CFILES) >> runtime.c
+basis.c: $(BASISCFILES)
+	rm -f basis.c
+	cat $(BASISCFILES) >> basis.c
 
+basis/Real/real-basis.c: $(REAL_BASISCFILES)
+	rm -f basis/real/real-basis.c
+	cat $(REAL_BASISCFILES) >>  basis/real/real-basis.c
 
-util/%-gdb.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
-
-util/%.o: util/%.c util.h $(UTILHFILES)
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -c -o $@ $<
-
-gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h $(UTILOFILES)
-	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c $(UTILOFILES)
+gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h util.o
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
 	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
 	cd gen && ./gen-types
 	rm -f gen/gen-types
@@ -292,17 +284,29 @@ bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
 	rm -f bytecode/print-opcodes
 
 
-gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
+util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES) 
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
+
+util.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES) 
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
+
+gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
+	$(CC) $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 gc.o: gc.c $(GCCFILES) $(HFILES) 
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
-bytecode/interpret-gdb.o: bytecode/interpret.c bytecode/opcode.h $(HFILES) 
+bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
 
-bytecode/interpret.o: bytecode/interpret.c bytecode/opcode.h $(HFILES) 
+bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
+
+basis-gdb.o: basis.c $(BASISCFILES) $(HFILES) 
+	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
+
+basis.o: basis.c $(BASISCFILES) $(HFILES) 
+	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
 # -O2 catches us on the code in Real/*.c where we treat a double as a
@@ -342,6 +346,8 @@ flags:
 	echo WARNFLAGS = $(WARNFLAGS)
 	echo OPTWARNFLAGS = $(OPTWARNFLAGS)
 	echo DEBUGWARNFLAGS = $(DEBUGWARNFLAGS)
+	echo OBJS = $(OBJS)
+	echo DEBUG_OBJS = $(DEBUG_OBJS)
 
 
 .PHONY: clean
