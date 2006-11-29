@@ -183,7 +183,7 @@ static const char* mlTypesHStd[] = {
   char *btUpper = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btUpper); i++)      \
     btUpper[i] = (char)(toupper((int)(bt[i])));     \
-  writeString (cTypesHFd, "typedef ");              \
+  writeString (cTypesHFd, "typedef");               \
   writeString (cTypesHFd, " /* ");                  \
   writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " */ ");                  \
@@ -231,7 +231,7 @@ static const char* mlTypesHStd[] = {
   } while (0)
 #define ptrtype(t, name)                            \
   do {                                              \
-  writeString (cTypesHFd, "typedef ");              \
+  writeString (cTypesHFd, "typedef");               \
   writeString (cTypesHFd, " /* ");                  \
   writeString (cTypesHFd, #t);                      \
   writeString (cTypesHFd, " */ ");                  \

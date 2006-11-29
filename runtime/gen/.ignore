@@ -1,5 +1,3 @@
-basis-ffi.h
-basis-ffi.sml
 c-types.h
 c-types.sml
 ml-types.h
