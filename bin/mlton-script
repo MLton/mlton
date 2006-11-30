@@ -75,7 +75,8 @@ doit "$lib" \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opts amd64 '-m32 -mtune=opteron'              \
         -target-cc-opts amd64 '-m32 -mtune=opteron'              \
-        -target-cc-opts darwin '-I/opt/local/include -I/sw/include' \
+        -target-cc-opts darwin                                   \
+                '-I/opt/local/include -I/sw/include'             \
         -target-cc-opts freebsd '-I/usr/local/include'           \
         -target-cc-opts netbsd '-I/usr/pkg/include'              \
         -target-cc-opts openbsd '-I/usr/local/include'           \
@@ -90,19 +91,15 @@ doit "$lib" \
                 -malign-functions=5
                 -malign-jumps=2
                 -malign-loops=2'                                 \
-        -target-link-opts aix '-lgmp'                            \
         -target-link-opts amd64 '-m32'                           \
-        -target-link-opts cygwin '-lgmp'                         \
-        -target-link-opts darwin '-L/opt/local/lib -L/sw/lib -lgmp' \
-        -target-link-opts freebsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opts hpux '-lgmp'                           \
-        -target-link-opts linux '-lgmp'                          \
+        -target-link-opts darwin '-L/opt/local/lib -L/sw/lib'    \
+        -target-link-opts freebsd '-L/usr/local/lib/'            \
         -target-link-opts mingw                                  \
-                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'   \
+                '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
         -target-link-opts netbsd                                 \
-                '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/ -lgmp'       \
-        -target-link-opts openbsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opts solaris '-lgmp -lnsl -lsocket -lrt'    \
-        -link-opts '-lgdtoa -lm'                                 \
+                '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'             \
+        -target-link-opts openbsd '-L/usr/local/lib/'            \
+        -target-link-opts solaris '-lnsl -lsocket -lrt'          \
+        -link-opts '-lgdtoa -lm -lgmp'                           \
         -profile-exclude '<basis>'                               \
         "$@"
