@@ -284,6 +284,7 @@ runtime:
 	$(MAKE) -C runtime
 	$(CP) include/*.h "$(INC)/"
 	$(CP) runtime/*.a "$(LIB)/$(TARGET)/"
+	mkdir -p "$(SRC)/basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)"
 	$(CP) runtime/gen/c-types.sml \
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
 	$(CP) runtime/gen/basis-ffi.sml \
