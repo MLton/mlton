@@ -196,14 +196,17 @@ OBJS := 							\
 	util.o							\
 	gc.o							\
 	platform.o						\
-	platform/$(TARGET_OS).o					\
-	bytecode/interpret.o
+	platform/$(TARGET_OS).o
 DEBUG_OBJS := 							\
 	util-gdb.o						\
 	gc-gdb.o						\
 	platform-gdb.o						\
-	platform/$(TARGET_OS)-gdb.o				\
-	bytecode/interpret-gdb.o
+	platform/$(TARGET_OS)-gdb.o
+
+ifeq ($(OMIT_BYTECODE), yes)
+  OBJS += bytecode/interpret.o
+  DEBUG_OBJS += bytecode/interpret-gdb.o
+endif
 
 ifeq ($(COMPILE_FAST), yes)
   OBJS += basis.o basis/Real/real-basis.o
