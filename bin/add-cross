@@ -12,10 +12,11 @@ set -e
 #    Examples of $crossTarget are i386-pc-cygwin and sparc-sun-solaris.
 #
 # 2. <crossArch> specifies the target architecture.  
-#    The posibilities are: sparc, x86.
+#    The posibilities are: amd64, hppa, sparc, x86.
 #
 # 3. <crossOS> specifies the target OS.
-#    The possibilities are: cygwin, solaris.
+#    The possibilities are: aix, cygwin, darwin, freebsd, hpux, linux, mingw, 
+#    netbsd, openbsd, solaris.
 #
 # 4. <machine> specifies a remote machine of the target type.  This script
 #    will ssh to $machine to compile the runtime and to compile and run the
