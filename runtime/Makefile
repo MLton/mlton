@@ -28,6 +28,25 @@ WARNFLAGS :=
 OPTWARNFLAGS := 
 DEBUGWARNFLAGS := 
 
+ifeq ($(TARGET_ARCH), amd64)
+FLAGS += -m32
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
+OPTFLAGS += -mcpu=opteron
+endif
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
+OPTFLAGS += -mtune=opteron
+endif
+ifeq ($(findstring $(GCC_VERSION), 3.4 4.0 4.1),$(GCC_VERSION))
+GCOPTFLAGS += --param inline-unit-growth=75 --param max-inline-insns-single=1000
+endif
+DEBUGFLAGS += -gstabs+
+OPTWARNFLAGS += -Winline
+endif
+
+ifeq ($(TARGET_ARCH), sparc)
+FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
+endif
+
 ifeq ($(TARGET_ARCH), x86)
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3 4),$(GCC_MAJOR_VERSION))
 OPTFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
@@ -45,25 +64,6 @@ ifeq ($(findstring $(GCC_VERSION), 4.1),$(GCC_VERSION))
 OPTWARNFLAGS += -Winline
 endif
 DEBUGFLAGS += -gstabs+
-endif
-
-ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -m32
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
-OPTFLAGS += -mcpu=opteron
-endif
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-OPTFLAGS += -mtune=opteron
-endif
-ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
-GCOPTFLAGS += --param inline-unit-growth=75 --param max-inline-insns-single=1000
-endif
-DEBUGFLAGS += -gstabs+
-OPTWARNFLAGS += -Winline
-endif
-
-ifeq ($(TARGET_ARCH), sparc)
-FLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
 endif
 
 ifeq ($(TARGET_OS), darwin)
@@ -102,7 +102,7 @@ DEBUGCFLAGS := $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
 GCDEBUGCFLAGS = $(GCDEBUGFLAGS)
 WARNCFLAGS :=
-WARNCFLAGS += -pedantic -Wall 
+WARNCFLAGS += -pedantic -Wall
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -W
 endif
@@ -113,22 +113,22 @@ endif
 WARNCFLAGS += -Wformat=2
 WARNCFLAGS += -Wno-format-nonliteral
 # WARNCFLAGS += -Wswitch-default -Wswitch-enum
-WARNCFLAGS += -Wuninitialized 
+WARNCFLAGS += -Wuninitialized
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNCFLAGS += -Winit-self 
+WARNCFLAGS += -Winit-self
 endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNCFLAGS += -Wstrict-aliasing=2 
+WARNCFLAGS += -Wstrict-aliasing=2
 endif
-WARNCFLAGS += -Wfloat-equal 
+WARNCFLAGS += -Wfloat-equal
 WARNCFLAGS += -Wundef
-WARNCFLAGS += -Wshadow 
-WARNCFLAGS += -Wpointer-arith 
-WARNCFLAGS += -Wbad-function-cast -Wcast-qual -Wcast-align 
+WARNCFLAGS += -Wshadow
+WARNCFLAGS += -Wpointer-arith
+WARNCFLAGS += -Wbad-function-cast -Wcast-qual -Wcast-align
 WARNCFLAGS += -Wwrite-strings
-# WARNCFLAGS += -Wconversion 
-WARNCFLAGS += -Waggregate-return 
-WARNCFLAGS += -Wstrict-prototypes 
+# WARNCFLAGS += -Wconversion
+WARNCFLAGS += -Waggregate-return
+WARNCFLAGS += -Wstrict-prototypes
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wold-style-definition
 endif
@@ -136,11 +136,12 @@ WARNCFLAGS += -Wmissing-prototypes -Wmissing-declarations
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wmissing-field-initializers
 endif
-WARNCFLAGS += -Wmissing-noreturn 
+WARNCFLAGS += -Wmissing-noreturn
 WARNCFLAGS += -Wmissing-format-attribute
-# WARNCFLAGS += -Wpacked -Wpadded
-WARNCFLAGS += -Wredundant-decls 
-WARNCFLAGS += -Wnested-externs 
+WARNCFLAGS += -Wpacked
+# WARNCFLAGS += -Wpadded
+WARNCFLAGS += -Wredundant-decls
+WARNCFLAGS += -Wnested-externs
 WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
 WARNCFLAGS += $(WARNFLAGS)
@@ -243,7 +244,7 @@ gdtoa/arithchk.out: gdtoa/arithchk.c
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
 
-libmlton.a: $(OBJS) 
+libmlton.a: $(OBJS)
 	$(AR) libmlton.a $(OBJS)
 	$(RANLIB) libmlton.a	
 
@@ -274,30 +275,30 @@ c-types.h ml-types.h: gen/c-types.h gen/ml-types.h
 gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
 	rm -f gen/basis-ffi.h gen/basis-ffi.sml
-	cd gen && ./gen-basis-ffi 
+	cd gen && ./gen-basis-ffi
 	rm -f gen/gen-basis-ffi
 
 basis-ffi.h: gen/basis-ffi.h
 	rm -f basis-ffi.h
 	cp gen/basis-ffi.h basis-ffi.h
 
-bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h 
+bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
 	rm -f bytecode/opcodes
 	cd bytecode && ./print-opcodes > opcodes
 	rm -f bytecode/print-opcodes
 
 
-util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES) 
+util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
-util.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES) 
+util.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
-gc-gdb.o: gc.c $(GCCFILES) $(HFILES) 
+gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
-gc.o: gc.c $(GCCFILES) $(HFILES) 
+gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
@@ -306,10 +307,10 @@ bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
 
-basis-gdb.o: basis.c $(BASISCFILES) $(HFILES) 
+basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
 
-basis.o: basis.c $(BASISCFILES) $(HFILES) 
+basis.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
 
 # It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
