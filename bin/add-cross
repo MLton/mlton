@@ -82,10 +82,12 @@ ssh $machine "rm -rf $tmp && mkdir $tmp"
 echo 'Making runtime.' 
 ( cd "$src" && tar cf - Makefile basis-library bin include runtime ) | 
         ssh $machine "cd $tmp && tar xf - && cd runtime &&
-                ../bin/mmake OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
+                ../bin/mmake COMPILE_FAST=yes OMIT_BYTECODE=yes TARGET_ARCH=$crossArch TARGET_OS=$crossOS clean all &&
 		cd .. && make dirs runtime"
 ssh $machine "cd $tmp/build/lib/self && tar cf - ." | 
         ( cd "$lib/$crossTarget" && tar xf - )
+ssh $machine "cd $tmp/basis-library/config/c && tar cf - $crossArch-$crossOS" | 
+        ( cd "$lib/sml/basis/config/c" && tar xf - )
 ( cd "$src" &&
         mmake TARGET=$crossTarget TARGET_ARCH=$crossArch TARGET_OS=$crossOS \
                 mlbpathmap targetmap )
@@ -99,12 +101,52 @@ mingw)
 ;;
 esac
 
+# Copied from mlton-script
+case "$crossArch" in
+amd64)
+        archOpts='-m32'
+;;
+hppa)
+        archOpts=''
+;;
+sparc)
+        archOpts='-m32'
+;;
+x86)
+        archOpts=''
+;;
+esac
+
 case "$crossOS" in
+aix)
+        osOpts=''
+;;
+cygwin)
+        osOpts=''
+;;
+darwin)
+        osOpts='-I/opt/local/include -I/sw/include -L/opt/local/lib -L/sw/lib -lgmp'
+;;
+freebsd)
+        osOpts='-I/usr/local/include -L/usr/local/lib/ -lgmp'
+;;
+hpux)
+        osOpts=''
+;;
+linux)
+        osOpts=''
+;;
 mingw)
 	libs='-lws2_32 -lkernel32 -lpsapi -lnetapi32'
 ;;
+netbsd)
+        osOpts='-I/usr/pkg/include -Wl,-R/usr/pkg/lib -L/usr/pkg/lib/ -lgmp'
+;;
+openbsd)
+        osOpts='-I/usr/local/include -L/usr/local/lib/ -lgmp'
+;;
 solaris)
-        libs='-lrt -lnsl -lsocket'
+        osOpts='-lnsl -lsocket -lrt'
 ;;
 esac
 
@@ -113,6 +155,6 @@ echo "Compiling and running print-constants on $machine."
 "$src/build/bin/mlton" -build-constants true | 
         ssh $machine "cd $tmp/runtime &&
                         cat >$exe.c && 
-                        gcc -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm $libs"
+                        gcc $archOpts $osOpts -I. -o $exe $exe.c libmlton.a libgdtoa.a -lgmp -lm"
 ssh $machine "$tmp/runtime/$exe$suf" >"$lib/$crossTarget/constants"
 ssh $machine "rm -rf $tmp"
