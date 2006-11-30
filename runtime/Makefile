@@ -257,8 +257,8 @@ basis.c: $(BASISCFILES)
 	cat $(BASISCFILES) >> basis.c
 
 basis/Real/real-basis.c: $(REAL_BASISCFILES)
-	rm -f basis/real/real-basis.c
-	cat $(REAL_BASISCFILES) >>  basis/real/real-basis.c
+	rm -f basis/Real/real-basis.c
+	cat $(REAL_BASISCFILES) >> basis/Real/real-basis.c
 
 gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h util.o
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
