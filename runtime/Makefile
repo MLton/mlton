@@ -204,6 +204,7 @@ DEBUG_OBJS := 							\
 	platform/$(TARGET_OS)-gdb.o
 
 ifeq ($(OMIT_BYTECODE), yes)
+else
   OBJS += bytecode/interpret.o
   DEBUG_OBJS += bytecode/interpret-gdb.o
 endif
