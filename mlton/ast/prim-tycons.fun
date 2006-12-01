@@ -33,6 +33,7 @@ datatype z = datatype AdmitsEquality.t
 
 val isBool = fn c => equals (c, bool)
 val isExn = fn c => equals (c, exn)
+val isPointer = fn c => equals (c, pointer)
 
 local
    fun 'a make (prefix: string,

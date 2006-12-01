@@ -797,6 +797,11 @@ structure Type =
           | Overload Overload.Int => true
           | _ => false
 
+      fun isPointer t =
+         case toType t of
+            Con (c, _) => Tycon.isPointer c
+          | _ => false
+
       fun isUnit t =
          case toType t of
             Record r =>

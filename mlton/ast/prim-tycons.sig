@@ -53,6 +53,7 @@ signature PRIM_TYCONS =
       val isCharX: tycon -> bool
       val isExn: tycon -> bool
       val isIntX: tycon -> bool
+      val isPointer: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:

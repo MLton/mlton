@@ -1,5 +1,11 @@
 Here are the changes since version 20051202.
-	
+
+* 2006-11-30
+   - Fixed a bug in elaboration of FFI forms; unary FFI types (e.g.,
+     array, ref, vector) could be used in places where MLton.Pointer.t was
+     required.  This would later cause the compiler to raise the TypeError
+     exception, along with a lot of XML IL.
+
 * 2006-08-03
    - Fixed a bug in the "useless" SSA optimization, caused by calling
      an imported C function and then ignoring the result.
