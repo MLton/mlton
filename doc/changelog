@@ -1,5 +1,14 @@
 Here are the changes since version 20051202.
 
+* 2006-11-19
+   - On *-darwin, work with GnuMP installed via Fink or MacPorts.
+
+* 2006-10-30
+   - Ported to x86-darwin.
+
+* 2006-09-23
+   - Added missing specification of find to the MONO_VECTOR signature.
+
 * 2006-08-03
    - Fixed a bug in the "useless" SSA optimization, caused by calling
      an imported C function and then ignoring the result.
