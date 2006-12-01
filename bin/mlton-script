@@ -67,6 +67,15 @@ doit () {
 # You may need to add a line with -link-opt '-L/path/to/libgmp' so
 # that the linker can find libgmp.
 
+# The darwin linker complains (loudly) about non-existent library
+# search paths.
+if [ -d '/opt/local/lib' ]; then 	 
+        darwinLinkOpts='-L/opt/local/lib'
+fi
+if [ -d '/sw/lib' ]; then 	 
+        darwinLinkOpts='$darwinLinkOpts -L/sw/lib'
+fi
+
 doit "$lib" \
         -cc "$gcc"                                               \
         -cc-opt "-I$lib/include"                                 \
@@ -92,7 +101,7 @@ doit "$lib" \
                 -malign-jumps=2
                 -malign-loops=2'                                 \
         -target-link-opts amd64 '-m32'                           \
-        -target-link-opts darwin '-L/opt/local/lib -L/sw/lib'    \
+        -target-link-opts darwin '$darwinLinkOpts'               \
         -target-link-opts freebsd '-L/usr/local/lib/'            \
         -target-link-opts mingw                                  \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
