@@ -24,7 +24,7 @@ val toString =
 val layout = Layout.str o toString
 
 fun spaces n = S.make (n, C.space)
-    
+
 fun justify (s, width, just) =
     let val numchars = S.size s
         val numspaces = width - numchars

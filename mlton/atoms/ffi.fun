@@ -41,7 +41,7 @@ in
 end
 
 val headers: string list ref = ref []
-      
+
 fun declareExports {print} =
    let
       val maxMap = CType.memo (fn _ => ref ~1)
@@ -79,7 +79,7 @@ fun declareExports {print} =
                    end
              else ()
           end)
-      val _ = print "Int MLton_FFI_op;\n"
+      val _ = print "Int32 MLton_FFI_op;\n"
    in
       List.foreach
       (!symbols, fn {name, ty} =>

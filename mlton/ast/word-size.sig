@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature WORD_SIZE_STRUCTS =
    sig
    end
@@ -20,6 +20,7 @@ signature WORD_SIZE =
       val + : t * t -> t
       val all: t list
       val bits: t -> Bits.t
+      val bool: t
       val bytes: t -> Bytes.t
       val byte: t
       val cardinality: t -> IntInf.t

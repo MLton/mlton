@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature INT_SIZE_STRUCTS =
    sig
    end
@@ -14,7 +14,7 @@ signature INT_SIZE_STRUCTS =
 signature INT_SIZE =
    sig
       include INT_SIZE_STRUCTS
-         
+
       type t
 
       val all: t list
@@ -22,9 +22,8 @@ signature INT_SIZE =
       val bytes: t -> Bytes.t
       val cardinality: t -> IntInf.t
       val compare: t * t -> Relation.t
-      val default: t
       val equals: t * t -> bool
-      val I : Bits.t -> t
+      val fromBits : Bits.t -> t
       val layout: t -> Layout.t
       val memoize: (t -> 'a) -> t -> 'a
       datatype prim = I8 | I16 | I32 | I64

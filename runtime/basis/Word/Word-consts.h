@@ -1,0 +1,12 @@
+#define WordS8_max (WordS8)0x7F
+#define WordS8_min (WordS8)0x80
+#define WordS16_max (WordS16)0x7FFF
+#define WordS16_min (WordS16)0x8000
+#define WordS32_max (WordS32)0x7FFFFFFF
+#define WordS32_min (WordS32)0x80000000
+#define WordS64_max (WordS64)0x7FFFFFFFFFFFFFFFll
+#define WordS64_min (WordS64)0x8000000000000000ll
+#define Word8_max (Word8)0xFF
+#define Word16_max (Word16)0xFFFF
+#define Word32_max (Word32)0xFFFFFFFF
+#define Word64_max (Word64)0xFFFFFFFFFFFFFFFFull

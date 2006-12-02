@@ -13,7 +13,7 @@ open S
 datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
-   
+
 fun 'a analyze
    {coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},

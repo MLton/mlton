@@ -9,7 +9,7 @@ structure File:> FILE =
 struct
 
 structure FS = OS.FileSys
-   
+
 type t = string
 type dir = string
 type file = string
@@ -70,19 +70,19 @@ fun sameContents (f1, f2) =
                            In.sameContents (in1, in2)))
 
 fun output (file, out) = Out.output (out, file)
-   
+
 fun outputContents (file, out) =
    withIn (file, fn ins => In.outputAll (ins, out))
 
 fun lines f = withIn (f, In.lines)
-   
+
 fun contents file = withIn (file, In.inputAll)
 
 fun move {from, to} = FS.rename {old = from, new = to}
-   
+
 fun copy (source, dest) =
    withOut (dest, fn out => outputContents (source, out))
-   
+
 fun concat (sources, dest) =
    withOut (dest, fn out =>
            List.foreach (sources, fn f => outputContents (f, out)))
@@ -103,7 +103,7 @@ fun withTemp f =
    in
       Exn.finally (fn () => f name, fn () => remove name)
    end
-   
+
 fun withTempOut' (z, f: Out.t -> unit, g) =
    let
       val (name, out) = temp z
@@ -120,7 +120,7 @@ fun withTempOut (f, g) =
 
 fun withString (s, f) =
    withTempOut (fn out => Out.output (out, s), f)
-   
+
 fun withOutIn (fout, fin) =
    withTempOut (fout, fn tmp => withIn (tmp, fin))
 

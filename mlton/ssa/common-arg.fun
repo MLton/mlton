@@ -11,7 +11,7 @@ struct
 
 open S
 open Exp Transfer
-  
+
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 

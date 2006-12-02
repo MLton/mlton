@@ -56,7 +56,7 @@ struct
                                        then MemLocSet.add(baseUses, memloc)
                                        else baseUses
                     | NONE => baseUses)
-            
+
         val tempUses
           = let
               fun doit (operands, tempUses)
@@ -440,7 +440,7 @@ struct
                                  in
                                    (min, minl)
                                  end
-                               
+
                              datatype z = datatype Transfer.t
                              val (n, l)
                                = case transfer
@@ -556,7 +556,7 @@ struct
                  => let
                       val loopLabels = getLoopLabels(loopInfo, label)
                       val Block.T {transfer, ...} = block
-                        
+
                       val (regHints, fltregHints) = hints
 
                       val live = LiveSet.toList(LiveInfo.getLive(liveInfo, label))
@@ -812,7 +812,7 @@ struct
                       val liveFltRegs = take(liveFltRegs, transferFltRegs entry)
                       val liveFltRegsTransfers
                         = List.map(liveFltRegs, fn (memloc, _) => (memloc, ref true))
-                          
+
 
                       val _ = liveTransfers := SOME (liveRegsTransfers, 
                                                      liveFltRegsTransfers)
@@ -1015,7 +1015,7 @@ struct
                                    then ()
                                    else default defed
             end
-          
+
         val _ = Vector.foreach
                 (funcs,
                  fn label => doit {label = label, 
@@ -1092,7 +1092,7 @@ struct
 
   fun computeLiveTransfers_totals ()
     = (computeLiveTransfers_msg ())
-      
+
   fun getLiveTransfers (T {get, ...}, label) = get label
 
   fun setLiveTransfersEmpty (T {set, ...}, label) = set(label, ([], []))

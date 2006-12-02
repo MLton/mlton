@@ -16,7 +16,7 @@ structure SMLofNJ: SML_OF_NJ =
             val callcc = C.callcc
             fun throw k v = C.throw (k, v)
          end
-         
+
       structure SysInfo =
          struct
             exception UNKNOWN
@@ -24,7 +24,7 @@ structure SMLofNJ: SML_OF_NJ =
 
             fun getHostArch () =
                MLton.Platform.Arch.toString MLton.Platform.Arch.host
-                     
+
             fun getOSKind () =
                let
                   open MLton.Platform.OS
@@ -44,7 +44,7 @@ structure SMLofNJ: SML_OF_NJ =
 
             fun getOSName () = MLton.Platform.OS.toString MLton.Platform.OS.host
          end
-      
+
       val getCmdName = CommandLine.name
       val getArgs = CommandLine.arguments
 

@@ -7,11 +7,11 @@
  *)
 
 structure LargeWord: WORD = Word32
-   
+
 signature WORD =
    sig
       eqtype word
-         
+
       val * : word * word -> word 
       val + : word * word -> word 
       val - : word * word -> word 
@@ -80,9 +80,9 @@ functor FixWord (W: PERVASIVE_WORD): WORD =
          val scan = scan
          val xorb = xorb
       end
-   
+
       val wordSize = Pervasive.Int32.fromInt W.wordSize
-         
+
       local
          fun fix (f: word * Word31.word -> word)
             (w: word, w': Word32.word): word =

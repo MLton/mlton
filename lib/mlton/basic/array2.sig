@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ARRAY2 =
    sig
       type 'a t

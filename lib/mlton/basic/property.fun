@@ -9,7 +9,7 @@ functor Property (Plist: PROPERTY_LIST):> PROPERTY where type Plist.t = Plist.t 
 struct
 
 structure Plist = Plist
-   
+
 datatype ('sym, 'val) init =
    Const of 'val
  | Fun of 'sym * ('sym -> 'val) -> 'val
@@ -27,7 +27,7 @@ fun initRaise (name, layout) =
     (let open Layout
      in toString (seq [layout s, str " has no ", str name, str " property"])
      end))
-   
+
 fun ('sym, 'val) nondestructable (plist: 'sym -> Plist.t,
                                   init: ('sym, 'val) init) =
    let
@@ -78,7 +78,7 @@ fun destGetSetOnce z =
    let val {destroy, get, set} = destructable z
    in {destroy = destroy, get = get, set = setToSetOnce set}
    end
-                           
+
 fun destGet z =
    let val {destroy, get, ...} = destGetSetOnce z
    in {destroy = destroy, get = get}

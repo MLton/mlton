@@ -15,7 +15,7 @@ signature MULTICAST =
       type 'a mchan
       type 'a port
       type 'a event = 'a CML.event
-          
+
       (* create a new multicast channel *)
       val mChannel : unit -> 'a mchan
       (* create a new output port on a channel *)

@@ -39,7 +39,7 @@ structure Set = DisjointSet
  *    of their definition.  This handles the side conditions on rules 4, 17, and
  *    19.
  *)
-   
+
 structure Time:>
    sig
       type t
@@ -89,7 +89,7 @@ structure Lay =
       fun simple (l: Layout.t): t =
          (l, {isChar = false, needsParen = false})
    end
-      
+
 structure UnifyResult =
    struct
       datatype t =
@@ -123,7 +123,7 @@ fun initAdmitsEquality (c, a) =
    setTyconInfo (c, {admitsEquality = ref a,
                      region = ref NONE,
                      time = ref (Time.now ())})
-   
+
 val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))
 
 structure Equality:>
@@ -211,7 +211,7 @@ structure Equality:>
                       in
                          e''
                       end)
-            
+
       val falsee = False
       val truee = True
 
@@ -238,7 +238,7 @@ structure Equality:>
              | Sometimes => andd es
              | Never => falsee
          end
-         
+
       val unify: t * t -> UnifyResult.t =
          fn (e, e') =>
          if unify (e, e')
@@ -257,7 +257,7 @@ structure Equality:>
                UnifyResult.NotUnifiable (lay e, lay e')
             end
    end
-   
+
 structure Unknown =
    struct
       datatype t = T of {canGeneralize: bool,
@@ -426,12 +426,12 @@ structure Type =
                 | Word => Tycon.isWordX c
 
             val defaultTycon: t -> Tycon.t =
-               fn Char => Tycon.defaultChar
-                | Int => Tycon.defaultInt
-                | Real => Tycon.defaultReal
-                | Word => Tycon.defaultWord
+               fn Char => Tycon.defaultChar ()
+                | Int => Tycon.defaultInt ()
+                | Real => Tycon.defaultReal ()
+                | Word => Tycon.defaultWord ()
          end
-      
+
       (* Tuples of length <> 1 are always represented as records.
        * There will never be tuples of length one.
        *)
@@ -459,7 +459,7 @@ structure Type =
                           tyvar: Tyvar.t} list,
           fields: (Field.t * t) list,
           spine: Spine.t}
- 
+
       val newCloses: t list ref = ref []
 
       local
@@ -737,7 +737,7 @@ structure Type =
          in
             (t, isResolved)
          end
-         
+
       fun record r =
          newTy (Record r,
                 Equality.andd (Vector.map (Srecord.range r, equality)))
@@ -762,7 +762,7 @@ fun setOpaqueTyconExpansion (c, f) =
 
 structure Ops = TypeOps (structure Tycon = Tycon
                          open Type)
-   
+
 structure Type =
    struct
       (* Order is important, since want specialized definitions in Type to
@@ -771,8 +771,8 @@ structure Type =
       open Ops Type
 
       fun char s = con (Tycon.char s, Vector.new0 ())
-      val string = con (Tycon.vector, Vector.new1 (char CharSize.C1))
-         
+      val string = con (Tycon.vector, Vector.new1 (char CharSize.C8))
+
       val unit = tuple (Vector.new0 ())
 
       fun isBool t =
@@ -796,7 +796,12 @@ structure Type =
             Con (c, _) => Tycon.isIntX c
           | Overload Overload.Int => true
           | _ => false
-               
+
+      fun isPointer t =
+         case toType t of
+            Con (c, _) => Tycon.isPointer c
+          | _ => false
+
       fun isUnit t =
          case toType t of
             Record r =>
@@ -816,7 +821,7 @@ structure Type =
       end
 
       fun unresolvedString () = vector (unresolvedChar ())
-   
+
       val traceCanUnify =
          Trace.trace2 
          ("TypeEnv.Type.canUnify", layout, layout, Bool.layout)
@@ -1284,20 +1289,17 @@ structure Type =
 
       val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.pointer ()))
 
-      val defaultChar = con (Tycon.char CharSize.default, Vector.new0 ())
-      val defaultInt = con (Tycon.int IntSize.default, Vector.new0 ())
-
       structure Overload =
          struct
             open Overload
-               
+
             val defaultType =
-               fn Char => defaultChar
-                | Int => defaultInt
-                | Real => defaultReal
-                | Word => defaultWord
+               fn Char => con (Tycon.defaultChar (), Vector.new0 ())
+                | Int => con (Tycon.defaultInt (), Vector.new0 ())
+                | Real => con (Tycon.defaultReal (), Vector.new0 ())
+                | Word => con (Tycon.defaultWord (), Vector.new0 ())
          end
-         
+
       fun 'a simpleHom {con: t * Tycon.t * 'a vector -> 'a,
                         expandOpaque: bool,
                         record: t * (Field.t * 'a) vector -> 'a,
@@ -1378,7 +1380,7 @@ structure Scheme =
                      tyvars: Tyvar.t vector,
                      ty: Type.t}
        | Type of Type.t
-      
+
       fun layout s =
          case s of
             Type t => Type.layout t
@@ -1541,7 +1543,7 @@ structure Scheme =
 
       fun apply (s, ts) =
          #instance (instantiate' (s, fn {index, ...} => Vector.sub (ts, index)))
-         
+
       fun instantiate s =
          instantiate'
          (s, fn {canGeneralize, equality, ...} =>
@@ -1769,7 +1771,7 @@ structure Type =
          homConVar {con = fn (_, c, ts) => con (c, ts),
                     expandOpaque = expandOpaque,
                     var = fn (_, a) => var a}
-         
+
       fun deRecord t =
          let
             val {hom, destroy} =

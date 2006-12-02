@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature ANALYZE2_STRUCTS = 
    sig
       include SSA_TREE2
@@ -16,7 +16,7 @@ signature ANALYZE2_STRUCTS =
 signature ANALYZE2 = 
    sig
       include ANALYZE2_STRUCTS
-      
+
       val analyze:
          {coerce: {from: 'a,
                    to: 'a} -> unit,

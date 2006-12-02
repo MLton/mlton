@@ -13,12 +13,12 @@ structure Timer: TIMER =
             datatype t = T of {sys: Time.time, usr: Time.time}
 
             fun export (T r) = r
-               
+
             fun (T {sys, usr}) - (T {sys = s', usr = u'}) =
                T {sys = Time.- (sys, s'),
                   usr = Time.- (usr, u')}
          end
-      
+
       type cpu_timer = {gc: SysUsr.t, self: SysUsr.t}
 
       fun startCPUTimer (): cpu_timer =
@@ -48,7 +48,7 @@ structure Timer: TIMER =
             {sys = Time.+ (#sys gc, #sys nongc),
              usr = Time.+ (#usr gc, #usr nongc)}
          end
-               
+
       val totalCPUTimer =
          let
             val t = startCPUTimer ()
@@ -64,7 +64,7 @@ structure Timer: TIMER =
 
       fun checkRealTimer (t: real_timer): Time.time =
          Time.- (startRealTimer (), t)
-         
+
       val totalRealTimer =
          let
             val t = startRealTimer ()

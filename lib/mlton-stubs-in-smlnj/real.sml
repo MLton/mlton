@@ -7,7 +7,7 @@
  *)
 
 type int = Int32.int
-   
+
 signature REAL =
    sig
       type real
@@ -110,7 +110,7 @@ structure Real: REAL =
               | GEN io => Pervasive.StringCvt.GEN (toIntOpt io)
               | SCI io => Pervasive.StringCvt.SCI (toIntOpt io)
          end)
-         
+
       fun fromLargeInt i =
          valOf (Real.fromString (LargeInt.toString i))
 

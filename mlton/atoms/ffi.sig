@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature FFI_STRUCTS = 
    sig
       structure CFunction: C_FUNCTION

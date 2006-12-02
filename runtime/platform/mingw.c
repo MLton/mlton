@@ -4,15 +4,36 @@
 
 #include "windows.c"
 
-void decommit (void *base, size_t length) {
+void GC_decommit (void *base, size_t length) {
         Windows_decommit (base, length);
 }
 
-HANDLE fileDesHandle (int fd) {
-        return (HANDLE)(_get_osfhandle (fd));
+void *GC_mmapAnon (void *start, size_t length) {
+        return Windows_mmapAnon (start, length);
 }
 
-int getpagesize (void) {
+void GC_release (void *base, 
+                 __attribute__ ((unused)) size_t length) {
+        Windows_release (base);
+}
+
+Word32 GC_totalRam (void) {
+        MEMORYSTATUS memStat;
+
+        memStat.dwLength = sizeof(memStat);
+        GlobalMemoryStatus(&memStat);
+        return memStat.dwTotalPhys;
+}
+
+HANDLE fileDesHandle (int fd) {
+  // The temporary prevents a "cast does not match function type" warning.
+  long t;
+
+  t = _get_osfhandle (fd);
+  return (HANDLE)t;
+}
+
+size_t GC_pageSize (void) {
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
         return sysinfo.dwPageSize;
@@ -30,22 +51,6 @@ int mkstemp (char *template) {
         if (0 == GetTempFileName (file_path, templ, 0, file_name))
                 diee ("unable to make temporary file");
         return _open (file_name, _O_CREAT | _O_RDWR, _S_IREAD | _S_IWRITE);
-}
-
-void *mmapAnon (void *start, size_t length) {
-        return Windows_mmapAnon (start, length);
-}
-
-void release (void *base, size_t length) {
-        Windows_release (base);
-}
-
-Word32 totalRam (GC_state s) {
-        MEMORYSTATUS memStat;
-
-        memStat.dwLength = sizeof(memStat);
-        GlobalMemoryStatus(&memStat);
-        return memStat.dwTotalPhys;
 }
 
 /* ------------------------------------------------- */
@@ -66,7 +71,7 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
         LARGE_INTEGER li;
         __int64 t;
         static bool tzInit = FALSE;
-        
+
         unless (tzInit) {
                 tzInit = TRUE;
                 _tzset();
@@ -86,9 +91,11 @@ int gettimeofday (struct timeval *tv, struct timezone *tz) {
 /*                   MLton.Itimer                    */
 /* ------------------------------------------------- */
 
-int setitimer (int which, 
-                const struct itimerval *value, 
-                struct itimerval *ovalue) {
+__attribute__ ((noreturn))
+int setitimer (__attribute__ ((unused)) int which, 
+               __attribute__ ((unused)) const struct itimerval *value, 
+               __attribute__ ((unused)) struct itimerval *ovalue) {
+        // !!! perhaps use code from alarm?
         die ("setitimer not implemented");
 }
 
@@ -98,7 +105,7 @@ int setitimer (int which,
 
 static struct rlimit rlimits[RLIM_NLIMITS];
 
-static void initRlimits () {
+static void initRlimits (void) {
         static int done = FALSE;
         int lim;
 
@@ -141,23 +148,42 @@ int setrlimit (int resource, const struct rlimit *rlp) {
 /*                   MLton.Rusage                    */
 /* ------------------------------------------------- */
 
-/* This is implemented to fill in the times with zeros, so that we can compile
- * MLton.
+/* GetProcessTimes and GetSystemTimeAsFileTime are documented at:
+ *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/getprocesstimes.asp
+ *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getsystemtimeasfiletime.asp
  */
-
-int fixedGetrusage (int who, struct rusage *usage) {
-        usage->ru_utime.tv_sec = 0;
-        usage->ru_utime.tv_usec = 0;
-        usage->ru_stime.tv_sec = 0;
-        usage->ru_stime.tv_usec = 0;
-        return 0;
+int getrusage (int who, struct rusage *usage) {
+  FILETIME ct, et, kt, ut;
+  LARGE_INTEGER li, lj;
+  if (GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut)) {
+    usage->ru_utime.tv_sec = ut.dwHighDateTime;
+    usage->ru_utime.tv_usec = ut.dwLowDateTime/10;
+    usage->ru_stime.tv_sec = kt.dwHighDateTime;
+    usage->ru_stime.tv_usec = kt.dwLowDateTime/10;
+    return 0;
+  }
+  /* if GetProcessTimes failed, use real time [for Windows] */
+  GetSystemTimeAsFileTime(&ut);
+  li.LowPart = ut.dwLowDateTime;
+  li.HighPart = ut.dwHighDateTime;
+  lj.LowPart = Time_sec;
+  lj.HighPart = Time_usec;
+  li.QuadPart -= lj.QuadPart;
+  usage->ru_utime.tv_sec = li.HighPart;
+  usage->ru_utime.tv_usec = li.LowPart/10;
+  usage->ru_stime.tv_sec = 0;
+  usage->ru_stime.tv_usec = 0;
+  return 0;
 }
 
 /* ------------------------------------------------- */
 /*                       OS.IO                       */
 /* ------------------------------------------------- */
 
-int poll (struct pollfd *ufds, unsigned int nfds, int timeout) {
+__attribute__ ((noreturn))
+int poll (__attribute__ ((unused)) struct pollfd *ufds, 
+          __attribute__ ((unused)) unsigned int nfds, 
+          __attribute__ ((unused)) int timeout) {
         die ("poll not implemented");
 }
 
@@ -165,13 +191,14 @@ int poll (struct pollfd *ufds, unsigned int nfds, int timeout) {
 /*                   Posix.FileSys                   */
 /* ------------------------------------------------- */
 
-#if FALSE
 static void GetWin32FileName (int fd, char* fname) {
         HANDLE fh, fhmap;
         DWORD fileSize, fileSizeHi;
         void* pMem = NULL;
-        
-        fh = (HANDLE)_get_osfhandle (fd);
+        long tmp;
+
+        tmp = _get_osfhandle (fd);
+        fh = (HANDLE)tmp;
         fileSize = GetFileSize (fh, &fileSizeHi);
         fhmap = CreateFileMapping (fh, NULL, PAGE_READONLY, 0, fileSize, NULL);
         if (fhmap) {
@@ -184,33 +211,44 @@ static void GetWin32FileName (int fd, char* fname) {
         }
         return; 
 }
-#endif
-
-int chown (const char *path, uid_t owner, gid_t group) {
-        die ("chown not implemented");
-}
 
 int fchmod (int filedes, mode_t mode) {
-        die ("chown not implemented");
-//      char fname[MAX_PATH + 1];
-//
-//      GetWin32FileName (filedes, fname);
-//      return _chmod (fname, mode);
+      char fname[MAX_PATH + 1];
+
+      GetWin32FileName (filedes, fname);
+      return _chmod (fname, mode);
 }
 
-int fchown (int fd, uid_t owner, gid_t group) {
+int fchdir (int filedes) {
+      char fname[MAX_PATH + 1];
+
+      GetWin32FileName (filedes, fname);
+      return chdir (fname);
+}
+
+__attribute__ ((noreturn))
+int chown (__attribute__ ((unused)) const char *path, 
+           __attribute__ ((unused)) uid_t owner, 
+           __attribute__ ((unused)) gid_t group) {
+        die ("chown not implemented");
+}
+
+__attribute__ ((noreturn))
+int fchown (__attribute__ ((unused)) int fd, 
+            __attribute__ ((unused)) uid_t owner, 
+            __attribute__ ((unused)) gid_t group) {
         die ("fchown not implemented");
 }
 
-long fpathconf (int filedes, int name) {
+__attribute__ ((noreturn))
+long fpathconf (__attribute__ ((unused)) int filedes, 
+                __attribute__ ((unused)) int name) {
         die ("fpathconf not implemented");
 }
 
-int ftruncate (int fd, off_t length) {
-        return _chsize (fd, length);
-}
-
-int link (const char *oldpath, const char *newpath) {
+__attribute__ ((noreturn))
+int link (__attribute__ ((unused)) const char *oldpath, 
+          __attribute__ ((unused)) const char *newpath) {
         die ("link not implemented");
 }
 
@@ -220,30 +258,56 @@ int lstat (const char *file_name, struct stat *buf) {
 }
 
 int mkdir2 (const char *pathname, mode_t mode) {
-        return mkdir (pathname);
+        return mkdir (pathname, mode);
 }
 
-int mkfifo (const char *pathname, mode_t mode) {
+__attribute__ ((noreturn))
+int mkfifo (__attribute__ ((unused)) const char *pathname, 
+            __attribute__ ((unused)) mode_t mode) {
         die ("mkfifo not implemented");
 }
 
-long pathconf (char *path, int name) {
+__attribute__ ((noreturn))
+long pathconf (__attribute__ ((unused)) const char *path, 
+               __attribute__ ((unused)) int name) {
         die ("pathconf not implemented");
 }
 
-int readlink (const char *path, char *buf, size_t bufsiz) {
+__attribute__ ((noreturn))
+int readlink (__attribute__ ((unused)) const char *path, 
+              __attribute__ ((unused)) char *buf, 
+              __attribute__ ((unused)) size_t bufsiz) {
         die ("readlink not implemented");
 }
 
-int symlink (const char *oldpath, const char *newpath) {
+__attribute__ ((noreturn))
+int symlink (__attribute__ ((unused)) const char *oldpath, 
+             __attribute__ ((unused)) const char *newpath) {
         die ("symlink not implemented");
 }
+
+int truncate (const char *path, off_t len) {
+  int fd;
+
+  if ((fd = open(path, O_RDWR)) == -1)
+    return -1;
+  if (ftruncate(fd, len) < 0) {
+    close(fd);
+    return -1;
+  }
+  close(fd);
+  return 0;
+}
+
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
 /* ------------------------------------------------- */
 
-int fcntl (int fd, int cmd, ...) {
+__attribute__ ((noreturn))
+int fcntl (__attribute__ ((unused)) int fd, 
+           __attribute__ ((unused)) int cmd, 
+           ...) {
         die ("fcntl not implemented");
 }
 
@@ -252,31 +316,31 @@ int fsync (int fd) {
 }
 
 int pipe (int filedes[2]) {
-        HANDLE read;
-        HANDLE write;
-        
+        HANDLE read_h;
+        HANDLE write_h;
+
         /* We pass no security attributes (0), so the current policy gets
          * inherited. The pipe is set to NOT stay open in child processes.
          * This will be corrected using DuplicateHandle in create()
          * The 4k buffersize is choosen b/c that's what linux uses.
          */
-        if (!CreatePipe(&read, &write, 0, 4096)) {
+        if (!CreatePipe(&read_h, &write_h, 0, 4096)) {
                 errno = ENOMEM; /* fake errno: out of resources */
                 return -1;
         }
         /* This requires Win98+
          * Choosing text/binary mode is defered till a later setbin/text call
          */
-        filedes[0] = _open_osfhandle((long)read,  _O_RDONLY);
-        filedes[1] = _open_osfhandle((long)write, _O_WRONLY);
+        filedes[0] = _open_osfhandle((long)read_h,  _O_RDONLY);
+        filedes[1] = _open_osfhandle((long)write_h, _O_WRONLY);
         if (filedes[0] == -1 or filedes[1] == -1) {
                 if (filedes[0] == -1) 
-                        CloseHandle(read); 
+                        CloseHandle(read_h); 
                 else    close(filedes[0]);
                 if (filedes[1] == -1) 
-                        CloseHandle(write);
+                        CloseHandle(write_h);
                 else    close(filedes[1]);
-                
+
                 errno = ENFILE;
                 return -1;
         }
@@ -287,36 +351,53 @@ int pipe (int filedes[2]) {
 /*                   Posix.ProcEnv                   */
 /* ------------------------------------------------- */
 
-char *ctermid (char *s) {
+__attribute__ ((noreturn))
+char *ctermid (__attribute__ ((unused)) char* s) {
         die ("*ctermid not implemented");
 }
+
+__attribute__ ((noreturn))
 gid_t getegid (void) {
         die ("getegid not implemented");
 }
+
+__attribute__ ((noreturn))
 uid_t geteuid (void) {
         die ("geteuid not implemented");
 }
+
+__attribute__ ((noreturn))
 gid_t getgid (void) {
         die ("getgid not implemented");
 }
-int getgroups (int size, gid_t list[]) {
+
+__attribute__ ((noreturn))
+int getgroups (__attribute__ ((unused)) int size, 
+               __attribute__ ((unused)) gid_t list[]) {
         die ("getgroups not implemented");
 }
+
+__attribute__ ((noreturn))
 char *getlogin (void) {
         die ("*getlogin not implemented");
 }
-pid_t getpgid(pid_t pid) {
+
+__attribute__ ((noreturn))
+pid_t getpgid(__attribute__ ((unused)) pid_t pid) {
         die ("getpgid not implemented");
 }
+
+__attribute__ ((noreturn))
 pid_t getpgrp(void) {
         die ("getpgrp not implemented");
 }
-pid_t getpid (void) {
-        die ("getpid not implemented");
-}
+
+__attribute__ ((noreturn))
 pid_t getppid (void) {
         die ("getppid not implemented");
 }
+
+__attribute__ ((noreturn))
 uid_t getuid (void) {
         die ("getuid not implemented");
 }
@@ -329,39 +410,54 @@ int setenv (const char *name, const char *value, int overwrite) {
                 errno = EEXIST;
                 return -1; /* previous mingw setenv was buggy and returned 0 */
         }
-        
+
         if (SetEnvironmentVariable (name, value)) {
                 errno = ENOMEM; /* this happens often in Windows.. */
                 return -1;
         }
-        
+
         return 0;
 }
 
-int setgid (gid_t gid) {
+__attribute__ ((noreturn))
+int setgid (__attribute__ ((unused)) gid_t gid) {
         die ("setgid not implemented");
 }
 
-int setgroups (size_t size, gid_t *list) {
+__attribute__ ((noreturn))
+int setgroups (__attribute__ ((unused)) size_t size, 
+               __attribute__ ((unused)) gid_t *list) {
         die ("setgroups not implemented");
 }
 
-int setpgid (pid_t pid, pid_t pgid) {
+__attribute__ ((noreturn))
+int setpgid (__attribute__ ((unused)) pid_t pid, 
+             __attribute__ ((unused)) pid_t pgid) {
         die ("setpgid not implemented");
 }
+
+__attribute__ ((noreturn))
 pid_t setsid (void) {
         die ("setsid not implemented");
 }
-int setuid (uid_t uid) {
+
+__attribute__ ((noreturn))
+int setuid (__attribute__ ((unused)) uid_t uid) {
         die ("setuid not implemented");
 }
-long sysconf (int name) {
+
+__attribute__ ((noreturn))
+long sysconf (__attribute__ ((unused)) int name) {
         die ("sysconf not implemented");
 }
-clock_t times (struct tms *buf) {
+
+__attribute__ ((noreturn))
+clock_t times (__attribute__ ((unused)) struct tms *buf) {
         die ("times not implemented");
 }
-char *ttyname (int desc) {
+
+__attribute__ ((noreturn))
+char *ttyname (__attribute__ ((unused)) int desc) {
         die ("*ttyname not implemented");
 }
 
@@ -438,9 +534,11 @@ static UINT_PTR curr_timer = 0;
 static int curr_timer_dur = 0;
 static LARGE_INTEGER timer_start_val;
 
-VOID CALLBACK alarm_signalled(HWND window, UINT message,
-        UINT_PTR timer_id, DWORD time)
-{
+
+static VOID CALLBACK alarm_signalled(__attribute__ ((unused)) HWND window,
+                                     __attribute__ ((unused)) UINT message,
+                                     __attribute__ ((unused)) UINT_PTR timer_id,
+                                     __attribute__ ((unused)) DWORD timestamp) {
     printf("Timer fired\n");
 }
 
@@ -451,7 +549,7 @@ int alarm (int secs) {
         LARGE_INTEGER timer_end_val, frequency;
         int remaining = 0;
         long elapse = secs * 1000;      /* win32 uses usecs */
-    
+
         /* Unsetting the alarm */
         if (secs == 0 && curr_timer == 0) {
             return 0;
@@ -481,11 +579,15 @@ int alarm (int secs) {
         return remaining;
 }
 
+__attribute__ ((noreturn))
 pid_t fork (void) {
         die ("fork not implemented");
 }
 
-int kill (pid_t pid, int sig) {
+
+__attribute__ ((noreturn))
+int kill (__attribute__ ((unused)) pid_t pid, 
+          __attribute__ ((unused)) int sig) {
         die ("kill not implemented");
 }
 
@@ -496,6 +598,7 @@ int nanosleep (const struct timespec *req, struct timespec *rem) {
         return 0;
 }
 
+__attribute__ ((noreturn))
 int pause (void) {
         die ("pause not implemented");
 }
@@ -505,11 +608,15 @@ unsigned int sleep (unsigned int seconds) {
         return 0;
 }
 
-pid_t wait (int *status) {
+__attribute__ ((noreturn))
+pid_t wait (__attribute__ ((unused)) int *status) {
         die ("wait not implemented");
 }
 
-pid_t waitpid (pid_t pid, int *status, int options) {
+__attribute__ ((noreturn))
+pid_t waitpid (__attribute__ ((unused)) pid_t pid, 
+               __attribute__ ((unused)) int *status, 
+               __attribute__ ((unused)) int options) {
         die ("waitpid not implemented");
 }
 
@@ -575,19 +682,24 @@ int sigismember (const sigset_t *set, const int signum) {
         return (*set & SIGTOMASK(signum)) ? 1 : 0;
 }
 
+
+/* With a bit of work and a redirected signal() function, we could
+ * probably emulate these methods properly. AtM blocking is a lie.
+ */
+static sigset_t signals_blocked = 0;
+static sigset_t signals_pending = 0;
+
 int sigpending (sigset_t *set) {
-        die ("sigpending not implemented");
+        *set = signals_pending;
+        return 0;
 }
 
 int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
-
-        sigset_t opmask;
-
         if (oldset) {
-                //*oldset = opmask;
+                *oldset = signals_blocked;
         }
         if (set) {
-                sigset_t newmask = opmask;
+                sigset_t newmask = signals_blocked;
 
                 switch (how) {
                         case SIG_BLOCK:
@@ -605,24 +717,26 @@ int sigprocmask (int how, const sigset_t *set, sigset_t *oldset) {
                         default:
                                 return -1;
                 }
-                //(void) set_signal_mask (newmask, opmask);
+
+                signals_blocked = newmask;
         }
         return 0;
 }
 
-int sigsuspend (const sigset_t *mask) {
-        die ("sigsuspend not implemented");
+__attribute__ ((noreturn))
+int sigsuspend (__attribute__ ((unused)) const sigset_t *mask) {
+        die("sigsuspend is unimplemented, but could be hacked in if needed");
 }
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
 /* ------------------------------------------------- */
 
-void Posix_IO_setbin (Fd fd) {
+void Posix_IO_setbin (C_Fd_t fd) {
         _setmode (fd, _O_BINARY);
 }
 
-void Posix_IO_settext (Fd fd) {
+void Posix_IO_settext (C_Fd_t fd) {
         _setmode (fd, _O_TEXT);
 }
 
@@ -635,15 +749,17 @@ static LPUSER_INFO_3 usrData = NULL;
 
 static struct passwd passwd;
 
-struct group *getgrgid (gid_t gid) {
+__attribute__ ((noreturn))
+struct group *getgrgid (__attribute__ ((unused)) gid_t gid) {
         die ("getgrgid not implemented");
 }
 
-struct group *getgrnam (const char *name) {
+__attribute__ ((noreturn))
+struct group *getgrnam (__attribute__ ((unused)) const char *name) {
         die ("getgrnam not implemented");
 }
 
-struct passwd *getpwnam (const char *name) {
+struct passwd *getpwnam (__attribute__ ((unused)) const char *name) {
         return NULL;
 //      unless (NERR_Success == 
 //                      NetUserGetInfo (NULL, (LPCWSTR)name, INFO_LEVEL, 
@@ -657,7 +773,8 @@ struct passwd *getpwnam (const char *name) {
         return &passwd;
 }
 
-struct passwd *getpwuid (uid_t uid) {
+__attribute__ ((noreturn))
+struct passwd *getpwuid (__attribute__ ((unused)) uid_t uid) {
         die ("getpwuid not implemented");
 }
 
@@ -665,51 +782,72 @@ struct passwd *getpwuid (uid_t uid) {
 /*                     Posix.TTY                     */
 /* ------------------------------------------------- */
 
-speed_t cfgetispeed (struct termios *termios_p) {
+__attribute__ ((noreturn))
+speed_t cfgetispeed (__attribute__ ((unused)) struct termios *termios_p) {
         die ("cfgetispeed not implemented");
 }
 
-speed_t cfgetospeed (struct termios *termios_p) {
+__attribute__ ((noreturn))
+speed_t cfgetospeed (__attribute__ ((unused)) struct termios *termios_p) {
         die ("cfgetospeed not implemented");
 }
 
-int cfsetispeed (struct termios *termios_p, speed_t speed) {
+__attribute__ ((noreturn))
+int cfsetispeed (__attribute__ ((unused)) struct termios *termios_p, 
+                 __attribute__ ((unused)) speed_t speed) {
         die ("cfsetispeed not implemented");
 }
 
-int cfsetospeed (struct termios *termios_p, speed_t speed) {
+__attribute__ ((noreturn))
+int cfsetospeed (__attribute__ ((unused)) struct termios *termios_p, 
+                 __attribute__ ((unused)) speed_t speed) {
         die ("cfsetospeed not implemented");
 }
 
-int tcdrain (int fd) {
+__attribute__ ((noreturn))
+int tcdrain (__attribute__ ((unused)) int fd) {
         die ("tcdrain not implemented");
 }
 
-int tcflow (int fd, int action) {
+__attribute__ ((noreturn))
+int tcflow (__attribute__ ((unused)) int fd, 
+            __attribute__ ((unused)) int action) {
         die ("tcflow not implemented");
 }
 
-int tcflush (int fd, int queue_selector) {
+__attribute__ ((noreturn))
+int tcflush (__attribute__ ((unused)) int fd, 
+             __attribute__ ((unused)) int queue_selector) {
         die ("tcflush not implemented");
 }
 
-int tcgetattr (int fd, struct termios *termios_p) {
+__attribute__ ((noreturn))
+int tcgetattr (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcgetattr not implemented");
 }
 
-pid_t tcgetpgrp (int fd) {
+__attribute__ ((noreturn))
+pid_t tcgetpgrp (__attribute__ ((unused)) int fd) {
         die ("tcgetpgrp not implemented");
 }
 
-int tcsendbreak (int fd, int duration) {
+__attribute__ ((noreturn))
+int tcsendbreak (__attribute__ ((unused)) int fd, 
+                 __attribute__ ((unused)) int duration) {
         die ("tcsendbreak not implemented");
 }
 
-int tcsetattr (int fd, int optional_actions, struct termios *termios_p) {
+__attribute__ ((noreturn))
+int tcsetattr (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) int optional_actions, 
+               __attribute__ ((unused)) struct termios *termios_p) {
         die ("tcsetattr not implemented");
 }
 
-int tcsetpgrp (int fd, pid_t pgrpid) {
+__attribute__ ((noreturn))
+int tcsetpgrp (__attribute__ ((unused)) int fd, 
+               __attribute__ ((unused)) pid_t pgrpid) {
         die ("tcsetpgrp not implemented");
 }
 
@@ -717,9 +855,9 @@ int tcsetpgrp (int fd, pid_t pgrpid) {
 /*                      Process                      */
 /* ------------------------------------------------- */
 
-Pid MLton_Process_cwait (Pid pid, Pointer status) {
+C_PId_t MLton_Process_cwait (C_PId_t pid, Pointer status) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* -1 on error, the casts here are due to bad types on both sides */
         return _cwait ((int*)status, (_pid_t)h, 0);
@@ -729,11 +867,18 @@ Pid MLton_Process_cwait (Pid pid, Pointer status) {
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
-int ioctl (int d, int request, ...) {
+__attribute__ ((noreturn))
+int ioctl (__attribute__ ((unused)) int d, 
+           __attribute__ ((unused)) int request, 
+           ...) {
         die ("ioctl not implemented");
 }
 
-int socketpair (int d, int type, int protocol, int sv[2]) {
+__attribute__ ((noreturn))
+int socketpair (__attribute__ ((unused)) int d, 
+                __attribute__ ((unused)) int type, 
+                __attribute__ ((unused)) int protocol, 
+                __attribute__ ((unused)) int sv[2]) {
         die ("socketpair not implemented");
 }
 
@@ -741,12 +886,55 @@ void MLton_initSockets () {
         static Bool isInitialized = FALSE;
         WORD version;
         WSADATA wsaData;
-        
+
         unless (isInitialized) {
                 isInitialized = TRUE;
                 version = MAKEWORD (2,2);
                 WSAStartup (version, &wsaData);
         }
+}
+
+/* ------------------------------------------------- */
+/*                      Syslog                       */
+/* ------------------------------------------------- */
+
+static const char* logident = "<unknown>";
+static int logopt = LOG_PERROR;
+static int logfacility = LOG_LOCAL0;
+
+void openlog(const char* ident, int opt, int facility) {
+  logident = ident;
+  logopt = opt;
+  logfacility = facility;
+}
+
+void closelog(void) {
+}
+
+void syslog(int priority, const char* fmt, const char* msg) {
+  static const char* severity[] = {
+    "debug", 
+    "informational", 
+    "notice", 
+    "warning", 
+    "error", 
+    "CRITICAL", 
+    "ALERT", 
+    "EMERGENCY"
+  };
+
+  if (priority < 0) priority = LOG_DEBUG;
+  if (priority > LOG_EMERG) priority = LOG_EMERG;
+
+
+  /* !!! Use ReportEvent to log with windows */
+
+  if ((logopt & LOG_PERROR) != 0) {
+    if ((logopt & LOG_PID) != 0)
+      fprintf(stderr, "%s(%d): %s: %s\n", logident, getpid(), severity[priority], msg);
+    else
+      fprintf(stderr, "%s: %s: %s\n", logident, severity[priority], msg);
+  }
 }
 
 /* ------------------------------------------------- */

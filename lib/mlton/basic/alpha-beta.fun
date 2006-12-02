@@ -92,7 +92,7 @@ structure Interval =
          else let open Layout
               in seq [Value.layout lower, str "-", Value.layout upper]
               end
-           
+
       val make = T
 
       local

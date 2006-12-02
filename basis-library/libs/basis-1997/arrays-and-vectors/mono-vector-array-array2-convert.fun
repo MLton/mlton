@@ -30,7 +30,7 @@ functor MonoVectorArrayArray2Convert
   struct
      fun shift1 f (_, s, _) = fn (i:int, x) => f (i + s, x)
      fun shift2 f (_, s, _) = fn (i:int, x, y) => f (i + s, x, y)
-      
+
      structure V =
        struct
           open Vector

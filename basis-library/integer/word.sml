@@ -6,68 +6,100 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Word (W: PRE_WORD_EXTRA): WORD_EXTRA =
+functor Word (W: PRIM_WORD) : WORD_EXTRA =
 struct
 
 open W
-structure PW = Primitive.Word
+type t = word
 
-val detectOverflow = Primitive.detectOverflow
+val wordSize: Int.int = Primitive.Int32.zextdToInt sizeInBits
+val sizeInBitsWord = Primitive.Word32.zextdToWord sizeInBitsWord
 
-(* These are overriden in patch.sml after int-inf.sml has been defined. *)
-val toLargeInt: word -> LargeInt.int = fn _ => raise Fail "toLargeInt"
-val toLargeIntX: word -> LargeInt.int = fn _ => raise Fail "toLargeIntX"
-val fromLargeInt: LargeInt.int -> word = fn _ => raise Fail "fromLargeInt"
+fun << (i, n) = 
+   if Word.>= (n, sizeInBitsWord)
+      then zero
+      else W.<<? (i, Primitive.Word32.zextdFromWord n)
+fun >> (i, n) = 
+   if Word.>= (n, sizeInBitsWord)
+      then zero
+      else W.>>? (i, Primitive.Word32.zextdFromWord n)
+fun ~>> (i, n) =
+   if Word.< (n, sizeInBitsWord)
+      then W.~>>? (i, Primitive.Word32.zextdFromWord n)
+      else W.~>>? (i, Primitive.Word32.- (W.sizeInBitsWord, 0w1))
+fun rol (i, n) = W.rolUnsafe (i, Primitive.Word32.zextdFromWord n)
+fun ror (i, n) = W.rorUnsafe (i, Primitive.Word32.zextdFromWord n)
 
-val wordSizeWord: Word.word = PW.fromInt wordSize
-val wordSizeMinusOneWord: Word.word = PW.fromInt (Int.-? (wordSize, 1))
-val zero: word = fromInt 0
-
-val toLargeWord = toLarge
-val toLargeWordX = toLargeX
-val fromLargeWord = fromLarge
-
+val fromInt = W.sextdFromInt
+val toIntX = W.schckToInt
 fun toInt w =
-   if detectOverflow
-      andalso Int.>= (wordSize, Int.precision')
-      andalso w > fromInt Int.maxInt'
-      then raise Overflow
-   else W.toInt w
-                      
-fun toIntX w =
-  if detectOverflow
-     andalso Int.> (wordSize, Int.precision')
-     andalso fromInt Int.maxInt' < w
-     andalso w < fromInt Int.minInt'
-     then raise Overflow
-  else W.toIntX w
+   let
+      val i = W.zchckToInt w
+   in
+      if Primitive.Controls.detectOverflow
+         andalso (case Int.precision of
+                     NONE => false
+                   | SOME precision => 
+                        Int32.<= (precision, W.sizeInBits))
+         andalso Int.< (i, 0)
+         then raise Overflow
+         else i
+   end
+val fromLargeInt = W.sextdFromLargeInt
+val toLargeIntX = W.schckToLargeInt
+fun toLargeInt w =
+   let
+      val i = W.zchckToLargeInt w
+   in
+      if Primitive.Controls.detectOverflow
+         andalso (case LargeInt.precision of
+                     NONE => false
+                   | SOME precision => 
+                        Int32.<= (precision, W.sizeInBits))
+         andalso LargeInt.< (i, 0)
+         then raise Overflow
+         else i
+   end
+
+val fromLargeWord = W.zextdFromLargeWord
+val fromLarge = fromLargeWord
+val toLargeWordX = W.sextdToLargeWord
+val toLargeX = toLargeWordX
+val toLargeWord = W.zextdToLargeWord
+val toLarge = toLargeWord
+
+val fromWord = W.zextdFromWord
+val toWordX = W.sextdToWord
+val toWord = W.zextdToWord
 
 local
-   fun make f (w, w') =
-      if Primitive.safe andalso w' = zero
-         then raise Div
-      else f (w, w')
+   (* Allocate a buffer large enough to hold any formatted word in any radix.
+    * The most that will be required is for maxWord in binary.
+    *)
+   val maxNumDigits = wordSize
+   val oneBuf = One.make (fn () => CharArray.array (maxNumDigits, #"\000"))
 in
-   val op div = make (op div)
-   val op mod = make (op mod)
+   fun fmt radix (w: word): string =
+      One.use
+      (oneBuf, fn buf =>
+      let
+         val radix = fromInt (StringCvt.radixToInt radix)
+         fun loop (q, i: Int.int) =
+            let
+               val _ =
+                  CharArray.update
+                  (buf, i, StringCvt.digitToChar (toInt (q mod radix)))
+               val q = q div radix
+            in
+               if q = zero
+                  then CharArraySlice.vector
+                       (CharArraySlice.slice (buf, i, NONE))
+                  else loop (q, Int.- (i, 1))
+            end
+      in
+         loop (w, Int.- (maxNumDigits, 1))
+      end)
 end
-
-fun << (i, n) 
-  = if PW.>=(n ,wordSizeWord)
-      then zero
-      else W.<<(i, n)
-
-fun >> (i, n) 
-  = if PW.>=(n, wordSizeWord)
-      then zero
-      else W.>>(i, n)
-
-fun ~>> (i, n) 
-  = if PW.<(n, wordSizeWord)
-      then W.~>>(i, n)
-      else W.~>>(i, wordSizeMinusOneWord)
-
-val {compare, min, max} = Util.makeCompare(op <)
 
 fun fmt radix (w: word): string =
    let val radix = fromInt (StringCvt.radixToInt radix)
@@ -75,7 +107,7 @@ fun fmt radix (w: word): string =
          let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
             val q = q div radix
          in if q = zero
-               then String0.implode chars
+               then PreString.implode chars
             else loop (q, chars)
          end
    in loop (w, [])
@@ -154,6 +186,3 @@ structure Word8 = Word (Primitive.Word8)
 structure Word16 = Word (Primitive.Word16)
 structure Word32 = Word (Primitive.Word32)
 structure Word64 = Word (Primitive.Word64)
-structure Word = Word32
-structure WordGlobal: WORD_GLOBAL = Word
-open WordGlobal

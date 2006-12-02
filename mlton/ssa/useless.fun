@@ -11,7 +11,7 @@ struct
 
 open S
 type int = Int.t
-   
+
 (* useless thing elimination
  *  remove components of tuples that are constants (use unification)
  *  remove function arguments that are constants
@@ -45,7 +45,7 @@ type int = Int.t
  * do
  * Another solution would be to unify all handler args.
  *)
-   
+
 structure Value =
    struct
       structure Set = DisjointSet
@@ -67,7 +67,7 @@ structure Value =
             val makeUseful = makeTop
             val isUseful = isTop
          end
-      
+
       datatype t =
          T of {new: (Type.t * bool) option ref,
                ty: Type.t,
@@ -92,7 +92,7 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
-   
+
       local
          open Layout
       in
@@ -147,7 +147,7 @@ structure Value =
                 | _ => Error.bug "Useless.Value.unify: strange"
             end
       and unifySlot ((v, e), (v', e')) = (unify (v, v'); Exists.== (e, e'))
-         
+
       fun coerce {from = from as T sfrom, to = to as T sto}: unit =
          if Set.equals (sfrom, sto)
             then ()
@@ -183,7 +183,7 @@ structure Value =
       fun coerces {from, to} =
          Vector.foreach2 (from, to, fn (from, to) =>
                           coerce {from = from, to = to})
-         
+
       fun foreach (v: t, f: Useful.t -> unit): unit  =
          let
             fun loop (v: t): unit =
@@ -199,7 +199,7 @@ structure Value =
          in
             loop v
          end
-      
+
       (* Coerce every ground value in v to u. *)
       fun deepCoerce (v: t, u: Useful.t): unit =
          foreach (v, fn u' => Useful.<= (u', u))
@@ -207,7 +207,7 @@ structure Value =
       val deepCoerce =
          Trace.trace2 ("Useless.deepCoerce", layout, Useful.layout, Unit.layout)
          deepCoerce
-         
+
       fun deground (v: t): Useful.t =
          case value v of
             Ground g => g
@@ -390,7 +390,7 @@ structure Value =
       val isUseful = Trace.trace ("Useless.isUseful", layout, Bool.layout) isUseful
 
       val newType = Trace.trace ("Useless.newType", layout, Type.layout) newType
-         
+
       fun newTypes (vs: t vector): Type.t vector =
          Vector.keepAllMap (vs, fn v =>
                             let val (t, b) = getNew v

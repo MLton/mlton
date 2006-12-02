@@ -30,7 +30,7 @@ fun fromString s = T {string = s, pos = 0}
 fun fromFile f = fromString (File.contents f)
 
 fun beginning (T {string, ...}) = T {string = string, pos = 0}
-   
+
 exception BackwardChars
 fun backwardChars (T {string, pos},n) =
    let val pos = pos - n
@@ -50,9 +50,9 @@ fun forwardChar m = forwardChars (m, 1)
 val forwardChar = Trace.trace ("Mark.forwardChar", layout, layout) forwardChar
 
 fun charAt (T {string, pos}) = String.sub (string, pos)
-   
+
 fun lookingAtChar (m, c) = Char.equals (charAt m, c)
-   
+
 local
    fun searchChar move (m, c) =
       let
@@ -68,13 +68,13 @@ end
 
 fun bol m = forwardChar (searchCharBackward (m, #"\n"))
    handle _ => beginning m
-      
+
 fun eol m = searchCharForward (m, #"\n")
 
 fun whatColumn m = diff (m, bol m)
 
 fun numColumns m = diff (eol m, bol m)
-   
+
 local
    fun moveLines move =
       let
@@ -156,7 +156,7 @@ val real = Trace.trace ("Mark.real", layout, Layout.tuple2 (layout, Real.layout)
 val op < = fn (m, m') => pos m < pos m'
 
 val equals = fn (m, m') => pos m = pos m'
-   
+
 val {>, >=, <=, min, max, compare} =
    Relation.lessEqual {< = op <, equals = op =}
 

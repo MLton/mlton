@@ -14,6 +14,6 @@ signature CONSTANT_PROPAGATION_STRUCTS =
 signature CONSTANT_PROPAGATION = 
    sig
       include CONSTANT_PROPAGATION_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

@@ -14,6 +14,6 @@ signature USELESS_STRUCTS =
 signature USELESS = 
    sig
       include USELESS_STRUCTS
-      
+
       val useless: Program.t -> Program.t
    end

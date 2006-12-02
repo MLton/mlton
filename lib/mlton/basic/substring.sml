@@ -22,7 +22,7 @@ structure Substring: SUBSTRING =
                   end
 
       val toString = string
-         
+
       val layout = String1.layout o toString
 
       fun endOf ss =

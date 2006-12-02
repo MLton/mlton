@@ -14,6 +14,6 @@ signature TYPE_CHECK_STRUCTS =
 signature TYPE_CHECK = 
    sig
       include TYPE_CHECK_STRUCTS
-      
+
       val typeCheck: Program.t -> unit
    end

@@ -7,7 +7,7 @@
 
 structure Error: ERROR =
 struct
-   
+
 fun bug msg = raise (Fail msg)
 
 fun reraise (exn, msg) =

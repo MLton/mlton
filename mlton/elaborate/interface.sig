@@ -40,7 +40,7 @@ signature INTERFACE =
       sharing AdmitsEquality = EnvTypeStr.AdmitsEquality
       structure Kind: TYCON_KIND
       sharing Kind = EnvTypeStr.Kind
-         
+
       structure FlexibleTycon:
          sig
             type typeStr
@@ -92,7 +92,7 @@ signature INTERFACE =
       structure Status:
          sig
             datatype t = Con | Exn | Var
-               
+
             val layout: t -> Layout.t
             val toString: t -> string
          end
@@ -115,7 +115,7 @@ signature INTERFACE =
          sig
             datatype t = T of {name: Ast.Con.t,
                                scheme: Scheme.t} vector
-               
+
             val empty: t
             val layout: t -> Layout.t
          end
@@ -159,7 +159,7 @@ signature INTERFACE =
          end
 
       type t
-      
+
       val copy: t -> t (* copy renames all flexible tycons. *)
       val equals: t * t -> bool
       val dest: t -> {strs: (Ast.Strid.t * t) array,

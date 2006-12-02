@@ -96,7 +96,7 @@ struct
 
          val default = make "cm2mlb-map"
       end
-   
+
    fun cm2mlb {defines, maps, out, sources} =
       let
          (* Define preprocessor symbols *)
@@ -120,7 +120,7 @@ struct
                List.concat
                ((List.map AnchorMap.make maps) @
                 [AnchorMap.default])
-               
+
             fun peekAnchorMap cmAnchor' =
                case List.find (fn {cmAnchor, ...} => cmAnchor = cmAnchor') anchorMap of
                   NONE => NONE
@@ -138,7 +138,7 @@ struct
                       let
                          val cmLibDescr = CM.Library.descr cmLib
                          val cmLibOSString = CM.Library.osstring cmLib
-                            
+
                          fun mlbLibDef () =
                             let
                                val {base, ext} = OS.Path.splitBaseExt cmLibOSString

@@ -13,6 +13,6 @@ signature ZONE_STRUCTS =
 signature ZONE = 
    sig
       include ZONE_STRUCTS
-      
+
       val zone: Program.t -> Program.t
    end

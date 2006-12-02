@@ -8,7 +8,7 @@
 signature POINTER =
    sig
       type 'a t
-      
+
       val ! : 'a t -> 'a
       val := : 'a t * 'a -> unit
 

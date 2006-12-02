@@ -27,7 +27,7 @@ fun toList a =
                     end :: ac)
    in loop (nRows a - 1, [])
    end
-   
+
 fun layout f a = List.layout (List.layout f) (toList a)
 
 fun wholeRegion a : 'a region =
@@ -57,10 +57,10 @@ fun foreachi (a, f) =
    foldi RowMajor (fn (r, c, a, ()) => f (r, c, a)) () (wholeRegion a)
 
 fun foreach (a, f) = foreachi (a, f o #3)
-   
+
 fun copy a = tabulate (nRows a, nCols a, fn (r, c) => sub (a, r, c))
 
 fun new (r, c, x) = tabulate (r, c, fn _ => x)
-   
+
 end
 

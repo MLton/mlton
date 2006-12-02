@@ -23,7 +23,7 @@ signature HTTP =
              | Trace
              | Extension of string
          end
-      
+
       structure RequestUrl:
          sig
             datatype t =
@@ -35,7 +35,7 @@ signature HTTP =
 
             val toString: t -> string
          end
-      
+
       structure Version:
          sig
             datatype t = T of {major: int,
@@ -176,7 +176,7 @@ signature HTTP =
             val regexp: unit -> Regexp.Compiled.t
             val toString: t -> string
          end
-      
+
       structure Post:
          sig
             structure Encoding:
@@ -191,7 +191,7 @@ signature HTTP =
                   val file: File.t -> t
                   val string: string -> t
                end
-                       
+
             datatype t =
                T of {encoding: Encoding.t,
                      fields: {name: string,
@@ -211,7 +211,7 @@ functor TestHttp (S: HTTP): sig end =
 struct
 
 open S
-   
+
 val _ = 
    Assert.assert
    ("TestHttp", fn () =>

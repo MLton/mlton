@@ -8,12 +8,12 @@
 
 functor DirectExp2 (S: DIRECT_EXP2_STRUCTS): DIRECT_EXP2 =
 struct
-  
+
 open S
 
 structure DirectExp =
 struct
-   
+
 datatype t =
    Arith of {prim: Type.t Prim.t,
              args: t vector,
@@ -269,7 +269,7 @@ structure Cont:
       val receiveExp = ReceiveExp
       val receiveVar = ReceiveVar
       val return = Return
-      
+
       fun toBind (k: t, ty: Type.t): bind =
          case k of
             Bind b => b

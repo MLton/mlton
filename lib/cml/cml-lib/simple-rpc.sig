@@ -17,7 +17,7 @@ signature SIMPLE_RPC =
       val mkRPC : ('a -> 'b) -> 
          {call     : 'a -> 'b,
           entryEvt : unit event}
-         
+
       val mkRPC_In : (('a * 'c) -> 'b) -> 
          {call     : 'a -> 'b,
           entryEvt : 'c -> unit event}

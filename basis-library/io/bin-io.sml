@@ -12,12 +12,12 @@ structure BinIO: BIN_IO_EXTRA =
     structure PrimIO = BinPrimIO
     structure Vector = Word8Vector
     structure VectorSlice = Word8VectorSlice
-    val chunkSize = Primitive.TextIO.bufSize
-    val fileTypeFlags = [PosixPrimitive.FileSys.O.binary]
+    val chunkSize = Int32.toInt (Primitive.Controls.bufSize)
+    val fileTypeFlags = [PrimitiveFFI.Posix.FileSys.O.BINARY]
     val line = NONE
     val mkReader = Posix.IO.mkBinReader
     val mkWriter = Posix.IO.mkBinWriter
     val someElem = 0wx0: Word8.word
     val xlatePos = SOME {fromInt = fn i => i,
                          toInt = fn i => i})
-       
+

@@ -8,32 +8,33 @@
 
 structure MLtonItimer =
    struct
-      structure Prim = Primitive.Itimer
-         
+      structure Prim = PrimitiveFFI.MLton.Itimer
+
       datatype t = Prof | Real | Virtual
 
       val signal =
-         fn Prof => PosixPrimitive.Signal.prof
-          | Real => PosixPrimitive.Signal.alrm
-          | Virtual => PosixPrimitive.Signal.vtalrm
+         fn Prof => PosixSignal.prof
+          | Real => PosixSignal.alrm
+          | Virtual => PosixSignal.vtalrm
 
       val toInt =
-         fn Prof => Prim.prof
-          | Real => Prim.real
-          | Virtual => Prim.virtual
+         fn Prof => Prim.PROF
+          | Real => Prim.REAL
+          | Virtual => Prim.VIRTUAL
 
       fun set' (t, {interval, value}) =
          let
             fun split t =
                let
-                  val (q, r) = IntInf.quotRem (Time.toMicroseconds t, 1000000)
+                  val q = LargeInt.quot (Time.toMicroseconds t, 1000000)
+                  val r = LargeInt.rem (Time.toMicroseconds t, 1000000)
                in
-                  (IntInf.toInt q, IntInf.toInt r)
+                  (C_Time.fromLargeInt q, C_SUSeconds.fromLargeInt r)
                end
             val (s1, u1) = split interval
             val (s2, u2) = split value
          in
-            Prim.set (toInt t, s1, u1, s2, u2)
+            ignore (Prim.set (toInt t, s1, u1, s2, u2))
          end
 
       fun set (z as (t, _)) =

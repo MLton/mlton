@@ -13,7 +13,7 @@ open S
 
 type ty = Type.t
 type tyvar = Tyvar.t
-   
+
 datatype t = T of {tyvars: Tyvar.t vector,
                    ty: Type.t}
 

@@ -72,7 +72,7 @@ fun project1 s = replace(s,
 fun project2 s = replace(s,
                          fn Pair(_, y) => SOME y
                           | _ => Error.error "UnorderedUniverse.project2")
-    
+
 fun update (c, x, y) =
     let fun update[] = [Pair(x, y)]
           | update((Pair(x', y')) :: ps) =

@@ -7,7 +7,7 @@
 
 functor PolyUnorderedSet(): POLY_SET =
 struct
-   
+
 structure I = Int
 structure L = List
 
@@ -17,7 +17,7 @@ type 'a info = {equal: 'a * 'a -> bool,
 datatype 'a t = T of 'a List.t * 'a info
 
 fun elts(T(xs, _)) = xs
-   
+
 fun empty info = T([], info)
 
 fun isEmpty s = List.isEmpty(elts s)
@@ -30,7 +30,7 @@ fun contains(T(elts, {equal, ...}), x) =
    L.exists(elts, fn x' => equal(x, x'))
 
 fun s <= s' = forall(s, fn x => contains(s', x))
-   
+
 fun equal(s, s') = s <= s' andalso s' <= s
 
 fun s >= s' = s' <= s
@@ -47,7 +47,7 @@ fun add(s as T(elts, info), x) =
 
 fun subset(T(elts, info), f) =
    T(L.keepAll(elts, f), info)
-    
+
 fun s1 - s2 = subset(s1, fn x => not(contains(s2, x)))
 
 fun s1 + (s2 as T(x2s, _)) = let val T(x1s, info) = s1 - s2
@@ -59,7 +59,7 @@ fun s1 + (s2 as T(x2s, _)) = let val T(x1s, info) = s1 - s2
 fun intersect(s, s') = subset(s, fn x => contains(s', x))
 
 fun toList(T(xs, _)) = xs
-    
+
 fun remove(T(xs, info as {equal, ...}), x) =
    T(L.remove(xs, fn x' => equal(x, x')),
      info)

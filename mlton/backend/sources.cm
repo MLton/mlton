@@ -11,10 +11,10 @@ Group
 signature MACHINE
 signature REP_TYPE
 signature RUNTIME
- 
+
 functor Backend
 functor Machine
-   
+
 is
 
 ../../lib/mlton/sources.cm

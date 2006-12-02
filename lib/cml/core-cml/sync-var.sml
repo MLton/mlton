@@ -15,12 +15,12 @@ structure SyncVar : SYNC_VAR_EXTRA =
    struct
       structure Assert = LocalAssert(val assert = false)
       structure Debug = LocalDebug(val debug = false)
-         
+
       structure Q = ImpQueue
       structure S = Scheduler
       structure E = Event
       fun debug msg = Debug.sayDebug ([S.atomicMsg, S.tidMsg], msg)
-         
+
       datatype trans_id = datatype TransID.trans_id
       datatype trans_id_state = datatype TransID.trans_id_state
 
@@ -268,7 +268,7 @@ structure SyncVar : SYNC_VAR_EXTRA =
 
       val iVar = newCell
       val sameIVar = sameCell
-         
+
       fun iPut (cell, x) = gPut ("iPut", cell, x)
       local fun doGetSwap _ = ()
       in

@@ -41,9 +41,9 @@ structure ExnStack =
          structure ZPoint =
             struct
                datatype t = Local | Slot
-               
+
                val equals: t * t -> bool = op =
-               
+
                val toString =
                   fn Local => "Local"
                    | Slot => "Slot"

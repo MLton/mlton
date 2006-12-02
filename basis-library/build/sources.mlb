@@ -1,0 +1,364 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+ann  
+   "deadCode true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused false" "forceUsed"
+in
+   ../primitive/primitive.mlb
+   ../top-level/infixes.sml
+   ../top-level/infixes-unsafe.sml
+   ../util/dynamic-wind.sig
+   ../util/dynamic-wind.sml
+
+   ../integer/iwconv0.sml
+   ../integer/num0.sml
+   local 
+      ../config/bind/int-prim.sml 
+      ../config/bind/pointer-prim.sml
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/header/$(HEADER_WORD)
+      ../config/seqindex/$(SEQINDEX_INT)
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+   end end
+   ../integer/int-inf0.sml
+   local
+      local 
+         ../config/bind/int-prim.sml 
+         ../config/bind/int-inf-prim.sml 
+         ../config/bind/word-prim.sml 
+      in ann "forceUsed" in
+         ../config/default/$(DEFAULT_INT)
+         ../config/default/$(DEFAULT_WORD)
+         ../config/default/fixed-int.sml
+         ../config/default/large-int.sml
+         ../config/default/large-word.sml
+         ../config/c/position.sml
+         ../config/c/sys-word.sml
+      end end
+   in
+      ../integer/num1.sml
+   end
+
+   local 
+      ../config/bind/char-prim.sml 
+      ../config/bind/int-prim.sml 
+      ../config/bind/int-inf-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/string-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
+      ../config/default/$(DEFAULT_CHAR)
+      ../config/default/$(DEFAULT_INT)
+      ../config/default/$(DEFAULT_REAL)
+      ../config/default/$(DEFAULT_WORD)
+      ../config/default/fixed-int.sml
+      ../config/default/large-int.sml
+      ../config/default/large-real.sml
+      ../config/default/large-word.sml
+   end end
+   ../general/general.sig
+   ../general/general.sml
+   ../util/one.sml
+   ../general/option.sig
+   ../general/option.sml
+   ../list/list.sig
+   ../list/list.sml
+   ../list/list-pair.sig
+   ../list/list-pair.sml
+   local 
+      ../config/bind/int-prim.sml 
+   in ann "forceUsed" in
+      ../config/seqindex/$(SEQINDEX_INT)
+   end end
+   ../arrays-and-vectors/slice.sig
+   ../arrays-and-vectors/sequence.sig
+   ../arrays-and-vectors/sequence.fun
+   ../arrays-and-vectors/vector-slice.sig
+   ../arrays-and-vectors/vector.sig
+   ../arrays-and-vectors/vector.sml
+   ../arrays-and-vectors/array-slice.sig
+   ../arrays-and-vectors/array.sig
+   ../arrays-and-vectors/array.sml
+   ../arrays-and-vectors/array2.sig
+   ../arrays-and-vectors/array2.sml
+   ../arrays-and-vectors/mono-vector-slice.sig
+   ../arrays-and-vectors/mono-vector.sig
+   ../arrays-and-vectors/mono-vector.fun
+   ../arrays-and-vectors/mono-array-slice.sig
+   ../arrays-and-vectors/mono-array.sig
+   ../arrays-and-vectors/mono-array.fun
+   ../arrays-and-vectors/mono-array2.sig
+   ../arrays-and-vectors/mono-array2.fun
+   ../arrays-and-vectors/mono.sml
+   ../text/string0.sml
+   ../text/char0.sml
+   ../util/reader.sig
+   ../util/reader.sml
+   ../text/string-cvt.sig
+   ../text/string-cvt.sml
+   ../general/bool.sig
+   ../general/bool.sml
+   ../integer/integer.sig
+   ../integer/int.sml
+   ../integer/word.sig
+   ../integer/word.sml
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
+   end end
+   ../integer/int-inf.sig
+   ../integer/int-inf.sml
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/int-inf-top.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/default/$(DEFAULT_INT)
+      ../config/default/$(DEFAULT_WORD)
+      ../config/default/fixed-int.sml
+      ../config/default/large-int.sml
+      ../config/default/large-word.sml
+   end end
+   ../integer/int-global.sml
+   ../integer/word-global.sml
+   ../top-level/arithmetic.sml
+   ../util/natural.sml
+   ../integer/embed-int.sml
+   ../integer/embed-word.sml
+   ../integer/pack-word.sig
+   ../integer/pack-word.sml
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
+   end end
+
+   ../text/char.sig
+   ../text/char.sml
+   ../text/string.sig
+   ../text/string.sml
+   ../text/substring.sig
+   ../text/substring.sml
+   ../text/char-global.sml
+   ../text/string-global.sml
+   ../text/substring-global.sml
+   ../text/byte.sig
+   ../text/byte.sml
+   ../text/text.sig
+   ../text/text.sml
+
+   ../text/nullstring.sml
+   ../util/CUtil.sig
+   ../util/CUtil.sml
+
+   ../real/IEEE-real.sig
+   ../real/IEEE-real.sml
+   ../real/math.sig
+   ../real/real.sig
+   ../real/real.sml
+   local 
+      ../config/bind/real-top.sml 
+   in ann "forceUsed" in
+      ../config/default/$(DEFAULT_REAL)
+      ../config/default/large-real.sml
+   end end
+   ../real/real-global.sml
+   ../real/pack-real.sig
+   ../real/pack-real.sml
+   local 
+      ../config/bind/int-top.sml 
+      ../config/bind/pointer-prim.sml
+      ../config/bind/real-top.sml 
+      ../config/bind/word-top.sml 
+   in ann "forceUsed" in
+      ../config/header/$(HEADER_WORD)
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
+   end end
+
+   ../util/unique-id.sig
+   ../util/unique-id.fun
+   ../util/cleaner.sig
+   ../util/cleaner.sml
+
+   ../config/c/sys-types.sml
+   ../system/pre-os.sml
+
+   ../posix/error.sig
+   ../posix/error.sml
+
+   ../system/time.sig
+   ../system/time.sml
+   ../system/date.sig
+   ../system/date.sml
+   ../io/io.sig
+   ../io/io.sml
+   ../io/prim-io.sig
+   ../io/prim-io.fun
+   ../io/bin-prim-io.sml
+   ../io/text-prim-io.sml
+
+   ../posix/stub-mingw.sml
+   ../posix/flags.sig
+   ../posix/flags.sml
+   ../posix/signal.sig
+   ../posix/signal.sml
+   ../posix/proc-env.sig
+   ../posix/proc-env.sml
+   ../posix/file-sys.sig
+   ../posix/file-sys.sml
+   ../posix/io.sig
+   ../posix/io.sml
+   ../posix/process.sig
+   ../posix/process.sml
+   ../posix/sys-db.sig
+   ../posix/sys-db.sml
+   ../posix/tty.sig
+   ../posix/tty.sml
+   ../posix/posix.sig
+   ../posix/posix.sml
+
+   ../platform/cygwin.sml
+
+   ../io/stream-io.sig
+   ../io/stream-io.fun
+   ../io/imperative-io.sig
+   ../io/imperative-io.fun
+   ../io/bin-stream-io.sig
+   ../io/bin-io.sig
+   ../io/bin-io.sml
+   ../io/text-stream-io.sig
+   ../io/text-io.sig
+   ../io/text-io.sml
+
+   ../system/path.sig
+   ../system/path.sml
+   ../system/file-sys.sig
+   ../system/file-sys.sml
+   ../system/command-line.sig
+   ../system/command-line.sml
+
+   ../general/sml90.sig
+   ../general/sml90.sml
+
+   ../mlton/pointer.sig
+   ../mlton/pointer.sml
+   ../mlton/call-stack.sig
+   ../mlton/call-stack.sml
+   ../mlton/exit.sml
+   ../mlton/exn.sig
+   ../mlton/exn.sml
+   ../mlton/thread.sig
+   ../mlton/thread.sml
+   ../mlton/signal.sig
+   ../mlton/signal.sml
+   ../mlton/process.sig
+   ../mlton/process.sml
+   ../mlton/gc.sig
+   ../mlton/gc.sml
+   ../mlton/rusage.sig
+   ../mlton/rusage.sml
+
+   ../system/process.sig
+   ../system/process.sml
+   ../system/io.sig
+   ../system/io.sml
+   ../system/os.sig
+   ../system/os.sml
+   ../system/unix.sig
+   ../system/unix.sml
+   ../system/timer.sig
+   ../system/timer.sml
+
+   ../net/net.sig
+   ../net/net.sml
+   ../net/net-host-db.sig
+   ../net/net-host-db.sml
+   ../net/net-prot-db.sig
+   ../net/net-prot-db.sml
+   ../net/net-serv-db.sig
+   ../net/net-serv-db.sml
+   ../net/socket.sig
+   ../net/socket.sml
+   ../net/generic-sock.sig
+   ../net/generic-sock.sml
+   ../net/inet-sock.sig
+   ../net/inet-sock.sml
+   ../net/unix-sock.sig
+   ../net/unix-sock.sml
+
+   ../mlton/array.sig
+   ../mlton/cont.sig
+   ../mlton/cont.sml
+   ../mlton/random.sig
+   ../mlton/random.sml
+   ../mlton/io.sig
+   ../mlton/io.fun
+   ../mlton/text-io.sig
+   ../mlton/bin-io.sig
+   ../mlton/itimer.sig
+   ../mlton/itimer.sml
+   ../mlton/ffi.sig
+   ann 
+      "ffiStr MLtonFFI" 
+   in
+      ../mlton/ffi.sml
+   end
+   ../mlton/int-inf.sig
+   ../mlton/platform.sig
+   ../mlton/platform.sml
+   ../mlton/proc-env.sig
+   ../mlton/proc-env.sml
+   ../mlton/profile.sig
+   ../mlton/profile.sml
+   (* ../mlton/ptrace.sig *)
+   (* ../mlton/ptrace.sml *)
+   ../mlton/rlimit.sig
+   ../mlton/rlimit.sml
+   ../mlton/socket.sig
+   ../mlton/socket.sml
+   ../mlton/syslog.sig
+   ../mlton/syslog.sml 
+   ../mlton/vector.sig
+   ../mlton/weak.sig
+   ../mlton/weak.sml
+   ../mlton/finalizable.sig
+   ../mlton/finalizable.sml
+   ../mlton/word.sig
+   ../mlton/world.sig
+   ../mlton/world.sml
+   ../mlton/mlton.sig
+   ../mlton/mlton.sml
+
+   ../sml-nj/sml-nj.sig
+   ../sml-nj/sml-nj.sml
+   ../sml-nj/unsafe.sig
+   ../sml-nj/unsafe.sml
+end

@@ -1,9 +1,9 @@
 #include <fenv.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <windows.h> // lots of stuff depends on this
 #include <io.h>
-#include <limits.h>
 #include <lm.h>
 #include <process.h>
 //#include <psapi.h>
@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <psapi.h>
 #undef max
 
 #define HAS_FEROUND TRUE
@@ -19,8 +20,9 @@
 // classifies subnormals as normals.  So, we disable it here, which causes the
 // runtime to use our own version.
 #define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY32 FALSE
+#define HAS_FPCLASSIFY64 FALSE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SIGNBIT TRUE
@@ -31,6 +33,12 @@
 
 typedef unsigned short gid_t;
 typedef unsigned short uid_t;
+typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
+typedef short nlink_t; // type of st_nlink in sys/stat.h
+
+// bullshit typedefs:
+typedef int id_t; // waitid() doesn't exist on windows
+typedef unsigned int nfds_t; // we have a fake poll() with this many fds
 
 int getpagesize (void);
 int mkstemp (char *template);
@@ -54,6 +62,8 @@ int mkstemp (char *template);
 #define F_SETFD 2
 #define F_GETFL 3
 #define F_SETFL 4
+#define F_GETOWN 5
+#define F_SETOWN 6
 #define F_GETLK 7
 #define F_SETLK 8
 #define F_RDLCK 1
@@ -148,7 +158,7 @@ struct pollfd {
         short revents;
 };
 
-int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
+int poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 
 /* ------------------------------------------------- */
 /*                    Posix.Error                    */
@@ -174,23 +184,35 @@ int poll (struct pollfd *ufds, unsigned int nfds, int timeout);
 #define S_IXGRP 0000010
 #define S_IXOTH 0000001
 
+// Do not exist in a windows filesystem
+#define S_IFLNK 0
+#define S_IFSOCK 0
+#define S_ISVTX 0
+
 #define O_NOCTTY 0x8000
 #define O_NONBLOCK 0x4000
 
-#define S_ISLNK(m) FALSE
-#define S_ISSOCK(m) FALSE
+// Synchronized writes? Safety of any kind? ... and windows?! hell no!
+#define O_SYNC 0
+
+// Use m to silence unused warnings
+#define S_ISLNK(m) (m?FALSE:FALSE)
+#define S_ISSOCK(m) (m?FALSE:FALSE)
 
 int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
+int fchdir (int filedes);
 int fchown (int fd, uid_t owner, gid_t group);
 long fpathconf (int filedes, int name);
-int ftruncate (int fd, off_t length);
 int link (const char *oldpath, const char *newpath);
 int lstat (const char *file_name, struct stat *buf);
 int mkfifo (const char *pathname, mode_t mode);
-long pathconf (char *path, int name);
+long pathconf (const char *path, int name);
 int readlink (const char *path, char *buf, size_t bufsiz);
 int symlink (const char *oldpath, const char *newpath);
+int truncate (const char *path, off_t len);
+
+#define mkdir(f, m) mkdir(f); chmod(f, m)
 
 /* ------------------------------------------------- */
 /*                     Posix.IO                      */
@@ -212,28 +234,13 @@ int pipe (int filedes[2]);
 /*                   Posix.ProcEnv                   */
 /* ------------------------------------------------- */
 
-#define _SC_BOGUS 0xFFFFFFFF
-#define _SC_2_FORT_DEV _SC_BOGUS
-#define _SC_2_FORT_RUN _SC_BOGUS
-#define _SC_2_SW_DEV _SC_BOGUS
-#define _SC_2_VERSION _SC_BOGUS
 #define _SC_ARG_MAX 0
-#define _SC_BC_BASE_MAX _SC_BOGUS
-#define _SC_BC_DIM_MAX _SC_BOGUS
-#define _SC_BC_SCALE_MAX _SC_BOGUS
-#define _SC_BC_STRING_MAX _SC_BOGUS
 #define _SC_CHILD_MAX 1
 #define _SC_CLK_TCK 2
-#define _SC_COLL_WEIGHTS_MAX _SC_BOGUS
-#define _SC_EXPR_NEST_MAX _SC_BOGUS
 #define _SC_JOB_CONTROL 5
-#define _SC_LINE_MAX _SC_BOGUS
 #define _SC_NGROUPS_MAX 3
 #define _SC_OPEN_MAX 4
-#define _SC_RE_DUP_MAX _SC_BOGUS
 #define _SC_SAVED_IDS 6
-#define _SC_STREAM_MAX _SC_BOGUS
-#define _SC_TZNAME_MAX 20
 #define _SC_VERSION 7
 
 struct tms {
@@ -259,7 +266,6 @@ int getgroups (int size, gid_t list[]);
 char *getlogin (void);
 pid_t getpgid(pid_t pid);
 pid_t getpgrp(void);
-pid_t getpid (void);
 pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
@@ -340,7 +346,7 @@ pid_t waitpid (pid_t pid, int *status, int options);
 
 #define _NSIG 32
 
-typedef void (*_sig_func_ptr)();
+typedef __p_sig_fn_t _sig_func_ptr;
 
 struct sigaction {
         int             sa_flags;
@@ -514,8 +520,17 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /*                      Socket                       */
 /* ------------------------------------------------- */
 
+// Unimplemented on windows:
 #define MSG_DONTWAIT 0
-#define UNIX_PATH_MAX   108
+#define MSG_WAITALL 0
+#define MSG_EOR 0
+#define MSG_CTRUNC 0
+
+// Has a different name:
+#define MSG_TRUNC MSG_PARTIAL
+
+
+#define UNIX_PATH_MAX 108
 
 typedef unsigned short  sa_family_t;
 
@@ -531,33 +546,41 @@ int socketpair (int d, int type, int protocol, int sv[2]);
 /*                      Syslog                       */
 /* ------------------------------------------------- */
 
-#define LOG_ALERT 0
-#define LOG_AUTHPRIV 0
-#define LOG_CONS 0
-#define LOG_CRIT 0
-#define LOG_CRON 0
-#define LOG_DAEMON 0
+#define LOG_EMERG 7
+#define LOG_ALERT 6
+#define LOG_CRIT 5
+#define LOG_ERR 4
+#define LOG_WARNING 3
+#define LOG_NOTICE 2
+#define LOG_INFO 1
 #define LOG_DEBUG 0
-#define LOG_EMERG 0
-#define LOG_ERR 0
-#define LOG_INFO 0
-#define LOG_KERN 0
-#define LOG_LOCAL0 0
-#define LOG_LOCAL1 0
-#define LOG_LOCAL2 0
-#define LOG_LOCAL3 0
-#define LOG_LOCAL4 0
-#define LOG_LOCAL5 0
-#define LOG_LOCAL6 0
-#define LOG_LOCAL7 0
-#define LOG_LPR 0
-#define LOG_MAIL 0
-#define LOG_NDELAY 0
-#define LOG_NEWS 0
-#define LOG_NOTICE 0
-#define LOG_PERROR 0
-#define LOG_PID 0
-#define LOG_SYSLOG 0
-#define LOG_USER 0
-#define LOG_UUCP 0
-#define LOG_WARNING 0
+
+#define LOG_PID    0x01 /* include PID in output */
+#define LOG_CONS   0x02 /* dump to console (meaningless for windows?) */
+#define LOG_ODELAY 0x04 /* delay open; meaningless---always open */
+#define LOG_NDELAY 0x08 /* don't delay; meaningless */
+#define LOG_NOWAIT 0x10 /* ignored and obsolete anyways */
+#define LOG_PERROR 0x20 /* print to standard error, honoured */
+
+#define LOG_AUTH 1
+#define LOG_CRON 2
+#define LOG_DAEMON 3
+#define LOG_KERN 4
+#define LOG_LOCAL0 5
+#define LOG_LOCAL1 6
+#define LOG_LOCAL2 7
+#define LOG_LOCAL3 8
+#define LOG_LOCAL4 9
+#define LOG_LOCAL5 10
+#define LOG_LOCAL6 11
+#define LOG_LOCAL7 12
+#define LOG_LPR 13
+#define LOG_MAIL 14
+#define LOG_NEWS 15
+#define LOG_SYSLOG 16
+#define LOG_USER 17
+#define LOG_UUCP 18
+
+void openlog(const char* ident, int logopt, int facility);
+void closelog(void);
+void syslog(int priority, const char* fmt, const char* msg);

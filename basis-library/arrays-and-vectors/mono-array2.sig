@@ -10,7 +10,7 @@ signature MONO_ARRAY2 =
                      col: int,
                      nrows: int option,
                      ncols: int option}
-         
+
       datatype traversal = datatype Array2.traversal
 
       val array: int * int * elem -> array 

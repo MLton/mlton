@@ -24,7 +24,7 @@ fun toString (tyvar: t) =
    let val {name, equality, ...} = node tyvar
    in (if equality then "''" else "'") ^ name
    end
-       
+
 val layout = Layout.str o toString
 
 local
@@ -39,7 +39,7 @@ end
 val clear = PropertyList.clear o plist
 fun equals (a, a') = PropertyList.equals (plist a, plist a')
 fun sameName (a, a') = String.equals (name a, name a')
-   
+
 fun newRegion ({name, equality}, region) =
    makeRegion ({name = name,
                 equality = equality,

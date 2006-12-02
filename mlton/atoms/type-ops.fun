@@ -20,7 +20,7 @@ end
 datatype realSize = datatype RealSize.t
 type tycon = Tycon.t
 type wordSize = WordSize.t
-   
+
 local
    fun nullary tycon = con (tycon, Vector.new0 ())
 in
@@ -33,7 +33,6 @@ in
    val word = WordSize.memoize (fn s => nullary (Tycon.word s))
 end
 
-val defaultReal = real RealSize.default
 val defaultWord = word WordSize.default
 
 local
@@ -48,7 +47,7 @@ end
 
 val word8 = word WordSize.byte
 val word8Vector = vector word8
-   
+
 local
    fun binary tycon (t1, t2) = con (tycon, Vector.new2 (t1, t2))
 in
@@ -78,7 +77,7 @@ val deArray = deUnary Tycon.array
 val deRef = deUnary Tycon.reff
 val deVector = deUnary Tycon.vector
 val deWeak = deUnary Tycon.weak
-   
+
 fun tuple ts =
    if 1 = Vector.length ts
       then Vector.sub (ts, 0)

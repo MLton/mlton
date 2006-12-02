@@ -40,7 +40,7 @@ functor GenericScheme
 functor HashType
 functor TypeOps
 functor UseName
-   
+
 is
 
 ../../lib/mlton/sources.cm

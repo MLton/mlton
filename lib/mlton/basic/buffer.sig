@@ -14,7 +14,7 @@ signature BUFFER_STRUCTS =
 signature BUFFER = 
    sig
       include BUFFER_STRUCTS
-      
+
       type 'a t
 
       val add: 'a t * 'a -> unit

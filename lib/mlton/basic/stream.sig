@@ -6,7 +6,7 @@
  *)
 
 type int = Pervasive.Int.int
-   
+
 signature STREAM_STRUCTS = 
    sig
    end
@@ -14,7 +14,7 @@ signature STREAM_STRUCTS =
 signature STREAM = 
    sig
       include STREAM_STRUCTS
-      
+
       type 'a t
 
       val append: 'a t * 'a t -> 'a t

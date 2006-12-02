@@ -2,52 +2,52 @@
 
 static struct hostent *hostent;
 
-Cstring NetHostDB_Entry_name() {
-        return (Cstring)hostent->h_name;
+C_String_t NetHostDB_getEntryName(void) {
+  return (C_String_t)(hostent->h_name);
 }
 
-Int NetHostDB_Entry_numAliases() {
-        int num = 0;
-        while (hostent->h_aliases[num] != NULL) num++;
-        return num;
+C_Int_t NetHostDB_getEntryAliasesNum(void) {
+  int num = 0;
+  while (hostent->h_aliases[num] != NULL) num++;
+  return num;
 }
 
-Cstring NetHostDB_Entry_aliasesN(Int n) {
-        return (Cstring)hostent->h_aliases[n];
+C_String_t NetHostDB_getEntryAliasesN(C_Int_t n) {
+  return (C_String_t)(hostent->h_aliases[n]);
 }
 
-Int NetHostDB_Entry_addrType() {
-        return hostent->h_addrtype;
+C_Int_t NetHostDB_getEntryAddrType(void) {
+  return hostent->h_addrtype;
 }
 
-Int NetHostDB_Entry_length() {
-        return hostent->h_length;
+C_Int_t NetHostDB_getEntryLength(void) {
+  return hostent->h_length;
 }
 
-Int NetHostDB_Entry_numAddrs() {
-        int num = 0;
-        while (hostent->h_addr_list[num] != NULL) num++;
-        return num;
+C_Int_t NetHostDB_getEntryAddrsNum(void) {
+  int num = 0;
+  while (hostent->h_addr_list[num] != NULL) num++;
+  return num;
 }
 
-void NetHostDB_Entry_addrsN(Int n, Pointer addr) {
-        int i;
-        for (i = 0; i < hostent->h_length; i++) {
-                addr[i] = hostent->h_addr_list[n][i];
-        }
-        return;
+void NetHostDB_getEntryAddrsN(C_Int_t n, Array(Word8_t) addr) {
+  int i;
+  for (i = 0; i < hostent->h_length; i++) {
+    ((char*)addr)[i] = hostent->h_addr_list[n][i];
+  }
+  return;
 }
 
-Bool NetHostDB_getByAddress(Pointer addr, Int len) {
-        hostent = gethostbyaddr(addr, len, AF_INET);
-        return (hostent != NULL and hostent->h_name != NULL);
+C_Int_t NetHostDB_getByAddress(Vector(Word8_t) addr, C_Socklen_t len) {
+  hostent = gethostbyaddr((const char*)addr, len, AF_INET);
+  return (C_Int_t)(hostent != NULL and hostent->h_name != NULL);
 }
 
-Bool NetHostDB_getByName(Cstring name) {
-        hostent = gethostbyname((char*)name);
-        return (hostent != NULL and hostent->h_name != NULL);
+C_Int_t NetHostDB_getByName(NullString8_t name) {
+  hostent = gethostbyname((const char*)name);
+  return (C_Int_t)(hostent != NULL and hostent->h_name != NULL);
 }
 
-Int NetHostDB_getHostName(Pointer buf, Int len) {
-        return (gethostname (buf, len));
+C_Errno_t(C_Int_t) NetHostDB_getHostName(Array(Char8_t) buf, C_Size_t len) {
+  return gethostname ((char*)buf, len);
 }

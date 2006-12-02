@@ -15,7 +15,7 @@ signature WORD_X_VECTOR_STRUCTS =
 signature WORD_X_VECTOR = 
    sig
       include WORD_X_VECTOR_STRUCTS
-      
+
       type t
 
       val elementSize: t -> WordSize.t

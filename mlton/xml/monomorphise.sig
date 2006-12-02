@@ -16,6 +16,6 @@ signature MONOMORPHISE_STRUCTS =
 signature MONOMORPHISE = 
    sig
       include MONOMORPHISE_STRUCTS
-      
+
       val monomorphise: Xml.Program.t -> Sxml.Program.t
    end

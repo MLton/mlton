@@ -10,23 +10,25 @@
 #include <sys/procfs.h>
 #include <sys/vminfo.h>
 
-#include "getrusage.c"
+#include "diskBack.unix.c"
 #include "mkdir2.c"
+#include "mmap-protect.c"
+#include "nonwin.c"
 #include "recv.nonblock.c"
-#include "ssmmap.c"
+#include "sysconf.c"
 #include "use-mmap.c"
 
-int fegetround(void)
+int fegetround (void)
 {
         return fp_read_rnd ();
 }
 
-void fesetround(int mode)
+void fesetround (int mode)
 {
         fp_swap_rnd (mode);
 }
 
-int fpclassify64(double d)
+int fpclassify64 (double d)
 {
         int c;
         c = class (d);
@@ -51,20 +53,9 @@ int fpclassify64(double d)
         }
 }
 
-W32 totalRam (GC_state s) {
-        struct vminfo info;
-        int pagesize;
-
-        pagesize = sysconf (_SC_PAGESIZE);
-        if (vmgetinfo (&info, VMINFO, sizeof(info)) < 0)
-                diee ("totalRam error: vmgetinfo failed\n");
-        return info.memsizepgs * pagesize;
-}
-
-
 struct map_type {
         int flag;
-        char *type;
+        const char *type;
 };
 
 static struct map_type map_types[] =
@@ -78,7 +69,7 @@ static struct map_type map_types[] =
 struct map_segment {
         prptr64_t start;
         prptr64_t end;
-        char *name;
+        const char *name;
 };
 
 static struct map_segment map_segments[] =
@@ -98,8 +89,8 @@ static struct map_segment map_segments[] =
          {0, 0, NULL}};
 
 
-static char *
-get_map_type(int flags, prptr64_t addr)
+static const char *
+get_map_type (int flags, prptr64_t addr)
 {
         struct map_type *m;
 
@@ -112,8 +103,8 @@ get_map_type(int flags, prptr64_t addr)
         return "";
 }
 
-static char *
-get_map_segment(prptr64_t addr)
+static const char *
+get_map_segment (prptr64_t addr)
 {
         struct map_segment *m;
 
@@ -125,7 +116,7 @@ get_map_segment(prptr64_t addr)
 
 #define BUFLEN 65536
 
-void showMem(void)
+void GC_displayMem (void)
 {
         pid_t pid = getpid ();
         char fname[128];

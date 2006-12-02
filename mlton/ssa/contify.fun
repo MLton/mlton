@@ -56,7 +56,7 @@ structure ContData =
     datatype t = T of {node: unit DirectedGraph.Node.t option ref,
                        rootEdge: bool ref,
                        prefixes: Func.t list ref}
-      
+
     fun new () = T {node = ref NONE,
                     rootEdge = ref false,
                     prefixes = ref []}
@@ -100,7 +100,7 @@ structure FuncData =
                     finished = ref false,
                     replace = ref NONE,
                     contified = ref []}
-      
+
     local
       fun make s = let
                      fun S' (T r) = s r
@@ -276,7 +276,7 @@ structure InitReachCallersCallees =
                           end
                        | _ => ())
                    end)
-              
+
           val dfs_param
             = DfsParam.finishNode
               (fn n => FuncData.reach' (getFuncData (getNodeInfo n)) := true)
@@ -521,7 +521,7 @@ structure Transform =
                                                    str ") = ",
                                                    Areturn.layout (!A)])
                                   end)
-                                                   
+
 
                      fun contify prefixes
                        = let

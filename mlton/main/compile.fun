@@ -61,7 +61,7 @@ structure CoreML = CoreML (open Atoms
                                     makeHom {con = con,
                                              expandOpaque = true,
                                              var = var}
-                                    
+
                                  val layout = layoutPretty
                               end)
 structure Xml = Xml (open Atoms)
@@ -139,10 +139,10 @@ fun setCommandLineConstant (c as {name, value}) =
    in
       List.push (commandLineConstants, c)
    end
-   
+
 val allConstants: (string * ConstType.t) list ref = ref []
 val amBuildingConstants: bool ref = ref false
-   
+
 val lookupConstant =
    let
       val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
@@ -330,7 +330,7 @@ structure MLBString:>
       val fromFile = quoteFile
 
       val fromString = fn s => s
-         
+
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
    end
 
@@ -370,7 +370,7 @@ fun parseAndElaborateMLB (input: MLBString.t)
              (Const.lookup := lookupConstant
               ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
     display = displayEnvDecs}
-   
+
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
 (* ------------------------------------------------- *)
@@ -379,7 +379,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val (_, decs) =
-         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/libs/primitive.mlb")
+         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/primitive/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
@@ -414,7 +414,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                 let
                    val _ =
                       File.outputContents
-                      (concat [!Control.libDir, "/include/types.h"], out)
+                      (concat [!Control.libDir, "/include/ml-types.h"], out)
                    fun print s = Out.output (out, s)
                    val _ = print "\n"
                    val _ = Ffi.declareHeaders {print = print}
@@ -445,22 +445,22 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          let
             fun get (name: string): Bytes.t =
                case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word) of
+                                    ConstType.Word WordSize.default) of
                   Const.Word w => Bytes.fromInt (WordX.toInt w)
                 | _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
          in
             Runtime.GCField.setOffsets
             {
-             canHandle = get "canHandle",
-             cardMap = get "cardMapForMutator",
+             canHandle = get "atomicState",
+             cardMap = get "generationalMaps.cardMapAbsolute",
              currentThread = get "currentThread",
-             curSourceSeqsIndex = get "curSourceSeqsIndex",
+             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex",
              exnStack = get "exnStack",
              frontier = get "frontier",
              limit = get "limit",
              limitPlusSlop = get "limitPlusSlop",
              maxFrameSize = get "maxFrameSize",
-             signalIsPending = get "signalIsPending",
+             signalIsPending = get "signalsInfo.signalIsPending",
              stackBottom = get "stackBottom",
              stackLimit = get "stackLimit",
              stackTop = get "stackTop"
@@ -488,7 +488,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
    in
       xml
    end
-      
+
 fun preCodegen {input: MLBString.t}: Machine.Program.t =
    let
       val xml = elaborate {input = input}
@@ -609,7 +609,7 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
    in
       machine
    end
- 
+
 fun compile {input: MLBString.t, outputC, outputS}: unit =
    let
       val machine =

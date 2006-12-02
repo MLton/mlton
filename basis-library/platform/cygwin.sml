@@ -7,10 +7,9 @@
 
 structure Cygwin =
    struct
-      structure Prim = Primitive.Cygwin
-         
       fun toFullWindowsPath p =
-         C.CS.toString (Prim.toFullWindowsPath (NullString.nullTerm p))
+         CUtil.C_String.toString
+         (PrimitiveFFI.Cygwin.toFullWindowsPath (NullString.nullTerm p))
 
       fun toExe cmd =
          let
@@ -20,8 +19,8 @@ structure Cygwin =
                let
                   val i = i - 1
                in
-                  if i < 0
-                     then addExe ()
+                  if i < 0 then
+                     addExe ()
                   else
                      let
                         val c = String.sub (cmd, i)
@@ -36,4 +35,4 @@ structure Cygwin =
             loop (size cmd)
          end
    end
-            
+

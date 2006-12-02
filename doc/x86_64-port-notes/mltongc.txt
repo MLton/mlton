@@ -1,0 +1,319 @@
+
+Notes on the MLton garbage collection system.  Until the "Thoughts on
+64-bits" section, a word is considered to be 32-bits.
+
+Garbage Collector
+=================
+
+MLton implements a relatively simple garbage collection strategy, that
+nonetheless adapts itself readily to different scenarios of memory usage.
+
+All ML objects (including ML execution stacks) are allocated in a
+contiguous heap.  The heap has the following general layout:
+
+  ---------------------------------------------------
+ |    old generation    |   to space   |   nursery   |
+  ---------------------------------------------------
+ ^                       ^                ^          ^
+ start                   back             frontier   limit
+
+New ML objects are allocated in the nursery at the frontier.  Upon
+exhausting the nursery (i.e., when limit - frontier is insufficient
+for the next object allocation), a garbage collection is initiated.  
+
+It should be noted that in the absence of memory pressure, the
+to-space is of zero size and the old-generation is simply the live
+data from the last garbage collection.  Hence, generational garbage
+collection is only enabled when the program display sufficiently high
+memory usage.
+
+In the common, non-generational scenario, a garbage collection
+involves one of two major garbage collection strategies.  If there is
+sufficient memory to allocate a second heap of approximately the same
+size as the current heap, then a Cheney Copy garbage collection is
+performed.  (In practice, the second heap is already allocated and the
+two semi-spaces are swapped at each Cheney Copy.)  If there is
+insufficient memory for a second semi-space, then a Mark Compact
+garbage collection is performed.
+
+After a Mark Compact garbage collection, or if the live ratio is low
+enough, the runtime switches to a generational collection.  In this
+scenario, the current live data becomes the old-generation, while the
+remaining space is split into the to-space and the nursery.  A minor
+garbage collection copies live objects from the nursery to the
+beginning of to-space, thereby extending the old-generation and
+shrinking the space available for the to-space and the nursery.
+Eventually, the nursery becomes too small to accomodate new object
+allocations, and a major garbage collection is intiated.
+
+The MLton garbage collector additionally supports weak pointers and
+object finalizers, hash-consing (sharing) of both the entire heap and
+the heap reachable from individual objects, computing the dynamic size
+of objects, and provides some runtime support for profiling.
+
+In the sequel we will refer to pointers to objects in the ML heap as
+"heap pointers".  Note that a valid heap pointer is always bounded by
+the start pointer and the limit pointer of the current heap.  Hence,
+heap pointers admit representations other than the native pointer
+representation.  Furthermore, precise garbage collection requires
+identifying all heap pointers in ML objects.
+
+There are four kinds of ML objects: array, normal (fixed size), stack,
+and weak.  Each object has a header (currently, a 32-bit word), which
+immediately precedes the object data.  A heap pointer always denotes
+the address following the header (i.e., the first data word); there
+are no heap pointers to object interiors.
+
+
+A header word has the following bit layout:
+
+  00        : 1
+  01 - 19   : type index bits
+  20 - 30   : counter bits, used by mark compact GC
+       31   : mark bit, used by mark compact GC
+
+Normal objects have the following layout:
+
+  header word :: 
+  (non heap-pointers)* :: 
+  (heap pointers)*
+
+Note that the non heap-pointers denote a sequence of primitive data
+values.  These data values need not map directly to values of the
+native word size.  MLton's aggressive representation strategies may
+pack multiple primitive values into the same native word.  Likewise, a
+primitive value may span multiple native words (e.g., Word64.word).
+
+Array objects have the following layout:
+
+  counter word :: 
+  length word :: 
+  header word :: 
+  ( (non heap-pointers)* :: (heap pointers)* )*
+
+The counter word is used by mark compact GC.  The length word is the
+number of elements in the array.  Array elements have the same
+individual layout as normal objects, omitting the header word.
+
+Stack objects have the following layout:
+
+  header word ::
+  markTop pointer ::
+  markIndex word ::
+  reserved word ::
+  used word ::
+  ... reserved bytes ...
+
+The markTop pointer and markIndex word are used by mark compact GC.
+The reserved word gives the number of bytes for the stack (before the
+next ML object).  The used word gives the number of bytes currently
+used by the stack.  The sequence of reserved bytes correspond to ML
+stack frames, which will be discussed in more detail below.
+
+Weak objects have the following layout:
+
+  header word ::
+  unused word ::
+  link word ::
+  heap-pointer
+
+
+The type index of a header word is an index into an array, where each
+element describes the layout of an object.  The 19 bits available for
+the type index means that there are only 2^19 different object layouts
+per program.  The "hello-world" program yields 37 object types in the
+array, though there are only 19 distinct object types.
+
+The type index array is declared as follows:
+
+        typedef enum { 
+                ARRAY_TAG,
+                NORMAL_TAG,
+                STACK_TAG,
+                WEAK_TAG,
+        } GC_ObjectTypeTag;
+
+        typedef struct {
+                GC_ObjectTypeTag tag;
+                Bool hasIdentity;
+                ushort numNonPointers;
+                ushort numPointers;
+        } GC_ObjectType;
+
+        GC_ObjectType *objectTypes; /* Array of object types. */
+
+The objectTypes pointer is initialized to point to a static array of
+object types that is emitted for each compiled program.  The
+hasIdentity field indicates whether or not the object has mutable
+fields, in which case it may not be hash-cons-ed.  In a normal object,
+the numNonPointers field indicates the number of 32-bit words of non
+heap-pointer data, while the numPointers field indicates the number of
+heap pointers.  In an array object, the numNonPointers field indicates
+the number of bytes of non heap-pointer data, while the numPointers
+field indicates the number of heap pointers.  In a stack object, the
+numNonPointers and numPointers fields are irrelevant.  In a weak
+object, the numNonPointers and numPointers fields are interpreted as
+in a normal object.
+
+As an example, here is a portion of the static data emitted for the
+"hello-world" program:
+
+static GC_ObjectType objectTypes[] = {
+        { 2, FALSE, 0, 0 },
+        { 0, FALSE, 1, 0 },
+        { 1, TRUE, 2, 1 },
+        { 3, FALSE, 3, 0 },
+        { 0, FALSE, 4, 0 },
+        ...
+}
+
+
+The "... reserved bytes ..." of a stack object constitute a linear
+sequence of frames.  For the purposes of garbage collection, we must
+be able to recover the size and offsets of live heap-pointers for each
+frame.  This data is declared as follows:
+
+        typedef ushort *GC_offsets;
+
+        typedef struct GC_frameLayout {
+                char isC;
+                ushort numBytes;
+                GC_offsets offsets;
+        } GC_frameLayout;
+
+        GC_frameLayout *frameLayouts;
+
+The frameLayouts pointer is initialized to point to a static array of
+frame layouts that is emitted for each compiled program.  The isC
+field identified whether or not the frame is for a C call. (Note: The
+ML stack is distinct from the system stack.  A C call executes on the
+system stack.  The frame left on the ML stack is just a marker.)  The
+numBytes field indicates the size of the frame, including space for
+the return address.  The offsets field points to an array (the zeroeth
+element recording the size of the array) whose elements record byte
+offsets from the bottom of the frame at which live heap pointers are
+located.
+
+As an example, here is a portion of the static data emitted for the
+"hello-world" program:
+
+static ushort frameOffsets0[] = {0};
+static ushort frameOffsets1[] = {2,0,4};
+static ushort frameOffsets2[] = {1,0};
+static ushort frameOffsets3[] = {2,4,16};
+static ushort frameOffsets4[] = {1,4};
+...
+static GC_frameLayout frameLayouts[] = {
+        {TRUE, 4, frameOffsets0},
+        {FALSE, 4, frameOffsets0},
+        {TRUE, 20, frameOffsets1},
+        {TRUE, 20, frameOffsets2},
+        {FALSE, 12, frameOffsets0},
+        ...
+
+
+
+Thoughts on 64-bits:
+
+ * At this high level, I don't see obvious difficulties with adapting
+   the garbage collector to a 64-bit platform.  However, there are
+   certainly a number of design decisions.
+
+ * What representation for heap pointers?
+
+   There is a preliminary proposal from Stephen:
+     http://mlton.org/pipermail/mlton/2004-October/026162.html
+
+   Certainly, it would appear to be easiest to begin with a scenario
+   where heap pointers share the same representation as native
+   pointers (i.e., 64-bits).  However this means that ML objects will
+   be quite a bit bigger in the 64-bit world.  Ultimately, it would be
+   appropriate to have multiple strategies at hand.
+
+   Assuming that per-compile representation strategies are available,
+   the question arises as to how to best integrate with the runtime
+   system.  The compiler proper can handle internalizing/externalizing
+   heap pointers in the code it emits.  However, it seems likely that
+   we would want multiple libmlton.a libraries available,
+   corresponding to the different strategies.  The overhead of
+   consulting a flag in the runtime state to determine the
+   representation of heap pointers at every heap pointer dereference
+   would appear to much much too high.  The implementation may
+   certainly make use of inline functions or macros to unify the
+   different strategies, but it seems as though we will want to
+   compile different specializations of the runtime system.
+
+   Also, I think it makes sense to ensure that heap pointers passed
+   through the FFI are externalized -- that is, C code will only ever
+   see 64-bit pointers, regardless of the representation strategy.
+
+   However, there is an argument against this.  Currently, int ref ref
+   is a valid FFI type, and we currently claim that it has the
+   "natural C representation."  This claim would be broken if the
+   inner ref had a different heap pointer representation.
+
+   We could provide {extern,intern}HeapPointer functions for C, but
+   then it is not clear how to compile the C code, not knowing what
+   representation will be chosen for heap pointers.
+
+ * How big should arrays be?
+
+   We currently allow arrays of size up to Int.maxInt, where Int.int
+   is a 32-bit integer.  It is a separate issue to decide how the
+   Basis Library should change in the presence of a 64-bit port, but
+   if we were to allow arrays of size up to Int64.maxInt, then the
+   representation of array objects would need to change, as the
+   counter word and the length word would need to be larger to
+   accomodate very large arrays.
+
+ * Another big design decision concerns how best to accomodate both
+   the 32-bit garbage collector and the 64-bit garbage collection with
+   (much) the same code.  Sharing as much code as possible would be
+   desirable, as we do not wish the two systems to vary in any
+   significant way.
+
+   I think that this strongly suggests that all sizes and offsets are
+   measured in (8-bit) bytes.  I can't remember why array and normal
+   objects treat the numNonPointers field of a GC_ObjectType
+   differently.
+
+   I think that it also strongly suggests that we avoid the C types
+   int and long, and instead use more specific C99 types.
+
+   I also think that it is a fairly safe assumption to assume that the
+   programs compiled on 64-bit architectures are essentially the same
+   as those compiled on 32-bit architectures.  In particular, 2^19
+   object types should remain viable for some time to come.  Likewise,
+   the 10 counter bits in the header word (used to implement the mark
+   stack) should continue to be sufficient for the number of heap
+   pointers in a normal heap object.  Finally, 16-bits for the
+   numNonPointers and numPointers fields of a GC_ObjectType will
+   continue to suffice.  (For a truly absurd example, the currently
+   active exception handler is represented by a 32-bit offset from the
+   bottom of the stack.  If an ML execution stack were to grow to more
+   than 4GB, this representation would no longer suffice.)
+
+   On the other hand, it is not safe to assume that the parameters of
+   a 64-bit host system are essentially the same as a 32-bit host
+   system.  For example, in order to make decisions regarding garbage
+   collection strategies, the runtime must query the amount of
+   available RAM.  Likewise, garbage collection statistics, such as
+   bytesAllocated, bytesCopied, bytesLive, etc., could potentially be
+   an order of magnitude larger on 64-bit systems.  And, most
+   importantly, the actual size of the heap could be much larger on a
+   64-bit system.
+
+ * Finally, I note that gc.c weighs in at 4826 lines, which is
+   significantly larger than almost any SML file in the compiler.
+   (The exceptions are the x86 native codegen register allocator and
+   the elaborator for the core language.)  Since we'll be going over
+   the garbage collector with a fine tooth comb anyway, it might be
+   time to start breaking it into separate implementation files.
+
+Those are some intial thoughts, and may provide a starting point for
+some discussion.
+
+_______________________________________________
+MLton mailing list
+MLton@mlton.org
+http://mlton.org/mailman/listinfo/mlton

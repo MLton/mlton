@@ -14,6 +14,6 @@ signature CONTIFY_STRUCTS =
 signature CONTIFY = 
    sig
       include CONTIFY_STRUCTS
-      
+
       val contify: Program.t -> Program.t
    end

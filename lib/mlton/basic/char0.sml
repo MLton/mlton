@@ -13,7 +13,7 @@ structure Int = Pervasive.Int
 type int = Int.int
 structure String = Pervasive.String
 open Pervasive.Char
-   
+
 type t = char
 
 val dash = #"-"
@@ -40,7 +40,7 @@ fun fromDigit (d: int): t =
    if let open Int in 0 <= d andalso d < 10 end
       then chr (d + ord #"0")
    else Error.bug "Char0.fromDigit"
-         
+
 fun output (c, out) = TextIO.output (out, toString c)
 
 val numChars = ord maxChar + 1

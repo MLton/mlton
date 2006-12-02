@@ -17,7 +17,7 @@ signature POSIX_TTY_1997 =
             val start: int 
             val stop: int 
             val nccs: int
-               
+
             type cc
             val cc: (int * char) list -> cc 
             val update: cc * (int * char) list -> cc 
@@ -81,7 +81,7 @@ signature POSIX_TTY_1997 =
       val compareSpeed: speed * speed -> order 
       val speedToWord: speed -> SysWord.word 
       val wordToSpeed: SysWord.word -> speed
-         
+
       val b0: speed 
       val b50: speed 
       val b75: speed 
@@ -146,7 +146,7 @@ signature POSIX_TTY_1997 =
             val ion: flow_action 
 
             eqtype queue_sel
-               
+
             val iflush: queue_sel 
             val oflush: queue_sel 
             val ioflush: queue_sel 
@@ -154,12 +154,12 @@ signature POSIX_TTY_1997 =
 
       val getattr: file_desc -> termios
       val setattr: file_desc * TC.set_action * termios -> unit
-         
+
       val sendbreak: file_desc * int -> unit
       val drain: file_desc -> unit
       val flush: file_desc * TC.queue_sel -> unit
       val flow: file_desc * TC.flow_action -> unit
-       
+
       val getpgrp: file_desc -> pid 
       val setpgrp: file_desc * pid -> unit
    end

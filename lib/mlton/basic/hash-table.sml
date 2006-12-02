@@ -10,7 +10,7 @@ structure HashTable: HASH_TABLE =
 struct
 
 structure Set = HashSet
-   
+
 type ('a, 'b) t = ('a * 'b) Set.t
 
 fun ('a, 'b) new {equals, hash}: ('a, 'b) t =
@@ -28,7 +28,7 @@ fun update (t, a, b) = Set.update (t, (a, b))
 
 fun peek (t, a) =
    Option.map (Set.peek (t, Set.hash (t, 
-   
+
 fun update (T {buckets = ref buckets, equals, mask, ...}, w, a, b) =
    let
       val j = index (w, !mask)
@@ -62,7 +62,7 @@ fun lookupOrInsert (table, w, i, x) =
 
 fun insertIfNew (table, w, i, x, yes) =
    lookupGen (table, w, i, fn () => x, fn _ => yes ())
-   
+
 fun foldi(T{buckets, ...}, b, f) =
    Array.fold(!buckets, b, fn (r, b) =>
               List.fold(r, b, fn ((_, i, x), b) => f(i, x, b)))
@@ -86,7 +86,7 @@ fun foralli(t, f) =
 fun forall(t, f) = foralli(t, f o #2)
 
 fun listItems t = fold(t, [], op ::)
-   
+
 fun appi(t, f) = foldi(t, (), fn (i, x, ()) => f(i, x))
 
 fun app(t, f) = appi(t, f o #2)

@@ -59,5 +59,5 @@ fun compare c =
        < = op <, > = op >, <= = op <=, >= = op >=,
        min = min, max = max}
    end
-   
+
 end

@@ -17,7 +17,7 @@ struct
 open S
 
 type word = Word.t
-   
+
 local
    open Const
 in
@@ -46,7 +46,7 @@ datatype 'a t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {name: string} (* codegen *)
+ | FFI_Symbol of {name: string, cty: CType.t option} (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
  | IntInf_andb (* ssa to rssa *)
@@ -327,7 +327,7 @@ fun toString (n: 'a t): string =
    end
 
 fun layout p = Layout.str (toString p)
-   
+
 val equals: 'a t * 'a t -> bool =
    fn (Array_array, Array_array) => true
     | (Array_array0Const, Array_array0Const) => true
@@ -486,7 +486,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name} => FFI_Symbol {name = name}
+    | FFI_Symbol {name, cty} => FFI_Symbol {name = name, cty = cty}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb
@@ -1140,7 +1140,7 @@ structure ApplyResult =
  * A = B --> false
  * A x = B y --> false
  *)
-   
+
 fun ('a, 'b) apply (p: 'a t,
                     args: 'b ApplyArg.t list,
                     varEquals: 'b * 'b -> bool): ('a, 'b) ApplyResult.t =

@@ -15,7 +15,7 @@ signature MAIN_STRUCTS =
 signature MAIN =
    sig
       include MAIN_STRUCTS
-         
+
       val commandLine: string list -> OS.Process.status
       val exportMLton: unit -> unit
       val exportNJ: File.t -> unit

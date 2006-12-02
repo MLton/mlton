@@ -14,7 +14,7 @@ signature TYCON_KIND_STRUCTS =
 signature TYCON_KIND = 
    sig
       include TYCON_KIND_STRUCTS
-      
+
       datatype t =
          Arity of int
        | Nary

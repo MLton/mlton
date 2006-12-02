@@ -23,7 +23,7 @@ fun contains s =
          let val a = Array.tabulate(numChars, f o chr)
          in fn c => Array.sub(a, ord c)
          end
-         
+
       local
          val not = fn f => memoize(not o f)
          infix or andd

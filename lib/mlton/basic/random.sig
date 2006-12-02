@@ -7,7 +7,7 @@
 
 type int = Int.t
 type word = Word.t
-   
+
 signature RANDOM =
    sig
       val alphaNumString: int -> string

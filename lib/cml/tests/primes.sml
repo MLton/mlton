@@ -18,7 +18,7 @@ struct
       in
          ch
       end
-   
+
    fun makeFilter (p, inCh) =
       let
          val outCh = channel ()
@@ -35,7 +35,7 @@ struct
       in
          outCh
       end
-   
+
    fun makePrimes () =
       let
          val primes = channel ()
@@ -53,7 +53,7 @@ struct
       in
          primes
       end
-   
+
    fun makeNatPrinter ch n =
       let
          fun loop i =

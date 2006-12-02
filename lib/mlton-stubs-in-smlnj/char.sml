@@ -10,7 +10,7 @@ structure Char =
    struct
       open Char
       open OpenInt32
-         
+
       val toCString =
          fn #"\000" => "\\000"
           | c => toCString c

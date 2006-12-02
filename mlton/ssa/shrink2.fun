@@ -26,11 +26,11 @@ structure Statement =
 structure Array =
    struct
       open Array
-         
+
       fun inc (a: int t, i: int): unit = update (a, i, 1 + sub (a, i))
       fun dec (a: int t, i: int): unit = update (a, i, sub (a, i) - 1)
    end
-   
+
 datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
@@ -52,7 +52,7 @@ structure VarInfo =
                      offset: int}
 
       fun equals (T {var = x, ...}, T {var = y, ...}) = Var.equals (x, y)
-         
+
       fun layout (T {isUsed, numOccurrences, ty, value, var}) =
          let open Layout
          in record [("isUsed", Bool.layout (!isUsed)),
@@ -128,7 +128,7 @@ structure LabelMeaning =
       datatype t = T of {aux: aux,
                          blockIndex: int, (* The index of the block *)
                          label: Label.t} (* redundant, the label of the block *)
-                         
+
       and aux =
          Block
        | Bug
@@ -1251,7 +1251,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                                  fn () => Exp.Const c)
                          | Var vi => setVar vi
                          | _ => apply {args = args, prim = prim}
-                                       
+
                      end
                 | Select {base, offset} =>
                      (case base of

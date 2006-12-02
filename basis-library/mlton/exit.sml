@@ -7,7 +7,14 @@
 
 structure Exit =
    struct
-      structure Status = PosixPrimitive.Process.Status
+      structure Status = 
+         struct
+            type t = C_Status.t
+            val fromInt = C_Status.fromInt
+            val toInt = C_Status.toInt
+            val failure = fromInt 1
+            val success = fromInt 0
+         end
 
       val exiting = ref false
 
@@ -26,7 +33,7 @@ structure Exit =
             in
                if 0 <= i andalso i < 256
                   then (let open Cleaner in clean atExit end
-                        ; Primitive.halt status
+                        ; Primitive.MLton.halt status
                         ; raise Fail "exit")
                else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
                                         Int.toString i])

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature FIELD_STRUCTS = 
    sig
       structure Symbol: SYMBOL
@@ -16,7 +16,7 @@ signature FIELD_STRUCTS =
 signature FIELD = 
    sig
       include FIELD_STRUCTS
-      
+
       datatype t =
          Int of int
        | Symbol of Symbol.t

@@ -7,7 +7,7 @@ structure Assert: ASSERT =
    struct
       structure C = Critical
       val assertFlg = false
-      
+
       fun fail msg =
          (C.atomicBegin ();
           TextIO.print (concat ["ASSERT: ", msg, "\n"]);

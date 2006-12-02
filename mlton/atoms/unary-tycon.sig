@@ -14,7 +14,7 @@ signature UNARY_TYCON_STRUCTS =
 signature UNARY_TYCON = 
    sig
       include UNARY_TYCON_STRUCTS
-      
+
       datatype t = Ref | Array | Vector
 
       val toTycon: t -> Tycon.t

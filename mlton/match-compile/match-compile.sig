@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature MATCH_COMPILE_STRUCTS =
    sig
       include ATOMS
@@ -35,7 +35,7 @@ signature MATCH_COMPILE_STRUCTS =
       structure Exp:
          sig
             type t
-               
+
             val casee:
                {cases: Cases.t,
                 default: (t * Region.t) option,

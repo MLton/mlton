@@ -2,7 +2,7 @@ fun append (l1, l2) =
    case l1 of
       [] => l2
     | x :: l1 => x :: append (l1, l2)
-         
+
 fun rev l =
    case l of
       [] => []

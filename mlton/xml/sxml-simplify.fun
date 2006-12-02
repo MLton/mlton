@@ -48,7 +48,7 @@ val sxmlPasses : pass list ref = ref sxmlPassesDefault
 
 local
    type passGen = string -> pass option
-     
+
    fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
@@ -134,7 +134,7 @@ in
    val _ = Control.sxmlPassesSet := sxmlPassesSet
    val _ = List.push (Control.optimizationPassesSet, ("sxml", sxmlPassesSet))
 end
-   
+
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
 

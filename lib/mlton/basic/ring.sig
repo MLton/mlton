@@ -20,7 +20,7 @@ signature RING_STRUCTS =
 signature RING =
    sig
       include RING_STRUCTS
-         
+
       val - : t * t -> t
       val double: t -> t
       val isZero: t -> bool

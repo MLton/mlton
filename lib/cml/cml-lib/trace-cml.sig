@@ -66,7 +66,7 @@ signature TRACE_CML =
 
 
   (** Thread watching **)
-  
+
     val watcher : trace_module
         (* controls printing of thread watching messages; the module's name
          * is "/ThreadWatcher/"

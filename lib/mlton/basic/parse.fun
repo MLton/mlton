@@ -15,9 +15,9 @@ type 'a t = Sexp.t -> 'a
 fun parse (p, s) = p s
 
 fun anything x = x
-   
+
 datatype sexp = datatype Sexp.t
-   
+
 exception Parse
 
 fun wrap (parser, f) sexp = f (parser sexp)
@@ -65,7 +65,7 @@ fun or [] s = raise Parse
 
 fun fold (parse: 'a t, base: 'b, f: 'a * 'b -> 'b): 'b t =
    wrap (list parse, fn l => List.fold (l, base, f))
-   
+
 end
 
 structure Parse = Parse(structure Sexp = Sexp)

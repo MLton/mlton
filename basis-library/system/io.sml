@@ -1,6 +1,7 @@
 (* modified from SML/NJ sources by Stephen Weeks 1998-6-25 *)
 (* modified by Matthew Fluet 2002-10-11 *)
 (* modified by Matthew Fluet 2002-11-21 *)
+(* modified by Matthew Fluet 2006-04-30 *)
 
 (* os-io.sml
  *
@@ -22,25 +23,18 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    type file_desc = PosixPrimitive.FileDesc.t
+    type file_desc = Posix.FileSys.file_desc
 
-    fun toFD (iod: iodesc): file_desc =
-       valOf (Posix.FileSys.iodToFD iod)
+    val iodToFd = fn x => x
+    val fdToIod = fn x => x
 
-    val FD = PosixPrimitive.FileDesc.fromInt
-    val unFD = PosixPrimitive.FileDesc.toInt
-       
-    fun fromInt i = Posix.FileSys.fdToIOD (FD i)
-       
-    val toInt: iodesc -> int = unFD o toFD
+    val iodescToWord = C_Fd.castToSysWord
 
-    val toWord = Posix.FileSys.fdToWord o toFD
-       
   (* return a hash value for the I/O descriptor. *)
-    val hash = toWord
+    val hash = SysWord.toWord o iodescToWord
 
   (* compare two I/O descriptors *)
-    fun compare (i, i') = Word.compare (toWord i, toWord i')
+    fun compare (i, i') = SysWord.compare (iodescToWord i, iodescToWord i')
 
     structure Kind =
       struct
@@ -55,7 +49,7 @@ structure OS_IO: OS_IO =
 
   (* return the kind of I/O descriptor *)
     fun kind (iod) = let
-          val stat = Posix.FileSys.fstat (toFD iod)
+          val stat = Posix.FileSys.fstat (iodToFd iod)
           in
             if      (Posix.FileSys.ST.isReg stat) then Kind.file
             else if (Posix.FileSys.ST.isDir stat) then Kind.dir
@@ -94,23 +88,24 @@ structure OS_IO: OS_IO =
 
   (* polling function *)
     local
-      structure Prim = Primitive.OS.IO
+      structure Prim = PrimitiveFFI.OS.IO
       fun join (false, _, w) = w
-        | join (true, b, w) = Word.orb(w, b)
-      fun test (w, b) = (Word.andb(w, b) <> 0w0)
-      val rdBit : Word.word = Primitive.OS.IO.POLLIN
-      and wrBit : Word.word = Primitive.OS.IO.POLLOUT
-      and priBit : Word.word = Primitive.OS.IO.POLLPRI
+        | join (true, b, w) = C_Short.orb(w, b)
+      fun test (w, b) = (C_Short.andb(w, b) <> 0)
+      val rdBit = PrimitiveFFI.OS.IO.POLLIN
+      and wrBit = PrimitiveFFI.OS.IO.POLLOUT
+      and priBit = PrimitiveFFI.OS.IO.POLLPRI
       fun fromPollDesc (PollDesc (iod, {rd, wr, pri})) =
-            ( toInt iod,
+            ( iodToFd iod,
               join (rd, rdBit, 
               join (wr, wrBit, 
-              join (pri, priBit, 0w0)))
+              join (pri, priBit, 0)))
             )
-      fun toPollInfo (fd, w) = PollInfo (fromInt fd, {
-              rd = test(w, rdBit), 
-              wr = test(w, wrBit), 
-              pri = test(w, priBit)
+      fun toPollInfo (fd, i) = 
+            PollInfo (fdToIod fd, {
+              rd = test(i, rdBit), 
+              wr = test(i, wrBit), 
+              pri = test(i, priBit)
             })
     in
     fun poll (pds, timeOut) = let
@@ -124,15 +119,15 @@ structure OS_IO: OS_IO =
               | SOME t =>
                    if Time.< (t, Time.zeroTime)
                       then let open PosixError in raiseSys inval end
-                   else (Int.fromLarge (Time.toMilliseconds t)
+                   else (C_Int.fromLarge (Time.toMilliseconds t)
                          handle Overflow => Error.raiseSys Error.inval)
-          val reventss = Array.array (n, 0w0)
+          val reventss = Array.array (n, 0)
           val _ = Posix.Error.SysCall.simpleRestart
-                  (fn () => Prim.poll (fds, eventss, n, timeOut, reventss))
+                  (fn () => Prim.poll (fds, eventss, C_NFds.fromInt n, timeOut, reventss))
           in
             Array.foldri
             (fn (i, w, l) => 
-             if w <> 0w0
+             if w <> 0
                then (toPollInfo (Vector.sub (fds, i), w))::l
                else l)
             []

@@ -11,19 +11,19 @@ signature MLTON_PROCESS =
 
       (* Process handle *)
       type ('stdin, 'stdout, 'stderr) t
-      
+
       (* is the io 'dir input or output *)
       type input
       type output
-      
+
       (* to what use can the stdio channel be put *)
       type none  (* it's not connected to a pipe *)
       type chain (* connect one child to another *)
       type any   (* any use is allowed -- dangerous *)
-      
+
       exception MisuseOfForget   (* you avoided the type safety and broke it *)
       exception DoublyRedirected (* you tried to reuse a Param.child *)
-      
+
       structure Child:
         sig
           type ('use, 'dir) t
@@ -37,11 +37,11 @@ signature MLTON_PROCESS =
           val textIn: (TextIO.instream, input) t -> TextIO.instream
           val textOut: (TextIO.outstream, output) t -> TextIO.outstream
         end
-      
+
       structure Param:
         sig
           type ('use, 'dir) t
-          
+
           (* {child,fd} close their parameter when create is called.
            * therefore they may only be used once!
            *)
@@ -55,7 +55,7 @@ signature MLTON_PROCESS =
           val pipe: ('use, 'dir) t
           val self: (none, 'dir) t
         end
-      
+
       val create:
          {args: string list, 
           env: string list option, 

@@ -1,0 +1,15 @@
+amd64-linux
+hppa-hpux
+hppa-linux
+powerpc-aix
+powerpc-darwin
+powerpc-linux
+sparc-linux
+sparc-solaris
+x86-cygwin
+x86-darwin
+x86-freebsd
+x86-linux
+x86-mingw
+x86-netbsd
+x86-openbsd

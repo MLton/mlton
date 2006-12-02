@@ -12,7 +12,7 @@ struct
   open x86
 
   val tracer = x86.tracer
-    
+
   datatype status = Count of int | None
 
   val status_eq
@@ -25,7 +25,7 @@ struct
        | Count i => concat ["Count ", Int.toString i]
 
   datatype t = T of {get: Label.t -> status ref}
-      
+
   fun newJumpInfo ()
     = let
         val {get : Label.t -> status ref, ...}

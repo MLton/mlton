@@ -9,8 +9,7 @@ signature POSIX =
       structure SysDB: POSIX_SYS_DB
       structure TTY: POSIX_TTY
 
-      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc
-         = TTY.file_desc
+      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc = TTY.file_desc
       sharing type ProcEnv.gid = FileSys.gid = SysDB.gid
       sharing type FileSys.open_mode = IO.open_mode
       sharing type Process.pid = ProcEnv.pid = IO.pid = TTY.pid
@@ -29,8 +28,7 @@ signature POSIX_EXTRA =
       structure SysDB: POSIX_SYS_DB
       structure TTY: POSIX_TTY
 
-      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc
-         = TTY.file_desc
+      sharing type FileSys.file_desc = ProcEnv.file_desc = IO.file_desc = TTY.file_desc
       sharing type ProcEnv.gid = FileSys.gid = SysDB.gid
       sharing type FileSys.open_mode = IO.open_mode
       sharing type Process.pid = ProcEnv.pid = IO.pid = TTY.pid

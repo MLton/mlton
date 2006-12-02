@@ -30,11 +30,11 @@ signature BASIS_2002 =
       exception Size
       exception Span
       exception Subscript
- 
+
       (* Top-level values *)
       val = : ''a * ''a -> bool
       val <> : ''a * ''a -> bool
-        
+
       val ! : 'a ref -> 'a
       val := : 'a ref * 'a -> unit
       val @ : ('a list * 'a list) -> 'a list
@@ -310,7 +310,7 @@ signature BASIS_2002 =
       structure Word64ArraySlice : MONO_ARRAY_SLICE
       structure Word64Vector : MONO_VECTOR
       structure Word64VectorSlice : MONO_VECTOR_SLICE
-         
+
       (* ************************************************** *)
       (* ************************************************** *)
 
@@ -328,29 +328,31 @@ signature BASIS_2002 =
 (* Can't use sharing on type array or vector, because they are rigid tycons.
  * Don't need it anyways, since it's built into the ARRAY and VECTOR signatures.
  *)
-(*      sharing type array = Array.array *)
-(*      sharing type vector = Vector.vector *)
-      (*
+(*
+      sharing type array = Array.array 
+      sharing type vector = Vector.vector 
+*)
+(*
       sharing type ref = General.ref
-      *)
-      (*
+*)
+(*
       sharing type bool = Bool.bool
-      *)
+*)
       sharing type option = Option.option
       sharing type order = General.order
-      (*
+(*
       sharing type list = List.list
-      *)
-
-      sharing type int = Int32.int
-      sharing type real = Real64.real
-      sharing type word = Word32.word
+*)
 
       (* Required structures *)
-(*      sharing type BinIO.StreamIO.elem = Word8.word *)
+(*    
+      sharing type BinIO.StreamIO.elem = Word8.word 
+*)
       sharing type BinIO.StreamIO.reader = BinPrimIO.reader
       sharing type BinIO.StreamIO.pos = BinPrimIO.pos
-(*      sharing type BinIO.StreamIO.vector = Word8Vector.vector *)
+(*   
+      sharing type BinIO.StreamIO.vector = Word8Vector.vector 
+*)
       sharing type BinIO.StreamIO.writer = BinPrimIO.writer
       sharing type BinPrimIO.array = Word8Array.array
       sharing type BinPrimIO.array_slice = Word8ArraySlice.slice
@@ -387,15 +389,18 @@ signature BASIS_2002 =
       sharing type Text.CharArray.array = CharArray.array
       sharing type Text.CharArraySlice.slice = CharArraySlice.slice
       sharing type Text.CharVectorSlice.slice = CharVectorSlice.slice
-(* redundant *)
-(*      sharing type TextIO.elem = char  *)
-(*      sharing type TextIO.vector = string *)
+      (* redundant *)
+(*    
+      sharing type TextIO.elem = char
+      sharing type TextIO.vector = string 
+*)
       sharing type TextPrimIO.array = CharArray.array
       sharing type TextPrimIO.array_slice = CharArraySlice.slice
       sharing type TextPrimIO.elem = Char.char
       sharing type TextPrimIO.pos = Position.int
       sharing type TextPrimIO.vector = CharVector.vector
       sharing type TextPrimIO.vector_slice = CharVectorSlice.slice
+      sharing type Word.word = word
       sharing type Word8Array.elem = Word8.word
       sharing type Word8Array.vector = Word8Vector.vector
       sharing type Word8ArraySlice.elem = Word8.word
@@ -407,7 +412,7 @@ signature BASIS_2002 =
       sharing type Word8VectorSlice.vector = Word8Vector.vector
       sharing type Word8Array2.elem = Word8.word
       sharing type Word8Array2.vector = Word8Vector.vector
-        
+
       (* Optional structures *)
       sharing type BoolArray.vector = BoolVector.vector
       sharing type BoolArraySlice.array = BoolArray.array
@@ -450,7 +455,6 @@ signature BASIS_2002 =
       sharing type Int16VectorSlice.vector = Int16Vector.vector
       sharing type Int16Array2.elem = Int16.int
       sharing type Int16Array2.vector = Int16Vector.vector
-      sharing type Int32.int = Int.int
       sharing type Int32Array.elem = Int32.int
       sharing type Int32Array.vector = Int32Vector.vector
       sharing type Int32ArraySlice.elem = Int32.int
@@ -574,7 +578,6 @@ signature BASIS_2002 =
       sharing type Word16VectorSlice.vector = Word16Vector.vector
       sharing type Word16Array2.elem = Word16.word
       sharing type Word16Array2.vector = Word16Vector.vector
-      sharing type Word32.word = Word.word
       sharing type Word32Array.elem = Word32.word
       sharing type Word32Array.vector = Word32Vector.vector
       sharing type Word32ArraySlice.elem = Word32.word

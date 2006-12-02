@@ -35,7 +35,7 @@ in
 end
 
 val toIntInf = value
-   
+
 fun toIntInfX w =
    let
       val v = value w
@@ -108,7 +108,7 @@ fun one s = make (1, s)
 
 fun toIntInfSg (w, {signed}) =
    if signed then toIntInfX w else toIntInf w
-   
+
 fun resize (w, s) = make (toIntInf w, s)
 
 fun resizeX (w, s) = make (toIntInfX w, s)
@@ -159,7 +159,7 @@ fun splice {hi, lo} =
    fromIntInf (value lo
                + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
                WordSize.+ (size hi, size lo))
-   
+
 fun split (w, {lo}) =
    let
       val {size, value} = dest w

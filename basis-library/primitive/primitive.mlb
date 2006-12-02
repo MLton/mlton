@@ -1,0 +1,77 @@
+(* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+ann 
+   "allowConstant true"
+   "allowFFI true"
+   "allowPrim true"
+   "deadCode true"
+   "nonexhaustiveMatch warn"
+   "redundantMatch warn"
+   "sequenceNonUnit warn"
+   "warnUnused false"
+in
+   prim-basis.mlb
+   ann "allowRebindEquals true" in
+      prim1.sml
+   end 
+   ../util/integral-comparisons.sml
+   ../util/string-comparisons.sml
+   ../util/real-comparisons.sml
+   local 
+      ../config/bind/char-prim.sml 
+      ../config/bind/int-prim.sml 
+      ../config/bind/int-inf-prim.sml 
+      ../config/bind/real-prim.sml 
+      ../config/bind/string-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
+      ../config/choose.sml
+      ../config/c/word-to-bool.sml
+   end end
+
+   prim-iwconv.sml
+   prim-word.sml
+   prim-int.sml
+
+   local 
+      ../config/bind/int-prim.sml 
+      ../config/bind/pointer-prim.sml
+      ../config/bind/real-prim.sml 
+      ../config/bind/word-prim.sml 
+   in ann "forceUsed" in
+      ../config/objptr/$(OBJPTR_REP)
+      ../config/header/$(HEADER_WORD)
+      ../config/seqindex/$(SEQINDEX_INT)
+      ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      ../config/c/errno.sml
+      ../config/c/position.sml
+      ../config/c/sys-word.sml
+   end end
+   prim-seq.sml
+   prim-nullstring.sml
+
+   prim-int-inf.sml
+
+   prim-char.sml
+   prim-string.sml
+
+   prim-real.sml
+
+   prim-pack-word.sml
+   prim-pack-real.sml
+
+   prim-mlton.sml
+
+   basis-ffi.sml
+   prim2.sml
+
+   (* Check compatibility between primitives and runtime functions. *)
+   check-real.sml
+   check-pack-word.sml
+   check-pack-real.sml
+end

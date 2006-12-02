@@ -14,7 +14,7 @@ structure String = ZString
 
 val input =
    Trace.trace ("Instream.input", layout, String.layout) input
-               
+
 fun outputAll (ins: t, out: Out.t): unit =
    let
       fun loop () =

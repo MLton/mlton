@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature CONSOLE =
    sig
       structure Background:
@@ -21,7 +21,7 @@ signature CONSOLE =
                DarkGray | BrightRed | BrightGreen | Yellow | BrightBlue
              | BrightMagenta | BrightCyan | White
          end
-         
+
       structure CharRendition:
          sig
             datatype t =

@@ -17,7 +17,7 @@ signature PRIM_IO_ARG =
          = Array.vector = ArraySlice.vector 
       sharing type VectorSlice.slice = ArraySlice.vector_slice
       sharing type Array.array = ArraySlice.array
-        
+
       val someElem: Vector.elem
 
       eqtype pos
@@ -27,12 +27,12 @@ signature PRIM_IO_ARG =
 functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
    struct 
       open S
-         
+
       structure V = Vector
       structure VS = VectorSlice
       structure A = Array
       structure AS = ArraySlice
-         
+
       type elem = A.elem
       type vector = V.vector
       type vector_slice = VS.slice
@@ -40,7 +40,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
       type array_slice = AS.slice
       type pos = pos
       val compare = compare
-         
+
       datatype reader =
          RD of {avail: unit -> int option,
                 block: (unit -> unit) option,
@@ -57,7 +57,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                 readVecNB: (int -> vector option) option,
                 setPos: (pos -> unit) option,
                 verifyPos: (unit -> pos) option}
-         
+
       datatype writer =
          WR of {block: (unit -> unit) option,
                 canOutput: (unit -> bool) option,
@@ -73,8 +73,8 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                 writeArrNB: (array_slice -> int option) option,
                 writeVec: (vector_slice -> int) option,
                 writeVecNB: (vector_slice -> int option) option}
-         
-         
+
+
       fun liftExn name function cause = raise IO.Io {name = name,
                                                      function = function,
                                                      cause = cause}
@@ -125,7 +125,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                 setPos = NONE,
                 verifyPos = NONE}
          end
-      
+
       fun nullRd () =
          let
             val name = "nullRd"
@@ -152,7 +152,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                 setPos = NONE,
                 verifyPos = NONE}
          end
-      
+
       fun nullWr () =
          let
             val name = "nullWr"
@@ -251,7 +251,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                              NONE => NONE
                            | SOME canInput => SOME (doCanInput (readSeq, canInput)))
                 | (NONE, NONE) => (NONE, NONE)
-                         
+
             val ((readVec,readArr),(readVecNB,readArrNB)) =
                (augmentRead (readVec, readArr),
                 augmentReadNB (readVecNB, readArrNB))
@@ -304,7 +304,7 @@ functor PrimIO (S: PRIM_IO_ARG): PRIM_IO =
                                                                  then SOME (writeSeq x)
                                                                  else NONE)))
                 | (NONE, NONE) => (NONE, NONE)
-                         
+
             val ((writeVec,writeArr),(writeVecNB,writeArrNB)) =
                (augmentWrite (writeVec, writeArr),
                 augmentWrite (writeVecNB, writeArrNB))

@@ -14,33 +14,73 @@
 structure MLtonSyslog :> MLTON_SYSLOG =
 struct
 
-open Primitive.MLton.Syslog
+open PrimitiveFFI.MLton.Syslog
 
-fun zt s = s ^ "\000"
+type openflag = C_Int.t
 
-(* openlog seems to rely on the string being around forever,
- * so I use strdup to make a copy.
- * This is a little dirty, sorry. (Personally I think it is
- * openlog's fault.)
- *)
-fun openlog (s, opt, fac) =
+local 
+   open Logopt
+in
+   val CONS = LOG_CONS
+   val NDELAY = LOG_NDELAY
+   val NOWAIT = LOG_NOWAIT
+   val ODELAY = LOG_ODELAY
+   val PID = LOG_PID
+end
+
+type facility = C_Int.t
+
+local
+   open Facility
+in
+   val AUTHPRIV = LOG_AUTH
+   val CRON = LOG_CRON
+   val DAEMON = LOG_DAEMON
+   val KERN = LOG_KERN
+   val LOCAL0 = LOG_LOCAL0
+   val LOCAL1 = LOG_LOCAL1
+   val LOCAL2 = LOG_LOCAL2
+   val LOCAL3 = LOG_LOCAL3
+   val LOCAL4 = LOG_LOCAL4
+   val LOCAL5 = LOG_LOCAL5
+   val LOCAL6 = LOG_LOCAL6
+   val LOCAL7 = LOG_LOCAL7
+   val LPR = LOG_LPR
+   val MAIL = LOG_MAIL
+   val NEWS = LOG_NEWS
+(* NOT STANDARD
+   val SYSLOG = LOG_SYSLOG
+*)
+   val USER = LOG_USER
+   val UUCP = LOG_UUCP
+end
+
+type loglevel = C_Int.t
+
+local
+   open Severity
+in
+   val ALERT = LOG_ALERT
+   val CRIT = LOG_CRIT
+   val DEBUG = LOG_DEBUG
+   val EMERG = LOG_EMERG
+   val ERR = LOG_ERR
+   val INFO = LOG_INFO
+   val NOTICE = LOG_NOTICE
+   val WARNING = LOG_WARNING
+end
+
+val openlog = fn (s, opt, fac) =>
    let 
-      val optf = 
-         Word32.toInt (foldl Word32.orb 0w0 (map Word32.fromInt opt))
-      val sys_strdup  = _import "strdup" : string -> word ;
-      val sys_openlog = _import "openlog" : word * int * int -> unit ;
+      val optf = foldl C_Int.orb 0 opt
    in
-      sys_openlog (sys_strdup (zt s), optf, fac)
+     openlog (NullString.nullTerm s, optf, fac)
    end
 
-fun closelog () =
-   let val sys_closelog = _import "closelog" : unit -> unit ;
-   in sys_closelog ()
-   end
+val closelog = fn () => 
+   closelog ()
 
-fun log (lev, msg) =
-   let val sys_syslog = _import "syslog" : int * string * string -> unit ;
-   in sys_syslog (lev, "%s\000", zt msg)
-   end
+val log = fn (lev, msg) => 
+   syslog (lev, NullString.nullTerm msg)
 
 end

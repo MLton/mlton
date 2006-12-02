@@ -30,17 +30,21 @@ signature PRIM_TYCONS_STRUCTS =
 signature PRIM_TYCONS =
    sig
       include PRIM_TYCONS_SUBSTRUCTS
-     
+
       type tycon
 
       val array: tycon
       val arrow: tycon
       val bool: tycon
       val char: CharSize.t -> tycon
-      val defaultChar: tycon
-      val defaultInt: tycon
-      val defaultReal: tycon
-      val defaultWord: tycon
+      val deCharX: tycon -> CharSize.t
+      val defaultChar: unit -> tycon
+      val defaultInt: unit -> tycon
+      val defaultReal: unit -> tycon
+      val defaultWord: unit -> tycon
+      val deIntX: tycon -> IntSize.t option
+      val deRealX: tycon -> RealSize.t
+      val deWordX: tycon -> WordSize.t
       val exn: tycon
       val int: IntSize.t -> tycon
       val ints: (tycon * IntSize.t) vector
@@ -49,6 +53,7 @@ signature PRIM_TYCONS =
       val isCharX: tycon -> bool
       val isExn: tycon -> bool
       val isIntX: tycon -> bool
+      val isPointer: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:

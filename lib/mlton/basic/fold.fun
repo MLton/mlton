@@ -10,7 +10,7 @@ struct
 
 structure Int = Pervasive.Int
 type int = Int.int
-   
+
 open S
 
 fun foldi (l: 'a t, b, f) =
@@ -24,13 +24,13 @@ fun last l =
    case fold (l, NONE, SOME o #1) of
       NONE => Error.bug "Fold.last"
     | SOME x => x
-   
+
 fun length l = fold (l, 0: int, fn (_, n) => n + 1)
 
 fun mapi (l, f) = rev (foldi (l, [], fn (i, x, l) => f (i, x) :: l))
 
 fun map (l, f) = mapi (l, f o #2)
-   
+
 fun layout f l = Layout.list (map (l, f))
 
 fun revKeepAllMap (l, f) =

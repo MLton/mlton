@@ -21,12 +21,12 @@ signature OS_FILE_SYS_1997 =
       val setTime: string * Time.time option -> unit 
       val remove: string -> unit 
       val rename: {old: string, new: string} -> unit
-         
+
       datatype access_mode =
          A_READ
        | A_WRITE
        | A_EXEC
-         
+
       val access: string * access_mode list -> bool 
       val tmpName: unit -> string 
 

@@ -16,11 +16,11 @@ signature MLTON_PLATFORM =
             val host: t
             val toString: t -> string
          end
-         
+
       structure OS:
          sig
             datatype t =
-                AIX
+               AIX
              | Cygwin
              | Darwin
              | FreeBSD

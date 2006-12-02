@@ -1,13 +1,13 @@
 #include "mmap.c"
 
-void decommit (void *base, size_t length) {
-        smunmap (base, length);
+void GC_decommit (void *base, size_t length) {
+        munmap_safe (base, length);
 }
 
-void release (void *base, size_t length) {
-        smunmap (base, length);
+void GC_release (void *base, size_t length) {
+        munmap_safe (base, length);
 }
 
-void *mmapAnon (void *start, size_t length) {
-        return mmapAnonMmap (start, length);
+void *GC_mmapAnon (void *start, size_t length) {
+        return mmapAnon (start, length);
 }

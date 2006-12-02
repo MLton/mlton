@@ -39,7 +39,7 @@ struct
    fun new v = make(Pointer.new v)
 
    fun dummy v = make(Pointer.null())
-      
+
    fun valuePtr(T{value, ...}) = value
    fun value e = Pointer.!(valuePtr e)
    fun mark(T{mark, ...}) = mark := true
@@ -58,7 +58,7 @@ struct
    fun decNumChildren e = Int.dec(numChildrenRef e)
    val equals = fn (e, e') => Pointer.eq(valuePtr e, valuePtr e')
 end
-   
+
 structure CircList = CircularList(structure Elt = DoublyLinked(Elt))
 
 structure Elt =
@@ -96,11 +96,11 @@ fun incSize h = Int.inc(sizeRef h)
 fun decSize h = Int.inc(sizeRef h)
 
 fun roots (T{roots, ...}) = roots
-                                                       
+
 fun min(T{min, ...}) = Pointer.! min
 
 fun clearMin(T{min, ...}) = Pointer.clear min
- 
+
 fun updateMin(T{min, ...}, e) =
    if Pointer.isNull min orelse Key.<(Elt.key e, Elt.key(Pointer.!min))
       then Pointer.:=(min, e)
@@ -109,7 +109,7 @@ fun updateMin(T{min, ...}, e) =
 fun addRoot(h, e) =
    (CircList.insert(roots h, e)
     ; updateMin(h, e))
-                 
+
 fun isEmpty h = size h = 0
 
 local
@@ -132,7 +132,7 @@ fun unlink e = let val p = Elt.parent e
                   ; Elt.clearParent e
                   ; Elt.unMark e
                end
-                                
+
 local
    structure I = Int
    local open Real
@@ -187,7 +187,7 @@ fun newEager kvs = let val h = newLazy kvs
 (*--------------------------------------------------------*)
 (*                       DeleteMin                        *)
 (*--------------------------------------------------------*)
-   
+
 fun deleteMin h =
    let val m = min h
       val c = Elt.child m
@@ -222,7 +222,7 @@ fun cut(h, e, k) =
            in cut e
            end
    else ()
-      
+
 fun decreaseKey(h, e, k) =
     if Key.>(k, Elt.key e) then Error.bug "decreaseKey"
     else (Elt.setKey(e, k); updateMin(h, e))

@@ -19,7 +19,7 @@ struct
       in
          mch
       end
-   
+
    fun makeFilter (p, inMCh) =
       let
          val inP = MC.port inMCh
@@ -37,7 +37,7 @@ struct
       in
          outMCh
       end
-   
+
    fun makePrimes () =
       let
          val primes = MC.mChannel ()
@@ -56,7 +56,7 @@ struct
       in
          primes
       end
-   
+
    fun makeNatPrinter mch n =
       let
          val p = MC.port mch

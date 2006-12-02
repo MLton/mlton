@@ -26,7 +26,7 @@ structure Bool: BOOL =
                                  SOME(true, state)
                             | _ => NONE)
                 | _ => NONE
-               
+
       val fromString = StringCvt.scanString scan
 
       val toString =

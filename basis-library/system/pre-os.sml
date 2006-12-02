@@ -9,20 +9,12 @@ structure OS =
    struct
       structure Process =
          struct
-            type status = PosixPrimitive.Process.Status.t
+            type status = C_Status.t
          end
-      structure IO :> sig
-                         eqtype iodesc
-
-                         val fromFD: PosixPrimitive.IO.file_desc -> iodesc
-                         val toFD: iodesc -> PosixPrimitive.IO.file_desc
-                      end = 
-                      struct
-                         type iodesc = PosixPrimitive.IO.file_desc
-
-                         val fromFD = fn z => z
-                         val toFD = fn z => z
-                      end
+      structure IO =
+         struct
+            type iodesc = C_Fd.t
+         end
    end
 
 structure PreOS = OS

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature JUSTIFY =
    sig
       datatype t =

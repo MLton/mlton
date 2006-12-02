@@ -7,32 +7,24 @@
 
 structure GenericSock : GENERIC_SOCK =
    struct
-      structure Prim = Primitive.Socket.GenericSock
+      structure Prim = PrimitiveFFI.Socket.GenericSock
       structure PE = Posix.Error
       structure PESC = PE.SysCall
 
-      fun intToSock i = Socket.wordToSock (SysWord.fromInt i)
-
       fun socket' (af, st, p) =
-         PESC.syscall
-         (fn () =>
-          let val n = Prim.socket (NetHostDB.addrFamilyToInt af, st, p)
-          in (n, fn () => intToSock n)
-          end)
+         PESC.simpleResult
+         (fn () => Prim.socket (af, st, C_Int.fromInt p))
 
       fun socketPair' (af, st, p) =
          let
-            val s1 = ref 0
-            val s2 = ref 0
+            val a = Array.array (2, 0)
          in
             PESC.syscall
-            (fn () =>
-             let val n = Prim.socketPair (NetHostDB.addrFamilyToInt af, st, p, s1, s2)
-             in (n, fn () => (intToSock (!s1), intToSock (!s2)))
-             end)
+            (fn () => (Prim.socketPair (af, st, C_Int.fromInt p, a), fn _ => 
+                       (Array.sub (a, 0), Array.sub (a, 1))))
          end
-      
+
       fun socket (af, st) = socket' (af, st, 0)
-         
+
       fun socketPair (af, st) = socketPair' (af, st, 0)
    end

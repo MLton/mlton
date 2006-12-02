@@ -14,7 +14,7 @@ signature SUM_STRUCTS =
 signature SUM =
    sig
       include SUM_STRUCTS
-         
+
       datatype t =
          X of X.t
        | Y of Y.t

@@ -87,7 +87,7 @@ structure Value =
             fun undefined () = new Undefined
 
             fun unknown () = new Unknown
-    
+
             fun makeUnknown (T {const, coercedTo}): unit =
                case !const of
                   Unknown => ()
@@ -176,7 +176,7 @@ structure Value =
             val equals: 'a t * 'a t -> bool = 
                fn (n, n') => global n = global n'
          end
-      
+
       structure Place =
          struct
             datatype 'a t =
@@ -211,7 +211,7 @@ structure Value =
             val traceMakeUnknown = 
                Trace.info 
                "ConstantPropagation.Value.Birth.makeUnknown"
-               
+
             fun makeUnknown arg =
                Trace.traceInfo'
                (traceMakeUnknown, layout, Unit.layout)
@@ -225,7 +225,7 @@ structure Value =
             val traceSend = 
                Trace.info 
                "ConstantPropagation.Value.Birth.send"
-               
+
             fun send arg =
                Trace.traceInfo'
                (traceSend, Layout.tuple2 (layout, One.layout), Unit.layout)
@@ -242,7 +242,7 @@ structure Value =
                 in
                    loop b
                 end) arg
-        
+
             val traceCoerce = 
                Trace.info 
                "ConstantPropagation.Value.Birth.coerce"
@@ -268,7 +268,7 @@ structure Value =
             val traceUnify = 
                Trace.info 
                "ConstantPropagation.Value.Birth.unify"
-               
+
             fun unify arg =
                Trace.traceInfo'
                (traceUnify, Layout.tuple2 (layout, layout), Unit.layout)
@@ -454,7 +454,7 @@ structure Value =
                       global (v, newGlobal)
                    end
           end) arg
-         
+
       fun new (v: value, ty: Type.t): t =
          T (Set.singleton {value = v,
                            ty = ty,
@@ -495,7 +495,7 @@ structure Value =
          in
             {elt = elt, length = length}
          end
-               
+
       local
          fun make (err, sel) v =
             case value v of
@@ -557,7 +557,7 @@ structure Value =
                val unknown = make Unknown
             end
          end
-      
+
       local
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.

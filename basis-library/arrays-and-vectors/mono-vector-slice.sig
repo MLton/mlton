@@ -3,7 +3,7 @@ signature MONO_VECTOR_SLICE =
       type elem
       type slice
       type vector
-         
+
       val all: (elem -> bool) -> slice -> bool
       val app: (elem -> unit) -> slice -> unit
       val appi: (int * elem -> unit) -> slice -> unit

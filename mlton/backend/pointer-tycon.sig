@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature POINTER_TYCON_STRUCTS =
    sig
    end
@@ -14,7 +14,7 @@ signature POINTER_TYCON_STRUCTS =
 signature POINTER_TYCON =
    sig
       include POINTER_TYCON_STRUCTS
-         
+
       type t
 
       val <= : t * t -> bool

@@ -17,7 +17,7 @@ signature THREE_POINT_LATTICE_STRUCTS =
 signature THREE_POINT_LATTICE = 
    sig
       include THREE_POINT_LATTICE_STRUCTS
-      
+
       type t
 
       val <= : t * t -> unit (* force rhs to be mid/top if lhs is *)

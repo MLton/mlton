@@ -9,7 +9,7 @@ signature CRITICAL =
       val atomicEnd : unit -> unit
       val atomicMsg : unit -> string
       val doAtomic : (unit -> unit) -> unit
-      
+
       val maskBegin : unit -> unit
       val maskEnd : unit -> unit
       val doMasked : (unit -> unit) -> unit

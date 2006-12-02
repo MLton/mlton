@@ -9,30 +9,27 @@
 structure PosixIO: POSIX_IO =
 struct
 
-structure Prim = PosixPrimitive.IO
+structure Prim = PrimitiveFFI.Posix.IO
 open Prim
 structure Error = PosixError
 structure SysCall = Error.SysCall
 structure FS = PosixFileSys
 
-type file_desc = Prim.file_desc
-type pid = Pid.t
+type file_desc = C_Fd.t (* = C_Int.t *)
+type pid = C_PId.t
 
-val FD = PosixPrimitive.FileDesc.fromInt
-val unFD = PosixPrimitive.FileDesc.toInt
-   
 local
-   val a: file_desc array = Array.array (2, FD 0)
+   val a: file_desc array = Array.array (2, C_Fd.fromInt 0)
 in
    fun pipe () =
       SysCall.syscall
       (fn () =>
        (Prim.pipe a,
-        fn () => {infd = Array.sub (a, 0),
-                  outfd = Array.sub (a, 1)}))
+        fn _ => {infd = Array.sub (a, 0),
+                 outfd = Array.sub (a, 1)}))
 end
 
-fun dup fd = FD (SysCall.simpleResult (fn () => Prim.dup fd))
+fun dup fd = SysCall.simpleResult (fn () => Prim.dup fd)
 
 fun dup2 {new, old} = SysCall.simple (fn () => Prim.dup2 (old, new))
 
@@ -40,39 +37,39 @@ fun close fd = SysCall.simpleRestart (fn () => Prim.close fd)
 
 structure FD =
    struct
-      open FD BitFlags
+      structure Flags = BitFlags(structure S = C_Int)
+      open FD Flags
+      val cloexec = CLOEXEC
    end
 
 structure O = PosixFileSys.O
 
 datatype open_mode = datatype PosixFileSys.open_mode
-         
+
 fun dupfd {base, old} =
-   FD (SysCall.simpleResultRestart 
-       (fn () => Prim.fcntl3 (old, F_DUPFD, unFD base)))
+   SysCall.simpleResultRestart 
+   (fn () => Prim.fcntl3 (old, F_DUPFD, base))
 
 fun getfd fd =
-   Word.fromInt (SysCall.simpleResultRestart 
-                 (fn () => Prim.fcntl2 (fd, F_GETFD)))
+   SysCall.simpleResultRestart 
+   (fn () => Prim.fcntl2 (fd, F_GETFD))
 
 fun setfd (fd, flags): unit =
    SysCall.simpleRestart
-   (fn () => Prim.fcntl3 (fd, F_SETFD, Word.toIntX flags))
-                            
+   (fn () => Prim.fcntl3 (fd, F_SETFD, flags))
+
 fun getfl fd : O.flags * open_mode =
    let 
-      val n =
-         SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
-      val w = Word.fromInt n
-      val flags = Word.andb (w, Word.notb O_ACCMODE)
-      val mode = Word.andb (w, O_ACCMODE)
-   in (flags, PosixFileSys.wordToOpenMode mode)
+      val n = SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
+      val flags = C_Int.andb (n, C_Int.notb O_ACCMODE)
+      val mode = C_Int.andb (n, O_ACCMODE)
+   in (flags, PosixFileSys.flagsToOpenMode mode)
    end
-      
+
 fun setfl (fd, flags: O.flags): unit  =
    SysCall.simpleRestart
-   (fn () => Prim.fcntl3 (fd, F_SETFL, Word.toIntX flags))
-         
+   (fn () => Prim.fcntl3 (fd, F_SETFL, flags))
+
 datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
 val whenceToInt =
@@ -80,51 +77,53 @@ val whenceToInt =
     | SEEK_CUR => Prim.SEEK_CUR
     | SEEK_END => Prim.SEEK_END
 
-fun intToWhence n =
-   if n = Prim.SEEK_SET
-      then SEEK_SET
-   else if n = Prim.SEEK_CUR
-           then SEEK_CUR
-        else if n = Prim.SEEK_END
-                then SEEK_END
-             else raise Fail "Posix.IO.intToWhence"
-                      
 fun lseek (fd, n: Position.int, w: whence): Position.int =
-   SysCall.syscall
-   (fn () =>
-    let val n = Prim.lseek (fd, n, whenceToInt w)
-    in (if n = ~1 then ~1 else 0, fn () => n)
-    end)
-         
+   SysCall.simpleResult'
+   ({errVal = C_Off.fromInt ~1}, fn () =>
+    Prim.lseek (fd, n, whenceToInt w))
+
 fun fsync fd : unit = SysCall.simple (fn () => Prim.fsync fd)
-         
-datatype lock_type =
-   F_RDLCK
-  | F_WRLCK
-  | F_UNLCK
+
+val whenceToInt =
+   fn SEEK_SET => Prim.FLock.SEEK_SET
+    | SEEK_CUR => Prim.FLock.SEEK_CUR
+    | SEEK_END => Prim.FLock.SEEK_END
+
+fun intToWhence n =
+   if n = Prim.FLock.SEEK_SET
+      then SEEK_SET
+   else if n = Prim.FLock.SEEK_CUR
+      then SEEK_CUR
+   else if n = Prim.FLock.SEEK_END
+      then SEEK_END
+   else raise Fail "Posix.IO.intToWhence"
+
+datatype lock_type = F_RDLCK | F_WRLCK | F_UNLCK
 
 val lockTypeToInt =
-   fn F_RDLCK => Prim.F_RDLCK
-    | F_WRLCK => Prim.F_WRLCK
-    | F_UNLCK => Prim.F_UNLCK
+   fn F_RDLCK => Prim.FLock.F_RDLCK
+    | F_WRLCK => Prim.FLock.F_WRLCK
+    | F_UNLCK => Prim.FLock.F_UNLCK
 
 fun intToLockType n =
-   if n = Prim.F_RDLCK
+   if n = Prim.FLock.F_RDLCK
       then F_RDLCK
-   else if n = Prim.F_WRLCK
-           then F_WRLCK
-        else if n = Prim.F_UNLCK
-                then F_UNLCK
-             else raise Fail "Posix.IO.intToLockType"
-         
+   else if n = Prim.FLock.F_WRLCK
+      then F_WRLCK
+   else if n = Prim.FLock.F_UNLCK
+      then F_UNLCK
+   else raise Fail "Posix.IO.intToLockType"
+
 structure FLock =
    struct
+      open FLock
+
       type flock = {ltype: lock_type,
                     whence: whence,
                     start: Position.int,
                     len: Position.int,
                     pid: pid option}
-                         
+
       fun flock l = l
       val ltype: flock -> lock_type = #ltype
       val whence: flock -> whence = #whence
@@ -145,16 +144,16 @@ local
          ; P.setWhence (whenceToInt whence)
          ; P.setStart start
          ; P.setLen len
-         ; P.fcntl (fd, cmd)), fn () => 
-        {ltype = intToLockType (P.typ ()),
-         whence = intToWhence (P.whence ()),
-         start = P.start (),
-         len = P.len (),
-         pid = if usepid then SOME (P.pid ()) else NONE}))
+         ; P.fcntl (fd, cmd)), fn _ => 
+        {ltype = intToLockType (P.getType ()),
+         whence = intToWhence (P.getWhence ()),
+         start = P.getStart (),
+         len = P.getLen (),
+         pid = if usepid then SOME (P.getPId ()) else NONE}))
 in
-   val getlk = make (F_GETLK, true)
-   val setlk = make (F_SETLK, false)
-   val setlkw = make (F_SETLKW, false)
+   val getlk = make (FLock.F_GETLK, true)
+   val setlk = make (FLock.F_SETLK, false)
+   val setlkw = make (FLock.F_SETLKW, false)
 end
 
 (* Adapted from SML/NJ sources. *)
@@ -202,9 +201,12 @@ local
             endPos = NONE, 
             verifyPos = NONE}
 
-   fun make {RD, WR, fromVector, read, setMode, toArraySlice, toVectorSlice,
-             vectorLength, write, writeVec} =
+   fun make {RD, WR, fromVector, readArr, setMode, toArraySlice, toVectorSlice,
+             vectorLength, writeArr, writeVec} =
       let
+         val primReadArr = readArr
+         val primWriteArr = writeArr
+         val primWriteVec = writeVec
          val setMode =
             fn fd =>
             if let
@@ -219,35 +221,49 @@ local
          fun readArr (fd, sl): int =
             let
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
+               val bytesRead =
+                  SysCall.simpleResultRestart'
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                   primReadArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+               val bytesRead = C_SSize.toInt bytesRead
             in
-               SysCall.simpleResultRestart (fn () => read (fd, buf, i, sz))
+               bytesRead
             end
          fun readVec (fd, n) =
             let
-               val a = Primitive.Array.array n
+               val buf = Array.arrayUninit n
                val bytesRead = 
-                  SysCall.simpleResultRestart (fn () => read (fd, a, 0, n))
+                  SysCall.simpleResultRestart'
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                   primReadArr (fd, buf, C_Int.fromInt 0, C_Size.fromInt n))
+               val bytesRead = C_SSize.toInt bytesRead
             in 
                fromVector
                (if n = bytesRead
-                   then Vector.fromArray a
-                else ArraySlice.vector (ArraySlice.slice
-                                        (a, 0, SOME bytesRead)))
+                   then Vector.fromArray buf
+                   else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME bytesRead)))
             end
-         fun writeArr (fd, sl) =
+         fun writeArr (fd, sl): int =
             let
                val (buf, i, sz) = ArraySlice.base (toArraySlice sl)
+               val bytesWrote =
+                  SysCall.simpleResultRestart'
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                   primWriteArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+               val bytesWrote = C_SSize.toInt bytesWrote
             in
-               SysCall.simpleResultRestart
-               (fn () => write (fd, buf, i, sz))
+               bytesWrote
             end
-         val writeVec =
-            fn (fd, sl) =>
+         fun writeVec (fd, sl): int =
             let
                val (buf, i, sz) = VectorSlice.base (toVectorSlice sl)
+               val bytesWrote =
+                  SysCall.simpleResultRestart'
+                  ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                   primWriteVec (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+               val bytesWrote = C_SSize.toInt bytesWrote
             in
-               SysCall.simpleResultRestart
-               (fn () => writeVec (fd, buf, i, sz))
+               bytesWrote
             end
          fun mkReader {fd, name, initBlkMode} =
             let
@@ -296,7 +312,7 @@ local
                RD {avail = avail,
                    block = NONE,
                    canInput = NONE,
-                   chunkSize = Primitive.TextIO.bufSize,
+                   chunkSize = Int32.toInt Primitive.Controls.bufSize,
                    close = close,
                    endPos = endPos,
                    getPos = getPos,
@@ -370,24 +386,24 @@ in
       make {RD = BinPrimIO.RD,
             WR = BinPrimIO.WR,
             fromVector = Word8Vector.fromPoly,
-            read = readWord8,
+            readArr = readWord8,
             setMode = Prim.setbin,
             toArraySlice = Word8ArraySlice.toPoly,
             toVectorSlice = Word8VectorSlice.toPoly,
             vectorLength = Word8Vector.length,
-            write = writeWord8,
+            writeArr = writeWord8Arr,
             writeVec = writeWord8Vec}
    val {mkReader = mkTextReader, mkWriter = mkTextWriter, ...} =
       make {RD = TextPrimIO.RD,
             WR = TextPrimIO.WR,
             fromVector = fn v => v,
-            read = readChar,
+            readArr = readChar8,
             setMode = Prim.settext,
             toArraySlice = CharArraySlice.toPoly,
             toVectorSlice = CharVectorSlice.toPoly,
             vectorLength = CharVector.length,
-            write = writeChar,
-            writeVec = writeCharVec}
+            writeArr = writeChar8Arr,
+            writeVec = writeChar8Vec}
 end
 
 end

@@ -1,0 +1,61 @@
+
+Notes on the status of the x86_64 port of MLton.
+=======================================================================
+
+Summary:
+
+The runtime system (i.e., garbage collector and related services) has
+been rewritten to be configurable along two independent axes: the
+native pointer size and the ML heap object pointer size.  There are no
+known functionality or performance regressions with respect to the
+rewritten runtime and the mainline runtime.
+
+The Basis Library has been refactored so that it is compile-time
+configurable on the following axes:
+
+   OBJPTR -- size of an object pointer (32-bits or 64-bits)
+   HEADER -- size of an object header (32-bits or 64-bits)
+   SEQINDEX -- size of an array/vector length (32-bits or 64-bits)
+
+   DEFAULT_CHAR -- size of Char.char (8-bits; no choice according to spec)
+   DEFAULT_INT -- size of Int.int (32-bits, 64-bits, and IntInf.int)
+   DEFAULT_REAL -- size of Real.real (32-bits, 64-bits)
+   DEFAULT_WORD -- size of Word.word (32-bits, 64-bits)
+
+   C_TYPES -- sizes of various primitive C types
+
+The object pointer and object header are needed for the IntInf
+implemention.  Configuring the default sizes support both adopting
+64-bit integers and words as the default on 64-bit platforms, but also
+supports retaining 32-bit integers and words as the default on 64-bit
+platforms.  The sizes of primitive C types are determined by the
+target architecture and operating system.  This ensures that the Basis
+Library uses the right representation for file descriptors, etc., and
+ensures that the implementation may be shared between 32-bit and
+64-bit systems.  There are no known functionality or performance
+regressions with respect to the refactored Basis Library
+implementation and the mainline implementation.
+
+The next step is to push changes through the compiler proper to
+support a C-codegen in which all pointers are 64-bit.  After shaking
+out bugs there, we should be able to consider supporting smaller
+ML-pointer representations and a simple native codegen.
+
+
+MLton.IntInf changes:
+
+As noted above, the object pointer size is needed by the IntInf
+implementation, which represents an IntInf.int either as a pointer to
+a vector of GNU MP mp_limb_t objects or as the upper bits of a
+pointer.  Since the representation of mp_limb_t changes from a 32-bit
+system to a 64-bit system, and the size of an object pointer may be
+compile-time configurable, we have changed the MLTON_INTINF signature
+to have the following:
+
+      structure BigWord : WORD
+      structure SmallInt : INTEGER
+
+      datatype rep =
+         Big of BigWord.word vector
+       | Small of SmallInt.int
+      val rep: t -> rep

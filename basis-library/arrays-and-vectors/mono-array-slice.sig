@@ -5,7 +5,7 @@ signature MONO_ARRAY_SLICE =
       type slice
       type vector
       type vector_slice
-         
+
       val length: slice -> int
       val sub: slice * int -> elem
       val update: slice * int * elem -> unit

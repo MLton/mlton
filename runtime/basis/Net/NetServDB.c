@@ -5,42 +5,42 @@
 
 static struct servent *servent;
 
-Cstring NetServDB_Entry_name() {
-        return (Cstring)servent->s_name;
+C_String_t NetServDB_getEntryName(void) {
+  return (C_String_t)(servent->s_name);
 }
 
-Int NetServDB_Entry_numAliases() {
-        int num = 0;
-        while (servent->s_aliases[num] != NULL) num++;
-        return num;
+C_Int_t NetServDB_getEntryAliasesNum(void) {
+  int num = 0;
+  while (servent->s_aliases[num] != NULL) num++;
+  return num;
 }
 
-Cstring NetServDB_Entry_aliasesN(Int n) {
-        return (Cstring)servent->s_aliases[n];
+C_String_t NetServDB_getEntryAliasesN(C_Int_t n) {
+  return (C_String_t)(servent->s_aliases[n]);
 }
 
-Int NetServDB_Entry_port() {
-        return servent->s_port;
+C_Int_t NetServDB_getEntryPort(void) {
+  return servent->s_port;
 }
 
-Cstring NetServDB_Entry_protocol() {
-        return (Cstring)servent->s_proto;
+C_String_t NetServDB_getEntryProto(void) {
+  return (C_String_t)(servent->s_proto);
 }
 
-Int NetServDB_getByName(Cstring name, Cstring proto) {
-        servent = getservbyname((char*)name, (char*)proto);
-        return (servent != NULL and servent->s_name != NULL);
+C_Int_t NetServDB_getByName(NullString8_t name, NullString8_t proto) {
+  servent = getservbyname((const char*)name, (const char*)proto);
+  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
 }
 
-Int NetServDB_getByNameNull(Cstring name) {
-        return NetServDB_getByName(name, (Cstring)NULL);
+C_Int_t NetServDB_getByNameNull(NullString8_t name) {
+  return NetServDB_getByName(name, (NullString8_t)NULL);
 }
 
-Int NetServDB_getByPort(Int port, Cstring proto) {
-        servent = getservbyport(port, (char*)proto);
-        return (servent != NULL and servent->s_name != NULL);
+C_Int_t NetServDB_getByPort(C_Int_t port, NullString8_t proto) {
+  servent = getservbyport(port, (const char*)proto);
+  return (C_Int_t)(servent != NULL and servent->s_name != NULL);
 }
 
-Int NetServDB_getByPortNull(Int port) {
-        return NetServDB_getByPort(port, (Cstring)NULL);
+C_Int_t NetServDB_getByPortNull(C_Int_t port) {
+  return NetServDB_getByPort(port, (NullString8_t)NULL);
 }

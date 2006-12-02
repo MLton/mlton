@@ -9,6 +9,8 @@
 #ifndef _MAIN_H_
 #define _MAIN_H_
 
+#define MLTON_GC_INTERNAL_TYPES
+#define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 
 /* The label must be declared as weak because gcc's optimizer may prove that
@@ -25,8 +27,8 @@
 #define Vector(a, b, c, d) { a, b, c, d },
 #define EndVectors };
 
-#define LoadArray(a, f) sfread (a, sizeof(*a), cardof(a), f)
-#define SaveArray(a, fd) swrite (fd, a, sizeof(*a) * cardof(a))
+#define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
+#define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 
 Pointer gcStateAddress;
 
@@ -34,35 +36,35 @@ Pointer gcStateAddress;
         gcStateAddress = &gcState;                                      \
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
-        gcState.atMLtonsSize = cardof(atMLtons);                        \
+        gcState.atMLtonsLength = cardof(atMLtons);                      \
         gcState.frameLayouts = frameLayouts;                            \
-        gcState.frameLayoutsSize = cardof(frameLayouts);                \
-        gcState.frameSources = frameSources;                            \
-        gcState.frameSourcesSize = cardof(frameSources);                \
+        gcState.frameLayoutsLength = cardof(frameLayouts);              \
         gcState.globals = globalPointer;                                \
-        gcState.globalsSize = cardof(globalPointer);                    \
+        gcState.globalsLength = cardof(globalPointer);                  \
         gcState.intInfInits = intInfInits;                              \
-        gcState.intInfInitsSize = cardof(intInfInits);                  \
+        gcState.intInfInitsLength = cardof(intInfInits);                \
         gcState.loadGlobals = loadGlobals;                              \
         gcState.magic = mg;                                             \
         gcState.maxFrameSize = mfs;                                     \
         gcState.mutatorMarksCards = mmc;                                \
         gcState.objectTypes = objectTypes;                              \
-        gcState.objectTypesSize = cardof(objectTypes);                  \
-        gcState.profileKind = pk;                                       \
-        gcState.profileStack = ps;                                      \
+        gcState.objectTypesLength = cardof(objectTypes);                \
         gcState.returnAddressToFrameIndex = returnAddressToFrameIndex;  \
         gcState.saveGlobals = saveGlobals;                              \
-        gcState.sourceLabels = sourceLabels;                            \
-        gcState.sourceLabelsSize = cardof(sourceLabels);                \
-        gcState.sourceNames = sourceNames;                              \
-        gcState.sourceNamesSize = cardof(sourceNames);                  \
-        gcState.sourceSeqs = sourceSeqs;                                \
-        gcState.sourceSeqsSize = cardof(sourceSeqs);                    \
-        gcState.sources = sources;                                      \
-        gcState.sourcesSize = cardof(sources);                          \
         gcState.vectorInits = vectorInits;                              \
-        gcState.vectorInitsSize = cardof(vectorInits);                  \
+        gcState.vectorInitsLength = cardof(vectorInits);                \
+        gcState.sourceMaps.frameSources = frameSources;                 \
+        gcState.sourceMaps.frameSourcesLength = cardof(frameSources);   \
+        gcState.sourceMaps.sourceLabels = sourceLabels;                 \
+        gcState.sourceMaps.sourceLabelsLength = cardof(sourceLabels);   \
+        gcState.sourceMaps.sourceNames = sourceNames;                   \
+        gcState.sourceMaps.sourceNamesLength = cardof(sourceNames);     \
+        gcState.sourceMaps.sourceSeqs = sourceSeqs;                     \
+        gcState.sourceMaps.sourceSeqsLength = cardof(sourceSeqs);       \
+        gcState.sourceMaps.sources = sources;                           \
+        gcState.sourceMaps.sourcesLength = cardof(sources);             \
+        gcState.profiling.kind = pk;                                    \
+        gcState.profiling.stack = ps;                                   \
         MLton_init (argc, argv, &gcState);                              \
 
 void MLton_callFromC ();

@@ -8,7 +8,7 @@
 
 type int = Int.t
 type word = Word.t
-   
+
 signature BACKEND_STRUCTS = 
    sig
       structure Machine: MACHINE
@@ -21,7 +21,7 @@ signature BACKEND_STRUCTS =
 signature BACKEND = 
    sig
       include BACKEND_STRUCTS
-      
+
       val toMachine:
          Ssa.Program.t
          * {codegenImplementsPrim: Machine.Type.t Machine.Prim.t -> bool}

@@ -12,7 +12,7 @@ functor QueueLinkedList(): QUEUE_EPHEMERAL_UNBOUNDED =
 struct
 
 val {error, ...} = Error.errors("queue", "linked-list")
-    
+
 structure L = MutableList
 
 datatype 'a t = T of {head: 'a L.t ref,

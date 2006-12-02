@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature REGEXP_STRUCTS = 
    sig
    end
@@ -113,7 +113,7 @@ functor TestRegexp (S: REGEXP): sig end =
 struct
 
 val _ = print "TestRegexp\n"
-   
+
 open S
 open Compiled
 val compile = if true then compileNFA else compileDFA
@@ -295,5 +295,5 @@ val _ =
                  let val (_, {start, length}) = Substring.base (Match.all m)
                  in (start, start + length)
                  end)))
-   
+
 end

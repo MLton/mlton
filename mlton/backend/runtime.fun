@@ -28,7 +28,7 @@ structure GCField =
        | StackTop
 
       val equals: t * t -> bool = op =
-         
+
 (*       val ty =
  *       fn CanHandle => CType.defaultInt
  *        | CardMap => CType.pointer
@@ -112,11 +112,11 @@ structure RObjectType =
    struct
       datatype t =
          Array of {hasIdentity: bool,
-                   nonPointer: Bytes.t,
-                   pointers: int}
+                   bytesNonPointers: Bytes.t,
+                   numPointers: int}
        | Normal of {hasIdentity: bool,
-                    nonPointer: Words.t,
-                    pointers: int}
+                    bytesNonPointers: Bytes.t,
+                    numPointers: int}
        | Stack
        | Weak
        | WeakGone
@@ -126,16 +126,16 @@ structure RObjectType =
             open Layout
          in
             case t of
-               Array {hasIdentity, nonPointer = np, pointers = p} =>
+               Array {hasIdentity, bytesNonPointers = np, numPointers = p} =>
                   seq [str "Array ",
                        record [("hasIdentity", Bool.layout hasIdentity),
-                               ("nonPointer", Bytes.layout np),
-                               ("pointers", Int.layout p)]]
-             | Normal {hasIdentity, nonPointer = np, pointers = p} =>
+                               ("bytesNonPointers", Bytes.layout np),
+                               ("numPointers", Int.layout p)]]
+             | Normal {hasIdentity, bytesNonPointers = np, numPointers = p} =>
                   seq [str "Normal ",
                        record [("hasIdentity", Bool.layout hasIdentity),
-                               ("nonPointer", Words.layout np),
-                               ("pointers", Int.layout p)]]
+                               ("bytesNonPointers", Bytes.layout np),
+                               ("numPointers", Int.layout p)]]
              | Stack => str "Stack"
              | Weak => str "Weak"
              | WeakGone => str "WeakGone"
@@ -144,7 +144,7 @@ structure RObjectType =
    end
 
 val maxTypeIndex = Int.pow (2, 19)
-   
+
 fun typeIndexToHeader typeIndex =
    (Assert.assert ("Runtime.header", fn () =>
                    0 <= typeIndex
@@ -177,7 +177,7 @@ val headerOffset = Bytes.~ Bytes.inWord
 fun normalSize {nonPointers, pointers} =
    Bytes.+ (Words.toBytes nonPointers,
             Bytes.scale (pointerSize, pointers))
- 
+
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 
 end

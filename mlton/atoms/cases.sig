@@ -20,7 +20,7 @@ signature CASES_STRUCTS =
 signature CASES = 
    sig
       include CASES_STRUCTS
-      
+
       datatype 'a t =
          Char of (char * 'a) vector
        | Con of (con * 'a) vector

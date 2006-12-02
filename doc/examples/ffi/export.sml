@@ -6,7 +6,7 @@ val _ = e (fn (i, r, _) =>
 val g = _import "g": unit -> unit;
 val _ = g ()
 val _ = g ()
-   
+
 val e = _export "f2": (Word8.word -> word array) -> unit;
 val _ = e (fn w =>
            Array.tabulate (10, fn _ => Word.fromLargeWord (Word8.toLargeWord w)))
@@ -29,6 +29,6 @@ val (_, zzzSet) = _symbol "zzz" alloc: (unit -> int) * (int -> unit);
 val () = zzzSet 42
 val g5 = _import "g5": unit -> unit;
 val _ = g5 ()
-   
+
 val _ = print "success\n"
 

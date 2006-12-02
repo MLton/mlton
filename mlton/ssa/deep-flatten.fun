@@ -21,7 +21,7 @@ structure Tree = Tree (structure Seq = Prod)
 structure TypeTree =
    struct
       datatype t = datatype Tree.t
-         
+
       datatype info =
          Flat
        | NotFlat of {ty: Type.t,
@@ -91,7 +91,7 @@ structure VarTree =
          in
             T (info, Prod.map (ts, dropVars))
          end
-         
+
       fun fillInRoots (t: t, {base: Var.t Base.t, offset: int})
          : t * Statement.t list =
          let
@@ -263,7 +263,7 @@ structure Flat =
    end
 
 datatype z = datatype Flat.t
-   
+
 structure Value =
    struct
       datatype t =
@@ -444,7 +444,7 @@ structure Value =
 
       fun object f =
          Object (Equatable.delay (fn () => objectFields (f ())))
-            
+
       val tuple: t Prod.t -> t =
          fn vs =>
          Object (Equatable.new (objectFields {args = vs, con = ObjectCon.Tuple}))

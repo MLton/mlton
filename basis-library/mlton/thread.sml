@@ -8,7 +8,16 @@
 structure MLtonThread:> MLTON_THREAD_EXTRA =
 struct
 
-structure Prim = Primitive.Thread
+structure Prim = Primitive.MLton.Thread
+
+fun die (s: string): 'a =
+   (PrimitiveFFI.Stdio.print s
+    ; PrimitiveFFI.Posix.Process.exit 1
+    ; let exception DieFailed
+      in raise DieFailed
+      end)
+
+val gcState = Primitive.MLton.GCState.gcState
 
 structure AtomicState =
    struct
@@ -22,8 +31,8 @@ in
    val atomicEnd = atomicEnd
    val atomicState = fn () =>
       case canHandle () of
-         0 => AtomicState.NonAtomic
-       | n => AtomicState.Atomic n
+         0wx0 => AtomicState.NonAtomic
+       | w => AtomicState.Atomic (Word32.toInt w)
 end
 
 fun atomically f =
@@ -68,7 +77,7 @@ local
             val () = Prim.copyCurrent ()
          in
             case !func of
-               NONE => Prim.savedPre ()
+               NONE => Prim.savedPre gcState
              | SOME x =>
                   (* This branch never returns. *)
                   let
@@ -107,7 +116,7 @@ in
             val r : (unit -> 'a) ref = 
                ref (fn () => die "Thread.atomicSwitch didn't set r.\n")
             val t: 'a thread ref =
-               ref (Paused (fn x => r := x, Prim.current ()))
+               ref (Paused (fn x => r := x, Prim.current gcState))
             fun fail e = (t := Dead
                           ; switching := false
                           ; atomicEnd ()
@@ -163,16 +172,16 @@ local
 in
    fun amInSignalHandler () = InHandler = !state
 
-   fun setHandler (f: Runnable.t -> Runnable.t): unit =
+   fun setSignalHandler (f: Runnable.t -> Runnable.t): unit =
       let
-         val _ = Primitive.installSignalHandler ()
+         val _ = Primitive.MLton.installSignalHandler ()
          fun loop (): unit =
             let
                (* Atomic 1 *)
                val _ = state := InHandler
-               val t = f (fromPrimitive (Prim.saved ()))
+               val t = f (fromPrimitive (Prim.saved gcState))
                val _ = state := Normal
-               val _ = Prim.finishHandler ()
+               val _ = Prim.finishSignalHandler gcState
                val _ =
                   atomicSwitch
                   (fn (T r) =>
@@ -180,7 +189,7 @@ in
                       val _ =
                          case !r of
                             Paused (f, _) => f (fn () => ())
-                          | _ => raise die "Thread.setHandler saw strange thread"
+                          | _ => raise die "Thread.setSignalHandler saw strange thread"
                    in
                       t
                    end) (* implicit atomicEnd () *)
@@ -192,15 +201,15 @@ in
             (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
          val _ = signalHandler := SOME p
       in
-         Prim.setHandler p
+         Prim.setSignalHandler (gcState, p)
       end
 
-   fun switchToHandler () =
+   fun switchToSignalHandler () =
       let
          (* Atomic 0 *)
          val () = atomicBegin ()
          (* Atomic 1 *)
-         val () = Prim.startHandler () (* implicit atomicBegin () *)
+         val () = Prim.startSignalHandler gcState (* implicit atomicBegin () *)
          (* Atomic 2 *)
       in
          case !signalHandler of
@@ -215,25 +224,26 @@ local
 in
    val register: int * (unit -> unit) -> unit =
       let
-         val exports = Array.array (Primitive.FFI.numExports, fn () =>
-                                    raise Fail "undefined export")
+         val exports = 
+            Array.array (Int32.toInt (Primitive.MLton.FFI.numExports), 
+                         fn () => raise Fail "undefined export")
          fun loop (): unit =
             let
                (* Atomic 2 *)
-               val t = Prim.saved ()
+               val t = Prim.saved gcState
                fun doit () =
                   let
                      (* Atomic 1 *)
                      val _ = 
                         (* atomicEnd() after getting args *)
-                        (Array.sub (exports, Primitive.FFI.getOp ()) ())
+                        (Array.sub (exports, Int32.toInt (Primitive.MLton.FFI.getOp ())) ())
                         handle e => 
                            (TextIO.output 
                             (TextIO.stdErr, "Call from C to SML raised exception.\n")
                             ; MLtonExn.topLevelHandler e)
                         (* atomicBegin() before putting res *)
                      (* Atomic 1 *)
-                     val _ = Prim.setSaved t
+                     val _ = Prim.setSaved (gcState, t)
                      val _ = Prim.returnToC () (* implicit atomicEnd() *)
                   in
                      ()
@@ -243,7 +253,7 @@ in
                loop ()
             end
          val p = toPrimitive (new (fn () => loop ()))
-         val _ = Prim.setCallFromCHandler p
+         val _ = Prim.setCallFromCHandler (gcState, p)
       in
          fn (i, f) => Array.update (exports, i, f)
       end

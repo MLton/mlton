@@ -10,20 +10,15 @@ structure MLtonSignal: MLTON_SIGNAL_EXTRA =
 struct
 
 open Posix.Signal
-structure Prim = PosixPrimitive.Signal
+structure Prim = PrimitiveFFI.Posix.Signal
 structure Error = PosixError
 structure SysCall = Error.SysCall
 val restart = SysCall.restartFlag
 
 type t = signal
 
-val prof = Prim.prof
-val vtalrm = Prim.vtalrm
+type how = C_Int.t
 
-type how = Prim.how
-
-(* val toString = SysWord.toString o toWord *)
-   
 fun raiseInval () =
    let
       open PosixError
@@ -33,8 +28,12 @@ fun raiseInval () =
 
 val validSignals = 
    Array.tabulate 
-   (Prim.numSignals, fn i => 
-    Prim.sigismember(fromInt i) <> ~1)
+   (C_Int.toInt Prim.NSIG, fn i => 
+    SysCall.syscallErr
+    ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+     {return = Prim.sigismember (fromInt i),
+      post = fn _ => true,
+      handlers = [(Error.inval, fn () => false)]}))
 
 structure Mask =
    struct
@@ -53,9 +52,16 @@ structure Mask =
          (Array.foldri
           (fn (i, b, sigs) =>
            if b
-              then if (Prim.sigismember(fromInt i)) = 1
-                      then (fromInt i)::sigs
-                      else sigs
+              then let
+                      val s = fromInt i
+                      val res =
+                         SysCall.simpleResult
+                         (fn () => Prim.sigismember s)
+                   in
+                      if res = C_Int.fromInt 1
+                         then s::sigs
+                         else sigs
+                   end
               else sigs)
           []
           validSignals)
@@ -68,15 +74,15 @@ structure Mask =
           | Some signals =>
                (SysCall.simple Prim.sigemptyset
                 ; List.app (fn s => SysCall.simple (fn () => Prim.sigaddset s)) signals)
-               
+
       local
          fun make (how: how) (m: t) =
             (write m; SysCall.simpleRestart (fn () => Prim.sigprocmask how))
       in
-         val block = make Prim.block
-         val unblock = make Prim.unblock
-         val setBlocked = make Prim.setmask
-         fun getBlocked () = (make Prim.block none; read ())
+         val block = make Prim.SIG_BLOCK
+         val unblock = make Prim.SIG_UNBLOCK
+         val setBlocked = make Prim.SIG_SETMASK
+         fun getBlocked () = (make Prim.SIG_BLOCK none; read ())
       end
 
       local
@@ -103,19 +109,19 @@ structure Handler =
 datatype handler = datatype Handler.t
 
 local
-   val r = ref false
+   val r = ref C_Int.zero
 in
    fun initHandler (s: signal): Handler.t =
-      if 0 = Prim.isDefault (s, r)
-         then if !r
-                 then Default
-              else Ignore
-      else InvalidSignal
+      SysCall.syscallErr
+      ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
+       {return = Prim.isDefault (s, r),
+        post = fn _ => if !r <> C_Int.zero then Default else Ignore,
+        handlers = [(Error.inval, fn () => InvalidSignal)]})
 end
 
 val (getHandler, setHandler, handlers) =
    let
-      val handlers = Array.tabulate (Prim.numSignals, initHandler o fromInt)
+      val handlers = Array.tabulate (C_Int.toInt Prim.NSIG, initHandler o fromInt)
       val _ =
          Cleaner.addNew
          (Cleaner.atLoadWorld, fn () =>
@@ -137,7 +143,7 @@ fun handled () =
      case h of 
         Handler _ => (fromInt s)::sigs
       | _ => sigs) [] handlers)
-   
+
 structure Handler =
    struct
       open Handler
@@ -172,21 +178,25 @@ structure Handler =
                          end)
 
             val () =
-               MLtonThread.setHandler
+               MLtonThread.setSignalHandler
                (fn t =>
                 let
                    val mask = Mask.getBlocked ()
                    val () = Mask.block (handled ())
                    val fs = 
                       case !gcHandler of
-                         Handler f => if Prim.isGCPending () then [f] else []
+                         Handler f => if Prim.isPendingGC () <> C_Int.zero 
+                                         then [f] 
+                                         else []
                        | _ => []
                    val fs =
                       Array.foldri
                       (fn (s, h, fs) =>
                        case h of
                           Handler f =>
-                             if Prim.isPending (fromInt s) then f::fs else fs
+                             if Prim.isPending (fromInt s) <> C_Int.zero
+                                then f::fs 
+                                else fs
                         | _ => fs) fs handlers
                    val () = Prim.resetPending ()
                    val () = Mask.setBlocked mask
@@ -220,8 +230,8 @@ val setHandler = fn (s, h) =>
 
 fun suspend m =
    (Mask.write m
-    ; Prim.suspend ()
-    ; MLtonThread.switchToHandler ())
+    ; Prim.sigsuspend ()
+    ; MLtonThread.switchToSignalHandler ())
 
 fun handleGC f =
    (Prim.handleGC ()

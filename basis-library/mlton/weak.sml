@@ -8,7 +8,7 @@
 structure MLtonWeak =
    struct
       structure Weak = Primitive.MLton.Weak
-         
+
       type 'a t = 'a Weak.t
 
       val new = Weak.new

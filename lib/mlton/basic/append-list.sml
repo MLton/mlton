@@ -21,9 +21,9 @@ datatype 'a t =
  | Single of 'a
  | Snoc of 'a t (* Nonempty *) * 'a 
  | Vector of 'a vector (* Nonempty. *)
-   
+
 val isEmpty = fn Empty => true | _ => false
-         
+
 fun append (t1, t2) =
    if isEmpty t1
       then t2
@@ -60,7 +60,7 @@ fun fromList l =
    if List.isEmpty l
       then Empty
    else List l
-   
+
 fun fromVector v =
    if Vector.isEmpty v
       then Empty
@@ -133,5 +133,5 @@ fun toVector ds = Vector.tabulator (length ds, fn call => foreach (ds, call))
 fun layout layoutX l = List.layout layoutX (toList l)
 
 fun push (r, x) = r := cons (x, !r)
-   
+
 end

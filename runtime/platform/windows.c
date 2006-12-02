@@ -1,10 +1,75 @@
-HANDLE fileDesHandle (int fd);
+iHANDLE fileDesHandle (int fd);
 
-static void showMaps () {
+#define BUFSIZE 65536
+
+static HANDLE tempFileDes (void) {
+  /* Based on http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating_and_using_a_temporary_file.asp
+   */  
+  HANDLE hTempFile; 
+  DWORD dwRetVal;
+  DWORD dwBufSize=BUFSIZE;
+  UINT uRetVal;
+  char szTempName[BUFSIZE];  
+  char lpPathBuffer[BUFSIZE];
+
+  dwRetVal = GetTempPath(dwBufSize, lpPathBuffer);
+  if (dwRetVal > dwBufSize)
+    die ("GetTempPath failed with error %ld\n", GetLastError());
+  uRetVal = GetTempFileName(lpPathBuffer, "TempFile", 0, szTempName);
+  if (0 == uRetVal)
+    die ("GetTempFileName failed with error %ld\n", GetLastError());
+  hTempFile = CreateFile((LPTSTR) szTempName, GENERIC_READ | GENERIC_WRITE,
+    0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+    NULL);                
+  if (hTempFile == INVALID_HANDLE_VALUE)
+    die ("CreateFile failed with error %ld\n", GetLastError());
+  return hTempFile;
+}
+
+typedef struct {
+  HANDLE handle;
+} *WriteToDiskData;
+
+void GC_diskBack_read (void *data, pointer buf, size_t size) {
+  HANDLE h;
+  DWORD d;
+  DWORD dwBytesRead;
+
+  h = ((WriteToDiskData)data)->handle;
+  d = SetFilePointer (h, 0, NULL, FILE_BEGIN);
+  if (d == INVALID_SET_FILE_POINTER)
+    die ("SetFilePointer failed with error %ld\n", GetLastError());
+  unless (ReadFile(h, buf, size, &dwBytesRead, NULL))
+    die ("ReadFile failed with error %ld\n", GetLastError());
+}
+
+void GC_diskBack_close (void *data) {
+  HANDLE h;
+
+  h = ((WriteToDiskData)data)->handle;
+  unless (CloseHandle (h))
+    die ("CloseHandle failed with error %ld.", GetLastError());
+  free (data);
+}
+
+void *GC_diskBack_write (pointer buf, size_t size) {
+  HANDLE h;
+  WriteToDiskData d;
+  DWORD dwBytesWritten;
+
+  h = tempFileDes ();
+  unless (WriteFile (h, buf, size, &dwBytesWritten, NULL))
+    die ("WriteFile failed with error %ld\n", GetLastError());
+  d = (WriteToDiskData)(malloc_safe (sizeof(*d)));
+  d->handle = h;
+  return d;
+}
+
+static void displayMaps (void) {
         MEMORY_BASIC_INFORMATION buf;
-        LPCVOID lpAddress;
-        char *state = "<unset>";
-        char *protect = "<unset>";
+        LPVOID lpAddress;
+        const char *state = "<unset>";
+        const char *protect = "<unset>";
 
         for (lpAddress = 0; lpAddress < (LPCVOID)0x80000000; ) {
                 VirtualQuery (lpAddress, &buf, sizeof (buf));
@@ -53,14 +118,14 @@ static void showMaps () {
                         break;
                 }
                 fprintf(stderr, "0x%8x %10u  %s %s\n",
-                        (uint)buf.BaseAddress,
-                        (uint)buf.RegionSize,
+                        (unsigned int)buf.BaseAddress,
+                        (unsigned int)buf.RegionSize,
                         state, protect);
-                lpAddress += buf.RegionSize;
+                lpAddress = (unsigned char*)lpAddress + buf.RegionSize;
         }
 }
 
-void showMem () {
+void GC_displayMem (void) {
         MEMORYSTATUS ms; 
 
         ms.dwLength = sizeof (MEMORYSTATUS); 
@@ -72,7 +137,7 @@ void showMem () {
                          ms.dwAvailPageFile, 
                          ms.dwTotalVirtual, 
                          ms.dwAvailVirtual); 
-        showMaps ();
+        displayMaps ();
 }
 
 static HANDLE dupHandle (int fd) {
@@ -107,7 +172,8 @@ static inline void Windows_decommit (void *base, size_t length) {
                 die ("VirtualFree decommit failed");
 }
 
-static inline void *Windows_mmapAnon (void *start, size_t length) {
+static inline void *Windows_mmapAnon (__attribute__ ((unused)) void *start,
+                                        size_t length) {
         void *res;
 
         /* Use "0" instead of "start" as the first argument to VirtualAlloc
@@ -124,15 +190,16 @@ static inline void Windows_release (void *base) {
                 die ("VirtualFree release failed");
 }
 
-Pid Windows_Process_create (NullString cmds, NullString args, NullString envs,
-                                Fd in, Fd out, Fd err) {
+C_Errno_t(C_PId_t) 
+Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t envs,
+                        C_Fd_t in, C_Fd_t out, C_Fd_t err) {
         char    *cmd;
         char    *arg;
         char    *env;
         int     result;
         STARTUPINFO si;
         PROCESS_INFORMATION proc;
-        
+
         cmd = (char*)cmds;
         arg = (char*)args;
         env = (char*)envs;
@@ -180,9 +247,9 @@ Pid Windows_Process_create (NullString cmds, NullString args, NullString envs,
         return result;
 }
 
-Int Windows_Process_terminate (Pid pid, Int sig) {
+C_Errno_t(C_Int_t) Windows_Process_terminate (C_PId_t pid, C_Signal_t sig) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* We terminate with 'sig' for the _return_ code + 0x80
          * Then in the basis library I test for this to decide W_SIGNALED.

@@ -11,7 +11,7 @@ struct
 datatype 'a t = T of {dummy: 'a,
                       elts: 'a array ref,
                       length: int ref}
-   
+
 fun new {dummy} =
    T {dummy = dummy,
       elts = ref (Array.array (1, dummy)),
@@ -25,7 +25,7 @@ fun last (T {elts, length = ref n, ...}) =
    if 0 = n
       then NONE
    else SOME (Array.sub (!elts, n - 1))
-   
+
 val growFactor: int = 2
 
 fun ensureFree (T {dummy, elts, length, ...}, amount: int): unit =

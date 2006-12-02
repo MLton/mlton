@@ -13,6 +13,6 @@ signature REF_FLATTEN_STRUCTS =
 signature REF_FLATTEN = 
    sig
       include REF_FLATTEN_STRUCTS
-      
+
       val flatten: Program.t -> Program.t
    end

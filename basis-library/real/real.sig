@@ -1,8 +1,3 @@
-structure LargeReal =
-   struct
-      type real = real
-   end
-
 signature PRE_REAL_GLOBAL =
   sig
       type real
@@ -27,24 +22,44 @@ signature PRE_REAL =
       val ?= : real * real -> bool
       val ~ : real -> real
       val abs: real -> real
-      val class: real -> Primitive.Real64.Class.t
-      val frexp: real * int ref -> real
-      val gdtoa: real * int * int * int ref -> Primitive.CString.t
-      val fromInt: int -> real
-      val fromLarge: IEEEReal.rounding_mode -> LargeReal.real -> real
-      val ldexp: real * int -> real
+
       val maxFinite: real
       val minNormalPos: real
       val minPos: real
-      val modf: real * real ref -> real
+
+      val realSize: Primitive.Int32.int
+      val precision: Primitive.Int32.int
+      val radix: Primitive.Int32.int
+
+      val class: real -> C_Int.t
+      val signBit: real -> C_Int.t
+
       val nextAfterDown: real -> real
       val nextAfterUp: real -> real
-      val precision: int
-      val radix: int
-      val signBit: real -> int
-      val strto: NullString.t -> real
-      val toInt: real -> int
-      val toLarge: real -> LargeReal.real        
+
+      val frexp: real * C_Int.int ref -> real
+      val ldexp: real * C_Int.int -> real
+      val modf: real * real ref -> real
+
+      val round: real -> real
+      val gdtoa: real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t
+      val strto: Primitive.NullString8.t -> real
+
+      val fromInt8Unsafe: Primitive.Int8.int -> real
+      val fromInt16Unsafe: Primitive.Int16.int -> real
+      val fromInt32Unsafe: Primitive.Int32.int -> real
+      val fromInt64Unsafe: Primitive.Int64.int -> real
+
+      val fromReal32Unsafe: Primitive.Real32.real -> real
+      val fromReal64Unsafe: Primitive.Real64.real -> real
+
+      val toInt8Unsafe: real -> Primitive.Int8.int
+      val toInt16Unsafe: real -> Primitive.Int16.int
+      val toInt32Unsafe: real -> Primitive.Int32.int
+      val toInt64Unsafe: real -> Primitive.Int64.int
+
+      val toReal32Unsafe: real -> Primitive.Real32.real
+      val toReal64Unsafe: real -> Primitive.Real64.real
   end
 
 signature REAL_GLOBAL =
@@ -119,4 +134,10 @@ signature REAL =
       val toManExp: real -> {man: real, exp: int}
       val toString: real -> string
       val unordered: real * real -> bool
+   end
+
+signature REAL_EXTRA =
+   sig
+      include REAL
+      val realSize: Int.int
    end

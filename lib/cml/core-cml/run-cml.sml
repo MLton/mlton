@@ -26,7 +26,7 @@ structure RunCML : RUN_CML =
       local
          structure Signal = MLton.Signal
          structure Itimer = MLton.Itimer
-            
+
          fun getAlrmHandler () =
             Signal.getHandler Posix.Signal.alrm
          fun setAlrmHandler h =

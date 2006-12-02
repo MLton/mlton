@@ -105,7 +105,7 @@ fun T' {buckets, mask}
         then T (ref (shrink {buckets = buckets, mask = mask}))
       else T (ref {buckets = buckets, mask = mask})
     end
-      
+
 fun coerce (s1 as T (s1' as ref (s1'' as {buckets = buckets1, mask = mask1})),
             s2 as T (s2' as ref (s2'' as {buckets = buckets2, mask = mask2})))
   = if mask1 = mask2
@@ -331,4 +331,3 @@ val op > = isSuperset
 val op >= = isSupersetEq
 
 end
-                        

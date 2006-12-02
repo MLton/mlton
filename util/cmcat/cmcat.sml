@@ -333,7 +333,7 @@ struct
                                          syms: (PG.namespace * String.t) list}
                       val symsDefs : v HashSet.t =
                          HashSet.new {hash = fn V {hash, ...} => hash}
-                                
+
                       val _ =
                          List.foreach
                          (defs, fn PG.DEF {lhs, rhs} =>

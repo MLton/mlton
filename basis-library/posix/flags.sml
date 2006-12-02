@@ -6,25 +6,30 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor BitFlags(val all: SysWord.word): BIT_FLAGS_EXTRA =
+functor BitFlags(structure S : sig
+                    eqtype t
+                    val castToSysWord: t -> SysWord.word
+                    val castFromSysWord: SysWord.word -> t
+                    val andb: t * t -> t
+                    val notb: t -> t
+                    val orb: t * t -> t
+                 end): BIT_FLAGS_EXTRA =
    struct
-      type flags = SysWord.word
-         
-      val all: flags = all
-      val empty: flags = 0w0
+      type flags = S.t
 
-      fun toWord f = f
-      fun fromWord f = SysWord.andb(f, all)
+      val all: flags = S.castFromSysWord (SysWord.~ 0w1)
+      val empty: flags = S.castFromSysWord 0w0
 
-      val flags: flags list -> flags = List.foldl SysWord.orb empty
+      fun toWord f = S.castToSysWord f
+      fun fromWord w = S.castFromSysWord (SysWord.andb (w, toWord all))
 
-      val intersect: flags list -> flags = List.foldl SysWord.andb all
+      val flags: flags list -> flags = List.foldl S.orb empty
 
-      fun clear(f, f') = SysWord.andb(SysWord.notb f, f')
+      val intersect: flags list -> flags = List.foldl S.andb all
 
-      fun allSet(f, f') = SysWord.andb(f, f') = f
+      fun clear (f, f') = S.andb (S.notb f, f')
 
-      fun anySet(f, f') = SysWord.andb(f, f') <> 0w0
+      fun allSet (f, f') = S.andb (f, f') = f'
 
+      fun anySet (f, f') = S.andb (f, f') <> empty
    end
-structure BitFlags = BitFlags(val all = 0wxFFFF: SysWord.word)

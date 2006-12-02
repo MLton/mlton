@@ -257,7 +257,7 @@ fun maybeZoneFunction (f, ac) =
          then f :: ac
       else zoneFunction f :: ac
    end
-   
+
 fun zone (Program.T {datatypes, globals, functions, main}) =
    Program.T {datatypes = datatypes,
               globals = globals,

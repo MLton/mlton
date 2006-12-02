@@ -16,6 +16,6 @@ signature CLOSURE_CONVERT_STRUCTS =
 signature CLOSURE_CONVERT = 
    sig
       include CLOSURE_CONVERT_STRUCTS
-      
+
       val closureConvert: Sxml.Program.t -> Ssa.Program.t
    end

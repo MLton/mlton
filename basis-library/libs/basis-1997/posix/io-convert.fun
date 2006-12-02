@@ -15,7 +15,7 @@ functor PosixIOConvert (structure IO: POSIX_IO): POSIX_IO_1997 =
            structure Flags = FlagsConvert (structure Flags = FD)
            open Flags
         end
-     
+
      structure O =
         struct
            open O

@@ -14,6 +14,6 @@ signature INTRODUCE_LOOPS_STRUCTS =
 signature INTRODUCE_LOOPS = 
    sig
       include INTRODUCE_LOOPS_STRUCTS
-      
+
       val introduceLoops: Program.t -> Program.t
    end

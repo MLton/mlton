@@ -74,17 +74,17 @@ structure WordX =
              | W64 => concat ["0x", toString w, "llu"]
          end
    end
-   
+
 structure C =
    struct
       val truee = "TRUE"
       val falsee = "FALSE"
 
       fun bool b = if b then truee else falsee
-         
+
       fun args (ss: string list): string
          = concat ("(" :: List.separate (ss, ", ") @ [")"])
-         
+
       fun callNoSemi (f: string, xs: string list, print: string -> unit): unit 
          = (print f
             ; print " ("
@@ -246,19 +246,19 @@ fun outputDeclarations
       fun declareLoadSaveGlobals () =
          let
             val _ =
-               (print "static void saveGlobals (int fd) {\n"
+               (print "static int saveGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     print (concat ["\tSaveArray (global",
-                                   CType.toString t, ", fd);\n"])))
-                ; print "}\n")
+                                   CType.toString t, ", f);\n"])))
+                ; print "\treturn 0;\n}\n")
             val _ =
-               (print "static void loadGlobals (FILE *file) {\n"
+               (print "static int loadGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     print (concat ["\tLoadArray (global",
-                                   CType.toString t, ", file);\n"])))
-                ; print "}\n")
+                                   CType.toString t, ", f);\n"])))
+                ; print "\treturn 0;\n}\n")
          in
             ()
          end
@@ -296,7 +296,7 @@ fun outputDeclarations
       fun declareFrameOffsets () =
          Vector.foreachi
          (frameOffsets, fn (i, v) =>
-          (print (concat ["static ushort frameOffsets", C.int i, "[] = {"])
+          (print (concat ["static uint16_t frameOffsets", C.int i, "[] = {"])
            ; print (C.int (Vector.length v))
            ; Vector.foreach (v, fn i => (print ","; print (C.bytes i)))
            ; print "};\n"))
@@ -309,38 +309,52 @@ fun outputDeclarations
                              print (concat ["\t", toString (i, x), ",\n"]))
           ; print "};\n")
       fun declareFrameLayouts () =
-         declareArray ("GC_frameLayout", "frameLayouts", frameLayouts,
+         declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
                        fn (_, {frameOffsetsIndex, isC, size}) =>
                        concat ["{",
                                C.bool isC,
-                               ", ", C.bytes size,
                                ", frameOffsets", C.int frameOffsetsIndex,
+                               ", ", C.bytes size,
                                "}"])
       fun declareAtMLtons () =
-         declareArray ("string", "atMLtons", !Control.atMLtons, C.string o #2)
+         declareArray ("char*", "atMLtons", !Control.atMLtons, C.string o #2)
       fun declareObjectTypes () =
          declareArray
-         ("GC_ObjectType", "objectTypes", objectTypes,
+         ("struct GC_objectType", "objectTypes", objectTypes,
           fn (_, ty) =>
           let
              datatype z = datatype Runtime.RObjectType.t
-             val (tag, hasIdentity, nonPointers, pointers) =
+             val (tag, hasIdentity, bytesNonPointers, numPointers) =
                 case ObjectType.toRuntime ty of
-                   Array {hasIdentity, nonPointer, pointers} =>
-                      (0, hasIdentity, Bytes.toInt nonPointer, pointers)
-                 | Normal {hasIdentity, nonPointer, pointers} =>
-                      (1, hasIdentity, Words.toInt nonPointer, pointers)
+                   Array {hasIdentity, bytesNonPointers, numPointers} =>
+                      (0, hasIdentity, 
+                       Bytes.toInt bytesNonPointers, numPointers)
+                 | Normal {hasIdentity, bytesNonPointers, numPointers} =>
+                      (1, hasIdentity, 
+                       Bytes.toInt bytesNonPointers, numPointers)
                  | Stack =>
                       (2, false, 0, 0)
                  | Weak =>
-                      (3, false, 2, 1)
+                      (case !Control.align of
+                          Control.Align4 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 1)), 1)
+                        | Control.Align8 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 1))
                  | WeakGone =>
-                      (3, false, 3, 0)
+                      (case !Control.align of
+                          Control.Align4 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 0)
+                        | Control.Align8 => 
+                             (3, false, 
+                              Bytes.toInt (Words.toBytes (Words.fromInt 3)), 0))
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",
-                     C.int nonPointers, ", ",
-                     C.int pointers, " }"]
+                     C.int bytesNonPointers, ", ",
+                     C.int numPointers, " }"]
           end)
       fun declareMain () =
          let
@@ -381,22 +395,22 @@ fun outputDeclarations
                                 declareProfileLabel (label, print))
                 ; (Vector.foreachi
                    (sourceSeqs, fn (i, v) =>
-                    (print (concat ["static int sourceSeq",
+                    (print (concat ["static uint32_t sourceSeq",
                                     Int.toString i,
                                     "[] = {"])
                      ; print (C.int (Vector.length v))
                      ; Vector.foreach (v, fn i =>
                                        (print (concat [",", C.int i])))
                      ; print "};\n")))
-                ; declareArray ("uint", "*sourceSeqs", sourceSeqs, fn (i, _) =>
+                ; declareArray ("uint32_t*", "sourceSeqs", sourceSeqs, fn (i, _) =>
                                 concat ["sourceSeq", Int.toString i])
-                ; declareArray ("uint", "frameSources", frameSources, C.int o #2)
+                ; declareArray ("GC_sourceSeqIndex", "frameSources", frameSources, C.int o #2)
                 ; (declareArray
                    ("struct GC_sourceLabel", "sourceLabels", labels,
                     fn (_, {label, sourceSeqsIndex}) =>
                     concat ["{(pointer)&", ProfileLabel.toString label, ", ",
                             C.int sourceSeqsIndex, "}"]))
-                ; declareArray ("string", "sourceNames", names, C.string o #2)
+                ; declareArray ("char*", "sourceNames", names, C.string o #2)
                 ; declareArray ("struct GC_source", "sources", sources,
                                 fn (_, {nameIndex, successorsIndex}) =>
                                 concat ["{ ", Int.toString nameIndex, ", ",
@@ -462,10 +476,16 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
               case s of
                  Statement.PrimApp {prim, ...} =>
                     (case Prim.name prim of
-                        Prim.Name.FFI_Symbol {name} =>
+                        Prim.Name.FFI_Symbol {name, cty} =>
                            doit
                            (name, fn () =>
-                            concat ["extern ", name, ";\n"])
+                            concat ["extern ", 
+                                    case cty of
+                                       SOME x => CType.toString x
+                                     | NONE => "", 
+                                    " ",
+                                    name, 
+                                    ";\n"])
                       | _ => ())
                | _ => ())
           val _ =
@@ -559,30 +579,42 @@ fun output {program as Machine.Program.T {chunks,
                then s
             else concat [s, " /* ", Label.toString l, " */"]
          end
-      val handleMisalignedReals =
+      val handleMisaligned =
          let
             open Control
          in
-            !align = Align4 andalso !targetArch = Sparc
+            !align = Align4
+            andalso (case !targetArch of
+                        HPPA => true
+                      | Sparc => true
+                      | _ => false)
          end
+      val handleMisaligned =
+         fn ty =>
+         handleMisaligned
+         andalso (Type.equals (ty, Type.real R64)
+                  orelse Type.equals (ty, Type.word (Bits.fromInt 64)))
       fun addr z = concat ["&(", z, ")"]
-      fun realFetch z = concat ["Real64_fetch(", addr z, ")"]
-      fun realMove {dst, src} =
-         concat ["Real64_move(", addr dst, ", ", addr src, ");\n"]
-      fun realStore {dst, src} =
-         concat ["Real64_store(", addr dst, ", ", src, ");\n"]
+      fun fetch (z, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_fetch(", addr z, ")"]
+      fun move' ({dst, src}, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_move(", addr dst, ", ", addr src, ");\n"]
+      fun store ({dst, src}, ty) =
+         concat [CType.toString (Type.toCType ty),
+                 "_store(", addr dst, ", ", src, ");\n"]
       fun move {dst: string, dstIsMem: bool,
                 src: string, srcIsMem: bool,
                 ty: Type.t}: string =
-         if handleMisalignedReals
-            andalso Type.equals (ty, Type.real R64)
-            then
-               case (dstIsMem, srcIsMem) of
-                  (false, false) => concat [dst, " = ", src, ";\n"]
-                | (false, true) => concat [dst, " = ", realFetch src, ";\n"]
-                | (true, false) => realStore {dst = dst, src = src}
-                | (true, true) => realMove {dst = dst, src = src}
-         else concat [dst, " = ", src, ";\n"]
+         if handleMisaligned ty then
+            case (dstIsMem, srcIsMem) of
+               (false, false) => concat [dst, " = ", src, ";\n"]
+             | (false, true) => concat [dst, " = ", fetch (src, ty), ";\n"]
+             | (true, false) => store ({dst = dst, src = src}, ty)
+             | (true, true) => move' ({dst = dst, src = src}, ty)
+         else
+            concat [dst, " = ", src, ";\n"]
       local
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
@@ -621,11 +653,10 @@ fun output {program as Machine.Program.T {chunks,
          val operandToString = toString
       end
       fun fetchOperand (z: Operand.t): string =
-         if handleMisalignedReals
-            andalso Type.equals (Operand.ty z, Type.real R64)
-            andalso Operand.isMem z
-            then realFetch (operandToString z)
-         else operandToString z
+         if handleMisaligned (Operand.ty z) andalso Operand.isMem z then
+            fetch (operandToString z, Operand.ty z)
+         else
+            operandToString z
       fun outputStatement (s, print) =
          let
             datatype z = datatype Statement.t

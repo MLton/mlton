@@ -7,11 +7,11 @@
 
 structure NetServDB: NET_SERV_DB =
    struct
-      structure Prim = Primitive.NetServDB
+      structure Prim = PrimitiveFFI.NetServDB
 
       datatype entry = T of {name: string,
                              aliases: string list,
-                             port: int,
+                             port: C_Int.t,
                              protocol: string}
 
       local
@@ -19,28 +19,27 @@ structure NetServDB: NET_SERV_DB =
       in
         val name = make #name
         val aliases = make #aliases
-        val port = make #port
+        val port = C_Int.toInt o (make #port)
         val protocol = make #protocol
       end
 
       local
-        fun get (b: bool): entry option =
-          if b
+        fun get (i: C_Int.t): entry option =
+          if i <> C_Int.zero
             then let
-                   val name = C.CS.toString (Prim.entryName ())
-                   val numAliases = Prim.entryNumAliases ()
+                   val name = CUtil.C_String.toString (Prim.getEntryName ())
+                   val numAliases = Prim.getEntryAliasesNum ()
                    fun fill (n, aliases) =
-                     if n < numAliases
+                     if C_Int.< (n, numAliases)
                        then let
-                              val alias =
-                                C.CS.toString (Prim.entryAliasesN n)
+                              val alias = CUtil.C_String.toString (Prim.getEntryAliasesN n)
                             in
-                              fill (n + 1, alias::aliases)
+                              fill (C_Int.+ (n, 1), alias::aliases)
                             end
                        else List.rev aliases
                    val aliases = fill (0, [])
-                   val port = Net.ntohs (Prim.entryPort ())
-                   val protocol = C.CS.toString (Prim.entryProtocol ())
+                   val port = Net.C_Int.ntoh (Prim.getEntryPort ())
+                   val protocol = CUtil.C_String.toString (Prim.getEntryProto ())
                  in
                    SOME (T {name = name,
                             aliases = aliases,
@@ -56,7 +55,7 @@ structure NetServDB: NET_SERV_DB =
           | NONE => get (Prim.getByNameNull (NullString.nullTerm name))
         fun getByPort (port, proto) = 
           let
-            val port = Net.htons port
+            val port = Net.C_Int.hton (C_Int.fromInt port)
           in
             case proto of
                NONE => get (Prim.getByPortNull port)

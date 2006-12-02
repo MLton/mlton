@@ -140,7 +140,7 @@ ann "forceUsed" in
       functor UniqueId
       functor UniqueSet
       functor UnorderedSet
-      
+
       $(SML_LIB)/basis/pervasive.mlb
    end
 end

@@ -1,8 +1,8 @@
 #include <fenv.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <grp.h>
-#include <limits.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -26,7 +26,6 @@
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_PTRACE FALSE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SIGNBIT TRUE
@@ -34,3 +33,12 @@
 #define HAS_TIME_PROFILING TRUE
 
 #define MLton_Platform_OS_host "darwin"
+
+// MacOS only defines this if POSIX_C_SOURCE is defined.
+// However, defining that breaks half the osx system headers.
+// They couldn't possibly change the number at this point anyways.
+#ifndef SIGPOLL
+#define SIGPOLL 7
+#endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

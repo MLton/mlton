@@ -56,11 +56,11 @@ signature RUNTIME =
          sig
             datatype t =
                Array of {hasIdentity: bool,
-                         nonPointer: Bytes.t,
-                         pointers: int}
+                         bytesNonPointers: Bytes.t,
+                         numPointers: int}
              | Normal of {hasIdentity: bool,
-                          nonPointer: Words.t,
-                          pointers: int}
+                          bytesNonPointers: Bytes.t,
+                          numPointers: int}
              | Stack
              | Weak
              | WeakGone

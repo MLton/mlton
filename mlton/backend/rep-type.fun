@@ -178,9 +178,9 @@ structure Type =
       val isUnit: t -> bool = fn t => Bits.equals (Bits.zero, width t)
 
       val isUnit = Trace.trace ("RepType.Type.isUnit", layout, Bool.layout) isUnit
-         
+
       val isReal: t -> bool = isSome o deReal
- 
+
       val rec isSubtype: t * t -> bool =
          fn (t, t') =>
          if not (sameWidth (t, t'))
@@ -325,7 +325,7 @@ structure ObjectType =
       structure Runtime = Runtime
 
       type ty = Type.t
-         
+
       datatype t =
          Array of {elt: Type.t,
                    hasIdentity: bool}
@@ -379,10 +379,12 @@ structure ObjectType =
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.
        * STACK_TYPE_INDEX,
-       * STRING_TYPE_INDEX,
        * THREAD_TYPE_INDEX,
        * WEAK_GONE_TYPE_INDEX,
-       * WORD_VECTOR_TYPE_INDEX.
+       * WORD8_VECTOR_TYPE_INDEX,
+       * WORD16_VECTOR_TYPE_INDEX,
+       * WORD32_VECTOR_TYPE_INDEX.
+       * WORD64_VECTOR_TYPE_INDEX.
        *)
       val basic =
          let
@@ -397,11 +399,12 @@ structure ObjectType =
          in
             Vector.fromList
             [(PointerTycon.stack, stack),
-             wordVec 8,
              (PointerTycon.thread, thread),
              (PointerTycon.weakGone, WeakGone),
+             wordVec 8,
              wordVec 32,
-             wordVec 16]
+             wordVec 16,
+             wordVec 64]
          end
 
       local
@@ -414,16 +417,16 @@ structure ObjectType =
                      val (b, p) = Type.bytesAndPointers elt
                   in
                      R.Array {hasIdentity = hasIdentity,
-                              nonPointer = b,
-                              pointers = p}
+                              bytesNonPointers = b,
+                              numPointers = p}
                   end
              | Normal {hasIdentity, ty} =>
                   let
                      val (b, p) = Type.bytesAndPointers ty
                   in
                      R.Normal {hasIdentity = hasIdentity,
-                               nonPointer = Bytes.toWords b,
-                               pointers = p}
+                               bytesNonPointers = b,
+                               numPointers = p}
                   end
              | Stack => R.Stack
              | Weak _ => R.Weak
@@ -432,7 +435,7 @@ structure ObjectType =
    end
 
 open Type
-   
+
 fun pointerHeader p =
    constant (WordX.fromIntInf
              (1 + 2 * Int.toIntInf (PointerTycon.index p),
@@ -441,7 +444,7 @@ fun pointerHeader p =
 fun arrayOffsetIsOk _ = true
 
 structure GCField = Runtime.GCField
-   
+
 fun ofGCField (f: GCField.t): t =
    let
       datatype z = datatype GCField.t
@@ -478,7 +481,7 @@ structure BuiltInCFunction =
 
       datatype z = datatype Convention.t
       datatype z = datatype Target.t
-         
+
       val bug = vanilla {args = Vector.new1 string,
                          name = "MLton_bug",
                          prototype = (Vector.new1 CType.pointer, NONE),
@@ -490,7 +493,7 @@ structure BuiltInCFunction =
          val Word32 = word (Bits.fromInt 32)
          val unit = unit
       end
-   
+
       local
          fun make b =
             T {args = let
@@ -512,7 +515,7 @@ structure BuiltInCFunction =
                                end,
                    readsStackTop = true,
                    return = unit,       
-                   target = Direct "GC_gc",
+                   target = Direct "GC_collect",
                    writesStackTop = true}
          val t = make true
          val f = make false

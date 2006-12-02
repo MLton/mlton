@@ -1,0 +1,535 @@
+
+Now that the refactoring on the x86_64 branch as mostly quiesced, I
+ran the benchmark suite to verify that there weren't any major
+regressions in performance.  It is to be expected that there will be
+some variability between HEAD and the x86_64 branch, since lots of
+code has been tweaked -- both in the runtime and in the implementation
+of the Basis Library.
+
+I've run the benchmark suite on the following two systems:
+ * FedoraCore 4; gcc 4.0.2; AMD Opteron 2GHz; 4GB memory
+ * RedHat; gcc 3.2.2; Intel Pentium 1.1GHz; 2GB memory
+
+Overall, there don't appear to be any significant (unexplained)
+regressions, but the x86_64 branch does appear to be running a little
+bit slower.  I'll go over some of the highlights, but if anyone sees
+anything that they believe deserves more investigation, let me know.
+
+Reminder: on the AMD Opteron system, these are 32-bit executables
+(running on a 64-bit kernel).  However, I will note that on the
+Opteron we compile the runtime and C-codegen generated files with the
+'-mopteron' option.
+
+
+Run-time ratio:
+
+Across the board, the 'checksum' benchmark performs poorly under the
+x86_64 branch; this is easily explained by the fact that the
+'checksum' benchmark is dominated by PackWord32Little.subArr, which is
+a primitive on HEAD, but is a C-call on the x86_64 branch.  See
+revision 4418.  We should eventually turn the PackWord operations into
+a more general primitives; see: 
+  http://mlton.org/pipermail/mlton-user/2004-November/000556.html
+  http://mlton.org/pipermail/mlton/2004-November/026246.html
+This should also partially explain the performance of 'md5', which
+also makes use of PackWord32Little operations.
+
+
+For the native-codegen on HEAD vs x86_64 on Opteron, the outliers are:
+        checksum                2.31
+        count-graphs            1.63
+        md5                     1.41
+        ray                     1.08
+The 'count-graphs' benchmark deserves further investigation, since it
+seems to perform badly on the configurations as well.
+
+For the native-codegen on HEAD vs x86_64 on i686, the outliers are:
+        checksum                2.18
+        count-graphs            1.74
+        md5                     1.47
+        tyan                    1.25
+        logic                   1.20
+        DLXSimulator            1.13
+        zebra                   1.12
+        zern                    1.12
+        model-elimination       1.11
+        hamlet                  1.09
+        wc-input1               1.09
+        life                    1.09
+        mlyacc                  1.08
+        flat-array              1.08
+        lexgen                  1.08
+        smith-normal-form       1.07
+
+For the C-codegen on HEAD vs x86_64 on Opteron, the outliers are:
+        checksum                4.61
+        mpuz                    2.05
+        count-graphs            1.68
+        md5                     1.60
+        tailfib                 1.53
+        zern                    1.40
+        imp-for                 1.40
+        simple                  1.26
+        matrix-multiply         1.24
+        mandelbrot              1.18
+        vector-concat           1.15
+        vliw                    1.12
+        tyan                    1.11
+        fib                     1.10
+        hamlet                  1.09
+        flat-array              1.07
+
+For the C-codegen on HEAD vs x86_64 on i686, the outliers are:
+        checksum                3.80
+        count-graphs            1.68
+        md5                     1.61
+        zern                    1.24
+        ray                     1.19
+        logic                   1.18
+        mpuz                    1.18
+        tyan                    1.16
+        vliw                    1.14
+        barnes-hut              1.13
+        fft                     1.13
+        zebra                   1.12
+        DLXSimulator            1.12
+        smith-normal-form       1.08
+        knuth-bendix            1.07
+        model-elimination       1.06
+        mlyacc                  1.06
+        wc-scanStream           1.06
+        hamlet                  1.06
+        psdes-random            1.06
+
+Since quite a few of our platforms are using the C-codegen, its
+probably worth investigating whether there is some low-hanging fruit
+to improve its performance.
+
+
+Size:
+
+Generally, the size of executables on the x86_64 branch are larger
+than those on HEAD.  
+
+Size x86_64 - Size HEAD:
+
+system      codegen     mean    min     max
+Opteron     native      33K     0K      37K
+Opteron     C           32K     0K      37K
+Opteron     byte        56K     0K      66K
+Pentium     native      20K     0K      24K
+Pentium     C           18K     -18K    38K
+
+Much of the size can probably be attributed to the refactored runtime
+code and aggressive inlining with the garbage collector.  On the
+Opteron system:
+
+   text    data     bss     dec     hex filename
+  54485       1     352   54838    d636 mlton.svn.x86_64/runtime/gc.o
+  33175       4      52   33231    81cf mlton.svn.HEAD/runtime/gc.o
+  52318    1004   31040   84362   1498a mlton.svn.x86_64/runtime/bytecode/interpret.o
+  34381    1004   31040   66425   10379 mlton.svn.HEAD/bytecode/interpret.o
+ 129625    1185   34399  165209   28559 mlton.svn.x86_64/build/lib/self/libmlton.a
+  91606    1136   33303  126045   1ec5d mlton.svn.HEAD/build/lib/self/libmlton.a
+
+and on the Pentium system:
+
+   text    data     bss     dec     hex filename
+  37098      16     400   37514    928a mlton.svn.x86_64/runtime/gc.o
+  29645      16      36   29697    7401 mlton.svn.HEAD/runtime/gc.o
+  35451    1004   31424   67879   10927 mlton.svn.x86_64/runtime/bytecode/interpret.o
+  32041    1004   31040   64085    fa55 mlton.svn.HEAD/bytecode/interpret.o
+  91314    1232   82490  175036   2abbc mlton.svn.x86_64/build/lib/self/libmlton.a
+  78982    1172   33239  113393   1baf1 mlton.svn.HEAD/build/lib/self/libmlton.a
+
+
+Compile time:
+
+On the Opteron system, compile times are on average 1.7s longer on the
+x86_64 branch than on HEAD (for all codegens), with no compile time
+more than 2s longer.  I believe that this is mainly explained by the
+revised Basis Library, which is nearly 10000 lines longer (39419 lines
+for x86_64, 29604 lines for HEAD), and makes aggressive use of
+functors.  When compiling the program "val () = ()", which includes
+type-checking the Basis Library, the x86_64 branch (on Opteron)
+requires
+
+         parseAndElaborate starting
+         parseAndElaborate finished in 2.47 + 1.50 (38% GC)
+
+while HEAD requires
+
+         parseAndElaborate starting
+         parseAndElaborate finished in 1.33 + 0.97 (42% GC)
+
+
+Benchmark Data:
+
+FedoraCore 4; gcc 4.0.2; AMD Opteron 2GHz; 4GB memory
+
+MLton0 -- /home/fluet/mlton/mlton.svn.HEAD/build/bin/mlton -codegen native
+MLton1 -- /home/fluet/mlton/mlton.svn.HEAD/build/bin/mlton -codegen c
+MLton2 -- /home/fluet/mlton/mlton.svn.HEAD/build/bin/mlton -codegen bytecode
+MLton3 -- /home/fluet/mlton/mlton.svn.x86_64/build/bin/mlton -codegen native
+MLton4 -- /home/fluet/mlton/mlton.svn.x86_64/build/bin/mlton -codegen c
+MLton5 -- /home/fluet/mlton/mlton.svn.x86_64/build/bin/mlton -codegen bytecode
+run time ratio
+benchmark         MLton0 MLton1 MLton2 MLton3 MLton4 MLton5
+barnes-hut          1.00   1.05  35.52   0.99   1.05  39.91
+boyer               1.00   1.45  48.58   0.90   1.34  54.04
+checksum            1.00   0.94  74.71   2.31   4.35 109.26
+count-graphs        1.00   1.05  71.94   1.63   1.77 118.20
+DLXSimulator        1.00   1.13  42.71   1.04   1.19  47.86
+fft                 1.00   1.06  11.10   0.98   1.06  12.40
+fib                 1.00   1.49  45.77   1.00   1.63  51.21
+flat-array          1.00   2.38      *   0.97   2.54 139.95
+hamlet              1.00   2.46  52.35   1.01   2.68  58.79
+imp-for             1.00   0.92 111.76   1.01   1.30 124.50
+knuth-bendix        1.00   1.97  82.38   1.01   2.02  92.02
+lexgen              1.00   1.25  63.31   0.97   1.15  69.67
+life                1.00   1.03  79.25   0.97   1.02  89.04
+logic               1.00   1.49  44.24   1.00   1.51  49.64
+mandelbrot          1.00   1.24  76.40   1.01   1.46  86.30
+matrix-multiply     1.00   1.34  71.18   1.00   1.66  79.63
+md5                 1.00   1.31  33.23   1.41   2.10  43.49
+merge               1.00   1.17  29.43   0.96   1.12  32.95
+mlyacc              1.00   1.28  37.96   1.02   1.29  42.41
+model-elimination   1.00   1.61  39.69   1.00   1.54  44.53
+mpuz                1.00   1.02  71.92   1.01   2.08  84.50
+nucleic             1.00   1.09  34.95   0.98   1.09  39.47
+output1             1.00   2.34 117.37   1.00   1.72 131.77
+peek                1.00   0.58  86.42   1.01   0.58  96.18
+psdes-random        1.00   1.53 137.87   1.04   1.54 153.87
+ratio-regions       1.00   1.21  55.21   0.99   1.22  61.90
+ray                 1.00   1.15  28.64   1.08   1.20  32.52
+raytrace            1.00   1.56  55.36   1.01   1.52  62.11
+simple              1.00   1.59  50.06   0.99   2.00  56.12
+smith-normal-form   1.00   1.00   1.55   1.00   1.00   1.65
+tailfib             1.00   2.16 125.85   1.00   3.29 141.95
+tak                 1.00   1.21  44.07   1.00   1.26  49.04
+tensor              1.00   2.73 221.51   1.00   2.34 249.18
+tsp                 1.00   1.07  32.75   0.99   1.10  36.47
+tyan                1.00   1.23  49.00   0.99   1.36  54.39
+vector-concat       1.00   2.10 117.04   1.00   2.41 131.42
+vector-rev          1.00   2.20 108.94   1.00   2.22 123.01
+vliw                1.00   1.58  38.45   0.95   1.77  42.15
+wc-input1           1.00   1.45  66.78   1.00   1.01  72.56
+wc-scanStream       1.00   1.38  85.70   1.01   1.29  96.10
+zebra               1.00   0.79  59.80   1.02   0.81  69.07
+zern                1.00   1.37  51.00   0.99   1.93  57.92
+size
+benchmark            MLton0    MLton1    MLton2    MLton3    MLton4    MLton5
+barnes-hut          105,267   104,417   165,416   139,837   138,215   232,889
+boyer               140,514   159,758   235,153   177,957   197,533   291,874
+checksum             56,054    56,294    95,329    89,801    93,425   153,298
+count-graphs         68,882    76,202   127,057   106,213   111,337   182,690
+DLXSimulator        135,234   146,354   229,221   169,092   176,216   287,985
+fft                  67,065    75,089   119,474   100,762   108,282   175,074
+fib                  49,670    56,438    95,369    86,841    92,845   151,778
+flat-array           49,710    56,514    95,425    86,913    92,665   151,906
+hamlet            1,257,401 1,436,385 2,205,344 1,278,403 1,468,331 2,251,676
+imp-for              49,542    56,306    95,497    86,713    92,393   151,938
+knuth-bendix        115,194   124,202   187,597   150,372   155,792   247,873
+lexgen              208,859   220,971   322,626   242,029   254,149   383,194
+life                 68,046    74,486   124,033   105,377   110,749   180,674
+logic               108,498   123,142   198,321   146,089   159,877   255,202
+mandelbrot           49,606    56,666    95,385    86,921    92,777   151,938
+matrix-multiply      50,146    56,970    96,281    87,413    92,977   152,818
+md5                  83,618    85,762   131,941   120,604   123,072   194,257
+merge                51,274    57,790    97,689    88,469    94,061   154,178
+mlyacc              511,891   565,983   795,250   546,353   602,813   856,506
+model-elimination   643,424   768,560 1,045,115   662,174   784,430 1,096,923
+mpuz                 52,582    59,982   100,817    89,649    96,245   157,218
+nucleic             200,330   159,021   226,891   237,861   195,196   286,321
+output1              86,748    90,724   136,647   121,316   120,832   196,545
+peek                 82,330    84,514   130,445   117,076   117,056   190,769
+psdes-random         50,302    57,286    96,545    87,489    93,189   153,026
+ratio-regions        75,846    83,366   136,993   112,873   120,301   192,674
+ray                 189,999   206,069   294,804   210,841   221,443   345,525
+raytrace            269,012   311,606   437,745   292,472   324,700   490,412
+simple              229,022   252,368   336,575   262,402   287,880   398,698
+smith-normal-form   187,722   210,750   264,629   223,784   245,772   330,081
+tailfib              49,334    56,242    94,961    86,505    92,329   151,394
+tak                  49,750    56,386    95,377    86,953    92,561   151,842
+tensor              103,625   112,809   174,708   139,227   145,515   239,952
+tsp                  88,194    89,620   142,687   122,964   124,362   207,232
+tyan                140,858   155,018   234,685   176,684   184,844   295,409
+vector-concat        50,934    57,954    97,505    88,137    94,241   153,986
+vector-rev           50,194    57,094    96,289    87,397    93,365   152,770
+vliw                400,590   475,066   682,121   415,992   492,872   727,701
+wc-input1           107,822   111,206   171,417   142,588   144,564   235,201
+wc-scanStream       115,102   121,150   183,745   149,936   151,548   247,521
+zebra               147,134   149,246   256,645   181,800   183,968   316,545
+zern                 96,747   104,479   153,564   113,951   121,011   198,699
+compile time
+benchmark         MLton0 MLton1 MLton2 MLton3 MLton4 MLton5
+barnes-hut          3.67   5.91   3.54   5.39   7.62   5.40
+boyer               4.03   8.59   3.65   5.66  10.19   5.28
+checksum            2.73   2.91   2.74   4.41   4.59   4.48
+count-graphs        3.08   4.21   3.00   4.73   5.85   4.66
+DLXSimulator        4.23   7.94   3.89   5.89   9.70   5.64
+fft                 2.96   3.49   2.92   4.66   5.17   4.65
+fib                 2.72   2.91   2.73   4.37   4.55   4.40
+flat-array          2.72   2.92   2.74   4.42   4.57   4.40
+hamlet             46.21 100.44  42.05  45.03  98.89  40.30
+imp-for             2.76   2.94   2.75   4.44   4.61   4.46
+knuth-bendix        3.52   6.53   3.31   5.20   8.28   5.05
+lexgen              4.92  11.05   4.24   6.63  12.94   6.05
+life                2.98   4.07   2.89   4.66   5.73   4.61
+logic               3.59   6.10   3.26   5.21   7.76   4.92
+mandelbrot          2.73   2.93   2.73   4.42   4.64   4.45
+matrix-multiply     2.76   2.97   2.74   4.43   4.66   4.49
+md5                 3.07   4.14   3.01   4.80   6.09   4.80
+merge               2.75   2.98   2.74   4.39   4.65   4.42
+mlyacc             10.98  28.62   8.40  12.62  30.30   9.86
+model-elimination  11.25  36.90   8.95  12.91  38.79  10.63
+mpuz                2.79   3.13   2.76   4.45   4.81   4.45
+nucleic             5.88  12.55   5.40   7.36  14.18   7.08
+output1             3.04   4.26   2.99   4.74   6.03   4.73
+peek                2.98   4.03   2.95   4.76   5.89   4.73
+psdes-random        2.73   2.94   2.74   4.40   4.62   4.43
+ratio-regions       3.27   4.71   3.11   4.89   6.32   4.81
+ray                 4.39   9.19   3.95   6.14  11.10   5.78
+raytrace            6.15  15.08   5.24   7.86  16.82   7.11
+simple              5.07  11.42   4.42   6.76  13.30   6.15
+smith-normal-form   4.37  11.58   3.92   6.14  13.51   5.73
+tailfib             2.72   2.89   2.72   4.36   4.56   4.40
+tak                 2.72   2.89   2.71   4.38   4.59   4.40
+tensor              3.78   6.03   3.63   5.55   8.00   5.50
+tsp                 3.19   4.47   3.11   4.93   6.39   4.88
+tyan                4.13   8.46   3.77   5.83  10.41   5.55
+vector-concat       2.73   2.98   2.73   4.41   4.62   4.41
+vector-rev          2.72   2.93   2.71   4.37   4.59   4.39
+vliw                8.26  22.55   6.72   9.85  24.40   8.39
+wc-input1           3.39   5.73   3.26   5.10   7.46   5.06
+wc-scanStream       3.50   5.91   3.32   5.20   7.66   5.13
+zebra               4.13   8.83   3.62   5.75  10.52   5.34
+zern                3.04   3.80   2.99   4.74   5.63   4.78
+run time
+benchmark         MLton0 MLton1  MLton2 MLton3 MLton4  MLton5
+barnes-hut         14.30  15.05  507.90  14.21  14.99  570.63
+boyer              18.04  26.23  876.42  16.21  24.16  974.97
+checksum           42.48  40.08 3173.59  97.97 184.62 4641.33
+count-graphs       20.80  21.87 1496.06  33.84  36.84 2458.24
+DLXSimulator       17.77  20.10  758.85  18.52  21.07  850.44
+fft                14.48  15.29  160.74  14.16  15.32  179.61
+fib                34.68  51.60 1587.41  34.68  56.67 1776.10
+flat-array          7.43  17.68       *   7.23  18.84 1039.24
+hamlet             16.43  40.33  860.05  16.55  44.09  965.80
+imp-for            28.83  26.66 3222.03  29.07  37.34 3589.23
+knuth-bendix       17.29  34.10 1424.23  17.51  34.84 1590.71
+lexgen             20.57  25.65 1302.31  19.97  23.67 1433.19
+life                8.93   9.23  707.85   8.65   9.12  795.25
+logic              18.82  27.99  832.67  18.76  28.49  934.14
+mandelbrot         24.40  30.33 1864.51  24.71  35.64 2105.89
+matrix-multiply     3.30   4.43  234.57   3.30   5.48  262.39
+md5                32.37  42.48 1075.62  45.56  67.87 1407.68
+merge              14.47  16.89  425.70  13.82  16.20  476.70
+mlyacc             16.48  21.16  625.73  16.84  21.25  699.21
+model-elimination  28.66  46.19 1137.74  28.66  44.12 1276.43
+mpuz               21.92  22.26 1576.65  22.08  45.68 1852.59
+nucleic            14.80  16.06  517.07  14.48  16.16  584.01
+output1             7.19  16.79  843.77   7.20  12.40  947.25
+peek               34.60  19.99 2990.07  34.79  19.96 3327.80
+psdes-random       15.90  24.29 2192.78  16.47  24.48 2447.26
+ratio-regions      24.02  28.99 1325.99  23.87  29.37 1486.63
+ray                15.73  18.14  450.44  17.05  18.88  511.61
+raytrace           16.37  25.59  906.21  16.55  24.86 1016.67
+simple             20.16  32.05 1009.38  20.03  40.41 1131.65
+smith-normal-form  10.32  10.32   15.96  10.31  10.32   17.07
+tailfib            19.36  41.81 2436.39  19.36  63.77 2748.18
+tak                12.92  15.70  569.51  12.92  16.24  633.76
+tensor             17.30  47.15 3831.05  17.30  40.45 4309.63
+tsp                19.84  21.15  649.58  19.54  21.86  723.41
+tyan               18.70  22.97  916.13  18.60  25.49 1016.87
+vector-concat      30.16  63.24 3530.57  30.21  72.83 3964.18
+vector-rev         18.61  40.95 2027.41  18.54  41.38 2289.30
+vliw               18.69  29.49  718.62  17.68  33.00  787.79
+wc-input1          27.42  39.70 1830.85  27.33  27.72 1989.39
+wc-scanStream      14.00  19.33 1200.10  14.12  18.02 1345.82
+zebra              26.26  20.82 1570.44  26.68  21.17 1814.11
+zern               17.18  23.60  876.26  16.94  33.15  995.14
+
+
+RedHat; gcc 3.2.2; Intel Pentium 1.1GHz; 2GB memory
+
+MLton0 -- /home/fluet/mlton/mlton.svn.HEAD/build/bin/mlton -codegen native
+MLton1 -- /home/fluet/mlton/mlton.svn.HEAD/build/bin/mlton -codegen c
+MLton2 -- /home/fluet/mlton/mlton.svn.x86_64/build/bin/mlton -codegen native
+MLton3 -- /home/fluet/mlton/mlton.svn.x86_64/build/bin/mlton -codegen c
+run time ratio
+benchmark         MLton0 MLton1 MLton2 MLton3
+barnes-hut          1.00   1.03   1.05   1.16
+boyer               1.00   1.17   1.04   1.22
+checksum            1.00   0.83   2.18   3.15
+count-graphs        1.00   1.44   1.74   2.42
+DLXSimulator        1.00   1.07   1.13   1.20
+fft                 1.00   1.04   1.01   1.17
+fib                 1.00   1.35   1.00   1.32
+flat-array          1.00   1.49   1.08   1.50
+hamlet              1.00   2.01   1.09   2.13
+imp-for             1.00   1.67   1.00   1.30
+knuth-bendix        1.00   1.98   1.00   2.12
+lexgen              1.00   1.34   1.08   1.39
+life                1.00   1.25   1.09   1.30
+logic               1.00   1.30   1.20   1.53
+mandelbrot          1.00   1.08   1.00   1.04
+matrix-multiply     1.00   1.08   1.00   0.99
+md5                 1.00   1.39   1.47   2.24
+merge               1.00   1.00   1.00   1.00
+mlyacc              1.00   1.30   1.08   1.38
+model-elimination   1.00   1.35   1.11   1.43
+mpuz                1.00   1.63   0.97   1.91
+nucleic             1.00   1.06   1.02   1.10
+output1             1.00   1.73   0.94   1.57
+peek                1.00   1.98   1.00   1.39
+psdes-random        1.00   0.93   1.00   0.98
+ratio-regions       1.00   1.39   1.01   1.42
+ray                 1.00   1.05   0.99   1.25
+raytrace            1.00   1.44   1.00   1.49
+simple              1.00   1.53   0.82   1.60
+smith-normal-form   1.00   1.00   1.07   1.08
+tailfib             1.00   2.42   1.00   2.40
+tak                 1.00   1.12   1.01   1.05
+tensor              1.00   2.87   1.00   1.83
+tsp                 1.00   1.46   1.04   1.51
+tyan                1.00   1.18   1.25   1.36
+vector-concat       1.00   1.48   0.99   1.20
+vector-rev          1.00   1.20   0.93   1.01
+vliw                1.00   1.36   1.04   1.55
+wc-input1           1.00   1.90   1.09   1.55
+wc-scanStream       1.00   1.38   1.04   1.46
+zebra               1.00   1.20   1.12   1.34
+zern                1.00   1.24   1.12   1.54
+size
+benchmark            MLton0    MLton1    MLton2    MLton3
+barnes-hut           97,508    97,306   120,294   116,848
+boyer               136,927   142,863   160,418   165,470
+checksum             51,663    51,311    71,706    73,842
+count-graphs         65,295    73,315    88,674    95,194
+DLXSimulator        127,763   136,771   149,829   154,097
+fft                  62,846    70,210    82,509    88,137
+fib                  46,083    51,327    69,286    72,846
+flat-array           46,123    51,323    69,358    73,914
+hamlet            1,254,374 1,363,870 1,264,408 1,344,664
+imp-for              45,955    51,099    69,158    72,738
+knuth-bendix        107,539   125,899   130,949   146,065
+lexgen              202,036   233,364   223,350   243,438
+life                 64,491    67,455    87,870    89,438
+logic               104,943    99,311   128,614   121,806
+mandelbrot           46,019    51,251    69,318    72,890
+matrix-multiply      46,559    51,859    69,810    73,490
+md5                  76,019    75,419   100,965    99,785
+merge                47,679    52,663    70,914    74,478
+mlyacc              505,988   610,056   528,634   649,166
+model-elimination   635,421   712,925   643,211   701,051
+mpuz                 48,987    55,991    72,110    77,310
+nucleic             196,751   149,485   220,274   171,076
+output1              79,133    77,813   101,909    98,473
+peek                 74,683    77,835    97,653    98,825
+psdes-random         46,715    52,127    69,934    73,782
+ratio-regions        72,275    87,903    95,350   106,166
+ray                 180,588   193,178   190,398   206,080
+raytrace            260,753   317,931   272,662   323,609
+simple              220,727   257,329   242,305   269,807
+smith-normal-form   180,099   188,743   204,361   211,045
+tailfib              45,747    51,067    68,950    72,730
+tak                  46,163    51,307    69,398    72,890
+tensor               95,986   105,482   119,796   127,380
+tsp                  80,579    81,508   103,501   104,954
+tyan                133,243   143,675   157,293   170,973
+vector-concat        47,379    52,643    70,582    74,330
+vector-rev           46,607    51,767    69,842    73,342
+vliw                391,203   452,871   395,557   450,293
+wc-input1           100,239   107,207   123,197   128,853
+wc-scanStream       107,511   107,671   130,497   129,437
+zebra               139,535   137,751   162,385   159,665
+zern                 88,236    95,996    95,376   101,680
+compile time
+benchmark         MLton0 MLton1 MLton2 MLton3
+barnes-hut          9.28  13.52  14.43  19.60
+boyer               9.55  28.24  15.23  34.07
+checksum            6.51   6.88  11.99  12.31
+count-graphs        7.30   9.48  12.74  14.96
+DLXSimulator       10.03  18.45  15.63  23.99
+fft                 6.98   7.97  12.60  13.52
+fib                 6.43   6.80  11.88  12.50
+flat-array          6.45   6.78  11.96  14.45
+hamlet            114.74 240.97 144.92 274.80
+imp-for             6.57   6.88  12.00  12.28
+knuth-bendix        8.31  14.22  14.11  20.17
+lexgen             11.86  25.81  17.46  31.33
+life                7.10   9.10  12.50  14.70
+logic               8.52  14.08  14.15  19.53
+mandelbrot          6.44   6.86  12.02  12.35
+matrix-multiply     6.57   6.92  12.08  12.48
+md5                 7.29   9.64  12.99  15.69
+merge               6.55   6.93  11.98  12.49
+mlyacc             27.38  74.39  34.33  79.63
+model-elimination  28.79  85.30  36.07  89.53
+mpuz                6.60   7.31  12.11  12.71
+nucleic            13.67  39.16  19.36  44.77
+output1             7.26   9.64  12.94  15.49
+peek                7.10   9.18  12.86  14.92
+psdes-random        6.49   6.80  12.00  12.47
+ratio-regions       7.77  10.97  13.27  16.10
+ray                10.59  20.62  16.37  26.32
+raytrace           14.88  36.18  21.19  42.23
+simple             12.83  30.33  18.15  33.79
+smith-normal-form  10.53  79.19  16.41  97.25
+tailfib             6.69   7.00  13.06  13.25
+tak                 7.41   9.00  14.06  12.38
+tensor              9.42  14.23  16.44  20.07
+tsp                 7.68  10.41  13.33  16.61
+tyan               10.74  20.20  16.64  26.49
+vector-concat       6.56   7.31  12.01  12.41
+vector-rev          6.96   8.09  15.08  12.44
+vliw               24.07  52.93  27.06  57.14
+wc-input1           8.39  13.38  15.94  23.38
+wc-scanStream       8.23  13.28  14.53  20.53
+zebra              11.06  17.77  15.57  23.29
+zern                7.45   8.66  13.06  16.02
+run time
+benchmark         MLton0 MLton1 MLton2 MLton3
+barnes-hut         44.53  45.98  46.83  51.87
+boyer              55.60  65.19  57.62  68.05
+checksum           97.34  80.59 211.83 306.25
+count-graphs       40.15  57.72  69.80  97.06
+DLXSimulator       85.24  91.25  96.11 102.38
+fft                35.98  37.38  36.41  42.09
+fib                70.23  94.84  70.23  92.87
+flat-array         24.93  37.08  26.86  37.37
+hamlet             50.91 102.55  55.62 108.50
+imp-for            46.81  78.06  46.80  61.02
+knuth-bendix       38.03  75.16  37.99  80.62
+lexgen             44.15  58.97  47.56  61.29
+life               14.89  18.63  16.18  19.41
+logic              53.38  69.48  64.10  81.84
+mandelbrot         55.98  60.45  55.97  58.03
+matrix-multiply     7.47   8.07   7.50   7.37
+md5                53.16  73.84  78.02 118.96
+merge              77.94  77.81  77.99  77.71
+mlyacc             40.97  53.38  44.35  56.66
+model-elimination  77.74 104.80  86.44 111.25
+mpuz               41.84  68.04  40.67  80.00
+nucleic            42.22  44.77  43.24  46.29
+output1            16.02  27.75  15.08  25.12
+peek               44.63  88.53  44.52  62.01
+psdes-random       38.86  36.12  38.85  38.19
+ratio-regions      51.77  71.99  52.52  73.43
+ray                33.97  35.83  33.70  42.58
+raytrace           42.30  61.08  42.47  63.03
+simple             60.46  92.79  49.83  96.88
+smith-normal-form  35.23  35.25  37.70  38.20
+tailfib            43.77 105.75  43.79 104.84
+tak                27.60  30.86  27.76  28.95
+tensor             58.98 169.31  59.06 107.94
+tsp                59.66  87.04  62.28  90.29
+tyan               59.12  69.47  73.83  80.61
+vector-concat      85.93 126.95  85.20 102.89
+vector-rev        122.82 147.47 113.88 123.68
+vliw               53.94  73.27  56.20  83.77
+wc-input1          39.13  74.19  42.66  60.60
+wc-scanStream      32.78  45.37  34.23  48.01
+zebra              43.41  51.91  48.45  58.28
+zern               43.72  54.23  48.77  67.33

@@ -16,7 +16,7 @@ signature X86_LOOP_INFO_STRUCTS =
 signature X86_LOOP_INFO =
   sig
     include X86_LOOP_INFO_STRUCTS
-    
+
     type t
 
     val createLoopInfo : {chunk: x86.Chunk.t, farLoops: bool} -> t

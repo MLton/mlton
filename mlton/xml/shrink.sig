@@ -14,6 +14,6 @@ signature SHRINK_STRUCTS =
 signature SHRINK = 
    sig
       include SHRINK_STRUCTS
-      
+
       val shrink: Program.t -> Program.t
    end

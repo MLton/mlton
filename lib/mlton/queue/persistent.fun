@@ -11,7 +11,7 @@
 functor PersistentQueue(Q: BASIC_PERSISTENT_QUEUE)
   : PERSISTENT_QUEUE =
 struct
-   
+
 open Q
 
 exception Deque

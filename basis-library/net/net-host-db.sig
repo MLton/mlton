@@ -3,7 +3,7 @@ signature NET_HOST_DB =
       eqtype addr_family
       type entry
       eqtype in_addr
-         
+
       val addr: entry -> in_addr
       val addrType: entry -> addr_family
       val addrs: entry -> in_addr list
@@ -22,12 +22,8 @@ signature NET_HOST_DB_EXTRA =
       include NET_HOST_DB
       type pre_in_addr
 
-      val addrFamilyToInt: addr_family -> int
       val any: unit -> in_addr
       val inAddrToWord8Vector: in_addr -> Word8.word vector
-      val inAddrToWord: in_addr -> word
-      val intToAddrFamily: int -> addr_family
       val new_in_addr: unit -> pre_in_addr * (unit -> in_addr)
       val preInAddrToWord8Array: pre_in_addr -> Word8.word array
-      val wordToInAddr: word -> in_addr
    end

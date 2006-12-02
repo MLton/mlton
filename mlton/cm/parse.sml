@@ -25,7 +25,7 @@ datatype result =
    Alias of File.t
  | Bad of string
  | Members of File.t list
-   
+
 (* The main read function for CM entities. *)
 fun parse {cmfile: string} =
    Exn.withEscape
@@ -126,5 +126,5 @@ fun parse {cmfile: string} =
          | _ => bad "expected 'group' or 'library'"
         end)
     end)
- 
+
 end

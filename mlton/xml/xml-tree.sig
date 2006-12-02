@@ -16,7 +16,7 @@
  *)
 
 type int = Int.t
-   
+
 signature XML_TREE_STRUCTS =
    sig
       include ATOMS
@@ -28,13 +28,13 @@ signature XML_TREE =
 
       structure Type: XML_TYPE
       sharing Atoms = Type.Atoms
-         
+
       structure Pat:
          sig
             datatype t = T of {arg: (Var.t * Type.t) option,
                                con: Con.t,
                                targs: Type.t vector}
-         
+
             val falsee: t
             val truee: t
             val con: t -> Con.t
@@ -117,11 +117,11 @@ signature XML_TREE =
 
             val layout: t -> Layout.t
          end
-               
+
       structure Dec:
          sig
             type exp = Lambda.exp
-               
+
             datatype t =
                Exception of {arg: Type.t option,
                              con: Con.t}
@@ -143,7 +143,7 @@ signature XML_TREE =
       structure Exp:
          sig
             type t = Lambda.exp
-               
+
             val clear: t -> unit
             val decs: t -> Dec.t list
             val dest: t -> {decs: Dec.t list, result: VarExp.t}

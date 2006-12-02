@@ -15,7 +15,7 @@ functor TextIOConvert
         case TextIO.inputLine ins of
            NONE => ""
          | SOME s => s
-              
+
      structure StreamIO =
         struct
            open StreamIO

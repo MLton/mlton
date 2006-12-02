@@ -10,7 +10,7 @@ BasicEnvToEnv
 (open S
 
  datatype t = T of (Domain.t * Range.t) list ref
-    
+
  val fromList = T o ref
 
  fun toList(T(ref drs)) = drs

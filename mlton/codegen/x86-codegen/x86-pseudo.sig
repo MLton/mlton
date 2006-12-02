@@ -123,7 +123,7 @@ signature X86_PSEUDO =
                      disp: Immediate.t,
                      scale: Scale.t,
                      size: Size.t} -> t
-          
+
         val class : t -> Class.t
         val compare : t * t -> order
         (*
@@ -269,7 +269,7 @@ signature X86_PSEUDO =
         type t
 
         val toString : t -> string
-          
+
         val data : unit -> t
         val text : unit -> t
         val p2align : Immediate.t * Immediate.t option * Immediate.t option -> t
@@ -445,7 +445,7 @@ signature X86_PSEUDO =
         structure Cases :
           sig
             type 'a t
-              
+
             val word : (word * 'a) list -> 'a t
           end
 
@@ -496,6 +496,6 @@ signature X86_PSEUDO =
     structure Chunk :
       sig
         datatype t = T of {data: Assembly.t list, blocks: Block.t list}
-                           
+
       end
   end

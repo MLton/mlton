@@ -68,9 +68,9 @@ local
             in
                seq [str "Save ", Int.layout (!index)]
             end
-         
+
          fun new () = T {index = ref ~1}
-            
+
          fun equals (T {index = i, ...}, T {index = i', ...}) = i = i'
 
          fun assign (T {index, ...}, i) = index := i
@@ -79,7 +79,7 @@ local
 
          val index = Trace.trace ("Regexp.Save.index", layout, Int.layout) index
       end
-   
+
    structure Regexp =
       struct
          datatype t =
@@ -90,7 +90,7 @@ local
           | Seq of t list
           | Save of t * Save.t
           | Star of t
-               
+
          fun layout (r: t): Layout.t =
             let
                open Layout
@@ -186,7 +186,7 @@ local
             fn (Finish s, Finish s') => Save.equals (s, s')
              | (Start s, Start s') => Save.equals (s, s')
              | _ => false
-                  
+
          fun layout a =
             let
                open Layout
@@ -196,7 +196,7 @@ local
                 | Start s => seq [str "Start ", Save.layout s]
             end
       end
-   
+
    structure Match =
       struct
          datatype t = T of {all: Substring.t,
@@ -259,7 +259,7 @@ local
             l
 
          val empty = T []
-            
+
          fun add (a as T l, i, v: MatchAction.t vector) =
                   if Vector.isEmpty v
                      then a
@@ -292,19 +292,19 @@ local
                   stack2: (State.t * Actions.t) Stack.t,
                   start: State.t}
       end
-   
+
    (* Non-deterministic Finite Automaton. *)
    structure NFA:
       sig
          structure State:
             sig
                type t = int
-                  
+
                val layout: t -> Layout.t
             end
-         
+
          datatype t = datatype NFA.t
-            
+
          val fromRegexp: Regexp.t -> t
          val layoutDot: t * string (* title *) -> Layout.t
          val match: {nfa: t,
@@ -676,7 +676,7 @@ local
                   stack2 = Stack.new (numStates, (~1, Actions.empty)),
                   start = start}
             end
-         
+
          structure Graph = DirectedGraph
          fun layoutDot (T {anchorStarts, charClass, final, next, start, ...},
                         title: string): Layout.t =
@@ -841,7 +841,7 @@ local
                              Vector.layout MatchAction.layout actions)]
                   end
             end
-         
+
          (* State i is final iff Array.sub (final, i).
           * Characters are grouped into equivalence classes, represented by
           * integers in [0, numCharClasses).
@@ -1395,7 +1395,7 @@ in
       struct
          structure Save = Save
          structure Match = Match
-            
+
          open Regexp
 
          val anchorFinish = AnchorFinish
@@ -1450,7 +1450,7 @@ in
             else or [null, seq [r, upper (r, n - 1)]]
          fun range (r, n: int, m: int) =
             seq [repeat (r, n), upper (r, m - n)]
-            
+
          structure Compiled =
             struct
                datatype machine =
@@ -1496,7 +1496,7 @@ in
                                           short = short,
                                           string = string,
                                           startPos = startPos})
-                                          
+
                          | NFA nfa =>
                               (NFA.saves nfa,
                                NFA.match {nfa = nfa,

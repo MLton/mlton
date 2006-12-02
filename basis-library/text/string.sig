@@ -2,7 +2,7 @@ signature STRING_GLOBAL =
    sig
       eqtype char
       eqtype string
-         
+
       val ^ : string * string -> string 
       val concat: string list -> string 
       val explode: string -> char list 
@@ -16,7 +16,7 @@ signature STRING =
    sig
       include STRING_GLOBAL
 
-         
+
       val < : string * string -> bool 
       val <= : string * string -> bool 
       val > : string * string -> bool 

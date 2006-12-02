@@ -34,9 +34,9 @@ structure MLton: MLTON =
    struct
       type int = Int.int
       type word = Word.word
-         
+
       type pointer = Word32.word
-         
+
       val cleanAtExit = fn _ => raise Fail "cleanAtExit"
       val debug = false
       val deserialize = fn _ => raise Fail "deserialize"
@@ -71,7 +71,7 @@ structure MLton: MLTON =
                   (a, !r)
                end
          end
-      
+
       structure BinIO =
          struct
             type instream = unit
@@ -128,7 +128,7 @@ structure MLton: MLTON =
             fun touch _ = ()
             fun withValue (x, f) = f x
          end
-      
+
       structure GC =
          struct
             fun collect _ = ()
@@ -142,7 +142,7 @@ structure MLton: MLTON =
       structure IntInf =
          struct
             open IntInf
-               
+
             type t = IntInf.int
 
             datatype rep =
@@ -176,7 +176,7 @@ structure MLton: MLTON =
 
                   val toLower = translate (str o Char.toLower)
                end
-         
+
             structure Arch =
                struct
                   datatype t = Alpha | AMD64 | ARM | HPPA | IA64 | m68k |
@@ -233,7 +233,7 @@ structure MLton: MLTON =
                              (NetBSD, "NetBSD"),
                              (OpenBSD, "OpenBSD"),
                              (Solaris, "Solaris")]
-               
+
                   fun fromString s =
                      let
                         val s = String.toLower s
@@ -249,7 +249,7 @@ structure MLton: MLTON =
       structure Pointer =
          struct
             type t = unit
-               
+
             val add = fn _ => raise Fail "Pointer.add"
             val compare = fn _ => raise Fail "Pointer.compare"
             val diff = fn _ => raise Fail "Pointer.diff"
@@ -284,7 +284,7 @@ structure MLton: MLTON =
       structure ProcEnv =
          struct
             type gid = Posix.ProcEnv.gid
-               
+
             fun setenv _ = raise Fail "setenv"
             fun setgroups _ = raise Fail "setgroups"
          end
@@ -297,10 +297,10 @@ structure MLton: MLTON =
             type none = unit
             type chain = unit
             type any = unit
-            
+
             exception MisuseOfForget
             exception DoublyRedirected
-            
+
             structure Child =
                struct
                   type ('use, 'dir) t = unit
@@ -312,7 +312,7 @@ structure MLton: MLTON =
                   val textIn = fn _ => raise Fail "Child.textIn"
                   val textOut = fn _ => raise Fail "Child.textOut"
                end
-            
+
             structure Param =
                struct
                   type ('use, 'dir) t = unit
@@ -325,7 +325,7 @@ structure MLton: MLTON =
                   val pipe = ()
                   val self = ()
                end
-            
+
             val create = fn _ => raise Fail "Process.create"
             val getStderr = fn _ => raise Fail "Process.getStderr"
             val getStdin  = fn _ => raise Fail "Process.getStdin"
@@ -336,14 +336,14 @@ structure MLton: MLTON =
             type pid = Posix.Process.pid
 
             val atExit = OS.Process.atExit
-               
+
             fun exit n =
                let
                   open OS.Process
                in
                   exit (if n = 0 then success else failure)
                end
-               
+
             fun spawne {path, args, env} =
                case Posix.Process.fork () of
                   NONE => Posix.Process.exece (path, args, env)
@@ -357,7 +357,7 @@ structure MLton: MLTON =
                   NONE => Posix.Process.execp (file, args)
                 | SOME pid => pid
          end
-      
+
       structure Profile =
          struct
             val profile = false
@@ -374,7 +374,7 @@ structure MLton: MLTON =
             val isOn = false
             val withData = fn _ => raise Fail "Profile.withData"
          end
-      
+
       structure Ptrace =
          struct
             type pid = Posix.Process.pid
@@ -391,27 +391,35 @@ structure MLton: MLTON =
 
       structure Rlimit =
          struct
-            type rlim = Word.word
+            structure RLim =
+               struct
+                  type t = SysWord.word
+                  val castFromSysWord = fn w => w
+                  val castToSysWord = fn w => w
+               end
 
-            val infinity: rlim = 0w0
+            val infinity: RLim.t = 0w0
 
             type t = int
-               
-            val cpuTime: t = 0
+
             val coreFileSize: t = 0
+            val cpuTime: t = 0
             val dataSize: t = 0
             val fileSize: t = 0
-            val lockedInMemorySize: t = 0
             val numFiles: t = 0
-            val numProcesses: t = 0
-            val residentSetSize: t = 0
             val stackSize: t = 0
             val virtualMemorySize: t = 0
+
+(* NOT STANDARD
+            val lockedInMemorySize: t = 0
+            val numProcesses: t = 0
+            val residentSetSize: t = 0
+*)
 
             fun get _ = raise Fail "Rlimit.get"
             fun set _ = raise Fail "Rlimit.set"
          end
-      
+
       structure Rusage =
          struct
            type t = {stime: Time.time, utime: Time.time}
@@ -508,7 +516,7 @@ structure MLton: MLTON =
                end
 
             type t = unit
-               
+
             fun accept _ = raise Fail "Socket.accept"
             fun connect _ = raise Fail "Socket.connect"
             fun fdToSock _ = raise Fail "Socket.fdToSock"
@@ -520,12 +528,12 @@ structure MLton: MLTON =
 
       (* From Tom 7 <twm@andrew.cmu.edu>. *)
       (* Implementation of Syslog which doesn't log anything. *)
-    
+
       structure Syslog =
          struct
 
             type openflag = unit
-               
+
             val CONS = ()
             val NDELAY = ()
             val PERROR = ()
@@ -611,7 +619,7 @@ structure MLton: MLTON =
                         Array.vector a
                      end
                end
-               
+
             fun unfoldi (n, a, f) =
                let
                   val r = ref a
@@ -682,7 +690,7 @@ structure MLton: MLTON =
                val mulCheck = make IntInf.*
             end
          end
-      
+
       structure Word8 =
          struct
             open Word8

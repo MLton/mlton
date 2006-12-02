@@ -6,7 +6,7 @@
  *)
 
 type int = Pervasive.Int.int
-   
+
 signature STRING =
    sig
       type t = string
@@ -113,7 +113,7 @@ functor TestString (S: STRING): sig end =
 struct
 
 val _ = print "TestString\n"
-   
+
 open S
 
 val _ =

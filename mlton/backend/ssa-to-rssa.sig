@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-   
+
 signature SSA_TO_RSSA_STRUCTS =
    sig
       structure Rssa: RSSA
@@ -24,7 +24,7 @@ signature SSA_TO_RSSA_STRUCTS =
 signature SSA_TO_RSSA =
    sig
       include SSA_TO_RSSA_STRUCTS
-         
+
       val convert:
          Ssa.Program.t
          * {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}

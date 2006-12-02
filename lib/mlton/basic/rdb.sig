@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 (* Relational Data Base *)
 signature RDB =
    sig

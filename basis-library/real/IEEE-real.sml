@@ -11,9 +11,11 @@ structure IEEEReal: IEEE_REAL_EXTRA =
       val op + = Int.+
       val op - = Int.-
       val op * = Int.*
-         
+
       exception Unordered
       datatype real_order = LESS | EQUAL | GREATER | UNORDERED
+
+      structure Prim = PrimitiveFFI.IEEEReal
 
       datatype float_class =
          INF
@@ -21,8 +23,31 @@ structure IEEEReal: IEEE_REAL_EXTRA =
        | NORMAL
        | SUBNORMAL
        | ZERO
-         
-      structure Prim = Primitive.IEEEReal
+
+      local
+         val classes =
+            let
+               open Prim.FloatClass
+            in
+               (* order here is chosen based on putting the more
+                * commonly used classes at the front.  
+                *)
+               [(FP_NORMAL, NORMAL),
+                (FP_ZERO, ZERO),
+                (FP_INFINITE, INF),
+                (FP_NAN, NAN),
+                (FP_SUBNORMAL, SUBNORMAL)]
+            end
+      in
+         fun mkClass class x =
+            let
+               val i = class x
+            in
+               case List.find (fn (i', _) => i = i') classes of
+                  NONE => raise Fail "Real_class returned bogus integer"
+                | SOME (_, c) => c
+            end
+      end
 
       structure RoundingMode =
          struct
@@ -37,30 +62,30 @@ structure IEEEReal: IEEE_REAL_EXTRA =
                   let
                      open Prim.RoundingMode
                   in
-                     [(toNearest, TO_NEAREST),
-                      (downward, TO_NEGINF),
-                      (upward, TO_POSINF),
-                      (towardZero, TO_ZERO)]
+                     [(FE_TONEAREST, TO_NEAREST),
+                      (FE_DOWNWARD, TO_NEGINF),
+                      (FE_UPWARD, TO_POSINF),
+                      (FE_TOWARDZERO, TO_ZERO)]
                   end
             in
-               val fromInt: int -> t =
+               val fromInt: C_Int.int -> t =
                   fn i =>
                   case List.find (fn (i', _) => i = i') modes of
                      NONE => raise Fail "IEEEReal.RoundingMode.fromInt"
                    | SOME (_, m) => m
-                        
-               val toInt: t -> int =
+
+               val toInt: t -> C_Int.int =
                   fn m =>
                   let
                      open Prim.RoundingMode
                      val i =
                         case m of
-                           TO_NEAREST => toNearest
-                         | TO_NEGINF => downward
-                         | TO_POSINF => upward
-                         | TO_ZERO => towardZero
+                           TO_NEAREST => FE_TONEAREST
+                         | TO_NEGINF => FE_DOWNWARD
+                         | TO_POSINF => FE_UPWARD
+                         | TO_ZERO => FE_TOWARDZERO
                   in
-                     if i = noSupport
+                     if i = FE_NOSUPPORT
                         then raise Fail "IEEEReal rounding mode not supported"
                      else i
                   end
@@ -101,7 +126,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
          end
 
       type decimal_approx = DecimalApprox.t
-         
+
       fun 'a scan reader (state: 'a) =
          let
             val state = StringCvt.skipWS reader state
@@ -151,8 +176,7 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             type exp = {digits: int list, negate: bool}
             fun 'b afterE (state: 'a,
                            failure: unit -> 'b,
-                           success: exp * 'a -> 'b)
-               : 'b =
+                           success: exp * 'a -> 'b) : 'b =
                case reader state of
                   NONE => failure ()
                 | SOME (c, state) =>
@@ -373,4 +397,3 @@ structure IEEEReal: IEEE_REAL_EXTRA =
             else num
          end
    end
-

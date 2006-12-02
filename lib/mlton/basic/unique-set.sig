@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature UNIQUE_SET_STRUCTS = 
    sig
       structure Element:
@@ -25,9 +25,9 @@ signature UNIQUE_SET_STRUCTS =
 signature UNIQUE_SET =
    sig
       include UNIQUE_SET_STRUCTS
-         
+
       type t
-               
+
       val + : t * t -> t
       val - : t * t -> t
       val empty: t

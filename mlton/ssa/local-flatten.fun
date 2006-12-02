@@ -15,7 +15,7 @@ open Exp Transfer
 (* Flatten a jump arg as long as it is only flows to selects and there is 
  * some tuple constructed in this function that flows to it.
  *)
-   
+
 structure ArgInfo =
    struct
       datatype t = T of {fromTuple: bool ref,
@@ -45,7 +45,7 @@ structure ArgInfo =
          if !t
             then (t := false; List.foreach (!toForce, nonSelect))
          else ()
-            
+
       val op <= =
          fn (lhs as T {fromTuple = f, fromForce, ...},
              rhs as T {toSelect = t, toForce, ...}) =>

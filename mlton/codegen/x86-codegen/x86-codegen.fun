@@ -9,7 +9,7 @@
 functor x86Codegen (S: X86_CODEGEN_STRUCTS): X86_CODEGEN =
 struct
   open S
-     
+
   structure x86 = x86 (open Machine
                        structure RepType = Type)
 
@@ -35,7 +35,7 @@ struct
                 structure x86Liveness = x86Liveness)
 
   val implementsPrim = x86MLton.implementsPrim
-    
+
   structure x86Translate 
     = x86Translate (structure x86 = x86
                     structure x86MLton = x86MLton
@@ -349,7 +349,7 @@ struct
            {frameLayoutsIndex = frameLayoutsIndex,
             size = Bytes.toInt (#size (Vector.sub (frameLayouts,
                                                    frameLayoutsIndex)))}
-           
+
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)
           = let
@@ -366,7 +366,7 @@ struct
                   {chunk = chunk,
                    frameInfoToX86 = frameInfoToX86,
                    liveInfo = liveInfo}
-                  
+
               val chunk : x86.Chunk.t
                 = x86Simplify.simplify 
                   {chunk = chunk,
@@ -420,7 +420,7 @@ struct
                          print "\n";
                          n + 1)))
             end
-          
+
         fun outputAssembly ()
           = let
               val split = !Control.Native.split

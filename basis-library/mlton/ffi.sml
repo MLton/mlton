@@ -8,13 +8,14 @@
 structure MLtonFFI: MLTON_FFI =
 struct
 
-structure Prim = Primitive.FFI
+structure Prim = Primitive.MLton.FFI
 
-structure Pointer = Primitive.Pointer
+structure Pointer = Primitive.MLton.Pointer
 
 local
    fun make (p: Pointer.t, get, set) =
-      (fn i => get (p, i), fn x => set (p, 0, x))
+      (fn i => get (p, C_Ptrdiff.fromInt i), 
+       fn x => set (p, C_Ptrdiff.fromInt 0, x))
 in
    val (getInt8, setInt8) =
       make (Prim.int8Array, Pointer.getInt8, Pointer.setInt8)
@@ -24,8 +25,8 @@ in
       make (Prim.int32Array, Pointer.getInt32, Pointer.setInt32)
    val (getInt64, setInt64) =
       make (Prim.int64Array, Pointer.getInt64, Pointer.setInt64)
-   fun getPointer i = Pointer.getPointer (Prim.pointerArray, i)
-   fun setPointer x = Pointer.setPointer (Prim.pointerArray, 0, x)
+   fun getPointer i = Pointer.getPointer (Prim.pointerArray, C_Ptrdiff.fromInt i)
+   fun setPointer x = Pointer.setPointer (Prim.pointerArray, C_Ptrdiff.fromInt 0, x)
    val (getReal32, setReal32) =
       make (Prim.real32Array, Pointer.getReal32, Pointer.setReal32)
    val (getReal64, setReal64) =
@@ -44,21 +45,13 @@ val atomicBegin = MLtonThread.atomicBegin
 val atomicEnd = MLtonThread.atomicEnd
 val register = MLtonThread.register
 
-(* To the C-world, booleans and chars are signed integers. *)
-fun intToBool (i: int): bool = i <> 0
-   
-val getBool = intToBool o getInt32
+(* To the C-world, chars are signed integers. *)
+val getChar8 = Primitive.Char8.idFromInt8 o getInt8
+val getChar16 = Primitive.Char16.idFromInt16 o getInt16
+val getChar32 = Primitive.Char32.idFromInt32 o getInt32
 
-val getChar8 = Primitive.Char.fromInt8 o getInt8
-val getChar16 = Primitive.Char2.fromInt16 o getInt16
-val getChar32 = Primitive.Char4.fromInt32 o getInt32
-               
-fun boolToInt (b: bool): int = if b then 1 else 0
-
-val setBool = setInt32 o boolToInt
-
-val setChar8 = setInt8 o Primitive.Char.toInt8
-val setChar16 = setInt16 o Primitive.Char2.toInt16
-val setChar32 = setInt32 o Primitive.Char4.toInt32
+val setChar8 = setInt8 o Primitive.Char8.idToInt8
+val setChar16 = setInt16 o Primitive.Char16.idToInt16
+val setChar32 = setInt32 o Primitive.Char32.idToInt32
 
 end

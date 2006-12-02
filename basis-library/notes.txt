@@ -679,7 +679,7 @@ StreamIO() and STREAM_IO:
   the description of this function, so it's unclear what corresponds
   to consumed input.
 * I suspect the example under endOfStream is wrong:
-  
+
   In these cases the StreamIO.instream will also have multiple EOF's;
   that is, it can be that
 
@@ -715,7 +715,7 @@ General comments:
 * Various operations in IO take "slices", but aren't expressed in
   terms of {Vector,Array}Slice structures.  One difficulty with this
   is that the slice types are not in scope within the IO signatures.  
-  
+
   I would really advocate making the VectorSlice structure a
   substructure of the Vector structure (and likewise for arrays).
   Even if this isn't done for the polymorphic vector/array structures,
@@ -1275,7 +1275,7 @@ Why no vector: int * 'a -> 'a vector?
 
 
 Resolved:
- 
+
 If one defines VECTOR_SLICE by including a type 'a vector and replace
 'a Vector.vector with the local 'a vector, but then binds
 structure Vector: VECTOR

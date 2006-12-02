@@ -59,7 +59,7 @@ structure Examples =
          List.layout (Layout.tuple2 (Var.layout, fn l => l)) es
 
       val empty = T {es = [], isOnlyExns = true}
-         
+
       fun add (T {es, isOnlyExns = is}, x, l, {isOnlyExns: bool}) =
          T {es = (x, l) :: es,
             isOnlyExns = is andalso isOnlyExns}
@@ -157,7 +157,7 @@ structure Facts =
           layout, Examples.layout, Var.layout, fn l => l)
          example
    end
-   
+
 structure Pat =
    struct
       datatype t =
@@ -242,7 +242,7 @@ structure Rules =
       type t = Rule.t vector
 
       fun layout (rs: t) = Layout.align (Vector.toListMap (rs, Rule.layout))
-         
+
       fun dropNth (rs: t, n: int): t =
          Vector.map (rs, fn r => Rule.dropNth (r, n))
    end
@@ -769,5 +769,5 @@ val matchCompile =
    matchCompile
 
 structure Vars = S.Vars
-   
+
 end

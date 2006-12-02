@@ -7,7 +7,7 @@
 
 structure Export: EXPORT =
 struct
-   
+
 structure NJ = SMLofNJ
 
 fun exportFn(file, command) =
@@ -16,5 +16,5 @@ fun exportFn(file, command) =
                           handle exn => (print ("Unhandled exception: "
                                                 ^ exnName exn ^ "\n") ;
                                          raise exn)))
-   
+
 end

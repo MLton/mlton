@@ -13,7 +13,7 @@ open S
 
 structure Set = DisjointSet
 structure List = AppendList
-   
+
 datatype t = T of value Set.t
 and value =
    Bottom of (unit -> unit) List.t ref  (* If I become Top, then run these. *)

@@ -6,7 +6,7 @@
  *)
 
 type int = Pervasive.Int.int
-      
+
 signature FOLD_STRUCTS = 
    sig
       type 'a t

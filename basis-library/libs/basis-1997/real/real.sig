@@ -2,7 +2,7 @@ signature REAL_1997 =
    sig
       type real
       structure Math: MATH where type real = real
-        
+
       val ceil: real -> Int.int
       val floor: real -> Int.int 
       val round: real -> Int.int

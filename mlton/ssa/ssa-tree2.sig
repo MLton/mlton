@@ -16,7 +16,7 @@ signature SSA_TREE2_STRUCTS =
 signature SSA_TREE2 = 
    sig
       include SSA_TREE2_STRUCTS
-     
+
       structure Prod:
          sig
             type 'a t
@@ -46,11 +46,11 @@ signature SSA_TREE2 =
             val isVector: t -> bool
             val layout: t -> Layout.t
          end
-      
+
       structure Type:
          sig
             type t
-               
+
             datatype dest =
                Datatype of Tycon.t
              | IntInf
@@ -143,7 +143,7 @@ signature SSA_TREE2 =
             val profile: ProfileExp.t -> t
             val replaceUses: t * (Var.t -> Var.t) -> t
          end
-      
+
       structure Cases:
          sig
             datatype t =
@@ -272,7 +272,7 @@ signature SSA_TREE2 =
             val profile: t * SourceInfo.t -> t
             val start: t -> Label.t
          end
-     
+
       structure Program:
          sig
             datatype t =

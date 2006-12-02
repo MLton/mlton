@@ -30,7 +30,7 @@ fun stats () =
                       str " plist length is ",
                       Int.layout (PropertyList.length (plist c))]))
    end
-   
+
 fun fromBool b = if b then truee else falsee
-   
+
 end

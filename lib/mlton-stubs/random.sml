@@ -23,11 +23,11 @@ structure Random: MLTON_RANDOM =
 
          fun srand (w: word): unit = seed := w
       end
-   
+
       structure String =
          struct
             open String
-                        
+
             val tabulate = CharVector.tabulate
          end
 

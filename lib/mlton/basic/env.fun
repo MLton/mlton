@@ -13,12 +13,12 @@ open S
 datatype 'a t = T of (Domain.t * 'a) List.t
 
 fun size (T l) = List.length l
-   
+
 fun domain (T drs) = List.revMap (drs, #1)
-   
+
 val fromList = T
 fun toList (T l) = l
-   
+
 fun empty () = T []
 
 fun single (d, r) = T [(d, r)]
@@ -34,18 +34,18 @@ fun mapi (T drs, f) = T (List.map (drs, fn (d, r) => (d, f (d, r))))
 
 fun fold (T drs, b, f) = List.fold (drs, b, fn ((_, r), b) => f (r, b))
 fun foldi (T drs, b, f) = List.fold (drs, b, fn ((d, r), b) => f (d, r, b))
-   
+
 fun equal d (d', _) = Domain.equals (d, d')
 
 fun remove (T drs, d) = T (List.remove (drs, equal d))
-   
+
 fun extend (T drs, d, r) =
    T (List.cons ((d, r), List.remove (drs, equal d)))
 
 fun env + (T l) = List.fold (l, env, fn ((d, r), env) => extend (env, d, r))
 
 fun plus es = List.fold (es, empty (), fn (e, accum) => accum + e)
-   
+
 fun peek (T l, d) =
    case List.peek (l, equal d) of
       NONE => NONE
@@ -69,14 +69,14 @@ fun foreachi (e, f) = List.foreach (toList e, f)
 
 fun forall (e, f) = List.forall (toList e, f o #2)
 fun foralli (e, f) = List.forall (toList e, f)
-   
+
 fun equals rangeEqual (e1, e2) =
    size e1 = size e2
    andalso foralli (e1, fn (d, r) =>
                    case peek (e2, d) of
                       NONE => false
                     | SOME r' => rangeEqual (r, r'))
-   
+
 fun layout layoutR (T ps) =
    let open Layout
    in seq [str "[",

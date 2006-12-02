@@ -24,7 +24,7 @@ signature AST_MLBS =
                Bas of basdec
              | Let of basdec * t
              | Var of Basid.t
-               
+
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 

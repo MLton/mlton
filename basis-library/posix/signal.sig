@@ -31,6 +31,9 @@ signature POSIX_SIGNAL_EXTRA =
    sig
       include POSIX_SIGNAL
 
+      val prof: signal
+      val vtalrm: signal
+
       val fromInt: int -> signal
       val toInt: signal -> int
    end

@@ -9,7 +9,7 @@ functor Tree (S: TREE_STRUCTS): TREE =
 struct
 
 open S
-   
+
 datatype 'a t = T of 'a * 'a t Seq.t
 
 fun children (T (_, v)) = v
@@ -74,7 +74,7 @@ fun layout (t, lay) =
    end
 
 fun map (T (a, ts), f) = T (f a, Seq.map (ts, fn t => map (t, f)))
-   
+
 end
 
 structure Tree = Tree (structure Seq =

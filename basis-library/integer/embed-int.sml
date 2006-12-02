@@ -9,27 +9,33 @@ signature EMBED_INT =
    sig
       eqtype int
       type big
-         
-      val precision': Int.int
+
       val fromBigUnsafe: big -> int
+      val sizeInBits: Int32.int
       val toBig: int -> big
    end
 
 functor EmbedInt (structure Big: INTEGER_EXTRA
                   structure Small: EMBED_INT where type big = Big.int): INTEGER =
    struct
-      val () = if Int.< (Small.precision', valOf Big.precision) then ()
+      structure Small =
+         struct
+            open Small
+            val precision': Int.int = Int32.toInt sizeInBits
+         end
+
+      val () = if Int.< (Small.precision', Big.precision') then ()
                else raise Fail "EmbedWord"
 
       open Small
 
-      val shift = Word.fromInt (Int.- (valOf Big.precision, precision'))
+      val shift = Word.fromInt (Int.- (Big.precision', precision'))
 
       val extend: Big.int -> Big.int =
          fn i => Big.~>> (Big.<< (i, shift), shift)
 
       val toBig: Small.int -> Big.int = extend o Small.toBig
-         
+
       val precision = SOME precision'
 
       val maxIntBig = Big.>> (Big.fromInt ~1, Word.+ (shift, 0w1))
@@ -46,11 +52,11 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
                then fromBigUnsafe i'
             else raise Overflow
          end
-               
+
       val maxInt = SOME (fromBig maxIntBig)
 
       val minInt = SOME (fromBig minIntBig)
-         
+
       local
          val make: (Big.int * Big.int -> Big.int) -> (int * int -> int) =
             fn f => fn (x, y) => fromBig (f (toBig x, toBig y))
@@ -101,7 +107,7 @@ functor EmbedInt (structure Big: INTEGER_EXTRA
          Option.map
          (fn (i, state) => (fromBig i, state))
          (Big.scan r reader state)
-         
+
       val sign = Big.sign o toBig
 
       fun sameSign (x, y) = sign x = sign y

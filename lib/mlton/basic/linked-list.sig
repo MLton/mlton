@@ -30,7 +30,7 @@ functor TestLinkedList (S: LINKED_LIST): sig end =
 struct
 
 open S
-   
+
 val _ = 
    Assert.assert
    ("TestLinkedList", fn () =>

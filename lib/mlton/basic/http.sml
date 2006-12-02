@@ -364,7 +364,7 @@ structure Header =
            ("via", SOME o Via),
            ("www-authenticate", SOME o WWWAuthenticate),
            ("warning", SOME o Warning)])
-          
+
       fun fromString (s: string): t list Result.t =
          let
             val no = Result.No (concat ["invalid header: ", s])
@@ -418,7 +418,7 @@ structure Request =
                          headers: Header.t list}
 
       val regexp = Regexp.requestLine
-         
+
       fun toString (T {method, url, version, headers}) =
          concat ([Method.toString method,
                  " ",
@@ -432,7 +432,7 @@ structure Request =
       val layout = Layout.str o toString
 
       fun output (r, out) = Out.output (out, toString r)
- 
+
       fun requestLine (s: string) =
          let
             open Regexp
@@ -471,7 +471,7 @@ structure Request =
          requestLine
 
       val requestIsValid = Option.isSome o requestLine
-         
+
       fun input (ins: In.t): t Result.t =
          case In.inputLine ins of
             NONE => Result.No ""
@@ -510,7 +510,7 @@ structure Rope =
           | String s => ac + String.size s
 
       fun size (r: t): int = sizePlus (r, 0)
-               
+
       fun toStrings (r: t, ac: string list): string list =
          case r of
             Appends rs => List.fold (rev rs, ac, toStrings)
@@ -530,7 +530,7 @@ structure Rope =
             loop r
          end
    end
-      
+
 structure Post =
    struct
       structure Encoding =
@@ -835,7 +835,7 @@ structure Response =
       val layout = Layout.str o toString
 
       fun output (r, out) = Out.output (out, toString r)
-         
+
       fun input (ins: In.t): t Result.t =
          case In.inputLine ins of
             NONE => Result.No ""

@@ -18,7 +18,7 @@ structure Answer =
        | PredecessorReachable of Node.t * Edge.t
        | Relaxable of Node.t * Edge.t
        | NoPath of Node.t
-         
+
       fun layout (a, layoutNode) =
          let open Layout
          in case a of
@@ -49,7 +49,7 @@ structure Answer =
    end
 
 structure Set = DisjointSet
-         
+
 fun check {graph, source, weight, distance} =
    case distance source of
       NONE => Answer.SourceNonZero

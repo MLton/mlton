@@ -145,7 +145,7 @@ struct
         val cstaticClasses = !x86MLton.Classes.cstaticClasses
         val heapClasses = !x86MLton.Classes.heapClasses
         val ccallflushClasses = ClassSet.+(cstaticClasses, heapClasses)
-          
+
         fun removeHoldMemLocs memlocs
           = MemLocSet.subset
             (memlocs, 
@@ -175,7 +175,7 @@ struct
                                                       then cStackAssume :: l
                                                    else l}
            end
-           
+
         fun runtimeTransfer live setup trans
           = AppendList.appends
             [AppendList.single
@@ -241,7 +241,7 @@ struct
           if !Control.profile <> Control.ProfileNone
             then AppendList.single profileStackTopCommit'
             else AppendList.empty
-            
+
         val _
           = Assert.assert
             ("x86GenerateTransfers.verifyLiveInfo",
@@ -275,7 +275,7 @@ struct
                      set(label, {block = block}) ;
                      label::labels
                    end)
-              
+
           fun loop labels
             = let
                 val (labels, b)
@@ -301,7 +301,7 @@ struct
                   else List.map (labels, #block o get)
               end
           val blocks = loop labels
-            
+
           val _ = destroy ()
         in
           val chunk = Chunk.T {data = data, blocks = blocks}
@@ -458,7 +458,7 @@ struct
               else
                  (fn name => Label.fromString name,
                   fn () => [])
-                 
+
         datatype z = datatype Entry.t
         datatype z = datatype Transfer.t
         fun generateAll (gef as GEF {effect,...})
@@ -749,7 +749,7 @@ struct
                       statements,
                       transfer]
                    end)
-          
+
         and effectDefault (gef as GEF {fall,...})
                           {label, transfer} : Assembly.t AppendList.t
           = AppendList.append
@@ -1210,7 +1210,7 @@ struct
                                 let
                                   val return = valOf return
                                   val _ = enque return
-                                    
+
                                   val stackTopTemp
                                     = x86MLton.stackTopTempContentsOperand ()
                                   val stackTopTempMinusWordDeref'
@@ -1224,7 +1224,7 @@ struct
                                   val stackTopMinusWordDeref
                                     = x86MLton.gcState_stackTopMinusWordDerefOperand ()
                                   val bytes = x86.Operand.immediate_const_int size
-                                    
+
                                   val live =
                                     x86Liveness.LiveInfo.getLive(liveInfo, return)
                                   val {defs, ...} = Transfer.uses_defs_kills transfer
@@ -1485,7 +1485,7 @@ struct
                                              (cases,
                                               fn (k,target)
                                                => (f k, target))
-                                             
+
                                          val (cases'', 
                                               minK'', maxK'', length'',
                                               shift'', mask'')
@@ -1510,7 +1510,7 @@ struct
                         in 
                           reduce' cases
                         end
-                      
+
                     fun doitTable(cases,
                                   {zero,
                                    incFn, 
@@ -1573,7 +1573,7 @@ struct
                                scale = Scale.Four,
                                size = Size.LONG,
                                class = MemLoc.Class.Code}
-                              
+
                           val size 
                             = case Operand.size test
                                 of SOME size => size
@@ -1724,7 +1724,7 @@ struct
                                minK, maxK, length,
                                shift, mask) 
                             = reduce(cases, ops)
-                            
+
                           val rangeK 
                             = range(minK,maxK)
                         in
@@ -1933,7 +1933,7 @@ struct
                                             falling = true,
                                             unique = false}))))
             end
-          
+
         fun make {generate, effect, fall}
           = generate (GEF {generate = generate,
                            effect = effect,

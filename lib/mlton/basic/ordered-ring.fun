@@ -37,5 +37,5 @@ fun factorial n = prodFromTo{from = one, to = n, term = fn i => i}
 fun max(m, n) = if m > n then m else n
 
 fun min(m, n) = if m < n then m else n
-   
+
 end

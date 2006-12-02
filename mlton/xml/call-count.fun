@@ -20,7 +20,7 @@ fun instrument(program as Program.T{datatypes, body}, passName: string) =
                None
              | Lam of int (* for curried lambdas, how many arrows remain *)
              | Prim
-               
+
             val {get = kind: Var.t -> kind, set} =
                Property.new(Var.plist, Property.initConst None)
 
@@ -50,7 +50,7 @@ fun instrument(program as Program.T{datatypes, body}, passName: string) =
 
             val incCount = inc "Unknown"
             val incObvious = inc "Known"
-            
+
             val program = Program.T{datatypes = datatypes,
                                     body = body}
             fun loopExp(e: Exp.t): Exp.t =
@@ -118,7 +118,7 @@ fun instrument(program as Program.T{datatypes, body}, passName: string) =
 
             val program = Program.T{datatypes = datatypes,
                                     body = loopExp body}
-               
+
          in Program.clear program
             ; program
          end

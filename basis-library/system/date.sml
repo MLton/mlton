@@ -1,17 +1,18 @@
 (* Modified from the ML Kit 4.1.4; basislib/Date.sml
+ * by mfluet@acm.org on 2006-4-25
  * by mfluet@acm.org on 2005-8-10 based on
  *  modifications from the ML Kit Version 3; basislib/Date.sml
  *  by sweeks@research.nj.nec.com on 1999-1-3 and
  *  by sweeks@acm.org on 2000-1-18.
  *)
- 
+
 (* Date -- 1995-07-03, 1998-04-07 *)
 
 structure Date :> DATE =
   struct
-     structure Prim = Primitive.Date
+     structure Prim = PrimitiveFFI.Date
      structure Tm = Prim.Tm
-        
+
      (* Patch to make Time look like it deals with Int.int
       * instead of LargeInt.int.
       *)
@@ -59,49 +60,48 @@ structure Date :> DATE =
 
     (* 86400 = 24*60*6 is the number of seconds per day *)
 
-    type tmoz = {tm_hour   : int,
-                 tm_isdst  : int,       (* 0 = no, 1 = yes, ~1 = don't know *)
-                 tm_mday   : int,
-                 tm_min    : int,
-                 tm_mon    : int,
-                 tm_sec    : int, 
-                 tm_wday   : int,
-                 tm_yday   : int,
-                 tm_year   : int}
-
+    type tmoz = {tm_hour  : C_Int.t,
+                 tm_isdst : C_Int.t,       (* 0 = no, 1 = yes, ~1 = don't know *)
+                 tm_mday  : C_Int.t,
+                 tm_min   : C_Int.t,
+                 tm_mon   : C_Int.t,
+                 tm_sec   : C_Int.t, 
+                 tm_wday  : C_Int.t,
+                 tm_yday  : C_Int.t,
+                 tm_year  : C_Int.t}
     local
-       fun make (f: int ref -> unit) (n: int): tmoz =
-          (f (ref n)
-           ; {tm_hour = Tm.hour (),
-              tm_isdst = Tm.isdst (),
-              tm_mday = Tm.mday (),
-              tm_min = Tm.min (),
-              tm_mon = Tm.mon (),
-              tm_sec = Tm.sec (),
-              tm_wday = Tm.wday (),
-              tm_yday = Tm.yday (),
-              tm_year = Tm.year ()})
+       fun make (f: C_Time.t ref -> C_Int.t C_Errno.t) (n: C_Time.t) : tmoz =
+          (ignore (f (ref n))
+           ; {tm_hour = Tm.getHour (),
+              tm_isdst = Tm.getIsDst (),
+              tm_mday = Tm.getMDay (),
+              tm_min = Tm.getMin (),
+              tm_mon = Tm.getMon (),
+              tm_sec = Tm.getSec (),
+              tm_wday = Tm.getWDay (),
+              tm_yday = Tm.getYDay (),
+              tm_year = Tm.getYear ()})
     in
        val getlocaltime_ = make Prim.localTime
-       val getunivtime_ = make Prim.gmTime
+       val getgmtime_ = make Prim.gmTime
     end
 
-    fun setTmBuf {tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, tm_sec, tm_wday,
-                 tm_yday, tm_year} =
+    fun setTmBuf ({tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, 
+                   tm_sec, tm_wday, tm_yday, tm_year}: tmoz) : unit =
        (Tm.setHour tm_hour
-        ; Tm.setIsdst tm_isdst
-        ; Tm.setMday tm_mday
+        ; Tm.setIsDst tm_isdst
+        ; Tm.setMDay tm_mday
         ; Tm.setMin tm_min
         ; Tm.setMon tm_mon
         ; Tm.setSec tm_sec
-        ; Tm.setWday tm_wday
-        ; Tm.setYday tm_yday
+        ; Tm.setWDay tm_wday
+        ; Tm.setYDay tm_yday
         ; Tm.setYear tm_year)
-        
-    fun mktime_ (t: tmoz): int = (setTmBuf t; Prim.mkTime ())
+
+    fun mktime_ (t: tmoz): C_Time.t = C_Errno.check (setTmBuf t; Prim.mkTime ())
 
     (* The offset to add to local time to get UTC: positive West of UTC *)
-    val localoffset: int = Prim.localOffset ()
+    val localoffset: int = C_Double.round (Prim.localOffset ())
 
     val toweekday: int -> weekday =
        fn 0 => Sun | 1 => Mon | 2 => Tue | 3 => Wed
@@ -111,7 +111,7 @@ structure Date :> DATE =
     val fromwday: weekday -> int =
        fn Sun => 0 | Mon => 1 | Tue => 2 | Wed => 3 
         | Thu => 4 | Fri => 5 | Sat => 6
-             
+
     val tomonth: int -> month =
        fn 0 => Jan | 1 => Feb |  2 => Mar |  3 => Apr
         | 4 => May | 5 => Jun |  6 => Jul |  7 => Aug
@@ -122,22 +122,22 @@ structure Date :> DATE =
        fn Jan => 0 | Feb => 1 | Mar => 2  | Apr => 3
         | May => 4 | Jun => 5 | Jul => 6  | Aug => 7
         | Sep => 8 | Oct => 9 | Nov => 10 | Dec => 11
-        
-    fun tmozToDate ({tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, tm_sec,
-                    tm_wday, tm_yday, tm_year}: tmoz) offset = 
-       T {day = tm_mday,
-          hour = tm_hour,
+
+    fun tmozToDate ({tm_hour, tm_isdst, tm_mday, tm_min, tm_mon, 
+                     tm_sec, tm_wday, tm_yday, tm_year}: tmoz) offset = 
+       T {day = C_Int.toInt tm_mday,
+          hour = C_Int.toInt tm_hour,
           isDst = (case tm_isdst of
                       0 => SOME false 
                     | 1 => SOME true
                     | _ => NONE),
-          minute = tm_min, 
-          month = tomonth tm_mon, 
+          minute = C_Int.toInt tm_min, 
+          month = tomonth (C_Int.toInt tm_mon), 
           offset = offset,
-          second = tm_sec,
-          weekDay = toweekday tm_wday,
-          year = tm_year + 1900,
-          yearDay = tm_yday}
+          second = C_Int.toInt tm_sec,
+          weekDay = toweekday (C_Int.toInt tm_wday),
+          yearDay = C_Int.toInt tm_yday,
+          year = (C_Int.toInt tm_year) + 1900}
 
     fun leapyear (y: int) =
        y mod 4 = 0 andalso y mod 100 <> 0 orelse y mod 400 = 0   
@@ -170,18 +170,18 @@ structure Date :> DATE =
                              weekDay, yearDay, isDst, ...}): tmoz =
         if not (okDate dt)
            then raise Date
-        else {tm_hour = hour,
-              tm_mday = day,
-              tm_min = minute, 
-              tm_mon = frommonth month,
-              tm_sec = second, 
-              tm_year = year -? 1900, 
+        else {tm_hour = C_Int.fromInt hour,
               tm_isdst = (case isDst of
                              SOME false => 0
                            | SOME true => 1
                            | NONE=> ~1),
-              tm_wday = fromwday weekDay,
-              tm_yday = yearDay}
+              tm_mday = C_Int.fromInt day,
+              tm_min = C_Int.fromInt minute, 
+              tm_mon = C_Int.fromInt (frommonth month),
+              tm_sec = C_Int.fromInt second, 
+              tm_wday = C_Int.fromInt (fromwday weekDay),
+              tm_yday = C_Int.fromInt yearDay,
+              tm_year = C_Int.fromInt (year - 1900)}
 
     (* -------------------------------------------------- *)
     (* Translated from Emacs's calendar.el:               *)
@@ -199,7 +199,7 @@ structure Date :> DATE =
 
     (* Reingold: Find the number of days elapsed from the (imagined)
        Gregorian date Sunday, December 31, 1 BC to the given date. *)
-        
+
     fun todaynumber year month day = 
         let val prioryears = year - 1
         in
@@ -242,7 +242,7 @@ structure Date :> DATE =
     fun weekday daynumber = toweekday (daynumber mod 7)
 
     (* Normalize a date, disregarding leap seconds: *)
-   
+
     fun normalizedate yr0 mo0 dy0 hr0 mn0 sec0 offset =
         let val mn1    = mn0 + sec0 div 60
             val second = sec0 mod 60
@@ -279,10 +279,10 @@ structure Date :> DATE =
         end
 
     fun fromTimeLocal t = 
-        tmozToDate (getlocaltime_ (Time.toSeconds t)) NONE
+        tmozToDate (getlocaltime_ (C_Time.fromInt (Time.toSeconds t))) NONE
 
     fun fromTimeUniv t = 
-        tmozToDate (getunivtime_ (Time.toSeconds t)) (SOME 0)
+        tmozToDate (getgmtime_ (C_Time.fromInt (Time.toSeconds t))) (SOME 0)
 
     (* The following implements conversion from a local date to 
      * a Time.time.  It IGNORES wday and yday.
@@ -294,7 +294,7 @@ structure Date :> DATE =
               case offset of
                  NONE      => 0
                | SOME secs => localoffset + secs
-            val clock = mktime_ (dateToTmoz date) - secoffset
+            val clock = C_Time.toInt (mktime_ (dateToTmoz date)) - secoffset
         in
             if clock < 0 then raise Date
             else Time.fromSeconds clock
@@ -307,7 +307,7 @@ structure Date :> DATE =
           let
              val a = Array.tabulate (Char.maxOrd + 1, fn _ => false)
              val validChars = "aAbBcdHIjmMpSUwWxXyYZ%"
-          in Util.naturalForeach
+          in Natural.foreach
              (size validChars, fn i =>
               Array.update (a, Char.ord (String.sub (validChars, i)), true));
              fn c => Array.sub (a, Char.ord c)
@@ -317,13 +317,14 @@ structure Date :> DATE =
           let
              val _ = setTmBuf (dateToTmoz d)
              val bufLen = 50 (* more than enough for a single format char *)
-             val buf = Primitive.Array.array bufLen
+             val buf = Array.arrayUninit bufLen
              fun strftime fmtChar =
                 let
                    val len =
                       Prim.strfTime
-                      (buf, bufLen,
+                      (buf, C_Size.fromInt bufLen,
                        NullString.fromString (concat ["%", str fmtChar, "\000"]))
+                   val len = C_Size.toInt len
                 in if len = 0
                       then raise Fail "Date.fmt"
                    else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME len))
@@ -367,7 +368,7 @@ structure Date :> DATE =
     val toString = fmt "%a %b %d %H:%M:%S %Y"
 
     type ('a, 'b) reader = ('a, 'b) Reader.reader
-       
+
     fun scan (reader: (char, 'a) reader): (t, 'a) reader =
        let
           type 'b t = ('b, 'a) reader
@@ -496,7 +497,7 @@ structure Date :> DATE =
                                   yearDay = dayinyear (year, month, day)}
                                ))))))))))))))))
        end
-       
+
     fun fromString s = StringCvt.scanString scan s
 
     (* Ignore timezone and DST when comparing dates: *)

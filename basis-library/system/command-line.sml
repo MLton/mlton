@@ -8,10 +8,12 @@
 
 structure CommandLine: COMMAND_LINE =
    struct
-      structure Prim = Primitive.CommandLine
-         
-      fun name () = C.CS.toString (Prim.commandName ())
+      structure Prim = PrimitiveFFI.CommandLine
+
+      fun name () = 
+         CUtil.C_String.toString (Prim.commandNameGet ())
 
       fun arguments () =
-         Array.toList (C.CSS.toArrayOfLength (Prim.argv (), Prim.argc ()))
+         (Array.toList o CUtil.C_StringArray.toArrayOfLength) 
+         (Prim.argvGet (), C_Int.toInt (Prim.argcGet ()))
    end

@@ -2,27 +2,15 @@
 
 #include <ieeefp.h>
 
-#include "getrusage.c"
+#include "diskBack.unix.c"
+#include "float-math.c"
 #include "getText.c"
 #include "mkdir2.c"
 #include "mmap.c"
-#include "signbit.c"
-#include "ssmmap.c"
-#include "totalRam.sysconf.c"
+#include "mmap-protect.c"
+#include "nonwin.c"
+#include "sysconf.c"
 #include "setenv.putenv.c"
-
-static void catcher (int sig, siginfo_t *sip, ucontext_t *ucp) {
-        GC_handleSigProf ((pointer) ucp->uc_mcontext.gregs[REG_PC]);
-}
-
-void setSigProfHandler (struct sigaction *sa) {
-        sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
-        sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
-void decommit (void *base, size_t length) {
-        smunmap (base, length);
-}
 
 int fegetround () {
         int mode;
@@ -71,10 +59,35 @@ int fpclassify64 (double d) {
                 die ("Real_class error: invalid class %d\n", c);
         }
 }
- 
+
+/* ------------------------------------------------- */
+/*                        GC                         */
+/* ------------------------------------------------- */
+
+void GC_displayMem () {
+        static char buffer[256];
+        snprintf (buffer, cardof(buffer), "pmap %d\n", (int)(getpid ()));
+        system (buffer);
+}
+
+static void catcher (__attribute__ ((unused)) int sig,
+                     __attribute__ ((unused)) siginfo_t *sip, 
+                     ucontext_t *ucp) {
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_PC]);
+}
+
+void GC_setSigProfHandler (struct sigaction *sa) {
+        sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
+        sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
+}
+
+void GC_decommit (void *base, size_t length) {
+        munmap_safe (base, length);
+}
+
 /* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor.
  */
-void *mmapAnon (void *start, size_t length) {
+void *GC_mmapAnon (void *start, size_t length) {
         static int fd = -1;
 
         if (-1 == fd)
@@ -82,12 +95,6 @@ void *mmapAnon (void *start, size_t length) {
         return mmap (start, length, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 }
 
-void release (void *base, size_t length) {
-        smunmap (base, length);
-}
-
-void showMem () {
-        static char buffer[256];
-        sprintf (buffer, "pmap %d\n", (int)(getpid ()));
-        system (buffer);
+void GC_release (void *base, size_t length) {
+        munmap_safe (base, length);
 }

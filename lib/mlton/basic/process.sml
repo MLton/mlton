@@ -84,7 +84,7 @@ val fork = Trace.trace ("Process.fork", Command.layout, Pid.layout) fork
 fun closes l = List.foreach (l, FileDesc.close)
 
 val pname = "<process>"
-   
+
 fun forkIn (c: Out.t -> unit): Pid.t * In.t =
    let
       val {infd, outfd} = FileDesc.pipe ()
@@ -253,7 +253,7 @@ fun makeMain z (): unit =
    OS.Process.exit (makeCommandLine z (CommandLine.arguments ()))
 
 fun basename s = #file (OS.Path.splitDirFile s)
-   
+
 val commandName = Promise.lazy (fn () => basename (CommandLine.name ()))
 
 local open Posix.SysDB Posix.ProcEnv
@@ -348,7 +348,7 @@ structure State =
    end
 
 val op / = String./
-   
+
 fun ps () =
    Dir.inDir
    ("/proc", fn () =>

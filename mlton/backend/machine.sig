@@ -8,7 +8,7 @@
 
 type int = Int.t
 type word = Word.t
-   
+
 signature MACHINE_STRUCTS = 
    sig
       include ATOMS
@@ -72,7 +72,7 @@ signature MACHINE =
 
       structure Scale: SCALE
       sharing Scale = Type.Scale
-         
+
       structure Operand:
          sig
             datatype t =
@@ -187,7 +187,7 @@ signature MACHINE =
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
             val layout: t -> Layout.t
          end
-      
+
       structure Kind:
          sig
             datatype t =
@@ -203,7 +203,7 @@ signature MACHINE =
 
             val frameInfoOpt: t -> FrameInfo.t option
          end
-      
+
       structure Block:
          sig
             datatype t =

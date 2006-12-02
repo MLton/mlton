@@ -80,7 +80,7 @@ structure Type =
                   con = con}
 
       fun equals (t, t'): bool = PropertyList.equals (plist t, plist t')
-                      
+
       fun layout (ty: t): Layout.t =
          #1 (hom {con = Tycon.layoutApp,
                   ty = ty,
@@ -88,7 +88,7 @@ structure Type =
                                                   needsParen = false})})
 
       val toString = Layout.toString o layout
-         
+
       local
          val same: tree * tree -> bool =
             fn (Var a, Var a') => Tyvar.equals (a, a')
@@ -136,7 +136,7 @@ structure Ops = TypeOps (structure Tycon = Tycon
 open Type Ops
 
 val string = word8Vector
-   
+
 fun ofConst c =
    let
       datatype z = datatype Const.t
@@ -362,7 +362,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Word_toReal (s, s', _) => done ([word s], real s')
        | Word_toWord (s, s', _) => done ([word s], word s')
        | Word_xorb s => wordBinary s
-       | World_save => done ([defaultWord], unit)
+       | World_save => done ([string], unit)
        | _ => Error.bug (concat ["HashType.checkPrimApp: strange prim: ",
                                  Prim.toString prim])
    end

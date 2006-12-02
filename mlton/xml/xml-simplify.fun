@@ -29,7 +29,7 @@ val xmlPasses : pass list ref = ref xmlPassesDefault
 
 local
    type passGen = string -> pass option
-     
+
    fun mkSimplePassGen (name, doit): passGen =
       let val count = Counter.new 1
       in fn s => if s = name
@@ -73,7 +73,7 @@ in
    val _ = List.push (Control.optimizationPassesSet, ("xml", xmlPassesSet))
 end
 
-   
+
 fun stats p =
    Control.message (Control.Detail, fn () => Program.layoutStats p)
 

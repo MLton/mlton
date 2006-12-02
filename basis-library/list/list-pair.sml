@@ -44,7 +44,7 @@ structure ListPair: LIST_PAIR =
          end
 
       fun foldr f = foldr' id f
-         
+
       fun foldrEq f = foldr' ul f
 
       fun zip' w (l1, l2) =
@@ -53,13 +53,13 @@ structure ListPair: LIST_PAIR =
       fun zip (l1, l2) = zip' id (l1, l2)
 
       fun zipEq (l1, l2) = zip' ul (l1, l2)
-         
+
       fun map' w f = rev o (foldl' w (fn (x1, x2, l) => f (x1, x2) :: l) [])
 
       fun map f = map' id f
 
       fun mapEq f = map' ul f
-         
+
       fun app' w f = foldl' w (fn (x1, x2, ()) => f (x1, x2)) ()
 
       fun app f = app' id f
@@ -75,7 +75,7 @@ structure ListPair: LIST_PAIR =
          in
             loop (l1, l2)
          end
-       
+
       fun all p ls = not (exists (not o p) ls)
 
       fun allEq p =

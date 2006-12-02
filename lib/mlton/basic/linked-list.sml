@@ -15,7 +15,7 @@ structure Node =
 
       fun new elt = T {elt = elt,
                        next = ref NONE}
-         
+
       fun cons (elt, next) = T {elt = elt,
                                 next = ref (SOME next)}
 

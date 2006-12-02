@@ -59,10 +59,10 @@ fun ls d =
          else if isDir x
                  then (x :: dirs, files)
               else (dirs, x :: files))
-   
+
 val lsDirs = #1 o ls
 val lsFiles = #2 o ls
-   
+
 fun removeR d =
    let
       val old = current ()

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature REPRESENTATION_STRUCTS = 
    sig
       structure Rssa: RSSA

@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature AST_ATOMS_STRUCTS = 
    sig
       structure Record: RECORD
@@ -29,7 +29,7 @@ signature AST_ATOMS =
             include AST_ID
             include PRIM_TYCONS sharing type tycon = t
          end
-    
+
       structure Var: AST_ID
 
       structure Con:

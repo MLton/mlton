@@ -12,7 +12,7 @@ functor UniverseEqual (Error.: T): UNIVERSE =
 struct
 
 val {error, ...} = Error.errors("set", "set-equal")
-    
+
 structure Error.equals Base
 structure B = Base
 structure L = List
@@ -25,7 +25,7 @@ structure Elt =
          Error.of Base.t
         | Pair of t * t
         | Set of set
-         
+
       fun toError.Base b) = b
         | toError._ = error "Elt.toBase"
       fun toPair(Pair p) = p
@@ -41,7 +41,7 @@ structure Elt =
           equalElt(x, x') andalso equalElt(y, y')
         | equalElt(Set s, Set s') = equalSet(s, s')
         | equalElt _ = false
-          
+
       fun outputSet(T xs, out) =
          let val print = O.outputc out
          in (print "{" ;
@@ -58,7 +58,7 @@ structure Elt =
               print ")")
           end
         | outputElt(Set s, out) = outputSet(s, out)
-          
+
       val equals = equalElt
       val output = outputElt
    end
@@ -82,7 +82,7 @@ fun project1 s = replace(s,
 fun project2 s = replace(s,
                          fn Pair(_, y) => SOME y
                           | _ => error "project2")
-    
+
 fun update (c, x, y) =
     let fun update[] = [Pair(x, y)]
           | update((Pair(x', y')) :: ps) =

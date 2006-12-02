@@ -20,7 +20,7 @@ structure Types =
 structure Edge =
    struct
       datatype t = datatype Types.edge
-         
+
       local
          fun make sel (Edge r) = sel r
       in
@@ -34,7 +34,7 @@ structure Node =
    struct
       type edge = Types.edge
       datatype t = datatype Types.node
-         
+
       fun layout _ = Layout.str "node"
 
       fun successors (Node {successors, ...}) = !successors
@@ -71,14 +71,14 @@ structure Node =
 structure Edge =
    struct
       structure Node = Node
-         
+
       open Edge
 
       fun new {from, to} =
          Edge {from = from,
                to = to,
                plist = PropertyList.new ()}
-         
+
       fun equals (e, e') = PropertyList.equals (plist e, plist e')
 
       fun layout e =
@@ -94,18 +94,18 @@ datatype t = T of {nodes: Node.t list ref}
 
 fun coerce g = (g, {edge = fn e => e,
                     node = fn n => n})
-   
+
 fun nodes (T {nodes, ...}) = !nodes
 
 fun foldNodes (g, a, f) = List.fold (nodes g, a, f)
-   
+
 val numNodes = List.length o nodes
 
 fun removeDuplicateEdges (g: t): unit =
    List.foreach (nodes g, Node.removeDuplicateSuccessors)
 
 fun new () = T {nodes = ref []}
-   
+
 fun newNode (T {nodes, ...}) =
    let val n = Node.new ()
    in List.push (nodes, n)
@@ -210,7 +210,7 @@ structure DfsParam =
               finish = finish})
          end
    end
-         
+
 fun dfsNodes (_: t,
               ns: Node.t list,
               (b, f): ('a, 'b, 'c, 'd, 'e) DfsParam.t) =
@@ -299,12 +299,12 @@ fun display {graph, layoutNode, display} =
                          list (List.revMap (Node.successors n,
                                             layoutNode o Edge.to))]
                  end))
-   
+
 fun foreachDescendent (g, n, f) =
    dfsNodes (g, [n], DfsParam.finishNode f)
 
 fun foreachNode (g, f) = List.foreach (nodes g, f)
-   
+
 fun foreachEdge (g, edge) =
    foreachNode (g, fn n as Node.Node {successors, ...} =>
                 List.foreach (!successors, fn e => edge (n, e)))
@@ -1163,6 +1163,6 @@ structure LoopForest =
 
       fun dest (T r) = r
    end
-   
+
 end
 

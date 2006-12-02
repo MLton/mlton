@@ -20,11 +20,11 @@ PATH := $(BIN):$(shell echo $$PATH)
 
 all: 	$(NAME)
 
-$(NAME): $(NAME).mlb $(shell PATH=$(BIN):$$PATH && $(MLTON) -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	$(MLTON) $(FLAGS) $(NAME).mlb
+	"$(MLTON)" $(FLAGS) $(NAME).mlb
 
-$(NAME).sml: $(NAME).cm $(shell $(MLTON) -stop f $(NAME).cm)
+$(NAME).sml: $(NAME).cm $(shell "$(MLTON)" -stop f $(NAME).cm)
 	mlton -stop sml $(NAME).cm
 
 .PHONY: clean
@@ -56,4 +56,4 @@ QBFLAGS := -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
 
 .PHONY: qtest
 qtest: $(NAME)
-	export PATH=$(PATH):$$PATH && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean
+	export PATH="$(PATH):$$PATH" && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean

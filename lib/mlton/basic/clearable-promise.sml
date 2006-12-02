@@ -11,7 +11,7 @@ struct
 datatype 'a t = T of (unit -> 'a) * 'a Promise.t
 
 fun clear (T (f, p)) = Promise.reset (p, f)
-   
+
 fun delay f = T (f, Promise.delay f)
 
 exception Force = Promise.Force

@@ -14,7 +14,7 @@
 signature CML =
   sig
      include VERSION
-     
+
      include THREAD
      include CHANNEL
      include EVENT

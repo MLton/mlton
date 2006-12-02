@@ -331,7 +331,7 @@ val unify =
    fn (t, t', preError, error) =>
    Type.unify (t, t', {error = Control.error o error,
                        preError = preError})
-   
+
 fun unifyList (trs: (Type.t * Region.t) vector,
                z,
                lay: unit -> Layout.t): Type.t =
@@ -745,7 +745,7 @@ structure Type =
                      in
                         [Int8, Int16, Int32]
                      end)
-            @ sized (Tycon.int o IntSize.I,
+            @ sized (Tycon.int o IntSize.fromBits,
                      let
                         open CType
                      in
@@ -766,19 +766,29 @@ structure Type =
       val unary: Tycon.t list =
          [Tycon.array, Tycon.reff, Tycon.vector]
 
-      fun toCType (t: t): {ctype: CType.t, name: string} option =
+      fun toNullaryCType (t: t): {ctype: CType.t, name: string} option =
+         case deConOpt t of
+            NONE => NONE
+          | SOME (c, _) =>
+               Option.map
+               (List.peek (nullary, fn {tycon = c', ...} =>
+                           Tycon.equals (c, c')),
+                fn {ctype, name, ...} => {ctype = ctype, name = name})
+
+      fun toUnaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of
             NONE => NONE
           | SOME (c, ts) =>
-               case List.peek (nullary, fn {tycon = c', ...} =>
-                               Tycon.equals (c, c')) of
-                  NONE =>
-                     if List.exists (unary, fn c' => Tycon.equals (c, c'))
-                        andalso 1 = Vector.length ts
-                        andalso isSome (toCType (Vector.sub (ts, 0)))
-                        then SOME {ctype = CType.pointer, name = "Pointer"}
-                     else NONE
-                | SOME {ctype, name, ...} => SOME {ctype = ctype, name = name}
+               if List.exists (unary, fn c' => Tycon.equals (c, c'))
+                  andalso 1 = Vector.length ts
+                  andalso isSome (toNullaryCType (Vector.sub (ts, 0)))
+                  then SOME {ctype = CType.pointer, name = "Pointer"}
+                  else NONE
+
+      fun toCType (ty: t): {ctype: CType.t, name: string} option =
+         case toNullaryCType ty of
+            NONE => toUnaryCType ty
+          | SOME {ctype, name} => SOME {ctype = ctype, name = name}
 
       val toCType =
          Trace.trace
@@ -792,46 +802,47 @@ structure Type =
 
       type z = {ctype: CType.t, name: string, ty: t}
 
-      fun parse (ty: t): (z vector * z option) option =
+      fun toCBaseType (ty: t): z option =
+         case toCType ty of
+            NONE => NONE
+          | SOME {ctype, name} => 
+               SOME {ctype = ctype, name = name, ty = ty}
+      fun toCArgType (ty: t): z vector option =
+         case deTupleOpt ty of
+            NONE => 
+               (case toCBaseType ty of
+                   NONE => NONE
+                 | SOME z => SOME (Vector.new1 z))
+          | SOME tys => 
+               Exn.withEscape
+               (fn esc =>
+                (SOME o Vector.map)
+                (tys, fn ty =>
+                 case toCBaseType ty of
+                    NONE => esc NONE
+                  | SOME z => z))
+      fun toCRetType (ty: t): z option option =
+         case toCBaseType ty of
+            NONE => if Type.isUnit ty
+                       then SOME NONE
+                       else NONE
+          | SOME z => SOME (SOME z)
+      fun toCFunType (ty: t): (z vector * z option) option =
          case deArrowOpt ty of
             NONE => NONE
-          | SOME (t1, t2) =>
-               let
-                  fun finish (ts: z vector) =
-                     case toCType t2 of
-                        NONE =>
-                           if Type.isUnit t2
-                              then SOME (ts, NONE)
-                           else NONE
-                      | SOME {ctype, name} =>
-                           SOME (ts, SOME {ctype = ctype, name = name, ty = t2})
-               in
-                  case deTupleOpt t1 of 
-                     NONE =>
-                        (case toCType t1 of
-                            NONE => NONE
-                          | SOME {ctype, name} =>
-                               finish (Vector.new1 {ctype = ctype,
-                                                    name = name,
-                                                    ty = t1}))
-                   | SOME ts =>
-                        let
-                           val cts = Vector.map (ts, toCType)
-                        in
-                           if Vector.forall (cts, isSome)
-                              then
-                                 finish (Vector.map2
-                                         (ts, cts, fn (ty, z) =>
-                                          let
-                                             val {ctype, name} = valOf z
-                                          in
-                                             {ctype = ctype,
-                                              name = name,
-                                              ty = ty}
-                                          end))
-                           else NONE
-                        end
-               end
+          | SOME (arg, ret) =>
+               (case toCArgType arg of
+                   NONE => NONE
+                 | SOME arg =>
+                      (case toCRetType ret of
+                          NONE => NONE
+                        | SOME ret => SOME (arg, ret)))
+      fun toCPtrType (ty: t): z option =
+         if Type.isPointer ty
+            then let val {ctype, name} = valOf (toCType ty)
+                 in SOME {ctype = ctype, name = name, ty = ty}
+                 end
+            else NONE
    end
 
 fun parseIEAttributes (attributes: ImportExportAttribute.t list): Convention.t option =
@@ -869,7 +880,7 @@ fun import {attributes: ImportExportAttribute.t list,
           str "invalid type for _import",
           Type.layoutPretty elabedTy)
    in
-      case Type.parse expandedTy of
+      case Type.toCFunType expandedTy of
          NONE =>
             let
                val () = invalidType ()
@@ -940,9 +951,10 @@ local
                            Type.defaultWord)
 
    fun mkAddress {expandedPtrTy: Type.t,
-                  name: string}: Cexp.t =
+                  name: string,
+                  cty: CType.t option }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol {name = name},
+               prim = Prim.ffiSymbol {name = name, cty = cty},
                result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,
@@ -1031,14 +1043,15 @@ in
             Control.error
             (region, str "invalid type for _address",
              Type.layoutPretty elabedTy)
-         val expandedPtrTy = expandedTy
          val () =
-            case Type.toCType expandedPtrTy of
-               SOME {ctype = CType.Pointer, ...} => ()
-             | _ => (error (); ())
+            case Type.toCPtrType expandedTy of
+               NONE => (error (); ())
+             | SOME _ => ()
+         val expandedPtrTy = expandedTy
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
-                       name = name}
+                       name = name,
+                       cty = NONE}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
          wrap (addrExp, elabedTy)
@@ -1094,12 +1107,13 @@ in
                               end
              end)
          val ctypeCbTy =
-            case Type.toCType expandedCbTy of
-               SOME {ctype, ...} => ctype
-             | NONE => (error (); CType.word (WordSize.default, {signed = false}))
+            case Type.toCBaseType expandedCbTy of
+               NONE => (error (); CType.word (WordSize.default, {signed = false}))
+             | SOME {ctype, ...} => ctype
          val addrExp =
             mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
-                       name = name}
+                       name = name,
+                       cty = SOME ctypeCbTy}
          val () =
             if List.exists (attributes, fn attr =>
                             attr = SymbolAttribute.Alloc)
@@ -1165,13 +1179,13 @@ in
                                      end)
              end)
          val ctypeCbTy =
-            case Type.toCType expandedCbTy of
-               SOME {ctype, ...} => ctype
-             | NONE => (error (); CType.word (WordSize.default, {signed = false}))
+            case Type.toCBaseType expandedCbTy of
+               NONE => (error (); CType.word (WordSize.default, {signed = false}))
+             | SOME {ctype, ...} => ctype
          val () =
-            case Type.toCType expandedPtrTy of
-               SOME {ctype = CType.Pointer, ...} => ()
-             | _ => (error (); ())
+            case Type.toCPtrType expandedPtrTy of
+               NONE => (error (); ())
+             | SOME _ => ()
          val ptrArg = Var.newNoname ()
          val ptrExp = Cexp.var (ptrArg, expandedPtrTy)
          val symExp =
@@ -1214,13 +1228,14 @@ in
              Type.layoutPretty elabedTy)
          val expandedCbTy = expandedTy
          val ctypeCbTy =
-            case Type.toCType expandedCbTy of
-               SOME {ctype, ...} => ctype
-             | NONE => (error (); CType.word (WordSize.default, {signed = false}))
+            case Type.toCBaseType expandedCbTy of
+               NONE => (error (); CType.word (WordSize.default, {signed = false}))
+             | SOME {ctype, ...} => ctype
          val isBool = Type.isBool expandedCbTy
          val addrExp =
             mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
-                       name = name}
+                       name = name,
+                       cty = SOME ctypeCbTy}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
          wrap (mkFetch {ctypeCbTy = ctypeCbTy, 
@@ -1252,7 +1267,7 @@ fun export {attributes: ImportExportAttribute.t list,
                      ; Convention.Cdecl)
           | SOME c => c
       val (exportId, args, res) =
-         case Type.parse expandedTy of
+         case Type.toCFunType expandedTy of
             NONE =>
                (invalidType ()
                 ; (0, Vector.new0 (), NONE))
@@ -1394,7 +1409,7 @@ val {get = recursiveTargs: Var.t -> (unit -> Type.t vector) option ref,
    Property.get (Var.plist, Property.initFun (fn _ => ref NONE))
 
 structure ElabControl = Control.Elaborate
-   
+
 fun check (c: (bool,bool) ElabControl.t, keyword: string, region) =
    if ElabControl.current c
       then ()
@@ -2616,11 +2631,15 @@ fun elaborateDec (d, {env = E, nest}) =
                                         if Tycon.equals (c, Tycon.bool)
                                            then ConstType.Bool
                                         else if Tycon.isIntX c
-                                           then ConstType.Word
+                                           then case Tycon.deIntX c of
+                                                   NONE => bug ()
+                                                 | SOME is => 
+                                                      ConstType.Word
+                                                      (WordSize.fromBits (IntSize.bits is))
                                         else if Tycon.isRealX c
-                                           then ConstType.Real
+                                           then ConstType.Real (Tycon.deRealX c)
                                         else if Tycon.isWordX c
-                                           then ConstType.Word
+                                           then ConstType.Word (Tycon.deWordX c)
                                         else if Tycon.equals (c, Tycon.vector)
                                            andalso 1 = Vector.length ts
                                            andalso
@@ -2628,7 +2647,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                                   (Vector.sub (ts, 0))) of
                                                NONE => false
                                              | SOME (c, _) => 
-                                                  Tycon.isCharX c)
+                                                  Tycon.isCharX c
+                                                  andalso (Tycon.deCharX c = CharSize.C8))
                                            then ConstType.String
                                         else bug ()
                                   val finish =
@@ -2802,9 +2822,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                        | SOME (fptrTy, cfTy) => (fptrTy, cfTy)
                                    end)
                                val () =
-                                  case Type.toCType expandedFPtrTy of
-                                     SOME {ctype = CType.Pointer, ...} => ()
-                                   | _ => (error (); ())
+                                  case Type.toCPtrType expandedFPtrTy of
+                                     NONE => (error (); ())
+                                   | SOME _ => ()
                                val fptr = Var.newNoname ()
                                val fptrArg = Cexp.var (fptr, expandedFPtrTy)
                             in

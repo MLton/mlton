@@ -17,7 +17,7 @@ structure Lex = MLLexFun (structure Tokens = LrVals.Tokens)
 structure Parse = JoinWithArg (structure ParserData = LrVals.ParserData
                                structure Lex = Lex
                                structure LrParser = LrParser)
-   
+
 fun lexAndParse (source: Source.t, ins: In.t): Ast.Program.t =
    let
       val stream =
@@ -43,7 +43,7 @@ fun lexAndParse (source: Source.t, ins: In.t): Ast.Program.t =
    in
       result
    end
-   
+
 fun lexAndParseFile (f: File.t) =
    File.withIn
    (f, fn ins => lexAndParse (Source.new f, ins))

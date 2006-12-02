@@ -33,18 +33,18 @@ structure Elt = Element
 (*--------------------------------------------------------*)
 (*                          Heap                          *)
 (*--------------------------------------------------------*)
-   
+
 datatype 'a t = T of 'a Elt.t Array.t
 
 fun empty() = T (Array.fromList [])
-   
+
 fun fixIndex(a, i) = Elt.setIndex(Array.sub(a, i), i)
 fun swap(a, i, j) = (Array.swap(a, i, j)
                      ; fixIndex(a, i)
                      ; fixIndex(a, j))
-   
+
 fun isEmpty (T a) = Array.length a = 0
-   
+
 fun parent(i: int) = (i - 1) div 2
 fun left(i: int) = 2 * i + 1
 fun right(i: int) = 2 * i + 2
@@ -60,7 +60,7 @@ fun siftUp(a, i) =
                            end
    in siftUp i
    end
-        
+
 fun siftDown(a, i) =
    let
       fun siftDown i =
@@ -79,7 +79,7 @@ fun siftDown(a, i) =
          end
    in siftDown i
    end
-      
+
 fun new es =
    let val a = Array.fromList (List.mapi (es, fn (i, (k, v)) =>
                                           Elt.new (k, v, i)))
@@ -89,7 +89,7 @@ fun new es =
    end
 
 fun isEmpty (T a) = Array.length a = 0
-   
+
 fun foreach(T a, f) = Array.foreach(a, f)
 
 fun insert(T a, k, v) =
@@ -114,7 +114,7 @@ fun deleteMin (h as (T a)) =
                          ; siftDown(a, 0)
                          ; min
                       end)
- 
+
 fun decreaseKey(T a, e, k) =
    if Key.<(Elt.key e, k) then Error.bug "decreaseKey"
    else (Elt.setKey(e, k); siftUp(a, Elt.index e))

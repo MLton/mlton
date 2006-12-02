@@ -40,16 +40,14 @@ val allVector = Vector.tabulate (65, fn i =>
                                      then SOME (make (Bits.fromInt i))
                                   else NONE)
 
-fun I (b: Bits.t): t =
+fun fromBits (b: Bits.t): t =
    case Vector.sub (allVector, Bits.toInt b) handle Subscript => NONE of
-      NONE => Error.bug (concat ["IntSize.I: strange int size: ", Bits.toString b])
+      NONE => Error.bug (concat ["IntSize.fromBits: strange int size: ", Bits.toString b])
     | SOME s => s
 
-val all = List.map (sizes, I)
+val all = List.map (sizes, fromBits)
 
-val prims = List.map ([8, 16, 32, 64], I o Bits.fromInt)
-
-val default = I Bits.inWord
+val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
@@ -73,7 +71,7 @@ fun roundUpToPrim s =
                            then 64
                         else Error.bug "IntSize.roundUpToPrim"
    in
-      I (Bits.fromInt bits)
+      fromBits (Bits.fromInt bits)
    end
 
 val bytes: t -> Bytes.t = Bits.toBytes o bits

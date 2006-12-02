@@ -17,14 +17,14 @@ functor DisjointMax(O: ORDER): DISJOINT_MAX =
 struct
 
 structure O = O
-    
+
 datatype t = T of {label: O.t ref,
                    info: info ref}
 and info =
    Parent of t
   | Root of {size: int ref,
              child: t option ref}
-    
+
 fun parent (T{info = ref (Parent p), ...}) = p
   | parent _ = Error.bug "DisjointMax.parent"
 fun setParent(T{info, ...}, p) = info := Parent p
@@ -38,14 +38,14 @@ fun childRef (T{info = ref(Root{child, ...}), ...}) = child
 val (childOption, setChildOption) = Ref.getAndSet childRef
 val child = Option.projector childOption
 fun setChild(r, c) = setChildOption(r, SOME c)
-   
+
 fun subsize r = size r - (case childOption r of
                              NONE => 0
                            | SOME r' => size r')
 
 fun hasParent (T{info = ref (Parent _), ...}) = true
   | hasParent _ = false
-    
+
 fun isRoot (T{info = ref (Root _), ...}) = true
   | isRoot _ = false
 
@@ -77,7 +77,7 @@ fun update(r, l) =
                                    setLabel(r', l))
                                end)
         end
-           
+
 fun link(r, r') =
    if not (isRoot r andalso isRoot r') then Error.error "DisjointMax.link"
    else let val s = size r

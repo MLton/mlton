@@ -9,7 +9,7 @@ structure String1 =
 struct
 
 open String0
-         
+
 structure F = Fold (type 'a t = string
                     type 'a elt = char
                     val fold = fold)
@@ -18,7 +18,7 @@ open F
 type t = string
 
 val last = String0.last
-         
+
 val layout = Layout.str
 
 fun forall (s, f) =
@@ -30,7 +30,7 @@ fun forall (s, f) =
    in
       loop 0
    end
-   
+
 (* This hash function is taken from pages 56-57 of
  * The Practice of Programming by Kernighan and Pike.
  *)

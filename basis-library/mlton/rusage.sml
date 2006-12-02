@@ -8,7 +8,7 @@
 
 structure MLtonRusage: MLTON_RUSAGE =
    struct
-      structure Prim = Primitive.MLton.Rusage
+      structure Prim = PrimitiveFFI.MLton.Rusage
 
       type t = {utime: Time.time, stime: Time.time}
 
@@ -17,9 +17,9 @@ structure MLtonRusage: MLTON_RUSAGE =
             fun toTime (sec, usec) =
                let
                   val time_sec =
-                     Time.fromSeconds (LargeInt.fromInt (sec ()))
+                     Time.fromSeconds (C_Time.toLargeInt (sec ()))
                   val time_usec =
-                     Time.fromMicroseconds (LargeInt.fromInt (usec ()))
+                     Time.fromMicroseconds (C_SUSeconds.toLargeInt (usec ()))
                in
                   Time.+ (time_sec, time_usec)
                end
@@ -28,7 +28,7 @@ structure MLtonRusage: MLTON_RUSAGE =
              utime = toTime (utimeSec, utimeUsec)}
          end
 
-      val measureGC = Primitive.GC.setRusageMeasureGC
+      val measureGC = MLtonGC.setRusageMeasureGC
 
       val rusage =
          let 
@@ -36,7 +36,7 @@ structure MLtonRusage: MLTON_RUSAGE =
          in
             fn () =>
             let
-               val () = Prim.ru ()
+               val () = Prim.getrusage ()
                open Prim
             in
                {children = collect (children_utime_sec, children_utime_usec,

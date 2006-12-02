@@ -140,7 +140,7 @@ basdecnode
       in
         List.fold(anns, mkAnn'(ann, basdecs), mkAnn)
       end)
-        
+
 
 fctbinds : fctid EQUALOP fctbinds'
            (let val (def, fctbinds) = fctbinds'

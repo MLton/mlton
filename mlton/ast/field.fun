@@ -14,7 +14,7 @@ open S
 datatype t =
    Int of int
  | Symbol of Symbol.t
-   
+
 val equals =
    fn (Int n, Int n') => Int.equals (n, n')
     | (Symbol s, Symbol s') => Symbol.equals (s, s')
@@ -23,9 +23,9 @@ val equals =
 val toString =
    fn Int n => Int.toString (n + 1)
     | Symbol s => Symbol.toString s
-         
+
 val layout = Layout.str o toString
-         
+
 val op <= =
    fn (Int n, Int n') => Int.<= (n, n')
     | (Symbol s, Symbol s') => Symbol.<= (s, s')

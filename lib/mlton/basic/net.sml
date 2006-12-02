@@ -47,7 +47,7 @@ fun ethernetIsUp (): bool =
 val message = Trace.Immediate.messageStr
 
 structure Socket = MLton.Socket
-   
+
 fun connect {host: string, port: port}: In.t * Out.t =
    let
       val _ = message (concat ["connect ", host, ":", Int.toString port])
@@ -88,5 +88,5 @@ fun server (p: port, c: In.t * Out.t -> unit): unit =
          end
    in Process.watch loop
    end
-   
+
 end

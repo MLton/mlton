@@ -37,7 +37,7 @@ val pointer = Pointer
 val thread = Pointer
 
 val equals: t * t -> bool = op =
-   
+
 fun memo (f: t -> 'a): t -> 'a =
    let
       val pointer = f Pointer
@@ -116,7 +116,7 @@ fun real (s: RealSize.t): t =
       32 => Real32
     | 64 => Real64
     | _ => Error.bug "CType.real"
-   
+
 fun word (s: WordSize.t, {signed: bool}): t =
    case (signed, Bits.toInt (WordSize.bits s)) of
       (false, 8) => Word8

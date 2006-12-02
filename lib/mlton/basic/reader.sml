@@ -34,7 +34,7 @@ fun all r s =
           | SOME(x, s) => loop(s, x :: ac)
    in loop(s, [])
    end
-   
+
 fun firstN(r, n: Int.t) s =
    let
       fun loop(n, s, ac) =
@@ -45,7 +45,7 @@ fun firstN(r, n: Int.t) s =
                 | SOME(x, s) => loop(n - 1, s, x :: ac))
    in loop(n, s, [])
    end
-   
+
 fun mapFail(r, f) s =
    case r s of
       NONE => NONE
@@ -120,5 +120,5 @@ fun readFromString(rm, s) =
       NONE => NONE
     | SOME(a, i) => if i = n then SOME a else NONE
    end
-      
+
 end

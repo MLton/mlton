@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature TYPE_OPS_STRUCTS =
    sig
       structure Tycon: TYCON
@@ -50,7 +50,6 @@ signature TYPE_OPS =
       val deVector: t -> t
       val deWeak: t -> t
       val deWeakOpt: t -> t option
-      val defaultReal: t
       val defaultWord: t
       val exn: t
       val intInf: t

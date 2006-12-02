@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature POLYVARIANCE_STRUCTS = 
    sig
       include SHRINK
@@ -16,6 +16,6 @@ signature POLYVARIANCE_STRUCTS =
 signature POLYVARIANCE = 
    sig
       include POLYVARIANCE_STRUCTS
-      
+
       val duplicate: Program.t -> Program.t
    end

@@ -16,7 +16,7 @@ structure Port =
 
 structure Address =
    struct
-      type t = word
+      type t = NetHostDB.in_addr
    end
 
 structure Host =
@@ -26,14 +26,14 @@ structure Host =
       val get: NetHostDB.entry option -> t option =
         Option.map (fn entry => {name = NetHostDB.name entry})
 
-      val getByAddress = get o NetHostDB.getByAddr o NetHostDB.wordToInAddr
+      val getByAddress = get o NetHostDB.getByAddr
       val getByName = get o NetHostDB.getByName
    end
 
 type passiveSocket = (INetSock.inet, Socket.passive Socket.stream) Socket.sock
 type activeSocket = (INetSock.inet, Socket.active Socket.stream) Socket.sock
 type t = passiveSocket
-   
+
 val listen: unit -> Port.t * passiveSocket =
    fn () =>
    let
@@ -75,7 +75,7 @@ fun accept s =
       val (in_addr: NetHostDB.in_addr, port: int) = INetSock.fromAddr addr
       val (ins, out) = sockToIO sock
    in
-      (NetHostDB.inAddrToWord in_addr, port, ins, out)
+      (in_addr, port, ins, out)
    end
 
 fun connect (host, port) =
@@ -95,7 +95,7 @@ fun shutdown (fd: Posix.IO.file_desc, mode: Socket.shutdown_mode): unit =
 
 fun shutdownRead ins =
    shutdown (TextIO.inFd ins, Socket.NO_RECVS)
-   
+
 fun shutdownWrite out =
    (TextIO.flushOut out
     ; shutdown (TextIO.outFd out, Socket.NO_SENDS))
@@ -103,5 +103,5 @@ fun shutdownWrite out =
 val fdToSock = Socket.fdToSock
 
 structure Ctl = Socket.CtlExtra
-   
+
 end

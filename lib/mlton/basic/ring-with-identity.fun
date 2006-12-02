@@ -61,7 +61,7 @@ fun dec r = r := sub1(!r)
 fun prod l = List.fold(l, one, op * )
 
 val negOne = sub1 zero
-   
+
 val two = add1 one
 
 val three = add1 two

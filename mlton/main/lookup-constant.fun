@@ -16,7 +16,6 @@ in
    structure RealX = RealX
    structure WordX = WordX
 end
-structure RealSize = RealX.RealSize
 structure WordSize = WordX.WordSize
 
 val buildConstants: (string * (unit -> string)) list =
@@ -42,16 +41,16 @@ datatype z = datatype ConstType.t
 
 val gcFields =
    [
-    "canHandle",
+    "atomicState",
     "currentThread",
-    "curSourceSeqsIndex",
+    "sourceMaps.curSourceSeqsIndex",
     "exnStack",
     "frontier",
-    "cardMapForMutator",
+    "generationalMaps.cardMapAbsolute",
     "limit",
     "limitPlusSlop",
     "maxFrameSize",
-    "signalIsPending",
+    "signalsInfo.signalIsPending",
     "stackBottom",
     "stackLimit",
     "stackTop"
@@ -61,7 +60,7 @@ val gcFields =
    List.map (gcFields, fn s =>
              {name = s,
               value = concat ["offsetof (struct GC_state, ", s, ")"],
-              ty = ConstType.Word})
+              ty = ConstType.Word WordSize.default})
 
 fun build (constants, out) =
    let
@@ -74,7 +73,8 @@ fun build (constants, out) =
    in
       List.foreach
       (List.concat
-       [["#include \"platform.h\"",
+       [["#define MLTON_GC_INTERNAL_TYPES",
+         "#include \"platform.h\"",
          "struct GC_state gcState;",
          "",
          "int main (int argc, char **argv) {"],
@@ -84,9 +84,15 @@ fun build (constants, out) =
             val (format, value) =
                case ty of
                   Bool => ("%s", concat [value, "? \"true\" : \"false\""])
-                | Real => ("%.20f", value)
+                | Real _ => ("%.20f", value)
                 | String => ("%s", value)
-                | Word => ("%u", value)
+                | Word ws => 
+                     (case WordSize.prim (WordSize.roundUpToPrim ws) of
+                         WordSize.W8 => "%\"PRIu8\""
+                       | WordSize.W16 => "%\"PRIu16\""
+                       | WordSize.W32 => "%\"PRIu32\""
+                       | WordSize.W64 => "%\"PRIu64\"",
+                      value)
          in
             concat ["fprintf (stdout, \"", name, " = ", format, "\\n\", ",
                     value, ");"]
@@ -157,19 +163,16 @@ fun load (ins: In.t, commandLineConstants)
                Bool =>
                   (case Bool.fromString value of
                       NONE => error "bool"
-                    | SOME b =>
-                         Const.Word (WordX.fromIntInf
-                                     (if b then 1 else 0, WordSize.default)))
-             | Real =>
-                  (case RealX.make (value, RealSize.default) of
+                    | SOME b => Const.Word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool)))
+             | Real rs =>
+                  (case RealX.make (value, rs) of
                       NONE => error "real"
                     | SOME r => Const.Real r)
              | String => Const.string value
-             | Word =>
+             | Word ws =>
                   (case IntInf.fromString value of
-                      NONE => error "int"
-                    | SOME i =>
-                         Const.Word (WordX.fromIntInf (i, WordSize.default)))
+                      NONE => error "word"
+                    | SOME i => Const.Word (WordX.fromIntInf (i, ws)))
          end
    in
       lookupConstant

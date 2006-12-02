@@ -11,7 +11,7 @@ struct
 open S
 
 type int = Int.t
-   
+
 datatype t = T of {index: int ref}
 
 local
@@ -27,9 +27,9 @@ in
 end
 
 fun setIndex (T {index = r}, i) = r := i
-   
+
 fun fromIndex i = T {index = ref i}
-   
+
 fun compare (p, p') = Int.compare (index p, index p')
 
 fun equals (pt, pt') = index pt = index pt'
@@ -49,12 +49,14 @@ local
    val word8Vector = new ()
    val word16Vector = new ()
    val word32Vector = new ()
+   val word64Vector = new ()
 in
    fun wordVector (b: Bits.t): t =
       case Bits.toInt b of
          8 => word8Vector
        | 16 => word16Vector
        | 32 => word32Vector
+       | 64 => word64Vector
        | _ => Error.bug "PointerTycon.wordVector"
 end
 

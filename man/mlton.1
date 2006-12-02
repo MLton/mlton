@@ -84,6 +84,16 @@ causes unused variable warnings to be enabled by default.
 Defaults may be overridden by an annotation in an ML Basis file.
 
 .TP
+\fB-default-type \fItype\fP\fR
+Specify the default binding for a primitive type.  For example, 
+\fB-default-type word64\fP causes the top-level type \fBword\fP and
+the top-level structure \fBWord\fP in the Basis Library to be equal to
+\fBWord64.word\fP and \fBWord64:WORD\fP, respectively.  Similarly, 
+\fB-default-type intinf\fP causes the top-level type \fBint\fP and
+the top-level structure \fBInt\fP in the Basis Library to be equal to
+\fBIntInf.int\fP and \fBIntInf:INTEGER\fP, respectively.
+
+.TP
 \fB-disable-ann \fIann\fP\fR
 Ignore the specified ML Basis annotation in every ML Basis File. For example,
 to see \fIall\fP match and unused warnings, compile with 

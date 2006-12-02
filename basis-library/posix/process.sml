@@ -8,25 +8,22 @@
 
 structure PosixProcess: POSIX_PROCESS_EXTRA =
    struct
-      structure Prim = PosixPrimitive.Process
+      structure Prim = PrimitiveFFI.Posix.Process
       open Prim
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
       type signal = PosixSignal.signal
-      type pid = Pid.t
+      type pid = C_PId.t
 
-      val wordToPid = Pid.fromInt o SysWord.toInt
-      val pidToWord = SysWord.fromInt o Pid.toInt
+      val wordToPid = C_PId.castFromSysWord
+      val pidToWord = C_PId.castToSysWord
 
       fun fork () =
-         SysCall.syscall
-         (fn () =>
-          let 
-             val p = Prim.fork ()
-             val p' = Pid.toInt p
-          in (p', fn () => if p' = 0 then NONE else SOME p)
-          end)
+         SysCall.syscall'
+         ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
+          (Prim.fork (), fn p =>
+           if p = C_PId.castFromFixedInt 0 then NONE else SOME p))
 
       val fork =
          if Primitive.MLton.Platform.OS.forkIsEnabled
@@ -34,7 +31,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          else fn () => Error.raiseSys Error.nosys
 
       val conv = NullString.nullTerm
-      val convs = C.CSS.fromList
+      val convs = CUtil.StringVector.fromList
 
       fun exece (path, args, env): 'a =
          let
@@ -43,10 +40,12 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val env = convs env
          in
             (SysCall.simple
-             (fn () => Prim.exece (path, args, env))
+             (fn () => Prim.exece (path, 
+                                   #1 args, #2 args, #3 args, 
+                                   #1 env, #2 env, #3 env))
              ; raise Fail "Posix.Process.exece")
          end
-         
+
       fun exec (path, args): 'a =
          exece (path, args, PosixProcEnv.environ ())
 
@@ -56,7 +55,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             val args = convs args
          in
             (SysCall.simple 
-             (fn () => Prim.execp (file, args))
+             (fn () => Prim.execp (file, 
+                                   #1 args, #2 args, #3 args))
              ; raise Fail "Posix.Process.execp")
          end
 
@@ -73,46 +73,49 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | W_STOPPED of signal 
 
       fun fromStatus status =
-         if Prim.ifExited status
+         if Prim.ifExited status <> C_Int.zero
             then (case Prim.exitStatus status of
                      0 => W_EXITED
-                   | n => W_EXITSTATUS (Word8.fromInt n))
-         else if Prim.ifSignaled status
+                   | n => W_EXITSTATUS (Word8.castFromSysWord (C_Int.castToSysWord n)))
+         else if Prim.ifSignaled status <> C_Int.zero
             then W_SIGNALED (Prim.termSig status)
-         else if Prim.ifStopped status
+         else if Prim.ifStopped status <> C_Int.zero
             then W_STOPPED (Prim.stopSig status)
          else raise Fail "Posix.Process.fromStatus"
 
       structure W =
          struct
-            open W BitFlags
+            structure Flags = BitFlags(structure S = C_Int)
+            open W Flags
+            (* val continued = CONTINUED *)
+            val nohang = NOHANG
+            val untraced = UNTRACED
          end
 
       local
-         val status: Status.t ref = ref (Status.fromInt 0)
+         val status: C_Status.t ref = ref (C_Status.fromInt 0)
          fun wait (wa, status, flags) =
             let
                val useCwait = 
                   Primitive.MLton.Platform.OS.useWindowsProcess
                   andalso case wa of W_CHILD _ => true | _ => false
-               val p =
+               val pid =
                   case wa of
-                     W_ANY_CHILD => ~1
-                   | W_CHILD pid => Pid.toInt pid
-                   | W_SAME_GROUP => 0
-                   | W_GROUP pid => ~ (Pid.toInt pid)
+                     W_ANY_CHILD => C_PId.castFromFixedInt ~1
+                   | W_CHILD pid => pid
+                   | W_SAME_GROUP => C_PId.castFromFixedInt 0
+                   | W_GROUP pid => C_PId.~ pid
                val flags = W.flags flags
             in
-               SysCall.syscallRestart
-               (fn () =>
+               SysCall.simpleResultRestart'
+               ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 let
                    val pid = 
                       if useCwait 
-                         then Prim.cwait (Pid.fromInt p, status)
-                      else Prim.waitpid (Pid.fromInt p, status,
-                                         SysWord.toInt flags)
+                         then PrimitiveFFI.MLton.Process.cwait (pid, status)
+                      else Prim.waitpid (pid, status, flags)
                 in
-                   (Pid.toInt pid, fn () => pid)
+                   pid
                 end)
             end
          fun getStatus () = fromStatus (!status)
@@ -126,9 +129,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
 
          fun waitpid_nh (wa, flags) =
             let
-               val pid = wait (wa, status, wnohang :: flags)
+               val pid = wait (wa, status, W.nohang :: flags)
             in
-               if 0 = Pid.toInt pid
+               if C_PId.castFromFixedInt 0 = pid
                   then NONE
                else SOME (pid, getStatus ())
             end
@@ -140,7 +143,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          (* Posix.Process.exit does not call atExit cleaners, as per the basis
           * library spec.
           *)
-         (Prim.exit (Word8.toInt w)
+         (Prim.exit (C_Status.castFromSysWord (Word8.castToSysWord w))
           ; raise Fail "Posix.Process.exit")
 
       datatype killpid_arg  =
@@ -152,39 +155,41 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          let
             val pid =
                case ka of
-                  K_PROC pid => Pid.toInt pid
-                | K_SAME_GROUP => ~1
-                | K_GROUP pid => ~ (Pid.toInt pid)
+                  K_PROC pid => pid
+                | K_SAME_GROUP => C_PId.castFromFixedInt ~1
+                | K_GROUP pid => C_PId.~ pid
          in
-            SysCall.simple (fn () => Prim.kill (Pid.fromInt pid, s))
+            SysCall.simple (fn () => Prim.kill (pid, s))
          end
 
       local
          fun wrap prim (t: Time.time): Time.time =
             Time.fromSeconds
-            (LargeInt.fromInt 
+            (C_UInt.toLargeInt
              (prim 
-              (LargeInt.toInt (Time.toSeconds t)
+              ((C_UInt.fromLargeInt (Time.toSeconds t))
                handle Overflow => Error.raiseSys Error.inval)))
       in
          val alarm = wrap Prim.alarm
-(*       val sleep = wrap Prim.sleep *)
+         (* val sleep = wrap Prim.sleep *)
       end
 
       fun sleep (t: Time.time): Time.time =
          let
-            val (sec, nsec) = IntInf.quotRem (Time.toNanoseconds t, 1000000000)
+            val t = Time.toNanoseconds t
+            val sec = LargeInt.quot (t, 1000000000)
+            val nsec = LargeInt.rem (t, 1000000000)
             val (sec, nsec) =
-               (IntInf.toInt sec, IntInf.toInt nsec)
+               (C_Time.fromLargeInt sec, C_Long.fromLargeInt nsec)
                handle Overflow => Error.raiseSys Error.inval
             val secRem = ref sec
             val nsecRem = ref nsec
-            fun remaining () =
-               Time.+ (Time.fromSeconds (Int.toLarge (!secRem)),
-                       Time.fromNanoseconds (Int.toLarge (!nsecRem)))
+            fun remaining _ =
+               Time.+ (Time.fromSeconds (C_Time.toLargeInt (!secRem)),
+                       Time.fromNanoseconds (C_Long.toLargeInt (!nsecRem)))
          in
             SysCall.syscallErr
-            ({clear = false, restart = false}, fn () =>
+            ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
              {handlers = [(Error.intr, remaining)],
               post = remaining,
               return = Prim.nanosleep (secRem, nsecRem)})
@@ -193,9 +198,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
       (* FIXME: pause *)
       fun pause () =
          SysCall.syscallErr
-         ({clear = false, restart = false},
+         ({clear = false, restart = false, errVal = C_Int.fromInt ~1},
           fn () =>
           {return = Prim.pause (),
-           post = fn () => (),
+           post = fn _ => (),
            handlers = [(Error.intr, fn () => ())]})
    end

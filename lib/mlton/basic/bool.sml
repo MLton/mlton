@@ -10,9 +10,9 @@
 
 structure Bool: BOOL =
 struct
-   
+
 open Pervasive.Bool
-   
+
 type t = bool
 
 val compare =
@@ -30,5 +30,5 @@ val equals =
 
 val layout = Layout.str o toString
 (*fun output(b, out) = Pervasive.IO.output(out, toString b)*)
-   
+
 end

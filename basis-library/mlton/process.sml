@@ -7,7 +7,7 @@
 
 structure MLtonProcess =
    struct
-      structure Prim = Primitive.MLton.Process
+      structure Prim = PrimitiveFFI.MLton.Process
       structure MLton = Primitive.MLton
       local
          open Posix
@@ -20,18 +20,18 @@ structure MLtonProcess =
       structure Mask = MLtonSignal.Mask
       structure SysCall = PosixError.SysCall
 
-      type pid = Pid.t
+      type pid = C_PId.t
 
       exception MisuseOfForget
       exception DoublyRedirected
 
       type input = unit
       type output = unit
-      
+
       type none = unit
       type chain = unit
       type any = unit
-      
+
       val useWindowsProcess = MLton.Platform.OS.useWindowsProcess
 
       val readWrite =
@@ -40,7 +40,7 @@ structure MLtonProcess =
         in
            flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
         end
-      
+
       structure Child =
          struct
             datatype 'use childt =
@@ -48,7 +48,7 @@ structure MLtonProcess =
              | Stream of 'use * ('use -> unit)
              | Term
             type ('use, 'dir) t = 'use childt ref
-          
+
             (* This is _not_ the identity; by rebuilding it we get type
              * ('a, 'b) t -> ('c, 'd) t
              *)
@@ -59,7 +59,7 @@ structure MLtonProcess =
                       ; ref (FileDesc f))
                 | Stream _ => raise MisuseOfForget (* remember twice = bad *)
                 | Term => ref Term
-                     
+
             local
                fun convert (new, close) p =
                   case !p of
@@ -78,23 +78,23 @@ structure MLtonProcess =
                val textIn = convert (TextIO.newIn, TextIO.closeIn)
                val textOut = convert (TextIO.newOut, TextIO.closeOut)
             end
-          
+
             fun fd p =
                case !p of
                   FileDesc fd => fd
                 | _ => raise MisuseOfForget
-          
+
             fun close ch =
                case ch of
                   FileDesc fd => IO.close fd
                 | Stream (str, close) => close str
                 | Term => ()
-          
+
             val close =
                fn (stdin, stdout, stderr) => 
                (close stdin; close stdout; close stderr)
          end
-      
+
       structure Param =
          struct
             datatype ('use, 'dir) t =
@@ -102,7 +102,7 @@ structure MLtonProcess =
              | FileDesc of FileSys.file_desc
              | Pipe
              | Self
-          
+
             (* This is _not_ the identity; by rebuilding it we get type
              * ('a, 'b) t -> ('c, 'd) t
              *)
@@ -111,7 +111,7 @@ structure MLtonProcess =
              | FileDesc f => FileDesc f
              | Pipe => Pipe
              | Self => Self
-          
+
             val pipe = Pipe
             local
                val null = if useWindowsProcess then "nul" else "/dev/null"
@@ -128,12 +128,12 @@ structure MLtonProcess =
                    Child.FileDesc f => (c := Child.Stream ((), fn () => ()); f)
                  | Child.Stream _ => raise DoublyRedirected
                  | Child.Term  => raise MisuseOfForget)
-            
+
             fun setCloseExec fd =
                if useWindowsProcess
                   then ()
                else IO.setfd (fd, IO.FD.flags [IO.FD.cloexec])
-            
+
             fun openOut std p =
                case p of 
                   File s => (FileSys.creat (s, readWrite), Child.Term)
@@ -146,7 +146,7 @@ structure MLtonProcess =
                         (outfd, Child.FileDesc infd)
                      end
                 | Self => (std, Child.Term)
-            
+
             fun openStdin p =
                case p of
                   File s =>
@@ -161,7 +161,7 @@ structure MLtonProcess =
                         (infd, Child.FileDesc outfd)
                      end
                 | Self => (FileSys.stdin, Child.Term)
-            
+
             fun close p fd =
                case p of
                   File _ => IO.close fd
@@ -169,7 +169,7 @@ structure MLtonProcess =
                 | Pipe => IO.close fd
                 | _ => ()
         end
-        
+
       datatype ('stdin, 'stdout, 'stderr) t =
          T of {pid: Process.pid,
                status: Posix.Process.exit_status option ref,
@@ -184,7 +184,7 @@ structure MLtonProcess =
          val getStdin = fn z => make #stdin z
          val getStdout = fn z => make #stdout z
       end
-      
+
       fun ('a, 'b) protect (f: 'a -> 'b, x: 'a): 'b =
          if useWindowsProcess then f x
          else
@@ -219,7 +219,7 @@ structure MLtonProcess =
                        then
                           SysCall.simple
                           (fn () =>
-                           Primitive.Windows.Process.terminate (pid, signal))
+                           PrimitiveFFI.Windows.Process.terminate (pid, signal))
                     else Process.kill (Process.K_PROC pid, signal)
               in
                  ignore (reap p)
@@ -254,8 +254,8 @@ structure MLtonProcess =
                  dquote]
 
       fun create (cmd, args, env, stdin, stdout, stderr) =
-         SysCall.syscall
-         (fn () =>
+         SysCall.simpleResult'
+         ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
           let
              val cmd =
                 let
@@ -266,12 +266,9 @@ structure MLtonProcess =
                     | MinGW => cmd
                     | _ => raise Fail "create"
                 end
-             val p =
-                Primitive.Windows.Process.create
-                (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
-             val p' = Pid.toInt p
           in
-             (p', fn () => p)
+             PrimitiveFFI.Windows.Process.create
+             (NullString.nullTerm cmd, args, env, stdin, stdout, stderr)
           end)
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
@@ -285,7 +282,7 @@ structure MLtonProcess =
       val launch =
          fn z =>
          (if useWindowsProcess then launchWithCreate else launchWithFork) z
-             
+
       fun create {args, env, path, stderr, stdin, stdout} =
          if not (FileSys.access (path, [FileSys.A_EXEC]))
             then PosixError.raiseSys PosixError.noent
@@ -322,14 +319,14 @@ structure MLtonProcess =
             then
                let
                   val path = NullString.nullTerm path
-                  val args = C.CSS.fromList args
-                  val env = C.CSS.fromList env
+                  val args = CUtil.StringVector.fromList args
+                  val env = CUtil.StringVector.fromList env
                in
-                  SysCall.syscall
-                  (fn () =>
-                   let val pid = Prim.spawne (path, args, env)
-                   in (Pid.toInt pid, fn () => pid)
-                   end)
+                  SysCall.simpleResult'
+                  ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
+                   Prim.spawne (path, 
+                                #1 args, #2 args, #3 args,
+                                #1 env, #2 env, #3 env))
                end
          else
             case Posix.Process.fork () of
@@ -346,13 +343,12 @@ structure MLtonProcess =
             then
                let
                   val file = NullString.nullTerm file
-                  val args = C.CSS.fromList args
+                  val args = CUtil.StringVector.fromList args
                in
-                  SysCall.syscall
-                  (fn () =>
-                   let val pid = Prim.spawnp (file, args)
-                   in (Pid.toInt pid, fn () => pid)
-                   end)
+                  SysCall.simpleResult'
+                  ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
+                   Prim.spawnp (file, 
+                                #1 args, #2 args, #3 args))
                end
          else    
             case Posix.Process.fork () of

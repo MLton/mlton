@@ -7,7 +7,7 @@
 
 type int = Int.t
 type word = Word.t
-   
+
 signature PROFILE_STRUCTS = 
    sig
       structure Machine: MACHINE
@@ -18,7 +18,7 @@ signature PROFILE_STRUCTS =
 signature PROFILE = 
    sig
       include PROFILE_STRUCTS
-      
+
       val profile:
          Rssa.Program.t
          -> Rssa.Program.t * ({frames: Rssa.Label.t vector}

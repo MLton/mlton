@@ -17,7 +17,7 @@ PATH := $(BIN):$(shell echo $$PATH)
 
 all:	$(NAME)
 
-$(NAME): $(NAME).mlb $(shell PATH=$(BIN):$$PATH && $(MLTON) -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	$(MLTON) $(FLAGS) $(NAME).mlb
 

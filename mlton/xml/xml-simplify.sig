@@ -16,6 +16,6 @@ signature XML_SIMPLIFY_STRUCTS =
 signature XML_SIMPLIFY = 
    sig
       include XML_SIMPLIFY_STRUCTS
-      
+
       val simplify: Program.t -> Program.t
    end

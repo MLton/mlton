@@ -18,14 +18,14 @@ structure Lambda =
    struct
       datatype t = Lambda of {lambda: Sxml.Lambda.t,
                               hash: Word.t}
-         
+
       val newHash = Random.word
 
       fun new lambda = Lambda {lambda = lambda,
                                hash = newHash ()}
 
       fun hash (Lambda {hash, ...}) = hash
-         
+
       fun dest (Lambda {lambda, ...}) = lambda
 
       fun equals (Lambda r, Lambda r') =
@@ -73,7 +73,7 @@ structure LambdaNode:
 
       fun handles (h: Lambda.t -> unit, s: Lambdas.t): unit =
          Lambdas.foreach (s, fn l => h l)
-         
+
       fun handless (hs: (Lambda.t -> unit) list, s: Lambdas.t): unit =
          List.foreach (hs, fn h => handles (h, s))
 
@@ -112,7 +112,7 @@ structure LambdaNode:
                  else (List.push (coercedTo, to)
                        ; send (to, !me))
               end
-                              
+
       fun update (c, h, diff) =
          if Lambdas.isEmpty diff
             then ()
@@ -157,15 +157,15 @@ structure LambdaNode:
 structure UnaryTycon =
    struct
       datatype t = Array | Ref | Vector | Weak
-   
+
       val toString =
          fn Array => "Array"
           | Ref => "Ref"
           | Vector => "Vector"
           | Weak => "Weak"
-         
+
       val equals: t * t -> bool = op =
-   
+
       val layout = Layout.str o toString
    end
 
@@ -191,7 +191,7 @@ in
    val tree = make #tree
    val ty = make #ty
 end
-   
+
 fun layout v =
    let open Layout
    in case tree v of
@@ -200,7 +200,7 @@ fun layout v =
     | Tuple vs => Vector.layout layout vs
     | Lambdas l => LambdaNode.layout l
    end
-   
+
 fun isEmpty v =
    case tree v of
       Lambdas n => Lambdas.isEmpty (LambdaNode.toSet n)

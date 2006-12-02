@@ -2,34 +2,37 @@
 
 #include "platform.h"
 
-#include "getrusage.c"
 #include "mkdir2.c"
 #include "mmap.c"
 #include "recv.nonblock.c"
-#include "totalRam.sysconf.c"
+#include "sysconf.c"
 #include "windows.c"
 
-void decommit (void *base, size_t length) {
+HANDLE fileDesHandle (int fd) {
+  // The temporary prevents a "cast does not match function type" warning.
+  long t;
+
+  t = get_osfhandle (fd);
+  return (HANDLE)t;
+}
+
+void GC_decommit (void *base, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
-                smunmap (base, length);
+                munmap_safe (base, length);
         else
                 Windows_decommit (base, length);
 }
 
-HANDLE fileDesHandle (int fd) {
-        return (HANDLE)(get_osfhandle (fd));
-}
-
-void *mmapAnon (void *start, size_t length) {
+void *GC_mmapAnon (void *start, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
-                return mmapAnonMmap (start, length);
+                return mmapAnon (start, length);
         else
                 return Windows_mmapAnon (start, length);
 }
 
-void release (void *base, size_t length) {
+void GC_release (void *base, size_t length) {
         if (MLton_Platform_CygwinUseMmap)
-                smunmap (base, length);
+                munmap_safe (base, length);
         else
                 Windows_release (base);
 }
@@ -38,23 +41,23 @@ void release (void *base, size_t length) {
 /*                      Cygwin                       */
 /* ------------------------------------------------- */
 
-char *Cygwin_toFullWindowsPath (char *path) {
+C_String_t Cygwin_toFullWindowsPath (NullString8_t path) {
         static char res[MAX_PATH];
 
         cygwin_conv_to_full_win32_path ((char*)path, &res[0]);
-        return &res[0];
+        return (C_String_t)&res[0];
 }
 
 /* ------------------------------------------------- */
 /*                       Posix                       */
 /* ------------------------------------------------- */
 
-void Posix_IO_setbin (Fd fd) {
+void Posix_IO_setbin (C_Fd_t fd) {
         /* cygwin has a different method for working with its fds */
         setmode (fd, O_BINARY);
 }
 
-void Posix_IO_settext (Fd fd) {
+void Posix_IO_settext (C_Fd_t fd) {
         /* cygwin has a different method for working with its fds */
         setmode (fd, O_TEXT);
 }
@@ -68,9 +71,9 @@ void Posix_IO_settext (Fd fd) {
  * is a secret magical pipe for sending signals and exit statuses over.
  * Screw that. We implement our own cwait using pure win32.
  */
-Pid MLton_Process_cwait (Pid pid, Pointer status) {
+C_Errno_t(C_PId_t) MLton_Process_cwait(C_PId_t pid, Ref(C_Status_t) status) {
         HANDLE h;
-        
+
         h = (HANDLE)pid;
         /* This all works on Win95+ */
         while (1) {

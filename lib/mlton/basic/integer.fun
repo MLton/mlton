@@ -11,17 +11,17 @@ struct
 open S
 
 structure In = In0
-   
+
 structure Int =
    struct
       open S
-         
+
       type t = int
-         
+
       val zero = fromInt 0
-         
+
       val layout = Layout.str o toString
-             
+
       val equals = op =
    end
 
@@ -48,7 +48,7 @@ structure I = EuclideanRing (open R S
 open I
 
 fun isEven n = isZero (n mod two)
-   
+
 val isOdd = not o isEven
 
 fun toCommaString n =
@@ -146,5 +146,5 @@ fun forDown (start: t, stop: t, f: t -> unit): unit =
 fun scan (radix, reader) = Int.scan radix reader
 
 fun format (i, r) = fmt r i
-            
+
 end

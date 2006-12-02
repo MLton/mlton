@@ -50,7 +50,7 @@ fun binary(i,r,f) =
        | (Rat p,Real x) => ratReal(p,x)
        | (Real x,Rat p) => ratReal(p,x)
    end
-   
+
 structure OF : BASIC_ORDERED_FIELD =
 struct
    type t = t      
@@ -129,7 +129,7 @@ val denominator = unaryRatOnly R.denominator
 
 fun toRealUnary f z = Real(f(toReal z))
 fun toRealBinary f (z,z')= Real(f(toReal z,toReal z'))
-   
+
 val ln = toRealUnary F.ln
 val exp = toRealUnary F.exp
 val log = toRealBinary F.log
@@ -147,7 +147,7 @@ val (op ^) = fn (z,z') =>
 
 fun random(Int m,Int n) = Int(I.random(m,n))
   | random(z,z') = Real(F.random(toReal z,toReal z'))
-                                    
+
 val toReal = F.toReal o toReal
 val fromReal = Real o F.fromReal
 val toInt = unaryIntOnly I.toInt

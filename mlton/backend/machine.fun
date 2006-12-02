@@ -107,7 +107,7 @@ structure Global =
                          ("isRoot", Bool.layout isRoot),
                          ("ty", Type.layout ty)]]
          end
-      
+
       val toString = Layout.toString o layout
 
       local
@@ -123,7 +123,7 @@ structure Global =
 
       val memo = CType.memo (fn _ => Counter.new 0)
       fun numberOfType t = Counter.value (memo t)
-         
+
       fun new {isRoot, ty} =
          let
             val isRoot = isRoot orelse not (Type.isPointer ty)
@@ -276,7 +276,7 @@ structure Operand =
          end
 
     val toString = Layout.toString o layout
-                              
+
     val rec equals =
          fn (ArrayOffset {base = b, index = i, ...},
              ArrayOffset {base = b', index = i', ...}) =>
@@ -300,7 +300,7 @@ structure Operand =
            | _ => false
 
       val stackOffset = StackOffset o StackOffset.T
-    
+
       fun interfere (write: t, read: t): bool =
          let
             fun inter read = interfere (write, read)
@@ -367,7 +367,7 @@ structure Statement =
              | ProfileLabel l =>
                   seq [str "ProfileLabel ", ProfileLabel.layout l]
          end
- 
+
       fun move (arg as {dst, src}) =
          if Operand.equals (dst, src)
             then Noop
@@ -380,7 +380,7 @@ structure Statement =
                                      ("src", Operand.layout src)],
                       layout)
          move
-         
+
       fun moves {srcs, dsts} =
          Vector.fromListRev
          (Vector.fold2 (srcs, dsts, [], fn (src, dst, ac)  =>
@@ -853,7 +853,7 @@ structure Program =
             fun forall (T ds, f) = List.forall (ds, f o Live.toOperand)
 
             fun defineLive (T ls, l) = T (l :: ls)
-               
+
             fun define (T ds, z) =
                case Live.fromOperand z of
                   NONE => T ds

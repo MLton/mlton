@@ -24,7 +24,7 @@ signature ELABORATE_ENV =
 
       structure AdmitsEquality: ADMITS_EQUALITY
       sharing AdmitsEquality = TypeEnv.Tycon.AdmitsEquality
-         
+
       structure Decs: DECS
       sharing CoreML = Decs.CoreML
 
@@ -67,7 +67,7 @@ signature ELABORATE_ENV =
                sig
                   type t
                end
-               
+
             type t
 
             datatype node =
@@ -97,7 +97,7 @@ signature ELABORATE_ENV =
       structure Structure:
          sig
             type t
-               
+
             (* ffi represents MLtonFFI, which is built by the basis library and
              * set via the special _basis_done topdec.
              *)

@@ -13,7 +13,7 @@ in Iterate.for(1, 20, fn n =>
                 Out.newline Out.standard ;
                 q := Q.enqueue(!q,n)))
 end
-               
+
 
 structure Q = QueuePersistentTwoList
 
@@ -43,7 +43,7 @@ local
    structure Ephemeral = Test(structure Queue' = QueueEphemeral)
    structure PersistentTwoList = Test(structure Queue' = QueuePersistentTwoList)
    structure OrderOne = Test(structure Queue' = QueuePersistentOrderOne)
-      
+
    val numOps = 1000
 in
    val _ = (Ephemeral.test numOps ;

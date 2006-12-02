@@ -26,7 +26,7 @@ structure IntegerHeap = FibonacciHeap(structure Key' = Integer)
 open IntegerHeap ;
 
 fun p h = output h Integer.output print
-   
+
 val h = new [(1, 1)] ;
 
 val w = isWellFormed h ;
@@ -34,20 +34,20 @@ val w = isWellFormed h ;
 val _ = p h ;
 
 fun i n = insert h n n ;
-   
+
 val _ = i 2 ;
-   
+
 val _ = i 3 ;
-   
+
 val h = new (ListUtil.reverse (ListUtil.map (ListUtil.fromTo 1 10)
                                (fn x => (x, x)))) ;
 
 val _ = p h ;
 
 val w = isWellFormed h ;
-      
+
 val a = min h ;
-   
+
 val a = deleteMin h ;
 
 val b = deleteMin h ;
@@ -97,7 +97,7 @@ fun d i = delete h (ListUtil.nth elts i)
 val _ = dc 6 ~1 ;
 
    dc 7 0 ;
-   
+
 val a = deleteMin h ;
-    
+
 val _ = d 4 ;

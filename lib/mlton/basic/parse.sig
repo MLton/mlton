@@ -13,7 +13,7 @@ signature PARSE_STRUCTS =
 signature PARSE = 
    sig
       include PARSE_STRUCTS
-      
+
       type 'a t
 
       exception Parse

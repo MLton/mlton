@@ -1,92 +1,87 @@
-structure Int =
-   struct
-      type int = int
-   end
-
-structure LargeInt =
-   struct
-      type int = intInf
-   end
-
 signature INTEGER_GLOBAL =
    sig
       eqtype int
    end
 
-signature PRE_INTEGER =
+signature INTEGER =
    sig
       include INTEGER_GLOBAL
 
-      val * : int * int -> int
-      val + : int * int -> int 
+      val precision : Int.int option
+      val minInt : int option
+      val maxInt : int option
+
+      val toLarge: int -> LargeInt.int
+      val fromLarge: LargeInt.int -> int
+      val toInt: int -> Int.int
+      val fromInt: Int.int -> int
+
+      val + : int * int -> int
       val - : int * int -> int
+      val * : int * int -> int
+      val div: int * int -> int
+      val mod: int * int -> int
+      val quot: int * int -> int
+      val rem: int * int -> int
+
+      val compare: int * int -> order
       val < : int * int -> bool
       val <= : int * int -> bool
       val > : int * int -> bool
       val >= : int * int -> bool
-      val fromInt : Int.int -> int
-      val quot : int * int -> int
-      val rem : int * int -> int
-      val toInt : int -> Int.int
+
       val ~ : int -> int
-   end
+      val abs: int -> int
+      val min: int * int -> int
+      val max: int * int -> int         
 
-signature PRE_INTEGER_EXTRA =
-   sig
-      include PRE_INTEGER
+      val sign: int -> Int.int
+      val sameSign: int * int -> bool
 
-      val << : int * Word.word -> int
-      val >> : int * Word.word -> int
-      val ~>> : int * Word.word -> int
-      val *? : int * int -> int
-      val +? : int * int -> int
-      val -? : int * int -> int
-      val andb : int * int -> int
-      val maxInt' : int
-      val minInt' : int
-      val precision' : Int.int
-      val ~? : int -> int
-   end
-
-signature INTEGER =
-   sig
-      include PRE_INTEGER
-
-      val abs: int -> int 
-      val compare: int * int -> order 
-      val div: int * int -> int 
-      val fmt: StringCvt.radix -> int -> string 
-      val fromLarge: LargeInt.int -> int 
-      val fromString: string -> int option 
-      val max: int * int -> int 
-      val maxInt: int option 
-      val min: int * int -> int 
-      val minInt: int option 
-      val mod: int * int -> int 
-      val precision: Int.int option 
-      val sameSign: int * int -> bool 
-      val scan: (StringCvt.radix
-                 -> (char, 'a) StringCvt.reader
+      val fmt: StringCvt.radix -> int -> string
+      val toString: int -> string
+      val scan: (StringCvt.radix 
+                 -> (char, 'a) StringCvt.reader 
                  -> (int, 'a) StringCvt.reader)
-      val sign: int -> Int.int 
-      val toLarge: int -> LargeInt.int 
-      val toString: int -> string 
+      val fromString: string -> int option
    end
 
 signature INTEGER_EXTRA =
    sig
       include INTEGER
+      type t = int
 
-      val << : int * Word.word -> int
-      val >> : int * Word.word -> int
-      val ~>> : int * Word.word -> int
-      val *? : int * int -> int
-      val +? : int * int -> int
-      val -? : int * int -> int
-      val ~? : int -> int
-      val andb : int * int -> int
+      val zero: int
+      val one: int
+
+      val precision' : Int.int
       val maxInt' : int
       val minInt' : int
-      val power: {base: int, exp: int} -> int
-      val precision' : Int.int
+
+      val +? : int * int -> int
+      val *? : int * int -> int
+      val -? : int * int -> int
+      val ~? : int -> int
+
+      val andb: int * int -> int
+      val << : int * Word.word -> int
+      val notb: int -> int
+      val orb: int * int -> int
+      val rol: int * Word.word -> int
+      val ror: int * Word.word -> int
+      val ~>> : int * Word.word -> int
+      val >> : int * Word.word -> int
+      val xorb: int * int -> int
+
+      val ltu: int * int -> bool
+      val leu: int * int -> bool
+      val gtu: int * int -> bool
+      val geu: int * int -> bool
+
+      val toLargeInt: int -> LargeInt.int
+      val fromLargeInt: LargeInt.int -> int
+      val castFromFixedInt: FixedInt.int -> int
+      val castToFixedInt: int -> FixedInt.int
+      val castFromSysWord: SysWord.word -> int
+      val castToSysWord: int -> SysWord.word
    end

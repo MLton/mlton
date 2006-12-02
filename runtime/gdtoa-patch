@@ -1,0 +1,100 @@
+diff -P -C 2 -r gdtoa/arithchk.c gdtoa-new/arithchk.c
+*** gdtoa/arithchk.c	1998-06-19 13:46:11.000000000 -0700
+--- gdtoa-new/arithchk.c	2006-05-24 17:02:44.303399187 -0700
+***************
+*** 137,141 ****
+  	}
+  
+! main()
+  {
+  	Akind *a = 0;
+--- 137,141 ----
+  	}
+  
+! int main()
+  {
+  	Akind *a = 0;
+diff -P -C 2 -r gdtoa/dtoa.c gdtoa-new/dtoa.c
+*** gdtoa/dtoa.c	2000-11-02 07:09:01.000000000 -0800
+--- gdtoa-new/dtoa.c	2006-05-24 17:04:27.987435180 -0700
+***************
+*** 81,85 ****
+  
+   char *
+! dtoa
+  #ifdef KR_headers
+  	(d, mode, ndigits, decpt, sign, rve)
+--- 81,85 ----
+  
+   char *
+! gdtoa_dtoa
+  #ifdef KR_headers
+  	(d, mode, ndigits, decpt, sign, rve)
+diff -P -C 2 -r gdtoa/gdtoa.h gdtoa-new/gdtoa.h
+*** gdtoa/gdtoa.h	2000-11-01 07:01:39.000000000 -0800
+--- gdtoa-new/gdtoa.h	2006-05-24 17:04:17.015912822 -0700
+***************
+*** 109,119 ****
+  #endif
+  
+! extern char* dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
+  			int *sign, char **rve));
+  extern char* gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
+  			int mode, int ndigits, int *decpt, char **rve));
+  extern void freedtoa ANSI((char*));
+! extern float  strtof ANSI((CONST char *, char **));
+! extern double strtod ANSI((CONST char *, char **));
+  extern int strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
+  
+--- 109,119 ----
+  #endif
+  
+! extern char* gdtoa_dtoa  ANSI((double d, int mode, int ndigits, int *decpt,
+  			int *sign, char **rve));
+  extern char* gdtoa ANSI((FPI *fpi, int be, ULong *bits, int *kindp,
+  			int mode, int ndigits, int *decpt, char **rve));
+  extern void freedtoa ANSI((char*));
+! extern float  gdtoa_strtof ANSI((CONST char *, char **));
+! extern double gdtoa_strtod ANSI((CONST char *, char **));
+  extern int strtodg ANSI((CONST char*, char**, FPI*, Long*, ULong*));
+  
+diff -P -C 2 -r gdtoa/strtod.c gdtoa-new/strtod.c
+*** gdtoa/strtod.c	2003-03-21 13:24:01.000000000 -0800
+--- gdtoa-new/strtod.c	2006-05-24 17:02:44.309398379 -0700
+***************
+*** 59,63 ****
+  
+   double
+! strtod
+  #ifdef KR_headers
+  	(s00, se) CONST char *s00; char **se;
+--- 59,63 ----
+  
+   double
+! gdtoa_strtod
+  #ifdef KR_headers
+  	(s00, se) CONST char *s00; char **se;
+diff -P -C 2 -r gdtoa/strtof.c gdtoa-new/strtof.c
+*** gdtoa/strtof.c	2000-11-01 20:31:40.000000000 -0800
+--- gdtoa-new/strtof.c	2006-05-24 17:02:44.309398379 -0700
+***************
+*** 38,46 ****
+  #include "gdtoaimp.h"
+  
+!  float
+  #ifdef KR_headers
+! strtof(s, sp) CONST char *s; char **sp;
+  #else
+! strtof(CONST char *s, char **sp)
+  #endif
+  {
+--- 38,46 ----
+  #include "gdtoaimp.h"
+  
+!  float gdtoa_strtof
+  #ifdef KR_headers
+! 	(s, sp) CONST char *s; char **sp;
+  #else
+! 	(CONST char *s, char **sp)
+  #endif
+  {

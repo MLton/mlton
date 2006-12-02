@@ -74,19 +74,19 @@ structure VarInfo =
    struct
       datatype t = T of {ty: Type.t, 
                          used: Used.t}
-         
+
       fun layout (T {used, ...}) = Used.layout used
-         
+
       local
          fun make f (T r) = f r
       in
          val ty = make #ty
          val used = make #used
       end
-   
+
       fun new (ty : Type.t): t = T {ty = ty,
                                     used = Used.new ()}
-         
+
       val use = Used.use o used
       val isUsed = Used.isUsed o used
       fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
@@ -100,13 +100,13 @@ structure ConInfo =
                          deconed: Deconed.t,
                          dummy: ({con: Con.t, args: Type.t Prod.t} * Exp.t) option ref,
                          used: Used.t}
-         
+
       fun layout (T {args, coned, deconed, used, ...}) =
          Layout.record [("args", Prod.layout (args, VarInfo.layout o #1)),
                         ("coned", Coned.layout coned),
                         ("deconed", Deconed.layout deconed),
                         ("used", Used.layout used)]
-         
+
       local
          fun make f (T r) = f r
       in
@@ -116,14 +116,14 @@ structure ConInfo =
          val dummy = make #dummy
          val used = make #used
       end
-   
+
       val con = Coned.con o coned
       val isConed = Coned.isConed o coned
       fun whenConed (ci, th) = Coned.whenConed (coned ci, th)
-         
+
       val decon = Deconed.decon o deconed
       val isDeconed = Deconed.isDeconed o deconed
-         
+
       val use = Used.use o used
       fun whenUsed (vi, th) = Used.whenUsed (used vi, th)
 
@@ -140,7 +140,7 @@ structure TyconInfo =
       datatype t = T of {cons: Con.t vector,
                          numCons: int ref,
                          used: Used.t}
-         
+
       fun layout (T {used, ...}) =
          Layout.record [("used", Used.layout used)]
 
@@ -152,7 +152,7 @@ structure TyconInfo =
          val (numCons', numCons) = make' #numCons
          val used = make #used
       end
-   
+
       fun new {cons: Con.t vector}: t = 
          T {cons = cons,
             numCons = ref ~1,
@@ -164,7 +164,7 @@ structure TypeInfo =
       datatype t = T of {deconed: bool ref,
                          simplify: Type.t option ref,
                          used: bool ref}
-         
+
       local
          fun make f (T r) = f r
          fun make' f = (make f, ! o (make f))
@@ -173,7 +173,7 @@ structure TypeInfo =
          val (simplify', _) = make' #simplify
          val (used', _) = make' #used
       end
-   
+
       fun new (): t = T {deconed = ref false,
                          simplify = ref NONE,
                          used = ref false}
@@ -193,7 +193,7 @@ structure FuncInfo =
                          sideEffects: SideEffects.t,
                          used: Used.t,
                          wrappers: Block.t list ref}
-         
+
       fun layout (T {args, 
                      mayRaise, mayReturn, 
                      raises, returns, 
@@ -214,7 +214,7 @@ structure FuncInfo =
                                     returns),
                         ("sideEffects", SideEffects.layout sideEffects),
                         ("used", Used.layout used)]
-         
+
       local
          fun make f (T r) = f r
          fun make' f = (make f, ! o (make f))
@@ -230,24 +230,24 @@ structure FuncInfo =
          val used = make #used
          val (wrappers', wrappers) = make' #wrappers
       end
-   
+
       val raisee = MayRaise.raisee o mayRaise'
       val mayRaise = MayRaise.mayRaise o mayRaise'
       fun whenRaises (fi, th) = MayRaise.whenRaises (mayRaise' fi, th)
       fun flowRaises (fi, fi') = MayRaise.<= (mayRaise' fi, mayRaise' fi')
-         
+
       val return = MayReturn.return o mayReturn'
       fun whenReturns (fi, th) = MayReturn.whenReturns (mayReturn' fi, th)
       val mayReturn = MayReturn.mayReturn o mayReturn'
       fun flowReturns (fi, fi') = MayReturn.<= (mayReturn' fi, mayReturn' fi')
-         
+
       val use = Used.use o used
       val isUsed = Used.isUsed o used
       fun whenUsed (fi, th) = Used.whenUsed (used fi, th)
-         
+
       val sideEffect = SideEffects.sideEffect o sideEffects
       fun flowSideEffects (fi, fi') = SideEffects.<= (sideEffects fi, sideEffects fi')
-         
+
       fun new {args: (VarInfo.t * Type.t) vector, 
                raises: (VarInfo.t * Type.t) vector option, 
                returns: (VarInfo.t * Type.t) vector option}: t =
@@ -270,17 +270,17 @@ structure LabelInfo =
                          func: FuncInfo.t,
                          used: Used.t,
                          wrappers: (Type.t vector * Label.t) list ref}
-         
+
       fun layout (T {args, used, ...}) =
          Layout.record [("args", Vector.layout (VarInfo.layout o #1) args),
                         ("used", Used.layout used)]
-         
+
       fun new {args: (VarInfo.t * Type.t) vector, func: FuncInfo.t}: t =
          T {args = args,
             func = func,
             used = Used.new (),
             wrappers = ref []}
-         
+
       local
          fun make f (T r) = f r
          fun make' f = (make f, ! o (make f))
@@ -290,7 +290,7 @@ structure LabelInfo =
          val used = make #used
          val (wrappers', wrappers) = make' #wrappers
       end
-   
+
       val use = Used.use o used
       val isUsed = Used.isUsed o used
       fun whenUsed (li, th) = Used.whenUsed (used li, th)
@@ -336,7 +336,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
          Property.getSetOnce
          (Label.plist,
           Property.initRaise ("RemoveUnused.labelInfo", Label.layout))
-         
+
       val {get = funcInfo: Func.t -> FuncInfo.t, 
            set = setFuncInfo, ...} =
          Property.getSetOnce
@@ -385,7 +385,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
                     end
          end
       val visitTypeTh = fn ty => fn () => visitType ty
-         
+
 
       val tyVar = VarInfo.ty o varInfo
       val usedVar = VarInfo.used o varInfo

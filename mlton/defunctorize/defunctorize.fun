@@ -85,7 +85,7 @@ structure MatchCompile =
 structure Xexp =
    struct
       open Xexp
-         
+
       local
          fun exn (c: Con.t): Xexp.t =
             conApp {arg = NONE,
@@ -102,7 +102,7 @@ fun enterLeave (e: Xexp.t, t, si): Xexp.t =
    Xexp.fromExp (Xml.Exp.enterLeave (Xexp.toExp e, t, si), t)
 
 val diagnostics: (unit -> unit) list ref = ref []
-   
+
 fun casee {caseType: Xtype.t,
            cases: {exp: Xexp.t,
                    lay: (unit -> Layout.t) option,
@@ -603,7 +603,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                              (setConTycon (con, tycon)
                               ; {arg = Option.map (arg, loopTy),
                                  con = con}))
-                         
+
                          val _ = 
                             if Tycon.equals (tycon, Tycon.reff)
                                then ()

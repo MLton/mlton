@@ -108,20 +108,24 @@ structure AFile =
            master)]
 
       fun new {afile: File.t}: t =
-         if not (File.doesExist afile)
-            then Error.bug "does not exist"
-         else if not (File.canRun afile)
-            then Error.bug "can not run"
+         let
+            fun userBug m =
+               Error.bug (concat ["Error: executable '", afile, "' ", m, "."])
+         in
+         if not (File.doesExist afile) then
+            userBug "does not exist"
+         else if not (File.canRun afile) then
+            userBug "does not run"
          else
             Process.callWithIn
             (OS.Path.mkAbsolute {path = afile,
                                  relativeTo = OS.FileSys.getDir ()},
-             ["@MLton", "show-prof"],
+             ["@MLton", "show-sources"],
              fn ins =>
              let
                 fun line () =
                    case In.inputLine ins of
-                      NONE => Error.bug "unexpected end of show-prof data"
+                      NONE => Error.bug "unexpected end of show-sources data"
                     | SOME l => l
                 val magic = valOf (Word.fromString (line ()))
                 fun vector (f: string -> 'a): 'a vector =
@@ -141,9 +145,8 @@ structure AFile =
                         source = source}
                     end)
                 val _ =
-                   if 0 = Vector.length master
-                      then
-                         Error.bug "doesn't appear to be compiled for profiling"
+                   if 0 = Vector.length master then
+                      userBug "is not compiled for profiling"
                    else ()
                 val sources =
                    vector
@@ -191,6 +194,7 @@ structure AFile =
                    name = afile,
                    split = split}
              end)
+         end
    end
 
 structure Kind =
@@ -378,7 +382,7 @@ structure ProfFile =
                 total = total,
                 totalGC = totalGC}
           end)
-   
+
       fun merge (T {counts = c, kind = k, magic = m, total = t, totalGC = g},
                  T {counts = c', kind = k', magic = m', total = t',
                     totalGC = g'}): t =
@@ -618,7 +622,7 @@ structure NodePred =
             vectorToNodes v
          end
    end
-   
+
 val keep: NodePred.t ref = ref NodePred.All
 
 val ticksPerSecond = 100.0
@@ -961,7 +965,7 @@ fun display (AFile.T {callGraph, master, name = aname, split, ...},
    in
       ()
    end
-   
+
 fun makeOptions {usage} =
    let
       open Popt
@@ -1012,7 +1016,7 @@ val {parse, usage} =
                    showExpert = fn () => false}
 
 val die = Process.fail
-   
+
 fun commandLine args =
    let
       val rest = parse args
@@ -1022,10 +1026,7 @@ fun commandLine args =
         | Result.Yes (afile :: files) =>
              let
                 val mlmonFiles = files @ !mlmonFiles 
-                val aInfo =
-                   AFile.new {afile = afile}
-                   handle e => die (concat ["Error in ", afile, ": ",
-                                            Exn.toString e])
+                val aInfo = AFile.new {afile = afile}
                 val _ =
                    if debug
                       then
@@ -1041,8 +1042,8 @@ fun commandLine args =
                     handle e =>
                        let
                           val msg =
-                             concat ["error in ", mlmonfile, ": ",
-                                     Exn.toString e]
+                             concat ["Error loading mlmon file '", mlmonfile,
+                                     "': ", Exn.toString e]
                        in
                           if !tolerant
                              then

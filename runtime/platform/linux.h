@@ -1,31 +1,27 @@
 #include <fenv.h>
+#include <inttypes.h>
 #include <stdint.h>
 
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <netinet/udp.h>
+#include <poll.h>
 #include <pwd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
-#include <sys/sysinfo.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
-#include <values.h>
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_PTRACE TRUE
 #define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SIGNBIT TRUE
@@ -34,4 +30,7 @@
 
 #define MLton_Platform_OS_host "linux"
 
-
+// environ is already defined if _GNU_SOURCE is.
+#ifndef _GNU_SOURCE
+extern char **environ; /* for Posix_ProcEnv_environ */
+#endif

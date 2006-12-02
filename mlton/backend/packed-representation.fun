@@ -128,7 +128,7 @@ structure Rep =
                              ty = ty}
 
       val bool = nonPointer Type.bool
-         
+
       val width = Type.width o ty
 
       val unit = T {rep = NonPointer,
@@ -204,7 +204,7 @@ structure WordRep =
                      components),
                     ("rep", Rep.layout rep)]
          end
-         
+
       local
          fun make f (T r) = f r
       in
@@ -215,7 +215,7 @@ structure WordRep =
                     rep = Rep.unit}
 
       fun equals (wr, wr') = Rep.equals (rep wr, rep wr')
-         
+
       fun make {components, rep} =
          if Bits.<= (Rep.width rep, Bits.inWord)
             andalso Bits.<= (Vector.fold (components, Bits.zero,
@@ -229,7 +229,7 @@ structure WordRep =
       fun padToWidth (T {components, rep}, b: Bits.t): t =
          make {components = components,
                rep = Rep.padToWidth (rep, b)}
- 
+
       fun tuple (T {components, ...},
                  {dst = (dstVar, dstTy): Var.t * Type.t,
                   src: {index: int} -> Operand.t}): Statement.t list =
@@ -301,7 +301,7 @@ structure Component =
       val rep: t -> Rep.t =
          fn Direct {rep, ...} => rep
           | Word wr => WordRep.rep wr
-               
+
       val ty = Rep.ty o rep
 
       val width = Type.width o ty
@@ -371,7 +371,7 @@ structure Unpack =
             record [("shift", Bits.layout shift),
                     ("ty", Type.layout ty)]
          end
-         
+
       val lshift: t * Bits.t -> t =
          fn (T {shift, ty}, b) =>
          T {shift = Bits.+ (shift, b),
@@ -412,7 +412,7 @@ structure Unpack =
                         (src,
                          Operand.word (WordX.resize
                                        (WordX.max (s, {signed = false}), s')))
-                                            
+
                   in
                      (src, [s])
                   end
@@ -845,7 +845,7 @@ structure PointerRep =
                   selects = selects,
                   tycon = pt}
          end
-      
+
       fun tuple (T {components, componentsTy, ty, tycon, ...},
                  {dst = dst: Var.t,
                   src: {index: int} -> Operand.t}) =
@@ -919,7 +919,7 @@ structure TupleRep =
           | Indirect p => PointerRep.rep p
 
       val ty = Rep.ty o rep
-         
+
       fun selects (tr: t): Selects.t =
          case tr of
             Direct {selects, ...} => selects
@@ -933,7 +933,7 @@ structure TupleRep =
                Component.tuple (c, {dst = dst, src = src})
           | Indirect pr =>
                PointerRep.tuple (pr, {dst = #1 dst, src = src})
- 
+
       val tuple =
          Trace.trace2 
          ("PackedRepresentation.TupleRep.tuple",
@@ -1227,7 +1227,7 @@ structure ConRep =
       end
 
       val unit = Tuple TupleRep.unit
-               
+
       fun conApp (r: t, {dst: Var.t * Type.t,
                          src: {index: int} -> Operand.t}): Statement.t list =
          case r of
@@ -1278,7 +1278,7 @@ structure ConRep =
 structure Block =
    struct
       open Block
-         
+
       val extra: t list ref = ref []
 
       fun getExtra () = !extra before extra := []
@@ -1613,7 +1613,7 @@ structure TyconRep =
       fun equals (r, r') = Rep.equals (rep r, rep r')
 
       val wordBits = Bits.toInt Bits.inWord
-         
+
       local
          val aWithout = Array.tabulate (wordBits + 1, fn i => IntInf.pow (2, i))
          (* If there is a pointer, then multiply the number of tags by 3/4 to
@@ -1648,7 +1648,7 @@ structure TyconRep =
                   NONE => Error.bug "PackedRepresentation.TyconRep.tagBitsNeeded"
                 | SOME i => Bits.fromInt i
             end
-         
+
          val tagBitsNeeded =
             Trace.trace 
             ("PackedRepresentation.TyconRep.tagBitsNeeded",
@@ -2184,9 +2184,9 @@ structure Value:
                      in
                         fixedPoint ()
                      end
-  
+
             fun affect (T {affects, ...}, z) = List.push (affects, z)
-               
+
             fun new {compute: unit -> 'a,
                      equals: 'a * 'a -> bool,
                      init: 'a}: t * 'a ref =

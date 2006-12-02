@@ -10,6 +10,8 @@ struct
 
 structure P = Primitive.MLton.Profile
 
+val gcState = Primitive.MLton.GCState.gcState
+
 val isOn = P.isOn
 
 structure Data =
@@ -17,9 +19,9 @@ structure Data =
       datatype t = T of {isCurrent: bool ref,
                          isFreed: bool ref,
                          raw: P.Data.t}
-   
+
       val all: t list ref = ref []
-   
+
       local
          fun make f (T r) = f r
       in
@@ -43,19 +45,19 @@ structure Data =
                                         if equals (d, d')
                                            then ac
                                         else d' :: ac) [] (!all)
-                     ; P.Data.free raw
+                     ; P.Data.free (gcState, raw)
                      ; isFreed := true)
 
       fun make (raw: P.Data.t): t =
          T {isCurrent = ref false,
             isFreed = ref false,
             raw = raw}
-         
+
       fun malloc (): t =
          let
             val array =
                if isOn
-                  then P.Data.malloc ()
+                  then P.Data.malloc gcState
                else P.Data.dummy
             val d = make array
             val _ = all := d :: !all
@@ -64,26 +66,14 @@ structure Data =
          end
 
       fun write (T {isFreed, raw, ...}, file) =
-         if not isOn
-            then ()
+         if not isOn then
+            ()
+         else if !isFreed then
+            raise Fail "write of freed profile data"
          else
-            if !isFreed
-               then raise Fail "write of freed profile data"
-            else
-               let
-                  val fd =
-                     let
-                        open Posix.FileSys
-                        open S
-                     in
-                        creat (file,
-                               flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth])
-                     end
-                  val _ = P.Data.write (raw, Posix.FileSys.fdToWord fd)
-                  val _ = Posix.IO.close fd
-               in
-                  ()
-               end
+            P.Data.write (gcState, raw,
+                          Primitive.NullString8.fromString
+                          (String.nullTerm file))
    end
 
 val r: Data.t ref = ref (Data.make P.Data.dummy)
@@ -102,7 +92,7 @@ fun setCurrent (d as Data.T {isCurrent, isFreed, raw, ...}) =
             val _ = ic := false
             val _ = isCurrent := true
             val _ = r := d
-            val _ = P.setCurrent raw
+            val _ = P.setCurrent (gcState, raw)
          in
             ()
          end
@@ -115,7 +105,7 @@ fun withData (d: Data.t, f: unit -> 'a): 'a =
       DynamicWind.wind (f, fn () => setCurrent old)
    end
 
-fun init () = setCurrent (Data.make (P.current ()))
+fun init () = setCurrent (Data.make (P.getCurrent gcState))
 
 val _ =
    if not isOn
@@ -125,9 +115,10 @@ val _ =
          val _ =
             Cleaner.addNew
             (Cleaner.atExit, fn () =>
-             (P.done ()
+             (P.done gcState
               ; Data.write (current (), "mlmon.out")
-              ; List.app (P.Data.free o Data.raw) (!Data.all)))
+              ; List.app (fn d => P.Data.free (gcState, Data.raw d)) 
+                         (!Data.all)))
          val _ =
             Cleaner.addNew
             (Cleaner.atLoadWorld, fn () =>

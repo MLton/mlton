@@ -40,7 +40,7 @@ structure Set = DisjointSet
 structure Status:
    sig
       datatype t = Con | Exn | Var
-         
+
       val layout: t -> Layout.t
       val toString: t -> string
    end =
@@ -77,7 +77,7 @@ structure Time:>
       type t = int
 
       val op < = Int.<
-         
+
       val layout = Int.layout
 
       val min = Int.min
@@ -147,7 +147,7 @@ structure FlexibleTycon =
       fun layoutApp (t, _) = (layout t, {isChar = false, needsParen = false})
 
       val copies: copy list ref = ref []
-         
+
       fun new {defn: Defn.t, hasCons: bool, kind: Kind.t}: t =
          T (Set.singleton {admitsEquality = ref AdmitsEquality.Sometimes,
                            copy = ref NONE,
@@ -244,7 +244,7 @@ structure Type =
          in
             loop t
          end
-               
+
       local
          open Layout
          fun simple l = (l, {isChar = false, needsParen = false})
@@ -301,7 +301,7 @@ structure Scheme =
       fun bogus () = T {ty = Type.bogus, tyvars = Vector.new0 ()}
 
       fun dest (T {ty, tyvars}) = (tyvars, ty)
-         
+
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
    end
 
@@ -379,7 +379,7 @@ structure TypeStr =
       fun data (tycon, kind, cons) =
          T {kind = kind,
             node = Datatype {tycon = tycon, cons = cons}}
-   
+
       fun def (s: Scheme.t, k: Kind.t) =
          let
             val (tyvars, ty) = Scheme.dest s
@@ -593,11 +593,11 @@ structure FlexibleTycon =
          end
 
       type typeStr = TypeStr.t
-         
+
       datatype realization =
          ETypeStr of EnvTypeStr.t option
         | TypeStr of typeStr
-          
+
       fun realization (f: t): realization =
          case Defn.dest (defn f) of
             Defn.Realized s => ETypeStr s
@@ -620,18 +620,18 @@ structure Scheme =
       open Scheme
 
       val admitsEquality = schemeAdmitsEquality
- 
+
       val copy = copyScheme
    end
 
 val renameTycons = ref (fn () => ())
-   
+
 structure TypeStr =
    struct
       open TypeStr
-         
+
       val admitsEquality = typeStrAdmitsEquality
-         
+
       val copy = copyTypeStr
 
       fun getFlex (s: t, time, oper, reg, lay): FlexibleTycon.t option =
@@ -801,7 +801,7 @@ structure UniqueId = IntUniqueId ()
          in
             loop
          end
-         
+
       fun empty (): 'a t = T {strs = Array.new0 (),
                               types = Array.new0 ()}
 
@@ -834,7 +834,7 @@ datatype t = T of {copy: copy,
 withtype copy = t option ref
 
 fun dest (T s) = Set.! s
-   
+
 local
    fun make f = f o dest
 in
@@ -845,7 +845,7 @@ fun original I =
    case #original (dest I) of
       NONE => I
     | SOME I => I
-         
+
 fun new {isClosed, strs, types, vals} =
    T (Set.singleton {copy = ref NONE,
                      flexible = ref NONE,

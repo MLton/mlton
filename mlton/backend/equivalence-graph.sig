@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature EQUIVALENCE_GRAPH_STRUCTS = 
    sig
    end
@@ -23,7 +23,7 @@ signature EQUIVALENCE_GRAPH_STRUCTS =
 signature EQUIVALENCE_GRAPH = 
    sig
       include EQUIVALENCE_GRAPH_STRUCTS
-      
+
       structure Class:
          sig
             (* The type of equivalence classes. *)

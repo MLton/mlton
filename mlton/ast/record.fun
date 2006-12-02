@@ -27,7 +27,7 @@ fun toVector r =
    case r of
       Tuple v => Vector.mapi (v, fn (i, x) => (Field.Int i, x))
     | Record r => r
-         
+
 fun detupleOpt (r: 'a t): 'a vector option =
    case r of
       Tuple t => SOME t
@@ -35,7 +35,7 @@ fun detupleOpt (r: 'a t): 'a vector option =
 
 fun sort v =
    QuickSort.sortVector (v, fn ((s, _), (s', _)) => Field.<= (s, s'))
-   
+
 fun fromVector v =
    let
       fun isTuple v : bool =
@@ -95,7 +95,7 @@ fun foldi (r, b, f) =
     | Record r => Vector.fold (r, b, fn ((i, x), b) => f (i, x, b))
 
 fun fold (r, b, f) = foldi (r, b, fn (_, a, b) => f (a, b))
-          
+
 fun map (r: 'a t, f: 'a -> 'b): 'b t =
    case r of
       Tuple xs => Tuple (Vector.map (xs, f))

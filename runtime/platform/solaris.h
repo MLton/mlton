@@ -1,8 +1,11 @@
+#include <inttypes.h>
+
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <poll.h>
 #include <pwd.h>
 #include <strings.h>
 #include <sys/filio.h> /* For FIONBIO, FIONREAD. */
@@ -21,21 +24,20 @@
 #include <termios.h>
 #include <ucontext.h>
 
+#include "feround.h"
+#include "float-math.h"
 #include "setenv.h"
 
 #define FE_TONEAREST 0
 #define FE_DOWNWARD 1
 #define FE_UPWARD 2
 #define FE_TOWARDZERO 3
-int fegetround ();
-void fesetround (int mode);
-int fpclassify64 (double d);
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY32 FALSE
 #define HAS_FPCLASSIFY64 TRUE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_PTRACE TRUE
 #define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK TRUE
 #define HAS_SIGNBIT FALSE
@@ -49,6 +51,9 @@ int fpclassify64 (double d);
 
 int fpclassify32 (float f);
 int fpclassify64 (double d);
-int signbit32 (float f);
-int signbit64 (double f);
 
+#ifndef PRIxPTR
+#define PRIxPTR "x"
+#endif
+
+extern char **environ; /* for Posix_ProcEnv_environ */

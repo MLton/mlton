@@ -86,7 +86,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
 
       fun equalsOut (Out {state = state1, ...}, Out {state = state2, ...}) =
          state1 = state2
-        
+
       fun outstreamSel (Out v, sel) = sel v
       fun outstreamWriter os = outstreamSel (os, #writer)
       fun writerSel (PIO.WR v, sel) = sel v
@@ -118,7 +118,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
             case writerSel (writer, #writeVec) of
                NONE => raise IO.BlockingNotSupported
              | SOME writeVec => flushGen (writeVec, VS.base, VS.slice, x)
-                  
+
          fun flushArr (writer, x) =
             case writerSel (writer, #writeArr) of
                NONE => raise IO.BlockingNotSupported
@@ -283,7 +283,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
              | LINE_BUF b => doit b
              | NO_BUF => ()
          end
-      
+
       fun closeOut (os as Out {state, ...}) =
         if closed (!state)
           then ()
@@ -548,7 +548,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                in
                   (SOME e, is')
                end
-                   
+
       (* input1 will never move past a temporary end of stream *)
       fun input1 is =
         case input1' is of
@@ -644,7 +644,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                   first is
                end
             end
-               
+
       fun canInput (is as In {pos, buf = Buf {inp, next, ...}, ...}, n) =
         if n < 0 orelse n > V.maxLen
           then raise Size
@@ -709,7 +709,7 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                      (!tail := Closed
                       ; close () handle exn => liftExn name "closeIn" exn)
                 | _ => ()
-                     
+
             fun equalsInstream (T {tail, ...}, is) = tail = instreamTail is
 
             fun make (In {common = {reader = PIO.RD {close, name, ...},
@@ -764,14 +764,14 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
               pos = 0,
               buf = buf}
         end
-     
+
       fun mkInstream (reader, bufferContents) =
         mkInstream' {bufferContents = if 0 = V.length bufferContents
                                          then NONE
                                          else SOME (false, bufferContents),
                      closed = false, 
                      reader = reader}
-        
+
       fun getReader (is as In {common = {reader, tail, ...}, ...}) =
         case !(!tail) of
           End => (!tail := Truncated;
@@ -880,18 +880,18 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
                os
             end
          end
-     
+
       fun mkOutstream' {bufferMode, closed, writer} =
          mkOutstream'' {bufferMode = bufferMode,
                         closeAtExit = true,
                         closed = closed, 
                         writer = writer}
-        
+
       fun mkOutstream (writer, bufferMode) =
         mkOutstream' {bufferMode = bufferMode,
                       closed = false,
                       writer = writer}
-        
+
       val closeOut = fn os =>
         let
           val _ = openOutstreams := List.filter (fn (os', _) => 
@@ -906,7 +906,7 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
       (*---------------*)
 
       fun readerSel (PIO.RD v, sel) = sel v
-         
+
       fun instreamName is = readerSel (instreamReader is, #name)
 
       fun inFd is =
@@ -915,7 +915,7 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
         | NONE => liftExn (instreamName is) "inFd" (Fail "<no ioDesc>")
 
       val closeAtExits: Close.t list ref = ref []
-         
+
       val mkInstream'' =
         let
            val _ = Cleaner.addNew (Cleaner.atExit, fn () =>
@@ -935,20 +935,20 @@ functor StreamIOExtraFile (S: STREAM_IO_EXTRA_FILE_ARG): STREAM_IO_EXTRA_FILE =
             is
           end
         end
-     
+
       fun mkInstream' {bufferContents, closed, reader} =
         mkInstream'' {bufferContents = bufferContents,
                       closeAtExit = true,
                       closed = closed, 
                       reader = reader}
-                      
-        
+
+
       fun mkInstream (reader, bufferContents) =
         mkInstream' {bufferContents = (if V.length bufferContents = 0 then NONE
                                        else SOME (false, bufferContents)),
                      closed = false,
                      reader = reader}
-        
+
       val closeIn = fn is =>
          let
             val _ =

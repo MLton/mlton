@@ -276,9 +276,9 @@ val traceElaborateSigexp =
                  Sigexp.layout,
                  fn {isTop} => Layout.record [("isTop", Bool.layout isTop)],
                  Option.layout Interface.layout)
-   
+
 val info' = Trace.info "ElaborateSigexp.elaborateSpec"
- 
+
 (* rule 65 *)
 fun elaborateSigexp (sigexp: Sigexp.t, {env = E: StructureEnv.t}): Interface.t option =
    let

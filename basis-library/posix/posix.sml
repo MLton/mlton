@@ -13,9 +13,9 @@ structure Posix: POSIX_EXTRA =
       structure Signal = PosixSignal
 
       structure Process = PosixProcess
-         
+
       structure ProcEnv = PosixProcEnv
-      
+
       structure FileSys = PosixFileSys
 
       structure IO = PosixIO

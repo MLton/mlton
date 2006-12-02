@@ -7,7 +7,7 @@
 
 type int = Int.int
 type word = Word.word
-   
+
 signature MLTON_INT_INF =
    sig
       type t

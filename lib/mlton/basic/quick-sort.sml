@@ -104,5 +104,5 @@ in
    val sortList = fn z => make (Array.fromList, Array.toList) z
    val sortVector = fn z => make (Array.fromVector, Array.toVector) z
 end
-   
+
 end

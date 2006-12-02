@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature PROCESS =
    sig
       structure Command:
@@ -108,7 +108,7 @@ functor TestProcess (S: PROCESS): sig end =
 struct
 
 val _ = print "TestProcess\n"
-   
+
 open S
 
 val _ = ps ()

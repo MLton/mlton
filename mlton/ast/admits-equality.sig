@@ -12,7 +12,7 @@ signature ADMITS_EQUALITY_STRUCTS =
 signature ADMITS_EQUALITY = 
    sig
       include ADMITS_EQUALITY_STRUCTS
-      
+
       datatype t = Always | Never | Sometimes
 
       val <= : t * t -> bool

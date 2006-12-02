@@ -100,15 +100,30 @@ val lexAndParseString =
          val pathMap =
             List.rev
             (List.concat
-             [List.concat (List.map (!Control.mlbPathMaps, make)),
-              [{var = "LIB_MLTON_DIR", 
+             [[{var = "LIB_MLTON_DIR", 
                 path = !Control.libDir},
                {var = "TARGET_ARCH",
                 path = String.toLower (MLton.Platform.Arch.toString
                                        (!Control.targetArch))},
                {var = "TARGET_OS",
                 path = String.toLower (MLton.Platform.OS.toString
-                                       (!Control.targetOS))}]])
+                                       (!Control.targetOS))},
+               {var = "OBJPTR_REP",
+                path = "objptr-rep32.sml"},
+               {var = "HEADER_WORD",
+                path = "header-word32.sml"},
+               {var = "SEQINDEX_INT",
+                path = "seqindex-int32.sml"},
+               {var = "DEFAULT_CHAR",
+                path = concat ["default-", !Control.defaultChar, ".sml"]},
+               {var = "DEFAULT_INT",
+                path = concat ["default-", !Control.defaultInt, ".sml"]},
+               {var = "DEFAULT_REAL",
+                path = concat ["default-", !Control.defaultReal, ".sml"]},
+               {var = "DEFAULT_WORD",
+                path = concat ["default-", !Control.defaultWord, ".sml"]}],
+              List.concat (List.map (!Control.mlbPathMaps, make))])
+
          fun peekPathMap var' =
             case List.peek (pathMap, fn {var,...} =>
                             var = var') of

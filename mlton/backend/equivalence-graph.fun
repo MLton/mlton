@@ -107,7 +107,7 @@ fun coarsen (T {classes, edges, ...}, {maxClassSize}) =
    in
       ()
    end
-         
+
 end
 
 structure EquivalenceGraph = EquivalenceGraph ()

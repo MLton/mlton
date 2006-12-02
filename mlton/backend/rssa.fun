@@ -58,10 +58,10 @@ structure Operand =
       val word = Const o Const.word
 
       fun zero s = word (WordX.fromIntInf (0, s))
-         
+
       fun bool b =
          word (WordX.fromIntInf (if b then 1 else 0, WordSize.default))
-         
+
       val ty =
          fn ArrayOffset {ty, ...} => ty
           | Cast (_, ty) => ty
@@ -555,7 +555,7 @@ structure Block =
          val statements = make #statements
          val transfer = make #transfer
       end
-   
+
       fun clear (T {args, label, statements, transfer, ...}) =
          (Vector.foreach (args, Var.clear o #1)
           ; Label.clear label
@@ -995,7 +995,7 @@ structure Program =
                main = main,
                objectTypes = objectTypes}
          end
-                  
+
       fun shrink (T {functions, handlesSignals, main, objectTypes}) =
          let
             val p = 
@@ -1016,7 +1016,7 @@ structure Program =
                   datatype t = Caller | Me
 
                   val equals: t * t -> bool = op =
-               
+
                   val toString =
                      fn Caller => "Caller"
                       | Me => "Me"
@@ -1027,7 +1027,7 @@ structure Program =
             structure L = FlatLattice (structure Point = ZPoint)
             open L
             structure Point = ZPoint
-         
+
             val me = point Point.Me
          end
 
@@ -1056,7 +1056,7 @@ structure Program =
 
       val traceGoto =
          Trace.trace ("Rssa.checkHandlers.goto", Label.layout, Unit.layout)
-         
+
       fun checkHandlers (T {functions, ...}) =
          let
             val debug = false
@@ -1230,7 +1230,7 @@ structure Program =
          in
             ()
          end
-            
+
       fun checkScopes (program as T {functions, main, ...}): unit =
          let
             datatype status =
@@ -1331,7 +1331,7 @@ structure Program =
             val _ = clear program
          in ()
          end
-   
+
       fun typeCheck (p as T {functions, main, objectTypes, ...}) =
          let
             val _ =

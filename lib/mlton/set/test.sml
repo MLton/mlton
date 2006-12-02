@@ -6,16 +6,16 @@
  *)
 
 structure S = UnorderedUniverse(Integer)
-   
+
 
 structure S = SetEqual(structure Element = Integer)
 
 open S
-    
+
 val s = listTo[1, 2, 3, 4]
 
 val ss = subsets s 3
-    
+
 structure D = DisjointMax(structure Label = struct open Int open IU end) ;
 
 open D ;
@@ -37,10 +37,10 @@ fun e i = eval (s i) ;
    l 8 3 ;
 
    l 8 10 ;
-   
+
    u 8 11 ;   
 
-   
+
 open DisjointCollection ;
 
 val (c, ss) = new (LU.fromTo 0 10) ;
@@ -50,7 +50,7 @@ fun r() = randomSet c ;
 fun u i j = union c (s i) (s j) ;
 fun n() = numSets c ;
 fun v i = value c (s i) ;
-   
+
 r() ;
 
 n() ;
@@ -82,9 +82,9 @@ fun u i j = union (n i) (n j) ;
    u 1 3 ; e 1 3 ;
 
    u 2 3 ; e 1 3 ;
-   
+
    u 2 4 ; u 1 4 ; u 1 3 ; e 1 2 ;
-   
+
 u 1 2 ;
 e 1 2 ;
 e 1 3 ;

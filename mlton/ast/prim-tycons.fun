@@ -33,12 +33,12 @@ datatype z = datatype AdmitsEquality.t
 
 val isBool = fn c => equals (c, bool)
 val isExn = fn c => equals (c, exn)
+val isPointer = fn c => equals (c, pointer)
 
 local
    fun 'a make (prefix: string,
                 all: 'a list,
                 bits: 'a -> Bits.t,
-                default: 'a,
                 equalsA: 'a * 'a -> bool,
                 memo: ('a -> t) -> ('a -> t),
                 admitsEquality: AdmitsEquality.t) =
@@ -51,43 +51,73 @@ local
             memo
             (fn s =>
              case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
-                NONE => Error.bug "PrimTycons.make"
+                NONE => Error.bug "PrimTycons.make.fromSize"
               | SOME (tycon, _) => tycon)
          fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
+         fun de t = 
+            case Vector.peek (all, fn (t', _) => equals (t, t')) of
+               NONE => Error.bug "PrimTycons.make.de"
+             | SOME (_, s') => s'
          val prims =
             Vector.toListMap (all, fn (tycon, _) =>
                               (tycon, Arity 0, admitsEquality))
       in
-         (fromSize default, fromSize, all, is, prims)
+         (fromSize, all, is, de, prims)
       end
 in
-   val (defaultChar, char, _, isCharX, primChars) =
+   val (char, _, isCharX, deCharX, primChars) =
       let
          open CharSize
       in
-         make ("char", all, bits, default, equals, memoize, Sometimes)
+         make ("char", all, bits, equals, memoize, Sometimes)
       end
-   val (defaultInt, int, ints, isIntX, primInts) =
+   val (int, ints, isIntX, deIntX, primInts) =
       let
          open IntSize
       in
-         make ("int", all, bits, default, equals, memoize, Sometimes)
+         make ("int", all, bits, equals, memoize, Sometimes)
       end
-   val (defaultReal, real, reals, isRealX, primReals) =
+   val (real, reals, isRealX, deRealX, primReals) =
       let
          open RealSize
       in
-         make ("real", all, bits, default, equals, memoize, Never)
+         make ("real", all, bits, equals, memoize, Never)
       end
-   val (defaultWord, word, words, isWordX, primWords) =
+   val (word, words, isWordX, deWordX, primWords) =
       let
          open WordSize
       in
-         make ("word", all, bits, default, equals, memoize, Sometimes)
+         make ("word", all, bits, equals, memoize, Sometimes)
       end
 end
 
+val defaultChar = fn () => 
+   case !Control.defaultChar of
+      "char8" => char CharSize.C8
+    | _ => Error.bug "PrimTycons.defaultChar"
+val defaultInt = fn () => 
+   case !Control.defaultInt of
+      "int8" => int (IntSize.fromBits (Bits.fromInt 8))
+    | "int16" => int (IntSize.fromBits (Bits.fromInt 16))
+    | "int32" => int (IntSize.fromBits (Bits.fromInt 32))
+    | "int64" => int (IntSize.fromBits (Bits.fromInt 64))
+    | "intinf" => intInf
+    | _ => Error.bug "PrimTycons.defaultInt"
+val defaultReal = fn () => 
+   case !Control.defaultReal of
+      "real32" => real RealSize.R32
+    | "real64" => real RealSize.R64
+    | _ => Error.bug "PrimTycons.defaultReal"
+val defaultWord = fn () => 
+   case !Control.defaultWord of
+      "word8" => word (WordSize.fromBits (Bits.fromInt 8))
+    | "word16" => word (WordSize.fromBits (Bits.fromInt 16))
+    | "word32" => word (WordSize.fromBits (Bits.fromInt 32))
+    | "word64" => word (WordSize.fromBits (Bits.fromInt 64))
+    | _ => Error.bug "PrimTycons.defaultWord"
+
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
+val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
 val prims =
    [(array, Arity 1, Always),
@@ -122,7 +152,7 @@ fun layoutApp (c: t,
          let
             val ({isChar}, lay) =
                case Vector.length args of
-                  0 => ({isChar = equals (c, defaultChar)}, layout c)
+                  0 => ({isChar = equals (c, defaultChar ())}, layout c)
                 | 1 => ({isChar = false},
                         seq [maybe (Vector.sub (args, 0)), str " ", layout c])
                 | _ => ({isChar = false},
@@ -150,4 +180,4 @@ fun layoutApp (c: t,
    end
 
 end
-          
+

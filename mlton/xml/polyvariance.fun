@@ -17,7 +17,7 @@ struct
 open S
 datatype z = datatype Dec.t
 datatype z = datatype PrimExp.t
-   
+
 structure Type =
    struct
       open Type
@@ -448,5 +448,5 @@ val duplicate =
                     end
          in loop (p, rounds)
          end
-      
+
 end

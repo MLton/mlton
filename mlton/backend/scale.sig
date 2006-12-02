@@ -14,7 +14,7 @@ signature SCALE_STRUCTS =
 signature SCALE =
    sig
       include SCALE_STRUCTS
-         
+
       datatype t = One | Two | Four | Eight
 
       val fromInt: int -> t option

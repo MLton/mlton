@@ -7,12 +7,12 @@
  *)
 
 type int = Int.t
-   
+
 signature CONTROL_FLAGS =
    sig
       (* set all flags to their default values *)
       val defaults: unit -> unit
-         
+
       val all : unit -> {name: string, 
                          value: string} list
 
@@ -46,6 +46,11 @@ signature CONTROL_FLAGS =
 
       (* Generate an executable with debugging info. *)
       val debug: bool ref
+
+      val defaultChar: string ref
+      val defaultInt: string ref
+      val defaultReal: string ref
+      val defaultWord: string ref
 
       (* List of pass names to keep diagnostic info on. *)
       val diagPasses: Regexp.Compiled.t list ref
@@ -124,7 +129,7 @@ signature CONTROL_FLAGS =
       val elaborateOnly: bool ref
 
       val exportHeader: File.t option ref
-         
+
       val exnHistory: bool ref
 
       (* *)
@@ -136,7 +141,7 @@ signature CONTROL_FLAGS =
 
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
-         
+
       datatype inline =
          NonRecursive of {product: int,
                           small: int}
@@ -155,13 +160,13 @@ signature CONTROL_FLAGS =
 
       (* Save the Machine to a file. *)
       val keepMachine: bool ref
-         
+
       (* List of pass names to save the result of. *)
       val keepPasses: Regexp.Compiled.t list ref
 
       (* Save the RSSA to a file. *)
       val keepRSSA: bool ref
-         
+
       (* Save the SSA to a file. *)
       val keepSSA: bool ref
       (* Save the SSA2 to a file. *)
@@ -180,7 +185,7 @@ signature CONTROL_FLAGS =
 
       (* Number of times to loop through optimization passes. *)
       val loopPasses: int ref
-         
+
       (* Should the mutator mark cards? *)
       val markCards: bool ref
 
@@ -201,13 +206,13 @@ signature CONTROL_FLAGS =
 
             (* whether or not to use move hoisting in native codegen *)
             val moveHoist: bool ref
-               
+
             (* whether or not to use copy propagation in native codegen *)
             val copyProp: bool ref
 
             (* Don't use copy propagation on blocks larger than this. *)
             val copyPropCutoff: int ref
-               
+
             (* live transfer cutoff distance *)
             val cutoff: int ref 
 
@@ -271,10 +276,10 @@ signature CONTROL_FLAGS =
 
       (* Show the basis library. *)
       val showBasis: File.t option ref
-         
+
       (* Show def-use information. *)
       val showDefUse: File.t option ref
-         
+
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
 

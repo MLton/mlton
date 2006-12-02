@@ -20,7 +20,7 @@ signature CHANNEL =
 
       val send : ('a chan * 'a) -> unit
       val recv : 'a chan -> 'a
-         
+
       val sendEvt  : ('a chan * 'a) -> unit Event.event
       val recvEvt  : 'a chan -> 'a Event.event
 

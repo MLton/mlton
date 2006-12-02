@@ -93,7 +93,7 @@ fun breakFunction (f, {codeMotion: bool}) =
              Transfer.foreachLabel
              (transfer, doit)
           end)
-         
+
       val newBlocks = ref []
       fun newBlock l =
          let

@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature PORT =
    sig
       type t = int
@@ -14,4 +14,4 @@ signature PORT =
       val equals: t * t -> bool
       val http: t
    end
-   
+

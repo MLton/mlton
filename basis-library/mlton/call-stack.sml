@@ -7,18 +7,18 @@
 
 structure MLtonCallStack =
    struct
-      open Primitive.CallStack
+      open Primitive.MLton.CallStack
 
-      val gcState = Primitive.GCState.gcState
+      val gcState = Primitive.MLton.GCState.gcState
       structure Pointer = MLtonPointer
-         
+
       val current: unit -> t =
          fn () =>
          if not keep
-            then T (Array.array (0, 0))
+            then T (Array.array (0, 0wx0))
          else
             let
-               val a = Array.array (numStackFrames gcState, ~1)
+               val a = Array.arrayUninit (Word32.toInt (numStackFrames gcState))
                val () = callStack (gcState, a)
             in
                T a
@@ -39,13 +39,12 @@ structure MLtonCallStack =
                 else
                    let
                       val p = frameIndexSourceSeq (gcState, frameIndex)
-                      val max = Pointer.getInt32 (p, 0)
+                      val max = Int32.toInt (Pointer.getInt32 (p, 0))
                       fun loop (j, ac) =
                          if j > max
                             then ac
                          else loop (j + 1,
-                                    C.CS.toString (sourceName
-                                                   (gcState, Pointer.getInt32 (p, j)))
+                                    CUtil.C_String.toString (sourceName (gcState, Pointer.getWord32 (p, j)))
                                     :: ac)
                    in
                       loop (1, ac)

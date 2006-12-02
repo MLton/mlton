@@ -23,10 +23,10 @@ signature SHORTEST_PATH_CHECK =
              | PredecessorReachable of Node.t * Edge.t
              | Relaxable of Node.t * Edge.t
              | NoPath of Node.t
-               
+
             val layout: t * (Node.t -> Layout.t) -> Layout.t
          end
-         
+
       val check: {graph: t,
                   source: Node.t,
                   weight: Edge.t -> Weight.t,

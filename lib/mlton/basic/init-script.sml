@@ -10,7 +10,7 @@ struct
 
 val messageStr = Trace.Immediate.messageStr
 val op / = String./
-   
+
 (* Losely based on /etc/sysconfig/init *)
 local
    open Console open Foreground CharRendition

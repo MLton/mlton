@@ -9,7 +9,7 @@ signature DIR =
    sig
       type t = string
       type file = string
-         
+
       val cd: t -> unit
       val current: unit -> t
       val doesExist: t -> bool

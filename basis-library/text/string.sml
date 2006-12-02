@@ -8,7 +8,7 @@
 
 structure String: STRING_EXTRA =
    struct
-      open String0
+      open PreString
 
       val toLower = translate (str o Char.toLower)
 
@@ -20,7 +20,12 @@ structure String: STRING_EXTRA =
         val isSuffix = make isSuffix
       end
       val compare = collate Char.compare
-      val {<, <=, >, >=} = Util.makeOrder compare
+      local
+         structure S = StringComparisons (type t = string
+                                          val compare = compare)
+      in
+         open S
+      end
 
       val toString = translate Char.toString
       val toCString = translate Char.toCString
@@ -36,9 +41,9 @@ structure String: STRING_EXTRA =
          in
             fn state => loop (state, [])
          end
-         
+
       val fromString = StringCvt.scanString scan
-         
+
       fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
         : (string, 'a) StringCvt.reader =
          fn state =>
@@ -48,22 +53,4 @@ structure String: STRING_EXTRA =
       val fromCString = StringCvt.scanString (scanString Char.scanC)
 
       fun nullTerm s = s ^ "\000"
-   end
-
-structure StringGlobal: STRING_GLOBAL = String
-open StringGlobal
-
-(* Now that concat is defined, we can add the exnMessager for Fail. *)
-val _ =
-   General.addExnMessager
-   (fn e =>
-    case e of
-       Fail s => SOME (concat ["Fail: ", s])
-     | _ => NONE)
-
-structure NullString =
-   struct
-      open NullString
-
-      val nullTerm = fromString o String.nullTerm
    end

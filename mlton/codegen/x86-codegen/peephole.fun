@@ -28,7 +28,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
                      statements: statement_element list,
                      finish: statement_border,
                      transfer: transfer_element}
-        
+
     type match = {entry: entry_type,
                   profileLabel: profileLabel_type,
                   start: statement_type list,
@@ -184,7 +184,7 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
                   | _::remaining
                   => SOME {remaining = remaining,
                            state = state})
-     
+
           fun findMatch' (find_state 
                           as {remaining as {template = {start 
                                                         = template_start,

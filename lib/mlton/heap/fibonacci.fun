@@ -16,7 +16,7 @@ open Heap
 val new = newLazy
 
 val insert = insertLazy
-   
+
 val decreaseKey = decreaseKeyCut
 
 val delete = deleteCut

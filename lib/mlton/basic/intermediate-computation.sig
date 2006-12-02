@@ -12,9 +12,9 @@ signature INTERMEDIATE_COMPUTATION_STRUCTS =
 signature INTERMEDIATE_COMPUTATION = 
    sig
       include INTERMEDIATE_COMPUTATION_STRUCTS
-      
+
       structure Computation: COMPUTATION
-      
+
       type t
 
       val empty: unit -> t

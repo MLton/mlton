@@ -1,82 +1,77 @@
-structure Word =
-   struct
-      type word = word
-   end
-
-structure LargeWord = 
-   struct
-      type word = word64
-   end
-
 signature WORD_GLOBAL =
    sig
       eqtype word
    end
 
-signature PRE_WORD =
+signature WORD =
    sig
       include WORD_GLOBAL
 
-      val * : word * word -> word 
-      val + : word * word -> word 
-      val - : word * word -> word 
-      val < : word * word -> bool 
-      val << : word * Word.word -> word 
-      val <= : word * word -> bool 
-      val > : word * word -> bool 
-      val >= : word * word -> bool 
-      val >> : word * Word.word -> word 
-      val andb: word * word -> word 
-      val div: word * word -> word 
-      val fromInt: Int.int -> word 
-      val fromLarge: LargeWord.word -> word 
-      val mod: word * word -> word
-      val notb: word -> word 
-      val orb: word * word -> word 
-      val toInt: word -> Int.int 
-      val toIntX: word -> Int.int 
+      val wordSize: Int.int
+
       val toLarge: word -> LargeWord.word
       val toLargeX: word -> LargeWord.word
-      val wordSize: int 
-      val xorb: word * word -> word 
-      val ~ : word -> word
-      val ~>> : word * Word.word -> word 
-   end
-signature PRE_WORD_EXTRA =
-   sig
-      include PRE_WORD
-   end
-
-signature WORD =
-   sig
-      include PRE_WORD
-         
-      val compare: word * word -> order 
-      val fmt: StringCvt.radix -> word -> string 
+      val toLargeWord: word -> LargeWord.word
+      val toLargeWordX: word -> LargeWord.word
+      val fromLarge: LargeWord.word -> word
+      val fromLargeWord: LargeWord.word -> word
+      val toLargeInt: word -> LargeInt.int
+      val toLargeIntX: word -> LargeInt.int
       val fromLargeInt: LargeInt.int -> word
-      val fromLargeWord: LargeWord.word -> word 
-      val fromString: string -> word option 
+      val toInt: word -> int
+      val toIntX: word -> int
+      val fromInt: int -> word
+
+      val + : word * word -> word
+      val - : word * word -> word
+      val * : word * word -> word
+      val div: word * word -> word
+      val mod: word * word -> word
+
+      val andb: word * word -> word
+      val << : word * Word.word -> word
+      val notb: word -> word
+      val orb: word * word -> word
+      val ~>> : word * Word.word -> word
+      val >> : word * Word.word -> word
+      val xorb: word * word -> word
+
+      val compare: word * word -> order
+      val < : word * word -> bool
+      val <= : word * word -> bool
+      val > : word * word -> bool
+      val >= : word * word -> bool
+
+      val ~ : word -> word
+      val min: word * word -> word
       val max: word * word -> word
-      val min: word * word -> word 
+
+      val fmt: StringCvt.radix -> word -> string
+      val toString: word -> string
       val scan: (StringCvt.radix
                  -> (char, 'a) StringCvt.reader
                  -> (word, 'a) StringCvt.reader)
-      val toLargeInt: word -> LargeInt.int 
-      val toLargeIntX: word -> LargeInt.int 
-      val toLargeWord: word -> LargeWord.word 
-      val toLargeWordX: word -> LargeWord.word 
-      val toString: word -> string 
+      val fromString: string -> word option
    end
 
 signature WORD_EXTRA =
    sig
       include WORD
-      (* include PRE_WORD_EXTRA *)
-   end
+      type t = word
 
-signature WORD32_EXTRA =
-   sig
-      include WORD_EXTRA
+      val zero: word
+      val one: word
 
-(*      val toReal: word -> real *)
+      val toWord: word -> Word.word
+      val toWordX: word -> Word.word
+      val fromWord: Word.word -> word
+
+      val rol: word * Word.word -> word
+      val ror: word * Word.word -> word
+      val log2 : word -> Primitive.Int32.int
+
+      val castFromFixedInt: FixedInt.int -> word
+      val castToFixedInt: word -> FixedInt.int
+      val castFromSysWord: SysWord.word -> word
+      val castToSysWord: word -> SysWord.word
    end

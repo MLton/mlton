@@ -1,95 +1,126 @@
 #include "platform.h"
 
-Int Socket_accept (Int s, Char *addr, Int *addrlen) {
-        MLton_initSockets ();
-        return accept (s, (struct sockaddr*)addr, (socklen_t*)addrlen);
+C_Errno_t(C_Int_t) Socket_accept (C_Sock_t s, Array(Word8_t) addr, Ref(C_Socklen_t) addrlen) {
+  MLton_initSockets ();
+  return accept (s, (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
-Int Socket_bind (Int s, Char *addr, Int addrlen) {
-        MLton_initSockets ();
-        return bind (s, (struct sockaddr*)addr, (socklen_t)addrlen);
+C_Errno_t(C_Int_t) Socket_bind (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  MLton_initSockets ();
+  return bind (s, (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
-Int Socket_close(Int s) {
-        return close(s);
+C_Errno_t(C_Int_t) Socket_close(C_Sock_t s) {
+  return close(s);
 }
 
-Int Socket_connect (Int s, Char *addr, Int addrlen) {
-        MLton_initSockets ();
-        return connect (s, (struct sockaddr*)addr, (socklen_t)addrlen);
+C_Errno_t(C_Int_t) Socket_connect (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  MLton_initSockets ();
+  return connect (s, (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
-Int Socket_familyOfAddr(Char *addr) {
-        return ((struct sockaddr*)addr)->sa_family;
+C_Int_t Socket_familyOfAddr(Vector(Word8_t) addr) {
+  return ((const struct sockaddr*)addr)->sa_family;
 }
 
-Int Socket_listen (Int s, Int backlog) {
-        MLton_initSockets ();
-        return listen (s, backlog);
+C_Errno_t(C_Int_t) Socket_listen (C_Sock_t s, C_Int_t backlog) {
+  MLton_initSockets ();
+  return listen (s, backlog);
 }
 
-Int Socket_recv (Int s, Char *msg, Int start, Int len, Word flags) {
-        MLton_initSockets ();
-        return mlton_recv (s, (void*)((char *)msg + start), (size_t)len, flags);
+C_Errno_t(C_SSize_t) 
+Socket_recv (C_Sock_t s, Array(Word8_t) msg, 
+             C_Int_t start, C_Size_t len, C_Int_t flags) {
+  MLton_initSockets ();
+  return mlton_recv (s, (void*)((char *)msg + start), len, flags);
 }
 
-Int Socket_recvFrom (Int s, Char *msg, Int start, Int len, Word flags,
-                    Char* addr, Int *addrlen) {
-        MLton_initSockets ();
-        return mlton_recvfrom (s, (void*)((char *)msg + start), (size_t)len, flags,
-                                (struct sockaddr*)addr, (socklen_t*)addrlen);
+C_Errno_t(C_SSize_t) 
+Socket_recvFrom (C_Sock_t s, Array(Word8_t) msg, 
+                 C_Int_t start, C_Size_t len, C_Int_t flags,
+                 Array(Word8_t) addr, Ref(C_Socklen_t) addrlen) {
+  MLton_initSockets ();
+  return mlton_recvfrom (s, (void*)((char *)msg + start), len, flags,
+                         (struct sockaddr*)addr, (socklen_t*)addrlen);
 }
 
-Int Socket_send (Int s, Char *msg, Int start, Int len, Word flags) {
-        MLton_initSockets ();
-        return send (s, (void*)((char *)msg + start), (size_t)len, flags);
+static inline C_Errno_t(C_SSize_t)
+Socket_send (C_Sock_t s, Pointer msg, 
+             C_Int_t start, C_Size_t len, C_Int_t flags) {
+  MLton_initSockets ();
+  return send (s, (void*)((char *)msg + start), len, flags);
 }
 
-Int Socket_sendTo (Int s, Char *msg, Int start, Int len, Word flags,
-                  Char* addr, Int addrlen) {
-        MLton_initSockets ();
-        return sendto (s, (void*)((char *)msg + start), (size_t)len, flags,
-                      (struct sockaddr*)addr, (socklen_t)addrlen);
+C_Errno_t(C_SSize_t)
+Socket_sendArr (C_Sock_t s, Array(Word8_t) msg, 
+                C_Int_t start, C_Size_t len, C_Int_t flags) {
+  return Socket_send (s, (Pointer)msg, start, len, flags);
+}
+C_Errno_t(C_SSize_t)
+Socket_sendVec (C_Sock_t s, Vector(Word8_t) msg, 
+                C_Int_t start, C_Size_t len, C_Int_t flags) {
+  return Socket_send (s, (Pointer)msg, start, len, flags);
 }
 
-Int Socket_shutdown (Int s, Int how) {
-        MLton_initSockets ();
-        return shutdown (s, how);
+static inline C_Errno_t(C_SSize_t) 
+Socket_sendTo (C_Sock_t s, Pointer msg, 
+               C_Int_t start, C_Size_t len, C_Int_t flags,
+               Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  MLton_initSockets ();
+  return sendto (s, (void*)((char *)msg + start), len, flags,
+                 (const struct sockaddr*)addr, (socklen_t)addrlen);
 }
 
-Int GenericSock_socket (Int domain, Int type, Int protocol) {
-        MLton_initSockets ();
-        return socket (domain, type, protocol);
+C_Errno_t(C_SSize_t) 
+Socket_sendArrTo (C_Sock_t s, Array(Word8_t) msg, 
+                  C_Int_t start, C_Size_t len, C_Int_t flags,
+                  Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  return Socket_sendTo (s, (Pointer)msg, start, len, flags, addr, addrlen);
+}
+C_Errno_t(C_SSize_t) 
+Socket_sendVecTo (C_Sock_t s, Vector(Word8_t) msg, 
+                  C_Int_t start, C_Size_t len, C_Int_t flags,
+                  Vector(Word8_t) addr, C_Socklen_t addrlen) {
+  return Socket_sendTo (s, (Pointer)msg, start, len, flags, addr, addrlen);
 }
 
-Int Socket_socketPair (Int domain, Int type, Int protocol, Int sv[2]) {
-        MLton_initSockets ();
-        return socketpair (domain, type, protocol, (int*)sv);
+C_Errno_t(C_Int_t) Socket_shutdown (C_Sock_t s, C_Int_t how) {
+  MLton_initSockets ();
+  return shutdown (s, how);
 }
 
-Int Socket_Ctl_getSockOpt (Int s, Int level, Int optname, Char *optval,
-                                 Int *optlen) {
-        MLton_initSockets ();
-        return getsockopt (s, level, optname, (void*)optval, (socklen_t*)optlen);
+C_Errno_t(C_Int_t) 
+Socket_Ctl_getSockOpt (C_Sock_t s, C_Int_t level, C_Int_t optname, 
+                       Array(Word8_t) optval, Ref(C_Socklen_t) optlen) {
+  MLton_initSockets ();
+  return getsockopt (s, level, optname, (void*)optval, (socklen_t*)optlen);
 }
 
-Int Socket_Ctl_setSockOpt (Int s, Int level, Int optname, Char *optval, 
-                                Int optlen) {
-        MLton_initSockets ();
-        return setsockopt (s, level, optname, (void*)optval, (socklen_t)optlen);
+C_Errno_t(C_Int_t)
+Socket_Ctl_setSockOpt (C_Sock_t s, C_Int_t level, C_Int_t optname, 
+                       Vector(Word8_t) optval, C_Socklen_t optlen) {
+  MLton_initSockets ();
+  return setsockopt (s, level, optname, (const void*)optval, (socklen_t)optlen);
 }
 
-Int Socket_Ctl_getsetIOCtl (Int s, Int request, Char* argp) {
-        MLton_initSockets ();
-        return ioctl (s, request, argp);
+C_Errno_t(C_Int_t) 
+Socket_Ctl_getIOCtl (C_Sock_t s, C_Int_t request, Array(Word8_t) argp) {
+  MLton_initSockets ();
+  return ioctl (s, request, (void*)argp);
 }
 
-Int Socket_Ctl_getPeerName (Int s, Char *name, Int *namelen) {
-        MLton_initSockets ();
-        return getpeername (s, (struct sockaddr*)name, (socklen_t*)namelen);
+C_Errno_t(C_Int_t) 
+Socket_Ctl_setIOCtl (C_Sock_t s, C_Int_t request, Vector(Word8_t) argp) {
+  MLton_initSockets ();
+  return ioctl (s, request, (const void*)argp);
 }
 
-Int Socket_Ctl_getSockName (Int s, Char *name, Int *namelen) {
-        MLton_initSockets ();
-        return getsockname (s, (struct sockaddr*)name, (socklen_t*)namelen);
+C_Errno_t(C_Int_t) Socket_Ctl_getPeerName (C_Sock_t s, Array(Word8_t) name, Ref(C_Socklen_t) namelen) {
+  MLton_initSockets ();
+  return getpeername (s, (struct sockaddr*)name, (socklen_t*)namelen);
+}
+
+C_Errno_t(C_Int_t) Socket_Ctl_getSockName (C_Sock_t s, Array(Word8_t) name, Ref(C_Socklen_t) namelen) {
+  MLton_initSockets ();
+  return getsockname (s, (struct sockaddr*)name, (socklen_t*)namelen);
 }

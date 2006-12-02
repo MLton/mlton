@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature SOURCE_POS_STRUCTS = 
    sig
    end

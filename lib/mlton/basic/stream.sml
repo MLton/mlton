@@ -40,7 +40,7 @@ fun map (s, f) =
                 | SOME (x, s) => cons (f x, loop s))
    in loop s
    end
-      
+
 fun appendMap (s, f) =
    let
       fun loop (s) =

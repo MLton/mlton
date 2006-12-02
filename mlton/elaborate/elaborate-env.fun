@@ -71,7 +71,7 @@ structure Decs = Decs (structure CoreML = CoreML)
 structure Tycon =
    struct
       open Tycon
-         
+
       val admitsEquality = TypeEnv.tyconAdmitsEquality
    end
 
@@ -156,7 +156,7 @@ structure Type =
 structure Scheme =
    struct
       open Scheme
-         
+
       fun bogus () = fromType (Type.new ())
 
       fun explainDoesNotAdmitEquality (s: t): Layout.t =
@@ -202,7 +202,7 @@ structure Uses:
    struct
       datatype 'a t = T of {direct: 'a list ref,
                             forceUsed: bool ref}
- 
+
       fun new () = T {direct = ref [],
                       forceUsed = ref false}
 
@@ -216,7 +216,7 @@ structure Uses:
 
       fun hasUse (T {direct, ...}): bool =
          not (List.isEmpty (!direct))
-         
+
       fun isUsed (u as T {forceUsed, ...}): bool =
          !forceUsed orelse hasUse u
    end
@@ -275,12 +275,12 @@ structure Vid =
       val deVar =
          fn Var v => SOME v
           | _ => NONE
-                
+
       val deCon =
          fn Con c => SOME c
           | Exn c => SOME c
           | _ => NONE
-          
+
       val class =
          fn Con _ => Class.Con
           | Exn _ => Class.Exn
@@ -300,9 +300,9 @@ structure TypeStr =
                                name: Ast.Con.t,
                                scheme: Scheme.t,
                                uses: Ast.Vid.t Uses.t} vector
-               
+
             val empty = T (Vector.new0 ())
-               
+
             fun layout (T v) =
                Vector.layout (fn {name, scheme, ...} =>
                               let
@@ -398,7 +398,7 @@ structure TypeStr =
       fun data (tycon, kind, cons) =
          T {kind = kind,
             node = Datatype {tycon = tycon, cons = cons}}
-   
+
       fun def (s: Scheme.t, k: Kind.t) =
          let
             val (tyvars, ty) = Scheme.dest s
@@ -556,7 +556,7 @@ structure Interface =
                                  var = var})
                end
          end
-      
+
       structure Scheme =
          struct
             open Scheme
@@ -575,7 +575,7 @@ structure Interface =
       structure Cons =
          struct
             open Cons
-               
+
             fun fromEnv (Econs.T v): t =
                T (Vector.map (v, fn {name, scheme, ...} =>
                               {name = name,
@@ -649,7 +649,7 @@ structure Info =
                                   range: 'b,
                                   time: Time.t,
                                   uses: 'a Uses.t} array
-         
+
       fun layout (layoutDomain, layoutRange) (T a) =
          Array.layout (fn {domain, range, ...} =>
                        Layout.tuple [layoutDomain domain, layoutRange range])
@@ -820,7 +820,7 @@ structure Structure =
       in
          val forceUsed = make Force
       end
-      
+
       fun realize (S: t, tm: 'a TyconMap.t,
                    f: (Ast.Tycon.t
                        * 'a
@@ -1031,7 +1031,7 @@ structure Structure =
       datatype 'a peekResult =
          Found of 'a
         | UndefinedStructure of Strid.t list
-          
+
       fun peekStrids (S, strids) =
          let
             fun loop (S, strids, ac) =
@@ -1820,7 +1820,7 @@ fun layoutLong (ids: Layout.t list) =
 
 fun layoutStrids (ss: Strid.t list): Layout.t =
    layoutLong (List.map (ss, Strid.layout))
-   
+
 structure PeekResult =
    struct
       datatype 'a t =
@@ -1833,12 +1833,12 @@ structure PeekResult =
             Found a => Found (f a)
           | UndefinedStructure ss => UndefinedStructure ss
           | Undefined => Undefined
-               
+
       val toOption: 'a t -> 'a option =
          fn Found z => SOME z
           | _ => NONE
    end
-    
+
 local
    datatype z = datatype PeekResult.t
    fun make (split: 'a -> Strid.t list * 'b,
@@ -1961,7 +1961,7 @@ end
 
 val peekLongcon = PeekResult.toOption o peekLongcon
 val peekLongtycon = PeekResult.toOption o peekLongtycon
-   
+
 (* ------------------------------------------------- *)
 (*                      extend                       *)
 (* ------------------------------------------------- *)
@@ -2090,10 +2090,10 @@ in
          ()
       end
 end
-       
+
 fun extendExn (E, c, c', s) =
    extendVals (E, Ast.Vid.fromCon c, (Vid.Exn c', s), ExtendUses.New)
-               
+
 fun extendVar (E, x, x', s, ir) =
    extendVals (E, Ast.Vid.fromVar x, (Vid.Var x', SOME s),
                ExtendUses.fromIsRebind ir)
@@ -2336,7 +2336,7 @@ fun scopeAll (T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, ...}, 
    in
       res
    end
-   
+
 fun openStructure (E as T {currentScope, strs, vals, types, ...},
                    Structure.T {strs = strs',
                                 vals = vals',
@@ -3295,11 +3295,11 @@ structure InterfaceEnv =
          structure Status = Status
          structure TypeStr = TypeStr
       end
-         
+
       val allowDuplicates = ref false
 
       type t = t
-         
+
       fun extend (T {currentScope, interface, ...},
                   domain, range, kind: string, ns, region): unit =
          let
@@ -3373,7 +3373,7 @@ structure InterfaceEnv =
                                  error (layoutStrids (s :: ss))
                         end
          end
-      
+
       fun lookupLongtycon (E: t, long: Longtycon.t): TypeStr.t option =
          let
             fun doit () =
@@ -3416,7 +3416,7 @@ structure InterfaceEnv =
          in
             (I, res)
          end
-      
+
       fun openInterface (E, I, r: Region.t) =
          let
             val {strs, vals, types} = Interface.dest I

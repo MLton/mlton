@@ -4,9 +4,9 @@
 
 set -e
 
-dir=`dirname $0`
-lib=`cd $dir/../lib && pwd`
-eval `$lib/platform`
+dir=`dirname "$0"`
+lib=`cd "$dir/../lib" && pwd`
+eval `"$lib/platform"`
 gcc='gcc'
 case "$HOST_OS" in
 mingw)
@@ -28,12 +28,12 @@ else
         njHeap="$lib/mlton.$HOST_ARCH-$HOST_OS"
 fi
 
-rargs=""
+declare -a rargs
 case "$1" in
 @MLton)
         shift
         while [ "$#" -gt 0 -a "$1" != "--" ]; do
-                rargs="$rargs $1"
+                rargs[${#rargs[@]}]="$1"
                 shift
         done
         if [ "$#" -gt 0 -a "$1" == "--" ]; then
@@ -49,7 +49,7 @@ esac
 # $njHeap (which exists), then use MLton, otherwise use SML/NJ.
 doit () {
         if [ -x "$mlton" -a -s "$world" -a ! "$njHeap" -nt "$world" ]; then
-                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 $rargs -- "$@"
+                exec "$mlton" @MLton load-world "$world" ram-slop 0.5 "${rargs[@]}" -- "$@"
         elif [ -s "$njHeap" ]; then
                 exec "$nj" @SMLload="$njHeap" "$@"
         fi
@@ -62,49 +62,53 @@ doit () {
 # about -m.  Someday, when we think we won't run into older gcc's,
 # these should be changed to -f.
 
-# You may need to add a line with -cc-opt 'I/path/to/gmp.h' so 
-# that the C compiler can find gmp.h
+# You may need to add a line with -cc-opt 'I/path/to/gmp.h' so the
+# C compiler can find gmp.h
 # You may need to add a line with -link-opt '-L/path/to/libgmp' so
 # that the linker can find libgmp.
 
+# The darwin linker complains (loudly) about non-existent library
+# search paths.
+if [ -d '/opt/local/lib' ]; then 	 
+        darwinLinkOpts='-L/opt/local/lib'
+fi
+if [ -d '/sw/lib' ]; then 	 
+        darwinLinkOpts='$darwinLinkOpts -L/sw/lib'
+fi
+
 doit "$lib" \
-        -cc "$gcc"                                              \
-        -cc-opt "-I$lib/include"                                \
-        -cc-opt '-O1'                                           \
-        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'  \
-	-mlb-path-map "$lib/mlb-path-map"			\
-        -target-as-opt amd64                                    \
-                '-m32
-                -mtune=opteron'                                 \
-        -target-cc-opt amd64                                    \
-                '-m32
-                -mtune=opteron'                                 \
-        -target-cc-opt darwin '-I/opt/local/include -I/sw/include' \
-	-target-cc-opt freebsd '-I/usr/local/include'		\
-        -target-cc-opt solaris                                  \
+        -cc "$gcc"                                               \
+        -cc-opt "-I$lib/include"                                 \
+        -cc-opt '-O1'                                            \
+        -cc-opts '-fno-strict-aliasing -fomit-frame-pointer -w'  \
+        -mlb-path-map "$lib/mlb-path-map"                        \
+        -target-as-opts amd64 '-m32 -mtune=opteron'              \
+        -target-cc-opts amd64 '-m32 -mtune=opteron'              \
+        -target-cc-opts darwin                                   \
+                '-I/opt/local/include -I/sw/include'             \
+        -target-cc-opts freebsd '-I/usr/local/include'           \
+        -target-cc-opts netbsd '-I/usr/pkg/include'              \
+        -target-cc-opts openbsd '-I/usr/local/include'           \
+        -target-cc-opts solaris                                  \
                 '-Wa,-xarch=v8plusa
-                -mcpu=ultrasparc'                               \
-        -target-cc-opt sparc '-mcpu=v8 -m32'                    \
-        -target-cc-opt x86                                      \
+                -mcpu=ultrasparc'                                \
+        -target-cc-opts sparc '-mcpu=v8 -m32'                    \
+        -target-cc-opts x86                                      \
                 '-fno-strength-reduce
                 -fschedule-insns
                 -fschedule-insns2
                 -malign-functions=5
                 -malign-jumps=2
-                -malign-loops=2'                                \
-        -target-link-opt aix '-lgmp'                            \
-        -target-link-opt amd64 '-m32'                           \
-        -target-link-opt cygwin '-lgmp'                         \
-        -target-link-opt darwin '-L/opt/local/lib -L/sw/lib -lgmp' \
-        -target-link-opt freebsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opt hpux '-lgmp'                           \
-        -target-link-opt linux '-lgmp'                          \
-        -target-link-opt mingw                                  \
-                '-lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32'  \
-        -target-link-opt netbsd                                 \
-                '-Wl,-R/usr/pkg/lib -L/usr/local/lib/ -lgmp'    \
-        -target-link-opt openbsd '-L/usr/local/lib/ -lgmp'      \
-        -target-link-opt solaris '-lgmp -lnsl -lsocket -lrt'    \
-        -link-opt '-lgdtoa -lm'                                 \
-        -profile-exclude '<basis>'                              \
+                -malign-loops=2'                                 \
+        -target-link-opts amd64 '-m32'                           \
+        -target-link-opts darwin '$darwinLinkOpts'               \
+        -target-link-opts freebsd '-L/usr/local/lib/'            \
+        -target-link-opts mingw                                  \
+                '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
+        -target-link-opts netbsd                                 \
+                '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'             \
+        -target-link-opts openbsd '-L/usr/local/lib/'            \
+        -target-link-opts solaris '-lnsl -lsocket -lrt'          \
+        -link-opts '-lgdtoa -lm -lgmp'                           \
+        -profile-exclude '<basis>'                               \
         "$@"

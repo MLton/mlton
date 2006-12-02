@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
-name=`basename $0`
-dir=`dirname $0`
-bin=`cd $dir && pwd`
+name=`basename "$0"`
+dir=`dirname "$0"`
+bin=`cd "$dir" && pwd`
 
 die () {
         echo >&2 "$1"
@@ -22,6 +22,6 @@ case "$#" in
 ;;
 esac
 
-eval `$bin/platform`
+eval `"$bin/platform"`
 
 echo $HOST_OS

@@ -16,7 +16,7 @@ signature ALPHA_BETA_STRUCTS =
             val move: t -> t
             val unmove: t -> t
          end
-      
+
       structure State:
          sig
             type t

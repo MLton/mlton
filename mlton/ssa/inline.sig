@@ -14,6 +14,6 @@ signature INLINE_STRUCTS =
 signature INLINE = 
    sig
       include INLINE_STRUCTS
-      
+
       val inline: Program.t -> Program.t
    end

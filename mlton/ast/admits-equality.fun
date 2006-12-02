@@ -35,5 +35,5 @@ val or =
     | (Sometimes, _) => Sometimes
     | (_, Sometimes) => Sometimes
     | _ => Never
-   
+
 end

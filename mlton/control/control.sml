@@ -23,7 +23,7 @@ structure Verbosity =
           | (_, Detail) => true
           | _ => false
    end
-   
+
 datatype style = No | Assembly | C | Dot | ML
 
 fun preSuf style =
@@ -68,7 +68,7 @@ fun message (verb: Verbosity.t, th: unit -> Layout.t): unit =
               ; Out.newline out
            end
    else ()
-      
+
 fun messageStr (verb, s: string): unit =
    message (verb, fn () => Layout.str s)
 

@@ -8,7 +8,7 @@
 signature COMPUTATION = 
    sig
       structure Time: TIME
-         
+
       type t
 
       val keepAll: t * (string -> bool) -> t

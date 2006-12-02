@@ -9,22 +9,22 @@ functor CircularList(S: CIRCULAR_LIST_STRUCTS): CIRCULAR_LIST =
 struct
 
 open S
-   
+
 type 'a t = 'a Elt.t Pointer.t
-  
+
 val empty = Pointer.null
 
 fun makeEmpty p = Pointer.clear p
-   
+
 fun isEmpty p = Pointer.isNull p
-   
+
 fun isSingle p =
    case Pointer.follow p of
       NONE => false
     | SOME d => Elt.eqPrev(d, Elt.prev d)
 
 val first = Pointer.!
-    
+
 fun insert(p,d) =
    case Pointer.follow p of
       SOME d' => Elt.insertR(d', d)

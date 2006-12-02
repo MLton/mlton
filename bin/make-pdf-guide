@@ -2,9 +2,9 @@
 
 set -e
 
-name=`basename $0`
-dir=`dirname $0`
-src=`cd $dir/.. && pwd`
+name=`basename "$0"`
+dir=`dirname "$0"`
+src=`cd "$dir/.." && pwd`
 bin="$src/bin"
 
 die () {
@@ -32,19 +32,20 @@ titlepage='title.html'
 tmp="/tmp/mlton-guide.$$"
 version=`date +%Y%m%d`
 
-rm -rf $tmp
-mkdir $tmp
-cd $tmp
+rm -rf "$tmp"
+mkdir "$tmp"
+cd "$tmp"
 
-( cd $src/doc/guide && tar -cf - . ) | tar -xf -
+( cd "$src/doc/guide" && tar -cf - . ) | tar -xf -
 
 # The grep -v takes out files that aren't wiki pages.
-ls -1 | grep -v '\.' >$pages
+# Hope that no files contain spaces or other specials -> `cat "$pages"` dies
+ls -1 | grep -v '\.' >"$pages"
 
 echo 'Massaging HTML.'
 
-for f in `cat $pages`; do
-cat >$script <<EOF
+for f in `cat "$pages"`; do
+cat >"$script" <<EOF
 /^<table bgcolor = lightblue/,+29d
 s;\(<body .*\);\1\n<h1>$f</h1>;
 s;<FONT[^>]*>;;g
@@ -53,12 +54,12 @@ s;\(<div id="content"\);\1;
 s;<td colspan = 3;<td align = right;
 s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
 EOF
-	$bin/msed -f $script <$f >.tmp
-	mv .tmp $f
+	"$bin/msed" -f "$script" <"$f" >.tmp
+	mv .tmp "$f"
 done
 
 echo 'Generating PDF titlepage.'
-cat >$titlepage <<EOF
+cat >"$titlepage" <<EOF
 <html>
 <head><title>MLton Guide ($version)</title></head>
 <body>
@@ -124,12 +125,12 @@ Home
 Index
 EOF
 
-grep -v '^\(Home\|Index\)$' $pages 
-) >$book
+grep -v '^\(Home\|Index\)$' "$pages" 
+) >"$book"
 
 echo 'Running htmldoc.'
-htmldoc --batch $book || true
+htmldoc --batch "$book" || true
 
-mv $pdf $src/doc/guide
+mv "$pdf" "$src/doc/guide"
 
-rm -rf $tmp
+rm -rf "$tmp"

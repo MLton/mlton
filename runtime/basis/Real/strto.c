@@ -1,22 +1,20 @@
 #include "platform.h"
+#include "gdtoa/gdtoa.h"
 
-Real32 gdtoa_strtof (char *s, char **endptr);
-Real64 gdtoa_strtod (char *s, char **endptr);
+Real32_t Real32_strto (NullString8_t s) {
+  char *endptr;
+  Real32_t res;
 
-Real32 Real32_strto (char *s) {
-        char *endptr;
-        Real32 res;
-
-        res = gdtoa_strtof (s, &endptr);
-        assert (NULL != endptr);
-        return res;
+  res = gdtoa_strtof ((const char*)s, &endptr);
+  assert (NULL != endptr);
+  return res;
 }
 
-Real64 Real64_strto (char *s) {
-        char *endptr;
-        Real64 res;
+Real64_t Real64_strto (NullString8_t s) {
+  char *endptr;
+  Real64_t res;
 
-        res = gdtoa_strtod (s, &endptr);
-        assert (NULL != endptr);
-        return res;
+  res = gdtoa_strtod ((const char*)s, &endptr);
+  assert (NULL != endptr);
+  return res;
 }

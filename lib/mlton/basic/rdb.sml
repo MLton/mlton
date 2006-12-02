@@ -26,13 +26,13 @@ structure Value =
       datatype t = T of {domain: Domain.t,
                          rep: Rep.t}
    end
-      
+
 structure Domain =
    struct
       open Domain
 
       fun contains (T {contains, ...}, Value.T {rep = r, ...}) = contains r
-         
+
       fun new {compare: 'a * 'a -> Relation.t,
                just: Justify.t,
                toString: 'a -> string}: t * ('a -> Value.t) =
@@ -90,7 +90,7 @@ structure Value =
       end
 
       fun justification (T {domain = Domain.T {just, ...}, ...}) = just
-   
+
       local
          fun binary f (T {domain = Domain.T d, rep = r, ...}, T {rep = r', ...}) =
             f d (r, r')
@@ -107,11 +107,11 @@ structure Attribute =
 
       val new = fn s => s
    end
-      
+
 structure Heading =
    struct
       datatype t = T of (Attribute.t * Domain.t) list
-         
+
       fun degree (T l) = List.length l
 
       fun info (T l, a) =
@@ -124,7 +124,7 @@ structure Heading =
 
 datatype t = T of {heading: Heading.t,
                    body: Value.t list list ref}
-   
+
 fun add (T {heading = Heading.T attrs, body, ...}, r) =
    List.push
    (body,
@@ -135,11 +135,11 @@ fun add (T {heading = Heading.T attrs, body, ...}, r) =
                     if Domain.contains (d, v)
                        then v :: ac
                     else Error.bug "RDB.add"))
-   
+
 fun cardinality (T {body, ...}) = List.length (!body)
 
 fun degree (T {heading, ...}) = Heading.degree heading
-   
+
 fun new {heading} = T {heading = Heading.T heading,
                      body = ref []}
 

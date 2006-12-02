@@ -16,7 +16,7 @@ open S
 val size = length
 
 fun unfold (n, a, f) = unfoldi (n, a, f o #2)
-   
+
 fun tabulate (n, f) = #1 (unfoldi (n, (), fn (i, ()) => (f i, ())))
 
 fun fromArray a =
@@ -57,9 +57,9 @@ fun isEmpty a = 0 = length a
 fun dropPrefix (v, n) = tabulate (length v - n, fn i => sub (v, i + n))
 
 fun dropSuffix (v, n) = tabulate (length v - n, fn i => sub (v, i))
-   
+
 fun new (n, x) = tabulate (n, fn _ => x)
-   
+
 fun mapi (a, f) = tabulate (length a, fn i => f (i, unsafeSub (a, i)))
 
 fun map (v, f) = mapi (v, f o #2)
@@ -132,7 +132,7 @@ fun foldr2 (a, a', b, f) =
          then loop (n - 1, b)
       else Error.bug "Vector.foldr2"
    end
-   
+
 fun foldi2From (a, a', start, b, f) =
    let
       val n = length a
@@ -151,10 +151,10 @@ fun foldi2 (a, a', b, f) = foldi2From (a, a', 0, b, f)
 
 fun foreachi2 (v, v', f) =
    foldi2 (v, v', (), fn (i, x, x', ()) => f (i, x, x'))
-   
+
 fun fold2 (a, a', b, f) =
    foldi2 (a, a', b, fn (_, x, x', b) => f (x, x', b))
-   
+
 fun fold3From (a, a', a'', start, b, f) =
    let
       val n = length a
@@ -262,7 +262,7 @@ fun foldri (a, b, f) =
 
 fun foldr (a, b, f) =
    foldri (a, b, fn (_, a, b) => f (a, b))
-   
+
 fun foreachri (a, f) = foldri (a, (), fn (i, x, ()) => f (i, x))
 
 fun foreachr (a, f) = foreachri (a, f o #2)
@@ -355,7 +355,7 @@ fun map2AndFold (v, v', b, f) =
                end)
    in (v, !r)
    end
-                    
+
 fun map3 (v1, v2, v3, f) =
    let
       val n = length v1

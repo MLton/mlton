@@ -9,7 +9,7 @@ structure Exn:> EXN =
 struct
 
 open Exn0
-   
+
 fun layout e =
    let
       open Layout

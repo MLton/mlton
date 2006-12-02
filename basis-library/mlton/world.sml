@@ -8,8 +8,12 @@
 
 structure MLtonWorld: MLTON_WORLD =
    struct
-      structure Prim = Primitive.World
-         
+      structure Prim = Primitive.MLton.World
+      structure Error = PosixError
+      structure SysCall = Error.SysCall
+
+      val gcState = Primitive.MLton.GCState.gcState
+
       datatype status = Clone | Original
 
       (* Need to worry about:
@@ -18,30 +22,15 @@ structure MLtonWorld: MLTON_WORLD =
        *)
       fun save' (file: string): status =
          let
-            val fd =
-               let
-                  open Posix.FileSys
-                  val flags =
-                     O.flags [O.trunc,
-                              PosixPrimitive.FileSys.O.binary]
-                  val mode =
-                     let
-                        open S
-                     in
-                        flags [irusr, iwusr, irgrp, iwgrp, iroth, iwoth]
-                     end
-               in
-                  createf (file, O_WRONLY, flags, mode)
-                  handle e =>
-                     raise Fail (concat ["MLton.World.save unable to open ",
-                                         file, " due to ",
-                                         General.exnMessage e])
-               end
-            val _ = Prim.save (Posix.FileSys.fdToWord fd)
+            val () = 
+               SysCall.simple' 
+               ({errVal = false}, 
+                fn () => (Prim.save (NullString.nullTerm file)
+                          ; Prim.getSaveStatus (gcState)))
          in
-            if Prim.isOriginal ()
-               then (Posix.IO.close fd; Original)
-            else (Prim.makeOriginal ()
+            if Prim.getAmOriginal gcState
+               then Original
+            else (Prim.setAmOriginal (gcState, true)
                   ; Cleaner.clean Cleaner.atLoadWorld
                   ; Clone)
          end
@@ -50,7 +39,7 @@ structure MLtonWorld: MLTON_WORLD =
          case save' file of
             Clone => MLtonThread.switch (fn _ => t)
           | Original => ()
-         
+
       fun save (file: string): status =
          if MLtonThread.amInSignalHandler ()
             then raise Fail "cannot call MLton.World.save within signal handler"

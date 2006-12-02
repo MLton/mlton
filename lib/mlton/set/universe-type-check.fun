@@ -16,7 +16,7 @@ structure T = Type
 
 open U
 structure L = List
-   
+
 fun typeOf s =
     L.foldl(toList s,
             T.EmptySet,
@@ -52,13 +52,13 @@ val op > = setSet("UniverseTypeCheck.>", op >)
 fun isReasonable s = (typeOf s ;
                       true)
     handle T.Incompatible => false
-        
+
 fun returnSet (name, f) a =
     let val s = f a
     in (Error.assert[(isReasonable s, name ^ ": invalid set")] ;
         s)
     end
-    
+
 val replace = returnSet("UniverseTypeCheck.replace", replace)
 val map = returnSet("UniverseTypeCheck.map", map)
 val fromList = returnSet("UniverseTypeCheck.fromList", fromList)
@@ -80,7 +80,7 @@ fun update(s, x, y) =
                          (t, T.Pair(typeOfElt x, typeOfElt y)),
                          "update: incompatible pairs")] ;
             U.update(s, x, y))
-           
+
 val updateSet = setSet("UniverseTypeCheck.updateSet", updateSet)
 
 end

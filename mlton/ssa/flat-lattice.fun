@@ -28,7 +28,7 @@ structure Elt =
       end
    end
 datatype z = datatype Elt.t
-   
+
 datatype t = T of {lessThan: t list ref,
                    upperBound: Point.t option ref,
                    value: Elt.t ref}
@@ -38,7 +38,7 @@ fun layout (T {value, ...}) = Elt.layout (!value)
 fun new () = T {lessThan = ref [],
                 upperBound = ref NONE,
                 value = ref Bottom}
-   
+
 val isBottom =
    fn (T {value = ref Bottom, ...}) => true
     | _ => false
@@ -59,7 +59,7 @@ fun forceTop (T {upperBound, value, ...}): bool =
    if isSome (!upperBound)
       then false
    else (value := Top; true)
-   
+
 fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
    let
       fun continue e = List.forall (!lessThan, fn z => up (z, e))

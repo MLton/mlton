@@ -66,7 +66,7 @@ structure Pervasive =
       datatype option = datatype option
       datatype order = datatype General.order
       datatype list = datatype list
-         
+
       val ! = General.! 
       val op := = General.:= 
       val op @ = List.@ 

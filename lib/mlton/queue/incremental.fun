@@ -19,7 +19,7 @@ struct
 
 structure L = AR.L
 open L.I
-   
+
 datatype 'a t = T of 'a AR.t * 'a AR.t * 'a L.t
 
 fun tail l =
@@ -36,14 +36,14 @@ fun queue(l, l', r) =
 fun empty() = let val l = AR.empty()
               in T(l, l, L.empty())
               end
-   
+
 fun isEmpty(T(l, _, _)) = AR.isEmpty l
 
 fun destruct(T(l, l', r)) =
    case AR.destruct l of
       NONE => NONE
     | SOME(x, l) => SOME(x, queue(l, l', r))
-      
+
 fun enque(T(l, l', r), x) = queue(l, l', L.cons(x, r))
-   
+
 end

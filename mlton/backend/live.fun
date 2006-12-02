@@ -54,7 +54,7 @@ structure LiveInfo =
             preds = ref []}
 
       fun live (T {live, ...}) = Buffer.toVector live
-         
+
       fun liveHS (T {liveHS = {handler, link}, ...}) =
          {handler = !handler,
           link = isSome (!link)}

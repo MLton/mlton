@@ -5,34 +5,33 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Socket:> SOCKET_EXTRA
-   where type SOCK.sock_type = Primitive.Socket.SOCK.sock_type
-   where type pre_sock_addr = Word8.word array
-=
+structure Socket : SOCKET_EXTRA =
 struct
 
-structure Prim = Primitive.Socket
+structure Prim = PrimitiveFFI.Socket
 structure Error = Posix.Error
 structure Syscall = Error.SysCall
 structure FileSys = Posix.FileSys
 
-type sock = Prim.sock
-val sockToWord = SysWord.fromInt o Prim.toInt
-val wordToSock = Prim.fromInt o SysWord.toInt
-fun sockToFD sock = FileSys.wordToFD (sockToWord sock)
-fun fdToSock fd = wordToSock (FileSys.fdToWord fd)
+type sock = C_Sock.t
+val sockToWord = C_Sock.castToSysWord
+val wordToSock = C_Sock.castFromSysWord
+val sockToFD = fn x => x
+val fdToSock = fn x => x
 
-type pre_sock_addr = Prim.pre_sock_addr
-datatype sock_addr = SA of Prim.sock_addr
-fun unpackSockAddr (SA sa) = Word8Vector.fromPoly sa
-fun new_sock_addr (): (pre_sock_addr * int ref * (unit -> sock_addr)) = 
+type pre_sock_addr = Word8.word array
+datatype sock_addr = SA of Word8.word vector
+fun unpackSockAddr (SA sa) = sa
+fun new_sock_addr (): (pre_sock_addr * C_Socklen.t ref * (unit -> sock_addr)) = 
    let
-      val sa = Array.array (Prim.sockAddrLenMax, 0wx0)
-      val salen = ref (Array.length sa)
-      fun finish () =
-         SA (ArraySlice.vector (ArraySlice.slice (sa, 0, SOME (!salen))))
+      val salen = C_Size.toInt Prim.sockAddrStorageLen
+      val sa = Array.array (salen, 0wx0)
+      val salenRef = ref (C_Socklen.fromInt salen)
+      fun finish () = 
+         SA (ArraySlice.vector 
+             (ArraySlice.slice (sa, 0, SOME (C_Socklen.toInt (!salenRef)))))
    in
-      (sa, salen, finish)
+      (sa, salenRef, finish)
    end
 datatype dgram = DGRAM (* phantom *)
 datatype stream = MODE (* phantom *)
@@ -42,13 +41,12 @@ datatype active = ACTIVE (* phantom *)
 structure AF =
    struct
       type addr_family = NetHostDB.addr_family
-      val i2a = NetHostDB.intToAddrFamily
-      val names = [
-                   ("UNIX", i2a Prim.AF.UNIX),
-                   ("INET", i2a Prim.AF.INET),
-                   ("INET6", i2a Prim.AF.INET6),
-                   ("UNSPEC", i2a Prim.AF.UNSPEC)
-                   ]
+      val names : (string * addr_family) list = 
+         ("UNIX", Prim.AF.UNIX) ::
+         ("INET", Prim.AF.INET) ::
+         ("INET6", Prim.AF.INET6) ::
+         ("UNSPEC", Prim.AF.UNSPEC) ::
+         nil
       fun list () = names
       fun toString af' =
          case List.find (fn (_, af) => af = af') names of
@@ -62,13 +60,13 @@ structure AF =
 
 structure SOCK =
    struct
-      type sock_type = Prim.SOCK.sock_type
+      type sock_type = C_Int.t
       val stream = Prim.SOCK.STREAM
       val dgram = Prim.SOCK.DGRAM
-      val names = [
-                   ("STREAM", stream),
-                   ("DGRAM", dgram)
-                   ]
+      val names : (string * sock_type) list = 
+         ("STREAM", stream) ::
+         ("DGRAM", dgram) ::
+         nil
       fun list () = names
       fun toString st' =
          case List.find (fn (_, st) => st = st') names of
@@ -82,102 +80,221 @@ structure SOCK =
 
 structure CtlExtra =
    struct
-      type level = Prim.Ctl.level
-      type optname = Prim.Ctl.optname
-      type request = Prim.Ctl.request
-      
+      type level = C_Int.t
+      type optname = C_Int.t
+      type request = C_Int.t
+
       (* host byte order *)
-      structure PW = PackWord32Host
+      type optvalVec = Word8.word vector
+      type optvalArr = Word8.word array
 
-      val wordLen = PW.bytesPerElem
-      fun unmarshalWord (wa, _, s): word = 
-         Word.fromLargeWord (PW.subArr (wa, s))
-      val intLen: int = wordLen
-      fun unmarshalInt (wa, l, s): int = 
-         Word.toIntX (unmarshalWord (wa, l, s))
-      val boolLen: int = intLen
-      fun unmarshalBool (wa, l, s): bool = 
-         if (unmarshalInt (wa, l, s)) = 0 then false else true
-      val timeOptLen: int = boolLen + intLen
-      fun unmarshalTimeOpt (wa, l, s): Time.time option =
-         if unmarshalBool (wa, l, s)
-            then SOME (Time.fromSeconds
-                       (LargeInt.fromInt
-                        (unmarshalInt (wa, l, s + 1))))
-         else NONE
+      val bitsPerByte = 8
 
-      fun marshalWord (w, wa, s) =
-         PW.update (wa, s, Word.toLargeWord w)
-
-      fun marshalInt (i, wa, s) =
-         marshalWord (Word.fromInt i, wa, s)
-
-      fun marshalBool (b, wa, s) =
-         marshalInt (if b then 1 else 0, wa, s)
-
-      fun marshalTimeOpt (t, wa, s) =
-         case t of
-            NONE => (marshalBool (false, wa, s)
-                     ; marshalInt (0, wa, s + 1))
-          | SOME t =>
-               (marshalBool (true, wa, s)
-                ; marshalWord (Word.fromLargeInt (Time.toSeconds t)
-                               handle Overflow => Error.raiseSys Error.inval,
-                               wa, s + 1))
+      val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+      val intLen = Int.quot (C_Int.precision', bitsPerByte)
+      fun unmarshalInt (wa: optvalArr) : C_Int.int =
+         let
+            fun loop (i, acc) =
+               if i >= intLen
+                  then acc
+                  else let
+                          val w =
+                             Array.sub 
+                             (wa, if isBigEndian
+                                     then i
+                                     else (intLen - 1) - i)
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
+                       in
+                          loop (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                       end
+         in
+            loop (0, 0)
+         end
+      fun marshalInt (i: C_Int.int) : optvalVec =
+         let
+            val wa = Array.array (intLen, 0wx0)
+            fun loop (i, acc) =
+               if i >= intLen
+                  then ()
+                  else let
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, if isBigEndian
+                                     then (intLen - 1) - i
+                                     else i, w)
+                       in
+                          loop (i + 1, C_Int.>> (acc, 0w4))
+                       end
+         in
+            loop (0, i)
+            ; Array.vector wa
+         end
+      val boolLen = intLen
+      fun unmarshalBool (wa: optvalArr) : bool =
+         if (unmarshalInt wa) = 0 then false else true
+      fun marshalBool (b: bool) : optvalVec = 
+         marshalInt (if b then 1 else 0)
+      val sizeLen = Int.quot (C_Size.wordSize, bitsPerByte)
+      fun unmarshalSize (wa: optvalArr) : int =
+         let
+            fun loop (i, acc) =
+               if i >= sizeLen
+                  then acc
+                  else let
+                          val w =
+                             Array.sub 
+                             (wa, if isBigEndian
+                                     then i
+                                     else (sizeLen - 1) - i)
+                          val w = C_Size.castFromSysWord (Word8.castToSysWord w)
+                       in
+                          loop (i + 1, C_Size.andb (w, C_Size.<< (acc, 0w4)))
+                       end
+         in
+            C_Size.toInt (loop (0, 0wx0))
+         end
+      fun marshalSize (i: int) : optvalVec =
+         let
+            val wa = Array.array (sizeLen, 0wx0)
+            fun loop (i, acc) =
+               if i >= sizeLen
+                  then ()
+                  else let
+                          val w = Word8.castFromSysWord (C_Size.castToSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, if isBigEndian
+                                     then (sizeLen - 1) - i
+                                     else i, w)
+                       in
+                          loop (i + 1, C_Size.>> (acc, 0w4))
+                       end
+         in
+            loop (0, C_Size.fromInt i)
+            ; Array.vector wa
+         end
+      (* Assume 'struct linger' has no padding. *)
+      val optTimeLen: int = intLen + intLen
+      fun unmarshalOptTime (wa: optvalArr) : Time.time option =
+         let
+            fun loopBool (i, acc) =
+               if i >= intLen
+                  then acc
+                  else let
+                          val w =
+                             Array.sub 
+                             (wa, if isBigEndian
+                                     then i
+                                     else (intLen - 1) - i)
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
+                       in
+                          loopBool (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                       end
+            fun loopInt (i, acc) =
+               if i >= intLen
+                  then acc
+                  else let
+                          val w =
+                             Array.sub 
+                             (wa, intLen + (if isBigEndian
+                                               then i
+                                               else (intLen - 1) - i))
+                          val w = C_Int.castFromSysWord (Word8.castToSysWord w)
+                       in
+                          loopInt (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                       end
+         in
+            if loopBool (0, 0) = 0
+               then NONE
+               else SOME (Time.fromSeconds (C_Int.toLarge (loopInt (0, 0))))
+         end
+      fun marshalOptTime (to: Time.time option) : optvalVec =
+         let
+            val wa = Array.array (optTimeLen, 0wx0)
+            fun loopBool (i, acc) =
+               if i >= intLen
+                  then ()
+                  else let
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, if isBigEndian
+                                     then (intLen - 1) - i
+                                     else i, w)
+                       in
+                          loopBool (i + 1, C_Int.>> (acc, 0w4))
+                       end
+            fun loopInt (i, acc) =
+               if i >= intLen
+                  then ()
+                  else let
+                          val w = Word8.castFromSysWord (C_Int.castToSysWord acc)
+                          val () =
+                             Array.update
+                             (wa, intLen + (if isBigEndian
+                                               then (intLen - 1) - i
+                                               else i), w)
+                       in
+                          loopInt (i + 1, C_Int.>> (acc, 0w4))
+                       end
+         in
+            case to of
+               NONE => (loopBool (0, 0); loopInt (0, 0))
+             | SOME t => (loopBool (0, 1); loopInt (0, C_Int.fromLarge (Time.toSeconds t)))
+            ; Array.vector wa
+         end
 
       local
          fun make (optlen: int,
-                   write: 'a * Word8Array.array * int -> unit,
-                   unmarshal: Word8Array.array * int * int -> 'a) =
+                   marshal: 'a -> optvalVec,
+                   unmarshal: optvalArr -> 'a) =
             let
-               fun marshal (x: 'a): Word8Vector.vector =
+               fun getSockOpt (level: level, optname: optname) s : 'a =
                   let
-                     val wa = Word8Array.array (optlen, 0wx0)
+                     val optval = Array.array (optlen, 0wx0)
+                     val optlen' = ref (C_Socklen.fromInt optlen)
+                     val () = 
+                        Syscall.simple
+                        (fn () =>
+                         Prim.Ctl.getSockOpt (s, level, optname, optval, optlen'))
+                     val () =
+                        if C_Socklen.toInt (!optlen') <> optlen
+                           then raise (Fail "Socket.Ctl.getSockOpt: optlen' <> optlen")
+                           else ()
                   in
-                     write (x, wa, 0)
-                     ; Word8Array.vector wa
+                     unmarshal optval
                   end
-               fun getSockOpt (level: level, optname: optname) s =
-                  let
-                     val optval = Word8Array.array (optlen, 0wx0)
-                     val optlen = ref optlen
-                  in
-                     Syscall.simple
-                     (fn () =>
-                      Prim.Ctl.getSockOpt (s, level, optname,
-                                           Word8Array.toPoly optval,
-                                           optlen))
-                     ; unmarshal (optval, !optlen, 0)
-                  end
-               fun setSockOpt (level: level, optname: optname) (s, optval) =
+               fun setSockOpt (level: level, optname: optname) (s, optval: 'a) : unit =
                   let
                      val optval = marshal optval
-                     val optlen = Word8Vector.length optval
+                     val optlen' = C_Socklen.fromInt optlen
+                     val () =
+                        Syscall.simple
+                        (fn () =>
+                         Prim.Ctl.setSockOpt (s, level, optname, optval, optlen'))
                   in
-                     Syscall.simple
-                     (fn () => 
-                      Prim.Ctl.setSockOpt (s, level, optname,
-                                           Word8Vector.toPoly optval,
-                                           optlen))
+                     ()
                   end
                fun getIOCtl (request: request) s : 'a =
                   let
-                     val optval = Word8Array.array (optlen, 0wx0)
+                     val optval = Array.array (optlen, 0wx0)
+                     val () =
+                        Syscall.simple
+                        (fn () =>
+                         Prim.Ctl.getIOCtl (s, request, optval))
                   in
-                     Syscall.simple
-                     (fn () =>
-                      Prim.Ctl.getIOCtl
-                      (s, request, Word8Array.toPoly optval))
-                     ; unmarshal (optval, optlen, 0)
+                     unmarshal optval
                   end
-               fun setIOCtl (request: request) (s, optval: 'a): unit =
+               fun setIOCtl (request: request) (s, optval: 'a) : unit =
                   let
                      val optval = marshal optval
+                     val () =
+                        Syscall.simple
+                        (fn () =>
+                         Prim.Ctl.setIOCtl (s, request, optval))
                   in
-                     Syscall.simple
-                     (fn () =>
-                      Prim.Ctl.setIOCtl
-                      (s, request, Word8Vector.toPoly optval))
+                     ()
                   end
             in
                (getSockOpt, getIOCtl, setSockOpt, setIOCtl)
@@ -187,40 +304,41 @@ structure CtlExtra =
             make (intLen, marshalInt, unmarshalInt)
          val (getSockOptBool, getIOCtlBool, setSockOptBool, _) =
             make (boolLen, marshalBool, unmarshalBool)
-         val (getSockOptTimeOpt, _, setSockOptTimeOpt, _) =
-            make (timeOptLen, marshalTimeOpt, unmarshalTimeOpt)
+         val (getSockOptSize, getIOCtlSize, setSockOptSize, _) =
+            make (sizeLen, marshalSize, unmarshalSize)
+         val (getSockOptOptTime, getIOCtlOptTime, setSockOptOptTime, _) =
+            make (optTimeLen, marshalOptTime, unmarshalOptTime)
       end
 
-      val getDEBUG = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DEBUG)
-      val setDEBUG = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DEBUG)
-      val getREUSEADDR = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.REUSEADDR)
-      val setREUSEADDR = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.REUSEADDR)
-      val getKEEPALIVE = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.KEEPALIVE)
-      val setKEEPALIVE = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.KEEPALIVE)
-      val getDONTROUTE = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DONTROUTE)
-      val setDONTROUTE = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.DONTROUTE)
-      val getBROADCAST = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.BROADCAST)
-      val getLINGER = getSockOptTimeOpt (Prim.Ctl.SOCKET, Prim.Ctl.LINGER)
-      val setLINGER = setSockOptTimeOpt (Prim.Ctl.SOCKET, Prim.Ctl.LINGER)
-      val setBROADCAST = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.BROADCAST)
-      val getOOBINLINE = getSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.OOBINLINE)
-      val setOOBINLINE = setSockOptBool (Prim.Ctl.SOCKET, Prim.Ctl.OOBINLINE)
-      val getSNDBUF = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.SNDBUF)
-      val setSNDBUF = setSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.SNDBUF)
-      val getRCVBUF = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.RCVBUF)
-      val setRCVBUF = setSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.RCVBUF)
-      fun getTYPE s =
-         Prim.SOCK.fromInt (getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.TYPE) s)
+      val getDEBUG = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_DEBUG)
+      val setDEBUG = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_DEBUG)
+      val getREUSEADDR = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_REUSEADDR)
+      val setREUSEADDR = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_REUSEADDR)
+      val getKEEPALIVE = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_KEEPALIVE)
+      val setKEEPALIVE = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_KEEPALIVE)
+      val getDONTROUTE = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_DONTROUTE)
+      val setDONTROUTE = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_DONTROUTE)
+      val getLINGER = getSockOptOptTime (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_LINGER)
+      val setLINGER = setSockOptOptTime (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_LINGER)
+      val getBROADCAST = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_BROADCAST)
+      val setBROADCAST = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_BROADCAST)
+      val getOOBINLINE = getSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_OOBINLINE)
+      val setOOBINLINE = setSockOptBool (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_OOBINLINE)
+      val getSNDBUF = getSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_SNDBUF)
+      val setSNDBUF = setSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_SNDBUF)
+      val getRCVBUF = getSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_RCVBUF)
+      val setRCVBUF = setSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_RCVBUF)
+      fun getTYPE s = getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_TYPE) s
       fun getERROR s =
          let
-            val se = getSockOptInt (Prim.Ctl.SOCKET, Prim.Ctl.ERROR) s
+            val se = getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_ERROR) s
          in
             if 0 = se
                then NONE
-            else SOME (Posix.Error.errorMsg se, SOME se)
+               else SOME (Posix.Error.errorMsg se, SOME se)
          end handle Error.SysErr z => SOME z
       local
-         fun getName (s, f: Prim.sock * pre_sock_addr * int ref -> int) =
+         fun getName (s, f: sock * pre_sock_addr * C_Socklen.t ref -> C_Int.int C_Errno.t) =
             let
                val (sa, salen, finish) = new_sock_addr ()
                val () = Syscall.simple (fn () => f (s, sa, salen))
@@ -231,8 +349,8 @@ structure CtlExtra =
          fun getPeerName s = getName (s, Prim.Ctl.getPeerName)
          fun getSockName s = getName (s, Prim.Ctl.getSockName)
       end
-      val getNREAD = getIOCtlInt Prim.Ctl.NREAD
-      val getATMARK = getIOCtlBool Prim.Ctl.ATMARK
+      val getNREAD = getIOCtlSize Prim.Ctl.FIONREAD
+      val getATMARK = getIOCtlBool Prim.Ctl.SIOCATMARK
    end
 
 structure Ctl =
@@ -244,57 +362,52 @@ structure Ctl =
 
 fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 
-fun familyOfAddr (SA sa) = NetHostDB.intToAddrFamily (Prim.familyOfAddr sa)
+fun familyOfAddr (SA sa) = Prim.familyOfAddr sa
 
 fun bind (s, SA sa) =
-   Syscall.simple (fn () => Prim.bind (s, sa, Vector.length sa))
+   Syscall.simple (fn () => Prim.bind (s, sa, C_Socklen.fromInt (Vector.length sa)))
 
 fun listen (s, n) = 
-   Syscall.simple (fn () => Prim.listen (s, n))
+   Syscall.simple (fn () => Prim.listen (s, C_Int.fromInt n))
 
 fun nonBlock' ({restart: bool},
-               f : unit -> int, post : int -> 'a, again, no : 'a) =
+               errVal : ''a, f : unit -> ''a C_Errno.t, post : ''a -> 'b, again, no : 'b) =
    Syscall.syscallErr
-   ({clear = false, restart = restart},
-    fn () => let val res = f ()
-             in 
-                {return = res,
-                 post = fn () => post res,
-                 handlers = [(again, fn () => no)]}
-             end)
+   ({clear = false, restart = restart, errVal = errVal}, fn () => 
+    {return = f (),
+     post = post,
+     handlers = [(again, fn () => no)]})
 
-fun nonBlock (f, post, no) =
-   nonBlock' ({restart = true}, f, post, Error.again, no)
+fun nonBlock (errVal, f, post, no) =
+   nonBlock' ({restart = true}, errVal, f, post, Error.again, no)
 
 local
-   structure PIO = PosixPrimitive.IO
+   structure PIO = PrimitiveFFI.Posix.IO
 in
    fun withNonBlock (s, f: unit -> 'a) =
       let
-         val fd = PosixPrimitive.FileDesc.fromInt (Prim.toInt s)
+         val fd = s
          val flags = 
             Syscall.simpleResultRestart (fn () => PIO.fcntl2 (fd, PIO.F_GETFL))
-         val _ =
-            Syscall.simpleResultRestart
+         val () =
+            Syscall.simpleRestart
             (fn () => 
              PIO.fcntl3 (fd, PIO.F_SETFL,
-                         Word.toIntX
-                         (Word.orb (Word.fromInt flags,
-                                    PosixPrimitive.FileSys.O.nonblock))))
+                         C_Int.orb (flags, PrimitiveFFI.Posix.FileSys.O.NONBLOCK)))
       in
          DynamicWind.wind
          (f, fn () =>
-          Syscall.simple (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
+          Syscall.simpleRestart (fn () => PIO.fcntl3 (fd, PIO.F_SETFL, flags)))
       end
 end
 
 fun connect (s, SA sa) =
-   Syscall.simple (fn () => Prim.connect (s, sa, Vector.length sa))
+   Syscall.simple (fn () => Prim.connect (s, sa, C_Socklen.fromInt (Vector.length sa)))
 
 fun connectNB (s, SA sa) =
    nonBlock'
-   ({restart = false}, fn () => 
-    withNonBlock (s, fn () => Prim.connect (s, sa, Vector.length sa)),
+   ({restart = false}, C_Int.fromInt ~1, fn () => 
+    withNonBlock (s, fn () => Prim.connect (s, sa, C_Socklen.fromInt (Vector.length sa))),
     fn _ => true,
     Error.inprogress, false)
 
@@ -303,7 +416,7 @@ fun accept s =
       val (sa, salen, finish) = new_sock_addr ()
       val s = Syscall.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
    in
-      (Prim.fromInt s, finish ())
+      (s, finish ())
    end
 
 fun acceptNB s =
@@ -311,8 +424,9 @@ fun acceptNB s =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => withNonBlock (s, fn () => Prim.accept (s, sa, salen)),
-       fn s => SOME (Prim.fromInt s, finish ()),
+      (C_Int.fromInt ~1, 
+       fn () => withNonBlock (s, fn () => Prim.accept (s, sa, salen)),
+       fn s => SOME (s, finish ()),
        NONE)
    end
 
@@ -376,27 +490,30 @@ fun select {rds: sock_desc list,
    end
 
 val ioDesc = sockDesc
- 
+
 type out_flags = {don't_route: bool, oob: bool}
 
-fun mk_out_flags {don't_route, oob} =
-   Word.orb (if don't_route then Prim.MSG_DONTROUTE else 0wx0,
-                Word.orb (if oob then Prim.MSG_OOB else 0wx0,
-                             0wx0))
 val no_out_flags = {don't_route = false, oob = false}
 
+fun mk_out_flags {don't_route, oob} =
+   C_Int.orb (if don't_route then Prim.MSG_DONTROUTE else 0x0,
+   C_Int.orb (if oob then Prim.MSG_OOB else 0x0,
+              0x0))
+
 local
-   fun make (base, toPoly, primSend, primSendTo) =
+   fun make (base, primSend, primSendTo) =
       let
          val base = fn sl => let val (buf, i, sz) = base sl
-                             in (toPoly buf, i, sz)
+                             in (buf, i, sz)
                              end
          fun send' (s, sl, out_flags) =
             let
                val (buf, i, sz) = base sl
             in
-               Syscall.simpleResultRestart
-               (fn () => primSend (s, buf, i, sz, mk_out_flags out_flags))
+               (C_SSize.toInt o Syscall.simpleResultRestart')
+               ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                primSend (s, buf, C_Int.fromInt i, C_Size.fromInt sz, 
+                          mk_out_flags out_flags))
             end
          fun send (sock, buf) = send' (sock, buf, no_out_flags)
          fun sendNB' (s, sl, out_flags) =
@@ -404,10 +521,11 @@ local
                val (buf, i, sz) = base sl
             in
                nonBlock
-               (fn () =>
-                primSend (s, buf, i, sz,
-                          Word.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
-                SOME, 
+               (C_SSize.castFromFixedInt ~1,
+                fn () =>
+                primSend (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
+                          C_Int.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags)),
+                SOME o C_SSize.toInt, 
                 NONE)
             end
          fun sendNB (sock, sl) = sendNB' (sock, sl, no_out_flags)
@@ -415,10 +533,11 @@ local
             let
                val (buf, i, sz) = base sl
             in
-               Syscall.simpleRestart
-               (fn () =>
-                primSendTo (s, buf, i, sz,
-                            mk_out_flags out_flags, sa, Vector.length sa))
+               Syscall.simpleRestart'
+               ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+                primSendTo (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
+                            mk_out_flags out_flags, 
+                            sa, C_Socklen.fromInt (Vector.length sa)))
             end
          fun sendTo (sock, sock_addr, sl) =
             sendTo' (sock, sock_addr, sl, no_out_flags)
@@ -427,11 +546,11 @@ local
                val (buf, i, sz) = base sl
             in
                nonBlock 
-               (fn () =>
-                primSendTo (s, buf, i, sz,
-                            Word.orb (Prim.MSG_DONTWAIT,
-                                      mk_out_flags out_flags),
-                            sa, Vector.length sa),
+               (C_SSize.castFromFixedInt ~1,
+                fn () =>
+                primSendTo (s, buf, C_Int.fromInt i, C_Size.fromInt sz,
+                            C_Int.orb (Prim.MSG_DONTWAIT, mk_out_flags out_flags),
+                            sa, C_Socklen.fromInt (Vector.length sa)),
                 fn _ => true,
                 false)
             end
@@ -443,39 +562,39 @@ local
 in
    val (sendArr, sendArr', sendArrNB, sendArrNB',
         sendArrTo, sendArrTo', sendArrToNB, sendArrToNB') =
-      make (Word8ArraySlice.base, Word8Array.toPoly,
-            Prim.sendArr, Prim.sendToArr)
+      make (Word8ArraySlice.base, Prim.sendArr, Prim.sendArrTo)
    val (sendVec, sendVec', sendVecNB, sendVecNB',
         sendVecTo, sendVecTo', sendVecToNB, sendVecToNB') =
-      make (Word8VectorSlice.base, Word8Vector.toPoly,
-            Prim.sendVec, Prim.sendToVec)
+      make (Word8VectorSlice.base, Prim.sendVec, Prim.sendVecTo)
 end
 
 type in_flags = {peek: bool, oob: bool}
 
 val no_in_flags = {peek = false, oob = false}
-            
+
 fun mk_in_flags {peek, oob} =
-   Word.orb (if peek then Prim.MSG_PEEK else 0wx0,
-                Word.orb (if oob then Prim.MSG_OOB else 0wx0,
-                             0wx0))
+   C_Int.orb (if peek then Prim.MSG_PEEK else 0x0,
+   C_Int.orb (if oob then Prim.MSG_OOB else 0x0,
+              0x0))
 
 fun recvArr' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
-      Syscall.simpleResultRestart
-      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz, mk_in_flags in_flags))
+      (C_SSize.toInt o Syscall.simpleResultRestart')
+      ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+       Prim.recv (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz, 
+                  mk_in_flags in_flags))
    end
 
 fun getVec (a, n, bytesRead) =
    if n = bytesRead
       then Word8Vector.fromArray a
    else Word8ArraySlice.vector (Word8ArraySlice.slice (a, 0, SOME bytesRead))
-      
+
 fun recvVec' (sock, n, in_flags) =
    let
-      val a = Word8Array.rawArray n
+      val a = Word8Array.arrayUninit n
       val bytesRead =
          recvArr' (sock, Word8ArraySlice.full a, in_flags)
    in
@@ -491,16 +610,18 @@ fun recvArrFrom' (s, sl, in_flags) =
       val (buf, i, sz) = Word8ArraySlice.base sl
       val (sa, salen, finish) = new_sock_addr ()
       val n =
-         Syscall.simpleResultRestart
-         (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz,
-                                  mk_in_flags in_flags, sa, salen))
+         (C_SSize.toInt o Syscall.simpleResultRestart')
+         ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
+          Prim.recvFrom (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
+                         mk_in_flags in_flags, 
+                         sa, salen))
    in
       (n, finish ())
    end
 
 fun recvVecFrom' (sock, n, in_flags) =
    let
-      val a = Word8Array.fromPoly (Primitive.Array.array n)
+      val a = Word8Array.arrayUninit n
       val (bytesRead, sock_addr) =
          recvArrFrom' (sock, Word8ArraySlice.full a, in_flags)
    in
@@ -511,27 +632,29 @@ fun recvArrFrom (sock, sl) = recvArrFrom' (sock, sl, no_in_flags)
 
 fun recvVecFrom (sock, n) = recvVecFrom' (sock, n, no_in_flags)
 
-fun mk_in_flagsNB z = Word.orb (mk_in_flags z, Prim.MSG_DONTWAIT)
+fun mk_in_flagsNB in_flags = C_Int.orb (mk_in_flags in_flags, Prim.MSG_DONTWAIT)
 
 fun recvArrNB' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly buf, i, sz,
+      (C_SSize.castFromFixedInt ~1,
+       fn () => Prim.recv (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
                            mk_in_flagsNB in_flags),
-       SOME, 
+       SOME o C_SSize.toInt, 
        NONE)
    end
 
 fun recvVecNB' (s, n, in_flags) =
    let
-      val a = Word8Array.rawArray n
+      val a = Word8Array.arrayUninit n
    in
       nonBlock
-      (fn () => Prim.recv (s, Word8Array.toPoly a, 0, n,
+      (C_SSize.castFromFixedInt ~1,
+       fn () => Prim.recv (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                            mk_in_flagsNB in_flags),
-       fn bytesRead => SOME (getVec (a, n, bytesRead)),
+       fn bytesRead => SOME (getVec (a, n, C_SSize.toInt bytesRead)),
        NONE)
    end
 
@@ -545,21 +668,23 @@ fun recvArrFromNB' (s, sl, in_flags) =
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly buf, i, sz,
+      (C_SSize.castFromFixedInt ~1,
+       fn () => Prim.recvFrom (s, Word8Array.toPoly buf, C_Int.fromInt i, C_Size.fromInt sz,
                                mk_in_flagsNB in_flags, sa, salen),
-       fn n => SOME (n, finish ()),
+       fn n => SOME (C_SSize.toInt n, finish ()),
        NONE)
    end
 
 fun recvVecFromNB' (s, n, in_flags) =
    let
-      val a = Word8Array.fromPoly (Primitive.Array.array n)
+      val a = Word8Array.arrayUninit n
       val (sa, salen, finish) = new_sock_addr ()
    in
       nonBlock
-      (fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, n,
+      (C_SSize.castFromFixedInt ~1,
+       fn () => Prim.recvFrom (s, Word8Array.toPoly a, 0, C_Size.fromInt n,
                                mk_in_flagsNB in_flags, sa, salen),
-       fn bytesRead => SOME (getVec (a, n, bytesRead), finish ()),
+       fn bytesRead => SOME (getVec (a, n, C_SSize.toInt bytesRead), finish ()),
        NONE)
    end
 
@@ -573,5 +698,5 @@ type ('af, 'sock_type) sock = sock
 type 'af sock_addr = sock_addr
 
 type 'mode stream = stream
-   
+
 end

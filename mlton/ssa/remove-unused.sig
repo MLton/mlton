@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-   
+
 signature REMOVE_UNUSED_STRUCTS = 
    sig
       include SHRINK
@@ -15,6 +15,6 @@ signature REMOVE_UNUSED_STRUCTS =
 signature REMOVE_UNUSED = 
    sig
       include REMOVE_UNUSED_STRUCTS
-      
+
       val remove: Program.t -> Program.t
    end

@@ -2,12 +2,12 @@
 
 (* Copyright 1996 by AT&T Bell Laboratories *)
 (* precedence.sml *)
- 
+
 functor PrecedenceParse (S: PRECEDENCE_PARSE_STRUCTS): PRECEDENCE_PARSE =
 struct
 
 open S
-   
+
 local open Ast
 in structure Exp = Exp
    structure Fixity = Fixity
@@ -16,7 +16,7 @@ in structure Exp = Exp
    structure Pat = Pat
    structure Vid = Vid
 end
-   
+
 structure Fixval =
    struct
       datatype t = Nonfix | Infix of int * int
@@ -56,7 +56,7 @@ datatype 'a precStack =
    INf of int * 'a * 'a precStack
  | NONf of 'a * 'a precStack
  | NILf
-   
+
 fun 'a parse {apply: 'a * 'a -> 'a,
               fixval: 'a -> Fixval.t,
               items: 'a vector,
@@ -233,5 +233,5 @@ fun parseClause (pats: Pat.t vector, E: Env.t, region, lay) =
                         | _ => done (b, [tuple (a, c)]))
        | _ => parse pats
    end
-    
+
 end

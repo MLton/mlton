@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature SET_STRUCTS =
    sig
       structure Element: T

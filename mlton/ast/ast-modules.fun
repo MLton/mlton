@@ -14,11 +14,11 @@ open S
 structure AstCore = AstCore (AstAtoms (S))
 
 open AstCore Layout
-   
+
 val layouts = List.map
 structure Wrap = Region.Wrap
 val node = Wrap.node
-   
+
 structure Equation =
    struct
       open Wrap
@@ -152,13 +152,13 @@ fun checkSyntaxSigexp (e: sigexp): unit =
     | Where (e, v) =>
          (checkSyntaxSigexp e
           ; Vector.foreach (v, fn {ty, ...} => Type.checkSyntax ty))
-          
+
 and checkSyntaxSigConst (s: sigConst): unit =
    case s of
       None => ()
     | Opaque e => checkSyntaxSigexp e
     | Transparent e => checkSyntaxSigexp e
-         
+
 and checkSyntaxSpec (s: spec): unit =
    let
       fun term () = layoutSpec s
@@ -224,17 +224,17 @@ structure Sigexp =
       type obj = t
 
       val checkSyntax = checkSyntaxSigexp
-         
+
       fun wheree (sigexp: t, wherespecs, region): t =
          if 0 = Vector.length wherespecs
             then sigexp
          else makeRegion (Where (sigexp, wherespecs), region)
 
       fun make n = makeRegion (n, Region.bogus)
-         
+
       val spec = make o Spec
       val var = make o Var
-         
+
       val layout = layoutSigexp
    end
 
@@ -294,7 +294,7 @@ fun layoutStrdec d =
                                 layoutStrexp def))
 
 and layoutStrdecs ds = layouts (ds, layoutStrdec)
-   
+
 and layoutStrexp exp =
    case node exp of
       App (f, e) => seq [Fctid.layout f, str " ", paren (layoutStrexp e)]
@@ -330,7 +330,7 @@ and checkSyntaxStrexp (e: strexp): unit =
                      ; checkSyntaxStrexp e)
     | Struct d => checkSyntaxStrdec d
     | Var _ => ()
-         
+
 structure Strexp =
    struct
       open Wrap
@@ -466,7 +466,7 @@ structure Topdec =
       type t = node Wrap.t
       type node' = node
       type obj = t
-         
+
       fun layout d =
          case node d of
             Functor fctbs =>

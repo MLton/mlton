@@ -14,6 +14,6 @@ signature IMPLEMENT_HANDLERS_STRUCTS =
 signature IMPLEMENT_HANDLERS = 
    sig
       include IMPLEMENT_HANDLERS_STRUCTS
-      
+
       val doit: Rssa.Program.t -> Rssa.Program.t
    end

@@ -15,7 +15,7 @@ datatype 'a t = T of {map: {name: string,
 fun new default = T{map = ref [], default = default}
 
 fun clear (T {map, ...}) = map := []
-   
+
 fun lookup (T {map, default}, name) =
    case List.peek (!map, fn {name = name', ...} => name = name') of
       NONE => let

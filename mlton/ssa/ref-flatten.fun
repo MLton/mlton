@@ -144,7 +144,7 @@ structure Value =
                       if Object.equals (object, outer) then SOME z else NONE
                  | _ => NONE)
           | _ => NONE
-               
+
       fun dontFlatten (v: t): unit =
          case value v of
             Object (Obj {flat, ...}) => flat := NotFlat
@@ -154,7 +154,7 @@ structure Value =
          case v of
             GroundV t => Type.isUnit t
           | _ => false
-               
+
       fun objectC {args: t Prod.t, con: ObjectCon.t, originalType}
          : computed =
          let
@@ -258,7 +258,7 @@ structure VarInfo =
                      objectVar: Var.t,
                      offset: int}
        | Unused
-         
+
       datatype t =
          Flattenable of {components: Var.t vector,
                          defBlock: Label.t,

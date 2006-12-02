@@ -7,7 +7,7 @@
  *)
 
 type int = Int.t
-   
+
 signature SIMPLIFY_TYPES_STRUCTS = 
    sig
       structure Input: XML_TREE
@@ -18,6 +18,6 @@ signature SIMPLIFY_TYPES_STRUCTS =
 signature SIMPLIFY_TYPES = 
    sig
       include SIMPLIFY_TYPES_STRUCTS
-      
+
       val simplifyTypes: Input.Program.t -> Output.Program.t
    end

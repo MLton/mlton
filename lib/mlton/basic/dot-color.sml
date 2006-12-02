@@ -167,7 +167,7 @@ structure DotColor =
          else Error.bug "Dot.gray"
 
       fun realToString x = Real.format (x, Real.Format.fix (SOME 2))
-         
+
       val toString =
          fn HSB (h, s, b) => concat [realToString h, " ",
                                      realToString s, " ",

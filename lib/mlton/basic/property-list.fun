@@ -21,7 +21,7 @@ fun clear (T hs) = hs := []
 val numPeeks: int ref = ref 0
 val numLinks: int ref = ref 0
 val maxLength: int ref = ref 0
-   
+
 fun stats () =
    let open Layout
    in align

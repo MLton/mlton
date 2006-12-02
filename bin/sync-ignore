@@ -2,9 +2,9 @@
 
 set -e
 
-name=`basename $0`
-dir=`dirname $0`
-root=`cd $dir/.. && pwd`
+name=`basename "$0"`
+dir=`dirname "$0"`
+root=`cd "$dir/.." && pwd`
 
 die () {
         echo >&2 "$1"
@@ -25,11 +25,11 @@ esac
 
 p='svn:ignore'
 
-for i in `find $root -type f -name .ignore`; do
-        d=`dirname $i`
+for i in `find "$root" -type f -name .ignore`; do
+        d=`dirname "$i"`
         tmp='/tmp/z.ign'
-        svn propget $p $d | head -n -1 >$tmp
-        if ! diff -q $i $tmp >/dev/null; then
-                svn propset $p -F $i $d
+        svn propget "$p" "$d" | head -n -1 >"$tmp"
+        if ! diff -q "$i" "$tmp" >/dev/null; then
+                svn propset "$p" -F "$i" "$d"
         fi
 done

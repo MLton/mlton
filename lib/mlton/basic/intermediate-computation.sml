@@ -29,7 +29,7 @@ structure Result =
 structure Computation =
    struct
       structure Time = Time
-         
+
       datatype t = T of callResult list
       withtype callResult = {name: string,
                              layoutArg: unit -> Layout.t,
@@ -44,19 +44,19 @@ structure Computation =
             type t = callResult
 
             fun layoutName({name, ...}:t) = str(name ^ " ")
-               
+
             fun layoutCall(cr as {layoutArg, ...}:t) =
                seq[layoutName cr, layoutArg()]
 
             val darrow = str "==> "
-               
+
             fun layoutDarrow _ = darrow
-               
+
             fun layoutTime({time, ...}:t) =
                case time of
                   SOME t => Time.layout t
                 | NONE => empty
-                     
+
             fun layoutReturn({result, ...}:t) =
                seq[darrow, Result.layout result]
          end
@@ -99,7 +99,7 @@ structure Computation =
                end
          in (output, outputCr)
          end
-      
+
       val makeOutput =
          makeOutputs(CR.layoutCall, CR.layoutReturn, fn _ => true)
       fun output(c, out) = #1(makeOutput out) c
@@ -168,10 +168,10 @@ structure Computation =
 
          exception Quit
          exception Back
-         
+
          val standardChoices = [("quit", fn () => raise Quit),
                                 ("back", fn () => raise Back)]
-         
+
          fun inspect(c as T crs) =
             case crs of
                [cr] => inspectCr cr
@@ -226,7 +226,7 @@ structure Computation =
              ; inspectCr cr)
       in val inspect = fn c => inspect c handle Quit => ()
       end      
-   
+
    end
 
 (*---------------------------------------------------*)
@@ -243,11 +243,11 @@ fun empty() = T{calls = ref [],
                 after = ref []}
 
 fun atTopLevel(T{calls, ...}) = List.isEmpty(!calls)
-            
+
 fun call(T{calls, after},name, layoutArg) =
    (List.push(calls, {name = name, layoutArg = layoutArg, prev = !after})
     ; after := [])
-   
+
 fun return(T{calls, after}, result, time) =
    case !calls of
       [] => Error.bug "IntermediateComputation.return: without a call"

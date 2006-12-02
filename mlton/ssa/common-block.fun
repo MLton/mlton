@@ -15,7 +15,7 @@ open Exp Transfer
 fun eliminate (Program.T {globals, datatypes, functions, main}) = 
    let
       val shrink = shrinkFunction {globals = globals}
-         
+
       local 
          fun make transfer = let
                                 val l = Label.newNoname ()
@@ -31,7 +31,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
          fun makeGoto (dst, var) = make (Goto {dst = dst, args = Vector.new1 var})
       end
       fun makeNullaryGoto dst = Goto {dst = dst, args = Vector.new0 ()}
-         
+
       val {get = varInfo: 
            Var.t -> {returner: (Func.t * Label.t) option ref,
                      raiser: (Func.t * Label.t) option ref,
@@ -59,7 +59,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                    | SOME varInfo => 
                         let
                            val c = sel varInfo
-                              
+
                            fun install () = 
                               let
                                  val b = make var
@@ -113,7 +113,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                        | SOME (_, l') => SOME l'
                                  else install' ()
                      end
-                  
+
             val blocks = 
                Vector.map
                (blocks, fn Block.T {label, args, statements, transfer} =>
@@ -156,7 +156,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                                   returns = returns,
                                   start = start})
          end
-      
+
       val program = 
          Program.T {datatypes = datatypes,
                     globals = globals,

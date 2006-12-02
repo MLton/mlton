@@ -8,14 +8,14 @@
 
 structure Char: CHAR_EXTRA =
    struct
-      open Char0
-                       
+      open PreChar
+
       fun control reader state =
          case reader state of
             NONE => NONE
           | SOME (c, state) =>
                if #"@" <= c andalso c <= #"_"
-                  then SOME (chr (ord c -? ord #"@"), state)
+                  then SOME (chr (Int.-? (ord c, ord #"@")), state)
                else NONE
 
       fun formatChar reader state =
@@ -35,7 +35,7 @@ structure Char: CHAR_EXTRA =
          in
             loop
          end
-                  
+
       val 'a formatSequences: (char, 'a) StringCvt.reader -> 'a -> 'a =
          fn reader =>
          let
@@ -159,10 +159,10 @@ structure Char: CHAR_EXTRA =
 
       fun padLeft (s: string, n: int): string =
          let
-            val m = String.size s
-            val diff = n -? m
+            val m = PreString.size s
+            val diff = Int.-? (n, m)
          in if Int.> (diff, 0)
-               then String.concat [String.new (diff, #"0"), s]
+               then PreString.concat [PreString.new (diff, #"0"), s]
             else if diff = 0
                     then s
                  else raise Fail "padLeft"
@@ -176,7 +176,7 @@ structure Char: CHAR_EXTRA =
                 (case c of
                     #"\\" => "\\\\"
                   | #"\"" => "\\\""
-                  | _ => String0.str c)
+                  | _ => PreString.str c)
           else
              case c of
                 #"\a" => "\\a"
@@ -188,11 +188,11 @@ structure Char: CHAR_EXTRA =
               | #"\r" => "\\r"
               | _ =>
                    if c < #" "
-                      then (String.concat
-                            ["\\^", String0.str (chr (ord c +? ord #"@"))])
-                   else String.concat 
+                      then (PreString.concat
+                            ["\\^", PreString.str (chr (Int.+? (ord c, ord #"@")))])
+                   else PreString.concat 
                         ["\\", padLeft (Int.fmt StringCvt.DEC (ord c), 3)])
-      
+
       val toCString =
          memoize
          (fn c =>
@@ -203,7 +203,7 @@ structure Char: CHAR_EXTRA =
                   | #"\"" => "\\\""
                   | #"?" => "\\?"
                   | #"'" => "\\'"
-                  | _ => String0.str c)
+                  | _ => PreString.str c)
           else
              case c of
                 #"\a" => "\\a"
@@ -214,10 +214,6 @@ structure Char: CHAR_EXTRA =
               | #"\f" => "\\f"
               | #"\r" => "\\r"
               | _ =>
-                   String.concat
+                   PreString.concat
                    ["\\", padLeft (Int.fmt StringCvt.OCT (ord c), 3)])
    end
-
-structure CharGlobal: CHAR_GLOBAL = Char
-open CharGlobal
-

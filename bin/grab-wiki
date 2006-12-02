@@ -2,9 +2,9 @@
 
 set -e
 
-name=`basename $0`
-dir=`dirname $0`
-src=`cd $dir/.. && pwd`
+name=`basename "$0"`
+dir=`dirname "$0"`
+src=`cd "$dir/.." && pwd`
 
 die () {
         echo >&2 "$1"
@@ -39,36 +39,36 @@ rm -f *
 drop='\(Download\|.*MoinEditorBackup\|OldPages\|Preferences\|RecentChanges\|TemporaryBugExamples\|TemporaryUpload\|WikiSandBox\)'
 
 if $useLocal; then 
-	(cd $HOME/mlton/guide-in && tar.write .) | tar.read;
+	(cd "$HOME/mlton/guide-in" && tar.write .) | tar.read;
 else
 echo "Getting index:" 
 lynx -dump "$base/Index?action=titleindex" | \
-    grep -v >$index -e '^$' -e "^$drop$"
+    grep -v >"$index" -e '^$' -e "^$drop$"
 
 echo "Getting pages:" 
-wget -B $base -c -nv -i $index
- 
+wget -B "$base" -c -nv -i "$index"
+
 echo "Getting CSS:"
 for f in common screen print; do
-	wget -c $base/wiki/mlton/css/$f.css
+	wget -c "$base/wiki/mlton/css/$f.css"
 done
 
 echo "Getting images:"
 for f in bottom email ftp news top www; do
-	wget -c $base/wiki/mlton/img/moin-$f.png
+	wget -c "$base/wiki/mlton/img/moin-$f.png"
 done
 fi
 
 echo "Fixing pages:" 
 
 # Eliminate ungrabbed pages from Index.
-grep -v "$drop" Index >$tmp
-mv $tmp Index
+grep -v "$drop" Index >"$tmp"
+mv "$tmp" Index
 
 wwwImg='<img src="moin-www.png" alt="[WWW]" height="11" width="11">'
 
 # Write sed script to file.
-cat >$script <<EOF
+cat >"$script" <<EOF
 # Delete search box.
 /<form .* action = "http:\/\/www.google.com\/custom">/,+6d
 # Replace highlight actions with no-op.
@@ -93,15 +93,15 @@ s; \(href\|src\) *= *"wiki/mlton/[^/]\+/\([^"]*\)"; \1="\2";g
 s;\(<a href *= *"http://mlton.org[^>]*>\);\1$wwwImg;g
 EOF
 
-for f in $(cat $index); do
-	echo $f
-	head -n -19 <$f >$tmp
+for f in $(cat "$index"); do
+	echo "$f"
+	head -n -19 <"$f" >"$tmp"
 	(
-		sed -f $script <$tmp
+		sed -f "$script" <"$tmp"
 		echo '</body></html>'
-	) >$f
+	) >"$f"
 done
 
-rm -f $tmp $index $script 
+rm -f "$tmp" "$index" "$script"
 
 cp Home index.html

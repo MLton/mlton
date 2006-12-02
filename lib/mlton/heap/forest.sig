@@ -6,7 +6,7 @@
  *)
 
 type int = Int.t
-   
+
 signature FOREST_HEAP_STRUCTS =
    sig
       structure Key: BOUNDED_ORDER
@@ -15,14 +15,14 @@ signature FOREST_HEAP_STRUCTS =
 signature FOREST_HEAP =
    sig
       include FOREST_HEAP_STRUCTS
-         
+
       structure Elt:
          sig
             type 'a t
             val key: 'a t -> Key.t
             val value: 'a t -> 'a
          end
-      
+
       type 'a t
 
       val empty: unit -> 'a t

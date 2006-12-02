@@ -7,7 +7,7 @@
 
 type int = Pervasive.Int.int
 type word8 = Pervasive.Word8.word
-   
+
 signature CHAR =
    sig
       type t = char
@@ -62,7 +62,7 @@ signature CHAR =
       val toUpper: t -> t
       val toWord8: t -> word8
    end
-   
+
 functor TestChar (S: CHAR): sig end =
    struct
       open S

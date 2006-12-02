@@ -99,11 +99,11 @@ structure Chunk =
                          chunkLabel: M.ChunkLabel.t}
 
       fun label (T {chunkLabel, ...}) = chunkLabel
-         
+
       fun new (): t =
          T {blocks = ref [],
             chunkLabel = M.ChunkLabel.newNoname ()}
-         
+
       fun newBlock (T {blocks, ...}, z) =
          List.push (blocks, M.Block.T z)
    end
@@ -1125,4 +1125,4 @@ end,
       program
    end
 end
-   
+

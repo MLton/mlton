@@ -31,8 +31,10 @@ fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64
 
 val one = fromBits (Bits.fromInt 1)
-   
+
 val byte = fromBits (Bits.fromInt 8)
+
+val bool = fromBits (Bits.fromInt 32)
 
 val allVector = Vector.tabulate (65, fn i =>
                                   if isValidSize i
@@ -95,7 +97,7 @@ fun isInRange (s, i, sg) =
    in
       min <= i andalso i <= max
    end
-   
+
 datatype prim = W8 | W16 | W32 | W64
 
 fun primOpt (s: t): prim option =
@@ -112,5 +114,5 @@ fun prim s =
     | SOME p => p
 
 fun s + s' = fromBits (Bits.+ (bits s, bits s'))
-   
+
 end

@@ -14,9 +14,9 @@ signature DECS_STRUCTS =
 signature DECS =
    sig
       include DECS_STRUCTS
-      
+
       type dec = CoreML.Dec.t
-         
+
       type t
 
       val add: t * dec -> t      (* add a dec to the end of the list *)

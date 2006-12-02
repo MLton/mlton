@@ -24,7 +24,7 @@ structure IO: IO =
                 SOME (concat ["Io: ", function, " \"", name, "\" failed with ",
                               exnMessage cause])
            | _ => NONE)
-      
+
       exception NonblockingNotSupported
 
       exception RandomAccessNotSupported

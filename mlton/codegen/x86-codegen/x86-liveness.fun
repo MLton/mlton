@@ -12,7 +12,7 @@ struct
   open x86
 
   type int = Int.t
-    
+
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop
 
@@ -49,7 +49,7 @@ struct
     struct
       datatype t = T of {get: Label.t -> LiveSet.t,
                          set: Label.t * LiveSet.t -> unit}
-      
+
       fun newLiveInfo ()
         = let
             val {get : Label.t -> LiveSet.t,
@@ -132,7 +132,7 @@ struct
             doit("dead: ", dead, MemLoc.toString,
                  "")))
           end
-        
+
 
       fun eq (T {liveIn = liveIn1,
                  liveOut = liveOut1,
@@ -279,7 +279,7 @@ struct
             val get_pred' = (! o #pred o getBlockInfo)
             val get_block' = (! o #block o getBlockInfo)
             val get_topo' = (! o #topo o getBlockInfo)
-              
+
             val labels
               = List.map
                 (blocks,
@@ -296,7 +296,7 @@ struct
                         fn target => List.push(get_pred target, label));
                        label
                      end)
-                
+
             local
               val todo = ref []
               fun topo_order(x,y) = Int.compare(get_topo' x, get_topo' y)
@@ -326,7 +326,7 @@ struct
                       | (x::todo') => (todo := todo';
                                        SOME x))
             end
-          
+
             local
               val num = Counter.new 1
             in
@@ -344,7 +344,7 @@ struct
                 = (get_topo label := Counter.next num;
                    push_todo label)
             end
-          
+
             fun loop (labels, n)
               = if List.isEmpty labels
                   then ()
@@ -357,7 +357,7 @@ struct
                                     val Block.T {transfer, ...} 
                                       = valOf (get_block' label)
                                     val targets = Transfer.nearTargets transfer
-                                      
+
                                     val targets'
                                       = List.fold(targets,
                                                   0,
@@ -385,7 +385,7 @@ struct
                        end
             val _ = loop(labels, 0)
             val _ = rev_todo ()
-              
+
             val changed = ref false
             fun doit ()
               = (case get_todo ()
@@ -396,7 +396,7 @@ struct
                          val block = valOf (!block)
                          val live = Liveness.livenessBlock {block = block,
                                                             liveInfo = liveInfo}
-                             
+
                          val live' = LiveInfo.getLive(liveInfo, label)
                        in
                          if LiveSet.equals(live, live')
@@ -438,7 +438,7 @@ struct
           in
             ()
           end
-        
+
       val (completeLiveInfo : {chunk: Chunk.t, 
                                liveInfo: LiveInfo.t,
                                pass: string} -> unit,

@@ -11,7 +11,7 @@ struct
 open S
 
 datatype z = datatype RealSize.t
-   
+
 datatype t =
    Real32 of Real32.t
  | Real64 of Real64.t
@@ -25,7 +25,7 @@ fun size r =
    case r of
       Real32 _ => R32
     | Real64 _ => R64
-         
+
 fun make (r: string, s: RealSize.t): t option =
    let
       fun doit (fromString, isFinite, con): t option =

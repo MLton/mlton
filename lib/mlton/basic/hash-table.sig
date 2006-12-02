@@ -8,11 +8,11 @@
 (* This code is not working -- it is not even in sources.cm *)
 type int = Int.t
 type word = Word.t
-   
+
 signature HASH_TABLE =
    sig
       type ('a, 'b) t
-         
+
       val fold: ('a, 'b) t * 'c * ('b * 'c -> 'c) -> 'c
       val foldi: ('a, 'b) t * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val forall: ('a, 'b) t * ('b -> bool) -> bool
@@ -68,5 +68,5 @@ val _ =
             end
          andalso n = size t
     end)
-   
+
 end

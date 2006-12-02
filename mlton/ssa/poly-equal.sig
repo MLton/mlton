@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-   
+
 signature POLY_EQUAL_STRUCTS = 
    sig
       include SHRINK
@@ -15,6 +15,6 @@ signature POLY_EQUAL_STRUCTS =
 signature POLY_EQUAL = 
    sig
       include POLY_EQUAL_STRUCTS
-      
+
       val polyEqual: Program.t -> Program.t
    end

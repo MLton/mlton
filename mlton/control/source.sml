@@ -8,7 +8,7 @@
 
 structure Source: SOURCE =
 struct
-  
+
 datatype t = T of {file: File.t ref,
                    lineNum: int ref,
                    lineStart: int ref}
@@ -17,7 +17,7 @@ fun getPos (T {file, lineNum, lineStart, ...}, n) =
    SourcePos.make {column = n - !lineStart,
                    file = !file,
                    line = !lineNum}
-                
+
 fun lineStart (s as T {lineStart, ...}) = getPos (s, !lineStart)
 
 fun lineDirective (T {file, lineNum, lineStart},
@@ -26,7 +26,7 @@ fun lineDirective (T {file, lineNum, lineStart},
    (Option.app (f, fn f => file := f)
     ; lineNum := n
     ; lineStart := s)
-                      
+
 fun new file = T {file = ref file,
                   lineNum = ref 1,
                   (* mllex file positions start at zero, while we report errors
@@ -39,6 +39,6 @@ fun new file = T {file = ref file,
 fun newline (T {lineStart, lineNum, ...}, n) =
    (Int.inc lineNum
     ; lineStart := n)
-   
+
 end
 

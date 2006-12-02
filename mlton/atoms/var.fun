@@ -13,5 +13,5 @@ open S
 
 structure V = Id (val noname = "x")
 open V
-   
+
 end
