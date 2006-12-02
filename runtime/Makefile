@@ -20,6 +20,7 @@ GCC_MINOR_VERSION :=						\
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
 FLAGS := 
+EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 GCOPTFLAGS := 
 DEBUGFLAGS := 
@@ -66,12 +67,20 @@ endif
 DEBUGFLAGS += -gstabs+
 endif
 
+ifeq ($(TARGET_OS), cygwin)
+EXE := .exe
+endif
+
 ifeq ($(TARGET_OS), darwin)
 FLAGS += -I/sw/include -I/opt/local/include
 endif
 
 ifeq ($(TARGET_OS), freebsd)
 FLAGS += -I/usr/local/include
+endif
+
+ifeq ($(TARGET_OS), mingw)
+EXE := .exe
 endif
 
 ifeq ($(TARGET_OS), netbsd)
@@ -265,7 +274,7 @@ gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h util.o
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
 	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h
 	cd gen && ./gen-types
-	rm -f gen/gen-types
+	rm -f gen/gen-types$(EXE)
 
 c-types.h ml-types.h: gen/c-types.h gen/ml-types.h
 	rm -f c-types.h ml-types.h
@@ -286,7 +295,7 @@ bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
 	rm -f bytecode/opcodes
 	cd bytecode && ./print-opcodes > opcodes
-	rm -f bytecode/print-opcodes
+	rm -f bytecode/print-opcodes$(EXE)
 
 
 util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
@@ -345,6 +354,7 @@ flags:
 	echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
 	echo GCC_VERSION = $(GCC_VERSION)
 	echo FLAGS = $(FLAGS)
+	echo EXE = $(EXE)
 	echo OPTFLAGS = $(OPTFLAGS)
 	echo GCOPTFLAGS = $(GCOPTFLAGS)
 	echo DEBUGFLAGS = $(DEBUGFLAGS)

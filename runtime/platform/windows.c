@@ -1,4 +1,4 @@
-iHANDLE fileDesHandle (int fd);
+HANDLE fileDesHandle (int fd);
 
 #define BUFSIZE 65536
 
