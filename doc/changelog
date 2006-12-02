@@ -1,5 +1,13 @@
 Here are the changes since version 20051202.
 
+* 2006-12-02
+   - Extensive reorganization of garbage collector, runtime system, and
+     Basis Library implementation. (This is in preparation for future
+     64bit support.)  They should be more C standards compliant and easier
+     to port to new systems.
+   - FFI revisions
+     Disallow nested indirect types (e.g., int array array).
+
 * 2006-11-30
    - Fixed a bug in elaboration of FFI forms; unary FFI types (e.g.,
      array, ref, vector) could be used in places where MLton.Pointer.t was
@@ -36,7 +44,7 @@ Here are the changes since version 20051202.
     (except MinGW, yet, where it's still ignored).
 
 * 2006-05-06
-  - Added -default-type '<ty><N>' for specyfying the binding of default
+  - Added -default-type '<ty><N>' for specifying the binding of default
     types in the Basis Library (e.g., Int.int).
 
 * 2006-04-25
