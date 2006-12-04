@@ -154,13 +154,14 @@ WARNCFLAGS += -Wnested-externs
 WARNCFLAGS += -Wlong-long
 # WARNCFLAGS += -Wunreachable-code
 WARNCFLAGS += $(WARNFLAGS)
-OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
-DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 
 # GCC doesn't recognize the %I64 format specifier which means %ll on windows
 ifeq ($(TARGET_OS), mingw)
 WARNCFLAGS += -Wno-format -Wno-missing-format-attribute
 endif
+
+OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
+DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
 
 UTILHFILES :=							\
 	util.h							\
