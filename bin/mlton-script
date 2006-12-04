@@ -69,11 +69,12 @@ doit () {
 
 # The darwin linker complains (loudly) about non-existent library
 # search paths.
-if [ -d '/opt/local/lib' ]; then 	 
-        darwinLinkOpts='-L/opt/local/lib'
+darwinLinkOpts=''
+if [ -d '/opt/local/lib' ]; then
+        darwinLinkOpts="$darwinLinkOpts -L/opt/local/lib"
 fi
-if [ -d '/sw/lib' ]; then 	 
-        darwinLinkOpts='$darwinLinkOpts -L/sw/lib'
+if [ -d '/sw/lib' ]; then
+        darwinLinkOpts="$darwinLinkOpts -L/sw/lib"
 fi
 
 doit "$lib" \
@@ -101,7 +102,7 @@ doit "$lib" \
                 -malign-jumps=2
                 -malign-loops=2'                                 \
         -target-link-opts amd64 '-m32'                           \
-        -target-link-opts darwin '$darwinLinkOpts'               \
+        -target-link-opts darwin "$darwinLinkOpts"               \
         -target-link-opts freebsd '-L/usr/local/lib/'            \
         -target-link-opts mingw                                  \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
