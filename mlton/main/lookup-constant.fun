@@ -56,17 +56,22 @@ val gcFields =
     "stackTop"
     ]
 
-val gcFields =
+val gcFieldsOffsets =
    List.map (gcFields, fn s =>
-             {name = s,
+             {name = s ^ "_Offset",
               value = concat ["offsetof (struct GC_state, ", s, ")"],
+              ty = ConstType.Word WordSize.default})
+val gcFieldsSizes =
+   List.map (gcFields, fn s =>
+             {name = s ^ "_Size",
+              value = concat ["sizeof (gcState.", s, ")"],
               ty = ConstType.Word WordSize.default})
 
 fun build (constants, out) =
    let
       val constants =
          List.fold
-         (constants, gcFields, fn ((name, ty), ac) =>
+         (constants, gcFieldsSizes @ gcFieldsOffsets, fn ((name, ty), ac) =>
           if List.exists (buildConstants, fn (name', _) => name = name')
              then ac
           else {name = name, value = name, ty = ty} :: ac)

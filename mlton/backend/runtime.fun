@@ -90,6 +90,52 @@ structure GCField =
           | StackLimit => !stackLimitOffset
           | StackTop => !stackTopOffset
 
+      val canHandleSize: Bytes.t ref = ref Bytes.zero
+      val cardMapSize: Bytes.t ref = ref Bytes.zero
+      val currentThreadSize: Bytes.t ref = ref Bytes.zero
+      val curSourceSeqsIndexSize: Bytes.t ref = ref Bytes.zero
+      val exnStackSize: Bytes.t ref = ref Bytes.zero
+      val frontierSize: Bytes.t ref = ref Bytes.zero
+      val limitSize: Bytes.t ref = ref Bytes.zero
+      val limitPlusSlopSize: Bytes.t ref = ref Bytes.zero
+      val maxFrameSizeSize: Bytes.t ref = ref Bytes.zero
+      val signalIsPendingSize: Bytes.t ref = ref Bytes.zero
+      val stackBottomSize: Bytes.t ref = ref Bytes.zero
+      val stackLimitSize: Bytes.t ref = ref Bytes.zero
+      val stackTopSize: Bytes.t ref = ref Bytes.zero
+
+      fun setSizes {canHandle, cardMap, currentThread, curSourceSeqsIndex, 
+                    exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
+                    signalIsPending, stackBottom, stackLimit, stackTop} =
+         (canHandleSize := canHandle
+          ; cardMapSize := cardMap
+          ; currentThreadSize := currentThread
+          ; curSourceSeqsIndexSize := curSourceSeqsIndex
+          ; exnStackSize := exnStack
+          ; frontierSize := frontier
+          ; limitSize := limit
+          ; limitPlusSlopSize := limitPlusSlop
+          ; maxFrameSizeSize := maxFrameSize
+          ; signalIsPendingSize := signalIsPending
+          ; stackBottomSize := stackBottom
+          ; stackLimitSize := stackLimit
+          ; stackTopSize := stackTop)
+
+      val size =
+         fn CanHandle => !canHandleSize
+          | CardMap => !cardMapSize
+          | CurrentThread => !currentThreadSize
+          | CurSourceSeqsIndex => !curSourceSeqsIndexSize
+          | ExnStack => !exnStackSize
+          | Frontier => !frontierSize
+          | Limit => !limitSize
+          | LimitPlusSlop => !limitPlusSlopSize
+          | MaxFrameSize => !maxFrameSizeSize
+          | SignalIsPending => !signalIsPendingSize
+          | StackBottom => !stackBottomSize
+          | StackLimit => !stackLimitSize
+          | StackTop => !stackTopSize
+
       val toString =
          fn CanHandle => "CanHandle"
           | CardMap => "CardMap"

@@ -440,7 +440,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ = Control.message (Control.Detail, fn () =>
                                CoreML.Program.layoutStats coreML)
 *)
-      (* Set GC_state offsets. *)
+      (* Set GC_state offsets and sizes. *)
       val _ =
          let
             fun get (name: string): Bytes.t =
@@ -451,19 +451,35 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          in
             Runtime.GCField.setOffsets
             {
-             canHandle = get "atomicState",
-             cardMap = get "generationalMaps.cardMapAbsolute",
-             currentThread = get "currentThread",
-             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex",
-             exnStack = get "exnStack",
-             frontier = get "frontier",
-             limit = get "limit",
-             limitPlusSlop = get "limitPlusSlop",
-             maxFrameSize = get "maxFrameSize",
-             signalIsPending = get "signalsInfo.signalIsPending",
-             stackBottom = get "stackBottom",
-             stackLimit = get "stackLimit",
-             stackTop = get "stackTop"
+             canHandle = get "atomicState_Offset",
+             cardMap = get "generationalMaps.cardMapAbsolute_Offset",
+             currentThread = get "currentThread_Offset",
+             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Offset",
+             exnStack = get "exnStack_Offset",
+             frontier = get "frontier_Offset",
+             limit = get "limit_Offset",
+             limitPlusSlop = get "limitPlusSlop_Offset",
+             maxFrameSize = get "maxFrameSize_Offset",
+             signalIsPending = get "signalsInfo.signalIsPending_Offset",
+             stackBottom = get "stackBottom_Offset",
+             stackLimit = get "stackLimit_Offset",
+             stackTop = get "stackTop_Offset"
+             };
+            Runtime.GCField.setSizes
+            {
+             canHandle = get "atomicState_Size",
+             cardMap = get "generationalMaps.cardMapAbsolute_Size",
+             currentThread = get "currentThread_Size",
+             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Size",
+             exnStack = get "exnStack_Size",
+             frontier = get "frontier_Size",
+             limit = get "limit_Size",
+             limitPlusSlop = get "limitPlusSlop_Size",
+             maxFrameSize = get "maxFrameSize_Size",
+             signalIsPending = get "signalsInfo.signalIsPending_Size",
+             stackBottom = get "stackBottom_Size",
+             stackLimit = get "stackLimit_Size",
+             stackTop = get "stackTop_Size"
              }
          end
       (* Setup endianness *)
