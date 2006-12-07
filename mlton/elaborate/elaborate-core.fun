@@ -735,7 +735,9 @@ structure Type =
                 end)
          in
             [("Bool", CType.bool, Tycon.bool),
-             ("Pointer", CType.pointer, Tycon.pointer),
+             ("Pointer", 
+              CType.word (WordSize.pointer (), {signed = false}), 
+              Tycon.pointer),
              ("Real32", CType.real RealSize.R32, Tycon.real RealSize.R32),
              ("Real64", CType.real RealSize.R64, Tycon.real RealSize.R64),
              ("Thread", CType.thread, Tycon.thread)]
