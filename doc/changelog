@@ -1,5 +1,12 @@
 Here are the changes since version 20051202.
 
+* 2006-12-8
+   - Added command line switches -{,target}-{as,cc,link}-opt-quote, which
+     pass their argument as a single argument to gcc (i.e., without
+     tokenization at spaces).  These options support using headers and
+     libraries (including the MLton runtime headers and libraries) from a
+     path with spaces.  
+
 * 2006-12-02
    - Extensive reorganization of garbage collector, runtime system, and
      Basis Library implementation. (This is in preparation for future

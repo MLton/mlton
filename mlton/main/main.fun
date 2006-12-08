@@ -47,19 +47,20 @@ structure OptPred =
        | Yes 
    end
 
+val gcc: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
-val buildConstants: bool ref = ref false
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
+
+val buildConstants: bool ref = ref false
 val coalesce: int option ref = ref NONE
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitCodegen: Control.codegen option ref = ref NONE
-val gcc: string ref = ref "<unset>"
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
-val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val profileTimeSet: bool ref = ref false
@@ -140,11 +141,12 @@ fun makeOptions {usage} =
                usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       datatype z = datatype MLton.Platform.Arch.t
-      fun splitString f opts =
-        List.foreach (String.tokens (opts, Char.isSpace), f)
-      fun splitString2 f (target, opts) =
-        List.foreach (String.tokens (opts, Char.isSpace), 
-                      fn opt => f (target, opt))
+      fun tokenizeOpt f opts =
+         List.foreach (String.tokens (opts, Char.isSpace), 
+                       fn opt => f opt)
+      fun tokenizeTargetOpt f (target, opts) =
+         List.foreach (String.tokens (opts, Char.isSpace), 
+                       fn opt => f (target, opt))
    in
       List.map
       (
@@ -159,24 +161,22 @@ fun makeOptions {usage} =
                                 | _ => usage (concat ["invalid -align flag: ",
                                                       s]))))),
        (Normal, "as-opt", " <opt>", "pass option to assembler",
-        SpaceString (fn s =>
-                     List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "as-opts", " <opts>", "pass options to assembler",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "as-opt-quote", " <opt>", "pass (quoted) option to assembler",
         SpaceString 
-         (splitString (fn s =>
-                       List.push (asOpts, {opt = s, pred = OptPred.Yes})))),
+        (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
         boolRef buildConstants),
        (Expert, "cc", " <gcc>", "path to gcc executable",
         SpaceString (fn s => gcc := s)),
        (Normal, "cc-opt", " <opt>", "pass option to C compiler",
-        SpaceString (fn s =>
-                     List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "cc-opts", " <opts>", "pass options to C compiler",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString 
-         (splitString (fn s =>
-                       List.push (ccOpts, {opt = s, pred = OptPred.Yes})))),
+        (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
         Int (fn n => coalesce := SOME n)),
        (Normal, "codegen",
@@ -306,12 +306,11 @@ fun makeOptions {usage} =
                                     end
                    | NONE => usage (concat ["invalid -keep-pass flag: ", s])))),
        (Normal, "link-opt", " <opt>", "pass option to linker",
-        SpaceString (fn s =>
-                     List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "link-opts", " <opts>", "pass options to linker",
+        (SpaceString o tokenizeOpt)
+        (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "link-opt-quote", " <opt>", "pass (quoted) option to linker",
         SpaceString 
-         (splitString (fn s =>
-                       List.push (linkOpts, {opt = s, pred = OptPred.Yes})))),
+        (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
         Int 
         (fn i => 
@@ -501,32 +500,29 @@ fun makeOptions {usage} =
          (target := (if t = "self" then Self else Cross t);
           setTargetType (t, usage)))),
        (Normal, "target-as-opt", " <target> <opt>", "target-dependent assembler option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) =>
+         List.push (asOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-as-opt-quote", " <target> <opt>", "target-dependent assembler option (quoted)",
         (SpaceString2
          (fn (target, opt) =>
           List.push (asOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Expert, "target-as-opts", " <target> <opts>", "target-dependent assembler options",
-        (SpaceString2
-         (splitString2 
-          (fn (target, opt) =>
-           List.push (asOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Normal, "target-cc-opt", " <target> <opt>", "target-dependent C compiler option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) =>
+         List.push (ccOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-cc-opt-quote", " <target> <opt>", "target-dependent C compiler option (quoted)",
         (SpaceString2
          (fn (target, opt) =>
           List.push (ccOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Expert, "target-cc-opts", " <target> <opts>", "target-dependent C compiler options",
-        (SpaceString2
-         (splitString2
-          (fn (target, opt) =>
-           List.push (ccOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Normal, "target-link-opt", " <target> <opt>", "target-dependent linker option",
+        (SpaceString2 o tokenizeTargetOpt)
+        (fn (target, opt) =>
+         List.push (linkOpts, {opt = opt, pred = OptPred.Target target}))),
+       (Expert, "target-link-opt-quote", " <target> <opt>", "target-dependent linker option (quoted)",
         (SpaceString2
          (fn (target, opt) =>
           List.push (linkOpts, {opt = opt, pred = OptPred.Target target})))),
-       (Expert, "target-link-opts", " <target> <opts>", "target-dependent linker options",
-        (SpaceString2
-         (splitString2
-          (fn (target, opt) =>
-           List.push (linkOpts, {opt = opt, pred = OptPred.Target target}))))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
         boolRef typeCheck),

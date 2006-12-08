@@ -32,7 +32,7 @@ set ccopts=%ccopts% -malign-functions=5 -malign-jumps=2 -malign-loops=2
 set linkopts=-lgdtoa -lm
 set linkopts=%linkopts% -lgmp -lws2_32 -lkernel32 -lpsapi -lnetapi32
 
-%mlton% @MLton load-world %world% ram-slop 0.5 -- %lib% -cc %cc% -cc-opt "-I%lib%\include" -cc-opts "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opts "%linkopts%" %*
+%mlton% @MLton load-world %world% ram-slop 0.5 -- %lib% -cc %cc% -cc-opt-quote "-I%lib%\include" -cc-opt "%ccopts%" -mlb-path-map "%lib%\mlb-path-map" -link-opt "%linkopts%" %*
 goto :eof
 
 :setdir
