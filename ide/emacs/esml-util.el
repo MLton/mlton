@@ -32,11 +32,8 @@ point is moved to the end of the string."
       (forward-char (length str))
     (insert str)))
 
-;; workaround for incompatibility between GNU Emacs and XEmacs
 (defun esml-split-string (string separator)
-  (if (string-match "XEmacs" emacs-version)
-      (split-string string separator t)
-    (remove* "" (split-string string separator))))
+  (remove* "" (split-string string separator) :test 'equal))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
 (defun esml-replace-regexp-in-string (str regexp rep)
