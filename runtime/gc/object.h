@@ -80,7 +80,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
  * native word size.  MLton's aggressive representation strategies may
  * pack multiple primitive values into the same native word.
  * Likewise, a primitive value may span multiple native words (e.g.,
- * Word64.word).
+ * Word64.word on an x86).
 */
 #define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
 
