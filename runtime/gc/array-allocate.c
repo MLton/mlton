@@ -10,66 +10,74 @@ pointer GC_arrayAllocate (GC_state s,
                           size_t ensureBytesFree, 
                           GC_arrayLength numElements, 
                           GC_header header) {
-  uintmax_t arraySizeMax;
-  size_t arraySize;
+  uintmax_t arraySizeMax, arraySizeAlignedMax;
+  size_t arraySize, arraySizeAligned;
   size_t bytesPerElement;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
   pointer frontier;
   pointer last;
-  pointer res;
+  pointer result;
 
   splitHeader(s, header, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
   if (DEBUG)
     fprintf (stderr, "GC_arrayAllocate (%zu, "FMTARRLEN", "FMTHDR")\n",
              ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
-  arraySizeMax = 
-    alignMax ((uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE,
-              s->alignment);
-  if (arraySizeMax >= (uintmax_t)SIZE_MAX)
+  arraySizeMax =
+    (uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE;
+  arraySizeAlignedMax = alignMax (arraySizeMax, s->alignment);
+  if (arraySizeAlignedMax >= (uintmax_t)SIZE_MAX)
     die ("Out of memory: cannot allocate array with %s bytes.",
-         uintmaxToCommaString(arraySizeMax));
+         uintmaxToCommaString(arraySizeAlignedMax));
   arraySize = (size_t)arraySizeMax;
-  if (arraySize < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE)
+  arraySizeAligned = (size_t)arraySizeAlignedMax;
+  if (arraySizeAligned < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
     /* Create space for forwarding pointer. */
-    arraySize = GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE;
+    arraySize = GC_ARRAY_HEADER_SIZE;
+    arraySizeAligned = align(GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE, s->alignment);
+  }
   if (DEBUG_ARRAY)
-    fprintf (stderr, "array with "FMTARRLEN" elts of size %zu and total size %s.  Ensure %s bytes free.\n",
+    fprintf (stderr, 
+             "Array with "FMTARRLEN" elts of size %zu and size %s and aligned size %s.  "
+             "Ensure %s bytes free.\n",
              numElements, bytesPerElement, 
              uintmaxToCommaString(arraySize),
+             uintmaxToCommaString(arraySizeAligned),
              uintmaxToCommaString(ensureBytesFree));
-  if (arraySize >= s->controls.oldGenArraySize) {
-    if (not hasHeapBytesFree (s, arraySize, ensureBytesFree)) {
+  if (arraySizeAligned >= s->controls.oldGenArraySize) {
+    if (not hasHeapBytesFree (s, arraySizeAligned, ensureBytesFree)) {
       enter (s);
-      performGC (s, arraySize, ensureBytesFree, FALSE, TRUE);
+      performGC (s, arraySizeAligned, ensureBytesFree, FALSE, TRUE);
       leave (s);
     }
     frontier = s->heap.start + s->heap.oldGenSize;
-    last = frontier + arraySize;
-    s->heap.oldGenSize += arraySize;
-    s->cumulativeStatistics.bytesAllocated += arraySize;
+    s->heap.oldGenSize += arraySizeAligned;
+    s->cumulativeStatistics.bytesAllocated += arraySizeAligned;
   } else {
     size_t bytesRequested;
+    pointer newFrontier;
 
-    bytesRequested = arraySize + ensureBytesFree;
+    bytesRequested = arraySizeAligned + ensureBytesFree;
     if (not hasHeapBytesFree (s, 0, bytesRequested)) {
       enter (s);
       performGC (s, 0, bytesRequested, FALSE, TRUE);
       leave (s);
     }
     frontier = s->frontier;
-    last = frontier + arraySize;
-    assert (isFrontierAligned (s, last));
-    s->frontier = last;
+    newFrontier = frontier + arraySizeAligned;
+    assert (isFrontierAligned (s, newFrontier));
+    s->frontier = newFrontier;
   }
+  last = frontier + arraySize;
   *((GC_arrayCounter*)(frontier)) = 0;
   frontier = frontier + GC_ARRAY_COUNTER_SIZE;
   *((GC_arrayLength*)(frontier)) = numElements;
   frontier = frontier + GC_ARRAY_LENGTH_SIZE;
   *((GC_header*)(frontier)) = header;
   frontier = frontier + GC_HEADER_SIZE;
-  res = frontier;
+  result = frontier;
+  assert (isAligned ((size_t)result, s->alignment));
   /* Initialize all pointers with BOGUS_OBJPTR. */
   if (1 <= numObjptrs and 0 < numElements) {
     pointer p;
@@ -94,10 +102,10 @@ pointer GC_arrayAllocate (GC_state s,
       }
     }
   }
-  GC_profileAllocInc (s, arraySize);
+  GC_profileAllocInc (s, arraySizeAligned);
   if (DEBUG_ARRAY) {
-    fprintf (stderr, "GC_arrayAllocate done.  res = "FMTPTR"  frontier = "FMTPTR"\n",
-             (uintptr_t)res, (uintptr_t)s->frontier);
+    fprintf (stderr, "GC_arrayAllocate done.  result = "FMTPTR"  frontier = "FMTPTR"\n",
+             (uintptr_t)result, (uintptr_t)s->frontier);
     displayGCState (s, stderr);
   }
   assert (ensureBytesFree <= (size_t)(s->limitPlusSlop - s->frontier));
@@ -105,5 +113,5 @@ pointer GC_arrayAllocate (GC_state s,
    * unless we did the GC, we never set s->currentThread->stack->used
    * to reflect what the mutator did with stackTop.
    */
-  return res;
+  return result;
 }       
