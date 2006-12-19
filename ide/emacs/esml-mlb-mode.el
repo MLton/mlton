@@ -242,21 +242,23 @@ by `esml-mlb-update'.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
 
-(defconst esml-mlb-string-continue-regexp "\\(\\\\[ \t\n]+\\\\\\)")
+(defconst esml-mlb-string-continue-regexp "\\(?:\\\\[ \t\n]+\\\\\\)")
 (defconst esml-mlb-string-char-regexp
-  (concat "\\(" esml-mlb-string-continue-regexp
-          "*\\([^\n\"\\]\\|\\\\[^ \t\n]\\)\\)"))
+  (concat "\\(?:" esml-mlb-string-continue-regexp
+          "*\\(?:[^\n\"\\]\\|\\\\[^ \t\n]\\)\\)"))
 (defconst esml-mlb-inside-string-regexp
   (concat "\"" esml-mlb-string-char-regexp "*"
           esml-mlb-string-continue-regexp "*"))
 (defconst esml-mlb-string-regexp (concat esml-mlb-inside-string-regexp "\""))
-(defconst esml-mlb-inside-comment-regexp "(\\*\\([^*]\\|\\*[^)]\\)*")
+(defconst esml-mlb-inside-comment-regexp "(\\*\\(?:[^*]\\|\\*[^)]\\)*")
 (defconst esml-mlb-comment-regexp
   (concat esml-mlb-inside-comment-regexp "\\*)"))
 (defconst esml-mlb-path-var-chars "A-Za-z0-9_")
 (defconst esml-mlb-unquoted-path-chars "-A-Za-z0-9_/.")
 (defconst esml-mlb-unquoted-path-or-ref-chars
   (concat esml-mlb-unquoted-path-chars "()$"))
+(defconst esml-mlb-compiler-ann-prefix
+  (concat "\\(?:" esml-mlb-string-char-regexp "*:[ \t]*\\)"))
 
 (defun esml-mlb-<token>-to-regexp (<token>)
   (let* ((<token>-to-regexp
@@ -309,7 +311,7 @@ by a space.")
           ;; annotations
           (,(apply
              'concat
-             "\"[ \t]*\\("
+             "\"[ \t]*" esml-mlb-compiler-ann-prefix "?\\("
              (reduce
               (function
                (lambda (regexps name-values)
@@ -484,7 +486,7 @@ name completions."
 
    ;; annotation values
    ((esml-point-preceded-by
-     (concat "\"[ \t\n]*\\("
+     (concat "\"[ \t\n]*" esml-mlb-compiler-ann-prefix "?\\("
              (regexp-opt (mapcar 'car esml-mlb-annotations))
              "\\)[ \t\n]+\\(" esml-mlb-string-char-regexp "*\\)"))
     (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
@@ -511,7 +513,8 @@ name completions."
           (concat "\\<ann[ \t\n]+\\([ \t\n]+\\|" esml-mlb-string-regexp
                   "\\|" esml-mlb-comment-regexp "\\)*\"[^\"]*"))
          (esml-point-preceded-by
-          (concat "\"[ \t\n]*\\(" esml-mlb-string-char-regexp "*\\)")))
+          (concat "\"[ \t\n]*" esml-mlb-compiler-ann-prefix "?\\("
+                  esml-mlb-string-char-regexp "*\\)")))
     (let* ((name-prefix (match-string 1))
            (name-completion (try-completion name-prefix esml-mlb-annotations))
            (name (if (eq t name-completion) name-prefix name-completion)))

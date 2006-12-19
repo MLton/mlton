@@ -429,9 +429,7 @@ fun insertFunction (f: Function.t,
                 end
              fun bigAllocation (bytesNeeded: Operand.t): unit =
                 let
-                   val extraBytes =
-                      Bytes.+ (Runtime.arrayHeaderSize,
-                               blockCheckAmount {blockIndex = i})
+                   val extraBytes = blockCheckAmount {blockIndex = i}
                 in
                    case bytesNeeded of
                       Operand.Const c =>

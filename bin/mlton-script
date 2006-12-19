@@ -70,46 +70,45 @@ doit () {
 # The darwin linker complains (loudly) about non-existent library
 # search paths.
 darwinLinkOpts=''
-if [ -d '/opt/local/lib' ]; then
-        darwinLinkOpts="$darwinLinkOpts -L/opt/local/lib"
-fi
 if [ -d '/sw/lib' ]; then
         darwinLinkOpts="$darwinLinkOpts -L/sw/lib"
+fi
+if [ -d '/opt/local/lib' ]; then
+        darwinLinkOpts="$darwinLinkOpts -L/opt/local/lib"
 fi
 
 doit "$lib" \
         -cc "$gcc"                                               \
-        -cc-opt "-I$lib/include"                                 \
+        -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1'                                            \
-        -cc-opts '-fno-strict-aliasing -fomit-frame-pointer -w'  \
+        -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -mlb-path-map "$lib/mlb-path-map"                        \
-        -target-as-opts amd64 '-m32 -mtune=opteron'              \
-        -target-cc-opts amd64 '-m32 -mtune=opteron'              \
-        -target-cc-opts darwin                                   \
+        -target-as-opt amd64 '-m32 -mtune=opteron'               \
+        -target-cc-opt amd64 '-m32 -mtune=opteron'               \
+        -target-cc-opt darwin                                    \
                 '-I/opt/local/include -I/sw/include'             \
-        -target-cc-opts freebsd '-I/usr/local/include'           \
-        -target-cc-opts netbsd '-I/usr/pkg/include'              \
-        -target-cc-opts openbsd '-I/usr/local/include'           \
-        -target-cc-opts solaris                                  \
-                '-Wa,-xarch=v8plusa
-                -mcpu=ultrasparc'                                \
-        -target-cc-opts sparc '-mcpu=v8 -m32'                    \
-        -target-cc-opts x86                                      \
+        -target-cc-opt freebsd '-I/usr/local/include'            \
+        -target-cc-opt netbsd '-I/usr/pkg/include'               \
+        -target-cc-opt openbsd '-I/usr/local/include'            \
+        -target-cc-opt solaris                                   \
+                '-Wa,-xarch=v8plusa -mcpu=ultrasparc'            \
+        -target-cc-opt sparc '-mcpu=v8 -m32'                     \
+        -target-cc-opt x86                                       \
                 '-fno-strength-reduce
                 -fschedule-insns
                 -fschedule-insns2
                 -malign-functions=5
                 -malign-jumps=2
                 -malign-loops=2'                                 \
-        -target-link-opts amd64 '-m32'                           \
-        -target-link-opts darwin "$darwinLinkOpts"               \
-        -target-link-opts freebsd '-L/usr/local/lib/'            \
-        -target-link-opts mingw                                  \
+        -target-link-opt amd64 '-m32'                            \
+        -target-link-opt darwin "$darwinLinkOpts"                \
+        -target-link-opt freebsd '-L/usr/local/lib/'             \
+        -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
-        -target-link-opts netbsd                                 \
+        -target-link-opt netbsd                                  \
                 '-Wl,-R/usr/pkg/lib -L/usr/pkg/lib/'             \
-        -target-link-opts openbsd '-L/usr/local/lib/'            \
-        -target-link-opts solaris '-lnsl -lsocket -lrt'          \
-        -link-opts '-lgdtoa -lm -lgmp'                           \
+        -target-link-opt openbsd '-L/usr/local/lib/'             \
+        -target-link-opt solaris '-lnsl -lsocket -lrt'           \
+        -link-opt '-lgdtoa -lm -lgmp'                            \
         -profile-exclude '<basis>'                               \
         "$@"

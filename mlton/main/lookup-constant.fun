@@ -24,7 +24,10 @@ val buildConstants: (string * (unit -> string)) list =
       val int = Int.toString
       open Control
    in
-      [("MLton_Codegen_codegen", fn () => int (case !codegen of
+      [("MLton_Align_align", fn () => int (case !align of
+                                              Align4 => 4
+                                            | Align8 => 8)),
+       ("MLton_Codegen_codegen", fn () => int (case !codegen of
                                                   Bytecode => 0
                                                 | CCodegen => 1
                                                 | Native => 2)),

@@ -37,6 +37,7 @@ pointer newObject (GC_state s,
   GC_profileAllocInc (s, bytesRequested);
   *((GC_header*)frontier) = header;
   result = frontier + GC_NORMAL_HEADER_SIZE;
+  assert (isAligned ((size_t)result, s->alignment));
   if (DEBUG)
     fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %zu, %s)\n",
              (uintptr_t)result,

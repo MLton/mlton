@@ -50,17 +50,29 @@ pointer getStackBottom (__attribute__ ((unused)) GC_state s, GC_stack stack) {
 
 /* Pointer to the topmost word in use on the stack. */
 pointer getStackTop (GC_state s, GC_stack stack) {
-  return getStackBottom (s, stack) + stack->used;
+  pointer res;
+
+  res = getStackBottom (s, stack) + stack->used;
+  assert (isAligned ((size_t)res, s->alignment));
+  return res;
 }
 
 /* Pointer to the end of stack. */
 pointer getStackLimitPlusSlop (GC_state s, GC_stack stack) {
-  return getStackBottom (s, stack) + stack->reserved;
+  pointer res;
+
+  res = getStackBottom (s, stack) + stack->reserved;
+  // assert (isAligned ((size_t)res, s->alignment));
+  return res;
 }
 
 /* The maximum value which is valid for stackTop. */
 pointer getStackLimit (GC_state s, GC_stack stack) {
-  return getStackLimitPlusSlop (s, stack) - sizeofStackSlop (s);
+  pointer res;
+
+  res  = getStackLimitPlusSlop (s, stack) - sizeofStackSlop (s);
+  // assert (isAligned ((size_t)res, s->alignment));
+  return res;
 }
 
 
