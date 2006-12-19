@@ -334,6 +334,7 @@ open Primitive
 structure IntInf =
    struct
       structure Prim = Primitive.IntInf
+      structure MLton = Primitive.MLton
 
       structure A = Primitive.Array
       structure V = Primitive.Vector
@@ -876,8 +877,11 @@ structure IntInf =
             Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex num),
             Sz.+ (Sz.* (bytesPerMPLimb, Sz.zextdFromSeqIndex extra),
             Sz.+ (bytesPerMPLimb, (* isneg Field *)
-                  bytesPerArrayHeader (* Array Header *)
-            )))
+            Sz.+ (bytesPerArrayHeader, (* Array Header *)
+                  case MLton.Align.align of (* alignment *)
+                     MLton.Align.Align4 => 0w3
+                   | MLton.Align.Align8 => 0w7
+            ))))
       end
 
       (* badObjptr{Int,Word}{,Tagged} is the fixnum IntInf.int whose 
@@ -1202,13 +1206,16 @@ structure IntInf =
                        Int32.+ (Int32.quot (bpl, bpd),
                                 if Int32.mod (bpl, bpd) = 0
                                    then 0 else 1)
+                    val bytes =
+                       Sz.+ (Sz.+ (bytesPerArrayHeader (* Array Header *),
+                             Sz.+ (0w1 (* sign *),
+                                   case MLton.Align.align of (* alignment *)
+                                      MLton.Align.Align4 => 0w3
+                                    | MLton.Align.Align8 => 0w7)),
+                             Sz.* (Sz.zextdFromInt32 dpl, 
+                                   Sz.zextdFromSeqIndex (numLimbs arg)))
                  in
-                    Prim.toString
-                    (arg, base, 
-                     Sz.+ (Sz.+ (bytesPerArrayHeader (* Array Header *),
-                                 0w1 (* sign *)),
-                           Sz.* (Sz.zextdFromInt32 dpl, 
-                                 Sz.zextdFromSeqIndex (numLimbs arg))))
+                    Prim.toString (arg, base, bytes)
                  end
 
       fun mkBigLog2 {fromSmall: {smallLog2: Primitive.Int32.int} -> 'a,

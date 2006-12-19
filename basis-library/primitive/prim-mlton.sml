@@ -32,6 +32,17 @@ structure GCState =
       val gcState = #1 _symbol "gcStateAddress": t GetSet.t; ()
    end
 
+structure Align =
+   struct
+      datatype t = Align4 | Align8
+
+      val align =
+         case _build_const "MLton_Align_align": Int32.int; of
+            4 => Align4
+          | 8 => Align8
+          | _ => raise Primitive.Exn.Fail8 "MLton_Align_align"
+   end
+
 structure CallStack =
    struct
       (* The most recent caller is at index 0 in the array. *)
