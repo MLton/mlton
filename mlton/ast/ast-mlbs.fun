@@ -128,7 +128,8 @@ fun sourceFiles (d: basdec): File.t vector =
                      else let
                              val () = b := true
                           in
-                             sourceFilesBasdec (Promise.force dec)
+                             Buffer.add (sourceFiles, fileAbs)
+                             ; sourceFilesBasdec (Promise.force dec)
                           end
                end
           | Open _ => ()
