@@ -706,6 +706,10 @@ val keepSSA2 = control {name = "keep SSA2",
                         default = false,
                         toString = Bool.toString}
 
+val keepDefUse = control {name = "keep def use",
+                          default = true,
+                          toString = Bool.toString}
+
 val keepDot = control {name = "keep dot",
                        default = false,
                        toString = Bool.toString}

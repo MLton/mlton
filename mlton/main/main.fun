@@ -675,10 +675,11 @@ fun commandLine (args: string list): unit =
          if !keepDot andalso List.isEmpty (!keepPasses)
             then keepSSA := true
          else ()
-      val keepDefUse = 
-         isSome (!showDefUse)
-         orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
-         orelse (Control.Elaborate.default Control.Elaborate.warnUnused)
+      val () =
+         keepDefUse
+         := (isSome (!showDefUse)
+             orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
+             orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
       val warnMatch =
           (Control.Elaborate.enabled Control.Elaborate.nonexhaustiveMatch)
           orelse (Control.Elaborate.enabled Control.Elaborate.redundantMatch)
@@ -688,7 +689,7 @@ fun commandLine (args: string list): unit =
                   Control.Elaborate.DiagEIW.Ignore)
       val _ = elaborateOnly := (stop = Place.TypeCheck
                                 andalso not (warnMatch)
-                                andalso not (keepDefUse))
+                                andalso not (!keepDefUse))
       val _ =
          if !codegen = Bytecode andalso !profile <> ProfileNone
             then usage (concat ["bytecode doesn't support profiling\n"])

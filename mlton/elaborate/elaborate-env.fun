@@ -1154,9 +1154,13 @@ structure NameSpace =
       fun newUses (T {defUses, ...}, class, def) =
          let
             val u = Uses.new ()
-            val _ = List.push (defUses, {class = class,
-                                         def = def,
-                                         uses = u})
+            val _ =
+               if !Control.keepDefUse then
+                  List.push (defUses, {class = class,
+                                       def = def,
+                                       uses = u})
+               else
+                  ()
          in
             u
          end

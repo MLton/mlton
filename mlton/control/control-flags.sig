@@ -152,9 +152,12 @@ signature CONTROL_FLAGS =
 
       val inlineIntoMain: bool ref
 
-      (* The input file on the command line, minus path and extension *)
+      (* The input file on the command line, minus path and extension. *)
       val inputFile: File.t ref
 
+      (* Whether or not the elaborator keeps def-use information. *)
+      val keepDefUse: bool ref
+         
       (* Keep dot files for whatever SSA files are produced. *)
       val keepDot: bool ref
 
