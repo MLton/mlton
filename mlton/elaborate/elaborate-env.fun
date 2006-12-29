@@ -688,7 +688,7 @@ structure Info =
               uses = uses}))
    end
 
-val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
+val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #tycon))
 val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
 
 val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
