@@ -135,7 +135,7 @@ files whose extension matches this regexp."
   :group 'esml-mlb)
 
 (defcustom esml-mlb-show-annotations-command
-  "mlton -expert true -show-anns true"
+  "mlton -expert true -show anns"
   "Shell command used to determine the annotations accepted by a compiler."
   :type 'string
   :set 'esml-mlb-set-custom-and-update
