@@ -991,6 +991,49 @@ val targetOS = control {name = "target OS",
                         default = Linux,
                         toString = MLton.Platform.OS.toString}
 
+local
+   fun make (file: File.t) =
+      if not (File.canRead file) then
+         Error.bug (concat ["can't read MLB path map file: ", file])
+      else
+         List.keepAllMap
+         (File.lines file, fn line =>
+          if String.forall (line, Char.isSpace)
+             then NONE
+          else
+             case String.tokens (line, Char.isSpace) of
+                [var, path] => SOME {var = var, path = path}
+              | _ => Error.bug (concat ["strange mlb path mapping: ",
+                                        file, ":: ", line]))
+in
+   fun mlbPathMap () =
+      List.rev
+         (List.concat
+             [[{var = "LIB_MLTON_DIR",
+                path = !libDir},
+               {var = "TARGET_ARCH",
+                path = String.toLower (MLton.Platform.Arch.toString
+                                       (!targetArch))},
+               {var = "TARGET_OS",
+                path = String.toLower (MLton.Platform.OS.toString
+                                       (!targetOS))},
+               {var = "OBJPTR_REP",
+                path = "objptr-rep32.sml"},
+               {var = "HEADER_WORD",
+                path = "header-word32.sml"},
+               {var = "SEQINDEX_INT",
+                path = "seqindex-int32.sml"},
+               {var = "DEFAULT_CHAR",
+                path = concat ["default-", !defaultChar, ".sml"]},
+               {var = "DEFAULT_INT",
+                path = concat ["default-", !defaultInt, ".sml"]},
+               {var = "DEFAULT_REAL",
+                path = concat ["default-", !defaultReal, ".sml"]},
+               {var = "DEFAULT_WORD",
+                path = concat ["default-", !defaultWord, ".sml"]}],
+              List.concat (List.map (!mlbPathMaps, make))])
+end
+
 val typeCheck = control {name = "type check",
                          default = false,
                          toString = Bool.toString}
