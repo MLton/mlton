@@ -61,7 +61,10 @@ signature PRIM_TYCONS =
          -> Layout.t * {isChar: bool, needsParen: bool}
       val list: tycon
       val pointer: tycon
-      val prims: (tycon * Kind.t * AdmitsEquality.t) list
+      val prims: {admitsEquality: AdmitsEquality.t,
+                  kind: Kind.t,
+                  name: string,
+                  tycon: tycon} list
       val real: RealSize.t -> tycon
       val reals: (tycon * RealSize.t) vector
       val reff: tycon

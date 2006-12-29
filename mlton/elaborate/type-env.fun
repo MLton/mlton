@@ -124,7 +124,8 @@ fun initAdmitsEquality (c, a) =
                      region = ref NONE,
                      time = ref (Time.now ())})
 
-val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))
+val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
+                      initAdmitsEquality (c, a))
 
 structure Equality:>
    sig

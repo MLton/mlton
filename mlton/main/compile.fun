@@ -242,10 +242,9 @@ local
             let
                val _ =
                   List.foreach
-                  (Tycon.prims, fn (tycon, kind, _) =>
+                  (Tycon.prims, fn {kind, name, tycon, ...} =>
                    extendTycon
-                   (E, Ast.Tycon.fromSymbol (Symbol.fromString
-                                             (Tycon.originalName tycon),
+                   (E, Ast.Tycon.fromSymbol (Symbol.fromString name,
                                              Region.bogus),
                     TypeStr.tycon (tycon, kind),
                     {forceUsed = false, isRebind = false}))

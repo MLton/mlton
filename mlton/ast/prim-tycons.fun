@@ -15,25 +15,25 @@ datatype z = datatype RealSize.t
 
 type tycon = t
 
-val array = fromString "array"
-val arrow = fromString "->"
-val bool = fromString "bool"
-val exn = fromString "exn"
-val intInf = fromString "intInf"
-val list = fromString "list"
-val pointer = fromString "pointer"
-val reff = fromString "ref"
-val thread = fromString "thread"
-val tuple = fromString "*"
-val vector = fromString "vector"
-val weak = fromString "weak"
+local
+   fun make s = (s, fromString s)
+in
+   val array = make "array"
+   val arrow = make "->"
+   val bool = make "bool"
+   val exn = make "exn"
+   val intInf = make "intInf"
+   val list = make "list"
+   val pointer = make "pointer"
+   val reff = make "ref"
+   val thread = make "thread"
+   val tuple = make "*"
+   val vector = make "vector"
+   val weak = make "weak"
+end
 
 datatype z = datatype Kind.t
 datatype z = datatype AdmitsEquality.t
-
-val isBool = fn c => equals (c, bool)
-val isExn = fn c => equals (c, exn)
-val isPointer = fn c => equals (c, pointer)
 
 local
    fun 'a make (prefix: string,
@@ -45,22 +45,31 @@ local
       let
          val all =
             Vector.fromListMap
-            (all, fn s =>
-             (fromString (concat [prefix, Bits.toString (bits s)]), s))
+            (all, fn s => let
+               val name = concat [prefix, Bits.toString (bits s)]
+            in
+               {name = name,
+                size = s,
+                tycon = fromString name}
+            end)
          val fromSize =
             memo
             (fn s =>
-             case Vector.peek (all, fn (_, s') => equalsA (s, s')) of
+             case Vector.peek (all, fn {size = s', ...} => equalsA (s, s')) of
                 NONE => Error.bug "PrimTycons.make.fromSize"
-              | SOME (tycon, _) => tycon)
-         fun is t = Vector.exists (all, fn (t', _) => equals (t, t'))
+              | SOME {tycon, ...} => tycon)
+         fun is t = Vector.exists (all, fn {tycon = t', ...} => equals (t, t'))
          fun de t = 
-            case Vector.peek (all, fn (t', _) => equals (t, t')) of
+            case Vector.peek (all, fn {tycon = t', ...} => equals (t, t')) of
                NONE => Error.bug "PrimTycons.make.de"
-             | SOME (_, s') => s'
+             | SOME {size, ...} => size
          val prims =
-            Vector.toListMap (all, fn (tycon, _) =>
-                              (tycon, Arity 0, admitsEquality))
+            Vector.toListMap (all, fn {name, tycon, ...} =>
+                              {admitsEquality = admitsEquality,
+                               kind = Arity 0,
+                               name = name,
+                               tycon = tycon})
+         val all = Vector.map (all, fn {tycon, size, ...} => (tycon, size))
       in
          (fromSize, all, is, de, prims)
       end
@@ -91,6 +100,39 @@ in
       end
 end
 
+val prims =
+   List.map ([(array, Arity 1, Always),
+              (arrow, Arity 2, Never),
+              (bool, Arity 0, Sometimes),
+              (exn, Arity 0, Never),
+              (intInf, Arity 0, Sometimes),
+              (list, Arity 1, Sometimes),
+              (pointer, Arity 0, Always),
+              (reff, Arity 1, Always),
+              (thread, Arity 0, Never),
+              (tuple, Nary, Sometimes),
+              (vector, Arity 1, Sometimes),
+              (weak, Arity 1, Never)],
+             fn ((name, tycon), kind, admitsEquality) =>
+             {admitsEquality = admitsEquality,
+              kind = kind,
+              name = name,
+              tycon = tycon})
+   @ primChars @ primInts @ primReals @ primWords
+
+val array = #2 array
+val arrow = #2 arrow
+val bool = #2 bool
+val exn = #2 exn
+val intInf = #2 intInf
+val list = #2 list
+val pointer = #2 pointer
+val reff = #2 reff
+val thread = #2 thread
+val tuple = #2 tuple
+val vector = #2 vector
+val weak = #2 weak
+
 val defaultChar = fn () => 
    case !Control.defaultChar of
       "char8" => char CharSize.C8
@@ -116,23 +158,11 @@ val defaultWord = fn () =>
     | "word64" => word (WordSize.fromBits (Bits.fromInt 64))
     | _ => Error.bug "PrimTycons.defaultWord"
 
+val isBool = fn c => equals (c, bool)
+val isExn = fn c => equals (c, exn)
+val isPointer = fn c => equals (c, pointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
-
-val prims =
-   [(array, Arity 1, Always),
-    (arrow, Arity 2, Never),
-    (bool, Arity 0, Sometimes),
-    (exn, Arity 0, Never),
-    (intInf, Arity 0, Sometimes),
-    (list, Arity 1, Sometimes),
-    (pointer, Arity 0, Always),
-    (reff, Arity 1, Always),
-    (thread, Arity 0, Never),
-    (tuple, Nary, Sometimes),
-    (vector, Arity 1, Sometimes),
-    (weak, Arity 1, Never)]
-   @ primChars @ primInts @ primReals @ primWords
 
 fun layoutApp (c: t,
                args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
