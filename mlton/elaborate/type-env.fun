@@ -720,6 +720,8 @@ structure Type =
       fun new () = unknown {canGeneralize = true,
                             equality = Equality.unknown ()}
 
+      val new = Trace.trace ("TypeEnv.Type.new", Unit.layout, layout) new
+
       fun newFlex {fields, spine} =
          newTy (FlexRecord {fields = fields,
                             spine = spine},
@@ -775,6 +777,11 @@ structure Type =
       val string = con (Tycon.vector, Vector.new1 (char CharSize.C8))
 
       val unit = tuple (Vector.new0 ())
+
+      fun isArrow t =
+         case toType t of
+            Con (c, _) => Tycon.equals (c, Tycon.arrow)
+          | _ => false
 
       fun isBool t =
          case toType t of
@@ -1654,7 +1661,7 @@ fun close (ensure: Tyvar.t vector, ubd) =
                                        Time.layout (!time),
                                        str " where getTime is ",
                                        Time.layout genTime],
-                                  Out.standard)
+                                  Out.error)
                       end
              in
                 if not (Time.<= (genTime, !time))

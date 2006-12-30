@@ -658,10 +658,7 @@ val elaboratePat:
                                            val {args, instance} =
                                               Scheme.instantiate s
                                         in
-                                           if Type.canUnify
-                                              (instance,
-                                               Type.arrow (Type.new (),
-                                                           Type.new ()))
+                                           if Type.isArrow instance
                                               then
                                                  (Control.error
                                                   (region,
