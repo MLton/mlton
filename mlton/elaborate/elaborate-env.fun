@@ -84,7 +84,7 @@ structure Type =
       fun explainDoesNotAdmitEquality (t: t): Layout.t =
          let
             open Layout
-            val wild = (str "_", {isChar = false, needsParen = false})
+            val wild = (str "_", ({isChar = false}, Tycon.BindingStrength.unit))
             fun con (c, ts) =
                let
                   fun keep {showInside: bool} =
@@ -101,7 +101,8 @@ structure Type =
                   case ! (Tycon.admitsEquality c) of
                      Always => NONE
                    | Never => SOME (bracket (#1 (keep {showInside = false})),
-                                    {isChar = false, needsParen = false})
+                                    ({isChar = false},
+                                     Tycon.BindingStrength.unit))
                    | Sometimes =>
                         if Vector.exists (ts, Option.isSome)
                            then SOME (keep {showInside = true})
@@ -134,7 +135,7 @@ structure Type =
                                        seq [Field.layout f, str ": ", z] :: ac),
                                 ",")),
                               str ending],
-                             {isChar = false, needsParen = false})
+                             ({isChar = false}, Tycon.BindingStrength.unit))
                          end
                     | SOME v =>
                          Tycon.layoutApp

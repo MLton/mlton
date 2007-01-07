@@ -84,8 +84,9 @@ structure Type =
       fun layout (ty: t): Layout.t =
          #1 (hom {con = Tycon.layoutApp,
                   ty = ty,
-                  var = fn a => (Tyvar.layout a, {isChar = false,
-                                                  needsParen = false})})
+                  var = fn a => (Tyvar.layout a,
+                                 ({isChar = false},
+                                  Tycon.BindingStrength.unit))})
 
       val toString = Layout.toString o layout
 

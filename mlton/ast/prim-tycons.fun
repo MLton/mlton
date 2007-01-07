@@ -11,6 +11,18 @@ struct
 
 open S
 
+structure BindingStrength =
+   struct
+      datatype t =
+         Arrow
+       | Tuple
+       | Unit
+
+      val arrow = Arrow
+      val tuple = Tuple
+      val unit = Unit
+   end
+
 datatype z = datatype RealSize.t
 
 type tycon = t
@@ -165,7 +177,8 @@ val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 
 fun layoutApp (c: t,
-               args: (Layout.t * {isChar: bool, needsParen: bool}) vector) =
+               args: (Layout.t * ({isChar: bool}
+                                  * BindingStrength.t)) vector) =
    let
       local
          open Layout
@@ -174,37 +187,52 @@ fun layoutApp (c: t,
          val seq = seq
          val str = str
       end
-      fun maybe (l, {isChar = _, needsParen}) =
-         if needsParen
-            then Layout.paren l
-         else l
+      datatype z = datatype BindingStrength.t
+      datatype binding_context =
+         ArrowLhs
+       | ArrowRhs
+       | TupleElem
+       | Tyseq1
+       | TyseqN
+      fun maybe bindingContext (l, ({isChar = _}, bindingStrength)) =
+         case (bindingStrength, bindingContext) of
+            (Unit, _) => l
+          | (Tuple, ArrowLhs) => l
+          | (Tuple, ArrowRhs) => l
+          | (Tuple, TyseqN) => l
+          | (Arrow, ArrowRhs) => l
+          | (Arrow, TyseqN) =>  l
+          | _ => Layout.paren l
       fun normal () =
          let
             val ({isChar}, lay) =
                case Vector.length args of
                   0 => ({isChar = equals (c, defaultChar ())}, layout c)
                 | 1 => ({isChar = false},
-                        seq [maybe (Vector.sub (args, 0)), str " ", layout c])
+                        seq [maybe Tyseq1 (Vector.sub (args, 0)),
+                             str " ", layout c])
                 | _ => ({isChar = false},
-                        seq [Layout.tuple (Vector.toListMap (args, maybe)),
+                        seq [Layout.tuple
+                             (Vector.toListMap (args, maybe TyseqN)),
                              str " ", layout c])
          in
-            (lay, {isChar = isChar, needsParen = false})
+            (lay, ({isChar = isChar}, Unit))
          end
    in
       if equals (c, arrow)
-         then (mayAlign [maybe (Vector.sub (args, 0)),
-                         seq [str "-> ", maybe (Vector.sub (args, 1))]],
-               {isChar = false, needsParen = true})
+         then (mayAlign [maybe ArrowLhs (Vector.sub (args, 0)),
+                         seq [str "-> ",
+                              maybe ArrowRhs (Vector.sub (args, 1))]],
+               ({isChar = false}, Arrow))
       else if equals (c, tuple)
          then if 0 = Vector.length args
-                 then (str "unit", {isChar = false, needsParen = false})
+                 then (str "unit", ({isChar = false}, Unit))
               else (mayAlign (Layout.separateLeft
-                              (Vector.toListMap (args, maybe), "* ")),
-                    {isChar = false, needsParen = true})
+                              (Vector.toListMap (args, maybe TupleElem), "* ")),
+                    ({isChar = false}, Tuple))
       else if equals (c, vector)
-         then if #isChar (#2 (Vector.sub (args, 0)))
-                 then (str "string", {isChar = false, needsParen = false})
+         then if #isChar (#1 (#2 (Vector.sub (args, 0))))
+                 then (str "string", ({isChar = false}, Unit))
               else normal ()
       else normal ()
    end

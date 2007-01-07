@@ -27,9 +27,20 @@ signature PRIM_TYCONS_STRUCTS =
       val layout: t -> Layout.t
    end
 
+signature BINDING_STRENGTH =
+   sig
+      type t
+
+      val arrow: t
+      val tuple: t
+      val unit: t
+   end
+
 signature PRIM_TYCONS =
    sig
       include PRIM_TYCONS_SUBSTRUCTS
+
+      structure BindingStrength: BINDING_STRENGTH
 
       type tycon
 
@@ -57,8 +68,8 @@ signature PRIM_TYCONS =
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:
-         tycon * (Layout.t * {isChar: bool, needsParen: bool}) vector
-         -> Layout.t * {isChar: bool, needsParen: bool}
+         tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
+         -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon
       val pointer: tycon
       val prims: {admitsEquality: AdmitsEquality.t,

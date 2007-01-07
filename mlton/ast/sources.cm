@@ -10,6 +10,7 @@ Group
 
 signature ADMITS_EQUALITY
 signature AST
+signature BINDING_STRENGTH
 signature CHAR_SIZE
 signature FIELD
 signature INT_SIZE

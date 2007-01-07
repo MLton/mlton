@@ -53,8 +53,8 @@ signature TYPE_ENV =
                                                   hom: t -> 'a}
             val makeLayoutPretty:
                unit -> {destroy: unit -> unit,
-                        lay: t -> Layout.t * {isChar: bool,
-                                              needsParen: bool}}
+                        lay: t -> Layout.t * ({isChar: bool}
+                                              * Tycon.BindingStrength.t)}
             (* minTime (t, time) makes every component of t occur no later than
              * time.  This will display a type error message if time is before
              * the definition time of some component of t.

@@ -59,7 +59,8 @@ structure Prod =
                                        then seq [layout elt, str " ref"]
                                     else layout elt
                               in
-                                 (lay, {isChar = false, needsParen = false})
+                                 (lay, ({isChar = false},
+                                        Tycon.BindingStrength.unit))
                               end))))
       end
 

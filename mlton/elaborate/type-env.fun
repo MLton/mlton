@@ -84,10 +84,10 @@ val tick = Time.tick
 
 structure Lay =
    struct
-      type t = Layout.t * {isChar: bool, needsParen: bool}
+      type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
 
       fun simple (l: Layout.t): t =
-         (l, {isChar = false, needsParen = false})
+         (l, ({isChar = false}, Tycon.BindingStrength.unit))
    end
 
 structure UnifyResult =
@@ -370,11 +370,11 @@ val tyvarTime =
    Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 local
-   type z = Layout.t * {isChar: bool, needsParen: bool}
+   type z = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
    open Layout
 in
    fun simple (l: Layout.t): z =
-      (l, {isChar = false, needsParen = false})
+      (l, ({isChar = false}, Tycon.BindingStrength.unit))
    val dontCare: z = simple (str "_")
    fun bracket l = seq [str "[", l, str "]"]
    fun layoutRecord (ds: (Field.t * bool * z) list, flexible: bool) =
@@ -600,8 +600,9 @@ structure Type =
          end
 
       fun makeLayoutPretty (): {destroy: unit -> unit,
-                                lay: t -> Layout.t * {isChar: bool,
-                                                      needsParen: bool}} =
+                                lay: t -> Layout.t
+                                          * ({isChar: bool}
+                                          * Tycon.BindingStrength.t)} =
          let
             val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutApp (c, ts)
@@ -946,10 +947,9 @@ structure Type =
                          (NotUnifiable (l, l'),
                           Unknown (Unknown.new {canGeneralize = true}))
                       val bracket =
-                         fn (l, {isChar, needsParen = _}) =>
+                         fn (l, ({isChar}, _)) =>
                          (bracket l,
-                          {isChar = isChar,
-                           needsParen = false})
+                          ({isChar = isChar}, Tycon.BindingStrength.unit))
                       fun notUnifiableBracket (l, l') =
                          notUnifiable (bracket l, bracket l')
                       fun flexToRecord (fields, spine) =
