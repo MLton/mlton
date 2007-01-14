@@ -99,8 +99,9 @@ structure DynLinkage :> DYN_LINKAGE = struct
         end
 
         (* label used for CleanUp *)
+(*
         val label = "DynLinkNewEra"
-
+*)
         (* generate a new "era" indicator *)
         fun newEra () = ref ()
 
