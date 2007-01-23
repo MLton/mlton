@@ -218,8 +218,12 @@ signature BASIS_EXTRA =
       structure PackReal64Little : PACK_REAL
       structure PackRealBig : PACK_REAL
       structure PackRealLittle : PACK_REAL
+      structure PackWord16Big : PACK_WORD
+      structure PackWord16Little : PACK_WORD
       structure PackWord32Big : PACK_WORD
       structure PackWord32Little : PACK_WORD
+      structure PackWord64Big : PACK_WORD
+      structure PackWord64Little : PACK_WORD
       structure Posix : POSIX
       structure Real32 : REAL
       structure Real32Array : MONO_ARRAY
