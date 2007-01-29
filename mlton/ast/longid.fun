@@ -90,11 +90,36 @@ val toString = Layout.toString o layout
 
 fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
    let
-      val (strids, id) = List.splitLast ss
+      val srs =
+         case Region.left region of
+             NONE => List.map (ss, fn s => (s, region))
+           | SOME p =>
+             let
+                val file = SourcePos.file p
+                val line = SourcePos.line p
+             in
+                List.unfold
+                ((ss, SourcePos.column p),
+                 fn (s::ss, cl) =>
+                    let
+                       val cr = cl + String.length (Symbol.toString s)
+                    in
+                       SOME
+                       ((s, Region.make
+                            {left = SourcePos.make {column = cl,
+                                                    file = file,
+                                                    line = line},
+                             right = SourcePos.make {column = cr,
+                                                     file = file,
+                                                     line = line}}),
+                        (ss, cr + 1))
+                    end
+                  | ([], _) => NONE)
+             end
+      val (strids, id) = List.splitLast srs
    in
-      makeRegion (T {strids = List.map (strids, fn s =>
-                                        Strid.fromSymbol (s, region)),
-                     id = Id.fromSymbol (id, region)},
+      makeRegion (T {strids = List.map (strids, Strid.fromSymbol),
+                     id = Id.fromSymbol id},
                   region)
    end
 

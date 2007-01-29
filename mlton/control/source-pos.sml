@@ -16,6 +16,7 @@ datatype t = T of {column: int,
 local
    fun f g (T r) = g r
 in
+   val column = f #column
    val line = f #line
 end
 
