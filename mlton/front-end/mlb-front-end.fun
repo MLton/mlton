@@ -153,7 +153,7 @@ val lexAndParseString =
             val fileAbs = OS.Path.mkAbsolute {path = fileExp, relativeTo = cwd}
             val fileAbs = OS.Path.mkCanonical fileAbs
             val relativize =
-               if OS.Path.isAbsolute fileExp
+               if !Control.preferAbsPaths orelse OS.Path.isAbsolute fileExp
                   then NONE
                   else relativize
             val fileUse =

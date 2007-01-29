@@ -836,6 +836,10 @@ val polyvariance =
                              ("product", Int.layout product)])
              p)}
 
+val preferAbsPaths = control {name = "prefer abs paths",
+                              default = false,
+                              toString = Bool.toString}
+
 val profPasses = 
    control {name = "prof passes",
             default = [],

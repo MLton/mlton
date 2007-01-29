@@ -46,14 +46,17 @@ fun getLib (T {file, ...}) =
    end
 
 fun file (p as T {file, ...}) =
-   case getLib p of
-      NONE => file
-    | SOME i =>
-         String.substituteFirst
-         (String.substituteFirst
-          (String.dropPrefix (file, i), 
-           {substring = "/", replacement = "<"}),
-          {substring = "/", replacement = ">/"})
+   if !ControlFlags.preferAbsPaths
+      then file
+      else
+         case getLib p of
+            NONE => file
+          | SOME i =>
+               String.substituteFirst
+               (String.substituteFirst
+                (String.dropPrefix (file, i),
+                 {substring = "/", replacement = "<"}),
+                {substring = "/", replacement = ">/"})
 
 val bogus = T {column = ~1,
                file = "<bogus>",

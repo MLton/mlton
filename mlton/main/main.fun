@@ -373,6 +373,9 @@ fun makeOptions {usage} =
         SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
+       (Expert, "prefer-abs-paths", " {false|true}",
+        "prefer absolute paths when referring to files",
+        boolRef preferAbsPaths),
        (Expert, "prof-pass", " <pass>", "keep profile info for pass",
         SpaceString (fn s =>
                      (case Regexp.fromString s of
