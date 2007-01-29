@@ -1752,11 +1752,10 @@ fun processDefUse (E as T f) =
                                   (align
                                    (List.map
                                     (uses, fn r =>
-                                     str (concat [case Region.left r of
-                                                     NONE => "NONE"
-                                                   | SOME p =>
-                                                        SourcePos.toString p,
-                                                  " "]))),
+                                     str (case Region.left r of
+                                              NONE => "NONE"
+                                            | SOME p =>
+                                              SourcePos.toString p))),
                                    4)],
                            out)
                        end))
