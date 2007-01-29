@@ -19,17 +19,16 @@
     (setq esml-def-use-mlton-resolve-src-last-src src
           esml-def-use-mlton-resolve-src-last-duf duf
           esml-def-use-mlton-resolve-src-last-result
-          (def-use-intern
-            (file-truename
-             (cond
-              ;; XXX <basis>
-              ((file-name-absolute-p src)
-               src)
-              ((equal ?< (aref src 0))
-               src)
-              (t
-               (expand-file-name
-                src (file-name-directory duf)))))))))
+          (def-use-file-truename
+            (cond
+             ;; XXX <basis>
+             ((file-name-absolute-p src)
+              src)
+             ((equal ?< (aref src 0))
+              src)
+             (t
+              (expand-file-name
+               src (file-name-directory duf))))))))
 
 (defun esml-def-use-read (taking skipping)
   (let ((start (point)))

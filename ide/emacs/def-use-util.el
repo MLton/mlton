@@ -6,9 +6,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
 
+(defvar def-use-file-truename-table
+  (make-hash-table :test 'equal :weakness 'key)
+  "Weak hash table private to `def-use-file-truename'.")
+
+(defun def-use-file-truename (file)
+  "Cached version of `file-truename'."
+  (def-use-gethash-or-put file
+    (function
+     (lambda ()
+       (def-use-intern (file-truename file))))
+    def-use-intern-table))
+
 (defun def-use-buffer-true-file-name ()
   "Returns the true filename of the current buffer."
-  (file-truename (buffer-file-name)))
+  (def-use-file-truename (buffer-file-name)))
 
 (defun def-use-point-at-next-line ()
   "Returns point at the beginning of the next line."
