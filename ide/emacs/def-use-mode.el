@@ -71,7 +71,7 @@ current buffer."
          (def-use-point-to-pos
            (save-excursion
              (goto-char point)
-             (skip-syntax-backward "w" (def-use-point-at-current-line))
+             (skip-syntax-backward "w." (def-use-point-at-current-line))
              (point)))))
     (def-use-sym-at-ref (def-use-ref (def-use-buffer-true-file-name) pos))))
 
