@@ -107,17 +107,17 @@ current buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
 
-(defun def-use-jump-to-def ()
+(defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
-  (interactive)
+  (interactive "P")
   (let ((sym (def-use-current-sym)))
     (if sym
-        (def-use-goto-ref (def-use-sym-ref sym))
+        (def-use-goto-ref (def-use-sym-ref sym) other-window)
       (message "Sorry, no known symbol at cursor."))))
 
-(defun def-use-jump-to-next (&optional reverse)
+(defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
-  (interactive)
+  (interactive "P")
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
@@ -126,18 +126,20 @@ current buffer."
              (uses (if reverse (reverse uses) uses))
              (uses (append uses uses)))
         (while (not (equal (pop uses) ref)))
-        (def-use-goto-ref (car uses))))))
+        (def-use-goto-ref (car uses) other-window)))))
 
-(defun def-use-jump-to-prev ()
+(defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
-  (interactive)
-  (def-use-jump-to-next t))
+  (interactive "P")
+  (def-use-jump-to-next other-window t))
 
-(defun def-use-goto-ref (ref)
+(defun def-use-goto-ref (ref &optional other-window)
   "Find the referenced source and moves point to the referenced position."
-  (unless (equal (def-use-buffer-true-file-name)
-                 (def-use-ref-src ref))
-    (find-file (def-use-ref-src ref)))
+  (cond
+   (other-window
+    (find-file-other-window (def-use-ref-src ref)))
+   ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
+    (find-file (def-use-ref-src ref))))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
 (defun def-use-goto-pos (pos)
