@@ -48,6 +48,8 @@
      . def-use-jump-to-next)
     ("[(control c) (control p)]"
      . def-use-jump-to-prev)
+    ("[(control c) (control l)]"
+     . def-use-list-all-refs)
     ("[(control c) (control v)]"
      . def-use-show-info))
   "Key bindings for the def-use mode.  The key specifications must be
