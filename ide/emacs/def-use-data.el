@@ -24,12 +24,20 @@
 (defalias 'def-use-pos (function cons))
 (defalias 'def-use-pos-line (function car))
 (defalias 'def-use-pos-col  (function cdr))
+(defun def-use-pos< (lhs rhs)
+  (or (< (def-use-pos-line lhs) (def-use-pos-line rhs))
+      (and (equal (def-use-pos-line lhs) (def-use-pos-line rhs))
+           (< (def-use-pos-col lhs) (def-use-pos-col rhs)))))
 
 (defun def-use-ref (src pos)
   "Reference constructor."
   (cons (def-use-intern src) pos))
 (defalias 'def-use-ref-src (function car))
 (defalias 'def-use-ref-pos (function cdr))
+(defun def-use-ref< (lhs rhs)
+  (or (string< (def-use-ref-src lhs) (def-use-ref-src rhs))
+      (and (equal (def-use-ref-src lhs) (def-use-ref-src rhs))
+           (def-use-pos< (def-use-ref-pos lhs) (def-use-ref-pos rhs)))))
 
 (defun def-use-sym (kind name ref)
   "Symbol constructor."
@@ -64,7 +72,6 @@
   (let* ((ref (def-use-sym-ref sym))
          (src (def-use-ref-src ref))
          (info (def-use-src-to-info src)))
-    (puthash ref ref (def-use-sym-to-use-set sym))
     (puthash src src (def-use-duf-to-src-set duf))
     (puthash sym sym (def-use-info-sym-set info))
     (puthash (def-use-ref-pos ref) sym (def-use-info-pos-to-sym info))))

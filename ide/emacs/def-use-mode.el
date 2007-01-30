@@ -122,11 +122,13 @@ current buffer."
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
         (message "Sorry, no information on the symbol at point!")
-      (let* ((uses (def-use-sym-to-uses sym))
-             (uses (if reverse (reverse uses) uses))
-             (uses (append uses uses)))
-        (while (not (equal (pop uses) ref)))
-        (def-use-goto-ref (car uses) other-window)))))
+      (let* ((refs (sort (cons (def-use-sym-ref sym)
+                               (def-use-sym-to-uses sym))
+                         (function def-use-ref<)))
+             (refs (if reverse (reverse refs) refs))
+             (refs (append refs refs)))
+        (while (not (equal (pop refs) ref)))
+        (def-use-goto-ref (car refs) other-window)))))
 
 (defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
@@ -199,10 +201,10 @@ current buffer."
       (setq def-use-highlighted-sym sym)
       (setq def-use-highlighted-buffer (current-buffer))
       (def-use-highlight-ref sym (def-use-sym-ref sym) 'def-use-def-face)
-      (maphash (function
-                (lambda (ref _)
-                  (def-use-highlight-ref sym ref 'def-use-use-face)))
-               (def-use-sym-to-use-set sym)))))
+      (mapc (function
+             (lambda (ref)
+               (def-use-highlight-ref sym ref 'def-use-use-face)))
+            (def-use-sym-to-uses sym)))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
