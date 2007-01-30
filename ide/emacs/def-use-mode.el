@@ -159,6 +159,8 @@ the symbol."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; List
 
+(defconst def-use-ref-regexp "\\([^ ]+\\):\\([0-9]+\\)\\.\\([0-9]+\\)")
+
 (defvar def-use-list-mode-map
   (let ((result (make-sparse-keymap)))
     (mapc (function
@@ -183,12 +185,10 @@ the symbol."
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
         (message "Sorry, no known symbol at cursor.")
-      (let* ((title (def-use-format-sym-title sym))
-             (buffer (generate-new-buffer title)))
+      (let* ((buffer (generate-new-buffer
+                      (concat "<" (def-use-format-sym-title sym) ">"))))
         (set-buffer buffer)
-        (insert "References to " title "\n"
-                "\n"
-                (def-use-format-ref (def-use-sym-ref sym)) "\n"
+        (insert (def-use-format-sym sym) "\n"
                 "\n")
         (let* ((refs (def-use-all-refs-sorted sym))
                (refs (if reverse (reverse refs) refs)))
@@ -196,7 +196,7 @@ the symbol."
                  (lambda (ref)
                    (insert (def-use-format-ref ref) "\n")))
                 refs))
-        (goto-line 5)
+        (goto-line 3)
         (pop-to-buffer buffer)
         (setq buffer-read-only t)
         (def-use-list-mode)))))
@@ -206,10 +206,7 @@ the symbol."
   (interactive)
   (beginning-of-line)
   (let ((b (current-buffer)))
-    (when (re-search-forward
-           "^\\(.*\\):\\([0-9]*\\)\\.\\([0-9]*\\)$"
-           (def-use-point-at-next-line)
-           t)
+    (when (re-search-forward def-use-ref-regexp (def-use-point-at-next-line) t)
       (forward-line)
       (def-use-goto-ref
         (def-use-ref (match-string 1)
@@ -232,21 +229,30 @@ the symbol."
 
 (defun def-use-format-sym (sym)
   "Formats a string with some basic info on the symbol."
-  (format "%s: %s, %d uses."
-          (def-use-format-ref (def-use-sym-ref sym))
-          (def-use-format-sym-title sym)
-          (length (def-use-sym-to-uses sym))))
+  (concat (def-use-format-sym-title sym)
+          ", "
+          (number-to-string (length (def-use-sym-to-uses sym)))
+          " uses, defined at: "
+          (def-use-format-ref (def-use-sym-ref sym))))
 
 (defun def-use-format-sym-title (sym)
   "Formats a title for the symbol"
-  (concat (def-use-sym-kind sym) " " (def-use-sym-name sym)))
+  (concat (def-use-add-face 'font-lock-keyword-face
+            (copy-sequence (def-use-sym-kind sym)))
+          " "
+          (def-use-add-face (def-use-sym-face sym)
+            (copy-sequence (def-use-sym-name sym)))))
 
 (defun def-use-format-ref (ref)
   "Formats a references."
-  (format "%s:%d.%d"
-          (def-use-ref-src ref)
-          (def-use-pos-line (def-use-ref-pos ref))
-          (def-use-pos-col (def-use-ref-pos ref))))
+  (let ((pos (def-use-ref-pos ref)))
+    (concat (def-use-ref-src ref)
+            ":"
+            (def-use-add-face 'font-lock-constant-face
+              (number-to-string (def-use-pos-line pos)))
+            "."
+            (def-use-add-face 'font-lock-constant-face
+              (number-to-string (def-use-pos-col pos))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Highlighting

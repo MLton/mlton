@@ -4,6 +4,7 @@
 ;; See the file MLton-LICENSE for details.
 
 (require 'def-use-mode)
+(require 'sml-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing of def-use -files produced by MLton.
@@ -37,6 +38,15 @@
       (skip-chars-forward skipping)
       result)))
 
+(defconst esml-def-use-kinds
+  `((,(def-use-intern "variable")    . ,font-lock-variable-name-face)
+    (,(def-use-intern "type")        . ,font-lock-type-def-face)
+    (,(def-use-intern "constructor") . ,font-lock-constant-face)
+    (,(def-use-intern "structure")   . ,font-lock-module-def-face)
+    (,(def-use-intern "signature")   . ,font-lock-interface-def-face)
+    (,(def-use-intern "functor")     . ,font-lock-module-def-face)
+    (,(def-use-intern "exception")   . ,font-lock-module-def-face)))
+
 (defun esml-def-use-mlton-parse (duf)
   "Parses a def-use -file."
   (interactive "fSpecify def-use -file: ")
@@ -45,15 +55,16 @@
     (insert-file duf)
     (goto-char 1)
     (while (not (eobp))
-      (let* ((kind (esml-def-use-read "^ " " "))
-             (name (esml-def-use-read "^ " " "))
+      (let* ((kind (def-use-intern (esml-def-use-read "^ " " ")))
+             (name (def-use-intern (esml-def-use-read "^ " " ")))
              (src (esml-def-use-mlton-resolve-src
                    (esml-def-use-read "^ " " ") duf))
              (line (string-to-int (esml-def-use-read "^." ".")))
              (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
              (pos (def-use-pos line col))
              (ref (def-use-ref src pos))
-             (sym (def-use-sym kind name ref)))
+             (sym (def-use-sym kind name ref
+                    (cdr (assoc kind esml-def-use-kinds)))))
         (def-use-add-def duf sym)
         (while (< 0 (skip-chars-forward " "))
           (let* ((src (esml-def-use-mlton-resolve-src

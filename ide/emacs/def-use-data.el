@@ -29,9 +29,7 @@
       (and (equal (def-use-pos-line lhs) (def-use-pos-line rhs))
            (< (def-use-pos-col lhs) (def-use-pos-col rhs)))))
 
-(defun def-use-ref (src pos)
-  "Reference constructor."
-  (cons (def-use-intern src) pos))
+(defalias 'def-use-ref (function cons))
 (defalias 'def-use-ref-src (function car))
 (defalias 'def-use-ref-pos (function cdr))
 (defun def-use-ref< (lhs rhs)
@@ -39,11 +37,12 @@
       (and (equal (def-use-ref-src lhs) (def-use-ref-src rhs))
            (def-use-pos< (def-use-ref-pos lhs) (def-use-ref-pos rhs)))))
 
-(defun def-use-sym (kind name ref)
+(defun def-use-sym (kind name ref &optional face)
   "Symbol constructor."
-  (cons ref (cons (def-use-intern name) (def-use-intern kind))))
-(defun def-use-sym-kind (sym) (cddr sym))
-(defun def-use-sym-name (sym) (cadr sym))
+  (cons ref (cons name (cons kind face))))
+(defalias 'def-use-sym-face (function cdddr))
+(defalias 'def-use-sym-kind (function caddr))
+(defalias 'def-use-sym-name (function cadr))
 (defalias 'def-use-sym-ref (function car))
 
 (defun def-use-info ()

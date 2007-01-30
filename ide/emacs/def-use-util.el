@@ -15,8 +15,10 @@
   (def-use-gethash-or-put file
     (function
      (lambda ()
-       (def-use-intern (file-truename file))))
-    def-use-intern-table))
+       (def-use-intern
+         (def-use-add-face 'change-log-file-face
+           (file-truename file)))))
+    def-use-file-truename-table))
 
 (defun def-use-buffer-true-file-name ()
   "Returns the true filename of the current buffer."
@@ -83,6 +85,12 @@ table."
   "Kills the current buffer."
   (interactive)
   (kill-buffer (current-buffer)))
+
+(defun def-use-add-face (face string)
+  "Adds the face as a property to the entire string and returns the
+string."
+  (add-text-properties 0 (length string) `(face ,face) string)
+  string)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
