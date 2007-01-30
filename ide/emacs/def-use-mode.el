@@ -41,6 +41,24 @@
   :type 'integer
   :group 'def-use)
 
+(defcustom def-use-key-bindings
+  '(("[(control c) (control d)]"
+     . def-use-jump-to-def)
+    ("[(control c) (control n)]"
+     . def-use-jump-to-next)
+    ("[(control c) (control p)]"
+     . def-use-jump-to-prev)
+    ("[(control c) (control v)]"
+     . def-use-show-info))
+  "Key bindings for the def-use mode.  The key specifications must be
+in a format accepted by the function `define-key'.  Hint: You might
+want to type `M-x describe-function def-use <TAB>' to see the
+available commands."
+  :type '(repeat (cons :tag "Key Binding"
+                       (string :tag "Key")
+                       (function :tag "Command")))
+  :group 'def-use)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Points and Positions
 
@@ -97,7 +115,7 @@ current buffer."
         (def-use-goto-ref (def-use-sym-ref sym))
       (message "Sorry, no known symbol at cursor."))))
 
-(defun def-use-jump-to-next ()
+(defun def-use-jump-to-next (&optional reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive)
   (let* ((ref (def-use-current-ref))
@@ -105,13 +123,21 @@ current buffer."
     (if (not sym)
         (message "Sorry, no information on the symbol at point!")
       (let* ((uses (def-use-sym-to-uses sym))
+             (uses (if reverse (reverse uses) uses))
              (uses (append uses uses)))
         (while (not (equal (pop uses) ref)))
         (def-use-goto-ref (car uses))))))
 
+(defun def-use-jump-to-prev ()
+  "Jumps to the prev use (or def) of the symbol under the cursor."
+  (interactive)
+  (def-use-jump-to-next t))
+
 (defun def-use-goto-ref (ref)
   "Find the referenced source and moves point to the referenced position."
-  (find-file (def-use-ref-src ref))
+  (unless (equal (def-use-buffer-true-file-name)
+                 (def-use-ref-src ref))
+    (find-file (def-use-ref-src ref)))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
 (defun def-use-goto-pos (pos)
@@ -119,14 +145,37 @@ current buffer."
   (goto-char (def-use-pos-to-point pos)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Info
+
+(defun def-use-show-info ()
+  "Shows info on the symbol under the cursor."
+  (interactive)
+  (let ((sym (def-use-current-sym)))
+    (if (not sym)
+        (message "Sorry, no information on the symbol at point!")
+      (message (def-use-format-sym sym)))))
+
+(defun def-use-format-sym (sym)
+  "Formats a string with some basic info on the symbol."
+  (format "%s:%d.%d: %s %s, %d uses."
+          (def-use-ref-src (def-use-sym-ref sym))
+          (def-use-pos-line (def-use-ref-pos (def-use-sym-ref sym)))
+          (def-use-pos-col (def-use-ref-pos (def-use-sym-ref sym)))
+          (def-use-sym-kind sym)
+          (def-use-sym-name sym)
+          (length (def-use-sym-to-uses sym))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Highlighting
 
 (defvar def-use-highlighted-sym nil)
+(defvar def-use-highlighted-buffer nil)
 (defvar def-use-highlighted-overlays nil)
 
 (defun def-use-delete-highlighting ()
   (mapc (function delete-overlay) def-use-highlighted-overlays)
   (setq def-use-highlighted-overlays nil)
+  (setq def-use-highlighted-buffer nil)
   (setq def-use-highlighted-sym nil))
 
 (defun def-use-highlight-ref (sym ref face-attr)
@@ -141,10 +190,12 @@ current buffer."
 
 (defun def-use-highlight-sym (sym)
   "Highlights the specified symbol."
-  (unless (equal sym def-use-highlighted-sym)
+  (unless (and (equal def-use-highlighted-sym sym)
+               (equal def-use-highlighted-buffer (current-buffer)))
     (def-use-delete-highlighting)
     (when sym
       (setq def-use-highlighted-sym sym)
+      (setq def-use-highlighted-buffer (current-buffer))
       (def-use-highlight-ref sym (def-use-sym-ref sym) 'def-use-def-face)
       (maphash (function
                 (lambda (ref _)
@@ -183,10 +234,20 @@ current buffer."
                   (buffer-list))))
 
 (define-minor-mode def-use-mode
-  "Toggless the def-use highlighting mode."
+  "Minor mode for highlighting and navigating definitions and uses."
+  ;; value
+  nil
+  ;; lighter
+  " DU"
+  ;; keymap
+  (let ((result (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key result (read (car key-command)) (cdr key-command))))
+          def-use-key-bindings)
+    result)
   :group 'def-use
   :global t
-  :lighter " DU"
   (def-use-delete-highlight-timer)
   (def-use-delete-highlighting)
   (when (def-use-mode-enabled-in-some-buffer)
