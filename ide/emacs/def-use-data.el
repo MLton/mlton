@@ -61,8 +61,8 @@
 (defvar def-use-src-to-info-table (def-use-make-hash-table)
   "Maps a source to a source info.")
 
-(defvar def-use-sym-to-use-set-table (def-use-make-hash-table)
-  "Maps a symbol to a set of references to the symbol.")
+(defvar def-use-sym-to-uses-table nil
+  "Maps a symbol to a list of use references to the symbol.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data entry
@@ -78,7 +78,7 @@
 
 (defun def-use-add-use (ref sym)
   "Adds a reference to (use of) the specified symbol."
-  (puthash ref ref (def-use-sym-to-use-set sym))
+  (puthash sym (cons ref (def-use-sym-to-uses sym)) def-use-sym-to-uses-table)
   (puthash (def-use-ref-pos ref) sym
            (def-use-src-to-pos-to-sym (def-use-ref-src ref))))
 
@@ -90,12 +90,6 @@
 new empty set."
   (def-use-gethash-or-put duf (function def-use-make-hash-table)
     def-use-duf-to-src-set-table))
-
-(defun def-use-sym-to-use-set (sym)
-  "Returns the existing use set for the specified symbol or a new empty
-use set."
-  (def-use-gethash-or-put sym (function def-use-make-hash-table)
-    def-use-sym-to-use-set-table))
 
 (defun def-use-src-to-info (src)
   "Returns the existing source info for the specified source or a new
@@ -127,7 +121,7 @@ specified source."
 
 (defun def-use-sym-to-uses (sym)
   "Returns a list of uses of the specified symbol."
-  (def-use-set-to-list (def-use-sym-to-use-set sym)))
+  (gethash sym def-use-sym-to-uses-table))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data purging
@@ -137,7 +131,7 @@ specified source."
   (interactive)
   (setq def-use-duf-to-src-set-table (def-use-make-hash-table))
   (setq def-use-src-to-info-table (def-use-make-hash-table))
-  (setq def-use-sym-to-use-set-table (def-use-make-hash-table)))
+  (setq def-use-sym-to-uses-table (def-use-make-hash-table)))
 
 ;; XXX Ability to purge data in a more fine grained manner
 
