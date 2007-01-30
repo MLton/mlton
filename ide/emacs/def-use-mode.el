@@ -145,14 +145,15 @@ current buffer."
         (set-buffer buffer)
         (insert "References to " title "\n"
                 "\n"
-                (def-use-format-ref (def-use-sym-ref sym)) "\n")
+                (def-use-format-ref (def-use-sym-ref sym)) "\n"
+                "\n")
         (let* ((refs (def-use-all-refs-sorted sym))
                (refs (if reverse (reverse refs) refs)))
           (mapc (function
                  (lambda (ref)
                    (insert (def-use-format-ref ref) "\n")))
                 refs))
-        (goto-char 0)
+        (goto-line 5)
         (pop-to-buffer buffer)
         (local-set-key "q" 'def-use-kill-current-buffer)
         (local-set-key "o" 'def-use-list-jump-to-ref-on-current-line)
