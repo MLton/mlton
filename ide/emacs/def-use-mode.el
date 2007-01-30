@@ -4,7 +4,6 @@
 ;; See the file MLton-LICENSE for details.
 
 ;; TBD:
-;; - jump-to-next
 ;; - automatic loading of def-use files
 ;; - make loading of def-use files asynchronous
 ;; - disable def-use when file is modified
@@ -64,20 +63,28 @@ current buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; High-level symbol lookup
 
+(defun def-use-ref-at-point (point)
+  "Returns a reference for the symbol at the specified point in the
+current buffer."
+  (def-use-ref (def-use-buffer-true-file-name)
+    (def-use-point-to-pos
+      (save-excursion
+        (goto-char point)
+        (skip-syntax-backward "w." (def-use-point-at-current-line))
+        (point)))))
+
 (defun def-use-sym-at-point (point)
   "Returns symbol information for the symbol at the specified point."
   ;; XXX If data unvailable for current buffer then attempt to load it.
-  (let ((pos
-         (def-use-point-to-pos
-           (save-excursion
-             (goto-char point)
-             (skip-syntax-backward "w." (def-use-point-at-current-line))
-             (point)))))
-    (def-use-sym-at-ref (def-use-ref (def-use-buffer-true-file-name) pos))))
+  (def-use-sym-at-ref (def-use-ref-at-point point)))
 
 (defun def-use-current-sym ()
   "Returns symbol information for the symbol at the current point."
   (def-use-sym-at-point (point)))
+
+(defun def-use-current-ref ()
+  "Returns a reference to the symbol at the current point."
+  (def-use-ref-at-point (point)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
@@ -93,12 +100,13 @@ current buffer."
 (defun def-use-jump-to-next ()
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive)
-  (let ((sym (def-use-current-sym)))
+  (let* ((ref (def-use-current-ref))
+         (sym (def-use-sym-at-ref ref)))
     (if (not sym)
         (message "Sorry, no information on the symbol at point!")
       (let* ((uses (def-use-sym-to-uses sym))
              (uses (append uses uses)))
-        (while (not (equal (pop uses) (def-use-sym-ref sym))))
+        (while (not (equal (pop uses) ref)))
         (def-use-goto-ref (car uses))))))
 
 (defun def-use-goto-ref (ref)
