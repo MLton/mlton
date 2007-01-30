@@ -5,8 +5,10 @@
 
 ;; TBD:
 ;; - automatic loading of def-use files
+;; - automatic reloading of modified def-use files
 ;; - make loading of def-use files asynchronous
 ;; - disable def-use when file is modified
+;; - use mode dependent identifier charset (e.g also skip over _ in sml-mode)
 
 (require 'def-use-data)
 
