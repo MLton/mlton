@@ -111,9 +111,9 @@ current buffer."
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
   (let ((sym (def-use-current-sym)))
-    (if sym
-        (def-use-goto-ref (def-use-sym-ref sym) other-window)
-      (message "Sorry, no known symbol at cursor."))))
+    (if (not sym)
+        (message "Sorry, no known symbol at cursor.")
+      (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
 (defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
@@ -122,9 +122,7 @@ current buffer."
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
         (message "Sorry, no information on the symbol at point!")
-      (let* ((refs (sort (cons (def-use-sym-ref sym)
-                               (copy-list (def-use-sym-to-uses sym)))
-                         (function def-use-ref<)))
+      (let* ((refs (def-use-all-refs-sorted sym))
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
         (while (not (equal (pop refs) ref)))
@@ -135,8 +133,49 @@ current buffer."
   (interactive "P")
   (def-use-jump-to-next other-window t))
 
+(defun def-use-list-all-refs (&optional reverse)
+  "Lists all references to the symbol under the cursor."
+  (interactive "P")
+  (let* ((ref (def-use-current-ref))
+         (sym (def-use-sym-at-ref ref)))
+    (if (not sym)
+        (message "Sorry, no known symbol at cursor.")
+      (let* ((title (def-use-format-sym-title sym))
+             (buffer (generate-new-buffer title)))
+        (set-buffer buffer)
+        (insert "References to " title "\n"
+                "\n"
+                (def-use-format-ref (def-use-sym-ref sym)) "\n")
+        (let* ((refs (def-use-all-refs-sorted sym))
+               (refs (if reverse (reverse refs) refs)))
+          (mapc (function
+                 (lambda (ref)
+                   (insert (def-use-format-ref ref) "\n")))
+                refs))
+        (goto-char 0)
+        (pop-to-buffer buffer)
+        (local-set-key "q" 'def-use-kill-current-buffer)
+        (local-set-key "o" 'def-use-list-jump-to-ref-on-current-line)
+        (setq buffer-read-only t)))))
+
+(defun def-use-list-jump-to-ref-on-current-line ()
+  "Jumps to the references on the current line."
+  (interactive)
+  (beginning-of-line)
+  (when (re-search-forward
+         "^\\(.*\\):\\([0-9]*\\)\\.\\([0-9]*\\)$"
+         (def-use-point-at-next-line))
+    (forward-line)
+    (def-use-goto-ref
+      (def-use-ref (match-string 1)
+        (def-use-pos
+          (string-to-number (match-string 2))
+          (string-to-number (match-string 3))))
+      t)))
+
 (defun def-use-goto-ref (ref &optional other-window)
-  "Find the referenced source and moves point to the referenced position."
+  "Finds the referenced source and moves point to the referenced
+position."
   (cond
    (other-window
     (find-file-other-window (def-use-ref-src ref)))
@@ -147,6 +186,13 @@ current buffer."
 (defun def-use-goto-pos (pos)
   "Moves point to the specified position."
   (goto-char (def-use-pos-to-point pos)))
+
+(defun def-use-all-refs-sorted (sym)
+  "Returns a sorted list of all references (including definition) to
+the symbol."
+  (sort (cons (def-use-sym-ref sym)
+              (copy-list (def-use-sym-to-uses sym)))
+        (function def-use-ref<)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Info
@@ -161,13 +207,21 @@ current buffer."
 
 (defun def-use-format-sym (sym)
   "Formats a string with some basic info on the symbol."
-  (format "%s:%d.%d: %s %s, %d uses."
-          (def-use-ref-src (def-use-sym-ref sym))
-          (def-use-pos-line (def-use-ref-pos (def-use-sym-ref sym)))
-          (def-use-pos-col (def-use-ref-pos (def-use-sym-ref sym)))
-          (def-use-sym-kind sym)
-          (def-use-sym-name sym)
+  (format "%s: %s, %d uses."
+          (def-use-format-ref (def-use-sym-ref sym))
+          (def-use-format-sym-title sym)
           (length (def-use-sym-to-uses sym))))
+
+(defun def-use-format-sym-title (sym)
+  "Formats a title for the symbol"
+  (concat (def-use-sym-kind sym) " " (def-use-sym-name sym)))
+
+(defun def-use-format-ref (ref)
+  "Formats a references."
+  (format "%s:%d.%d"
+          (def-use-ref-src ref)
+          (def-use-pos-line (def-use-ref-pos ref))
+          (def-use-pos-col (def-use-ref-pos ref))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Highlighting

@@ -79,6 +79,11 @@ table."
   "Makes a hash table with `equal' semantics."
   (make-hash-table :test 'equal :size 1))
 
+(defun def-use-kill-current-buffer ()
+  "Kills the current buffer."
+  (interactive)
+  (kill-buffer (current-buffer)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'def-use-util)
