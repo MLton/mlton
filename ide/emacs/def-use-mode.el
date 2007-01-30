@@ -133,6 +133,47 @@ current buffer."
   (interactive "P")
   (def-use-jump-to-next other-window t))
 
+(defun def-use-goto-ref (ref &optional other-window)
+  "Finds the referenced source and moves point to the referenced
+position."
+  (cond
+   (other-window
+    (find-file-other-window (def-use-ref-src ref)))
+   ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
+    (find-file (def-use-ref-src ref))))
+  (def-use-goto-pos (def-use-ref-pos ref)))
+
+(defun def-use-goto-pos (pos)
+  "Moves point to the specified position."
+  (goto-char (def-use-pos-to-point pos)))
+
+(defun def-use-all-refs-sorted (sym)
+  "Returns a sorted list of all references (including definition) to
+the symbol."
+  (sort (cons (def-use-sym-ref sym)
+              (copy-list (def-use-sym-to-uses sym)))
+        (function def-use-ref<)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; List
+
+(defvar def-use-list-mode-map
+  (let ((result (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key result
+               (read (car key-command))
+               (cdr key-command))))
+          '(("[(q)]"
+             . def-use-kill-current-buffer)
+            ("[(control m)]"
+             . def-use-list-view-ref)))
+    result))
+
+(define-derived-mode def-use-list-mode fundamental-mode "Def-Use-List"
+  "Major mode for browsing def-use lists."
+  :group 'def-use-list)
+
 (defun def-use-list-all-refs (&optional reverse)
   "Lists all references to the symbol under the cursor."
   (interactive "P")
@@ -155,45 +196,26 @@ current buffer."
                 refs))
         (goto-line 5)
         (pop-to-buffer buffer)
-        (local-set-key "q" 'def-use-kill-current-buffer)
-        (local-set-key "o" 'def-use-list-jump-to-ref-on-current-line)
-        (setq buffer-read-only t)))))
+        (setq buffer-read-only t)
+        (def-use-list-mode)))))
 
-(defun def-use-list-jump-to-ref-on-current-line ()
-  "Jumps to the references on the current line."
+(defun def-use-list-view-ref ()
+  "Finds references on the current line and shows in another window."
   (interactive)
   (beginning-of-line)
-  (when (re-search-forward
-         "^\\(.*\\):\\([0-9]*\\)\\.\\([0-9]*\\)$"
-         (def-use-point-at-next-line))
-    (forward-line)
-    (def-use-goto-ref
-      (def-use-ref (match-string 1)
-        (def-use-pos
-          (string-to-number (match-string 2))
-          (string-to-number (match-string 3))))
-      t)))
-
-(defun def-use-goto-ref (ref &optional other-window)
-  "Finds the referenced source and moves point to the referenced
-position."
-  (cond
-   (other-window
-    (find-file-other-window (def-use-ref-src ref)))
-   ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
-    (find-file (def-use-ref-src ref))))
-  (def-use-goto-pos (def-use-ref-pos ref)))
-
-(defun def-use-goto-pos (pos)
-  "Moves point to the specified position."
-  (goto-char (def-use-pos-to-point pos)))
-
-(defun def-use-all-refs-sorted (sym)
-  "Returns a sorted list of all references (including definition) to
-the symbol."
-  (sort (cons (def-use-sym-ref sym)
-              (copy-list (def-use-sym-to-uses sym)))
-        (function def-use-ref<)))
+  (let ((b (current-buffer)))
+    (when (re-search-forward
+           "^\\(.*\\):\\([0-9]*\\)\\.\\([0-9]*\\)$"
+           (def-use-point-at-next-line)
+           t)
+      (forward-line)
+      (def-use-goto-ref
+        (def-use-ref (match-string 1)
+          (def-use-pos
+            (string-to-number (match-string 2))
+            (string-to-number (match-string 3))))
+        t)
+      (pop-to-buffer b))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Info
