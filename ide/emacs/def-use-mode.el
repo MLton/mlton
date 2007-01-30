@@ -123,7 +123,7 @@ current buffer."
     (if (not sym)
         (message "Sorry, no information on the symbol at point!")
       (let* ((refs (sort (cons (def-use-sym-ref sym)
-                               (def-use-sym-to-uses sym))
+                               (copy-list (def-use-sym-to-uses sym)))
                          (function def-use-ref<)))
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
