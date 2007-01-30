@@ -20,7 +20,9 @@
 
 (defun def-use-buffer-true-file-name ()
   "Returns the true filename of the current buffer."
-  (def-use-file-truename (buffer-file-name)))
+  (let ((name (buffer-file-name)))
+    (when name
+      (def-use-file-truename name))))
 
 (defun def-use-point-at-next-line ()
   "Returns point at the beginning of the next line."
