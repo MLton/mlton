@@ -61,7 +61,7 @@
 (defvar def-use-src-to-info-table (def-use-make-hash-table)
   "Maps a source to a source info.")
 
-(defvar def-use-sym-to-uses-table nil
+(defvar def-use-sym-to-uses-table (def-use-make-hash-table)
   "Maps a symbol to a list of use references to the symbol.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
