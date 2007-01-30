@@ -100,8 +100,12 @@ empty source info."
   (def-use-set-to-list (def-use-duf-to-src-set duf)))
 
 (defun def-use-src-to-pos-to-sym (src)
-  "Returns a pos to sym table for the specified source."
+  "Returns a position to symbol table for the specified source."
   (def-use-info-pos-to-sym (def-use-src-to-info src)))
+
+(defun def-use-src-to-sym-set (src)
+  "Returns a set of all symbols defined in the specified source."
+  (def-use-info-sym-set (def-use-src-to-info src)))
 
 (defun def-use-sym-at-ref (ref)
   "Returns the symbol referenced at specified ref."
@@ -115,7 +119,7 @@ specified source."
 
 (defun def-use-sym-to-uses (sym)
   "Returns a list of uses of the specified symbol."
-  (def-use-hash-table-to-key-list (def-use-sym-to-use-set sym)))
+  (def-use-set-to-list (def-use-sym-to-use-set sym)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data purging
