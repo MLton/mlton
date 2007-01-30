@@ -90,6 +90,17 @@ current buffer."
         (def-use-goto-ref (def-use-sym-ref sym))
       (message "Sorry, no known symbol at cursor."))))
 
+(defun def-use-jump-to-next ()
+  "Jumps to the next use (or def) of the symbol under the cursor."
+  (interactive)
+  (let ((sym (def-use-current-sym)))
+    (if (not sym)
+        (message "Sorry, no information on the symbol at point!")
+      (let* ((uses (def-use-sym-to-uses sym))
+             (uses (append uses uses)))
+        (while (not (equal (pop uses) (def-use-sym-ref sym))))
+        (def-use-goto-ref (car uses))))))
+
 (defun def-use-goto-ref (ref)
   "Find the referenced source and moves point to the referenced position."
   (find-file (def-use-ref-src ref))

@@ -64,6 +64,7 @@
   (let* ((ref (def-use-sym-ref sym))
          (src (def-use-ref-src ref))
          (info (def-use-src-to-info src)))
+    (puthash ref ref (def-use-sym-to-use-set sym))
     (puthash src src (def-use-duf-to-src-set duf))
     (puthash sym sym (def-use-info-sym-set info))
     (puthash (def-use-ref-pos ref) sym (def-use-info-pos-to-sym info))))
