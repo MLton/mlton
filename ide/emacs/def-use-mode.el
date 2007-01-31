@@ -4,11 +4,14 @@
 ;; See the file MLton-LICENSE for details.
 
 ;; TBD:
+;; - highlight all refs to a var while def-use-list buffer exists
+;; - mode specific on-off switching
 ;; - automatic loading of def-use files
 ;; - automatic reloading of modified def-use files
 ;; - make loading of def-use files asynchronous
 ;; - disable def-use when file is modified
 ;; - use mode dependent identifier charset (e.g also skip over _ in sml-mode)
+;; - rename-variable
 
 (require 'def-use-data)
 
