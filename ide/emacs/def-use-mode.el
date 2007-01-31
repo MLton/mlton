@@ -3,6 +3,25 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
+;; This is a minor mode to support precisely identified definitions and
+;; uses.
+;;
+;; To try:
+;;
+;; -1. svn up your MLton source tree.
+;;  0. Compile the latest MLton from SVN.
+;;  1. Generate a def-use file using MLton with the (new)
+;;     -prefer-abs-paths true option.
+;;  2. Load all of the def-use-*.el files and `esml-def-use-mlton.el'.
+;;  3. M-x def-use-mode
+;;  4. M-x esml-def-use-mlton-parse <def-use-file>
+;;     (This may take from a few seconds to a minute or more.)
+;;  5. Go to a SML source file covered by the def-use file and place the
+;;     cursor over some variable (def or use).
+;;
+;; The plan is to improve the usability of this mode (automatic loading,
+;; purging, and reloading of def-use info) in the near future.
+
 ;; TBD:
 ;; - highlight all refs to a var while def-use-list buffer exists
 ;; - mode specific on-off switching
