@@ -13,9 +13,10 @@
 ;;  1. Generate a def-use file using MLton with the (new)
 ;;     -prefer-abs-paths true option.
 ;;  2. Load all of the def-use-*.el files and `esml-def-use-mlton.el'.
-;;  3. M-x def-use-mode
-;;  4. M-x esml-def-use-mlton-parse <def-use-file>
-;;     (This may take from a few seconds to a minute or more.)
+;;  3. M-x esml-def-use-mlton-parse <def-use-file>
+;;     (It may take some time for parsing to finish, but you can continue
+;;      editing at the same time.)
+;;  4. M-x def-use-mode
 ;;  5. Go to a SML source file covered by the def-use file and place the
 ;;     cursor over some variable (def or use).
 ;;
@@ -27,7 +28,6 @@
 ;; - mode specific on-off switching
 ;; - automatic loading of def-use files
 ;; - automatic reloading of modified def-use files
-;; - make loading of def-use files asynchronous
 ;; - disable def-use when file is modified
 ;; - use mode dependent identifier charset (e.g also skip over _ in sml-mode)
 ;; - rename-variable

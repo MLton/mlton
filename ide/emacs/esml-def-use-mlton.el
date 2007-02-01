@@ -48,32 +48,56 @@
     (,(def-use-intern "exception")   . ,font-lock-module-def-face)))
 
 (defun esml-def-use-mlton-parse (duf)
-  "Parses a def-use -file."
+  "Parses a def-use -file.  Because parsing may take a while, it is
+done as a background process.  This allows you to continue working
+altough the editor may feel a bit sluggish."
   (interactive "fSpecify def-use -file: ")
   (setq duf (expand-file-name duf))
-  (with-temp-buffer
-    (insert-file duf)
-    (goto-char 1)
-    (while (not (eobp))
-      (let* ((kind (def-use-intern (esml-def-use-read "^ " " ")))
-             (name (def-use-intern (esml-def-use-read "^ " " ")))
-             (src (esml-def-use-mlton-resolve-src
-                   (esml-def-use-read "^ " " ") duf))
-             (line (string-to-int (esml-def-use-read "^." ".")))
-             (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
-             (pos (def-use-pos line col))
-             (ref (def-use-ref src pos))
-             (sym (def-use-sym kind name ref
-                    (cdr (assoc kind esml-def-use-kinds)))))
-        (def-use-add-def duf sym)
-        (while (< 0 (skip-chars-forward " "))
-          (let* ((src (esml-def-use-mlton-resolve-src
-                       (esml-def-use-read "^ " " ") duf))
-                 (line (string-to-int (esml-def-use-read "^." ".")))
-                 (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
-                 (pos (def-use-pos line col))
-                 (ref (def-use-ref src pos)))
-            (def-use-add-use ref sym)))))))
+  (let ((buf (generate-new-buffer (concat "** " duf " **"))))
+    (with-current-buffer buf
+      (buffer-disable-undo buf)
+      (insert-file duf)
+      (goto-char 1)
+      (setq buffer-read-only t))
+    (message (concat "Parsing " duf " in the background..."))
+    (def-use-start-bg-job
+      (function
+       (lambda (duf buf)
+         (with-current-buffer buf
+           (eobp))))
+      (function
+       (lambda (duf buf)
+         (with-current-buffer buf
+           (goto-char 1)
+           (let* ((kind (def-use-intern (esml-def-use-read "^ " " ")))
+                  (name (def-use-intern (esml-def-use-read "^ " " ")))
+                  (src (esml-def-use-mlton-resolve-src
+                        (esml-def-use-read "^ " " ") duf))
+                  (line (string-to-int (esml-def-use-read "^." ".")))
+                  (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
+                  (pos (def-use-pos line col))
+                  (ref (def-use-ref src pos))
+                  (sym (def-use-sym kind name ref
+                         (cdr (assoc kind esml-def-use-kinds)))))
+             (def-use-add-def duf sym)
+             (while (< 0 (skip-chars-forward " "))
+               (let* ((src (esml-def-use-mlton-resolve-src
+                            (esml-def-use-read "^ " " ") duf))
+                      (line (string-to-int (esml-def-use-read "^." ".")))
+                      (col (- (string-to-int (esml-def-use-read "^\n" "\n"))
+                              1))
+                      (pos (def-use-pos line col))
+                      (ref (def-use-ref src pos)))
+                 (def-use-add-use ref sym))))
+           (setq buffer-read-only nil)
+           (delete-backward-char (- (point) 1))
+           (setq buffer-read-only t))
+         (list duf buf)))
+      (function
+       (lambda (duf buf)
+         (kill-buffer buf)
+         (message (concat "Finished parsing " duf "."))))
+      duf buf)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -112,13 +112,12 @@ string."
 (defvar def-use-bg-jobs nil)
 
 (defconst def-use-bg-job-period 0.03)
-(defconst def-use-bg-job-cpu-ratio 0.7)
+(defconst def-use-bg-job-cpu-ratio 0.3)
 
 (defun def-use-bg-job-reschedule ()
   (when def-use-bg-jobs
     (run-with-timer
-     (- (/ def-use-bg-job-period def-use-bg-job-cpu-ratio)
-        def-use-bg-job-period)
+     (/ def-use-bg-job-period def-use-bg-job-cpu-ratio)
      nil
      (function def-use-bg-job-quantum))))
 
