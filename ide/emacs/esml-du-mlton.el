@@ -17,14 +17,14 @@
       (skip-chars-forward skipping)
       result)))
 
-(defconst esml-du-kinds
+(defconst esml-du-kinds ;; XXX Needs customization
   `((,(def-use-intern "variable")    . ,font-lock-variable-name-face)
-    (,(def-use-intern "type")        . ,font-lock-type-def-face)
-    (,(def-use-intern "constructor") . ,font-lock-constant-face)
-    (,(def-use-intern "structure")   . ,font-lock-module-def-face)
-    (,(def-use-intern "signature")   . ,font-lock-interface-def-face)
-    (,(def-use-intern "functor")     . ,font-lock-module-def-face)
-    (,(def-use-intern "exception")   . ,font-lock-module-def-face)))
+    (,(def-use-intern "type")        . ,font-lock-variable-name-face)
+    (,(def-use-intern "constructor") . ,font-lock-variable-name-face)
+    (,(def-use-intern "structure")   . ,font-lock-variable-name-face)
+    (,(def-use-intern "signature")   . ,font-lock-variable-name-face)
+    (,(def-use-intern "functor")     . ,font-lock-variable-name-face)
+    (,(def-use-intern "exception")   . ,font-lock-variable-name-face)))
 
 (defun esml-du-mlton-parse (duf)
   "Parses a def-use -file.  Because parsing may take a while, it is
