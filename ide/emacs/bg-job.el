@@ -7,9 +7,33 @@
 ;; Background Processor
 
 (defun bg-job-start (done? step finalize &rest args)
-  "Starts a background job."
-  (push (cons args (cons done? (cons step finalize))) bg-jobs)
-  (unless (cdr bg-jobs)
+  "Starts a background job.  The job is considered active as longs as
+
+  (apply done? args)
+
+returns nil.  While the job is active,
+
+  (apply step args)
+
+will be called periodically to perform a (supposedly small) computation
+step.  The return value, which must be a list, will be used as the next
+args.  So, a step function often looks like this:
+
+  (function
+   (lambda (args)
+     ;; do something
+     (list args)))
+
+After the job becomes inactive,
+
+  (apply finalize args)
+
+will be called once and the job will be discarded.
+
+A job may call `bg-job-start' to start new jobs and multiple background
+jobs may be active simultaneously."
+  (push (cons args (cons done? (cons step finalize))) bg-job-queue)
+  (unless (cdr bg-job-queue)
     (bg-job-reschedule)))
 
 (defun bg-job-done? (job)
@@ -21,13 +45,13 @@
 (defun bg-job-finalize (job)
   (apply (cdddr job) (car job)))
 
-(defvar bg-jobs nil)
+(defvar bg-job-queue nil)
 
 (defconst bg-job-period 0.03)
 (defconst bg-job-cpu-ratio 0.3)
 
 (defun bg-job-reschedule ()
-  (when bg-jobs
+  (when bg-job-queue
     (run-with-timer
      (/ bg-job-period bg-job-cpu-ratio)
      nil
@@ -35,16 +59,14 @@
 
 (defun bg-job-quantum ()
   (let ((start-time (bg-job-time-to-double (current-time))))
-    (while (and bg-jobs
-                (< (- (bg-job-time-to-double (current-time))
-                      start-time)
+    (while (and bg-job-queue
+                (< (- (bg-job-time-to-double (current-time)) start-time)
                    bg-job-period))
-      (let ((job (pop bg-jobs)))
+      (let ((job (pop bg-job-queue)))
         (if (bg-job-done? job)
             (bg-job-finalize job)
           (bg-job-step job)
-          (setq bg-jobs
-                (nconc bg-jobs (list job)))))))
+          (setq bg-job-queue (nconc bg-job-queue (list job)))))))
   (bg-job-reschedule))
 
 (defun bg-job-time-to-double (time)
