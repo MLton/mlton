@@ -33,8 +33,7 @@ will be called once and the job will be discarded.
 A job may call `bg-job-start' to start new jobs and multiple background
 jobs may be active simultaneously."
   (push (cons args (cons done? (cons step finalize))) bg-job-queue)
-  (unless (cdr bg-job-queue)
-    (bg-job-reschedule)))
+  (bg-job-reschedule))
 
 (defun bg-job-done? (job)
   (apply (cadr job) (car job)))
@@ -46,16 +45,18 @@ jobs may be active simultaneously."
   (apply (cdddr job) (car job)))
 
 (defvar bg-job-queue nil)
+(defvar bg-job-timer nil)
 
 (defconst bg-job-period 0.03)
 (defconst bg-job-cpu-ratio 0.3)
 
 (defun bg-job-reschedule ()
-  (when bg-job-queue
-    (run-with-timer
-     (/ bg-job-period bg-job-cpu-ratio)
-     nil
-     (function bg-job-quantum))))
+  (unless bg-job-timer
+    (setq bg-job-timer
+          (run-with-timer
+           (/ bg-job-period bg-job-cpu-ratio)
+           nil
+           (function bg-job-quantum)))))
 
 (defun bg-job-quantum ()
   (let ((start-time (bg-job-time-to-double (current-time))))
@@ -67,7 +68,9 @@ jobs may be active simultaneously."
             (bg-job-finalize job)
           (bg-job-step job)
           (setq bg-job-queue (nconc bg-job-queue (list job)))))))
-  (bg-job-reschedule))
+  (setq bg-job-timer nil)
+  (when bg-job-queue
+    (bg-job-reschedule)))
 
 (defun bg-job-time-to-double (time)
   (+ (* (car time) 65536.0)
