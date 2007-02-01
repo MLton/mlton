@@ -16,7 +16,7 @@
     (function
      (lambda ()
        (def-use-intern
-         (def-use-add-face 'change-log-file-face
+         (def-use-add-face 'font-lock-keyword-face
            (file-truename file)))))
     def-use-file-truename-table))
 

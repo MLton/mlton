@@ -198,7 +198,7 @@ the symbol."
                (cdr key-command))))
           '(("[(q)]"
              . def-use-kill-current-buffer)
-            ("[(control m)]"
+            ("[(return)]"
              . def-use-list-view-ref)))
     result))
 
