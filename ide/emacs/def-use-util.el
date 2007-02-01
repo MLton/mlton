@@ -92,55 +92,6 @@ string."
   (add-text-properties 0 (length string) `(face ,face) string)
   string)
 
-(defun def-use-time-to-double (time)
-  (+ (* (car time) 65536.0)
-     (cadr time)
-     (/ (caddr time) 1000000.0)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Background Processor
-
-(defun def-use-bg-job (done? step finalize args)
-  (cons args (cons done? (cons step finalize))))
-(defun def-use-bg-job-done? (job)
-  (apply (cadr job) (car job)))
-(defun def-use-bg-job-step (job)
-  (setcar job (apply (caddr job) (car job))))
-(defun def-use-bg-job-finalize (job)
-  (apply (cdddr job) (car job)))
-
-(defvar def-use-bg-jobs nil)
-
-(defconst def-use-bg-job-period 0.03)
-(defconst def-use-bg-job-cpu-ratio 0.3)
-
-(defun def-use-bg-job-reschedule ()
-  (when def-use-bg-jobs
-    (run-with-timer
-     (/ def-use-bg-job-period def-use-bg-job-cpu-ratio)
-     nil
-     (function def-use-bg-job-quantum))))
-
-(defun def-use-start-bg-job (done? step finalize &rest args)
-  (let ((schedule (not def-use-bg-jobs)))
-    (push (def-use-bg-job done? step finalize args) def-use-bg-jobs)
-    (when schedule
-      (def-use-bg-job-reschedule))))
-
-(defun def-use-bg-job-quantum ()
-  (let ((start-time (def-use-time-to-double (current-time))))
-    (while (and def-use-bg-jobs
-                (< (- (def-use-time-to-double (current-time))
-                      start-time)
-                   def-use-bg-job-period))
-      (let ((job (pop def-use-bg-jobs)))
-        (if (def-use-bg-job-done? job)
-            (def-use-bg-job-finalize job)
-          (def-use-bg-job-step job)
-          (setq def-use-bg-jobs
-                (nconc def-use-bg-jobs (list job)))))))
-  (def-use-bg-job-reschedule))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'def-use-util)

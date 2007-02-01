@@ -5,6 +5,7 @@
 
 (require 'def-use-mode)
 (require 'sml-mode)
+(require 'bg-job)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing of def-use -files produced by MLton.
@@ -60,7 +61,7 @@ altough the editor may feel a bit sluggish."
       (goto-char 1)
       (setq buffer-read-only t))
     (message (concat "Parsing " duf " in the background..."))
-    (def-use-start-bg-job
+    (bg-job-start
       (function
        (lambda (duf buf)
          (with-current-buffer buf
