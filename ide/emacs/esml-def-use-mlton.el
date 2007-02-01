@@ -10,28 +10,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing of def-use -files produced by MLton.
 
-(defvar esml-def-use-mlton-resolve-src-last-src nil)
-(defvar esml-def-use-mlton-resolve-src-last-duf nil)
-(defvar esml-def-use-mlton-resolve-src-last-result nil)
-
-(defun esml-def-use-mlton-resolve-src (src duf)
-  (if (and (equal esml-def-use-mlton-resolve-src-last-src src)
-           (equal esml-def-use-mlton-resolve-src-last-duf duf))
-      esml-def-use-mlton-resolve-src-last-result
-    (setq esml-def-use-mlton-resolve-src-last-src src
-          esml-def-use-mlton-resolve-src-last-duf duf
-          esml-def-use-mlton-resolve-src-last-result
-          (def-use-file-truename
-            (cond
-             ;; XXX <basis>
-             ((file-name-absolute-p src)
-              src)
-             ((equal ?< (aref src 0))
-              src)
-             (t
-              (expand-file-name
-               src (file-name-directory duf))))))))
-
 (defun esml-def-use-read (taking skipping)
   (let ((start (point)))
     (skip-chars-forward taking)
@@ -53,7 +31,7 @@
 done as a background process.  This allows you to continue working
 altough the editor may feel a bit sluggish."
   (interactive "fSpecify def-use -file: ")
-  (setq duf (expand-file-name duf))
+  (setq duf (def-use-file-truename duf))
   (let ((buf (generate-new-buffer (concat "** " duf " **"))))
     (with-current-buffer buf
       (buffer-disable-undo buf)
@@ -72,8 +50,8 @@ altough the editor may feel a bit sluggish."
            (goto-char 1)
            (let* ((kind (def-use-intern (esml-def-use-read "^ " " ")))
                   (name (def-use-intern (esml-def-use-read "^ " " ")))
-                  (src (esml-def-use-mlton-resolve-src
-                        (esml-def-use-read "^ " " ") duf))
+                  (src (def-use-file-truename
+                         (esml-def-use-read "^ " " ")))
                   (line (string-to-int (esml-def-use-read "^." ".")))
                   (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
                   (pos (def-use-pos line col))
@@ -82,8 +60,8 @@ altough the editor may feel a bit sluggish."
                          (cdr (assoc kind esml-def-use-kinds)))))
              (def-use-add-def duf sym)
              (while (< 0 (skip-chars-forward " "))
-               (let* ((src (esml-def-use-mlton-resolve-src
-                            (esml-def-use-read "^ " " ") duf))
+               (let* ((src (def-use-file-truename
+                             (esml-def-use-read "^ " " ")))
                       (line (string-to-int (esml-def-use-read "^." ".")))
                       (col (- (string-to-int (esml-def-use-read "^\n" "\n"))
                               1))
