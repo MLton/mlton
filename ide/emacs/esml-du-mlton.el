@@ -10,14 +10,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing of def-use -files produced by MLton.
 
-(defun esml-def-use-read (taking skipping)
+(defun esml-du-read (taking skipping)
   (let ((start (point)))
     (skip-chars-forward taking)
     (let ((result (buffer-substring start (point))))
       (skip-chars-forward skipping)
       result)))
 
-(defconst esml-def-use-kinds
+(defconst esml-du-kinds
   `((,(def-use-intern "variable")    . ,font-lock-variable-name-face)
     (,(def-use-intern "type")        . ,font-lock-type-def-face)
     (,(def-use-intern "constructor") . ,font-lock-constant-face)
@@ -26,7 +26,7 @@
     (,(def-use-intern "functor")     . ,font-lock-module-def-face)
     (,(def-use-intern "exception")   . ,font-lock-module-def-face)))
 
-(defun esml-def-use-mlton-parse (duf)
+(defun esml-du-mlton-parse (duf)
   "Parses a def-use -file.  Because parsing may take a while, it is
 done as a background process.  This allows you to continue working
 altough the editor may feel a bit sluggish."
@@ -48,22 +48,22 @@ altough the editor may feel a bit sluggish."
        (lambda (duf buf)
          (with-current-buffer buf
            (goto-char 1)
-           (let* ((kind (def-use-intern (esml-def-use-read "^ " " ")))
-                  (name (def-use-intern (esml-def-use-read "^ " " ")))
+           (let* ((kind (def-use-intern (esml-du-read "^ " " ")))
+                  (name (def-use-intern (esml-du-read "^ " " ")))
                   (src (def-use-file-truename
-                         (esml-def-use-read "^ " " ")))
-                  (line (string-to-int (esml-def-use-read "^." ".")))
-                  (col (- (string-to-int (esml-def-use-read "^\n" "\n")) 1))
+                         (esml-du-read "^ " " ")))
+                  (line (string-to-int (esml-du-read "^." ".")))
+                  (col (- (string-to-int (esml-du-read "^\n" "\n")) 1))
                   (pos (def-use-pos line col))
                   (ref (def-use-ref src pos))
                   (sym (def-use-sym kind name ref
-                         (cdr (assoc kind esml-def-use-kinds)))))
+                         (cdr (assoc kind esml-du-kinds)))))
              (def-use-add-def duf sym)
              (while (< 0 (skip-chars-forward " "))
                (let* ((src (def-use-file-truename
-                             (esml-def-use-read "^ " " ")))
-                      (line (string-to-int (esml-def-use-read "^." ".")))
-                      (col (- (string-to-int (esml-def-use-read "^\n" "\n"))
+                             (esml-du-read "^ " " ")))
+                      (line (string-to-int (esml-du-read "^." ".")))
+                      (col (- (string-to-int (esml-du-read "^\n" "\n"))
                               1))
                       (pos (def-use-pos line col))
                       (ref (def-use-ref src pos)))
@@ -80,4 +80,4 @@ altough the editor may feel a bit sluggish."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(provide 'esml-def-use-mlton)
+(provide 'esml-du-mlton)

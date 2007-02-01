@@ -12,8 +12,8 @@
 ;;  0. Compile the latest MLton from SVN.
 ;;  1. Generate a def-use file using MLton with the (new)
 ;;     -prefer-abs-paths true option.
-;;  2. Load all of the def-use-*.el files and `esml-def-use-mlton.el'.
-;;  3. M-x esml-def-use-mlton-parse <def-use-file>
+;;  2. Load all of the `def-use-*.el' files and `esml-du-mlton.el'.
+;;  3. M-x esml-du-mlton-parse <def-use-file>
 ;;     (It may take some time for parsing to finish, but you can continue
 ;;      editing at the same time.)
 ;;  4. M-x def-use-mode
