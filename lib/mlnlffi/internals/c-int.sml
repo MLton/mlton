@@ -45,7 +45,9 @@ structure C :> C_INT = struct
         type cword = MLRep.Int.Unsigned.word
         type bf = { a: addr, l: word, r: word, lr: word, m: cword, im: cword }
 
+(*
         fun pair_type_addr (t: 'f objt) (a: addr) = (a, t)
+*)
         fun strip_type (a: addr, _: 'f objt) = a
         fun p_strip_type (a: addr, _: 'f objt) = a
         fun strip_fun (a: addr, _: 'f) = a
@@ -62,7 +64,9 @@ structure C :> C_INT = struct
         val op ~>> = MLRep.Int.Unsigned.~>>
         val op && = MLRep.Int.Unsigned.andb
         val op || = MLRep.Int.Unsigned.orb
+(*
         val op ^^ = MLRep.Int.Unsigned.xorb
+*)
         val ~~ = MLRep.Int.Unsigned.notb
     in
 
@@ -168,7 +172,7 @@ structure C :> C_INT = struct
        fn w => fn x => w x
     val convert' : (('st, 'sc) obj, ('tt, 'tc) obj) W.witness -> 
                    ('st, 'sc) obj' -> ('tt, 'tc) obj' =
-       fn w => fn x => x
+       fn _ => fn x => x
 
     (*
      * A family of types and corresponding values representing natural numbers.
@@ -399,9 +403,9 @@ structure C :> C_INT = struct
         local
             val u2s = MLRep.Int.Signed.fromLarge o MLRep.Int.Unsigned.toLargeIntX
         in
-            fun ubf ({ a, l, r, lr, m, im } : bf) =
+            fun ubf ({ a, l, r=_, lr, m=_, im=_ } : bf) =
                 (CMemory.load_uint a << l) >> lr
-            fun sbf ({ a, l, r, lr, m, im } : bf) =
+            fun sbf ({ a, l, r=_, lr, m=_, im=_ } : bf) =
                 u2s ((CMemory.load_uint a << l) ~>> lr)
         end
     end
@@ -455,7 +459,7 @@ structure C :> C_INT = struct
                fn (x, p) => ptr_voidptr' (p_strip_type x, p)
         end
 
-        fun ubf ({ a, l, r, lr, m, im }, x) =
+        fun ubf ({ a, l=_, r, lr=_, m, im }, x) =
            CMemory.store_uint (a, (CMemory.load_uint a && im) ||
                                ((x << r) && m))
 
@@ -498,7 +502,7 @@ structure C :> C_INT = struct
 
         val inject : 'o ptr -> voidptr = p_strip_type
         val cast : 'o ptr T.typ -> voidptr -> 'o ptr =
-           fn PTR (null, t) => (fn p => (p, t))
+           fn PTR (_, t) => (fn p => (p, t))
             | _ => bug "Ptr.cast (non-pointer-type)"
 
         val vnull : voidptr = CMemory.null
@@ -526,7 +530,7 @@ structure C :> C_INT = struct
            fn ((p, t as PTR (_, t')), i) => (|+! (T.sizeof t') (p, i), t)
             | _ => bug "Ptr.|+| (non-pointer-type)"
         val |-| : ('t, 'c) obj ptr * ('t, 'c) obj ptr -> int =
-           fn ((p, t as PTR (_, t')), (p', _)) => |-! (T.sizeof t') (p, p')
+           fn ((p, PTR (_, t')), (p', _)) => |-! (T.sizeof t') (p, p')
             | _ => bug "Ptr.|-| (non-pointer-type"
 
         val sub : ('t, 'c) obj ptr * int -> ('t, 'c) obj =
@@ -539,7 +543,7 @@ structure C :> C_INT = struct
            fn w => fn x => w x
         val convert' : (('st, 'sc) obj ptr, ('tt, 'tc) obj ptr) W.witness ->
                        ('st, 'sc) obj ptr' -> ('tt, 'tc) obj ptr' =
-           fn w => fn x => x
+           fn _ => fn x => x
 
         val ro : ('t, 'c) obj ptr   -> ('t, ro) obj ptr =
            fn x => convert (W.pointer (W.ro W.trivial)) x
@@ -577,7 +581,7 @@ structure C :> C_INT = struct
            fn ((a, PTR (_, t)), d) => (a, T.arr (t, d))
             | _ => bug "Arr.reconstruct (non-pointer)"
 
-        fun reconstruct' (a: addr, d: 'n Dim.dim) = a
+        fun reconstruct' (a: addr, _: 'n Dim.dim) = a
 
         fun dim (_: addr, t) = T.dim t
     end

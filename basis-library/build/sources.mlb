@@ -354,6 +354,8 @@ in
    ../mlton/word.sig
    ../mlton/world.sig
    ../mlton/world.sml
+   ../mlton/mono-array.sig
+   ../mlton/mono-vector.sig
    ../mlton/mlton.sig
    ../mlton/mlton.sml
 

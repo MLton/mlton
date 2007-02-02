@@ -84,10 +84,10 @@ val tick = Time.tick
 
 structure Lay =
    struct
-      type t = Layout.t * {isChar: bool, needsParen: bool}
+      type t = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
 
       fun simple (l: Layout.t): t =
-         (l, {isChar = false, needsParen = false})
+         (l, ({isChar = false}, Tycon.BindingStrength.unit))
    end
 
 structure UnifyResult =
@@ -124,7 +124,8 @@ fun initAdmitsEquality (c, a) =
                      region = ref NONE,
                      time = ref (Time.now ())})
 
-val _ = List.foreach (Tycon.prims, fn (c, _, a) => initAdmitsEquality (c, a))
+val _ = List.foreach (Tycon.prims, fn {tycon = c, admitsEquality = a, ...} =>
+                      initAdmitsEquality (c, a))
 
 structure Equality:>
    sig
@@ -369,11 +370,11 @@ val tyvarTime =
    Trace.trace ("TypeEnv.tyvarTime", Tyvar.layout, Ref.layout Time.layout) tyvarTime
 
 local
-   type z = Layout.t * {isChar: bool, needsParen: bool}
+   type z = Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)
    open Layout
 in
    fun simple (l: Layout.t): z =
-      (l, {isChar = false, needsParen = false})
+      (l, ({isChar = false}, Tycon.BindingStrength.unit))
    val dontCare: z = simple (str "_")
    fun bracket l = seq [str "[", l, str "]"]
    fun layoutRecord (ds: (Field.t * bool * z) list, flexible: bool) =
@@ -599,8 +600,9 @@ structure Type =
          end
 
       fun makeLayoutPretty (): {destroy: unit -> unit,
-                                lay: t -> Layout.t * {isChar: bool,
-                                                      needsParen: bool}} =
+                                lay: t -> Layout.t
+                                          * ({isChar: bool}
+                                          * Tycon.BindingStrength.t)} =
          let
             val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutApp (c, ts)
@@ -719,6 +721,8 @@ structure Type =
       fun new () = unknown {canGeneralize = true,
                             equality = Equality.unknown ()}
 
+      val new = Trace.trace ("TypeEnv.Type.new", Unit.layout, layout) new
+
       fun newFlex {fields, spine} =
          newTy (FlexRecord {fields = fields,
                             spine = spine},
@@ -774,6 +778,11 @@ structure Type =
       val string = con (Tycon.vector, Vector.new1 (char CharSize.C8))
 
       val unit = tuple (Vector.new0 ())
+
+      fun isArrow t =
+         case toType t of
+            Con (c, _) => Tycon.equals (c, Tycon.arrow)
+          | _ => false
 
       fun isBool t =
          case toType t of
@@ -938,10 +947,9 @@ structure Type =
                          (NotUnifiable (l, l'),
                           Unknown (Unknown.new {canGeneralize = true}))
                       val bracket =
-                         fn (l, {isChar, needsParen = _}) =>
+                         fn (l, ({isChar}, _)) =>
                          (bracket l,
-                          {isChar = isChar,
-                           needsParen = false})
+                          ({isChar = isChar}, Tycon.BindingStrength.unit))
                       fun notUnifiableBracket (l, l') =
                          notUnifiable (bracket l, bracket l')
                       fun flexToRecord (fields, spine) =
@@ -1653,7 +1661,7 @@ fun close (ensure: Tyvar.t vector, ubd) =
                                        Time.layout (!time),
                                        str " where getTime is ",
                                        Time.layout genTime],
-                                  Out.standard)
+                                  Out.error)
                       end
              in
                 if not (Time.<= (genTime, !time))

@@ -38,6 +38,10 @@
 ;; - find-binding-occurance (of a basid)
 ;; - support doc strings in mlb files
 
+;; TBD:
+;; - fix indentation bugs
+;; - use something more robust than `shell-command' to run shell commands
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Prelude
 
@@ -57,27 +61,18 @@
 Unrecognized
 - annotations (see `esml-mlb-show-annotations-command' and
                    `esml-mlb-additional-annotations'),
-- path variables (see `esml-mlb-mlb-path-map-files' and
+- path variables (see `esml-mlb-show-path-map-command',
+                      `esml-mlb-mlb-path-map-files', and
                       `esml-mlb-additional-path-variables'), and
 - path name suffices (see `esml-mlb-path-suffix-regexp') are
 highlighed as warnings."
   :group 'sml)
 
 (defcustom esml-mlb-additional-annotations
-  '(("allowConstant" "false" "true")
-    ("allowFFI" "false" "true")
-    ("allowOverload" "false" "true")
-    ("allowPrim" "false" "true")
-    ("allowRebindEquals" "false" "true")
-    ("deadCode" "false" "true")
-    ("ffiStr" "<longstrid>")
-    ("forceUsed")
-    ("nonexhaustiveExnMatch" "default" "ignore")
-    ("nonexhaustiveMatch" "warn" "ignore" "error")
-    ("redundantMatch" "warn" "ignore" "error")
-    ("sequenceNonUnit" "ignore" "error" "warn")
-    ("warnUnused" "false" "true"))
-  "Additional annotations accepted by your compiler(s)."
+  '()
+  "Additional annotations accepted by your compiler(s).  Note that ML
+Basis mode runs the `esml-mlb-show-annotations-command' to query available
+annotations automatically."
   :type '(repeat (cons :tag "Annotation"
                        (string :tag "Name")
                        (repeat :tag "Values starting with the default"
@@ -86,9 +81,10 @@ highlighed as warnings."
   :group 'esml-mlb)
 
 (defcustom esml-mlb-additional-path-variables
-  '(("LIB_MLTON_DIR" . "/usr/lib/mlton"))
+  '()
   "Additional path variables that can not be found in the path map files
-specified by `esml-mlb-mlb-path-map-files'."
+specified by `esml-mlb-mlb-path-map-files' or by running the command
+`esml-mlb-show-path-map-command'."
   :type '(repeat (cons (string :tag "Name") (string :tag "Value")))
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
@@ -135,8 +131,8 @@ files whose extension matches this regexp."
   :group 'esml-mlb)
 
 (defcustom esml-mlb-show-annotations-command
-  "mlton -expert true -show-anns true"
-  "Shell command used to determine the annotations accepted by a compiler."
+  "mlton -expert true -show anns"
+  "Shell command used to query the available annotations."
   :type 'string
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
@@ -147,6 +143,13 @@ files whose extension matches this regexp."
 `%t' is replaced by the name of a temporary file and `%f' is replaced by
 the name of the MLB file."
   :type 'string
+  :group 'esml-mlb)
+
+(defcustom esml-mlb-show-path-map-command
+  "mlton -expert true -show path-map"
+  "Shell command used to query the available path variables."
+  :type 'string
+  :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -195,21 +198,28 @@ the name of the MLB file."
   "An association list of known path variables. This variable is updated
 by `esml-mlb-update'.")
 
+(defun esml-mlb-parse-path-variables-from-string (path-map-string)
+  (mapcar (function
+           (lambda (s) (apply 'cons (esml-split-string s "[ \t]+"))))
+          (esml-split-string path-map-string "[ \t]*\n+[ \t]*")))
+
 (defun esml-mlb-parse-path-variables ()
   (setq esml-mlb-path-variables
         (remove-duplicates
          (sort (append
                 esml-mlb-additional-path-variables
+                (esml-mlb-parse-path-variables-from-string
+                 (with-temp-buffer
+                   (save-window-excursion
+                     (shell-command
+                      esml-mlb-show-path-map-command
+                      (current-buffer))
+                     (buffer-string))))
                 (loop for file in esml-mlb-mlb-path-map-files
-                  append (mapcar (function
-                                  (lambda (s)
-                                    (apply 'cons
-                                           (esml-split-string s "[ \t]+"))))
-                                 (esml-split-string
-                                  (with-temp-buffer
-                                    (insert-file-contents file)
-                                    (buffer-string))
-                                  "[ \t]*\n+[ \t]*"))))
+                  append (esml-mlb-parse-path-variables-from-string
+                          (with-temp-buffer
+                            (insert-file-contents file)
+                            (buffer-string)))))
                (function
                 (lambda (a b)
                   (string-lessp (car a) (car b)))))

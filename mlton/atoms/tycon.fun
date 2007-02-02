@@ -35,7 +35,7 @@ fun stats () =
       open Layout
    in
       align
-      (List.map (prims, fn (c, _, _) =>
+      (List.map (prims, fn {tycon = c, ...} =>
                  seq [layout c, str " size is ",
                       Int.layout (MLton.size c),
                       str " plist length is ",

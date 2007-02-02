@@ -47,6 +47,11 @@ structure OptPred =
        | Yes 
    end
 
+structure Show =
+   struct
+      datatype t = Anns | PathMap
+   end
+
 val gcc: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -65,7 +70,7 @@ val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
 val profileTimeSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
-val showAnns: bool ref = ref false
+val show: Show.t option ref = ref NONE
 val stop = ref Place.OUT
 
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
@@ -451,8 +456,20 @@ fun makeOptions {usage} =
         boolRef profileStack),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
-       (Expert, "show-anns", " {false|true}", "show annotations",
-        boolRef showAnns),
+       (Expert, "show", " {anns|path-map}", "print specified data and stop",
+        SpaceString
+        (fn s =>
+         show := SOME (case s of
+                          "anns" => Show.Anns
+                        | "path-map" => Show.PathMap
+                        | _ => usage (concat ["invalid -show arg: ", s])))),
+       (Expert, "show-anns", " {false|true}", "deprecated (use -show anns)",
+        Bool
+        (fn b =>
+         (if b then show := SOME Show.Anns else ()
+          ; Out.output
+            (Out.error,
+             "Warning: deprecated option: -show-anns.  Use -show anns.\n")))),
        (Normal, "show-basis", " <file>", "write out the final basis environment",
         SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
@@ -583,11 +600,24 @@ fun commandLine (args: string list): unit =
                       | SOME c => c)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () =
-         if !showAnns then
-            (Layout.outputl (Control.Elaborate.document {expert = !expert}, 
-                             Out.standard)
+         case !show of
+            NONE => ()
+          | SOME info =>
+            (case info of
+                Show.Anns =>
+                Layout.outputl (Control.Elaborate.document {expert = !expert},
+                                Out.standard)
+              | Show.PathMap =>
+                let
+                   open Layout
+                in
+                   outputl (align
+                            (List.map (Control.mlbPathMap (),
+                                       fn {var, path, ...} =>
+                                       str (concat [var, " ", path]))),
+                            Out.standard)
+                end
              ; let open OS.Process in exit success end)
-         else ()
       val () = if !profileTimeSet
                   then (case !codegen of
                            Native => profile := ProfileTimeLabel
@@ -675,10 +705,11 @@ fun commandLine (args: string list): unit =
          if !keepDot andalso List.isEmpty (!keepPasses)
             then keepSSA := true
          else ()
-      val keepDefUse = 
-         isSome (!showDefUse)
-         orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
-         orelse (Control.Elaborate.default Control.Elaborate.warnUnused)
+      val () =
+         keepDefUse
+         := (isSome (!showDefUse)
+             orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
+             orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
       val warnMatch =
           (Control.Elaborate.enabled Control.Elaborate.nonexhaustiveMatch)
           orelse (Control.Elaborate.enabled Control.Elaborate.redundantMatch)
@@ -688,7 +719,7 @@ fun commandLine (args: string list): unit =
                   Control.Elaborate.DiagEIW.Ignore)
       val _ = elaborateOnly := (stop = Place.TypeCheck
                                 andalso not (warnMatch)
-                                andalso not (keepDefUse))
+                                andalso not (!keepDefUse))
       val _ =
          if !codegen = Bytecode andalso !profile <> ProfileNone
             then usage (concat ["bytecode doesn't support profiling\n"])

@@ -84,7 +84,7 @@ structure Type =
       fun explainDoesNotAdmitEquality (t: t): Layout.t =
          let
             open Layout
-            val wild = (str "_", {isChar = false, needsParen = false})
+            val wild = (str "_", ({isChar = false}, Tycon.BindingStrength.unit))
             fun con (c, ts) =
                let
                   fun keep {showInside: bool} =
@@ -101,7 +101,8 @@ structure Type =
                   case ! (Tycon.admitsEquality c) of
                      Always => NONE
                    | Never => SOME (bracket (#1 (keep {showInside = false})),
-                                    {isChar = false, needsParen = false})
+                                    ({isChar = false},
+                                     Tycon.BindingStrength.unit))
                    | Sometimes =>
                         if Vector.exists (ts, Option.isSome)
                            then SOME (keep {showInside = true})
@@ -134,7 +135,7 @@ structure Type =
                                        seq [Field.layout f, str ": ", z] :: ac),
                                 ",")),
                               str ending],
-                             {isChar = false, needsParen = false})
+                             ({isChar = false}, Tycon.BindingStrength.unit))
                          end
                     | SOME v =>
                          Tycon.layoutApp
@@ -688,7 +689,7 @@ structure Info =
               uses = uses}))
    end
 
-val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #1))
+val allTycons: Tycon.t list ref = ref (List.map (Tycon.prims, #tycon))
 val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
 
 val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
@@ -1154,9 +1155,13 @@ structure NameSpace =
       fun newUses (T {defUses, ...}, class, def) =
          let
             val u = Uses.new ()
-            val _ = List.push (defUses, {class = class,
-                                         def = def,
-                                         uses = u})
+            val _ =
+               if !Control.keepDefUse then
+                  List.push (defUses, {class = class,
+                                       def = def,
+                                       uses = u})
+               else
+                  ()
          in
             u
          end

@@ -144,7 +144,8 @@ structure FlexibleTycon =
                     ("id", TyconId.layout id)]
          end
 
-      fun layoutApp (t, _) = (layout t, {isChar = false, needsParen = false})
+      fun layoutApp (t, _) =
+          (layout t, ({isChar = false}, Etycon.BindingStrength.unit))
 
       val copies: copy list ref = ref []
 
@@ -247,7 +248,7 @@ structure Type =
 
       local
          open Layout
-         fun simple l = (l, {isChar = false, needsParen = false})
+         fun simple l = (l, ({isChar = false}, Etycon.BindingStrength.unit))
          fun loop t =
             case t of
                Con (c, ts) => Tycon.layoutApp (c, Vector.map (ts, loop))

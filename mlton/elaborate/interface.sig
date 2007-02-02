@@ -15,6 +15,8 @@ signature INTERFACE_STRUCTS =
             structure Kind: TYCON_KIND
             structure Tycon:
                sig
+                  structure BindingStrength: BINDING_STRENGTH
+
                   type t
 
                   val admitsEquality: t -> AdmitsEquality.t ref
@@ -23,8 +25,9 @@ signature INTERFACE_STRUCTS =
                   val exn: t
                   val layout: t -> Layout.t
                   val layoutApp:
-                     t * (Layout.t * {isChar: bool, needsParen: bool}) vector
-                     -> Layout.t * {isChar: bool, needsParen: bool}
+                     t * (Layout.t
+                          * ({isChar: bool} * BindingStrength.t)) vector
+                     -> Layout.t * ({isChar: bool} * BindingStrength.t)
                   val tuple: t
                end
 

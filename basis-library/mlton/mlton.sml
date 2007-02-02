@@ -81,6 +81,16 @@ structure Word8 =
       type t = word
    end
 
+structure Word8Array = struct
+   open Word8Array
+   type t = array
+end
+
+structure Word8Vector = struct
+   open Word8Vector
+   type t = vector
+end
+
 val _ = 
    (Primitive.TopLevel.setHandler MLtonExn.topLevelHandler
     ; Primitive.TopLevel.setSuffix 

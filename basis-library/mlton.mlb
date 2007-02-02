@@ -24,6 +24,8 @@ in
       signature MLTON_INT_INF
       signature MLTON_IO
       signature MLTON_ITIMER
+      signature MLTON_MONO_ARRAY
+      signature MLTON_MONO_VECTOR
       signature MLTON_PLATFORM
       signature MLTON_POINTER
       signature MLTON_PROC_ENV

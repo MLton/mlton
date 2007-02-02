@@ -218,8 +218,12 @@ signature BASIS_EXTRA =
       structure PackReal64Little : PACK_REAL
       structure PackRealBig : PACK_REAL
       structure PackRealLittle : PACK_REAL
+      structure PackWord16Big : PACK_WORD
+      structure PackWord16Little : PACK_WORD
       structure PackWord32Big : PACK_WORD
       structure PackWord32Little : PACK_WORD
+      structure PackWord64Big : PACK_WORD
+      structure PackWord64Little : PACK_WORD
       structure Posix : POSIX
       structure Real32 : REAL
       structure Real32Array : MONO_ARRAY
@@ -622,6 +626,8 @@ signature BASIS_EXTRA =
       sharing type MLton.BinIO.outstream = BinIO.outstream
       sharing type MLton.TextIO.instream = TextIO.instream
       sharing type MLton.TextIO.outstream = TextIO.outstream
+      sharing type MLton.Word8Array.t = Word8Array.array
+      sharing type MLton.Word8Vector.t = Word8Vector.vector
    end
    (* bool is already defined as bool and so cannot be shared.
     * So, we where these to get the needed sharing.
