@@ -152,7 +152,7 @@ int setrlimit (int resource, const struct rlimit *rlp) {
  *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/getprocesstimes.asp
  *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getsystemtimeasfiletime.asp
  */
-int getrusage (int who, struct rusage *usage) {
+int getrusage (__attribute__ ((unused)) int who, struct rusage *usage) {
   FILETIME ct, et, kt, ut;
   LARGE_INTEGER li, lj;
   if (GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut)) {
@@ -426,7 +426,7 @@ int setgid (__attribute__ ((unused)) gid_t gid) {
 
 __attribute__ ((noreturn))
 int setgroups (__attribute__ ((unused)) size_t size, 
-               __attribute__ ((unused)) gid_t *list) {
+               __attribute__ ((unused)) const gid_t *list) {
         die ("setgroups not implemented");
 }
 
@@ -911,7 +911,7 @@ void openlog(const char* ident, int opt, int facility) {
 void closelog(void) {
 }
 
-void syslog(int priority, const char* fmt, const char* msg) {
+void syslog(int priority, __attribute__ ((unused)) const char* fmt, const char* msg) {
   static const char* severity[] = {
     "debug", 
     "informational", 
@@ -950,7 +950,7 @@ static HMODULE dl_main_module = NULL;
  * process.
  */
 
-void *dlopen(const char *filename, int flag_IGNORED) {
+void *dlopen(const char *filename, __attribute__ ((unused)) int flag_IGNORED) {
         if (!filename) {
                 if (!dl_main_module)
                         dl_main_module = GetModuleHandle(NULL);
