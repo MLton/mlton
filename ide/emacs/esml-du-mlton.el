@@ -4,7 +4,6 @@
 ;; See the file MLton-LICENSE for details.
 
 (require 'def-use-mode)
-(require 'sml-mode)
 (require 'bg-job)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
