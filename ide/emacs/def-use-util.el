@@ -92,6 +92,13 @@ string."
   (add-text-properties 0 (length string) `(face ,face) string)
   string)
 
+(defun def-use-attr-mod-time-as-double (attr)
+  (+ (* (car (nth 5 attr)) 65536.0) (cadr (nth 5 attr))))
+
+(defun def-use-attr-newer? (attr1 attr2)
+  (> (def-use-attr-mod-time-as-double attr1)
+     (def-use-attr-mod-time-as-double attr2)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'def-use-util)

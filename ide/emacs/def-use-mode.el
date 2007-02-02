@@ -13,7 +13,7 @@
 ;;  1. Generate a def-use file using MLton with the (new)
 ;;     -prefer-abs-paths true option.
 ;;  2. Load all of the `def-use-*.el' files and `esml-du-mlton.el'.
-;;  3. M-x esml-du-mlton-parse <def-use-file>
+;;  3. M-x esml-du-mlton <def-use-file>
 ;;     (It may take some time for parsing to finish, but you can continue
 ;;      editing at the same time.)
 ;;  4. M-x def-use-mode
@@ -110,21 +110,25 @@ current buffer."
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
 current buffer."
-  (def-use-ref (def-use-buffer-true-file-name)
-    (def-use-point-to-pos
-      (save-excursion
-        (goto-char point)
-        ;; XXX Index this logic in a mode specific manner
-        (when (zerop (skip-chars-backward
-                      "a-zA-Z0-9_" (def-use-point-at-current-line)))
-          (skip-chars-backward
-           "-!%&$#+/:<=>?@~`^|*\\" (def-use-point-at-current-line)))
-        (point)))))
+  (let ((src (def-use-buffer-true-file-name)))
+    (when src
+      (def-use-ref src
+        (def-use-point-to-pos
+          (save-excursion
+            (goto-char point)
+            ;; XXX Index this logic in a mode specific manner
+            (when (zerop (skip-chars-backward
+                          "a-zA-Z0-9_" (def-use-point-at-current-line)))
+              (skip-chars-backward
+               "-!%&$#+/:<=>?@~`^|*\\" (def-use-point-at-current-line)))
+            (point)))))))
 
 (defun def-use-sym-at-point (point)
   "Returns symbol information for the symbol at the specified point."
   ;; XXX If data unvailable for current buffer then attempt to load it.
-  (def-use-sym-at-ref (def-use-ref-at-point point)))
+  (let ((ref (def-use-ref-at-point point)))
+    (when ref
+      (def-use-sym-at-ref ref))))
 
 (defun def-use-current-sym ()
   "Returns symbol information for the symbol at the current point."
