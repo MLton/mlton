@@ -200,7 +200,7 @@ by `esml-mlb-update'.")
 
 (defun esml-mlb-parse-path-variables-from-string (path-map-string)
   (mapcar (function
-           (lambda (s) (apply 'cons (esml-split-string s "[ \t]+"))))
+           (lambda (s) (apply (function cons) (esml-split-string s "[ \t]+"))))
           (esml-split-string path-map-string "[ \t]*\n+[ \t]*")))
 
 (defun esml-mlb-parse-path-variables ()
@@ -247,7 +247,7 @@ by `esml-mlb-update'.")
                 parts)
           (delete-char (- 1 (point))))
         (goto-char 0)))
-    (apply 'concat (reverse parts))))
+    (apply (function concat) (reverse parts))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
@@ -320,7 +320,7 @@ by a space.")
            . font-lock-constant-face)
           ;; annotations
           (,(apply
-             'concat
+             (function concat)
              "\"[ \t]*" esml-mlb-compiler-ann-prefix "?\\("
              (reduce
               (function
