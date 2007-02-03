@@ -33,11 +33,18 @@
 (defalias 'def-use-sym-ref (function car))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Def-use source
+;; Def-use sources
 
-(defun def-use-dus (title sym-at-ref sym-to-uses finalize &rest args)
-  "Makes a new def-use -source."
-  (cons args (cons sym-at-ref (cons sym-to-uses (cons title finalize)))))
+(defun def-use-add-dus (title sym-at-ref sym-to-uses finalize &rest args)
+  (push (cons args (cons sym-at-ref (cons sym-to-uses (cons title finalize))))
+        def-use-dus-list)
+  (def-use-show-dus-update))
+
+(defun def-use-rem-dus (dus)
+  (setq def-use-dus-list
+        (remove dus def-use-dus-list))
+  (def-use-dus-finalize dus)
+  (def-use-show-dus-update))
 
 (defun def-use-dus-sym-at-ref (dus ref)
   (apply (cadr dus) ref (car dus)))
@@ -51,18 +58,63 @@
 (defun def-use-dus-finalize (dus)
   (apply (cddddr dus) (car dus)))
 
+(defvar def-use-dus-list nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Def-use source list
+;; Def-Use Sources -mode
 
-(defvar def-use-dus-list nil
-  "List of active def-use sources.")
+(defconst def-use-show-dus-buffer-name "<:Def-Use Sources:>")
 
-(defun def-use-add-dus (dus)
-  (push dus def-use-dus-list))
+(defconst def-use-dus-mode-map
+  (let ((result (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key result
+               (read (car key-command))
+               (cdr key-command))))
+          `(("[(q)]"
+             . ,(function def-use-kill-current-buffer))
+            ("[(k)]"
+             . ,(function def-use-show-dus-del))))
+    result))
 
-(defun def-use-rem-dus (dus)
-  (setq def-use-dus-list
-        (remove dus def-use-dus-list)))
+(define-derived-mode def-use-dus-mode fundamental-mode "Def-Use-DUS"
+  "Major mode for browsing def-use sources."
+  :group 'def-use-dus)
+
+(defun def-use-show-dus ()
+  "Show a list of def-use sources."
+  (interactive)
+  (let ((buffer (get-buffer-create "<:Def-Use Sources:>")))
+    (with-current-buffer buffer
+      (setq buffer-read-only t)
+      (def-use-dus-mode))
+    (switch-to-buffer buffer))
+  (def-use-show-dus-update))
+
+(defun def-use-show-dus-update ()
+  (let ((buffer (get-buffer def-use-show-dus-buffer-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (save-excursion
+          (setq buffer-read-only nil)
+          (goto-char 1)
+          (delete-char (buffer-size))
+          (insert "Def-Use Sources\n"
+                  "\n")
+          (mapc (function
+                 (lambda (dus)
+                   (insert (def-use-dus-title dus) "\n")))
+                def-use-dus-list)
+          (setq buffer-read-only t))))))
+
+(defun def-use-show-dus-del ()
+  "Kill the def-use source on the current line."
+  (interactive)
+  (let ((idx (- (count-lines 1 (point)) 3)))
+    (when (and (<= 0 idx)
+               (< idx (length def-use-dus-list)))
+      (def-use-rem-dus (nth idx def-use-dus-list)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Queries

@@ -15,12 +15,11 @@
   (let ((ctx (esml-du-ctx (def-use-file-truename duf))))
     (esml-du-parse ctx)
     (def-use-add-dus
-      (def-use-dus
-        (function esml-du-title)
-        (function esml-du-sym-at-ref)
-        (function esml-du-sym-to-uses)
-        (function esml-du-finalize)
-        ctx))))
+      (function esml-du-title)
+      (function esml-du-sym-at-ref)
+      (function esml-du-sym-to-uses)
+      (function esml-du-finalize)
+      ctx)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Methods
