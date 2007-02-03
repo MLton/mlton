@@ -87,6 +87,7 @@
   (interactive)
   (let ((buffer (get-buffer-create "<:Def-Use Sources:>")))
     (with-current-buffer buffer
+      (buffer-disable-undo)
       (setq buffer-read-only t)
       (def-use-dus-mode))
     (switch-to-buffer buffer))

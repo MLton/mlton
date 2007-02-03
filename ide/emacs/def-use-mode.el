@@ -220,6 +220,7 @@ the symbol."
       (let* ((buffer (generate-new-buffer
                       (concat "<" (def-use-format-sym-title sym) ">"))))
         (set-buffer buffer)
+        (buffer-disable-undo)
         (insert (def-use-format-sym sym) "\n"
                 "\n")
         (let* ((refs (def-use-all-refs-sorted sym))
