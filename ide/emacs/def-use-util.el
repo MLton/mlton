@@ -38,11 +38,9 @@
     (beginning-of-line)
     (point)))
 
-(defun def-use-delete-idle-timer (timer)
-  "Deletes the specified idle timer."
-  (if (string-match "XEmacs" emacs-version)
-      (delete-itimer timer)
-    (cancel-timer timer)))
+(if (string-match "XEmacs" emacs-version)
+    (defalias 'def-use-delete-idle-timer (function delete-itimer))
+  (defalias 'def-use-delete-idle-timer (function cancel-timer)))
 
 (defun def-use-gethash-or-put (key_ mk-value_ table_)
   (or (gethash key_ table_)

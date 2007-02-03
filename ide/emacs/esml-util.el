@@ -36,16 +36,18 @@ point is moved to the end of the string."
   (remove* "" (split-string string separator) :test 'equal))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(defun esml-replace-regexp-in-string (str regexp rep)
-  (if (string-match "XEmacs" emacs-version)
-      (replace-in-string str regexp rep t)
+(if (string-match "XEmacs" emacs-version)
+    (defun esml-replace-regexp-in-string (str regexp rep)
+      (replace-in-string str regexp rep t))
+  (defun esml-replace-regexp-in-string (str regexp rep)
     (replace-regexp-in-string regexp rep str t t)))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(defun esml-error (str &rest objs)
-  (if (string-match "XEmacs" emacs-version)
-      (error 'error (apply 'format str objs))
-    (apply 'error str objs)))
+(if (string-match "XEmacs" emacs-version)
+    (defun esml-error (str &rest objs)
+      (error 'error (apply (function format) str objs)))
+  (defun esml-error (str &rest objs)
+    (apply (function error) str objs)))
 
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."
