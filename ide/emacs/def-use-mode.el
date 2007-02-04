@@ -24,10 +24,7 @@
 ;; purging, and reloading of def-use info) in the near future.
 
 ;; TBD:
-;; - highlight all refs to a var while def-use-list buffer exists
 ;; - mode specific on-off switching
-;; - automatic loading of def-use files
-;; - automatic reloading of modified def-use files
 ;; - disable def-use when file is modified
 ;; - use mode dependent identifier charset (e.g also skip over _ in sml-mode)
 ;; - rename-variable
@@ -50,6 +47,13 @@
 
 (defface def-use-use-face
   '((((class color)) (:background "darkseagreen3"))
+    (t (:background "gray")))
+  "Face for highlighting uses."
+  :group 'faces
+  :group 'def-use)
+
+(defface def-use-mark-face
+  '((((class color)) (:background "orchid1"))
     (t (:background "gray")))
   "Face for highlighting uses."
   :group 'faces
@@ -193,22 +197,31 @@ the symbol."
 
 (defconst def-use-ref-regexp "\\([^ ]+\\):\\([0-9]+\\)\\.\\([0-9]+\\)")
 
-(defvar def-use-list-mode-map
+(defconst def-use-list-mode-map
   (let ((result (make-sparse-keymap)))
     (mapc (function
            (lambda (key-command)
              (define-key result
                (read (car key-command))
                (cdr key-command))))
-          '(("[(q)]"
-             . def-use-kill-current-buffer)
+          `(("[(b)]"
+             . ,(function bury-buffer))
+            ("[(m)]"
+             . ,(function def-use-list-view-mark-all))
+            ("[(u)]"
+             . ,(function def-use-list-view-kill-marks))
+            ("[(q)]"
+             . ,(function def-use-kill-current-buffer))
             ("[(return)]"
-             . def-use-list-view-ref)))
+             . ,(function def-use-list-view-ref))))
     result))
 
 (define-derived-mode def-use-list-mode fundamental-mode "Def-Use-List"
   "Major mode for browsing def-use lists."
   :group 'def-use-list)
+
+(defvar def-use-list-ref-to-overlay-alist nil)
+(defvar def-use-list-sym nil)
 
 (defun def-use-list-all-refs (&optional reverse)
   "Lists all references to the symbol under the cursor."
@@ -217,37 +230,75 @@ the symbol."
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
         (message "Sorry, no known symbol at cursor.")
-      (let* ((buffer (generate-new-buffer
-                      (concat "<" (def-use-format-sym-title sym) ">"))))
-        (set-buffer buffer)
-        (buffer-disable-undo)
-        (insert (def-use-format-sym sym) "\n"
-                "\n")
-        (let* ((refs (def-use-all-refs-sorted sym))
-               (refs (if reverse (reverse refs) refs)))
-          (mapc (function
-                 (lambda (ref)
-                   (insert (def-use-format-ref ref) "\n")))
-                refs))
-        (goto-line 3)
-        (pop-to-buffer buffer)
-        (setq buffer-read-only t)
-        (def-use-list-mode)))))
+      (let* ((name (concat "<:" (def-use-format-sym sym) ":>"))
+             (buffer (get-buffer name)))
+        (if buffer
+            (pop-to-buffer buffer)
+          (setq buffer (get-buffer-create name))
+          (pop-to-buffer buffer)
+          (buffer-disable-undo)
+          (def-use-list-mode)
+          (add-hook
+           'kill-buffer-hook (function def-use-list-view-kill-marks) nil t)
+          (set (make-local-variable 'def-use-list-sym)
+               sym)
+          (insert (def-use-format-sym sym) "\n"
+                  "\n")
+          (let* ((refs (def-use-all-refs-sorted sym))
+                 (refs (if reverse (reverse refs) refs)))
+            (set (make-local-variable 'def-use-list-ref-to-overlay-alist)
+                 (mapcar (function list) refs))
+            (mapc (function
+                   (lambda (ref)
+                     (insert (def-use-format-ref ref) "\n")))
+                  refs))
+          (goto-line 3)
+          (setq buffer-read-only t))))))
 
 (defun def-use-list-view-ref ()
   "Finds references on the current line and shows in another window."
   (interactive)
   (beginning-of-line)
-  (let ((b (current-buffer)))
-    (when (re-search-forward def-use-ref-regexp (def-use-point-at-next-line) t)
+  (let ((b (current-buffer))
+        (idx (- (def-use-current-line) 3)))
+    (when (and (<= 0 idx)
+               (< idx (length def-use-list-ref-to-overlay-alist)))
       (forward-line)
-      (def-use-goto-ref
-        (def-use-ref (match-string 1)
-          (def-use-pos
-            (string-to-number (match-string 2))
-            (string-to-number (match-string 3))))
-        t)
+      (def-use-goto-ref (car (nth idx def-use-list-ref-to-overlay-alist)) t)
       (pop-to-buffer b))))
+
+(defun def-use-list-view-mark-all ()
+  "Visits all the references and marks them."
+  (interactive)
+  (when (and def-use-list-ref-to-overlay-alist
+             def-use-list-sym)
+    (let ((b (current-buffer))
+          (l (length (def-use-sym-name def-use-list-sym))))
+      (mapc (function
+             (lambda (ref-overlay)
+               (let ((ref (car ref-overlay))
+                     (overlay (cdr ref-overlay)))
+                 (unless overlay
+                   (def-use-goto-ref ref t)
+                   (let* ((begin (def-use-pos-to-point (def-use-ref-pos ref)))
+                          (beyond (+ begin l))
+                          (overlay (make-overlay begin beyond)))
+                   (setcdr ref-overlay overlay)
+                   (overlay-put overlay 'priority (- def-use-priority 1))
+                   (overlay-put overlay 'face 'def-use-mark-face)
+                   (pop-to-buffer b))))))
+            def-use-list-ref-to-overlay-alist))))
+
+(defun def-use-list-view-kill-marks ()
+  "Kills all the marks associated with the list view."
+  (interactive)
+  (when def-use-list-ref-to-overlay-alist
+    (mapc (function
+           (lambda (ref-overlay)
+             (when (cdr ref-overlay)
+               (delete-overlay (cdr ref-overlay))
+               (setcdr ref-overlay nil))))
+          def-use-list-ref-to-overlay-alist)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Info

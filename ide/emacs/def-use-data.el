@@ -112,7 +112,7 @@
 (defun def-use-show-dus-del ()
   "Kill the def-use source on the current line."
   (interactive)
-  (let ((idx (- (count-lines 1 (def-use-point-at-current-line)) 2)))
+  (let ((idx (- (def-use-current-line) 3)))
     (when (and (<= 0 idx)
                (< idx (length def-use-dus-list)))
       (def-use-rem-dus (nth idx def-use-dus-list)))))

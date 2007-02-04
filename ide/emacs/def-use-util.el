@@ -38,6 +38,10 @@
     (beginning-of-line)
     (point)))
 
+(defun def-use-current-line ()
+  "Returns the current line number counting from 1."
+  (+ 1 (count-lines 1 (def-use-point-at-current-line))))
+
 (if (string-match "XEmacs" emacs-version)
     (defalias 'def-use-delete-timer (function delete-itimer))
   (defalias 'def-use-delete-timer (function cancel-timer)))
