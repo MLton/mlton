@@ -65,7 +65,7 @@
 
 (defconst def-use-show-dus-buffer-name "<:Def-Use Sources:>")
 
-(defconst def-use-dus-mode-map
+(defconst def-use-show-dus-mode-map
   (let ((result (make-sparse-keymap)))
     (mapc (function
            (lambda (key-command)
@@ -78,7 +78,7 @@
              . ,(function def-use-show-dus-del))))
     result))
 
-(define-derived-mode def-use-dus-mode fundamental-mode "Def-Use-DUS"
+(define-derived-mode def-use-show-dus-mode fundamental-mode "Def-Use-DUS"
   "Major mode for browsing def-use sources."
   :group 'def-use-dus)
 
@@ -89,7 +89,7 @@
     (with-current-buffer buffer
       (buffer-disable-undo)
       (setq buffer-read-only t)
-      (def-use-dus-mode))
+      (def-use-show-dus-mode))
     (switch-to-buffer buffer))
   (def-use-show-dus-update))
 
