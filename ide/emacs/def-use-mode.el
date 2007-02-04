@@ -273,20 +273,18 @@ the symbol."
   (when (and def-use-list-ref-to-overlay-alist
              def-use-list-sym)
     (let ((b (current-buffer))
-          (l (length (def-use-sym-name def-use-list-sym))))
+          (sym def-use-list-sym))
       (mapc (function
              (lambda (ref-overlay)
-               (let ((ref (car ref-overlay))
-                     (overlay (cdr ref-overlay)))
-                 (unless overlay
-                   (def-use-goto-ref ref t)
-                   (let* ((begin (def-use-pos-to-point (def-use-ref-pos ref)))
-                          (beyond (+ begin l))
-                          (overlay (make-overlay begin beyond)))
-                   (setcdr ref-overlay overlay)
-                   (overlay-put overlay 'priority (- def-use-priority 1))
-                   (overlay-put overlay 'face 'def-use-mark-face)
-                   (pop-to-buffer b))))))
+               (unless (cdr ref-overlay)
+                 (def-use-goto-ref (car ref-overlay) t)
+                 (setcdr ref-overlay
+                         (def-use-create-overlay
+                           sym
+                           (car ref-overlay)
+                           (- def-use-priority 1)
+                           'def-use-mark-face))
+                 (pop-to-buffer b))))
             def-use-list-ref-to-overlay-alist))))
 
 (defun def-use-list-view-kill-marks ()
@@ -354,12 +352,16 @@ the symbol."
 (defun def-use-highlight-ref (sym ref face-attr)
   ;; XXX Apply highlight to all open buffers
   (when (equal (def-use-ref-src ref) (def-use-buffer-true-file-name))
-    (let* ((begin (def-use-pos-to-point (def-use-ref-pos ref)))
-           (beyond (+ begin (length (def-use-sym-name sym))))
-           (overlay (make-overlay begin beyond)))
-      (push overlay def-use-highlighted-overlays)
-      (overlay-put overlay 'priority def-use-priority)
-      (overlay-put overlay 'face face-attr))))
+    (push (def-use-create-overlay sym ref def-use-priority face-attr)
+          def-use-highlighted-overlays)))
+
+(defun def-use-create-overlay (sym ref priority face-attr)
+  (let* ((begin (def-use-pos-to-point (def-use-ref-pos ref)))
+         (beyond (+ begin (length (def-use-sym-name sym))))
+         (overlay (make-overlay begin beyond)))
+    (overlay-put overlay 'priority priority)
+    (overlay-put overlay 'face face-attr)
+    overlay))
 
 (defun def-use-highlight-sym (sym)
   "Highlights the specified symbol."
