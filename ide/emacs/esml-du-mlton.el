@@ -6,6 +6,8 @@
 (require 'def-use-mode)
 (require 'bg-job)
 
+;; XXX Detect when the same ref is both a use and a def and act appropriately.
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interface
 
