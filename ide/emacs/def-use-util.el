@@ -39,8 +39,8 @@
     (point)))
 
 (if (string-match "XEmacs" emacs-version)
-    (defalias 'def-use-delete-idle-timer (function delete-itimer))
-  (defalias 'def-use-delete-idle-timer (function cancel-timer)))
+    (defalias 'def-use-delete-timer (function delete-itimer))
+  (defalias 'def-use-delete-timer (function cancel-timer)))
 
 (defun def-use-gethash-or-put (key_ mk-value_ table_)
   (or (gethash key_ table_)

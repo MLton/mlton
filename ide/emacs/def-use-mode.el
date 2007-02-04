@@ -336,7 +336,7 @@ the symbol."
 
 (defun def-use-delete-highlight-timer ()
   (when def-use-highlight-timer
-    (def-use-delete-idle-timer def-use-highlight-timer)
+    (def-use-delete-timer def-use-highlight-timer)
     (setq def-use-highlight-timer nil)))
 
 (defun def-use-create-highlight-timer ()
