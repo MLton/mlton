@@ -32,6 +32,16 @@
 (require 'def-use-data)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Prelude
+
+(defvar def-use-load-time t)
+
+(defun def-use-set-custom-and-update (sym val)
+  (custom-set-default sym val)
+  (unless def-use-load-time
+    (def-use-update)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
 
 (defgroup def-use nil
@@ -76,6 +86,8 @@
      . def-use-jump-to-next)
     ("[(control c) (control p)]"
      . def-use-jump-to-prev)
+    ("[(control c) (control s)]"
+     . def-use-show-dus)
     ("[(control c) (control l)]"
      . def-use-list-all-refs)
     ("[(control c) (control v)]"
@@ -87,6 +99,7 @@ available commands."
   :type '(repeat (cons :tag "Key Binding"
                        (string :tag "Key")
                        (function :tag "Command")))
+  :set (function def-use-set-custom-and-update)
   :group 'def-use)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -408,19 +421,27 @@ the symbol."
                       def-use-mode))
                   (buffer-list))))
 
-(define-minor-mode def-use-mode
-  "Minor mode for highlighting and navigating definitions and uses."
-  ;; value
-  nil
-  ;; lighter
-  " DU"
-  ;; keymap
+(defvar def-use-mode-map (make-sparse-keymap)
+  "Keymap for Def-Use mode.  This variable is updated by
+`esml-mlb-build-mode-map'.")
+
+(defun def-use-build-mode-map ()
   (let ((result (make-sparse-keymap)))
     (mapc (function
            (lambda (key-command)
              (define-key result (read (car key-command)) (cdr key-command))))
           def-use-key-bindings)
-    result)
+    (setq def-use-mode-map result))
+  (let ((cons (assoc 'def-use-mode minor-mode-map-alist)))
+    (when cons
+      (setcdr cons def-use-mode-map))))
+
+(define-minor-mode def-use-mode
+  "Minor mode for highlighting and navigating definitions and uses.
+
+\\{def-use-mode-map}
+"
+  :lighter " DU"
   :group 'def-use
   :global t
   (def-use-delete-highlight-timer)
@@ -429,5 +450,14 @@ the symbol."
     (def-use-create-highlight-timer)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Finalization
+
+(setq def-use-load-time nil)
+
+(defun def-use-update ()
+  "Update data based on customization variables."
+  (def-use-build-mode-map))
+
+(def-use-update)
 
 (provide 'def-use-mode)
