@@ -97,7 +97,7 @@
     nil)
    (t
     (esml-du-finalize ctx)
-    (run-with-idle-timer 0.1 nil (function esml-du-reparse) ctx)
+    (run-with-idle-timer 0.5 nil (function esml-du-reparse) ctx)
     nil)))
 
 (defun esml-du-parse (ctx)
