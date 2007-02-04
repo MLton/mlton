@@ -222,7 +222,7 @@ the symbol."
             ("[(m)]"
              . ,(function def-use-list-view-mark-all))
             ("[(u)]"
-             . ,(function def-use-list-view-kill-marks))
+             . ,(function def-use-list-view-unmark-all))
             ("[(q)]"
              . ,(function def-use-kill-current-buffer))
             ("[(return)]"
@@ -252,7 +252,7 @@ the symbol."
           (buffer-disable-undo)
           (def-use-list-mode)
           (add-hook
-           'kill-buffer-hook (function def-use-list-view-kill-marks) nil t)
+           'kill-buffer-hook (function def-use-list-view-unmark-all) nil t)
           (set (make-local-variable 'def-use-list-sym)
                sym)
           (insert (def-use-format-sym sym) "\n"
@@ -300,7 +300,7 @@ the symbol."
                  (pop-to-buffer b))))
             def-use-list-ref-to-overlay-alist))))
 
-(defun def-use-list-view-kill-marks ()
+(defun def-use-list-view-unmark-all ()
   "Kills all the marks associated with the list view."
   (interactive)
   (when def-use-list-ref-to-overlay-alist
@@ -392,7 +392,6 @@ the symbol."
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
-  (interactive)
   (def-use-highlight-sym (def-use-current-sym)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
