@@ -25,7 +25,19 @@
 ;; Methods
 
 (defun esml-du-title (ctx)
-  (esml-du-ctx-duf ctx))
+  (concat
+   (esml-du-ctx-duf ctx)
+   " ["
+   (if (esml-du-ctx-buf ctx)
+       (concat "parsing: "
+               (int-to-string
+                (truncate
+                 (/ (buffer-size (esml-du-ctx-buf ctx))
+                    0.01
+                    (nth 7 (esml-du-ctx-attr ctx)))))
+               "% left")
+     "complete")
+   "]"))
 
 (defun esml-du-sym-at-ref (ref ctx)
   (if (def-use-attr-newer?
