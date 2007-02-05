@@ -328,7 +328,7 @@ the symbol."
 (defun def-use-format-sym-title (sym)
   "Formats a title for the symbol"
   (concat (def-use-add-face 'font-lock-keyword-face
-            (copy-sequence (def-use-sym-kind sym)))
+            (copy-sequence (def-use-sym-class sym)))
           " "
           (def-use-add-face (def-use-sym-face sym)
             (copy-sequence (def-use-sym-name sym)))))

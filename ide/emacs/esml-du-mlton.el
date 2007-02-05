@@ -103,7 +103,7 @@
       (skip-chars-forward skipping)
       result)))
 
-(defconst esml-du-kinds ;; XXX Needs customization
+(defconst esml-du-classes ;; XXX Needs customization
   `((,(def-use-intern "variable")    . ,font-lock-variable-name-face)
     (,(def-use-intern "type")        . ,font-lock-variable-name-face)
     (,(def-use-intern "constructor") . ,font-lock-variable-name-face)
@@ -151,15 +151,15 @@ altough the editor may feel a bit sluggish."
         (goto-char 1)
         (let* ((ref-to-sym (esml-du-ctx-ref-to-sym-table ctx))
                (sym-to-uses (esml-du-ctx-sym-to-uses-table ctx))
-               (kind (def-use-intern (esml-du-read "^ " " ")))
+               (class (def-use-intern (esml-du-read "^ " " ")))
                (name (def-use-intern (esml-du-read "^ " " ")))
                (src (def-use-file-truename (esml-du-read "^ " " ")))
                (line (string-to-int (esml-du-read "^." ".")))
                (col (- (string-to-int (esml-du-read "^\n" "\n")) 1))
                (pos (def-use-pos line col))
                (ref (def-use-ref src pos))
-               (sym (def-use-sym kind name ref
-                      (cdr (assoc kind esml-du-kinds))))
+               (sym (def-use-sym class name ref
+                      (cdr (assoc class esml-du-classes))))
                (uses nil))
           (puthash ref sym ref-to-sym)
           (while (< 0 (skip-chars-forward " "))
