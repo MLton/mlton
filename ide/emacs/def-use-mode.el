@@ -163,7 +163,7 @@ current buffer."
   (interactive "P")
   (let ((sym (def-use-current-sym)))
     (if (not sym)
-        (message def-use-apology)
+        (message "%s" def-use-apology)
       (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
 (defun def-use-jump-to-next (&optional other-window reverse)
@@ -172,7 +172,7 @@ current buffer."
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
-        (message def-use-apology)
+        (message "%s" def-use-apology)
       (let* ((refs (def-use-all-refs-sorted sym))
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
@@ -237,7 +237,7 @@ the symbol."
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
-        (message def-use-apology)
+        (message "%s" def-use-apology)
       (let* ((name (concat "<:" (def-use-format-sym sym) ":>"))
              (buffer (get-buffer name)))
         (if buffer
@@ -314,8 +314,8 @@ the symbol."
   (interactive)
   (let ((sym (def-use-current-sym)))
     (if (not sym)
-        (message def-use-apology)
-      (message (def-use-format-sym sym)))))
+        (message "%s" def-use-apology)
+      (message "%s" (def-use-format-sym sym)))))
 
 (defun def-use-format-sym (sym)
   "Formats a string with some basic info on the symbol."

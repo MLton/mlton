@@ -179,9 +179,9 @@ altough the editor may feel a bit sluggish."
     (lambda (ctx)
       (kill-buffer (esml-du-ctx-buf ctx))
       (esml-du-ctx-set-buf nil ctx)
-      (message (concat "Finished parsing " (esml-du-ctx-duf ctx) "."))))
+      (message "Finished parsing %s." (esml-du-ctx-duf ctx))))
    ctx)
-  (message (concat "Parsing " (esml-du-ctx-duf ctx) " in the background...")))
+  (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
