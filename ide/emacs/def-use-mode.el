@@ -134,10 +134,7 @@ current buffer."
           (save-excursion
             (goto-char point)
             ;; XXX Index this logic in a mode specific manner
-            (when (zerop (skip-chars-backward
-                          "a-zA-Z0-9_'" (def-use-point-at-current-line)))
-              (skip-chars-backward
-               "-!%&$#+/:<=>?@~`^|*\\" (def-use-point-at-current-line)))
+            (esml-du-move-to-symbol-beginning)
             (point)))))))
 
 (defun def-use-sym-at-point (point)

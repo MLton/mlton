@@ -23,6 +23,13 @@
       (function esml-du-finalize)
       ctx)))
 
+(defun esml-du-move-to-symbol-beginning ()
+  "XXX"
+  (when (zerop (skip-chars-backward
+                "a-zA-Z0-9_'" (def-use-point-at-current-line)))
+    (skip-chars-backward
+     "-!%&$#+/:<=>?@~`^|*\\" (def-use-point-at-current-line))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Methods
 
