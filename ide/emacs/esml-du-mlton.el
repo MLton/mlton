@@ -140,6 +140,7 @@ altough the editor may feel a bit sluggish."
     (goto-char 1))
   (clrhash (esml-du-ctx-ref-to-sym-table ctx))
   (clrhash (esml-du-ctx-sym-to-uses-table ctx))
+  (garbage-collect)
   (bg-job-start
    (function
     (lambda (ctx)
