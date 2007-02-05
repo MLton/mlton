@@ -1,4 +1,4 @@
-;; Copyright (C) 2005 Vesa Karvonen
+;; Copyright (C) 2005-2007 Vesa Karvonen
 ;;
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
@@ -699,8 +699,8 @@ perform context sensitive completion. This command is not idempotent."
                 (toggle-read-only)
                 (delete-file tmp-file))
             (switch-to-buffer buffer))
-          (message event)))))
-    (message "show-basis running...")))
+          (message "%S" event)))))
+    (message "%s" "show-basis running...")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Key Map
