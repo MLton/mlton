@@ -23,10 +23,9 @@
 ;; The plan is to improve the usability of this mode (automatic loading,
 ;; purging, and reloading of def-use info) in the near future.
 
-;; TBD:
-;; - mode specific on-off switching
-;; - disable def-use when file is modified
-;; - rename-variable
+;; XXX mode specific on-off switching
+;; XXX disable def-use when file is modified
+;; XXX rename-variable
 
 (require 'def-use-data)
 
@@ -79,18 +78,12 @@
   :group 'def-use)
 
 (defcustom def-use-key-bindings
-  '(("[(control c) (control d)]"
-     . def-use-jump-to-def)
-    ("[(control c) (control n)]"
-     . def-use-jump-to-next)
-    ("[(control c) (control p)]"
-     . def-use-jump-to-prev)
-    ("[(control c) (control s)]"
-     . def-use-show-dus)
-    ("[(control c) (control l)]"
-     . def-use-list-all-refs)
-    ("[(control c) (control v)]"
-     . def-use-show-info))
+  '(("[(control c) (control d)]" . def-use-jump-to-def)
+    ("[(control c) (control n)]" . def-use-jump-to-next)
+    ("[(control c) (control p)]" . def-use-jump-to-prev)
+    ("[(control c) (control s)]" . def-use-show-dus)
+    ("[(control c) (control l)]" . def-use-list-all-refs)
+    ("[(control c) (control v)]" . def-use-show-info))
   "Key bindings for the def-use mode.  The key specifications must be
 in a format accepted by the function `define-key'.  Hint: You might
 want to type `M-x describe-function def-use <TAB>' to see the
@@ -163,12 +156,14 @@ current buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
 
+(defconst def-use-apology "Sorry, no information on the symbol at point.")
+
 (defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
   (let ((sym (def-use-current-sym)))
     (if (not sym)
-        (message "Sorry, no known symbol at cursor.")
+        (message def-use-apology)
       (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
 (defun def-use-jump-to-next (&optional other-window reverse)
@@ -177,7 +172,7 @@ current buffer."
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
-        (message "Sorry, no information on the symbol at point!")
+        (message def-use-apology)
       (let* ((refs (def-use-all-refs-sorted sym))
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
@@ -222,16 +217,11 @@ the symbol."
              (define-key result
                (read (car key-command))
                (cdr key-command))))
-          `(("[(b)]"
-             . ,(function bury-buffer))
-            ("[(m)]"
-             . ,(function def-use-list-view-mark-all))
-            ("[(u)]"
-             . ,(function def-use-list-view-unmark-all))
-            ("[(q)]"
-             . ,(function def-use-kill-current-buffer))
-            ("[(return)]"
-             . ,(function def-use-list-view-ref))))
+          `(("[(b)]"      . ,(function bury-buffer))
+            ("[(m)]"      . ,(function def-use-list-view-mark-all))
+            ("[(u)]"      . ,(function def-use-list-view-unmark-all))
+            ("[(q)]"      . ,(function def-use-kill-current-buffer))
+            ("[(return)]" . ,(function def-use-list-view-ref))))
     result))
 
 (define-derived-mode def-use-list-mode fundamental-mode "Def-Use-List"
@@ -247,7 +237,7 @@ the symbol."
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
-        (message "Sorry, no known symbol at cursor.")
+        (message def-use-apology)
       (let* ((name (concat "<:" (def-use-format-sym sym) ":>"))
              (buffer (get-buffer name)))
         (if buffer
@@ -324,7 +314,7 @@ the symbol."
   (interactive)
   (let ((sym (def-use-current-sym)))
     (if (not sym)
-        (message "Sorry, no information on the symbol at point!")
+        (message def-use-apology)
       (message (def-use-format-sym sym)))))
 
 (defun def-use-format-sym (sym)
