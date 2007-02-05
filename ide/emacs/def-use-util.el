@@ -3,6 +3,8 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
+(require 'cl)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
 
