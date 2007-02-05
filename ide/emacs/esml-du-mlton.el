@@ -23,12 +23,17 @@
       (function esml-du-finalize)
       ctx)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Move to symbol
+
 (defun esml-du-move-to-symbol-beginning ()
-  "XXX"
-  (when (zerop (skip-chars-backward
-                "a-zA-Z0-9_'" (def-use-point-at-current-line)))
-    (skip-chars-backward
-     "-!%&$#+/:<=>?@~`^|*\\" (def-use-point-at-current-line))))
+  "Moves to the beginning of the SML symbol at point."
+  (let ((limit (def-use-point-at-current-line)))
+    (when (zerop (skip-chars-backward "a-zA-Z0-9_'" limit))
+      (skip-chars-backward "-!%&$#+/:<=>?@~`^|*\\" limit))))
+
+(add-to-list 'def-use-mode-to-move-to-symbol-beginning-alist
+             (cons 'sml-mode (function esml-du-move-to-symbol-beginning)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Methods

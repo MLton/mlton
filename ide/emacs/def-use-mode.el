@@ -26,7 +26,6 @@
 ;; TBD:
 ;; - mode specific on-off switching
 ;; - disable def-use when file is modified
-;; - use mode dependent identifier charset (e.g also skip over _ in sml-mode)
 ;; - rename-variable
 
 (require 'def-use-data)
@@ -124,6 +123,10 @@ current buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; High-level symbol lookup
 
+(defvar def-use-mode-to-move-to-symbol-beginning-alist nil
+  "Association list mapping modes to functions that move the point
+(backwards) to the beginning of the symbol at the point.")
+
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
 current buffer."
@@ -133,8 +136,13 @@ current buffer."
         (def-use-point-to-pos
           (save-excursion
             (goto-char point)
-            ;; XXX Index this logic in a mode specific manner
-            (esml-du-move-to-symbol-beginning)
+            (let ((mode-move
+                   (assoc
+                    major-mode
+                    def-use-mode-to-move-to-symbol-beginning-alist)))
+              (if mode-move
+                  (funcall (cdr mode-move))
+                (skip-syntax-backward "w_" (def-use-point-at-current-line))))
             (point)))))))
 
 (defun def-use-sym-at-point (point)
