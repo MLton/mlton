@@ -172,9 +172,9 @@ current buffer."
 position."
   (cond
    (other-window
-    (find-file-other-window (def-use-ref-src ref)))
+    (def-use-find-file (def-use-ref-src ref) t))
    ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
-    (find-file (def-use-ref-src ref))))
+    (def-use-find-file (def-use-ref-src ref))))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
 (defun def-use-goto-pos (pos)
@@ -224,9 +224,9 @@ the symbol."
       (let* ((name (concat "<:" (def-use-format-sym sym) ":>"))
              (buffer (get-buffer name)))
         (if buffer
-            (pop-to-buffer buffer)
+            (switch-to-buffer-other-window buffer)
           (setq buffer (get-buffer-create name))
-          (pop-to-buffer buffer)
+          (switch-to-buffer-other-window buffer)
           (buffer-disable-undo)
           (def-use-list-mode)
           (add-hook
@@ -256,27 +256,27 @@ the symbol."
                (< idx (length def-use-list-ref-to-overlay-alist)))
       (forward-line)
       (def-use-goto-ref (car (nth idx def-use-list-ref-to-overlay-alist)) t)
-      (pop-to-buffer b))))
+      (switch-to-buffer-other-window b))))
 
 (defun def-use-list-view-mark-all ()
   "Visits all the references and marks them."
   (interactive)
   (when (and def-use-list-ref-to-overlay-alist
              def-use-list-sym)
-    (let ((b (current-buffer))
-          (sym def-use-list-sym))
-      (mapc (function
-             (lambda (ref-overlay)
-               (unless (cdr ref-overlay)
-                 (def-use-goto-ref (car ref-overlay) t)
-                 (setcdr ref-overlay
-                         (def-use-create-overlay
-                           sym
-                           (car ref-overlay)
-                           (- def-use-priority 1)
-                           'def-use-mark-face))
-                 (pop-to-buffer b))))
-            def-use-list-ref-to-overlay-alist))))
+    (save-window-excursion
+      (let ((b (current-buffer))
+            (sym def-use-list-sym))
+        (mapc (function
+               (lambda (ref-overlay)
+                 (unless (cdr ref-overlay)
+                   (def-use-goto-ref (car ref-overlay) t)
+                   (setcdr ref-overlay
+                           (def-use-create-overlay
+                             sym
+                             (car ref-overlay)
+                             (- def-use-priority 1)
+                             'def-use-mark-face)))))
+              def-use-list-ref-to-overlay-alist)))))
 
 (defun def-use-list-view-unmark-all ()
   "Kills all the marks associated with the list view."
