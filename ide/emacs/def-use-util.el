@@ -8,6 +8,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
 
+;; workaround for incompatibility between GNU Emacs and XEmacs
+(if (string-match "XEmacs" emacs-version)
+    (defun def-use-error (str &rest objs)
+      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
+  (defalias 'def-use-error (function error)))
+
 (defvar def-use-file-truename-table
   (make-hash-table :test 'equal :weakness 'key)
   "Weak hash table private to `def-use-file-truename'.")

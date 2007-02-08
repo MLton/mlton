@@ -195,6 +195,8 @@ when there really is a symbol at the point."
   "Finds the referenced source and moves point to the referenced
 position."
   (cond
+   ((not (file-readable-p (def-use-ref-src ref)))
+    (def-use-error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
    ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
