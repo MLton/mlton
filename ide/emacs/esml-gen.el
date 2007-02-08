@@ -3,7 +3,6 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(require 'cl)
 (require 'esml-util)
 
 ;; Installation
@@ -27,15 +26,6 @@
 ;; Prelude
 
 ;; TBD: Consider moving these to another place if/when it makes sense.
-(defconst esml-sml-symbolic-chars
-  "-!%&$#+/:<=>?@~`^|*\\"
-  "A string of all Standard ML symbolic characters as defined in section
-2.4 of the Definition.")
-
-(defconst esml-sml-alphanumeric-chars
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'_"
-  "A string of all Standard ML alphanumeric characters as defined in
-section 2.4 of the Definition.")
 
 (defun esml-extract-field-names (pattern-or-type)
   (let ((fields nil))

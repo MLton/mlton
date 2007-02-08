@@ -5,6 +5,7 @@
 
 (require 'def-use-mode)
 (require 'bg-job)
+(require 'esml-util)
 
 ;; XXX Detect when the same ref is both a use and a def and act appropriately.
 
@@ -29,8 +30,8 @@
 (defun esml-du-move-to-symbol-start ()
   "Moves to the start of the SML symbol at point."
   (let ((limit (def-use-point-at-current-line)))
-    (when (zerop (skip-chars-backward "a-zA-Z0-9_'" limit))
-      (skip-chars-backward "-!%&$#+/:<=>?@~`^|*\\" limit))))
+    (when (zerop (skip-chars-backward esml-sml-alphanumeric-chars limit))
+      (skip-chars-backward esml-sml-symbolic-chars limit))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
              (cons 'sml-mode (function esml-du-move-to-symbol-start)))
@@ -38,8 +39,8 @@
 (defun esml-du-move-to-symbol-end ()
   "Moves to the end of the SML symbol at point."
   (let ((limit (def-use-point-at-next-line)))
-    (when (zerop (skip-chars-forward "a-zA-Z0-9_'" limit))
-      (skip-chars-forward "-!%&$#+/:<=>?@~`^|*\\" limit))))
+    (when (zerop (skip-chars-forward esml-sml-alphanumeric-chars limit))
+      (skip-chars-forward esml-sml-symbolic-chars limit))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-end-alist
              (cons 'sml-mode (function esml-du-move-to-symbol-end)))
