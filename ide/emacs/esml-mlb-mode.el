@@ -674,7 +674,7 @@ perform context sensitive completion. This command is not idempotent."
                            ".basis"))
                 (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
     (when (file-exists-p tmp-file)
-      (esml-error "temporary basis file already exists: %s" tmp-file))
+      (esml-error "Temporary basis file already exists: %s" tmp-file))
     (save-excursion
       (set-buffer buffer)
       (delete-region (point-min) (point-max)))

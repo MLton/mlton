@@ -45,9 +45,8 @@ point is moved to the end of the string."
 ;; workaround for incompatibility between GNU Emacs and XEmacs
 (if (string-match "XEmacs" emacs-version)
     (defun esml-error (str &rest objs)
-      (error 'error (apply (function format) str objs)))
-  (defun esml-error (str &rest objs)
-    (apply (function error) str objs)))
+      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
+  (defalias 'esml-error (function error)))
 
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."
