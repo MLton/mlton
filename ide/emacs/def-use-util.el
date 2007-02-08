@@ -28,12 +28,6 @@
            (file-truename file)))))
     def-use-file-truename-table))
 
-(defun def-use-buffer-true-file-name ()
-  "Returns the true filename of the current buffer."
-  (let ((name (buffer-file-name)))
-    (when name
-      (def-use-file-truename name))))
-
 (defun def-use-find-buffer-visiting-file (file)
   "Tries to find a buffer visiting the specified file."
   (let ((truename (def-use-file-truename file)))

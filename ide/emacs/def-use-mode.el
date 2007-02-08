@@ -123,7 +123,7 @@ end of the symbol at the point.")
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
 current buffer."
-  (let ((src (def-use-buffer-true-file-name)))
+  (let ((src buffer-file-truename))
     (when src
       (def-use-ref src
         (def-use-point-to-pos
@@ -199,7 +199,7 @@ position."
     (def-use-error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
-   ((not (equal (def-use-buffer-true-file-name) (def-use-ref-src ref)))
+   ((not (equal buffer-file-truename (def-use-ref-src ref)))
     (def-use-find-file (def-use-ref-src ref))))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
@@ -368,7 +368,7 @@ the symbol."
 
 (defun def-use-highlight-ref (sym ref face-attr)
   ;; XXX Apply highlight to all open buffers
-  (when (equal (def-use-ref-src ref) (def-use-buffer-true-file-name))
+  (when (equal (def-use-ref-src ref) buffer-file-truename)
     (push (def-use-create-overlay sym ref def-use-priority face-attr)
           def-use-highlighted-overlays)))
 
@@ -412,21 +412,20 @@ the symbol."
   (unless def-use-highlight-timer
     (setq def-use-highlight-timer
           (run-with-idle-timer
-           def-use-delay t
-           'def-use-highlight-current))))
+           def-use-delay t (function def-use-highlight-current)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode
 
 (defun def-use-mode-enabled-in-some-buffer ()
-  (memq t (mapcar (lambda (buffer)
-                    (with-current-buffer buffer
-                      def-use-mode))
-                  (buffer-list))))
+  (loop for buffer in (buffer-list) do
+    (if (with-current-buffer buffer
+          def-use-mode)
+        (return t))))
 
 (defvar def-use-mode-map (make-sparse-keymap)
   "Keymap for Def-Use mode.  This variable is updated by
-`esml-mlb-build-mode-map'.")
+`def-use-build-mode-map'.")
 
 (defun def-use-build-mode-map ()
   (let ((result (make-sparse-keymap)))
