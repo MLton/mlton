@@ -28,22 +28,26 @@
     (when name
       (def-use-file-truename name))))
 
+(defun def-use-find-buffer-visiting-file (file)
+  "Tries to find a buffer visiting the specified file."
+  (let ((truename (def-use-file-truename file)))
+    (loop for buffer in (buffer-list) do
+      (if (with-current-buffer buffer
+            (string= buffer-file-truename truename))
+          (return buffer)))))
+
 (defun def-use-find-file (file &optional other-window)
   "Roughly as `find-file' or `find-file-other-window' except that will not
 open the file a second time if a buffer is editing a file by the same true
 file name."
-  (let* ((truename (def-use-file-truename file))
-         (buffer (loop for buffer in (buffer-list) do
-                   (if (with-current-buffer buffer
-                         (string= buffer-file-truename truename))
-                       (return buffer)))))
+  (let ((buffer (def-use-find-buffer-visiting-file file)))
     (if buffer
         (if other-window
             (switch-to-buffer-other-window buffer)
           (switch-to-buffer buffer))
       (if other-window
-          (find-file-other-window truename)
-        (find-file truename)))))
+          (find-file-other-window file)
+        (find-file file)))))
 
 (defun def-use-point-at-next-line ()
   "Returns point at the beginning of the next line."

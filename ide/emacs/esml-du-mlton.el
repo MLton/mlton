@@ -26,14 +26,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Move to symbol
 
-(defun esml-du-move-to-symbol-beginning ()
-  "Moves to the beginning of the SML symbol at point."
+(defun esml-du-move-to-symbol-start ()
+  "Moves to the start of the SML symbol at point."
   (let ((limit (def-use-point-at-current-line)))
     (when (zerop (skip-chars-backward "a-zA-Z0-9_'" limit))
       (skip-chars-backward "-!%&$#+/:<=>?@~`^|*\\" limit))))
 
-(add-to-list 'def-use-mode-to-move-to-symbol-beginning-alist
-             (cons 'sml-mode (function esml-du-move-to-symbol-beginning)))
+(add-to-list 'def-use-mode-to-move-to-symbol-start-alist
+             (cons 'sml-mode (function esml-du-move-to-symbol-start)))
+
+(defun esml-du-move-to-symbol-end ()
+  "Moves to the end of the SML symbol at point."
+  (let ((limit (def-use-point-at-next-line)))
+    (when (zerop (skip-chars-forward "a-zA-Z0-9_'" limit))
+      (skip-chars-forward "-!%&$#+/:<=>?@~`^|*\\" limit))))
+
+(add-to-list 'def-use-mode-to-move-to-symbol-end-alist
+             (cons 'sml-mode (function esml-du-move-to-symbol-end)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Methods
@@ -58,7 +67,10 @@
         (file-attributes (def-use-ref-src ref))
         (esml-du-ctx-attr ctx))
       (esml-du-reparse ctx)
-    (gethash ref (esml-du-ctx-ref-to-sym-table ctx))))
+    (unless (let ((buffer (def-use-find-buffer-visiting-file
+                            (def-use-ref-src ref))))
+              (and buffer (buffer-modified-p buffer)))
+      (gethash ref (esml-du-ctx-ref-to-sym-table ctx)))))
 
 (defun esml-du-sym-to-uses (sym ctx)
   (if (def-use-attr-newer?

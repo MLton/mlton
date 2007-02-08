@@ -7,7 +7,6 @@
 ;; uses.  See http://mlton.org/EmacsDefUseMode for further information.
 
 ;; XXX mode specific on-off switching
-;; XXX disable def-use when file is modified
 ;; XXX rename-variable
 
 (require 'def-use-data)
@@ -99,9 +98,27 @@ current buffer."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; High-level symbol lookup
 
-(defvar def-use-mode-to-move-to-symbol-beginning-alist nil
+(defvar def-use-mode-to-move-to-symbol-start-alist nil
   "Association list mapping modes to functions that move the point
-(backwards) to the beginning of the symbol at the point.")
+backwards to the start of the symbol at the point.")
+
+(defvar def-use-mode-to-move-to-symbol-end-alist nil
+  "Association list mapping modes to functions that move the point to the
+end of the symbol at the point.")
+
+(defun def-use-move-to-symbol-start ()
+  (let ((mode-move
+         (assoc major-mode def-use-mode-to-move-to-symbol-start-alist)))
+    (if mode-move
+        (funcall (cdr mode-move))
+      (skip-syntax-backward "w_" (def-use-point-at-current-line)))))
+
+(defun def-use-move-to-symbol-end ()
+  (let ((mode-move
+         (assoc major-mode def-use-mode-to-move-to-symbol-end-alist)))
+    (if mode-move
+        (funcall (cdr mode-move))
+      (skip-syntax-forward "w_" (def-use-point-at-next-line)))))
 
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
@@ -112,21 +129,28 @@ current buffer."
         (def-use-point-to-pos
           (save-excursion
             (goto-char point)
-            (let ((mode-move
-                   (assoc
-                    major-mode
-                    def-use-mode-to-move-to-symbol-beginning-alist)))
-              (if mode-move
-                  (funcall (cdr mode-move))
-                (skip-syntax-backward "w_" (def-use-point-at-current-line))))
+            (def-use-move-to-symbol-start)
             (point)))))))
+
+(defun def-use-extract-sym-name-at-point (point)
+  "Extracts what looks like the name of the symbol at point.  This doesn't
+really understand the syntax of the language, so the result is only valid
+when there really is a symbol at the point."
+  (save-excursion
+    (goto-char point)
+    (let* ((start (progn (def-use-move-to-symbol-start) (point)))
+           (end (progn (def-use-move-to-symbol-end) (point))))
+      (buffer-substring start end))))
 
 (defun def-use-sym-at-point (point)
   "Returns symbol information for the symbol at the specified point."
-  ;; XXX If data unvailable for current buffer then attempt to load it.
   (let ((ref (def-use-ref-at-point point)))
     (when ref
-      (def-use-sym-at-ref ref))))
+      (let ((sym (def-use-sym-at-ref ref)))
+        (when (and sym
+                   (string= (def-use-sym-name sym)
+                            (def-use-extract-sym-name-at-point point)))
+          sym)))))
 
 (defun def-use-current-sym ()
   "Returns symbol information for the symbol at the current point."
