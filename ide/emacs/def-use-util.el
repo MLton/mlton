@@ -117,8 +117,12 @@ string."
   (+ (* (car (nth 5 attr)) 65536.0) (cadr (nth 5 attr))))
 
 (defun def-use-attr-newer? (attr1 attr2)
-  (> (def-use-attr-mod-time-as-double attr1)
-     (def-use-attr-mod-time-as-double attr2)))
+  "Returns non-nil iff the modification time of `attr1' is later than the
+modification time of `attr2'.  Note that this also returns nil when either
+one of the modification times is nil."
+  (when (and attr1 attr2)
+    (> (def-use-attr-mod-time-as-double attr1)
+       (def-use-attr-mod-time-as-double attr2))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
