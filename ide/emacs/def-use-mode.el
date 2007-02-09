@@ -291,15 +291,15 @@ the symbol."
              def-use-list-sym)
     (save-window-excursion
       (let ((b (current-buffer))
-            (sym def-use-list-sym))
+            (length (length (def-use-sym-name def-use-list-sym))))
         (mapc (function
                (lambda (ref-overlay)
                  (unless (cdr ref-overlay)
                    (def-use-goto-ref (car ref-overlay) t)
                    (setcdr ref-overlay
                            (def-use-create-overlay
-                             sym
-                             (car ref-overlay)
+                             length
+                             (def-use-ref-pos (car ref-overlay))
                              (- def-use-priority 1)
                              'def-use-mark-face)))))
               def-use-list-ref-to-overlay-alist)))))
@@ -357,24 +357,20 @@ the symbol."
 ;; Highlighting
 
 (defvar def-use-highlighted-sym nil)
-(defvar def-use-highlighted-buffer nil)
 (defvar def-use-highlighted-overlays nil)
 
 (defun def-use-delete-highlighting ()
   (mapc (function delete-overlay) def-use-highlighted-overlays)
   (setq def-use-highlighted-overlays nil)
-  (setq def-use-highlighted-buffer nil)
   (setq def-use-highlighted-sym nil))
 
 (defun def-use-highlight-ref (sym ref face-attr)
-  ;; XXX Apply highlight to all open buffers
-  (when (equal (def-use-ref-src ref) buffer-file-truename)
-    (push (def-use-create-overlay sym ref def-use-priority face-attr)
-          def-use-highlighted-overlays)))
+  (push (def-use-create-overlay sym ref def-use-priority face-attr)
+        def-use-highlighted-overlays))
 
-(defun def-use-create-overlay (sym ref priority face-attr)
-  (let* ((begin (def-use-pos-to-point (def-use-ref-pos ref)))
-         (beyond (+ begin (length (def-use-sym-name sym))))
+(defun def-use-create-overlay (length pos priority face-attr)
+  (let* ((begin (def-use-pos-to-point pos))
+         (beyond (+ begin length))
          (overlay (make-overlay begin beyond)))
     (overlay-put overlay 'priority priority)
     (overlay-put overlay 'face face-attr)
@@ -382,17 +378,32 @@ the symbol."
 
 (defun def-use-highlight-sym (sym)
   "Highlights the specified symbol."
-  (unless (and (equal def-use-highlighted-sym sym)
-               (equal def-use-highlighted-buffer (current-buffer)))
+  (unless (equal def-use-highlighted-sym sym)
     (def-use-delete-highlighting)
     (when sym
       (setq def-use-highlighted-sym sym)
-      (setq def-use-highlighted-buffer (current-buffer))
-      (def-use-highlight-ref sym (def-use-sym-ref sym) 'def-use-def-face)
-      (mapc (function
-             (lambda (ref)
-               (def-use-highlight-ref sym ref 'def-use-use-face)))
-            (def-use-sym-to-uses sym)))))
+      (let ((length (length (def-use-sym-name sym)))
+            (file-to-poss (def-use-make-hash-table)))
+        (mapc (function
+               (lambda (ref)
+                 (puthash (def-use-ref-src ref)
+                          (cons (def-use-ref-pos ref)
+                                (gethash (def-use-ref-src ref) file-to-poss))
+                          file-to-poss)))
+              (def-use-sym-to-uses sym))
+        (mapc (function
+               (lambda (buffer)
+                 (set-buffer buffer)
+                 (mapc (function
+                        (lambda (pos)
+                          (def-use-highlight-ref length pos 'def-use-use-face)))
+                       (gethash buffer-file-truename file-to-poss))))
+              (buffer-list))
+        (let* ((ref (def-use-sym-ref sym))
+               (buffer (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
+          (when buffer
+            (set-buffer buffer)
+            (def-use-highlight-ref length (def-use-ref-pos ref) 'def-use-def-face)))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
