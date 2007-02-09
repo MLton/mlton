@@ -169,7 +169,7 @@ altough the editor may feel a bit sluggish."
                (name (def-use-intern (esml-du-read "^ " " ")))
                (src (def-use-file-truename (esml-du-read "^ " " ")))
                (line (string-to-int (esml-du-read "^." ".")))
-               (col (- (string-to-int (esml-du-read "^\n" "\n")) 1))
+               (col (1- (string-to-int (esml-du-read "^\n" "\n"))))
                (pos (def-use-pos line col))
                (ref (def-use-ref src pos))
                (sym (def-use-sym class name ref
@@ -179,7 +179,7 @@ altough the editor may feel a bit sluggish."
           (while (< 0 (skip-chars-forward " "))
             (let* ((src (def-use-file-truename (esml-du-read "^ " " ")))
                    (line (string-to-int (esml-du-read "^." ".")))
-                   (col (- (string-to-int (esml-du-read "^\n" "\n")) 1))
+                   (col (1- (string-to-int (esml-du-read "^\n" "\n"))))
                    (pos (def-use-pos line col))
                    (ref (def-use-ref src pos)))
               (puthash ref sym (esml-du-ctx-ref-to-sym-table ctx))
