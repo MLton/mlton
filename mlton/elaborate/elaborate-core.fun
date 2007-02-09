@@ -1355,20 +1355,17 @@ structure Aexp =
       open Aexp
 
       local
-         val x = Symbol.fromString "x"
+         val x = Avar.fromSymbol (Symbol.fromString "#", Region.bogus)
+         val xField = Apat.Item.Field (Apat.var x)
+         val xVar = var x
       in
          fun selector (f: Field.t, r: Region.t): t =
-            let
-               val x = Avar.fromSymbol (x, r)
-            in
-               fnn (Vector.new1
-                    (Apat.makeRegion
-                     (Apat.Record {flexible = true,
-                                   items = (Vector.new1
-                                            (f, Apat.Item.Field (Apat.var x)))},
-                      r),
-                     var x))
-            end
+            fnn (Vector.new1
+                 (Apat.makeRegion
+                  (Apat.Record {flexible = true,
+                                items = Vector.new1 (f, xField)},
+                   r),
+                  xVar))
       end
    end
 
