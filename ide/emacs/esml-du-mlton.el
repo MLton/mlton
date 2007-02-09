@@ -7,6 +7,7 @@
 (require 'bg-job)
 (require 'esml-util)
 
+;; XXX Keep a set of files covered by a def-use file.  Don't reload unnecessarily.
 ;; XXX Poll periodically for modifications to def-use files.
 ;; XXX Detect when the same ref is both a use and a def and act appropriately.
 

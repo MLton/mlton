@@ -6,6 +6,7 @@
 ;; This is a minor mode to support precisely identified definitions and
 ;; uses.  See http://mlton.org/EmacsDefUseMode for further information.
 
+;; XXX def-use-apropos
 ;; XXX mode specific on-off switching
 ;; XXX rename-variable
 
