@@ -36,7 +36,7 @@ local
    shrink.fun
    shrink2.fun
    flat-lattice.sig
-   flat-lattice.fun
+   ann "forceUsed" in flat-lattice.fun end
    common-arg.sig
    common-arg.fun
    common-block.sig
@@ -62,9 +62,9 @@ local
    introduce-loops.sig
    introduce-loops.fun
    n-point-lattice.sig
-   n-point-lattice.fun
+   ann "forceUsed" in n-point-lattice.fun end
    three-point-lattice.sig
-   three-point-lattice.fun
+   ann "forceUsed" in three-point-lattice.fun end
    restore.sig
    restore.fun
    known-case.sig

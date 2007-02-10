@@ -30,8 +30,6 @@ val all = [Int8, Int16, Int32, Int64,
 
 val bool = Int32
 
-val char = Int8
-
 val pointer = Pointer
 
 val thread = Pointer

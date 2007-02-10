@@ -134,9 +134,6 @@ structure Operand =
           | Var {var, ...} => f (var, a)
           | _ => a
 
-      fun foreachVar (z: t, f: Var.t -> unit): unit =
-         foldVars (z, (), f o #1)
-
       fun replaceVar (z: t, f: Var.t -> t): t =
          let
             fun loop (z: t): t =
@@ -549,11 +546,8 @@ structure Block =
       local
          fun make f (T r) = f r
       in
-         val args = make #args
          val kind = make #kind
          val label = make #label
-         val statements = make #statements
-         val transfer = make #transfer
       end
 
       fun clear (T {args, label, statements, transfer, ...}) =
@@ -595,7 +589,6 @@ structure Function =
       in
          val blocks = make #blocks
          val name = make #name
-         val start = make #start
       end
 
       fun dest (T r) = r
@@ -867,6 +860,8 @@ structure Program =
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
                objectTypes = objectTypes})
+      (* quell unused warning *)
+      val _ = dropProfile
 
       fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
          let

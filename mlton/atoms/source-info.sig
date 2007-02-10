@@ -18,7 +18,6 @@ signature SOURCE_INFO =
       type t
 
       val all: unit -> t list
-      val anonymous: Region.t -> t
       val equals: t * t -> bool
       val file: t -> File.t option
       val gc: t

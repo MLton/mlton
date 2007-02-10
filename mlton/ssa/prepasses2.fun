@@ -52,8 +52,11 @@ fun eliminate (Program.T {datatypes, globals, functions, main}) =
 end
 
 val eliminateDeadBlocksFunction = DeadBlocks.eliminateFunction
+(* quell unused warning *)
+val _ = eliminateDeadBlocksFunction
 val eliminateDeadBlocks = DeadBlocks.eliminate
-
+(* quell unused warning *)
+val _ = eliminateDeadBlocks
 
 structure Reverse =
 struct

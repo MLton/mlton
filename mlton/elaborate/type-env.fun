@@ -774,9 +774,6 @@ structure Type =
        *)
       open Ops Type
 
-      fun char s = con (Tycon.char s, Vector.new0 ())
-      val string = con (Tycon.vector, Vector.new1 (char CharSize.C8))
-
       val unit = tuple (Vector.new0 ())
 
       fun isArrow t =
@@ -793,11 +790,6 @@ structure Type =
          case toType t of
             Con (c, _) => Tycon.isCharX c
           | Overload Overload.Char => true
-          | _ => false
-
-      fun isExn t =
-         case toType t of
-            Con (c, _) => Tycon.isExn c
           | _ => false
 
       fun isInt t =
@@ -1272,8 +1264,6 @@ structure Type =
          case unify (t, t', z) of
             UnifyResult.NotUnifiable ((l, _), (l', _)) => NotUnifiable (l, l')
           | UnifyResult.Unified => Unified
-
-      val word8 = word WordSize.byte
 
       local
          val {get: Tycon.t -> (t * Tycon.t) option, set, ...} =
@@ -1820,8 +1810,6 @@ structure Type =
          Trace.trace ("TypeEnv.Type.deTupleOpt", layout,
                       Option.layout (Vector.layout layout))
          deTupleOpt
-
-      val deTuple = valOf o deTupleOpt
 
       fun hom (t, {con, expandOpaque = e, record, replaceSynonyms = r,
                    var}) =

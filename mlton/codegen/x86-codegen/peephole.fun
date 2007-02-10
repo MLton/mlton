@@ -15,12 +15,8 @@ functor Peephole(T : PEEPHOLE_TYPES): PEEPHOLE =
     type statement_element = (int * int option) * (statement_type -> bool)
     type transfer_element = transfer_type -> bool
 
-    val Zero : (statement_type -> bool) -> statement_element
-      = fn p => ((0, SOME 0), p)
     val One : (statement_type -> bool) -> statement_element 
       = fn p => ((1, SOME 1), p)
-    val ZeroOrOne : (statement_type -> bool) -> statement_element
-      = fn p => ((0, SOME 1), p)
     val All : (statement_type -> bool) -> statement_element
       = fn p => ((0, NONE), p)
 

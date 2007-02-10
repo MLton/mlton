@@ -9,8 +9,6 @@
 signature X86_LIVE_TRANSFERS_STRUCTS =
   sig
     structure x86 : X86
-    structure x86MLton : X86_MLTON
-    sharing x86 = x86MLton.x86
     structure x86Liveness : X86_LIVENESS
     sharing x86 = x86Liveness.x86
     structure x86JumpInfo : X86_JUMP_INFO

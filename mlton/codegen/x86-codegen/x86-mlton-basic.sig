@@ -41,10 +41,6 @@ signature X86_MLTON_BASIC =
     val wordScale : x86.Scale.t
     val pointerBytes : int
     val pointerSize : x86.Size.t
-    val pointerScale : x86.Scale.t
-    val normalHeaderBytes : int
-    val arrayHeaderBytes : int
-    val intInfOverheadBytes : int
 
     (*
      * Memory classes
@@ -105,10 +101,6 @@ signature X86_MLTON_BASIC =
     val local_base : x86.CType.t -> x86.Label.t
     val global_base : x86.CType.t -> x86.Label.t
     val globalPointerNonRoot_base : x86.Label.t
-
-    (* Static functions defined in main.h *)
-    val saveGlobals : x86.Label.t
-    val loadGlobals : x86.Label.t
 
     (* Misc. *)
     val fileNameLabel : x86.Label.t

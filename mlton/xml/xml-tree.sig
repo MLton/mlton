@@ -249,7 +249,6 @@ signature XML_TREE =
                      overflow: Var.t option}
 
             val clear: t -> unit (* clear all property lists *)
-            val empty: t
             val layout: t -> Layout.t
             val layoutStats: t -> Layout.t
          end

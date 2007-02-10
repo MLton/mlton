@@ -16,7 +16,6 @@ struct
      open Machine
   in
      structure CFunction = CFunction
-     structure IntSize = IntSize
      structure RealSize = RealSize
      structure Prim = Prim
      structure WordSize = WordSize
@@ -32,7 +31,6 @@ struct
 
   fun implementsPrim (p: 'a Prim.t) =
      let
-        datatype z = datatype IntSize.prim
         datatype z = datatype RealSize.t
         datatype z = datatype WordSize.prim
         fun w32168 s =

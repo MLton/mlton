@@ -15,7 +15,6 @@ signature HASH_TYPE =
    sig
       include HASH_TYPE_STRUCTS
       include TYPE_OPS
-(*      sharing type intSize = IntSize.t *)
       sharing type realSize = RealSize.t
       sharing type tycon = Tycon.t
       sharing type wordSize = WordSize.t
@@ -61,7 +60,6 @@ signature HASH_TYPE =
        * The ai's are not required to contain every free variable in t
        *)
       val substitute: t * (Tyvar.t * t) vector -> t
-      val toString: t -> string
       val tycon: t -> Tycon.t
       val var: Tyvar.t -> t
    end

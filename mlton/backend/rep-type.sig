@@ -42,9 +42,7 @@ signature REP_TYPE =
       type t
       sharing type t = ObjectType.ty
 
-      val add: t * t -> t
       val bogusWord: t -> WordX.t
-      val address: t -> t
       val align: t * Bytes.t -> Bytes.t
       val andb: t * t -> t option
       val arrayOffsetIsOk: {base: t,
@@ -53,7 +51,6 @@ signature REP_TYPE =
                             pointerTy: PointerTycon.t -> ObjectType.t,
                             result: t,
                             scale: Scale.t} -> bool
-      val arshift: t * t -> t
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
@@ -62,7 +59,6 @@ signature REP_TYPE =
       val checkPrimApp: {args: t vector,
                          prim: t Prim.t,
                          result: t option} -> bool
-      val char: t
       val cPointer: unit -> t
       val constant: WordX.t -> t
       val deLabel: t -> Label.t option
@@ -76,14 +72,10 @@ signature REP_TYPE =
       val isCPointer: t -> bool
       val isPointer: t -> bool
       val isUnit: t -> bool
-      val isReal: t -> bool
       val isSubtype: t * t -> bool
-      val isZero: t -> bool
-      val junk: Bits.t -> t
       val label: Label.t -> t
       val layout: t -> Layout.t
       val lshift: t * t -> t
-      val mul: t * t -> t
       val name: t -> string (* simple one letter abbreviation *)
       val ofGCField: Runtime.GCField.t -> t
       val ofWordVector: WordXVector.t -> t
@@ -102,13 +94,10 @@ signature REP_TYPE =
       val sum: t vector -> t
       val thread: t
       val toCType: t -> CType.t
-      val toString: t -> string
       val unit: t
       val width: t -> Bits.t
-      val word8: t
       val word: Bits.t -> t
       val wordVector: Bits.t -> t
-      val words: t -> Words.t
       val zero: Bits.t -> t
 
       structure BuiltInCFunction:

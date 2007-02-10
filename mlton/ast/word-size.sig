@@ -17,7 +17,6 @@ signature WORD_SIZE =
 
       type t
 
-      val + : t * t -> t
       val all: t list
       val bits: t -> Bits.t
       val bool: t
@@ -29,11 +28,9 @@ signature WORD_SIZE =
       val equals: t * t -> bool
       val fromBits: Bits.t -> t
       val isInRange: t * IntInf.t * {signed: bool} -> bool
-      val layout: t -> Layout.t
       val max: t * {signed: bool} -> IntInf.t
       val min: t * {signed: bool} -> IntInf.t
       val memoize: (t -> 'a) -> t -> 'a
-      val one: t
       val pointer: unit -> t
       datatype prim = W8 | W16 | W32 | W64
       val prim: t -> prim

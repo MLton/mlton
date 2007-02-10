@@ -1070,9 +1070,6 @@ signature X86 =
        sig
           datatype t = T of {size: int, 
                              frameLayoutsIndex: int}
-
-          val frameInfo: {size: int, 
-                          frameLayoutsIndex: int} -> t
        end
 
     structure Entry:
@@ -1105,7 +1102,6 @@ signature X86 =
                        label: Label.t,
                        live: MemLocSet.t} -> t
         val isFunc : t -> bool
-        val isNear : t -> bool
         val jump : {label: Label.t} -> t
         val label : t -> Label.t
         val live : t -> MemLocSet.t

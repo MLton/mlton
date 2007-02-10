@@ -22,13 +22,11 @@ signature WORD_X =
       val add: t * t -> t
       val allOnes: WordSize.t -> t
       val andb: t * t -> t
-      val bitIsSet: t * Int.t -> bool
       val equals: t * t -> bool
       val ge: t * t * {signed: bool} -> bool
       val gt: t * t * {signed: bool} -> bool
       val fromChar: char -> t (* returns a word of size 8 *)
       val fromIntInf: IntInf.t * WordSize.t -> t
-      val fromWord8: Word8.t -> t
       val isAllOnes: t -> bool
       val isOne: t -> bool
       val isMax: t * {signed: bool} -> bool
@@ -54,8 +52,6 @@ signature WORD_X =
       val ror: t * t -> t
       val rshift : t * t * {signed: bool} -> t
       val size: t -> WordSize.t
-      val splice: {hi: t, lo: t} -> t
-      val split: t * {lo: Bits.t} -> {hi: t, lo: t}
       val sub: t * t -> t
       val toChar: t -> char
       val toInt: t -> int

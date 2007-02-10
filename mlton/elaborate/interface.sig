@@ -132,10 +132,8 @@ signature INTERFACE =
              | Scheme of Scheme.t
              | Tycon of Tycon.t
 
-            val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t
             val apply: t * Type.t vector -> Type.t
-            val bogus: Kind.t -> t
             val cons: t -> Cons.t
             val data: Tycon.t * Kind.t * Cons.t -> t
             val def: Scheme.t * Kind.t -> t
@@ -158,7 +156,6 @@ signature INTERFACE =
                                   types: (Ast.Tycon.t * 'a) array}
 
             val layout: ('a -> Layout.t) -> 'a t -> Layout.t
-            val map: 'a t * ('a -> 'b) -> 'b t
          end
 
       type t

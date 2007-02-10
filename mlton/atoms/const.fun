@@ -48,7 +48,6 @@ val intInf = IntInf
 val word = Word
 val wordVector = WordVector
 
-val word8 = word o WordX.fromWord8 
 val string = wordVector o WordXVector.fromString
 
 local

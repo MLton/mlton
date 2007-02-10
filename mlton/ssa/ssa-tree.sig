@@ -92,12 +92,10 @@ signature SSA_TREE =
 
             val equals: t * t -> bool
             val foreachVar: t * (Var.t -> unit) -> unit
-            val isProfile: t -> bool
             val hash: t -> Word.t
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
-            val toString: t -> string
             val unit: t
          end
 
@@ -108,7 +106,6 @@ signature SSA_TREE =
                                var: Var.t option}
 
             val clear: t -> unit (* clear the var *)
-            val equals: t * t -> bool
             val exp: t -> Exp.t
             val layout: t -> Layout.t
             val prettifyGlobals: t vector -> (Var.t -> string option)
@@ -168,7 +165,6 @@ signature SSA_TREE =
             val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
             val foreachVar: t * (Var.t -> unit) -> unit
             val hash: t -> Word.t 
-            val iff: Var.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
@@ -243,7 +239,6 @@ signature SSA_TREE =
                       returns: Type.t vector option,
                       start: Label.t} -> t
             val profile: t * SourceInfo.t -> t
-            val start: t -> Label.t
          end
 
       structure Program:

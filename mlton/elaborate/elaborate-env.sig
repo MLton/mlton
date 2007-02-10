@@ -59,7 +59,6 @@ signature ELABORATE_ENV =
                sig
                   type t
 
-                  val empty: t
                   val layout: t -> Layout.t
                end
             structure Kind: TYCON_KIND
@@ -79,8 +78,6 @@ signature ELABORATE_ENV =
             val abs: t -> t
             val admitsEquality: t -> AdmitsEquality.t
             val apply: t * Type.t vector -> Type.t
-            val bogus: Kind.t -> t
-            val cons: t -> Cons.t
             val data: Tycon.t * Kind.t * Cons.t -> t
             val def: Scheme.t * Kind.t -> t
             val kind: t -> Kind.t

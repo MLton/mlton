@@ -19,7 +19,6 @@ signature X86_LIVENESS =
 
     structure LiveSet: sig 
                          include SET
-                         val fromMemLocSet: x86.MemLocSet.t -> t
                          val toMemLocSet: t -> x86.MemLocSet.t
                        end
     sharing type LiveSet.Element.t = x86.MemLoc.t
@@ -32,7 +31,6 @@ signature X86_LIVENESS =
         val newLiveInfo : unit -> t
 
         val setLiveOperands : t * x86.Label.t * x86.Operand.t list -> unit
-        val setLiveMemlocs : t * x86.Label.t * x86.MemLocSet.t -> unit
         val setLive : t * x86.Label.t * LiveSet.t -> unit
         val getLive : t * x86.Label.t -> LiveSet.t
         val completeLiveInfo : {chunk: x86.Chunk.t,
@@ -52,7 +50,6 @@ signature X86_LIVENESS =
 
         val dead: t -> LiveSet.t
         val liveIn: t -> LiveSet.t
-        val liveOut: t -> LiveSet.t
         val livenessAssembly : {assembly : x86.Assembly.t, live : LiveSet.t} -> t
         val livenessEntry : {entry : x86.Entry.t, live : LiveSet.t} -> t
         val livenessTransfer : {transfer: x86.Transfer.t, liveInfo: LiveInfo.t} -> t

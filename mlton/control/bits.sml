@@ -39,7 +39,6 @@ local
                val toIntInf: t -> IntInf.t
                val toString: t -> string
                val toWord: t -> word
-               val toWords: t -> words
                val zero: t
             end
 
@@ -124,11 +123,6 @@ local
                   else Error.bug "Bits.toBytes"
 
                val toWord = Word.fromIntInf
-
-               fun toWords b =
-                  if isWordAligned b
-                     then quot (b, inWord)
-                  else Error.bug "Bits.toWords"
             end
 
          type bytes = IntInf.t

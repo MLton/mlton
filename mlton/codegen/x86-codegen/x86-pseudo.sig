@@ -415,9 +415,6 @@ signature X86_PSEUDO =
        sig
           datatype t = T of {size: int, 
                              frameLayoutsIndex: int}
-
-          val frameInfo : {size: int, 
-                           frameLayoutsIndex: int} -> t
        end
 
     structure Entry:

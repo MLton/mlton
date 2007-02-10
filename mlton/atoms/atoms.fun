@@ -50,10 +50,7 @@ structure Atoms =
                              structure WordSize = WordSize)
       structure Ffi = Ffi (structure CFunction = CFunction
                            structure CType = CType)
-      structure Tyvars = UnorderedSet (Tyvar)
       structure Vars = UnorderedSet (Var)
-      structure Cons = UnorderedSet (Con)
-      structure Tycons = UnorderedSet (Tycon)
    end
 
 open Atoms

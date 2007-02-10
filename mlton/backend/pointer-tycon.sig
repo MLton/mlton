@@ -18,7 +18,6 @@ signature POINTER_TYCON =
       type t
 
       val <= : t * t -> bool
-      val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val fromIndex: Int.t -> t
       val index: t -> Int.t (* index into objectTypes array *)

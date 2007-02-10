@@ -315,8 +315,6 @@ structure Exp =
 
       val hash = Trace.trace ("SsaTree.Exp.hash", layout, Word.layout) hash
 
-      val toString = Layout.toString o layout
-
       fun toPretty (e: t, global: Var.t -> string option): string =
          case e of
             ConApp {con, args} =>
@@ -333,10 +331,6 @@ structure Exp =
                concat ["#", Int.toString offset, " ", Var.toString tuple]
           | Tuple xs => Var.prettys (xs, global)
           | Var x => Var.toString x
-
-      val isProfile =
-         fn Profile _ => true
-          | _ => false
    end
 datatype z = datatype Exp.t
 
@@ -367,12 +361,6 @@ structure Statement =
                                  str " = "]],
                  Exp.layout exp]
          end
-
-      fun equals (T {exp = e, ty = t, var = v},
-                  T {exp = e', ty = t', var = v'}): bool =
-         Option.equals (v, v', Var.equals)
-         andalso Type.equals (t, t')
-         andalso Exp.equals (e, e')
 
       local
          fun make f x =
@@ -583,16 +571,6 @@ structure Transfer =
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
                      return: Label.t} (* Must be nullary. *)
-
-      fun iff (test: Var.t, {truee, falsee}) =
-         let
-            val s = WordSize.fromBits (Bits.fromInt 32)
-         in
-            Case {cases = Cases.Word (s, Vector.new2 ((WordX.zero s, falsee),
-                                                      (WordX.one s, truee))),
-                  default = NONE,
-                  test = test}
-         end
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
@@ -900,7 +878,6 @@ structure Function =
          val dest = make (fn d => d)
          val mayInline = make #mayInline
          val name = make #name
-         val start = make #start
       end
 
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =

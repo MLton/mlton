@@ -14,10 +14,6 @@ datatype t = T of {bits: Bits.t}
 
 fun bits (T {bits, ...}) = bits
 
-val toString = Bits.toString o bits
-
-val layout = Layout.str o toString
-
 fun compare (s, s') = Bits.compare (bits s, bits s')
 
 val {equals, ...} = Relation.compare compare
@@ -47,8 +43,6 @@ fun fromBits (b: Bits.t): t =
 
 val all = List.map (sizes, fromBits)
 
-val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
-
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
@@ -56,39 +50,5 @@ val memoize: (t -> 'a) -> t -> 'a =
    in
       fn T {bits = b, ...} => valOf (Vector.sub (v, Bits.toInt b))
    end
-
-fun roundUpToPrim s =
-   let
-      val bits = Bits.toInt (bits s)
-      val bits =
-         if bits <= 8
-            then 8
-         else if bits <= 16
-                 then 16
-              else if bits <= 32
-                      then 32
-                   else if bits = 64
-                           then 64
-                        else Error.bug "IntSize.roundUpToPrim"
-   in
-      fromBits (Bits.fromInt bits)
-   end
-
-val bytes: t -> Bytes.t = Bits.toBytes o bits
-
-val cardinality = memoize (fn s => IntInf.pow (2, Bits.toInt (bits s)))
-
-datatype prim = I8 | I16 | I32 | I64
-
-val primOpt =
-   memoize (fn T {bits, ...} =>
-            List.peekMap ([(8, I8), (16, I16), (32, I32), (64, I64)],
-                          fn (b, p) =>
-                          if b = Bits.toInt bits then SOME p else NONE))
-
-fun prim s =
-   case primOpt s of
-      NONE => Error.bug "IntSize.prim"
-    | SOME p => p
 
 end

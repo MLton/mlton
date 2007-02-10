@@ -18,7 +18,6 @@ struct
 
   structure LiveSet = struct 
                         open MemLocSet
-                        fun fromMemLocSet s = s
                         fun toMemLocSet s = s
                       end
   fun track memloc = ClassSet.contains(!x86MLtonBasic.Classes.livenessClasses, 
@@ -35,15 +34,6 @@ struct
                => if track memloc
                     then LiveSet.add(live, memloc)
                     else live))
-
-  fun livenessMemlocs live
-    = MemLocSet.fold
-      (live,
-       LiveSet.empty,
-       fn (memloc, live) 
-        => if track memloc
-             then LiveSet.add(live, memloc)
-             else live)
 
   structure LiveInfo =
     struct
@@ -62,8 +52,6 @@ struct
 
       fun setLiveOperands (T {set, ...}, label, live)
         = set(label, livenessOperands live)
-      fun setLiveMemlocs (T {set, ...}, label, live)
-        = set(label, livenessMemlocs live)
       fun setLive (T {set, ...}, label, live)
         = set(label, live)
       fun getLive (T {get, ...}, label)
@@ -117,7 +105,6 @@ struct
        in
           val dead = make #dead
           val liveIn = make #liveIn
-          val liveOut = make #liveOut
        end
 
       fun toString (T {liveIn, liveOut, dead})

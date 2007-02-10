@@ -29,7 +29,6 @@ signature TYPE_ENV =
             val admitsEquality: t -> bool
             (* can two types be unified?  not side-effecting. *)
             val canUnify: t * t -> bool
-            val char: CharSize.t -> t
             val deEta: t * Tyvar.t vector -> Tycon.t option
             val deRecord: t -> (Record.Field.t * t) vector
             val flexRecord: t SortedRecord.t -> t * (unit -> bool)
@@ -41,7 +40,6 @@ signature TYPE_ENV =
             val isArrow: t -> bool
             val isBool: t -> bool
             val isCharX: t -> bool
-            val isExn: t -> bool
             val isInt: t -> bool
             val isPointer: t -> bool
             val isUnit: t -> bool
@@ -62,7 +60,6 @@ signature TYPE_ENV =
             val minTime: t * Time.t -> unit
             val new: unit -> t
             val record: t SortedRecord.t -> t
-            val string: t
             val toString: t -> string
             (* make two types identical (recursively).  side-effecting. *)
             val unify:

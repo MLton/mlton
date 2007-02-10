@@ -18,7 +18,6 @@ functor ProfileLabel (S: PROFILE_LABEL_STRUCTS): PROFILE_LABEL =
          fun make f (T r) = f r
       in
          val plist = make #plist
-         val uniq = make #uniq
       end
 
       local
@@ -32,8 +31,6 @@ functor ProfileLabel (S: PROFILE_LABEL_STRUCTS): PROFILE_LABEL =
          concat ["MLtonProfile", Int.toString uniq]
 
       val layout = Layout.str o toString
-
-      fun equals (l, l') = uniq l = uniq l'
 
       val clear = PropertyList.clear o plist
    end

@@ -283,8 +283,6 @@ structure Lambda =
    struct
       datatype t = datatype lambda
 
-      val layout = layoutLambda
-
       val make = Lam
 
       fun dest (Lam r) = r

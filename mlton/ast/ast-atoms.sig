@@ -63,7 +63,6 @@ signature AST_ATOMS =
          sig
             include LONGID
             val arrow: t
-            val exn: t
          end sharing Longtycon.Id = Tycon
 
       structure Longvar: LONGID sharing Longvar.Id = Var
@@ -72,14 +71,6 @@ signature AST_ATOMS =
       structure Longvid:
          sig
             include LONGID
-
-            val bind: t
-            val cons: t
-            val falsee: t
-            val match: t
-            val nill: t
-            val reff: t
-            val truee: t
 
             val fromLongcon: Longcon.t -> t
             val toLongvar: t -> Longvar.t
@@ -108,7 +99,6 @@ signature AST_ATOMS =
             val arrow: t * t -> t
             val checkSyntax: t -> unit
             val con: Tycon.t * t vector -> t
-            val exn:  t
             val layout: t -> Layout.t
             val layoutApp: Layout.t * 'a vector * ('a -> Layout.t) -> Layout.t
             val layoutOption: t option -> Layout.t

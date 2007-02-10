@@ -24,14 +24,10 @@ signature RECORD =
       val change: 'a t * ('a vector -> 'b vector * 'c) -> 'b t * 'c
       (* detuple r returns the components, if r is a tuple *)
       val detupleOpt: 'a t -> 'a vector option
-      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val exists: 'a t * ('a -> bool) -> bool
-      val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
-      val foldi: 'a t * 'b * (Field.t * 'a * 'b ->'b) -> 'b
       val forall: 'a t * ('a -> bool) -> bool
       val foreach: 'a t * ('a -> unit) -> unit
       val fromVector: (Field.t * 'a) vector -> 'a t
-      val isTuple: 'a t -> bool
       val layout: {record: 'a t,
                    separator: string,
                    extra: string,
@@ -44,6 +40,5 @@ signature RECORD =
       val toVector: 'a t -> (Field.t * 'a) vector
       (* tuple [a, b, c] creates {1 = a, 2 = b, 3 = c} *)
       val tuple: 'a vector -> 'a t
-      val unzip: 'a t -> Field.t vector * 'a vector
       val zip: Field.t vector * 'a vector -> 'a t
    end

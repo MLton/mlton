@@ -156,8 +156,11 @@ fun break (Program.T {datatypes, globals, functions, main}, codeMotion) =
 end
 
 val breakCriticalEdgesFunction = CriticalEdges.breakFunction
+(* quell unused warning *)
+val _ = breakCriticalEdgesFunction
 val breakCriticalEdges = CriticalEdges.break
-
+(* quell unused warning *)
+val _ = breakCriticalEdges
 
 structure DeadBlocks =
 struct

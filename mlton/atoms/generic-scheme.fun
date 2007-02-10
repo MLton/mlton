@@ -14,19 +14,14 @@ open S
 type ty = Type.t
 type tyvar = Tyvar.t
 
-datatype t = T of {tyvars: Tyvar.t vector,
-                   ty: Type.t}
+datatype t = T of {tyvars: tyvar vector,
+                   ty: ty}
 
 local
    fun make f (T r) = f r
 in
    val ty = make #ty
-   val tyvars = make #tyvars
 end
-
-fun fromType t = T {tyvars = Vector.new0 (), ty = t}
-
-val equals = fn _ => Error.unimplemented "GenericScheme.equals"
 
 fun layout (T {tyvars, ty}) =
    let open Layout
@@ -47,21 +42,5 @@ fun apply (T {tyvars, ty}, args) =
                * in monotypes.
                *)
    else Type.substitute (ty, Vector.zip (tyvars, args))
-
-fun makeGen (numTyvars, equality, makeType): t =
-   let
-      val tyvars =
-         Vector.tabulate (numTyvars, fn _ =>
-                          Tyvar.newNoname {equality = equality})
-      val tys = Vector.map (tyvars, Type.var)
-   in T {tyvars = tyvars,
-         ty = makeType (fn i => Vector.sub (tys, i))}
-   end
-
-val make0 = fromType
-
-fun make1 makeType = makeGen (1, false, fn sub => makeType (sub 0))
-fun make2 makeType = makeGen (2, false, fn sub => makeType (sub 0, sub 1))
-fun makeEqual1 makeType = makeGen (1, true, fn sub => makeType (sub 0))
 
 end

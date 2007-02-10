@@ -88,8 +88,6 @@ structure Type =
                                  ({isChar = false},
                                   Tycon.BindingStrength.unit))})
 
-      val toString = Layout.toString o layout
-
       local
          val same: tree * tree -> bool =
             fn (Var a, Var a') => Tyvar.equals (a, a')

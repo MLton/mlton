@@ -299,8 +299,6 @@ structure Scheme =
    struct
       open Scheme
 
-      fun bogus () = T {ty = Type.bogus, tyvars = Vector.new0 ()}
-
       fun dest (T {ty, tyvars}) = (tyvars, ty)
 
       fun make (tyvars, ty) = T {ty = ty, tyvars = tyvars}
@@ -355,16 +353,6 @@ structure TypeStr =
              | Scheme s => Scheme.layout s
              | Tycon t => seq [str "Tycon ", Tycon.layout t]
          end
-
-      fun bogus (k: Kind.t): t =
-         T {kind = k,
-            node = Scheme (Scheme.bogus ())}
-
-      fun abs t =
-         case node t of
-            Datatype {tycon, ...} => T {kind = kind t,
-                                        node = Tycon tycon}
-          | _ => t
 
       fun apply (t: t, tys: Type.t vector): Type.t =
          case node t of
@@ -808,15 +796,6 @@ structure UniqueId = IntUniqueId ()
 
       fun isEmpty (T {strs, types}) =
          0 = Array.length strs andalso 0 = Array.length types
-
-      fun map (tm, f) =
-         let
-            fun loop (T {strs, types}) =
-               T {strs = Array.map (strs, fn (s, tm) => (s, loop tm)),
-                  types = Array.map (types, fn (t, a) => (t, f a))}
-         in
-            loop tm
-         end
    end
 
 (*---------------------------------------------------*)

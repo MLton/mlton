@@ -3751,8 +3751,6 @@ struct
                      "size = ", Int.toString size, ", ",
                      "frameLayoutsIndex = ", 
                      Int.toString frameLayoutsIndex, "}"]
-
-        val frameInfo = T
      end
 
   structure Entry =
@@ -3855,11 +3853,6 @@ struct
       val cont = Cont
       val handler = Handler
       val creturn = CReturn
-
-      val isNear = fn Jump _ => true
-                    | CReturn {func, ...} 
-                    => not (CFunction.maySwitchThreads func)
-                    | _ => false
     end
 
   structure Transfer =

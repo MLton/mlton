@@ -29,9 +29,7 @@ signature PEEPHOLE =
     type statement_element = (int * int option) * (statement_type -> bool)
     type transfer_element = transfer_type -> bool
 
-    val Zero : (statement_type -> bool) -> statement_element
     val One : (statement_type -> bool) -> statement_element 
-    val ZeroOrOne : (statement_type -> bool) -> statement_element
     val All : (statement_type -> bool) -> statement_element
 
     type template = {start: statement_border,

@@ -15,7 +15,6 @@ struct
   local
      open Machine
   in
-     structure CFunction = CFunction
      structure CType = CType
      structure Runtime = Runtime
   end
@@ -28,10 +27,6 @@ struct
   val wordScale = Scale.fromBytes wordBytes
   val pointerBytes = Bytes.toInt Runtime.pointerSize
   val pointerSize = Size.fromBytes pointerBytes
-  val pointerScale = Scale.fromBytes pointerBytes
-  val normalHeaderBytes = Bytes.toInt Runtime.normalHeaderSize
-  val arrayHeaderBytes = Bytes.toInt Runtime.arrayHeaderSize
-  val intInfOverheadBytes = Bytes.toInt Runtime.intInfOverhead
 
   (*
    * Memory classes
@@ -393,9 +388,6 @@ struct
   end
 
   val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"
-
-  val saveGlobals = Label.fromString "saveGlobals"
-  val loadGlobals = Label.fromString "loadGlobals"
 
   val fileNameLabel = Label.fromString "fileName"
   val fileName = Operand.immediate_label fileNameLabel

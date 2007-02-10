@@ -34,7 +34,6 @@ signature RUNTIME =
              | StackLimit (* Must have StackTop <= StackLimit *)
              | StackTop (* Points at the next available word on the stack. *)
 
-            val equals: t * t -> bool
             val layout: t -> Layout.t
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
             val setOffsets: {canHandle: Bytes.t,
@@ -67,20 +66,14 @@ signature RUNTIME =
          end
 
       val allocTooLarge: Bytes.t
-      val arrayHeaderSize: Bytes.t
       val arrayLengthOffset: Bytes.t
-      val array0Size: Bytes.t
       val headerOffset: Bytes.t
       val headerToTypeIndex: word -> int
-      val intInfOverhead: Bytes.t
       val labelSize: Bytes.t
       (* Same as LIMIT_SLOP from gc.c. *)
       val limitSlop: Bytes.t
       val maxFrameSize: Bytes.t
       val normalHeaderSize: Bytes.t
-      (* normalBytes does not include the header. *)
-      val normalSize: {nonPointers: Words.t,
-                       pointers: int} -> Bytes.t
       val pointerSize: Bytes.t
       val typeIndexToHeader: int -> word
    end

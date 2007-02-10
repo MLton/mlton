@@ -12,7 +12,6 @@ struct
 open S
 open Rssa
 
-datatype z = datatype IntSize.prim
 datatype z = datatype WordSize.prim
 
 structure S = Ssa

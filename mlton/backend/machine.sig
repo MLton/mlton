@@ -57,7 +57,6 @@ signature MACHINE =
             val new: {isRoot: bool, ty: Type.t} -> t
             val numberOfNonRoot: unit -> int
             val numberOfType: CType.t -> int
-            val toString: t -> string
             val ty: t -> Type.t
          end
 
@@ -66,7 +65,6 @@ signature MACHINE =
             datatype t = T of {offset: Bytes.t,
                                ty: Type.t}
 
-            val offset: t -> Bytes.t
             val ty: t -> Type.t
          end
 

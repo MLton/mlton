@@ -66,8 +66,6 @@ fun make (p, t) =
          else T {pat = p, ty = t}
     | _ => T {pat = p, ty = t}
 
-fun wild t = make (Wild, t)
-
 fun isRefutable p =
    case node p of
       Wild => false
@@ -81,10 +79,6 @@ fun isVar p =
    case node p of
       Var _ => true
     | _ => false
-
-val unit =
-   T {pat = Tuple (Vector.new0 ()),
-      ty = Type.tuple (Vector.new0 ())}
 
 fun removeOthersReplace (p, {new, old}) =
    let

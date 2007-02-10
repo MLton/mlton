@@ -16,8 +16,6 @@ fun bits (T b) = b
 
 val toString = Bits.toString o bits
 
-val layout = Layout.str o toString
-
 fun compare (s, s') = Bits.compare (bits s, bits s')
 
 val {equals, ...} = Relation.compare compare
@@ -29,8 +27,6 @@ fun fromBits (b: Bits.t): t =
 
 fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64
-
-val one = fromBits (Bits.fromInt 1)
 
 val byte = fromBits (Bits.fromInt 8)
 
@@ -112,7 +108,5 @@ fun prim s =
    case primOpt s of
       NONE => Error.bug "WordSize.prim"
     | SOME p => p
-
-fun s + s' = fromBits (Bits.+ (bits s, bits s'))
 
 end

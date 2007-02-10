@@ -23,9 +23,6 @@ signature AST_CORE =
                Infix of int option
              | Infixr of int option
              | Nonfix
-
-            val bogus: t
-            val isInfix: t -> bool
             val layout: t -> Layout.t
          end
 
@@ -68,8 +65,6 @@ signature AST_CORE =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val app: Con.t * t -> t
-            val con: Con.t -> t
             val const: Const.t -> t
             val constraint: t * Type.t -> t
             val layered: {fixop: Fixop.t,
@@ -228,11 +223,6 @@ signature AST_CORE =
                             sharing type obj = t
 
             val checkSyntax: t -> unit
-            val datatypee: {tyvars: Tyvar.t vector,
-                            tycon: Tycon.t,
-                            cons: (Con.t * Type.t option) vector} vector -> t
-            val empty: t
-            val exceptionn: Con.t * Type.t option -> t
             val fromExp: Exp.t -> t
             val layout: t -> Layout.t
             val openn: Longstrid.t vector -> t

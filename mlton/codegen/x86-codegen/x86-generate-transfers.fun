@@ -31,7 +31,6 @@ struct
 
   structure x86LiveTransfers 
     = x86LiveTransfers(structure x86 = x86
-                       structure x86MLton = x86MLton
                        structure x86Liveness = x86Liveness
                        structure x86JumpInfo = x86JumpInfo
                        structure x86LoopInfo = x86LoopInfo)

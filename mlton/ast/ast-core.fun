@@ -23,12 +23,6 @@ structure Fixity =
        | Infixr of int option
        | Nonfix
 
-      val bogus = Nonfix
-
-      val isInfix =
-         fn Nonfix => false
-          | _ => true
-
       val toString =
          fn Infix NONE => "infix"
           | Infix (SOME n) => "infix " ^ Int.toString n
@@ -63,13 +57,6 @@ fun layoutLongvid x =
                    then s ^ " "
                 else s
         end)
-
-structure Vector =
-   struct
-      open Vector
-
-      fun cons (x, v) = concat [new1 x, v]
-   end
 
 (*---------------------------------------------------*)
 (*                     Patterns                      *)
@@ -113,37 +100,8 @@ structure Pat =
       val constraint = make o Constraint
       val layered = make o Layered
 
-      val emptyList = make (List (Vector.new0 ()))
-
       fun longvid x = make (Var {name = x, fixop = Fixop.None})
       val var = longvid o Longvid.short o Vid.fromVar
-
-      fun con c =
-         if Con.equals (c, Con.nill) then emptyList
-         else longvid (Longvid.short (Vid.fromCon c))
-
-      fun app (c, p) =
-         let
-            val default = make (App (Longcon.short c, p))
-         in
-            if Con.equals (c, Con.cons)
-               then
-                  case node p of
-                     Tuple ps =>
-                        if 2 = Vector.length ps
-                           then
-                              let
-                                 val p0 = Vector.sub (ps, 0)
-                                 val p1 = Vector.sub (ps, 1)
-                              in
-                                 case node p1 of
-                                    List ps => make (List (Vector.cons (p0, ps)))
-                                  | _ => default
-                              end
-                        else default
-                   | _ => default
-            else default
-         end
 
       fun tuple ps =
          if 1 = Vector.length ps
@@ -698,23 +656,6 @@ structure Dec =
       fun make n = makeRegion (n, Region.bogus)
 
       val openn = make o Open
-
-      fun exceptionn (exn: Con.t, to: Type.t option): t =
-         make (Exception (Vector.new1 (exn, make (Eb.Rhs.Gen to))))
-
-      fun datatypee datatypes: t =
-         make
-         (Datatype
-          (DatatypeRhs.makeRegion
-           (DatatypeRhs.DatBind
-            (DatBind.makeRegion (DatBind.T {withtypes = TypBind.empty,
-                                            datatypes = datatypes},
-                                 Region.bogus)),
-            Region.bogus)))
-
-      val seq = make o SeqDec
-
-      val empty = seq (Vector.new0 ())
 
       fun vall (tyvars, var, exp): t =
          make (Val {tyvars = tyvars,

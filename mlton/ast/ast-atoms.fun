@@ -95,13 +95,6 @@ structure Vid =
          val toFctid = make Fctid.fromSymbol
          val toStrid = make Strid.fromSymbol
       end
-      val bind = fromCon Con.bind
-      val cons = fromCon Con.cons
-      val falsee = fromCon Con.falsee
-      val match = fromCon Con.match
-      val nill = fromCon Con.nill
-      val reff = fromCon Con.reff
-      val truee = fromCon Con.truee
    end
 
 structure Longtycon =
@@ -113,8 +106,6 @@ structure Longtycon =
       open T
 
       val arrow = short Tycon.arrow
-
-      val exn = short Tycon.exn
    end
 
 structure Longvar = Longid (structure Id = Var
@@ -159,14 +150,6 @@ structure Longvid =
          val toLongcon = to (Longcon.makeRegion, Longcon.T, Vid.toCon)
          val toLongstrid = to (Longstrid.makeRegion, Longstrid.T, Vid.toStrid)
       end
-
-      val bind = short Vid.bind
-      val cons = short Vid.cons
-      val falsee = short Vid.falsee
-      val match = short Vid.match
-      val nill = short Vid.nill
-      val reff = short Vid.reff
-      val truee = short Vid.truee
    end
 
 open Layout
@@ -233,8 +216,6 @@ structure Type =
          else make (Con (Longtycon.short c, ts))
 
       fun arrow (t1, t2) = con (Tycon.arrow, Vector.new2 (t1, t2))
-
-      val exn = con (Tycon.exn, Vector.new0 ())
 
       fun layoutApp (tycon, args: 'a vector, layoutArg) =
          case Vector.length args of

@@ -669,4 +669,6 @@ fun restore (Program.T {datatypes, globals, functions, main})
                  functions = List.revMap (functions, r),
                  main = main}
     end
+(* quell unused warning *)
+val _ = restore
 end

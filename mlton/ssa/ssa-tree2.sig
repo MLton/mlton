@@ -120,8 +120,6 @@ signature SSA_TREE2 =
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
-            val toString: t -> string
-            val unit: t
          end
 
       structure Statement:
@@ -154,7 +152,6 @@ signature SSA_TREE2 =
             val foreach: t * (Label.t -> unit) -> unit
             val hd: t -> Label.t
             val isEmpty: t -> bool
-            val length: t -> int
             val map: t * (Label.t -> Label.t) -> t
          end
 
@@ -196,7 +193,6 @@ signature SSA_TREE2 =
             val foreachLabelVar: t * (Label.t -> unit) * (Var.t -> unit) -> unit
             val foreachVar: t * (Var.t -> unit) -> unit
             val hash: t -> Word.t 
-            val iff: Var.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
             val replaceLabelVar: t * (Label.t -> Label.t) * (Var.t -> Var.t) -> t
             val replaceLabel: t * (Label.t -> Label.t) -> t
@@ -215,7 +211,6 @@ signature SSA_TREE2 =
             val clear: t -> unit
             val label: t -> Label.t
             val layout: t -> Layout.t
-            val statements: t -> Statement.t vector
             val transfer: t -> Transfer.t
          end
 
@@ -270,7 +265,6 @@ signature SSA_TREE2 =
                       returns: Type.t vector option,
                       start: Label.t} -> t
             val profile: t * SourceInfo.t -> t
-            val start: t -> Label.t
          end
 
       structure Program:

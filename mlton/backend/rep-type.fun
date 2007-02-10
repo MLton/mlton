@@ -10,7 +10,7 @@ struct
 
 open S
 
-structure CFunction = Prim.CFunction
+structure CFunction = CFunction
 
 type int = Int.t
 
@@ -53,8 +53,6 @@ structure Type =
              | Word => str (concat ["Word", Bits.toString (width t)])
          end
 
-      val toString = Layout.toString o layout
-
       val rec equals: t * t -> bool =
          fn (t, t') =>
          Bits.equals (width t, width t')
@@ -76,24 +74,15 @@ structure Type =
 
       val word: Bits.t -> t = fn width => T {node = Word, width = width}
 
-      val add: t * t -> t = #1
-
       val bogusWord: t -> WordX.t =
          fn t => WordX.one (WordSize.fromBits (width t))
 
-      val address: t -> t =
-         fn t => T {node = Address t,
-                    width = Bits.inPointer}
 
       val andb: t * t -> t option = SOME o #1
-
-      val arshift: t * t -> t = #1
 
       val bool: t = word Bits.inWord
 
       val bytes: t -> Bytes.t = Bits.toBytes o width
-
-      val char: t = word Bits.inByte
 
       val cPointer: unit -> t = fn () => word Bits.inPointer
 
@@ -179,8 +168,6 @@ structure Type =
 
       val isUnit = Trace.trace ("RepType.Type.isUnit", layout, Bool.layout) isUnit
 
-      val isReal: t -> bool = isSome o deReal
-
       val rec isSubtype: t * t -> bool =
          fn (t, t') =>
          if not (sameWidth (t, t'))
@@ -200,14 +187,10 @@ structure Type =
          Trace.trace2 ("RepType.Type.isSubtype", layout, layout, Bool.layout)
          isSubtype
 
-      val junk: Bits.t -> t = word
-
       val label: Label.t -> t =
          fn l => T {node = Label l, width = Bits.inPointer}
 
       val lshift: t * t -> t = #1
-
-      val mul: t * t -> t = #1
 
       val orb: t * t -> t option = SOME o #1
 
@@ -295,10 +278,6 @@ structure Type =
                                (1, WordSize.fromBits (Bits.fromInt 1))),
                      word (Bits.fromInt 31)))))
 
-      val word8: t = word Bits.inByte
-
-      val words: t -> Words.t = Bits.toWords o width
-
       val zero: Bits.t -> t = word
 
       fun bytesAndPointers (t: t): Bytes.t * int =
@@ -315,8 +294,6 @@ structure Type =
                               div Bytes.toInt Bytes.inPointer))
                       end)
           | _ => (bytes t, 0)
-
-      val isZero = fn _ => false
    end
 
 structure ObjectType =
@@ -325,12 +302,11 @@ structure ObjectType =
       structure Runtime = Runtime
 
       type ty = Type.t
-
       datatype t =
-         Array of {elt: Type.t,
+         Array of {elt: ty,
                    hasIdentity: bool}
        | Normal of {hasIdentity: bool,
-                    ty: Type.t}
+                    ty: ty}
        | Stack
        | Weak of Type.t
        | WeakGone
@@ -471,7 +447,8 @@ fun ofWordVector (v: WordXVector.t): t =
 fun castIsOk {from, to, tyconTy = _} =
    Bits.equals (width from, width to)
 
-fun checkPrimApp _ = true
+fun checkPrimApp {args, prim, result} = 
+    case (args, Prim.name prim, result) of _ => true
 
 fun offsetIsOk _ = true
 
