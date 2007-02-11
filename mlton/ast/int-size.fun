@@ -5,6 +5,8 @@
  * See the file MLton-LICENSE for details.
  *)
 
+type int = Int.t
+
 functor IntSize (S: INT_SIZE_STRUCTS): INT_SIZE =
 struct
 
