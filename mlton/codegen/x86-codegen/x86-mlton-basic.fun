@@ -148,14 +148,6 @@ struct
                     class = Classes.StaticNonTemp}
   val c_stackPContentsOperand 
     = Operand.memloc c_stackPContents
-  val c_stackPDeref
-    = MemLoc.simple {base = c_stackPContents,
-                     index = Immediate.const_int 0,
-                     scale = wordScale,
-                     size = pointerSize,
-                     class = Classes.CStack}
-  val c_stackPDerefOperand
-    = Operand.memloc c_stackPDeref
   val c_stackPDerefDouble
     = MemLoc.simple {base = c_stackPContents,
                      index = Immediate.const_int 0,
@@ -172,30 +164,6 @@ struct
                      class = Classes.CStack}
   val c_stackPDerefFloatOperand
     = Operand.memloc c_stackPDerefFloat
-
-  val threadTemp = Label.fromString "threadTemp"
-  val threadTempContents 
-    = makeContents {base = Immediate.label threadTemp,
-                    size = wordSize,
-                    class = Classes.StaticTemp}
-  val threadTempContentsOperand
-    = Operand.memloc threadTempContents
-
-  val statusTemp = Label.fromString "statusTemp"
-  val statusTempContents 
-    = makeContents {base = Immediate.label statusTemp,
-                    size = wordSize,
-                    class = Classes.StaticTemp}
-  val statusTempContentsOperand
-    = Operand.memloc statusTempContents
-
-  val fileTemp = Label.fromString "fileTemp"
-  val fileTempContents 
-    = makeContents {base = Immediate.label fileTemp,
-                    size = pointerSize,
-                    class = Classes.StaticTemp}
-  val fileTempContentsOperand
-    = Operand.memloc fileTempContents
 
   val applyFFTemp = Label.fromString "applyFFTemp"
   val applyFFTempContents 
@@ -287,21 +255,6 @@ struct
   val fildTempContentsOperand
     = Operand.memloc fildTempContents
 
-  val eq1Temp = Label.fromString "eq1Temp"
-  val eq1TempContents 
-    = makeContents {base = Immediate.label eq1Temp,
-                    size = wordSize,
-                    class = Classes.StaticTemp}
-  val eq1TempContentsOperand
-    = Operand.memloc eq1TempContents
-  val eq2Temp = Label.fromString "eq2Temp"
-  val eq2TempContents 
-    = makeContents {base = Immediate.label eq2Temp,
-                    size = wordSize,
-                    class = Classes.StaticTemp}
-  val eq2TempContentsOperand
-    = Operand.memloc eq2TempContents
-
   val wordTemp1B = Label.fromString "wordTemp1B"
   val wordTemp1ContentsB
     = makeContents {base = Immediate.label wordTemp1B,
@@ -329,35 +282,6 @@ struct
       | Size.WORD => wordTemp1ContentsOperandW
       | Size.LONG => wordTemp1ContentsOperandL
       | _ => Error.bug "x86MLtonBasic.wordTemp1ContentsOperand: wordSize"
-
-  val wordTemp2B = Label.fromString "wordTemp2B"
-  val wordTemp2ContentsB
-    = makeContents {base = Immediate.label wordTemp2B,
-                    size = Size.BYTE,
-                    class = Classes.StaticTemp}
-  val wordTemp2ContentsOperandB
-    = Operand.memloc wordTemp2ContentsB
-  val wordTemp2W = Label.fromString "wordTemp2W"
-  val wordTemp2ContentsW
-    = makeContents {base = Immediate.label wordTemp2W,
-                    size = Size.WORD,
-                    class = Classes.StaticTemp}
-  val wordTemp2ContentsOperandW
-    = Operand.memloc wordTemp2ContentsW
-  val wordTemp2L = Label.fromString "wordTemp2L"
-  val wordTemp2ContentsL
-    = makeContents {base = Immediate.label wordTemp2L,
-                    size = Size.LONG,
-                    class = Classes.StaticTemp}
-  val wordTemp2ContentsOperandL
-    = Operand.memloc wordTemp2ContentsL
-  fun wordTemp2ContentsOperand wordSize
-    = case wordSize of
-        Size.BYTE => wordTemp2ContentsOperandB
-      | Size.WORD => wordTemp2ContentsOperandW
-      | Size.LONG => wordTemp2ContentsOperandL
-      | _ => Error.bug "x86MLtonBasic.wordTemp2ContentsOperand: wordSize"
-
 
   local
      fun make prefix =
@@ -476,22 +400,6 @@ struct
   in
     val stackTopTempContents = fn () => stackTopTempContents
     val stackTopTempContentsOperand = fn () => stackTopTempContentsOperand
-  end
-
-  local
-     fun make (contents, class) () =
-        Operand.memloc (MemLoc.simple {base = contents (),
-                                       index = Immediate.const_int 0,
-                                       scale = wordScale,
-                                       size = pointerSize,
-                                       class = class})
-  in
-     val gcState_frontierDerefOperand =
-        make (gcState_frontierContents, Classes.Heap)
-     val gcState_stackTopDerefOperand =
-        make (gcState_stackTopContents, Classes.Stack)
-     val stackTopTempDerefOperand =
-        make (stackTopTempContents, Classes.Stack)
   end
 
   fun gcState_stackTopMinusWordDeref () =

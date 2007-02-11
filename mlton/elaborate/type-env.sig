@@ -60,7 +60,6 @@ signature TYPE_ENV =
             val minTime: t * Time.t -> unit
             val new: unit -> t
             val record: t SortedRecord.t -> t
-            val toString: t -> string
             (* make two types identical (recursively).  side-effecting. *)
             val unify:
                t * t * {error: Layout.t * Layout.t -> unit,

@@ -48,7 +48,6 @@ signature MATCH_COMPILE_STRUCTS =
                           body: (Var.t * Type.t) vector -> t} -> t
             val equal: t * t -> t
             val iff: {test: t, thenn: t, elsee: t, ty: Type.t} -> t
-            val layout: t -> Layout.t
             val lett: {var: Var.t, exp: t, body: t} -> t
             val var: Var.t * Type.t -> t
          end

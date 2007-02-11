@@ -56,6 +56,4 @@ in
        | Word w => str (concat ["0wx", IntInf.format (w, StringCvt.HEX)])
 end
 
-val toString = Layout.toString o layout
-
 end

@@ -506,8 +506,6 @@ structure Type =
             end
       end
 
-      val toString = Layout.toString o layout
-
       fun admitsEquality t =
          case Equality.toBoolOpt (equality t) of
             NONE =>

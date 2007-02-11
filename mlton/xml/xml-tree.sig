@@ -59,7 +59,6 @@ signature XML_TREE =
             type t
 
             val arg: t -> Var.t
-            val argType: t -> Type.t
             val body: t -> exp
             val dest: t -> {arg: Var.t,
                             argType: Type.t,
@@ -83,7 +82,6 @@ signature XML_TREE =
 
             val layout: t -> Layout.t
             val mono: Var.t -> t
-            val targs: t -> Type.t vector
             val var: t -> Var.t
          end
 
@@ -210,7 +208,6 @@ signature XML_TREE =
                          body: t,
                          bodyType: Type.t,
                          mayInline: bool} -> t
-            val layout: t -> Layout.t
             val let1: {var: Var.t, exp: t, body: t} -> t
             val lett: {decs: Dec.t list, body: t} -> t
             val monoVar: Var.t * Type.t -> t

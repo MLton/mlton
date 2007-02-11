@@ -27,36 +27,6 @@ fun split id =
       (strids, id)
    end
 
-fun prepend (id, strid) =
-   let
-      val (T {strids, id}, region) = dest id
-   in
-      makeRegion (T {strids = strid :: strids, id = id},
-                 region)
-   end
-
-fun prepends (id, strids') =
-   let
-      val (T {strids, id}, region) = dest id
-   in
-      makeRegion (T {strids = strids' @ strids, id = id},
-                 region)
-   end
-
-fun isLong id =
-   let
-      val T {strids, ...} = node id
-   in
-      not (List.isEmpty strids)
-   end
-
-fun toId id =
-   let
-      val T {id, ...} = node id
-   in
-      id
-   end
-
 val equals =
    fn (id, id') =>
    let
@@ -122,7 +92,5 @@ fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
                      id = Id.fromSymbol id},
                   region)
    end
-
-val bogus = short Id.bogus
 
 end

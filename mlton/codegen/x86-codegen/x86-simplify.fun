@@ -2951,28 +2951,6 @@ struct
                        | _ => false)
                   then NONE
                   else let
-(*
-                          val label = let
-                                        val (entry,_) = entry
-                                      in 
-                                        Entry.label entry
-                                      end
-                          val {dsts, ...} = Instruction.srcs_dsts instruction
-                          val _ = print (Label.toString label)
-                          val _ = print ": "
-                          val _ = print (Instruction.toString instruction)
-                          val _ = print ": "
-                          val _ = Option.app
-                                  (dsts,
-                                   fn dsts 
-                                   => List.foreach
-                                   (dsts,
-                                    fn operand 
-                                    => (print (Operand.toString operand);
-                                        print " ")))
-                          val _ = print "\n"
-*)
-
                           val {statements, live}
                             = LivenessBlock.reLivenessStatements
                               {statements = List.rev start,
@@ -4159,16 +4137,6 @@ struct
                 jumpInfo : x86JumpInfo.t} :
                Chunk.t
     = let
-        fun changedChunk_msg 
-            ({...} : {chunk : Chunk.t, changed: bool, msg: string})
-          = ()
-        fun changedBlock_msg 
-            ({...} : {block : Block.t, changed: bool, msg: string})
-          = ()
-        fun changedLivenessBlock_msg 
-            ({...} : {block : x86Liveness.LivenessBlock.t, changed: bool, msg: string})
-          = ()
-
 (*
         fun changedChunk_msg 
             {chunk as Chunk.T {blocks, ...}, changed, msg}
@@ -4181,10 +4149,10 @@ struct
           = if changed then (print ("finished " ^ msg ^ "\n")) else ()
 *)
 
-(*
         fun changedChunk_msg 
-            {chunk as Chunk.T {blocks, ...}, changed, msg}
-          = (print (String.make (60, #"*"));
+            {chunk = Chunk.T {blocks, ...}, changed, msg}
+          = if not changed then () else
+            (print (String.make (60, #"*"));
              print "\n";
              print msg;
              print "\n";
@@ -4204,7 +4172,8 @@ struct
 
         fun changedBlock_msg 
             {block as Block.T {entry, ...}, changed, msg}
-          = (print (String.make (60, #"*"));
+          = if not changed then () else
+            (print (String.make (60, #"*"));
              print "\n";
              print msg;
              print "\n";
@@ -4222,7 +4191,8 @@ struct
 
         fun changedLivenessBlock_msg 
             {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
-          = (print (String.make (60, #"*"));
+          = if not changed then () else 
+            (print (String.make (60, #"*"));
              print "\n";
              print msg;
              print "\n";
@@ -4237,7 +4207,14 @@ struct
                        "\n        "),
                       "\n"]);
               x86Liveness.LivenessBlock.printBlock block))
-*)
+
+        val debug = false
+        val changedChunk_msg : {chunk : Chunk.t, changed: bool, msg: string} -> unit =
+           if debug then changedChunk_msg else (fn _ => ())
+        val changedBlock_msg : {block : Block.t, changed: bool, msg: string} -> unit =
+           if debug then changedBlock_msg else (fn _ => ())
+        val changedLivenessBlock_msg : {block : x86Liveness.LivenessBlock.t, changed: bool, msg: string} -> unit =
+           if debug then changedLivenessBlock_msg else (fn _ => ())
 
         fun checkLivenessBlock
             {block, block', msg}

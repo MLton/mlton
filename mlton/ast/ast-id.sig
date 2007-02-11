@@ -19,15 +19,10 @@ signature AST_ID =
       type t
       sharing type obj = t
 
-      val < : t * t -> bool
-      val <= : t * t -> bool
-      val > : t * t -> bool
-      val >= : t * t -> bool
       val bogus: t
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val fromSymbol: Symbol.t * Region.t -> t
-      val hash: t -> Word.t
       val isSymbolic: t -> bool
       val layout: t -> Layout.t
       val toString: t -> string

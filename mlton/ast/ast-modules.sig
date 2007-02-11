@@ -30,7 +30,6 @@ signature AST_MODULES =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val var: Sigid.t -> t
             val wheree: t * {tyvars: Tyvar.t vector,
                              longtycon: Longtycon.t,
                              ty: Type.t} vector * Region.t -> t
@@ -99,10 +98,7 @@ signature AST_MODULES =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val var: Longstrid.t -> t
-            val structt: strdec -> t
             val constrained: t * SigConst.t -> t
-            val app: Fctid.t * t -> t
             val lett: strdec * t -> t
 
             val layout: t -> Layout.t
@@ -125,12 +121,7 @@ signature AST_MODULES =
             val coalesce: t -> t
             val core: Dec.t -> t
             val layout: t -> Layout.t
-            val locall: t * t -> t
             val openn: Longstrid.t vector -> t
-            val seq: t list -> t
-            val structuree: {name: Strid.t,
-                             def: Strexp.t,
-                             constraint: SigConst.t} vector -> t
          end
       sharing type Strdec.t = Strexp.strdec
 
@@ -160,12 +151,6 @@ signature AST_MODULES =
 
             val checkSyntax: t -> unit
             val fromExp: Exp.t -> t
-            val functorr: {name: Fctid.t,
-                           arg: FctArg.t,
-                           result: SigConst.t,
-                           body: Strexp.t} vector -> t
             val layout: t -> Layout.t
-            val signaturee: (Sigid.t * Sigexp.t) vector -> t
-            val strdec: Strdec.t -> t
          end
    end

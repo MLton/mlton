@@ -62,7 +62,6 @@ signature X86_LIVENESS =
                            statements: (x86.Assembly.t * Liveness.t) list,
                            transfer: (x86.Transfer.t * Liveness.t)}
 
-        val toString : t -> string
         val printBlock : t -> unit
         val toLivenessEntry : {entry: x86.Entry.t,
                                live: LiveSet.t} ->

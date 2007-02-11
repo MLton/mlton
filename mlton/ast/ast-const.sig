@@ -27,5 +27,4 @@ signature AST_CONST =
 
       val layout: t -> Layout.t
       val ordToString: IntInf.t -> string
-      val toString: t -> string
    end

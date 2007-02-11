@@ -56,7 +56,6 @@ signature AST_ATOMS =
             val fromCon: Con.t -> t
             val toVar: t -> Var.t
             val toCon: t -> Con.t
-            val toFctid: t -> Fctid.t
          end
 
       structure Longtycon:
@@ -72,10 +71,7 @@ signature AST_ATOMS =
          sig
             include LONGID
 
-            val fromLongcon: Longcon.t -> t
-            val toLongvar: t -> Longvar.t
             val toLongcon: t -> Longcon.t
-            val toLongstrid: t -> Longstrid.t
          end sharing Longvid.Id = Vid
 
       sharing Strid = Longtycon.Strid = Longvar.Strid = Longcon.Strid

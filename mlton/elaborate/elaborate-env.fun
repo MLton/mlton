@@ -1953,7 +1953,6 @@ in
 end
 
 val peekLongcon = PeekResult.toOption o peekLongcon
-val peekLongtycon = PeekResult.toOption o peekLongtycon
 
 (* ------------------------------------------------- *)
 (*                      extend                       *)

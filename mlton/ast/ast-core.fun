@@ -96,7 +96,6 @@ structure Pat =
       fun make n = makeRegion (n, Region.bogus)
 
       val wild = make Wild
-      val const = make o Const
       val constraint = make o Constraint
       val layered = make o Layered
 
@@ -232,11 +231,6 @@ structure PrimKind =
       structure SymbolAttribute =
          struct
             datatype t = Alloc
-
-            val toString: t -> string =
-               fn Alloc => "alloc"
-
-            val layout = Layout.str o toString
          end
 
       datatype t =
@@ -578,13 +572,6 @@ and checkSyntaxDec (d: dec): unit =
           ; Vector.foreach (vbs, fn {exp, pat} =>
                             (checkSyntaxExp exp
                              ; Pat.checkSyntax pat)))
-
-structure Match =
-   struct
-      open Match
-
-      val layout = layoutMatch
-   end
 
 structure Exp =
    struct

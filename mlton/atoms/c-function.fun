@@ -92,6 +92,8 @@ in
    fun target z = make #target z
    fun writesStackTop z = make #writesStackTop z
 end
+(* quell unused warnings *)
+val _ = (modifiesFrontier, readsStackTop, writesStackTop)
 
 fun equals (f, f') = Target.equals (target f, target f')
 

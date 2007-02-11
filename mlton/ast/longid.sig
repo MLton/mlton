@@ -25,18 +25,9 @@ signature LONGID =
       include WRAPPED sharing type node' = node
                       sharing type obj = t
 
-      val bogus: t
       val fromSymbols: Symbol.t list * Region.t -> t
-      val isLong: t -> bool (* returns true if the list of strids is nonempty *)
       val long: Strid.t list * Id.t -> t
-      (* prepend with a path: 
-       * prepend (([B, C], x), A) = ([A, B, C], x)
-       * prepends (([C, D], x), [A, B]) = ([A, B, C, D], x)
-       *)
-      val prepend: t * Strid.t -> t
-      val prepends: t * Strid.t list -> t
       val short: Id.t -> t
       val split: t -> Strid.t list * Id.t
-      val toId: t -> Id.t
       val toString: t -> string
    end

@@ -729,6 +729,8 @@ structure Exp =
                Base.equals (b1, b2, Var.equals) andalso i1 = i2
           | (Var x, Var x') => Var.equals (x, x')
           | _ => false
+      (* quell unused warning *)
+      val _ = equals
 
       local
          val newHash = Random.word
@@ -755,6 +757,8 @@ structure Exp =
                              Base.hash (base, Var.hash) + Word.fromInt offset)
              | Var x => Var.hash x
       end
+      (* quell unused warning *)
+      val _ = hash
    end
 datatype z = datatype Exp.t
 
@@ -999,6 +1003,8 @@ structure Return =
                             | Handler.Dead => handler
                             | Handler.Handle _ => handler)}
           | Tail => r
+      (* quell unused warning *)
+      val _ = compose
 
       local
          val newHash = Random.word
@@ -1067,6 +1073,8 @@ structure Transfer =
 
       fun foreachFunc (t, func) =
          foreachFuncLabelVar (t, func, fn _ => (), fn _ => ())
+      (* quell unused warning *)
+      val _ = foreachFunc
 
       fun foreachLabelVar (t, label, var) =
          foreachFuncLabelVar (t, fn _ => (), label, var)
@@ -1106,6 +1114,8 @@ structure Transfer =
          end
 
       fun replaceLabel (t, f) = replaceLabelVar (t, f, fn x => x)
+      (* quell unused warning *)
+      val _ = replaceLabel
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
       local open Layout
@@ -1188,6 +1198,8 @@ structure Transfer =
                varsEquals (args, args') andalso
                Label.equals (return, return')
           | _ => false
+      (* quell unused warning *)
+      val _ = equals
 
       local
          val newHash = Random.word
@@ -1221,6 +1233,8 @@ structure Transfer =
              | Return xs => hashVars (xs, return)
              | Runtime {args, return, ...} => hashVars (args, Label.hash return)
       end
+      (* quell unused warning *)
+      val _ = hash
    end
 datatype z = datatype Transfer.t
 
@@ -1767,6 +1781,8 @@ structure Function =
                  returns = returns,
                  start = start}
          end
+      (* quell unused warning *)
+      val _ = alphaRename
 
       fun profile (f: t, sourceInfo): t =
          if !Control.profile = Control.ProfileNone

@@ -132,7 +132,6 @@ structure VarExp =
       local
          fun make f (T r) = f r
       in
-         val targs = make #targs
          val var = make #var
       end
 
@@ -464,6 +463,8 @@ structure Exp =
                   handleExp = f,
                   handleBoundVar = ignore,
                   handleVarExp = ignore}
+      (* quell unused warning *)
+      val _ = foreachExp
 
       fun hasPrim (e, f) =
          Exn.withEscape
@@ -481,10 +482,9 @@ structure Exp =
          in foreachPrimExp (e, fn _ => inc ());
             !n
          end
-
-(*
       val size = Trace.trace ("XmlTree.Exp.size", Layout.ignore, Int.layout) size
-*)
+      (* quell unused warning *)
+      val _ = size
 
       fun clear (e: t): unit =
          let open PrimExp
@@ -538,7 +538,6 @@ structure Lambda =
          fun make f (Lam r) = f r
       in
          val arg = make #arg
-         val argType = make #argType
          val body = make #body
          val mayInline = make #mayInline
       end
@@ -591,8 +590,6 @@ structure DirectExp =
       fun send (e: t, k: Cont.t): Exp.t = e k
 
       fun toExp e = send (e, Cont.id)
-
-      val layout = Exp.layout o toExp
 
       fun fromExp (Exp {decs, result}, ty): t =
          fn k => Exp.prefixs (k (Var result, ty), decs)
@@ -824,16 +821,6 @@ structure DirectExp =
           end)
    end
 
-structure Exp =
-   struct
-      open Exp
-
-      fun unit () =
-         let open DirectExp
-         in toExp (tuple {exps = Vector.new0 (), ty = Type.unit})
-         end
-   end
-
 (*---------------------------------------------------*)
 (*                     Datatype                      *)
 (*---------------------------------------------------*)
@@ -883,10 +870,6 @@ structure Program =
                            ; Vector.foreach (tyvars, Tyvar.clear)
                            ; Vector.foreach (cons, Con.clear o #con)))
           ; Exp.clear body)
-
-      val empty = T {datatypes = Vector.new0 (),
-                     body = Exp.unit (),
-                     overflow = NONE}
 
       fun layoutStats (T {datatypes, body, ...}) =
          let

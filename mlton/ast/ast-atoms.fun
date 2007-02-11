@@ -92,8 +92,6 @@ structure Vid =
       in
          val toCon = make Con.fromSymbol
          val toVar = make Var.fromSymbol
-         val toFctid = make Fctid.fromSymbol
-         val toStrid = make Strid.fromSymbol
       end
    end
 
@@ -133,22 +131,13 @@ structure Longvid =
                             structure Symbol = Symbol)
 
       open L
-      fun fromLongcon (c: Longcon.t): t =
-         let
-            val (strids, id) = Longcon.split c
-         in
-            makeRegion (T {strids = strids, id = Vid.fromCon id},
-                        Longcon.region c)
-         end
       local
          fun to (make,node, conv) x =
             let val (T {strids, id}, region) = dest x
             in make (node {strids = strids, id =  conv id}, region)
             end
       in
-         val toLongvar = to (Longvar.makeRegion, Longvar.T, Vid.toVar)
          val toLongcon = to (Longcon.makeRegion, Longcon.T, Vid.toCon)
-         val toLongstrid = to (Longstrid.makeRegion, Longstrid.T, Vid.toStrid)
       end
    end
 
@@ -198,7 +187,7 @@ structure Type =
       open Wrap
       datatype node =
          Con of Longtycon.t * t vector
-       | Record of node Wrap.t Record.t (* kit barfs on t Record.t *)
+       | Record of t Record.t
        | Var of Tyvar.t
       withtype t = node Wrap.t
       type node' = node

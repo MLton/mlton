@@ -212,7 +212,6 @@ signature ELABORATE_ENV =
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
       val peekLongcon:
          t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t option) option
-      val peekLongtycon: t * Ast.Longtycon.t -> TypeStr.t option
       val processDefUse: t -> unit
       (* scope f evaluates f () in a new scope so that extensions that occur
        * during f () are forgotten afterwards.

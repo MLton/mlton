@@ -463,32 +463,6 @@ struct
                          statements: (Assembly.t * Liveness.t) list,
                          transfer: Transfer.t * Liveness.t}
 
-      fun toString (T {entry, statements, transfer, ...})
-        = concat [let
-                    val (entry,info) = entry
-                  in
-                    concat[Entry.toString entry,
-                           "\n",
-                           Liveness.toString info,
-                           "\n"]
-                  end,
-                  List.fold
-                  (statements,
-                   "",
-                   fn ((asm,info),s)
-                    => concat [s,
-                               Assembly.toString asm,
-                               "\n",
-                               Liveness.toString info]),
-                  let
-                    val (trans,info) = transfer
-                  in
-                    concat[Transfer.toString trans,
-                           "\n",
-                           Liveness.toString info,
-                           "\n"]
-                  end]
-
       fun printBlock (T {entry, statements, transfer, ...})
         = (let
              val (entry,info) = entry

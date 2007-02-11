@@ -28,11 +28,6 @@ signature AST_MLBS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val bas: basdec -> t
-            val lett: basdec * t -> t
-            val var: Basid.t -> t
-
-            val checkSyntax: t -> unit
             val layout: t -> Layout.t
          end
 
@@ -53,15 +48,7 @@ signature AST_MLBS =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val ann: string * Region.t * t -> t
-            val basis: {name: Basid.t, def: Basexp.t} vector -> t
-            val defs: ModIdBind.t -> t
             val empty: t
-            val locall: t * t -> t
-            val mlb: {fileAbs: File.t, fileUse: File.t} * t Promise.t -> t
-            val openn: Basid.t vector -> t
-            val prim: t
-            val prog: {fileAbs: File.t, fileUse: File.t} * Program.t Promise.t -> t
             val seq: t list -> t
 
             val checkSyntax: t -> unit

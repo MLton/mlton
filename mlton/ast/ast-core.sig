@@ -65,7 +65,6 @@ signature AST_CORE =
             include WRAPPED sharing type node' = node
                             sharing type obj = t
 
-            val const: Const.t -> t
             val constraint: t * Type.t -> t
             val layered: {fixop: Fixop.t,
                           var: Var.t,
@@ -91,8 +90,6 @@ signature AST_CORE =
             structure SymbolAttribute:
                sig
                   datatype t = Alloc
-
-                  val layout: t -> Layout.t
                end
 
             datatype t =
@@ -179,8 +176,6 @@ signature AST_CORE =
             include WRAPPED
             sharing type node' = node
             sharing type obj = t
-
-            val layout: t -> Layout.t
          end where type t = Exp.match
 
       structure EbRhs:
