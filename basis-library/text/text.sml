@@ -15,3 +15,14 @@ structure Text: TEXT =
       structure String = String
       structure Substring = Substring
    end
+
+structure WideText: TEXT =
+   struct
+      structure Char = WideChar
+      structure CharArray = WideCharArray
+      structure CharArraySlice = WideCharArraySlice
+      structure CharVector = WideCharVector
+      structure CharVectorSlice = WideCharVectorSlice
+      structure String = WideString
+      structure Substring = WideSubstring
+   end

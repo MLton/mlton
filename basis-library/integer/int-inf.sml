@@ -84,30 +84,30 @@ structure IntInf: INT_INF_EXTRA =
              | _ => NONE
 
          local
-            val op <= = PreChar.<=
+            val op <= = Char.<=
          in
             fun octDig (ch: char): W.word option =
                if #"0" <= ch andalso ch <= #"7"
-                  then SOME (W.fromInt (Int.- (PreChar.ord ch, 
-                                               PreChar.ord #"0")))
+                  then SOME (W.fromInt (Int.- (Char.ord ch, 
+                                               Char.ord #"0")))
                else NONE
 
             fun decDig (ch: char): W.word option =
                if #"0" <= ch andalso ch <= #"9"
-                  then SOME (W.fromInt (Int.- (PreChar.ord ch, 
-                                               PreChar.ord #"0")))
+                  then SOME (W.fromInt (Int.- (Char.ord ch, 
+                                               Char.ord #"0")))
                else NONE
 
             fun hexDig (ch: char): W.word option =
                if #"0" <= ch andalso ch <= #"9"
-                  then SOME (W.fromInt (Int.- (PreChar.ord ch, 
-                                               PreChar.ord #"0")))
+                  then SOME (W.fromInt (Int.- (Char.ord ch, 
+                                               Char.ord #"0")))
                else if #"a" <= ch andalso ch <= #"f"
-                  then SOME (W.fromInt (Int.- (PreChar.ord ch, 
-                                               Int.- (PreChar.ord #"a", 0xa))))
+                  then SOME (W.fromInt (Int.- (Char.ord ch, 
+                                               Int.- (Char.ord #"a", 0xa))))
                else if #"A" <= ch andalso ch <= #"F"
-                  then SOME (W.fromInt (Int.- (PreChar.ord ch, 
-                                               Int.- (PreChar.ord #"A", 0xA))))
+                  then SOME (W.fromInt (Int.- (Char.ord ch, 
+                                               Int.- (Char.ord #"A", 0xA))))
                else NONE
          end
 
@@ -231,24 +231,23 @@ structure IntInf: INT_INF_EXTRA =
                     : (int, 'a) reader =
             let
                fun reader (s: 'a): (int * 'a) option =
-                  case cread s of
+                  case cread (StringCvt.skipWS cread s) of
                      NONE => NONE
                    | SOME (ch, s') =>
-                        if PreChar.isSpace ch then reader s'
-                        else let
-                                val (isNeg, s'') =
-                                   case ch of
-                                      #"+" => (false, s')
-                                    | #"-" => (true, s')
-                                    | #"~" => (true, s')
-                                    | _ => (false, s)
-                             in
-                                if isNeg 
-                                   then case uread s'' of
-                                           NONE => NONE
-                                         | SOME (abs, s''') => SOME (~ abs, s''')
-                                   else uread s''
-                             end
+                       let
+                          val (isNeg, s'') =
+                             case ch of
+                                #"+" => (false, s')
+                              | #"-" => (true, s')
+                              | #"~" => (true, s')
+                              | _ => (false, s)
+                       in
+                          if isNeg 
+                             then case uread s'' of
+                                     NONE => NONE
+                                   | SOME (abs, s''') => SOME (~ abs, s''')
+                             else uread s''
+                       end
             in
                reader
             end
