@@ -24,7 +24,7 @@ val word =
    @ List.map (List.tabulate (32, fn i => i + 1) @ [64],
                fn i => concat ["Word", Int.toString i])
 
-val text = ["Char", "String"]
+val text = ["Char", "WideChar", "String", "WideString"]
 
 (* Order matters here in the appends, since the first element will be the
  * default.
