@@ -14,6 +14,14 @@
       (error 'error (concat "Error: " (apply (function format) str objs) ".")))
   (defalias 'def-use-error (function error)))
 
+;; In Gnu Emacs, `buffer-file-truename' is abbreviated while in XEmacs
+;; it isn't.
+(defun def-use-buffer-file-truename ()
+  "Returns the true filename of the current buffer."
+  (let ((name (buffer-file-name)))
+    (when name
+      (def-use-file-truename name))))
+
 (defvar def-use-file-truename-table
   (make-hash-table :test 'equal :weakness 'key)
   "Weak hash table private to `def-use-file-truename'.")
@@ -33,7 +41,7 @@
   (let ((truename (def-use-file-truename file)))
     (loop for buffer in (buffer-list) do
       (if (with-current-buffer buffer
-            (string= buffer-file-truename truename))
+            (string= (def-use-buffer-file-truename) truename))
           (return buffer)))))
 
 (defun def-use-find-file (file &optional other-window)

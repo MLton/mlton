@@ -124,7 +124,7 @@ end of the symbol at the point.")
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
 current buffer."
-  (let ((src buffer-file-truename))
+  (let ((src (def-use-buffer-file-truename)))
     (when src
       (def-use-ref src
         (def-use-point-to-pos
@@ -200,7 +200,7 @@ position."
     (def-use-error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
-   ((not (equal buffer-file-truename (def-use-ref-src ref)))
+   ((not (equal (def-use-buffer-file-truename) (def-use-ref-src ref)))
     (def-use-find-file (def-use-ref-src ref))))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
@@ -398,7 +398,7 @@ the symbol."
                  (mapc (function
                         (lambda (pos)
                           (def-use-highlight-ref length pos 'def-use-use-face)))
-                       (gethash buffer-file-truename file-to-poss))))
+                       (gethash (def-use-buffer-file-truename) file-to-poss))))
               (buffer-list))
         (let* ((ref (def-use-sym-ref sym))
                (buffer (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
