@@ -22,8 +22,6 @@ type t = node Region.Wrap.t
 type node' = node
 type obj = t
 
-val equals = fn _ => Error.unimplemented "AstConst.equals"
-
 fun ordToString (c: IntInf.t): string =
       let
          fun loop (n: int, c: IntInf.t, ac: char list) =
@@ -57,7 +55,5 @@ in
             str (concat ["\"", concat (Vector.toListMap (s, ordToString)), "\""])
        | Word w => str (concat ["0wx", IntInf.format (w, StringCvt.HEX)])
 end
-
-val toString = Layout.toString o layout
 
 end

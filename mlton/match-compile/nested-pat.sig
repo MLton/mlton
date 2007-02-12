@@ -46,12 +46,10 @@ signature NESTED_PAT =
       val replaceTypes: t * (Type.t -> Type.t) -> t
       val tuple: t vector -> t
       val ty: t -> Type.t
-      val unit: t
       (* varsAndTypes returns a list of the variables in the pattern, along with
        * their types.  It is used for match compilation in order to build a
        * function that abstracts over the expression of a case rule p => e.
        * See infer.fun.
        *)
       val varsAndTypes: t -> (Var.t * Type.t) list
-      val wild: Type.t -> t
    end

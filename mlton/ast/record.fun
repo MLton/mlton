@@ -19,10 +19,6 @@ datatype 'a t =
 
 val tuple = Tuple
 
-val isTuple =
-   fn Tuple _ => true
-    | _ => false
-
 fun toVector r =
    case r of
       Tuple v => Vector.mapi (v, fn (i, x) => (Field.Int i, x))
@@ -50,15 +46,6 @@ fun fromVector v =
          then Tuple (Vector.map (v, #2))
       else Record v
    end
-
-fun equals (r, r', eq) =
-   case (r, r') of
-      (Tuple v, Tuple v') => Vector.equals (v, v', eq)
-    | (Record fs, Record fs') =>
-         Vector.equals
-         (fs, sort fs', fn ((f, v), (f', v')) =>
-          Field.equals (f, f') andalso eq (v, v'))
-    | _ => false
 
 val peek: 'a t * Field.t -> 'a option =
    fn (r, f) =>
@@ -89,13 +76,6 @@ fun exists (r, p) =
 
 fun forall (r, p) = not (exists (r, not o p))
 
-fun foldi (r, b, f) =
-   case r of
-      Tuple xs => Vector.foldi (xs, b, fn (i, x, b) => f (Field.Int i, x, b))
-    | Record r => Vector.fold (r, b, fn ((i, x), b) => f (i, x, b))
-
-fun fold (r, b, f) = foldi (r, b, fn (_, a, b) => f (a, b))
-
 fun map (r: 'a t, f: 'a -> 'b): 'b t =
    case r of
       Tuple xs => Tuple (Vector.map (xs, f))
@@ -117,12 +97,6 @@ fun change (r: 'a t, f: 'a vector -> 'b vector * 'c): 'b t * 'c =
                   end
 
 fun zip z = fromVector (Vector.zip z)
-
-fun unzip r =
-   case r of
-      Tuple v => (Vector.tabulate (Vector.length v, Field.Int),
-                  v)
-    | Record r => Vector.unzip r
 
 fun layout {record, layoutTuple, separator, extra, layoutElt} =
    case (record, extra) of

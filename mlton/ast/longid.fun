@@ -27,36 +27,6 @@ fun split id =
       (strids, id)
    end
 
-fun prepend (id, strid) =
-   let
-      val (T {strids, id}, region) = dest id
-   in
-      makeRegion (T {strids = strid :: strids, id = id},
-                 region)
-   end
-
-fun prepends (id, strids') =
-   let
-      val (T {strids, id}, region) = dest id
-   in
-      makeRegion (T {strids = strids' @ strids, id = id},
-                 region)
-   end
-
-fun isLong id =
-   let
-      val T {strids, ...} = node id
-   in
-      not (List.isEmpty strids)
-   end
-
-fun toId id =
-   let
-      val T {id, ...} = node id
-   in
-      id
-   end
-
 val equals =
    fn (id, id') =>
    let
@@ -90,14 +60,37 @@ val toString = Layout.toString o layout
 
 fun fromSymbols (ss: Symbol.t list, region: Region.t): t =
    let
-      val (strids, id) = List.splitLast ss
+      val srs =
+         case Region.left region of
+             NONE => List.map (ss, fn s => (s, region))
+           | SOME p =>
+             let
+                val file = SourcePos.file p
+                val line = SourcePos.line p
+             in
+                List.unfold
+                ((ss, SourcePos.column p),
+                 fn (s::ss, cl) =>
+                    let
+                       val cr = cl + String.length (Symbol.toString s)
+                    in
+                       SOME
+                       ((s, Region.make
+                            {left = SourcePos.make {column = cl,
+                                                    file = file,
+                                                    line = line},
+                             right = SourcePos.make {column = cr,
+                                                     file = file,
+                                                     line = line}}),
+                        (ss, cr + 1))
+                    end
+                  | ([], _) => NONE)
+             end
+      val (strids, id) = List.splitLast srs
    in
-      makeRegion (T {strids = List.map (strids, fn s =>
-                                        Strid.fromSymbol (s, region)),
-                     id = Id.fromSymbol (id, region)},
+      makeRegion (T {strids = List.map (strids, Strid.fromSymbol),
+                     id = Id.fromSymbol id},
                   region)
    end
-
-val bogus = short Id.bogus
 
 end

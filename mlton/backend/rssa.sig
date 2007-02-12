@@ -67,7 +67,6 @@ signature RSSA =
             val bool: bool -> t
             val cast: t * Type.t -> t
             val layout: t -> Layout.t
-            val foreachVar: t * (Var.t -> unit) -> unit
             val replaceVar: t * (Var.t -> t) -> t
             val ty: t -> Type.t
             val word: WordX.t -> t
@@ -182,13 +181,10 @@ signature RSSA =
                      statements: Statement.t vector,
                      transfer: Transfer.t}
 
-            val args: t -> (Var.t * Type.t) vector
             val clear: t -> unit
             val kind: t -> Kind.t
             val label: t -> Label.t
             val layout: t -> Layout.t
-            val statements: t -> Statement.t vector
-            val transfer: t -> Transfer.t
          end
 
       structure Function:
@@ -216,7 +212,6 @@ signature RSSA =
                       raises: Type.t vector option,
                       returns: Type.t vector option,
                       start: Label.t} -> t
-            val start: t -> Label.t
          end
 
       structure Program:

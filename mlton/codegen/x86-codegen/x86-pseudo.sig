@@ -66,10 +66,7 @@ signature X86_PSEUDO =
         val const_char : char -> t
         val const_int : int -> t
         val const_word : word -> t
-        val deConst : t -> const option
         val label : Label.t -> t
-        val unexp : {oper: un,
-                     exp: t} -> t
         val binexp : {oper: bin,
                       exp1: t,
                       exp2: t} -> t
@@ -415,9 +412,6 @@ signature X86_PSEUDO =
        sig
           datatype t = T of {size: int, 
                              frameLayoutsIndex: int}
-
-          val frameInfo : {size: int, 
-                           frameLayoutsIndex: int} -> t
        end
 
     structure Entry:

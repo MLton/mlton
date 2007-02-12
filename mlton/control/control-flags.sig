@@ -251,6 +251,8 @@ signature CONTROL_FLAGS =
           product: int
          } option ref
 
+      val preferAbsPaths: bool ref
+
       (* List of pass names to keep profiling info on. *)
       val profPasses: Regexp.Compiled.t list ref
 

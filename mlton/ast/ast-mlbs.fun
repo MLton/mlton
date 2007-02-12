@@ -155,11 +155,6 @@ structure Basexp =
       type node' = node
       type obj = t
 
-      fun make n = makeRegion (n, Region.bogus)
-      val bas = make o Bas
-      val lett = make o Let
-      val var = make o Var
-      val checkSyntax = checkSyntaxBasexp
       val layout = layoutBasexp
    end
 
@@ -172,16 +167,8 @@ structure Basdec =
       type obj = t
 
       fun make n = makeRegion (n, Region.bogus)
-      val ann = make o Ann
-      val defs = make o Defs
-      val basis = make o Basis
-      val locall = make o Local
       val seq = make o Seq
       val empty = seq []
-      val mlb = make o MLB
-      val openn = make o Open
-      val prim = make Prim
-      val prog = make o Prog
       val checkSyntax = checkSyntaxBasdec
       val layout = layoutBasdec
       val sourceFiles = sourceFiles

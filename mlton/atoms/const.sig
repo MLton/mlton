@@ -49,6 +49,5 @@ signature CONST =
       val string: string -> t
       val toString: t -> string
       val word: WordX.t -> t
-      val word8: Word8.t -> t
       val wordVector: WordXVector.t -> t
    end

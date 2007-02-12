@@ -5,9 +5,20 @@
 
 (require 'cl)
 
-;; Some general purpose Emacs Lisp utility functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SML metadata
+
+(defconst esml-sml-symbolic-chars "-!%&$#+/:<=>?@~`^|*\\"
+  "A string of all Standard ML symbolic characters as defined in section
+2.4 of the Definition.")
+
+(defconst esml-sml-alphanumeric-chars
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'_"
+  "A string of all Standard ML alphanumeric characters as defined in
+section 2.4 of the Definition.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Some general purpose Emacs Lisp utility functions
 
 (defun esml-point-preceded-by (regexp)
   "Determines whether point is immediately preceded by the given regexp.
@@ -36,16 +47,17 @@ point is moved to the end of the string."
   (remove* "" (split-string string separator) :test 'equal))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(defun esml-replace-regexp-in-string (str regexp rep)
-  (if (string-match "XEmacs" emacs-version)
-      (replace-in-string str regexp rep t)
+(if (string-match "XEmacs" emacs-version)
+    (defun esml-replace-regexp-in-string (str regexp rep)
+      (replace-in-string str regexp rep t))
+  (defun esml-replace-regexp-in-string (str regexp rep)
     (replace-regexp-in-string regexp rep str t t)))
 
 ;; workaround for incompatibility between GNU Emacs and XEmacs
-(defun esml-error (str &rest objs)
-  (if (string-match "XEmacs" emacs-version)
-      (error 'error (apply 'format str objs))
-    (apply 'error str objs)))
+(if (string-match "XEmacs" emacs-version)
+    (defun esml-error (str &rest objs)
+      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
+  (defalias 'esml-error (function error)))
 
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."

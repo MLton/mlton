@@ -27,8 +27,6 @@ structure GCField =
        | StackLimit
        | StackTop
 
-      val equals: t * t -> bool = op =
-
 (*       val ty =
  *       fn CanHandle => CType.defaultInt
  *        | CardMap => CType.pointer
@@ -199,10 +197,6 @@ fun typeIndexToHeader typeIndex =
 
 fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
 
-val arrayHeaderSize = Bytes.scale (Bytes.inWord, 3)
-
-val intInfOverhead = Bytes.+ (arrayHeaderSize, Bytes.inWord) (* for the sign *)
-
 val labelSize = Bytes.inWord
 
 val limitSlop = Bytes.fromInt 512
@@ -211,18 +205,11 @@ val normalHeaderSize = Bytes.inWord
 
 val pointerSize = Bytes.inWord
 
-val array0Size =
-   Bytes.+ (arrayHeaderSize, Bytes.inWord) (* for the forwarding pointer *)
-
 val arrayLengthOffset = Bytes.~ (Bytes.scale (Bytes.inWord, 2))
 
 val allocTooLarge = Bytes.fromWord 0wxFFFFFFFC
 
 val headerOffset = Bytes.~ Bytes.inWord
-
-fun normalSize {nonPointers, pointers} =
-   Bytes.+ (Words.toBytes nonPointers,
-            Bytes.scale (pointerSize, pointers))
 
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 

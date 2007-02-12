@@ -233,7 +233,6 @@ structure Sigexp =
       fun make n = makeRegion (n, Region.bogus)
 
       val spec = make o Spec
-      val var = make o Var
 
       val layout = layoutSigexp
    end
@@ -342,10 +341,7 @@ structure Strexp =
 
       val checkSyntax = checkSyntaxStrexp
       fun make n = makeRegion (n, Region.bogus)
-      val var = make o Var
-      val structt = make o Struct
       val constrained = make o Constrained
-      val app = make o App
       val lett = make o Let
       val layout = layoutStrexp
    end
@@ -360,11 +356,8 @@ structure Strdec =
 
       val checkSyntax = checkSyntaxStrdec
       fun make n = makeRegion (n, Region.bogus)
-      val structuree = make o Structure
 
-      val locall = make o Local
       val core = make o Core
-      val seq = make o Seq
 
       val openn = core o Dec.openn
 
@@ -490,9 +483,6 @@ structure Topdec =
 
       fun make n = makeRegion (n, Region.bogus)
       val fromExp = make o Strdec o Strdec.fromExp
-      val functorr = make o Functor
-      val signaturee = make o Signature
-      val strdec = make o Strdec
 
       fun checkSyntax (d: t): unit =
          case node d of

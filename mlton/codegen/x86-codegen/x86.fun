@@ -59,15 +59,6 @@ struct
   structure Size =
     struct
       datatype class = INT | FLT | FPI
-      val class_layout
-        = let
-            open Layout
-          in
-            fn INT => str "INT"
-             | FLT => str "FLT"
-             | FPI => str "FPI"
-          end
-      val class_toString = Layout.toString o class_layout 
 
       datatype t 
         = BYTE | WORD | LONG
@@ -105,6 +96,8 @@ struct
              | FPIQ => str "fpiq"
           end
       val toString' = Layout.toString o layout'
+      (* quell unused warning *)
+      val _ = toString'
 
       val fromBytes : int -> t
         = fn 1 => BYTE
@@ -279,6 +272,8 @@ struct
                               end)
 
       fun coincident (T {reg, ...}) = coincident' reg
+      (* quell unused warning *)
+      val _ = coincident
 
       val registers
         = fn Size.BYTE => byteRegisters
@@ -348,6 +343,8 @@ struct
            | (T {reg, part = X},Size.LONG) => T {reg = reg, part = E}
            | (T {reg, part = E},Size.LONG) => T {reg = reg, part = L}
            | _ => Error.bug "x86.Register.fullPartOf: register,fullsize"
+      (* quell unused warning *)
+      val _ = fullPartOf
     end
 
   structure FltRegister =
@@ -627,14 +624,10 @@ struct
       val const_char = const o Char
       val const_int = const o Int
       val const_word = const o Word
-      val deConst
-        = fn T {immediate = Const c, ...} => SOME c
-           | _ => NONE
       val label = construct o Label
       val deLabel
         = fn T {immediate = Label l, ...} => SOME l
            | _ => NONE
-      val unexp = construct o ImmedUnExp
       val binexp = construct o ImmedBinExp
     end
 
@@ -735,6 +728,8 @@ struct
                                                   exp2 = i})
                        | NONE => SOME i,
              base = base, index = index, scale = scale}
+      (* quell unused warning *)
+      val _ = shift
     end
 
   structure MemLoc =
@@ -3751,8 +3746,6 @@ struct
                      "size = ", Int.toString size, ", ",
                      "frameLayoutsIndex = ", 
                      Int.toString frameLayoutsIndex, "}"]
-
-        val frameInfo = T
      end
 
   structure Entry =
@@ -3855,11 +3848,6 @@ struct
       val cont = Cont
       val handler = Handler
       val creturn = CReturn
-
-      val isNear = fn Jump _ => true
-                    | CReturn {func, ...} 
-                    => not (CFunction.maySwitchThreads func)
-                    | _ => false
     end
 
   structure Transfer =

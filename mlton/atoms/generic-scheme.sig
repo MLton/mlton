@@ -26,13 +26,6 @@ signature GENERIC_SCHEME =
                          ty: ty}
 
       val apply: t * ty vector -> ty
-      val equals: t * t -> bool
-      val fromType: ty -> t
       val layout: t -> Layout.t
-      val make0: ty -> t
-      val make1: (ty -> ty) -> t
-      val make2: (ty * ty -> ty) -> t
-      val makeEqual1: (ty -> ty) -> t
       val ty: t -> ty
-      val tyvars: t -> tyvar vector
    end

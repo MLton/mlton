@@ -10,7 +10,6 @@ struct
 
 open S
 
-type int = Int.t
 type word = Word.t
 
 val modulus: WordSize.t -> IntInf.t =
@@ -75,8 +74,6 @@ fun equals (w, w') = WordSize.equals (size w, size w') andalso value w = value w
 fun fromChar (c: Char.t) = make (Int.toIntInf (Char.toInt c), WordSize.byte)
 
 val fromIntInf = make
-
-fun fromWord8 w = make (Word8.toIntInf w, WordSize.byte)
 
 fun isAllOnes w = value w = modulus (size w) - 1
 
@@ -154,23 +151,6 @@ fun ror (w, w') =
    in
       make (swap (value w, {hi = Bits.toWord b - shift, lo = shift}), s)
    end
-
-fun splice {hi, lo} =
-   fromIntInf (value lo
-               + IntInf.<< (value hi, Bits.toWord (WordSize.bits (size lo))),
-               WordSize.+ (size hi, size lo))
-
-fun split (w, {lo}) =
-   let
-      val {size, value} = dest w
-      val (q, r) = IntInf.quotRem (value, IntInf.<< (1, Bits.toWord lo))
-   in
-      {hi = fromIntInf (q, WordSize.fromBits (Bits.- (WordSize.bits size, lo))),
-       lo = fromIntInf (r, WordSize.fromBits lo)}
-   end
-
-fun bitIsSet (w, i: int) =
-   1 = IntInf.rem (IntInf.~>> (value w, Word.fromInt i), 2)
 
 local
    val make: ((IntInf.t * IntInf.t -> IntInf.t) * string) -> t * t -> t =

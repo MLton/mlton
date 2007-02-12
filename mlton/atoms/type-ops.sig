@@ -6,8 +6,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
-type int = Int.t
-
 signature TYPE_OPS_STRUCTS =
    sig
       structure Tycon: TYCON
@@ -30,36 +28,27 @@ signature TYPE_OPS =
       type wordSize
       type t
 
-      val arg: t -> t    (* arg = #1 o dearrow *)
       val array: t -> t
       val arrow: t * t -> t
       val bool: t
       val con: tycon * t vector -> t
       val deArray: t -> t
-      val deArrayOpt: t -> t option
       val deArrow: t -> t * t
       val deArrowOpt: t -> (t * t) option
       val deConOpt: t -> (tycon * t vector) option
-      val deConConstOpt: t -> (tycon * tycon vector) option
-      val deConConst: t -> (tycon * tycon vector)
       val deRef: t -> t
-      val deRefOpt: t -> t option
       val deTuple: t -> t vector
       val deTupleOpt: t -> t vector option
-      val deTycon: t -> tycon
       val deVector: t -> t
       val deWeak: t -> t
-      val deWeakOpt: t -> t option
       val defaultWord: t
       val exn: t
       val intInf: t
       val isTuple: t -> bool
       val list: t -> t
-      val nth: t * int -> t
       val pointer: t
       val real: realSize -> t
       val reff: t -> t
-      val result: t -> t (* result = #2 o dearrow *)
       val thread: t
       val tuple: t vector -> t
       val unit: t

@@ -25,8 +25,6 @@ signature AST_CONST =
       include WRAPPED sharing type node' = node
                       sharing type obj = t
 
-      val equals: t * t -> bool
       val layout: t -> Layout.t
       val ordToString: IntInf.t -> string
-      val toString: t -> string
    end

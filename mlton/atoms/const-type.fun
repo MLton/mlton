@@ -13,10 +13,4 @@ open S
 
 datatype t = Bool | Real of RealSize.t | String | Word of WordSize.t
 
-val toString =
-   fn Bool => "Bool"
-    | Real rs => "Real" ^ (RealSize.toString rs)
-    | String => "String"
-    | Word ws => "Word" ^ (WordSize.toString ws)
-
 end

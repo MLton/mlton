@@ -31,8 +31,6 @@ signature BINDING_STRENGTH =
    sig
       type t
 
-      val arrow: t
-      val tuple: t
       val unit: t
    end
 
@@ -62,7 +60,6 @@ signature PRIM_TYCONS =
       val intInf: tycon
       val isBool: tycon -> bool
       val isCharX: tycon -> bool
-      val isExn: tycon -> bool
       val isIntX: tycon -> bool
       val isPointer: tycon -> bool
       val isRealX: tycon -> bool

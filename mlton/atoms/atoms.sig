@@ -26,7 +26,6 @@ signature ATOMS' =
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure Con: CON
-      structure Cons: SET
       structure Const: CONST
       structure Ffi: FFI
       structure Func: FUNC
@@ -37,10 +36,8 @@ signature ATOMS' =
       structure RealX: REAL_X
       structure SourceInfo: SOURCE_INFO
       structure Tycon: TYCON
-      structure Tycons: SET
-      structure Var: VAR
+      structure Var: VAR 
       structure Vars: SET
-      structure Tyvars: SET
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
 
@@ -77,7 +74,7 @@ signature ATOMS =
       sharing CFunction = Atoms.CFunction
       sharing CType = Atoms.CType
       sharing Con = Atoms.Con
-      sharing Cons = Atoms.Cons
+      (* sharing Cons = Atoms.Cons *)
       sharing Const = Atoms.Const
       sharing Ffi = Atoms.Ffi
       sharing Field = Atoms.Field
@@ -92,9 +89,9 @@ signature ATOMS =
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
       sharing Tycon = Atoms.Tycon
-      sharing Tycons = Atoms.Tycons
+      (* sharing Tycons = Atoms.Tycons *)
       sharing Tyvar = Atoms.Tyvar
-      sharing Tyvars = Atoms.Tyvars
+      (* sharing Tyvars = Atoms.Tyvars *)
       sharing Var = Atoms.Var
       sharing Vars = Atoms.Vars
       sharing WordSize = Atoms.WordSize

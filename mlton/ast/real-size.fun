@@ -14,12 +14,6 @@ datatype t = R32 | R64
 
 val all = [R32, R64]
 
-val compare =
-   fn (R32, R32) => EQUAL
-    | (R32, _) => LESS
-    | (R64, R64) => EQUAL
-    | _ => GREATER
-
 val equals: t * t -> bool = op =
 
 val memoize: (t -> 'a) -> t -> 'a =
@@ -35,8 +29,6 @@ val memoize: (t -> 'a) -> t -> 'a =
 val toString =
    fn R32 => "32"
     | R64 => "64"
-
-val layout = Layout.str o toString
 
 val bytes: t -> Bytes.t =
    fn R32 => Bytes.fromInt 4

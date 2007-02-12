@@ -73,7 +73,6 @@ signature DIRECT_EXP =
            val select: {tuple: t, 
                         offset: int, 
                         ty: Type.t} -> t
-           val seq: t * t -> t
            val truee: t
            val tuple: {exps: t vector, ty: Type.t} -> t
            val var: Var.t * Type.t -> t

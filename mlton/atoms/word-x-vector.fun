@@ -45,7 +45,9 @@ fun toString (T {elements, elementSize}): string =
 
 val layout = Layout.str o toString
 
-fun equals (v, v') = Vector.equals (elements v, elements v', WordX.equals)
+fun equals (v, v') = 
+    WordSize.equals (elementSize v, elementSize v')
+    andalso Vector.equals (elements v, elements v', WordX.equals)
 
 fun forall (v, f) = Vector.forall (elements v, f)
 

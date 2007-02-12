@@ -140,7 +140,6 @@ signature CORE_ML =
                             argType: Type.t,
                             body: Exp.t,
                             mayInline: bool}
-            val layout: t -> Layout.t
             val make: {arg: Var.t,
                        argType: Type.t,
                        body: Exp.t,

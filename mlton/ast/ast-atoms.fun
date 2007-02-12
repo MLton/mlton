@@ -92,16 +92,7 @@ structure Vid =
       in
          val toCon = make Con.fromSymbol
          val toVar = make Var.fromSymbol
-         val toFctid = make Fctid.fromSymbol
-         val toStrid = make Strid.fromSymbol
       end
-      val bind = fromCon Con.bind
-      val cons = fromCon Con.cons
-      val falsee = fromCon Con.falsee
-      val match = fromCon Con.match
-      val nill = fromCon Con.nill
-      val reff = fromCon Con.reff
-      val truee = fromCon Con.truee
    end
 
 structure Longtycon =
@@ -113,8 +104,6 @@ structure Longtycon =
       open T
 
       val arrow = short Tycon.arrow
-
-      val exn = short Tycon.exn
    end
 
 structure Longvar = Longid (structure Id = Var
@@ -142,31 +131,14 @@ structure Longvid =
                             structure Symbol = Symbol)
 
       open L
-      fun fromLongcon (c: Longcon.t): t =
-         let
-            val (strids, id) = Longcon.split c
-         in
-            makeRegion (T {strids = strids, id = Vid.fromCon id},
-                        Longcon.region c)
-         end
       local
          fun to (make,node, conv) x =
             let val (T {strids, id}, region) = dest x
             in make (node {strids = strids, id =  conv id}, region)
             end
       in
-         val toLongvar = to (Longvar.makeRegion, Longvar.T, Vid.toVar)
          val toLongcon = to (Longcon.makeRegion, Longcon.T, Vid.toCon)
-         val toLongstrid = to (Longstrid.makeRegion, Longstrid.T, Vid.toStrid)
       end
-
-      val bind = short Vid.bind
-      val cons = short Vid.cons
-      val falsee = short Vid.falsee
-      val match = short Vid.match
-      val nill = short Vid.nill
-      val reff = short Vid.reff
-      val truee = short Vid.truee
    end
 
 open Layout
@@ -215,7 +187,7 @@ structure Type =
       open Wrap
       datatype node =
          Con of Longtycon.t * t vector
-       | Record of node Wrap.t Record.t (* kit barfs on t Record.t *)
+       | Record of t Record.t
        | Var of Tyvar.t
       withtype t = node Wrap.t
       type node' = node
@@ -233,8 +205,6 @@ structure Type =
          else make (Con (Longtycon.short c, ts))
 
       fun arrow (t1, t2) = con (Tycon.arrow, Vector.new2 (t1, t2))
-
-      val exn = con (Tycon.exn, Vector.new0 ())
 
       fun layoutApp (tycon, args: 'a vector, layoutArg) =
          case Vector.length args of

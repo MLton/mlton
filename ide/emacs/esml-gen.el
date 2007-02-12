@@ -3,7 +3,6 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(require 'cl)
 (require 'esml-util)
 
 ;; Installation
@@ -27,15 +26,6 @@
 ;; Prelude
 
 ;; TBD: Consider moving these to another place if/when it makes sense.
-(defconst esml-sml-symbolic-chars
-  "-!%&$#+/:<=>?@~`^|*\\"
-  "A string of all Standard ML symbolic characters as defined in section
-2.4 of the Definition.")
-
-(defconst esml-sml-alphanumeric-chars
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'_"
-  "A string of all Standard ML alphanumeric characters as defined in
-section 2.4 of the Definition.")
 
 (defun esml-extract-field-names (pattern-or-type)
   (let ((fields nil))
@@ -94,7 +84,7 @@ the format `[{]id[: ty][,] ...[,] id[}]' where `[]' marks optional parts."
   (let* ((fields (esml-extract-field-names pattern-or-type))
          (n (length fields)))
     (if (< n 2)
-        (error 'invalid-argument "Record must have at least two fields.")
+        (esml-error "%s" "Record must have at least two fields")
       (let ((fields (sort fields 'string-lessp))
             (start (point)))
         (labels ((format-fields
@@ -154,7 +144,7 @@ two characters of a pattern are deleted at the end."
   (interactive "nMaximum number of fields [2-100]: ")
   (if (not (and (<= 2 n)
                 (<= n 100)))
-      (error 'invalid-argument "Number of fields must be between 2 and 100.")
+      (esml-error "%s" "Number of fields must be between 2 and 100")
     (labels ((format-fields
               (fmt n)
               (with-temp-buffer

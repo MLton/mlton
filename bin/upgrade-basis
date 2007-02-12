@@ -219,7 +219,7 @@ structure MLton =
                              (Cygwin, "Cygwin"),
                              (Darwin, "Darwin"),
                              (FreeBSD, "FreeBSD"),
-			     (HPUX, "HPUX"),
+                             (HPUX, "HPUX"),
                              (Linux, "Linux"),
                              (MinGW, "MinGW"),
                              (NetBSD, "NetBSD"),

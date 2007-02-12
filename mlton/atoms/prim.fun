@@ -607,12 +607,10 @@ val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
 val deref = Ref_deref
-val deserialize = MLton_deserialize
 val eq = MLton_eq
 val equal = MLton_equal
 val ffi = FFI
 val ffiSymbol = FFI_Symbol
-val gcCollect = GC_collect
 val intInfEqual = IntInf_equal
 val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
@@ -650,7 +648,6 @@ fun pointerSet ctype =
    end
 
 val reff = Ref_ref
-val serialize = MLton_serialize
 val touch = MLton_touch
 val vectorLength = Vector_length
 val vectorSub = Vector_sub
@@ -661,14 +658,12 @@ val wordEqual = Word_equal
 val wordLshift = Word_lshift
 val wordLt = Word_lt
 val wordMul = Word_mul
-val wordMulCheck = Word_mulCheck
 val wordNeg = Word_neg
 val wordNegCheck = Word_negCheck
 val wordNotb = Word_notb
 val wordOrb = Word_orb
 val wordRshift = Word_rshift
 val wordSub = Word_sub
-val wordSubCheck = Word_subCheck
 val wordToWord = Word_toWord
 
 val isCommutative =
@@ -694,8 +689,6 @@ val mayOverflow =
     | Word_negCheck _ => true
     | Word_subCheck _ => true
     | _ => false
-
-val mayRaise = mayOverflow
 
 val kind: 'a t -> Kind.t =
    fn p =>
@@ -1588,7 +1581,6 @@ fun ('a, 'b) layoutApp (p: 'a t,
 structure Name =
    struct
       datatype t = datatype t
-      val layout = layout
       val toString = toString
    end
 

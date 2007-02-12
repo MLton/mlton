@@ -25,6 +25,8 @@ in
 end
 
 val node = name
+(* quell unused warning *)
+val _ = node
 val toSymbol = name
 
 fun makeRegion (s, r) = T {name = s,
@@ -34,8 +36,12 @@ val fromSymbol = makeRegion
 
 fun makeRegion' (s, x, y) =
    makeRegion (s, Region.make {left = x, right = y})
+(* quell unused warning *)
+val _ = makeRegion'
 
 fun dest (T {name, region, ...}) = (name, region)
+(* quell unused warning *)
+val _ = dest
 
 val bogus = makeRegion (Symbol.bogus, Region.bogus)
 
@@ -52,9 +58,6 @@ val toString = Symbol.toString o name
 
 val layout = String.layout o toString
 
-val hash = Symbol.hash o name
-val hash = Trace.trace ("AstId.hash", layout, Word.layout) hash
-
 (* val left = Region.left o region *)
 (* val right = Region.left o region *)
 
@@ -62,10 +65,6 @@ local
    fun binary (f: string * string -> 'a) (x :t, y: t): 'a =
       f (toString x, toString y)
 in
-   val op < = binary String.<
-   val op > = binary String.>
-   val op >= = binary String.>=
-   val op <= = binary String.<=
    val compare = binary String.compare
 end
 

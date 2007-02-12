@@ -158,8 +158,6 @@ structure Scheme =
    struct
       open Scheme
 
-      fun bogus () = fromType (Type.new ())
-
       fun explainDoesNotAdmitEquality (s: t): Layout.t =
          Type.explainDoesNotAdmitEquality (ty s)
    end
@@ -302,8 +300,6 @@ structure TypeStr =
                                scheme: Scheme.t,
                                uses: Ast.Vid.t Uses.t} vector
 
-            val empty = T (Vector.new0 ())
-
             fun layout (T v) =
                Vector.layout (fn {name, scheme, ...} =>
                               let
@@ -375,10 +371,6 @@ structure TypeStr =
              | Tycon c => Tycon.layout c
          end
 
-      fun bogus (k: Kind.t): t =
-         T {kind = k,
-            node = Scheme (Scheme.bogus ())}
-
       fun abs t =
          case node t of
             Datatype {tycon, ...} => T {kind = kind t,
@@ -390,11 +382,6 @@ structure TypeStr =
             Datatype {tycon, ...} => Type.con (tycon, tys)
           | Scheme s => Scheme.apply (s, tys)
           | Tycon t => Type.con (t, tys)
-
-      fun cons t =
-         case node t of
-            Datatype {cons, ...} => cons
-          | _ => Cons.empty
 
       fun data (tycon, kind, cons) =
          T {kind = kind,
@@ -1255,6 +1242,8 @@ fun sizeMessage (E: t): Layout.t =
    in
       record [("total", Int.layout (size E))]
    end
+(* quell unused warning *)
+val _ = sizeMessage
 
 fun empty () =
    let
@@ -1752,11 +1741,10 @@ fun processDefUse (E as T f) =
                                   (align
                                    (List.map
                                     (uses, fn r =>
-                                     str (concat [case Region.left r of
-                                                     NONE => "NONE"
-                                                   | SOME p =>
-                                                        SourcePos.toString p,
-                                                  " "]))),
+                                     str (case Region.left r of
+                                              NONE => "NONE"
+                                            | SOME p =>
+                                              SourcePos.toString p))),
                                    4)],
                            out)
                        end))
@@ -1965,7 +1953,6 @@ in
 end
 
 val peekLongcon = PeekResult.toOption o peekLongcon
-val peekLongtycon = PeekResult.toOption o peekLongtycon
 
 (* ------------------------------------------------- *)
 (*                      extend                       *)

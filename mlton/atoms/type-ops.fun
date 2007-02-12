@@ -17,7 +17,7 @@ in
    structure RealSize = RealSize
    structure WordSize = WordSize
 end
-datatype realSize = datatype RealSize.t
+type realSize = RealSize.t
 type tycon = Tycon.t
 type wordSize = WordSize.t
 
@@ -64,10 +64,6 @@ fun deUnaryOpt tycon t =
                       else NONE
     | _ => NONE
 
-val deArrayOpt = deUnaryOpt Tycon.array
-val deRefOpt = deUnaryOpt Tycon.reff
-val deWeakOpt = deUnaryOpt Tycon.weak
-
 fun deUnary tycon t =
    case deUnaryOpt tycon t of
       SOME t => t
@@ -97,31 +93,7 @@ fun deTuple t =
       SOME t => t
     | NONE => Error.bug "TypeOps.deTuple"
 
-fun nth (t, n) = Vector.sub (deTuple t, n)
-
 val unitRef = reff unit
-
-fun deTycon t =
-   case deConOpt t of
-      SOME (c, _) => c
-    | NONE => Error.bug "TypeOps.deTycon"
-
-fun deConConstOpt t =
-   Option.map
-   (deConOpt t, fn (c, ts) =>
-    (c, Vector.map (ts, fn t =>
-                    case deConOpt t of
-                       SOME (c, _) => c
-                     | NONE => Error.bug "TypeOps.deConConstOpt")))
-
-fun deConConst t =
-   case deConOpt t of
-      NONE => Error.bug "TypeOps.deConConst"
-    | SOME (c, ts) => (c, Vector.map (ts, fn t =>
-                                      case deConOpt t of
-                                         NONE => Error.bug "TypeOps.deConConst"
-                                       | SOME (c, _) => c))
-
 
 fun deArrowOpt t =
    case deConOpt t of
@@ -135,12 +107,9 @@ fun deArrow t =
       SOME x => x
     | NONE => Error.bug "TypeOps.deArrow"
 
-val dearrow =
+val deArrow =
    Trace.trace 
    ("TypeOps.deArrow", layout, Layout.tuple2 (layout, layout)) 
    deArrow
-
-val arg = #1 o dearrow
-val result = #2 o dearrow
 
 end

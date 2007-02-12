@@ -79,7 +79,6 @@ val name = Name
 val profile = Profile
 val raisee = Raise
 val select = Select
-val seq = Seq
 val word = Const o Const.word
 
 fun tuple (r as {exps, ...}) =

@@ -1,4 +1,4 @@
-;; Copyright (C) 2005 Vesa Karvonen
+;; Copyright (C) 2005-2007 Vesa Karvonen
 ;;
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
@@ -200,7 +200,7 @@ by `esml-mlb-update'.")
 
 (defun esml-mlb-parse-path-variables-from-string (path-map-string)
   (mapcar (function
-           (lambda (s) (apply 'cons (esml-split-string s "[ \t]+"))))
+           (lambda (s) (apply (function cons) (esml-split-string s "[ \t]+"))))
           (esml-split-string path-map-string "[ \t]*\n+[ \t]*")))
 
 (defun esml-mlb-parse-path-variables ()
@@ -247,7 +247,7 @@ by `esml-mlb-update'.")
                 parts)
           (delete-char (- 1 (point))))
         (goto-char 0)))
-    (apply 'concat (reverse parts))))
+    (apply (function concat) (reverse parts))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Syntax and highlighting
@@ -320,7 +320,7 @@ by a space.")
            . font-lock-constant-face)
           ;; annotations
           (,(apply
-             'concat
+             (function concat)
              "\"[ \t]*" esml-mlb-compiler-ann-prefix "?\\("
              (reduce
               (function
@@ -674,7 +674,7 @@ perform context sensitive completion. This command is not idempotent."
                            ".basis"))
                 (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
     (when (file-exists-p tmp-file)
-      (esml-error "temporary basis file already exists: %s" tmp-file))
+      (esml-error "Temporary basis file already exists: %s" tmp-file))
     (save-excursion
       (set-buffer buffer)
       (delete-region (point-min) (point-max)))
@@ -699,8 +699,8 @@ perform context sensitive completion. This command is not idempotent."
                 (toggle-read-only)
                 (delete-file tmp-file))
             (switch-to-buffer buffer))
-          (message event)))))
-    (message "show-basis running...")))
+          (message "%S" event)))))
+    (message "%s" "show-basis running...")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Key Map

@@ -26,17 +26,12 @@ structure Verbosity =
 
 datatype style = No | Assembly | C | Dot | ML
 
-fun preSuf style =
-   let
-      val (p, s) =
-         case style of
-            No => ("", "")
-          | Assembly => ("/* ", " */")
-          | C => ("/* ", " */")
-          | Dot => ("// ", "")
-          | ML => ("(* ", " *)")
-   in (p, s)
-   end
+val preSuf =
+   fn No => ("", "")
+    | Assembly => ("/* ", " */")
+    | C => ("/* ", " */")
+    | Dot => ("// ", "")
+    | ML => ("(* ", " *)")
 
 fun outputHeader (style: style, output: Layout.t -> unit) =
    let

@@ -30,6 +30,8 @@ fun stats () =
                       str " plist length is ",
                       Int.layout (PropertyList.length (plist c))]))
    end
+(* quell unused warning *)
+val _ = stats
 
 fun fromBool b = if b then truee else falsee
 

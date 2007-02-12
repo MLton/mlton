@@ -168,7 +168,6 @@ signature PRIM =
              | Word8Vector_toString (* defunctorize *)
              | World_save (* ssa to rssa *)
 
-            val layout: 'a t -> Layout.t
             val toString: 'a t -> string
          end
 
@@ -205,7 +204,6 @@ signature PRIM =
       val bogus: 'a t
       val bug: 'a t
       val deref: 'a t
-      val deserialize: 'a t
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)
       val equals: 'a t * 'a t -> bool
@@ -218,23 +216,21 @@ signature PRIM =
       val ffi: 'a CFunction.t -> 'a t
       val ffiSymbol: {name: string, cty: CType.t option} -> 'a t
       val fromString: string -> 'a t option
-      val gcCollect: 'a t
       val intInfEqual: 'a t
       val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
        *   same args and has no side effects.
        * isFuntional implies not maySideEffect.
-       * examples: Array_length, MLton_equal, Int_add
+       * examples: Array_length, MLton_equal, Word_add
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
-      (* Int_addCheck, Int_mulCheck, Int_subCheck *)
+      (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
       val mayOverflow: 'a t -> bool
-      val mayRaise: 'a t -> bool
       (* examples: Array_update, Ref_assign
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
@@ -243,7 +239,6 @@ signature PRIM =
       val pointerSet: CType.t -> 'a t
       val name: 'a t -> 'a Name.t
       val reff: 'a t
-      val serialize: 'a t
       val toString: 'a t -> string
       val touch: 'a t
       val vectorLength: 'a t
@@ -255,11 +250,9 @@ signature PRIM =
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t
       val wordMul: WordSize.t * {signed: bool} -> 'a t
-      val wordMulCheck: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordSubCheck: WordSize.t * {signed: bool} -> 'a t
       val wordToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
    end

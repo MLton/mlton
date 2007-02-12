@@ -67,7 +67,10 @@ fun newString (s, {left, right}) =
  *)
 
 local val c = Counter.new 0
-in fun reset () = Counter.reset (c, 0)
+in 
+   fun reset () = Counter.reset (c, 0)
+   (* quell unused warning *)
+   val _ = reset
    fun newNoname {equality} =
       new {name = "a_" ^ Int.toString (Counter.next c),
            equality = equality}

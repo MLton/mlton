@@ -39,7 +39,6 @@ signature X86 =
     structure Size :
       sig
         datatype class = INT | FLT | FPI
-        val class_toString : class -> string
 
         datatype t 
           = BYTE | WORD | LONG 
@@ -156,11 +155,8 @@ signature X86 =
         val const_char : char -> t
         val const_int : int -> t
         val const_word : word -> t
-        val deConst : t -> const option
         val label : Label.t -> t
         val deLabel : t -> Label.t option
-        val unexp : {oper: un, 
-                     exp: t} -> t
         val binexp : {oper: bin, 
                       exp1: t,
                       exp2: t} -> t
@@ -1070,9 +1066,6 @@ signature X86 =
        sig
           datatype t = T of {size: int, 
                              frameLayoutsIndex: int}
-
-          val frameInfo: {size: int, 
-                          frameLayoutsIndex: int} -> t
        end
 
     structure Entry:
@@ -1105,7 +1098,6 @@ signature X86 =
                        label: Label.t,
                        live: MemLocSet.t} -> t
         val isFunc : t -> bool
-        val isNear : t -> bool
         val jump : {label: Label.t} -> t
         val label : t -> Label.t
         val live : t -> MemLocSet.t

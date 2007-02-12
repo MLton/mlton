@@ -18,9 +18,7 @@ signature REAL_SIZE =
       val all: t list
       val bits: t -> Bits.t
       val bytes: t -> Bytes.t
-      val compare: t * t -> Relation.t
       val equals: t * t -> bool
-      val layout: t -> Layout.t
       val memoize: (t -> 'a) -> t -> 'a
       val toString: t -> string
    end

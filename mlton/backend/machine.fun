@@ -108,8 +108,6 @@ structure Global =
                          ("ty", Type.layout ty)]]
          end
 
-      val toString = Layout.toString o layout
-
       local
          fun make f (T r) = f r
       in
@@ -161,7 +159,6 @@ structure StackOffset =
       local
          fun make f (T r) = f r
       in
-         val offset = make #offset
          val ty = make #ty
       end
 

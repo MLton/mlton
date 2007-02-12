@@ -270,7 +270,7 @@ pid_t getppid (void);
 uid_t getuid (void);
 int setenv (const char *name, const char *value, int overwrite);
 int setgid (gid_t gid);
-int setgroups (size_t size, gid_t *list);
+int setgroups (size_t size, const gid_t *list);
 int setpgid (pid_t pid, pid_t pgid);
 pid_t setsid (void);
 int setuid (uid_t uid);
@@ -584,3 +584,12 @@ int socketpair (int d, int type, int protocol, int sv[2]);
 void openlog(const char* ident, int logopt, int facility);
 void closelog(void);
 void syslog(int priority, const char* fmt, const char* msg);
+
+/* ------------------------------------------------- */
+/*                      libdl                        */
+/* ------------------------------------------------- */
+
+void *dlopen(const char *filename, int flag_IGNORED);
+const char *dlerror(void);
+void *dlsym(void *void_hmodule, const char *symbol);
+int dlclose(void *void_hmodule);

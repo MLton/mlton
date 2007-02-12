@@ -16,16 +16,10 @@ Word32 applyFFTemp2;
 Word32 checkTemp;
 Word32 cReturnTemp[16];
 Pointer c_stackP;
-Word32 c_stackPTrue;
 Word32 divTemp;
-Word32 eq1Temp;
-Word32 eq2Temp;
-Word32 fileTemp;
 Word32 fildTemp;
 Word32 fpswTemp;
 Word32 indexTemp;
-Word32 intInfTemp;
-char MLton_bug_msg[] = "cps machine";
 Word32 raTemp1;
 Real64 raTemp2;
 Real64 realTemp1D;
@@ -36,15 +30,9 @@ Real32 realTemp2S;
 Real32 realTemp3S;
 Word32 spill[16];
 Word32 stackTopTemp;
-Word32 statusTemp;
-Word32 switchTemp;
-Word32 threadTemp;
 Word8 wordTemp1B;
-Word8 wordTemp2B;
 Word16 wordTemp1W;
-Word16 wordTemp2W;
 Word32 wordTemp1L;
-Word32 wordTemp2L;
 
 #ifndef DEBUG_X86CODEGEN
 #define DEBUG_X86CODEGEN FALSE

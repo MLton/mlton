@@ -18,8 +18,6 @@ structure BindingStrength =
        | Tuple
        | Unit
 
-      val arrow = Arrow
-      val tuple = Tuple
       val unit = Unit
    end
 
@@ -171,7 +169,6 @@ val defaultWord = fn () =>
     | _ => Error.bug "PrimTycons.defaultWord"
 
 val isBool = fn c => equals (c, bool)
-val isExn = fn c => equals (c, exn)
 val isPointer = fn c => equals (c, pointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)

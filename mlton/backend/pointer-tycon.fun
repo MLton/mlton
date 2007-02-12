@@ -30,8 +30,6 @@ fun setIndex (T {index = r}, i) = r := i
 
 fun fromIndex i = T {index = ref i}
 
-fun compare (p, p') = Int.compare (index p, index p')
-
 fun equals (pt, pt') = index pt = index pt'
 
 val op <= = fn (pt, pt') => index pt <= index pt'

@@ -31,7 +31,6 @@ signature C_TYPE =
       val align: t * Bytes.t -> Bytes.t
       val all: t list
       val bool: t
-      val char: t
       val equals: t * t -> bool
       val memo: (t -> 'a) -> t -> 'a
       (* name: I{8,16,32,64} R{32,64} W{8,16,32,64} *)

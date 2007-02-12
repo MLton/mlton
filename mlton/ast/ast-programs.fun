@@ -21,8 +21,6 @@ structure Program =
 
       val empty = T []
 
-      fun append (T ds1, T ds2) = T (ds1 @ ds2)
-
       fun layout (T dss) =
          Layout.align (List.map (dss, fn ds =>
                                  Layout.paren 
@@ -148,6 +146,8 @@ structure Program =
          in
             !n
          end
+      (* quell unused warning *)
+      val _ = size
    end
 
 end

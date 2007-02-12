@@ -552,8 +552,6 @@ structure Cases =
              | Word (_, l) => doit l
          end
 
-      fun length (c: t): int = fold (c, 0, fn (_, i) => i + 1)
-
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
    end
 
@@ -651,9 +649,6 @@ structure Exp =
                     offset: int}
        | Var of Var.t
 
-      val unit = Object {con = NONE,
-                         args = Vector.new0 ()}
-
       fun foreachVar (e, v) =
          let
             fun vs xs = Vector.foreach (xs, v)
@@ -704,8 +699,6 @@ structure Exp =
 
       fun layout e = layout' (e, Var.layout)
 
-      val toString = Layout.toString o layout
-
       fun toPretty (e, global: Var.t -> string option): string =
          Layout.toString (layout' (e, fn x =>
                                    case global x of
@@ -736,6 +729,8 @@ structure Exp =
                Base.equals (b1, b2, Var.equals) andalso i1 = i2
           | (Var x, Var x') => Var.equals (x, x')
           | _ => false
+      (* quell unused warning *)
+      val _ = equals
 
       local
          val newHash = Random.word
@@ -762,8 +757,8 @@ structure Exp =
                              Base.hash (base, Var.hash) + Word.fromInt offset)
              | Var x => Var.hash x
       end
-
-      val hash = Trace.trace ("SsaTree2.Exp.hash", layout, Word.layout) hash
+      (* quell unused warning *)
+      val _ = hash
    end
 datatype z = datatype Exp.t
 
@@ -1008,6 +1003,8 @@ structure Return =
                             | Handler.Dead => handler
                             | Handler.Handle _ => handler)}
           | Tail => r
+      (* quell unused warning *)
+      val _ = compose
 
       local
          val newHash = Random.word
@@ -1048,16 +1045,6 @@ structure Transfer =
                      args: Var.t vector,
                      return: Label.t} (* Must be nullary. *)
 
-      fun iff (test: Var.t, {truee, falsee}) =
-         let
-            val s = WordSize.fromBits (Bits.fromInt 32)
-         in
-            Case {cases = Cases.Word (s, Vector.new2 ((WordX.zero s, falsee),
-                                                      (WordX.one s, truee))),
-                  default = NONE,
-                  test = test}
-         end
-
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let
             fun vars xs = Vector.foreach (xs, var)
@@ -1086,6 +1073,8 @@ structure Transfer =
 
       fun foreachFunc (t, func) =
          foreachFuncLabelVar (t, func, fn _ => (), fn _ => ())
+      (* quell unused warning *)
+      val _ = foreachFunc
 
       fun foreachLabelVar (t, label, var) =
          foreachFuncLabelVar (t, fn _ => (), label, var)
@@ -1125,6 +1114,8 @@ structure Transfer =
          end
 
       fun replaceLabel (t, f) = replaceLabelVar (t, f, fn x => x)
+      (* quell unused warning *)
+      val _ = replaceLabel
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
       local open Layout
@@ -1207,6 +1198,8 @@ structure Transfer =
                varsEquals (args, args') andalso
                Label.equals (return, return')
           | _ => false
+      (* quell unused warning *)
+      val _ = equals
 
       local
          val newHash = Random.word
@@ -1240,9 +1233,8 @@ structure Transfer =
              | Return xs => hashVars (xs, return)
              | Runtime {args, return, ...} => hashVars (args, Label.hash return)
       end
-
-      val hash = Trace.trace ("SsaTree2.Transfer.hash", layout, Word.layout) hash
-
+      (* quell unused warning *)
+      val _ = hash
    end
 datatype z = datatype Transfer.t
 
@@ -1271,7 +1263,6 @@ structure Block =
       in
          val args = make #args
          val label = make #label
-         val statements = make #statements
          val transfer = make #transfer
       end
 
@@ -1358,7 +1349,6 @@ structure Function =
          val blocks = make #blocks
          val dest = make (fn d => d)
          val name = make #name
-         val start = make #start
       end
 
       fun foreachVar (f: t, fx: Var.t * Type.t -> unit): unit =
@@ -1791,6 +1781,8 @@ structure Function =
                  returns = returns,
                  start = start}
          end
+      (* quell unused warning *)
+      val _ = alphaRename
 
       fun profile (f: t, sourceInfo): t =
          if !Control.profile = Control.ProfileNone

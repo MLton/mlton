@@ -72,8 +72,6 @@ in
    val plist = make #plist
 end
 
-fun anonymous r = new (Anonymous (Pos.fromRegion r))
-
 local
    val set: {hash: word,
              name: string,
