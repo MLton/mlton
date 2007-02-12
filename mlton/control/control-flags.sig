@@ -48,6 +48,7 @@ signature CONTROL_FLAGS =
       val debug: bool ref
 
       val defaultChar: string ref
+      val defaultWideChar: string ref
       val defaultInt: string ref
       val defaultReal: string ref
       val defaultWord: string ref

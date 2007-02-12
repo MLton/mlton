@@ -84,6 +84,9 @@ val debug = control {name = "debug",
 val defaultChar = control {name = "defaultChar",
                            default = "char8",
                            toString = fn s => s}
+val defaultWideChar = control {name = "defaultWideChar",
+                               default = "widechar32",
+                               toString = fn s => s}
 val defaultInt = control {name = "defaultInt",
                           default = "int32",
                           toString = fn s => s}
@@ -1029,6 +1032,8 @@ in
                 path = "seqindex-int32.sml"},
                {var = "DEFAULT_CHAR",
                 path = concat ["default-", !defaultChar, ".sml"]},
+               {var = "DEFAULT_WIDECHAR",
+                path = concat ["default-", !defaultWideChar, ".sml"]},
                {var = "DEFAULT_INT",
                 path = concat ["default-", !defaultInt, ".sml"]},
                {var = "DEFAULT_REAL",

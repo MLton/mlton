@@ -229,6 +229,8 @@ fun makeOptions {usage} =
                    | "intinf" => Control.defaultInt := s
                    | "real32" => Control.defaultReal := s
                    | "real64" => Control.defaultReal := s
+                   | "widechar16" => Control.defaultWideChar := s
+                   | "widechar32" => Control.defaultWideChar := s
                    | "word8" => Control.defaultWord := s
                    | "word16" => Control.defaultWord := s
                    | "word32" => Control.defaultWord := s
