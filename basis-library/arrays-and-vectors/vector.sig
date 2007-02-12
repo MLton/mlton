@@ -42,7 +42,7 @@ signature VECTOR_EXTRA =
       val isPrefix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
       val isSubvector: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
       val isSuffix: ('a * 'a -> bool) -> 'a vector -> 'a vector -> bool
-      val translate: ('a -> 'a vector) -> 'a vector -> 'a vector
+      val translate: ('a -> 'b vector) -> 'a vector -> 'b vector
       val tokens: ('a -> bool) -> 'a vector -> 'a vector list
       val fields: ('a -> bool) -> 'a vector -> 'a vector list
 

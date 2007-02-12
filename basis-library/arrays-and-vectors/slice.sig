@@ -86,7 +86,7 @@ signature SLICE =
        * ('a sequence * 'a sequence -> bool)  should be polymorphic equality
        *)
       val span: ('a sequence * 'a sequence -> bool) -> 'a slice * 'a slice -> 'a slice
-      val translate: ('a elt -> 'a sequence) -> 'a slice -> 'a sequence
+      val translate: ('a elt -> 'b sequence) -> 'a slice -> 'b sequence
       val tokens: ('a elt -> bool) -> 'a slice -> 'a slice list
       val fields: ('a elt -> bool) -> 'a slice -> 'a slice list
 
