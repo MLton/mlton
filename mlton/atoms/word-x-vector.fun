@@ -39,7 +39,11 @@ fun toString (T {elements, elementSize}): string =
                                        Char.fromInt (IntInf.toInt r) :: ac)
                               end
                      in
-                        loop (n, WordX.toIntInf w, ac)
+                        (* Control.targetIsBigEndian is not always set, so
+                         * only use it if we really need to know the value. *)
+                        if n > 8 andalso Control.targetIsBigEndian ()
+                        then rev (loop (n, WordX.toIntInf w, [])) @ ac
+                        else loop (n, WordX.toIntInf w, []) @ ac
                      end)))
    end
 
