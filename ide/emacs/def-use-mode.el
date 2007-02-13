@@ -46,7 +46,7 @@
 (defface def-use-mark-face
   '((((class color)) (:background "orchid1"))
     (t (:background "gray")))
-  "Face for highlighting uses."
+  "Face for marking definitions and uses."
   :group 'faces
   :group 'def-use)
 
