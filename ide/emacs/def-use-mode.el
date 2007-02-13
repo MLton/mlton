@@ -358,12 +358,14 @@ the symbol."
 ;; Highlighting
 
 (defvar def-use-highlighted-sym nil)
+(defvar def-use-highlighted-buffer-file-truename nil)
 (defvar def-use-highlighted-overlays nil)
 
 (defun def-use-delete-highlighting ()
   (mapc (function delete-overlay) def-use-highlighted-overlays)
-  (setq def-use-highlighted-overlays nil)
-  (setq def-use-highlighted-sym nil))
+  (setq def-use-highlighted-overlays nil
+        def-use-highlighted-sym nil
+        def-use-highlighted-buffer-file-truename nil))
 
 (defun def-use-highlight-ref (sym ref face-attr)
   (push (def-use-create-overlay sym ref def-use-priority face-attr)
@@ -379,32 +381,38 @@ the symbol."
 
 (defun def-use-highlight-sym (sym)
   "Highlights the specified symbol."
-  (unless (equal def-use-highlighted-sym sym)
-    (def-use-delete-highlighting)
-    (when sym
-      (setq def-use-highlighted-sym sym)
-      (let ((length (length (def-use-sym-name sym)))
-            (file-to-poss (def-use-make-hash-table)))
-        (mapc (function
-               (lambda (ref)
-                 (puthash (def-use-ref-src ref)
-                          (cons (def-use-ref-pos ref)
-                                (gethash (def-use-ref-src ref) file-to-poss))
-                          file-to-poss)))
-              (def-use-sym-to-uses sym))
-        (mapc (function
-               (lambda (buffer)
-                 (set-buffer buffer)
-                 (mapc (function
-                        (lambda (pos)
-                          (def-use-highlight-ref length pos 'def-use-use-face)))
-                       (gethash (def-use-buffer-file-truename) file-to-poss))))
-              (buffer-list))
-        (let* ((ref (def-use-sym-ref sym))
-               (buffer (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
-          (when buffer
-            (set-buffer buffer)
-            (def-use-highlight-ref length (def-use-ref-pos ref) 'def-use-def-face)))))))
+  (let ((buffer-file-truename (def-use-buffer-file-truename)))
+    (unless (and (equal def-use-highlighted-sym sym)
+                 (equal def-use-highlighted-buffer-file-truename
+                        buffer-file-truename))
+      (def-use-delete-highlighting)
+      (when sym
+        (setq def-use-highlighted-sym sym
+              def-use-highlighted-buffer-file-truename buffer-file-truename)
+        (let ((length (length (def-use-sym-name sym)))
+              (file-to-poss (def-use-make-hash-table)))
+          (mapc (function
+                 (lambda (ref)
+                   (puthash (def-use-ref-src ref)
+                            (cons (def-use-ref-pos ref)
+                                  (gethash (def-use-ref-src ref) file-to-poss))
+                            file-to-poss)))
+                (def-use-sym-to-uses sym))
+          (mapc (function
+                 (lambda (buffer)
+                   (set-buffer buffer)
+                   (mapc (function
+                          (lambda (pos)
+                            (def-use-highlight-ref length pos 'def-use-use-face)))
+                         (gethash (def-use-buffer-file-truename) file-to-poss))))
+                (buffer-list))
+          (let* ((ref (def-use-sym-ref sym))
+                 (buffer
+                  (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
+            (when buffer
+              (set-buffer buffer)
+              (def-use-highlight-ref
+                length (def-use-ref-pos ref) 'def-use-def-face))))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
