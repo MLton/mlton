@@ -26,14 +26,19 @@
   (make-hash-table :test 'equal :weakness 'key)
   "Weak hash table private to `def-use-file-truename'.")
 
+(if (string-match "XEmacs" emacs-version)
+    (defun def-use-abbreviate-file-name (file)
+      (abbreviate-file-name file t))
+  (defalias 'def-use-abbreviate-file-name (function abbreviate-file-name)))
+
 (defun def-use-file-truename (file)
-  "Cached version of `file-truename'."
+  "Cached version of `file-truename' combined with `abbreviate-file-name'."
   (def-use-gethash-or-put file
     (function
      (lambda ()
        (def-use-intern
          (def-use-add-face 'font-lock-keyword-face
-           (file-truename file)))))
+           (def-use-abbreviate-file-name (file-truename file))))))
     def-use-file-truename-table))
 
 (defun def-use-find-buffer-visiting-file (file)
