@@ -27,6 +27,11 @@
   "Weak hash table private to `def-use-file-truename'.")
 
 (if (string-match "XEmacs" emacs-version)
+    (defalias 'def-use-add-local-hook (function add-local-hook))
+  (defun def-use-add-local-hook (hook fn)
+    (add-hook hook fn nil t)))
+
+(if (string-match "XEmacs" emacs-version)
     (defun def-use-abbreviate-file-name (file)
       (abbreviate-file-name file t))
   (defalias 'def-use-abbreviate-file-name (function abbreviate-file-name)))

@@ -16,15 +16,7 @@ returns nil.  While the job is active,
   (apply step args)
 
 will be called periodically to perform a (supposedly small) computation
-step.  The return value, which must be a list, will be used as the next
-args.  So, a step function often looks like this:
-
-  (function
-   (lambda (args)
-     ;; do something
-     (list args)))
-
-After the job becomes inactive,
+step.  After the job becomes inactive,
 
   (apply finalize args)
 
@@ -39,7 +31,7 @@ jobs may be active simultaneously."
   (apply (cadr job) (car job)))
 
 (defun bg-job-step (job)
-  (setcar job (apply (caddr job) (car job))))
+  (apply (caddr job) (car job)))
 
 (defun bg-job-finalize (job)
   (apply (cdddr job) (car job)))

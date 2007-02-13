@@ -83,12 +83,9 @@
     (gethash sym (esml-du-ctx-sym-to-uses-table ctx))))
 
 (defun esml-du-finalize (ctx)
-  (when (esml-du-ctx-buf ctx)
-    (with-current-buffer (esml-du-ctx-buf ctx)
-      (setq buffer-read-only nil)
-      (goto-char 1)
-      (delete-char (buffer-size))
-      (setq buffer-read-only t))))
+  (let ((buffer (esml-du-ctx-buf ctx)))
+    (when buffer
+      (kill-buffer buffer))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context
@@ -152,15 +149,23 @@ altough the editor may feel a bit sluggish."
     (buffer-disable-undo)
     (insert-file (esml-du-ctx-duf ctx))
     (setq buffer-read-only t)
-    (goto-char 1))
+    (goto-char 1)
+    (def-use-add-local-hook
+     'kill-buffer-hook
+     (lexical-let ((ctx ctx))
+       (function
+        (lambda ()
+          (esml-du-ctx-set-buf nil ctx))))))
   (clrhash (esml-du-ctx-ref-to-sym-table ctx))
   (clrhash (esml-du-ctx-sym-to-uses-table ctx))
   (garbage-collect)
   (bg-job-start
    (function
     (lambda (ctx)
-      (with-current-buffer (esml-du-ctx-buf ctx)
-        (eobp))))
+      (let ((buffer (esml-du-ctx-buf ctx)))
+        (or (not buffer)
+            (with-current-buffer buffer
+              (eobp))))))
    (function
     (lambda (ctx)
       (with-current-buffer (esml-du-ctx-buf ctx)
@@ -189,12 +194,10 @@ altough the editor may feel a bit sluggish."
           (puthash sym uses sym-to-uses))
         (setq buffer-read-only nil)
         (delete-backward-char (- (point) 1))
-        (setq buffer-read-only t))
-      (list ctx)))
+        (setq buffer-read-only t))))
    (function
     (lambda (ctx)
-      (kill-buffer (esml-du-ctx-buf ctx))
-      (esml-du-ctx-set-buf nil ctx)
+      (esml-du-finalize ctx)
       (message "Finished parsing %s." (esml-du-ctx-duf ctx))))
    ctx)
   (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))

@@ -256,8 +256,8 @@ the symbol."
           (switch-to-buffer-other-window buffer)
           (buffer-disable-undo)
           (def-use-list-mode)
-          (add-hook
-           'kill-buffer-hook (function def-use-list-view-unmark-all) nil t)
+          (def-use-add-local-hook
+            'kill-buffer-hook (function def-use-list-view-unmark-all))
           (set (make-local-variable 'def-use-list-sym)
                sym)
           (insert (def-use-format-sym sym) "\n"
