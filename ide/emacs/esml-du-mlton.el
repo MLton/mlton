@@ -8,8 +8,20 @@
 (require 'esml-util)
 
 ;; XXX Keep a set of files covered by a def-use file.  Don't reload unnecessarily.
-;; XXX Poll periodically for modifications to def-use files.
 ;; XXX Detect when the same ref is both a use and a def and act appropriately.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Customization
+
+(defgroup esml-du nil
+  "MLton def-use info plugin for `def-use-mode'."
+  :group 'sml)
+
+(defcustom esml-du-change-poll-period 1.0
+  "Delay in seconds between file change polls."
+  :type '(choice (number :tag "Period in seconds")
+                 (const :tag "Disable polling" nil))
+  :group 'esml-du)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interface
@@ -82,28 +94,41 @@
       (esml-du-reparse ctx)
     (gethash sym (esml-du-ctx-sym-to-uses-table ctx))))
 
-(defun esml-du-finalize (ctx)
+(defun esml-du-stop-parsing (ctx)
   (let ((buffer (esml-du-ctx-buf ctx)))
     (when buffer
       (kill-buffer buffer))))
+
+(defun esml-du-finalize (ctx)
+  (esml-du-stop-parsing ctx)
+  (let ((timer (esml-du-ctx-poll-timer ctx)))
+    (when timer
+      (def-use-delete-timer timer)
+      (esml-du-ctx-set-poll-timer nil ctx))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context
 
 (defun esml-du-ctx (duf)
-  (cons (def-use-make-hash-table)
-        (cons (def-use-make-hash-table)
-              (cons duf
-                    (cons nil nil)))))
+  (let ((ctx (vector (def-use-make-hash-table) (def-use-make-hash-table)
+                     duf nil nil nil)))
+    (when esml-du-change-poll-period
+      (esml-du-ctx-set-poll-timer
+       (run-with-timer esml-du-change-poll-period esml-du-change-poll-period
+                       (function esml-du-reparse) ctx)
+       ctx))
+    ctx))
 
-(defalias 'esml-du-ctx-buf               (function cddddr))
-(defalias 'esml-du-ctx-attr              (function cadddr))
-(defalias 'esml-du-ctx-duf               (function caddr))
-(defalias 'esml-du-ctx-ref-to-sym-table  (function cadr))
-(defalias 'esml-du-ctx-sym-to-uses-table (function car))
+(defun esml-du-ctx-poll-timer        (ctx) (aref ctx 5))
+(defun esml-du-ctx-buf               (ctx) (aref ctx 4))
+(defun esml-du-ctx-attr              (ctx) (aref ctx 3))
+(defun esml-du-ctx-duf               (ctx) (aref ctx 2))
+(defun esml-du-ctx-ref-to-sym-table  (ctx) (aref ctx 1))
+(defun esml-du-ctx-sym-to-uses-table (ctx) (aref ctx 0))
 
-(defun esml-du-ctx-set-buf  (buf  ctx) (setcdr (cdddr ctx) buf))
-(defun esml-du-ctx-set-attr (attr ctx) (setcar (cdddr ctx) attr))
+(defun esml-du-ctx-set-poll-timer (timer ctx) (aset ctx 5 timer))
+(defun esml-du-ctx-set-buf        (buf   ctx) (aset ctx 4 buf))
+(defun esml-du-ctx-set-attr       (attr  ctx) (aset ctx 3 attr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing
@@ -134,7 +159,7 @@
     (esml-du-parse ctx)
     nil)
    (t
-    (esml-du-finalize ctx)
+    (esml-du-stop-parsing ctx)
     (run-with-idle-timer 0.5 nil (function esml-du-reparse) ctx)
     nil)))
 
@@ -197,7 +222,7 @@ altough the editor may feel a bit sluggish."
         (setq buffer-read-only t))))
    (function
     (lambda (ctx)
-      (esml-du-finalize ctx)
+      (esml-du-stop-parsing ctx)
       (message "Finished parsing %s." (esml-du-ctx-duf ctx))))
    ctx)
   (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))
