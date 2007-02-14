@@ -59,13 +59,20 @@
 open the file a second time if a buffer is editing a file by the same true
 file name."
   (let ((buffer (def-use-find-buffer-visiting-file file)))
-    (if buffer
-        (if other-window
-            (switch-to-buffer-other-window buffer)
-          (switch-to-buffer buffer))
-      (if other-window
-          (find-file-other-window file)
-        (find-file file)))))
+    (cond
+     (buffer
+      (let ((window (get-buffer-window buffer)))
+        (cond
+         (other-window
+          (switch-to-buffer-other-window buffer))
+         (window
+          (set-frame-selected-window nil window))
+         (t
+          (switch-to-buffer buffer)))))
+     (other-window
+      (find-file-other-window file))
+     (t
+      (find-file file)))))
 
 (defun def-use-point-at-next-line ()
   "Returns point at the beginning of the next line."
