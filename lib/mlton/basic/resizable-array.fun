@@ -76,14 +76,20 @@ structure A'' =
    Array (open A'
           val unsafeSub = sub
           val unsafeUpdate = update
-          val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t =
+          val unfoldi: int * 'a * (int * 'a -> 'b * 'a) -> 'b t * 'a =
              fn (n, ac, f) =>
-             T {array = ref (Array.unfoldi (n, ac, fn (i, a) =>
-                                            let
-                                               val (b, a') = f (i, a)
-                                            in (SOME b, a')
-                                            end)),
-                length = ref n})
+             let
+                val (arr, z) =
+                   Array.unfoldi (n, ac, fn (i, a) =>
+                                  let
+                                     val (b, a') = f (i, a)
+                                  in (SOME b, a')
+                                  end)
+             in
+                (T {array = ref arr,
+                    length = ref n},
+                 z)
+             end)
 
 open A' A''
 

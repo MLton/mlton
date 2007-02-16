@@ -50,7 +50,7 @@ fun grow {buckets, mask}
       val n = Vector.length buckets
 
       val buckets
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (2 * n,
            ([], false),
            fn (i, (l, b))
@@ -81,7 +81,7 @@ fun shrink {buckets, mask}
       val n = (Vector.length buckets) div 2
 
       val buckets
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (n,
            (),
            fn (i, _) => let
@@ -164,7 +164,7 @@ fun build1 sb s
       val T (ref {buckets, mask}) = s
 
       val buckets
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (Vector.length buckets,
            (),
            fn (i, _) => let
@@ -182,7 +182,7 @@ fun build2 sb (s1, s2)
       val T (ref {buckets = buckets2, mask}) = s2
 
       val buckets
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (Vector.length buckets1,
            (),
            fn (i, _) => let
@@ -218,7 +218,7 @@ fun add (s, x)
              val T (ref {buckets, mask}) = s
              val ix = index(hash x, mask)
              val buckets
-               = Vector.unfoldi
+               = (#1 o Vector.unfoldi)
                  (Vector.length buckets,
                   (),
                   fn (i, _) 
@@ -240,7 +240,7 @@ fun remove (s, x)
              val T (ref {buckets, mask}) = s
              val ix = index(hash x, mask)
              val buckets
-               = Vector.unfoldi
+               = (#1 o Vector.unfoldi)
                  (Vector.length buckets,
                   (),
                   fn (i, _) 
@@ -271,14 +271,14 @@ fun partition (s, p)
                   no = no'::no}
                end)
       val yes 
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (n,
            List.rev yes,
            fn (_, l) => case l
                           of h::t => (h, t)
                            | _ => Error.bug "HashedUniqueSet.partition.yes")
       val no
-        = Vector.unfoldi
+        = (#1 o Vector.unfoldi)
           (n,
            List.rev no,
            fn (_, l) => case l
