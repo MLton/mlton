@@ -149,9 +149,9 @@ string."
   "Returns non-nil iff the modification time of `attr1' is later than the
 modification time of `attr2'.  Note that this also returns nil when either
 one of the modification times is nil."
-  (when (and attr1 attr2)
-    (> (def-use-attr-mod-time-as-double attr1)
-       (def-use-attr-mod-time-as-double attr2))))
+  (and attr1 attr2
+       (> (def-use-attr-mod-time-as-double attr1)
+          (def-use-attr-mod-time-as-double attr2))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
