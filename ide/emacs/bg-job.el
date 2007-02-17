@@ -4,6 +4,27 @@
 ;; See the file MLton-LICENSE for details.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Customization
+
+(defgroup bg-job nil
+  "The background job module allows emacs to perform time consuming
+processing jobs in the background while allowing the user to continue
+editing.  See the documentation of the `bg-job-start' function for
+details.")
+
+(defcustom bg-job-period 0.10
+  "Timer period in seconds for background processing interrupts.  Must
+be positive."
+  :type 'number
+  :group 'bg-job)
+
+(defcustom bg-job-cpu-ratio 0.15
+  "Ratio of CPU time allowed for background processing.  Must be positive
+and less than 1."
+  :type 'number
+  :group 'bg-job)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Background Processor
 
 (defun bg-job-start (done? step finalize &rest args)
@@ -38,9 +59,6 @@ jobs may be active simultaneously."
 
 (defvar bg-job-queue nil)
 (defvar bg-job-timer nil)
-
-(defconst bg-job-period 0.10)
-(defconst bg-job-cpu-ratio 0.2)
 
 (defun bg-job-timer-start ()
   (unless bg-job-timer
