@@ -50,6 +50,13 @@
   :group 'faces
   :group 'def-use)
 
+(defface def-use-view-face
+  '((((class color)) (:background "chocolate1"))
+    (t (:background "gray")))
+  "Face for marking the definition or use currently being viewed."
+  :group 'faces
+  :group 'def-use)
+
 (defcustom def-use-delay 0.125
   "Idle time in seconds to delay before updating highlighting."
   :type '(number :tag "seconds")
@@ -197,7 +204,7 @@ when there really is a symbol at the point."
 position."
   (cond
    ((not (file-readable-p (def-use-ref-src ref)))
-    (def-use-error "Referenced file %s can not be read" (def-use-ref-src ref)))
+    (compat-error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
    ((not (equal (def-use-buffer-file-truename) (def-use-ref-src ref)))
@@ -216,7 +223,7 @@ the symbol."
         (function def-use-ref<)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; List
+;; List mode
 
 (defconst def-use-ref-regexp "\\([^ ]+\\):\\([0-9]+\\)\\.\\([0-9]+\\)")
 
@@ -256,7 +263,7 @@ the symbol."
           (switch-to-buffer-other-window buffer)
           (buffer-disable-undo)
           (def-use-list-mode)
-          (def-use-add-local-hook
+          (compat-add-local-hook
             'kill-buffer-hook (function def-use-list-view-unmark-all))
           (set (make-local-variable 'def-use-list-sym)
                sym)
@@ -291,8 +298,7 @@ the symbol."
   (when (and def-use-list-ref-to-overlay-alist
              def-use-list-sym)
     (save-window-excursion
-      (let ((b (current-buffer))
-            (length (length (def-use-sym-name def-use-list-sym))))
+      (let ((length (length (def-use-sym-name def-use-list-sym))))
         (mapc (function
                (lambda (ref-overlay)
                  (unless (cdr ref-overlay)
@@ -425,7 +431,7 @@ the symbol."
 
 (defun def-use-delete-highlight-timer ()
   (when def-use-highlight-timer
-    (def-use-delete-timer def-use-highlight-timer)
+    (compat-delete-timer def-use-highlight-timer)
     (setq def-use-highlight-timer nil)))
 
 (defun def-use-create-highlight-timer ()

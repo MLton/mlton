@@ -3,19 +3,15 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
+(require 'compat)
 (require 'cl)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
 
-;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun def-use-error (str &rest objs)
-      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
-  (defalias 'def-use-error (function error)))
-
-;; In Gnu Emacs, `buffer-file-truename' is abbreviated while in XEmacs
-;; it isn't.
+;; In Gnu Emacs, `buffer-file-truename' is abbreviated while in XEmacs it
+;; isn't.  This isn't in compat.el, because we want to use our cached
+;; version of `file-truename', namely `def-use-file-truename'.
 (defun def-use-buffer-file-truename ()
   "Returns the true filename of the current buffer."
   (let ((name (buffer-file-name)))
@@ -26,16 +22,6 @@
   (make-hash-table :test 'equal :weakness 'key)
   "Weak hash table private to `def-use-file-truename'.")
 
-(if (string-match "XEmacs" emacs-version)
-    (defalias 'def-use-add-local-hook (function add-local-hook))
-  (defun def-use-add-local-hook (hook fn)
-    (add-hook hook fn nil t)))
-
-(if (string-match "XEmacs" emacs-version)
-    (defun def-use-abbreviate-file-name (file)
-      (abbreviate-file-name file t))
-  (defalias 'def-use-abbreviate-file-name (function abbreviate-file-name)))
-
 (defun def-use-file-truename (file)
   "Cached version of `file-truename' combined with `abbreviate-file-name'."
   (def-use-gethash-or-put file
@@ -43,7 +29,7 @@
      (lambda ()
        (def-use-intern
          (def-use-add-face 'font-lock-keyword-face
-           (def-use-abbreviate-file-name (file-truename file))))))
+           (compat-abbreviate-file-name (file-truename file))))))
     def-use-file-truename-table))
 
 (defun def-use-find-buffer-visiting-file (file)
@@ -89,10 +75,6 @@ file name."
 (defun def-use-current-line ()
   "Returns the current line number counting from 1."
   (+ 1 (count-lines 1 (def-use-point-at-current-line))))
-
-(if (string-match "XEmacs" emacs-version)
-    (defalias 'def-use-delete-timer (function delete-itimer))
-  (defalias 'def-use-delete-timer (function cancel-timer)))
 
 (defun def-use-gethash-or-put (key_ mk-value_ table_)
   (or (gethash key_ table_)
@@ -142,16 +124,19 @@ string."
   (add-text-properties 0 (length string) `(face ,face) string)
   string)
 
-(defun def-use-attr-mod-time-as-double (attr)
-  (+ (* (car (nth 5 attr)) 65536.0) (cadr (nth 5 attr))))
+(defun def-use-time-to-double (time)
+  "Converts a time to a double."
+  (+ (* (car time) 65536.0)
+     (cadr time)
+     (if (cddr time) (* (caddr time) 1e-06) 0)))
 
 (defun def-use-attr-newer? (attr1 attr2)
   "Returns non-nil iff the modification time of `attr1' is later than the
 modification time of `attr2'.  Note that this also returns nil when either
 one of the modification times is nil."
   (and attr1 attr2
-       (> (def-use-attr-mod-time-as-double attr1)
-          (def-use-attr-mod-time-as-double attr2))))
+       (> (def-use-time-to-double (nth 5 attr1))
+          (def-use-time-to-double (nth 5 attr2)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

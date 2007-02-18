@@ -3,6 +3,9 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
+(require 'compat)
+(require 'cl)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
 
@@ -45,7 +48,8 @@ will be called once and the job will be discarded.
 
 A job may call `bg-job-start' to start new jobs and multiple background
 jobs may be active simultaneously."
-  (push (cons args (cons done? (cons step finalize))) bg-job-queue)
+  (let ((job (cons args (cons done? (cons step finalize)))))
+    (push job bg-job-queue))
   (bg-job-timer-start))
 
 (defun bg-job-done? (job)
@@ -68,7 +72,7 @@ jobs may be active simultaneously."
 
 (defun bg-job-timer-stop ()
   (when bg-job-timer
-    (def-use-delete-timer bg-job-timer)
+    (compat-delete-timer bg-job-timer)
     (setq bg-job-timer nil)))
 
 (defun bg-job-quantum ()

@@ -107,7 +107,7 @@
   (esml-du-stop-parsing ctx)
   (let ((timer (esml-du-ctx-poll-timer ctx)))
     (when timer
-      (def-use-delete-timer timer)
+      (compat-delete-timer timer)
       (esml-du-ctx-set-poll-timer nil ctx))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -176,6 +176,7 @@
   (let ((buffer (esml-du-ctx-buf ctx)))
     (when buffer
       (with-current-buffer buffer
+        (goto-char 1)
         (when (search-forward (esml-du-ref-to-appx-syntax ref) nil t)
           (beginning-of-line)
           (while (= ?\  (char-after))
@@ -231,7 +232,7 @@ altough the editor may feel a bit sluggish."
     (insert-file (esml-du-ctx-duf ctx))
     (setq buffer-read-only t)
     (goto-char 1)
-    (def-use-add-local-hook
+    (compat-add-local-hook
      'kill-buffer-hook
      (lexical-let ((ctx ctx))
        (function
