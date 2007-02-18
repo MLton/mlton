@@ -67,10 +67,17 @@
   :type 'integer
   :group 'def-use)
 
+(defcustom def-use-marker-ring-length 16
+  "*Length of marker ring `def-use-marker-ring'."
+  :type 'integer
+  :set (function def-use-set-custom-and-update)
+  :group 'def-use)
+
 (defcustom def-use-key-bindings
   '(("[(control c) (control d)]" . def-use-jump-to-def)
     ("[(control c) (control n)]" . def-use-jump-to-next)
     ("[(control c) (control p)]" . def-use-jump-to-prev)
+    ("[(control c) (control m)]" . def-use-pop-ref-mark)
     ("[(control c) (control s)]" . def-use-show-dus)
     ("[(control c) (control l)]" . def-use-list-all-refs)
     ("[(control c) (control v)]" . def-use-show-info))
@@ -173,9 +180,31 @@ when there really is a symbol at the point."
 
 (defconst def-use-apology "Sorry, no information on the symbol at point.")
 
+(defvar def-use-marker-ring (make-ring def-use-marker-ring-length)
+  "Ring of markers which are locations from which \\[def-use-jump-to-def],
+\\[def-use-jump-to-next], or \\[def-use-jump-to-prev] was invoked.")
+
+(defun def-use-create-marker-ring ()
+  (setq def-use-marker-ring
+        (make-ring def-use-marker-ring-length)))
+
+(defun def-use-pop-ref-mark ()
+  "Pop back to where \\[def-use-jump-to-def], \\[def-use-jump-to-next], or
+\\[def-use-jump-to-prev] was last invoked."
+  (interactive)
+  (if (ring-empty-p def-use-marker-ring)
+      (compat-error "No previous jump locations for invocation"))
+  (let ((marker (ring-remove def-use-marker-ring 0)))
+    (switch-to-buffer
+     (or (marker-buffer marker)
+         (compat-error "The marked buffer has been deleted")))
+    (goto-char (marker-position marker))
+    (set-marker marker nil nil)))
+
 (defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (let ((sym (def-use-current-sym)))
     (if (not sym)
         (message "%s" def-use-apology)
@@ -184,6 +213,7 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
@@ -197,6 +227,7 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (def-use-jump-to-next other-window t))
 
 (defun def-use-goto-ref (ref &optional other-window)
@@ -484,6 +515,7 @@ the symbol."
 
 (defun def-use-update ()
   "Update data based on customization variables."
+  (def-use-create-marker-ring)
   (def-use-build-mode-map))
 
 (def-use-update)
