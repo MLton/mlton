@@ -52,14 +52,19 @@ is needed."
 (defun esml-du-mlton (duf)
   "Gets def-use information from a def-use file produced by MLton."
   (interactive "fSpecify def-use -file: ")
-  (let ((ctx (esml-du-ctx (def-use-file-truename duf))))
-    (esml-du-load ctx)
-    (def-use-add-dus
-      (function esml-du-title)
-      (function esml-du-sym-at-ref)
-      (function esml-du-sym-to-uses)
-      (function esml-du-finalize)
-      ctx)))
+  (run-with-idle-timer
+   0.5 nil
+   (function
+    (lambda (duf)
+      (let ((ctx (esml-du-ctx (def-use-file-truename duf))))
+        (esml-du-load ctx)
+        (def-use-add-dus
+          (function esml-du-title)
+          (function esml-du-sym-at-ref)
+          (function esml-du-sym-to-uses)
+          (function esml-du-finalize)
+          ctx))))
+   duf))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Move to symbol
