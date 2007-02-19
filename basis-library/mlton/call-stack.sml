@@ -30,7 +30,7 @@ structure MLtonCallStack =
             then []
          else
             let
-               val skip = Array.length a - 2
+               val skip = Array.length a - 1
             in
                Array.foldri
                (fn (i, frameIndex, ac) =>

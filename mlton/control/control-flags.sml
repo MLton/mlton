@@ -921,6 +921,10 @@ val profileStack = control {name = "profile stack",
                             default = false,
                             toString = Bool.toString}
 
+val profileVal = control {name = "profile val",
+                          default = false,
+                          toString = Bool.toString}
+
 val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}

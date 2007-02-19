@@ -282,6 +282,8 @@ signature CONTROL_FLAGS =
 
       val profileStack: bool ref
 
+      val profileVal: bool ref
+
       (* Show the basis library. *)
       val showBasis: File.t option ref
 
