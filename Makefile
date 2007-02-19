@@ -234,7 +234,7 @@ mlbpathmap:
 
 .PHONY: traced
 traced:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).trace" COMPILE_ARGS="-const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).trace" "$(LIB)/"
 	"$(LIB)/$(AOUT).trace" @MLton -- "$(LIB)/world.trace"
 	sed 's/mlton-compile/mlton-compile.trace/' < "$(MLTON)" | sed 's/world.mlton/world.trace.mlton/' > "$(MLTON).trace"
@@ -242,7 +242,7 @@ traced:
 
 .PHONY: debugged
 debugged:
-	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -const 'MLton.debug true' -drop-pass 'deepFlatten'"
+	$(MAKE) -C "$(COMP)" "AOUT=$(AOUT).debug" COMPILE_ARGS="-debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -drop-pass 'deepFlatten'"
 	$(CP) "$(COMP)/$(AOUT).debug" "$(LIB)/"
 	"$(LIB)/$(AOUT).debug" @MLton -- "$(LIB)/world.debug"
 	sed 's/mlton-compile/mlton-compile.debug/' < "$(MLTON)" | sed 's/world.mlton/world.debug.mlton/' > "$(MLTON).debug"
