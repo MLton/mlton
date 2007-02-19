@@ -46,7 +46,14 @@
 (defface def-use-mark-face
   '((((class color)) (:background "orchid1"))
     (t (:background "gray")))
-  "Face for highlighting uses."
+  "Face for marking definitions and uses."
+  :group 'faces
+  :group 'def-use)
+
+(defface def-use-view-face
+  '((((class color)) (:background "chocolate1"))
+    (t (:background "gray")))
+  "Face for marking the definition or use currently being viewed."
   :group 'faces
   :group 'def-use)
 
@@ -60,10 +67,17 @@
   :type 'integer
   :group 'def-use)
 
+(defcustom def-use-marker-ring-length 16
+  "*Length of marker ring `def-use-marker-ring'."
+  :type 'integer
+  :set (function def-use-set-custom-and-update)
+  :group 'def-use)
+
 (defcustom def-use-key-bindings
   '(("[(control c) (control d)]" . def-use-jump-to-def)
     ("[(control c) (control n)]" . def-use-jump-to-next)
     ("[(control c) (control p)]" . def-use-jump-to-prev)
+    ("[(control c) (control m)]" . def-use-pop-ref-mark)
     ("[(control c) (control s)]" . def-use-show-dus)
     ("[(control c) (control l)]" . def-use-list-all-refs)
     ("[(control c) (control v)]" . def-use-show-info))
@@ -124,7 +138,7 @@ end of the symbol at the point.")
 (defun def-use-ref-at-point (point)
   "Returns a reference for the symbol at the specified point in the
 current buffer."
-  (let ((src buffer-file-truename))
+  (let ((src (def-use-buffer-file-truename)))
     (when src
       (def-use-ref src
         (def-use-point-to-pos
@@ -166,9 +180,31 @@ when there really is a symbol at the point."
 
 (defconst def-use-apology "Sorry, no information on the symbol at point.")
 
+(defvar def-use-marker-ring (make-ring def-use-marker-ring-length)
+  "Ring of markers which are locations from which \\[def-use-jump-to-def],
+\\[def-use-jump-to-next], or \\[def-use-jump-to-prev] was invoked.")
+
+(defun def-use-create-marker-ring ()
+  (setq def-use-marker-ring
+        (make-ring def-use-marker-ring-length)))
+
+(defun def-use-pop-ref-mark ()
+  "Pop back to where \\[def-use-jump-to-def], \\[def-use-jump-to-next], or
+\\[def-use-jump-to-prev] was last invoked."
+  (interactive)
+  (if (ring-empty-p def-use-marker-ring)
+      (compat-error "No previous jump locations for invocation"))
+  (let ((marker (ring-remove def-use-marker-ring 0)))
+    (switch-to-buffer
+     (or (marker-buffer marker)
+         (compat-error "The marked buffer has been deleted")))
+    (goto-char (marker-position marker))
+    (set-marker marker nil nil)))
+
 (defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (let ((sym (def-use-current-sym)))
     (if (not sym)
         (message "%s" def-use-apology)
@@ -177,6 +213,7 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
@@ -190,6 +227,7 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
   (interactive "P")
+  (ring-insert def-use-marker-ring (point-marker))
   (def-use-jump-to-next other-window t))
 
 (defun def-use-goto-ref (ref &optional other-window)
@@ -197,10 +235,10 @@ when there really is a symbol at the point."
 position."
   (cond
    ((not (file-readable-p (def-use-ref-src ref)))
-    (def-use-error "Referenced file %s can not be read" (def-use-ref-src ref)))
+    (compat-error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
-   ((not (equal buffer-file-truename (def-use-ref-src ref)))
+   ((not (equal (def-use-buffer-file-truename) (def-use-ref-src ref)))
     (def-use-find-file (def-use-ref-src ref))))
   (def-use-goto-pos (def-use-ref-pos ref)))
 
@@ -216,7 +254,7 @@ the symbol."
         (function def-use-ref<)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; List
+;; List mode
 
 (defconst def-use-ref-regexp "\\([^ ]+\\):\\([0-9]+\\)\\.\\([0-9]+\\)")
 
@@ -256,8 +294,8 @@ the symbol."
           (switch-to-buffer-other-window buffer)
           (buffer-disable-undo)
           (def-use-list-mode)
-          (add-hook
-           'kill-buffer-hook (function def-use-list-view-unmark-all) nil t)
+          (compat-add-local-hook
+            'kill-buffer-hook (function def-use-list-view-unmark-all))
           (set (make-local-variable 'def-use-list-sym)
                sym)
           (insert (def-use-format-sym sym) "\n"
@@ -291,8 +329,7 @@ the symbol."
   (when (and def-use-list-ref-to-overlay-alist
              def-use-list-sym)
     (save-window-excursion
-      (let ((b (current-buffer))
-            (length (length (def-use-sym-name def-use-list-sym))))
+      (let ((length (length (def-use-sym-name def-use-list-sym))))
         (mapc (function
                (lambda (ref-overlay)
                  (unless (cdr ref-overlay)
@@ -358,12 +395,14 @@ the symbol."
 ;; Highlighting
 
 (defvar def-use-highlighted-sym nil)
+(defvar def-use-highlighted-buffer-file-truename nil)
 (defvar def-use-highlighted-overlays nil)
 
 (defun def-use-delete-highlighting ()
   (mapc (function delete-overlay) def-use-highlighted-overlays)
-  (setq def-use-highlighted-overlays nil)
-  (setq def-use-highlighted-sym nil))
+  (setq def-use-highlighted-overlays nil
+        def-use-highlighted-sym nil
+        def-use-highlighted-buffer-file-truename nil))
 
 (defun def-use-highlight-ref (sym ref face-attr)
   (push (def-use-create-overlay sym ref def-use-priority face-attr)
@@ -379,32 +418,38 @@ the symbol."
 
 (defun def-use-highlight-sym (sym)
   "Highlights the specified symbol."
-  (unless (equal def-use-highlighted-sym sym)
-    (def-use-delete-highlighting)
-    (when sym
-      (setq def-use-highlighted-sym sym)
-      (let ((length (length (def-use-sym-name sym)))
-            (file-to-poss (def-use-make-hash-table)))
-        (mapc (function
-               (lambda (ref)
-                 (puthash (def-use-ref-src ref)
-                          (cons (def-use-ref-pos ref)
-                                (gethash (def-use-ref-src ref) file-to-poss))
-                          file-to-poss)))
-              (def-use-sym-to-uses sym))
-        (mapc (function
-               (lambda (buffer)
-                 (set-buffer buffer)
-                 (mapc (function
-                        (lambda (pos)
-                          (def-use-highlight-ref length pos 'def-use-use-face)))
-                       (gethash buffer-file-truename file-to-poss))))
-              (buffer-list))
-        (let* ((ref (def-use-sym-ref sym))
-               (buffer (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
-          (when buffer
-            (set-buffer buffer)
-            (def-use-highlight-ref length (def-use-ref-pos ref) 'def-use-def-face)))))))
+  (let ((buffer-file-truename (def-use-buffer-file-truename)))
+    (unless (and (equal def-use-highlighted-sym sym)
+                 (equal def-use-highlighted-buffer-file-truename
+                        buffer-file-truename))
+      (def-use-delete-highlighting)
+      (when sym
+        (setq def-use-highlighted-sym sym
+              def-use-highlighted-buffer-file-truename buffer-file-truename)
+        (let ((length (length (def-use-sym-name sym)))
+              (file-to-poss (def-use-make-hash-table)))
+          (mapc (function
+                 (lambda (ref)
+                   (puthash (def-use-ref-src ref)
+                            (cons (def-use-ref-pos ref)
+                                  (gethash (def-use-ref-src ref) file-to-poss))
+                            file-to-poss)))
+                (def-use-sym-to-uses sym))
+          (mapc (function
+                 (lambda (buffer)
+                   (set-buffer buffer)
+                   (mapc (function
+                          (lambda (pos)
+                            (def-use-highlight-ref length pos 'def-use-use-face)))
+                         (gethash (def-use-buffer-file-truename) file-to-poss))))
+                (buffer-list))
+          (let* ((ref (def-use-sym-ref sym))
+                 (buffer
+                  (def-use-find-buffer-visiting-file (def-use-ref-src ref))))
+            (when buffer
+              (set-buffer buffer)
+              (def-use-highlight-ref
+                length (def-use-ref-pos ref) 'def-use-def-face))))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
@@ -417,7 +462,7 @@ the symbol."
 
 (defun def-use-delete-highlight-timer ()
   (when def-use-highlight-timer
-    (def-use-delete-timer def-use-highlight-timer)
+    (compat-delete-timer def-use-highlight-timer)
     (setq def-use-highlight-timer nil)))
 
 (defun def-use-create-highlight-timer ()
@@ -470,6 +515,7 @@ the symbol."
 
 (defun def-use-update ()
   "Update data based on customization variables."
+  (def-use-create-marker-ring)
   (def-use-build-mode-map))
 
 (def-use-update)

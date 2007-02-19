@@ -230,6 +230,8 @@ fun makeOptions {usage} =
                    | "intinf" => Control.defaultInt := s
                    | "real32" => Control.defaultReal := s
                    | "real64" => Control.defaultReal := s
+                   | "widechar16" => Control.defaultWideChar := s
+                   | "widechar32" => Control.defaultWideChar := s
                    | "word8" => Control.defaultWord := s
                    | "word16" => Control.defaultWord := s
                    | "word32" => Control.defaultWord := s
@@ -458,6 +460,9 @@ fun makeOptions {usage} =
         boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
+       (Normal, "profile-val", " {false|true}",
+        "profile val bindings in addition to functions",
+        boolRef profileVal),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
        (Expert, "show", " {anns|path-map}", "print specified data and stop",

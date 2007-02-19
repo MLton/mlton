@@ -46,19 +46,6 @@ point is moved to the end of the string."
 (defun esml-split-string (string separator)
   (remove* "" (split-string string separator) :test 'equal))
 
-;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun esml-replace-regexp-in-string (str regexp rep)
-      (replace-in-string str regexp rep t))
-  (defun esml-replace-regexp-in-string (str regexp rep)
-    (replace-regexp-in-string regexp rep str t t)))
-
-;; workaround for incompatibility between GNU Emacs and XEmacs
-(if (string-match "XEmacs" emacs-version)
-    (defun esml-error (str &rest objs)
-      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
-  (defalias 'esml-error (function error)))
-
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."
   (and (string-match regexp str)

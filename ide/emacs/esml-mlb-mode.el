@@ -238,7 +238,7 @@ by `esml-mlb-update'.")
             (let* ((name (match-string 1))
                    (name-value (assoc name esml-mlb-path-variables)))
               (unless name-value
-                (esml-error "Unknown path variable: %s" name))
+                (compat-error "Unknown path variable: %s" name))
               (delete-char (length (match-string 0)))
               (insert (cdr name-value)))
           (forward-char 1)
@@ -664,9 +664,9 @@ perform context sensitive completion. This command is not idempotent."
   (interactive)
   ;; TBD: find-error / error output mode
   (unless (eq major-mode 'esml-mlb-mode)
-    (esml-error "show-basis is only meaningful on MLB files"))
+    (compat-error "show-basis is only meaningful on MLB files"))
   (when (get-process esml-mlb-show-basis-process-name)
-    (esml-error "show-basis already running"))
+    (compat-error "show-basis already running"))
   (save-some-buffers)
   (lexical-let ((tmp-file (concat
                            (file-name-directory (buffer-file-name))
@@ -674,15 +674,15 @@ perform context sensitive completion. This command is not idempotent."
                            ".basis"))
                 (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
     (when (file-exists-p tmp-file)
-      (esml-error "Temporary basis file already exists: %s" tmp-file))
+      (compat-error "Temporary basis file already exists: %s" tmp-file))
     (save-excursion
       (set-buffer buffer)
       (delete-region (point-min) (point-max)))
     (let ((process (start-process-shell-command
                     esml-mlb-show-basis-process-name
                     buffer
-                    (esml-replace-regexp-in-string
-                     (esml-replace-regexp-in-string
+                    (compat-replace-regexp-in-string
+                     (compat-replace-regexp-in-string
                       esml-mlb-show-basis-command
                       "%t"
                       tmp-file)

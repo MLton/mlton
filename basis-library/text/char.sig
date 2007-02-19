@@ -38,17 +38,18 @@ signature CHAR =
       val isPrint: char -> bool 
       val isPunct: char -> bool 
       val isSpace: char -> bool 
-      val fromString: string -> char option 
-      val scan: (char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
-      val toString: char -> string 
-      val fromCString: string -> char option
-      val toCString: char -> string
+      
+      val toString: char -> String.string 
+      val scan: (Char.char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
+      val fromString: String.string -> char option 
+      val toCString: char -> String.string
+      val fromCString: String.string -> char option
    end
 
 signature CHAR_EXTRA =
    sig
       include CHAR
 
-      val formatSequences: (char, 'a) StringCvt.reader -> 'a -> 'a
-      val scanC: (char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
+      val formatSequences: (Char.char, 'a) StringCvt.reader -> 'a -> 'a
+      val scanC: (Char.char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
    end

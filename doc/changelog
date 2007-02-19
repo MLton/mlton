@@ -1,5 +1,10 @@
 Here are the changes since version 20051202.
 
+* 2007-02-18
+   - Added command line switch -profile-val, to profile the evaluation of
+     val bindings; this is particularly useful with exception history for
+     debugging uncaught exceptions at the top-level.
+
 * 2006-12-29
    - Added command line switch -show {anns|path-map} and deprecated command
      line switch -show-anns {false|true}.  Use -show path-map to see the

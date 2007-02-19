@@ -9,12 +9,18 @@
 (* The :> is to hide the type substring.  We must add the where's to make char
  * and string the same as the toplevel types.
  *)
-structure Substring :> SUBSTRING_EXTRA 
-                       where type char = char
-                       where type string = string
-                       where type substring = CharVectorSlice.slice =
+functor SubstringFn(Arg : STRING_ARG)
+        :> SUBSTRING_EXTRA 
+              where type char      = Arg.CharVector.MonoVectorSlice.elem
+              where type string    = Arg.CharVector.MonoVectorSlice.vector
+              where type substring = Arg.CharVector.MonoVectorSlice.slice =
    struct
-      open PreString.PreSubstring
+      open Arg
+      open CharVector.MonoVectorSlice
+      
+      type char = elem
+      type string = vector
+      type substring = slice
 
       val size = length
       val extract = slice
@@ -51,5 +57,5 @@ structure Substring :> SUBSTRING_EXTRA
 *)
    end
 
-structure SubstringGlobal: SUBSTRING_GLOBAL = Substring
-open SubstringGlobal
+structure Substring = SubstringFn(StringArg)
+structure WideSubstring = SubstringFn(WideStringArg)

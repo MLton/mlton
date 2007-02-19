@@ -176,6 +176,16 @@ in
    structure CharVectorSlice = VectorSlice
 end
 local
+   structure S = EqMono (type elem = WideChar.char)
+   open S
+in
+   structure WideCharArray = Array
+   structure WideCharArray2 = Array2
+   structure WideCharArraySlice = ArraySlice
+   structure WideCharVector = Vector
+   structure WideCharVectorSlice = VectorSlice
+end
+local
    structure S = EqMono (type elem = Int.int)
    open S
 in

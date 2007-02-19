@@ -6,27 +6,32 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure PreString8 = 
+(* This is the minimum needed to bootstrap StringCvt *)
+structure String = 
    struct
+      (* CharVector comes from mono.sml and default-charX.sml *)
       open CharVector
       type char = elem
       type string = vector
-      structure PreSubstring =
-         struct
-            open CharVectorSlice
-            type char = elem
-            type string = vector
-            type substring = slice
-         end
-      val maxSize = maxLen
+      
       val size = length
-      fun extract (s, start, len) = 
-         CharVectorSlice.vector (CharVectorSlice.slice (s, start, len))
-      fun substring (s, start, len) = extract (s, start, SOME len)
       val op ^ = append
-      val new = vector
-      fun str c = new (1, c)
       val implode = fromList
       val explode = toList
+      val new = vector
    end
-structure PreString = PreString8
+
+(*
+structure WideString = 
+   struct
+      open WideCharVector
+      type char = elem
+      type string = vector
+      
+      val size = length
+      val op ^ = append
+      val implode = fromList
+      val explode = toList
+      val new = vector
+   end
+*)

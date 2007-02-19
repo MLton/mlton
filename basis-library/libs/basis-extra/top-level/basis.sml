@@ -175,7 +175,6 @@ structure BasisExtra :> BASIS_EXTRA =
       structure SysWord = SysWord
       structure Unix = Unix
       structure UnixSock = UnixSock
-(*
       structure WideChar = WideChar
       structure WideCharArray = WideCharArray
       structure WideCharArray2 = WideCharArray2
@@ -185,6 +184,8 @@ structure BasisExtra :> BASIS_EXTRA =
       structure WideString = WideString
       structure WideSubstring = WideSubstring
       structure WideText = WideText
+(*
+      structure WideTextIO = WideTextIO
       structure WideTextPrimIO = WideTextPrimIO
 *)
 (*

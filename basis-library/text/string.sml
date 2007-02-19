@@ -6,9 +6,39 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure String: STRING_EXTRA =
+signature STRING_ARG =
+   sig
+      structure Char: CHAR_EXTRA
+      structure CharVector: EQTYPE_MONO_VECTOR_EXTRA
+      sharing type Char.char   = CharVector.elem
+      sharing type Char.string = CharVector.vector
+   end
+
+functor StringFn(Arg : STRING_ARG) 
+        :> STRING_EXTRA
+             where type char   = Arg.CharVector.elem
+             where type string = Arg.CharVector.vector 
+             where type array  = Arg.CharVector.array =
    struct
-      open PreString
+      open Arg
+      open CharVector
+      structure CharVectorSlice = MonoVectorSlice
+      
+      type char = elem
+      type string = vector
+      
+      val new = vector
+      fun str c = new (1, c)
+      
+      val maxSize = maxLen
+      val size = length
+      val op ^ = append
+      val implode = fromList
+      val explode = toList
+      
+      fun extract (s, start, len) = 
+         CharVectorSlice.vector (CharVectorSlice.slice (s, start, len))
+      fun substring (s, start, len) = extract (s, start, SOME len)
 
       val toLower = translate (str o Char.toLower)
 
@@ -26,11 +56,13 @@ structure String: STRING_EXTRA =
       in
          open S
       end
+      
+      fun Stranslate f = String.fromPoly o Vector.translate f o toPoly
 
-      val toString = translate Char.toString
-      val toCString = translate Char.toCString
+      val toString = Stranslate Char.toString
+      val toCString = Stranslate Char.toCString
 
-      val scan: (char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader =
+      val scan =
          fn reader =>
          let
             fun loop (state, cs) =
@@ -44,13 +76,30 @@ structure String: STRING_EXTRA =
 
       val fromString = StringCvt.scanString scan
 
-      fun scanString scanChar (reader: (char, 'a) StringCvt.reader)
-        : (string, 'a) StringCvt.reader =
+      fun scanString scanChar reader =
          fn state =>
          Option.map (fn (cs, state) => (implode cs, state))
          (Reader.list (scanChar reader) state)
 
       val fromCString = StringCvt.scanString (scanString Char.scanC)
 
-      fun nullTerm s = s ^ "\000"
+      val null = str (Char.chr 0)
+      fun nullTerm s = s ^ null
    end
+
+structure StringArg : STRING_ARG =
+   struct
+      structure Char = Char
+      structure CharVector = CharVector
+      structure CharArray = CharArray
+   end
+
+structure WideStringArg : STRING_ARG =
+   struct
+      structure Char = WideChar
+      structure CharVector = WideCharVector
+      structure CharArray = WideCharArray
+   end
+
+structure String : STRING_EXTRA = StringFn(StringArg)
+structure WideString : STRING_EXTRA = StringFn(WideStringArg)

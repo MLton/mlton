@@ -32,6 +32,9 @@ signature STRING_CVT_EXTRA =
       val radixToWord: radix -> word
       val charToDigit: radix -> char -> int option
       val charToWDigit: radix -> char -> word option
+      
+      (* this exists before Char.isSpace *)
+      val isSpace: char -> bool
 
       (* maps 0...15 to #"0", #"1", ..., #"F" *)
       val digitToChar: int -> char

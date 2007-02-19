@@ -107,7 +107,7 @@ fun fmt radix (w: word): string =
          let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
             val q = q div radix
          in if q = zero
-               then PreString.implode chars
+               then String.implode chars
             else loop (q, chars)
          end
    in loop (w, [])

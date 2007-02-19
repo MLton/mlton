@@ -33,7 +33,7 @@ signature STRING =
       val isSuffix: string -> string -> bool
       val map: (char -> char) -> string -> string 
       val maxSize: int
-      val scan: (char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader
+      val scan: (Char.char, 'a) StringCvt.reader -> (string, 'a) StringCvt.reader
       val sub: string * int -> char 
       val toCString: string -> String.string
       val toString: string -> String.string 
@@ -44,8 +44,9 @@ signature STRING =
 signature STRING_EXTRA =
    sig
       include STRING
-
-      val fromArray: CharArray.array -> string
+      type array
+      
+      val fromArray: array -> string
       val new: int * char -> string
       val nullTerm: string -> string
       val tabulate: int * (int -> char) -> string

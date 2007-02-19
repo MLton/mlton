@@ -2090,12 +2090,15 @@ fun elaborateDec (d, {env = E, nest}) =
                                         (seq [Apat.layout pat,
                                               str " = ", Aexp.layout exp])]
                                 end
+                             val patRegion = Apat.region pat
+                             val expRegion = Aexp.region exp
+                             val exp = elabExp (exp, nest, Apat.getName pat)
                           in
-                             {exp = elabExp (exp, nest, Apat.getName pat),
-                              expRegion = Aexp.region exp,
+                             {exp = exp,
+                              expRegion = expRegion,
                               lay = lay,
                               pat = pat,
-                              patRegion = Apat.region pat}
+                              patRegion = patRegion}
                           end)
                       val {markFunc, setBound, unmarkFunc} = recursiveFun ()
                       val elaboratePat = elaboratePat ()
@@ -2192,25 +2195,46 @@ fun elaborateDec (d, {env = E, nest}) =
                       val vbs =
                          Vector.map
                          (vbs,
-                          fn {exp = e, expRegion, lay, pat, patRegion, ...} =>
+                          fn {exp, expRegion, lay, pat, patRegion, ...} =>
                           let
-                             val (p, bound) =
+                             val (pat, bound) =
                                 elaboratePat (pat, E, {bind = false,
                                                        isRvb = false}, preError)
                              val _ =
                                 unify
-                                (Cpat.ty p, Cexp.ty e, fn (p, e) =>
-                                 (Apat.region pat,
+                                (Cpat.ty pat, Cexp.ty exp, fn (p, e) =>
+                                 (patRegion,
                                   str "pattern and expression disagree",
                                   align [seq [str "pattern:    ", p],
                                          seq [str "expression: ", e],
                                          lay ()]))
+                             val exp =
+                                Cexp.enterLeave
+                                (exp, 
+                                 profileBody 
+                                 andalso !Control.profileVal 
+                                 andalso Cexp.isExpansive exp, fn () =>
+                                 let
+                                    val bound = Vector.map (bound, #1)
+                                    val name = 
+                                       concat ["<val>:",
+                                               if Vector.length bound = 1
+                                                  then (Avar.toString 
+                                                        (Vector.sub (bound, 0)))
+                                               else (Vector.toString 
+                                                     Avar.toString 
+                                                     bound)]
+                                 in
+                                    SourceInfo.function
+                                    {name = name :: nest,
+                                     region = expRegion}
+                                 end)
                           in
                              {bound = bound,
-                              exp = e,
+                              exp = exp,
                               expRegion = expRegion,
                               lay = lay,
-                              pat = p,
+                              pat = pat,
                               patRegion = patRegion}
                           end)
                       val boundVars =
@@ -2866,7 +2890,7 @@ fun elaborateDec (d, {env = E, nest}) =
                       Cexp.enterLeave
                       (Cexp.make (Cexp.Raise exn, resultType),
                        profileBody andalso !Control.profileRaise,
-                       fn () => SourceInfo.function {name = "raise" :: nest,
+                       fn () => SourceInfo.function {name = "<raise>" :: nest,
                                                      region = region})
                    end
               | Aexp.Record r =>

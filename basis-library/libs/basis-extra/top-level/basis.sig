@@ -246,7 +246,6 @@ signature BASIS_EXTRA =
       structure SysWord : WORD
       structure Unix : UNIX
       structure UnixSock : UNIX_SOCK
-(*
       structure WideChar : CHAR
       structure WideCharArray : MONO_ARRAY
       structure WideCharArray2 : MONO_ARRAY2
@@ -256,6 +255,8 @@ signature BASIS_EXTRA =
       structure WideString : STRING
       structure WideSubstring : SUBSTRING
       structure WideText : TEXT
+(*
+      structure WideTextIO : TEXT_IO
       structure WideTextPrimIO : PRIM_IO
 *)
 (*
@@ -578,6 +579,39 @@ signature BASIS_EXTRA =
       sharing type Real64Array2.elem = Real64.real
       sharing type Real64Array2.vector = Real64Vector.vector
       sharing type Unix.exit_status = Posix.Process.exit_status
+      sharing type WideChar.string = WideString.string
+      sharing type WideCharArray.elem = WideChar.char
+      sharing type WideCharArray.vector = WideCharVector.vector
+      sharing type WideCharArray2.elem = WideChar.char
+      sharing type WideCharArray2.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.elem = WideChar.char
+      sharing type WideCharArraySlice.array = WideCharArray.array
+      sharing type WideCharArraySlice.vector = WideCharVector.vector
+      sharing type WideCharArraySlice.vector_slice = WideCharVectorSlice.slice
+      sharing type WideCharVector.elem = WideChar.char
+      sharing type WideCharVector.vector = WideString.string
+      sharing type WideCharVectorSlice.elem = WideChar.char
+      sharing type WideCharVectorSlice.slice = WideSubstring.substring
+      sharing type WideCharVectorSlice.vector = WideString.string
+      sharing type WideString.char = WideChar.char
+      (* next two are redundant? basis & char both do it... *)
+      sharing type WideString.string = WideCharVector.vector
+      sharing type WideSubstring.substring = WideCharVectorSlice.slice
+      sharing type WideSubstring.string = WideString.string
+      sharing type WideSubstring.char = WideChar.char
+      sharing type WideText.Char.char = WideChar.char
+      sharing type WideText.String.string = WideString.string
+      sharing type WideText.Substring.substring = WideSubstring.substring
+      sharing type WideText.CharVector.vector = WideCharVector.vector
+      sharing type WideText.CharArray.array = WideCharArray.array
+      sharing type WideText.CharArraySlice.slice = WideCharArraySlice.slice
+      sharing type WideText.CharVectorSlice.slice = WideCharVectorSlice.slice
+(*
+      sharing type WideTextIO.
+      sharing type WideTextPrimIO.array = WideCharArray.array
+      sharing type WideTextPrimIO.vector = WideCharVector.vector
+      sharing type WideTextPrimIO.elem = WideChar.char
+*)
       sharing type WordArray.elem = word
       sharing type WordArray.vector = WordVector.vector
       sharing type WordArraySlice.elem = word
@@ -699,11 +733,17 @@ signature BASIS_EXTRA =
    where type 'a Vector.vector = 'a Vector.vector
 *)
    where type 'a VectorSlice.slice = 'a VectorSlice.slice
+(*
+   where type WideTextIO.instream = WideTextIO.instream
+   where type WideTextIO.outstream = WideTextIO.outstream
+   where type WideTextPrimIO.reader = WideTextPrimIO.reader
+   where type WideTextPrimIO.writer = WideTextPrimIO.writer
+*)
    where type Word8Array.array = Word8Array.array
    where type Word8ArraySlice.slice = Word8ArraySlice.slice
    where type Word8ArraySlice.vector_slice = Word8ArraySlice.vector_slice
    where type Word8Vector.vector = Word8Vector.vector
-
+   
    where type 'a MLton.Thread.t = 'a MLton.Thread.t
    where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
 
@@ -744,6 +784,8 @@ signature BASIS_EXTRA =
    where type IntInf.int = IntInf.int
    where type Real32.real = Real32.real
    where type Real64.real = Real64.real
+   where type WideChar.char = WideChar.char
+   where type WideString.string = WideString.string
    where type Word1.word = Word1.word
    where type Word2.word = Word2.word
    where type Word3.word = Word3.word

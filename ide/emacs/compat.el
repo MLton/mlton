@@ -1,0 +1,36 @@
+;; Copyright (C) 2007 Vesa Karvonen
+;;
+;; MLton is released under a BSD-style license.
+;; See the file MLton-LICENSE for details.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gnu Emacs / XEmacs compatibility workarounds
+
+(if (string-match "XEmacs" emacs-version)
+    (defun compat-replace-regexp-in-string (str regexp rep)
+      (replace-in-string str regexp rep t))
+  (defun compat-replace-regexp-in-string (str regexp rep)
+    (replace-regexp-in-string regexp rep str t t)))
+
+(if (string-match "XEmacs" emacs-version)
+    (defun compat-error (str &rest objs)
+      (error 'error (concat "Error: " (apply (function format) str objs) ".")))
+  (defalias 'compat-error (function error)))
+
+(if (string-match "XEmacs" emacs-version)
+    (defalias 'compat-add-local-hook (function add-local-hook))
+  (defun compat-add-local-hook (hook fn)
+    (add-hook hook fn nil t)))
+
+(if (string-match "XEmacs" emacs-version)
+    (defun compat-abbreviate-file-name (file)
+      (abbreviate-file-name file t))
+  (defalias 'compat-abbreviate-file-name (function abbreviate-file-name)))
+
+(if (string-match "XEmacs" emacs-version)
+    (defalias 'compat-delete-timer (function delete-itimer))
+  (defalias 'compat-delete-timer (function cancel-timer)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide 'compat)

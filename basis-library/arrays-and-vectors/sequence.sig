@@ -64,7 +64,7 @@ signature SEQUENCE =
       val isPrefix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
       val isSubsequence: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
       val isSuffix: ('a elt * 'a elt -> bool) -> 'a sequence -> 'a sequence -> bool
-      val translate: ('a elt -> 'a sequence) -> 'a sequence -> 'a sequence
+      val translate: ('a elt -> 'b sequence) -> 'a sequence -> 'b sequence
       val tokens: ('a elt -> bool) -> 'a sequence -> 'a sequence list
       val fields: ('a elt -> bool) -> 'a sequence -> 'a sequence list
 

@@ -58,6 +58,7 @@ in
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
       ../config/default/$(DEFAULT_CHAR)
+      ../config/default/$(DEFAULT_WIDECHAR)
       ../config/default/$(DEFAULT_INT)
       ../config/default/$(DEFAULT_REAL)
       ../config/default/$(DEFAULT_WORD)
@@ -100,6 +101,7 @@ in
    ../arrays-and-vectors/mono-array2.sig
    ../arrays-and-vectors/mono-array2.fun
    ../arrays-and-vectors/mono.sml
+   ../text/char0.sig
    ../text/string0.sml
    ../text/char0.sml
    ../util/reader.sig
@@ -159,18 +161,20 @@ in
    end end
 
    ../text/char.sig
-   ../text/char.sml
    ../text/string.sig
-   ../text/string.sml
    ../text/substring.sig
+   ../text/text.sig
+
+   ../util/heap.sml
+   ../text/char.sml
+   ../text/string.sml
    ../text/substring.sml
+   ../text/text.sml
    ../text/char-global.sml
    ../text/string-global.sml
    ../text/substring-global.sml
    ../text/byte.sig
    ../text/byte.sml
-   ../text/text.sig
-   ../text/text.sml
 
    ../text/nullstring.sml
    ../util/CUtil.sig
