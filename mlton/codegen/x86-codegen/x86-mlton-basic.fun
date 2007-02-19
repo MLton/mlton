@@ -22,10 +22,10 @@ struct
   (*
    * x86.Size.t equivalents
    *)
-  val wordBytes = Bytes.toInt Bytes.inWord
+  val wordBytes = Bytes.toInt Bytes.inWord32
   val wordSize = Size.fromBytes wordBytes
   val wordScale = Scale.fromBytes wordBytes
-  val pointerBytes = Bytes.toInt Runtime.pointerSize
+  val pointerBytes = Bytes.toInt Bytes.inWord32
   val pointerSize = Size.fromBytes pointerBytes
 
   (*
@@ -294,11 +294,12 @@ struct
            CType.memo
            (fn t =>
             case t of
-               Int8 => w "8"
+               CPointer => Label.fromString (concat [prefix, "CPointer"])
+             | Int8 => w "8"
              | Int16 => w "16"
              | Int32 => w "32"
              | Int64 => w "64"
-             | Pointer => Label.fromString (concat [prefix, "Pointer"])
+             | Objptr => Label.fromString (concat [prefix, "Objptr"])
              | Real32 => r "32"
              | Real64 => r "64"
              | Word8 => w "8"
@@ -311,7 +312,7 @@ struct
      val global_base = make "global"
   end
 
-  val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"
+  val globalObjptrNonRoot_base = Label.fromString "globalObjptrNonRoot"
 
   val fileNameLabel = Label.fromString "fileName"
   val fileName = Operand.immediate_label fileNameLabel

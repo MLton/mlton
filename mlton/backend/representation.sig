@@ -36,7 +36,7 @@ signature REPRESENTATION =
                       dst: Rssa.Var.t * Rssa.Type.t,
                       objectTy: Ssa.Type.t,
                       oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list,
-             objectTypes: (Rssa.PointerTycon.t * Rssa.ObjectType.t) vector,
+             objectTypes: (Rssa.ObjptrTycon.t * Rssa.ObjectType.t) vector,
              select: {base: Rssa.Operand.t Ssa.Base.t,
                       baseTy: Ssa.Type.t,
                       dst: Rssa.Var.t * Rssa.Type.t,

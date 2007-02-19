@@ -305,14 +305,37 @@ signature CONTROL_FLAGS =
        | Self
       val target: target ref
 
-      datatype arch = datatype MLton.Platform.Arch.t
-      val targetArch: arch ref
+      structure Target:
+         sig
+            datatype arch = datatype MLton.Platform.Arch.t
+            val arch: arch ref
 
-      val setTargetBigEndian: bool -> unit
-      val targetIsBigEndian: unit -> bool
+            val bigEndian: unit -> bool
+            val setBigEndian: bool -> unit
 
-      datatype os = datatype MLton.Platform.OS.t
-      val targetOS: os ref
+            datatype os = datatype MLton.Platform.OS.t
+            val os: os ref
+
+            structure Size:
+               sig
+                  val cint: unit -> Bits.t
+                  val cpointer: unit -> Bits.t
+                  val cptrdiff: unit -> Bits.t
+                  val csize: unit -> Bits.t
+                  val header: unit -> Bits.t
+                  val mplimb: unit -> Bits.t
+                  val objptr: unit -> Bits.t
+                  val seqIndex: unit -> Bits.t
+               end
+            val setSizes: {cint: Bits.t,
+                           cpointer: Bits.t,
+                           cptrdiff: Bits.t,
+                           csize: Bits.t,
+                           header: Bits.t,
+                           mplimb: Bits.t,
+                           objptr: Bits.t,
+                           seqIndex: Bits.t} -> unit
+         end
 
       (* Type check ILs. *)
       val typeCheck: bool ref

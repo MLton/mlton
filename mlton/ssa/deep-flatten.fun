@@ -710,6 +710,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                     | Make _ => Value.weak (arg 0))
              | _ => result ()
          end
+      fun base b =
+         case b of
+            Base.Object obj => obj
+          | Base.VectorSub {vector, ...} => vector
       fun select {base, offset} =
          let
             datatype z = datatype Value.t
@@ -728,7 +732,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                  to = select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
       val {func, value = varValue, ...} =
-         analyze {coerce = coerce,
+         analyze {base = base,
+                  coerce = coerce,
                   const = const,
                   filter = fn _ => (),
                   filterWord = fn _ => (),

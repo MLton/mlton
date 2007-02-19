@@ -100,7 +100,7 @@ structure Statement =
 
       fun bytesAllocated (s: t): Bytes.t =
          case s of
-            Object {size, ...} => Words.toBytes size
+            Object {size, ...} => size
           | _ => Bytes.zero
    end
 
@@ -160,7 +160,7 @@ fun insertFunction (f: Function.t,
                     ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
-      val lessThan = Prim.wordLt (WordSize.default, {signed = false})
+      val lessThan = Prim.wordLt (WordSize.csize (), {signed = false})
       val newBlocks = ref []
       local
          val r: Label.t option ref = ref NONE
@@ -218,7 +218,7 @@ fun insertFunction (f: Function.t,
                                              (WordX.fromIntInf
                                               (Bytes.toIntInf
                                                (ensureFree (valOf return)),
-                                               WordSize.default))
+                                               WordSize.csize ()))
                                         | _ => z)),
                               func = func,
                               return = return}
@@ -343,7 +343,7 @@ fun insertFunction (f: Function.t,
                    then ignore (stackCheck
                                 (true,
                                  insert (Operand.word
-                                         (WordX.zero WordSize.default))))
+                                         (WordX.zero (WordSize.csize ())))))
                 else
                    (* No limit check, just keep the block around. *)
                    List.push (newBlocks,
@@ -377,11 +377,11 @@ fun insertFunction (f: Function.t,
                       Statement.PrimApp
                       {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
                                            Operand.Runtime Frontier),
-                       dst = SOME (res, Type.defaultWord),
-                       prim = Prim.wordSub WordSize.default}
+                       dst = SOME (res, Type.csize ()),
+                       prim = Prim.wordSub (WordSize.csize ())}
                    val (statements, transfer) =
                       primApp (lessThan,
-                               Operand.Var {var = res, ty = Type.defaultWord},
+                               Operand.Var {var = res, ty = Type.csize ()},
                                amount,
                                z)
                    val statements = Vector.concat [Vector.new1 s, statements]
@@ -389,10 +389,10 @@ fun insertFunction (f: Function.t,
                    if handlesSignals
                       then
                          frontierCheck (isFirst,
-                                        Prim.wordEqual WordSize.default,
+                                        Prim.wordEqual (WordSize.csize ()),
                                         Operand.Runtime Limit,
                                         Operand.word (WordX.zero
-                                                      WordSize.default),
+                                                      (WordSize.csize ())),
                                         {collect = collect,
                                          dontCollect = newBlock (false,
                                                                  statements,
@@ -414,11 +414,11 @@ fun insertFunction (f: Function.t,
                                         Operand.Runtime Limit,
                                         Operand.Runtime Frontier,
                                         insert (Operand.word
-                                                (WordX.zero WordSize.default)))
+                                                (WordX.zero (WordSize.csize ()))))
                  else heapCheck (true,
                                  Operand.word (WordX.fromIntInf
                                                (Bytes.toIntInf bytes,
-                                                WordSize.default))))
+                                                WordSize.csize ()))))
              fun smallAllocation (): unit =
                 let
                    val b = blockCheckAmount {blockIndex = i}
@@ -454,18 +454,18 @@ fun insertFunction (f: Function.t,
                                                      (WordX.fromIntInf
                                                       (Word.toIntInf
                                                        (Bytes.toWord extraBytes),
-                                                       WordSize.default)),
+                                                       WordSize.csize ())),
                                                      bytesNeeded),
                                  dst = bytes,
                                  overflow = allocTooLarge (),
-                                 prim = Prim.wordAddCheck (WordSize.default,
+                                 prim = Prim.wordAddCheck (WordSize.csize (),
                                                            {signed = false}),
                                  success = (heapCheck
                                             (false, 
                                              Operand.Var
                                              {var = bytes,
-                                              ty = Type.defaultWord})),
-                                 ty = Type.defaultWord})
+                                              ty = Type.csize ()})),
+                                 ty = Type.csize ()})
                          in
                             ()
                          end

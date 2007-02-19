@@ -68,10 +68,10 @@ fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
       else
          let
             val casesTy =
-               Type.sum (Vector.map (cases, fn (w, _) => Type.constant w))
+               Type.sum (Vector.map (cases, fn (w, _) => Type.ofWordX w))
          in
             Bits.equals (Type.width ty, Type.width casesTy)
-            andalso not (Type.isPointer ty)
+            andalso not (Type.isObjptr ty)
             andalso (isSome default orelse Type.isSubtype (ty, casesTy))
          end
    end

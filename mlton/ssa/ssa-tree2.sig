@@ -71,6 +71,7 @@ signature SSA_TREE2 =
             val dest: t -> dest
             val equals: t * t -> bool
             val intInf: t
+            val isVector: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
             val object: {args: t Prod.t, con: ObjectCon.t} -> t

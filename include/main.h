@@ -13,6 +13,9 @@
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
 
+typedef Pointer CPointer;
+typedef Pointer Objptr;
+
 /* The label must be declared as weak because gcc's optimizer may prove that
  * the code that declares the label is dead and hence eliminate the declaration.
  */
@@ -39,8 +42,8 @@ Pointer gcStateAddress;
         gcState.atMLtonsLength = cardof(atMLtons);                      \
         gcState.frameLayouts = frameLayouts;                            \
         gcState.frameLayoutsLength = cardof(frameLayouts);              \
-        gcState.globals = globalPointer;                                \
-        gcState.globalsLength = cardof(globalPointer);                  \
+        gcState.globals = globalObjptr;                                 \
+        gcState.globalsLength = cardof(globalObjptr);                   \
         gcState.intInfInits = intInfInits;                              \
         gcState.intInfInitsLength = cardof(intInfInits);                \
         gcState.loadGlobals = loadGlobals;                              \

@@ -172,9 +172,9 @@ datatype 'a t =
  | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* ssa to rssa *)
- | Word8Array_subWord (* ssa to rssa *)
- | Word8Array_updateWord (* ssa to rssa *)
- | Word8Vector_subWord (* ssa to rssa *)
+ | Word8Array_subWord of WordSize.t (* ssa to rssa *)
+ | Word8Array_updateWord of WordSize.t  (* ssa to rssa *)
+ | Word8Vector_subWord of WordSize.t  (* ssa to rssa *)
  | Word8Vector_toString (* defunctorize *)
  | World_save (* ssa to rssa *)
 
@@ -190,6 +190,8 @@ fun toString (n: 'a t): string =
       fun sign {signed} = if signed then "WordS" else "WordU"
       fun word (s: WordSize.t, str: string): string =
          concat ["Word", WordSize.toString s, "_", str]
+      fun word8Seq (seq: string, oper: string, s: WordSize.t): string =
+         concat ["Word8", seq, "_", oper, "Word", WordSize.toString s]
       fun wordS (s: WordSize.t, sg, str: string): string =
          concat [sign sg, WordSize.toString s, "_", str]
       val realC = ("Real", RealSize.toString)
@@ -295,9 +297,9 @@ fun toString (n: 'a t): string =
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
-       | Word8Array_subWord => "Word8Array_subWord"
-       | Word8Array_updateWord => "Word8Array_updateWord"
-       | Word8Vector_subWord => "Word8Vector_subWord"
+       | Word8Array_subWord w => word8Seq ("Array", "sub", w)
+       | Word8Array_updateWord w => word8Seq ("Array", "update", w)
+       | Word8Vector_subWord w => word8Seq ("Vector", "sub", w)
        | Word8Vector_toString => "Word8Vector_toString"
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
@@ -465,9 +467,9 @@ val equals: 'a t * 'a t -> bool =
          andalso sg = sg'
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
-    | (Word8Array_subWord, Word8Array_subWord) => true
-    | (Word8Array_updateWord, Word8Array_updateWord) => true
-    | (Word8Vector_subWord, Word8Vector_subWord) => true
+    | (Word8Array_subWord s, Word8Array_subWord s') => WordSize.equals (s, s')
+    | (Word8Array_updateWord s, Word8Array_updateWord s') => WordSize.equals (s, s')
+    | (Word8Vector_subWord s, Word8Vector_subWord s') => WordSize.equals (s, s')
     | (Word8Vector_toString, Word8Vector_toString) => true
     | (World_save, World_save) => true
     | _ => false
@@ -593,9 +595,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_toWord z => Word_toWord z
     | Word_xorb z => Word_xorb z
     | WordVector_toIntInf => WordVector_toIntInf
-    | Word8Array_subWord => Word8Array_subWord
-    | Word8Array_updateWord => Word8Array_updateWord
-    | Word8Vector_subWord => Word8Vector_subWord
+    | Word8Array_subWord z => Word8Array_subWord z
+    | Word8Array_updateWord z => Word8Array_updateWord z
+    | Word8Vector_subWord z => Word8Vector_subWord z
     | Word8Vector_toString => Word8Vector_toString
     | World_save => World_save
 
@@ -614,15 +616,16 @@ val ffiSymbol = FFI_Symbol
 val intInfEqual = IntInf_equal
 val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
-fun pointerGet ctype =
+fun pointerGet ctype = 
    let datatype z = datatype CType.t
    in
       case ctype of
-         Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+         CPointer => Pointer_getPointer
+       | Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
        | Int16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
        | Int32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Int64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
-       | Pointer => Pointer_getPointer
+       | Objptr => Error.bug "Prim.pointerGet"
        | Real32 => Pointer_getReal RealSize.R32
        | Real64 => Pointer_getReal RealSize.R64
        | Word8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
@@ -630,15 +633,16 @@ fun pointerGet ctype =
        | Word32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
    end
-fun pointerSet ctype =
+fun pointerSet ctype = 
    let datatype z = datatype CType.t
    in
       case ctype of
-         Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+         CPointer => Pointer_setPointer
+       | Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
        | Int16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
        | Int32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
        | Int64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
-       | Pointer => Pointer_setPointer
+       | Objptr => Error.bug "Prim.pointerSet"
        | Real32 => Pointer_setReal RealSize.R32
        | Real64 => Pointer_setReal RealSize.R64
        | Word8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
@@ -790,9 +794,9 @@ val kind: 'a t -> Kind.t =
        | Weak_canGet => DependsOnState
        | Weak_get => DependsOnState
        | Weak_new => Moveable
-       | Word8Array_subWord => DependsOnState
-       | Word8Array_updateWord => SideEffect
-       | Word8Vector_subWord => Functional
+       | Word8Array_subWord _ => DependsOnState
+       | Word8Array_updateWord _ => SideEffect
+       | Word8Vector_subWord _ => Functional
        | Word8Vector_toString => Functional
        | WordVector_toIntInf => Functional
        | Word_add _ => Functional
@@ -883,6 +887,10 @@ local
        (Word_xorb s)]
       @ wordSigns (s, true)
       @ wordSigns (s, false)
+   fun word8Seqs (s: WordSize.t) =
+      [(Word8Array_subWord s),
+       (Word8Array_updateWord s),
+       (Word8Vector_subWord s)]
 in
    val all: unit t list =
       [Array_array,
@@ -948,9 +956,6 @@ in
        Weak_new,
        Word_toIntInf,
        WordVector_toIntInf,
-       Word8Array_subWord,
-       Word8Array_updateWord,
-       Word8Vector_subWord,
        Word8Vector_toString,
        World_save]
       @ List.concat [List.concatMap (RealSize.all, reals),
@@ -975,6 +980,7 @@ in
                                        (real, ac, fn (s', ac) =>
                                         Real_toReal (s, s') :: ac)))))
         end
+     @ List.concatMap (WordSize.prims, word8Seqs)
      @ let
           fun doit (all, get, set) =
              List.concatMap (all, fn s => [get s, set s])
@@ -1187,14 +1193,13 @@ fun ('a, 'b) apply (p: 'a t,
                        | Relation.EQUAL => 0
                        | Relation.GREATER => 1
                 in
-                   word (WordX.fromIntInf (i, WordSize.default))
+                   word (WordX.fromIntInf (i, WordSize.compareRes))
                 end
            | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
            | (IntInf_toWord, [IntInf i]) =>
                 (case SmallIntInf.toWord i of
                     NONE => ApplyResult.Unknown
-                  | SOME w => word (WordX.fromIntInf (Word.toIntInf w,
-                                                      WordSize.default)))
+                  | SOME w => word w)
            | (MLton_eq, [c1, c2]) => eq (c1, c2)
            | (MLton_equal, [c1, c2]) => equal (c1, c2)
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
@@ -1224,9 +1229,7 @@ fun ('a, 'b) apply (p: 'a t,
                 wordS (WordX.rshift, s, w1, w2)
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
            | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
-           | (Word_toIntInf, [Word w]) =>
-                intInf (SmallIntInf.fromWord
-                        (Word.fromIntInf (WordX.toIntInf w)))
+           | (Word_toIntInf, [Word w]) => intInf (SmallIntInf.fromWord w)
            | (Word_toWord (_, s, {signed}), [Word w]) =>
                 word (if signed then WordX.resizeX (w, s)
                       else WordX.resize (w, s))
@@ -1334,7 +1337,7 @@ fun ('a, 'b) apply (p: 'a t,
                                       (w,
                                        WordX.fromIntInf (Bits.toIntInf
                                                          (WordSize.bits s),
-                                                         WordSize.default),
+                                                         WordSize.shiftArg),
                                        {signed = false}))
                                      then zero s
                                   else Unknown
@@ -1494,7 +1497,7 @@ fun ('a, 'b) apply (p: 'a t,
                           in
                              case p of
                                 IntInf_compare =>
-                                   word (WordX.zero WordSize.default)
+                                   word (WordX.zero WordSize.compareRes)
                               | IntInf_equal => t
                               | MLton_eq => t
                               | MLton_equal => t

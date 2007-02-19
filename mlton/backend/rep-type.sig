@@ -10,7 +10,7 @@ signature REP_TYPE_STRUCTS =
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure Label: LABEL
-      structure PointerTycon: POINTER_TYCON
+      structure ObjptrTycon: OBJPTR_TYCON
       structure Prim: PRIM
       structure RealSize: REAL_SIZE
       structure Runtime: RUNTIME
@@ -44,55 +44,54 @@ signature REP_TYPE =
 
       val bogusWord: t -> WordX.t
       val align: t * Bytes.t -> Bytes.t
-      val andb: t * t -> t option
       val arrayOffsetIsOk: {base: t,
                             index: t,
                             offset: Bytes.t,
-                            pointerTy: PointerTycon.t -> ObjectType.t,
+                            tyconTy: ObjptrTycon.t -> ObjectType.t,
                             result: t,
                             scale: Scale.t} -> bool
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
                      to: t,
-                     tyconTy: PointerTycon.t -> ObjectType.t} -> bool
+                     tyconTy: ObjptrTycon.t -> ObjectType.t} -> bool
       val checkPrimApp: {args: t vector,
                          prim: t Prim.t,
                          result: t option} -> bool
-      val cPointer: unit -> t
-      val constant: WordX.t -> t
+      val cpointer: unit -> t
+      val csize: unit -> t
+      val cint: unit -> t
       val deLabel: t -> Label.t option
-      val dePointer: t -> PointerTycon.t option
+      val deObjptr: t -> ObjptrTycon.t option
       val deReal: t -> RealSize.t option
-      val defaultWord: t
       val equals: t * t -> bool
-      val exnStack: t
-      val gcState: t
-      val intInf: t
+      val exnStack: unit -> t
+      val gcState: unit -> t
+      val intInf: unit -> t
       val isCPointer: t -> bool
-      val isPointer: t -> bool
+      val isObjptr: t -> bool
       val isUnit: t -> bool
       val isSubtype: t * t -> bool
       val label: Label.t -> t
       val layout: t -> Layout.t
-      val lshift: t * t -> t
       val name: t -> string (* simple one letter abbreviation *)
       val ofGCField: Runtime.GCField.t -> t
-      val ofWordVector: WordXVector.t -> t
+      val ofWordXVector: WordXVector.t -> t
+      val ofWordX: WordX.t -> t
       val offsetIsOk: {base: t,
                        offset: Bytes.t,
-                       pointerTy: PointerTycon.t -> ObjectType.t,
+                       tyconTy: ObjptrTycon.t -> ObjectType.t,
                        result: t} -> bool
-      val orb: t * t -> t option
-      val pointer: PointerTycon.t -> t
-      val pointerHeader: PointerTycon.t -> t
+      val objptr: ObjptrTycon.t -> t
+      val objptrHeader: unit -> t
       val real: RealSize.t -> t
       val resize: t * Bits.t -> t
-      val rshift: t * t -> t
       val seq: t vector -> t
-      val string: t
+      val seqIndex: unit -> t
+      val shiftArg: t
+      val string: unit -> t
       val sum: t vector -> t
-      val thread: t
+      val thread: unit -> t
       val toCType: t -> CType.t
       val unit: t
       val width: t -> Bits.t
@@ -102,7 +101,7 @@ signature REP_TYPE =
 
       structure BuiltInCFunction:
          sig
-            val bug: t CFunction.t
+            val bug: unit -> t CFunction.t
             val gc: {maySwitchThreads: bool} -> t CFunction.t
          end
    end

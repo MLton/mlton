@@ -247,7 +247,7 @@ structure Value =
                      case Type.dest t of
                         Type.Array t =>
                            let val elt as (_, e) = slot t
-                               val length = loop Type.defaultWord
+                               val length = loop (Type.word (WordSize.seqIndex ()))
                            in Exists.addHandler
                               (e, fn () => Useful.makeUseful (deground length))
                               ; Array {useful = useful (),
@@ -257,8 +257,9 @@ structure Value =
                       | Type.Ref t => Ref {arg = slot t,
                                            useful = useful ()}
                       | Type.Tuple ts => Tuple (Vector.map (ts, slot))
-                      | Type.Vector t => Vector {length = loop Type.defaultWord,
-                                                 elt = slot t}
+                      | Type.Vector t => 
+                           Vector {length = loop (Type.word (WordSize.seqIndex ())),
+                                   elt = slot t}
                       | Type.Weak t => Weak {arg = slot t,
                                              useful = useful ()}
                       | _ => Ground (useful ())
@@ -532,8 +533,8 @@ fun useless (program: Program.t): Program.t =
                                     ; return (devector (arg 0)))
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
-                   | Word8Array_subWord => sub ()
-                   | Word8Array_updateWord => update ()
+                   | Word8Array_subWord _ => sub ()
+                   | Word8Array_updateWord _ => update ()
                    | _ =>
                         let (* allOrNothing so the type doesn't change *)
                            val res = allOrNothing result
@@ -828,7 +829,7 @@ fun useless (program: Program.t): Program.t =
                                  | Ref_assign =>
                                       Value.isUseful 
                                       (Value.deref (value (arg 0)))
-                                 | Word8Array_updateWord => array ()
+                                 | Word8Array_updateWord _ => array ()
                                  | _ => true
                                 end
                         then yes ty

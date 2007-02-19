@@ -7,7 +7,7 @@
 
 signature OBJECT_TYPE =
    sig
-      structure PointerTycon: POINTER_TYCON
+      structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
 
       type ty
@@ -20,7 +20,7 @@ signature OBJECT_TYPE =
        | Weak of ty (* in Weak t, must have Type.isPointer t *)
        | WeakGone
 
-      val basic: (PointerTycon.t * t) vector
+      val basic: unit -> (ObjptrTycon.t * t) vector
       val isOk: t -> bool
       val layout: t -> Layout.t
       val toRuntime: t -> Runtime.RObjectType.t

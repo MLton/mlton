@@ -15,7 +15,7 @@ datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 fun 'a analyze
-   {coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
+   {base, coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},
     select, update, useFromTypeOnBinds} =
    let
@@ -192,10 +192,7 @@ fun 'a analyze
           Option.layout (Vector.layout layout),
           Layout.ignore)
          loopTransfer
-      fun baseValue b =
-         case b of
-            Base.Object x => value x
-          | Base.VectorSub {vector, ...} => value vector
+      fun baseValue b = base (Base.map (b, value))
       fun loopBind {exp, ty, var}: 'a =
          case exp of
             Const c => const c

@@ -162,9 +162,9 @@ signature PRIM =
              | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Word_xorb of WordSize.t (* codegen *)
              | WordVector_toIntInf (* ssa to rssa *)
-             | Word8Array_subWord (* ssa to rssa *)
-             | Word8Array_updateWord (* ssa to rssa *)
-             | Word8Vector_subWord (* ssa to rssa *)
+             | Word8Array_subWord of WordSize.t (* ssa to rssa *)
+             | Word8Array_updateWord of WordSize.t (* ssa to rssa *)
+             | Word8Vector_subWord of WordSize.t (* ssa to rssa *)
              | Word8Vector_toString (* defunctorize *)
              | World_save (* ssa to rssa *)
 

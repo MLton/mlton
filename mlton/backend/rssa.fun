@@ -50,7 +50,7 @@ structure Operand =
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
-       | PointerTycon of PointerTycon.t
+       | ObjptrTycon of ObjptrTycon.t
        | Runtime of GCField.t
        | Var of {var: Var.t,
                  ty: Type.t}
@@ -60,7 +60,7 @@ structure Operand =
       fun zero s = word (WordX.fromIntInf (0, s))
 
       fun bool b =
-         word (WordX.fromIntInf (if b then 1 else 0, WordSize.default))
+         word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
 
       val ty =
          fn ArrayOffset {ty, ...} => ty
@@ -70,19 +70,17 @@ structure Operand =
                   datatype z = datatype Const.t
                in
                   case c of
-                     IntInf _ => Type.intInf
+                     IntInf _ => Type.intInf ()
                    | Real r => Type.real (RealX.size r)
-                   | Word w => Type.constant w
-                   | WordVector v =>
-                        Type.wordVector (WordSize.bits
-                                         (WordXVector.elementSize v))
+                   | Word w => Type.ofWordX w
+                   | WordVector v => Type.ofWordXVector v
                end
-          | EnsuresBytesFree => Type.defaultWord
-          | File => Type.cPointer ()
-          | GCState => Type.gcState
-          | Line => Type.defaultWord
+          | EnsuresBytesFree => Type.csize ()
+          | File => Type.cpointer ()
+          | GCState => Type.gcState ()
+          | Line => Type.cint ()
           | Offset {ty, ...} => ty
-          | PointerTycon _ => Type.defaultWord
+          | ObjptrTycon opt => Type.objptr opt
           | Runtime z => Type.ofGCField z
           | Var {ty, ...} => ty
 
@@ -105,7 +103,7 @@ structure Operand =
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset]]
-             | PointerTycon pt => PointerTycon.layout pt
+             | ObjptrTycon opt => ObjptrTycon.layout opt
              | Runtime r => GCField.layout r
              | Var {var, ...} => Var.layout var
          end
@@ -184,7 +182,7 @@ structure Statement =
                   src: Operand.t}
        | Object of {dst: Var.t * Type.t,
                     header: word,
-                    size: Words.t}
+                    size: Bytes.t}
        | PrimApp of {args: Operand.t vector,
                      dst: (Var.t * Type.t) option,
                      prim: Type.t Prim.t}
@@ -270,7 +268,7 @@ structure Statement =
                   [seq [Var.layout dst, constrain ty],
                    seq [str "= Object ",
                         record [("header", seq [str "0x", Word.layout header]),
-                                ("size", Words.layout size)]]]
+                                ("size", Bytes.layout size)]]]
              | PrimApp {dst, prim, args, ...} =>
                   let
                      val rest =
@@ -371,11 +369,11 @@ structure Transfer =
              | Switch s => Switch.layout s
          end
 
-      val bug =
+      fun bug () =
          CCall {args = (Vector.new1
                         (Operand.Const
                          (Const.string "control shouldn't reach here"))),
-                func = Type.BuiltInCFunction.bug,
+                func = Type.BuiltInCFunction.bug (),
                 return = NONE}
 
       fun 'a foldDefLabelUse (t, a: 'a,
@@ -439,19 +437,19 @@ structure Transfer =
          foreachDef (t, Var.clear o #1)
 
       local
-         fun make i = WordX.fromIntInf (i, WordSize.default)
+         fun make i = WordX.fromIntInf (i, WordSize.bool)
       in
          fun ifBool (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
                      default = NONE,
-                     size = WordSize.default,
+                     size = WordSize.bool,
                      test = test})
          fun ifZero (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new1 (make 0, truee),
                      default = SOME falsee,
-                     size = WordSize.default,
+                     size = WordSize.bool,
                      test = test})
       end
 
@@ -1335,8 +1333,8 @@ structure Program =
                 Err.check ("objectType",
                            fn () => ObjectType.isOk ty,
                            fn () => ObjectType.layout ty))
-            fun tyconTy (pt: PointerTycon.t): ObjectType.t =
-               Vector.sub (objectTypes, PointerTycon.index pt)
+            fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
+               Vector.sub (objectTypes, ObjptrTycon.index opt)
             val () = checkScopes p
             val {get = labelBlock: Label.t -> Block.t,
                  set = setLabelBlock, ...} =
@@ -1363,7 +1361,7 @@ structure Program =
                              ; Type.arrayOffsetIsOk {base = Operand.ty base,
                                                      index = Operand.ty index,
                                                      offset = offset,
-                                                     pointerTy = tyconTy,
+                                                     tyconTy = tyconTy,
                                                      result = ty,
                                                      scale = scale})
                        | Cast (z, ty) =>
@@ -1379,9 +1377,9 @@ structure Program =
                        | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
                                              offset = offset,
-                                             pointerTy = tyconTy,
+                                             tyconTy = tyconTy,
                                              result = ty}
-                       | PointerTycon _ => true
+                       | ObjptrTycon _ => true
                        | Runtime _ => true
                        | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
@@ -1410,11 +1408,10 @@ structure Program =
                    | Object {dst = (_, ty), header, size} =>
                         let
                            val tycon =
-                              PointerTycon.fromIndex
+                              ObjptrTycon.fromIndex
                               (Runtime.headerToTypeIndex header)
-                           val size = Words.toBytes size
                         in
-                           Type.isSubtype (Type.pointer tycon, ty)
+                           Type.isSubtype (Type.objptr tycon, ty)
                            andalso
                            Bytes.equals
                            (size,
@@ -1428,7 +1425,7 @@ structure Program =
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
                                   Bytes.equals
-                                  (size, Bytes.+ (Runtime.normalHeaderSize,
+                                  (size, Bytes.+ (Runtime.headerSize (),
                                                   Type.bytes ty))
                               | _ => false)
                         end

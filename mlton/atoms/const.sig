@@ -25,9 +25,9 @@ signature CONST =
 
       structure SmallIntInf:
          sig
-            val fromWord: word -> IntInf.t
+            val fromWord: WordX.t -> IntInf.t
             val isSmall: IntInf.t -> bool
-            val toWord: IntInf.t -> word option
+            val toWord: IntInf.t -> WordX.t option
          end
 
       datatype t =

@@ -43,11 +43,11 @@ structure Dexp =
    struct
       open DirectExp
 
-      fun add (e1: t, e2: t): t =
-         primApp {prim = Prim.wordAdd WordSize.default,
+      fun add (e1: t, e2: t, s): t =
+         primApp {prim = Prim.wordAdd s,
                   targs = Vector.new0 (),
                   args = Vector.new2 (e1, e2),
-                  ty = Type.defaultWord}
+                  ty = Type.word s}
 
       fun conjoin (e1: t, e2: t): t =
          casee {test = e1,
@@ -102,6 +102,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
            destroy = destroyType} =
          Property.destGetSet (Type.plist, Property.initConst NONE)
       val returns = SOME (Vector.new1 Type.bool)
+      val seqIndexWordSize = WordSize.seqIndex ()
       fun newFunction z =
          List.push (newFunctions,
                     Function.profile (shrink (Function.new z),
@@ -203,16 +204,17 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                              Dexp.primApp {prim = Prim.vectorLength,
                                            targs = Vector.new1 ty,
                                            args = Vector.new1 x,
-                                           ty = Type.defaultWord}
+                                           ty = Type.word seqIndexWordSize}
                         in
                            Dexp.disjoin
                            (Dexp.eq (Dexp.var v1, Dexp.var v2, vty),
                             Dexp.conjoin
-                            (Dexp.eq (length dv1, length dv2, Type.defaultWord),
+                            (Dexp.eq (length dv1, length dv2, 
+                                      Type.word seqIndexWordSize),
                              Dexp.call
                              {func = loop,
                               args = (Vector.new4 
-                                      (Dexp.word (WordX.zero WordSize.default),
+                                      (Dexp.word (WordX.zero seqIndexWordSize),
                                        length dv1, dv1, dv2)),
                               ty = Type.bool}))
                         end
@@ -229,8 +231,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                                      start = start}
                   end
                   local
-                     val i = (Var.newNoname (), Type.defaultWord)
-                     val len = (Var.newNoname (), Type.defaultWord)
+                     val i = (Var.newNoname (), Type.word seqIndexWordSize)
+                     val len = (Var.newNoname (), Type.word seqIndexWordSize)
                      val v1 = (Var.newNoname (), vty)
                      val v2 = (Var.newNoname (), vty)
                      val args = Vector.new4 (i, len, v1, v2)
@@ -248,11 +250,12 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                            val args =
                               Vector.new4 
                               (Dexp.add
-                               (di, Dexp.word (WordX.one WordSize.default)),
+                               (di, Dexp.word (WordX.one seqIndexWordSize), 
+                                seqIndexWordSize),
                                dlen, dv1, dv2)
                         in
                            Dexp.disjoin 
-                           (Dexp.eq (di, dlen, Type.defaultWord),
+                           (Dexp.eq (di, dlen, Type.word seqIndexWordSize),
                             Dexp.conjoin
                             (equalExp (sub (dv1, di), sub (dv2, di), ty),
                              Dexp.call {args = args,

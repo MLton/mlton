@@ -93,7 +93,7 @@ signature X86_MLTON_BASIC =
     (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.CType.t -> x86.Label.t
     val global_base : x86.CType.t -> x86.Label.t
-    val globalPointerNonRoot_base : x86.Label.t
+    val globalObjptrNonRoot_base : x86.Label.t
 
     (* Misc. *)
     val fileNameLabel : x86.Label.t

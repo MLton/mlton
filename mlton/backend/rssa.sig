@@ -14,7 +14,7 @@ signature RSSA_STRUCTS =
 
       structure Handler: HANDLER
       structure ObjectType: OBJECT_TYPE
-      structure PointerTycon: POINTER_TYCON
+      structure ObjptrTycon: OBJPTR_TYCON
       structure Return: RETURN
       structure Runtime: RUNTIME
       structure Scale: SCALE
@@ -24,7 +24,7 @@ signature RSSA_STRUCTS =
       sharing Handler = Return.Handler
       sharing Label = Handler.Label = Return.Label
       sharing ObjectType = Type.ObjectType
-      sharing PointerTycon = ObjectType.PointerTycon = Type.PointerTycon
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
       sharing Runtime = Type.Runtime
       sharing Scale = Type.Scale
    end
@@ -59,7 +59,7 @@ signature RSSA =
              | Offset of {base: t,
                           offset: Bytes.t,
                           ty: Type.t}
-             | PointerTycon of PointerTycon.t
+             | ObjptrTycon of ObjptrTycon.t
              | Runtime of Runtime.GCField.t
              | Var of {ty: Type.t,
                        var: Var.t}
@@ -84,7 +84,7 @@ signature RSSA =
                         src: Operand.t}
              | Object of {dst: Var.t * Type.t,
                           header: word,
-                          size: Words.t (* including header *)}
+                          size: Bytes.t (* including header *)}
              | PrimApp of {args: Operand.t vector,
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}
@@ -141,7 +141,7 @@ signature RSSA =
              | Return of Operand.t vector
              | Switch of Switch.t
 
-            val bug: t
+            val bug: unit -> t
             (* foldDef (t, a, f)
              * If t defines a variable x, then return f (x, a), else return a.
              *)

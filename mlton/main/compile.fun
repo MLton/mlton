@@ -145,7 +145,7 @@ val amBuildingConstants: bool ref = ref false
 
 val lookupConstant =
    let
-      val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
+      val zero = Const.word (WordX.fromIntInf (0, WordSize.word32))
       val f =
          Promise.lazy
          (fn () =>
@@ -444,7 +444,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          let
             fun get (name: string): Bytes.t =
                case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.default) of
+                                    ConstType.Word WordSize.word32) of
                   Const.Word w => Bytes.fromInt (WordX.toInt w)
                 | _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
          in
@@ -490,7 +490,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    Const.Word w => 1 = WordX.toInt w
                  | _ => Error.bug "Compile.elaborate: endian unknown"
          in
-            Control.setTargetBigEndian (get "MLton_Platform_Arch_bigendian")
+            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
          end
       val xml =
          Control.passTypeCheck

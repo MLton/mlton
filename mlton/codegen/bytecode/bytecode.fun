@@ -75,12 +75,14 @@ structure CType =
             val m =
                CType.memo (fn t =>
                            case t of
-                              CType.Pointer => NONE
+                              CType.CPointer => NONE
+                            | CType.Objptr => NONE 
                             | _ => SOME (f t))
          in
             CType.memo (fn t =>
                         valOf (case t of
-                                  CType.Pointer => m CType.Word32
+                                  CType.CPointer => m CType.Word32
+                                | CType.Objptr => m CType.Word32
                                 | _ => m t))
          end
 
@@ -251,7 +253,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                                       val display =
                                          let
                                             val ptr = 
-                                               CType.toString CType.Pointer
+                                               CType.toString CType.CPointer
                                          in
                                             concat
                                             ["PushReg (",ptr,") = ",
@@ -530,7 +532,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
          Trace.trace ("Bytecode.emitStatement", Statement.layout, Unit.layout)
          emitStatement
       val gotoOp = opcode "Goto"
-      val pointerSize = WordSize.pointer ()
+      val pointerSize = WordSize.cpointer ()
       fun shiftStackTop (size: Bytes.t) =
          primApp {args = (Vector.new2
                           (Operand.StackTop,
@@ -542,7 +544,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       fun push (label: Label.t, size: Bytes.t): unit =
          (move {dst = (Operand.StackOffset
                        (StackOffset.T
-                        {offset = Bytes.- (size, Runtime.labelSize),
+                        {offset = Bytes.- (size, Runtime.labelSize ()),
                          ty = Type.label label})),
                 src = Operand.Label label}
           ; shiftStackTop size)
@@ -685,7 +687,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                    in
                       if 2 = Vector.length cases
                          andalso Option.isNone default
-                         andalso WordSize.equals (size, WordSize.default)
+                         andalso WordSize.equals (size, WordSize.bool)
                          then
                             let
                                val (c0, l0) = Vector.sub (cases, 0)

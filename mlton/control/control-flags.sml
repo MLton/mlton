@@ -961,7 +961,7 @@ structure Target =
       datatype t =
          Cross of string
        | Self
-
+         
       val toString =
          fn Cross s => s
           | Self => "self"
@@ -973,27 +973,55 @@ val target = control {name = "target",
                       default = Self,
                       toString = Target.toString}
 
-datatype arch = datatype MLton.Platform.Arch.t
-
-val targetArch = control {name = "target arch",
+structure Target =
+   struct
+      datatype arch = datatype MLton.Platform.Arch.t
+         
+      val arch = control {name = "target arch",
                           default = X86,
                           toString = MLton.Platform.Arch.toString}
 
-local
-   val r: bool option ref = ref NONE
-in
-   fun setTargetBigEndian b = r := SOME b
-   fun targetIsBigEndian () =
-      case !r of
-         NONE => Error.bug "ControlFlags.targetIsBigEndian: not set"
-       | SOME b => b
-end
+      datatype os = datatype MLton.Platform.OS.t
 
-datatype os = datatype MLton.Platform.OS.t
-
-val targetOS = control {name = "target OS",
+      val os = control {name = "target OS",
                         default = Linux,
                         toString = MLton.Platform.OS.toString}
+
+      fun make s =
+         let
+            val r = ref NONE
+            fun get () =
+               case !r of
+                  NONE => Error.bug ("ControlFlags.Target." ^ s ^ ": not set")
+                | SOME x => x
+            fun set x = r := SOME x
+         in
+            (get, set)
+         end
+      val (bigEndian: unit -> bool, setBigEndian) = make "bigEndian"
+
+      structure Size =
+         struct
+            val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
+            val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
+            val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
+            val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
+            val (header: unit -> Bits.t, set_header) = make "Size.header"
+            val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
+            val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
+            val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
+         end
+      fun setSizes {cint, cpointer, cptrdiff, csize, 
+                    header, mplimb, objptr, seqIndex} =
+         (Size.set_cint cint
+          ; Size.set_cpointer cpointer
+          ; Size.set_cptrdiff cptrdiff
+          ; Size.set_csize csize
+          ; Size.set_header header
+          ; Size.set_mplimb mplimb
+          ; Size.set_objptr objptr
+          ; Size.set_seqIndex seqIndex)
+   end
 
 local
    fun make (file: File.t) =
@@ -1017,10 +1045,10 @@ in
                 path = !libDir},
                {var = "TARGET_ARCH",
                 path = String.toLower (MLton.Platform.Arch.toString
-                                       (!targetArch))},
+                                       (!Target.arch))},
                {var = "TARGET_OS",
                 path = String.toLower (MLton.Platform.OS.toString
-                                       (!targetOS))},
+                                       (!Target.os))},
                {var = "OBJPTR_REP",
                 path = "objptr-rep32.sml"},
                {var = "HEADER_WORD",

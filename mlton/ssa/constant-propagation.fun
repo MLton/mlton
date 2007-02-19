@@ -491,7 +491,7 @@ structure Value =
                     end
             val length =
                const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt length,
-                                                     WordSize.default)))
+                                                     WordSize.seqIndex ())))
          in
             {elt = elt, length = length}
          end
@@ -567,15 +567,17 @@ structure Value =
                fun loop (t: Type.t): t =
                   new
                   (case Type.dest t of
-                      Type.Array t => Array {birth = arrayBirth (),
-                                             elt = loop t,
-                                             length = loop Type.defaultWord}
+                      Type.Array t => 
+                         Array {birth = arrayBirth (),
+                                elt = loop t,
+                                length = loop (Type.word (WordSize.seqIndex ()))}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
                     | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t => Vector {elt = loop t,
-                                               length = loop Type.defaultWord}
+                    | Type.Vector t => Vector 
+                         {elt = loop t,
+                          length = loop (Type.word (WordSize.seqIndex ()))}
                     | Type.Weak t => Weak (loop t)
                     | _ => Const (const ()), 
                    t)
@@ -848,7 +850,7 @@ fun simplify (program: Program.t): Program.t =
                case Prim.name prim of
                   Array_array => array (arg 0, bear ())
                 | Array_array0Const =>
-                     array (zero WordSize.default, Birth.here ())
+                     array (zero (WordSize.seqIndex ()), Birth.here ())
                 | Array_length => arrayLength (arg 0)
                 | Array_sub => dearray (arg 0)
                 | Array_toVector => vectorFromArray (arg 0)

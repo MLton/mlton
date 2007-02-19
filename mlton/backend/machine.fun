@@ -11,13 +11,13 @@ struct
 
 open S
 
-structure PointerTycon = PointerTycon ()
+structure ObjptrTycon = ObjptrTycon ()
 structure Runtime = Runtime ()
 structure Scale = Scale ()
 structure RepType = RepType (structure CFunction = CFunction
                              structure CType = CType
                              structure Label = Label
-                             structure PointerTycon = PointerTycon
+                             structure ObjptrTycon = ObjptrTycon
                              structure Prim = Prim
                              structure RealSize = RealSize
                              structure Runtime = Runtime
@@ -124,7 +124,7 @@ structure Global =
 
       fun new {isRoot, ty} =
          let
-            val isRoot = isRoot orelse not (Type.isPointer ty)
+            val isRoot = isRoot orelse not (Type.isObjptr ty)
             val counter =
                if isRoot
                   then memo (Type.toCType ty)
@@ -223,18 +223,18 @@ structure Operand =
        fn ArrayOffset {ty, ...} => ty
         | Cast (_, ty) => ty
         | Contents {ty, ...} => ty
-        | File => Type.cPointer ()
-        | Frontier => Type.defaultWord
-        | GCState => Type.gcState
+        | File => Type.cpointer ()
+        | Frontier => Type.cpointer ()
+        | GCState => Type.gcState ()
         | Global g => Global.ty g
         | Label l => Type.label l
-        | Line => Type.defaultWord
+        | Line => Type.cint ()
         | Offset {ty, ...} => ty
         | Real r => Type.real (RealX.size r)
         | Register r => Register.ty r
         | StackOffset s => StackOffset.ty s
-        | StackTop => Type.defaultWord
-        | Word w => Type.constant w
+        | StackTop => Type.cpointer ()
+        | Word w => Type.ofWordX w
 
     fun layout (z: t): Layout.t =
          let
@@ -387,20 +387,21 @@ structure Statement =
          let
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
-               Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.default))
+               Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
          in
             Vector.new3
             (Move {dst = Contents {oper = Frontier,
-                                   ty = Type.defaultWord},
+                                   ty = Type.objptrHeader ()},
                    src = Word (WordX.fromIntInf (Word.toIntInf header,
-                                                 WordSize.default))},
+                                                 WordSize.objptrHeader ()))},
+             (* CHECK; if objptr <> cpointer, need coercion here. *)
              PrimApp {args = Vector.new2 (Frontier,
-                                          bytes Runtime.normalHeaderSize),
+                                          bytes (Runtime.headerSize ())),
                       dst = SOME dst,
-                      prim = Prim.wordAdd WordSize.default},
-             PrimApp {args = Vector.new2 (Frontier, bytes (Words.toBytes size)),
+                      prim = Prim.wordAdd (WordSize.cpointer ())},
+             PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
-                      prim = Prim.wordAdd WordSize.default})
+                      prim = Prim.wordAdd (WordSize.cpointer ())})
          end
 
       fun foldOperands (s, ac, f) =
@@ -792,7 +793,7 @@ structure Program =
                                         size: Bytes.t} vector,
                          frameOffsets: Bytes.t vector vector,
                          handlesSignals: bool,
-                         intInfs: (Global.t * string) list,
+                         intInfs: (Global.t * IntInf.t) list,
                          main: {chunkLabel: ChunkLabel.t,
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
@@ -950,7 +951,7 @@ structure Program =
                            andalso frameOffsetsIndex < Vector.length frameOffsets
                            andalso Bytes.<= (size, maxFrameSize)
                            andalso Bytes.<= (size, Runtime.maxFrameSize)
-                           andalso Bytes.isWordAligned size),
+                           andalso Bytes.isWord32Aligned size),
                  fn () => Layout.record [("frameOffsetsIndex",
                                           Int.layout frameOffsetsIndex),
                                          ("size", Bytes.layout size)]))
@@ -960,8 +961,8 @@ structure Program =
                 Err.check ("objectType",
                            fn () => ObjectType.isOk ty,
                            fn () => ObjectType.layout ty))
-            fun tyconTy (pt: PointerTycon.t): ObjectType.t =
-               Vector.sub (objectTypes, PointerTycon.index pt)
+            fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
+               Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
             fun globals (name, gs, isOk, layout) =
                List.foreach
@@ -980,12 +981,12 @@ structure Program =
                         RealX.layout)
             val _ =
                globals ("intInf", intInfs,
-                        fn (t, _) => Type.isSubtype (t, Type.intInf),
-                        String.layout)
+                        fn (t, _) => Type.isSubtype (t, Type.intInf ()),
+                        IntInf.layout)
             val _ =
                globals ("vector", vectors,
                         fn (t, v) =>
-                        Type.equals (t, Type.ofWordVector v),
+                        Type.equals (t, Type.ofWordXVector v),
                         WordXVector.layout)
             (* Check for no duplicate labels. *)
             local
@@ -1029,7 +1030,7 @@ structure Program =
                                (Type.arrayOffsetIsOk {base = Operand.ty base,
                                                       index = Operand.ty index,
                                                       offset = offset,
-                                                      pointerTy = tyconTy,
+                                                      tyconTy = tyconTy,
                                                       result = ty,
                                                       scale = scale})))
                       | Cast (z, t) =>
@@ -1064,7 +1065,7 @@ structure Program =
                                 | _ => 
                                      Type.offsetIsOk {base = Operand.ty base,
                                                       offset = offset,
-                                                      pointerTy = tyconTy,
+                                                      tyconTy = tyconTy,
                                                       result = ty})))
                       | Real _ => true
                       | Register r => Alloc.doesDefine (alloc, Live.Register r)
@@ -1086,7 +1087,7 @@ structure Program =
                                                    Bytes.equals
                                                    (size,
                                                     Bytes.+ (offset,
-                                                             Runtime.labelSize))
+                                                             Runtime.labelSize ()))
                                                 end
                                           in
                                              case kind of
@@ -1134,7 +1135,7 @@ structure Program =
                                (zs, [], fn (z, liveOffsets) =>
                                 case z of
                                    Live.StackOffset (StackOffset.T {offset, ty}) =>
-                                      if Type.isPointer ty
+                                      if Type.isObjptr ty
                                          then offset :: liveOffsets
                                       else liveOffsets
                                  | _ => raise No)

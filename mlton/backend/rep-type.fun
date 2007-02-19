@@ -19,11 +19,11 @@ structure Type =
       datatype t = T of {node: node,
                          width: Bits.t}
       and node =
-         Address of t
+          CPointer
         | ExnStack
         | GCState
         | Label of Label.t
-        | Pointers of PointerTycon.t vector
+        | Objptr of ObjptrTycon.t vector
         | Real of RealSize.t
         | Seq of t vector
         | Word
@@ -34,6 +34,7 @@ structure Type =
          val node = make #node
          val width = make #width
       end
+      val bytes: t -> Bytes.t = Bits.toBytes o width
 
       val rec layout: t -> Layout.t =
          fn t =>
@@ -41,13 +42,13 @@ structure Type =
             open Layout
          in
             case node t of
-               Address t => seq [str "Address ", layout t]
+               CPointer => str "CPointer"
              | ExnStack => str "ExnStack"
              | GCState => str "GCState"
              | Label l => seq [str "Label ", Label.layout l]
-             | Pointers pts =>
-                  seq [str "Pointers ",
-                       tuple (Vector.toListMap (pts, PointerTycon.layout))]
+             | Objptr opts =>
+                  seq [str "Objptr ",
+                       tuple (Vector.toListMap (opts, ObjptrTycon.layout))]
              | Real s => str (concat ["Real", RealSize.toString s])
              | Seq ts => List.layout layout (Vector.toList ts)
              | Word => str (concat ["Word", Bits.toString (width t)])
@@ -58,12 +59,12 @@ structure Type =
          Bits.equals (width t, width t')
          andalso
          (case (node t, node t') of
-             (Address t, Address t') => equals (t, t')
+             (CPointer, CPointer) => true
            | (ExnStack, ExnStack) => true
            | (GCState, GCState) => true
            | (Label l, Label l') => Label.equals (l, l')
-           | (Pointers v, Pointers v') =>
-                Vector.equals (v, v', PointerTycon.equals)
+           | (Objptr opts, Objptr opts') =>
+                Vector.equals (opts, opts', ObjptrTycon.equals)
            | (Real s, Real s') => RealSize.equals (s, s')
            | (Seq ts, Seq ts') => Vector.equals (ts, ts', equals)
            | (Word, Word) => true
@@ -72,147 +73,67 @@ structure Type =
       val sameWidth: t * t -> bool =
          fn (t, t') => Bits.equals (width t, width t')
 
-      val word: Bits.t -> t = fn width => T {node = Word, width = width}
 
-      val bogusWord: t -> WordX.t =
-         fn t => WordX.one (WordSize.fromBits (width t))
+      val cpointer: unit -> t = fn () =>
+         T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
 
+      val exnStack: unit -> t = fn () => 
+         T {node = ExnStack, width = WordSize.bits WordSize.exnStack}
 
-      val andb: t * t -> t option = SOME o #1
+      val gcState: unit -> t = fn () => 
+         T {node = GCState, width = WordSize.bits (WordSize.cpointer ())}
 
-      val bool: t = word Bits.inWord
+      val label: Label.t -> t =
+         fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
 
-      val bytes: t -> Bytes.t = Bits.toBytes o width
-
-      val cPointer: unit -> t = fn () => word Bits.inPointer
-
-      val constant: WordX.t -> t = fn w => word (WordSize.bits (WordX.size w))
-
-      val deLabel: t -> Label.t option =
-         fn t =>
-         case node t of
-            Label l => SOME l
-          | _ => NONE
-
-      val dePointer: t -> PointerTycon.t option =
-         fn t => 
-         case node t of
-            Pointers pts =>
-               if 1 = Vector.length pts
-                  then SOME (Vector.sub (pts, 0))
-               else NONE
-          | _ => NONE
-
-      val deReal: t -> RealSize.t option =
-         fn t =>
-         case node t of
-            Real s => SOME s
-          | _ => NONE
-
-      val defaultWord: t = word Bits.inWord
-
-      val exnStack: t = T {node = ExnStack,
-                           width = Bits.inPointer}
-
-      val rec isPointer: t -> bool =
-         fn t =>
-         case node t of
-            Pointers _ => true
-          | _ => false
+      val objptr: ObjptrTycon.t -> t =
+         fn opt => T {node = Objptr (Vector.new1 opt),
+                      width = WordSize.bits (WordSize.objptr ())}
 
       val real: RealSize.t -> t =
          fn s => T {node = Real s, width = RealSize.bits s}
+ 
+      val word: Bits.t -> t = fn width => T {node = Word, width = width}
 
-      local
-         structure C =
-            struct
-               open CType
 
-               fun fromBits (b: Bits.t): t =
-                  case Bits.toInt b of
-                     8 => Word8
-                   | 16 => Word16
-                   | 32 => Word32
-                   | 64 => Word64
-                   | _ => Error.bug (concat ["RepType.Type.CType.fromBits: ",
-                                             Bits.toString b])
-            end
-      in
-         val rec toCType: t -> CType.t =
-            fn t =>
-            if isPointer t
-               then C.Pointer
-            else 
-               case node t of
-                  Real s =>
-                     (case s of
-                         RealSize.R32 => C.Real32
-                       | RealSize.R64 => C.Real64)
-                | _ => C.fromBits (width t)
+      val bool: t = word (WordSize.bits WordSize.bool)
 
-         val name = C.name o toCType
+      val csize: unit -> t = word o WordSize.bits o WordSize.csize
 
-         val align: t * Bytes.t -> Bytes.t =
-            fn (t, n) => C.align (toCType t, n)
-      end
+      val cint: unit -> t = word o WordSize.bits o WordSize.cint
 
-      val gcState: t = T {node = GCState, width = Bits.inPointer}
+      val objptrHeader: unit -> t = word o WordSize.bits o WordSize.objptrHeader
 
-      val isCPointer: t -> bool =
-         fn t =>
-         case node t of
-            Word => Bits.equals (width t, Bits.inPointer)
-          | _ => false
+      val seqIndex: unit -> t = word o WordSize.bits o WordSize.seqIndex
 
-      val isUnit: t -> bool = fn t => Bits.equals (Bits.zero, width t)
+      val shiftArg: t = word (WordSize.bits WordSize.shiftArg)
 
-      val isUnit = Trace.trace ("RepType.Type.isUnit", layout, Bool.layout) isUnit
+      val stack : unit -> t = fn () => 
+         objptr ObjptrTycon.stack
 
-      val rec isSubtype: t * t -> bool =
-         fn (t, t') =>
-         if not (sameWidth (t, t'))
-            then Error.bug "RepType.Type.isSubtype"
-         else
-            (equals (t, t')
-             orelse
-             case (node t, node t') of
-                (Pointers ps, Pointers ps') =>
-                   Vector.isSubsequence (ps, ps', PointerTycon.equals)
-              | (Real _, _) => false
-              | (Word, Pointers _) => true
-              | (_, Word) => true
-              | _ => false)
+      val thread : unit -> t = fn () => 
+         objptr ObjptrTycon.thread
 
-      val isSubtype =
-         Trace.trace2 ("RepType.Type.isSubtype", layout, layout, Bool.layout)
-         isSubtype
+      val word32: t = word (WordSize.bits WordSize.word32)
 
-      val label: Label.t -> t =
-         fn l => T {node = Label l, width = Bits.inPointer}
+      val wordVector: Bits.t -> t = objptr o ObjptrTycon.wordVector
 
-      val lshift: t * t -> t = #1
+      val word8Vector: unit -> t =  fn () => 
+         wordVector (WordSize.bits WordSize.word8)
 
-      val orb: t * t -> t option = SOME o #1
-
-      val pointer: PointerTycon.t -> t =
-         fn pt => T {node = Pointers (Vector.new1 pt),
-                     width = Bits.inPointer}
-
-      val stack = pointer PointerTycon.stack
-
-      val thread = pointer PointerTycon.thread
-
-      val wordVector: Bits.t -> t = pointer o PointerTycon.wordVector
-
-      val word8Vector = wordVector Bits.inByte
-
-      val string = word8Vector
-
-      val resize: t * Bits.t -> t = fn (_, b) => word b
-
-      val rshift: t * t -> t = #1
+      val string: unit -> t = word8Vector
 
       val unit: t = word Bits.zero
+
+      val zero: Bits.t -> t = word
+
+
+      val ofWordX: WordX.t -> t = 
+         fn w => word (WordSize.bits (WordX.size w))
+
+      fun ofWordXVector (v: WordXVector.t): t =
+         wordVector (WordSize.bits (WordXVector.elementSize v))
+
 
       val seq: t vector -> t =
          fn ts =>
@@ -228,8 +149,7 @@ structure Type =
                     | t' :: ac' =>
                          (case (node t, node t') of
                              (Seq ts, _) => seqOnto (ts, ac)
-                           | (Word, Word) =>
-                                word (Bits.+ (width t, width t')) :: ac'
+                           | (Word, Word) => word (Bits.+ (width t, width t')) :: ac'
                            | _ => t :: ac))
             in
                case seqOnto (ts, []) of
@@ -252,53 +172,145 @@ structure Type =
             then Error.bug "RepType.Type.sum: empty"
          else
             let
-               val pts =
+               val opts =
                   Vector.concatV
                   (Vector.keepAllMap
                    (ts, fn t =>
                     case node t of
-                       Pointers pts => SOME pts
+                       Objptr opts => SOME opts
                      | _ => NONE))
             in
-               if 0 = Vector.length pts
+               if 0 = Vector.length opts
                   then Vector.sub (ts, 0)
                else
-                  T {node = (Pointers
-                             (QuickSort.sortVector (pts, PointerTycon.<=))),
-                     width = Bits.inPointer}
+                  T {node = (Objptr (QuickSort.sortVector (opts, ObjptrTycon.<=))),
+                     width = WordSize.bits (WordSize.objptr ())}
             end
 
       val sum = Trace.trace ("RepType.Type.sum", Vector.layout layout, layout) sum
 
-      val intInf: t =
+      val intInf: unit -> t = fn () =>
          sum (Vector.new2
-              (wordVector Bits.inWord,
+              (wordVector (WordSize.bits (WordSize.bigIntInfWord ())),
                seq (Vector.new2
-                    (constant (WordX.fromIntInf
-                               (1, WordSize.fromBits (Bits.fromInt 1))),
-                     word (Bits.fromInt 31)))))
+                    (word Bits.one,
+                     word (Bits.- (WordSize.bits (WordSize.smallIntInfWord ()), 
+                                   Bits.one))))))
 
-      val zero: Bits.t -> t = word
 
-      fun bytesAndPointers (t: t): Bytes.t * int =
+      val deLabel: t -> Label.t option =
+         fn t =>
          case node t of
-            Pointers _ => (Bytes.zero, 1)
+            Label l => SOME l
+          | _ => NONE
+
+      val deObjptr: t -> ObjptrTycon.t option =
+         fn t => 
+         case node t of
+            Objptr opts =>
+               if 1 = Vector.length opts
+                  then SOME (Vector.sub (opts, 0))
+               else NONE
+          | _ => NONE
+
+      val deReal: t -> RealSize.t option =
+         fn t =>
+         case node t of
+            Real s => SOME s
+          | _ => NONE
+
+      val isCPointer: t -> bool =
+         fn t =>
+         case node t of
+            CPointer => true
+          | _ => false
+
+      val isObjptr: t -> bool =
+         fn t =>
+         case node t of
+            Objptr _ => true
+          | _ => false
+
+      val isUnit: t -> bool = fn t => Bits.equals (Bits.zero, width t)
+
+      val isSubtype: t * t -> bool =
+         fn (t, t') =>
+         if not (sameWidth (t, t'))
+            then Error.bug "RepType.Type.isSubtype"
+         else
+            (equals (t, t')
+             orelse
+             case (node t, node t') of
+                (Objptr opts, Objptr opts') =>
+                   Vector.isSubsequence (opts, opts', ObjptrTycon.equals)
+              | (Real _, _) => false
+              | (Word, Objptr _) => true
+              | (_, Word) => true
+              | _ => false)
+
+      val isSubtype =
+         Trace.trace2 ("RepType.Type.isSubtype", layout, layout, Bool.layout)
+         isSubtype
+
+
+      val resize: t * Bits.t -> t = fn (_, b) => word b
+
+      val bogusWord: t -> WordX.t =
+         fn t => WordX.one (WordSize.fromBits (width t))
+
+      local
+         structure C =
+            struct
+               open CType
+
+               fun fromBits (b: Bits.t): t =
+                  case Bits.toInt b of
+                     8 => Word8
+                   | 16 => Word16
+                   | 32 => Word32
+                   | 64 => Word64
+                   | _ => Error.bug (concat ["RepType.Type.CType.fromBits: ",
+                                             Bits.toString b])
+            end
+      in
+         val toCType: t -> CType.t =
+            fn t =>
+            if isObjptr t
+               then C.Objptr
+            else 
+               case node t of
+                  CPointer => C.CPointer
+                | Real s =>
+                     (case s of
+                         RealSize.R32 => C.Real32
+                       | RealSize.R64 => C.Real64)
+                | _ => C.fromBits (width t)
+                         
+         val name = C.name o toCType
+            
+         val align: t * Bytes.t -> Bytes.t =
+            fn (t, n) => C.align (toCType t, n)
+      end
+
+      fun bytesAndObjptrs (t: t): Bytes.t * int =
+         case node t of
+            Objptr _ => (Bytes.zero, 1)
           | Seq ts =>
-               (case Vector.peeki (ts, isPointer o #2) of
+               (case Vector.peeki (ts, isObjptr o #2) of
                    NONE => (bytes t, 0)
                  | SOME (i, _) =>
                       let
                          val b = bytes (seq (Vector.prefix (ts, i)))
+                         val j = (Vector.length ts) - i
                       in
-                         (b, (Bytes.toInt (Bytes.- (bytes t, b))
-                              div Bytes.toInt Bytes.inPointer))
+                         (b, j)
                       end)
           | _ => (bytes t, 0)
    end
 
 structure ObjectType =
    struct
-      structure PointerTycon = PointerTycon
+      structure ObjptrTycon = ObjptrTycon
       structure Runtime = Runtime
 
       type ty = Type.t
@@ -339,18 +351,19 @@ structure ObjectType =
                   andalso Bits.isByteAligned b
                end
           | Normal {ty, ...} =>
-               not (Type.isUnit ty) andalso Bits.isWordAligned (Type.width ty)
+               not (Type.isUnit ty) 
+               andalso Bits.isWord32Aligned (Type.width ty)
           | Stack => true
-          | Weak t => Type.isPointer t
+          | Weak t => Type.isObjptr t
           | WeakGone => true
 
       val stack = Stack
 
-      val thread =
+      val thread = fn () =>
          Normal {hasIdentity = true,
-                 ty = Type.seq (Vector.new3 (Type.defaultWord,
-                                             Type.defaultWord,
-                                             Type.stack))}
+                 ty = Type.seq (Vector.new3 (Type.csize (),
+                                             Type.exnStack (),
+                                             Type.stack ()))}
 
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.
@@ -362,21 +375,21 @@ structure ObjectType =
        * WORD32_VECTOR_TYPE_INDEX.
        * WORD64_VECTOR_TYPE_INDEX.
        *)
-      val basic =
+      val basic = fn () => 
          let
             fun wordVec i =
                let
                   val b = Bits.fromInt i
                in
-                  (PointerTycon.wordVector b,
+                  (ObjptrTycon.wordVector b,
                    Array {hasIdentity = false,
                           elt = Type.word b})
                end
          in
             Vector.fromList
-            [(PointerTycon.stack, stack),
-             (PointerTycon.thread, thread),
-             (PointerTycon.weakGone, WeakGone),
+            [(ObjptrTycon.stack, stack),
+             (ObjptrTycon.thread, thread ()),
+             (ObjptrTycon.weakGone, WeakGone),
              wordVec 8,
              wordVec 32,
              wordVec 16,
@@ -390,19 +403,19 @@ structure ObjectType =
             case t of
                Array {elt, hasIdentity} =>
                   let
-                     val (b, p) = Type.bytesAndPointers elt
+                     val (b, nops) = Type.bytesAndObjptrs elt
                   in
                      R.Array {hasIdentity = hasIdentity,
-                              bytesNonPointers = b,
-                              numPointers = p}
+                              bytesNonObjptrs = b,
+                              numObjptrs = nops}
                   end
              | Normal {hasIdentity, ty} =>
                   let
-                     val (b, p) = Type.bytesAndPointers ty
+                     val (b, nops) = Type.bytesAndObjptrs ty
                   in
                      R.Normal {hasIdentity = hasIdentity,
-                               bytesNonPointers = b,
-                               numPointers = p}
+                               bytesNonObjptrs = b,
+                               numObjptrs = nops}
                   end
              | Stack => R.Stack
              | Weak _ => R.Weak
@@ -412,13 +425,6 @@ structure ObjectType =
 
 open Type
 
-fun pointerHeader p =
-   constant (WordX.fromIntInf
-             (1 + 2 * Int.toIntInf (PointerTycon.index p),
-              WordSize.default))
-
-fun arrayOffsetIsOk _ = true
-
 structure GCField = Runtime.GCField
 
 fun ofGCField (f: GCField.t): t =
@@ -426,23 +432,23 @@ fun ofGCField (f: GCField.t): t =
       datatype z = datatype GCField.t
    in
       case f of
-         CanHandle => defaultWord
-       | CardMap => cPointer ()
-       | CurrentThread => cPointer ()
-       | CurSourceSeqsIndex => defaultWord
-       | ExnStack => defaultWord
-       | Frontier => cPointer ()
-       | Limit => cPointer ()
-       | LimitPlusSlop => cPointer ()
-       | MaxFrameSize => defaultWord
-       | SignalIsPending => bool
-       | StackBottom => cPointer ()
-       | StackLimit => cPointer ()
-       | StackTop => cPointer ()
+         CanHandle => word32
+       | CardMap => cpointer ()
+       | CurrentThread => thread ()
+       | CurSourceSeqsIndex => word32
+       | ExnStack => exnStack ()
+       | Frontier => cpointer ()
+       | Limit => cpointer ()
+       | LimitPlusSlop => cpointer ()
+       | MaxFrameSize => word32
+       | SignalIsPending => word32
+       | StackBottom => cpointer ()
+       | StackLimit => cpointer ()
+       | StackTop => cpointer ()
    end
 
-fun ofWordVector (v: WordXVector.t): t =
-   wordVector (WordSize.bits (WordXVector.elementSize v))
+fun arrayOffsetIsOk {base,index, offset, tyconTy, result, scale} = 
+   case (base, index, offset, tyconTy, result, scale) of _ => true
 
 fun castIsOk {from, to, tyconTy = _} =
    Bits.equals (width from, width to)
@@ -450,7 +456,10 @@ fun castIsOk {from, to, tyconTy = _} =
 fun checkPrimApp {args, prim, result} = 
     case (args, Prim.name prim, result) of _ => true
 
-fun offsetIsOk _ = true
+fun offsetIsOk {base, offset, tyconTy, result} = 
+   case (base, offset, tyconTy, result) of _ => true
+
+
 
 structure BuiltInCFunction =
    struct
@@ -459,10 +468,11 @@ structure BuiltInCFunction =
       datatype z = datatype Convention.t
       datatype z = datatype Target.t
 
-      val bug = vanilla {args = Vector.new1 string,
-                         name = "MLton_bug",
-                         prototype = (Vector.new1 CType.pointer, NONE),
-                         return = unit}
+      fun bug () = 
+         vanilla {args = Vector.new1 (string ()),
+                  name = "MLton_bug",
+                  prototype = (Vector.new1 CType.cpointer, NONE),
+                  return = unit}
 
       local
          open Type
@@ -472,11 +482,11 @@ structure BuiltInCFunction =
       end
 
       local
-         fun make b =
+         fun make b = fn () =>
             T {args = let
                          open Type
                       in
-                         Vector.new5 (gcState, Word32, bool, cPointer (), Word32)
+                         Vector.new5 (gcState (), Word32, bool, cpointer (), Word32)
                       end,
                    bytesNeeded = NONE,
                    convention = Cdecl,
@@ -487,7 +497,7 @@ structure BuiltInCFunction =
                    prototype = let
                                   open CType
                                in
-                                  (Vector.new5 (Pointer, Word32, bool, Pointer, Word32),
+                                  (Vector.new5 (cpointer, Word32, bool, cpointer, Word32),
                                    NONE)
                                end,
                    readsStackTop = true,
@@ -497,7 +507,7 @@ structure BuiltInCFunction =
          val t = make true
          val f = make false
       in
-         fun gc {maySwitchThreads = b} = if b then t else f
+         fun gc {maySwitchThreads = b} = if b then t () else f ()
       end
    end
 

@@ -120,11 +120,12 @@ struct
       in
          fun fromCType t =
             case t of
-               Int8 => Vector.new1 BYTE
+               CPointer => Vector.new1 LONG
+             | Int8 => Vector.new1 BYTE
              | Int16 => Vector.new1 WORD
              | Int32 => Vector.new1 LONG
              | Int64 => Vector.new2 (LONG, LONG)
-             | Pointer => Vector.new1 LONG
+             | Objptr => Vector.new1 LONG
              | Real32 => Vector.new1 SNGL
              | Real64 => Vector.new1 DBLE
              | Word8 => Vector.new1 BYTE
@@ -656,12 +657,13 @@ struct
          datatype z = datatype CType.t
       in
          fun fromCType t =
-            case t of
-               Int8 => One
+            case t of 
+               CPointer => Four
+             | Int8 => One
              | Int16 => Two
              | Int32 => Four
              | Int64 => Eight
-             | Pointer => Four
+             | Objptr => Four
              | Real32 => Four
              | Real64 => Eight
              | Word8 => One
@@ -1418,11 +1420,12 @@ struct
                              dst = cReturnTempContent (4, LONG)}]
                in
                   case RepType.toCType ty of
-                     Int8 => w8
+                     CPointer => w32
+                   | Int8 => w8
                    | Int16 => w16
                    | Int32 => w32
                    | Int64 => w64
-                   | Pointer => w32
+                   | Objptr => w32
                    | Real32 => [{src = fltregister FltRegister.top,
                                  dst = cReturnTempContent (0, SNGL)}]
                    | Real64 => [{src = fltregister FltRegister.top,

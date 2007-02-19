@@ -232,33 +232,41 @@ fun checkPrimApp {args, prim, result, targs}: bool =
          val realCompare = make real
          val wordCompare = make word
       end
-      fun intInfBinary () = done ([intInf, intInf, defaultWord], intInf)
-      fun intInfShift () = done ([intInf, defaultWord, defaultWord], intInf)
-      fun intInfUnary () = done ([intInf, defaultWord], intInf)
+      val cint = word (WordSize.cint ())
+      val compareRes = word WordSize.compareRes
+      val csize = word (WordSize.csize ())
+      val cpointer = word (WordSize.cpointer ())
+      val cptrdiff = word (WordSize.cptrdiff ())
+      val seqIndex = word (WordSize.seqIndex ())
+      val shiftArg = word WordSize.shiftArg
+      val bigIntInfWord = word (WordSize.bigIntInfWord ())
+      val smallIntInfWord = word (WordSize.smallIntInfWord ())
+
+      fun intInfBinary () = done ([intInf, intInf, csize], intInf)
+      fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
+      fun intInfUnary () = done ([intInf, csize], intInf)
       fun real3 s = done ([real s, real s, real s], real s)
-      val pointer = defaultWord
       val word8Array = array word8
-      val wordVector = vector defaultWord
-      fun wordShift s = done ([word s, defaultWord], word s)
+      fun wordShift s = done ([word s, shiftArg], word s)
    in
       case Prim.name prim of
-         Array_array => oneTarg (fn targ => ([defaultWord], array targ))
+         Array_array => oneTarg (fn targ => ([seqIndex], array targ))
        | Array_array0Const => oneTarg (fn targ => ([], array targ))
-       | Array_length => oneTarg (fn t => ([array t], defaultWord))
-       | Array_sub => oneTarg (fn t => ([array t, defaultWord], t))
+       | Array_length => oneTarg (fn t => ([array t], seqIndex))
+       | Array_sub => oneTarg (fn t => ([array t, seqIndex], t))
        | Array_toVector => oneTarg (fn t => ([array t], vector t))
-       | Array_update => oneTarg (fn t => ([array t, defaultWord, t], unit))
+       | Array_update => oneTarg (fn t => ([array t, seqIndex, t], unit))
        | Exn_extra => oneTarg (fn t => ([exn], t))
        | Exn_name => done ([exn], string)
        | Exn_setExtendExtra => oneTarg (fn t => ([arrow (t, t)], unit))
        | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
        | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
-       | FFI_Symbol _ => done ([], pointer)
+       | FFI_Symbol _ => done ([], cpointer)
        | GC_collect => done ([], unit)
        | IntInf_add => intInfBinary ()
        | IntInf_andb => intInfBinary ()
        | IntInf_arshift => intInfShift ()
-       | IntInf_compare => done ([intInf, intInf], defaultWord)
+       | IntInf_compare => done ([intInf, intInf], compareRes)
        | IntInf_equal => done ([intInf, intInf], bool)
        | IntInf_gcd => intInfBinary ()
        | IntInf_lshift => intInfShift ()
@@ -269,26 +277,26 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | IntInf_quot => intInfBinary ()
        | IntInf_rem => intInfBinary ()
        | IntInf_sub => intInfBinary ()
-       | IntInf_toString => done ([intInf, defaultWord, defaultWord], string)
-       | IntInf_toVector => done ([intInf], vector defaultWord)
-       | IntInf_toWord => done ([intInf], defaultWord)
+       | IntInf_toString => done ([intInf, word32, csize], string)
+       | IntInf_toVector => done ([intInf], vector bigIntInfWord)
+       | IntInf_toWord => done ([intInf], smallIntInfWord)
        | IntInf_xorb => intInfBinary ()
        | MLton_bogus => oneTarg (fn t => ([], t))
        | MLton_bug => done ([string], unit)
        | MLton_eq => oneTarg (fn t => ([t, t], bool))
        | MLton_equal => oneTarg (fn t => ([t, t], bool))
-       | MLton_halt => done ([defaultWord], unit)
+       | MLton_halt => done ([cint], unit)
        | MLton_handlesSignals => done ([], bool)
        | MLton_installSignalHandler => done ([], unit)
        | MLton_share => oneTarg (fn t => ([t], unit))
-       | MLton_size => oneTarg (fn t => ([t], defaultWord))
+       | MLton_size => oneTarg (fn t => ([t], csize))
        | MLton_touch => oneTarg (fn t => ([t], unit))
-       | Pointer_getPointer => oneTarg (fn t => ([pointer, defaultWord], t))
-       | Pointer_getReal s => done ([pointer, defaultWord], real s)
-       | Pointer_getWord s => done ([pointer, defaultWord], word s)
-       | Pointer_setPointer => oneTarg (fn t => ([pointer, defaultWord, t], unit))
-       | Pointer_setReal s => done ([pointer, defaultWord, real s], unit)
-       | Pointer_setWord s => done ([pointer, defaultWord, word s], unit)
+       | Pointer_getPointer => oneTarg (fn t => ([cpointer, cptrdiff], t))
+       | Pointer_getReal s => done ([cpointer, cptrdiff], real s)
+       | Pointer_getWord s => done ([cpointer, cptrdiff], word s)
+       | Pointer_setPointer => oneTarg (fn t => ([cpointer, cptrdiff, t], unit))
+       | Pointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
+       | Pointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
        | Real_Math_acos s => realUnary s
        | Real_Math_asin s => realUnary s
        | Real_Math_atan s => realUnary s
@@ -304,7 +312,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Real_add s => realBinary s
        | Real_div s => realBinary s
        | Real_equal s => realCompare s
-       | Real_ldexp s => done ([real s, defaultWord], real s)
+       | Real_ldexp s => done ([real s, cint], real s)
        | Real_le s => realCompare s
        | Real_lt s => realCompare s
        | Real_mul s => realBinary s
@@ -321,23 +329,22 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Ref_ref => oneTarg (fn t => ([t], reff t))
        | Thread_atomicBegin => done ([], unit)
        | Thread_atomicEnd => done ([], unit)
-       | Thread_canHandle => done ([], defaultWord)
+       | Thread_canHandle => done ([], word32)
        | Thread_copy => done ([thread], thread)
        | Thread_copyCurrent => done ([], unit)
        | Thread_returnToC => done ([], unit)
        | Thread_switchTo => done ([thread], unit)
        | TopLevel_setHandler => done ([arrow (exn, unit)], unit)
        | TopLevel_setSuffix => done ([arrow (unit, unit)], unit)
-       | Vector_length => oneTarg (fn t => ([vector t], defaultWord))
-       | Vector_sub => oneTarg (fn t => ([vector t, defaultWord], t))
+       | Vector_length => oneTarg (fn t => ([vector t], seqIndex))
+       | Vector_sub => oneTarg (fn t => ([vector t, seqIndex], t))
        | Weak_canGet => oneTarg (fn t => ([weak t], bool))
        | Weak_get => oneTarg (fn t => ([weak t], t))
        | Weak_new => oneTarg (fn t => ([t], weak t))
-       | Word8Array_subWord => done ([word8Array, defaultWord], defaultWord)
-       | Word8Array_updateWord =>
-            done ([word8Array, defaultWord, defaultWord], unit)
-       | Word8Vector_subWord => done ([word8Vector, defaultWord], defaultWord)
-       | WordVector_toIntInf => done ([wordVector], intInf)
+       | Word8Array_subWord s => done ([word8Array, seqIndex], word s)
+       | Word8Array_updateWord s => done ([word8Array, seqIndex, word s], unit)
+       | Word8Vector_subWord s => done ([word8Vector, seqIndex], word s)
+       | WordVector_toIntInf => done ([vector bigIntInfWord], intInf)
        | Word_add s => wordBinary s
        | Word_addCheck (s, _) => wordBinary s
        | Word_andb s => wordBinary s
@@ -357,7 +364,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Word_rshift (s, _) => wordShift s
        | Word_sub s => wordBinary s
        | Word_subCheck (s, _) => wordBinary s
-       | Word_toIntInf => done ([defaultWord], intInf)
+       | Word_toIntInf => done ([smallIntInfWord], intInf)
        | Word_toReal (s, s', _) => done ([word s], real s')
        | Word_toWord (s, s', _) => done ([word s], word s')
        | Word_xorb s => wordBinary s

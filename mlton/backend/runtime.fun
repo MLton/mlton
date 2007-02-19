@@ -27,21 +27,6 @@ structure GCField =
        | StackLimit
        | StackTop
 
-(*       val ty =
- *       fn CanHandle => CType.defaultInt
- *        | CardMap => CType.pointer
- *        | CurrentThread => CType.pointer
- *        | ExnStack => CType.defaultWord
- *        | Frontier => CType.pointer
- *        | Limit => CType.pointer
- *        | LimitPlusSlop => CType.pointer
- *        | MaxFrameSize => CType.defaultWord
- *        | SignalIsPending => CType.defaultInt
- *        | StackBottom => CType.pointer
- *        | StackLimit => CType.pointer
- *        | StackTop => CType.pointer
- *)
-
       val canHandleOffset: Bytes.t ref = ref Bytes.zero
       val cardMapOffset: Bytes.t ref = ref Bytes.zero
       val currentThreadOffset: Bytes.t ref = ref Bytes.zero
@@ -156,11 +141,11 @@ structure RObjectType =
    struct
       datatype t =
          Array of {hasIdentity: bool,
-                   bytesNonPointers: Bytes.t,
-                   numPointers: int}
+                   bytesNonObjptrs: Bytes.t,
+                   numObjptrs: int}
        | Normal of {hasIdentity: bool,
-                    bytesNonPointers: Bytes.t,
-                    numPointers: int}
+                    bytesNonObjptrs: Bytes.t,
+                    numObjptrs: int}
        | Stack
        | Weak
        | WeakGone
@@ -170,16 +155,16 @@ structure RObjectType =
             open Layout
          in
             case t of
-               Array {hasIdentity, bytesNonPointers = np, numPointers = p} =>
+               Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                   seq [str "Array ",
                        record [("hasIdentity", Bool.layout hasIdentity),
-                               ("bytesNonPointers", Bytes.layout np),
-                               ("numPointers", Int.layout p)]]
-             | Normal {hasIdentity, bytesNonPointers = np, numPointers = p} =>
+                               ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
+                               ("numObjptrs", Int.layout numObjptrs)]]
+             | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                   seq [str "Normal ",
                        record [("hasIdentity", Bool.layout hasIdentity),
-                               ("bytesNonPointers", Bytes.layout np),
-                               ("numPointers", Int.layout p)]]
+                               ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
+                               ("numObjptrs", Int.layout numObjptrs)]]
              | Stack => str "Stack"
              | Weak => str "Weak"
              | WeakGone => str "WeakGone"
@@ -187,30 +172,48 @@ structure RObjectType =
       val _ = layout (* quell unused warning *)
    end
 
-val maxTypeIndex = Int.pow (2, 19)
+(* see gc/object.h *)
+local
+   val maxTypeIndex = Int.pow (2, 19)
+in
+   (* see gc/object.c:buildHeaderFromTypeIndex *)
+   fun typeIndexToHeader typeIndex =
+      (Assert.assert ("Runtime.header", fn () =>
+                      0 <= typeIndex
+                      andalso typeIndex < maxTypeIndex)
+       ; Word.orb (0w1, Word.<< (Word.fromInt typeIndex, 0w1)))
+      
+   fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
+end
 
-fun typeIndexToHeader typeIndex =
-   (Assert.assert ("Runtime.header", fn () =>
-                   0 <= typeIndex
-                   andalso typeIndex < maxTypeIndex)
-    ; Word.orb (0w1, Word.<< (Word.fromInt typeIndex, 0w1)))
+(* see gc/object.h *)
+val objptrSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.objptr)
 
-fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
+(* see gc/object.h *)
+val headerSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.header)
+val headerOffset : unit -> Bytes.t = 
+   Promise.lazy (Bytes.~ o headerSize)
 
-val labelSize = Bytes.inWord
+(* see gc/array.h *)
+val arrayLengthSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.seqIndex)
+val arrayLengthOffset : unit -> Bytes.t =
+   Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
+                                            arrayLengthSize ())))
 
-val limitSlop = Bytes.fromInt 512
+val cpointerSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.cpointer)
+val labelSize = cpointerSize
 
-val normalHeaderSize = Bytes.inWord
-
-val pointerSize = Bytes.inWord
-
-val arrayLengthOffset = Bytes.~ (Bytes.scale (Bytes.inWord, 2))
-
+(* See platform.c. *)
 val allocTooLarge = Bytes.fromWord 0wxFFFFFFFC
 
-val headerOffset = Bytes.~ Bytes.inWord
+(* See gc/heap.h. *)
+val limitSlop = Bytes.fromInt 512
 
+(* See gc/frame.h. *)
 val maxFrameSize = Bytes.fromInt (Int.pow (2, 16))
 
 end

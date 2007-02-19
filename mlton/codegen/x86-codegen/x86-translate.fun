@@ -45,7 +45,7 @@ struct
                  x86.Immediate.label
                  (if isRoot g
                      then x86MLton.global_base ty
-                  else x86MLton.globalPointerNonRoot_base)
+                  else x86MLton.globalObjptrNonRoot_base)
               val origin =
                  x86.MemLoc.imm
                  {base = base,

@@ -77,7 +77,7 @@ struct
              * hold the C stack pointer.  We only need to do this in programs
              * that handle signals.
              *)
-            handlesSignals andalso let open Control in !targetOS = Cygwin end
+            handlesSignals andalso let open Control.Target in !os = Cygwin end
 
         val makeC = outputC
         val makeS = outputS

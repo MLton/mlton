@@ -105,15 +105,15 @@ fun setTargetType (target: string, usage): unit =
          let 
             open Control
          in
-            targetArch := arch
-            ; targetOS := os
+            Target.arch := arch
+            ; Target.os := os
          end
 
 fun hasNative () =
    let
-      datatype z = datatype Control.arch
+      datatype z = datatype Control.Target.arch
    in
-      case !Control.targetArch of
+      case !Control.Target.arch of
          AMD64 => true
        | X86 => true
        | _ => false
@@ -121,9 +121,9 @@ fun hasNative () =
 
 fun defaultAlignIs8 () =
    let
-      open Control
+      datatype z = datatype Control.Target.arch
    in
-      case !targetArch of
+      case !Control.Target.arch of
          HPPA => true
        | Sparc => true
        | _ => false
@@ -146,6 +146,7 @@ fun makeOptions {usage} =
                usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       datatype z = datatype MLton.Platform.Arch.t
+      datatype z = datatype MLton.Platform.OS.t
       fun tokenizeOpt f opts =
          List.foreach (String.tokens (opts, Char.isSpace), 
                        fn opt => f opt)
@@ -584,6 +585,8 @@ val usage = fn s => (usage s; raise Fail "unreachable")
 fun commandLine (args: string list): unit =
    let
       open Control
+      datatype z = datatype MLton.Platform.Arch.t
+      datatype z = datatype MLton.Platform.OS.t
       val args =
          case args of
             lib :: args =>
@@ -592,7 +595,7 @@ fun commandLine (args: string list): unit =
           | _ => Error.bug "incorrect args from shell script"
       val () = setTargetType ("self", usage)
       val result = parse args
-      val targetArch = !targetArch
+      val targetArch = !Target.arch
       val () =
          align := (case !explicitAlign of
                       NONE => if defaultAlignIs8 () then Align8 else Align4
@@ -646,13 +649,27 @@ fun commandLine (args: string list): unit =
           | Self => "self"
       val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
-      val targetOS = !targetOS
+      val targetOS = !Target.os
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
                                          Cygwin => true
                                        | Darwin => true
                                        | MinGW => true
                                        | _ => false)
+      val () =
+         let
+            val word32 = Bits.fromInt 32
+         in
+            Control.Target.setSizes
+            {cint = word32,
+             cpointer = word32,
+             cptrdiff = word32,
+             csize = word32,
+             header = word32,
+             mplimb = word32,
+             objptr = word32,
+             seqIndex = word32}
+         end
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)

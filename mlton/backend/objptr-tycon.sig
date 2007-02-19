@@ -7,26 +7,29 @@
 
 type int = Int.t
 
-signature POINTER_TYCON_STRUCTS =
+signature OBJPTR_TYCON_STRUCTS =
    sig
    end
 
-signature POINTER_TYCON =
+signature OBJPTR_TYCON =
    sig
-      include POINTER_TYCON_STRUCTS
+      include OBJPTR_TYCON_STRUCTS
 
       type t
 
       val <= : t * t -> bool
+      val compare: t * t -> Relation.t
       val equals: t * t -> bool
-      val fromIndex: Int.t -> t
-      val index: t -> Int.t (* index into objectTypes array *)
+      val fromIndex: int -> t
+      val index: t -> int (* index into objectTypes array *)
       val layout: t -> Layout.t
       val new: unit -> t
       val setIndex: t * int -> unit
+      val toString: t -> string
+
+      (* See gc/object.h. *) 
       val stack: t
       val thread: t
-      val toString: t -> string
       val weakGone: t
       val wordVector: Bits.t -> t
    end

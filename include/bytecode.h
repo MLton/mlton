@@ -6,4 +6,10 @@
  */
 
 #include <stdint.h>
+#include "ml-types.h"
+#include "c-types.h"
+
+typedef Pointer CPointer;
+typedef Pointer Objptr;
+
 #include "interpret.h"

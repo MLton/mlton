@@ -390,6 +390,20 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                    else err ())
              | _ => err ()
          end
+      fun base b =
+         case b of
+            Base.Object ty => ty
+          | Base.VectorSub {index, vector} =>
+               if Type.isVector vector 
+                  then let
+                          val _ =
+                             if Type.equals (index, Type.word (WordSize.seqIndex ()))
+                                then ()
+                             else error ("vector-sub of non seqIndex", Layout.empty)
+                       in
+                          vector
+                       end
+               else error ("vector-sub of non vector", Layout.empty)
       fun select {base: Type.t, offset: int, resultType = _}: Type.t =
          case Type.dest base of
             Type.Object {args, ...} => Prod.elt (args, offset)
@@ -436,7 +450,8 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
             resultType
          end
       val _ =
-         analyze {coerce = coerce,
+         analyze {base = base,
+                  coerce = coerce,
                   const = Type.ofConst,
                   filter = filter,
                   filterWord = filterWord,

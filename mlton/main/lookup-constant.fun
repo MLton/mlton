@@ -63,12 +63,12 @@ val gcFieldsOffsets =
    List.map (gcFields, fn s =>
              {name = s ^ "_Offset",
               value = concat ["offsetof (struct GC_state, ", s, ")"],
-              ty = ConstType.Word WordSize.default})
+              ty = ConstType.Word WordSize.word32})
 val gcFieldsSizes =
    List.map (gcFields, fn s =>
              {name = s ^ "_Size",
               value = concat ["sizeof (gcState.", s, ")"],
-              ty = ConstType.Word WordSize.default})
+              ty = ConstType.Word WordSize.word32})
 
 fun build (constants, out) =
    let

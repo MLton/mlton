@@ -424,7 +424,7 @@ struct
                                    {registers = [Register.esp]})
 
         val (mkCCallLabel, mkSymbolStubs) =
-           if !Control.targetOS = MLton.Platform.OS.Darwin
+           if !Control.Target.os = MLton.Platform.OS.Darwin
               then 
                  let
                     val set: (word * String.t * Label.t) HashSet.t =

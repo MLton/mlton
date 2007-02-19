@@ -32,7 +32,7 @@ signature RUNTIME =
              | SignalIsPending
              | StackBottom
              | StackLimit (* Must have StackTop <= StackLimit *)
-             | StackTop (* Points at the next available word on the stack. *)
+             | StackTop (* Points at the next available byte on the stack. *)
 
             val layout: t -> Layout.t
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
@@ -69,25 +69,26 @@ signature RUNTIME =
          sig
             datatype t =
                Array of {hasIdentity: bool,
-                         bytesNonPointers: Bytes.t,
-                         numPointers: int}
+                         bytesNonObjptrs: Bytes.t,
+                         numObjptrs: int}
              | Normal of {hasIdentity: bool,
-                          bytesNonPointers: Bytes.t,
-                          numPointers: int}
+                          bytesNonObjptrs: Bytes.t,
+                          numObjptrs: int}
              | Stack
              | Weak
              | WeakGone
          end
 
       val allocTooLarge: Bytes.t
-      val arrayLengthOffset: Bytes.t
-      val headerOffset: Bytes.t
+      val arrayLengthOffset: unit -> Bytes.t
+      val arrayLengthSize: unit -> Bytes.t
+      val headerOffset: unit -> Bytes.t
+      val headerSize: unit -> Bytes.t
       val headerToTypeIndex: word -> int
-      val labelSize: Bytes.t
-      (* Same as LIMIT_SLOP from gc.c. *)
+      val labelSize: unit -> Bytes.t
       val limitSlop: Bytes.t
       val maxFrameSize: Bytes.t
-      val normalHeaderSize: Bytes.t
-      val pointerSize: Bytes.t
+      val cpointerSize: unit -> Bytes.t
+      val objptrSize: unit -> Bytes.t
       val typeIndexToHeader: int -> word
    end

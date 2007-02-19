@@ -1271,19 +1271,31 @@ structure Type =
          val synonym = get
       end
 
-      val () =
-         List.foreach
-         (CharSize.all, fn s =>
-          setSynonym (Tycon.char s,
-                      Tycon.word (WordSize.fromBits (CharSize.bits s))))
+      val initSynonyms =
+         let
+            val b = ref false
+         in
+            fn () =>
+            if !b
+               then ()
+            else let
+                    val () =
+                       List.foreach
+                       (CharSize.all, fn s =>
+                        setSynonym (Tycon.char s,
+                                    Tycon.word (WordSize.fromBits (CharSize.bits s))))
 
-      val () =
-         List.foreach
-         (IntSize.all, fn s =>
-          setSynonym (Tycon.int s,
-                      Tycon.word (WordSize.fromBits (IntSize.bits s))))
+                    val () =
+                       List.foreach
+                       (IntSize.all, fn s =>
+                        setSynonym (Tycon.int s,
+                                    Tycon.word (WordSize.fromBits (IntSize.bits s))))
 
-      val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.pointer ()))
+                    val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.cpointer ()))
+                 in
+                    b := true
+                 end
+         end
 
       structure Overload =
          struct
@@ -1586,6 +1598,8 @@ structure Scheme =
             res
          end
    end
+
+val initSynonyms = Type.initSynonyms
 
 fun generalize (tyvars: Tyvar.t vector) =
    let

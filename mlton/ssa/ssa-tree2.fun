@@ -206,9 +206,8 @@ structure Type =
       val word: WordSize.t -> t =
          fn s => lookup (Tycon.hash (Tycon.word s), Word s)
 
-      val defaultWord = word WordSize.default
-
-      val word8 = word WordSize.byte
+      val word8 = word WordSize.word8
+      val word32 = word WordSize.word32
 
       local
          val generator: Word.t = 0wx5555
@@ -330,21 +329,27 @@ structure Type =
                val realCompare = make real
                val wordCompare = make word
             end
-            fun intInfBinary () = done ([intInf, intInf, defaultWord], intInf)
-            fun intInfShift () =
-               done ([intInf, defaultWord, defaultWord], intInf)
-            fun intInfUnary () = done ([intInf, defaultWord], intInf)
+            val bigIntInfWord = word (WordSize.bigIntInfWord ())
+            val cint = word (WordSize.cint ())
+            val compareRes = word WordSize.compareRes
+            val cpointer = word (WordSize.cpointer ())
+            val cptrdiff = word (WordSize.cptrdiff ())
+            val csize = word (WordSize.csize ())
+            val seqIndex = word (WordSize.seqIndex ())
+            val shiftArg = word WordSize.shiftArg
+            val smallIntInfWord = word (WordSize.smallIntInfWord ())
+
+            fun intInfBinary () = done ([intInf, intInf, csize], intInf)
+            fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
+            fun intInfUnary () = done ([intInf, csize], intInf)
             fun real3 s = done ([real s, real s, real s], real s)
-            val pointer = defaultWord
             val word8Array = array word8
-            val wordVector = vector1 defaultWord
-            fun wordShift s = done ([word s, defaultWord], word s)
+            fun wordShift s = done ([word s, shiftArg], word s)
             fun arg i = Vector.sub (args, i)
             fun noArgs () = 0 = Vector.length args
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
             fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
-            fun threeArgs f =
-               3 = Vector.length args andalso f (arg 0, arg 1, arg 2)
+            fun threeArgs f = 3 = Vector.length args andalso f (arg 0, arg 1, arg 2)
             fun eq () =
                twoArgs (fn (x1, x2) =>
                         equals (x1, x2) andalso equals (result, bool))
@@ -352,10 +357,10 @@ structure Type =
             case Prim.name prim of
                Array_array =>
                   oneArg (fn n =>
-                          equals (n, defaultWord) andalso isVector result)
+                          equals (n, seqIndex) andalso isVector result)
              | Array_length =>
                   oneArg (fn a =>
-                          isVector a andalso equals (result, defaultWord))
+                          isVector a andalso equals (result, seqIndex))
              | Array_toVector =>
                   oneArg
                   (fn a =>
@@ -369,12 +374,12 @@ structure Type =
                     | _ => false)
              | FFI f => done (Vector.toList (CFunction.args f),
                               CFunction.return f)
-             | FFI_Symbol _ => done ([], pointer)
+             | FFI_Symbol _ => done ([], cpointer)
              | GC_collect => done ([], unit)
              | IntInf_add => intInfBinary ()
              | IntInf_andb => intInfBinary ()
              | IntInf_arshift => intInfShift ()
-             | IntInf_compare => done ([intInf, intInf], defaultWord)
+             | IntInf_compare => done ([intInf, intInf], compareRes)
              | IntInf_equal => done ([intInf, intInf], bool)
              | IntInf_gcd => intInfBinary ()
              | IntInf_lshift => intInfShift ()
@@ -385,30 +390,28 @@ structure Type =
              | IntInf_quot => intInfBinary ()
              | IntInf_rem => intInfBinary ()
              | IntInf_sub => intInfBinary ()
-             | IntInf_toString =>
-                  done ([intInf, defaultWord, defaultWord], string)
-             | IntInf_toVector => done ([intInf], vector1 defaultWord)
-             | IntInf_toWord => done ([intInf], defaultWord)
+             | IntInf_toString => done ([intInf, word32, csize], string)
+             | IntInf_toVector => done ([intInf], vector1 bigIntInfWord)
+             | IntInf_toWord => done ([intInf], smallIntInfWord)
              | IntInf_xorb => intInfBinary ()
              | MLton_bogus => noArgs ()
              | MLton_bug => done ([string], unit)
              | MLton_eq => eq ()
              | MLton_equal => eq ()
-             | MLton_halt => done ([defaultWord], unit)
+             | MLton_halt => done ([cint], unit)
              | MLton_handlesSignals => done ([], bool)
              | MLton_installSignalHandler => done ([], unit)
              | MLton_share => oneArg (fn x => done ([x], unit))
-             | MLton_size => oneArg (fn x => done ([x], defaultWord))
+             | MLton_size => oneArg (fn x => done ([x], csize))
              | MLton_touch => oneArg (fn x => done ([x], unit))
-             | Pointer_getPointer =>
-                  twoArgs (fn _ => done ([pointer, defaultWord], result))
-             | Pointer_getReal s => done ([pointer, defaultWord], real s)
-             | Pointer_getWord s => done ([pointer, defaultWord], word s)
+             | Pointer_getPointer => twoArgs (fn _ => done ([cpointer, cptrdiff], result))
+             | Pointer_getReal s => done ([cpointer, cptrdiff], real s)
+             | Pointer_getWord s => done ([cpointer, cptrdiff], word s)
              | Pointer_setPointer =>
                   threeArgs (fn (_, _, t) =>
-                             done ([pointer, defaultWord, t], unit))
-             | Pointer_setReal s => done ([pointer, defaultWord, real s], unit)
-             | Pointer_setWord s => done ([pointer, defaultWord, word s], unit)
+                             done ([cpointer, cptrdiff, t], unit))
+             | Pointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
+             | Pointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
              | Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
@@ -424,7 +427,7 @@ structure Type =
              | Real_add s => realBinary s
              | Real_div s => realBinary s
              | Real_equal s => realCompare s
-             | Real_ldexp s => done ([real s, defaultWord], real s)
+             | Real_ldexp s => done ([real s, cint], real s)
              | Real_le s => realCompare s
              | Real_lt s => realCompare s
              | Real_mul s => realBinary s
@@ -438,7 +441,7 @@ structure Type =
              | Real_toWord (s, s', _) => done ([real s], word s')
              | Thread_atomicBegin => done ([], unit)
              | Thread_atomicEnd => done ([], unit)
-             | Thread_canHandle => done ([], defaultWord)
+             | Thread_canHandle => done ([], word32)
              | Thread_copy => done ([thread], thread)
              | Thread_copyCurrent => done ([], unit)
              | Thread_returnToC => done ([], unit)
@@ -447,13 +450,10 @@ structure Type =
                   oneArg (fn w => isWeak w andalso equals (result, bool))
              | Weak_get => oneArg (fn _ => done ([weak result], result))
              | Weak_new => oneArg (fn x => done ([x], weak x))
-             | Word8Array_subWord =>
-                  done ([word8Array, defaultWord], defaultWord)
-             | Word8Array_updateWord =>
-                  done ([word8Array, defaultWord, defaultWord], unit)
-             | Word8Vector_subWord =>
-                  done ([word8Vector, defaultWord], defaultWord)
-             | WordVector_toIntInf => done ([wordVector], intInf)
+             | Word8Array_subWord s => done ([word8Array, seqIndex], word s)
+             | Word8Array_updateWord s => done ([word8Array, seqIndex, word s], unit)
+             | Word8Vector_subWord s => done ([word8Vector, seqIndex], word s)
+             | WordVector_toIntInf => done ([vector1 bigIntInfWord], intInf)
              | Word_add s => wordBinary s
              | Word_addCheck (s, _) => wordBinary s
              | Word_andb s => wordBinary s
@@ -473,7 +473,7 @@ structure Type =
              | Word_rshift (s, _) => wordShift s
              | Word_sub s => wordBinary s
              | Word_subCheck (s, _) => wordBinary s
-             | Word_toIntInf => done ([defaultWord], intInf)
+             | Word_toIntInf => done ([smallIntInfWord], intInf)
              | Word_toReal (s, s', _) => done ([word s], real s')
              | Word_toWord (s, s', _) => done ([word s], word s')
              | Word_xorb s => wordBinary s

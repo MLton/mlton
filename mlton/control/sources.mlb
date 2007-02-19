@@ -33,5 +33,4 @@ in
    structure Source
    structure SourcePos
    structure System
-   structure Words
 end

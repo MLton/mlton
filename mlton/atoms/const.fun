@@ -18,23 +18,25 @@ structure ConstType = ConstType (struct
 
 structure SmallIntInf =
    struct
-      structure Word = Pervasive.Word
+      structure WordSize = WordX.WordSize
 
-      val minSmall: IntInf.t = ~0x40000000
-      val maxSmall: IntInf.t = 0x3FFFFFFF
+      fun toWord (i: IntInf.t): WordX.t option =
+         let
+            val ws = WordSize.smallIntInfWord ()
+            val ws' = WordSize.fromBits (Bits.- (WordSize.bits ws, Bits.one))
+         in
+            if WordSize.isInRange (ws', i, {signed = true})
+               then SOME (WordX.orb (WordX.one ws,
+                                     WordX.lshift (WordX.fromIntInf (i, ws),
+                                                   WordX.one ws)))
+                          
+               else NONE
+         end
 
-      fun isSmall (i: IntInf.t): bool =
-         minSmall <= i andalso i <= maxSmall
+      val isSmall = isSome o toWord
 
-      fun toWord (i: IntInf.t): word option =
-         if isSmall i
-            then SOME (Word.orb (0w1,
-                                 Word.<< (Word.fromInt (IntInf.toInt i),
-                                          0w1)))
-         else NONE
-
-      fun fromWord (w: word): IntInf.t =
-         IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
+      fun fromWord (w: WordX.t): IntInf.t =
+         WordX.toIntInfX (WordX.rshift (w, WordX.one (WordX.size w), {signed = true}))
    end
 
 datatype t =

@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor PointerTycon (S: POINTER_TYCON_STRUCTS): POINTER_TYCON =
+functor ObjptrTycon (S: OBJPTR_TYCON_STRUCTS): OBJPTR_TYCON =
 struct
 
 open S
@@ -30,12 +30,14 @@ fun setIndex (T {index = r}, i) = r := i
 
 fun fromIndex i = T {index = ref i}
 
-fun equals (pt, pt') = index pt = index pt'
+fun compare (opt, opt') = Int.compare (index opt, index opt')
 
-val op <= = fn (pt, pt') => index pt <= index pt'
+fun equals (opt, opt') = index opt = index opt'
 
-fun toString (pt: t): string =
-   concat ["pt_", Int.toString (index pt)]
+val op <= = fn (opt, opt') => index opt <= index opt'
+
+fun toString (opt: t): string =
+   concat ["opt_", Int.toString (index opt)]
 
 val layout = Layout.str o toString
 
@@ -55,7 +57,7 @@ in
        | 16 => word16Vector
        | 32 => word32Vector
        | 64 => word64Vector
-       | _ => Error.bug "PointerTycon.wordVector"
+       | _ => Error.bug "ObjptrTycon.wordVector"
 end
 
 end

@@ -16,11 +16,12 @@ signature C_TYPE =
       include C_TYPE_STRUCTS
 
       datatype t =
-         Int8
+         CPointer
+       | Int8
        | Int16
        | Int32
        | Int64
-       | Pointer
+       | Objptr
        | Real32
        | Real64
        | Word8
@@ -31,13 +32,19 @@ signature C_TYPE =
       val align: t * Bytes.t -> Bytes.t
       val all: t list
       val bool: t
+      val cpointer: t
+      val cint: unit -> t
+      val csize: unit -> t
       val equals: t * t -> bool
+      val objptrHeader: unit -> t
       val memo: (t -> 'a) -> t -> 'a
       (* name: I{8,16,32,64} R{32,64} W{8,16,32,64} *)
       val name: t -> string
       val layout: t -> Layout.t
-      val pointer: t
+      val objptr: t
       val real: RealSize.t -> t
+      val seqIndex: unit -> t
+      val shiftArg: t
       val size: t -> Bytes.t
       val thread: t
       val toString: t -> string

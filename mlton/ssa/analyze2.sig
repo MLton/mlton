@@ -18,7 +18,8 @@ signature ANALYZE2 =
       include ANALYZE2_STRUCTS
 
       val analyze:
-         {coerce: {from: 'a,
+         {base: 'a Base.t -> 'a,
+          coerce: {from: 'a,
                    to: 'a} -> unit,
           const: Const.t -> 'a,
           (* In filter, the variant is an 'a option because the targets of Case
