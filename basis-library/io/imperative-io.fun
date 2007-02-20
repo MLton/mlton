@@ -16,7 +16,7 @@ signature IMPERATIVE_IO_EXTRA_ARG =
       structure PrimIO: PRIM_IO
       structure Vector: sig 
                            include MONO_VECTOR
-                           val fromArray: Array.array -> vector
+                           val unsafeFromArray: Array.array -> vector
                         end
       structure VectorSlice: MONO_VECTOR_SLICE
       sharing type Array.array
@@ -396,7 +396,7 @@ fun inputN (ib as In {buf, first, last, ...}, n) =
                             val i = loop size
                          in
                             if i = n
-                               then V.fromArray inp
+                               then V.unsafeFromArray inp
                             else AS.vector (AS.slice (inp, 0, SOME i))
                          end)
                 | Stream s =>

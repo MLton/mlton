@@ -338,7 +338,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   val i = upd (i, #"E")
                   val i = CharVector.foldl (fn (c, i) => upd (i, c)) i exp
                   val _ = upd (i, #"\000")
-                  val x = Vector.fromArray a
+                  val x = Vector.unsafeFromArray a
                   val x = Prim.strto (NullString.fromString x)
                in
                   if sign

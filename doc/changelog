@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 
+* 2007-02-20
+   - Fixed bug in PackReal<N>.toBytes.  Thanks to Eric McCorkle for the
+     bug report.
+
 * 2007-02-18
    - Added command line switch -profile-val, to profile the evaluation of
      val bindings; this is particularly useful with exception history for

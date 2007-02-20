@@ -57,7 +57,7 @@ structure Vector: VECTOR_EXTRA =
 
       val isSubvector = isSubsequence
 
-      val fromArray = Primitive.Vector.fromArray
+      val unsafeFromArray = Primitive.Vector.fromArray
 
       val vector = new
 

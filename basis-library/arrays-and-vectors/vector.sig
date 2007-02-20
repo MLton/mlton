@@ -34,7 +34,7 @@ signature VECTOR_EXTRA =
       include VECTOR
       structure VectorSlice: VECTOR_SLICE_EXTRA 
 
-      val fromArray: 'a array -> 'a vector
+      val unsafeFromArray: 'a array -> 'a vector
       val unsafeSub: 'a vector * int -> 'a
 
       (* Used to implement Substring/String functions *)
