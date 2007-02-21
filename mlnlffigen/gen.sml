@@ -410,9 +410,21 @@ let
    in
       fun smlFileAndExport (file,export,do_export) = 
          let
-            (* we don't want apostrophes in file names -> turn them into minuses *)
-            val file = Vector.map (file, fn #"'" => #"-" | c => c)
-            val file = OS.Path.joinBaseExt {base = file, ext = SOME "sml"}
+            (* We don't want apostrophes in file names -> turn them into minuses.
+             * We also want to use only lowercase characters as some file systems
+             * are case insensitive.
+             *)
+            val base = Vector.map (file, fn #"'" => #"-" | c => Char.toLower c)
+            fun pick i = let
+               val file = OS.Path.joinBaseExt
+                             {base = if i=0 then base
+                                     else concat [base, "-", Int.toString i],
+                              ext = SOME "sml"}
+            in
+               if List.exists (!files, fn f => f = file) then pick (i+1)
+               else file
+            end
+            val file = pick 0
             val result = OS.Path.joinDirFile {dir = dir, file = file}
          in
             checkDir ()
