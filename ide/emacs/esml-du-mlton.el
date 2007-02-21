@@ -84,8 +84,13 @@ following the point is preferred.  This ensures that the symbol does not
 change surprisingly after a jump."
   (let ((limit (def-use-point-at-current-line)))
     (let ((bef (esml-du-character-class (char-before)))
-          (aft (esml-du-character-class (char-after))))
+          (aft (esml-du-character-class (char-after)))
+          (fol (esml-du-character-class (char-after (1+ (point))))))
       (cond
+       ((and (eq bef 'alphanumeric)
+             (= ?= (char-after))
+             (not (eq fol 'symbolic)))
+        (skip-chars-backward esml-sml-alphanumeric-chars limit))
        ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
         (skip-chars-backward esml-sml-symbolic-chars limit))
        ((and (eq bef 'alphanumeric) (not (eq aft 'symbolic)))
