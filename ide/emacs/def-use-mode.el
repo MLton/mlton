@@ -204,16 +204,15 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (let ((sym (def-use-current-sym)))
     (if (not sym)
         (message "%s" def-use-apology)
+      (ring-insert def-use-marker-ring (point-marker))
       (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
 (defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
@@ -222,12 +221,12 @@ when there really is a symbol at the point."
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
         (while (not (equal (pop refs) ref)))
+        (ring-insert def-use-marker-ring (point-marker))
         (def-use-goto-ref (car refs) other-window)))))
 
 (defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (def-use-jump-to-next other-window t))
 
 (defun def-use-goto-ref (ref &optional other-window)
