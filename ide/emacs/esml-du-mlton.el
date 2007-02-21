@@ -8,6 +8,7 @@
 (require 'esml-util)
 
 ;; XXX Detect when the same ref is both a use and a def and act appropriately.
+;; XXX Fix race condition when (re)loading def-use file that is being written.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
