@@ -70,17 +70,33 @@ is needed."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Move to symbol
 
+(defun esml-du-character-class (c)
+  (cond
+   ((find c esml-sml-symbolic-chars)
+    'symbolic)
+   ((find c esml-sml-alphanumeric-chars)
+    'alphanumeric)))
+
 (defun esml-du-move-to-symbol-start ()
-  "Moves to the start of the SML symbol at point."
+  "Moves to the start of the SML symbol at point.  If the point is between
+two symbols, one symbolic and other alphanumeric (e.g. !x) the symbol
+following the point is preferred.  This ensures that the symbol does not
+change surprisingly after a jump."
   (let ((limit (def-use-point-at-current-line)))
-    (when (zerop (skip-chars-backward esml-sml-alphanumeric-chars limit))
-      (skip-chars-backward esml-sml-symbolic-chars limit))))
+    (let ((bef (esml-du-character-class (char-before)))
+          (aft (esml-du-character-class (char-after))))
+      (cond
+       ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
+        (skip-chars-backward esml-sml-symbolic-chars limit))
+       ((and (eq bef 'alphanumeric) (not (eq aft 'symbolic)))
+        (skip-chars-backward esml-sml-alphanumeric-chars limit))))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
              (cons 'sml-mode (function esml-du-move-to-symbol-start)))
 
 (defun esml-du-move-to-symbol-end ()
-  "Moves to the end of the SML symbol at point."
+  "Moves to the end of the SML symbol at point assuming that we are at the
+beginning of the symbol."
   (let ((limit (def-use-point-at-next-line)))
     (when (zerop (skip-chars-forward esml-sml-alphanumeric-chars limit))
       (skip-chars-forward esml-sml-symbolic-chars limit))))
