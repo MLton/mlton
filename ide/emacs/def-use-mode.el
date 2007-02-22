@@ -36,6 +36,13 @@
   :group 'faces
   :group 'def-use)
 
+(defface def-use-unused-def-face
+  '((((class color)) (:background "pink"))
+    (t (:background "gray")))
+  "Face for highlighting definitions that have no uses."
+  :group 'faces
+  :group 'def-use)
+
 (defface def-use-use-face
   '((((class color)) (:background "darkseagreen3"))
     (t (:background "gray")))
@@ -448,7 +455,10 @@ the symbol."
             (when buffer
               (set-buffer buffer)
               (def-use-highlight-ref
-                length (def-use-ref-pos ref) 'def-use-def-face))))))))
+                length (def-use-ref-pos ref)
+                (if (def-use-sym-to-uses sym)
+                    'def-use-def-face
+                  'def-use-unused-def-face)))))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
