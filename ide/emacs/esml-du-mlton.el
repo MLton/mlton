@@ -88,7 +88,7 @@ change surprisingly after a jump."
           (fol (esml-du-character-class (char-after (1+ (point))))))
       (cond
        ((and (eq bef 'alphanumeric)
-             (= ?= (char-after))
+             (equal ?= (char-after))
              (not (eq fol 'symbolic)))
         (skip-chars-backward esml-sml-alphanumeric-chars limit))
        ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
