@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 
+* 2007-02-23
+   - Removed expert command line switch -coalesce <n>.
+   - Added expert command line switch -chunkify {coalesce<n>|func|one}.
+
 * 2007-02-18
    - Added command line switch -profile-val, to profile the evaluation of
      val bindings; this is particularly useful with exception history for

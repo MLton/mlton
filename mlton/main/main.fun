@@ -58,10 +58,10 @@ val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val buildConstants: bool ref = ref false
-val coalesce: int option ref = ref NONE
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
+val explicitChunk: Control.chunk option ref = ref NONE
 val explicitCodegen: Control.codegen option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
@@ -183,8 +183,29 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString 
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
-        Int (fn n => coalesce := SOME n)),
+       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify method",
+        SpaceString (fn s =>
+                     explicitChunk
+                     := SOME (case s of
+                                 "func" => ChunkPerFunc 
+                               | "one" => OneChunk
+                               | _ => let
+                                         val usage = fn () =>
+                                            usage (concat ["invalid -chunkify flag: ", s])
+                                      in 
+                                         if String.hasPrefix (s, {prefix = "coalesce"})
+                                            then let
+                                                    val s = String.dropPrefix (s, 8)
+                                                 in
+                                                    if String.forall (s, Char.isDigit)
+                                                       then (case Int.fromString s of
+                                                                NONE => usage ()
+                                                              | SOME n => Coalesce 
+                                                                          {limit = n})
+                                                       else usage ()
+                                                 end
+                                            else usage ()
+                                      end))),
        (Normal, "codegen",
         concat [" {", if hasNative () then "native|" else "", "bytecode|c}"],
         "which code generator to use",
@@ -714,15 +735,12 @@ fun commandLine (args: string list): unit =
          else ()
       val _ =
          chunk :=
-         (case !codegen of
-             Bytecode => OneChunk
-           | CCodegen => Coalesce {limit = (case !coalesce of
-                                               NONE => 4096
-                                             | SOME n => n)}
-           | Native =>
-                if isSome (!coalesce)
-                   then usage "can't use -coalesce and -codegen native"
-                else ChunkPerFunc)
+         (case !explicitChunk of
+             NONE => (case !codegen of
+                         Bytecode => OneChunk
+                       | CCodegen => Coalesce {limit = 4096}
+                       | Native => ChunkPerFunc)
+           | SOME c => c)
       val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
                  then usage "must use native codegen with -ieee-fp true"
               else ()
