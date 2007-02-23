@@ -30,7 +30,7 @@
   :group 'matching)
 
 (defface def-use-def-face
-  '((((class color)) (:background "paleturquoise3"))
+  '((((class color)) (:background "darkseagreen3"))
     (t (:background "gray")))
   "Face for highlighting definitions."
   :group 'faces
@@ -44,7 +44,7 @@
   :group 'def-use)
 
 (defface def-use-use-face
-  '((((class color)) (:background "darkseagreen3"))
+  '((((class color)) (:background "paleturquoise3"))
     (t (:background "gray")))
   "Face for highlighting uses."
   :group 'faces
