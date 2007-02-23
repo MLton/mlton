@@ -7,7 +7,6 @@
 (require 'bg-job)
 (require 'esml-util)
 
-;; XXX Detect when the same ref is both a use and a def and act appropriately.
 ;; XXX Fix race condition when (re)loading def-use file that is being written.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -213,23 +212,39 @@ beginning of the symbol."
           (esml-du-ctx-attr ctx))
     (esml-du-load ctx)))
 
+(defun esml-du-try-to-read-symbol-at-ref-once (ref ctx)
+  (when (search-forward (esml-du-ref-to-appx-syntax ref) nil t)
+    (when (eq 'lazy esml-du-background-parsing)
+      (esml-du-parse ctx))
+    (beginning-of-line)
+    (while (= ?\  (char-after))
+      (forward-line -1))
+    (esml-du-read-one-symbol ctx)))
+
+(defun esml-du-try-to-read-all-symbols-at-ref (ref ctx)
+  (let ((syms nil))
+    (goto-char 1)
+    (while (let ((sym (esml-du-try-to-read-symbol-at-ref-once ref ctx)))
+             (when sym
+               (push sym syms))))
+    syms))
+
 (defun esml-du-try-to-read-symbol-at-ref (ref ctx)
-  "Tries to read the symbol at the specified ref from the duf."
+  "Tries to read the symbol at the specified ref from the duf.  Returns
+non-nil if something was actually read."
   (let ((buffer (esml-du-ctx-buf ctx)))
     (when buffer
       (with-current-buffer buffer
-        (goto-char 1)
-        (when (search-forward (esml-du-ref-to-appx-syntax ref) nil t)
-          (when (eq 'lazy esml-du-background-parsing)
-            (esml-du-parse ctx))
-          (beginning-of-line)
-          (while (= ?\  (char-after))
-            (forward-line -1))
-          (let ((start (point)))
-            (esml-du-read-one-symbol ctx)
-            (setq buffer-read-only nil)
-            (delete-backward-char (- (point) start))
-            (setq buffer-read-only t)))))))
+        (let ((syms (esml-du-try-to-read-all-symbols-at-ref ref ctx)))
+          (when syms
+            (while syms
+              (let* ((sym (pop syms))
+                     (more-syms
+                      (esml-du-try-to-read-all-symbols-at-ref
+                       (def-use-sym-ref sym) ctx)))
+                (when more-syms
+                  (setq syms (nconc more-syms syms)))))
+            t))))))
 
 (defun esml-du-ref-to-appx-syntax (ref)
   (let ((pos (def-use-ref-pos ref)))
@@ -239,9 +254,10 @@ beginning of the symbol."
      (int-to-string (1+ (def-use-pos-col pos))))))
 
 (defun esml-du-read-one-symbol (ctx)
-  "Reads one symbol from the current buffer starting at the current
-point."
-  (let* ((ref-to-sym (esml-du-ctx-ref-to-sym-table ctx))
+  "Reads one symbol from the current buffer starting at the current point.
+Returns the symbol read and deletes the read symbol from the buffer."
+  (let* ((start (point))
+         (ref-to-sym (esml-du-ctx-ref-to-sym-table ctx))
          (sym-to-uses (esml-du-ctx-sym-to-uses-table ctx))
          (class (def-use-intern (esml-du-read "^ " " ")))
          (name (def-use-intern (esml-du-read "^ " " ")))
@@ -253,16 +269,33 @@ point."
          (sym (def-use-sym class name ref
                 (cdr (assoc class esml-du-classes))))
          (uses nil))
-    (puthash ref sym ref-to-sym)
+    (let ((old-sym (gethash ref ref-to-sym)))
+      (when old-sym
+        (setq sym old-sym))
+      (puthash ref sym ref-to-sym))
     (while (< 0 (skip-chars-forward " "))
       (let* ((src (def-use-file-truename (esml-du-read "^ " " ")))
              (line (string-to-int (esml-du-read "^." ".")))
              (col (1- (string-to-int (esml-du-read "^\n" "\n"))))
              (pos (def-use-pos line col))
              (ref (def-use-ref src pos)))
-        (puthash ref sym (esml-du-ctx-ref-to-sym-table ctx))
+        (let ((old-sym (gethash ref ref-to-sym)))
+          (when old-sym
+            (let ((old-uses (gethash old-sym sym-to-uses)))
+              (remhash old-sym sym-to-uses)
+              (mapc
+               (function
+                (lambda (ref)
+                  (puthash ref sym ref-to-sym)))
+               old-uses)
+              (setq uses (nconc uses old-uses)))))
+        (puthash ref sym ref-to-sym)
         (push ref uses)))
-    (puthash sym uses sym-to-uses)))
+    (puthash sym uses sym-to-uses)
+    (setq buffer-read-only nil)
+    (delete-backward-char (- (point) start))
+    (setq buffer-read-only t)
+    sym))
 
 (defun esml-du-load (ctx)
   "Loads the def-use file to a buffer for parsing and performing queries."
@@ -312,10 +345,7 @@ altough the editor may feel a bit sluggish."
       (lambda (ctx)
         (with-current-buffer (esml-du-ctx-buf ctx)
           (goto-char 1)
-          (esml-du-read-one-symbol ctx)
-          (setq buffer-read-only nil)
-          (delete-backward-char (1- (point)))
-          (setq buffer-read-only t))))
+          (esml-du-read-one-symbol ctx))))
      (function
       (lambda (ctx)
         (esml-du-stop-parsing ctx)
