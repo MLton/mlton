@@ -234,6 +234,7 @@ beginning of the symbol."
 non-nil if something was actually read."
   (let ((buffer (esml-du-ctx-buf ctx)))
     (when buffer
+      (bury-buffer buffer)
       (with-current-buffer buffer
         (let ((syms (esml-du-try-to-read-all-symbols-at-ref ref ctx)))
           (when syms
