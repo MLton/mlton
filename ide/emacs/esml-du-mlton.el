@@ -76,24 +76,34 @@ is needed."
    ((find c esml-sml-alphanumeric-chars)
     'alphanumeric)))
 
+(defun esml-du-extract-following-symbol (chars)
+  (save-excursion
+    (let ((start (point)))
+      (skip-chars-forward chars)
+      (buffer-substring start (point)))))
+
 (defun esml-du-move-to-symbol-start ()
   "Moves to the start of the SML symbol at point.  If the point is between
 two symbols, one symbolic and other alphanumeric (e.g. !x) the symbol
 following the point is preferred.  This ensures that the symbol does not
 change surprisingly after a jump."
-  (let ((limit (def-use-point-at-current-line)))
-    (let ((bef (esml-du-character-class (char-before)))
-          (aft (esml-du-character-class (char-after)))
-          (fol (esml-du-character-class (char-after (1+ (point))))))
-      (cond
-       ((and (eq bef 'alphanumeric)
-             (equal ?= (char-after))
-             (not (eq fol 'symbolic)))
-        (skip-chars-backward esml-sml-alphanumeric-chars limit))
-       ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
-        (skip-chars-backward esml-sml-symbolic-chars limit))
-       ((and (eq bef 'alphanumeric) (not (eq aft 'symbolic)))
-        (skip-chars-backward esml-sml-alphanumeric-chars limit))))))
+  (let ((bef (esml-du-character-class (char-before)))
+        (aft (esml-du-character-class (char-after))))
+    (cond
+     ((and (eq bef 'alphanumeric) (eq aft 'symbolic)
+           (find (esml-du-extract-following-symbol esml-sml-symbolic-chars)
+                 esml-sml-symbolic-keywords
+                 :test 'equal))
+      (skip-chars-backward esml-sml-alphanumeric-chars))
+     ((and (eq bef 'symbolic) (eq aft 'alphanumeric)
+           (find (esml-du-extract-following-symbol esml-sml-alphanumeric-chars)
+                 esml-sml-alphanumeric-keywords
+                 :test 'equal))
+      (skip-chars-backward esml-sml-symbolic-chars))
+     ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
+      (skip-chars-backward esml-sml-symbolic-chars))
+     ((and (eq bef 'alphanumeric) (not (eq aft 'symbolic)))
+      (skip-chars-backward esml-sml-alphanumeric-chars)))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
              (cons 'sml-mode (function esml-du-move-to-symbol-start)))
