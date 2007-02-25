@@ -80,7 +80,7 @@ structure Operand =
           | GCState => Type.gcState ()
           | Line => Type.cint ()
           | Offset {ty, ...} => ty
-          | ObjptrTycon opt => Type.objptr opt
+          | ObjptrTycon opt => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | Var {ty, ...} => ty
 
