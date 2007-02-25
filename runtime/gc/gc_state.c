@@ -59,7 +59,7 @@ void setGCStateCurrentHeap (GC_state s,
   nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  assert (isAligned (nurserySize, POINTER_SIZE));
+  assert (isAligned (nurserySize, s->alignment));
   if (/* The mutator marks cards. */
       s->mutatorMarksCards
       /* There is enough space in the nursery. */
@@ -73,11 +73,9 @@ void setGCStateCurrentHeap (GC_state s,
            <= s->controls.ratios.nursery)
       and /* There is a reason to use generational GC. */
       (
-       /* We must use it for debugging pruposes. */
+       /* We must use it for debugging purposes. */
        FORCE_GENERATIONAL
-       /* We just did a mark compact, so it will be advantageous to to
-        * use it.
-        */
+       /* We just did a mark compact, so it will be advantageous to to use it. */
        or (s->lastMajorStatistics.kind == GC_MARK_COMPACT)
        /* The live ratio is low enough to make it worthwhile. */
        or ((float)h->size / (float)s->lastMajorStatistics.bytesLive
@@ -87,7 +85,7 @@ void setGCStateCurrentHeap (GC_state s,
        )) {
     s->canMinor = TRUE;
     nurserySize /= 2;
-    while (not (isAligned (nurserySize, POINTER_SIZE))) {
+    while (not (isAligned (nurserySize, s->alignment))) {
       nurserySize -= 2;
     }
     clearCardMap (s);
@@ -109,7 +107,6 @@ void setGCStateCurrentHeap (GC_state s,
   assert (isFrontierAligned (s, s->heap.nursery));
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
-
 
 bool GC_getAmOriginal (GC_state s) {
   return s->amOriginal;

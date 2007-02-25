@@ -10,7 +10,7 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
                               struct GC_generationalMaps *generational,
                               FILE *stream) {
   fprintf(stream,
-          "\t\tcardMap ="FMTPTR"\n"
+          "\t\tcardMap = "FMTPTR"\n"
           "\t\tcardMapAbsolute = "FMTPTR"\n"
           "\t\tcardMapLength = %zu\n"
           "\t\tcrossMap = "FMTPTR"\n"

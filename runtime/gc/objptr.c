@@ -31,7 +31,7 @@ pointer objptrToPointer (objptr O, pointer B) {
 
   P_ = ((O_ << S_) + B_);
   P = (pointer)P_;
-  if (DEBUG_DETAILED) 
+  if (DEBUG_OBJPTR) 
     fprintf (stderr, "objptrToPointer ("FMTOBJPTR") = "FMTPTR"\n", O, (uintptr_t)P);
 
   return P;
@@ -52,7 +52,7 @@ objptr pointerToObjptr (pointer P, pointer B) {
 
   O_ = ((P_ - B_) >> S_);
   O = (objptr)O_;
-  if (DEBUG_DETAILED) 
+  if (DEBUG_OBJPTR) 
     fprintf (stderr, "pointerToObjptr ("FMTPTR") = "FMTOBJPTR"\n", (uintptr_t)P, O);
 
   return O;

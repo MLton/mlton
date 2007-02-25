@@ -134,9 +134,9 @@ thread:
         /* Compress all of the unmarked into one vector.  We require
          * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
          * because that is the smallest possible array.  You cannot
-         * use GC_ARRAY_HEADER_SIZE because even zero-length arrays
-         * require extra space for the forwarding pointer.  If you did
-         * use GC_ARRAY_HEADER_SIZE,
+         * use GC_ARRAY_HEADER_SIZE because even very small (including
+         * zero-length) arrays require extra space for the forwarding
+         * pointer.  If you did use GC_ARRAY_HEADER_SIZE,
          * updateBackwardPointersAndSlideForMarkCompact would skip the
          * extra space and be completely busted.
          */

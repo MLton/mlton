@@ -227,6 +227,13 @@ structure WordRep =
                     rep = rep}
          else Error.bug "PackedRepresentation.WordRep.make"
 
+      val make =
+         Trace.trace
+         ("PackedRepresentation.WordRep.make",
+          layout o T,
+          layout)
+         make
+
       fun padToWidth (T {components, rep}, b: Bits.t): t =
          make {components = components,
                rep = Rep.padToWidth (rep, b)}
@@ -484,33 +491,53 @@ structure Base =
                   case Scale.fromInt (Bytes.toInt eltWidth) of
                      NONE =>
                         let
-                           val size = WordSize.seqIndex ()
-                           val wty = Type.word (WordSize.bits size)
-                           (* vector + (width * index) + offset *)
+                           val seqIndexSize = WordSize.seqIndex ()
+                           val seqIndexTy = Type.word (WordSize.bits seqIndexSize)
+                           val csizeSize = WordSize.csize ()
+                           val csizeTy = Type.word (WordSize.bits csizeSize)
+                           (* vector + (eltWidth * index) + offset *)
+                           val ind = Var.newNoname ()
+                           val s0 =
+                              case WordSize.compare (seqIndexSize, csizeSize) of
+                                 EQUAL => 
+                                    Bind {dst = (ind, csizeTy),
+                                          isMutable = false,
+                                          src = index}
+                               | GREATER => Error.bug "PackedRepresentation.Base.ToOperand: WordSize.compare (seqIndexSize, csizeSize)"
+                               | LESS => 
+                                    PrimApp {args = Vector.new1 index,
+                                             dst = SOME (ind, csizeTy),
+                                             prim = (Prim.wordToWord 
+                                                     (seqIndexSize, 
+                                                      csizeSize, 
+                                                      {signed = false}))}
                            val prod = Var.newNoname ()
                            val s1 =
                               PrimApp {args = (Vector.new2
-                                               (index,
+                                               (Operand.Var {ty = csizeTy,
+                                                             var = ind},
                                                 Operand.word
                                                 (WordX.fromIntInf
                                                  (Bytes.toIntInf eltWidth,
-                                                  size)))),
-                                       dst = SOME (prod, wty),
-                                       prim = Prim.wordMul (size, {signed = false})}
+                                                  csizeSize)))),
+                                       dst = SOME (prod, csizeTy),
+                                       prim = (Prim.wordMul 
+                                               (csizeSize, 
+                                                {signed = false}))}
                            val eltBase = Var.newNoname ()
                            val s2 =
                               PrimApp {args = (Vector.new2
                                                (vector,
-                                                Operand.Var {ty = wty,
+                                                Operand.Var {ty = csizeTy,
                                                              var = prod})),
-                                       dst = SOME (eltBase, wty),
-                                       prim = Prim.wordAdd size}
+                                       dst = SOME (eltBase, csizeTy),
+                                       prim = Prim.wordAdd csizeSize}
                         in
-                           (Offset {base = Operand.Var {ty = wty,
+                           (Offset {base = Operand.Var {ty = csizeTy,
                                                         var = eltBase},
                                     offset = offset,
                                     ty = ty},
-                            [s1, s2])
+                            [s0, s1, s2])
                         end
                    | SOME s =>
                         (ArrayOffset {base = vector,
@@ -724,26 +751,31 @@ structure ObjptrRep =
             val padBytes: Bytes.t =
                if isVector
                   then let
-                          val width = width
                           val alignWidth =
-                             if (Vector.exists
-                                 (components, fn {component = c, ...} =>
-                                  case Type.deReal (Component.ty c) of
-                                     NONE => false
-                                   | SOME s => RealSize.equals (s, RealSize.R64)))
-                                then Bytes.alignWord64 width
-                             else width
+                             case !Control.align of
+                                Control.Align4 => width
+                              | Control.Align8 =>
+                                   if (Vector.exists
+                                       (components, fn {component = c, ...} =>
+                                        case Type.deReal (Component.ty c) of
+                                           NONE => false
+                                         | SOME s => RealSize.equals (s, RealSize.R64)))
+                                      then Bytes.alignWord64 width
+                                   else width
                        in
                           Bytes.- (alignWidth, width)
                        end
                else let
-                       val width = Bytes.+ (width, Runtime.headerSize ())
-                       val alignWidth = 
+                       (* An object needs space for a forwarding objptr. *)
+                       val width' = Bytes.max (width, Runtime.objptrSize ())
+                       val width'' = Bytes.+ (width', Runtime.headerSize ())
+                       val alignWidth'' = 
                           case !Control.align of
-                             Control.Align4 => Bytes.alignWord32 width
-                           | Control.Align8 => Bytes.alignWord64 width
+                             Control.Align4 => Bytes.alignWord32 width''
+                           | Control.Align8 => Bytes.alignWord64 width''
+                       val alignWidth' = Bytes.- (alignWidth'', Runtime.headerSize ())
                     in
-                       Bytes.- (alignWidth, width)
+                       Bytes.- (alignWidth', width)
                     end
             val (components, selects) =
                if Bytes.isZero padBytes
@@ -759,17 +791,21 @@ structure ObjptrRep =
                         if 0 = Vector.length objptrs
                            then width
                         else #offset (Vector.sub (objptrs, 0))
-                     val pad =                        
-                        {component = (Component.padToWidth 
-                                      (Component.unit, 
-                                       Bytes.toBits padBytes)),
-                         offset = padOffset}
+                     val pad = 
+                        (#1 o Vector.unfoldi)
+                        ((Bytes.toInt padBytes) div (Bytes.toInt Bytes.inWord32),
+                         padOffset,
+                         fn (_, padOffset) =>
+                         ({component = (Component.padToWidth 
+                                        (Component.unit, Bits.inWord32)),
+                           offset = padOffset},
+                          Bytes.+ (padOffset, Bytes.inWord32)))
                      val objptrs =
                         Vector.map (objptrs, fn {component = c, offset} =>
                                     {component = c,
                                      offset = Bytes.+ (offset, padBytes)})
                      val components = 
-                        Vector.concat [nonObjptrs, Vector.new1 pad, objptrs]
+                        Vector.concat [nonObjptrs, pad, objptrs]
                      val selects =
                         Selects.map
                         (selects, fn s =>
@@ -1700,6 +1736,17 @@ structure TyconRep =
                          in
                             if i >= objptrBitsAsInt ()
                                then makeBig ()
+                            else if (* FIXME: must box Real32 w/ 64bit object pointers,
+                                     * since ShiftAndTag operations aren't bit casts;
+                                     * we end up rounding a Real32 to a Word64.
+                                     *)
+                                   Type.exists
+                                   (ty, fn ty =>
+                                    case Type.deReal ty of
+                                       NONE => false
+                                     | SOME rs => Bytes.< (RealSize.bytes rs,
+                                                           objptrBytes ()))
+                               then makeBig ()
                             else
                                let
                                   val {component, selects} =
@@ -2454,7 +2501,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                                                     if nInt = 8
                                                        orelse nInt = 16
                                                        orelse nInt = 32
-                                                       (* orelse nInt = 64 *)
+                                                       orelse nInt = 64
                                                        then
                                                           now 
                                                           (ObjptrTycon.wordVector nBits)

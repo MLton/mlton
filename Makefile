@@ -289,14 +289,14 @@ runtime:
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
-	$(CP) runtime/bytecode/opcodes "$(LIB)/"
+        # $(CP) runtime/bytecode/opcodes "$(LIB)/"
 	$(CP) runtime/*.h "$(INC)/"
 	mv "$(INC)/c-types.h" "$(LIB)/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
-	$(CP) runtime/bytecode/interpret.h "$(INC)"
+        # $(CP) runtime/bytecode/interpret.h "$(INC)"
 	for x in "$(LIB)"/"$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script

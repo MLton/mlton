@@ -83,8 +83,8 @@ doit "$lib" \
         -cc-opt '-O1'                                            \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -mlb-path-map "$lib/mlb-path-map"                        \
-        -target-as-opt amd64 '-m32 -mtune=opteron'               \
-        -target-cc-opt amd64 '-m32 -mtune=opteron'               \
+        -target-as-opt amd64 '-m64 -mtune=opteron'               \
+        -target-cc-opt amd64 '-m64 -mtune=opteron'               \
         -target-cc-opt darwin                                    \
                 '-I/opt/local/include -I/sw/include'             \
         -target-cc-opt freebsd '-I/usr/local/include'            \
@@ -100,7 +100,7 @@ doit "$lib" \
                 -malign-functions=5
                 -malign-jumps=2
                 -malign-loops=2'                                 \
-        -target-link-opt amd64 '-m32'                            \
+        -target-link-opt amd64 '-m64'                            \
         -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
         -target-link-opt mingw                                   \

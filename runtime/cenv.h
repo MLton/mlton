@@ -121,5 +121,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #error unknown platform arch
 #endif
 
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is_sizeof_voidStar, sizeof(uintptr_t) == sizeof(void*));
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t, sizeof(uintptr_t) == sizeof(size_t));
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_ptrdiff_t, sizeof(uintptr_t) == sizeof(ptrdiff_t));
 
 #endif /* _MLTON_CENV_H_ */

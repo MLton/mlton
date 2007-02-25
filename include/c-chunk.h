@@ -171,7 +171,7 @@ typedef Pointer Objptr;
 
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(Word32*)(StackTop - sizeof(Word32));              \
+                l_nextFun = *(Word32*)(StackTop - sizeof(void*));               \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
                                         __FILE__, __LINE__, l_nextFun);         \

@@ -114,8 +114,7 @@ fun hasNative () =
       datatype z = datatype Control.Target.arch
    in
       case !Control.Target.arch of
-         AMD64 => true
-       | X86 => true
+         X86 => true
        | _ => false
    end
 
@@ -212,7 +211,8 @@ fun makeOptions {usage} =
         SpaceString (fn s =>
                      explicitCodegen
                      := SOME (case s of
-                                 "bytecode" => Bytecode
+                                 "bytecode" => (* Bytecode *)
+                                               usage "can't use bytecode codegen"
                                | "c" => CCodegen
                                | "native" => Native
                                | _ => usage (concat
@@ -683,19 +683,36 @@ fun commandLine (args: string list): unit =
                                        | MinGW => true
                                        | _ => false)
       val () =
-         let
-            val word32 = Bits.fromInt 32
-         in
-            Control.Target.setSizes
-            {cint = word32,
-             cpointer = word32,
-             cptrdiff = word32,
-             csize = word32,
-             header = word32,
-             mplimb = word32,
-             objptr = word32,
-             seqIndex = word32}
-         end
+         case targetArch of
+            AMD64 => 
+               let
+                  val word32 = Bits.fromInt 32
+                  val word64 = Bits.fromInt 64
+               in
+                  Control.Target.setSizes
+                  {cint = word32,
+                   cpointer = word64,
+                   cptrdiff = word64,
+                   csize = word64,
+                   header = word32,
+                   mplimb = word64,
+                   objptr = word64,
+                   seqIndex = word32}
+               end
+          | _ =>
+               let
+                  val word32 = Bits.fromInt 32
+               in
+                  Control.Target.setSizes
+                  {cint = word32,
+                   cpointer = word32,
+                   cptrdiff = word32,
+                   csize = word32,
+                   header = word32,
+                   mplimb = word32,
+                   objptr = word32,
+                   seqIndex = word32}
+               end
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)

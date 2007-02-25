@@ -33,13 +33,15 @@ pointer GC_arrayAllocate (GC_state s,
   arraySize = (size_t)arraySizeMax;
   arraySizeAligned = (size_t)arraySizeAlignedMax;
   if (arraySizeAligned < GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
-    /* Create space for forwarding pointer. */
+    /* Very small (including empty) arrays have OBJPTR_SIZE bytes
+     * space for the forwarding pointer.
+     */
     arraySize = GC_ARRAY_HEADER_SIZE;
     arraySizeAligned = align(GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE, s->alignment);
   }
   if (DEBUG_ARRAY)
     fprintf (stderr, 
-             "Array with "FMTARRLEN" elts of size %zu and size %s and aligned size %s.  "
+             "Array with "FMTARRLEN" elts of size %zu and total size %s and total aligned size %s.  "
              "Ensure %s bytes free.\n",
              numElements, bytesPerElement, 
              uintmaxToCommaString(arraySize),

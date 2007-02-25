@@ -335,13 +335,21 @@ fun outputDeclarations
                  | Stack =>
                       (2, false, 0, 0)
                  | Weak =>
-                      (case !Control.align of
-                          Control.Align4 => (3, false, 4, 1)
-                        | Control.Align8 => (3, false, 8, 1))
+                      (case (!Control.align,
+                             Bits.toInt (Control.Target.Size.cpointer ()),
+                             Bits.toInt (Control.Target.Size.objptr ())) of
+                          (Control.Align4,32,32) => (3, false, 4, 1)
+                        | (Control.Align8,32,32) => (3, false, 8, 1)
+                        | (Control.Align4,64,64) => (3, false, 8, 1)
+                        | _ => Error.bug "CCodegen.declareObjectTypes")
                  | WeakGone =>
-                      (case !Control.align of
-                          Control.Align4 => (3, false, 8, 0)
-                        | Control.Align8 => (3, false, 12, 0))
+                      (case (!Control.align,
+                             Bits.toInt (Control.Target.Size.cpointer ()),
+                             Bits.toInt (Control.Target.Size.objptr ())) of
+                          (Control.Align4,32,32) => (3, false, 8, 0)
+                        | (Control.Align8,32,32) => (3, false, 12, 0)
+                        | (Control.Align4,64,64) => (3, false, 16, 0)
+                        | _ => Error.bug "CCodegen.declareObjectTypes")
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",

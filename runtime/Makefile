@@ -23,14 +23,14 @@ FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 GCOPTFLAGS := 
-DEBUGFLAGS := 
+DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
 GCDEBUGFLAGS := 
 WARNFLAGS := 
 OPTWARNFLAGS := 
 DEBUGWARNFLAGS := 
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -m32
+FLAGS += -m64
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
 OPTFLAGS += -mcpu=opteron
 endif
@@ -107,7 +107,7 @@ endif
 CC := gcc -std=gnu99
 CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
-DEBUGCFLAGS := $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
+DEBUGCFLAGS := $(CFLAGS) -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
 GCDEBUGCFLAGS = $(GCDEBUGFLAGS)
 WARNCFLAGS :=
@@ -147,7 +147,7 @@ WARNCFLAGS += -Wmissing-field-initializers
 endif
 WARNCFLAGS += -Wmissing-noreturn
 WARNCFLAGS += -Wmissing-format-attribute
-WARNCFLAGS += -Wpacked
+# WARNCFLAGS += -Wpacked
 # WARNCFLAGS += -Wpadded
 WARNCFLAGS += -Wredundant-decls
 WARNCFLAGS += -Wnested-externs
@@ -214,6 +214,7 @@ DEBUG_OBJS := 							\
 	platform-gdb.o						\
 	platform/$(TARGET_OS)-gdb.o
 
+OMIT_BYTECODE := yes
 ifeq ($(OMIT_BYTECODE), yes)
 else
   OBJS += bytecode/interpret.o
@@ -232,9 +233,14 @@ else
 	$(foreach f, $(basename $(REAL_BASISCFILES)), $(f)-gdb.o)
 endif
 
-all:  libgdtoa.a libmlton.a libmlton-gdb.a 			\
-	gen/c-types.sml gen/basis-ffi.sml			\
-	bytecode/opcodes
+ALL := libgdtoa.a libmlton.a libmlton-gdb.a
+ALL += gen/c-types.sml gen/basis-ffi.sml
+ifeq ($(OMIT_BYTECODE), yes)
+else
+  ALL += bytecode/opcodes
+endif
+
+all: $(ALL)
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 						\

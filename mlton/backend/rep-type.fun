@@ -252,6 +252,13 @@ structure Type =
          Trace.trace2 ("RepType.Type.isSubtype", layout, layout, Bool.layout)
          isSubtype
 
+      fun exists (t, p) =
+         if p t
+            then true
+         else (case node t of
+                  Seq ts => Vector.exists (ts, fn t => exists (t, p))
+                | _ => false)
+
 
       val resize: t * Bits.t -> t = fn (_, b) => word b
 
