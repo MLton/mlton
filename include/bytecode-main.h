@@ -17,8 +17,9 @@
 
 struct Bytecode MLton_bytecode;
 
-static Word32 returnAddressToFrameIndex (Word32 w) {
-        return *(Word32*)(MLton_bytecode.code + w - sizeof (Word32));
+static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
+        return *(GC_frameIndex*)(MLton_bytecode.code 
+                                 + ra - sizeof (GC_frameIndex*));
 }
 
 #define Main(al, mg, mfs, mmc, pk, ps, ml)                              \

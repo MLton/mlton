@@ -38,8 +38,8 @@ Word32 wordTemp1L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-static Word32 returnAddressToFrameIndex (Word32 w) {
-        return *((Word32*)(w - sizeof(Word32)));
+static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
+        return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex*)));
 }
 
 #define Main(al, mg, mfs, mmc, pk, ps, ml)                              \

@@ -12,8 +12,8 @@
 #include "main.h"
 #include "c-common.h"
 
-static Word32 returnAddressToFrameIndex (Word32 w) {
-        return w;
+static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
+        return (GC_frameIndex)ra;
 }
 
 #define Main(al, mg, mfs, mmc, pk, ps, mc, ml)                          \

@@ -51,7 +51,7 @@ struct GC_state {
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
-  uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
+  GC_frameIndex (*returnAddressToFrameIndex) (GC_returnAddress ra);
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
