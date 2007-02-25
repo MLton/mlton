@@ -236,7 +236,7 @@ structure Type =
       val isSubtype: t * t -> bool =
          fn (t, t') =>
          if not (sameWidth (t, t'))
-            then Error.bug "RepType.Type.isSubtype"
+            then false (* Error.bug "RepType.Type.isSubtype" *)
          else
             (equals (t, t')
              orelse

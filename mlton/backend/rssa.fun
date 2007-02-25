@@ -1445,8 +1445,13 @@ structure Program =
                           | _ => false)
                    | SetSlotExnStack => true
                end
-            fun goto {args: Type.t vector,
-                      dst: Label.t}: bool =
+            val statementOk = 
+               Trace.trace ("Rssa.statementOk",
+                            Statement.layout,
+                            Bool.layout)
+                           statementOk
+            fun gotoOk {args: Type.t vector,
+                        dst: Label.t}: bool =
                let
                   val Block.T {args = formals, kind, ...} = labelBlock dst
                in
@@ -1456,7 +1461,7 @@ structure Program =
                               Kind.Jump => true
                             | _ => false)
                end
-            fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
+            fun labelIsNullaryJump l = gotoOk {dst = l, args = Vector.new0 ()}
             fun tailIsOk (caller: Type.t vector option,
                           callee: Type.t vector option): bool =
                case (caller, callee) of
@@ -1584,8 +1589,8 @@ structure Program =
                               end
                          | Goto {args, dst} =>
                               (checkOperands args
-                               ; goto {args = Vector.map (args, Operand.ty),
-                                       dst = dst})
+                               ; gotoOk {args = Vector.map (args, Operand.ty),
+                                         dst = dst})
                          | Raise zs =>
                               (checkOperands zs
                                ; (case raises of
@@ -1606,6 +1611,11 @@ structure Program =
                               Switch.isOk (s, {checkUse = checkOperand,
                                                labelIsOk = labelIsNullaryJump})
                      end
+                  val transferOk =
+                     Trace.trace ("Rssa.transferOk",
+                                  Transfer.layout,
+                                  Bool.layout)
+                     transferOk
                   fun blockOk (Block.T {args, kind, statements, transfer, ...})
                      : bool =
                      let
@@ -1647,6 +1657,11 @@ structure Program =
                      in
                         true
                      end
+                  val blockOk =
+                     Trace.trace ("Rssa.blockOk",
+                                  Block.layout,
+                                  Bool.layout)
+                                 blockOk
 
                   val _ = 
                      Vector.foreach
