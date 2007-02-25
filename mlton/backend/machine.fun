@@ -836,7 +836,7 @@ structure Program =
                            ; ProfileInfo.layouts (pi, output)))
             ; output (str "\nObjectTypes:")
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
-                               output (seq [str "pt_", Int.layout i,
+                               output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))

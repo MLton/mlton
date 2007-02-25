@@ -844,7 +844,7 @@ structure Program =
          in
             output (str "\nObjectTypes:")
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
-                               output (seq [str "pt_", Int.layout i,
+                               output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
             ; output (str "\nMain:")
             ; Function.layouts (main, output)
