@@ -1057,7 +1057,10 @@ in
                 path = String.toLower (MLton.Platform.OS.toString
                                        (!Target.os))},
                {var = "OBJPTR_REP",
-                path = "objptr-rep32.sml"},
+                path = (case Bits.toInt (Target.Size.objptr ()) of
+                           32 => "objptr-rep32.sml"
+                         | 64 => "objptr-rep64.sml"
+                         | _ => Error.bug "Control.mlbPathMap")},
                {var = "HEADER_WORD",
                 path = "header-word32.sml"},
                {var = "SEQINDEX_INT",
