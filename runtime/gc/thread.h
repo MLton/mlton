@@ -20,7 +20,13 @@ typedef struct GC_thread {
                        * where the top of the exnStack is.
                        */
   objptr stack;       /* The stack for this thread. */
-} *GC_thread;
+} __attribute__ ((packed)) *GC_thread;
+
+COMPILE_TIME_ASSERT(GC_thread__packed,
+                    sizeof(struct GC_thread) ==
+                    sizeof(size_t)
+                    + sizeof(uint32_t)
+                    + sizeof(objptr));
 
 #define BOGUS_EXN_STACK 0xFFFFFFFF
 
