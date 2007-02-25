@@ -49,13 +49,13 @@ fun update (a, i, r) =
       updA (a, i, r)
    end
 
-local
-   val a = Array.arrayUninit bytesPerElem
-in
-   fun toBytes (r: real): Word8Vector.vector =
+fun toBytes (r: real): Word8Vector.vector =
+   let
+      val a = Array.arrayUninit bytesPerElem
+   in
       (updA (a, 0, r)
-       ; Word8Vector.fromPoly (Vector.fromArray a))
-end
+       ; Word8Vector.fromPoly (Array.vector a))
+   end
 
 local
    fun make (sub, length, toPoly) (s, i) =

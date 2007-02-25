@@ -17,6 +17,20 @@
   "A string of all Standard ML alphanumeric characters as defined in
 section 2.4 of the Definition.")
 
+(defconst esml-sml-symbolic-keywords '("#" "*" "->" ":" "::" ":>" "=" "=>" "|")
+  "A list of symbolic keywords or reserved words as defined in sections
+2.1 and section 3.1 and including the special symbol * mentioned in 2.4 as
+well as the symbol :: mentioned in section 2.9 of the Definition.")
+
+(defconst esml-sml-alphanumeric-keywords
+  '("_" "abstype" "and" "andalso" "as" "case" "datatype" "do" "else" "end"
+    "eqtype" "exception" "false" "fn" "fun" "functor" "handle" "if" "in"
+    "include" "infix" "infixr" "let" "local" "nil" "nonfix" "of" "op" "open"
+    "orelse" "raise" "rec" "ref" "sharing" "sig" "signature" "struct"
+    "structure" "then" "true" "type" "val" "where" "while" "with" "withtype")
+  "A list of alphanumeric keywords or reserved words as well as
+non-bindable identifiers defined in various sections of the Definition")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Some general purpose Emacs Lisp utility functions
 

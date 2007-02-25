@@ -65,7 +65,7 @@ structure CUtil: C_UTIL =
                toArrayOfLength (cs, sub, n)
 
             fun toStringOfLength (cs, n) =
-               String.fromArray 
+               String.unsafeFromArray 
                (CharArray.fromPoly (toCharArrayOfLength (cs, n)))
 
             fun toString cs = toStringOfLength (cs, length cs)

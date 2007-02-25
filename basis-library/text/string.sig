@@ -46,7 +46,8 @@ signature STRING_EXTRA =
       include STRING
       type array
       
-      val fromArray: array -> string
+      val unsafeFromArray: array -> string
+
       val new: int * char -> string
       val nullTerm: string -> string
       val tabulate: int * (int -> char) -> string

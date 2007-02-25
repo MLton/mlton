@@ -240,7 +240,7 @@ local
             in 
                fromVector
                (if n = bytesRead
-                   then Vector.fromArray buf
+                   then Vector.unsafeFromArray buf
                    else ArraySlice.vector (ArraySlice.slice (buf, 0, SOME bytesRead)))
             end
          fun writeArr (fd, sl): int =

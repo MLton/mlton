@@ -589,7 +589,7 @@ fun recvArr' (s, sl, in_flags) =
 
 fun getVec (a, n, bytesRead) =
    if n = bytesRead
-      then Word8Vector.fromArray a
+      then Word8Vector.unsafeFromArray a
    else Word8ArraySlice.vector (Word8ArraySlice.slice (a, 0, SOME bytesRead))
 
 fun recvVec' (sock, n, in_flags) =

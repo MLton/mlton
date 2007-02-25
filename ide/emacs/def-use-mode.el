@@ -30,14 +30,21 @@
   :group 'matching)
 
 (defface def-use-def-face
-  '((((class color)) (:background "paleturquoise3"))
+  '((((class color)) (:background "darkseagreen3"))
     (t (:background "gray")))
   "Face for highlighting definitions."
   :group 'faces
   :group 'def-use)
 
+(defface def-use-unused-def-face
+  '((((class color)) (:background "pink"))
+    (t (:background "gray")))
+  "Face for highlighting definitions that have no uses."
+  :group 'faces
+  :group 'def-use)
+
 (defface def-use-use-face
-  '((((class color)) (:background "darkseagreen3"))
+  '((((class color)) (:background "paleturquoise3"))
     (t (:background "gray")))
   "Face for highlighting uses."
   :group 'faces
@@ -204,16 +211,15 @@ when there really is a symbol at the point."
 (defun def-use-jump-to-def (&optional other-window)
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (let ((sym (def-use-current-sym)))
     (if (not sym)
         (message "%s" def-use-apology)
+      (ring-insert def-use-marker-ring (point-marker))
       (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
 (defun def-use-jump-to-next (&optional other-window reverse)
   "Jumps to the next use (or def) of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
     (if (not sym)
@@ -222,12 +228,12 @@ when there really is a symbol at the point."
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
         (while (not (equal (pop refs) ref)))
+        (ring-insert def-use-marker-ring (point-marker))
         (def-use-goto-ref (car refs) other-window)))))
 
 (defun def-use-jump-to-prev (&optional other-window)
   "Jumps to the prev use (or def) of the symbol under the cursor."
   (interactive "P")
-  (ring-insert def-use-marker-ring (point-marker))
   (def-use-jump-to-next other-window t))
 
 (defun def-use-goto-ref (ref &optional other-window)
@@ -449,7 +455,10 @@ the symbol."
             (when buffer
               (set-buffer buffer)
               (def-use-highlight-ref
-                length (def-use-ref-pos ref) 'def-use-def-face))))))))
+                length (def-use-ref-pos ref)
+                (if (def-use-sym-to-uses sym)
+                    'def-use-def-face
+                  'def-use-unused-def-face)))))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."

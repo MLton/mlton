@@ -31,11 +31,13 @@ signature MONO_VECTOR_EXTRA_PRE =
 
       type array
 
+      val unsafeFromArray: array -> vector
+      val unsafeSub: vector * int -> elem
+
       val append: vector * vector -> vector
       val concatWith: vector -> vector list -> vector
       val duplicate: vector -> vector
       val fields: (elem -> bool) -> vector -> vector list
-      val fromArray: array -> vector
       val isPrefix: (elem * elem -> bool) -> vector -> vector -> bool
       val isSubvector: (elem * elem -> bool) -> vector -> vector -> bool
       val isSuffix: (elem * elem -> bool) -> vector -> vector -> bool
@@ -43,7 +45,6 @@ signature MONO_VECTOR_EXTRA_PRE =
       val tokens: (elem -> bool) -> vector -> vector list
       val translate: (elem -> vector) -> vector -> vector
       val unfoldi: int * 'a * (int * 'a -> elem * 'a) -> vector * 'a
-      val unsafeSub: vector * int -> elem
       val vector: int * elem -> vector
    end
 
