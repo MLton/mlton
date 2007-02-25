@@ -475,33 +475,20 @@ structure BuiltInCFunction =
                   return = unit}
 
       local
-         open Type
-      in
-         val Word32 = word (Bits.fromInt 32)
-         val unit = unit
-      end
-
-      local
          fun make b = fn () =>
-            T {args = let
-                         open Type
-                      in
-                         Vector.new5 (gcState (), Word32, bool, cpointer (), Word32)
-                      end,
+            T {args = Vector.new5 (Type.gcState (), Type.csize (), Type.bool, 
+                                   Type.cpointer (), Type.word (Bits.fromInt 32)),
                    bytesNeeded = NONE,
                    convention = Cdecl,
                    ensuresBytesFree = true,
                    mayGC = true,
                    maySwitchThreads = b,
                    modifiesFrontier = true,
-                   prototype = let
-                                  open CType
-                               in
-                                  (Vector.new5 (cpointer, Word32, bool, cpointer, Word32),
-                                   NONE)
-                               end,
+                   prototype = (Vector.new5 (CType.cpointer, CType.csize (), CType.bool, 
+                                             CType.cpointer, CType.Int32),
+                                NONE),
                    readsStackTop = true,
-                   return = unit,       
+                   return = Type.unit,       
                    target = Direct "GC_collect",
                    writesStackTop = true}
          val t = make true
