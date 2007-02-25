@@ -164,8 +164,18 @@ structure IntInf: INT_INF_EXTRA =
                                     shift = W.* (base, shift),
                                     chunk = W.+ (W.* (base, chunk), dig),
                                     s = s'}
-               val digitsPerChunk = 
-                  Int32.quot (Int32.- (Int32.fromInt W.wordSize, 3), W.log2 base)
+               (* digitsPerChunk = floor((W.wordSize - 3) / (log2 base)) *)
+               val digitsPerChunk =
+                  case (W.wordSize, base) of
+                     (64, 0w16) => 15
+                   | (64, 0w10) => 18
+                   | (64, 0w8) => 20
+                   | (64, 0w2) => 61
+                   | (32, 0w16) => 7
+                   | (32, 0w10) => 8
+                   | (32, 0w8) => 9
+                   | (32, 0w2) => 29
+                   | _ => raise (Fail "IntInf.scan:digitsPerChunk")
                fun reader (s: 'a): (chunk * 'a) option =
                   case dread s of
                      NONE => NONE
