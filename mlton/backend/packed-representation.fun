@@ -492,7 +492,6 @@ structure Base =
                      NONE =>
                         let
                            val seqIndexSize = WordSize.seqIndex ()
-                           val seqIndexTy = Type.word (WordSize.bits seqIndexSize)
                            val csizeSize = WordSize.csize ()
                            val csizeTy = Type.word (WordSize.bits csizeSize)
                            (* vector + (eltWidth * index) + offset *)
