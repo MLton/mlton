@@ -18,7 +18,7 @@ AOUT := mlton-compile
 UP := upgrade-basis.sml
 PATH := $(BIN):$(shell echo $$PATH)
 
-FLAGS := @MLton max-heap 640m ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
