@@ -462,7 +462,9 @@ the symbol."
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."
-  (def-use-highlight-sym (def-use-current-sym)))
+  (save-excursion
+    (save-window-excursion
+      (def-use-highlight-sym (def-use-current-sym)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Highlighting timer
