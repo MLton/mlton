@@ -1062,9 +1062,15 @@ in
                          | 64 => "objptr-rep64.sml"
                          | _ => Error.bug "Control.mlbPathMap")},
                {var = "HEADER_WORD",
-                path = "header-word32.sml"},
+                path = (case Bits.toInt (Target.Size.header ()) of
+                           32 => "header-word32.sml"
+                         | 64 => "header-word64.sml"
+                         | _ => Error.bug "Control.mlbPathMap")},
                {var = "SEQINDEX_INT",
-                path = "seqindex-int32.sml"},
+                path = (case Bits.toInt (Target.Size.seqIndex ()) of
+                           32 => "seqindex-int32.sml"
+                         | 64 => "seqindex-int64.sml"
+                         | _ => Error.bug "Control.mlbPathMap")},
                {var = "DEFAULT_CHAR",
                 path = concat ["default-", !defaultChar, ".sml"]},
                {var = "DEFAULT_WIDECHAR",
