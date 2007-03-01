@@ -20,15 +20,28 @@
  * the number of elements in the array.  Array elements have the same
  * individual layout as normal objects, omitting the header word.
  */
+#ifdef GC_MODEL_NATIVE32
 typedef uint32_t GC_arrayLength;
 #define GC_ARRAY_LENGTH_SIZE sizeof(GC_arrayLength)
 #define PRIxARRLEN PRIu32
 #define FMTARRLEN "%"PRIxARRLEN
 typedef GC_arrayLength GC_arrayCounter;
 #define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
-#define PRIxARRCTR PRIu32
+#define PRIxARRCTR PRIxARRLEN
 #define FMTARRCTR "%"PRIxARRCTR
 #define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
+#endif
+#ifdef GC_MODEL_NATIVE64
+typedef uint64_t GC_arrayLength;
+#define GC_ARRAY_LENGTH_SIZE sizeof(GC_arrayLength)
+#define PRIxARRLEN PRIu64
+#define FMTARRLEN "%"PRIxARRLEN
+typedef GC_arrayLength GC_arrayCounter;
+#define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
+#define PRIxARRCTR PRIxARRLEN
+#define FMTARRCTR "%"PRIxARRCTR
+#define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
+#endif
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 

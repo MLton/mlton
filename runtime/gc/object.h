@@ -39,20 +39,32 @@ static const char* objectTypeTagToString (GC_objectTypeTag tag);
  * 20 - 30   : counter bits, used by mark compact GC (initially 0)
  *      31   : mark bit, used by mark compact GC (initially 0)
  */
+#ifdef GC_MODEL_NATIVE32
 typedef uint32_t GC_header;
 #define GC_HEADER_SIZE sizeof(GC_header)
 #define PRIxHDR PRIx32
 #define FMTHDR "0x%08"PRIxHDR
+#endif
+#ifdef GC_MODEL_NATIVE64
+typedef uint64_t GC_header;
+#define GC_HEADER_SIZE sizeof(GC_header)
+#define PRIxHDR PRIx64
+#define FMTHDR "0x%08"PRIxHDR
+#endif
+#ifdef GC_HEADER_SIZE
+#else
+#error GC_header undefined
+#endif
 
 #define GC_VALID_HEADER_MASK ((GC_header)0x1)
 #define TYPE_INDEX_BITS    19
-#define TYPE_INDEX_MASK    0x000FFFFE
+#define TYPE_INDEX_MASK    ((GC_header)0x000FFFFE)
 #define TYPE_INDEX_SHIFT   1
 #define COUNTER_BITS       10
-#define COUNTER_MASK       0x7FF00000
+#define COUNTER_MASK       ((GC_header)0x7FF00000)
 #define COUNTER_SHIFT      20
 #define MARK_BITS          1
-#define MARK_MASK          0x80000000
+#define MARK_MASK          ((GC_header)0x80000000)
 #define MARK_SHIFT         31
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

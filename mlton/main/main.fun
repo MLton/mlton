@@ -694,10 +694,10 @@ fun commandLine (args: string list): unit =
                    cpointer = word64,
                    cptrdiff = word64,
                    csize = word64,
-                   header = word32,
+                   header = word64,
                    mplimb = word64,
                    objptr = word64,
-                   seqIndex = word32}
+                   seqIndex = word64}
                end
           | _ =>
                let
