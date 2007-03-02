@@ -341,6 +341,7 @@ fun outputDeclarations
                           (Control.Align4,32,32) => (3, false, 4, 1)
                         | (Control.Align8,32,32) => (3, false, 8, 1)
                         | (Control.Align4,64,64) => (3, false, 8, 1)
+                        | (Control.Align8,64,64) => (3, false, 8, 1)
                         | _ => Error.bug "CCodegen.declareObjectTypes")
                  | WeakGone =>
                       (case (!Control.align,
@@ -349,6 +350,7 @@ fun outputDeclarations
                           (Control.Align4,32,32) => (3, false, 8, 0)
                         | (Control.Align8,32,32) => (3, false, 12, 0)
                         | (Control.Align4,64,64) => (3, false, 16, 0)
+                        | (Control.Align8,64,64) => (3, false, 16, 0)
                         | _ => Error.bug "CCodegen.declareObjectTypes")
           in
              concat ["{ ", C.int tag, ", ",
