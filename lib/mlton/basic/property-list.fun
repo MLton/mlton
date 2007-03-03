@@ -18,17 +18,18 @@ val equals = fn (T r, T r') => Ref.equals (r, r')
 
 fun clear (T hs) = hs := []
 
-val numPeeks: int ref = ref 0
-val numLinks: int ref = ref 0
+val numPeeks: Int64.int ref = ref 0
+val numLinks: Int64.int ref = ref 0
 val maxLength: int ref = ref 0
 
 fun stats () =
    let open Layout
    in align
-      [seq [str "numPeeks = ", Int.layout (!numPeeks)],
+      [seq [str "numPeeks = ", str (Int64.toString (!numPeeks))],
        seq [str "maxLength = ", Int.layout (!maxLength)],
        seq [str "average position in property list = ",
             str let open Real
+                    val fromInt = fromIntInf o Int64.toLarge
                 in format (fromInt (!numLinks) / fromInt (!numPeeks),
                            Format.fix (SOME 3))
                 end]]
@@ -42,7 +43,7 @@ fun 'a newProperty () =
             fun loop (l, n) =
                let
                   fun update () =
-                     ((numLinks := n + !numLinks
+                     ((numLinks := Int64.fromInt n + !numLinks
                        handle Overflow => Error.bug "PropertyList: numLinks overflow")
                       ; if n > !maxLength
                            then maxLength := n
