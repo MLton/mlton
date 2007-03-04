@@ -122,7 +122,7 @@ signature PRIM =
              | String_toWord8Vector (* defunctorize *)
              | Thread_atomicBegin (* backend *)
              | Thread_atomicEnd (* backend *)
-             | Thread_canHandle (* backend *)
+             | Thread_atomicState (* backend *)
              | Thread_copy (* ssa to rssa *)
              | Thread_copyCurrent (* ssa to rssa *)
              | Thread_returnToC (* codegen *)

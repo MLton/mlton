@@ -132,7 +132,7 @@ datatype 'a t =
  | String_toWord8Vector (* defunctorize *)
  | Thread_atomicBegin (* backend *)
  | Thread_atomicEnd (* backend *)
- | Thread_canHandle (* backend *)
+ | Thread_atomicState (* backend *)
  | Thread_copy (* ssa to rssa *)
  | Thread_copyCurrent (* ssa to rssa *)
  | Thread_returnToC (* codegen *)
@@ -285,7 +285,7 @@ fun toString (n: 'a t): string =
        | String_toWord8Vector => "String_toWord8Vector"
        | Thread_atomicBegin => "Thread_atomicBegin"
        | Thread_atomicEnd => "Thread_atomicEnd"
-       | Thread_canHandle => "Thread_canHandle"
+       | Thread_atomicState => "Thread_atomicState"
        | Thread_copy => "Thread_copy"
        | Thread_copyCurrent => "Thread_copyCurrent"
        | Thread_returnToC => "Thread_returnToC"
@@ -417,7 +417,7 @@ val equals: 'a t * 'a t -> bool =
     | (String_toWord8Vector, String_toWord8Vector) => true
     | (Thread_atomicBegin, Thread_atomicBegin) => true
     | (Thread_atomicEnd, Thread_atomicEnd) => true
-    | (Thread_canHandle, Thread_canHandle) => true
+    | (Thread_atomicState, Thread_atomicState) => true
     | (Thread_copy, Thread_copy) => true
     | (Thread_copyCurrent, Thread_copyCurrent) => true
     | (Thread_returnToC, Thread_returnToC) => true
@@ -559,7 +559,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | String_toWord8Vector => String_toWord8Vector
     | Thread_atomicBegin => Thread_atomicBegin
     | Thread_atomicEnd => Thread_atomicEnd
-    | Thread_canHandle => Thread_canHandle
+    | Thread_atomicState => Thread_atomicState
     | Thread_copy => Thread_copy
     | Thread_copyCurrent => Thread_copyCurrent
     | Thread_returnToC => Thread_returnToC
@@ -782,7 +782,7 @@ val kind: 'a t -> Kind.t =
        | String_toWord8Vector => Functional
        | Thread_atomicBegin => SideEffect
        | Thread_atomicEnd => SideEffect
-       | Thread_canHandle => DependsOnState
+       | Thread_atomicState => DependsOnState
        | Thread_copy => Moveable
        | Thread_copyCurrent => SideEffect
        | Thread_returnToC => SideEffect
@@ -942,7 +942,7 @@ in
        String_toWord8Vector,
        Thread_atomicBegin,
        Thread_atomicEnd,
-       Thread_canHandle,
+       Thread_atomicState,
        Thread_copy,
        Thread_copyCurrent,
        Thread_returnToC,

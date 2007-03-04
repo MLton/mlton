@@ -439,8 +439,8 @@ fun ofGCField (f: GCField.t): t =
       datatype z = datatype GCField.t
    in
       case f of
-         CanHandle => word32
-       | CardMap => cpointer ()
+         AtomicState => word32
+       | CardMapAbsolute => cpointer ()
        | CurrentThread => thread ()
        | CurSourceSeqsIndex => word32
        | ExnStack => exnStack ()

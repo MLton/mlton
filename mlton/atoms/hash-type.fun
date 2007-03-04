@@ -329,7 +329,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Ref_ref => oneTarg (fn t => ([t], reff t))
        | Thread_atomicBegin => done ([], unit)
        | Thread_atomicEnd => done ([], unit)
-       | Thread_canHandle => done ([], word32)
+       | Thread_atomicState => done ([], word32)
        | Thread_copy => done ([thread], thread)
        | Thread_copyCurrent => done ([], unit)
        | Thread_returnToC => done ([], unit)

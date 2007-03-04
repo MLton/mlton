@@ -30,7 +30,7 @@ in
    val atomicBegin = atomicBegin
    val atomicEnd = atomicEnd
    val atomicState = fn () =>
-      case canHandle () of
+      case atomicState () of
          0wx0 => AtomicState.NonAtomic
        | w => AtomicState.Atomic (Word32.toInt w)
 end

@@ -553,7 +553,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
                 dst = SOME (index, indexTy),
                 prim = Prim.wordRshift (sz, {signed = false})},
        Move {dst = (ArrayOffset
-                    {base = Runtime GCField.CardMap,
+                    {base = Runtime GCField.CardMapAbsolute,
                      index = Var {ty = indexTy, var = index},
                      offset = Bytes.zero,
                      scale = Scale.One,
@@ -1027,15 +1027,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                prim = prim,
                                                args = varOps args})
                               datatype z = datatype Prim.Name.t
-                              fun bumpCanHandle n =
+                              fun bumpAtomicState n =
                                  let
-                                    val canHandle = Runtime GCField.CanHandle
+                                    val atomicState = Runtime GCField.AtomicState
                                     val res = Var.newNoname ()
-                                    val resTy = Operand.ty canHandle
+                                    val resTy = Operand.ty atomicState
                                  in
                                     [Statement.PrimApp
                                      {args = (Vector.new2
-                                              (canHandle,
+                                              (atomicState,
                                                (Operand.word
                                                 (WordX.fromIntInf
                                                  (IntInf.fromInt n,
@@ -1043,7 +1043,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                       dst = SOME (res, resTy),
                                       prim = Prim.wordAdd WordSize.word32},
                                      Statement.Move
-                                     {dst = canHandle,
+                                     {dst = atomicState,
                                       src = Var {ty = resTy, var = res}}]
                                  end
                               fun ccall {args: Operand.t vector,
@@ -1204,7 +1204,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | Pointer_setReal _ => pointerSet ()
                                | Pointer_setWord _ => pointerSet ()
                                | Thread_atomicBegin =>
-                                    (* gcState.canHandle++;
+                                    (* gcState.atomicState++;
                                      * if (gcState.signalsInfo.signalIsPending)
                                      *   gcState.limit = gcState.limitPlusSlop - LIMIT_SLOP;
                                      *)
@@ -1240,7 +1240,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                         {args = Vector.new0 (),
                                                          dst = continue})}
                                      in
-                                        (bumpCanHandle 1,
+                                        (bumpAtomicState 1,
                                          if handlesSignals 
                                             then
                                                Transfer.ifBool
@@ -1252,9 +1252,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                            dst = continue})
                                      end)
                                | Thread_atomicEnd =>
-                                    (* gcState.canHandle--;
+                                    (* gcState.atomicState--;
                                      * if (gcState.signalsInfo.signalIsPending
-                                     *     and 0 == gcState.canHandle)
+                                     *     and 0 == gcState.atomicState)
                                      *   gc;
                                      *)
                                     split
@@ -1289,30 +1289,30 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             {args = args,
                                              func = func,
                                              return = SOME returnFromHandler}}
-                                        val testCanHandle =
+                                        val testAtomicState =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.Jump,
                                             statements = Vector.new0 (),
                                             transfer =
                                             Transfer.ifZero
-                                            (Runtime CanHandle,
+                                            (Runtime AtomicState,
                                              {falsee = continue,
                                               truee = switchToHandler})}
                                      in
-                                        (bumpCanHandle ~1,
+                                        (bumpAtomicState ~1,
                                          if handlesSignals 
                                             then 
                                                Transfer.ifBool
                                                (Runtime SignalIsPending,
                                                 {falsee = continue,
-                                                 truee = testCanHandle})
+                                                 truee = testAtomicState})
                                          else 
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
                                      end)
-                               | Thread_canHandle =>
-                                    move (Runtime GCField.CanHandle)
+                               | Thread_atomicState =>
+                                    move (Runtime GCField.AtomicState)
                                | Thread_copy =>
                                     simpleCCallWithGCState
                                     (CFunction.copyThread ())

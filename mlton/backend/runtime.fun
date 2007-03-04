@@ -13,8 +13,8 @@ open S
 structure GCField =
    struct
       datatype t =
-         CanHandle
-       | CardMap
+         AtomicState
+       | CardMapAbsolute
        | CurrentThread
        | CurSourceSeqsIndex
        | ExnStack
@@ -27,8 +27,8 @@ structure GCField =
        | StackLimit
        | StackTop
 
-      val canHandleOffset: Bytes.t ref = ref Bytes.zero
-      val cardMapOffset: Bytes.t ref = ref Bytes.zero
+      val atomicStateOffset: Bytes.t ref = ref Bytes.zero
+      val cardMapAbsoluteOffset: Bytes.t ref = ref Bytes.zero
       val currentThreadOffset: Bytes.t ref = ref Bytes.zero
       val curSourceSeqsIndexOffset: Bytes.t ref = ref Bytes.zero
       val exnStackOffset: Bytes.t ref = ref Bytes.zero
@@ -41,11 +41,11 @@ structure GCField =
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
-      fun setOffsets {canHandle, cardMap, currentThread, curSourceSeqsIndex, 
+      fun setOffsets {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
                       exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
                       signalIsPending, stackBottom, stackLimit, stackTop} =
-         (canHandleOffset := canHandle
-          ; cardMapOffset := cardMap
+         (atomicStateOffset := atomicState
+          ; cardMapAbsoluteOffset := cardMapAbsolute
           ; currentThreadOffset := currentThread
           ; curSourceSeqsIndexOffset := curSourceSeqsIndex
           ; exnStackOffset := exnStack
@@ -59,8 +59,8 @@ structure GCField =
           ; stackTopOffset := stackTop)
 
       val offset =
-         fn CanHandle => !canHandleOffset
-          | CardMap => !cardMapOffset
+         fn AtomicState => !atomicStateOffset
+          | CardMapAbsolute => !cardMapAbsoluteOffset
           | CurrentThread => !currentThreadOffset
           | CurSourceSeqsIndex => !curSourceSeqsIndexOffset
           | ExnStack => !exnStackOffset
@@ -73,8 +73,8 @@ structure GCField =
           | StackLimit => !stackLimitOffset
           | StackTop => !stackTopOffset
 
-      val canHandleSize: Bytes.t ref = ref Bytes.zero
-      val cardMapSize: Bytes.t ref = ref Bytes.zero
+      val atomicStateSize: Bytes.t ref = ref Bytes.zero
+      val cardMapAbsoluteSize: Bytes.t ref = ref Bytes.zero
       val currentThreadSize: Bytes.t ref = ref Bytes.zero
       val curSourceSeqsIndexSize: Bytes.t ref = ref Bytes.zero
       val exnStackSize: Bytes.t ref = ref Bytes.zero
@@ -87,11 +87,11 @@ structure GCField =
       val stackLimitSize: Bytes.t ref = ref Bytes.zero
       val stackTopSize: Bytes.t ref = ref Bytes.zero
 
-      fun setSizes {canHandle, cardMap, currentThread, curSourceSeqsIndex, 
+      fun setSizes {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
                     exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
                     signalIsPending, stackBottom, stackLimit, stackTop} =
-         (canHandleSize := canHandle
-          ; cardMapSize := cardMap
+         (atomicStateSize := atomicState
+          ; cardMapAbsoluteSize := cardMapAbsolute
           ; currentThreadSize := currentThread
           ; curSourceSeqsIndexSize := curSourceSeqsIndex
           ; exnStackSize := exnStack
@@ -105,8 +105,8 @@ structure GCField =
           ; stackTopSize := stackTop)
 
       val size =
-         fn CanHandle => !canHandleSize
-          | CardMap => !cardMapSize
+         fn AtomicState => !atomicStateSize
+          | CardMapAbsolute => !cardMapAbsoluteSize
           | CurrentThread => !currentThreadSize
           | CurSourceSeqsIndex => !curSourceSeqsIndexSize
           | ExnStack => !exnStackSize
@@ -120,8 +120,8 @@ structure GCField =
           | StackTop => !stackTopSize
 
       val toString =
-         fn CanHandle => "CanHandle"
-          | CardMap => "CardMap"
+         fn AtomicState => "AtomicState"
+          | CardMapAbsolute => "CardMapAbsolute"
           | CurrentThread => "CurrentThread"
           | CurSourceSeqsIndex => "CurSourceSeqsIndex"
           | ExnStack => "ExnStack"

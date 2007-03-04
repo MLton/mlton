@@ -20,8 +20,8 @@ signature RUNTIME =
       structure GCField:
          sig
             datatype t =
-               CanHandle
-             | CardMap
+               AtomicState
+             | CardMapAbsolute
              | CurrentThread
              | CurSourceSeqsIndex
              | ExnStack
@@ -36,8 +36,8 @@ signature RUNTIME =
 
             val layout: t -> Layout.t
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
-            val setOffsets: {canHandle: Bytes.t,
-                             cardMap: Bytes.t,
+            val setOffsets: {atomicState: Bytes.t,
+                             cardMapAbsolute: Bytes.t,
                              currentThread: Bytes.t,
                              curSourceSeqsIndex: Bytes.t,
                              exnStack: Bytes.t,
@@ -49,8 +49,8 @@ signature RUNTIME =
                              stackBottom: Bytes.t,
                              stackLimit: Bytes.t,
                              stackTop: Bytes.t} -> unit
-            val setSizes: {canHandle: Bytes.t,
-                           cardMap: Bytes.t,
+            val setSizes: {atomicState: Bytes.t,
+                           cardMapAbsolute: Bytes.t,
                            currentThread: Bytes.t,
                            curSourceSeqsIndex: Bytes.t,
                            exnStack: Bytes.t,
