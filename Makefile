@@ -406,10 +406,19 @@ MAN_PAGES :=  \
 install-no-docs:
 	mkdir -p "$(TLIB)" "$(TBIN)" "$(TMAN)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
-	rm -f "$(TLIB)/self/libmlton-gdb.a"
 	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
-		<"$(SRC)/bin/mlton-script" >"$(TBIN)/mlton"
+		<"$(BIN)/mlton" >"$(TBIN)/mlton"
 	chmod a+x "$(TBIN)/mlton"
+	if [ -x "$(BIN)/mlton.trace" ]; then                            \
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+			<"$(BIN)/mlton.trace" >"$(TBIN)/mlton.trace";   \
+		chmod a+x "$(TBIN)/mlton.trace";                        \
+	fi
+	if [ -x "$(BIN)/mlton.debug" ]; then                            \
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+			<"$(BIN)/mlton.debug" >"$(TBIN)/mlton.debug";   \
+		chmod a+x "$(TBIN)/mlton.debug";                        \
+	fi
 	cd "$(BIN)" && $(CP) "$(LEX)$(EXE)" "$(NLFFIGEN)$(EXE)"		\
 		 "$(PROF)$(EXE)" "$(YACC)$(EXE)" "$(TBIN)/"
 	( cd "$(SRC)/man" && tar cf - $(MAN_PAGES)) | \
