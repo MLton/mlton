@@ -97,7 +97,7 @@
   (let ((buffer (get-buffer def-use-show-dus-buffer-name)))
     (when buffer
       (with-current-buffer buffer
-        (save-excursion
+        (let ((point (point)))
           (setq buffer-read-only nil)
           (goto-char 1)
           (delete-char (buffer-size))
@@ -107,7 +107,8 @@
                  (lambda (dus)
                    (insert (def-use-dus-title dus) "\n")))
                 def-use-dus-list)
-          (setq buffer-read-only t))))))
+          (setq buffer-read-only t)
+          (goto-char point))))))
 
 (defun def-use-show-dus-del ()
   "Kill the def-use source on the current line."
