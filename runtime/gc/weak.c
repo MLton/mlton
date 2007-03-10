@@ -17,6 +17,10 @@ size_t sizeofWeak (GC_state s) {
 
     splitHeader (s, GC_WEAK_GONE_HEADER, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
     check = GC_NORMAL_HEADER_SIZE + (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
+    if (DEBUG_DETAILED) 
+      fprintf (stderr,
+               "sizeofWeak: res = %zu  check = %zu\n",
+               res, check);
     assert (check == res);
   }
   assert (isAligned (res, s->alignment));
@@ -41,7 +45,7 @@ pointer GC_weakGet (GC_state s, pointer p) {
   GC_weak weak;
   pointer res;
 
-  weak = (GC_weak)(p + (offsetofWeak (s)));
+  weak = (GC_weak)(p + offsetofWeak (s));
   res = objptrToPointer(weak->objptr, s->heap.start);
   if (DEBUG_WEAK)
     fprintf (stderr, FMTPTR" = GC_weakGet ("FMTPTR")\n",
@@ -56,7 +60,7 @@ pointer GC_weakNew (GC_state s, GC_header header, pointer p) {
   res = newObject (s, header, 
                    sizeofWeak (s),
                    FALSE);
-  weak = (GC_weak)(res + (offsetofWeak (s)));
+  weak = (GC_weak)(res + offsetofWeak (s));
   weak->objptr = pointerToObjptr(p, s->heap.start);
   if (DEBUG_WEAK)
     fprintf (stderr, FMTPTR" = GC_weakNew ("FMTHDR", "FMTPTR")\n",

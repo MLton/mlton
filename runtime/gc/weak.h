@@ -11,10 +11,10 @@
 /*
  * Weak objects have the following layout:
  * 
- * header word32 ::
+ * header ::
  * padding ::
- * link native-pointer ::
- * object-pointer
+ * link (native-pointer) ::
+ * objptr (object-pointer)
  *
  * The object type indexed by the header determines whether the weak
  * is valid or not.  If the type has numObjptrs == 1, then the weak
@@ -27,11 +27,20 @@
  * during a copying gc and is otherwise unused.
  *
  * The final component is the weak object-pointer.
+ *
+ * Note that the order of the fields is important.  The non-objptr
+ * field must be first, because a weak object is sometimes treated as
+ * a normal object.
  */ 
 typedef struct GC_weak {
   struct GC_weak *link;
   objptr objptr;
 } *GC_weak;
+
+COMPILE_TIME_ASSERT(GC_weak__packed,
+                    sizeof(struct GC_weak) ==
+                    sizeof(struct GC_weak*)
+                    + sizeof(objptr));
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 

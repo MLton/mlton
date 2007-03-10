@@ -24,6 +24,7 @@ size_t sizeofThread (GC_state s) {
   size_t res;
 
   res = GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread);
+  res = align (res, s->alignment);
   if (DEBUG) {
     size_t check;
     uint16_t bytesNonObjptrs, numObjptrs;
@@ -36,12 +37,10 @@ size_t sizeofThread (GC_state s) {
                res, check);
     assert (check == res);
   }
-  /* The following assert depends on struct GC_thread being the right
-   * size.  Right now, it happens that res = 16, which is aligned mod
-   * 4 and mod 8, which is all that we need.  If the struct ever
-   * changes (possible) or we need more alignment (doubtful), we may
-   * need to put some padding at the beginning.
-   */
   assert (isAligned (res, s->alignment));
   return res;
+}
+
+size_t offsetofThread (GC_state s) {
+  return (sizeofThread (s)) - (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread));
 }

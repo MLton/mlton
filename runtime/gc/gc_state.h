@@ -92,11 +92,11 @@ void GC_setSummary (GC_state s, bool b);
 void GC_setRusageMeasureGC (GC_state s, bool b);
 void GC_setHashConsDuringGC (GC_state s, bool b);
 
-GC_thread GC_getCurrentThread (GC_state s);
-GC_thread GC_getSavedThread (GC_state s);
-void GC_setCallFromCHandlerThread (GC_state s, GC_thread thread);
-void GC_setSavedThread (GC_state s, GC_thread thread);
-void GC_setSignalHandlerThread (GC_state s, GC_thread thread);
+pointer GC_getCurrentThread (GC_state s);
+pointer GC_getSavedThread (GC_state s);
+void GC_setCallFromCHandlerThread (GC_state s, pointer p);
+void GC_setSavedThread (GC_state s, pointer p);
+void GC_setSignalHandlerThread (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 

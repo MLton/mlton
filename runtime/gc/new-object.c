@@ -70,12 +70,14 @@ GC_stack newStack (GC_state s,
 GC_thread newThread (GC_state s, size_t reserved) {
   GC_stack stack;
   GC_thread thread;
+  pointer res;
 
   ensureHasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
-  thread = (GC_thread)(newObject (s, GC_THREAD_HEADER, 
-                                  sizeofThread (s), 
-                                  FALSE));
+  res = newObject (s, GC_THREAD_HEADER, 
+                   sizeofThread (s), 
+                   FALSE);
+  thread = (GC_thread)(res + offsetofThread (s));
   thread->bytesNeeded = 0;
   thread->exnStack = BOGUS_EXN_STACK;
   thread->stack = pointerToObjptr((pointer)stack, s->heap.start);

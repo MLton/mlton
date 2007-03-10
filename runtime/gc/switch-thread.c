@@ -11,7 +11,8 @@ void switchToThread (GC_state s, objptr op) {
     GC_thread thread;
     GC_stack stack;
 
-    thread = (GC_thread)(objptrToPointer (op, s->heap.start));
+    thread = (GC_thread)(objptrToPointer (op, s->heap.start)
+                         + offsetofThread (s));
     stack = (GC_stack)(objptrToPointer (thread->stack, s->heap.start));
 
     fprintf (stderr, "switchToThread ("FMTOBJPTR")  used = %zu  reserved = %zu\n",
@@ -21,10 +22,10 @@ void switchToThread (GC_state s, objptr op) {
   setGCStateCurrentThreadAndStack (s);
 }
 
-void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
+void GC_switchToThread (GC_state s, pointer p, size_t ensureBytesFree) {
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_switchToThread ("FMTPTR", %zu)\n", 
-             (uintptr_t)t, ensureBytesFree);
+             (uintptr_t)p, ensureBytesFree);
   if (FALSE) {
     /* This branch is slower than the else branch, especially
      * when debugging is turned on, because it does an invariant
@@ -33,7 +34,7 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
      */
     enter (s);
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
+    switchToThread (s, pointerToObjptr(p, s->heap.start));
     s->atomicState--;
     switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
     ensureInvariantForMutator (s, FALSE);
@@ -47,7 +48,7 @@ void GC_switchToThread (GC_state s, GC_thread t, size_t ensureBytesFree) {
     beginAtomic (s);
     /* END: enter(s); */
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr((pointer)t, s->heap.start));
+    switchToThread (s, pointerToObjptr(p, s->heap.start));
     s->atomicState--;
     switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
     /* BEGIN: ensureInvariantForMutator */

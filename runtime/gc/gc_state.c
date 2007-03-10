@@ -10,7 +10,8 @@ void displayGCState (GC_state s, FILE *stream) {
   fprintf (stream,
            "GC state\n");
   fprintf (stream, "\tcurrentThread = "FMTOBJPTR"\n", s->currentThread);
-  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)), 
+  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)
+                                + offsetofThread (s)), 
                  stream);
   fprintf (stream, "\tgenerational\n");
   displayGenerationalMaps (s, &s->generationalMaps, 
@@ -155,28 +156,28 @@ void GC_setGCSignalPending (GC_state s, bool b) {
   s->signalsInfo.gcSignalPending = b;
 }
 
-void GC_setCallFromCHandlerThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setCallFromCHandlerThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->callFromCHandlerThread = op;
 }
 
-GC_thread GC_getCurrentThread (GC_state s) {
+pointer GC_getCurrentThread (GC_state s) {
   pointer p = objptrToPointer (s->currentThread, s->heap.start);
-  return (GC_thread)p;
+  return p;
 }
 
-GC_thread GC_getSavedThread (GC_state s) {
+pointer GC_getSavedThread (GC_state s) {
   pointer p = objptrToPointer (s->savedThread, s->heap.start);
   s->savedThread = BOGUS_OBJPTR;
-  return (GC_thread)p;
+  return p;
 }
 
-void GC_setSavedThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setSavedThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->savedThread = op;
 }
 
-void GC_setSignalHandlerThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setSignalHandlerThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->signalHandlerThread = op;
 }

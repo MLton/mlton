@@ -38,6 +38,7 @@ static const char* objectTypeTagToString (GC_objectTypeTag tag);
  * 01 - 19   : type index bits, index into GC_state->objectTypes.
  * 20 - 30   : counter bits, used by mark compact GC (initially 0)
  *      31   : mark bit, used by mark compact GC (initially 0)
+ * 32 - 63   : 0wx00000000  (only w/ 64-bit header)
  */
 #ifdef GC_MODEL_NATIVE32
 typedef uint32_t GC_header;
@@ -83,7 +84,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
 /*
  * Normal objects have the following layout:
  *
- * header word32 :: 
+ * header :: 
  * (non heap-pointers)* :: 
  * (heap pointers)*
  *

@@ -114,6 +114,7 @@ structure Type =
       val thread : unit -> t = fn () => 
          objptr ObjptrTycon.thread
 
+      val word0: t = word (Bits.fromInt 0)
       val word32: t = word (WordSize.bits WordSize.word32)
 
       val wordVector: Bits.t -> t = objptr o ObjptrTycon.wordVector
@@ -367,10 +368,23 @@ structure ObjectType =
       val stack = Stack
 
       val thread = fn () =>
-         Normal {hasIdentity = true,
-                 ty = Type.seq (Vector.new3 (Type.csize (),
-                                             Type.exnStack (),
-                                             Type.stack ()))}
+         let
+            val padding =
+               case (!Control.align,
+                     Bits.toInt (Control.Target.Size.csize ()),
+                     Bits.toInt (Control.Target.Size.objptr ())) of
+                  (Control.Align4,32,32) => Type.word0
+                | (Control.Align8,32,32) => Type.word0
+                | (Control.Align4,64,64) => Type.word0
+                | (Control.Align8,64,64) => Type.word32
+                | _ => Error.bug "RepType.ObjectType.thread"
+         in
+            Normal {hasIdentity = true,
+                    ty = Type.seq (Vector.new4 (padding,
+                                                Type.csize (),
+                                                Type.exnStack (),
+                                                Type.stack ()))}
+         end
 
       (* Order in the following vector matters.  The basic pointer tycons must
        * correspond to the constants in gc.h.

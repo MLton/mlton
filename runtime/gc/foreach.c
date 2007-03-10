@@ -189,6 +189,7 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
                  "  front = "FMTPTR"  *back = "FMTPTR"\n",
                  (uintptr_t)front, (uintptr_t)(*back));
       pointer p = advanceToObjectData (s, front);
+      assert (isAligned ((size_t)p, s->alignment));
       front = foreachObjptrInObject (s, p, f, skipWeaks);
     }
     b = *back;

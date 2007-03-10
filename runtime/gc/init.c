@@ -220,10 +220,9 @@ int GC_init (GC_state s, int argc, char **argv) {
   int res;
 
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
-  assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
-                     s->alignment));
-  // While the following assert is manifestly true,
-  // it checks the asserts in sizeofWeak.
+  // While the following asserts are manifestly true,
+  // thye check the asserts in sizeofThread and sizeofWeak.
+  assert (sizeofThread (s) == sizeofThread (s));
   assert (sizeofWeak (s) == sizeofWeak (s));
 
   s->amInGC = TRUE;

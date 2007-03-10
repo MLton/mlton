@@ -11,19 +11,18 @@
 /*
  * Stack objects have the following layout:
  * 
- * header word32 ::
- * markTop native-pointer ::
- * markIndex word32 ::
+ * header ::
+ * markTop (native-pointer) ::
+ * markIndex (word32) ::
  * reserved ::
  * used ::
  * ... reserved bytes ...
  *
- * The markTop native-pointer and markIndex word32 are used by mark
- * compact GC.  The reserved size gives the number of bytes for the
- * stack (before the next ML object).  The used size gives the number
- * of bytes currently used by the stack.  The sequence of reserved
- * bytes correspond to ML stack frames, which will be discussed in
- * more detail in "frame.h".
+ * The markTop and markIndex are used by the mark-compact GC.  The
+ * reserved size gives the number of bytes for the stack (before the
+ * next ML object).  The used size gives the number of bytes currently
+ * used by the stack.  The sequence of reserved bytes correspond to ML
+ * stack frames, which will be discussed in more detail in "frame.h".
 */
 typedef struct GC_stack {       
   /* markTop and markIndex are only used during marking.  They record

@@ -11,9 +11,9 @@
 /*
  * Array objects have the following layout:
  * 
- * counter word32 :: 
- * length word32 :: 
- * header word32 :: 
+ * counter :: 
+ * length :: 
+ * header :: 
  * ( (non heap-pointers)* :: (heap pointers)* )*
  *
  * The counter word is used by mark compact GC.  The length word is

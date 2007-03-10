@@ -77,7 +77,7 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
     if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
-    w = (GC_weak)(p + (offsetofWeak(s)));
+    w = (GC_weak)(p + offsetofWeak (s));
     objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap.start));
     /* If it's not threaded and unmarked, clear the weak pointer. */
     if ((GC_VALID_HEADER_MASK & objptrHeader)
