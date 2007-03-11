@@ -57,7 +57,7 @@ void setGCStateCurrentHeap (GC_state s,
              uintmaxToCommaString(nurseryBytesRequested));
   h = &s->heap;
   assert (isFrontierAligned (s, h->start + h->oldGenSize + oldGenBytesRequested));
-  nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
+  nurserySize = h->size - align(h->oldGenSize + oldGenBytesRequested, s->alignment);
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
   assert (isAligned (nurserySize, s->alignment));
@@ -67,7 +67,8 @@ void setGCStateCurrentHeap (GC_state s,
       and (nurseryBytesRequested
            <= (size_t)(s->limitPlusSlop
                        - alignFrontier (s, (s->limitPlusSlop 
-                                            - nurserySize / 2 + 2))))
+                                            - nurserySize / 2
+                                            - s->alignment / 2))))
       /* The nursery is large enough to be worth it. */
       and (((float)(h->size - s->lastMajorStatistics.bytesLive) 
             / (float)nurserySize) 
