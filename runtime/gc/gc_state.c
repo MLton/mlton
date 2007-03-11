@@ -49,7 +49,10 @@ void setGCStateCurrentHeap (GC_state s,
                             size_t oldGenBytesRequested,
                             size_t nurseryBytesRequested) {
   GC_heap h;
+  pointer nursery;
   size_t nurserySize;
+  pointer genNursery;
+  size_t genNurserySize;
 
   if (DEBUG_DETAILED)
     fprintf (stderr, "setGCStateCurrentHeap(%s, %s)\n",
@@ -57,18 +60,17 @@ void setGCStateCurrentHeap (GC_state s,
              uintmaxToCommaString(nurseryBytesRequested));
   h = &s->heap;
   assert (isFrontierAligned (s, h->start + h->oldGenSize + oldGenBytesRequested));
-  nurserySize = h->size - align(h->oldGenSize + oldGenBytesRequested, s->alignment);
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  assert (isAligned (nurserySize, s->alignment));
+  nurserySize = h->size - (h->oldGenSize + oldGenBytesRequested);
+  assert (isFrontierAligned (s, s->limitPlusSlop - nurserySize));
+  nursery = s->limitPlusSlop - nurserySize;
+  genNursery = alignFrontier (s, s->limitPlusSlop - (nurserySize / 2));
+  genNurserySize = s->limitPlusSlop - genNursery;
   if (/* The mutator marks cards. */
       s->mutatorMarksCards
-      /* There is enough space in the nursery. */
-      and (nurseryBytesRequested
-           <= (size_t)(s->limitPlusSlop
-                       - alignFrontier (s, (s->limitPlusSlop 
-                                            - nurserySize / 2
-                                            - s->alignment / 2))))
+      /* There is enough space in the generational nursery. */
+      and (nurseryBytesRequested <= genNurserySize)
       /* The nursery is large enough to be worth it. */
       and (((float)(h->size - s->lastMajorStatistics.bytesLive) 
             / (float)nurserySize) 
@@ -86,25 +88,17 @@ void setGCStateCurrentHeap (GC_state s,
                : s->controls.ratios.markCompactGenerational))
        )) {
     s->canMinor = TRUE;
-    nurserySize /= 2;
-    while (not (isAligned (nurserySize, s->alignment))) {
-      nurserySize -= 2;
-    }
+    nursery = genNursery;
+    nurserySize = genNurserySize;
     clearCardMap (s);
   } else {
-    unless (nurseryBytesRequested
-            <= (size_t)(s->limitPlusSlop
-                        - alignFrontier (s, s->limitPlusSlop
-                                         - nurserySize)))
+    unless (nurseryBytesRequested <= nurserySize)
       die ("Out of memory.  Insufficient space in nursery.");
     s->canMinor = FALSE;
   }
-  assert (nurseryBytesRequested
-          <= (size_t)(s->limitPlusSlop
-                      - alignFrontier (s, s->limitPlusSlop
-                                       - nurserySize)));
-  s->heap.nursery = alignFrontier (s, s->limitPlusSlop - nurserySize);
-  s->frontier = s->heap.nursery;
+  assert (nurseryBytesRequested <= nurserySize);
+  s->heap.nursery = nursery;
+  s->frontier = nursery;
   assert (nurseryBytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
   assert (isFrontierAligned (s, s->heap.nursery));
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
