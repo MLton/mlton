@@ -67,8 +67,7 @@ void setGCStateCurrentHeap (GC_state s,
       and (nurseryBytesRequested
            <= (size_t)(s->limitPlusSlop
                        - alignFrontier (s, (s->limitPlusSlop 
-                                            - nurserySize / 2
-                                            - s->alignment / 2))))
+                                            - nurserySize / 2 + 2))))
       /* The nursery is large enough to be worth it. */
       and (((float)(h->size - s->lastMajorStatistics.bytesLive) 
             / (float)nurserySize) 
