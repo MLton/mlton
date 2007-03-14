@@ -262,7 +262,7 @@ structure Statement =
                   seq [Var.layout x, constrain t, str " = ", Operand.layout src]
              | Move {dst, src} =>
                   mayAlign [Operand.layout dst,
-                            seq [str " = ", Operand.layout src]]
+                            seq [str "= ", Operand.layout src]]
              | Object {dst = (dst, ty), header, size} =>
                   mayAlign
                   [seq [Var.layout dst, constrain ty],
