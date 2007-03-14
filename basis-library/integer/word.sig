@@ -66,6 +66,7 @@ signature WORD_EXTRA =
       val toWordX: word -> Word.word
       val fromWord: Word.word -> word
 
+      val bswap: word -> word
       val rol: word * Word.word -> word
       val ror: word * Word.word -> word
       val log2 : word -> Primitive.Int32.int

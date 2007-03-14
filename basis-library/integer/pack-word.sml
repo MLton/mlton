@@ -11,11 +11,9 @@ functor PackWord (S: sig
                         val wordSize: int
                         val isBigEndian: bool
                         val subArr: Word8.word array * SeqIndex.int -> word
-                        val subArrRev: Word8.word array * C_Ptrdiff.t -> word
                         val subVec: Word8.word vector * SeqIndex.int -> word
-                        val subVecRev: Word8.word vector * C_Ptrdiff.t -> word
                         val update: Word8.word array * SeqIndex.int * word -> unit
-                        val updateRev: Word8.word array * C_Ptrdiff.t * word -> unit
+                        val bswap: word -> word
                         val toLarge: word -> LargeWord.word
                         val toLargeX: word -> LargeWord.word
                         val fromLarge: LargeWord.word -> word
@@ -26,20 +24,7 @@ open S
 
 val bytesPerElem = Int.div (wordSize, 8)
 
-fun offsetForC (i, n) =
-   let
-      val i = Int.* (bytesPerElem, i)
-      val () =
-         if Primitive.Controls.safe
-            andalso (Int.geu (Int.+ (i, Int.- (bytesPerElem, 1)), n))
-            then raise Subscript
-            else ()
-   in
-      C_Ptrdiff.fromInt i
-   end
-   handle Overflow => raise Subscript
-
-fun offsetForML (i, n) = 
+fun offset (i, n) = 
    let
       val i' = Int.* (bytesPerElem, i)
       val () =
@@ -52,10 +37,14 @@ fun offsetForML (i, n) =
    end
    handle Overflow => raise Subscript
 
-val (subA, subV, updA, offset) =
+val subArrRev = bswap o subArr
+val subVecRev = bswap o subVec
+fun updateRev (a, i, w) = update (a, i, bswap w)
+
+val (subA, subV, updA) =
    if isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-      then (subArr, subVec, update, offsetForML)
-   else (subArrRev, subVecRev, updateRev, offsetForC)
+      then (subArr, subVec, update)
+   else (subArrRev, subVecRev, updateRev)
 
 fun update (a, i, w) =
    let
@@ -97,73 +86,61 @@ end
 structure PackWord8Big: PACK_WORD =
    PackWord (val wordSize = Word8.wordSize
              val isBigEndian = true
-             open PrimitiveFFI.PackWord8
              open Primitive.PackWord8
              open Word8)
 structure PackWord8Little: PACK_WORD =
    PackWord (val wordSize = Word8.wordSize
              val isBigEndian = false
-             open PrimitiveFFI.PackWord8
              open Primitive.PackWord8
              open Word8)
 structure PackWord8Host: PACK_WORD =
    PackWord (val wordSize = Word8.wordSize
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-             open PrimitiveFFI.PackWord8
              open Primitive.PackWord8
              open Word8)
 structure PackWord16Big: PACK_WORD =
    PackWord (val wordSize = Word16.wordSize
              val isBigEndian = true
-             open PrimitiveFFI.PackWord16
              open Primitive.PackWord16
              open Word16)
 structure PackWord16Little: PACK_WORD =
    PackWord (val wordSize = Word16.wordSize
              val isBigEndian = false
-             open PrimitiveFFI.PackWord16
              open Primitive.PackWord16
              open Word16)
 structure PackWord16Host: PACK_WORD =
    PackWord (val wordSize = Word16.wordSize
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-             open PrimitiveFFI.PackWord16
              open Primitive.PackWord16
              open Word16)
 structure PackWord32Big: PACK_WORD =
    PackWord (val wordSize = Word32.wordSize
              val isBigEndian = true
-             open PrimitiveFFI.PackWord32
              open Primitive.PackWord32
              open Word32)
 structure PackWord32Little: PACK_WORD =
    PackWord (val wordSize = Word32.wordSize
              val isBigEndian = false
-             open PrimitiveFFI.PackWord32
              open Primitive.PackWord32
              open Word32)
 structure PackWord32Host: PACK_WORD =
    PackWord (val wordSize = Word32.wordSize
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-             open PrimitiveFFI.PackWord32
              open Primitive.PackWord32
              open Word32)
 structure PackWord64Big: PACK_WORD =
    PackWord (val wordSize = Word64.wordSize
              val isBigEndian = true
-             open PrimitiveFFI.PackWord64
              open Primitive.PackWord64
              open Word64)
 structure PackWord64Little: PACK_WORD =
    PackWord (val wordSize = Word64.wordSize
              val isBigEndian = false
-             open PrimitiveFFI.PackWord64
              open Primitive.PackWord64
              open Word64)
 structure PackWord64Host: PACK_WORD =
    PackWord (val wordSize = Word64.wordSize
              val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
-             open PrimitiveFFI.PackWord64
              open Primitive.PackWord64
              open Word64)
 local
@@ -184,68 +161,35 @@ local
          local
             structure S =
                Word_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subArr
-                val fWord16 = PrimitiveFFI.PackWord16.subArr
-                val fWord32 = PrimitiveFFI.PackWord32.subArr
-                val fWord64 = PrimitiveFFI.PackWord64.subArr)
+               (type 'a t = Word8.word array * SeqIndex.t -> 'a
+                val fWord8 = Primitive.PackWord8.subArr
+                val fWord16 = Primitive.PackWord16.subArr
+                val fWord32 = Primitive.PackWord32.subArr
+                val fWord64 = Primitive.PackWord64.subArr)
          in
             val subArr = S.f
          end
          local
             structure S =
                Word_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subArrRev
-                val fWord16 = PrimitiveFFI.PackWord16.subArrRev
-                val fWord32 = PrimitiveFFI.PackWord32.subArrRev
-                val fWord64 = PrimitiveFFI.PackWord64.subArrRev)
-         in
-            val subArrRev = S.f
-         end
-         local
-            structure S =
-               Word_ChooseWordN
-               (type 'a t = Word8.word vector * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subVec
-                val fWord16 = PrimitiveFFI.PackWord16.subVec
-                val fWord32 = PrimitiveFFI.PackWord32.subVec
-                val fWord64 = PrimitiveFFI.PackWord64.subVec)
+               (type 'a t = Word8.word vector * SeqIndex.t -> 'a
+                val fWord8 = Primitive.PackWord8.subVec
+                val fWord16 = Primitive.PackWord16.subVec
+                val fWord32 = Primitive.PackWord32.subVec
+                val fWord64 = Primitive.PackWord64.subVec)
          in
             val subVec = S.f
          end
          local
             structure S =
                Word_ChooseWordN
-               (type 'a t = Word8.word vector * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subVecRev
-                val fWord16 = PrimitiveFFI.PackWord16.subVecRev
-                val fWord32 = PrimitiveFFI.PackWord32.subVecRev
-                val fWord64 = PrimitiveFFI.PackWord64.subVecRev)
-         in
-            val subVecRev = S.f
-         end
-         local
-            structure S =
-               Word_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t * 'a -> unit
-                val fWord8 = PrimitiveFFI.PackWord8.update
-                val fWord16 = PrimitiveFFI.PackWord16.update
-                val fWord32 = PrimitiveFFI.PackWord32.update
-                val fWord64 = PrimitiveFFI.PackWord64.update)
+               (type 'a t = Word8.word array * SeqIndex.t * 'a -> unit
+                val fWord8 = Primitive.PackWord8.update
+                val fWord16 = Primitive.PackWord16.update
+                val fWord32 = Primitive.PackWord32.update
+                val fWord64 = Primitive.PackWord64.update)
          in
             val update = S.f
-         end
-         local
-            structure S =
-               Word_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t * 'a -> unit
-                val fWord8 = PrimitiveFFI.PackWord8.updateRev
-                val fWord16 = PrimitiveFFI.PackWord16.updateRev
-                val fWord32 = PrimitiveFFI.PackWord32.updateRev
-                val fWord64 = PrimitiveFFI.PackWord64.updateRev)
-         in
-            val updateRev = S.f
          end
       end
 in
@@ -283,68 +227,35 @@ local
          local
             structure S =
                LargeWord_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subArr
-                val fWord16 = PrimitiveFFI.PackWord16.subArr
-                val fWord32 = PrimitiveFFI.PackWord32.subArr
-                val fWord64 = PrimitiveFFI.PackWord64.subArr)
+               (type 'a t = Word8.word array * SeqIndex.t -> 'a
+                val fWord8 = Primitive.PackWord8.subArr
+                val fWord16 = Primitive.PackWord16.subArr
+                val fWord32 = Primitive.PackWord32.subArr
+                val fWord64 = Primitive.PackWord64.subArr)
          in
             val subArr = S.f
          end
          local
             structure S =
                LargeWord_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subArrRev
-                val fWord16 = PrimitiveFFI.PackWord16.subArrRev
-                val fWord32 = PrimitiveFFI.PackWord32.subArrRev
-                val fWord64 = PrimitiveFFI.PackWord64.subArrRev)
-         in
-            val subArrRev = S.f
-         end
-         local
-            structure S =
-               LargeWord_ChooseWordN
-               (type 'a t = Word8.word vector * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subVec
-                val fWord16 = PrimitiveFFI.PackWord16.subVec
-                val fWord32 = PrimitiveFFI.PackWord32.subVec
-                val fWord64 = PrimitiveFFI.PackWord64.subVec)
+               (type 'a t = Word8.word vector * SeqIndex.t -> 'a
+                val fWord8 = Primitive.PackWord8.subVec
+                val fWord16 = Primitive.PackWord16.subVec
+                val fWord32 = Primitive.PackWord32.subVec
+                val fWord64 = Primitive.PackWord64.subVec)
          in
             val subVec = S.f
          end
          local
             structure S =
                LargeWord_ChooseWordN
-               (type 'a t = Word8.word vector * C_Ptrdiff.t -> 'a
-                val fWord8 = PrimitiveFFI.PackWord8.subVecRev
-                val fWord16 = PrimitiveFFI.PackWord16.subVecRev
-                val fWord32 = PrimitiveFFI.PackWord32.subVecRev
-                val fWord64 = PrimitiveFFI.PackWord64.subVecRev)
-         in
-            val subVecRev = S.f
-         end
-         local
-            structure S =
-               LargeWord_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t * 'a -> unit
-                val fWord8 = PrimitiveFFI.PackWord8.update
-                val fWord16 = PrimitiveFFI.PackWord16.update
-                val fWord32 = PrimitiveFFI.PackWord32.update
-                val fWord64 = PrimitiveFFI.PackWord64.update)
+               (type 'a t = Word8.word array * SeqIndex.t * 'a -> unit
+                val fWord8 = Primitive.PackWord8.update
+                val fWord16 = Primitive.PackWord16.update
+                val fWord32 = Primitive.PackWord32.update
+                val fWord64 = Primitive.PackWord64.update)
          in
             val update = S.f
-         end
-         local
-            structure S =
-               LargeWord_ChooseWordN
-               (type 'a t = Word8.word array * C_Ptrdiff.t * 'a -> unit
-                val fWord8 = PrimitiveFFI.PackWord8.updateRev
-                val fWord16 = PrimitiveFFI.PackWord16.updateRev
-                val fWord32 = PrimitiveFFI.PackWord32.updateRev
-                val fWord64 = PrimitiveFFI.PackWord64.updateRev)
-         in
-            val updateRev = S.f
          end
       end
 in
