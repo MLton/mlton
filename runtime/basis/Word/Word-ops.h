@@ -41,7 +41,7 @@ compare (U##size, name, op)
     return w1 op w2;                                                    \
   }
 
-#define unary(kind,name, op)                                            \
+#define unary(kind, name, op)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w) {                       \
     return op w;                                                        \
