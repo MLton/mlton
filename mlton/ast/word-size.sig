@@ -49,4 +49,5 @@ signature WORD_SIZE =
       val toString: t -> string
       val word8: t      
       val word32: t
+      val word64: t
    end

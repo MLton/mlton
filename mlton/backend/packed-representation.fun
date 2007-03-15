@@ -493,7 +493,7 @@ structure Base =
                         let
                            val seqIndexSize = WordSize.seqIndex ()
                            val csizeSize = WordSize.csize ()
-                           val csizeTy = Type.word (WordSize.bits csizeSize)
+                           val csizeTy = Type.word csizeSize
                            (* vector + (eltWidth * index) + offset *)
                            val ind = Var.newNoname ()
                            val s0 =
@@ -756,9 +756,15 @@ structure ObjptrRep =
                               | Control.Align8 =>
                                    if (Vector.exists
                                        (components, fn {component = c, ...} =>
-                                        case Type.deReal (Component.ty c) of
-                                           NONE => false
-                                         | SOME s => RealSize.equals (s, RealSize.R64)))
+                                        (case Type.deReal (Component.ty c) of
+                                            NONE => false
+                                          | SOME s => 
+                                               RealSize.equals (s, RealSize.R64))
+                                        orelse
+                                        (case Type.deWord (Component.ty c) of
+                                            NONE => false
+                                          | SOME s => 
+                                               WordSize.equals (s, WordSize.word64))))
                                       then Bytes.alignWord64 width
                                    else width
                        in
@@ -767,6 +773,10 @@ structure ObjptrRep =
                else let
                        (* An object needs space for a forwarding objptr. *)
                        val width' = Bytes.max (width, Runtime.objptrSize ())
+                       (* Node that with Align8 and objptrSize == 64bits, 
+                        * the following ensures that objptrs will be
+                        * mod 8 aligned. 
+                        *)
                        val width'' = Bytes.+ (width', Runtime.headerSize ())
                        val alignWidth'' = 
                           case !Control.align of
@@ -1507,7 +1517,7 @@ structure Small =
             (* CHECK: Shouldn't cast come before mask above? *)
             val tagOp =
                if isObjptr
-                  then Operand.cast (tagOp, Type.word testBits)
+                  then Operand.cast (tagOp, Type.bits testBits)
                else tagOp
             val default =
                if Vector.length variants = Vector.length cases
@@ -1520,7 +1530,7 @@ structure Small =
                         let
                            val (s, test) =
                               Statement.andb
-                              (Operand.cast (test, Type.word testBits),
+                              (Operand.cast (test, Type.bits testBits),
                                Operand.word (WordX.fromIntInf (3, testSize)))
                            val t =
                               Switch
@@ -2545,7 +2555,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                     in
                        r'
                     end
-             | Word s => nonObjptr (Type.word (WordSize.bits s))
+             | Word s => nonObjptr (Type.word s)
            end))
       val () = typeRepRef := typeRep
       val _ = typeRep (S.Type.vector1 (S.Type.word WordSize.byte))

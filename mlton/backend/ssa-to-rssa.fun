@@ -267,7 +267,7 @@ structure Name =
             datatype z = datatype CFunction.Target.t
             val name = toString n
             val real = Type.real
-            val word = Type.word o WordSize.bits
+            val word = Type.word
             val vanilla = CFunction.vanilla
             fun coerce (t1, t2, sg) =
                vanilla {args = Vector.new1 t1,
@@ -314,9 +314,9 @@ structure Name =
                             target = Direct name,
                             writesStackTop = false}
             val intInfToString = fn () =>
-               (* CHECK; cint would be better *)
+               (* CHECK; cint would be better? *)
                CFunction.T {args = Vector.new3 (Type.intInf (),
-                                                Type.word (Bits.fromInt 32),
+                                                Type.word WordSize.word32,
                                                 Type.csize ()),
                             bytesNeeded = SOME 2,
                             convention = Cdecl,
@@ -428,12 +428,12 @@ structure Name =
              | IntInf_andb => intInfBinary ()
              | IntInf_arshift => intInfShift ()
              | IntInf_compare => 
-                  (* CHECK; change to cint? *)
+                  (* CHECK; cint would be better? *)
                   vanilla {args = Vector.new2 (Type.intInf (), Type.intInf ()),
                            name = name,
                            prototype = (Vector.new2 (CType.intInf, CType.intInf),
                                         SOME CType.Int32),
-                           return = Type.word (Bits.fromInt 32)}
+                           return = Type.word WordSize.word32}
              | IntInf_equal =>
                   vanilla {args = Vector.new2 (Type.intInf (), Type.intInf ()),
                            name = name,
@@ -508,11 +508,9 @@ structure Name =
              | Word_sub s => wordBinary (s, {signed = false})
              | Word_subCheck (s, sg) => wordBinaryOverflows (s, sg)
              | Word_toReal (s1, s2, sg) =>
-                  coerce (Type.word (WordSize.bits s1), Type.real s2, sg)
+                  coerce (Type.word s1, Type.real s2, sg)
              | Word_toWord (s1, s2, sg) =>
-                  coerce (Type.word (WordSize.bits s1),
-                          Type.word (WordSize.bits s2),
-                          sg)
+                  coerce (Type.word s1, Type.word s2, sg)
              | Word_xorb s => wordBinary (s, {signed = false})
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
@@ -542,9 +540,10 @@ val cardSizeLog2 : IntInf.t = 8 (* must agree with CARD_SIZE_LOG2 in gc.c *)
 fun updateCard (addr: Operand.t): Statement.t list =
    let
       val index = Var.newNoname ()
-      (* CHECK *)
+      (* CHECK; WordSize.objptr or WordSize.cpointer? *)
       val sz = WordSize.objptr ()
-      val indexTy = Type.word (WordSize.bits sz)
+      val indexTy = Type.word sz
+      val cardElemSize = WordSize.fromBits Bits.inByte
    in
       [PrimApp {args = (Vector.new2
                         (addr,
@@ -557,8 +556,8 @@ fun updateCard (addr: Operand.t): Statement.t list =
                      index = Var {ty = indexTy, var = index},
                      offset = Bytes.zero,
                      scale = Scale.One,
-                     ty = Type.word Bits.inByte}),
-             src = Operand.word (WordX.one (WordSize.fromBits Bits.inByte))}]
+                     ty = Type.word cardElemSize}),
+             src = Operand.word (WordX.one cardElemSize)}]
    end
 
 fun convertConst (c: Const.t): Const.t =
@@ -1008,7 +1007,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         ty = Type.seqIndex ()})
                               fun subWord s =
                                  let
-                                    val ty = Type.word (WordSize.bits s)
+                                    val ty = Type.word s
                                  in
                                     move (ArrayOffset {base = a 0,
                                                        index = a 1,
@@ -1389,7 +1388,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | Word8Array_subWord s => subWord s
                                | Word8Array_updateWord s =>
                                        let
-                                          val ty = Type.word (WordSize.bits s)
+                                          val ty = Type.word s
                                        in
                                           add (Move {dst = (ArrayOffset
                                                             {base = a 0,

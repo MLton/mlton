@@ -95,14 +95,15 @@ structure Operand =
                               Bytes.layout offset]]
              | Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-             | Const c => Const.layout c
+             | Const c => seq [Const.layout c, constrain (ty z)]
              | EnsuresBytesFree => str "<EnsuresBytesFree>"
              | File => str "<File>"
              | GCState => str "<GCState>"
              | Line => str "<Line>"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
-                       tuple [layout base, Bytes.layout offset]]
+                       tuple [layout base, Bytes.layout offset],
+                       constrain ty]
              | ObjptrTycon opt => ObjptrTycon.layout opt
              | Runtime r => GCField.layout r
              | Var {var, ...} => Var.layout var

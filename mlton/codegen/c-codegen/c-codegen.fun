@@ -595,7 +595,7 @@ fun output {program as Machine.Program.T {chunks,
          fn ty =>
          handleMisaligned
          andalso (Type.equals (ty, Type.real R64)
-                  orelse Type.equals (ty, Type.word (Bits.fromInt 64)))
+                  orelse Type.equals (ty, Type.word WordSize.word64))
       fun addr z = concat ["&(", z, ")"]
       fun fetch (z, ty) =
          concat [CType.toString (Type.toCType ty),

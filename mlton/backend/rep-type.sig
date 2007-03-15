@@ -50,6 +50,7 @@ signature REP_TYPE =
                             tyconTy: ObjptrTycon.t -> ObjectType.t,
                             result: t,
                             scale: Scale.t} -> bool
+      val bits: Bits.t -> t
       val bool: t
       val bytes: t -> Bytes.t
       val castIsOk: {from: t,
@@ -64,6 +65,7 @@ signature REP_TYPE =
       val deLabel: t -> Label.t option
       val deObjptr: t -> ObjptrTycon.t option
       val deReal: t -> RealSize.t option
+      val deWord: t -> WordSize.t option
       val equals: t * t -> bool
       val exnStack: unit -> t
       val gcState: unit -> t
@@ -96,8 +98,8 @@ signature REP_TYPE =
       val toCType: t -> CType.t
       val unit: t
       val width: t -> Bits.t
-      val word: Bits.t -> t
-      val wordVector: Bits.t -> t
+      val word: WordSize.t -> t
+      val wordVector: WordSize.t -> t
       val zero: Bits.t -> t
 
       structure BuiltInCFunction:
