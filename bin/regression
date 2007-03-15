@@ -19,6 +19,8 @@ short='false'
 skipTo=''
 declare -a flags
 declare -a extraFlags
+flags[${#flags[@]}]="-type-check"
+flags[${#flags[@]}]="true"
 while [ "$#" -gt 0 ]; do
         case "$1" in
         -cross)
@@ -67,8 +69,6 @@ src=`cd "$dir/.." && pwd`
 bin="$src/build/bin"
 lib="$src/build/lib"
 mlton="$bin/mlton"
-flags[${#flags[@]}]="-type-check"
-flags[${#flags[@]}]="true"
 if $cross; then
 	flags[${#flags[@]}]="-target"
 	flags[${#flags[@]}]="$crossTarget"
