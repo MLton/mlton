@@ -764,7 +764,11 @@ structure ObjptrRep =
                                         (case Type.deWord (Component.ty c) of
                                             NONE => false
                                           | SOME s => 
-                                               WordSize.equals (s, WordSize.word64))))
+                                               WordSize.equals (s, WordSize.word64))
+                                        orelse 
+                                        (Type.isObjptr (Component.ty c)
+                                         andalso WordSize.equals (WordSize.objptr (), 
+                                                                  WordSize.word64))))
                                       then Bytes.alignWord64 width
                                    else width
                        in
