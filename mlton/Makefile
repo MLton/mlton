@@ -91,6 +91,10 @@ $(UP):
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
+.PHONY: def-use
+def-use:
+	mlton -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+
 .PHONY: clean
 clean:
 	../bin/clean
@@ -103,10 +107,6 @@ clean:
 # 'sml-cm'.
 #
 SML	:= sml
-
-.PHONY: def-use
-def-use:
-	mlton -stop tc -show-def-use /tmp/z.def-use $(FILE)
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)
