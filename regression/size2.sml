@@ -71,21 +71,3 @@ val _ =
 val _ = if 10 = foldl (op +) 0 l
            then ()
         else raise Fail "bug"
-   
-local
-   open MLton.Cont
-in
-   val rc: int option t option ref = ref NONE
-   val _ =
-      case callcc (fn k: int option t => (rc := SOME k; throw (k, NONE))) of
-         NONE => ()
-       | SOME i => print (concat [Int.toString i, "\n"])
-end
-
-val _ =
-   printSize ("a continuation option ref", rc)
-
-val _ =
-   case !rc of
-      NONE => ()
-    | SOME k => (rc := NONE; MLton.Cont.throw (k, SOME 13))

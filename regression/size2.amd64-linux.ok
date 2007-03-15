@@ -22,6 +22,3 @@ The size of an array of length 10 of tuples of word64 * (arrays of length 20 of 
 The size of an array of length 10 of tuples of real32 * (arrays of length 20 of ints) is = 1184 bytes.
 The size of an array of length 10 of tuples of real64 * (arrays of length 20 of ints) is = 1224 bytes.
 The size of a useless function is = 0 bytes.
-The size of a continuation option ref is = 11152 bytes.
-13
-The size of a continuation option ref is = 16 bytes.
