@@ -592,7 +592,7 @@ int kill (__attribute__ ((unused)) pid_t pid,
 }
 
 int nanosleep (const struct timespec *req, struct timespec *rem) {
-        Sleep (req->tv_sec * 1000 + (req->tv_nsec + 999) / 1000);
+        Sleep (req->tv_sec * 1000 + (req->tv_nsec + 999999) / 1000000);
         rem->tv_nsec = 0;
         rem->tv_sec = 0;
         return 0;
