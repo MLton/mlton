@@ -52,8 +52,8 @@ test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH := $(BENCH)
-QBFLAGS := -mlton "mlton{-stable,.cvs.HEAD -detect-overflow {false,true}}"
+QBFLAGS := -mlton "~/devel/mlton/mlton-20051202-1.i386-linux/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.x86_64/build/bin/mlton -codegen {native,c} -align {4,8}"
 
 .PHONY: qtest
 qtest: $(NAME)
-	export PATH="$(PATH):$$PATH" && cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean
+	cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean

@@ -83,6 +83,7 @@ doit "$lib" \
         -cc-opt '-O1'                                            \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lgdtoa -lm -lgmp'                            \
+        -link-opt '-Wl,--hash-style=both'                        \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opt amd64 '-m64 -mtune=opteron'               \
         -target-cc-opt amd64 '-m64 -mtune=opteron'               \

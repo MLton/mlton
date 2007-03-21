@@ -9,6 +9,7 @@ signature MLTON_FFI =
    sig
       val atomicBegin: unit -> unit
       val atomicEnd: unit -> unit
+      val getBool: int -> bool
       val getChar8: int -> Char.char
 (*
       val getChar16: int -> Char16.char
@@ -26,6 +27,7 @@ signature MLTON_FFI =
       val getWord32: int -> Word32.word
       val getWord64: int -> Word64.word
       val register: int * (unit -> unit) -> unit
+      val setBool: bool -> unit
       val setChar8: Char.char -> unit
 (*
       val setChar16: Char16.char -> unit
