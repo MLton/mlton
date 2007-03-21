@@ -54,4 +54,10 @@ val setChar8 = setInt8 o Primitive.Char8.idToInt8
 val setChar16 = setInt16 o Primitive.Char16.idToInt16
 val setChar32 = setInt32 o Primitive.Char32.idToInt32
 
+(* To the C-world, booleans are 32-bit integers. *)
+fun intToBool (i: Int32.int): bool = i <> 0
+val getBool = intToBool o getInt32
+fun boolToInt (b: bool): Int32.int = if b then 1 else 0
+val setBool = setInt32 o boolToInt
+
 end
