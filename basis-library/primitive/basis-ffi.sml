@@ -1132,8 +1132,8 @@ val TCP_NODELAY = _const "Socket_INetSock_Ctl_TCP_NODELAY" : C_Int.t;
 end
 val fromAddr = _import "Socket_INetSock_fromAddr" : (Word8.t) vector -> unit;
 val getInAddr = _import "Socket_INetSock_getInAddr" : (Word8.t) array -> unit;
-val getPort = _import "Socket_INetSock_getPort" : unit -> C_Int.t;
-val toAddr = _import "Socket_INetSock_toAddr" : (Word8.t) vector * C_Int.t * (Word8.t) array * (C_Socklen.t) ref -> unit;
+val getPort = _import "Socket_INetSock_getPort" : unit -> Word16.t;
+val toAddr = _import "Socket_INetSock_toAddr" : (Word8.t) vector * Word16.t * (Word8.t) array * (C_Socklen.t) ref -> unit;
 end
 val listen = _import "Socket_listen" : C_Sock.t * C_Int.t -> (C_Int.t) C_Errno.t;
 val MSG_CTRUNC = _const "Socket_MSG_CTRUNC" : C_Int.t;
