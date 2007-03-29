@@ -229,7 +229,7 @@ structure PosixProcEnv: POSIX_PROC_ENV =
              * we don't want a SysErr during Basis Library initialization. 
              *)
             if (let open Primitive.MLton.Platform.OS in host = MinGW end)
-               then LargeInt.fromInt 0
+               then LargeInt.zero
             else SysWord.toLargeIntX (sysconf "CLK_TCK")
 
          fun cvt (clocks: C_Clock.t) =

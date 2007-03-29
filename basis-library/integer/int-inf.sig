@@ -30,6 +30,9 @@ signature INT_INF_EXTRA =
        | Small of SmallInt.int
       val rep: int -> rep
 
+      val zero: int
+      val one: int
+
       val +? : int * int -> int
       val *? : int * int -> int
       val -? : int * int -> int
