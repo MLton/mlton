@@ -15,7 +15,7 @@ local
                           then ()
                           else (PrimitiveFFI.Stdio.print msg
                                 ; PrimitiveFFI.Stdio.print "\n")
-                       ; Error.raiseSys Error.nosys)
+                       ; Error.raiseSysWithMsg (Error.nosys, msg))
          else f
 in
    structure PrimitiveFFI =
