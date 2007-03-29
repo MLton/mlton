@@ -38,61 +38,67 @@ structure OS_FileSys =
 
       structure P = OS_Path
 
-      (* A UNIX specific implementation of fullPath *)
+      val isMinGW = let open Primitive.MLton.Platform.OS in host = MinGW end
+
+      (* An implementation of fullPath which works on Unix and Windows (Cygwin and MinGW) *)
       fun fullPath p =
          let
             val oldCWD = getDir()
-            fun mkPath pathFromRoot =
+            fun mkPath (pathFromRoot, vol) =
                P.toString {arcs = List.rev pathFromRoot,
                            isAbs = true,
-                           vol = ""}
-            fun walkPath (n, pathFromRoot, arcs) =
+                           vol = vol}
+            fun walkPath (n, pathFromRoot, arcs, vol) =
                if n = 0
                   then raise PosixError.SysErr ("too many links", NONE)
                else
                   case arcs of
-                     [] => mkPath pathFromRoot
+                     [] => mkPath (pathFromRoot, vol)
                    | arc :: al =>
                         if arc = "" orelse arc = "."
-                           then walkPath (n, pathFromRoot, al)
+                           then walkPath (n, pathFromRoot, al, vol)
                         else if arc = ".."
                                 then
                                    case pathFromRoot of
-                                      [] => walkPath (n, [], al)
+                                      [] => walkPath (n, [], al, vol)
                                     | _ :: r =>
-                                         (chDir ".."; walkPath (n, r, al))
+                                         (chDir ".."; walkPath (n, r, al, vol))
                         else
                            if isLink arc
-                              then expandLink (n, pathFromRoot, arc, al)
+                              then expandLink (n, pathFromRoot, arc, al, vol)
                            else
                               case al of
-                                 [] => mkPath (arc :: pathFromRoot)
+                                 [] => mkPath (arc :: pathFromRoot, vol)
                                | _ =>
                                     (chDir arc
-                                     ; walkPath (n, arc :: pathFromRoot, al))
-            and expandLink (n, pathFromRoot, link, rest) =
+                                     ; walkPath (n, arc :: pathFromRoot, al, vol))
+            and expandLink (n, pathFromRoot, link, rest, vol) =
                let
                   val {isAbs, arcs, ...} = P.fromString (readLink link)
                   val arcs = List.@ (arcs, rest)
                in 
                   if isAbs
-                     then gotoRoot (n-1, arcs)
-                  else walkPath (n-1, pathFromRoot, arcs)
+                     then gotoRoot (n-1, arcs, vol)
+                  else walkPath (n-1, pathFromRoot, arcs, vol)
                end
-            and gotoRoot (n, arcs) =
-               (chDir "/"; walkPath (n, [], arcs))
-            fun computeFullPath arcs =
-               (gotoRoot (maxLinks, arcs) before chDir oldCWD)
+            (* If the volume is not empty, chDir to it rather than to "/" *)
+            and gotoRoot (n, arcs, vol) =
+                (if vol <> "" 
+                    then chDir (vol ^ (if isMinGW then "\\" else "/"))
+                 else chDir "/"
+                 ; walkPath (n, [], arcs, vol))
+            fun computeFullPath (arcs, vol) =
+               (gotoRoot (maxLinks, arcs, vol) before chDir oldCWD)
                handle ex => (chDir oldCWD; raise ex)
          in
             case (P.fromString p)
                of {isAbs=false, arcs, ...} =>
                   let
-                     val {arcs=arcs', ...} = P.fromString(oldCWD)
+                     val {arcs=arcs', vol=vol, ...} = P.fromString(oldCWD)
                   in
-                     computeFullPath (List.@(arcs', arcs))
+                     computeFullPath (List.@(arcs', arcs), vol)
                   end
-             | {isAbs=true, arcs, ...} => computeFullPath arcs
+             | {isAbs=true, arcs, vol} => computeFullPath (arcs, vol)
          end
 
       fun realPath p =
