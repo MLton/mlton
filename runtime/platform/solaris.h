@@ -58,15 +58,17 @@ int fpclassify64 (double d);
 
 extern char **environ; /* for Posix_ProcEnv_environ */
 
-/* Solaris 7 does not define MAP_ANON and does not handle IPv6 */
+/* Solaris 7 does not define MAP_ANON. */
 
 #ifndef MAP_ANON
 #define MAP_ANON        0x100           /* map anonymous pages directly */
 #endif
 
+/* Solaris 7 does not handle IPv6. */
+
 #ifndef AF_INET6
 
-#define AF_INET6        26              /* Internet Protocol, Version 6 */
+#define AF_INET6 26 /* Internet Protocol, Version 6 */
 #define PF_INET6 AF_INET6
 
 struct sockaddr_in6 { 
@@ -75,4 +77,3 @@ struct sockaddr_in6 {
 #define sockaddr_storage sockaddr_in
 
 #endif
-

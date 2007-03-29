@@ -41,15 +41,20 @@
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
 
-#ifndef PF_INET6
-/* Old versions of HP-UX don't have IPv6 support. */
-struct sockaddr_in6 { char dummy; };
+/* Old versions of HP-UX do not handle IPv6. */
+#ifndef AF_INET6
+
+#define AF_INET6 22 /* Internet Protocol, Version 6 */
+#define PF_INET6 AF_INET6
+
+struct sockaddr_in6 { 
+  int dummy; // quell gcc warnings about "struct has no members"
+};
 #define sockaddr_storage sockaddr_in
-#define PF_INET6 0
-#define AF_INET6 0
+
 #endif
 
-typedef long suseconds_t;
+typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 
 /* These GCC builtins aren't defined in the system headers. */
 float modff(float x, float *iptr);
