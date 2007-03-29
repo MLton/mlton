@@ -242,7 +242,7 @@ structure MLtonProcess =
                   ; dup2 (stdout, FileSys.stdout)
                   ; dup2 (stderr, FileSys.stderr)
                   ; ignore (Process.exece (path, base :: args, env))
-                  ; Process.exit 0w1 (* just in case *)
+                  ; Process.exit 0w127 (* just in case *)
                end
           | SOME pid => pid (* parent *)
 
@@ -330,7 +330,8 @@ structure MLtonProcess =
                end
          else
             case Posix.Process.fork () of
-               NONE => Posix.Process.exece (path, args, env)
+               NONE => (Posix.Process.exece (path, args, env) handle _ => ()
+                        ; Posix.Process.exit 0w127)
              | SOME pid => pid
 
       fun spawn {args, path}= 
@@ -352,7 +353,8 @@ structure MLtonProcess =
                end
          else    
             case Posix.Process.fork () of
-               NONE => Posix.Process.execp (file, args)
+               NONE => (Posix.Process.execp (file, args) handle _ => ()
+                        ; Posix.Process.exit 0w127)
              | SOME pid => pid
 
       open Exit
