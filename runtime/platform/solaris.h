@@ -65,7 +65,6 @@ extern char **environ; /* for Posix_ProcEnv_environ */
 #endif
 
 /* Solaris 7 does not handle IPv6. */
-
 #ifndef AF_INET6
 
 #define AF_INET6 26 /* Internet Protocol, Version 6 */
@@ -74,6 +73,11 @@ extern char **environ; /* for Posix_ProcEnv_environ */
 struct sockaddr_in6 { 
   int dummy; // quell gcc warnings about "struct has no members"
 };
-#define sockaddr_storage sockaddr_in
+struct sockaddr_storage {
+  union {
+    struct sockaddr_in sa_in;
+    struct sockaddr_un sa_un;
+  } sa;
+}
 
 #endif

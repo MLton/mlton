@@ -50,7 +50,12 @@
 struct sockaddr_in6 { 
   int dummy; // quell gcc warnings about "struct has no members"
 };
-#define sockaddr_storage sockaddr_in
+struct sockaddr_storage {
+  union {
+    struct sockaddr_in sa_in;
+    struct sockaddr_un sa_un;
+  } sa;
+}
 
 #endif
 
