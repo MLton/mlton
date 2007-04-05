@@ -8,7 +8,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SML metadata
 
-(defconst esml-sml-symbolic-chars "-!%&$#+/:<=>?@~`^|*\\"
+(defconst esml-sml-symbolic-chars "-!%&$#+/:<=>?@~`^|*\\\\"
   "A string of all Standard ML symbolic characters as defined in section
 2.4 of the Definition.")
 
