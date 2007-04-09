@@ -83,7 +83,6 @@ in
                      val getgroups = stub ("getgroups", getgroups)
                      val getlogin = stub ("getlogin", getlogin)
                      val getpgrp = stub ("getpgrp", getpgrp)
-                     val getpid = stub ("getpid", getpid)
                      val getppid = stub ("getppid", getppid)
                      val getuid = stub ("getuid", getuid)
                      val setgid = stub ("setgid", setgid)
