@@ -53,19 +53,6 @@ fun update (a, i, w) =
    end
 
 local
-   fun make (sub, length, toPoly) (s, i) =
-      let
-         val i = offset (i, length s)
-         val s = toPoly s
-      in
-         sub (s, i)
-      end
-in
-   val subArr = make (subA, Word8Array.length, Word8Array.toPoly)
-   val subVec = make (subV, Word8Vector.length, Word8Vector.toPoly)
-end
-
-local
    fun make (sub, length, toPoly) (av, i) =
       let
          val i = offset (i, length av)
@@ -82,80 +69,56 @@ end
 end
 
 structure PackWord8Big: PACK_WORD =
-   PackWord (val wordSize = Word8.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PrimitiveFFI.PackWord8
              open Word8)
 structure PackWord8Little: PACK_WORD =
-   PackWord (val wordSize = Word8.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PrimitiveFFI.PackWord8
              open Word8)
 structure PackWord8Host: PACK_WORD =
-   PackWord (val wordSize = Word8.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PrimitiveFFI.PackWord8
              open Word8)
 structure PackWord16Big: PACK_WORD =
-   PackWord (val wordSize = Word16.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PrimitiveFFI.PackWord16
              open Word16)
 structure PackWord16Little: PACK_WORD =
-   PackWord (val wordSize = Word16.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PrimitiveFFI.PackWord16
              open Word16)
 structure PackWord16Host: PACK_WORD =
-   PackWord (val wordSize = Word16.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PrimitiveFFI.PackWord16
              open Word16)
 structure PackWord32Big: PACK_WORD =
-   PackWord (val wordSize = Word32.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PrimitiveFFI.PackWord32
              open Word32)
 structure PackWord32Little: PACK_WORD =
-   PackWord (val wordSize = Word32.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PrimitiveFFI.PackWord32
              open Word32)
 structure PackWord32Host: PACK_WORD =
-   PackWord (val wordSize = Word32.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PrimitiveFFI.PackWord32
              open Word32)
 structure PackWord64Big: PACK_WORD =
-   PackWord (val wordSize = Word64.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PrimitiveFFI.PackWord64
              open Word64)
 structure PackWord64Little: PACK_WORD =
-   PackWord (val wordSize = Word64.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PrimitiveFFI.PackWord64
              open Word64)
 structure PackWord64Host: PACK_WORD =
-   PackWord (val wordSize = Word64.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PrimitiveFFI.PackWord64
              open Word64)
 local
-   local
-      structure S =
-         Word_ChooseWordN
-         (type 'a t = int
-          val fWord8 = Word8.wordSize
-          val fWord16 = Word16.wordSize
-          val fWord32 = Word32.wordSize
-          val fWord64 = Word64.wordSize)
-   in
-      val wordSize = S.f
-   end
    structure PackWord =
       struct
-         type word = Word.word
          local
             structure S =
                Word_ChooseWordN
@@ -225,36 +188,21 @@ local
       end
 in
 structure PackWordBig: PACK_WORD =
-   PackWord (val wordSize = Word.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PackWord
              open Word)
 structure PackWordLittle: PACK_WORD =
-   PackWord (val wordSize = Word.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PackWord
              open Word)
 structure PackWordHost: PACK_WORD =
-   PackWord (val wordSize = Word.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PackWord
              open Word)
 end
 local
-   local
-      structure S =
-         LargeWord_ChooseWordN
-         (type 'a t = int
-          val fWord8 = Word8.wordSize
-          val fWord16 = Word16.wordSize
-          val fWord32 = Word32.wordSize
-          val fWord64 = Word64.wordSize)
-   in
-      val wordSize = S.f
-   end
    structure PackLargeWord =
       struct
-         type word = Word.word
          local
             structure S =
                LargeWord_ChooseWordN
@@ -324,18 +272,15 @@ local
       end
 in
 structure PackLargeWordBig: PACK_WORD =
-   PackWord (val wordSize = LargeWord.wordSize
-             val isBigEndian = true
+   PackWord (val isBigEndian = true
              open PackLargeWord
              open LargeWord)
 structure PackLargeWordLittle: PACK_WORD =
-   PackWord (val wordSize = LargeWord.wordSize
-             val isBigEndian = false
+   PackWord (val isBigEndian = false
              open PackLargeWord
              open LargeWord)
 structure PackLargeWordHost: PACK_WORD =
-   PackWord (val wordSize = LargeWord.wordSize
-             val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
+   PackWord (val isBigEndian = Primitive.MLton.Platform.Arch.hostIsBigEndian
              open PackLargeWord
              open LargeWord)
 end

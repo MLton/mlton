@@ -23,8 +23,6 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    type file_desc = Posix.FileSys.file_desc
-
     val iodToFd = fn x => x
     val fdToIod = fn x => x
 
@@ -118,7 +116,7 @@ structure OS_IO: OS_IO =
                 NONE => ~1
               | SOME t =>
                    if Time.< (t, Time.zeroTime)
-                      then let open PosixError in raiseSys inval end
+                      then Error.raiseSys Error.inval
                    else (C_Int.fromLarge (Time.toMilliseconds t)
                          handle Overflow => Error.raiseSys Error.inval)
           val reventss = Array.array (n, 0)

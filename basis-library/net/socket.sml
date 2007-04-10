@@ -306,7 +306,7 @@ structure CtlExtra =
             make (boolLen, marshalBool, unmarshalBool)
          val (getSockOptSize, getIOCtlSize, setSockOptSize, _) =
             make (sizeLen, marshalSize, unmarshalSize)
-         val (getSockOptOptTime, getIOCtlOptTime, setSockOptOptTime, _) =
+         val (getSockOptOptTime, _, setSockOptOptTime, _) =
             make (optTimeLen, marshalOptTime, unmarshalOptTime)
       end
 

@@ -99,7 +99,7 @@ structure Array2 (* : ARRAY2 *) =
             end
       end
 
-      fun wholeRegion (a as {rows, cols, ...}: 'a array): 'a region =
+      fun wholeRegion (a : 'a array): 'a region =
          {base = a, row = 0, col = 0, nrows = NONE, ncols = NONE}
 
       datatype traversal = RowMajor | ColMajor
@@ -145,7 +145,7 @@ structure Array2 (* : ARRAY2 *) =
           rows = 0,
           cols = 0}
 
-      fun unsafeSpot' (a as {cols, ...}: 'a array, r, c) =
+      fun unsafeSpot' ({cols, ...}: 'a array, r, c) =
          r *? cols +? c
       fun spot' (a as {rows, cols, ...}: 'a array, r, c) =
          if Primitive.Controls.safe 
@@ -190,7 +190,7 @@ structure Array2 (* : ARRAY2 *) =
           | row1 :: _ =>
                let
                   val cols = length row1
-                  val a as {array, rows = rows', cols = cols', ...} = 
+                  val a as {array, cols = cols', ...} = 
                      arrayUninit (length rows, cols)
                   val _ =
                      List.foldl
@@ -244,7 +244,7 @@ structure Array2 (* : ARRAY2 *) =
                  end
             else column' (a, SeqIndex.fromIntUnsafe c)
 
-      fun foldi' trv f b (region as {base, row, col, ...}) =
+      fun foldi' trv f b (region as {base, ...}) =
          let
             val {startRow, stopRow, startCol, stopCol} = checkRegion region
          in

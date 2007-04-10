@@ -379,17 +379,6 @@ structure IntInf =
                         in
                            val zextdFromSeqIndex = S.f
                         end
-                        local
-                           structure S =
-                              SeqIndex_ChooseIntN
-                              (type 'a t = 'a -> C_Size.word
-                               val fInt8 = C_Size.sextdFromInt8
-                               val fInt16 = C_Size.sextdFromInt16
-                               val fInt32 = C_Size.sextdFromInt32
-                               val fInt64 = C_Size.sextdFromInt64)
-                        in
-                           val sextdFromSeqIndex = S.f
-                        end
                      end
 
       type bigInt = Prim.int
@@ -891,7 +880,7 @@ structure IntInf =
       val badObjptrInt: I.int = I.~>>? (I.minInt', 0w1)
       val badObjptrWord: W.word = W.idFromObjptrInt badObjptrInt
       val badObjptrWordTagged: W.word = addTag badObjptrWord
-      val badObjptrIntTagged: I.int = W.idToObjptrInt badObjptrWordTagged
+      (* val badObjptrIntTagged: I.int = W.idToObjptrInt badObjptrWordTagged *)
       val negBadIntInf: bigInt = sextdFromObjptrInt (I.~ badObjptrInt)
 
       (* Given two ObjptrWord.word's, check if they have the same 'high'/'sign' bit.
@@ -1256,12 +1245,6 @@ structure IntInf =
             val zeroTag = zeroTag
             val oneTag = oneTag
             val oneTagCoerce = oneTagCoerce
-
-            val numLimbs = numLimbs
-            val bytesPerArrayHeader = bytesPerArrayHeader
-            val reserve = reserve
-
-            val toString = Prim.toString
         end
 
       val abs = bigAbs

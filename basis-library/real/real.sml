@@ -59,9 +59,9 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                       other : {precision: Primitive.Int32.int}} =
             if R.precision = #precision other
                then (fromRealUnsafe,
-                     fn (m: rounding_mode) => fromRealUnsafe,
+                     fn (_: rounding_mode) => fromRealUnsafe,
                      toRealUnsafe,
-                     fn (m: rounding_mode) => toRealUnsafe)
+                     fn (_: rounding_mode) => toRealUnsafe)
                else (fromRealUnsafe,
                      fn (m: rounding_mode) => fn r =>
                      IEEEReal.withRoundingMode (m, fn () => fromRealUnsafe r),
@@ -69,11 +69,11 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      fn (m: rounding_mode) => fn r =>
                      IEEEReal.withRoundingMode (m, fn () => toRealUnsafe r))
       in
-         val (fromReal32,fromReal32M,toReal32,toReal32M) =
+         val (_,fromReal32M,toReal32,_) =
             make {fromRealUnsafe = R.fromReal32Unsafe,
                   toRealUnsafe = R.toReal32Unsafe,
                   other = {precision = Primitive.Real32.precision}}
-         val (fromReal64,fromReal64M,toReal64,toReal64M) =
+         val (_,fromReal64M,toReal64,_) =
             make {fromRealUnsafe = R.fromReal64Unsafe,
                   toRealUnsafe = R.toReal64Unsafe,
                   other = {precision = Primitive.Real64.precision}}
@@ -132,8 +132,6 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val op != = not o op ==
 
       fun isNan r = r != r
-
-      fun isNormal r = class r = NORMAL
 
       fun isNormal r = class r = NORMAL
 
@@ -641,22 +639,22 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                            else raise Overflow)
             end
       in
-         val (fromInt8,fromInt8M,toInt8,toInt8M) =
+         val (fromInt8,_,_,toInt8M) =
             make {fromIntUnsafe = R.fromInt8Unsafe,
                   toIntUnsafe = R.toInt8Unsafe,
                   other = {maxInt' = Int8.maxInt',
                            minInt' = Int8.minInt'}}
-         val (fromInt16,fromInt16M,toInt16,toInt16M) =
+         val (fromInt16,_,_,toInt16M) =
             make {fromIntUnsafe = R.fromInt16Unsafe,
                   toIntUnsafe = R.toInt16Unsafe,
                   other = {maxInt' = Int16.maxInt',
                            minInt' = Int16.minInt'}}
-         val (fromInt32,fromInt32M,toInt32,toInt32M) =
+         val (fromInt32,_,_,toInt32M) =
             make {fromIntUnsafe = R.fromInt32Unsafe,
                   toIntUnsafe = R.toInt32Unsafe,
                   other = {maxInt' = Int32.maxInt',
                            minInt' = Int32.minInt'}}
-         val (fromInt64,fromInt64M,toInt64,toInt64M) =
+         val (fromInt64,_,_,toInt64M) =
             make {fromIntUnsafe = R.fromInt64Unsafe,
                   toIntUnsafe = R.toInt64Unsafe,
                   other = {maxInt' = Int64.maxInt',

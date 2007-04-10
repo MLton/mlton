@@ -101,17 +101,23 @@ in
       end)
 end
 
+(*
 fun fmt radix (w: word): string =
-   let val radix = fromInt (StringCvt.radixToInt radix)
+   let 
+      val radix = fromInt (StringCvt.radixToInt radix)
       fun loop (q, chars) =
-         let val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
+         let 
+            val chars = StringCvt.digitToChar (toInt (q mod radix)) :: chars
             val q = q div radix
-         in if q = zero
+         in 
+            if q = zero
                then String.implode chars
             else loop (q, chars)
          end
-   in loop (w, [])
+   in 
+      loop (w, [])
    end
+*)
 
 val toString = fmt StringCvt.HEX
 

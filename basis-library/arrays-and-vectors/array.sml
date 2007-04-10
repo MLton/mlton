@@ -17,13 +17,8 @@ structure Array: ARRAY_EXTRA =
       open A
 
       val op +? = Int.+?
-      val op + = Int.+
-      val op -? = Int.-?
-      val op - = Int.-
       val op < = Int.<
       val op <= = Int.<=
-      val op > = Int.>
-      val op >= = Int.>=
 
       fun wrap2 f = fn (i, x) => f (SeqIndex.toIntUnsafe i, x)
 
@@ -54,7 +49,7 @@ structure Array: ARRAY_EXTRA =
                fun copy (arg as {src, dst, di}) =
                   let val (src', si', len') = base src
                   in
-                    if src' = dst andalso si' < di andalso si' +? len' >= di
+                    if src' = dst andalso si' < di andalso di <= si' +? len' 
                        then let val sl = slice (dst, di, SOME (length src))
                             in 
                                foldri' (fn (i, _, _) => 
@@ -73,7 +68,7 @@ structure Array: ARRAY_EXTRA =
         fun make f arr = f (ArraySlice.full arr)
       in
         fun vector arr = make (ArraySlice.vector) arr
-        fun modifyi' f = make (ArraySlice.modifyi' f)
+        (* fun modifyi' f = make (ArraySlice.modifyi' f) *)
         fun modifyi f = make (ArraySlice.modifyi f)
         fun modify f = make (ArraySlice.modify f)
         fun copy {src, dst, di} = ArraySlice.copy {src = ArraySlice.full src,
@@ -87,7 +82,7 @@ structure Array: ARRAY_EXTRA =
       val array' = new'
       val array = new
 
-      fun update' (arr, i, x) = updateMk' Primitive.Array.updateUnsafe (arr, i, x)
+      (* fun update' (arr, i, x) = updateMk' Primitive.Array.updateUnsafe (arr, i, x) *)
       fun update (arr, i, x) = updateMk Primitive.Array.updateUnsafe (arr, i, x)
       fun unsafeUpdate' (arr, i, x) = unsafeUpdateMk' Primitive.Array.updateUnsafe (arr, i, x)
       fun unsafeUpdate (arr, i, x) = unsafeUpdateMk Primitive.Array.updateUnsafe (arr, i, x)

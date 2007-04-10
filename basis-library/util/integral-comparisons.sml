@@ -8,7 +8,7 @@
 functor IntegralComparisons (type t
                              val < : t * t -> bool) =
    struct
-      val < = <
+      val < : t * t -> bool = <
       fun <= (a, b) = not (< (b, a))
       fun > (a, b) = < (b, a)
       fun >= (a, b) = <= (b, a)

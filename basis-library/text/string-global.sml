@@ -16,10 +16,3 @@ val _ =
     case e of
        Fail s => SOME (concat ["Fail: ", s])
      | _ => NONE)
-
-structure NullString =
-   struct
-      open Primitive.NullString8
-
-      val nullTerm = fromString o String.nullTerm
-   end
