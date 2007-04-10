@@ -335,7 +335,7 @@ structure CtlExtra =
          in
             if 0 = se
                then NONE
-               else SOME (Posix.Error.errorMsg se, SOME se)
+               else SOME (Error.errorMsg se, SOME se)
          end handle Error.SysErr z => SOME z
       local
          fun getName (s, f: sock * pre_sock_addr * C_Socklen.t ref -> C_Int.int C_Errno.t) =
@@ -472,14 +472,17 @@ fun select {rds: sock_desc list,
       val setTimeout = 
          case timeout of
             NONE => Prim.setTimeoutNull
-          | SOME t => let
-                         val q = LargeInt.quot (Time.toMicroseconds t, 1000000)
-                         val q = C_Time.fromLargeInt q
-                         val r = LargeInt.rem (Time.toMicroseconds t, 1000000)
-                         val r = C_SUSeconds.fromLargeInt r
-                      in
-                         fn () => Prim.setTimeout (q, r)
-                      end
+          | SOME t => 
+               if Time.< (t, Time.zeroTime)
+                  then Error.raiseSys Error.inval
+               else let
+                       val q = LargeInt.quot (Time.toMicroseconds t, 1000000)
+                       val q = C_Time.fromLargeInt q
+                       val r = LargeInt.rem (Time.toMicroseconds t, 1000000)
+                       val r = C_SUSeconds.fromLargeInt r
+                    in
+                       fn () => Prim.setTimeout (q, r)
+                    end handle Overflow => Error.raiseSys Error.inval
       val res = 
          Syscall.simpleResult 
          (fn () =>
