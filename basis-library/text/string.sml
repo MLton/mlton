@@ -91,14 +91,12 @@ structure StringArg : STRING_ARG =
    struct
       structure Char = Char
       structure CharVector = CharVector
-      structure CharArray = CharArray
    end
 
 structure WideStringArg : STRING_ARG =
    struct
       structure Char = WideChar
       structure CharVector = WideCharVector
-      structure CharArray = WideCharArray
    end
 
 structure String : STRING_EXTRA = StringFn(StringArg)

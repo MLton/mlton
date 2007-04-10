@@ -77,17 +77,14 @@ functor Sequence (S: sig
       val op +? = SeqIndex.+?
       val op + = SeqIndex.+
       val op -? = SeqIndex.-?
-      val op - = SeqIndex.-
       val op < = SeqIndex.<
       val op <= = SeqIndex.<=
       val op > = SeqIndex.>
       val op >= = SeqIndex.>=
-      val ltu = SeqIndex.ltu
-      val leu = SeqIndex.leu
       val gtu = SeqIndex.gtu
       val geu = SeqIndex.geu
 
-      fun wrap1 f = fn (i) => f (SeqIndex.toIntUnsafe i)
+      (* fun wrap1 f = fn (i) => f (SeqIndex.toIntUnsafe i) *)
       fun wrap2 f = fn (i, x) => f (SeqIndex.toIntUnsafe i, x)
       fun wrap3 f = fn (i, x, y) => f (SeqIndex.toIntUnsafe i, x, y)
       fun unwrap1 f = fn (i) => f (SeqIndex.fromIntUnsafe i)

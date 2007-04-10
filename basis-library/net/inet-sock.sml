@@ -19,18 +19,15 @@ structure INetSock:> INET_SOCK =
 
       fun toAddr (in_addr, port) =
          let
-            val port = C_Int.fromInt port
-            val port = Net.C_Int.hton port
+            val port = Word16.fromInt port
+                       handle Overflow => PosixError.raiseSys PosixError.inval
+            val port = Net.Word16.hton port
+            val (sa, salen, finish) = Socket.new_sock_addr ()
+            val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
+                                 port, sa, salen)
+
          in
-            if C_Int.< (port, 0) orelse C_Int.>= (port, 0x10000)
-               then PosixError.raiseSys PosixError.inval
-               else let
-                       val (sa, salen, finish) = Socket.new_sock_addr ()
-                       val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
-                                            port, sa, salen)
-                    in
-                       finish ()
-                    end
+            finish ()
          end
 
       fun any port = toAddr (NetHostDB.any (), port)
@@ -39,8 +36,8 @@ structure INetSock:> INET_SOCK =
         let
           val () = Prim.fromAddr (Socket.unpackSockAddr sa)
           val port = Prim.getPort ()
-          val port = Net.C_Int.ntoh port
-          val port = C_Int.toInt port
+          val port = Net.Word16.ntoh port
+          val port = Word16.toInt port
           val (ia, finish) = NetHostDB.new_in_addr ()
           val _ = Prim.getInAddr (NetHostDB.preInAddrToWord8Array ia)
         in

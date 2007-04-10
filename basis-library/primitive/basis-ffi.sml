@@ -1087,6 +1087,8 @@ struct
 val socket = _import "Socket_GenericSock_socket" : C_Int.t * C_Int.t * C_Int.t -> (C_Int.t) C_Errno.t;
 val socketPair = _import "Socket_GenericSock_socketPair" : C_Int.t * C_Int.t * C_Int.t * (C_Int.t) array -> (C_Int.t) C_Errno.t;
 end
+val getTimeout_sec = _import "Socket_getTimeout_sec" : unit -> C_Time.t;
+val getTimeout_usec = _import "Socket_getTimeout_usec" : unit -> C_SUSeconds.t;
 structure INetSock = 
 struct
 structure Ctl = 
@@ -1096,8 +1098,8 @@ val TCP_NODELAY = _const "Socket_INetSock_Ctl_TCP_NODELAY" : C_Int.t;
 end
 val fromAddr = _import "Socket_INetSock_fromAddr" : (Word8.t) vector -> unit;
 val getInAddr = _import "Socket_INetSock_getInAddr" : (Word8.t) array -> unit;
-val getPort = _import "Socket_INetSock_getPort" : unit -> C_Int.t;
-val toAddr = _import "Socket_INetSock_toAddr" : (Word8.t) vector * C_Int.t * (Word8.t) array * (C_Socklen.t) ref -> unit;
+val getPort = _import "Socket_INetSock_getPort" : unit -> Word16.t;
+val toAddr = _import "Socket_INetSock_toAddr" : (Word8.t) vector * Word16.t * (Word8.t) array * (C_Socklen.t) ref -> unit;
 end
 val listen = _import "Socket_listen" : C_Sock.t * C_Int.t -> (C_Int.t) C_Errno.t;
 val MSG_CTRUNC = _const "Socket_MSG_CTRUNC" : C_Int.t;
@@ -1110,10 +1112,13 @@ val MSG_TRUNC = _const "Socket_MSG_TRUNC" : C_Int.t;
 val MSG_WAITALL = _const "Socket_MSG_WAITALL" : C_Int.t;
 val recv = _import "Socket_recv" : C_Sock.t * (Word8.t) array * C_Int.t * C_Size.t * C_Int.t -> (C_SSize.t) C_Errno.t;
 val recvFrom = _import "Socket_recvFrom" : C_Sock.t * (Word8.t) array * C_Int.t * C_Size.t * C_Int.t * (Word8.t) array * (C_Socklen.t) ref -> (C_SSize.t) C_Errno.t;
+val select = _import "Socket_select" : (C_Fd.t) vector * (C_Fd.t) vector * (C_Fd.t) vector * (C_Int.t) array * (C_Int.t) array * (C_Int.t) array -> (C_Int.t) C_Errno.t;
 val sendArr = _import "Socket_sendArr" : C_Sock.t * (Word8.t) array * C_Int.t * C_Size.t * C_Int.t -> (C_SSize.t) C_Errno.t;
 val sendArrTo = _import "Socket_sendArrTo" : C_Sock.t * (Word8.t) array * C_Int.t * C_Size.t * C_Int.t * (Word8.t) vector * C_Socklen.t -> (C_SSize.t) C_Errno.t;
 val sendVec = _import "Socket_sendVec" : C_Sock.t * (Word8.t) vector * C_Int.t * C_Size.t * C_Int.t -> (C_SSize.t) C_Errno.t;
 val sendVecTo = _import "Socket_sendVecTo" : C_Sock.t * (Word8.t) vector * C_Int.t * C_Size.t * C_Int.t * (Word8.t) vector * C_Socklen.t -> (C_SSize.t) C_Errno.t;
+val setTimeout = _import "Socket_setTimeout" : C_Time.t * C_SUSeconds.t -> unit;
+val setTimeoutNull = _import "Socket_setTimeoutNull" : unit -> unit;
 val SHUT_RD = _const "Socket_SHUT_RD" : C_Int.t;
 val SHUT_RDWR = _const "Socket_SHUT_RDWR" : C_Int.t;
 val SHUT_WR = _const "Socket_SHUT_WR" : C_Int.t;

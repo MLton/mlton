@@ -1,17 +1,17 @@
 #include "platform.h"
 
 void 
-Socket_INetSock_toAddr (Vector(Word8_t) in_addr, C_Int_t port, 
+Socket_INetSock_toAddr (Vector(Word8_t) in_addr, Word16_t port, 
                         Array(Word8_t) addr, Ref(C_Socklen_t) addrlen) {
   struct sockaddr_in *sa = (struct sockaddr_in*)addr;
 
   sa->sin_family = AF_INET;
-  sa->sin_port = port;
+  sa->sin_port = (uint16_t)port;
   sa->sin_addr = *(const struct in_addr*)in_addr;
   *((socklen_t*)addrlen) = sizeof(struct sockaddr_in);
 }
 
-static int fromAddr_port;
+static uint16_t fromAddr_port;
 static struct in_addr fromAddr_in_addr;
 
 void Socket_INetSock_fromAddr (Vector(Word8_t) addr) {
@@ -22,8 +22,8 @@ void Socket_INetSock_fromAddr (Vector(Word8_t) addr) {
   fromAddr_in_addr = sa->sin_addr;
 }
 
-C_Int_t Socket_INetSock_getPort (void) {
-  return fromAddr_port;
+Word16_t Socket_INetSock_getPort (void) {
+  return (Word16_t)fromAddr_port;
 }
 
 void Socket_INetSock_getInAddr (Array(Word8_t) addr) {

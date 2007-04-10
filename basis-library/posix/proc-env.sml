@@ -224,13 +224,19 @@ structure PosixProcEnv: POSIX_PROC_ENV =
       local
          structure Times = Prim.Times
 
-         val ticksPerSec = SysWord.toLargeIntX (sysconf "CLK_TCK")
+         val clocksPerSec = 
+            (* syconf is not implemented on MinGW; 
+             * we don't want a SysErr during Basis Library initialization. 
+             *)
+            if (let open Primitive.MLton.Platform.OS in host = MinGW end)
+               then LargeInt.zero
+            else SysWord.toLargeIntX (sysconf "CLK_TCK")
 
-         fun cvt (ticks: C_Clock.t) =
+         fun cvt (clocks: C_Clock.t) =
             Time.fromTicks (LargeInt.quot
-                            (LargeInt.* (C_Clock.toLargeInt ticks,
+                            (LargeInt.* (C_Clock.toLargeInt clocks,
                                          Time.ticksPerSecond),
-                             ticksPerSec))
+                             clocksPerSec))
       in
          fun times () =
             SysCall.syscall'

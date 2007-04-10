@@ -306,7 +306,7 @@ structure CtlExtra =
             make (boolLen, marshalBool, unmarshalBool)
          val (getSockOptSize, getIOCtlSize, setSockOptSize, _) =
             make (sizeLen, marshalSize, unmarshalSize)
-         val (getSockOptOptTime, getIOCtlOptTime, setSockOptOptTime, _) =
+         val (getSockOptOptTime, _, setSockOptOptTime, _) =
             make (optTimeLen, marshalOptTime, unmarshalOptTime)
       end
 
@@ -335,7 +335,7 @@ structure CtlExtra =
          in
             if 0 = se
                then NONE
-               else SOME (Posix.Error.errorMsg se, SOME se)
+               else SOME (Error.errorMsg se, SOME se)
          end handle Error.SysErr z => SOME z
       local
          fun getName (s, f: sock * pre_sock_addr * C_Socklen.t ref -> C_Int.int C_Errno.t) =
@@ -445,51 +445,73 @@ fun shutdown (s, m) =
    in Syscall.simple (fn () => Prim.shutdown (s, m))
    end
 
-type sock_desc = OS.IO.iodesc
+type sock_desc = FileSys.file_desc
 
-fun sockDesc sock = FileSys.fdToIOD (sockToFD sock)
+fun sockDesc sock = sockToFD sock
 
-fun sameDesc (desc1, desc2) =
-   OS.IO.compare (desc1, desc2) = EQUAL
+fun sameDesc (desc1, desc2) = desc1 = desc2
 
 fun select {rds: sock_desc list, 
             wrs: sock_desc list, 
             exs: sock_desc list, 
             timeout: Time.time option} =
    let
-      fun mk poll (sd,pds) =
-         let
-            val pd = Option.valOf (OS.IO.pollDesc sd)
-            val pd = poll pd
-         in
-            pd::pds
-         end
-      val pds =
-         (List.foldr (mk OS.IO.pollIn)
-          (List.foldr (mk OS.IO.pollOut)
-           (List.foldr (mk OS.IO.pollPri)
-            [] exs) wrs) rds)
-      val pis = OS.IO.poll (pds, timeout)
-      val {rds, wrs, exs} =
-         List.foldr
-         (fn (pi,{rds,wrs,exs}) =>
-          let
-             fun mk (is,l) =
-                if is pi
-                   then (OS.IO.pollToIODesc (OS.IO.infoToPollDesc pi))::l
-                else l
-          in
-             {rds = mk (OS.IO.isIn, rds),
-              wrs = mk (OS.IO.isOut, wrs),
-              exs = mk (OS.IO.isPri, exs)}
-          end) 
-         {rds = [], wrs = [], exs = []}
-         pis
+      local
+         fun mk l =
+            let
+               val vec = Vector.fromList l
+               val arr = Array.array (Vector.length vec, 0)
+            in
+               (vec, arr)
+            end
+      in
+         val (read_vec, read_arr) = mk rds
+         val (write_vec, write_arr) = mk wrs
+         val (except_vec, except_arr) = mk exs
+      end
+      val setTimeout = 
+         case timeout of
+            NONE => Prim.setTimeoutNull
+          | SOME t => 
+               if Time.< (t, Time.zeroTime)
+                  then Error.raiseSys Error.inval
+               else let
+                       val q = LargeInt.quot (Time.toMicroseconds t, 1000000)
+                       val q = C_Time.fromLargeInt q
+                       val r = LargeInt.rem (Time.toMicroseconds t, 1000000)
+                       val r = C_SUSeconds.fromLargeInt r
+                    in
+                       fn () => Prim.setTimeout (q, r)
+                    end handle Overflow => Error.raiseSys Error.inval
+      val res = 
+         Syscall.simpleResult 
+         (fn () =>
+          (setTimeout ()
+           ; Prim.select (read_vec, write_vec, except_vec,
+                          read_arr, write_arr, except_arr)))
+      val (rds, wrs, exs) =
+         if res = 0
+            then ([],[],[])
+         else 
+            let
+               fun mk (l, arr) = 
+                  (List.rev o #1)
+                  (List.foldl (fn (sd, (l, i)) =>
+                               (if Array.sub (arr, i) <> 0 then sd::l else l, i + 1))
+                              ([],0) 
+                              l)
+            in
+               (mk (rds, read_arr),
+                mk (wrs, write_arr),
+                mk (exs, except_arr))
+            end
    in
-      {rds = rds, wrs = wrs, exs = exs}
+      {rds = rds,
+       wrs = wrs,
+       exs = exs}
    end
 
-val ioDesc = sockDesc
+val ioDesc = FileSys.fdToIOD o sockDesc
 
 type out_flags = {don't_route: bool, oob: bool}
 

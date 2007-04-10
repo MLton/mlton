@@ -366,6 +366,9 @@ endif
 ifeq ($(TARGET_OS), darwin)
 PREFIX := /usr/local
 endif
+ifeq ($(TARGET_OS), freebsd)
+PREFIX := /usr/local
+endif
 ifeq ($(TARGET_OS), mingw)
 PREFIX := /mingw
 endif

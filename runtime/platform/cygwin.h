@@ -35,22 +35,24 @@
 
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
-#define PF_INET6 0
+
+/* Cygwin does not handle IPv6. */
+#ifndef AF_INET6
+
+#define AF_INET6 23 /* Internet Protocol, Version 6 */
+#define PF_INET6 AF_INET6
 
 struct sockaddr_in6 {
   int dummy; // quell gcc warnings about "struct has no members"
 };
 
+/* Cygwin does provide sockaddr_storage. */
+
+#endif
+
 typedef unsigned int nfds_t;
 typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
-
-// /usr/include/cygwin/socket.h has this ifdef'd out for now.
-#define AF_INET6 23
 
 // Unimplemented on Cygwin
 #define MSG_WAITALL 0
 #define MSG_EOR 0
-
-
-
-

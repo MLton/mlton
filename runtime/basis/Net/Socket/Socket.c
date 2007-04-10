@@ -11,7 +11,11 @@ C_Errno_t(C_Int_t) Socket_bind (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t ad
 }
 
 C_Errno_t(C_Int_t) Socket_close(C_Sock_t s) {
+#ifdef __MINGW32__
+  return closesocket(s);
+#else
   return close(s);
+#endif
 }
 
 C_Errno_t(C_Int_t) Socket_connect (C_Sock_t s, Vector(Word8_t) addr, C_Socklen_t addrlen) {

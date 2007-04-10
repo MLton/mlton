@@ -221,6 +221,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
          end
 
       fun raiseSys n = raise SysErr (errorMsg n, SOME n)
+      fun raiseSysWithMsg (n, msg) = raise SysErr ((errorMsg n) ^ ": " ^ msg, SOME n)
 
       structure SysCall =
          struct
