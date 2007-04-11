@@ -112,10 +112,10 @@ available commands."
 current buffer."
   (save-excursion
     (goto-char point)
-    (def-use-pos
-      (+ (count-lines 1 (point))
-         (if (= (current-column) 0) 1 0))
-      (current-column))))
+    (beginning-of-line)
+    (let ((line (+ (count-lines 1 (point)) 1))
+          (col (- point (point))))
+      (def-use-pos line col))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; High-level symbol lookup
