@@ -28,11 +28,6 @@ http://mlton.org/pipermail/mlton/2006-July/028963.html
    that correspond to bit-wise identities.
  + Revision 4672 -- nextAfter
 
-(* PackWord primitives; could delay *)
-http://mlton.org/pipermail/mlton/2006-May/028833.html
- + http://mlton.org/pipermail/mlton-user/2004-November/000556.html
- + http://mlton.org/pipermail/mlton/2004-November/026246.html
-
 (* Char signedness *)
 http://mlton.org/pipermail/mlton/2006-July/028970.html
  + http://mlton.org/pipermail/mlton/2006-July/028982.html
@@ -45,5 +40,3 @@ Another minor thing I think we should do:
 
 
 * Why does hash-table use malloc/free while generational maps use mmap/munmap?
-
-* Use C99 <assert.h> instead of util/assert.{c,h}
