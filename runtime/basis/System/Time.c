@@ -1,16 +1,10 @@
 #include "platform.h"
 
-#ifndef DEBUG
-#define DEBUG FALSE
-#endif
-
 static struct timeval timeval;
 
 C_Int_t Time_getTimeOfDay (void) {
   int res;
   res = gettimeofday (&timeval, (struct timezone*)NULL);
-  if (DEBUG)
-    fprintf (stderr, "%d = Time_gettimeofday ()\n", res);
   return res;
 }
 

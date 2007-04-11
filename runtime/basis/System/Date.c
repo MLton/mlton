@@ -1,9 +1,5 @@
 #include "platform.h"
 
-#ifndef DEBUG
-#define DEBUG FALSE
-#endif
-
 static struct tm tm_in;
 static struct tm *tm_out;
 
@@ -29,9 +25,6 @@ void Date_Tm_setYear(C_Int_t x) { tm_in.tm_year = x; }
 
 C_Errno_t(C_Int_t) Date_gmTime(Ref(C_Time_t) p) {
   tm_out = gmtime((time_t*)p);
-  if (DEBUG)
-    fprintf (stderr, FMTPTR" = Date_gmTime ("FMTPTR")\n", 
-             (uintptr_t)tm_out, (uintptr_t)p);
   if (tm_out == NULL) return -1;
   return 0;
 }
@@ -47,9 +40,6 @@ C_Double_t Date_localOffset(void) {
 
 C_Errno_t(C_Int_t) Date_localTime(Ref(C_Time_t) p) {
   tm_out = localtime((time_t*)p);
-  if (DEBUG)
-    fprintf (stderr, FMTPTR" = Date_localTime ("FMTPTR")\n", 
-             (uintptr_t)tm_out, (uintptr_t)p);
   if (tm_out == NULL) return -1;
   return 0;
 }
