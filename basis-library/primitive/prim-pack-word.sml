@@ -18,16 +18,10 @@ structure PackWord8 =
 
       val subArr = 
          _prim "Word8Array_subWord8": Word8.word array * SeqIndex.int -> word;
-      val subArrRev = 
-         _import "PackWord8_subArrRev": Word8.word array * C_Ptrdiff.t -> word;
       val subVec = 
          _prim "Word8Vector_subWord8": Word8.word vector * SeqIndex.int -> word;
-      val subVecRev = 
-         _import "PackWord8_subVecRev": Word8.word vector * C_Ptrdiff.t -> word;
       val update = 
          _prim "Word8Array_updateWord8": Word8.word array * SeqIndex.int * word -> unit;
-      val updateRev = 
-         _import "PackWord8_updateRev": Word8.word array * C_Ptrdiff.t * word -> unit;
    end
 
 structure PackWord16 =
@@ -36,16 +30,10 @@ structure PackWord16 =
 
       val subArr = 
          _prim "Word8Array_subWord16": Word8.word array * SeqIndex.int -> word;
-      val subArrRev = 
-         _import "PackWord16_subArrRev": Word8.word array * C_Ptrdiff.t -> word;
       val subVec = 
          _prim "Word8Vector_subWord16": Word8.word vector * SeqIndex.int -> word;
-      val subVecRev = 
-         _import "PackWord16_subVecRev": Word8.word vector * C_Ptrdiff.t -> word;
       val update = 
          _prim "Word8Array_updateWord16": Word8.word array * SeqIndex.int * word -> unit;
-      val updateRev = 
-         _import "PackWord16_updateRev": Word8.word array * C_Ptrdiff.t * word -> unit;
    end
 
 structure PackWord32 =
@@ -54,16 +42,10 @@ structure PackWord32 =
 
       val subArr = 
          _prim "Word8Array_subWord32": Word8.word array * SeqIndex.int -> word;
-      val subArrRev = 
-         _import "PackWord32_subArrRev": Word8.word array * C_Ptrdiff.t -> word;
       val subVec = 
          _prim "Word8Vector_subWord32": Word8.word vector * SeqIndex.int -> word;
-      val subVecRev = 
-         _import "PackWord32_subVecRev": Word8.word vector * C_Ptrdiff.t -> word;
       val update = 
          _prim "Word8Array_updateWord32": Word8.word array * SeqIndex.int * word -> unit;
-      val updateRev = 
-         _import "PackWord32_updateRev": Word8.word array * C_Ptrdiff.t * word -> unit;
    end
 
 structure PackWord64 =
@@ -72,16 +54,10 @@ structure PackWord64 =
 
       val subArr = 
          _prim "Word8Array_subWord64": Word8.word array * SeqIndex.int -> word;
-      val subArrRev = 
-         _import "PackWord64_subArrRev": Word8.word array * C_Ptrdiff.t -> word;
       val subVec = 
          _prim "Word8Vector_subWord64": Word8.word vector * SeqIndex.int -> word;
-      val subVecRev = 
-         _import "PackWord64_subVecRev": Word8.word vector * C_Ptrdiff.t -> word;
       val update = 
          _prim "Word8Array_updateWord64": Word8.word array * SeqIndex.int * word -> unit;
-      val updateRev = 
-         _import "PackWord64_updateRev": Word8.word array * C_Ptrdiff.t * word -> unit;
    end
 
 end
