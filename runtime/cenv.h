@@ -21,8 +21,13 @@
 #endif
 #define _FILE_OFFSET_BITS 64
 
+#ifndef ASSERT
+#define ASSERT 0
+#define NDEBUG
+#endif
+
 /* C99 headers */
-// #include <assert.h>
+#include <assert.h>
 // #include <complex.h>
 #include <ctype.h>
 #include <errno.h>

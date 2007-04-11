@@ -5,6 +5,5 @@
  * See the file MLton-LICENSE for details.
  */
 
-#include "util/assert.c"
 #include "util/die.c"
 #include "util/to-string.c"
