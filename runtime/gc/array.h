@@ -20,28 +20,27 @@
  * the number of elements in the array.  Array elements have the same
  * individual layout as normal objects, omitting the header word.
  */
-#ifdef GC_MODEL_NATIVE32
-typedef uint32_t GC_arrayLength;
+
+#define GC_ARRLEN_TYPE__(z) uint ## z ## _t
+#define GC_ARRLEN_TYPE_(z) GC_ARRLEN_TYPE__(z)
+#define GC_ARRLEN_TYPE GC_ARRLEN_TYPE_(GC_MODEL_ARRLEN_SIZE)
+typedef GC_ARRLEN_TYPE GC_arrayLength;
 #define GC_ARRAY_LENGTH_SIZE sizeof(GC_arrayLength)
-#define PRIxARRLEN PRIu32
+#define PRIxARRLEN__(z) PRIx ## z
+#define PRIxARRLEN_(z) PRIxARRLEN__(z)
+#define PRIxARRLEN PRIxARRLEN_(GC_MODEL_ARRLEN_SIZE)
 #define FMTARRLEN "%"PRIxARRLEN
 typedef GC_arrayLength GC_arrayCounter;
 #define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
 #define PRIxARRCTR PRIxARRLEN
 #define FMTARRCTR "%"PRIxARRCTR
 #define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
-#endif
-#ifdef GC_MODEL_NATIVE64
-typedef uint64_t GC_arrayLength;
-#define GC_ARRAY_LENGTH_SIZE sizeof(GC_arrayLength)
-#define PRIxARRLEN PRIu64
-#define FMTARRLEN "%"PRIxARRLEN
-typedef GC_arrayLength GC_arrayCounter;
-#define GC_ARRAY_COUNTER_SIZE sizeof(GC_arrayCounter)
-#define PRIxARRCTR PRIxARRLEN
-#define FMTARRCTR "%"PRIxARRCTR
-#define GC_ARRAY_HEADER_SIZE (GC_ARRAY_COUNTER_SIZE + GC_ARRAY_LENGTH_SIZE + GC_HEADER_SIZE)
-#endif
+
+COMPILE_TIME_ASSERT(sizeof_header__le__sizeof_arrlen,
+                    sizeof(GC_header) <= sizeof(GC_arrayLength));
+COMPILE_TIME_ASSERT(sizeof_arrlen__eq__sizeof_arrctr,
+                    sizeof(GC_arrayLength) == sizeof(GC_arrayCounter));
+
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 

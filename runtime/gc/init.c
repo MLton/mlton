@@ -219,9 +219,10 @@ int GC_init (GC_state s, int argc, char **argv) {
   char *worldFile;
   int res;
 
+  assert (s->alignment >= GC_MODEL_MINALIGN);
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
   // While the following asserts are manifestly true,
-  // thye check the asserts in sizeofThread and sizeofWeak.
+  // they check the asserts in sizeofThread and sizeofWeak.
   assert (sizeofThread (s) == sizeofThread (s));
   assert (sizeofWeak (s) == sizeofWeak (s));
 

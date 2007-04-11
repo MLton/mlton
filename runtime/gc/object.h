@@ -40,22 +40,19 @@ static const char* objectTypeTagToString (GC_objectTypeTag tag);
  *      31   : mark bit, used by mark compact GC (initially 0)
  * 32 - 63   : 0wx00000000  (only w/ 64-bit header)
  */
-#ifdef GC_MODEL_NATIVE32
-typedef uint32_t GC_header;
+
+#define GC_HEADER_TYPE__(z) uint ## z ## _t
+#define GC_HEADER_TYPE_(z) GC_HEADER_TYPE__(z)
+#define GC_HEADER_TYPE GC_HEADER_TYPE_(GC_MODEL_HEADER_SIZE)
+typedef GC_HEADER_TYPE GC_header;
 #define GC_HEADER_SIZE sizeof(GC_header)
-#define PRIxHDR PRIx32
-#define FMTHDR "0x%08"PRIxHDR
-#endif
-#ifdef GC_MODEL_NATIVE64
-typedef uint64_t GC_header;
-#define GC_HEADER_SIZE sizeof(GC_header)
-#define PRIxHDR PRIx64
-#define FMTHDR "0x%08"PRIxHDR
-#endif
-#ifdef GC_HEADER_SIZE
-#else
-#error GC_header undefined
-#endif
+#define PRIxHDR__(z) PRIx ## z
+#define PRIxHDR_(z) PRIxHDR__(z)
+#define PRIxHDR PRIxHDR_(GC_MODEL_HEADER_SIZE)
+#define FMTHDR "%08"PRIxHDR
+
+COMPILE_TIME_ASSERT(sizeof_objptr__eq__sizeof_header,
+                    sizeof(objptr) == sizeof(GC_header));
 
 #define GC_VALID_HEADER_MASK ((GC_header)0x1)
 #define TYPE_INDEX_BITS    19

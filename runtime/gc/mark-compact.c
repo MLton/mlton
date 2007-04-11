@@ -11,7 +11,6 @@
 /* ---------------------------------------------------------------- */
 
 void copyForThreadInternal (pointer dst, pointer src) {
-
   if (OBJPTR_SIZE > GC_HEADER_SIZE) {
     size_t count;
 
@@ -36,7 +35,6 @@ void copyForThreadInternal (pointer dst, pointer src) {
       dst -= OBJPTR_SIZE;
       src += OBJPTR_SIZE;
     }
-
   } else /* (GC_HEADER_SIZE == OBJPTR_SIZE) */ {
     *((GC_header*)dst) = *((GC_header*)src);
   }

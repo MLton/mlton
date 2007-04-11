@@ -10,7 +10,6 @@
 #define MLTON_GC_INTERNAL_FUNCS
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
-#include "gc/rusage.h"
 
 #include "gc/virtual-memory.c"
 #include "gc/align.c"
