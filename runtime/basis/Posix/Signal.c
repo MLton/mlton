@@ -7,7 +7,7 @@ static void handler (int signum) {
 }
 
 enum {
-#if  (defined (SA_ONSTACK))
+#if (defined (SA_ONSTACK))
   SA_FLAGS = SA_ONSTACK,
 #else
   SA_FLAGS = 0,
