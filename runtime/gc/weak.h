@@ -35,7 +35,7 @@
 typedef struct GC_weak {
   struct GC_weak *link;
   objptr objptr;
-} *GC_weak;
+} __attribute__ ((packed)) *GC_weak;
 
 COMPILE_TIME_ASSERT(GC_weak__packed,
                     sizeof(struct GC_weak) ==
