@@ -1,5 +1,9 @@
 #include <inttypes.h>
 
+#include <unistd.h>
+
+#include <dirent.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <io.h>
 #include <netdb.h>
@@ -14,12 +18,15 @@
 #include <sys/poll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
+#include <utime.h>
 #include <windows.h>
 
 #define MLton_Platform_OS_host "cygwin"

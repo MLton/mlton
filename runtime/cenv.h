@@ -61,14 +61,6 @@ COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
 COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
 COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 
-#include <fcntl.h>
-#include <unistd.h>
-
-#include <dirent.h>
-#include <utime.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-
 #include "gmp.h"
 
 #if (defined (__APPLE_CC__))
