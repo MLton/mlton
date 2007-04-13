@@ -269,13 +269,12 @@ structure Name =
             val real = Type.real
             val word = Type.word
             val vanilla = CFunction.vanilla
-            fun coerce (t1, t2, sg) =
+            fun wordCType (s, sg) = CType.word (s, sg)
+            fun realCType s = CType.real s
+            fun coerce (t1, ct1, t2, ct2) =
                vanilla {args = Vector.new1 t1,
                         name = name,
-                        prototype = (Vector.new1
-                                     (CType.word
-                                      (WordSize.fromBits (Type.width t1), sg)),
-                                     SOME (Type.toCType t2)),
+                        prototype = (Vector.new1 ct1, SOME ct2),
                         return = t2}
             fun amAllocationProfiling () =
                Control.ProfileAlloc = !Control.profile
@@ -465,6 +464,9 @@ structure Name =
              | Real_Math_tan s => realUnary s
              | Real_abs s => realUnary s
              | Real_add s => realBinary s
+             | Real_castToWord (s1, s2) =>
+                  coerce (real s1, realCType s1, 
+                          word s2, wordCType (s2, {signed = false}))
              | Real_div s => realBinary s
              | Real_equal s => realCompare s
              | Real_ldexp s =>
@@ -485,13 +487,21 @@ structure Name =
              | Real_mulsub s => realTernary s
              | Real_neg s => realUnary s
              | Real_qequal s => realCompare s
+             | Real_rndToReal (s1, s2) =>
+                  coerce (real s1, realCType s1, real s2, realCType s2)
              | Real_round s => realUnary s
              | Real_sub s => realBinary s
              | Thread_returnToC => CFunction.returnToC ()
              | Word_add s => wordBinary (s, {signed = false})
              | Word_addCheck (s, sg) => wordBinaryOverflows (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
+             | Word_castToReal (s1, s2) =>
+                  coerce (word s1, wordCType (s1, {signed = false}), 
+                          real s2, realCType s2)
              | Word_equal s => wordCompare (s, {signed = false})
+             | Word_extdToWord (s1, s2, sg) =>
+                  coerce (word s1, wordCType (s1, sg), 
+                          word s2, wordCType (s2, {signed = false}))
              | Word_lshift s => wordShift (s, {signed = false})
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
@@ -502,16 +512,15 @@ structure Name =
              | Word_orb s => wordBinary (s, {signed = false})
              | Word_quot z => wordBinary z
              | Word_rem z => wordBinary z
+             | Word_rndToReal (s1, s2, sg) =>
+                  coerce (word s1, wordCType (s1, sg), 
+                          real s2, realCType s2)
+             | Word_xorb s => wordBinary (s, {signed = false})
              | Word_rol s => wordShift (s, {signed = false})
              | Word_ror s => wordShift (s, {signed = false})
              | Word_rshift z => wordShift z
              | Word_sub s => wordBinary (s, {signed = false})
              | Word_subCheck (s, sg) => wordBinaryOverflows (s, sg)
-             | Word_toReal (s1, s2, sg) =>
-                  coerce (Type.word s1, Type.real s2, sg)
-             | Word_toWord (s1, s2, sg) =>
-                  coerce (Type.word s1, Type.word s2, sg)
-             | Word_xorb s => wordBinary (s, {signed = false})
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
 
@@ -1365,7 +1374,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     codegenOrC (Prim.wordEqual
                                                (WordSize.roundUpToPrim s))
                                | Word_toIntInf => cast ()
-                               | Word_toWord (s1, s2, {signed}) =>
+                               | Word_extdToWord (s1, s2, {signed}) =>
                                     if WordSize.equals (s1, s2)
                                        then move (a 0)
                                     else
@@ -1381,7 +1390,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              then cast ()
                                           else
                                              codegenOrC
-                                             (Prim.wordToWord
+                                             (Prim.wordExtdToWord
                                               (s1, s2, {signed = signed}))
                                        end
                                | WordVector_toIntInf => move (a 0)

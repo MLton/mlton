@@ -66,23 +66,15 @@ struct
          | Real_mulsub _ => true
          | Real_neg _ => true
          | Real_qequal _ => true
+         | Real_rndToReal _ => true
+         | Real_rndToWord (s1, s2, {signed}) => signed andalso w32168 s2
          | Real_round _ => true
          | Real_sub _ => true
-         | Real_toReal _ => true
-         | Real_toWord (s1, s2, {signed}) =>
-              signed
-              andalso (case (s1, WordSize.prim s2) of
-                          (R64, W32) => true
-                        | (R64, W16) => true
-                        | (R64, W8) => true
-                        | (R32, W32) => true
-                        | (R32, W16) => true
-                        | (R32, W8) => true
-                        | _ => false)
          | Word_add _ => true
          | Word_addCheck _ => true
          | Word_andb _ => true
          | Word_equal s => w32168 s
+         | Word_extdToWord (s1, s2, _) => w32168 s1 andalso w32168 s2
          | Word_lshift s => w32168 s
          | Word_lt (s, _) => w32168 s
          | Word_mul (s, _) => w32168 s
@@ -93,33 +85,12 @@ struct
          | Word_orb _ => true
          | Word_quot (s, _) => w32168 s
          | Word_rem (s, _) => w32168 s
+         | Word_rndToReal (s1, s2, {signed}) => signed andalso w32168 s1
          | Word_rol s => w32168 s
          | Word_ror s => w32168 s
          | Word_rshift (s, _) => w32168 s
          | Word_sub _ => true
          | Word_subCheck _ => true
-         | Word_toReal (s1, s2, {signed}) =>
-              signed
-              andalso (case (WordSize.prim s1, s2) of
-                          (W32, R64) => true
-                        | (W32, R32) => true
-                        | (W16, R64) => true
-                        | (W16, R32) => true
-                        | (W8, R64) => true
-                        | (W8, R32) => true
-                        | _ => false)
-         | Word_toWord (s1, s2, _) =>
-              (case (WordSize.prim s1, WordSize.prim s2) of
-                  (W32, W32) => true
-                | (W32, W16) => true
-                | (W32, W8) => true
-                | (W16, W32) => true
-                | (W16, W16) => true
-                | (W16, W8) => true
-                | (W8, W32) => true
-                | (W8, W16) => true
-                | (W8, W8) => true
-                | _ => false)
          | Word_xorb _ => true
          | _ => false
      end
@@ -1117,7 +1088,7 @@ struct
                     transfer = NONE}]
                 end
              | Real_abs _ => funa Instruction.FABS
-             | Real_toReal (s, s')
+             | Real_rndToReal (s, s')
              => let
                   val (dst,dstsize) = getDst1 ()
                   val (src,srcsize) = getSrc1 ()
@@ -1160,7 +1131,7 @@ struct
                     | (R32, R64) => movx ()
                     | (R32, R32) => mov ()
                 end 
-             | Real_toWord (s, s', _)
+             | Real_rndToWord (s, s', _)
              => let
                   fun default () =
                     let
@@ -1299,7 +1270,7 @@ struct
                   | W16 => binal Instruction.SUB
                   | W32 => binal Instruction.SUB
                   | W64 => binal64 (Instruction.SUB, Instruction.SBB))
-             | Word_toReal (s, s', _)
+             | Word_rndToReal (s, s', _)
              => let
                   fun default () =
                     let
@@ -1351,7 +1322,7 @@ struct
                     | (W8, R32) => default' ()
                     | _ => Error.bug "x86MLton.prim: Word_toReal, W64"
                 end
-             | Word_toWord (s, s', {signed}) =>
+             | Word_extdToWord (s, s', {signed}) =>
                   let
                      val b = WordSize.bits s
                      val b' = WordSize.bits s'

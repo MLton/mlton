@@ -225,10 +225,10 @@ structure Pointer =
          structure S =
             C_Pointer_ChooseWordN
             (type 'a t = 'a -> t
-             val fWord8 = _prim "WordU8_toWord8": Primitive.Word8.word -> pointer;
-             val fWord16 = _prim "WordU16_toWord16": Primitive.Word16.word -> pointer;
-             val fWord32 = _prim "WordU32_toWord32": Primitive.Word32.word -> pointer;
-             val fWord64 = _prim "WordU64_toWord64": Primitive.Word64.word -> pointer;)
+             val fWord8 = _prim "WordU8_extdToWord8": Primitive.Word8.word -> pointer;
+             val fWord16 = _prim "WordU16_extdToWord16": Primitive.Word16.word -> pointer;
+             val fWord32 = _prim "WordU32_extdToWord32": Primitive.Word32.word -> pointer;
+             val fWord64 = _prim "WordU64_extdToWord64": Primitive.Word64.word -> pointer;)
       in
          val fromWord = S.f
       end
@@ -236,10 +236,10 @@ structure Pointer =
          structure S =
             C_Pointer_ChooseWordN
             (type 'a t = t -> 'a
-             val fWord8 = _prim "WordU8_toWord8": pointer -> Primitive.Word8.word;
-             val fWord16 = _prim "WordU16_toWord16": pointer -> Primitive.Word16.word;
-             val fWord32 = _prim "WordU32_toWord32": pointer -> Primitive.Word32.word;
-             val fWord64 = _prim "WordU64_toWord64": pointer -> Primitive.Word64.word;)
+             val fWord8 = _prim "WordU8_extdToWord8": pointer -> Primitive.Word8.word;
+             val fWord16 = _prim "WordU16_extdToWord16": pointer -> Primitive.Word16.word;
+             val fWord32 = _prim "WordU32_extdToWord32": pointer -> Primitive.Word32.word;
+             val fWord64 = _prim "WordU64_extdToWord64": pointer -> Primitive.Word64.word;)
       in
          val toWord = S.f
       end

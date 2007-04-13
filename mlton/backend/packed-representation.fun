@@ -506,7 +506,7 @@ structure Base =
                                | LESS => 
                                     PrimApp {args = Vector.new1 index,
                                              dst = SOME (ind, csizeTy),
-                                             prim = (Prim.wordToWord 
+                                             prim = (Prim.wordExtdToWord 
                                                      (seqIndexSize, 
                                                       csizeSize, 
                                                       {signed = false}))}

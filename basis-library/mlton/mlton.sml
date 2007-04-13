@@ -80,6 +80,21 @@ structure Word8 =
       open Word8
       type t = word
    end
+structure Word16 =
+   struct
+      open Word16
+      type t = word
+   end
+structure Word32 =
+   struct
+      open Word32
+      type t = word
+   end
+structure Word64 =
+   struct
+      open Word64
+      type t = word
+   end
 
 structure Word8Array = struct
    open Word8Array

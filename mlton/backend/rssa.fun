@@ -311,9 +311,9 @@ structure Statement =
                   (Operand.Var {ty = tmpTy, var = tmp},
                    [PrimApp {args = Vector.new1 z,
                              dst = SOME (tmp, tmpTy),
-                             prim = Prim.wordToWord (WordSize.fromBits w,
-                                                     WordSize.fromBits b,
-                                                     {signed = false})}])
+                             prim = Prim.wordExtdToWord (WordSize.fromBits w,
+                                                         WordSize.fromBits b,
+                                                         {signed = false})}])
                end
          end
    end

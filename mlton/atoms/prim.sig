@@ -102,6 +102,7 @@ signature PRIM =
              | Real_Math_tan of RealSize.t (* codegen *)
              | Real_abs of RealSize.t (* codegen *)
              | Real_add of RealSize.t (* codegen *)
+             | Real_castToWord of RealSize.t * WordSize.t (* codegen *)
              | Real_div of RealSize.t (* codegen *)
              | Real_equal of RealSize.t (* codegen *)
              | Real_ldexp of RealSize.t (* codegen *)
@@ -112,10 +113,10 @@ signature PRIM =
              | Real_mulsub of RealSize.t (* codegen *)
              | Real_neg of RealSize.t     (* codegen *)
              | Real_qequal of RealSize.t (* codegen *)
+             | Real_rndToReal of RealSize.t * RealSize.t (* codegen *)
+             | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Real_round of RealSize.t (* codegen *)
              | Real_sub of RealSize.t (* codegen *)
-             | Real_toWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
-             | Real_toReal of RealSize.t * RealSize.t (* codegen *)
              | Ref_assign (* ssa to ssa2 *)
              | Ref_deref (* ssa to ssa2 *)
              | Ref_ref (* ssa to ssa2 *)
@@ -141,7 +142,9 @@ signature PRIM =
              | Word_add of WordSize.t (* codegen *)
              | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_andb of WordSize.t (* codegen *)
+             | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
              | Word_equal of WordSize.t (* codegen *)
+             | Word_extdToWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Word_lshift of WordSize.t (* codegen *)
              | Word_lt of WordSize.t * {signed: bool} (* codegen *)
              | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -152,14 +155,13 @@ signature PRIM =
              | Word_orb of WordSize.t (* codegen *)
              | Word_quot of WordSize.t * {signed: bool} (* codegen *)
              | Word_rem of WordSize.t * {signed: bool} (* codegen *)
+             | Word_rndToReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
              | Word_rol of WordSize.t (* codegen *)
              | Word_ror of WordSize.t (* codegen *)
              | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
              | Word_sub of WordSize.t (* codegen *)
              | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
              | Word_toIntInf (* ssa to rssa *)
-             | Word_toReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
-             | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Word_xorb of WordSize.t (* codegen *)
              | WordVector_toIntInf (* ssa to rssa *)
              | Word8Array_subWord of WordSize.t (* ssa to rssa *)
@@ -254,5 +256,5 @@ signature PRIM =
       val wordOrb: WordSize.t -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
+      val wordExtdToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
    end

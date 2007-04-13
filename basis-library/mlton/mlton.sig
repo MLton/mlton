@@ -50,6 +50,9 @@ signature MLTON =
       structure Weak: MLTON_WEAK
       structure Word: MLTON_WORD
       structure Word8: MLTON_WORD
+      structure Word16: MLTON_WORD
+      structure Word32: MLTON_WORD
+      structure Word64: MLTON_WORD
       structure Word8Array: MLTON_MONO_ARRAY
       structure Word8Vector: MLTON_MONO_VECTOR
       structure World: MLTON_WORLD

@@ -72,5 +72,4 @@ in
 
    (* Check compatibility between primitives and runtime functions. *)
    check-real.sml
-   check-pack-real.sml
 end

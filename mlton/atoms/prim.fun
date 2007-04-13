@@ -112,6 +112,7 @@ datatype 'a t =
  | Real_Math_tan of RealSize.t (* codegen *)
  | Real_abs of RealSize.t (* codegen *)
  | Real_add of RealSize.t (* codegen *)
+ | Real_castToWord of RealSize.t * WordSize.t (* codegen *)
  | Real_div of RealSize.t (* codegen *)
  | Real_equal of RealSize.t (* codegen *)
  | Real_ldexp of RealSize.t (* codegen *)
@@ -122,10 +123,10 @@ datatype 'a t =
  | Real_mulsub of RealSize.t (* codegen *)
  | Real_neg of RealSize.t         (* codegen *)
  | Real_qequal of RealSize.t (* codegen *)
+ | Real_rndToReal of RealSize.t * RealSize.t (* codegen *)
+ | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Real_round of RealSize.t (* codegen *)
  | Real_sub of RealSize.t (* codegen *)
- | Real_toReal of RealSize.t * RealSize.t (* codegen *)
- | Real_toWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Ref_assign (* backend *)
  | Ref_deref (* backend *)
  | Ref_ref (* backend *)
@@ -151,7 +152,9 @@ datatype 'a t =
  | Word_add of WordSize.t (* codegen *)
  | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
  | Word_andb of WordSize.t (* codegen *)
+ | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
  | Word_equal of WordSize.t (* codegen *)
+ | Word_extdToWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Word_lshift of WordSize.t (* codegen *)
  | Word_lt of WordSize.t * {signed: bool} (* codegen *)
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -162,14 +165,13 @@ datatype 'a t =
  | Word_orb of WordSize.t (* codegen *)
  | Word_quot of WordSize.t * {signed: bool} (* codegen *)
  | Word_rem of WordSize.t * {signed: bool} (* codegen *)
+ | Word_rndToReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
  | Word_rol of WordSize.t (* codegen *)
  | Word_ror of WordSize.t (* codegen *)
  | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
  | Word_sub of WordSize.t (* codegen *)
  | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
  | Word_toIntInf (* ssa to rssa *)
- | Word_toReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
- | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* ssa to rssa *)
  | Word8Array_subWord of WordSize.t (* ssa to rssa *)
@@ -197,8 +199,11 @@ fun toString (n: 'a t): string =
       val realC = ("Real", RealSize.toString)
       val wordC = ("Word", WordSize.toString)
       fun wordCS sg = (sign sg, WordSize.toString)
-      fun coerce ((n, sizeToString), (n', sizeToString'), s, s'): string =
-         concat [n, sizeToString s, "_to", n', sizeToString' s']
+      fun coerce (k, (n, sizeToString), (n', sizeToString'), s, s'): string =
+         concat [n, sizeToString s, "_", k ,"To", n', sizeToString' s']
+      fun cast (c, c', s, s') = coerce ("cast", c, c', s, s')
+      fun extd (c, c', s, s') = coerce ("extd", c, c', s, s')
+      fun rnd (c, c', s, s') = coerce ("rnd", c, c', s, s')
       fun pointerGet (ty, s) = concat ["Pointer_get", ty, s]
       fun pointerSet (ty, s) = concat ["Pointer_set", ty, s]
    in
@@ -265,6 +270,7 @@ fun toString (n: 'a t): string =
        | Real_Math_tan s => real (s, "Math_tan")
        | Real_abs s => real (s, "abs")
        | Real_add s => real (s, "add")
+       | Real_castToWord (s1, s2) => cast (realC, wordC, s1, s2)
        | Real_div s => real (s, "div")
        | Real_equal s => real (s, "equal")
        | Real_ldexp s => real (s, "ldexp")
@@ -275,10 +281,10 @@ fun toString (n: 'a t): string =
        | Real_mulsub s => real (s, "mulsub")
        | Real_neg s => real (s, "neg")
        | Real_qequal s => real (s, "qequal")
+       | Real_rndToReal (s1, s2) => rnd (realC, realC, s1, s2)
+       | Real_rndToWord (s1, s2, sg) => rnd (realC, wordCS sg, s1, s2)
        | Real_round s => real (s, "round")
        | Real_sub s => real (s, "sub")
-       | Real_toWord (s1, s2, sg) => coerce (realC, wordCS sg, s1, s2)
-       | Real_toReal (s1, s2) => coerce (realC, realC, s1, s2)
        | Ref_assign => "Ref_assign"
        | Ref_deref => "Ref_deref"
        | Ref_ref => "Ref_ref"
@@ -305,7 +311,9 @@ fun toString (n: 'a t): string =
        | Word_add s => word (s, "add")
        | Word_addCheck (s, sg) => wordS (s, sg, "addCheck")
        | Word_andb s => word (s, "andb")
+       | Word_castToReal (s1, s2) => cast (wordC, realC, s1, s2)
        | Word_equal s => word (s, "equal")
+       | Word_extdToWord (s1, s2, sg) => extd (wordCS sg, wordC, s1, s2)
        | Word_lshift s => word (s, "lshift")
        | Word_lt (s, sg) => wordS (s, sg, "lt")
        | Word_mul (s, sg) => wordS (s, sg, "mul")
@@ -316,14 +324,13 @@ fun toString (n: 'a t): string =
        | Word_orb s => word (s, "orb")
        | Word_quot (s, sg) => wordS (s, sg, "quot")
        | Word_rem (s, sg) => wordS (s, sg, "rem")
+       | Word_rndToReal (s1, s2, sg) => rnd (wordCS sg, realC, s1, s2)
        | Word_rol s => word (s, "rol")
        | Word_ror s => word (s, "ror")
        | Word_rshift (s, sg) => wordS (s, sg, "rshift")
        | Word_sub s => word (s, "sub")
        | Word_subCheck (s, sg) => wordS (s, sg, "subCheck")
        | Word_toIntInf => "Word_toIntInf"
-       | Word_toReal (s1, s2, sg) => coerce (wordCS sg, realC, s1, s2)
-       | Word_toWord (s1, s2, sg) => coerce (wordCS sg, wordC, s1, s2)
        | Word_xorb s => word (s, "xorb")
        | World_save => "World_save"
    end
@@ -393,6 +400,9 @@ val equals: 'a t * 'a t -> bool =
     | (Real_Math_tan s, Real_Math_tan s') => RealSize.equals (s, s')
     | (Real_abs s, Real_abs s') => RealSize.equals (s, s')
     | (Real_add s, Real_add s') => RealSize.equals (s, s')
+    | (Real_castToWord (s1, s2), Real_castToWord (s1', s2')) =>
+         RealSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
     | (Real_div s, Real_div s') => RealSize.equals (s, s')
     | (Real_equal s, Real_equal s') => RealSize.equals (s, s')
     | (Real_ldexp s, Real_ldexp s') => RealSize.equals (s, s')
@@ -403,14 +413,14 @@ val equals: 'a t * 'a t -> bool =
     | (Real_mulsub s, Real_mulsub s') => RealSize.equals (s, s')
     | (Real_neg s, Real_neg s') => RealSize.equals (s, s')
     | (Real_qequal s, Real_qequal s') => RealSize.equals (s, s')
-    | (Real_round s, Real_round s') => RealSize.equals (s, s')
-    | (Real_sub s, Real_sub s') => RealSize.equals (s, s')
-    | (Real_toReal (s1, s2), Real_toReal (s1', s2')) =>
+    | (Real_rndToReal (s1, s2), Real_rndToReal (s1', s2')) =>
          RealSize.equals (s1, s1') andalso RealSize.equals (s2, s2')
-    | (Real_toWord (s1, s2, sg), Real_toWord (s1', s2', sg')) =>
+    | (Real_rndToWord (s1, s2, sg), Real_rndToWord (s1', s2', sg')) =>
          RealSize.equals (s1, s1')
          andalso WordSize.equals (s2, s2')
          andalso sg = sg'
+    | (Real_round s, Real_round s') => RealSize.equals (s, s')
+    | (Real_sub s, Real_sub s') => RealSize.equals (s, s')
     | (Ref_assign, Ref_assign) => true
     | (Ref_deref, Ref_deref) => true
     | (Ref_ref, Ref_ref) => true
@@ -433,6 +443,13 @@ val equals: 'a t * 'a t -> bool =
     | (Word_addCheck (s, sg), Word_addCheck (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_andb s, Word_andb s') => WordSize.equals (s, s')
+    | (Word_castToReal (s1, s2), Word_castToReal (s1', s2')) =>
+         WordSize.equals (s1, s1')
+         andalso RealSize.equals (s2, s2')
+    | (Word_extdToWord (s1, s2, sg), Word_extdToWord (s1', s2', sg')) =>
+         WordSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_equal s, Word_equal s') => WordSize.equals (s, s')
     | (Word_lshift s, Word_lshift s') => WordSize.equals (s, s')
     | (Word_lt (s, sg), Word_lt (s', sg')) =>
@@ -449,6 +466,10 @@ val equals: 'a t * 'a t -> bool =
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_rem (s, sg), Word_rem (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
+    | (Word_rndToReal (s1, s2, sg), Word_rndToReal (s1', s2', sg')) =>
+         WordSize.equals (s1, s1')
+         andalso RealSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_rol s, Word_rol s') => WordSize.equals (s, s')
     | (Word_ror s, Word_ror s') => WordSize.equals (s, s')
     | (Word_rshift (s, sg), Word_rshift (s', sg')) =>
@@ -457,14 +478,6 @@ val equals: 'a t * 'a t -> bool =
     | (Word_subCheck (s, sg), Word_subCheck (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_toIntInf, Word_toIntInf) => true
-    | (Word_toReal (s1, s2, sg), Word_toReal (s1', s2', sg')) =>
-         WordSize.equals (s1, s1')
-         andalso RealSize.equals (s2, s2')
-         andalso sg = sg'
-    | (Word_toWord (s1, s2, sg), Word_toWord (s1', s2', sg')) =>
-         WordSize.equals (s1, s1')
-         andalso WordSize.equals (s2, s2')
-         andalso sg = sg'
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
     | (Word8Array_subWord s, Word8Array_subWord s') => WordSize.equals (s, s')
@@ -539,6 +552,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Real_Math_tan z => Real_Math_tan z
     | Real_abs z => Real_abs z
     | Real_add z => Real_add z
+    | Real_castToWord z => Real_castToWord z
     | Real_div z => Real_div z
     | Real_equal z => Real_equal z
     | Real_ldexp z => Real_ldexp z
@@ -549,10 +563,10 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Real_mulsub z => Real_mulsub z
     | Real_neg z => Real_neg z
     | Real_qequal z => Real_qequal z
+    | Real_rndToReal z => Real_rndToReal z
+    | Real_rndToWord z => Real_rndToWord z
     | Real_round z => Real_round z
     | Real_sub z => Real_sub z
-    | Real_toReal z => Real_toReal z
-    | Real_toWord z => Real_toWord z
     | Ref_assign => Ref_assign
     | Ref_deref => Ref_deref
     | Ref_ref => Ref_ref
@@ -574,7 +588,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_add z => Word_add z
     | Word_addCheck z => Word_addCheck z
     | Word_andb z => Word_andb z
+    | Word_castToReal z => Word_castToReal z
     | Word_equal z => Word_equal z
+    | Word_extdToWord z => Word_extdToWord z
     | Word_lshift z => Word_lshift z
     | Word_lt z => Word_lt z
     | Word_mul z => Word_mul z
@@ -583,16 +599,15 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_negCheck z => Word_negCheck z
     | Word_notb z => Word_notb z
     | Word_orb z => Word_orb z
-    | Word_rol z => Word_rol z
     | Word_quot z => Word_quot z
     | Word_rem z => Word_rem z
+    | Word_rndToReal z => Word_rndToReal z
+    | Word_rol z => Word_rol z
     | Word_ror z => Word_ror z
     | Word_rshift z => Word_rshift z
     | Word_sub z => Word_sub z
     | Word_subCheck z => Word_subCheck z
     | Word_toIntInf => Word_toIntInf
-    | Word_toReal z => Word_toReal z
-    | Word_toWord z => Word_toWord z
     | Word_xorb z => Word_xorb z
     | WordVector_toIntInf => WordVector_toIntInf
     | Word8Array_subWord z => Word8Array_subWord z
@@ -668,7 +683,7 @@ val wordNotb = Word_notb
 val wordOrb = Word_orb
 val wordRshift = Word_rshift
 val wordSub = Word_sub
-val wordToWord = Word_toWord
+val wordExtdToWord = Word_extdToWord
 
 val isCommutative =
    fn IntInf_equal => true
@@ -762,6 +777,7 @@ val kind: 'a t -> Kind.t =
        | Real_Math_tan _ => Functional
        | Real_abs _ => Functional
        | Real_add _ => Functional
+       | Real_castToWord _ => Functional
        | Real_div _ => Functional
        | Real_equal _ => Functional
        | Real_ldexp _ => Functional
@@ -772,10 +788,10 @@ val kind: 'a t -> Kind.t =
        | Real_mulsub _ => Functional
        | Real_neg _ => Functional
        | Real_qequal _ => Functional
+       | Real_rndToReal _ => Functional
+       | Real_rndToWord _ => Functional
        | Real_round _ => DependsOnState  (* depends on rounding mode *)
        | Real_sub _ => Functional
-       | Real_toReal _ => Functional
-       | Real_toWord _ => Functional
        | Ref_assign => SideEffect
        | Ref_deref => DependsOnState
        | Ref_ref => Moveable
@@ -802,7 +818,9 @@ val kind: 'a t -> Kind.t =
        | Word_add _ => Functional
        | Word_addCheck _ => SideEffect
        | Word_andb _ => Functional
+       | Word_castToReal _ => Functional
        | Word_equal _ => Functional
+       | Word_extdToWord _ => Functional
        | Word_lshift _ => Functional
        | Word_lt _ => Functional
        | Word_mul _ => Functional
@@ -813,14 +831,13 @@ val kind: 'a t -> Kind.t =
        | Word_orb _ => Functional
        | Word_quot _ => Functional
        | Word_rem _ => Functional
+       | Word_rndToReal _ => Functional
        | Word_rol _ => Functional
        | Word_ror _ => Functional
        | Word_rshift _ => Functional
        | Word_sub _ => Functional
        | Word_subCheck _ => SideEffect
        | Word_toIntInf => Functional
-       | Word_toReal _ => Functional
-       | Word_toWord _ => Functional
        | Word_xorb _ => Functional
        | World_save => SideEffect
    end
@@ -965,20 +982,24 @@ in
            val word = WordSize.all
            fun coerces (name, sizes, sizes', ac) =
               List.fold
+              (sizes, ac, fn (s, ac) =>
+               List.fold 
+               (sizes', ac, fn (s', ac) =>
+                name (s, s') :: ac))
+           fun coercesS (name, sizes, sizes', ac) =
+              List.fold
               ([false, true], ac, fn (signed, ac) =>
-               List.fold
-               (sizes, ac, fn (s, ac) =>
-                List.fold (sizes', ac, fn (s', ac) =>
-                           name (s, s', {signed = signed}) :: ac)))
+               coerces (fn (s, s') => name (s, s', {signed = signed}),
+                        sizes, sizes', ac))
+           fun casts (name, sizes, ac) =
+              List.fold (sizes, ac, fn (s, ac) => name s :: ac)
         in
-           coerces (Real_toWord, real, word,
-                    coerces (Word_toReal, word, real,
-                             coerces (Word_toWord, word, word,
-                                      List.fold
-                                      (real, [], fn (s, ac) =>
-                                       List.fold
-                                       (real, ac, fn (s', ac) =>
-                                        Real_toReal (s, s') :: ac)))))
+           casts (fn rs => Real_castToWord (rs, WordSize.fromBits (RealSize.bits rs)), real, 
+           coerces (Real_rndToReal, real, real,
+           coercesS (Real_rndToWord, real, word,
+           casts (fn rs => Word_castToReal (WordSize.fromBits (RealSize.bits rs), rs), real,
+           coercesS (Word_extdToWord, word, word,
+           coercesS (Word_rndToReal, word, real, []))))))
         end
      @ List.concatMap (WordSize.prims, word8Seqs)
      @ let
@@ -1230,7 +1251,7 @@ fun ('a, 'b) apply (p: 'a t,
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
            | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
            | (Word_toIntInf, [Word w]) => intInf (SmallIntInf.fromWord w)
-           | (Word_toWord (_, s, {signed}), [Word w]) =>
+           | (Word_extdToWord (_, s, {signed}), [Word w]) =>
                 word (if signed then WordX.resizeX (w, s)
                       else WordX.resize (w, s))
            | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
