@@ -8,7 +8,7 @@
 name=`basename "$0"`
 
 usage () {
-        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [-skip-to reg] [mlton flags ...]"
+        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [-test-reg reg] [mlton flags ...]"
         exit 1
 }
 
@@ -16,7 +16,8 @@ cross='false'
 fail='false'
 runOnly='false'
 short='false'
-skipTo=''
+testReg='false'
+declare -a testRegs
 declare -a flags
 declare -a extraFlags
 flags[${#flags[@]}]="-type-check"
@@ -49,12 +50,13 @@ while [ "$#" -gt 0 ]; do
                 short='true'
                 shift
                 ;;
-        -skip-to)
+        -test-reg)
+                testReg='true'
                 shift
                 if [ "$#" = 0 ]; then
                         usage
                 fi
-                skipTo="$1"
+                testRegs[${#testRegs[@]}]="$1"
                 shift
                 ;;
         *)
@@ -117,12 +119,15 @@ esac
 
 for f in *.sml; do
         f=`basename "$f" .sml`
-        if [ "$skipTo" != "" ]; then
-                if [ "$skipTo" != "$f" ]; then
-                        echo "skipping $f"
+        if ($testReg); then
+                skip='true'
+                for (( i = 0 ; $i < ${#testRegs[@]} ; i++ )); do
+                        if [ "$f" = "${testRegs[$i]}" ]; then
+                                skip='false'
+                        fi
+                done
+                if ($skip); then
                         continue
-                else
-                        skipTo=''
                 fi
         fi
         case `host-os` in
@@ -223,7 +228,7 @@ for f in *.sml; do
                 fi
         fi
 done
-if $cross || $runOnly || $short; then
+if $cross || $runOnly || $short || $testReg ; then
         exit 0
 fi
 mmake clean >/dev/null
@@ -236,7 +241,7 @@ for f in *.sml; do
                 echo "skipping $f"
         ;;
         *)
-                        echo "testing $f"
+                echo "testing $f"
                 echo "val _ = Main.doit 0" | cat "$f.sml" - > "$tmpf.sml"
                 $mlton -output "$tmpf" "${flags[@]}"            \
                         -default-ann 'nonexhaustiveMatch ignore'\
@@ -254,20 +259,13 @@ cd "$src"
 for f in mllex mlyacc mlprof; do
     tmpf="/tmp/$f.$$"
     cd "$src/$f"
-    case "$f" in
-    foobar)
-            echo "skipping $f"
-    ;;
-    *)
-        echo "testing $f"
-        mmake -W "$f" >/dev/null
-        "$mlton" "${flags[@]}" -output "$tmpf" "$f.mlb"
-        if [ $? -ne 0 ]; then
-                compFail "$f"
-        fi
-        rm -f "$tmpf"
-    ;;
-    esac
+    echo "testing $f"
+    mmake -W "$f" >/dev/null
+    "$mlton" "${flags[@]}" -output "$tmpf" "$f.mlb"
+    if [ $? -ne 0 ]; then
+        compFail "$f"
+    fi
+    rm -f "$tmpf"
 done
 
 rm -f "$tmp"
