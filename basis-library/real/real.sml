@@ -872,5 +872,27 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          end
    end
 
-structure Real32 = Real (Primitive.Real32)
-structure Real64 = Real (Primitive.Real64)
+(* All of the Real{32,64}.nextAfter{Down,Up} functions work by
+ * converting the real to a word of equivalent size and doing an
+ * increment or decrement on the word.  This works because the SML
+ * Basis Library code that calls these functions handles all the
+ * special cases (nans and infs).  Also, because of the way IEEE
+ * floating point numbers are represented, word {de,in}crement
+ * automatically does the right thing at the boundary between normals
+ * and denormals.  Also, convienently, maxFinite+1 = posInf.  
+ *)
+
+structure Real32 = Real (open Primitive.Real32
+                         local open Primitive.PackReal32 in
+                            fun nextAfterDown r = 
+                               castFromWord (Word32.- (castToWord r, 0wx1))
+                            fun nextAfterUp r = 
+                               castFromWord (Word32.+ (castToWord r, 0wx1))
+                         end)
+structure Real64 = Real (open Primitive.Real64
+                         local open Primitive.PackReal64 in
+                            fun nextAfterDown r = 
+                               castFromWord (Word64.- (castToWord r, 0wx1))
+                            fun nextAfterUp r = 
+                               castFromWord (Word64.+ (castToWord r, 0wx1))
+                         end)
