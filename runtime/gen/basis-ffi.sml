@@ -63,6 +63,10 @@ val FE_UPWARD = _const "IEEEReal_RoundingMode_FE_UPWARD" : C_Int.t;
 end
 val setRoundingMode = _import "IEEEReal_setRoundingMode" : C_Int.t -> unit;
 end
+structure MinGW = 
+struct
+val getTempPath = _import "MinGW_getTempPath" : C_Size.t * (Char8.t) array -> C_Size.t;
+end
 structure MLton = 
 struct
 val bug = _import "MLton_bug" : NullString8.t -> unit;

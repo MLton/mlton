@@ -88,6 +88,7 @@ fun concat (sources, dest) =
            List.foreach (sources, fn f => outputContents (f, out)))
 
 val temp = MLton.TextIO.mkstemps
+val tempPrefix = MLton.TextIO.tempPrefix
 
 fun tempName z =
    let
@@ -99,7 +100,7 @@ fun tempName z =
 
 fun withTemp f =
    let
-      val name = tempName {prefix = "/tmp/file", suffix = ""}
+      val name = tempName {prefix = tempPrefix "file", suffix = ""}
    in
       Exn.finally (fn () => f name, fn () => remove name)
    end
@@ -116,7 +117,7 @@ fun withTempOut' (z, f: Out.t -> unit, g) =
    end
 
 fun withTempOut (f, g) =
-   withTempOut' ({prefix = "/tmp/file", suffix = ""}, f, g)
+   withTempOut' ({prefix = tempPrefix "file", suffix = ""}, f, g)
 
 fun withString (s, f) =
    withTempOut (fn out => Out.output (out, s), f)

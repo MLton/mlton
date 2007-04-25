@@ -26,4 +26,6 @@ signature MLTON_IO =
       val mkstemp: string -> string * outstream
       (* mkstemps is like mkstemp, except it has both a prefix and suffix. *)
       val mkstemps: {prefix: string, suffix: string} -> string * outstream
+      (* adds a suitable system or user specific prefix (dir) for temp files *)
+      val tempPrefix: string -> string
    end

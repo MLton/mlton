@@ -103,6 +103,7 @@ MLton.Syslog.Severity.LOG_WARNING = _const : C_Int.t
 MLton.Syslog.closelog = _import : unit -> unit
 MLton.Syslog.openlog = _import : NullString8.t * C_Int.t * C_Int.t -> unit
 MLton.Syslog.syslog = _import : C_Int.t * NullString8.t -> unit
+MinGW.getTempPath = _import : C_Size.t * Char8.t array -> C_Size.t
 Net.htonl = _import : Word32.t -> Word32.t
 Net.htons = _import : Word16.t -> Word16.t
 Net.ntohl = _import : Word32.t -> Word32.t

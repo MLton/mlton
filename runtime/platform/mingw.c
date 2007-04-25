@@ -1024,3 +1024,11 @@ int dlclose(void *void_hmodule) {
                 return result;
         }
 }
+
+/* ------------------------------------------------- */
+/*                        MinGW                      */
+/* ------------------------------------------------- */
+
+C_Size_t MinGW_getTempPath(C_Size_t buf_size, Array(Char8_t) buf) {
+        return GetTempPath(buf_size, buf);
+}

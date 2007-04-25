@@ -44,6 +44,7 @@ extern const C_Int_t IEEEReal_RoundingMode_FE_TONEAREST;
 extern const C_Int_t IEEEReal_RoundingMode_FE_TOWARDZERO;
 extern const C_Int_t IEEEReal_RoundingMode_FE_UPWARD;
 void IEEEReal_setRoundingMode(C_Int_t);
+C_Size_t MinGW_getTempPath(C_Size_t,Array(Char8_t));
 __attribute__((noreturn)) void MLton_bug(NullString8_t);
 extern const C_Int_t MLton_Itimer_PROF;
 extern const C_Int_t MLton_Itimer_REAL;
