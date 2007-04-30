@@ -32,6 +32,7 @@ signature TYPE_OPS =
       val arrow: t * t -> t
       val bool: t
       val con: tycon * t vector -> t
+      val cpointer: t
       val deArray: t -> t
       val deArrow: t -> t * t
       val deArrowOpt: t -> (t * t) option

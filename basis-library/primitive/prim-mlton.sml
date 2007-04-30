@@ -109,13 +109,14 @@ structure Exn =
 
 structure FFI =
    struct
+      val cpointerArray = #1 _symbol "MLton_FFI_CPointer": Pointer.t GetSet.t; ()
       val getOp = #1 _symbol "MLton_FFI_op": Int32.t GetSet.t;
       val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t GetSet.t; ()
       val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t GetSet.t; ()
       val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t GetSet.t; ()
       val int64Array = #1 _symbol "MLton_FFI_Int64": Pointer.t GetSet.t; ()
       val numExports = _build_const "MLton_FFI_numExports": Int32.int;
-      val pointerArray = #1 _symbol "MLton_FFI_Pointer": Pointer.t GetSet.t; ()
+      val objptrArray = #1 _symbol "MLton_FFI_Objptr": Pointer.t GetSet.t; ()
       val real32Array = #1 _symbol "MLton_FFI_Real32": Pointer.t GetSet.t; ()
       val real64Array = #1 _symbol "MLton_FFI_Real64": Pointer.t GetSet.t; ()
       val word8Array = #1 _symbol "MLton_FFI_Word8": Pointer.t GetSet.t; ()
@@ -221,55 +222,53 @@ structure Pointer =
       open Pointer
       type pointer = t
 
+      val add =
+         _prim "CPointer_add": pointer * C_Size.word -> pointer;
+      val sub =
+         _prim "CPointer_add": pointer * C_Size.word -> pointer;
+      val diff =
+         _prim "CPointer_diff": pointer * pointer -> C_Size.word;
+      val < = _prim "CPointer_lt": pointer * pointer -> bool;
       local
-         structure S =
-            C_Pointer_ChooseWordN
-            (type 'a t = 'a -> t
-             val fWord8 = _prim "WordU8_extdToWord8": Primitive.Word8.word -> pointer;
-             val fWord16 = _prim "WordU16_extdToWord16": Primitive.Word16.word -> pointer;
-             val fWord32 = _prim "WordU32_extdToWord32": Primitive.Word32.word -> pointer;
-             val fWord64 = _prim "WordU64_extdToWord64": Primitive.Word64.word -> pointer;)
+         structure S = IntegralComparisons(type t = pointer
+                                           val < = <)
       in
-         val fromWord = S.f
+         open S
       end
-      local
-         structure S =
-            C_Pointer_ChooseWordN
-            (type 'a t = t -> 'a
-             val fWord8 = _prim "WordU8_extdToWord8": pointer -> Primitive.Word8.word;
-             val fWord16 = _prim "WordU16_extdToWord16": pointer -> Primitive.Word16.word;
-             val fWord32 = _prim "WordU32_extdToWord32": pointer -> Primitive.Word32.word;
-             val fWord64 = _prim "WordU64_extdToWord64": pointer -> Primitive.Word64.word;)
-      in
-         val toWord = S.f
-      end
+
+      val fromWord =
+         _prim "CPointer_fromWord": C_Size.word -> pointer;
+      val toWord =
+         _prim "CPointer_toWord": pointer -> C_Size.word;
 
       val null: t = fromWord 0w0
 
       fun isNull p = p = null
 
-      val getInt8 = _prim "Pointer_getWord8": t * C_Ptrdiff.t -> Int8.int;
-      val getInt16 = _prim "Pointer_getWord16": t * C_Ptrdiff.t -> Int16.int;
-      val getInt32 = _prim "Pointer_getWord32": t * C_Ptrdiff.t -> Int32.int;
-      val getInt64 = _prim "Pointer_getWord64": t * C_Ptrdiff.t -> Int64.int;
-      val getPointer = _prim "Pointer_getPointer": t * C_Ptrdiff.t -> 'a;
-      val getReal32 = _prim "Pointer_getReal32": t * C_Ptrdiff.t -> Real32.real;
-      val getReal64 = _prim "Pointer_getReal64": t * C_Ptrdiff.t -> Real64.real;
-      val getWord8 = _prim "Pointer_getWord8": t * C_Ptrdiff.t -> Word8.word;
-      val getWord16 = _prim "Pointer_getWord16": t * C_Ptrdiff.t -> Word16.word;
-      val getWord32 = _prim "Pointer_getWord32": t * C_Ptrdiff.t -> Word32.word;
-      val getWord64 = _prim "Pointer_getWord64": t * C_Ptrdiff.t -> Word64.word;
-      val setInt8 = _prim "Pointer_setWord8": t * C_Ptrdiff.t * Int8.int -> unit;
-      val setInt16 = _prim "Pointer_setWord16": t * C_Ptrdiff.t * Int16.int -> unit;
-      val setInt32 = _prim "Pointer_setWord32": t * C_Ptrdiff.t * Int32.int -> unit;
-      val setInt64 = _prim "Pointer_setWord64": t * C_Ptrdiff.t * Int64.int -> unit;
-      val setPointer = _prim "Pointer_setPointer": t * C_Ptrdiff.t * 'a -> unit;
-      val setReal32 = _prim "Pointer_setReal32": t * C_Ptrdiff.t * Real32.real -> unit;
-      val setReal64 = _prim "Pointer_setReal64": t * C_Ptrdiff.t * Real64.real -> unit;
-      val setWord8 = _prim "Pointer_setWord8": t * C_Ptrdiff.t * Word8.word -> unit;
-      val setWord16 = _prim "Pointer_setWord16": t * C_Ptrdiff.t * Word16.word -> unit;
-      val setWord32 = _prim "Pointer_setWord32": t * C_Ptrdiff.t * Word32.word -> unit;
-      val setWord64 = _prim "Pointer_setWord64": t * C_Ptrdiff.t * Word64.word -> unit;
+      val getCPointer = _prim "CPointer_getCPointer": t * C_Ptrdiff.t -> t;
+      val getInt8 = _prim "CPointer_getWord8": t * C_Ptrdiff.t -> Int8.int;
+      val getInt16 = _prim "CPointer_getWord16": t * C_Ptrdiff.t -> Int16.int;
+      val getInt32 = _prim "CPointer_getWord32": t * C_Ptrdiff.t -> Int32.int;
+      val getInt64 = _prim "CPointer_getWord64": t * C_Ptrdiff.t -> Int64.int;
+      val getObjptr = _prim "CPointer_getObjptr": t * C_Ptrdiff.t -> 'a;
+      val getReal32 = _prim "CPointer_getReal32": t * C_Ptrdiff.t -> Real32.real;
+      val getReal64 = _prim "CPointer_getReal64": t * C_Ptrdiff.t -> Real64.real;
+      val getWord8 = _prim "CPointer_getWord8": t * C_Ptrdiff.t -> Word8.word;
+      val getWord16 = _prim "CPointer_getWord16": t * C_Ptrdiff.t -> Word16.word;
+      val getWord32 = _prim "CPointer_getWord32": t * C_Ptrdiff.t -> Word32.word;
+      val getWord64 = _prim "CPointer_getWord64": t * C_Ptrdiff.t -> Word64.word;
+      val setCPointer = _prim "CPointer_setCPointer": t * C_Ptrdiff.t * t -> unit;
+      val setInt8 = _prim "CPointer_setWord8": t * C_Ptrdiff.t * Int8.int -> unit;
+      val setInt16 = _prim "CPointer_setWord16": t * C_Ptrdiff.t * Int16.int -> unit;
+      val setInt32 = _prim "CPointer_setWord32": t * C_Ptrdiff.t * Int32.int -> unit;
+      val setInt64 = _prim "CPointer_setWord64": t * C_Ptrdiff.t * Int64.int -> unit;
+      val setObjptr = _prim "CPointer_setObjptr": t * C_Ptrdiff.t * 'a -> unit;
+      val setReal32 = _prim "CPointer_setReal32": t * C_Ptrdiff.t * Real32.real -> unit;
+      val setReal64 = _prim "CPointer_setReal64": t * C_Ptrdiff.t * Real64.real -> unit;
+      val setWord8 = _prim "CPointer_setWord8": t * C_Ptrdiff.t * Word8.word -> unit;
+      val setWord16 = _prim "CPointer_setWord16": t * C_Ptrdiff.t * Word16.word -> unit;
+      val setWord32 = _prim "CPointer_setWord32": t * C_Ptrdiff.t * Word32.word -> unit;
+      val setWord64 = _prim "CPointer_setWord64": t * C_Ptrdiff.t * Word64.word -> unit;
    end
 
 structure Profile =

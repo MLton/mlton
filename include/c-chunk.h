@@ -208,6 +208,7 @@ typedef Pointer Objptr;
 #endif
 #include "basis-ffi.h"
 #include "basis/coerce.h"
+#include "basis/cpointer.h"
 #include "basis/Real/Real-ops.h"
 #include "basis/Real/Math-fns.h"
 #include "basis/Word/Word-ops.h"

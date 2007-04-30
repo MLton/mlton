@@ -76,11 +76,11 @@ structure CUtil: C_UTIL =
             type t = C_StringArray.t
 
             fun sub (css: t, i) = 
-               Pointer.getPointer 
+               (Pointer.toWord o Pointer.getCPointer)
                (Pointer.fromWord css, 
                 C_Ptrdiff.fromInt i)
 
-            val length = makeLength (sub, Pointer.isNull)
+            val length = makeLength (sub, C_Pointer.isNull)
 
             val toArrayOfLength = 
                fn (css, n) => 

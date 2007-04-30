@@ -40,8 +40,8 @@ signature TYPE_ENV =
             val isArrow: t -> bool
             val isBool: t -> bool
             val isCharX: t -> bool
+            val isCPointer: t -> bool
             val isInt: t -> bool
-            val isPointer: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
             val layoutPretty: t -> Layout.t
@@ -102,7 +102,6 @@ signature TYPE_ENV =
              schemes: Scheme.t vector,
              unable: Tyvar.t vector}
       val generalize: Tyvar.t vector -> unit -> {unable: Tyvar.t vector}
-      val initSynonyms: unit -> unit
       val initAdmitsEquality: Tycon.t * Tycon.AdmitsEquality.t -> unit
       val setOpaqueTyconExpansion: Tycon.t * (Type.t vector -> Type.t) -> unit
       val tick: {useBeforeDef: Tycon.t -> unit} -> unit

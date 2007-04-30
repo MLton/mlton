@@ -116,7 +116,8 @@ structure Type =
                plist: PropertyList.t,
                tree: tree}
       and tree =
-         Datatype of Tycon.t
+          CPointer
+        | Datatype of Tycon.t
         | IntInf
         | Object of {args: t Prod.t,
                      con: ObjectCon.t}
@@ -196,6 +197,7 @@ structure Type =
       local
          fun make (tycon, tree) = lookup (Tycon.hash tycon, tree)
       in
+         val cpointer = make (Tycon.cpointer, CPointer)
          val intInf = make (Tycon.intInf, IntInf)
          val thread = make (Tycon.thread, Thread)
       end
@@ -250,6 +252,7 @@ structure Type =
          in
             case c of
                IntInf _ => intInf
+             | Null => cpointer
              | Real r => real (RealX.size r)
              | Word w => word (WordX.size w)
              | WordVector v => vector1 (word (WordXVector.elementSize v))
@@ -280,8 +283,9 @@ structure Type =
              Property.initRec
              (fn (t, layout) =>
               case dest t of
-                 Datatype t => Tycon.layout t
-               | IntInf => str "IntInf.int"
+                 CPointer => str "cpointer"
+               | Datatype t => Tycon.layout t
+               | IntInf => str "intInf"
                | Object {args, con} =>
                     if isUnit t
                        then str "unit"
@@ -332,7 +336,6 @@ structure Type =
             val bigIntInfWord = word (WordSize.bigIntInfWord ())
             val cint = word (WordSize.cint ())
             val compareRes = word WordSize.compareRes
-            val cpointer = word (WordSize.cpointer ())
             val cptrdiff = word (WordSize.cptrdiff ())
             val csize = word (WordSize.csize ())
             val seqIndex = word (WordSize.seqIndex ())
@@ -342,7 +345,7 @@ structure Type =
             fun intInfBinary () = done ([intInf, intInf, csize], intInf)
             fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
             fun intInfUnary () = done ([intInf, csize], intInf)
-            fun real3 s = done ([real s, real s, real s], real s)
+            fun realTernary s = done ([real s, real s, real s], real s)
             val word8Array = array word8
             fun wordShift s = done ([word s, shiftArg], word s)
             fun arg i = Vector.sub (args, i)
@@ -372,6 +375,23 @@ structure Type =
                                         (not vi orelse ai)
                                         andalso Type.equals (ae, ve))
                     | _ => false)
+             | CPointer_add => done ([cpointer, csize], cpointer)
+             | CPointer_diff => done ([cpointer, cpointer], csize)
+             | CPointer_equal => done ([cpointer, cpointer], bool)
+             | CPointer_fromWord => done ([csize], cpointer)
+             | CPointer_getCPointer => done ([cpointer, cptrdiff], cpointer)
+             | CPointer_getObjptr => 
+                  twoArgs (fn _ => done ([cpointer, cptrdiff], result))
+             | CPointer_getReal s => done ([cpointer, cptrdiff], real s)
+             | CPointer_getWord s => done ([cpointer, cptrdiff], word s)
+             | CPointer_lt => done ([cpointer, cpointer], bool)
+             | CPointer_setCPointer => done ([cpointer, cptrdiff, cpointer], unit)
+             | CPointer_setObjptr =>
+                  threeArgs (fn (_, _, t) => done ([cpointer, cptrdiff, t], unit))
+             | CPointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
+             | CPointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
+             | CPointer_sub => done ([cpointer, csize], cpointer)
+             | CPointer_toWord => done ([cpointer], csize)
              | FFI f => done (Vector.toList (CFunction.args f),
                               CFunction.return f)
              | FFI_Symbol _ => done ([], cpointer)
@@ -404,14 +424,6 @@ structure Type =
              | MLton_share => oneArg (fn x => done ([x], unit))
              | MLton_size => oneArg (fn x => done ([x], csize))
              | MLton_touch => oneArg (fn x => done ([x], unit))
-             | Pointer_getPointer => twoArgs (fn _ => done ([cpointer, cptrdiff], result))
-             | Pointer_getReal s => done ([cpointer, cptrdiff], real s)
-             | Pointer_getWord s => done ([cpointer, cptrdiff], word s)
-             | Pointer_setPointer =>
-                  threeArgs (fn (_, _, t) =>
-                             done ([cpointer, cptrdiff, t], unit))
-             | Pointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
-             | Pointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
              | Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
@@ -432,8 +444,8 @@ structure Type =
              | Real_le s => realCompare s
              | Real_lt s => realCompare s
              | Real_mul s => realBinary s
-             | Real_muladd s => real3 s
-             | Real_mulsub s => real3 s
+             | Real_muladd s => realTernary s
+             | Real_mulsub s => realTernary s
              | Real_neg s => realUnary s
              | Real_qequal s => realCompare s
              | Real_rndToReal (s, s') => done ([real s], real s')

@@ -293,6 +293,7 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
          in
             case Type.dest ty of
                Type.Array _ => eq ()
+             | Type.CPointer => prim (Prim.cpointerEqual, Vector.new0 ())
              | Type.Datatype tycon =>
                   if isEnum tycon orelse hasConstArg ()
                      then eq ()

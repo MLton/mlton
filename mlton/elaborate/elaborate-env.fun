@@ -1247,7 +1247,6 @@ val _ = sizeMessage
 
 fun empty () =
    let
-      val () = TypeEnv.initSynonyms ()
       val {get = lookupAll: Symbol.t -> All.t list ref, ...} = 
          Property.get (Symbol.plist, Property.initFun (fn _ => ref []))
       val topSymbols = ref []

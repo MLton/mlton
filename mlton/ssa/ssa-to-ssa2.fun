@@ -38,6 +38,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
           (fn (t, convertType)  =>
            case S.Type.dest t of
               S.Type.Array t => S2.Type.array (convertType t)
+            | S.Type.CPointer => S2.Type.cpointer
             | S.Type.Datatype tycon => S2.Type.datatypee tycon
             | S.Type.IntInf => S2.Type.intInf
             | S.Type.Real s => S2.Type.real s

@@ -247,7 +247,8 @@ structure WordRep =
                Vector.fold
                (components, NONE, fn ({index, rep, ...}, z) =>
                 let
-                   val (src, ss) = Statement.resize (src {index = index}, bits)
+                   val (src, ss) = Statement.resize (src {index = index}, 
+                                                     Type.bits bits)
                 in
                    case z of
                       NONE => SOME (src, Rep.width rep, [rev ss])
@@ -349,7 +350,7 @@ structure Component =
             Direct {index, ...} =>
                let
                   val (src, ss) = 
-                     Statement.resize (src {index = index}, Type.width (#2 dst))
+                     Statement.resize (src {index = index}, #2 dst)
                in
                   ss @ [Bind {dst = dst,
                               isMutable = false,
@@ -403,7 +404,7 @@ structure Unpack =
             val sz = WordSize.fromBits w
             val w' = Type.width dstTy
             val sz' = WordSize.fromBits w'
-            val (src, ss2) = Statement.resize (src, w')
+            val (src, ss2) = Statement.resize (src, dstTy)
             val (src, ss3) = 
                if Bits.equals (w, w')
 (*                orelse Type.isZero (Type.dropPrefix (Operand.ty src,
@@ -439,7 +440,8 @@ structure Unpack =
          let
             val shift =
                WordX.fromIntInf (Bits.toIntInf shift, WordSize.shiftArg)
-            val chunkWidth = Type.width (Operand.ty chunk)
+            val chunkTy = Operand.ty chunk
+            val chunkWidth = Type.width chunkTy
             val mask =
                Operand.word
                (WordX.notb
@@ -448,7 +450,7 @@ structure Unpack =
                                 WordSize.fromBits chunkWidth),
                   shift)))
             val (s1, chunk) = Statement.andb (chunk, mask)
-            val (component, s2) = Statement.resize (component, chunkWidth)
+            val (component, s2) = Statement.resize (component, chunkTy)
             val (s3, component) = Statement.lshift (component, Operand.word shift)
             val (s4, result) = Statement.orb (chunk, component)
          in
@@ -488,55 +490,30 @@ structure Base =
                         NONE => Error.bug "PackedRepresentation.Base.toOperand: eltWidth"
                       | SOME w => w
                in
-                  case Scale.fromInt (Bytes.toInt eltWidth) of
+                  case Scale.fromBytes eltWidth of
                      NONE =>
                         let
                            val seqIndexSize = WordSize.seqIndex ()
-                           val csizeSize = WordSize.csize ()
-                           val csizeTy = Type.word csizeSize
-                           (* vector + (eltWidth * index) + offset *)
-                           val ind = Var.newNoname ()
-                           val s0 =
-                              case WordSize.compare (seqIndexSize, csizeSize) of
-                                 EQUAL => 
-                                    Bind {dst = (ind, csizeTy),
-                                          isMutable = false,
-                                          src = index}
-                               | GREATER => Error.bug "PackedRepresentation.Base.ToOperand: WordSize.compare (seqIndexSize, csizeSize)"
-                               | LESS => 
-                                    PrimApp {args = Vector.new1 index,
-                                             dst = SOME (ind, csizeTy),
-                                             prim = (Prim.wordExtdToWord 
-                                                     (seqIndexSize, 
-                                                      csizeSize, 
-                                                      {signed = false}))}
+                           val seqIndexTy = Type.word seqIndexSize
                            val prod = Var.newNoname ()
-                           val s1 =
+                           val s =
                               PrimApp {args = (Vector.new2
-                                               (Operand.Var {ty = csizeTy,
-                                                             var = ind},
+                                               (index,
                                                 Operand.word
                                                 (WordX.fromIntInf
                                                  (Bytes.toIntInf eltWidth,
-                                                  csizeSize)))),
-                                       dst = SOME (prod, csizeTy),
+                                                  seqIndexSize)))),
+                                       dst = SOME (prod, seqIndexTy),
                                        prim = (Prim.wordMul 
-                                               (csizeSize, 
+                                               (seqIndexSize, 
                                                 {signed = false}))}
-                           val eltBase = Var.newNoname ()
-                           val s2 =
-                              PrimApp {args = (Vector.new2
-                                               (vector,
-                                                Operand.Var {ty = csizeTy,
-                                                             var = prod})),
-                                       dst = SOME (eltBase, csizeTy),
-                                       prim = Prim.wordAdd csizeSize}
                         in
-                           (Offset {base = Operand.Var {ty = csizeTy,
-                                                        var = eltBase},
-                                    offset = offset,
-                                    ty = ty},
-                            [s0, s1, s2])
+                           (ArrayOffset {base = vector,
+                                         index = Var {var = prod, ty = seqIndexTy},
+                                         offset = offset,
+                                         scale = Scale.One,
+                                         ty = ty},
+                            [s])
                         end
                    | SOME s =>
                         (ArrayOffset {base = vector,
@@ -595,7 +572,7 @@ structure Select =
             fun move (src, ss) =
                let
                   val (dst, dstTy) = dst
-                  val (src, ss') = Statement.resize (src, Type.width dstTy)
+                  val (src, ss') = Statement.resize (src, dstTy)
                in
                   ss @ ss' @ [Bind {dst = (dst, dstTy),
                                     isMutable = false,
@@ -777,7 +754,7 @@ structure ObjptrRep =
                else let
                        (* An object needs space for a forwarding objptr. *)
                        val width' = Bytes.max (width, Runtime.objptrSize ())
-                       (* Node that with Align8 and objptrSize == 64bits, 
+                       (* Note that with Align8 and objptrSize == 64bits, 
                         * the following ensures that objptrs will be
                         * mod 8 aligned. 
                         *)
@@ -1479,7 +1456,7 @@ structure Small =
                    ConRep.ShiftAndTag {tag, ty, ...} =>
                       let
                          val test = Operand.cast (test, Type.padToWidth (ty, testBits))
-                         val (test, ss) = Statement.resize (test, Type.width ty)
+                         val (test, ss) = Statement.resize (test, ty)
                          val transfer =
                             Goto {args = if dstHasArg
                                             then Vector.new1 test
@@ -1505,24 +1482,23 @@ structure Small =
                  | _ => NONE)
             val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
                                               WordX.le (w, w', {signed = false}))
+            val tagOp =
+               if isObjptr
+                  then Operand.cast (test, Type.bits testBits)
+               else test
             val (tagOp, ss) =
                if isEnum
-                  then (test, [])
+                  then (tagOp, [])
                else
                   let
                      val mask =
                         Operand.word (WordX.resize
                                       (WordX.max (tagSize, {signed = false}),
                                        testSize))
-                     val (s, tag) = Statement.andb (test, mask)
+                     val (s, tagOp) = Statement.andb (tagOp, mask)
                   in
-                     (tag, [s])
+                     (tagOp, [s])
                   end
-            (* CHECK: Shouldn't cast come before mask above? *)
-            val tagOp =
-               if isObjptr
-                  then Operand.cast (tagOp, Type.bits testBits)
-               else tagOp
             val default =
                if Vector.length variants = Vector.length cases
                   then notSmall
@@ -1748,17 +1724,6 @@ structure TyconRep =
                             val i = Bits.toInt (Type.width ty)
                          in
                             if i >= objptrBitsAsInt ()
-                               then makeBig ()
-                            else if (* FIXME: must box Real32 w/ 64bit object pointers,
-                                     * since ShiftAndTag operations aren't bit casts;
-                                     * we end up rounding a Real32 to a Word64.
-                                     *)
-                                   Type.exists
-                                   (ty, fn ty =>
-                                    case Type.deReal ty of
-                                       NONE => false
-                                     | SOME rs => Bytes.< (RealSize.bytes rs,
-                                                           objptrBytes ()))
                                then makeBig ()
                             else
                                let
@@ -2374,7 +2339,8 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
               datatype z = datatype S.Type.dest
            in
               case S.Type.dest t of
-                 Datatype tycon =>
+                 CPointer => nonObjptr (Type.cpointer ())
+               | Datatype tycon =>
                     let
                        val r = tyconRep tycon
                        fun compute () = TyconRep.rep (#1 (Value.get r))

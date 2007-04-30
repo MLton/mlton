@@ -41,12 +41,14 @@ structure SmallIntInf =
 
 datatype t =
    IntInf of IntInf.t
+ | Null
  | Real of RealX.t
  | Word of WordX.t
  | WordVector of WordXVector.t
 
-val real = Real
 val intInf = IntInf
+val null = Null
+val real = Real
 val word = Word
 val wordVector = WordVector
 
@@ -58,6 +60,7 @@ local
 in
    val layout =
       fn IntInf i => IntInf.layout i
+       | Null => str "NULL"
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
@@ -68,6 +71,7 @@ val toString = Layout.toString o layout
 fun hash (c: t): word =
    case c of
       IntInf i => String.hash (IntInf.toString i)
+    | Null => 0wx0
     | Real r => RealX.hash r
     | Word w => Word.fromIntInf (WordX.toIntInf w)
     | WordVector v => String.hash (WordXVector.toString v)
@@ -75,6 +79,7 @@ fun hash (c: t): word =
 fun equals (c, c') =
    case (c, c') of
       (IntInf i, IntInf i') => IntInf.equals (i, i')
+    | (Null, Null) => true
     | (Real r, Real r') => RealX.equals (r, r')
     | (Word w, Word w') => WordX.equals (w, w')
     | (WordVector v, WordVector v') => WordXVector.equals (v, v')

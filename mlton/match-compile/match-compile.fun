@@ -306,6 +306,7 @@ fun unhandledConst (cs: Const.t vector): Const.t =
                        next = fn i => i + 1,
                        prev = fn i => i - 1}
             end
+       | Null => Error.bug "MatchCompile.unhandledConst: match on null is not allowed"
        | Real _ => Error.bug "MatchCompile.unhandledConst: match on real is not allowed"
        | Word w =>
             let

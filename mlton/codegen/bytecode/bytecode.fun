@@ -485,6 +485,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                   (emitOpcode (wordOpcode (ls, cty))
                    ; emitLabel l)
              | Line => emitLoadWord32Zero ()
+             | Null => (emitOpcode (wordOpcode (ls, cty))
+                        ; emitWordX (WordX.zero (WordSize.cpointer ())))
              | Offset {base, offset = off, ...} =>
                   (emitLoadOperand base
                    ; emitOpcode (offsetOp (ls, cty))

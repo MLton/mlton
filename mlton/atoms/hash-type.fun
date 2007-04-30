@@ -142,6 +142,7 @@ fun ofConst c =
    in
       case c of
          IntInf _ => intInf
+       | Null => cpointer
        | Real r => real (RealX.size r)
        | Word w => word (WordX.size w)
        | WordVector v => vector (word (WordXVector.elementSize v))
@@ -235,7 +236,6 @@ fun checkPrimApp {args, prim, result, targs}: bool =
       val cint = word (WordSize.cint ())
       val compareRes = word WordSize.compareRes
       val csize = word (WordSize.csize ())
-      val cpointer = word (WordSize.cpointer ())
       val cptrdiff = word (WordSize.cptrdiff ())
       val seqIndex = word (WordSize.seqIndex ())
       val shiftArg = word WordSize.shiftArg
@@ -245,7 +245,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
       fun intInfBinary () = done ([intInf, intInf, csize], intInf)
       fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
       fun intInfUnary () = done ([intInf, csize], intInf)
-      fun real3 s = done ([real s, real s, real s], real s)
+      fun realTernary s = done ([real s, real s, real s], real s)
       val word8Array = array word8
       fun wordShift s = done ([word s, shiftArg], word s)
    in
@@ -256,6 +256,21 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Array_sub => oneTarg (fn t => ([array t, seqIndex], t))
        | Array_toVector => oneTarg (fn t => ([array t], vector t))
        | Array_update => oneTarg (fn t => ([array t, seqIndex, t], unit))
+       | CPointer_add => done ([cpointer, csize], cpointer) 
+       | CPointer_diff => done ([cpointer, cpointer], csize)
+       | CPointer_equal => done ([cpointer, cpointer], bool)
+       | CPointer_fromWord => done ([csize], cpointer)
+       | CPointer_getCPointer => done ([cpointer, cptrdiff], cpointer)
+       | CPointer_getObjptr => oneTarg (fn t => ([cpointer, cptrdiff], t))
+       | CPointer_getReal s => done ([cpointer, cptrdiff], real s)
+       | CPointer_getWord s => done ([cpointer, cptrdiff], word s)
+       | CPointer_lt => done ([cpointer, cpointer], bool)
+       | CPointer_setCPointer => done ([cpointer, cptrdiff, cpointer], unit)
+       | CPointer_setObjptr => oneTarg (fn t => ([cpointer, cptrdiff, t], unit))
+       | CPointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
+       | CPointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
+       | CPointer_sub => done ([cpointer, csize], cpointer)
+       | CPointer_toWord => done ([cpointer], csize)
        | Exn_extra => oneTarg (fn t => ([exn], t))
        | Exn_name => done ([exn], string)
        | Exn_setExtendExtra => oneTarg (fn t => ([arrow (t, t)], unit))
@@ -291,12 +306,6 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | MLton_share => oneTarg (fn t => ([t], unit))
        | MLton_size => oneTarg (fn t => ([t], csize))
        | MLton_touch => oneTarg (fn t => ([t], unit))
-       | Pointer_getPointer => oneTarg (fn t => ([cpointer, cptrdiff], t))
-       | Pointer_getReal s => done ([cpointer, cptrdiff], real s)
-       | Pointer_getWord s => done ([cpointer, cptrdiff], word s)
-       | Pointer_setPointer => oneTarg (fn t => ([cpointer, cptrdiff, t], unit))
-       | Pointer_setReal s => done ([cpointer, cptrdiff, real s], unit)
-       | Pointer_setWord s => done ([cpointer, cptrdiff, word s], unit)
        | Real_Math_acos s => realUnary s
        | Real_Math_asin s => realUnary s
        | Real_Math_atan s => realUnary s
@@ -317,8 +326,8 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Real_le s => realCompare s
        | Real_lt s => realCompare s
        | Real_mul s => realBinary s
-       | Real_muladd s => real3 s
-       | Real_mulsub s => real3 s
+       | Real_muladd s => realTernary s
+       | Real_mulsub s => realTernary s
        | Real_neg s => realUnary s
        | Real_qequal s => realCompare s
        | Real_rndToReal (s, s') => done ([real s], real s')

@@ -142,7 +142,14 @@ fun implementsPrim (p: 'a Prim.t): bool =
           | W64 => false
    in
       case Prim.name p of
-         FFI_Symbol _ => true
+         CPointer_add => true
+       | CPointer_diff => true
+       | CPointer_equal => true
+       | CPointer_fromWord => true
+       | CPointer_lt => true
+       | CPointer_sub => true
+       | CPointer_toWord => true
+       | FFI_Symbol _ => true
        | Real_Math_acos _ => true
        | Real_Math_asin _ => true
        | Real_Math_atan _ => true
@@ -642,6 +649,7 @@ fun output {program as Machine.Program.T {chunks,
                   else concat ["GPNR", C.args [Int.toString (Global.index g)]]
              | Label l => labelToStringIndex l
              | Line => "__LINE__"
+             | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
                                        toString base,
@@ -793,37 +801,50 @@ fun output {program as Machine.Program.T {chunks,
                      then print "\tFlushStackTop();\n"
                   else ())
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
-               if Vector.exists (args,
-                                 fn Operand.StackOffset _ => true
-                                  | _ => false)
-                  then
-                     let
-                        val _ = print "\t{\n"
-                        val c = Counter.new 0
-                        val args =
-                           Vector.toListMap
-                           (args, fn z =>
-                            case z of
-                               Operand.StackOffset s =>
-                                  let
-                                     val ty = StackOffset.ty s
-                                     val tmp =
-                                        concat ["tmp",
-                                                Int.toString (Counter.next c)]
-                                     val _ =
-                                        print
-                                        (concat
-                                         ["\t", Type.toC ty, " ", tmp, " = ",
-                                          fetchOperand z, ";\n"])
-                                  in
-                                     tmp
-                                  end
-                             | _ => fetchOperand z)
-                     in
-                        (args, fn () => print "\t}\n")
-                     end
-               else (Vector.toListMap (args, fetchOperand),
-                     fn () => ())
+               let
+                  fun usesStack z =
+                     case z of
+                        Operand.ArrayOffset {base, index, ...} =>
+                           (usesStack base) orelse (usesStack index)
+                      | Operand.Cast (z, _) =>
+                           (usesStack z)
+                      | Operand.Contents {oper, ...} =>
+                           (usesStack oper)
+                      | Operand.Offset {base, ...} =>
+                           (usesStack base)
+                      | Operand.StackOffset _ => true
+                      | _ => false
+               in
+                  if Vector.exists (args, usesStack)
+                     then
+                        let
+                           val _ = print "\t{\n"
+                           val c = Counter.new 0
+                           val args =
+                              Vector.toListMap
+                              (args, fn z =>
+                               if usesStack z
+                                  then
+                                     let
+                                        val ty = Operand.ty z
+                                        val tmp =
+                                           concat ["tmp",
+                                                   Int.toString (Counter.next c)]
+                                        val _ =
+                                           print
+                                           (concat
+                                            ["\t", Type.toC ty, " ", tmp, " = ",
+                                             fetchOperand z, ";\n"])
+                                     in
+                                        tmp
+                                     end
+                               else fetchOperand z)
+                        in
+                           (args, fn () => print "\t}\n")
+                        end
+                  else (Vector.toListMap (args, fetchOperand),
+                        fn () => ())
+               end
             val tracePrintLabelCode =
                Trace.trace
                ("CCodegen.printLabelCode",

@@ -67,6 +67,7 @@ signature RSSA =
             val bool: bool -> t
             val cast: t * Type.t -> t
             val layout: t -> Layout.t
+            val null: t
             val replaceVar: t * (Var.t -> t) -> t
             val ty: t -> Type.t
             val word: WordX.t -> t
@@ -107,7 +108,7 @@ signature RSSA =
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
             val replaceUses: t * (Var.t -> Operand.t) -> t
-            val resize: Operand.t * Bits.t -> Operand.t * t list
+            val resize: Operand.t * Type.t -> Operand.t * t list
             val toString: t -> string
          end
 

@@ -88,6 +88,7 @@ signature MACHINE =
              | Global of Global.t
              | Label of Label.t
              | Line (* expand by codegen into int constant *)
+             | Null
              | Offset of {base: t,
                           offset: Bytes.t,
                           ty: Type.t}

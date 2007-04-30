@@ -42,7 +42,14 @@ struct
         datatype z = datatype Prim.Name.t
      in
         case Prim.name p of
-           FFI_Symbol _ => true
+           CPointer_add => true
+         | CPointer_diff => true
+         | CPointer_equal => true
+         | CPointer_fromWord => true
+         | CPointer_lt => true
+         | CPointer_sub => true
+         | CPointer_toWord => true
+         | FFI_Symbol _ => true
          | Real_Math_acos _ => true
          | Real_Math_asin _ => true
          | Real_Math_atan _ => true
@@ -67,7 +74,7 @@ struct
          | Real_neg _ => true
          | Real_qequal _ => true
          | Real_rndToReal _ => true
-         | Real_rndToWord (s1, s2, {signed}) => signed andalso w32168 s2
+         | Real_rndToWord (_, s2, {signed}) => signed andalso w32168 s2
          | Real_round _ => true
          | Real_sub _ => true
          | Word_add _ => true
@@ -85,7 +92,7 @@ struct
          | Word_orb _ => true
          | Word_quot (s, _) => w32168 s
          | Word_rem (s, _) => w32168 s
-         | Word_rndToReal (s1, s2, {signed}) => signed andalso w32168 s1
+         | Word_rndToReal (s1, _, {signed}) => signed andalso w32168 s1
          | Word_rol s => w32168 s
          | Word_ror s => w32168 s
          | Word_rshift (s, _) => w32168 s
@@ -698,7 +705,14 @@ struct
         AppendList.appends
         [comment_begin,
          (case Prim.name prim of
-             FFI_Symbol {name, ...}
+               CPointer_add => binal Instruction.ADD
+             | CPointer_diff => binal Instruction.SUB
+             | CPointer_equal => cmp Instruction.E
+             | CPointer_fromWord => mov ()
+             | CPointer_lt => cmp Instruction.B
+             | CPointer_sub => binal Instruction.SUB
+             | CPointer_toWord => mov ()
+             | FFI_Symbol {name, ...}
              => let     
                    val (dst,dstsize) = getDst1 ()
                 in

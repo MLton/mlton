@@ -426,6 +426,7 @@ let
                   (case Const.SmallIntInf.toWord i of
                       NONE => globalIntInf i
                     | SOME w => M.Operand.Word w)
+             | Null => M.Operand.Null
              | Real r => realOp r
              | Word w => M.Operand.Word w
              | WordVector v => globalVector v

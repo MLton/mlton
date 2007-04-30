@@ -331,7 +331,7 @@ fun insertFunction (f: Function.t,
              fun stackCheck (maybeFirst, z): Label.t =
                 let
                    val (statements, transfer) =
-                      primApp (lessThan,
+                      primApp (Prim.cpointerLt,
                                Operand.Runtime StackLimit,
                                Operand.Runtime StackTop,
                                z)
@@ -378,7 +378,7 @@ fun insertFunction (f: Function.t,
                       {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
                                            Operand.Runtime Frontier),
                        dst = SOME (res, Type.csize ()),
-                       prim = Prim.wordSub (WordSize.csize ())}
+                       prim = Prim.cpointerDiff}
                    val (statements, transfer) =
                       primApp (lessThan,
                                Operand.Var {var = res, ty = Type.csize ()},
@@ -389,10 +389,9 @@ fun insertFunction (f: Function.t,
                    if handlesSignals
                       then
                          frontierCheck (isFirst,
-                                        Prim.wordEqual (WordSize.csize ()),
+                                        Prim.cpointerEqual,
                                         Operand.Runtime Limit,
-                                        Operand.word (WordX.zero
-                                                      (WordSize.csize ())),
+                                        Operand.null,
                                         {collect = collect,
                                          dontCollect = newBlock (false,
                                                                  statements,
@@ -410,7 +409,7 @@ fun insertFunction (f: Function.t,
                 ignore
                 (if Bytes.<= (bytes, Runtime.limitSlop)
                     then frontierCheck (true,
-                                        lessThan,
+                                        Prim.cpointerLt,
                                         Operand.Runtime Limit,
                                         Operand.Runtime Frontier,
                                         insert (Operand.word

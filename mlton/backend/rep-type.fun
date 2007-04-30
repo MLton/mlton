@@ -121,6 +121,7 @@ structure Type =
          objptr ObjptrTycon.thread
 
       val word0: t = bits Bits.zero
+      val word8: t = word WordSize.word8
       val word32: t = word WordSize.word32
 
       val wordVector: WordSize.t -> t = 
@@ -152,16 +153,21 @@ structure Type =
                fun seqOnto (ts, ac) =
                   Vector.foldr
                   (ts, ac, fn (t, ac) =>
-                   case ac of
-                      [] => [t]
-                    | t' :: ac' =>
-                         (case (node t, node t') of
-                             (Seq ts, _) => seqOnto (ts, ac)
-                           | (Bits, Bits) => bits (Bits.+ (width t, width t')) :: ac'
-                           | _ => t :: ac))
+                   if Bits.equals (width t, Bits.zero)
+                      then ac
+                   else (case node t of
+                            Seq ts => seqOnto (ts, ac)
+                          | _ => (case ac of
+                                     [] => [t]
+                                   | t' :: ac' =>
+                                        (case (node t, node t') of
+                                            (Bits, Bits) => 
+                                               bits (Bits.+ (width t, width t')) :: ac'
+                                          | _ => t :: ac))))
             in
                case seqOnto (ts, []) of
-                  [t] => t
+                  [] => word0
+                | [t] => t
                 | ts =>
                      let
                         val ts = Vector.fromList ts
@@ -262,12 +268,18 @@ structure Type =
               | (Word _, Objptr _) => true
               | (Seq ts, Objptr _) =>
                    Vector.forall 
-                   (ts, (fn Bits => true | Word _ => true | _ => false) o node)
+                   (ts, (fn Bits => true 
+                          | Real _ => true 
+                          | Word _ => true 
+                          | _ => false) o node)
               | (_, Bits) => true
               | (_, Word _) => true
               | (_, Seq ts) => 
                    Vector.forall 
-                   (ts, (fn Bits => true | Word _ => true | _ => false) o node)
+                   (ts, (fn Bits => true 
+                          | Real _ => true
+                          | Word _ => true 
+                          | _ => false) o node)
               | _ => false)
 
       val isSubtype =
@@ -489,17 +501,223 @@ fun ofGCField (f: GCField.t): t =
        | StackTop => cpointer ()
    end
 
-fun arrayOffsetIsOk {base,index, offset, tyconTy, result, scale} = 
-   case (base, index, offset, tyconTy, result, scale) of _ => true
-
 fun castIsOk {from, to, tyconTy = _} =
    Bits.equals (width from, width to)
 
 fun checkPrimApp {args, prim, result} = 
-    case (args, Prim.name prim, result) of _ => true
+   let
+      datatype z = datatype Prim.Name.t
+      fun done (argsP, resultP) =
+         let
+            val argsP = Vector.fromList argsP
+         in
+            (Vector.length args = Vector.length argsP)
+            andalso (Vector.forall2 (args, argsP, 
+                                     fn (arg, argP) => argP arg))
+            andalso (case (result, resultP) of
+                        (NONE, NONE) => true
+                      | (SOME result, SOME resultP) => resultP result
+                      | _ => false)
+         end
+      val bits = fn s => fn t => equals (t, bits s)
+      val bool = fn t => equals (t, bool)
+      val cpointer = fn t => equals (t, cpointer ())
+      val objptr = fn t => (case node t of Objptr _ => true | _ => false)
+      val real = fn s => fn t => equals (t, real s)
+      val seq = fn s => fn t => 
+         (case node t 
+             of Seq _ => Bits.equals (width t, WordSize.bits s) 
+           | _ => false)
+      val word = fn s => fn t => equals (t, word s)
+
+      val cint = word (WordSize.cint ())
+      val csize = word (WordSize.csize ())
+      val shiftArg = word WordSize.shiftArg
+
+      val or = fn (p1, p2) => fn t => p1 t orelse p2 t
+      val bitsOrSeq = fn s => or (bits (WordSize.bits s), seq s)
+      val wordOrBitsOrSeq = fn s => or (word s, bitsOrSeq s)
+      local
+         fun make f s = let val t = f s in done ([t], SOME t) end
+      in
+         val realUnary = make real
+         val wordUnary = make wordOrBitsOrSeq
+      end
+      local
+         fun make f s = let val t = f s in done ([t, t], SOME t) end
+      in
+         val realBinary = make real
+         val wordBinary = make wordOrBitsOrSeq
+      end
+      local
+         fun make f s = let val t = f s in done ([t, t], SOME bool) end
+      in
+         val realCompare = make real
+         val wordCompare = make wordOrBitsOrSeq
+         val objptrCompare = make (fn _ => objptr) ()
+      end
+      fun realTernary s = done ([real s, real s, real s], SOME (real s))
+      fun wordShift s = done ([wordOrBitsOrSeq s, shiftArg], SOME (wordOrBitsOrSeq s))
+   in
+      case Prim.name prim of
+         CPointer_add => done ([cpointer, csize], SOME cpointer)
+       | CPointer_diff => done ([cpointer, cpointer], SOME csize)
+       | CPointer_equal => done ([cpointer, cpointer], SOME bool)
+       | CPointer_fromWord => done ([csize], SOME cpointer)
+       | CPointer_lt => done ([cpointer, cpointer], SOME bool)
+       | CPointer_sub => done ([cpointer, csize], SOME cpointer)
+       | CPointer_toWord => done ([cpointer], SOME csize)
+       | FFI f => done (Vector.toListMap (CFunction.args f, 
+                                          fn t' => fn t => equals (t', t)),
+                        SOME (fn t => equals (t, CFunction.return f)))
+       | FFI_Symbol _ => done ([], SOME cpointer)
+       | MLton_touch => done ([objptr], NONE)
+       | Real_Math_acos s => realUnary s
+       | Real_Math_asin s => realUnary s
+       | Real_Math_atan s => realUnary s
+       | Real_Math_atan2 s => realBinary s
+       | Real_Math_cos s => realUnary s
+       | Real_Math_exp s => realUnary s
+       | Real_Math_ln s => realUnary s
+       | Real_Math_log10 s => realUnary s
+       | Real_Math_sin s => realUnary s
+       | Real_Math_sqrt s => realUnary s
+       | Real_Math_tan s => realUnary s
+       | Real_abs s => realUnary s
+       | Real_add s => realBinary s
+       | Real_castToWord (s, s') => done ([real s], SOME (word s'))
+       | Real_div s => realBinary s
+       | Real_equal s => realCompare s
+       | Real_ldexp s => done ([real s, cint], SOME (real s))
+       | Real_le s => realCompare s
+       | Real_lt s => realCompare s
+       | Real_mul s => realBinary s
+       | Real_muladd s => realTernary s
+       | Real_mulsub s => realTernary s
+       | Real_neg s => realUnary s
+       | Real_qequal s => realCompare s
+       | Real_rndToReal (s, s') => done ([real s], SOME (real s'))
+       | Real_rndToWord (s, s', _) => done ([real s], SOME (word s'))
+       | Real_round s => realUnary s
+       | Real_sub s => realBinary s
+       | Word_add s => wordBinary s
+       | Word_addCheck (s, _) => wordBinary s
+       | Word_andb s => wordBinary s
+       | Word_castToReal (s, s') => done ([word s], SOME (real s'))
+       | Word_equal s => (wordCompare s) orelse objptrCompare
+       | Word_extdToWord (s, s', _) => done ([wordOrBitsOrSeq s], 
+                                             SOME (wordOrBitsOrSeq s'))
+       | Word_lshift s => wordShift s
+       | Word_lt (s, _) => wordCompare s
+       | Word_mul (s, _) => wordBinary s
+       | Word_mulCheck (s, _) => wordBinary s
+       | Word_neg s => wordUnary s
+       | Word_negCheck s => wordUnary s
+       | Word_notb s => wordUnary s
+       | Word_orb s => wordBinary s
+       | Word_quot (s, _) => wordBinary s
+       | Word_rem (s, _) => wordBinary s
+       | Word_rndToReal (s, s', _) => done ([word s], SOME (real s'))
+       | Word_rol s => wordShift s
+       | Word_ror s => wordShift s
+       | Word_rshift (s, _) => wordShift s
+       | Word_sub s => wordBinary s
+       | Word_subCheck (s, _) => wordBinary s
+       | Word_xorb s => wordBinary s
+       | _ => Error.bug (concat ["RepType.checkPrimApp got strange prim: ",
+                                 Prim.toString prim])
+   end
+
+fun checkOffset {base, offset, result} =
+   let
+      fun getTys ty =
+         case node ty of
+            Seq tys => Vector.toList tys
+          | _ => [ty]
+      fun loop (offset, tys) =
+         case tys of
+            [] => false
+          | ty::tys =>
+               if Bits.equals (offset, Bits.zero)
+                  then let
+                          fun loop (resTys, eltTys) =
+                             case (resTys, eltTys) of
+                                ([], _) => true
+                              | (_, []) => false
+                              | (resTy::resTys, eltTy::eltTys) => 
+                                   (case (node resTy, resTys, node eltTy) of
+                                       (Bits, [], Bits) => 
+                                          Bits.<= (width resTy, width eltTy)
+                                     | _ => (equals (resTy, eltTy))
+                                            andalso (loop (resTys, eltTys)))
+                       in
+                          loop (getTys result, ty::tys)
+                       end
+               else if Bits.>= (offset, width ty)
+                  then loop (Bits.- (offset, width ty), tys)
+               else (case node ty of
+                        Bits => loop (Bits.zero, (bits (Bits.- (width ty, offset))) :: tys)
+                      | _ => false)
+   in
+      loop (Bytes.toBits offset, getTys base)
+   end
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
-   case (base, offset, tyconTy, result) of _ => true
+   case node base of
+      Objptr opts => 
+         if Bytes.equals (offset, Runtime.headerOffset ())
+            then equals (result, objptrHeader ())
+         else if Bytes.equals (offset, Runtime.arrayLengthOffset ())
+            then (1 = Vector.length opts)
+                 andalso (case tyconTy (Vector.sub (opts, 0)) of
+                             ObjectType.Array _ => true
+                           | _ => false)
+                 andalso (equals (result, seqIndex ()))
+         else (1 = Vector.length opts)
+              andalso (case tyconTy (Vector.sub (opts, 0)) of
+                          ObjectType.Normal {ty, ...} => 
+                             checkOffset {base = ty,
+                                          offset = offset,
+                                          result = result}
+                        | _ => false)
+    | _ => false
+
+fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} = 
+   case node base of
+      CPointer => 
+         (equals (index, csize ()))
+         andalso (case node result of
+                     CPointer => true
+                   | Objptr _ => true (* for FFI export of indirect types *)
+                   | Real _ => true
+                   | Word _ => true
+                   | _ => false)
+         andalso (case Scale.fromBytes (bytes result) of
+                     NONE => false
+                   | SOME s => scale = s)
+         andalso (Bytes.equals (offset, Bytes.zero))
+    | Objptr opts => 
+         (equals (index, seqIndex ()))
+         andalso (1 = Vector.length opts)
+         andalso (case tyconTy (Vector.sub (opts, 0)) of
+                     ObjectType.Array {elt, ...} => 
+                        if equals (elt, word8)
+                           then (* special case for PackWord operations *)
+                                (case node result of
+                                    Word wsRes => 
+                                       (case Scale.fromBytes (WordSize.bytes wsRes) of
+                                           NONE => false
+                                         | SOME s => scale = s)
+                                       andalso (Bytes.equals (offset, Bytes.zero))
+                                  | _ => false)
+                        else (case Scale.fromBytes (bytes elt) of
+                                 NONE => scale = Scale.One
+                               | SOME s => scale = s)
+                             andalso (checkOffset {base = elt,
+                                                   offset = offset,
+                                                   result = result})
+                   | _ => false)
+    | _ => false
 
 
 

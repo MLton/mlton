@@ -31,6 +31,21 @@ signature PRIM =
              | Array_sub (* ssa to ssa2 *)
              | Array_toVector (* backend *)
              | Array_update (* ssa to ssa2 *)
+             | CPointer_add (* codegen *)
+             | CPointer_diff (* codegen *)
+             | CPointer_equal (* codegen *)
+             | CPointer_fromWord (* codegen *)
+             | CPointer_getCPointer (* ssa to rssa *)
+             | CPointer_getObjptr (* ssa to rssa *)
+             | CPointer_getReal of RealSize.t (* ssa to rssa *)
+             | CPointer_getWord of WordSize.t (* ssa to rssa *)
+             | CPointer_lt (* codegen *)
+             | CPointer_setCPointer (* ssa to rssa *)
+             | CPointer_setObjptr (* ssa to rssa *)
+             | CPointer_setReal of RealSize.t (* ssa to rssa *)
+             | CPointer_setWord of WordSize.t (* ssa to rssa *)
+             | CPointer_sub (* codegen *)
+             | CPointer_toWord (* codegen *)
              | Exn_extra (* implement exceptions *)
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
@@ -83,12 +98,6 @@ signature PRIM =
              | MLton_share
              | MLton_size (* ssa to rssa *)
              | MLton_touch (* backend *)
-             | Pointer_getPointer (* ssa to rssa *)
-             | Pointer_getReal of RealSize.t (* ssa to rssa *)
-             | Pointer_getWord of WordSize.t (* ssa to rssa *)
-             | Pointer_setPointer (* ssa to rssa *)
-             | Pointer_setReal of RealSize.t (* ssa to rssa *)
-             | Pointer_setWord of WordSize.t (* ssa to rssa *)
              | Real_Math_acos of RealSize.t (* codegen *)
              | Real_Math_asin of RealSize.t (* codegen *)
              | Real_Math_atan of RealSize.t (* codegen *)
@@ -205,6 +214,13 @@ signature PRIM =
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
+      val cpointerAdd: 'a t
+      val cpointerDiff: 'a t
+      val cpointerEqual: 'a t
+      val cpointerGet: CType.t -> 'a t 
+      val cpointerLt: 'a t
+      val cpointerSet: CType.t -> 'a t 
+      val cpointerSub: 'a t
       val deref: 'a t
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)
@@ -237,9 +253,8 @@ signature PRIM =
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
-      val pointerGet: CType.t -> 'a t
-      val pointerSet: CType.t -> 'a t
       val name: 'a t -> 'a Name.t
+      val realCastToWord: RealSize.t * WordSize.t -> 'a t
       val reff: 'a t
       val toString: 'a t -> string
       val touch: 'a t
@@ -248,6 +263,7 @@ signature PRIM =
       val wordAdd: WordSize.t -> 'a t
       val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
+      val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t

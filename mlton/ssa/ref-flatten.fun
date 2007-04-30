@@ -704,7 +704,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                            datatype z = datatype Type.dest
                            val () =
                               case Type.dest t of
-                                 Datatype c => Size.<= (tyconSize c, s)
+                                 CPointer => ()
+                               | Datatype c => Size.<= (tyconSize c, s)
                                | IntInf => Size.makeTop s
                                | Object {args, ...} =>
                                     Prod.foreach (args, dependsOn)

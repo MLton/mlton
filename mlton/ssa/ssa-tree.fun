@@ -26,6 +26,7 @@ structure Type =
 
       datatype dest =
           Array of t
+        | CPointer
         | Datatype of Tycon.t
         | IntInf
         | Real of RealSize.t
@@ -52,6 +53,7 @@ structure Type =
 
          val tycons =
             [(Tycon.array, unary Array)]
+            @ [(Tycon.cpointer, nullary CPointer)]
             @ [(Tycon.intInf, nullary IntInf)]
             @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
             @ [(Tycon.reff, unary Ref),
@@ -82,8 +84,9 @@ structure Type =
              (fn (t, layout) =>
               case dest t of
                  Array t => seq [layout t, str " array"]
+               | CPointer => str "pointer"
                | Datatype t => Tycon.layout t
-               | IntInf => str "IntInf.int"
+               | IntInf => str "intInf"
                | Real s => str (concat ["real", RealSize.toString s])
                | Ref t => seq [layout t, str " ref"]
                | Thread => str "thread"

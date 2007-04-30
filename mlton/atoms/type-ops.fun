@@ -25,6 +25,7 @@ local
    fun nullary tycon = con (tycon, Vector.new0 ())
 in
    val bool = nullary Tycon.bool
+   val cpointer = nullary Tycon.cpointer
    val exn = nullary Tycon.exn
    val intInf = nullary Tycon.intInf
    val real = RealSize.memoize (fn s => nullary (Tycon.real s))

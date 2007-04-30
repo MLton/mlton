@@ -416,6 +416,9 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                       (concat [!Control.libDir, "/include/ml-types.h"], out)
                    fun print s = Out.output (out, s)
                    val _ = print "\n"
+                   val _ = print "typedef void* CPointer;\n"
+                   val _ = print "typedef Pointer Objptr;\n"
+                   val _ = print "\n"
                    val _ = Ffi.declareHeaders {print = print}
                 in
                    ()

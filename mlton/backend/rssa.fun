@@ -55,6 +55,8 @@ structure Operand =
        | Var of {var: Var.t,
                  ty: Type.t}
 
+      val null = Const Const.null
+
       val word = Const o Const.word
 
       fun zero s = word (WordX.fromIntInf (0, s))
@@ -71,6 +73,7 @@ structure Operand =
                in
                   case c of
                      IntInf _ => Type.intInf ()
+                   | Null => Type.cpointer ()
                    | Real r => Type.real (RealX.size r)
                    | Word w => Type.ofWordX w
                    | WordVector v => Type.ofWordXVector v
@@ -296,27 +299,69 @@ structure Statement =
       fun clear (s: t) =
          foreachDef (s, Var.clear o #1)
 
-      fun resize (z: Operand.t, b: Bits.t): Operand.t * t list =
+      fun resize (src: Operand.t, dstTy: Type.t): Operand.t * t list =
          let
-            val ty = Operand.ty z
-            val w = Type.width ty
+            val srcTy = Operand.ty src
+
+            val (src, srcTy, ssSrc, dstTy, finishDst) =
+               case (Type.deReal srcTy, Type.deReal dstTy) of
+                  (NONE, NONE) => 
+                     (src, srcTy, [], dstTy, fn dst => (dst, []))
+                | (SOME rs, NONE) =>
+                     let
+                        val ws = WordSize.fromBits (RealSize.bits rs)
+                        val tmp = Var.newNoname ()
+                        val tmpTy = Type.word ws
+                     in
+                        (Operand.Var {ty = tmpTy, var = tmp},
+                         tmpTy,
+                         [PrimApp {args = Vector.new1 src,
+                                   dst = SOME (tmp, tmpTy),
+                                   prim = Prim.realCastToWord (rs, ws)}],
+                         dstTy, fn dst => (dst, []))
+                     end
+                | (NONE, SOME rs) =>
+                     let
+                        val ws = WordSize.fromBits (RealSize.bits rs)
+                        val tmp = Var.newNoname ()
+                        val tmpTy = Type.real rs
+                     in
+                        (src, srcTy, [],
+                         Type.word ws,
+                         fn dst =>
+                         (Operand.Var {ty = tmpTy, var = tmp},
+                          [PrimApp {args = Vector.new1 dst,
+                                    dst = SOME (tmp, tmpTy),
+                                    prim = Prim.wordCastToReal (ws, rs)}]))
+                     end
+                | (SOME _, SOME _) =>
+                     (src, srcTy, [], dstTy, fn dst => (dst, []))
+
+            val srcW = Type.width srcTy
+            val dstW = Type.width dstTy
+
+            val (dst, ssConv) =
+               if Bits.equals (srcW, dstW)
+                  then (Operand.cast (src, dstTy), [])
+               else let
+                       val tmp = Var.newNoname ()
+                       val tmpTy = dstTy
+                    in
+                       (Operand.Var {ty = tmpTy, var = tmp},
+                        [PrimApp {args = Vector.new1 src,
+                                  dst = SOME (tmp, tmpTy),
+                                  prim = (Prim.wordExtdToWord 
+                                          (WordSize.fromBits srcW, 
+                                           WordSize.fromBits dstW, 
+                                           {signed = false}))}])
+                    end
+
+            val (dst, ssDst) = finishDst dst
          in
-            if Bits.equals (b, w)
-               then (z, [])
-            else
-               let
-                  val tmp = Var.newNoname ()
-                  val tmpTy = Type.resize (ty, b)
-               in
-                  (Operand.Var {ty = tmpTy, var = tmp},
-                   [PrimApp {args = Vector.new1 z,
-                             dst = SOME (tmp, tmpTy),
-                             prim = Prim.wordExtdToWord (WordSize.fromBits w,
-                                                         WordSize.fromBits b,
-                                                         {signed = false})}])
-               end
+            (dst, ssSrc @ ssConv @ ssDst)
          end
    end
+
 datatype z = datatype Statement.t
 
 structure Transfer =
@@ -885,20 +930,31 @@ structure Program =
                       ; SOME s)
                in
                   case s of
-                     Bind {dst = (x, _), isMutable, src} =>
+                     Bind {dst = (dst, dstTy), isMutable, src} =>
                         if isMutable
                            then keep ()
                         else
                            let
                               datatype z = datatype Operand.t
+                              fun getSrc src =
+                                 case src of
+                                    Cast (src, _) => getSrc src
+                                  | Const _ => SOME src
+                                  | Var _ => SOME src
+                                  | _ => NONE
                            in
-                              if (case src of
-                                     Const _ => true
-                                   | Var _ => true
-                                   | _ => false)
-                                 then (setReplaceVar (x, src)
-                                       ; NONE)
-                              else keep ()
+                              case getSrc src of
+                                 NONE => keep ()
+                               | SOME src =>
+                                    let
+                                       val src = 
+                                          if Type.equals (Operand.ty src, dstTy)
+                                             then src
+                                          else Cast (src, dstTy)
+                                    in
+                                       setReplaceVar (dst, src)
+                                       ; NONE
+                                    end
                            end
                    | PrimApp {args, dst, prim} =>
                         let

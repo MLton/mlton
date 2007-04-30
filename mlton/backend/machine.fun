@@ -210,6 +210,7 @@ structure Operand =
        | Global of Global.t
        | Label of Label.t
        | Line
+       | Null
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
@@ -229,6 +230,7 @@ structure Operand =
         | Global g => Global.ty g
         | Label l => Type.label l
         | Line => Type.cint ()
+        | Null => Type.cpointer ()
         | Offset {ty, ...} => ty
         | Real r => Type.real (RealX.size r)
         | Register r => Register.ty r
@@ -261,6 +263,7 @@ structure Operand =
              | Global g => Global.layout g
              | Label l => Label.layout l
              | Line => str "<Line>"
+             | Null => str "NULL"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
@@ -302,8 +305,10 @@ structure Operand =
          let
             fun inter read = interfere (write, read)
          in
-            case (read, write) 
-               of (ArrayOffset {base, index, ...}, _) => 
+            case (read, write) of
+               (Cast (z, _), _) => interfere (write, z)
+             | (_, Cast (z, _)) => interfere (z, read)
+             | (ArrayOffset {base, index, ...}, _) => 
                   inter base orelse inter index
              | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
@@ -1056,6 +1061,7 @@ structure Program =
                             in true
                             end handle _ => false)
                       | Line => true
+                      | Null => true
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
                             ; (Operand.isLocation base

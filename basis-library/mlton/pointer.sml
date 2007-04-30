@@ -10,10 +10,9 @@ struct
 
 open Primitive.MLton.Pointer
 
-fun add (p, t) = fromWord (C_Pointer.+ (toWord p, C_Pointer.fromWord t))
-fun compare (p, p') = C_Pointer.compare (toWord p, toWord p')
-fun diff (p, p') = C_Pointer.toWord (C_Pointer.- (toWord p, toWord p'))
-fun sub (p, t) = fromWord (C_Pointer.- (toWord p, C_Pointer.fromWord t))
+val add = fn (p, t) => add (p, C_Size.fromWord t)
+val sub = fn (p, t) => sub (p, C_Size.fromWord t)
+val diff = fn (p, p') => C_Size.toWord (diff (p, p'))
 
 local
    fun wrap f (p, i) =
@@ -23,7 +22,7 @@ in
    val getInt16 = wrap getInt16
    val getInt32 = wrap getInt32
    val getInt64 = wrap getInt64
-   val getPointer = wrap getPointer
+   val getPointer = wrap getCPointer
    val getReal32 = wrap getReal32
    val getReal64 = wrap getReal64
    val getWord8 = wrap getWord8
@@ -40,7 +39,7 @@ in
    val setInt16 = wrap setInt16
    val setInt32 = wrap setInt32
    val setInt64 = wrap setInt64
-   val setPointer = wrap setPointer
+   val setPointer = wrap setCPointer
    val setReal32 = wrap setReal32
    val setReal64 = wrap setReal64
    val setWord8 = wrap setWord8

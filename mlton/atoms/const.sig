@@ -32,6 +32,7 @@ signature CONST =
 
       datatype t =
          IntInf of IntInf.t
+       | Null
        | Real of RealX.t
        | Word of WordX.t
        | WordVector of WordXVector.t
@@ -45,6 +46,7 @@ signature CONST =
        *)
       val lookup: ({default: string option,
                     name: string} * ConstType.t -> t) ref
+      val null: t
       val real: RealX.t -> t
       val string: string -> t
       val toString: t -> string

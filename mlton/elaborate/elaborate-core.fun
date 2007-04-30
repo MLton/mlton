@@ -732,7 +732,7 @@ structure Type =
                 end)
          in
             [("Bool", CType.bool, Tycon.bool),
-             ("Pointer", CType.cpointer, Tycon.pointer),
+             ("CPointer", CType.cpointer, Tycon.cpointer),
              ("Real32", CType.real RealSize.R32, Tycon.real RealSize.R32),
              ("Real64", CType.real RealSize.R64, Tycon.real RealSize.R64),
              ("Thread", CType.thread, Tycon.thread)]
@@ -779,7 +779,7 @@ structure Type =
                if List.exists (unary, fn c' => Tycon.equals (c, c'))
                   andalso 1 = Vector.length ts
                   andalso isSome (toNullaryCType (Vector.sub (ts, 0)))
-                  then SOME {ctype = CType.cpointer, name = "Pointer"}
+                  then SOME {ctype = CType.objptr, name = "Objptr"}
                   else NONE
 
       fun toCType (ty: t): {ctype: CType.t, name: string} option =
@@ -835,7 +835,7 @@ structure Type =
                           NONE => NONE
                         | SOME ret => SOME (arg, ret)))
       fun toCPtrType (ty: t): z option =
-         if Type.isPointer ty
+         if Type.isCPointer ty
             then let val {ctype, name} = valOf (toCType ty)
                  in SOME {ctype = ctype, name = name, ty = ty}
                  end
@@ -892,7 +892,7 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
-               val addrTy = Type.word (WordSize.cpointer ())
+               val addrTy = Type.cpointer
                val func =
                   CFunction.T {args = let
                                          val args = Vector.map (args, #ty)
@@ -966,7 +966,7 @@ local
       let
          val fetchExp = 
             primApp {args = Vector.new2 (ptrExp, zeroExpPtrdiff ()),
-                     prim = Prim.pointerGet ctypeCbTy,
+                     prim = Prim.cpointerGet ctypeCbTy,
                      result = if isBool 
                                  then Type.word WordSize.bool
                                  else expandedCbTy}
@@ -1006,7 +1006,7 @@ local
                         test = valueExp}
       in
          primApp {args = Vector.new3 (ptrExp, zeroExpPtrdiff (), valueExp),
-                  prim = Prim.pointerSet ctypeCbTy,
+                  prim = Prim.cpointerSet ctypeCbTy,
                   result = Type.unit}
       end
 
@@ -1114,7 +1114,7 @@ in
                NONE => (error (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
          val addrExp =
-            mkAddress {expandedPtrTy = Type.word (WordSize.cpointer ()),
+            mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
                        cty = SOME ctypeCbTy}
          val () =
@@ -1145,8 +1145,7 @@ in
              let
                 val error = fn () =>
                    (error ()
-                    ; ignore (escape (Type.word (WordSize.cpointer ()),
-                                      Type.word8))
+                    ; ignore (escape (Type.cpointer, Type.word8))
                     ; Error.bug "ElaborateCore.symbolIndirect.escape")
              in
                 case Type.deArrowOpt expandedTy of
@@ -2783,7 +2782,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    let
                                       val error = fn () =>
                                          (error ()
-                                          ; ignore (escape (Type.word (WordSize.cpointer ()), 
+                                          ; ignore (escape (Type.cpointer, 
                                                             Type.arrow (Type.unit, Type.unit)))
                                           ; Error.bug "ElaborateCore.elabExp.IImport.escape")
                                    in

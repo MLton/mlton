@@ -52,7 +52,8 @@ signature SSA_TREE2 =
             type t
 
             datatype dest =
-               Datatype of Tycon.t
+               CPointer
+             | Datatype of Tycon.t
              | IntInf
              | Object of {args: t Prod.t,
                           con: ObjectCon.t}
@@ -67,6 +68,7 @@ signature SSA_TREE2 =
             val checkPrimApp: {args: t vector,
                                prim: t Prim.t,
                                result: t} -> bool
+            val cpointer: t
             val datatypee: Tycon.t -> t
             val dest: t -> dest
             val equals: t * t -> bool

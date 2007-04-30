@@ -179,6 +179,8 @@ struct
                Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
           | Line => 
                Vector.new1 (x86MLton.fileLine (), x86MLton.wordSize)
+          | Null => 
+               Vector.new1 (x86.Operand.immediate_const_word 0wx0, x86MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>
                let
                   val offset = Bytes.toInt offset

@@ -539,7 +539,7 @@ structure Type =
       open Type
 
       fun scale (ty: t): Scale.t =
-         case Scale.fromInt (Bytes.toInt (bytes ty)) of
+         case Scale.fromBytes (bytes ty) of
             NONE => Error.bug "SsaToRssa.Type.scale"
           | SOME s => s
    end
@@ -555,7 +555,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
       val cardElemSize = WordSize.fromBits Bits.inByte
    in
       [PrimApp {args = (Vector.new2
-                        (addr,
+                        (Operand.cast (addr, Type.bits (WordSize.bits sz)),
                          Operand.word
                          (WordX.fromIntInf (cardSizeLog2, WordSize.shiftArg)))),
                 dst = SOME (index, indexTy),
@@ -1096,14 +1096,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                  in
                                     ccall {args = args, func = func}
                                  end
-                     fun pointerGet () =
+                     fun cpointerGet () =
                         maybeMove (fn ty =>
                                    ArrayOffset {base = a 0,
                                                 index = a 1,
                                                 offset = Bytes.zero,
                                                 scale = Type.scale ty,
                                                 ty = ty})
-                     fun pointerSet () =
+                     fun cpointerSet () =
                         let
                            val src = a 2
                            val ty = Operand.ty src
@@ -1156,6 +1156,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         :: ss,
                                         t)
                                     end
+                               | CPointer_getCPointer => cpointerGet ()
+                               | CPointer_getObjptr => cpointerGet ()
+                               | CPointer_getReal _ => cpointerGet ()
+                               | CPointer_getWord _ => cpointerGet ()
+                               | CPointer_setCPointer => cpointerSet ()
+                               | CPointer_setObjptr => cpointerSet ()
+                               | CPointer_setReal _ => cpointerSet ()
+                               | CPointer_setWord _ => cpointerSet ()
                                | FFI f => simpleCCall f
                                | GC_collect =>
                                     ccall
@@ -1205,12 +1213,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                      dst = NONE,
                                                      prim = prim})
                                     end
-                               | Pointer_getPointer => pointerGet ()
-                               | Pointer_getReal _ => pointerGet ()
-                               | Pointer_getWord _ => pointerGet ()
-                               | Pointer_setPointer => pointerSet ()
-                               | Pointer_setReal _ => pointerSet ()
-                               | Pointer_setWord _ => pointerSet ()
                                | Thread_atomicBegin =>
                                     (* gcState.atomicState++;
                                      * if (gcState.signalsInfo.signalIsPending)
@@ -1235,7 +1237,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                         (Bytes.toInt Runtime.limitSlop),
                                                         size)))),
                                              dst = SOME (tmp, ty),
-                                             prim = Prim.wordSub size},
+                                             prim = Prim.cpointerSub},
                                             Statement.Move
                                             {dst = Runtime Limit,
                                              src = Var {ty = ty, var = tmp}})
