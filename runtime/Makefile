@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -19,15 +19,15 @@ GCC_MINOR_VERSION :=						\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
-FLAGS := 
+FLAGS := $(CPPFLAGS)
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
-GCOPTFLAGS := 
-DEBUGFLAGS := 
-GCDEBUGFLAGS := 
-WARNFLAGS := 
-OPTWARNFLAGS := 
-DEBUGWARNFLAGS := 
+GCOPTFLAGS :=
+DEBUGFLAGS :=
+GCDEBUGFLAGS :=
+WARNFLAGS :=
+OPTWARNFLAGS :=
+DEBUGWARNFLAGS :=
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m32
@@ -245,7 +245,7 @@ libgdtoa.a: gdtoa/arith.h
 	$(RANLIB) libgdtoa.a
 
 gdtoa/arithchk.c:
-	gzip -dc gdtoa.tgz | tar xf -	
+	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
@@ -256,7 +256,7 @@ gdtoa/arith.h: gdtoa/arithchk.out
 
 libmlton.a: $(OBJS)
 	$(AR) libmlton.a $(OBJS)
-	$(RANLIB) libmlton.a	
+	$(RANLIB) libmlton.a
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
