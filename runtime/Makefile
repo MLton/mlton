@@ -241,6 +241,7 @@ libgdtoa.a: gdtoa/arith.h
 		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)		\
 			-w -O1 -c -DINFNAN_CHECK 		\
 			*.c
+	$(RM) gdtoa/arithchk.o
 	$(AR) libgdtoa.a gdtoa/*.o
 	$(RANLIB) libgdtoa.a
 
