@@ -85,7 +85,7 @@ fun removeR d =
 
 fun inTemp thunk =
    let
-      val d = concat ["/tmp/dir", Random.alphaNumString 6]
+      val d = concat [MLton.TextIO.tempPrefix "dir", Random.alphaNumString 6]
       val _ = make d
    in
       Exn.finally (fn () => inDir (d, fn _ => thunk ()),

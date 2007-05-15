@@ -250,6 +250,7 @@ in
    ../posix/posix.sml
 
    ../platform/cygwin.sml
+   ../platform/mingw.sml
 
    ../io/stream-io.sig
    ../io/stream-io.fun
@@ -318,6 +319,8 @@ in
    ../net/unix-sock.sig
    ../net/unix-sock.sml
 
+   ../mlton/platform.sig
+   ../mlton/platform.sml
    ../mlton/array.sig
    ../mlton/cont.sig
    ../mlton/cont.sml
@@ -336,8 +339,6 @@ in
       ../mlton/ffi.sml
    end
    ../mlton/int-inf.sig
-   ../mlton/platform.sig
-   ../mlton/platform.sml
    ../mlton/proc-env.sig
    ../mlton/proc-env.sml
    ../mlton/profile.sig

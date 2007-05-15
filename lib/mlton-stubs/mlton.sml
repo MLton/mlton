@@ -25,6 +25,7 @@ functor IO (S : sig
       fun newOut _ = raise Fail "newOut"
       fun outFd _ = raise Fail "outFd"
       fun setIn _ = raise Fail "setIn"
+      fun tempPrefix _ = raise Fail "tempPrefix"
    end
 
 (* This file is just a dummy provided in place of the structure that MLton
@@ -84,6 +85,7 @@ structure MLton: MLTON =
             fun newOut _ = raise Fail "newOut"
             fun outFd _ = raise Fail "outFd"
             fun setIn _ = raise Fail "setIn"
+            fun tempPrefix _ = raise Fail "tempPrefix"
          end
 
       structure CallStack =

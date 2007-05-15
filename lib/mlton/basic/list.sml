@@ -390,8 +390,8 @@ fun 'a ordered {<= : 'a * 'a -> bool} =
          in firstN (fold (s, [], insert),n)
          end
 
-      val smallest = choose (op <)
-      val largest = choose (op >)
+      val smallest = choose (op < : int * int -> bool)
+      val largest = choose (op > : int * int -> bool)
 
       fun getFirst (l, extreme, name) =
          case extreme (l, 1) of

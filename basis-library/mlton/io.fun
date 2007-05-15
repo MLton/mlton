@@ -33,4 +33,12 @@ fun mkstemps {prefix, suffix}: string * outstream =
 
 fun mkstemp s = mkstemps {prefix = s, suffix = ""}
 
+fun tempPrefix file =
+   case MLtonPlatform.OS.host of
+      MLtonPlatform.OS.MinGW =>
+      (case MinGW.getTempPath () of
+          SOME d => d
+        | NONE => "C:\\temp\\") ^ file
+    | _ => "/tmp/" ^ file
+
 end

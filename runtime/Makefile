@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -19,15 +19,15 @@ GCC_MINOR_VERSION :=						\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
-FLAGS := 
+FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
-GCOPTFLAGS := 
+GCOPTFLAGS :=
 DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
-GCDEBUGFLAGS := 
-WARNFLAGS := 
-OPTWARNFLAGS := 
-DEBUGWARNFLAGS := 
+GCDEBUGFLAGS :=
+WARNFLAGS :=
+OPTWARNFLAGS :=
+DEBUGWARNFLAGS :=
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
@@ -106,6 +106,7 @@ FLAGS += -b $(TARGET)
 endif
 
 CC := gcc -std=gnu99
+CPPFLAGS := 
 CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) -DASSERT=1 $(DEBUGFLAGS)
@@ -240,11 +241,12 @@ libgdtoa.a: gdtoa/arith.h
 		$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS)		\
 			-w -O1 -c -DINFNAN_CHECK 		\
 			*.c
+	$(RM) gdtoa/arithchk.o
 	$(AR) libgdtoa.a gdtoa/*.o
 	$(RANLIB) libgdtoa.a
 
 gdtoa/arithchk.c:
-	gzip -dc gdtoa.tgz | tar xf -	
+	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
@@ -255,7 +257,7 @@ gdtoa/arith.h: gdtoa/arithchk.out
 
 libmlton.a: $(OBJS)
 	$(AR) libmlton.a $(OBJS)
-	$(RANLIB) libmlton.a	
+	$(RANLIB) libmlton.a
 
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)

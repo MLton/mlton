@@ -125,7 +125,8 @@ structure OS =
 
             fun tmpName () =
                let
-                  val (f, out) = MLton.TextIO.mkstemp "/tmp/file"
+                  val (f, out) =
+                      MLton.TextIO.mkstemp (MLton.TextIO.tempPrefix "file")
                   val _ = TextIO.closeOut out
                in
                   f
