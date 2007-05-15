@@ -19,7 +19,7 @@ GCC_MINOR_VERSION :=						\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
-FLAGS := 
+FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 GCOPTFLAGS :=
