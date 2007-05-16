@@ -995,7 +995,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4500,
+                        src2 = Operand.immediate_int' (0x4500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.Z,
@@ -1026,7 +1026,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx500,
+                        src2 = Operand.immediate_int' (0x500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.Z,
@@ -1058,11 +1058,11 @@ struct
                        Assembly.instruction_binal
                        {oper = Instruction.AND,
                         dst = fpswTempContentsOperand,
-                        src = Operand.immediate_const_word 0wx4500,
+                        src = Operand.immediate_int' (0x4500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_cmp
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4000,
+                        src2 = Operand.immediate_int' (0x4000, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.E,
@@ -1093,7 +1093,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4400,
+                        src2 = Operand.immediate_int' (0x4400, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.NE,
@@ -1261,7 +1261,7 @@ struct
                                    fn (dst,dstsize) => [Assembly.instruction_binal
                                                         {dst = dst,
                                                          oper = Instruction.ADC,
-                                                         src = Operand.immediate_const_int 0,
+                                                         src = Operand.immediate_zero,
                                                          size = dstsize}]))
              | Word_notb s => 
                 (case WordSize.prim s of
@@ -1761,10 +1761,9 @@ struct
                 | W16 => unal (x86.Instruction.NEG, x86.Instruction.O)
                 | W32 => unal (x86.Instruction.NEG, x86.Instruction.O)
                 | W64 => neg64 ())
-           | Word_subCheck (s, {signed}) =>
+           | Word_subCheck (s, sg) =>
                 let
-                   val flag =
-                      if signed then x86.Instruction.O else x86.Instruction.C
+                   val flag = flag sg
                 in
                    case WordSize.prim s of
                       W8 => binal (x86.Instruction.SUB, flag)

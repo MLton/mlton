@@ -12,9 +12,10 @@ struct
 
   structure x86 = x86 (open Machine
                        structure RepType = Type)
+  structure x86Pseudo = x86PseudoCheck (structure S = x86)
 
   structure x86MLtonBasic
-    = x86MLtonBasic (structure x86 = x86
+    = x86MLtonBasic (structure x86 = x86Pseudo
                      structure Machine = Machine)
 
   structure x86Liveness
@@ -169,7 +170,7 @@ struct
         fun file_begin file
           = [x86.Assembly.pseudoop_data (),
              x86.Assembly.pseudoop_p2align 
-             (x86.Immediate.const_int 2, NONE, NONE),
+             (x86.Immediate.int 2, NONE, NONE),
              x86.Assembly.label x86MLton.fileNameLabel,
              x86.Assembly.pseudoop_string [file]]
 
@@ -187,17 +188,17 @@ struct
                  [
                   x86.Assembly.pseudoop_text (),
                   x86.Assembly.pseudoop_p2align 
-                  (x86.Immediate.const_int 4, NONE, NONE),
+                  (x86.Immediate.int 4, NONE, NONE),
                   x86.Assembly.pseudoop_global jumpToSML,
                   x86.Assembly.label jumpToSML,
                   x86.Assembly.instruction_binal
                   {oper = x86.Instruction.SUB,
-                   src = x86.Operand.immediate_const_int 28,
+                   src = x86.Operand.immediate_int 28,
                    dst = x86.Operand.register x86.Register.esp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 32),
+                         {disp = SOME (x86.Immediate.int 32),
                           base = SOME x86.Register.esp,
                           index= NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.eax,
@@ -205,28 +206,28 @@ struct
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.ebp,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 24),
+                         {disp = SOME (x86.Immediate.int 24),
                           base = SOME x86.Register.esp,
                           index= NONE, scale = NONE},
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.ebx,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 20),
+                         {disp = SOME (x86.Immediate.int 20),
                           base = SOME x86.Register.esp,
                           index= NONE, scale = NONE},
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.edi,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 16),
+                         {disp = SOME (x86.Immediate.int 16),
                           base = SOME x86.Register.esp,
                           index= NONE, scale = NONE},
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.esi,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 12),
+                         {disp = SOME (x86.Immediate.int 12),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    size = x86.Size.LONG},
@@ -239,7 +240,7 @@ struct
                   x86.Assembly.instruction_mov
                   {src = x86.Operand.register x86.Register.ebx,
                    dst = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 8),
+                         {disp = SOME (x86.Immediate.int 8),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    size = x86.Size.LONG},
@@ -251,25 +252,21 @@ struct
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = (SOME o x86.Immediate.binexp)
-                                 {oper = x86.Immediate.Addition,
-                                  exp1 = x86.Immediate.label x86MLton.gcState_label,
-                                  exp2 = x86.Immediate.const_int 
-                                         (Bytes.toInt 
-                                          (Machine.Runtime.GCField.offset
-                                           Machine.Runtime.GCField.StackTop))},
+                         {disp = (SOME o x86.Immediate.labelPlusInt)
+                                 (x86MLton.gcState_label,
+                                  Bytes.toInt 
+                                  (Machine.Runtime.GCField.offset
+                                   Machine.Runtime.GCField.StackTop)),
                           base = NONE, index = NONE, scale = NONE},
                    dst = x86.Operand.register stackTopReg,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = (SOME o x86.Immediate.binexp)
-                                 {oper = x86.Immediate.Addition,
-                                  exp1 = x86.Immediate.label x86MLton.gcState_label,
-                                  exp2 = x86.Immediate.const_int 
-                                         (Bytes.toInt 
-                                          (Machine.Runtime.GCField.offset
-                                           Machine.Runtime.GCField.Frontier))},
+                         {disp = (SOME o x86.Immediate.labelPlusInt)
+                                 (x86MLton.gcState_label,
+                                  Bytes.toInt 
+                                  (Machine.Runtime.GCField.offset
+                                   Machine.Runtime.GCField.Frontier)),
                           base = NONE, index = NONE, scale = NONE},
                    dst = x86.Operand.register frontierReg,
                    size = x86.Size.LONG},
@@ -277,7 +274,7 @@ struct
                   {target = x86.Operand.register x86.Register.eax,
                    absolute = true},
                   x86.Assembly.pseudoop_p2align 
-                  (x86.Immediate.const_int 4, NONE, NONE),
+                  (x86.Immediate.int 4, NONE, NONE),
                   x86.Assembly.pseudoop_global returnToC,
                   x86.Assembly.label returnToC,
                   x86.Assembly.instruction_mov
@@ -288,7 +285,7 @@ struct
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 8),
+                         {disp = SOME (x86.Immediate.int 8),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.ebx,
@@ -301,35 +298,35 @@ struct
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 12),
+                         {disp = SOME (x86.Immediate.int 12),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.esi,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 16),
+                         {disp = SOME (x86.Immediate.int 16),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.edi,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 20),
+                         {disp = SOME (x86.Immediate.int 20),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.ebx,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)
-                         {disp = SOME (x86.Immediate.const_int 24),
+                         {disp = SOME (x86.Immediate.int 24),
                           base = SOME x86.Register.esp,
                           index = NONE, scale = NONE},
                    dst = x86.Operand.register x86.Register.ebp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_binal
                   {oper = x86.Instruction.ADD,
-                   src = x86.Operand.immediate_const_int 28,
+                   src = x86.Operand.immediate_int 28,
                    dst = x86.Operand.register x86.Register.esp,
                    size = x86.Size.LONG},
                   x86.Assembly.instruction_ret {src = NONE}

@@ -81,24 +81,6 @@ struct
           end
       val toString = Layout.toString o layout
 
-      val layout'
-        = let
-            open Layout
-          in 
-            fn BYTE => str "byte"
-             | WORD => str "word"
-             | LONG => str "long"
-             | SNGL => str "sngl"
-             | DBLE => str "dble"
-             | EXTD => str "extd"
-             | FPIS => str "fpis"
-             | FPIL => str "fpil"
-             | FPIQ => str "fpiq"
-          end
-      val toString' = Layout.toString o layout'
-      (* quell unused warning *)
-      val _ = toString'
-
       val fromBytes : int -> t
         = fn 1 => BYTE
            | 2 => WORD
@@ -272,10 +254,6 @@ struct
                                   else NONE
                               end)
 
-      fun coincident (T {reg, ...}) = coincident' reg
-      (* quell unused warning *)
-      val _ = coincident
-
       val registers
         = fn Size.BYTE => byteRegisters
            | Size.WORD => wordRegisters
@@ -334,18 +312,6 @@ struct
            | (T {reg,       part = X},Size.WORD) => T {reg = reg, part = X}
            | (T {reg,       ...},     Size.WORD) => T {reg = reg, part = X}
            | _ => Error.bug "x86.Register.lowPartOf: register,lowsize"
-
-      val fullPartOf (* (register,fullsize) *)
-        = fn (T {reg, part = L},Size.BYTE) => T {reg = reg, part = L}
-           | (T {reg, part = H},Size.BYTE) => T {reg = reg, part = H}
-           | (T {reg, part = L},Size.WORD) => T {reg = reg, part = X}
-           | (T {reg, part = X},Size.WORD) => T {reg = reg, part = X}
-           | (T {reg, part = L},Size.LONG) => T {reg = reg, part = E}
-           | (T {reg, part = X},Size.LONG) => T {reg = reg, part = E}
-           | (T {reg, part = E},Size.LONG) => T {reg = reg, part = L}
-           | _ => Error.bug "x86.Register.fullPartOf: register,fullsize"
-      (* quell unused warning *)
-      val _ = fullPartOf
     end
 
   structure FltRegister =
@@ -377,213 +343,59 @@ struct
 
   structure Immediate =
     struct
-      datatype const
-        = Char of char
-        | Int of int
-        | Word of word
-      val const_layout
-        = let
-            open Layout
-          in
-            fn Char c => (Int.layout o Char.ord) c
-             | Int i => if i >= 0
-                          then Int.layout i
-                          else seq [str "-", 
-                                    str (String.dropPrefix(Int.toString i, 1))]
-             | Word w => seq [str "0x", Word.layout w]
-          end
-      val const_eval
-        = fn Char c => (Word.fromInt o Char.ord) c
-           | Int i => Word.fromInt i
-           | Word w => w
-      val const_hash = const_eval
-      val const_compare
-        = fn (Char c1, Char c2) => Char.compare (c1, c2)
-           | (Char _, Int _) => LESS
-           | (Char _, Word _) => LESS
-           | (Int i1, Int i2) => Int.compare (i1, i2)
-           | (Int _, Word _) => LESS
-           | (Word w1, Word w2) => Word.compare (w1, w2)
-           | _ => GREATER
-
-      datatype un
-        = Negation
-        | Complementation
-      val un_layout
-        = let
-            open Layout
-          in 
-            fn Negation => str "-"
-             | Complementation => str "~"
-          end
-      val un_hash : un -> Word.t
-        = fn Negation => 0w1
-           | Complementation => 0w2
-      val un_compare
-        = fn (un1, un2) => Word.compare (un_hash un1, un_hash un2)
-
-      datatype bin
-        = Multiplication
-        | Division
-        | Remainder
-        | ShiftLeft
-        | ShiftRight
-        | BitOr
-        | BitAnd
-        | BitXor
-        | BitOrNot
-        | Addition
-        | Subtraction
-      val bin_layout
-        = let
-            open Layout
-          in 
-            fn Multiplication => str "*"
-             | Division => str "/"
-             | Remainder => str "%"
-             | ShiftLeft => str "<<"
-             | ShiftRight => str ">>"
-             | BitOr => str "|"
-             | BitAnd => str "&"
-             | BitXor => str "^"
-             | BitOrNot => str "!"
-             | Addition => str "+"
-             | Subtraction => str "-"
-          end
-      val bin_hash : bin -> Word.t
-        = fn Multiplication => 0w1
-           | Division => 0w2
-           | Remainder => 0w3
-           | ShiftLeft => 0w4
-           | ShiftRight => 0w5
-           | BitOr => 0w6
-           | BitAnd => 0w7
-           | BitXor => 0w8 
-           | BitOrNot => 0w9
-           | Addition => 0w10
-           | Subtraction => 0w11
-      val bin_compare
-        = fn (bin1, bin2) => Word.compare (bin_hash bin1, bin_hash bin2)
-
       datatype u
-        = Const of const
-
+        = Word of WordX.t
         | Label of Label.t
-        | ImmedUnExp of {oper: un,
-                         exp: t}
-        | ImmedBinExp of {oper: bin,
-                          exp1: t,
-                          exp2: t}
+        | LabelPlusWord of Label.t * WordX.t
       and t
         = T of {immediate: u,
                 plist: PropertyList.t,
-                hash: Word.t,
-                eval: Word.t option}
+                hash: Word.t}
 
       local 
         open Layout
       in
         val rec layoutU
-          = fn Const c => const_layout c
+          = fn Word w => WordX.layout w
              | Label l => Label.layout l
-             | ImmedUnExp {oper, exp}
-             => paren (seq [un_layout oper, layout exp])
-             | ImmedBinExp {oper, exp1, exp2}
-             => paren (seq [layout exp1, bin_layout oper, layout exp2])
+             | LabelPlusWord (l, w) 
+             => paren (seq [Label.layout l, str "+", WordX.layout w])
         and layout
           = fn T {immediate, ...} => layoutU immediate
       end
 
       val rec eqU
-        = fn (Const c1, Const c2) => c1 = c2
+        = fn (Word w1, Word w2) => WordX.equals (w1, w2)
            | (Label l1, Label l2) => Label.equals(l1, l2)
-           | (ImmedUnExp {oper = oper,  exp = exp},
-              ImmedUnExp {oper = oper', exp = exp'})
-           => oper = oper' andalso 
-              eq(exp, exp') 
-           | (ImmedBinExp {oper = oper,  exp1 = exp1,  exp2 = exp2},
-              ImmedBinExp {oper = oper', exp1 = exp1', exp2 = exp2'})
-           => oper = oper' andalso 
-              eq(exp1, exp1') andalso 
-              eq(exp2, exp2')
+           | (LabelPlusWord (l1, w1), LabelPlusWord (l2,w2))
+           => Label.equals(l1,l2) andalso WordX.equals(w1, w2)
            | _ => false
       and eq
         = fn (T {plist = plist1, ...},
               T {plist = plist2, ...})
            => PropertyList.equals(plist1, plist2)
 
-      val rec compareU
-        = fn (Const c1, Const c2) => const_compare (c1, c2)
-           | (Const _, Label _) => LESS
-           | (Const _, ImmedUnExp _) => LESS
-           | (Const _, ImmedBinExp _) => LESS
-           | (Label l1, Label l2) 
-           => lexical [fn () => EQUAL,
-                       fn () => String.compare (Label.toString l1,
-                                                Label.toString l2)]
-           | (Label _, ImmedUnExp _) => LESS
-           | (Label _, ImmedBinExp _) => LESS
-           | (ImmedUnExp {oper = oper1, exp = exp1},
-              ImmedUnExp {oper = oper2, exp = exp2})
-           => lexical [fn () => un_compare (oper1, oper2),
-                       fn () => compare (exp1, exp2)]
-           | (ImmedUnExp _, ImmedBinExp _) => LESS
-           | (ImmedBinExp {oper = oper1, exp1 = exp11, exp2 = exp12},
-              ImmedBinExp {oper = oper2, exp1 = exp21, exp2 = exp22})
-           => lexical [fn () => bin_compare (oper1, oper2),
-                       fn () => compare (exp11, exp21),
-                       fn () => compare (exp12, exp22)]
-           | _ => GREATER
-      and compare
-        = fn (T {immediate = immediate1, ...},
-              T {immediate = immediate2, ...})
-           => compareU(immediate1, immediate2)
-
       local 
-        open Word 
+        open WordX
       in
         val rec evalU
-          = fn Const c => SOME (const_eval c)
+          = fn Word w => SOME w
              | Label _ => NONE
-             | ImmedUnExp {oper, exp}
-             => (case eval exp
-                   of SOME i 
-                    => (case oper
-                          of Negation => SOME (0wx0 - i)
-                           | Complementation => SOME (notb i))
-                    | NONE => NONE)
-             | ImmedBinExp {oper, exp1, exp2}
-             => (case (eval exp1, eval exp2)
-                   of (SOME i1, SOME i2)
-                    => (case oper
-                          of Multiplication => SOME (i1 * i2)
-                           | Division => SOME (i1 div i2)
-                           | Remainder => SOME (i1 mod i2)
-                           | ShiftLeft => SOME (<<(i1, i2))
-                           | ShiftRight => SOME (>>(i1, i2))
-                           | BitOr => SOME (orb(i1, i2))
-                           | BitAnd => SOME (andb(i1, i2))
-                           | BitXor => SOME (xorb(i1, i2))
-                           | BitOrNot => SOME ((notb o orb)(i1, i2))
-                           | Addition => SOME (i1 + i2)
-                           | Subtraction => SOME (i1 - i2))
-                    | _ => NONE)
+             | LabelPlusWord _ => NONE
         and eval
-          = fn T {eval, ...} => eval
+          = fn T {immediate, ...} => evalU immediate
       end
 
-      val zero = fn i => eval i = SOME 0wx0
+      val isZero = fn i => case eval i of SOME w => WordX.isZero w | _ => false
 
       local 
         open Word
       in 
         val rec hashU
-          = fn Const c => const_hash c
+          = fn Word w => WordX.hash w
              | Label l => Label.hash l
-             | ImmedUnExp {exp, ...}
-             => hash exp
-             | ImmedBinExp {exp1, exp2, ...}
-             => Word.xorb(0wx5555 * (hash exp1), hash exp2)
+             | LabelPlusWord (l,w)
+             => Word.xorb(0wx5555 * (Label.hash l), WordX.hash w)
         and hash
           = fn T {hash, ...} => hash
       end
@@ -603,8 +415,7 @@ struct
                     => eqU(immediate', immediate),
                    fn () => T {immediate = immediate,
                                hash = hash,
-                               plist = PropertyList.new (),
-                               eval = evalU immediate})
+                               plist = PropertyList.new ()})
                 end
 
         val destruct
@@ -616,20 +427,29 @@ struct
              let in
                PropertyList.clear plist;
                case immediate
-                 of Label l => Label.clear l
-                  | _ => ()
+                 of Word _ => ()
+                  | Label l => Label.clear l
+                  | LabelPlusWord (l, _) => Label.clear l
              end)
       end
 
-      val const = construct o Const
-      val const_char = const o Char
-      val const_int = const o Int
-      val const_word = const o Word
+      val word = construct o Word
       val label = construct o Label
+      val labelPlusWord = fn (l, w) =>
+         if WordSize.equals (WordX.size w, WordSize.word32)
+            then construct (LabelPlusWord (l, w))
+         else Error.bug "x86.Immediate.labelPlusWord"
+
+      val int' = fn (i, ws) => word (WordX.fromIntInf (IntInf.fromInt i, ws))
+      val int = fn i => int' (i, WordSize.word32)
+      val zero = int 0
+
+      val labelPlusInt = fn (l, i) => 
+         labelPlusWord (l, WordX.fromIntInf (IntInf.fromInt i, WordSize.word32))
+
       val deLabel
         = fn T {immediate = Label l, ...} => SOME l
            | _ => NONE
-      val binexp = construct o ImmedBinExp
     end
 
   structure Scale = 
@@ -674,11 +494,12 @@ struct
 
       fun eq(s1, s2) = s1 = s2
 
-      val toImmediate
-        = fn One => Immediate.const_int 1
-           | Two => Immediate.const_int 2
-           | Four => Immediate.const_int 4
-           | Eight => Immediate.const_int 8
+      val toWordX
+        = fn One => WordX.fromIntInf (1, WordSize.word32)
+           | Two => WordX.fromIntInf (2, WordSize.word32)
+           | Four => WordX.fromIntInf (4, WordSize.word32)
+           | Eight => WordX.fromIntInf (8, WordSize.word32)
+      val toImmediate = Immediate.word o toWordX
     end
 
   structure Address =
@@ -721,17 +542,6 @@ struct
           base = base' andalso
           index = index' andalso
           scale = scale'
-
-      fun shift (T {disp, base, index, scale}, i)
-        = T {disp = case disp
-                      of SOME disp 
-                       => SOME (Immediate.binexp {oper = Immediate.Addition,
-                                                  exp1 = disp,
-                                                  exp2 = i})
-                       | NONE => SOME i,
-             base = base, index = index, scale = scale}
-      (* quell unused warning *)
-      val _ = shift
     end
 
   structure MemLoc =
@@ -801,6 +611,19 @@ struct
              | (SOME imm, SOME mem) => seq [Immediate.layout imm,
                                             str "+",
                                             layout mem]
+
+        and layoutImmMemScale
+          = fn (NONE, NONE, _) => str "0"
+             | (SOME imm, NONE, _) => Immediate.layout imm
+             | (NONE, SOME mem, scale) => seq [layout mem,
+                                               str "*",
+                                               Scale.layout scale]
+             | (SOME imm, SOME mem, scale) => seq [Immediate.layout imm,
+                                                   str "+(",
+                                                   layout mem,
+                                                   str "*",
+                                                   Scale.layout scale,
+                                                   str ")"]
         and layoutU
           = fn U {immBase, memBase,
                   immIndex, memIndex,
@@ -812,10 +635,8 @@ struct
                      Class.layout class,
                      str "}[(",
                      layoutImmMem (immBase, memBase),
-                     str ")+((",
-                     layoutImmMem (immIndex, memIndex),
-                     str ")*",
-                     Scale.layout scale,
+                     str ")+(",
+                     layoutImmMemScale (immIndex, memIndex, scale),
                      str ")]"]
         and layout
           = fn T {memloc, ...} => layoutU memloc
@@ -914,19 +735,19 @@ struct
         = fn ({immIndex = immIndex1, size = size1},
               {immIndex = immIndex2, size = size2})
            => let
-                val size1 = Size.toBytes size1
-                val size2 = Size.toBytes size2
+                val size1 = IntInf.fromInt (Size.toBytes size1)
+                val size2 = IntInf.fromInt (Size.toBytes size2)
               in
                 case (Immediate.eval (case immIndex1
-                                        of NONE => Immediate.const_int 0
+                                        of NONE => Immediate.zero
                                          | SOME immIndex => immIndex),
                       Immediate.eval (case immIndex2
-                                        of NONE => Immediate.const_int 0
+                                        of NONE => Immediate.zero
                                          | SOME immIndex => immIndex))
                   of (SOME pos1, SOME pos2)
                    => (let
-                         val pos1 = Word.toInt pos1
-                         val pos2 = Word.toInt pos2
+                         val pos1 = WordX.toIntInfX pos1
+                         val pos2 = WordX.toIntInfX pos2
                        in 
                          if pos1 < pos2 
                            then pos2 < (pos1 + size1) 
@@ -999,19 +820,19 @@ struct
         = fn ({immIndex = immIndex1, size = size1},
               {immIndex = immIndex2, size = size2})
            => let
-                val size1 = Size.toBytes size1
-                val size2 = Size.toBytes size2
+                val size1 = IntInf.fromInt (Size.toBytes size1)
+                val size2 = IntInf.fromInt (Size.toBytes size2)
               in
                 case (Immediate.eval (case immIndex1
-                                        of NONE => Immediate.const_int 0
+                                        of NONE => Immediate.zero
                                          | SOME immIndex => immIndex),
                       Immediate.eval (case immIndex2
-                                        of NONE => Immediate.const_int 0
+                                        of NONE => Immediate.zero
                                          | SOME immIndex => immIndex))
                   of (SOME pos1, SOME pos2)
                    => (let
-                         val pos1 = Word.toInt pos1
-                         val pos2 = Word.toInt pos2
+                         val pos1 = WordX.toIntInfX pos1
+                         val pos2 = WordX.toIntInfX pos2
                        in 
                          if pos1 < pos2 
                            then if pos2 < (pos1 + size1) 
@@ -1125,13 +946,22 @@ struct
       val rec classU = fn U {class, ...} => class
       and class = fn T {memloc, ...} => classU memloc
 
+      fun scaleImmediate (imm, scale) =
+        case Immediate.destruct imm of
+           Immediate.Word w => Immediate.word (WordX.mul (w, 
+                                                          Scale.toWordX scale, 
+                                                          {signed = true}))
+         | _ => Error.bug "x86.MemLoc.scaleImmediate"
+
+      fun addImmediate (imm1, imm2) =
+        case (Immediate.destruct imm1, Immediate.destruct imm2) of
+           (Immediate.Word w1, Immediate.Word w2) => Immediate.word (WordX.add (w1, w2))
+         | _ => Error.bug "x86.MemLoc.scaleImmediate"
+
       val imm = fn {base, index, scale, size, class} 
         => construct (U {immBase = SOME base,
                          memBase = NONE,
-                         immIndex = SOME (Immediate.binexp
-                                          {oper = Immediate.Multiplication,
-                                           exp1 = index,
-                                           exp2 = Scale.toImmediate scale}),
+                         immIndex = SOME (scaleImmediate (index, scale)),
                          memIndex = NONE,
                          scale = scale,
                          size = size,
@@ -1147,11 +977,7 @@ struct
       val simple = fn {base, index, scale, size, class} 
         => construct (U {immBase = NONE,
                          memBase = SOME base,
-                         immIndex 
-                         = SOME (Immediate.binexp
-                                 {oper = Immediate.Multiplication,
-                                  exp1 = index,
-                                  exp2 = Scale.toImmediate scale}),
+                         immIndex = SOME (scaleImmediate (index, scale)),
                          memIndex = NONE,
                          scale = scale,
                          size = size,
@@ -1167,11 +993,7 @@ struct
                          class = class})
       val shift = fn {origin, disp, scale, size} 
         => let  
-              val disp =
-                 Immediate.binexp
-                 {oper = Immediate.Multiplication,
-                  exp1 = disp,
-                  exp2 = Scale.toImmediate scale}
+              val disp = scaleImmediate (disp, scale)
               val U {immBase, memBase, 
                      immIndex, memIndex, 
                      scale, class, ...} =
@@ -1182,10 +1004,7 @@ struct
                             immIndex = 
                             case immIndex of
                                NONE => SOME disp
-                             | SOME immIndex => SOME (Immediate.binexp
-                                                      {oper = Immediate.Addition,
-                                                       exp1 = immIndex,
-                                                       exp2 = disp}),
+                             | SOME immIndex => SOME (addImmediate (immIndex, disp)),
                             memIndex = memIndex,
                             scale = scale,
                             size = size,
@@ -1196,8 +1015,8 @@ struct
         val num : int ref = ref 0
       in
         val temp = fn {size} => (Int.inc num;
-                                 imm {base = Immediate.const_int 0,
-                                      index = Immediate.const_int (!num),
+                                 imm {base = Immediate.zero,
+                                      index = Immediate.int (!num),
                                       scale = Scale.One,
                                       size = size,
                                       class = Class.Temp})
@@ -1208,7 +1027,7 @@ struct
        *)
       fun makeContents {base, size, class}
         = imm {base = base,
-               index = Immediate.const_int 0,
+               index = Immediate.zero,
                scale = Scale.Four,
                size = size,
                class = class}
@@ -1377,10 +1196,10 @@ struct
       val deImmediate
         = fn Immediate x => SOME x
            | _ => NONE
-      val immediate_const = immediate o Immediate.const
-      val immediate_const_char = immediate o Immediate.const_char
-      val immediate_const_int = immediate o Immediate.const_int
-      val immediate_const_word = immediate o Immediate.const_word
+      val immediate_word = immediate o Immediate.word
+      val immediate_int' = immediate o Immediate.int'
+      val immediate_int = immediate o Immediate.int
+      val immediate_zero = immediate Immediate.zero
       val immediate_label = immediate o Immediate.label
       val label = Label
       val deLabel
@@ -1397,7 +1216,7 @@ struct
         fun cReturnTempContent (index, size) =
            MemLoc.imm
            {base = Immediate.label cReturnTemp,
-            index = Immediate.const_int index,
+            index = Immediate.int index,
             scale = Scale.One,
             size = size,
             class = MemLoc.Class.StaticTemp}
@@ -2348,7 +2167,7 @@ struct
                          of Operand.MemLoc base
                           => [Operand.MemLoc 
                               (MemLoc.simple {base = base,
-                                              index = Immediate.const_int 0,
+                                              index = Immediate.zero,
                                               size = size,
                                               scale = Scale.One,
                                               class = MemLoc.Class.CStack})]
@@ -2360,7 +2179,7 @@ struct
                          of Operand.MemLoc base
                           => [Operand.MemLoc 
                               (MemLoc.simple {base = base,
-                                              index = Immediate.const_int 0,
+                                              index = Immediate.zero,
                                               size = size,
                                               scale = Scale.One,
                                               class = MemLoc.Class.CStack})]
@@ -3857,7 +3676,7 @@ struct
     struct
       structure Cases =
         struct
-          datatype 'a t = Word of (word * 'a) list
+          datatype 'a t = Word of (WordX.t * 'a) list
 
           val word = Word
 
@@ -3975,7 +3794,7 @@ struct
               (concat o Cases.mapToList)
               (cases,
                fn (w, target) => concat[" (",
-                                        Word.toString w,
+                                        WordX.toString w,
                                         " -> GOTO ",
                                         Label.toString target,
                                         ")"]) ^

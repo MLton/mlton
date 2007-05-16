@@ -18,6 +18,8 @@ signature X86_MLTON_BASIC_STRUCTS =
     sharing x86.ProfileLabel = Machine.ProfileLabel
     sharing x86.RepType = Machine.Type
     sharing x86.Runtime = Machine.Runtime
+    sharing x86.WordSize = Machine.WordSize
+    sharing x86.WordX = Machine.WordX
   end
 
 signature X86_MLTON_BASIC =

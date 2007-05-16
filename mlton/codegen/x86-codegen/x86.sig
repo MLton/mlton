@@ -7,7 +7,6 @@
  *)
 
 type int = Int.t
-type word = Word.t
 
 signature X86_STRUCTS =
   sig
@@ -17,8 +16,11 @@ signature X86_STRUCTS =
     structure ProfileLabel: PROFILE_LABEL 
     structure RepType: REP_TYPE
     structure Runtime: RUNTIME
+    structure WordSize: WORD_SIZE
+    structure WordX: WORD_X
     sharing CFunction = RepType.CFunction
     sharing CType = RepType.CType
+    sharing WordSize = CType.WordSize = WordX.WordSize
   end
 
 signature X86 =
@@ -28,8 +30,11 @@ signature X86 =
     structure Label: ID
     structure RepType: REP_TYPE
     structure Runtime: RUNTIME
+    structure WordSize: WORD_SIZE
+    structure WordX: WORD_X
     sharing CFunction = RepType.CFunction
     sharing CType = RepType.CType
+    sharing WordSize = CType.WordSize = WordX.WordSize
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -46,7 +51,6 @@ signature X86 =
           | FPIS | FPIL | FPIQ
 
         val toString : t -> string
-        val toString' : t -> string
         val fromBytes : int -> t
         val toBytes : t -> int
         val fromCType : CType.t -> t vector
@@ -74,7 +78,6 @@ signature X86 =
         val valid  : t -> bool
         val coincide : t * t -> bool
         val coincident' : reg -> t list
-        val coincident : t -> t list
 
 (*
         val return : Size.t -> t
@@ -100,7 +103,6 @@ signature X86 =
 
         val withLowPart : Size.t * Size.t -> t list
         val lowPartOf : t * Size.t -> t
-        val fullPartOf : t * Size.t -> t
       end
 
     structure FltRegister :
@@ -123,48 +125,25 @@ signature X86 =
       sig
         type t 
 
-        datatype const
-          = Char of char
-          | Int of int
-          | Word of word
-        datatype un
-          = Negation
-          | Complementation
-        datatype bin
-          = Multiplication
-          | Division
-          | Remainder
-          | ShiftLeft
-          | ShiftRight
-          | BitOr
-          | BitAnd
-          | BitXor
-          | BitOrNot
-          | Addition
-          | Subtraction
         datatype u
-          = Const of const
+          = Word of WordX.t
           | Label of Label.t
-          | ImmedUnExp of {oper: un,
-                           exp: t}
-          | ImmedBinExp of {oper: bin,
-                            exp1: t,
-                            exp2: t}
+          | LabelPlusWord of Label.t * WordX.t
 
-        val const : const -> t
-        val const_char : char -> t
-        val const_int : int -> t
-        val const_word : word -> t
+        val word : WordX.t -> t
+        val int' : int * WordSize.t -> t
+        val int : int -> t
+        val zero : t
         val label : Label.t -> t
+        val labelPlusWord : Label.t * WordX.t -> t
+        val labelPlusInt : Label.t * int -> t
+
         val deLabel : t -> Label.t option
-        val binexp : {oper: bin, 
-                      exp1: t,
-                      exp2: t} -> t
         val destruct : t -> u
         val clearAll : unit -> unit
 
-        val eval : t -> word option
-        val zero : t -> bool
+        val eval : t -> WordX.t option
+        val isZero : t -> bool
         val eq : t * t -> bool
     end
 
@@ -173,6 +152,7 @@ signature X86 =
         datatype t 
           = One | Two | Four | Eight
         val eq : t * t -> bool
+        val toWordX : t -> WordX.t
         val toImmediate : t -> Immediate.t
         val fromBytes : int -> t
         val fromCType : CType.t -> t
@@ -184,7 +164,6 @@ signature X86 =
                            base: Register.t option,
                            index: Register.t option,
                            scale: Scale.t option}
-        val shift : t * Immediate.t -> t
       end
 
     structure MemLoc :
@@ -293,10 +272,10 @@ signature X86 =
         val fltregister : FltRegister.t -> t
         val deFltregister : t -> FltRegister.t option
         val immediate : Immediate.t -> t
-        val immediate_const : Immediate.const -> t
-        val immediate_const_char : char -> t
-        val immediate_const_int : int -> t
-        val immediate_const_word : word -> t
+        val immediate_word : WordX.t -> t
+        val immediate_int' : int * WordSize.t -> t
+        val immediate_int : int -> t
+        val immediate_zero : t
         val immediate_label : Label.t -> t
         val deImmediate : t -> Immediate.t option
         val label : Label.t -> t
@@ -1111,19 +1090,19 @@ signature X86 =
       sig
         structure Cases :
           sig
-            datatype 'a t = Word of (word * 'a) list
+            datatype 'a t = Word of (WordX.t * 'a) list
 
-            val word : (word * 'a) list -> 'a t
+            val word : (WordX.t * 'a) list -> 'a t
 
             val isEmpty : 'a t -> bool
             val isSingle : 'a t -> bool
-            val extract : 'a t * (word * 'a -> 'b) -> 'b
+            val extract : 'a t * (WordX.t * 'a -> 'b) -> 'b
             val count : 'a t * ('a -> bool) -> int
-            val keepAll : 'a t * (word * 'a -> bool) -> 'a t
-            val forall : 'a t * (word * 'a -> bool) -> bool
-            val foreach : 'a t * (word * 'a -> unit) -> unit
-            val map : 'a t * (word * 'a -> 'b) -> 'b t
-            val mapToList : 'a t * (word * 'a -> 'b) -> 'b list
+            val keepAll : 'a t * (WordX.t * 'a -> bool) -> 'a t
+            val forall : 'a t * (WordX.t * 'a -> bool) -> bool
+            val foreach : 'a t * (WordX.t * 'a -> unit) -> unit
+            val map : 'a t * (WordX.t * 'a -> 'b) -> 'b t
+            val mapToList : 'a t * (WordX.t * 'a -> 'b) -> 'b list
           end
 
         datatype t

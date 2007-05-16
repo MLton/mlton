@@ -2443,7 +2443,7 @@ struct
                   => let        
                        val spillMemLoc
                          = MemLoc.imm {base = Immediate.label spillLabel,
-                                       index = Immediate.const_int spillEnd,
+                                       index = Immediate.int spillEnd,
                                        scale = x86MLton.wordScale,
                                        size = MemLoc.size memloc,
                                        class = x86MLton.Classes.Temp}
@@ -2730,7 +2730,7 @@ struct
                                          = MemLoc.imm
                                            {base = Immediate.label
                                                    (Label.fromString "BUG"),
-                                            index = Immediate.const_int 0,
+                                            index = Immediate.zero,
                                             scale = Scale.One,
                                             size = MemLoc.size memloc,
                                             class = MemLoc.Class.Temp},
@@ -3447,14 +3447,17 @@ struct
                 = MemLoc.destruct memloc
 
               val disp 
-                = Immediate.binexp
-                  {oper = Immediate.Addition,
-                   exp1 = case immBase
-                            of NONE => Immediate.const_int 0
-                             | SOME immBase => immBase,
-                   exp2 = case immIndex
-                            of NONE => Immediate.const_int 0
-                             | SOME immIndex => immIndex}
+                = case (immBase, immIndex) of
+                     (NONE, NONE) => Immediate.zero
+                   | (SOME immBase, NONE) => immBase
+                   | (NONE, SOME immIndex) => immIndex
+                   | (SOME immBase, SOME immIndex) 
+                   => (case (Immediate.destruct immBase, Immediate.destruct immIndex) of
+                          (Immediate.Label l1, Immediate.Word w2) => 
+                             Immediate.labelPlusWord (l1, w2)
+                        | (Immediate.LabelPlusWord (l1, w1), Immediate.Word w2) => 
+                             Immediate.labelPlusWord (l1, WordX.add (w1, w2))
+                        | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc:disp")
 
               val {register = register_base,
                    assembly = assembly_base,
@@ -4792,7 +4795,7 @@ struct
                      val temp 
                        = MemLoc.imm
                          {base = Immediate.label (Label.fromString "raTemp2"),
-                          index = Immediate.const_int 0,
+                          index = Immediate.zero,
                           scale = Scale.Eight,
                           size = Size.DBLE,
                           class = MemLoc.Class.Temp}
@@ -5893,8 +5896,8 @@ struct
             {assembly = AppendList.appends
                         [assembly_reserve,
                          assembly_shuffle,
-                         assembly_commit_registers,
                          assembly_commit_fltregisters,
+                         assembly_commit_registers,
                          assembly_unreserve],
              registerAllocation = registerAllocation}
           end
@@ -8024,11 +8027,7 @@ struct
                              info = info,
                              registerAllocation = registerAllocation}
 
-                        val isConst0
-                          = fn Immediate.Const (Immediate.Char #"\000") => true
-                             | Immediate.Const (Immediate.Int 0) => true
-                             | Immediate.Const (Immediate.Word 0wx0) => true
-                             | _ => false
+                        val isConst0 = Immediate.isZero
 
                         (* special case moving 0 to a register
                          *)
@@ -8036,7 +8035,7 @@ struct
                           = case (final_src, final_dst)
                               of (Operand.Immediate immediate,
                                   Operand.Register _)
-                               => if isConst0 (Immediate.destruct immediate)
+                               => if isConst0 immediate
                                     then Instruction.BinAL
                                          {oper = XOR,
                                           src = final_dst,
