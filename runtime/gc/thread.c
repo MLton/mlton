@@ -10,7 +10,7 @@ void displayThread (GC_state s,
                     GC_thread thread, 
                     FILE *stream) {
   fprintf(stream,
-          "\t\texnStack = %"PRIu32"\n"
+          "\t\texnStack = %zu\n"
           "\t\tbytesNeeded = %zu\n"
           "\t\tstack = "FMTOBJPTR"\n",
           thread->exnStack,

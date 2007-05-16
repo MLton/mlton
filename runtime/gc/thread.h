@@ -14,7 +14,7 @@
  * header ::
  * padding ::
  * bytesNeeded (size_t) ::
- * exnStack (word32) ::
+ * exnStack (size_t) ::
  * stack (object-pointer)
  *
  * There may be zero or more bytes of padding for alignment purposes.
@@ -22,7 +22,7 @@
  * The bytesNeeded size_t is the number of bytes needed when returning
  * to this thread.
  *
- * The exnStack uint32_t is an offset added to stackBottom that
+ * The exnStack size_t is an offset added to stackBottom that
  * specifies the top of the exnStack.
  *
  * The final component is the stack object-pointer.
@@ -33,17 +33,17 @@
  */
 typedef struct GC_thread {
   size_t bytesNeeded;
-  uint32_t exnStack;
+  size_t exnStack;
   objptr stack;
 } __attribute__ ((packed)) *GC_thread;
 
 COMPILE_TIME_ASSERT(GC_thread__packed,
                     sizeof(struct GC_thread) ==
                     sizeof(size_t)
-                    + sizeof(uint32_t)
+                    + sizeof(size_t)
                     + sizeof(objptr));
 
-#define BOGUS_EXN_STACK 0xFFFFFFFF
+#define BOGUS_EXN_STACK ((size_t)(-1))
 
 #else
 

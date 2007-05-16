@@ -31,7 +31,6 @@ signature WORD_SIZE =
       val cptrdiff: unit -> t
       val csize: unit -> t
       val equals: t * t -> bool
-      val exnStack: t
       val fromBits: Bits.t -> t
       val isInRange: t * IntInf.t * {signed: bool} -> bool
       val max: t * {signed: bool} -> IntInf.t
@@ -48,6 +47,7 @@ signature WORD_SIZE =
       val smallIntInfWord: unit -> t
       val toString: t -> string
       val word8: t      
+      val word16: t
       val word32: t
       val word64: t
    end

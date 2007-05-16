@@ -83,7 +83,7 @@ structure Type =
          T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
 
       val exnStack: unit -> t = fn () => 
-         T {node = ExnStack, width = WordSize.bits WordSize.exnStack}
+         T {node = ExnStack, width = WordSize.bits (WordSize.csize ())}
 
       val gcState: unit -> t = fn () => 
          T {node = GCState, width = WordSize.bits (WordSize.cpointer ())}
