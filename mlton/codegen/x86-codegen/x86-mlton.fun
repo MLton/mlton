@@ -32,7 +32,7 @@ struct
   fun implementsPrim (p: 'a Prim.t) =
      let
         datatype z = datatype RealSize.t
-        datatype z = datatype WordSize.prim
+        datatype z = datatype WordSize.prim 
         fun w32168 s =
            case WordSize.prim s of
               W8 => true
@@ -1175,10 +1175,10 @@ struct
                        {entry = NONE,
                         statements 
                         = [Assembly.instruction_pfmovti
-                           {dst = dst,
+                           {dst = tmp,
                             src = src,
                             srcsize = srcsize,
-                            dstsize = dstsize},
+                            dstsize = tmpsize},
                            Assembly.instruction_xvom
                            {src = tmp,
                             dst = dst,

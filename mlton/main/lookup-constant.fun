@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -30,7 +30,8 @@ val buildConstants: (string * (unit -> string)) list =
        ("MLton_Codegen_codegen", fn () => int (case !codegen of
                                                   Bytecode => 0
                                                 | CCodegen => 1
-                                                | Native => 2)),
+                                                | x86Codegen => 2
+                                                | amd64Codegen => 3)),
        ("MLton_FFI_numExports", fn () => int (Ffi.numExports ())),
        ("MLton_Profile_isOn", fn () => bool (case !profile of
                                                 ProfileNone => false

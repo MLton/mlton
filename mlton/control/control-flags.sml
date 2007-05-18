@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -59,18 +59,20 @@ structure Codegen =
       datatype t =
          Bytecode
        | CCodegen
-       | Native
+       | x86Codegen
+       | amd64Codegen
 
       val toString: t -> string =
          fn Bytecode => "Bytecode"
           | CCodegen => "C"
-          | Native => "Native"
+          | x86Codegen => "x86"
+          | amd64Codegen => "amd64"
    end
 
 datatype codegen = datatype Codegen.t
 
 val codegen = control {name = "codegen",
-                       default = Native,
+                       default = x86Codegen,
                        toString = Codegen.toString}
 
 val contifyIntoMain = control {name = "contifyIntoMain",

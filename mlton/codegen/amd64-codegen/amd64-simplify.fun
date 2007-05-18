@@ -6,14 +6,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor x86Simplify(S: X86_SIMPLIFY_STRUCTS): X86_SIMPLIFY =
+functor amd64Simplify(S: AMD64_SIMPLIFY_STRUCTS): AMD64_SIMPLIFY =
 struct
 
   open S
-  open x86
+  open amd64
 
-  val tracer = x86.tracer
-  val tracerTop = x86.tracerTop
+  val tracer = amd64.tracer
+  val tracerTop = amd64.tracerTop
 
   structure PeepholeBlock =
     struct
@@ -202,7 +202,7 @@ struct
                                 transfer = transfer})
                        end
                   else NONE
-             | _ => Error.bug "x86Simplify.PeepholeBlock: elimBinALMDDouble"
+             | _ => Error.bug "amd64Simplify.PeepholeBlock: elimBinALMDDouble"
 
         val (callback,elimBinALMDDouble_msg) 
           = make_callback_msg "elimBinALMDDouble"
@@ -215,25 +215,21 @@ struct
       end
 
       local
-        val isInstructionFMOV : statement_type -> bool
-          = fn Assembly.Instruction (Instruction.pFMOV _)
+        val isInstructionSSEMOVS : statement_type -> bool
+          = fn Assembly.Instruction (Instruction.SSE_MOVS _)
              => true
              | _ => false
 
-        val isInstructionFBinA : statement_type -> bool
-          = fn Assembly.Instruction (Instruction.pFBinA _)
-             => true
-             | Assembly.Instruction (Instruction.pFBinAS _)
-             => true
-             | Assembly.Instruction (Instruction.pFBinASP _)
+        val isInstructionSSEBinAS : statement_type -> bool
+          = fn Assembly.Instruction (Instruction.SSE_BinAS _)
              => true
              | _ => false
 
         val template : template
           = {start = EmptyOrNonEmpty,
-             statements = [One isInstructionFMOV,
+             statements = [One isInstructionSSEMOVS,
                            All isComment,
-                           One isInstructionFBinA],
+                           One isInstructionSSEBinAS],
              finish = EmptyOrNonEmpty,
              transfer = fn _ => true}
 
@@ -242,12 +238,12 @@ struct
                 profileLabel,
                 start, 
                 statements =
-                [[Assembly.Instruction (Instruction.pFMOV
+                [[Assembly.Instruction (Instruction.SSE_MOVS
                                         {src = src1,
                                          dst = dst1, 
                                          size = size1})],
                  comments,
-                 [Assembly.Instruction (Instruction.pFBinA
+                 [Assembly.Instruction (Instruction.SSE_BinAS
                                         {oper = oper2,
                                          src = src2,
                                          dst = dst2,
@@ -259,11 +255,11 @@ struct
                    Operand.eq(src1, src2)
                   then let
                          val statements
-                           = (Assembly.instruction_pfmov
+                           = (Assembly.instruction_sse_movs
                               {src = src1,
                                dst = dst1,
                                size = size1})::
-                             (Assembly.instruction_pfbina
+                             (Assembly.instruction_sse_binas
                               {oper = oper2,
                                src = dst1,
                                dst = dst2,
@@ -283,106 +279,16 @@ struct
                                 transfer = transfer})
                        end
                   else NONE
-             | {entry,
-                profileLabel, 
-                start, 
-                statements =
-                [[Assembly.Instruction (Instruction.pFMOV
-                                        {src = src1,
-                                         dst = dst1, 
-                                         size = size1})],
-                 comments,
-                 [Assembly.Instruction (Instruction.pFBinAS
-                                        {oper = oper2,
-                                         src = src2,
-                                         dst = dst2,
-                                         size = size2})]],
-                finish, 
-                transfer}
-             => if Size.eq(size1, size2) andalso
-                   Operand.eq(dst1, dst2) andalso
-                   Operand.eq(src1, src2)
-                  then let
-                         val statements
-                           = (Assembly.instruction_pfmov
-                              {src = src1,
-                               dst = dst1,
-                               size = size1})::
-                             (Assembly.instruction_pfbinas
-                              {oper = oper2,
-                               src = dst1,
-                               dst = dst2,
-                               size = size1})::
-                             finish
+             | _ => Error.bug "amd64Simplify.PeepholeBlock: elimSSEBinASDouble"
 
-                         val statements
-                           = List.fold(start,
-                                       List.concat [comments,
-                                                    statements],
-                                       op ::)
-                       in
-                         SOME (Block.T
-                               {entry = entry,
-                                profileLabel = profileLabel,
-                                statements = statements,
-                                transfer = transfer})
-                       end
-                  else NONE
-             | {entry,
-                profileLabel,
-                start, 
-                statements =
-                [[Assembly.Instruction (Instruction.pFMOV
-                                        {src = src1,
-                                         dst = dst1, 
-                                         size = size1})],
-                 comments,
-                 [Assembly.Instruction (Instruction.pFBinASP
-                                        {oper = oper2,
-                                         src = src2,
-                                         dst = dst2,
-                                         size = size2})]],
-                finish, 
-                transfer}
-             => if Size.eq(size1, size2) andalso
-                   Operand.eq(dst1, dst2) andalso
-                   Operand.eq(src1, src2)
-                  then let
-                         val statements
-                           = (Assembly.instruction_pfmov
-                              {src = src1,
-                               dst = dst1,
-                               size = size1})::
-                             (Assembly.instruction_pfbinasp
-                              {oper = oper2,
-                               src = dst1,
-                               dst = dst2,
-                               size = size1})::
-                             finish
-
-                         val statements
-                           = List.fold(start,
-                                       List.concat [comments,
-                                                    statements],
-                                       op ::)
-                       in
-                         SOME (Block.T
-                               {entry = entry,
-                                profileLabel = profileLabel,
-                                statements = statements,
-                                transfer = transfer})
-                       end
-                  else NONE
-             | _ => Error.bug "x86Simplify.PeepholeBlock: elimFltBinADouble"
-
-        val (callback,elimFltBinADouble_msg) 
-          = make_callback_msg "elimFltBinADouble"
+        val (callback,elimSSEBinASDouble_msg) 
+          = make_callback_msg "elimSSEBinASDouble"
       in
-        val elimFltBinADouble : optimization
+        val elimSSEBinASDouble : optimization
           = {template = template,
              rewriter = rewriter,
              callback = callback}
-        val elimFltBinADouble_msg = elimFltBinADouble_msg
+        val elimSSEBinASDouble_msg = elimSSEBinASDouble_msg
       end
 
       local
@@ -591,7 +497,7 @@ struct
                              end
                           | _ => NONE
                   else NONE
-             | _ => Error.bug "x86Simplify.PeepholeBlock: commuteBinALMD"
+             | _ => Error.bug "amd64Simplify.PeepholeBlock: commuteBinALMD"
 
         val (callback,commuteBinALMD_msg) 
           = make_callback_msg "commuteBinALMD"
@@ -680,7 +586,7 @@ struct
                                 | (Instruction.ADD, SOME true ) => Instruction.DEC
                                 | (Instruction.SUB, SOME false) => Instruction.DEC
                                 | (Instruction.SUB, SOME true ) => Instruction.INC
-                                | _ => Error.bug "x86Simplify.PeeholeBlock: elimAddSub1:oper"
+                                | _ => Error.bug "amd64Simplify.PeeholeBlock: elimAddSub1:oper"
 
                          val statements
                            = (Assembly.instruction_unal
@@ -700,7 +606,7 @@ struct
                                 statements = statements,
                                 transfer = transfer})
                        end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimAddSub1"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimAddSub1"
 
         val (callback,elimAddSub1_msg) 
           = make_callback_msg "elimAddSub1"
@@ -782,7 +688,7 @@ struct
                                           truee,
                                           falsee}}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false)
                     => let
                          val transfer
@@ -791,7 +697,7 @@ struct
                                 => Transfer.Goto {target = falsee}
                                 | Instruction.NO 
                                 => Transfer.Goto {target = truee}
-                                | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
+                                | _ => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:transfer"
 
                          val statements
                            = List.fold(start,
@@ -863,7 +769,7 @@ struct
                 finish, 
                 transfer}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
@@ -963,7 +869,7 @@ struct
                 finish, 
                 transfer}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
@@ -1010,7 +916,7 @@ struct
                 finish, 
                 transfer}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
@@ -1121,7 +1027,7 @@ struct
                 finish, 
                 transfer}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
@@ -1168,7 +1074,7 @@ struct
                                           truee,
                                           falsee}}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false)
                     => let
                          val transfer
@@ -1177,7 +1083,7 @@ struct
                                 => Transfer.Goto {target = falsee}
                                 | Instruction.NO 
                                 => Transfer.Goto {target = truee}
-                                | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:transfer"
+                                | _ => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:transfer"
 
                          val statements
                            = List.fold(start,
@@ -1248,7 +1154,7 @@ struct
                 finish, 
                 transfer}
              => (case getImmediateLog2 (Immediate.destruct immediate)
-                   of NONE => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
+                   of NONE => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2:getImmediateLog2"
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
@@ -1335,7 +1241,7 @@ struct
                                        transfer = transfer})
                               end
                          else NONE)
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimMDPow2"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimMDPow2"
 
         val (callback,elimMDPow2_msg) 
           = make_callback_msg "elimMDPow2"
@@ -1419,7 +1325,7 @@ struct
                          end
                     else NONE
                 end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMPTEST"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimCMPTEST"
 
         val (callback,elimCMPTEST_msg) 
           = make_callback_msg "elimCMPTEST"
@@ -1472,7 +1378,7 @@ struct
                     = case condition
                         of Instruction.E => Instruction.Z
                          | Instruction.NE => Instruction.NZ
-                         | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0:condition"
+                         | _ => Error.bug "amd64Simplify.PeeholeBlock: elimCMP0:condition"
 
                   val src
                     = case (Operand.deImmediate src1, 
@@ -1483,7 +1389,7 @@ struct
                          => if Immediate.isZero immediate1
                               then src2
                               else src1
-                         | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0:src"
+                         | _ => Error.bug "amd64Simplify.PeeholeBlock: elimCMP0:src"
 
                   val statements 
                     = List.fold(start, 
@@ -1504,7 +1410,7 @@ struct
                                  statements = statements,
                                  transfer = transfer})
                 end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimCMP0"
 
         val (callback,elimCMP0_msg) 
           = make_callback_msg "elimCMP0"
@@ -1572,7 +1478,7 @@ struct
                         of Instruction.BinAL {dst, ...} => dst
                          | Instruction.UnAL {dst, ...} => dst
                          | Instruction.SRAL {dst, ...} => dst
-                         | _ => Error.bug "x86Simplify.PeeholeBlock: elimALTEST:dst"
+                         | _ => Error.bug "amd64Simplify.PeeholeBlock: elimALTEST:dst"
                 in
                   if Operand.eq(dst,src1)
                     then let
@@ -1590,7 +1496,7 @@ struct
                          end
                     else NONE
                 end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimALTEST"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimALTEST"
 
         val (callback,elimALTEST_msg) 
           = make_callback_msg "elimALTEST"
@@ -1621,14 +1527,14 @@ struct
 
         val optimizations_post
           = elimBinALMDDouble::
-            elimFltBinADouble::
+            elimSSEBinASDouble::
             elimCMPTEST::
             elimCMP0::
             elimALTEST::
             nil
         val optimizations_post_msg
           = elimBinALMDDouble_msg::
-            elimFltBinADouble_msg::
+            elimSSEBinASDouble_msg::
             elimCMPTEST_msg::
             elimCMP0_msg::
             elimALTEST_msg::
@@ -1665,7 +1571,7 @@ struct
 
       val (callback_elimIff,elimIff_msg)
         = make_callback_msg "elimIff"
-      fun makeElimIff {jumpInfo : x86JumpInfo.t} :
+      fun makeElimIff {jumpInfo : amd64JumpInfo.t} :
                       optimization
         = let
             val isTransferIff_eqTargets
@@ -1687,7 +1593,7 @@ struct
                     finish = [],
                     transfer = Transfer.Iff {truee, falsee, ...}}
                  => let
-                      val _ = x86JumpInfo.decNear(jumpInfo, falsee)
+                      val _ = amd64JumpInfo.decNear(jumpInfo, falsee)
 
                       val statements 
                         = List.fold(start, 
@@ -1701,7 +1607,7 @@ struct
                                      statements = statements,
                                      transfer = transfer})
                     end
-                 | _ => Error.bug "x86Simplify.PeeholeBlock: elimIff"
+                 | _ => Error.bug "amd64Simplify.PeeholeBlock: elimIff"
           in
             {template = template,
              rewriter = rewriter,
@@ -1710,7 +1616,7 @@ struct
 
       val (callback_elimSwitchTest,elimSwitchTest_msg)
         = make_callback_msg "elimSwitchTest"
-      fun makeElimSwitchTest {jumpInfo : x86JumpInfo.t} :
+      fun makeElimSwitchTest {jumpInfo : amd64JumpInfo.t} :
                              optimization
         = let
             val isTransferSwitch_testImmediateEval
@@ -1741,7 +1647,7 @@ struct
                         = Transfer.Cases.keepAll
                           (cases,
                            fn (w,target) 
-                            => (x86JumpInfo.decNear(jumpInfo, target);
+                            => (amd64JumpInfo.decNear(jumpInfo, target);
                                 WordX.equals (w, test)))
 
                       val transfer
@@ -1749,25 +1655,25 @@ struct
                             then Transfer.goto {target = default}
                           else if Transfer.Cases.isSingle cases
                             then let
-                                   val _ = x86JumpInfo.decNear
+                                   val _ = amd64JumpInfo.decNear
                                            (jumpInfo, default)
 
                                    val target
                                      = Transfer.Cases.extract
                                        (cases, #2)
-                                   val _ = x86JumpInfo.incNear
+                                   val _ = amd64JumpInfo.incNear
                                            (jumpInfo, target)
                                  in
                                    Transfer.goto {target = target}
                                  end
-                          else Error.bug "x86Simplify.PeeholeBlock: elimSwitchTest:transfer"
+                          else Error.bug "amd64Simplify.PeeholeBlock: elimSwitchTest:transfer"
                     in
                       SOME (Block.T {entry = entry,
                                      profileLabel = profileLabel,
                                      statements = statements,
                                      transfer = transfer})
                     end
-                 | _ => Error.bug "x86Simplify.PeeholeBlock: elimSwitchTest"
+                 | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSwitchTest"
           in
             {template = template,
              rewriter = rewriter,
@@ -1776,7 +1682,7 @@ struct
 
       val (callback_elimSwitchCases,elimSwitchCases_msg)
         = make_callback_msg "elimSwitchCases"
-      fun makeElimSwitchCases {jumpInfo : x86JumpInfo.t} :
+      fun makeElimSwitchCases {jumpInfo : amd64JumpInfo.t} :
                               optimization
         = let
             val isTransferSwitch_casesDefault
@@ -1809,7 +1715,7 @@ struct
                         = Transfer.Cases.keepAll
                           (cases,
                            fn (_,target) => if Label.equals(target, default)
-                                               then (x86JumpInfo.decNear
+                                               then (amd64JumpInfo.decNear
                                                      (jumpInfo, target);
                                                      false)
                                                else true)
@@ -1828,7 +1734,7 @@ struct
                                    val size
                                      = case Operand.size test
                                          of SOME size => size
-                                          | NONE => Size.LONG
+                                          | NONE => Size.QUAD
                                  in 
                                    (List.concat
                                     [statements,
@@ -1850,7 +1756,7 @@ struct
                                      statements = statements,
                                      transfer = transfer})
                     end
-                 | _ => Error.bug "x86Simplify.PeeholeBlock: elimSwitchCases"
+                 | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSwitchCases"
           in
             {template = template,
              rewriter = rewriter,
@@ -1861,8 +1767,8 @@ struct
   structure ElimGoto =
     struct
       fun elimSimpleGoto {chunk = Chunk.T {data, blocks, ...},
-                          delProfileLabel : x86.ProfileLabel.t -> unit,
-                          jumpInfo : x86JumpInfo.t} 
+                          delProfileLabel : amd64.ProfileLabel.t -> unit,
+                          jumpInfo : amd64JumpInfo.t} 
         = let
             val {get: Label.t -> Label.t option,
                  set: Label.t * Label.t option -> unit,
@@ -1914,8 +1820,8 @@ struct
               = case get target
                   of SOME target'
                    => (changed := true;
-                       x86JumpInfo.decNear(jumpInfo, target); 
-                       x86JumpInfo.incNear(jumpInfo, target'); 
+                       amd64JumpInfo.decNear(jumpInfo, target); 
+                       amd64JumpInfo.incNear(jumpInfo, target'); 
                        target')
                    | NONE => target
 
@@ -1948,7 +1854,7 @@ struct
                  fn Block.T {entry,...}
                   => (case get (Entry.label entry)
                         of SOME label' => (changed := true;
-                                           x86JumpInfo.decNear(jumpInfo, 
+                                           amd64JumpInfo.decNear(jumpInfo, 
                                                                label');
                                            true)
                          | NONE => false))
@@ -1965,9 +1871,9 @@ struct
           elimSimpleGoto
 
       fun elimComplexGoto {chunk = Chunk.T {data, blocks, ...},
-                           jumpInfo : x86JumpInfo.t}
+                           jumpInfo : amd64JumpInfo.t}
         = let
-            datatype z = datatype x86JumpInfo.status
+            datatype z = datatype amd64JumpInfo.status
 
             val {get: Label.t -> Block.t option,
                  set: Label.t * Block.t option -> unit,
@@ -1978,7 +1884,7 @@ struct
               = List.keepAllMap
                 (blocks,
                  fn block as Block.T {entry = Entry.Jump {label},...}
-                  => if x86JumpInfo.getNear(jumpInfo, label) = Count 1
+                  => if amd64JumpInfo.getNear(jumpInfo, label) = Count 1
                          then (set(label, SOME block); SOME label)
                          else NONE
                   | _ => NONE)
@@ -2040,13 +1946,13 @@ struct
                                                 transfer = transfer'})
                                => let
                                     val _ = changed := true
-                                    val _ = x86JumpInfo.decNear
+                                    val _ = amd64JumpInfo.decNear
                                             (jumpInfo, 
                                              Entry.label entry')
                                     val _ = List.foreach
                                             (Transfer.nearTargets transfer',
                                              fn target 
-                                              => x86JumpInfo.incNear
+                                              => amd64JumpInfo.incNear
                                                  (jumpInfo, target))
 
                                     val block
@@ -2081,7 +1987,7 @@ struct
           elimComplexGoto
 
       fun elimBlocks {chunk = Chunk.T {data, blocks, ...},
-                      jumpInfo : x86JumpInfo.t}
+                      jumpInfo : amd64JumpInfo.t}
         = let
             val {get: Label.t -> {block: Block.t,
                                   reach: bool ref},
@@ -2154,7 +2060,7 @@ struct
                          else (changed := true ;
                                List.foreach 
                                (Transfer.nearTargets transfer,
-                                fn label => x86JumpInfo.decNear (jumpInfo, label));
+                                fn label => amd64JumpInfo.decNear (jumpInfo, label));
                                NONE)
                      end)
 
@@ -2170,8 +2076,8 @@ struct
           elimBlocks
 
       fun elimGoto {chunk : Chunk.t,
-                    delProfileLabel: x86.ProfileLabel.t -> unit,
-                    jumpInfo : x86JumpInfo.t}
+                    delProfileLabel: amd64.ProfileLabel.t -> unit,
+                    jumpInfo : amd64JumpInfo.t}
         = let
             val elimIff 
               = PeepholeBlock.makeElimIff {jumpInfo = jumpInfo}
@@ -2244,9 +2150,9 @@ struct
 
   structure MoveHoistLivenessBlock = 
     struct
-      structure LiveSet = x86Liveness.LiveSet
-      structure Liveness = x86Liveness.Liveness
-      structure LivenessBlock = x86Liveness.LivenessBlock
+      structure LiveSet = amd64Liveness.LiveSet
+      structure Liveness = amd64Liveness.Liveness
+      structure LivenessBlock = amd64Liveness.LivenessBlock
 
       fun moveHoist {block = LivenessBlock.T 
                              {entry, profileLabel, statements, transfer}}
@@ -2265,7 +2171,7 @@ struct
                      {statements: (Assembly.t * Liveness.t) list,
                       changed : bool,
                       moves,
-                      live: x86Liveness.LiveSet.t})
+                      live: amd64Liveness.LiveSet.t})
                   => let
                        fun default ()
                          = let
@@ -2404,8 +2310,8 @@ struct
                                              {src = Operand.memloc src,
                                               dst = Operand.memloc dst,
                                               size = size}
-                                          | _
-                                          => Assembly.instruction_pfmov
+                                          | Size.FLT
+                                          => Assembly.instruction_sse_movs
                                              {src = Operand.memloc src,
                                               dst = Operand.memloc dst,
                                               size = size}))
@@ -2451,7 +2357,7 @@ struct
                                      live = live}
                                else default ()
                           | Assembly.Instruction 
-                            (Instruction.pFMOV
+                            (Instruction.SSE_MOVS
                              {src = Operand.MemLoc memloc_src,
                               dst = Operand.MemLoc memloc_dst,
                               size})
@@ -2483,8 +2389,8 @@ struct
                             {src = Operand.memloc src,
                              dst = Operand.memloc dst,
                              size = size}
-                         | _
-                         => Assembly.instruction_pfmov
+                         | Size.FLT
+                         => Assembly.instruction_sse_movs
                             {src = Operand.memloc src,
                              dst = Operand.memloc dst,
                              size = size}))
@@ -2524,10 +2430,10 @@ struct
 
   structure CopyPropagateLivenessBlock =
     struct
-      structure LiveSet = x86Liveness.LiveSet
-      structure LiveInfo = x86Liveness.LiveInfo
-      structure Liveness = x86Liveness.Liveness
-      structure LivenessBlock = x86Liveness.LivenessBlock
+      structure LiveSet = amd64Liveness.LiveSet
+      structure LiveInfo = amd64Liveness.LiveInfo
+      structure Liveness = amd64Liveness.Liveness
+      structure LivenessBlock = amd64Liveness.LivenessBlock
 
       fun copyPropagate' {src,
                           dst as Operand.MemLoc memloc_dst,
@@ -2739,7 +2645,7 @@ struct
                           changed = !changed > 0}
                   end
           end
-        | copyPropagate' _ = Error.bug "x86Simplify.PeeholeBlock: copyPropagate'"
+        | copyPropagate' _ = Error.bug "amd64Simplify.PeeholeBlock: copyPropagate'"
 
 
       fun copyPropagate {block = LivenessBlock.T 
@@ -2764,7 +2670,7 @@ struct
                         val pblock' = {statements = (asm,info)::statements,
                                        transfer = transfer}
                       in
-                        if x86Liveness.track memloc_dst
+                        if amd64Liveness.track memloc_dst
                            andalso
                            (List.fold
                             (statements,
@@ -2787,7 +2693,7 @@ struct
                                changed = changed}
                       end
                    | ((asm as Assembly.Instruction
-                             (Instruction.pFMOV
+                             (Instruction.SSE_MOVS
                               {src,
                                dst as Operand.MemLoc memloc_dst,
                                ...}),
@@ -2798,7 +2704,7 @@ struct
                         val pblock' = {statements = (asm,info)::statements,
                                        transfer = transfer}
                       in
-                        if x86Liveness.track memloc_dst
+                        if amd64Liveness.track memloc_dst
                            andalso
                            (List.fold
                             (statements,
@@ -2858,9 +2764,9 @@ struct
 
   structure PeepholeLivenessBlock =
     struct
-      structure LiveSet = x86Liveness.LiveSet
-      structure Liveness = x86Liveness.Liveness
-      structure LivenessBlock = x86Liveness.LivenessBlock
+      structure LiveSet = amd64Liveness.LiveSet
+      structure Liveness = amd64Liveness.Liveness
+      structure LivenessBlock = amd64Liveness.LivenessBlock
 
       structure Peephole 
         = Peephole(type entry_type = Entry.t * Liveness.t
@@ -2901,7 +2807,7 @@ struct
                      | SOME dsts => List.forall
                                     (dsts,
                                      fn Operand.MemLoc memloc
-                                      => x86Liveness.track memloc
+                                      => amd64Liveness.track memloc
                                          andalso
                                          LiveSet.contains(dead,memloc)
                                       | _ => false)
@@ -2957,7 +2863,7 @@ struct
                                 statements = statements,
                                 transfer = transfer})
                        end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimDeadDsts"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimDeadDsts"
 
         val (callback,elimDeadDsts_msg)
           = make_callback_msg "elimDeadDsts"
@@ -2974,41 +2880,41 @@ struct
           = fn (Assembly.Instruction (Instruction.MOV 
                                       {dst = Operand.MemLoc memloc,...}), 
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | _ => false
 
         val isInstructionAL_dstTemp : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.BinAL
                                       {dst = Operand.MemLoc memloc,...}),
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | (Assembly.Instruction (Instruction.pMD
                                       {dst = Operand.MemLoc memloc,...}),
 
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | (Assembly.Instruction (Instruction.IMUL2
                                       {dst = Operand.MemLoc memloc,...}),
 
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | (Assembly.Instruction (Instruction.UnAL
                                       {dst = Operand.MemLoc memloc,...}),
 
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | (Assembly.Instruction (Instruction.SRAL
                                       {dst = Operand.MemLoc memloc,...}),
 
                 _)
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
              | _ => false
 
         val isInstructionMOV_srcTemp_srcDead : statement_type -> bool
           = fn (Assembly.Instruction (Instruction.MOV 
                                       {src = Operand.MemLoc memloc,...}),
                 Liveness.T {dead,...})
-             => x86Liveness.track memloc
+             => amd64Liveness.track memloc
                 andalso
                 LiveSet.contains(dead, memloc)
              | _ => false
@@ -3121,7 +3027,7 @@ struct
                                  => not (MemLoc.mayAlias(memloc_dst2,memloc')))
                             | (Operand.Immediate _, _) => true
                             | _ => false)
-                     | _ => Error.bug "x86Simplify.PeeholeBlock: elimALCopy")
+                     | _ => Error.bug "amd64Simplify.PeeholeBlock: elimALCopy")
                   then let
                          val statements
                            = List.map
@@ -3157,7 +3063,7 @@ struct
                                 transfer = transfer})            
                        end
                   else NONE
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimALCopy"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimALCopy"
 
         val (callback,elimALCopy_msg)
           = make_callback_msg "elimALCopy"
@@ -3167,6 +3073,140 @@ struct
              rewriter = rewriter,
              callback = callback}
         val elimALCopy_msg = elimALCopy_msg
+      end
+
+      local
+        val isInstructionSSEMOVS_dstTemp : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.SSE_MOVS
+                                      {dst = Operand.MemLoc memloc,...}), 
+                _)
+             => amd64Liveness.track memloc
+             | _ => false
+
+        val isInstructionSSEAS_dstTemp : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.SSE_BinAS
+                                      {dst = Operand.MemLoc memloc,...}),
+                _)
+             => amd64Liveness.track memloc
+             | (Assembly.Instruction (Instruction.SSE_UnAS
+                                      {dst = Operand.MemLoc memloc,...}),
+
+                _)
+             => amd64Liveness.track memloc
+             | _ => false
+
+        val isInstructionSSEMOVS_srcTemp_srcDead : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.SSE_MOVS
+                                      {src = Operand.MemLoc memloc,...}),
+                Liveness.T {dead,...})
+             => amd64Liveness.track memloc
+                andalso
+                LiveSet.contains(dead, memloc)
+             | _ => false
+
+        val template : template 
+          = {start = EmptyOrNonEmpty,
+             statements = [One isInstructionSSEMOVS_dstTemp,
+                           All (fn asm 
+                                 => (isComment asm) 
+                                    orelse
+                                    (isInstructionSSEAS_dstTemp asm)),
+                           One isInstructionSSEMOVS_srcTemp_srcDead],
+             finish = EmptyOrNonEmpty,
+             transfer = fn _ => true}
+
+        val rewriter : rewriter
+          = fn {entry,
+                profileLabel,
+                start, 
+                statements =
+                [[(Assembly.Instruction (Instruction.SSE_MOVS
+                                         {src = src1,
+                                          dst = dst1 as Operand.MemLoc memloc1,
+                                          size = size1}),
+                   _)],
+                 statements',
+                 [(Assembly.Instruction (Instruction.SSE_MOVS
+                                         {src = Operand.MemLoc memloc2,
+                                          dst = dst2,
+                                          size = size2}),
+                   Liveness.T {liveOut = liveOut2,...})]],
+                finish, 
+                transfer}
+             => if Size.eq(size1,size2) andalso
+                   MemLoc.eq(memloc1,memloc2) andalso
+                   List.forall
+                   (statements',
+                    fn (Assembly.Comment _, _) => true
+                     | (Assembly.Instruction (Instruction.SSE_BinAS
+                                              {src, 
+                                               dst = Operand.MemLoc memloc, 
+                                               size,
+                                               ...}),
+                        _)
+                     => Size.eq(size1,size) andalso
+                        MemLoc.eq(memloc1,memloc) andalso
+                        (case (src,dst2)
+                           of (Operand.MemLoc memloc_src,
+                               Operand.MemLoc memloc_dst2)
+                            => List.forall
+                               (memloc_src::(MemLoc.utilized memloc_src),
+                                fn memloc' 
+                                 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
+                            | _ => false)
+                     | (Assembly.Instruction (Instruction.SSE_UnAS
+                                              {dst = Operand.MemLoc memloc, 
+                                               size,
+                                               ...}),
+                        _)
+                     => Size.eq(size1,size) andalso
+                        MemLoc.eq(memloc1,memloc) 
+                     | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSSEASCopy")
+                  then let
+                         val statements
+                           = List.map
+                             (statements',
+                              fn (asm,_)
+                               => Assembly.replace
+                                  (fn {...} 
+                                    => fn operand 
+                                        => if Operand.eq(operand,dst1)
+                                             then dst2
+                                             else operand)
+                                  asm)
+
+                         val {statements, ...}
+                           = LivenessBlock.toLivenessStatements
+                             {statements 
+                              = (Assembly.instruction_sse_movs
+                                 {src = src1,
+                                  dst = dst2,
+                                  size = size1})::statements,
+                              live = liveOut2}
+
+                         val statements
+                           = List.fold(start,
+                                       List.concat [statements,
+                                                    finish],
+                                       op ::)
+                       in
+                         SOME (LivenessBlock.T
+                               {entry = entry,
+                                profileLabel = profileLabel,
+                                statements = statements,
+                                transfer = transfer})            
+                       end
+                  else NONE
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSSEASCopy"
+
+        val (callback,elimSSEASCopy_msg)
+          = make_callback_msg "elimSSEASCopy"
+      in
+        val elimSSEASCopy : optimization
+          = {template = template,
+             rewriter = rewriter,
+             callback = callback}
+        val elimSSEASCopy_msg = elimSSEASCopy_msg
       end
 
       local
@@ -3194,7 +3234,7 @@ struct
                    Liveness.T {liveOut,...})]],
                 finish, 
                 transfer}
-             => if List.exists (MemLoc.utilized memloc, x86Liveness.track)
+             => if List.exists (MemLoc.utilized memloc, amd64Liveness.track)
                    then let
                            val {statements, live} =
                               LivenessBlock.reLivenessStatements
@@ -3223,7 +3263,7 @@ struct
                                   statements = statements,
                                   transfer = transfer})
                         end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimSelfMove"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSelfMove"
 
         val (callback,elimSelfMove_msg)
           = make_callback_msg "elimSelfMove"
@@ -3233,6 +3273,72 @@ struct
              rewriter = rewriter,
              callback = callback}
         val elimSelfMove_msg = elimSelfMove_msg
+      end
+
+      local
+        val isInstructionSSEMOVS_eqSrcDst : statement_type -> bool
+        = fn (Assembly.Instruction (Instruction.SSE_MOVS
+                                    {dst = Operand.MemLoc memloc1,
+                                     src = Operand.MemLoc memloc2,...}),
+              _) 
+           => MemLoc.eq(memloc1,memloc2) 
+           | _ => false
+
+        val template : template 
+          = {start = EmptyOrNonEmpty,
+             statements = [One isInstructionSSEMOVS_eqSrcDst],
+             finish = EmptyOrNonEmpty,
+             transfer = fn _ => true}
+
+        val rewriter : rewriter
+          = fn {entry,
+                profileLabel,
+                start, 
+                statements =
+                [[(Assembly.Instruction (Instruction.SSE_MOVS
+                                         {src = Operand.MemLoc memloc, ...}),
+                   Liveness.T {liveOut,...})]],
+                finish, 
+                transfer}
+             => if List.exists (MemLoc.utilized memloc, amd64Liveness.track)
+                   then let
+                           val {statements, live} =
+                              LivenessBlock.reLivenessStatements
+                              {statements = List.rev start,
+                               live = liveOut}
+                           val {entry, ...} =
+                              LivenessBlock.reLivenessEntry
+                              {entry = entry,
+                               live = live}
+                           val statements =
+                              List.concat [statements, finish]
+                        in 
+                           SOME (LivenessBlock.T
+                                 {entry = entry,
+                                  profileLabel = profileLabel,
+                                  statements = statements,
+                                  transfer = transfer})
+                        end
+                   else let
+                           val statements =
+                              List.fold(start, finish, op ::)
+                        in
+                           SOME (LivenessBlock.T
+                                 {entry = entry,
+                                  profileLabel = profileLabel,
+                                  statements = statements,
+                                  transfer = transfer})
+                        end
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: elimSSESSelfMove"
+
+        val (callback,elimSSESSelfMove_msg)
+          = make_callback_msg "elimSSESSelfMove"
+      in
+        val elimSSESSelfMove : optimization
+          = {template = template,
+             rewriter = rewriter,
+             callback = callback}
+        val elimSSESSelfMove_msg = elimSSESSelfMove_msg
       end
 
       local
@@ -3523,7 +3629,7 @@ struct
                                 transfer = transfer})            
                        end
                   else NONE
-             | _ => Error.bug "x86Simplify.PeeholeBlock: commuteBinALMD"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: commuteBinALMD"
 
         val (callback,commuteBinALMD_msg)
           = make_callback_msg "commuteBinALMD"
@@ -3536,263 +3642,28 @@ struct
       end
 
       local
-        val isInstructionFMOV_dstTemp : statement_type -> bool
-          = fn (Assembly.Instruction (Instruction.pFMOV 
-                                      {dst = Operand.MemLoc memloc,...}), 
-                _)
-             => x86Liveness.track memloc
-             | _ => false
-
-        val isInstructionFltA_dstTemp : statement_type -> bool
-          = fn (Assembly.Instruction (Instruction.pFBinA
-                                      {dst = Operand.MemLoc memloc,...}),
-                _)
-             => x86Liveness.track memloc
-             | (Assembly.Instruction (Instruction.pFUnA
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
-             => x86Liveness.track memloc
-             | (Assembly.Instruction (Instruction.pFPTAN
-                                      {dst = Operand.MemLoc memloc,...}),
-
-                _)
-             => x86Liveness.track memloc
-             | (Assembly.Instruction (Instruction.pFBinAS
-                                      {dst = Operand.MemLoc memloc,...}),
-                _)
-             => x86Liveness.track memloc
-             | (Assembly.Instruction (Instruction.pFBinASP
-                                      {dst = Operand.MemLoc memloc,...}),
-                _)
-             => x86Liveness.track memloc
-             | _ => false
-
-        val isInstructionFMOV_srcTemp_srcDead : statement_type -> bool
-          = fn (Assembly.Instruction (Instruction.pFMOV 
-                                      {src = Operand.MemLoc memloc,...}),
-                Liveness.T {dead,...})
-             => x86Liveness.track memloc
-                andalso
-                LiveSet.contains(dead, memloc)
-             | _ => false
-
-        val template : template 
-          = {start = EmptyOrNonEmpty,
-             statements = [One isInstructionFMOV_dstTemp,
-                           All (fn asm 
-                                 => (isComment asm) 
-                                    orelse
-                                    (isInstructionFltA_dstTemp asm)),
-                           One isInstructionFMOV_srcTemp_srcDead],
-             finish = EmptyOrNonEmpty,
-             transfer = fn _ => true}
-
-        val rewriter : rewriter
-          = fn {entry,
-                profileLabel,
-                start, 
-                statements =
-                [[(Assembly.Instruction (Instruction.pFMOV 
-                                         {src = src1,
-                                          dst = dst1 as Operand.MemLoc memloc1,
-                                          size = size1}),
-                   _)],
-                 statements',
-                 [(Assembly.Instruction (Instruction.pFMOV 
-                                         {src = Operand.MemLoc memloc2,
-                                          dst = dst2,
-                                          size = size2}),
-                   Liveness.T {liveOut = liveOut2,...})]],
-                finish, 
-                transfer}
-             => if Size.eq(size1,size2) andalso
-                   MemLoc.eq(memloc1,memloc2) andalso
-                   List.forall
-                   (statements',
-                    fn (Assembly.Comment _, _) => true
-                     | (Assembly.Instruction (Instruction.pFBinA
-                                              {src, 
-                                               dst = Operand.MemLoc memloc, 
-                                               size,
-                                               ...}),
-                        _)
-                     => Size.eq(size1,size) andalso
-                        MemLoc.eq(memloc1,memloc) andalso
-                        (case (src,dst2)
-                           of (Operand.MemLoc memloc_src,
-                               Operand.MemLoc memloc_dst2)
-                            => List.forall
-                               (memloc_src::(MemLoc.utilized memloc_src),
-                                fn memloc' 
-                                 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
-                            | (Operand.Immediate _, _) => true
-                            | _ => false)
-                     | (Assembly.Instruction (Instruction.pFUnA
-                                              {dst = Operand.MemLoc memloc, 
-                                               size, 
-                                               ...}),
-                        _)
-                     => Size.eq(size1,size) andalso
-                        MemLoc.eq(memloc1,memloc) 
-                     | (Assembly.Instruction (Instruction.pFPTAN
-                                              {dst = Operand.MemLoc memloc, 
-                                               size}),
-                        _)
-                     => Size.eq(size1,size) andalso
-                        MemLoc.eq(memloc1,memloc) 
-                     | (Assembly.Instruction (Instruction.pFBinAS
-                                              {src, 
-                                               dst = Operand.MemLoc memloc, 
-                                               size,
-                                               ...}),
-                        _)
-                     => Size.eq(size1,size) andalso
-                        MemLoc.eq(memloc1,memloc) andalso
-                        (case (src,dst2)
-                           of (Operand.MemLoc memloc_src,
-                               Operand.MemLoc memloc_dst2)
-                            => List.forall
-                               (memloc_src::(MemLoc.utilized memloc_src),
-                                fn memloc' 
-                                 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
-                            | (Operand.Immediate _, _) => true
-                            | _ => false)
-                     | (Assembly.Instruction (Instruction.pFBinASP
-                                              {src, 
-                                               dst = Operand.MemLoc memloc, 
-                                               size, 
-                                               ...}),
-                        _)
-                     => Size.eq(size1,size) andalso
-                        MemLoc.eq(memloc1,memloc) andalso
-                        (case (src,dst2)
-                           of (Operand.MemLoc memloc_src,
-                               Operand.MemLoc memloc_dst2)
-                            => List.forall
-                               (memloc_src::(MemLoc.utilized memloc_src),
-                                fn memloc' 
-                                 => not (MemLoc.mayAlias(memloc_dst2,memloc')))
-                            | (Operand.Immediate _, _) => true
-                            | _ => false)
-                     | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltACopy")
-                  then let
-                         val statements
-                           = List.map
-                             (statements',
-                              fn (asm,_)
-                               => Assembly.replace
-                                  (fn {...} 
-                                    => fn operand 
-                                        => if Operand.eq(operand,dst1)
-                                             then dst2
-                                             else operand)
-                                  asm)
-
-                         val {statements, ...}
-                           = LivenessBlock.toLivenessStatements
-                             {statements 
-                              = (Assembly.instruction_pfmov
-                                 {src = src1,
-                                  dst = dst2,
-                                  size = size1})::statements,
-                              live = liveOut2}
-
-                         val statements
-                           = List.fold(start,
-                                       List.concat [statements, 
-                                                    finish],
-                                       op ::)
-                       in
-                         SOME (LivenessBlock.T
-                               {entry = entry,
-                                profileLabel = profileLabel,
-                                statements = statements,
-                                transfer = transfer})            
-                       end
-                  else NONE
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltACopy"
-
-        val (callback,elimFltACopy_msg)
-          = make_callback_msg "elimFltACopy"
-      in
-        val elimFltACopy : optimization
-          = {template = template,
-             rewriter = rewriter,
-             callback = callback}
-        val elimFltACopy_msg = elimFltACopy_msg
-      end
-
-      local
-        val isInstructionFMOV_eqSrcDst : statement_type -> bool
-        = fn (Assembly.Instruction (Instruction.pFMOV 
-                                    {dst = Operand.MemLoc memloc1,
-                                     src = Operand.MemLoc memloc2,...}),
-              _) 
-           => MemLoc.eq(memloc1,memloc2) 
-           | _ => false
-
-        val template : template 
-          = {start = EmptyOrNonEmpty,
-             statements = [One isInstructionFMOV_eqSrcDst],
-             finish = EmptyOrNonEmpty,
-             transfer = fn _ => true}
-
-        val rewriter : rewriter
-          = fn {entry,
-                profileLabel,
-                start, 
-                statements =
-                [[(Assembly.Instruction (Instruction.pFMOV 
-                                         {...}),
-                   _)]],
-                finish, 
-                transfer}
-             => let
-                  val statements 
-                    = List.fold
-                      (start, 
-                       finish, 
-                       op ::)
-                in 
-                  SOME (LivenessBlock.T
-                        {entry = entry,
-                         profileLabel = profileLabel,
-                         statements = statements,
-                         transfer = transfer})
-                end
-             | _ => Error.bug "x86Simplify.PeeholeBlock: elimFltSelfMove"
-
-        val (callback,elimFltSelfMove_msg)
-          = make_callback_msg "elimFltSelfMove"
-      in
-        val elimFltSelfMove : optimization
-          = {template = template,
-             rewriter = rewriter,
-             callback = callback}
-        val elimFltSelfMove_msg = elimFltSelfMove_msg
-      end
-
-      local
-        val isInstructionFMOV_dstMemloc : statement_type -> bool
-          = fn (Assembly.Instruction (Instruction.pFMOV 
+        val isInstructionSSEMOVS_dstMemloc : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.SSE_MOVS
                                       {dst = Operand.MemLoc _,...}),
                 _)
              => true
              | _ => false
 
-        val isInstructionFltBinA_dstMemloc : statement_type -> bool
-          = fn (Assembly.Instruction (Instruction.pFBinA
-                                      {dst = Operand.MemLoc _,...}),
+        val isInstructionSSEBinAS_dstMemloc_operCommute : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.SSE_BinAS
+                                      {oper,
+                                       dst = Operand.MemLoc _,...}),
                 _)
-             => true
+             => (oper = Instruction.SSE_ADDS)
+                orelse
+                (oper = Instruction.SSE_MULS)
              | _ => false
 
         val template : template 
           = {start = EmptyOrNonEmpty,
-             statements = [One isInstructionFMOV_dstMemloc,
+             statements = [One isInstructionSSEMOVS_dstMemloc,
                            All isComment,
-                           One isInstructionFltBinA_dstMemloc],
+                           One isInstructionSSEBinAS_dstMemloc_operCommute],
              finish = EmptyOrNonEmpty,
              transfer = fn _ => true}
 
@@ -3801,26 +3672,26 @@ struct
                 profileLabel,
                 start, 
                 statements =
-                [[(Assembly.Instruction (Instruction.pFMOV 
+                [[(Assembly.Instruction (Instruction.SSE_MOVS
                                          {src = src1,
                                           dst 
                                           = dst1 as Operand.MemLoc memloc_dst1,
                                           size = size1}),
                    Liveness.T {dead = dead1,...})],
                  comments,
-                 [(Assembly.Instruction (Instruction.pFBinA 
+                 [(Assembly.Instruction (Instruction.SSE_BinAS
                                          {oper = oper2,
                                           src = src2,
                                           dst 
                                           = dst2 as Operand.MemLoc _,
                                           size = size2}),
                    Liveness.T {dead = dead2,
-                               liveOut = liveOut2,...})]],
+                               liveOut = liveOut2, ...})]],
                 finish, 
                 transfer}
              => if Size.eq(size1,size2) andalso
                    Operand.eq(dst1,dst2) andalso
-                   not (Operand.eq(src1, src2)) andalso
+                   not (Operand.eq(src1,src2)) andalso
                    (case (src1,src2)
                       of (Operand.MemLoc memloc_src1,
                           Operand.MemLoc memloc_src2)
@@ -3849,14 +3720,14 @@ struct
                        | _ => true)
                   then let
                          val statements
-                           = (Assembly.instruction_pfmov
+                           = (Assembly.instruction_sse_movs
                               {src = src2,
                                dst = dst1,
                                size = size1})::
                              (List.concat
                               [List.map(comments, #1),
-                               [Assembly.instruction_pfbina
-                                {oper = Instruction.fbina_reverse oper2,
+                               [Assembly.instruction_sse_binas
+                                {oper = oper2,
                                  src = src1,
                                  dst = dst2,
                                  size = size2}]])
@@ -3866,10 +3737,10 @@ struct
                              {statements = statements,
                               live = liveOut2}
 
-                         val statements 
-                           = List.fold(start, 
-                                       List.concat [statements,
-                                                    finish], 
+                         val statements
+                           = List.fold(start,
+                                       List.concat [statements, 
+                                                    finish],
                                        op ::)
                        in
                          SOME (LivenessBlock.T
@@ -3879,16 +3750,16 @@ struct
                                 transfer = transfer})            
                        end
                   else NONE
-             | _ => Error.bug "x86Simplify.PeeholeBlock: commuteFltBinA"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: commuteSSEBinAS"
 
-        val (callback,commuteFltBinA_msg)
-          = make_callback_msg "commuteFltBinA"
+        val (callback,commuteSSEBinAS_msg)
+          = make_callback_msg "commuteSSEBinAS"
       in
-        val commuteFltBinA : optimization
+        val commuteSSEBinAS : optimization
           = {template = template,
              rewriter = rewriter,
              callback = callback}
-        val commuteFltBinA_msg = commuteFltBinA_msg
+        val commuteSSEBinAS_msg = commuteSSEBinAS_msg
       end
 
       local
@@ -3955,7 +3826,7 @@ struct
                                of Instruction.Z 
                                 => Instruction.condition_negate condition1
                                 | Instruction.NZ => condition1
-                                | _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump:condition"
+                                | _ => Error.bug "amd64Simplify.PeeholeBlock: conditionalJump:condition"
 
                          val transfer 
                            = (Transfer.iff {condition = condition,
@@ -3972,7 +3843,7 @@ struct
                              [List.map(comments1, #1),
                               List.map(comments2, #1)]
                          val statements 
-                           = if x86Liveness.track memloc1 andalso
+                           = if amd64Liveness.track memloc1 andalso
                                 LiveSet.contains(dead, memloc1)
                                then statements
                                else statement::statements
@@ -3990,7 +3861,7 @@ struct
                          val live
                            = case statements
                                of (_, Liveness.T {liveIn,...})::_ => liveIn
-                                | _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump:live"
+                                | _ => Error.bug "amd64Simplify.PeeholeBlock: conditionalJump:live"
 
                          val {entry, ...}
                            = LivenessBlock.reLivenessEntry
@@ -4004,7 +3875,7 @@ struct
                                 transfer = transfer})
                        end
                   else NONE
-             | _ => Error.bug "x86Simplify.PeeholeBlock: conditionalJump"
+             | _ => Error.bug "amd64Simplify.PeeholeBlock: conditionalJump"
 
         val (callback,conditionalJump_msg)
           = make_callback_msg "conditionalJump"
@@ -4041,48 +3912,48 @@ struct
       end
 
       local
-        val {template, rewriter, ...} = elimFltSelfMove
-        val (callback,elimFltSelfMove_minor_msg)
-          = make_callback_msg "elimFltSelfMove_minor"
+        val {template, rewriter, ...} = elimSSESSelfMove
+        val (callback,elimSSESSelfMove_minor_msg)
+          = make_callback_msg "elimSSESSelfMove_minor"
       in
-        val elimFltSelfMove_minor : optimization
+        val elimSSESSelfMove_minor : optimization
           = {template = template,
              rewriter = rewriter,
              callback = callback}
-        val elimFltSelfMove_minor_msg = elimFltSelfMove_minor_msg
+        val elimSSESSelfMove_minor_msg = elimSSESSelfMove_minor_msg
       end
 
       local
         val optimizations 
           = elimALCopy::
-            elimFltACopy::
+            elimSSEASCopy::
             elimDeadDsts::
             elimSelfMove::
-            elimFltSelfMove::
+            elimSSESSelfMove::
             commuteBinALMD::
-            commuteFltBinA::
+            commuteSSEBinAS::
             conditionalJump::
             nil
         val optimizations_msg
           = elimALCopy_msg:: 
-            elimFltACopy_msg::
+            elimSSEASCopy_msg:: 
             elimDeadDsts_msg::
             elimSelfMove_msg::
-            elimFltSelfMove_msg::
+            elimSSESSelfMove_msg::
             commuteBinALMD_msg::
-            commuteFltBinA_msg::
+            commuteSSEBinAS_msg::
             conditionalJump_msg::
             nil
 
         val optimizations_minor
           = elimDeadDsts_minor::
             elimSelfMove_minor::
-            elimFltSelfMove_minor::
+            elimSSESSelfMove_minor::
             nil
         val optimizations_minor_msg
           = elimDeadDsts_minor_msg::
             elimSelfMove_minor_msg::
-            elimFltSelfMove_minor_msg::
+            elimSSESSelfMove_minor_msg::
             nil
       in
         val peepholeLivenessBlock
@@ -4119,9 +3990,9 @@ struct
 
   fun simplify {chunk : Chunk.t,
                 optimize : int,
-                delProfileLabel : x86.ProfileLabel.t -> unit,
-                liveInfo : x86Liveness.LiveInfo.t,
-                jumpInfo : x86JumpInfo.t} :
+                delProfileLabel : amd64.ProfileLabel.t -> unit,
+                liveInfo : amd64Liveness.LiveInfo.t,
+                jumpInfo : amd64JumpInfo.t} :
                Chunk.t
     = let
 (*
@@ -4132,7 +4003,7 @@ struct
             {block as Block.T {entry, ...}, changed, msg}
           = (print ("finished " ^ msg ^ "\n"))
         fun changedLivenessBlock_msg 
-            {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
+            {block as amd64Liveness.LivenessBlock.T {entry, ...}, changed, msg}
           = if changed then (print ("finished " ^ msg ^ "\n")) else ()
 *)
 
@@ -4149,13 +4020,13 @@ struct
                                       ["liveIn: ",
                                        (concat o List.separate)
                                        (List.map
-                                        (x86Liveness.LiveSet.toList
-                                         (x86Liveness.LiveInfo.getLive
+                                        (amd64Liveness.LiveSet.toList
+                                         (amd64Liveness.LiveInfo.getLive
                                           (liveInfo, Entry.label entry)),
                                          fn memloc => MemLoc.toString memloc),
                                         "\n        "),
                                        "\n"]);
-                               x86.Block.printBlock b)))
+                               amd64.Block.printBlock b)))
 
         fun changedBlock_msg 
             {block as Block.T {entry, ...}, changed, msg}
@@ -4168,16 +4039,16 @@ struct
                      ["liveIn: ",
                       (concat o List.separate)
                       (List.map
-                       (x86Liveness.LiveSet.toList
-                        (x86Liveness.LiveInfo.getLive
+                       (amd64Liveness.LiveSet.toList
+                        (amd64Liveness.LiveInfo.getLive
                          (liveInfo, Entry.label entry)),
                         fn memloc => MemLoc.toString memloc),
                        "\n        "),
                       "\n"]);
-              x86.Block.printBlock block))
+              amd64.Block.printBlock block))
 
         fun changedLivenessBlock_msg 
-            {block as x86Liveness.LivenessBlock.T {entry, ...}, changed, msg}
+            {block as amd64Liveness.LivenessBlock.T {entry, ...}, changed, msg}
           = if not changed then () else 
             (print (String.make (60, #"*"));
              print "\n";
@@ -4187,36 +4058,36 @@ struct
                      ["liveIn: ",
                       (concat o List.separate)
                       (List.map
-                       (x86Liveness.LiveSet.toList
-                        (x86Liveness.LiveInfo.getLive
+                       (amd64Liveness.LiveSet.toList
+                        (amd64Liveness.LiveInfo.getLive
                          (liveInfo, Entry.label (#1 entry))),
                         fn memloc => MemLoc.toString memloc),
                        "\n        "),
                       "\n"]);
-              x86Liveness.LivenessBlock.printBlock block))
+              amd64Liveness.LivenessBlock.printBlock block))
 
         val debug = false
         val changedChunk_msg : {chunk : Chunk.t, changed: bool, msg: string} -> unit =
            if debug then changedChunk_msg else (fn _ => ())
         val changedBlock_msg : {block : Block.t, changed: bool, msg: string} -> unit =
            if debug then changedBlock_msg else (fn _ => ())
-        val changedLivenessBlock_msg : {block : x86Liveness.LivenessBlock.t, changed: bool, msg: string} -> unit =
+        val changedLivenessBlock_msg : {block : amd64Liveness.LivenessBlock.t, changed: bool, msg: string} -> unit =
            if debug then changedLivenessBlock_msg else (fn _ => ())
 
         fun checkLivenessBlock
             {block, block', msg}
           = Assert.assert
-            ("x86Simplify.checkLivenessBlock: " ^ msg,
-             fn () => if x86Liveness.LivenessBlock.verifyLivenessBlock
+            ("amd64Simplify.checkLivenessBlock: " ^ msg,
+             fn () => if amd64Liveness.LivenessBlock.verifyLivenessBlock
                          {block = block,
                           liveInfo = liveInfo}
                         then true
                         else (print ("pre: " ^ msg);
-                              x86Liveness.LivenessBlock.printBlock block;
+                              amd64Liveness.LivenessBlock.printBlock block;
                               print (String.make(60, #"*"));
                               print ("\n");
                               print ("post: " ^ msg);
-                              x86Liveness.LivenessBlock.printBlock block';
+                              amd64Liveness.LivenessBlock.printBlock block';
                               print (String.make(60, #"*"));
                               print ("\n");
                               false))
@@ -4233,7 +4104,7 @@ struct
         (*********************************************************************)
         (* completeLiveInfo                                                  *)
         (*********************************************************************)
-        val _ = x86Liveness.LiveInfo.completeLiveInfo 
+        val _ = amd64Liveness.LiveInfo.completeLiveInfo 
                 {chunk = chunk,
                  liveInfo = liveInfo,
                  pass = "pre"}
@@ -4246,14 +4117,14 @@ struct
         (*********************************************************************)
         (* completeJumpInfo                                                  *)
         (*********************************************************************)
-        val _ = x86JumpInfo.completeJumpInfo 
+        val _ = amd64JumpInfo.completeJumpInfo 
                 {chunk = chunk,
                  jumpInfo = jumpInfo}
 
         val _
           = Assert.assert
-            ("x86Simplify.verifyEntryTransfer",
-             fn () => x86EntryTransfer.verifyEntryTransfer
+            ("amd64Simplify.verifyEntryTransfer",
+             fn () => amd64EntryTransfer.verifyEntryTransfer
                       {chunk = chunk})
 
         (*********************************************************************)
@@ -4275,15 +4146,15 @@ struct
 
                val _
                  = Assert.assert
-                   ("x86Simplify.verifyJumpInfo",
-                    fn () => x86JumpInfo.verifyJumpInfo 
+                   ("amd64Simplify.verifyJumpInfo",
+                    fn () => amd64JumpInfo.verifyJumpInfo 
                              {chunk = chunk',
                               jumpInfo = jumpInfo})
 
                val _
                  = Assert.assert
-                   ("x86Simplify.verifyEntryTransfer",
-                    fn () => x86EntryTransfer.verifyEntryTransfer
+                   ("amd64Simplify.verifyEntryTransfer",
+                    fn () => amd64EntryTransfer.verifyEntryTransfer
                              {chunk = chunk'})
 
                val _ = changedChunk_msg 
@@ -4326,7 +4197,7 @@ struct
                           (* toLivenessBlock                                 *)
                           (***************************************************)
                           val block'
-                            = x86Liveness.LivenessBlock.toLivenessBlock 
+                            = amd64Liveness.LivenessBlock.toLivenessBlock 
                               {block = block,
                                liveInfo = liveInfo}
 
@@ -4334,7 +4205,7 @@ struct
                           val _ = changedLivenessBlock_msg 
                                   {block = block',
                                    changed = false,
-                                   msg = "x86Liveness.LivenessBlock.toLivenessBlock"}
+                                   msg = "amd64Liveness.LivenessBlock.toLivenessBlock"}
 
                           (***************************************************)
                           (* moveHoist                                       *)
@@ -4425,12 +4296,12 @@ struct
                           (* toBlock                                         *)
                           (***************************************************)
                           val block'
-                            = x86Liveness.LivenessBlock.toBlock {block = block}
+                            = amd64Liveness.LivenessBlock.toBlock {block = block}
 
                           val _ = changedBlock_msg 
                                   {block = block',
                                    changed = false,
-                                   msg = "x86Liveness.LivenessBlock.toBlock"}
+                                   msg = "amd64Liveness.LivenessBlock.toBlock"}
                           val block = block'
 
                           (***************************************************)
@@ -4463,7 +4334,7 @@ struct
                (* completeLiveInfo                                           *)
                (**************************************************************)
                val _
-                 = x86Liveness.LiveInfo.completeLiveInfo 
+                 = amd64Liveness.LiveInfo.completeLiveInfo 
                    {chunk = chunk,
                     liveInfo = liveInfo,
                     pass = "post"}
@@ -4522,19 +4393,19 @@ struct
   fun simplify_totals ()
     = (simplify_msg ();
        Control.indent ();
-       x86Liveness.LiveInfo.completeLiveInfo_msg ();
-       x86JumpInfo.completeJumpInfo_msg ();
+       amd64Liveness.LiveInfo.completeLiveInfo_msg ();
+       amd64JumpInfo.completeJumpInfo_msg ();
        ElimGoto.elimGoto_msg ();
-       x86JumpInfo.verifyJumpInfo_msg ();
-       x86EntryTransfer.verifyEntryTransfer_msg ();
+       amd64JumpInfo.verifyJumpInfo_msg ();
+       amd64EntryTransfer.verifyEntryTransfer_msg ();
        PeepholeBlock.peepholeBlock_pre_msg ();
-       x86Liveness.LivenessBlock.toLivenessBlock_msg ();
+       amd64Liveness.LivenessBlock.toLivenessBlock_msg ();
        MoveHoistLivenessBlock.moveHoist_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_msg ();
        CopyPropagateLivenessBlock.copyPropagate_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_minor_msg ();
-       x86Liveness.LivenessBlock.verifyLivenessBlock_msg ();
-       x86Liveness.LivenessBlock.toBlock_msg ();
+       amd64Liveness.LivenessBlock.verifyLivenessBlock_msg ();
+       amd64Liveness.LivenessBlock.toBlock_msg ();
        PeepholeBlock.peepholeBlock_post_msg ();
        Control.unindent ())
 end

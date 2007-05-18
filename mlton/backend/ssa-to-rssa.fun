@@ -489,6 +489,9 @@ structure Name =
              | Real_qequal s => realCompare s
              | Real_rndToReal (s1, s2) =>
                   coerce (real s1, realCType s1, real s2, realCType s2)
+             | Real_rndToWord (s1, s2, sg) =>
+                  coerce (real s1, realCType s1,
+                          word s2, wordCType (s2, sg))
              | Real_round s => realUnary s
              | Real_sub s => realBinary s
              | Thread_returnToC => CFunction.returnToC ()

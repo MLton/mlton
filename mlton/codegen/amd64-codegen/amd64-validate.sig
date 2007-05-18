@@ -6,16 +6,16 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group
+signature AMD64_VALIDATE_STRUCTS =
+  sig
+    structure amd64 : AMD64
+  end
 
-functor amd64Codegen
-functor Bytecode
-functor CCodegen
-functor x86Codegen
+signature AMD64_VALIDATE =
+  sig
+    include AMD64_VALIDATE_STRUCTS
 
-is
+    val validate : {assembly: amd64.Assembly.t list list} -> bool
 
-c-codegen/sources.cm
-bytecode/sources.cm
-x86-codegen/sources.cm
-amd64-codegen/sources.cm
+    val validate_totals : unit -> unit
+  end

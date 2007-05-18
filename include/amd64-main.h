@@ -5,37 +5,30 @@
  * See the file MLton-LICENSE for details.
  */
 
-#ifndef _X86_MAIN_H_
-#define _X86_MAIN_H_
+#ifndef _AMD64_MAIN_H_
+#define _AMD64_MAIN_H_
 
 #include "main.h"
 
 /* Globals */
-Word32 applyFFTemp;
-Word32 applyFFTemp2;
+Word64 applyFFTempFun;
+Word64 applyFFTempStackArg;
+Word64 applyFFTempRegArg[6];
+Real32 applyFFTempXmmsRegArgD[8];
+Real64 applyFFTempXmmsRegArgS[8];
 Word32 checkTemp;
-Word32 cReturnTemp[16];
+Word64 cReturnTemp[16];
 Pointer c_stackP;
-Word32 divTemp;
-Word32 fildTemp;
-Word32 fpswTemp;
+Word64 fpcvtTemp;
+Word8 fpeqTemp;
+Word64 divTemp;
 Word32 indexTemp;
-Word32 raTemp1;
-Real64 raTemp2;
-Real64 realTemp1D;
-Real64 realTemp2D;
-Real64 realTemp3D;
-Real32 realTemp1S;
-Real32 realTemp2S;
-Real32 realTemp3S;
-Word32 spill[16];
-Word32 stackTopTemp;
-Word8 wordTemp1B;
-Word16 wordTemp1W;
-Word32 wordTemp1L;
+Word64 raTemp1;
+Word64 spill[32];
+Word64 stackTopTemp;
 
-#ifndef DEBUG_X86CODEGEN
-#define DEBUG_X86CODEGEN FALSE
+#ifndef DEBUG_AMD64CODEGEN
+#define DEBUG_AMD64CODEGEN FALSE
 #endif
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
@@ -48,7 +41,7 @@ void MLton_callFromC () {                                               \
         pointer jump;                                                   \
         GC_state s;                                                     \
                                                                         \
-        if (DEBUG_X86CODEGEN)                                           \
+        if (DEBUG_AMD64CODEGEN)                                         \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         s = &gcState;                                                   \
         s->savedThread = s->currentThread;                              \
@@ -59,7 +52,7 @@ void MLton_callFromC () {                                               \
         MLton_jumpToSML(jump);                                          \
         GC_switchToThread (s, s->savedThread, 0);                       \
         s->savedThread = BOGUS_OBJPTR;                                  \
-        if (DEBUG_X86CODEGEN)                                           \
+        if (DEBUG_AMD64CODEGEN)                                         \
                 fprintf (stderr, "MLton_callFromC() done\n");           \
         return;                                                         \
 }                                                                       \
@@ -78,5 +71,4 @@ int main (int argc, char **argv) {                                      \
         return 1;                                                       \
 }
 
-#endif /* #ifndef _X86_MAIN_H_ */
-
+#endif /* #ifndef _AMD64_MAIN_H_ */

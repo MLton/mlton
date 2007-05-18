@@ -7,7 +7,6 @@
  *)
 
 type int = Int.t
-type word = Word.t
 
 signature X86_SIMPLIFY_STRUCTS =
   sig

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -112,6 +112,8 @@ structure Bytecode = Bytecode (structure CCodegen = CCodegen
                                structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
+structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
+                                       structure Machine = Machine)
 
 
 (* ------------------------------------------------- *)
@@ -596,7 +598,8 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          case !Control.codegen of
             Control.Bytecode => Bytecode.implementsPrim
           | Control.CCodegen => CCodegen.implementsPrim
-          | Control.Native => x86Codegen.implementsPrim
+          | Control.x86Codegen => x86Codegen.implementsPrim
+          | Control.amd64Codegen => amd64Codegen.implementsPrim
       val machine =
          Control.pass
          {name = "backend",
@@ -647,12 +650,18 @@ fun compile {input: MLBString.t, outputC, outputS}: unit =
                 ; (Control.trace (Control.Top, "C code gen")
                    CCodegen.output {program = machine,
                                     outputC = outputC}))
-          | Control.Native =>
+          | Control.x86Codegen =>
                (clearNames ()
                 ; (Control.trace (Control.Top, "x86 code gen")
                    x86Codegen.output {program = machine,
                                       outputC = outputC,
                                       outputS = outputS}))
+          | Control.amd64Codegen =>
+               (clearNames ()
+                ; (Control.trace (Control.Top, "amd64 code gen")
+                   amd64Codegen.output {program = machine,
+                                        outputC = outputC,
+                                        outputS = outputS}))
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in

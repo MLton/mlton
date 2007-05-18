@@ -112,7 +112,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val class = IEEEReal.mkClass R.class
 
       val abs =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86
             then abs
          else
             fn x =>
@@ -136,7 +136,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       fun isNormal r = class r = NORMAL
 
       val op ?= =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86 orelse MLton.Codegen.isAmd64
             then R.?=
          else
             fn (x, y) =>
@@ -238,7 +238,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             man * (if Int.< (exp, 0) then zero else posInf)
 
       val fromManExp =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86
             then fromManExp
          else
             fn {exp, man} =>
@@ -782,7 +782,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
 
             (* The x86 doesn't get exp right on infs. *)
             val exp =
-               if MLton.Codegen.isNative
+               if MLton.Codegen.isX86
                   andalso let open MLton.Platform.Arch in host = X86 end
                   then (fn x =>
                         case class x of

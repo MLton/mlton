@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -38,7 +38,8 @@ signature CONTROL_FLAGS =
       datatype codegen =
          Bytecode
        | CCodegen
-       | Native
+       | x86Codegen
+       | amd64Codegen
 
       val codegen: codegen ref
 
