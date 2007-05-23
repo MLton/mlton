@@ -772,17 +772,17 @@ structure Type =
                            Tycon.equals (c, c')),
                 fn {ctype, name, ...} => {ctype = ctype, name = name})
 
-      fun toUnaryCType (t: t): {ctype: CType.t, name: string} option =
+      and toUnaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of
             NONE => NONE
           | SOME (c, ts) =>
                if List.exists (unary, fn c' => Tycon.equals (c, c'))
                   andalso 1 = Vector.length ts
-                  andalso isSome (toNullaryCType (Vector.sub (ts, 0)))
+                  andalso isSome (toCType (Vector.sub (ts, 0)))
                   then SOME {ctype = CType.objptr, name = "Objptr"}
                   else NONE
 
-      fun toCType (ty: t): {ctype: CType.t, name: string} option =
+      and toCType (ty: t): {ctype: CType.t, name: string} option =
          case toNullaryCType ty of
             NONE => toUnaryCType ty
           | SOME {ctype, name} => SOME {ctype = ctype, name = name}
