@@ -86,7 +86,7 @@ $(AOUT): $(SOURCES)
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.
 $(UP):
-	"$(SRC)/bin/upgrade-basis" "$(PATH)" "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
+	"$(SRC)/bin/upgrade-basis" '$(PATH)' "$(HOST_ARCH)" "$(HOST_OS)" >$(UP)
 
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
