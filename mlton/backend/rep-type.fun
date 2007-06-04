@@ -409,7 +409,7 @@ structure ObjectType =
                   (Control.Align4,32,32) => Type.word0
                 | (Control.Align8,32,32) => Type.word0
                 | (Control.Align4,64,64) => Type.word0
-                | (Control.Align8,64,64) => Type.word32
+                | (Control.Align8,64,64) => Type.word0
                 | _ => Error.bug "RepType.ObjectType.thread"
          in
             Normal {hasIdentity = true,
