@@ -17,13 +17,17 @@ signature PRIM_INTEGER =
       val sizeInBitsWord: Primitive.Word32.word
       val precision: Primitive.Int32.int option
 
+      val +! : int * int -> int
       val +? : int * int -> int
       val + : int * int -> int
+      val *! : int * int -> int 
       val *? : int * int -> int
       val * : int * int -> int
+      val ~! : int -> int
       val ~? : int -> int
       val ~ : int -> int
       val quotUnsafe: int * int -> int
+      val -! : int * int -> int
       val -? : int * int -> int
       val - : int * int -> int
       val remUnsafe: int * int -> int
@@ -106,26 +110,30 @@ structure Int8 =
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
 
+      val +! = Exn.wrapOverflow (_prim "WordS8_addCheck": int * int -> int;)
       val +? = _prim "Word8_add": int * int -> int;
       val + =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS8_addCheck": int * int -> int;)
+            then +!
             else +?
+      val *! = Exn.wrapOverflow (_prim "WordS8_mulCheck": int * int -> int;)
       val *? = _prim "WordS8_mul": int * int -> int;
       val * =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS8_mulCheck": int * int -> int;)
+            then *!
             else *?
+      val ~! = Exn.wrapOverflow (_prim "Word8_negCheck": int -> int;)
       val ~? = _prim "Word8_neg": int -> int; 
       val ~ =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "Word8_negCheck": int -> int;)
+            then ~!
             else ~?
       val quotUnsafe = _prim "WordS8_quot": int * int -> int;
+      val -! = Exn.wrapOverflow (_prim "WordS8_subCheck": int * int -> int;)
       val -? = _prim "Word8_sub": int * int -> int;
       val - =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS8_subCheck": int * int -> int;)
+            then -!
             else -?
       val remUnsafe = _prim "WordS8_rem": int * int -> int;
 
@@ -205,26 +213,30 @@ structure Int16 =
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
 
+      val +! = Exn.wrapOverflow (_prim "WordS16_addCheck": int * int -> int;)
       val +? = _prim "Word16_add": int * int -> int;
       val + =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS16_addCheck": int * int -> int;)
+            then +!
             else +?
+      val *! = Exn.wrapOverflow (_prim "WordS16_mulCheck": int * int -> int;)
       val *? = _prim "WordS16_mul": int * int -> int;
       val * =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS16_mulCheck": int * int -> int;)
+            then *!
             else *?
+      val ~! = Exn.wrapOverflow (_prim "Word16_negCheck": int -> int;)
       val ~? = _prim "Word16_neg": int -> int; 
       val ~ =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "Word16_negCheck": int -> int;)
+            then ~!
             else ~?
       val quotUnsafe = _prim "WordS16_quot": int * int -> int;
+      val -! = Exn.wrapOverflow (_prim "WordS16_subCheck": int * int -> int;)
       val -? = _prim "Word16_sub": int * int -> int;
       val - =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS16_subCheck": int * int -> int;)
+            then -!
             else -?
       val remUnsafe = _prim "WordS16_rem": int * int -> int;
 
@@ -368,26 +380,30 @@ structure Int32 =
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
 
+      val +! = Exn.wrapOverflow (_prim "WordS32_addCheck": int * int -> int;)
       val +? = _prim "Word32_add": int * int -> int;
       val + =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS32_addCheck": int * int -> int;)
+            then +!
             else +?
+      val *! = Exn.wrapOverflow (_prim "WordS32_mulCheck": int * int -> int;)
       val *? = _prim "WordS32_mul": int * int -> int;
       val * =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS32_mulCheck": int * int -> int;)
+            then *!
             else *?
+      val ~! = Exn.wrapOverflow (_prim "Word32_negCheck": int -> int;)
       val ~? = _prim "Word32_neg": int -> int; 
       val ~ =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "Word32_negCheck": int -> int;)
+            then ~!
             else ~?
       val quotUnsafe = _prim "WordS32_quot": int * int -> int;
+      val -! = Exn.wrapOverflow (_prim "WordS32_subCheck": int * int -> int;)
       val -? = _prim "Word32_sub": int * int -> int;
       val - =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS32_subCheck": int * int -> int;)
+            then -!
             else -?
       val remUnsafe = _prim "WordS32_rem": int * int -> int;
 
@@ -411,26 +427,30 @@ structure Int64 =
          IntWordConv.zextdFromInt32ToWord32 sizeInBits
       val precision = SOME sizeInBits
 
+      val +! = Exn.wrapOverflow (_prim "WordS64_addCheck": int * int -> int;)
       val +? = _prim "Word64_add": int * int -> int;
       val + =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS64_addCheck": int * int -> int;)
+            then +!
             else +?
+      val *! = Exn.wrapOverflow (_prim "WordS64_mulCheck": int * int -> int;)
       val *? = _prim "WordS64_mul": int * int -> int;
       val * =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS64_mulCheck": int * int -> int;)
+            then *!
             else *?
+      val ~! = Exn.wrapOverflow (_prim "Word64_negCheck": int -> int;)
       val ~? = _prim "Word64_neg": int -> int; 
       val ~ =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "Word64_negCheck": int -> int;)
+            then ~!
             else ~?
       val quotUnsafe = _prim "WordS64_quot": int * int -> int;
+      val -! = Exn.wrapOverflow (_prim "WordS64_subCheck": int * int -> int;)
       val -? = _prim "Word64_sub": int * int -> int;
       val - =
          if Controls.detectOverflow
-            then Exn.wrapOverflow (_prim "WordS64_subCheck": int * int -> int;)
+            then -!
             else -?
       val remUnsafe = _prim "WordS64_rem": int * int -> int;
 
