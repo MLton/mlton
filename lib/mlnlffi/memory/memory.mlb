@@ -1,1 +1,1 @@
-platform/memory.$(TARGET_ARCH)-$(TARGET_OS).mlb
+platform/memory.$(TARGET_OS).mlb

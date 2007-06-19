@@ -1,4 +1,4 @@
-(* memalloc-a4-unix.sml
+(* memalloc-unix.sml
  * 2005 Matthew Fluet (mfluet@acm.org)
  *  Adapted for MLton.
  *)
@@ -28,8 +28,8 @@ structure CMemAlloc : CMEMALLOC = struct
     val malloc_h = main's "malloc"
     val free_h = main's "free"
 
-    fun sys_malloc (n : Word32.word) = 
-        let val w_p = _import * : MLton.Pointer.t -> Word32.word -> addr;
+    fun sys_malloc (n : C_Size.word) = 
+        let val w_p = _import * : MLton.Pointer.t -> C_Size.word -> addr;
             val a = w_p (DL.addr malloc_h) n
         in if a = Ptr.null then raise OutOfMemory else a
         end
@@ -40,8 +40,8 @@ structure CMemAlloc : CMEMALLOC = struct
         end
 *)
 
-    fun sys_malloc (n : Word32.word) = 
-        let val w_p = _import "malloc" : Word32.word -> addr;
+    fun sys_malloc (n : C_Size.word) = 
+        let val w_p = _import "malloc" : C_Size.word -> addr;
             val a = w_p n
         in if a = Ptr.null then raise OutOfMemory else a
         end
@@ -51,6 +51,6 @@ structure CMemAlloc : CMEMALLOC = struct
         in p_u a
         end
 
-    fun alloc bytes = sys_malloc bytes
+    fun alloc bytes = sys_malloc (C_Size.fromLarge (Word.toLarge bytes))
     fun free a = sys_free a
 end

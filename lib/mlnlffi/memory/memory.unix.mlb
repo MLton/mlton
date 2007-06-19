@@ -1,6 +1,7 @@
 local
    $(SML_LIB)/basis/basis.mlb
    $(SML_LIB)/basis/mlton.mlb
+   $(SML_LIB)/basis/c-types.mlb
 in
    ann
       "forceUsed"
@@ -13,12 +14,12 @@ in
             linkage-libdl.sml
          end
          bitop-fn.sml
-         mlrep-i8i16i32i32i64f32f64.sml
+         mlrep.sml
          memaccess.sig
-         memaccess-a4c1s2i4l4ll8f4d8.sml
+         memaccess.sml
          memalloc.sig
          ann "allowFFI true" in
-            memalloc-a4-unix.sml
+            memalloc-unix.sml
          end
          memory.sig
          memory.sml
