@@ -13,17 +13,16 @@ ann
 in
    local
       basis.mlb
-      local
-         config/choose-int.sml
-         config/choose-real.sml
-         config/choose-word.sml
-         config/c/word-to-bool.sml
-         config/bind/int-top.sml 
-         config/bind/real-top.sml 
-         config/bind/word-top.sml 
-      in ann "forceUsed" in
+      config/choose-int.sml
+      config/choose-real.sml
+      config/choose-word.sml
+      config/c/word-to-bool.sml
+      config/bind/int-top.sml 
+      config/bind/real-top.sml 
+      config/bind/word-top.sml 
+      ann "forceUsed" in
          config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
-      end end
+      end
    in
       signature CHOOSE_INTN_ARG
       signature CHOOSE_WORDN_ARG
