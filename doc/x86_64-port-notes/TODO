@@ -10,11 +10,6 @@ http://mlton.org/pipermail/mlton/2006-June/028927.html
                  -- revert when dropping 'bool' from FFI; comparision
                     with zero will happen on the ML side.
 
-(* platform dependent c-types.h; change <build>/ layout *)
-http://mlton.org/pipermail/mlton/2006-June/028943.html
- + http://mlton.org/pipermail/mlton/2006-June/028948.html
- + Revision 4665 -- build/lib/<target>/include
-
 (* Add basis-ffi.h to SVN; create .PHONY target to regenerate. *)
 http://mlton.org/pipermail/mlton/2006-June/028946.html
  + http://mlton.org/pipermail/mlton/2006-June/028947.html
