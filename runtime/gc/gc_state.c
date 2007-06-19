@@ -10,7 +10,8 @@ void displayGCState (GC_state s, FILE *stream) {
   fprintf (stream,
            "GC state\n");
   fprintf (stream, "\tcurrentThread = "FMTOBJPTR"\n", s->currentThread);
-  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)), 
+  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)
+                                + offsetofThread (s)), 
                  stream);
   fprintf (stream, "\tgenerational\n");
   displayGenerationalMaps (s, &s->generationalMaps, 
@@ -48,7 +49,10 @@ void setGCStateCurrentHeap (GC_state s,
                             size_t oldGenBytesRequested,
                             size_t nurseryBytesRequested) {
   GC_heap h;
+  pointer nursery;
   size_t nurserySize;
+  pointer genNursery;
+  size_t genNurserySize;
 
   if (DEBUG_DETAILED)
     fprintf (stderr, "setGCStateCurrentHeap(%s, %s)\n",
@@ -56,28 +60,26 @@ void setGCStateCurrentHeap (GC_state s,
              uintmaxToCommaString(nurseryBytesRequested));
   h = &s->heap;
   assert (isFrontierAligned (s, h->start + h->oldGenSize + oldGenBytesRequested));
-  nurserySize = h->size - h->oldGenSize - oldGenBytesRequested;
   s->limitPlusSlop = h->start + h->size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  assert (isAligned (nurserySize, POINTER_SIZE));
+  nurserySize = h->size - (h->oldGenSize + oldGenBytesRequested);
+  assert (isFrontierAligned (s, s->limitPlusSlop - nurserySize));
+  nursery = s->limitPlusSlop - nurserySize;
+  genNursery = alignFrontier (s, s->limitPlusSlop - (nurserySize / 2));
+  genNurserySize = s->limitPlusSlop - genNursery;
   if (/* The mutator marks cards. */
       s->mutatorMarksCards
-      /* There is enough space in the nursery. */
-      and (nurseryBytesRequested
-           <= (size_t)(s->limitPlusSlop
-                       - alignFrontier (s, (s->limitPlusSlop 
-                                            - nurserySize / 2 + 2))))
+      /* There is enough space in the generational nursery. */
+      and (nurseryBytesRequested <= genNurserySize)
       /* The nursery is large enough to be worth it. */
       and (((float)(h->size - s->lastMajorStatistics.bytesLive) 
             / (float)nurserySize) 
            <= s->controls.ratios.nursery)
       and /* There is a reason to use generational GC. */
       (
-       /* We must use it for debugging pruposes. */
+       /* We must use it for debugging purposes. */
        FORCE_GENERATIONAL
-       /* We just did a mark compact, so it will be advantageous to to
-        * use it.
-        */
+       /* We just did a mark compact, so it will be advantageous to to use it. */
        or (s->lastMajorStatistics.kind == GC_MARK_COMPACT)
        /* The live ratio is low enough to make it worthwhile. */
        or ((float)h->size / (float)s->lastMajorStatistics.bytesLive
@@ -86,30 +88,21 @@ void setGCStateCurrentHeap (GC_state s,
                : s->controls.ratios.markCompactGenerational))
        )) {
     s->canMinor = TRUE;
-    nurserySize /= 2;
-    while (not (isAligned (nurserySize, POINTER_SIZE))) {
-      nurserySize -= 2;
-    }
+    nursery = genNursery;
+    nurserySize = genNurserySize;
     clearCardMap (s);
   } else {
-    unless (nurseryBytesRequested
-            <= (size_t)(s->limitPlusSlop
-                        - alignFrontier (s, s->limitPlusSlop
-                                         - nurserySize)))
+    unless (nurseryBytesRequested <= nurserySize)
       die ("Out of memory.  Insufficient space in nursery.");
     s->canMinor = FALSE;
   }
-  assert (nurseryBytesRequested
-          <= (size_t)(s->limitPlusSlop
-                      - alignFrontier (s, s->limitPlusSlop
-                                       - nurserySize)));
-  s->heap.nursery = alignFrontier (s, s->limitPlusSlop - nurserySize);
-  s->frontier = s->heap.nursery;
+  assert (nurseryBytesRequested <= nurserySize);
+  s->heap.nursery = nursery;
+  s->frontier = nursery;
   assert (nurseryBytesRequested <= (size_t)(s->limitPlusSlop - s->frontier));
   assert (isFrontierAligned (s, s->heap.nursery));
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
-
 
 bool GC_getAmOriginal (GC_state s) {
   return s->amOriginal;
@@ -158,28 +151,28 @@ void GC_setGCSignalPending (GC_state s, bool b) {
   s->signalsInfo.gcSignalPending = b;
 }
 
-void GC_setCallFromCHandlerThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setCallFromCHandlerThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->callFromCHandlerThread = op;
 }
 
-GC_thread GC_getCurrentThread (GC_state s) {
+pointer GC_getCurrentThread (GC_state s) {
   pointer p = objptrToPointer (s->currentThread, s->heap.start);
-  return (GC_thread)p;
+  return p;
 }
 
-GC_thread GC_getSavedThread (GC_state s) {
+pointer GC_getSavedThread (GC_state s) {
   pointer p = objptrToPointer (s->savedThread, s->heap.start);
   s->savedThread = BOGUS_OBJPTR;
-  return (GC_thread)p;
+  return p;
 }
 
-void GC_setSavedThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setSavedThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->savedThread = op;
 }
 
-void GC_setSignalHandlerThread (GC_state s, GC_thread t) {
-  objptr op = pointerToObjptr ((pointer)t, s->heap.start);
+void GC_setSignalHandlerThread (GC_state s, pointer p) {
+  objptr op = pointerToObjptr (p, s->heap.start);
   s->signalHandlerThread = op;
 }

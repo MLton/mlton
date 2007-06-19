@@ -27,6 +27,9 @@ val fromInt: int -> t option =
     | 8 => SOME Eight
     | _ => NONE
 
+val fromBytes: Bytes.t -> t option =
+   fromInt o Bytes.toInt
+
 val toInt: t -> int =
    fn One => 1
     | Two => 2

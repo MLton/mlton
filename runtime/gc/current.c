@@ -12,7 +12,7 @@ objptr getThreadCurrentObjptr (GC_state s) {
 
 GC_thread getThreadCurrent (GC_state s) {
   pointer p = objptrToPointer(getThreadCurrentObjptr(s), s->heap.start);
-  return (GC_thread)p;
+  return (GC_thread)(p + offsetofThread (s));
 }
 
 objptr getStackCurrentObjptr (GC_state s) {

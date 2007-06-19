@@ -40,8 +40,8 @@ signature TYPE_ENV =
             val isArrow: t -> bool
             val isBool: t -> bool
             val isCharX: t -> bool
+            val isCPointer: t -> bool
             val isInt: t -> bool
-            val isPointer: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
             val layoutPretty: t -> Layout.t

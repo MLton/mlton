@@ -160,9 +160,12 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                if Primitive.Controls.safe 
                   andalso y = zero
                   then raise Div
-                  else if Primitive.Controls.detectOverflow 
+                  else if (Primitive.Controls.detectOverflow
+                           orelse Primitive.Controls.safe)
                           andalso x = minInt' andalso y = ~one
-                          then raise Overflow
+                          then if Primitive.Controls.detectOverflow 
+                                  then raise Overflow
+                                  else minInt'
                           else quotUnsafe (x, y)
 
             fun rem (x, y) =
@@ -183,9 +186,12 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                                           else quotUnsafe (x -? one, y) -? one
                                   else raise Div
                   else if y < zero
-                          then if Primitive.Controls.detectOverflow 
+                          then if (Primitive.Controls.detectOverflow
+                                   orelse Primitive.Controls.safe)
                                   andalso x = minInt' andalso y = ~one
-                                  then raise Overflow
+                                  then if Primitive.Controls.detectOverflow 
+                                          then raise Overflow
+                                          else minInt'
                                   else quotUnsafe (x, y)
                           else if y > zero
                                   then quotUnsafe (x +? one, y) -? one

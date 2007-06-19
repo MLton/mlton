@@ -105,7 +105,7 @@ esac
 # Copied from mlton-script
 case "$crossArch" in
 amd64)
-        archOpts='-m32'
+        archOpts='-m64'
 ;;
 hppa)
         archOpts=''

@@ -142,7 +142,14 @@ fun implementsPrim (p: 'a Prim.t): bool =
           | W64 => false
    in
       case Prim.name p of
-         FFI_Symbol _ => true
+         CPointer_add => true
+       | CPointer_diff => true
+       | CPointer_equal => true
+       | CPointer_fromWord => true
+       | CPointer_lt => true
+       | CPointer_sub => true
+       | CPointer_toWord => true
+       | FFI_Symbol _ => true
        | Real_Math_acos _ => true
        | Real_Math_asin _ => true
        | Real_Math_atan _ => true
@@ -155,6 +162,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_Math_sqrt _ => true
        | Real_Math_tan _ => true
        | Real_add _ => true
+       | Real_castToWord _ => true
        | Real_div _ => true
        | Real_equal _ => true
        | Real_ldexp _ => true
@@ -164,15 +172,17 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_muladd _ => true
        | Real_mulsub _ => true
        | Real_neg _ => true
+       | Real_rndToReal _ => true
+       | Real_rndToWord _ => true
        | Real_round _ => true
        | Real_sub _ => true
-       | Real_toReal _ => true
-       | Real_toWord _ => true
        | Thread_returnToC => true
        | Word_add _ => true
        | Word_addCheck _ => true
        | Word_andb _ => true
+       | Word_castToReal _ => true
        | Word_equal _ => true
+       | Word_extdToWord _ => true
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
@@ -183,13 +193,12 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_orb _ => true
        | Word_quot (_, {signed}) => not signed
        | Word_rem (_, {signed}) => not signed
+       | Word_rndToReal _ => true
        | Word_rol _ => true
        | Word_ror _ => true
        | Word_rshift _ => true
        | Word_sub _ => true
        | Word_subCheck _ => true
-       | Word_toReal _ => true
-       | Word_toWord _ => true
        | Word_xorb _ => true
        | _ => false
    end
@@ -224,7 +233,7 @@ fun declareGlobals (prefix: string, print) =
              ; print (concat [prefix, s, " CReturn", CType.name t, ";\n"])
           end)
       val _ =                               
-         print (concat [prefix, "Pointer globalPointerNonRoot [",
+         print (concat [prefix, "Pointer globalObjptrNonRoot [",
                         C.int (Global.numberOfNonRoot ()),
                         "];\n"])
    in
@@ -264,10 +273,10 @@ fun outputDeclarations
          end
       fun declareIntInfs () =
          (print "BeginIntInfs\n"
-          ; List.foreach (intInfs, fn (g, s) =>
+          ; List.foreach (intInfs, fn (g, i) =>
                           (C.callNoSemi ("IntInf",
                                          [C.int (Global.index g),
-                                          C.string s],
+                                          C.string (IntInf.toString i)],
                                          print)
                            ; print "\n"))
           ; print "EndIntInfs\n")
@@ -324,37 +333,39 @@ fun outputDeclarations
           fn (_, ty) =>
           let
              datatype z = datatype Runtime.RObjectType.t
-             val (tag, hasIdentity, bytesNonPointers, numPointers) =
+             val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
-                   Array {hasIdentity, bytesNonPointers, numPointers} =>
+                   Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                       (0, hasIdentity, 
-                       Bytes.toInt bytesNonPointers, numPointers)
-                 | Normal {hasIdentity, bytesNonPointers, numPointers} =>
+                       Bytes.toInt bytesNonObjptrs, numObjptrs)
+                 | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
                       (1, hasIdentity, 
-                       Bytes.toInt bytesNonPointers, numPointers)
+                       Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
                       (2, false, 0, 0)
                  | Weak =>
-                      (case !Control.align of
-                          Control.Align4 => 
-                             (3, false, 
-                              Bytes.toInt (Words.toBytes (Words.fromInt 1)), 1)
-                        | Control.Align8 => 
-                             (3, false, 
-                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 1))
+                      (case (!Control.align,
+                             Bits.toInt (Control.Target.Size.cpointer ()),
+                             Bits.toInt (Control.Target.Size.objptr ())) of
+                          (Control.Align4,32,32) => (3, false, 4, 1)
+                        | (Control.Align8,32,32) => (3, false, 8, 1)
+                        | (Control.Align4,64,64) => (3, false, 8, 1)
+                        | (Control.Align8,64,64) => (3, false, 8, 1)
+                        | _ => Error.bug "CCodegen.declareObjectTypes")
                  | WeakGone =>
-                      (case !Control.align of
-                          Control.Align4 => 
-                             (3, false, 
-                              Bytes.toInt (Words.toBytes (Words.fromInt 2)), 0)
-                        | Control.Align8 => 
-                             (3, false, 
-                              Bytes.toInt (Words.toBytes (Words.fromInt 3)), 0))
+                      (case (!Control.align,
+                             Bits.toInt (Control.Target.Size.cpointer ()),
+                             Bits.toInt (Control.Target.Size.objptr ())) of
+                          (Control.Align4,32,32) => (3, false, 8, 0)
+                        | (Control.Align8,32,32) => (3, false, 12, 0)
+                        | (Control.Align4,64,64) => (3, false, 16, 0)
+                        | (Control.Align8,64,64) => (3, false, 16, 0)
+                        | _ => Error.bug "CCodegen.declareObjectTypes")
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",
-                     C.int bytesNonPointers, ", ",
-                     C.int numPointers, " }"]
+                     C.int bytesNonObjptrs, ", ",
+                     C.int numObjptrs, " }"]
           end)
       fun declareMain () =
          let
@@ -584,16 +595,16 @@ fun output {program as Machine.Program.T {chunks,
             open Control
          in
             !align = Align4
-            andalso (case !targetArch of
-                        HPPA => true
-                      | Sparc => true
+            andalso (case !Control.Target.arch of
+                        Target.HPPA => true
+                      | Target.Sparc => true
                       | _ => false)
          end
       val handleMisaligned =
          fn ty =>
          handleMisaligned
          andalso (Type.equals (ty, Type.real R64)
-                  orelse Type.equals (ty, Type.word (Bits.fromInt 64)))
+                  orelse Type.equals (ty, Type.word WordSize.word64))
       fun addr z = concat ["&(", z, ")"]
       fun fetch (z, ty) =
          concat [CType.toString (Type.toCType ty),
@@ -638,6 +649,7 @@ fun output {program as Machine.Program.T {chunks,
                   else concat ["GPNR", C.args [Int.toString (Global.index g)]]
              | Label l => labelToStringIndex l
              | Line => "__LINE__"
+             | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
                                        toString base,
@@ -689,7 +701,7 @@ fun output {program as Machine.Program.T {chunks,
                                   case Prim.name prim of
                                      Prim.Name.FFI_Symbol {name, ...} => 
                                         concat 
-                                        ["((",CType.toString CType.Pointer,
+                                        ["((",CType.toString CType.CPointer,
                                          ")(&", name, "))"]
                                    | _ => call ()
                             in
@@ -778,7 +790,7 @@ fun output {program as Machine.Program.T {chunks,
                (print "\t"
                 ; print (move {dst = (StackOffset.toString
                                       (StackOffset.T
-                                       {offset = Bytes.- (size, Runtime.labelSize),
+                                       {offset = Bytes.- (size, Runtime.labelSize ()),
                                         ty = Type.label return})),
                                dstIsMem = true,
                                src = operandToString (Operand.Label return),
@@ -789,37 +801,50 @@ fun output {program as Machine.Program.T {chunks,
                      then print "\tFlushStackTop();\n"
                   else ())
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
-               if Vector.exists (args,
-                                 fn Operand.StackOffset _ => true
-                                  | _ => false)
-                  then
-                     let
-                        val _ = print "\t{\n"
-                        val c = Counter.new 0
-                        val args =
-                           Vector.toListMap
-                           (args, fn z =>
-                            case z of
-                               Operand.StackOffset s =>
-                                  let
-                                     val ty = StackOffset.ty s
-                                     val tmp =
-                                        concat ["tmp",
-                                                Int.toString (Counter.next c)]
-                                     val _ =
-                                        print
-                                        (concat
-                                         ["\t", Type.toC ty, " ", tmp, " = ",
-                                          fetchOperand z, ";\n"])
-                                  in
-                                     tmp
-                                  end
-                             | _ => fetchOperand z)
-                     in
-                        (args, fn () => print "\t}\n")
-                     end
-               else (Vector.toListMap (args, fetchOperand),
-                     fn () => ())
+               let
+                  fun usesStack z =
+                     case z of
+                        Operand.ArrayOffset {base, index, ...} =>
+                           (usesStack base) orelse (usesStack index)
+                      | Operand.Cast (z, _) =>
+                           (usesStack z)
+                      | Operand.Contents {oper, ...} =>
+                           (usesStack oper)
+                      | Operand.Offset {base, ...} =>
+                           (usesStack base)
+                      | Operand.StackOffset _ => true
+                      | _ => false
+               in
+                  if Vector.exists (args, usesStack)
+                     then
+                        let
+                           val _ = print "\t{\n"
+                           val c = Counter.new 0
+                           val args =
+                              Vector.toListMap
+                              (args, fn z =>
+                               if usesStack z
+                                  then
+                                     let
+                                        val ty = Operand.ty z
+                                        val tmp =
+                                           concat ["tmp",
+                                                   Int.toString (Counter.next c)]
+                                        val _ =
+                                           print
+                                           (concat
+                                            ["\t", Type.toC ty, " ", tmp, " = ",
+                                             fetchOperand z, ";\n"])
+                                     in
+                                        tmp
+                                     end
+                               else fetchOperand z)
+                        in
+                           (args, fn () => print "\t}\n")
+                        end
+                  else (Vector.toListMap (args, fetchOperand),
+                        fn () => ())
+               end
             val tracePrintLabelCode =
                Trace.trace
                ("CCodegen.printLabelCode",
@@ -891,29 +916,12 @@ fun output {program as Machine.Program.T {chunks,
                   val _ =
                      if 0 = !Control.Native.commented
                         then ()
-                     else
-                        if false
-                           then
-                              Vector.foreach
-                              (live, fn z =>
-                               let
-                                  val z = Live.toOperand z
-                               in
-                                  if Type.isPointer (Operand.ty z)
-                                     then
-                                        print
-                                        (concat ["\tCheckPointer(",
-                                                 operandToString z,
-                                                 ");\n"])
-                                  else ()
-                               end)
-                        else
-                           print (let open Layout
-                                  in toString
-                                     (seq [str "\t/* live: ",
-                                           Vector.layout Live.layout live,
-                                           str " */\n"])
-                                  end)
+                     else print (let open Layout
+                                 in toString
+                                    (seq [str "\t/* live: ",
+                                          Vector.layout Live.layout live,
+                                          str " */\n"])
+                                 end)
                   val _ = Vector.foreach (statements, fn s =>
                                           outputStatement (s, print))
                   val _ = outputTransfer (transfer, l)

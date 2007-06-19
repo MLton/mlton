@@ -7,23 +7,19 @@
 
 /* isObjptr returns true if p looks like an object pointer. */
 bool isObjptr (objptr p) {
-  if GC_MODEL_NONOBJPTR {
-    unsigned int shift = GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT;
-    objptr mask = ~((~((objptr)0)) << shift);
-    return (0 == (p & mask));
-  } else {
-    return TRUE;
-  }
+  unsigned int shift = GC_MODEL_MINALIGN_SHIFT - GC_MODEL_OBJPTR_SHIFT;
+  objptr mask = ~((~((objptr)0)) << shift);
+  return (0 == (p & mask));
 }
 
 pointer objptrToPointer (objptr O, pointer B) {
   uintptr_t O_ = (uintptr_t)O;
   uintptr_t B_;
-  unsigned int S_ = GC_MODEL_SHIFT;
+  unsigned int S_ = GC_MODEL_OBJPTR_SHIFT;
   uintptr_t P_;
   pointer P;
 
-  if (GC_MODEL_USEBASE) {
+  if (GC_MODEL_OBJPTR_BASE) {
     B_ = (uintptr_t)B;
   } else {
     B_ = 0;
@@ -31,7 +27,7 @@ pointer objptrToPointer (objptr O, pointer B) {
 
   P_ = ((O_ << S_) + B_);
   P = (pointer)P_;
-  if (DEBUG_DETAILED) 
+  if (DEBUG_OBJPTR) 
     fprintf (stderr, "objptrToPointer ("FMTOBJPTR") = "FMTPTR"\n", O, (uintptr_t)P);
 
   return P;
@@ -40,11 +36,11 @@ pointer objptrToPointer (objptr O, pointer B) {
 objptr pointerToObjptr (pointer P, pointer B) {
   uintptr_t P_ = (uintptr_t)P;
   uintptr_t B_;
-  unsigned int S_ = GC_MODEL_SHIFT;
+  unsigned int S_ = GC_MODEL_OBJPTR_SHIFT;
   uintptr_t O_;
   objptr O;
 
-  if (GC_MODEL_USEBASE) {
+  if (GC_MODEL_OBJPTR_BASE) {
     B_ = (uintptr_t)B;
   } else {
     B_ = 0;
@@ -52,7 +48,7 @@ objptr pointerToObjptr (pointer P, pointer B) {
 
   O_ = ((P_ - B_) >> S_);
   O = (objptr)O_;
-  if (DEBUG_DETAILED) 
+  if (DEBUG_OBJPTR) 
     fprintf (stderr, "pointerToObjptr ("FMTPTR") = "FMTOBJPTR"\n", (uintptr_t)P, O);
 
   return O;

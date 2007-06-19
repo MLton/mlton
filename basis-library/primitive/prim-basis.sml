@@ -434,7 +434,7 @@ structure Word64 =
 (* Primitive Basis (MLton Extensions) *)
 structure Pointer =
    struct
-      type t = pointer
+      type t = cpointer
    end
 structure Thread =
    struct

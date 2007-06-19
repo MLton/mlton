@@ -25,15 +25,13 @@ local
    fun nullary tycon = con (tycon, Vector.new0 ())
 in
    val bool = nullary Tycon.bool
+   val cpointer = nullary Tycon.cpointer
    val exn = nullary Tycon.exn
    val intInf = nullary Tycon.intInf
-   val pointer = nullary Tycon.pointer
    val real = RealSize.memoize (fn s => nullary (Tycon.real s))
    val thread = nullary Tycon.thread
    val word = WordSize.memoize (fn s => nullary (Tycon.word s))
 end
-
-val defaultWord = word WordSize.default
 
 local
    fun unary tycon t = con (tycon, Vector.new1 t)
@@ -45,8 +43,9 @@ in
    val weak = unary Tycon.weak
 end
 
-val word8 = word WordSize.byte
+val word8 = word WordSize.word8
 val word8Vector = vector word8
+val word32 = word WordSize.word32
 
 local
    fun binary tycon (t1, t2) = con (tycon, Vector.new2 (t1, t2))

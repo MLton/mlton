@@ -15,8 +15,8 @@ local
 
    runtime.sig
    runtime.fun
-   pointer-tycon.sig
-   pointer-tycon.fun
+   objptr-tycon.sig
+   objptr-tycon.fun
    object-type.sig
    scale.sig
    scale.fun

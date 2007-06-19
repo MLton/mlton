@@ -31,6 +31,21 @@ signature PRIM =
              | Array_sub (* ssa to ssa2 *)
              | Array_toVector (* backend *)
              | Array_update (* ssa to ssa2 *)
+             | CPointer_add (* codegen *)
+             | CPointer_diff (* codegen *)
+             | CPointer_equal (* codegen *)
+             | CPointer_fromWord (* codegen *)
+             | CPointer_getCPointer (* ssa to rssa *)
+             | CPointer_getObjptr (* ssa to rssa *)
+             | CPointer_getReal of RealSize.t (* ssa to rssa *)
+             | CPointer_getWord of WordSize.t (* ssa to rssa *)
+             | CPointer_lt (* codegen *)
+             | CPointer_setCPointer (* ssa to rssa *)
+             | CPointer_setObjptr (* ssa to rssa *)
+             | CPointer_setReal of RealSize.t (* ssa to rssa *)
+             | CPointer_setWord of WordSize.t (* ssa to rssa *)
+             | CPointer_sub (* codegen *)
+             | CPointer_toWord (* codegen *)
              | Exn_extra (* implement exceptions *)
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
@@ -83,12 +98,6 @@ signature PRIM =
              | MLton_share
              | MLton_size (* ssa to rssa *)
              | MLton_touch (* backend *)
-             | Pointer_getPointer (* ssa to rssa *)
-             | Pointer_getReal of RealSize.t (* ssa to rssa *)
-             | Pointer_getWord of WordSize.t (* ssa to rssa *)
-             | Pointer_setPointer (* ssa to rssa *)
-             | Pointer_setReal of RealSize.t (* ssa to rssa *)
-             | Pointer_setWord of WordSize.t (* ssa to rssa *)
              | Real_Math_acos of RealSize.t (* codegen *)
              | Real_Math_asin of RealSize.t (* codegen *)
              | Real_Math_atan of RealSize.t (* codegen *)
@@ -102,6 +111,7 @@ signature PRIM =
              | Real_Math_tan of RealSize.t (* codegen *)
              | Real_abs of RealSize.t (* codegen *)
              | Real_add of RealSize.t (* codegen *)
+             | Real_castToWord of RealSize.t * WordSize.t (* codegen *)
              | Real_div of RealSize.t (* codegen *)
              | Real_equal of RealSize.t (* codegen *)
              | Real_ldexp of RealSize.t (* codegen *)
@@ -112,17 +122,17 @@ signature PRIM =
              | Real_mulsub of RealSize.t (* codegen *)
              | Real_neg of RealSize.t     (* codegen *)
              | Real_qequal of RealSize.t (* codegen *)
+             | Real_rndToReal of RealSize.t * RealSize.t (* codegen *)
+             | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Real_round of RealSize.t (* codegen *)
              | Real_sub of RealSize.t (* codegen *)
-             | Real_toWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
-             | Real_toReal of RealSize.t * RealSize.t (* codegen *)
              | Ref_assign (* ssa to ssa2 *)
              | Ref_deref (* ssa to ssa2 *)
              | Ref_ref (* ssa to ssa2 *)
              | String_toWord8Vector (* defunctorize *)
              | Thread_atomicBegin (* backend *)
              | Thread_atomicEnd (* backend *)
-             | Thread_canHandle (* backend *)
+             | Thread_atomicState (* backend *)
              | Thread_copy (* ssa to rssa *)
              | Thread_copyCurrent (* ssa to rssa *)
              | Thread_returnToC (* codegen *)
@@ -141,7 +151,9 @@ signature PRIM =
              | Word_add of WordSize.t (* codegen *)
              | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_andb of WordSize.t (* codegen *)
+             | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
              | Word_equal of WordSize.t (* codegen *)
+             | Word_extdToWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Word_lshift of WordSize.t (* codegen *)
              | Word_lt of WordSize.t * {signed: bool} (* codegen *)
              | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -152,19 +164,18 @@ signature PRIM =
              | Word_orb of WordSize.t (* codegen *)
              | Word_quot of WordSize.t * {signed: bool} (* codegen *)
              | Word_rem of WordSize.t * {signed: bool} (* codegen *)
+             | Word_rndToReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
              | Word_rol of WordSize.t (* codegen *)
              | Word_ror of WordSize.t (* codegen *)
              | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
              | Word_sub of WordSize.t (* codegen *)
              | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
              | Word_toIntInf (* ssa to rssa *)
-             | Word_toReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
-             | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
              | Word_xorb of WordSize.t (* codegen *)
              | WordVector_toIntInf (* ssa to rssa *)
-             | Word8Array_subWord (* ssa to rssa *)
-             | Word8Array_updateWord (* ssa to rssa *)
-             | Word8Vector_subWord (* ssa to rssa *)
+             | Word8Array_subWord of WordSize.t (* ssa to rssa *)
+             | Word8Array_updateWord of WordSize.t (* ssa to rssa *)
+             | Word8Vector_subWord of WordSize.t (* ssa to rssa *)
              | Word8Vector_toString (* defunctorize *)
              | World_save (* ssa to rssa *)
 
@@ -203,6 +214,13 @@ signature PRIM =
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
+      val cpointerAdd: 'a t
+      val cpointerDiff: 'a t
+      val cpointerEqual: 'a t
+      val cpointerGet: CType.t -> 'a t 
+      val cpointerLt: 'a t
+      val cpointerSet: CType.t -> 'a t 
+      val cpointerSub: 'a t
       val deref: 'a t
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)
@@ -235,9 +253,8 @@ signature PRIM =
        * not examples: Array_array, Array_sub, Ref_deref, Ref_ref
        *)
       val maySideEffect: 'a t -> bool
-      val pointerGet: CType.t -> 'a t
-      val pointerSet: CType.t -> 'a t
       val name: 'a t -> 'a Name.t
+      val realCastToWord: RealSize.t * WordSize.t -> 'a t
       val reff: 'a t
       val toString: 'a t -> string
       val touch: 'a t
@@ -246,6 +263,7 @@ signature PRIM =
       val wordAdd: WordSize.t -> 'a t
       val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
+      val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t
@@ -254,5 +272,5 @@ signature PRIM =
       val wordOrb: WordSize.t -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
+      val wordExtdToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
    end

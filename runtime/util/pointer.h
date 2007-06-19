@@ -12,6 +12,16 @@ typedef unsigned char pointerAux __attribute__ ((aligned (4), may_alias));
 typedef pointerAux* pointer;
 
 #define POINTER_SIZE sizeof(pointer)
+#ifdef __WORDSIZE
+#if __WORDSIZE == 32
+#define FMTPTR "0x%08"PRIxPTR
+#elif __WORDSIZE == 64
 #define FMTPTR "0x%016"PRIxPTR
+#else
+#error __WORDSIZE unknown
+#endif
+#else
+#define FMTPTR "0x%08"PRIxPTR
+#endif
 
 typedef const unsigned char* code_pointer;

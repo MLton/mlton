@@ -22,10 +22,10 @@ struct
   (*
    * x86.Size.t equivalents
    *)
-  val wordBytes = Bytes.toInt Bytes.inWord
+  val wordBytes = Bytes.toInt Bytes.inWord32
   val wordSize = Size.fromBytes wordBytes
   val wordScale = Scale.fromBytes wordBytes
-  val pointerBytes = Bytes.toInt Runtime.pointerSize
+  val pointerBytes = Bytes.toInt Bytes.inWord32
   val pointerSize = Size.fromBytes pointerBytes
 
   (*
@@ -150,7 +150,7 @@ struct
     = Operand.memloc c_stackPContents
   val c_stackPDerefDouble
     = MemLoc.simple {base = c_stackPContents,
-                     index = Immediate.const_int 0,
+                     index = Immediate.zero,
                      scale = wordScale,
                      size = Size.DBLE,
                      class = Classes.CStack}
@@ -158,7 +158,7 @@ struct
     = Operand.memloc c_stackPDerefDouble
   val c_stackPDerefFloat
     = MemLoc.simple {base = c_stackPContents,
-                     index = Immediate.const_int 0,
+                     index = Immediate.zero,
                      scale = wordScale,
                      size = Size.SNGL,
                      class = Classes.CStack}
@@ -294,11 +294,12 @@ struct
            CType.memo
            (fn t =>
             case t of
-               Int8 => w "8"
+               CPointer => Label.fromString (concat [prefix, "CPointer"])
+             | Int8 => w "8"
              | Int16 => w "16"
              | Int32 => w "32"
              | Int64 => w "64"
-             | Pointer => Label.fromString (concat [prefix, "Pointer"])
+             | Objptr => Label.fromString (concat [prefix, "Objptr"])
              | Real32 => r "32"
              | Real64 => r "64"
              | Word8 => w "8"
@@ -311,7 +312,7 @@ struct
      val global_base = make "global"
   end
 
-  val globalPointerNonRoot_base = Label.fromString "globalPointerNonRoot"
+  val globalObjptrNonRoot_base = Label.fromString "globalObjptrNonRoot"
 
   val fileNameLabel = Label.fromString "fileName"
   val fileName = Operand.immediate_label fileNameLabel
@@ -331,12 +332,10 @@ struct
 
   val fileLine
     = fn () => if !Control.debug
-                 then Operand.immediate (Immediate.const_int 0)
+                 then Operand.immediate (Immediate.zero)
                  else (Operand.immediate
-                       (Immediate.binexp
-                        {oper = Immediate.Addition,
-                         exp1 = Immediate.label (fileLineLabel ()),
-                         exp2 = Immediate.const_int 9}))
+                       (Immediate.labelPlusInt
+                        (fileLineLabel (), 9)))
 
   val gcState_label = Label.fromString "gcState"
 
@@ -344,10 +343,8 @@ struct
   fun make' (offset: int, size, class) =
      let
         fun imm () =
-           Immediate.binexp
-           {oper = Immediate.Addition,
-            exp1 = Immediate.label gcState_label,
-            exp2 = Immediate.const_int offset}
+           Immediate.labelPlusInt
+           (gcState_label, offset)
         fun contents () =
            makeContents {base = imm (),
                          size = size,
@@ -359,10 +356,8 @@ struct
   fun make (f: Field.t, size, class) =
      let
         fun imm () =
-           Immediate.binexp
-           {oper = Immediate.Addition,
-            exp1 = Immediate.label gcState_label,
-            exp2 = Immediate.const_int (Bytes.toInt (Field.offset f))}
+           Immediate.labelPlusInt
+           (gcState_label, Bytes.toInt (Field.offset f))
         fun contents () =
            makeContents {base = imm (),
                          size = size,
@@ -404,7 +399,7 @@ struct
 
   fun gcState_stackTopMinusWordDeref () =
      MemLoc.simple {base = gcState_stackTopContents (), 
-                    index = Immediate.const_int ~1,
+                    index = Immediate.int ~1,
                     scale = wordScale,
                     size = pointerSize,
                     class = Classes.Stack}
@@ -413,7 +408,7 @@ struct
 
   fun stackTopTempMinusWordDeref () =
      MemLoc.simple {base = stackTopTempContents (), 
-                    index = Immediate.const_int ~1,
+                    index = Immediate.int ~1,
                     scale = wordScale,
                     size = pointerSize,
                     class = Classes.Stack}

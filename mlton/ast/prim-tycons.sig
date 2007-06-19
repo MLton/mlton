@@ -46,6 +46,7 @@ signature PRIM_TYCONS =
       val arrow: tycon
       val bool: tycon
       val char: CharSize.t -> tycon
+      val cpointer: tycon
       val deCharX: tycon -> CharSize.t
       val defaultChar: unit -> tycon
       val defaultInt: unit -> tycon
@@ -60,15 +61,14 @@ signature PRIM_TYCONS =
       val intInf: tycon
       val isBool: tycon -> bool
       val isCharX: tycon -> bool
+      val isCPointer: tycon -> bool
       val isIntX: tycon -> bool
-      val isPointer: tycon -> bool
       val isRealX: tycon -> bool
       val isWordX: tycon -> bool
       val layoutApp:
          tycon * (Layout.t * ({isChar: bool} * BindingStrength.t)) vector
          -> Layout.t * ({isChar: bool} * BindingStrength.t)
       val list: tycon
-      val pointer: tycon
       val prims: {admitsEquality: AdmitsEquality.t,
                   kind: Kind.t,
                   name: string,

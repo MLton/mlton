@@ -213,60 +213,6 @@ val POLLOUT = _const "OS_IO_POLLOUT" : C_Short.t;
 val POLLPRI = _const "OS_IO_POLLPRI" : C_Short.t;
 end
 end
-structure PackReal32 = 
-struct
-val subArr = _import "PackReal32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
-val subArrRev = _import "PackReal32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real32.t;
-val subVec = _import "PackReal32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
-val subVecRev = _import "PackReal32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real32.t;
-val update = _import "PackReal32_update" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
-val updateRev = _import "PackReal32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real32.t -> unit;
-end
-structure PackReal64 = 
-struct
-val subArr = _import "PackReal64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
-val subArrRev = _import "PackReal64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Real64.t;
-val subVec = _import "PackReal64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
-val subVecRev = _import "PackReal64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Real64.t;
-val update = _import "PackReal64_update" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
-val updateRev = _import "PackReal64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Real64.t -> unit;
-end
-structure PackWord16 = 
-struct
-val subArr = _import "PackWord16_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
-val subArrRev = _import "PackWord16_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word16.t;
-val subVec = _import "PackWord16_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
-val subVecRev = _import "PackWord16_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word16.t;
-val update = _import "PackWord16_update" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
-val updateRev = _import "PackWord16_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word16.t -> unit;
-end
-structure PackWord32 = 
-struct
-val subArr = _import "PackWord32_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
-val subArrRev = _import "PackWord32_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word32.t;
-val subVec = _import "PackWord32_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
-val subVecRev = _import "PackWord32_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word32.t;
-val update = _import "PackWord32_update" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
-val updateRev = _import "PackWord32_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word32.t -> unit;
-end
-structure PackWord64 = 
-struct
-val subArr = _import "PackWord64_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
-val subArrRev = _import "PackWord64_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word64.t;
-val subVec = _import "PackWord64_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
-val subVecRev = _import "PackWord64_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word64.t;
-val update = _import "PackWord64_update" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
-val updateRev = _import "PackWord64_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word64.t -> unit;
-end
-structure PackWord8 = 
-struct
-val subArr = _import "PackWord8_subArr" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
-val subArrRev = _import "PackWord8_subArrRev" : (Word8.t) array * C_Ptrdiff.t -> Word8.t;
-val subVec = _import "PackWord8_subVec" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
-val subVecRev = _import "PackWord8_subVecRev" : (Word8.t) vector * C_Ptrdiff.t -> Word8.t;
-val update = _import "PackWord8_update" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
-val updateRev = _import "PackWord8_updateRev" : (Word8.t) array * C_Ptrdiff.t * Word8.t -> unit;
-end
 structure Posix = 
 struct
 structure Error = 
@@ -962,6 +908,7 @@ struct
 type t = Real32.t
 val abs = _import "Real32_abs" : Real32.t -> Real32.t;
 val add = _import "Real32_add" : Real32.t * Real32.t -> Real32.t;
+val castToWord32 = _import "Real32_castToWord32" : Real32.t -> Word32.t;
 val class = _import "Real32_class" : Real32.t -> C_Int.t;
 val div = _import "Real32_div" : Real32.t * Real32.t -> Real32.t;
 val equal = _import "Real32_equal" : Real32.t * Real32.t -> Bool.t;
@@ -1000,29 +947,28 @@ val mul = _import "Real32_mul" : Real32.t * Real32.t -> Real32.t;
 val muladd = _import "Real32_muladd" : Real32.t * Real32.t * Real32.t -> Real32.t;
 val mulsub = _import "Real32_mulsub" : Real32.t * Real32.t * Real32.t -> Real32.t;
 val neg = _import "Real32_neg" : Real32.t -> Real32.t;
-val nextAfterDown = _import "Real32_nextAfterDown" : Real32.t -> Real32.t;
-val nextAfterUp = _import "Real32_nextAfterUp" : Real32.t -> Real32.t;
+val rndToReal32 = _import "Real32_rndToReal32" : Real32.t -> Real32.t;
+val rndToReal64 = _import "Real32_rndToReal64" : Real32.t -> Real64.t;
+val rndToWordS16 = _import "Real32_rndToWordS16" : Real32.t -> Int16.t;
+val rndToWordS32 = _import "Real32_rndToWordS32" : Real32.t -> Int32.t;
+val rndToWordS64 = _import "Real32_rndToWordS64" : Real32.t -> Int64.t;
+val rndToWordS8 = _import "Real32_rndToWordS8" : Real32.t -> Int8.t;
+val rndToWordU16 = _import "Real32_rndToWordU16" : Real32.t -> Word16.t;
+val rndToWordU32 = _import "Real32_rndToWordU32" : Real32.t -> Word32.t;
+val rndToWordU64 = _import "Real32_rndToWordU64" : Real32.t -> Word64.t;
+val rndToWordU8 = _import "Real32_rndToWordU8" : Real32.t -> Word8.t;
 val round = _import "Real32_round" : Real32.t -> Real32.t;
 val signBit = _import "Real32_signBit" : Real32.t -> C_Int.t;
 val store = _import "Real32_store" : (Real32.t) ref * Real32.t -> unit;
 val strto = _import "Real32_strto" : NullString8.t -> Real32.t;
 val sub = _import "Real32_sub" : Real32.t * Real32.t -> Real32.t;
-val toReal32 = _import "Real32_toReal32" : Real32.t -> Real32.t;
-val toReal64 = _import "Real32_toReal64" : Real32.t -> Real64.t;
-val toWordS16 = _import "Real32_toWordS16" : Real32.t -> Int16.t;
-val toWordS32 = _import "Real32_toWordS32" : Real32.t -> Int32.t;
-val toWordS64 = _import "Real32_toWordS64" : Real32.t -> Int64.t;
-val toWordS8 = _import "Real32_toWordS8" : Real32.t -> Int8.t;
-val toWordU16 = _import "Real32_toWordU16" : Real32.t -> Word16.t;
-val toWordU32 = _import "Real32_toWordU32" : Real32.t -> Word32.t;
-val toWordU64 = _import "Real32_toWordU64" : Real32.t -> Word64.t;
-val toWordU8 = _import "Real32_toWordU8" : Real32.t -> Word8.t;
 end
 structure Real64 = 
 struct
 type t = Real64.t
 val abs = _import "Real64_abs" : Real64.t -> Real64.t;
 val add = _import "Real64_add" : Real64.t * Real64.t -> Real64.t;
+val castToWord64 = _import "Real64_castToWord64" : Real64.t -> Word64.t;
 val class = _import "Real64_class" : Real64.t -> C_Int.t;
 val div = _import "Real64_div" : Real64.t * Real64.t -> Real64.t;
 val equal = _import "Real64_equal" : Real64.t * Real64.t -> Bool.t;
@@ -1061,23 +1007,21 @@ val mul = _import "Real64_mul" : Real64.t * Real64.t -> Real64.t;
 val muladd = _import "Real64_muladd" : Real64.t * Real64.t * Real64.t -> Real64.t;
 val mulsub = _import "Real64_mulsub" : Real64.t * Real64.t * Real64.t -> Real64.t;
 val neg = _import "Real64_neg" : Real64.t -> Real64.t;
-val nextAfterDown = _import "Real64_nextAfterDown" : Real64.t -> Real64.t;
-val nextAfterUp = _import "Real64_nextAfterUp" : Real64.t -> Real64.t;
+val rndToReal32 = _import "Real64_rndToReal32" : Real64.t -> Real32.t;
+val rndToReal64 = _import "Real64_rndToReal64" : Real64.t -> Real64.t;
+val rndToWordS16 = _import "Real64_rndToWordS16" : Real64.t -> Int16.t;
+val rndToWordS32 = _import "Real64_rndToWordS32" : Real64.t -> Int32.t;
+val rndToWordS64 = _import "Real64_rndToWordS64" : Real64.t -> Int64.t;
+val rndToWordS8 = _import "Real64_rndToWordS8" : Real64.t -> Int8.t;
+val rndToWordU16 = _import "Real64_rndToWordU16" : Real64.t -> Word16.t;
+val rndToWordU32 = _import "Real64_rndToWordU32" : Real64.t -> Word32.t;
+val rndToWordU64 = _import "Real64_rndToWordU64" : Real64.t -> Word64.t;
+val rndToWordU8 = _import "Real64_rndToWordU8" : Real64.t -> Word8.t;
 val round = _import "Real64_round" : Real64.t -> Real64.t;
 val signBit = _import "Real64_signBit" : Real64.t -> C_Int.t;
 val store = _import "Real64_store" : (Real64.t) ref * Real64.t -> unit;
 val strto = _import "Real64_strto" : NullString8.t -> Real64.t;
 val sub = _import "Real64_sub" : Real64.t * Real64.t -> Real64.t;
-val toReal32 = _import "Real64_toReal32" : Real64.t -> Real32.t;
-val toReal64 = _import "Real64_toReal64" : Real64.t -> Real64.t;
-val toWordS16 = _import "Real64_toWordS16" : Real64.t -> Int16.t;
-val toWordS32 = _import "Real64_toWordS32" : Real64.t -> Int32.t;
-val toWordS64 = _import "Real64_toWordS64" : Real64.t -> Int64.t;
-val toWordS8 = _import "Real64_toWordS8" : Real64.t -> Int8.t;
-val toWordU16 = _import "Real64_toWordU16" : Real64.t -> Word16.t;
-val toWordU32 = _import "Real64_toWordU32" : Real64.t -> Word32.t;
-val toWordU64 = _import "Real64_toWordU64" : Real64.t -> Word64.t;
-val toWordU8 = _import "Real64_toWordU8" : Real64.t -> Word8.t;
 end
 structure Socket = 
 struct
@@ -1218,6 +1162,7 @@ struct
 type t = Word32.t
 val add = _import "Word32_add" : Word32.t * Word32.t -> Word32.t;
 val andb = _import "Word32_andb" : Word32.t * Word32.t -> Word32.t;
+val castToReal32 = _import "Word32_castToReal32" : Word32.t -> Real32.t;
 val equal = _import "Word32_equal" : Word32.t * Word32.t -> Bool.t;
 val lshift = _import "Word32_lshift" : Word32.t * Word32.t -> Word32.t;
 val neg = _import "Word32_neg" : Word32.t -> Word32.t;
@@ -1233,6 +1178,7 @@ struct
 type t = Word64.t
 val add = _import "Word64_add" : Word64.t * Word64.t -> Word64.t;
 val andb = _import "Word64_andb" : Word64.t * Word64.t -> Word64.t;
+val castToReal64 = _import "Word64_castToReal64" : Word64.t -> Real64.t;
 val equal = _import "Word64_equal" : Word64.t * Word64.t -> Bool.t;
 val fetch = _import "Word64_fetch" : (Word64.t) ref -> Word64.t;
 val lshift = _import "Word64_lshift" : Word64.t * Word32.t -> Word64.t;
@@ -1264,6 +1210,10 @@ end
 structure WordS16 = 
 struct
 val addCheckOverflows = _import "WordS16_addCheckOverflows" : Int16.t * Int16.t -> Bool.t;
+val extdToWord16 = _import "WordS16_extdToWord16" : Int16.t -> Word16.t;
+val extdToWord32 = _import "WordS16_extdToWord32" : Int16.t -> Word32.t;
+val extdToWord64 = _import "WordS16_extdToWord64" : Int16.t -> Word64.t;
+val extdToWord8 = _import "WordS16_extdToWord8" : Int16.t -> Word8.t;
 val ge = _import "WordS16_ge" : Int16.t * Int16.t -> Bool.t;
 val gt = _import "WordS16_gt" : Int16.t * Int16.t -> Bool.t;
 val le = _import "WordS16_le" : Int16.t * Int16.t -> Bool.t;
@@ -1273,18 +1223,18 @@ val mulCheckOverflows = _import "WordS16_mulCheckOverflows" : Int16.t * Int16.t 
 val negCheckOverflows = _import "WordS16_negCheckOverflows" : Int16.t -> Bool.t;
 val quot = _import "WordS16_quot" : Int16.t * Int16.t -> Int16.t;
 val rem = _import "WordS16_rem" : Int16.t * Int16.t -> Int16.t;
+val rndToReal32 = _import "WordS16_rndToReal32" : Int16.t -> Real32.t;
+val rndToReal64 = _import "WordS16_rndToReal64" : Int16.t -> Real64.t;
 val rshift = _import "WordS16_rshift" : Int16.t * Word32.t -> Int16.t;
 val subCheckOverflows = _import "WordS16_subCheckOverflows" : Int16.t * Int16.t -> Bool.t;
-val toReal32 = _import "WordS16_toReal32" : Int16.t -> Real32.t;
-val toReal64 = _import "WordS16_toReal64" : Int16.t -> Real64.t;
-val toWord16 = _import "WordS16_toWord16" : Int16.t -> Word16.t;
-val toWord32 = _import "WordS16_toWord32" : Int16.t -> Word32.t;
-val toWord64 = _import "WordS16_toWord64" : Int16.t -> Word64.t;
-val toWord8 = _import "WordS16_toWord8" : Int16.t -> Word8.t;
 end
 structure WordS32 = 
 struct
 val addCheckOverflows = _import "WordS32_addCheckOverflows" : Int32.t * Int32.t -> Bool.t;
+val extdToWord16 = _import "WordS32_extdToWord16" : Int32.t -> Word16.t;
+val extdToWord32 = _import "WordS32_extdToWord32" : Int32.t -> Word32.t;
+val extdToWord64 = _import "WordS32_extdToWord64" : Int32.t -> Word64.t;
+val extdToWord8 = _import "WordS32_extdToWord8" : Int32.t -> Word8.t;
 val ge = _import "WordS32_ge" : Int32.t * Int32.t -> Bool.t;
 val gt = _import "WordS32_gt" : Int32.t * Int32.t -> Bool.t;
 val le = _import "WordS32_le" : Int32.t * Int32.t -> Bool.t;
@@ -1294,18 +1244,18 @@ val mulCheckOverflows = _import "WordS32_mulCheckOverflows" : Int32.t * Int32.t 
 val negCheckOverflows = _import "WordS32_negCheckOverflows" : Int32.t -> Bool.t;
 val quot = _import "WordS32_quot" : Int32.t * Int32.t -> Int32.t;
 val rem = _import "WordS32_rem" : Int32.t * Int32.t -> Int32.t;
+val rndToReal32 = _import "WordS32_rndToReal32" : Int32.t -> Real32.t;
+val rndToReal64 = _import "WordS32_rndToReal64" : Int32.t -> Real64.t;
 val rshift = _import "WordS32_rshift" : Int32.t * Word32.t -> Int32.t;
 val subCheckOverflows = _import "WordS32_subCheckOverflows" : Int32.t * Int32.t -> Bool.t;
-val toReal32 = _import "WordS32_toReal32" : Int32.t -> Real32.t;
-val toReal64 = _import "WordS32_toReal64" : Int32.t -> Real64.t;
-val toWord16 = _import "WordS32_toWord16" : Int32.t -> Word16.t;
-val toWord32 = _import "WordS32_toWord32" : Int32.t -> Word32.t;
-val toWord64 = _import "WordS32_toWord64" : Int32.t -> Word64.t;
-val toWord8 = _import "WordS32_toWord8" : Int32.t -> Word8.t;
 end
 structure WordS64 = 
 struct
 val addCheckOverflows = _import "WordS64_addCheckOverflows" : Int64.t * Int64.t -> Bool.t;
+val extdToWord16 = _import "WordS64_extdToWord16" : Int64.t -> Word16.t;
+val extdToWord32 = _import "WordS64_extdToWord32" : Int64.t -> Word32.t;
+val extdToWord64 = _import "WordS64_extdToWord64" : Int64.t -> Word64.t;
+val extdToWord8 = _import "WordS64_extdToWord8" : Int64.t -> Word8.t;
 val ge = _import "WordS64_ge" : Int64.t * Int64.t -> Bool.t;
 val gt = _import "WordS64_gt" : Int64.t * Int64.t -> Bool.t;
 val le = _import "WordS64_le" : Int64.t * Int64.t -> Bool.t;
@@ -1315,18 +1265,18 @@ val mulCheckOverflows = _import "WordS64_mulCheckOverflows" : Int64.t * Int64.t 
 val negCheckOverflows = _import "WordS64_negCheckOverflows" : Int64.t -> Bool.t;
 val quot = _import "WordS64_quot" : Int64.t * Int64.t -> Int64.t;
 val rem = _import "WordS64_rem" : Int64.t * Int64.t -> Int64.t;
+val rndToReal32 = _import "WordS64_rndToReal32" : Int64.t -> Real32.t;
+val rndToReal64 = _import "WordS64_rndToReal64" : Int64.t -> Real64.t;
 val rshift = _import "WordS64_rshift" : Int64.t * Word32.t -> Int64.t;
 val subCheckOverflows = _import "WordS64_subCheckOverflows" : Int64.t * Int64.t -> Bool.t;
-val toReal32 = _import "WordS64_toReal32" : Int64.t -> Real32.t;
-val toReal64 = _import "WordS64_toReal64" : Int64.t -> Real64.t;
-val toWord16 = _import "WordS64_toWord16" : Int64.t -> Word16.t;
-val toWord32 = _import "WordS64_toWord32" : Int64.t -> Word32.t;
-val toWord64 = _import "WordS64_toWord64" : Int64.t -> Word64.t;
-val toWord8 = _import "WordS64_toWord8" : Int64.t -> Word8.t;
 end
 structure WordS8 = 
 struct
 val addCheckOverflows = _import "WordS8_addCheckOverflows" : Int8.t * Int8.t -> Bool.t;
+val extdToWord16 = _import "WordS8_extdToWord16" : Int8.t -> Word16.t;
+val extdToWord32 = _import "WordS8_extdToWord32" : Int8.t -> Word32.t;
+val extdToWord64 = _import "WordS8_extdToWord64" : Int8.t -> Word64.t;
+val extdToWord8 = _import "WordS8_extdToWord8" : Int8.t -> Word8.t;
 val ge = _import "WordS8_ge" : Int8.t * Int8.t -> Bool.t;
 val gt = _import "WordS8_gt" : Int8.t * Int8.t -> Bool.t;
 val le = _import "WordS8_le" : Int8.t * Int8.t -> Bool.t;
@@ -1336,18 +1286,18 @@ val mulCheckOverflows = _import "WordS8_mulCheckOverflows" : Int8.t * Int8.t -> 
 val negCheckOverflows = _import "WordS8_negCheckOverflows" : Int8.t -> Bool.t;
 val quot = _import "WordS8_quot" : Int8.t * Int8.t -> Int8.t;
 val rem = _import "WordS8_rem" : Int8.t * Int8.t -> Int8.t;
+val rndToReal32 = _import "WordS8_rndToReal32" : Int8.t -> Real32.t;
+val rndToReal64 = _import "WordS8_rndToReal64" : Int8.t -> Real64.t;
 val rshift = _import "WordS8_rshift" : Int8.t * Word32.t -> Int8.t;
 val subCheckOverflows = _import "WordS8_subCheckOverflows" : Int8.t * Int8.t -> Bool.t;
-val toReal32 = _import "WordS8_toReal32" : Int8.t -> Real32.t;
-val toReal64 = _import "WordS8_toReal64" : Int8.t -> Real64.t;
-val toWord16 = _import "WordS8_toWord16" : Int8.t -> Word16.t;
-val toWord32 = _import "WordS8_toWord32" : Int8.t -> Word32.t;
-val toWord64 = _import "WordS8_toWord64" : Int8.t -> Word64.t;
-val toWord8 = _import "WordS8_toWord8" : Int8.t -> Word8.t;
 end
 structure WordU16 = 
 struct
 val addCheckOverflows = _import "WordU16_addCheckOverflows" : Word16.t * Word16.t -> Bool.t;
+val extdToWord16 = _import "WordU16_extdToWord16" : Word16.t -> Word16.t;
+val extdToWord32 = _import "WordU16_extdToWord32" : Word16.t -> Word32.t;
+val extdToWord64 = _import "WordU16_extdToWord64" : Word16.t -> Word64.t;
+val extdToWord8 = _import "WordU16_extdToWord8" : Word16.t -> Word8.t;
 val ge = _import "WordU16_ge" : Word16.t * Word16.t -> Bool.t;
 val gt = _import "WordU16_gt" : Word16.t * Word16.t -> Bool.t;
 val le = _import "WordU16_le" : Word16.t * Word16.t -> Bool.t;
@@ -1356,17 +1306,17 @@ val mul = _import "WordU16_mul" : Word16.t * Word16.t -> Word16.t;
 val mulCheckOverflows = _import "WordU16_mulCheckOverflows" : Word16.t * Word16.t -> Bool.t;
 val quot = _import "WordU16_quot" : Word16.t * Word16.t -> Word16.t;
 val rem = _import "WordU16_rem" : Word16.t * Word16.t -> Word16.t;
+val rndToReal32 = _import "WordU16_rndToReal32" : Word16.t -> Real32.t;
+val rndToReal64 = _import "WordU16_rndToReal64" : Word16.t -> Real64.t;
 val rshift = _import "WordU16_rshift" : Word16.t * Word32.t -> Word16.t;
-val toReal32 = _import "WordU16_toReal32" : Word16.t -> Real32.t;
-val toReal64 = _import "WordU16_toReal64" : Word16.t -> Real64.t;
-val toWord16 = _import "WordU16_toWord16" : Word16.t -> Word16.t;
-val toWord32 = _import "WordU16_toWord32" : Word16.t -> Word32.t;
-val toWord64 = _import "WordU16_toWord64" : Word16.t -> Word64.t;
-val toWord8 = _import "WordU16_toWord8" : Word16.t -> Word8.t;
 end
 structure WordU32 = 
 struct
 val addCheckOverflows = _import "WordU32_addCheckOverflows" : Word32.t * Word32.t -> Bool.t;
+val extdToWord16 = _import "WordU32_extdToWord16" : Word32.t -> Word16.t;
+val extdToWord32 = _import "WordU32_extdToWord32" : Word32.t -> Word32.t;
+val extdToWord64 = _import "WordU32_extdToWord64" : Word32.t -> Word64.t;
+val extdToWord8 = _import "WordU32_extdToWord8" : Word32.t -> Word8.t;
 val ge = _import "WordU32_ge" : Word32.t * Word32.t -> Bool.t;
 val gt = _import "WordU32_gt" : Word32.t * Word32.t -> Bool.t;
 val le = _import "WordU32_le" : Word32.t * Word32.t -> Bool.t;
@@ -1375,17 +1325,17 @@ val mul = _import "WordU32_mul" : Word32.t * Word32.t -> Word32.t;
 val mulCheckOverflows = _import "WordU32_mulCheckOverflows" : Word32.t * Word32.t -> Bool.t;
 val quot = _import "WordU32_quot" : Word32.t * Word32.t -> Word32.t;
 val rem = _import "WordU32_rem" : Word32.t * Word32.t -> Word32.t;
+val rndToReal32 = _import "WordU32_rndToReal32" : Word32.t -> Real32.t;
+val rndToReal64 = _import "WordU32_rndToReal64" : Word32.t -> Real64.t;
 val rshift = _import "WordU32_rshift" : Word32.t * Word32.t -> Word32.t;
-val toReal32 = _import "WordU32_toReal32" : Word32.t -> Real32.t;
-val toReal64 = _import "WordU32_toReal64" : Word32.t -> Real64.t;
-val toWord16 = _import "WordU32_toWord16" : Word32.t -> Word16.t;
-val toWord32 = _import "WordU32_toWord32" : Word32.t -> Word32.t;
-val toWord64 = _import "WordU32_toWord64" : Word32.t -> Word64.t;
-val toWord8 = _import "WordU32_toWord8" : Word32.t -> Word8.t;
 end
 structure WordU64 = 
 struct
 val addCheckOverflows = _import "WordU64_addCheckOverflows" : Word64.t * Word64.t -> Bool.t;
+val extdToWord16 = _import "WordU64_extdToWord16" : Word64.t -> Word16.t;
+val extdToWord32 = _import "WordU64_extdToWord32" : Word64.t -> Word32.t;
+val extdToWord64 = _import "WordU64_extdToWord64" : Word64.t -> Word64.t;
+val extdToWord8 = _import "WordU64_extdToWord8" : Word64.t -> Word8.t;
 val ge = _import "WordU64_ge" : Word64.t * Word64.t -> Bool.t;
 val gt = _import "WordU64_gt" : Word64.t * Word64.t -> Bool.t;
 val le = _import "WordU64_le" : Word64.t * Word64.t -> Bool.t;
@@ -1394,17 +1344,17 @@ val mul = _import "WordU64_mul" : Word64.t * Word64.t -> Word64.t;
 val mulCheckOverflows = _import "WordU64_mulCheckOverflows" : Word64.t * Word64.t -> Bool.t;
 val quot = _import "WordU64_quot" : Word64.t * Word64.t -> Word64.t;
 val rem = _import "WordU64_rem" : Word64.t * Word64.t -> Word64.t;
+val rndToReal32 = _import "WordU64_rndToReal32" : Word64.t -> Real32.t;
+val rndToReal64 = _import "WordU64_rndToReal64" : Word64.t -> Real64.t;
 val rshift = _import "WordU64_rshift" : Word64.t * Word32.t -> Word64.t;
-val toReal32 = _import "WordU64_toReal32" : Word64.t -> Real32.t;
-val toReal64 = _import "WordU64_toReal64" : Word64.t -> Real64.t;
-val toWord16 = _import "WordU64_toWord16" : Word64.t -> Word16.t;
-val toWord32 = _import "WordU64_toWord32" : Word64.t -> Word32.t;
-val toWord64 = _import "WordU64_toWord64" : Word64.t -> Word64.t;
-val toWord8 = _import "WordU64_toWord8" : Word64.t -> Word8.t;
 end
 structure WordU8 = 
 struct
 val addCheckOverflows = _import "WordU8_addCheckOverflows" : Word8.t * Word8.t -> Bool.t;
+val extdToWord16 = _import "WordU8_extdToWord16" : Word8.t -> Word16.t;
+val extdToWord32 = _import "WordU8_extdToWord32" : Word8.t -> Word32.t;
+val extdToWord64 = _import "WordU8_extdToWord64" : Word8.t -> Word64.t;
+val extdToWord8 = _import "WordU8_extdToWord8" : Word8.t -> Word8.t;
 val ge = _import "WordU8_ge" : Word8.t * Word8.t -> Bool.t;
 val gt = _import "WordU8_gt" : Word8.t * Word8.t -> Bool.t;
 val le = _import "WordU8_le" : Word8.t * Word8.t -> Bool.t;
@@ -1413,13 +1363,9 @@ val mul = _import "WordU8_mul" : Word8.t * Word8.t -> Word8.t;
 val mulCheckOverflows = _import "WordU8_mulCheckOverflows" : Word8.t * Word8.t -> Bool.t;
 val quot = _import "WordU8_quot" : Word8.t * Word8.t -> Word8.t;
 val rem = _import "WordU8_rem" : Word8.t * Word8.t -> Word8.t;
+val rndToReal32 = _import "WordU8_rndToReal32" : Word8.t -> Real32.t;
+val rndToReal64 = _import "WordU8_rndToReal64" : Word8.t -> Real64.t;
 val rshift = _import "WordU8_rshift" : Word8.t * Word32.t -> Word8.t;
-val toReal32 = _import "WordU8_toReal32" : Word8.t -> Real32.t;
-val toReal64 = _import "WordU8_toReal64" : Word8.t -> Real64.t;
-val toWord16 = _import "WordU8_toWord16" : Word8.t -> Word16.t;
-val toWord32 = _import "WordU8_toWord32" : Word8.t -> Word32.t;
-val toWord64 = _import "WordU8_toWord64" : Word8.t -> Word64.t;
-val toWord8 = _import "WordU8_toWord8" : Word8.t -> Word8.t;
 end
 end
 end

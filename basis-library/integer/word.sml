@@ -30,6 +30,27 @@ fun ~>> (i, n) =
 fun rol (i, n) = W.rolUnsafe (i, Primitive.Word32.zextdFromWord n)
 fun ror (i, n) = W.rorUnsafe (i, Primitive.Word32.zextdFromWord n)
 
+local
+   fun st (w, msk, sft) =
+      let
+         val odd = andb (w, msk)
+         val evn = xorb (w, odd)
+      in
+         (xorb (W.<<? (odd, sft), W.>>? (evn, sft)),
+          xorb (msk, W.<<? (msk, Primitive.Word32.>>? (sft, 0w1))),
+          Primitive.Word32.>>? (sft, 0w1))
+      end
+   val (f, sft) =
+      case W.sizeInBitsWord of
+         0w8 => (fn x => x, 0w4)
+       | 0w16 => (st, 0w8)
+       | 0w32 => (st o st, 0w16)
+       | 0w64 => (st o st o st, 0w32)
+       | _ => raise (Fail "Word.bswap")
+in
+   fun bswap w = #1 (f (w, W.<<? (one, sft) - one, sft))
+end
+
 val fromInt = W.sextdFromInt
 val toIntX = W.schckToInt
 fun toInt w =

@@ -98,7 +98,9 @@ structure Target =
 
       fun make (t as T {arch, os}) =
          case (arch, os) of
-            (Sparc, _) => SOME {name = toString t, sizes = SizesSparc.sizes,
+            (AMD64, _) => SOME {name = toString t, sizes = SizesAMD64.sizes,
+                                endianShift = EndianLittle.shift}
+          | (Sparc, _) => SOME {name = toString t, sizes = SizesSparc.sizes,
                                 endianShift = EndianBig.shift}
           | (PowerPC, _) => SOME {name = toString t, sizes = SizesPPC.sizes,
                                   endianShift = EndianLittle.shift}

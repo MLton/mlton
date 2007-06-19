@@ -2,14 +2,23 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+#include <unistd.h>
+
 #include <windows.h> // lots of stuff depends on this
+
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <utime.h>
+
 #include <io.h>
 #include <lm.h>
 #include <process.h>
 //#include <psapi.h>
-#include <sys/stat.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <psapi.h>

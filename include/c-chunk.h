@@ -15,6 +15,9 @@
 #include "c-types.h"
 #include "c-common.h"
 
+typedef Pointer CPointer;
+typedef Pointer Objptr;
+
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -41,7 +44,7 @@
 
 #define C(ty, x) (*(ty*)(x))
 #define G(ty, i) (global##ty [i])
-#define GPNR(i) G(PointerNonRoot, i)
+#define GPNR(i) G(ObjptrNonRoot, i)
 #define O(ty, b, o) (*(ty*)((b) + (o)))
 #define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
 #define S(ty, i) *(ty*)(StackTop + (i))
@@ -168,7 +171,7 @@
 
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(Word32*)(StackTop - sizeof(Word32));              \
+                l_nextFun = *(Word32*)(StackTop - sizeof(void*));               \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
                                         __FILE__, __LINE__, l_nextFun);         \
@@ -205,6 +208,7 @@
 #endif
 #include "basis-ffi.h"
 #include "basis/coerce.h"
+#include "basis/cpointer.h"
 #include "basis/Real/Real-ops.h"
 #include "basis/Real/Math-fns.h"
 #include "basis/Word/Word-ops.h"

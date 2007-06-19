@@ -33,7 +33,6 @@
 #define min(a, b) ((a)<(b)?(a):(b))
 #endif
 
-#include "util/assert.h"
 #include "util/die.h"
 #include "util/safe.h"
 #include "util/read_write.h"

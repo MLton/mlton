@@ -45,11 +45,11 @@ struct
                  x86.Immediate.label
                  (if isRoot g
                      then x86MLton.global_base ty
-                  else x86MLton.globalPointerNonRoot_base)
+                  else x86MLton.globalObjptrNonRoot_base)
               val origin =
                  x86.MemLoc.imm
                  {base = base,
-                  index = x86.Immediate.const_int index,
+                  index = x86.Immediate.int index,
                   scale = x86.Scale.fromCType ty,
                   size = x86.Size.BYTE,
                   class = x86MLton.Classes.Globals}
@@ -59,7 +59,7 @@ struct
               (sizes, 0, fn (size,offset) =>
                (((x86.Operand.memloc o x86.MemLoc.shift)
                  {origin = origin,
-                  disp = x86.Immediate.const_int offset,
+                  disp = x86.Immediate.int offset,
                   scale = x86.Scale.One,
                   size = size}, size), offset + x86.Size.toBytes size))
            end
@@ -120,7 +120,7 @@ struct
                         then origin
                         else x86.MemLoc.shift
                              {origin = origin,
-                              disp = x86.Immediate.const_int (Bytes.toInt offset),
+                              disp = x86.Immediate.int (Bytes.toInt offset),
                               scale = x86.Scale.One,
                               size = x86.Size.BYTE}
                   val sizes = x86.Size.fromCType ty
@@ -129,7 +129,7 @@ struct
                   (sizes, 0, fn (size,offset) =>
                    (((x86.Operand.memloc o x86.MemLoc.shift)
                      {origin = origin,
-                      disp = x86.Immediate.const_int offset,
+                      disp = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
@@ -146,7 +146,7 @@ struct
                         SOME base =>
                            x86.MemLoc.simple 
                            {base = base,
-                            index = x86.Immediate.const_int 0,
+                            index = x86.Immediate.zero,
                             scale = x86.Scale.One,
                             size = x86.Size.BYTE,
                             class = x86MLton.Classes.Heap}
@@ -160,7 +160,7 @@ struct
                   (sizes, 0, fn (size,offset) =>
                    (((x86.Operand.memloc o x86.MemLoc.shift)
                      {origin = origin,
-                      disp = x86.Immediate.const_int offset,
+                      disp = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
@@ -179,6 +179,8 @@ struct
                Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
           | Line => 
                Vector.new1 (x86MLton.fileLine (), x86MLton.wordSize)
+          | Null => 
+               Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>
                let
                   val offset = Bytes.toInt offset
@@ -200,7 +202,7 @@ struct
                      SOME base =>
                        x86.MemLoc.simple 
                        {base = base,
-                        index = x86.Immediate.const_int offset,
+                        index = x86.Immediate.int offset,
                         scale = x86.Scale.One,
                         size = x86.Size.BYTE,
                         class = x86MLton.Classes.Heap}
@@ -213,7 +215,7 @@ struct
                   (sizes, 0, fn (size,offset) =>
                    (((x86.Operand.memloc o x86.MemLoc.shift)
                      {origin = origin,
-                      disp = x86.Immediate.const_int offset,
+                      disp = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
@@ -226,7 +228,7 @@ struct
                   val origin =
                      x86.MemLoc.imm
                      {base = base,
-                      index = x86.Immediate.const_int index,
+                      index = x86.Immediate.int index,
                       scale = x86.Scale.fromCType ty,
                       size = x86.Size.BYTE,
                       class = x86MLton.Classes.Locals}
@@ -236,7 +238,7 @@ struct
                   (sizes, 0, fn (size,offset) =>
                    (((x86.Operand.memloc o x86.MemLoc.shift)
                      {origin = origin,
-                      disp = x86.Immediate.const_int offset,
+                      disp = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
@@ -247,7 +249,7 @@ struct
                   val origin =
                      x86.MemLoc.simple 
                      {base = x86MLton.gcState_stackTopContents (), 
-                      index = x86.Immediate.const_int offset,
+                      index = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = x86.Size.BYTE,
                       class = x86MLton.Classes.Stack}
@@ -257,7 +259,7 @@ struct
                   (sizes, 0, fn (size,offset) =>
                    (((x86.Operand.memloc o x86.MemLoc.shift)
                      {origin = origin,
-                      disp = x86.Immediate.const_int offset,
+                      disp = x86.Immediate.int offset,
                       scale = x86.Scale.One,
                       size = size}, size), offset + x86.Size.toBytes size))
                end
@@ -270,10 +272,7 @@ struct
           | Word w =>
                let
                   fun single size =
-                     Vector.new1
-                     (x86.Operand.immediate_const_word
-                      (Word.fromIntInf (WordX.toIntInf w)),
-                      size)
+                     Vector.new1 (x86.Operand.immediate_word w, size)
                in
                   case WordSize.prim (WordX.size w) of
                      W8 => single x86.Size.BYTE
@@ -281,13 +280,15 @@ struct
                    | W32 => single x86.Size.LONG
                    | W64 =>
                         let
-                           val w = WordX.toIntInf w
-                           val lo = Word.fromIntInf w
-                           val hi = Word.fromIntInf (IntInf.~>> (w, 0w32))
+                           val lo = WordX.resize (w, WordSize.word32)
+                           val w = WordX.rshift (w, 
+                                                 WordX.fromIntInf (32, WordSize.word64),
+                                                 {signed = true})
+                           val hi = WordX.resize (w, WordSize.word32)
                         in
                            Vector.new2
-                           ((x86.Operand.immediate_const_word lo, x86.Size.LONG),
-                            (x86.Operand.immediate_const_word hi, x86.Size.LONG))
+                           ((x86.Operand.immediate_word lo, x86.Size.LONG),
+                            (x86.Operand.immediate_word hi, x86.Size.LONG))
                         end
                end
     end
@@ -570,12 +571,14 @@ struct
               => Error.bug "x86Translate.Transfer.doSwitchWord"
               | ([(_,l)],       NONE) => goto l
               | ([],            SOME l) => goto l
-              | ([(0wx0,f),(0wx1,t)], NONE) => iff(test,t,f)
-              | ([(0wx1,t),(0wx0,f)], NONE) => iff(test,t,f)
-              | ([(_,l),(k',l')],NONE) 
-              => cmp(test,x86.Immediate.const_word k',l',l)
+              | ([(w1,l1),(w2,l2)], NONE) => 
+                if WordX.isZero w1 andalso WordX.isOne w2
+                   then iff(test,l2,l1)
+                else if WordX.isZero w2 andalso WordX.isOne w1
+                   then iff(test,l1,l2)
+                else cmp(test,x86.Immediate.word w1,l1,l2)
               | ([(k',l')],      SOME l)
-              => cmp(test,x86.Immediate.const_word k',l',l)
+              => cmp(test,x86.Immediate.word k',l',l)
               | ((_,l)::cases,  NONE) 
               => switch(test, x86.Transfer.Cases.word cases, l)
               | (cases,         SOME l) 
@@ -665,15 +668,9 @@ struct
                                  x86MLton.gcState_stackBottomContents ()),
                                 x86MLton.gcState_exnStackContents ())})}))
               | Switch (Machine.Switch.T {cases, default, test, ...})
-              => let
-                    val cases =
-                       Vector.toListMap (cases, fn (w, l) =>
-                                         (Word.fromIntInf (WordX.toIntInf w), l))
-                 in
-                    AppendList.append
-                    (comments transfer,
-                     doSwitchWord (test, cases, default))
-                 end
+              => AppendList.append
+                 (comments transfer,
+                  doSwitchWord (test, Vector.toList cases, default))
               | Goto label
               => (AppendList.append
                   (comments transfer,

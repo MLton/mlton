@@ -15,11 +15,12 @@ signature MLTON_FFI =
       val getChar16: int -> Char16.char
       val getChar32: int -> Char32.char
 *)
+      val getCPointer: int -> MLtonPointer.t
       val getInt8: int -> Int8.int
       val getInt16: int -> Int16.int
       val getInt32: int -> Int32.int
       val getInt64: int -> Int64.int
-      val getPointer: int -> 'a
+      val getObjptr: int -> 'a
       val getReal32: int -> Real32.real
       val getReal64: int -> Real64.real
       val getWord8: int -> Word8.word
@@ -33,11 +34,12 @@ signature MLTON_FFI =
       val setChar16: Char16.char -> unit
       val setChar32: Char32.char -> unit
 *)
+      val setCPointer: MLtonPointer.t -> unit
       val setInt8: Int8.int -> unit
       val setInt16: Int16.int -> unit
       val setInt32: Int32.int -> unit
       val setInt64: Int64.int -> unit
-      val setPointer: 'a -> unit
+      val setObjptr: 'a -> unit
       val setReal32: Real32.real -> unit
       val setReal64: Real64.real -> unit
       val setWord8: Word8.word -> unit

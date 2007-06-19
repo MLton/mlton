@@ -74,22 +74,23 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
       p += OBJPTR_SIZE;
     }
   } else if (ARRAY_TAG == tag) {
+    size_t bytesPerElement;
     size_t dataBytes;
     pointer last;
     GC_arrayLength numElements;
 
     numElements = getArrayLength (p);
-    dataBytes = numElements * (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-    /* Must check 0 == dataBytes before 0 == numPointers to correctly
-     * handle arrays when both are true.
-     */
-    if (0 == dataBytes)
-      /* Empty arrays have space for forwarding pointer. */
+    bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
+    dataBytes = numElements * bytesPerElement;
+    if (dataBytes < OBJPTR_SIZE) {
+      /* Very small (including empty) arrays have OBJPTR_SIZE bytes
+       * space for the forwarding pointer.
+       */
       dataBytes = OBJPTR_SIZE;
-    else if (0 == numObjptrs)
-      /* No pointers to process. */
+    } else if (0 == numObjptrs) {
+      /* No objptrs to process. */
       ;
-    else {
+    } else {
       last = p + dataBytes;
       if (0 == bytesNonObjptrs)
         /* Array with only pointers. */
@@ -187,7 +188,9 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
         fprintf (stderr, 
                  "  front = "FMTPTR"  *back = "FMTPTR"\n",
                  (uintptr_t)front, (uintptr_t)(*back));
-      front = foreachObjptrInObject (s, advanceToObjectData (s, front), f, skipWeaks);
+      pointer p = advanceToObjectData (s, front);
+      assert (isAligned ((size_t)p, s->alignment));
+      front = foreachObjptrInObject (s, p, f, skipWeaks);
     }
     b = *back;
   }

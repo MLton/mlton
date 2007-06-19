@@ -30,11 +30,11 @@ local
 in
    val array = make "array"
    val arrow = make "->"
-   val bool = make "bool"
+   val bool = make "bool" 
+   val cpointer = make "cpointer"
    val exn = make "exn"
    val intInf = make "intInf"
    val list = make "list"
-   val pointer = make "pointer"
    val reff = make "ref"
    val thread = make "thread"
    val tuple = make "*"
@@ -114,10 +114,10 @@ val prims =
    List.map ([(array, Arity 1, Always),
               (arrow, Arity 2, Never),
               (bool, Arity 0, Sometimes),
+              (cpointer, Arity 0, Always),
               (exn, Arity 0, Never),
               (intInf, Arity 0, Sometimes),
               (list, Arity 1, Sometimes),
-              (pointer, Arity 0, Always),
               (reff, Arity 1, Always),
               (thread, Arity 0, Never),
               (tuple, Nary, Sometimes),
@@ -133,10 +133,10 @@ val prims =
 val array = #2 array
 val arrow = #2 arrow
 val bool = #2 bool
+val cpointer = #2 cpointer
 val exn = #2 exn
 val intInf = #2 intInf
 val list = #2 list
-val pointer = #2 pointer
 val reff = #2 reff
 val thread = #2 thread
 val tuple = #2 tuple
@@ -169,7 +169,7 @@ val defaultWord = fn () =>
     | _ => Error.bug "PrimTycons.defaultWord"
 
 val isBool = fn c => equals (c, bool)
-val isPointer = fn c => equals (c, pointer)
+val isCPointer = fn c => equals (c, cpointer)
 val isIntX = fn c => equals (c, intInf) orelse isIntX c
 val deIntX = fn c => if equals (c, intInf) then NONE else SOME (deIntX c)
 

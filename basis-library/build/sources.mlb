@@ -13,6 +13,7 @@ ann
 in
    ../primitive/primitive.mlb
    ../top-level/infixes.sml
+   ../top-level/infixes-overflow.sml
    ../top-level/infixes-unsafe.sml
    ../util/dynamic-wind.sig
    ../util/dynamic-wind.sml

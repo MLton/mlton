@@ -34,7 +34,7 @@ structure DynLinkage :> DYN_LINKAGE = struct
         type addr_handle = h
     end
 
-    type mode = Word32.word
+    type mode = C_UInt.word
     local
        val RTLD_LAZY   = 0wx00001
        val RTLD_NOW    = 0wx00002
@@ -42,7 +42,7 @@ structure DynLinkage :> DYN_LINKAGE = struct
        val RTLD_LOCAL  = 0wx00000
     in
        fun mk_mode {lazy: bool, global: bool} : mode=
-          Word32.orb
+          C_UInt.orb
           (if lazy then RTLD_LAZY else RTLD_NOW,
            if global then RTLD_GLOBAL else RTLD_LOCAL)
     end

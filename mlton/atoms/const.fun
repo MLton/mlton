@@ -18,33 +18,37 @@ structure ConstType = ConstType (struct
 
 structure SmallIntInf =
    struct
-      structure Word = Pervasive.Word
+      structure WordSize = WordX.WordSize
 
-      val minSmall: IntInf.t = ~0x40000000
-      val maxSmall: IntInf.t = 0x3FFFFFFF
+      fun toWord (i: IntInf.t): WordX.t option =
+         let
+            val ws = WordSize.smallIntInfWord ()
+            val ws' = WordSize.fromBits (Bits.- (WordSize.bits ws, Bits.one))
+         in
+            if WordSize.isInRange (ws', i, {signed = true})
+               then SOME (WordX.orb (WordX.one ws,
+                                     WordX.lshift (WordX.fromIntInf (i, ws),
+                                                   WordX.one ws)))
+                          
+               else NONE
+         end
 
-      fun isSmall (i: IntInf.t): bool =
-         minSmall <= i andalso i <= maxSmall
+      val isSmall = isSome o toWord
 
-      fun toWord (i: IntInf.t): word option =
-         if isSmall i
-            then SOME (Word.orb (0w1,
-                                 Word.<< (Word.fromInt (IntInf.toInt i),
-                                          0w1)))
-         else NONE
-
-      fun fromWord (w: word): IntInf.t =
-         IntInf.fromInt (Word.toIntX (Word.~>> (w, 0w1)))
+      fun fromWord (w: WordX.t): IntInf.t =
+         WordX.toIntInfX (WordX.rshift (w, WordX.one (WordX.size w), {signed = true}))
    end
 
 datatype t =
    IntInf of IntInf.t
+ | Null
  | Real of RealX.t
  | Word of WordX.t
  | WordVector of WordXVector.t
 
-val real = Real
 val intInf = IntInf
+val null = Null
+val real = Real
 val word = Word
 val wordVector = WordVector
 
@@ -56,6 +60,7 @@ local
 in
    val layout =
       fn IntInf i => IntInf.layout i
+       | Null => str "NULL"
        | Real r => RealX.layout r
        | Word w => WordX.layout w
        | WordVector v => wrap ("\"", "\"", WordXVector.toString v)
@@ -66,6 +71,7 @@ val toString = Layout.toString o layout
 fun hash (c: t): word =
    case c of
       IntInf i => String.hash (IntInf.toString i)
+    | Null => 0wx0
     | Real r => RealX.hash r
     | Word w => Word.fromIntInf (WordX.toIntInf w)
     | WordVector v => String.hash (WordXVector.toString v)
@@ -73,6 +79,7 @@ fun hash (c: t): word =
 fun equals (c, c') =
    case (c, c') of
       (IntInf i, IntInf i') => IntInf.equals (i, i')
+    | (Null, Null) => true
     | (Real r, Real r') => RealX.equals (r, r')
     | (Word w, Word w') => WordX.equals (w, w')
     | (WordVector v, WordVector v') => WordXVector.equals (v, v')

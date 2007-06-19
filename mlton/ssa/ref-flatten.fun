@@ -466,6 +466,10 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
              | Weak_new => weak (arg 0)
              | _ => result ()
          end
+      fun base b =
+         case b of
+            Base.Object obj => obj
+          | Base.VectorSub {vector, ...} => vector
       fun select {base, offset} =
          let
             datatype z = datatype Value.value
@@ -488,7 +492,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
           ; Value.dontFlatten value)
       fun const c = typeValue (Type.ofConst c)
       val {func, value = varValue, ...} =
-         analyze {coerce = coerce,
+         analyze {base = base,
+                  coerce = coerce,
                   const = const,
                   filter = fn _ => (),
                   filterWord = fn _ => (),
@@ -699,7 +704,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                            datatype z = datatype Type.dest
                            val () =
                               case Type.dest t of
-                                 Datatype c => Size.<= (tyconSize c, s)
+                                 CPointer => ()
+                               | Datatype c => Size.<= (tyconSize c, s)
                                | IntInf => Size.makeTop s
                                | Object {args, ...} =>
                                     Prod.foreach (args, dependsOn)

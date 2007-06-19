@@ -18,15 +18,14 @@ structure Region
 structure Source
 structure SourcePos
 structure System
-structure Words
 
 is
 
 ../../lib/mlton/sources.cm
 
+bits.sml
 control-flags.sig
 control-flags.sml
-bits.sml
 source-pos.sig
 source-pos.sml
 region.sig

@@ -60,6 +60,8 @@ structure Process = MLtonProcess
 (* structure Ptrace = MLtonPtrace *)
 structure Profile = MLtonProfile
 structure Random = MLtonRandom
+structure Real32 = Primitive.PackReal32
+structure Real64 = Primitive.PackReal64
 structure Rlimit = MLtonRlimit
 structure Rusage = MLtonRusage
 structure Signal = MLtonSignal
@@ -78,6 +80,21 @@ structure Word =
 structure Word8 =
    struct
       open Word8
+      type t = word
+   end
+structure Word16 =
+   struct
+      open Word16
+      type t = word
+   end
+structure Word32 =
+   struct
+      open Word32
+      type t = word
+   end
+structure Word64 =
+   struct
+      open Word64
       type t = word
    end
 

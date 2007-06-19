@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -112,6 +112,8 @@ structure Bytecode = Bytecode (structure CCodegen = CCodegen
                                structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
+structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
+                                       structure Machine = Machine)
 
 
 (* ------------------------------------------------- *)
@@ -145,7 +147,7 @@ val amBuildingConstants: bool ref = ref false
 
 val lookupConstant =
    let
-      val zero = Const.word (WordX.fromIntInf (0, WordSize.default))
+      val zero = Const.word (WordX.fromIntInf (0, WordSize.word32))
       val f =
          Promise.lazy
          (fn () =>
@@ -416,6 +418,9 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                       (concat [!Control.libDir, "/include/ml-types.h"], out)
                    fun print s = Out.output (out, s)
                    val _ = print "\n"
+                   val _ = print "typedef void* CPointer;\n"
+                   val _ = print "typedef Pointer Objptr;\n"
+                   val _ = print "\n"
                    val _ = Ffi.declareHeaders {print = print}
                 in
                    ()
@@ -439,30 +444,46 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ = Control.message (Control.Detail, fn () =>
                                CoreML.Program.layoutStats coreML)
 *)
-      (* Set GC_state offsets. *)
+      (* Set GC_state offsets and sizes. *)
       val _ =
          let
             fun get (name: string): Bytes.t =
                case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.default) of
+                                    ConstType.Word WordSize.word32) of
                   Const.Word w => Bytes.fromInt (WordX.toInt w)
                 | _ => Error.bug "Compile.elaborate: GC_state offset must be an int"
          in
             Runtime.GCField.setOffsets
             {
-             canHandle = get "atomicState",
-             cardMap = get "generationalMaps.cardMapAbsolute",
-             currentThread = get "currentThread",
-             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex",
-             exnStack = get "exnStack",
-             frontier = get "frontier",
-             limit = get "limit",
-             limitPlusSlop = get "limitPlusSlop",
-             maxFrameSize = get "maxFrameSize",
-             signalIsPending = get "signalsInfo.signalIsPending",
-             stackBottom = get "stackBottom",
-             stackLimit = get "stackLimit",
-             stackTop = get "stackTop"
+             atomicState = get "atomicState_Offset",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
+             currentThread = get "currentThread_Offset",
+             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Offset",
+             exnStack = get "exnStack_Offset",
+             frontier = get "frontier_Offset",
+             limit = get "limit_Offset",
+             limitPlusSlop = get "limitPlusSlop_Offset",
+             maxFrameSize = get "maxFrameSize_Offset",
+             signalIsPending = get "signalsInfo.signalIsPending_Offset",
+             stackBottom = get "stackBottom_Offset",
+             stackLimit = get "stackLimit_Offset",
+             stackTop = get "stackTop_Offset"
+             };
+            Runtime.GCField.setSizes
+            {
+             atomicState = get "atomicState_Size",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
+             currentThread = get "currentThread_Size",
+             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Size",
+             exnStack = get "exnStack_Size",
+             frontier = get "frontier_Size",
+             limit = get "limit_Size",
+             limitPlusSlop = get "limitPlusSlop_Size",
+             maxFrameSize = get "maxFrameSize_Size",
+             signalIsPending = get "signalsInfo.signalIsPending_Size",
+             stackBottom = get "stackBottom_Size",
+             stackLimit = get "stackLimit_Size",
+             stackTop = get "stackTop_Size"
              }
          end
       (* Setup endianness *)
@@ -474,7 +495,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    Const.Word w => 1 = WordX.toInt w
                  | _ => Error.bug "Compile.elaborate: endian unknown"
          in
-            Control.setTargetBigEndian (get "MLton_Platform_Arch_bigendian")
+            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
          end
       val xml =
          Control.passTypeCheck
@@ -577,7 +598,8 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          case !Control.codegen of
             Control.Bytecode => Bytecode.implementsPrim
           | Control.CCodegen => CCodegen.implementsPrim
-          | Control.Native => x86Codegen.implementsPrim
+          | Control.x86Codegen => x86Codegen.implementsPrim
+          | Control.amd64Codegen => amd64Codegen.implementsPrim
       val machine =
          Control.pass
          {name = "backend",
@@ -628,12 +650,18 @@ fun compile {input: MLBString.t, outputC, outputS}: unit =
                 ; (Control.trace (Control.Top, "C code gen")
                    CCodegen.output {program = machine,
                                     outputC = outputC}))
-          | Control.Native =>
+          | Control.x86Codegen =>
                (clearNames ()
                 ; (Control.trace (Control.Top, "x86 code gen")
                    x86Codegen.output {program = machine,
                                       outputC = outputC,
                                       outputS = outputS}))
+          | Control.amd64Codegen =>
+               (clearNames ()
+                ; (Control.trace (Control.Top, "amd64 code gen")
+                   amd64Codegen.output {program = machine,
+                                        outputC = outputC,
+                                        outputS = outputS}))
       val _ = Control.message (Control.Detail, PropertyList.stats)
       val _ = Control.message (Control.Detail, HashSet.stats)
    in

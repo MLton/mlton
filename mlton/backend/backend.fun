@@ -18,7 +18,7 @@ in
    structure Global = Global
    structure Label = Label
    structure Live = Live
-   structure PointerTycon = PointerTycon
+   structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
    structure Register = Register
    structure Runtime = Runtime
@@ -382,7 +382,7 @@ let
                                   hash = hash,
                                   global = M.Global.new {isRoot = true,
                                                          ty = ty},
-                                  value =  value})))
+                                  value = value})))
                   end
                fun all () =
                   HashSet.fold
@@ -394,11 +394,9 @@ let
       in
          val (allIntInfs, globalIntInf) =
             make (IntInf.equals,
-                  fn i => let
-                             val s = IntInf.toString i
-                          in
-                             (s, Type.intInf, s)
-                          end)
+                  fn i => (IntInf.toString i,
+                           Type.intInf (),
+                           i))
          val (allReals, globalReal) =
             make (RealX.equals,
                   fn r => (RealX.toString r,
@@ -407,7 +405,7 @@ let
          val (allVectors, globalVector) =
             make (WordXVector.equals,
                   fn v => (WordXVector.toString v,
-                           Type.ofWordVector v,
+                           Type.ofWordXVector v,
                            v))
       end
       fun realOp (r: RealX.t): M.Operand.t =
@@ -427,9 +425,8 @@ let
                IntInf i =>
                   (case Const.SmallIntInf.toWord i of
                       NONE => globalIntInf i
-                    | SOME w =>
-                         M.Operand.Word (WordX.fromIntInf
-                                         (Word.toIntInf w, WordSize.default)))
+                    | SOME w => M.Operand.Word w)
+             | Null => M.Operand.Null
              | Real r => realOp r
              | Word w => M.Operand.Word w
              | WordVector v => globalVector v
@@ -453,17 +450,17 @@ let
                                 temp = temp
                                 })
          end
-      fun runtimeOp (field: GCField.t, ty: Type.t): M.Operand.t =
+      fun runtimeOp (field: GCField.t): M.Operand.t =
          case field of
             GCField.Frontier => M.Operand.Frontier
           | GCField.StackTop => M.Operand.StackTop
           | _ => 
                M.Operand.Offset {base = M.Operand.GCState,
                                  offset = GCField.offset field,
-                                 ty = ty}
-      val exnStackOp = runtimeOp (GCField.ExnStack, Type.exnStack)
-      val stackBottomOp = runtimeOp (GCField.StackBottom, Type.defaultWord)
-      val stackTopOp = runtimeOp (GCField.StackTop, Type.defaultWord)
+                                 ty = Type.ofGCField field}
+      val exnStackOp = runtimeOp GCField.ExnStack
+      val stackBottomOp = runtimeOp GCField.StackBottom
+      val stackTopOp = runtimeOp GCField.StackTop
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
          let
             datatype z = datatype R.Operand.t
@@ -492,14 +489,13 @@ let
                                                ty = ty}
                      else bogusOp ty
                   end
-             | PointerTycon pt =>
+             | ObjptrTycon opt =>
                   M.Operand.Word
                   (WordX.fromIntInf
                    (Word.toIntInf (Runtime.typeIndexToHeader
-                                   (PointerTycon.index pt)),
-                    WordSize.default))
-             | Runtime f =>
-                  runtimeOp (f, R.Operand.ty oper)
+                                   (ObjptrTycon.index opt)),
+                    WordSize.objptrHeader ()))
+             | Runtime f => runtimeOp f
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -545,11 +541,11 @@ let
                   end
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
-                  (* ExnStack = stackTop + (offset + WORD_SIZE) - StackBottom; *)
+                  (* ExnStack = stackTop + (offset + LABEL_SIZE) - StackBottom; *)
                   let
                      val tmp =
                         M.Operand.Register
-                        (Register.new (Type.defaultWord, NONE))
+                        (Register.new (Type.cpointer (), NONE))
                   in
                      Vector.new2
                      (M.Statement.PrimApp
@@ -559,14 +555,14 @@ let
                                 (WordX.fromIntInf
                                  (Int.toIntInf
                                   (Bytes.toInt
-                                   (Bytes.+ (handlerOffset (), Bytes.inWord))),
-                                  WordSize.default)))),
+                                   (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
+                                  WordSize.cpointer ())))),
                        dst = SOME tmp,
-                       prim = Prim.wordAdd WordSize.default},
+                       prim = Prim.wordAdd (WordSize.cpointer ())},
                       M.Statement.PrimApp
                       {args = Vector.new2 (tmp, stackBottomOp),
                        dst = SOME exnStackOp,
-                       prim = Prim.wordSub WordSize.default})
+                       prim = Prim.wordSub (WordSize.cpointer ())})
                   end
              | SetExnStackSlot =>
                   (* ExnStack = *(uint* )(stackTop + offset);   *)
@@ -574,7 +570,7 @@ let
                   (M.Statement.move
                    {dst = exnStackOp,
                     src = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack}})
+                                                 ty = Type.exnStack ()}})
              | SetHandler h =>
                   Vector.new1
                   (M.Statement.move
@@ -586,7 +582,7 @@ let
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack},
+                                                 ty = Type.exnStack ()},
                     src = exnStackOp})
              | _ => Error.bug (concat
                                ["Backend.genStatement: strange statement: ",
@@ -596,14 +592,14 @@ let
          Trace.trace ("Backend.genStatement",
                       R.Statement.layout o #1, Vector.layout M.Statement.layout)
          genStatement
-      val bugTransfer =
+      val bugTransfer = fn () =>
          M.Transfer.CCall
          {args = (Vector.new1
                   (globalVector
                    (WordXVector.fromString
                     "backend thought control shouldn't reach here"))),
           frameInfo = NONE,
-          func = Type.BuiltInCFunction.bug,
+          func = Type.BuiltInCFunction.bug (),
           return = NONE}
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
            set = setLabelInfo, ...} =
@@ -750,7 +746,7 @@ let
                                   (liveNoFormals, [], fn (oper, ac) =>
                                    case oper of
                                       M.Operand.StackOffset (StackOffset.T {offset, ty}) =>
-                                         if Type.isPointer ty
+                                         if Type.isObjptr ty
                                             then offset :: ac
                                          else ac
                                     | _ => ac)
@@ -867,7 +863,7 @@ let
                         in
                            simple
                            (case (Vector.length cases, default) of
-                               (0, NONE) => bugTransfer
+                               (0, NONE) => bugTransfer ()
                              | (1, NONE) =>
                                   M.Transfer.Goto (#2 (Vector.sub (cases, 0)))
                              | (0, SOME dst) => M.Transfer.Goto dst
@@ -1104,7 +1100,7 @@ let
            in
               max
            end))
-      val maxFrameSize = Bytes.wordAlign maxFrameSize
+      val maxFrameSize = Bytes.alignWord32 maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
 in
       Machine.Program.T 

@@ -11,7 +11,8 @@
 
 #include "cenv.h"
 #include "util.h"
-#include "gc.h"
+#include "ml-types.h"
+#include "c-types.h"
 
 #ifndef MLton_Platform_Arch_host
 #error MLton_Platform_Arch_host not defined
@@ -109,12 +110,12 @@
 #endif
 #endif
 
-#include "ml-types.h"
-#include "c-types.h"
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE /*static inline*/
 #endif
 #include "basis-ffi.h"
+
+#include "gc.h"
 
 /* ---------------------------------------------------------------- */
 /*                        Runtime Init/Exit/Alloc                   */
@@ -200,14 +201,13 @@ static inline void MLton_initSockets (void) {}
 #endif
 
 #if HAS_MSG_DONTWAIT
-#define mlton_recv recv
-#define mlton_recvfrom recvfrom
+#define MLton_recv recv
+#define MLton_recvfrom recvfrom
 #else
 /* Platform has no MSG_DONTWAIT flag for recv(), so these must be
    defined to simulate that flag. */
-int mlton_recv(int s, void *buf, int len, int flags);
-int mlton_recvfrom(int s, void *buf, int len, int flags, void *from,
-                   socklen_t *fromlen);
+int MLton_recv(int s, void *buf, int len, int flags);
+int MLton_recvfrom(int s, void *buf, int len, int flags, void *from, socklen_t *fromlen);
 #endif
 
 #endif /* _MLTON_PLATFORM_H_ */

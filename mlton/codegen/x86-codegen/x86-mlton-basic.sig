@@ -18,6 +18,8 @@ signature X86_MLTON_BASIC_STRUCTS =
     sharing x86.ProfileLabel = Machine.ProfileLabel
     sharing x86.RepType = Machine.Type
     sharing x86.Runtime = Machine.Runtime
+    sharing x86.WordSize = Machine.WordSize
+    sharing x86.WordX = Machine.WordX
   end
 
 signature X86_MLTON_BASIC =
@@ -93,7 +95,7 @@ signature X86_MLTON_BASIC =
     (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.CType.t -> x86.Label.t
     val global_base : x86.CType.t -> x86.Label.t
-    val globalPointerNonRoot_base : x86.Label.t
+    val globalObjptrNonRoot_base : x86.Label.t
 
     (* Misc. *)
     val fileNameLabel : x86.Label.t

@@ -9,18 +9,25 @@
 #ifndef _MLTON_GC_H_
 #define _MLTON_GC_H_
 
-#include "cenv.h"
-#include "util.h"
-#include "ml-types.h"
-#include "c-types.h"
-
-#include "gc/debug.h"
+#include "platform.h"
 
 struct GC_state;
 typedef struct GC_state *GC_state;
 typedef GC_state GCState_t;
 
+#ifdef __WORDSIZE
+#if __WORDSIZE == 32
 #define GC_MODEL_NATIVE32
+#elif __WORDSIZE == 64
+#define GC_MODEL_NATIVE64
+#else
+#error unknown __WORDSIZE
+#endif
+#else
+#define GC_MODEL_NATIVE32
+#endif
+
+#include "gc/debug.h"
 
 #include "gc/align.h"
 #include "gc/model.h"
@@ -61,6 +68,7 @@ typedef GC_state GCState_t;
 #include "gc/sources.h"
 #include "gc/call-stack.h"
 #include "gc/profiling.h"
+#include "gc/rusage.h"
 #include "gc/gc_state.h"
 #include "gc/init-world.h"
 #include "gc/world.h"

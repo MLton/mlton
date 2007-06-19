@@ -145,7 +145,7 @@ size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
            + reserved,
            s->alignment);
   if (DEBUG_STACKS)
-    fprintf (stderr, "%zu = sizeofStackTotalAligned (%zu)\n", res, reserved);
+    fprintf (stderr, "%zu = sizeofStackWithHeaderAligned (%zu)\n", res, reserved);
   return res;
 }
 

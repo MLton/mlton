@@ -21,8 +21,13 @@
 #endif
 #define _FILE_OFFSET_BITS 64
 
+#ifndef ASSERT
+#define ASSERT 0
+#define NDEBUG
+#endif
+
 /* C99 headers */
-// #include <assert.h>
+#include <assert.h>
 // #include <complex.h>
 #include <ctype.h>
 #include <errno.h>
@@ -55,16 +60,6 @@
 COMPILE_TIME_ASSERT(CHAR_BIT__is_eight, CHAR_BIT == 8);
 COMPILE_TIME_ASSERT(sizeof_float__is_four, sizeof(float) == 4);
 COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
-
-#include <fcntl.h>
-#include <unistd.h>
-
-#include <dirent.h>
-#include <utime.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-
-#include "gmp.h"
 
 #if (defined (__APPLE_CC__))
 #define __Darwin__
@@ -121,5 +116,13 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #error unknown platform arch
 #endif
 
+#include "gmp.h"
+
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_voidStar, 
+                    sizeof(uintptr_t) == sizeof(void*));
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t, 
+                    sizeof(uintptr_t) == sizeof(size_t));
+COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_ptrdiff_t, 
+                    sizeof(uintptr_t) == sizeof(ptrdiff_t));
 
 #endif /* _MLTON_CENV_H_ */

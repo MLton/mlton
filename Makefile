@@ -289,14 +289,14 @@ runtime:
 		basis-library/config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml	
 	$(CP) runtime/gen/basis-ffi.sml \
 		basis-library/primitive/basis-ffi.sml
-	$(CP) runtime/bytecode/opcodes "$(LIB)/"
+        # $(CP) runtime/bytecode/opcodes "$(LIB)/"
 	$(CP) runtime/*.h "$(INC)/"
 	mv "$(INC)/c-types.h" "$(LIB)/$(TARGET)/include"
 	for d in basis basis/Real basis/Word gc platform util; do	\
 		mkdir -p "$(INC)/$$d";					\
 		$(CP) runtime/$$d/*.h "$(INC)/$$d";			\
 	done
-	$(CP) runtime/bytecode/interpret.h "$(INC)"
+        # $(CP) runtime/bytecode/interpret.h "$(INC)"
 	for x in "$(LIB)"/"$(TARGET)"/*.a; do $(RANLIB) "$$x"; done
 
 .PHONY: script
@@ -409,10 +409,19 @@ MAN_PAGES :=  \
 install-no-docs:
 	mkdir -p "$(TLIB)" "$(TBIN)" "$(TMAN)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
-	rm -f "$(TLIB)/self/libmlton-gdb.a"
 	sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 			\
-		<"$(SRC)/bin/mlton-script" >"$(TBIN)/mlton"
+		<"$(BIN)/mlton" >"$(TBIN)/mlton"
 	chmod a+x "$(TBIN)/mlton"
+	if [ -x "$(BIN)/mlton.trace" ]; then                            \
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+			<"$(BIN)/mlton.trace" >"$(TBIN)/mlton.trace";   \
+		chmod a+x "$(TBIN)/mlton.trace";                        \
+	fi
+	if [ -x "$(BIN)/mlton.debug" ]; then                            \
+		sed "/^lib=/s;.*;lib='$(prefix)/$(ULIB)';" 		\
+			<"$(BIN)/mlton.debug" >"$(TBIN)/mlton.debug";   \
+		chmod a+x "$(TBIN)/mlton.debug";                        \
+	fi
 	cd "$(BIN)" && $(CP) "$(LEX)$(EXE)" "$(NLFFIGEN)$(EXE)"		\
 		 "$(PROF)$(EXE)" "$(YACC)$(EXE)" "$(TBIN)/"
 	( cd "$(SRC)/man" && tar cf - $(MAN_PAGES)) | \

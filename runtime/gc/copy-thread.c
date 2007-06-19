@@ -14,9 +14,11 @@ GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
   /* newThread may do a GC, which invalidates from.
    * Hence we need to stash from where the GC can find it.
    */
-  s->savedThread = pointerToObjptr((pointer)from, s->heap.start);
+  assert (s->savedThread == BOGUS_OBJPTR);
+  s->savedThread = pointerToObjptr((pointer)from - offsetofThread (s), s->heap.start);
   to = newThread (s, size);
-  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start));
+  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start) 
+                     + offsetofThread (s));
   s->savedThread = BOGUS_OBJPTR;
   if (DEBUG_THREADS) {
     fprintf (stderr, FMTPTR" = copyThread ("FMTPTR")\n",
@@ -39,10 +41,11 @@ void GC_copyCurrentThread (GC_state s) {
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_copyCurrentThread\n");
   enter (s);
-  fromThread = (GC_thread)(objptrToPointer(s->currentThread, s->heap.start));
-  fromStack = (GC_stack)(objptrToPointer((objptr)(fromThread->stack), s->heap.start));
+  fromThread = (GC_thread)(objptrToPointer(s->currentThread, s->heap.start) 
+                           + offsetofThread (s));
+  fromStack = (GC_stack)(objptrToPointer(fromThread->stack, s->heap.start));
   toThread = copyThread (s, fromThread, fromStack->used);
-  toStack = (GC_stack)(objptrToPointer((objptr)(toThread->stack), s->heap.start));
+  toStack = (GC_stack)(objptrToPointer(toThread->stack, s->heap.start));
   /* The following assert is no longer true, since alignment
    * restrictions can force the reserved to be slightly larger than
    * the used.
@@ -52,7 +55,8 @@ void GC_copyCurrentThread (GC_state s) {
   leave (s);
   if (DEBUG_THREADS)
     fprintf (stderr, FMTPTR" = GC_copyCurrentThread\n", (uintptr_t)toThread);
-  s->savedThread = pointerToObjptr((pointer)toThread, s->heap.start);
+  assert (s->savedThread == BOGUS_OBJPTR);
+  s->savedThread = pointerToObjptr((pointer)toThread - offsetofThread (s), s->heap.start);
 }
 
 pointer GC_copyThread (GC_state s, pointer p) {
@@ -64,8 +68,8 @@ pointer GC_copyThread (GC_state s, pointer p) {
   if (DEBUG_THREADS)
     fprintf (stderr, "GC_copyThread ("FMTPTR")\n", (uintptr_t)p);
   enter (s);
-  fromThread = (GC_thread)p;
-  fromStack = (GC_stack)(objptrToPointer((objptr)(fromThread->stack), s->heap.start));
+  fromThread = (GC_thread)(p + offsetofThread (s));
+  fromStack = (GC_stack)(objptrToPointer(fromThread->stack, s->heap.start));
   /* The following assert is no longer true, since alignment
    * restrictions can force the reserved to be slightly larger than
    * the used.
@@ -77,12 +81,12 @@ pointer GC_copyThread (GC_state s, pointer p) {
    * restrictions can force the reserved to be slightly larger than
    * the used.
    */
-  toStack = (GC_stack)(objptrToPointer((objptr)(toThread->stack), s->heap.start));
+  toStack = (GC_stack)(objptrToPointer(toThread->stack, s->heap.start));
   /* assert (fromStack->reserved == fromStack->used); */
   assert (fromStack->reserved >= fromStack->used);
   leave (s);
   if (DEBUG_THREADS)
     fprintf (stderr, FMTPTR" = GC_copyThread ("FMTPTR")\n", 
              (uintptr_t)toThread, (uintptr_t)fromThread);
-  return (pointer)toThread;
+  return ((pointer)toThread - offsetofThread (s));
 }

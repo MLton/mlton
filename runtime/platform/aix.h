@@ -1,5 +1,9 @@
 #define __ppc__
 
+#include <unistd.h>
+
+#include <dirent.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -9,12 +13,15 @@
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syslog.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <termios.h>
+#include <utime.h>
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE

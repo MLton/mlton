@@ -409,9 +409,9 @@ fun allocate {argOperands,
             then
                let
                   val (stack, {offset = handler, ...}) =
-                     Allocation.Stack.get (stack, Type.defaultWord)
+                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
                   val (_, {offset = link, ...}) = 
-                     Allocation.Stack.get (stack, Type.exnStack)
+                     Allocation.Stack.get (stack, Type.exnStack ())
                in
                   SOME {handler = handler, link = link}
                end
@@ -456,7 +456,7 @@ fun allocate {argOperands,
                             if linkLive
                                then
                                   Operand.stackOffset {offset = link,
-                                                       ty = Type.exnStack}
+                                                       ty = Type.exnStack ()}
                                   :: extra
                             else extra
                       in
@@ -474,8 +474,10 @@ fun allocate {argOperands,
                 case handlerLinkOffset of
                    NONE => stackInit
                  | SOME {handler, link} =>
-                      StackOffset.T {offset = handler, ty = Type.defaultWord} (* should be label *)
-                      :: StackOffset.T {offset = link, ty = Type.exnStack}
+                      StackOffset.T {offset = handler,
+                                     ty = Type.label (Label.newNoname ())}
+                      :: StackOffset.T {offset = link, 
+                                        ty = Type.exnStack ()}
                       :: stackInit
              val a = Allocation.new (stackInit, registersInit)
              val size =
@@ -484,21 +486,20 @@ fun allocate {argOperands,
                       (case handlerLinkOffset of
                           NONE => Error.bug "AllocateRegisters.allocate: Handler with no handler offset"
                         | SOME {handler, ...} =>
-                             Bytes.+ (Runtime.labelSize, handler))
+                             Bytes.+ (Runtime.labelSize (), handler))
                  | _ =>
                       let
                          val size =
                             Bytes.+
-                            (Runtime.labelSize,
-                             Bytes.wordAlign (Allocation.stackSize a))
+                            (Runtime.labelSize (),
+                             Bytes.alignWord32 (Allocation.stackSize a))
                       in
                          case !Control.align of
                             Control.Align4 => size
-                          | Control.Align8 =>
-                               Bytes.align (size, {alignment = Bytes.fromInt 8})
+                          | Control.Align8 => Bytes.alignWord64 size
                       end
              val _ =
-                if Bytes.isWordAligned size
+                if Bytes.isWord32Aligned size
                    then ()
                 else Error.bug (concat ["AllocateRegisters.allocate: ",
                                         "bad size ",

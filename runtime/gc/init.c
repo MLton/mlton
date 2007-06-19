@@ -91,14 +91,21 @@ int processAtMLton (GC_state s, int argc, char **argv,
         char *arg;
 
         arg = argv[i];
-        if (0 == strcmp (arg, "copy-ratio")) {
+        if (0 == strcmp (arg, "copy-generational-ratio")) {
+          i++;
+          if (i == argc)
+            die ("@MLton copy-generational-ratio missing argument.");
+          s->controls.ratios.copyGenerational = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.copyGenerational)
+            die ("@MLton copy-generational-ratio argument must be greater than 1.0.");
+        } else if (0 == strcmp (arg, "copy-ratio")) {
           i++;
           if (i == argc)
             die ("@MLton copy-ratio missing argument.");
           s->controls.ratios.copy = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.copy)
-            die ("@MLton copy-ratio argument must be greater than 1.0");
-        } else if (0 == strcmp(arg, "fixed-heap")) {
+            die ("@MLton copy-ratio argument must be greater than 1.0.");
+        } else if (0 == strcmp (arg, "fixed-heap")) {
           i++;
           if (i == argc)
             die ("@MLton fixed-heap missing argument.");
@@ -110,24 +117,17 @@ int processAtMLton (GC_state s, int argc, char **argv,
         } else if (0 == strcmp (arg, "gc-summary")) {
           i++;
 #if (defined (__MINGW32__))
-          fprintf (stderr, "Warning: MinGW doesn't yet support gc-summary\n");
+          fprintf (stderr, "Warning: MinGW doesn't support gc-summary.\n");
 #else
           s->controls.summary = TRUE;
 #endif
-        } else if (0 == strcmp (arg, "copy-generational-ratio")) {
-          i++;
-          if (i == argc)
-            die ("@MLton copy-generational-ratio missing argument.");
-          s->controls.ratios.copyGenerational = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.copyGenerational)
-            die ("@MLton copy-generational-ratio argument must be greater than 1.0");
         } else if (0 == strcmp (arg, "grow-ratio")) {
           i++;
           if (i == argc)
             die ("@MLton grow-ratio missing argument.");
           s->controls.ratios.grow = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.grow)
-            die ("@MLton grow-ratio argument must be greater than 1.0");
+            die ("@MLton grow-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "hash-cons")) {
           i++;
           if (i == argc)
@@ -135,14 +135,14 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.hashCons = stringToFloat (argv[i++]);
           unless (0.0 <= s->controls.ratios.hashCons
                   and s->controls.ratios.hashCons <= 1.0)
-            die ("@MLton hash-cons argument must be between 0.0 and 1.0");
+            die ("@MLton hash-cons argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "live-ratio")) {
           i++;
           if (i == argc)
             die ("@MLton live-ratio missing argument.");
           s->controls.ratios.live = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.live)
-            die ("@MLton live-ratio argument must be greater than 1.0");
+            die ("@MLton live-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "load-world")) {
           unless (s->controls.mayLoadWorld)
             die ("May not load world.");
@@ -151,26 +151,26 @@ int processAtMLton (GC_state s, int argc, char **argv,
           if (i == argc)
             die ("@MLton load-world missing argument.");
           *worldFile = argv[i++];
-        } else if (0 == strcmp (arg, "max-heap")) {
-          i++;
-          if (i == argc)
-            die ("@MLton max-heap missing argument.");
-          s->controls.maxHeap = align (stringToBytes (argv[i++]),
-                                       2 * s->sysvals.pageSize);
         } else if (0 == strcmp (arg, "mark-compact-generational-ratio")) {
           i++;
           if (i == argc)
             die ("@MLton mark-compact-generational-ratio missing argument.");
           s->controls.ratios.markCompactGenerational = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.markCompactGenerational)
-            die ("@MLton mark-compact-generational-ratio argument must be greater than 1.0");
+            die ("@MLton mark-compact-generational-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "mark-compact-ratio")) {
           i++;
           if (i == argc)
             die ("@MLton mark-compact-ratio missing argument.");
           s->controls.ratios.markCompact = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.markCompact)
-            die ("@MLton mark-compact-ratio argument must be greater than 1.0");
+            die ("@MLton mark-compact-ratio argument must be greater than 1.0.");
+        } else if (0 == strcmp (arg, "max-heap")) {
+          i++;
+          if (i == argc)
+            die ("@MLton max-heap missing argument.");
+          s->controls.maxHeap = align (stringToBytes (argv[i++]),
+                                       2 * s->sysvals.pageSize);
         } else if (0 == strcmp (arg, "no-load-world")) {
           i++;
           s->controls.mayLoadWorld = FALSE;
@@ -180,7 +180,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
             die ("@MLton nursery-ratio missing argument.");
           s->controls.ratios.nursery = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.nursery)
-            die ("@MLton nursery-ratio argument must be greater than 1.0");
+            die ("@MLton nursery-ratio argument must be greater than 1.0.");
         } else if (0 == strcmp (arg, "ram-slop")) {
           i++;
           if (i == argc)
@@ -199,7 +199,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.threadShrink = stringToFloat (argv[i++]);
           unless (0.0 <= s->controls.ratios.threadShrink
                   and s->controls.ratios.threadShrink <= 1.0)
-            die ("@MLton thread-shrink-ratio argument must be between 0.0 and 1.0");
+            die ("@MLton thread-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "use-mmap")) {
           i++;
           GC_setCygwinUseMmap (TRUE);
@@ -219,11 +219,11 @@ int GC_init (GC_state s, int argc, char **argv) {
   char *worldFile;
   int res;
 
+  assert (s->alignment >= GC_MODEL_MINALIGN);
   assert (isAligned (sizeof (struct GC_stack), s->alignment));
-  assert (isAligned (GC_NORMAL_HEADER_SIZE + sizeof (struct GC_thread),
-                     s->alignment));
-  // While the following assert is manifestly true,
-  // it checks the asserts in sizeofWeak.
+  // While the following asserts are manifestly true,
+  // they check the asserts in sizeofThread and sizeofWeak.
+  assert (sizeofThread (s) == sizeofThread (s));
   assert (sizeofWeak (s) == sizeofWeak (s));
 
   s->amInGC = TRUE;
@@ -299,7 +299,7 @@ int GC_init (GC_state s, int argc, char **argv) {
     die ("Cannot use both fixed-heap and max-heap.");
   unless (s->controls.ratios.markCompact <= s->controls.ratios.copy
           and s->controls.ratios.copy <= s->controls.ratios.live)
-    die ("Ratios must satisfy mark-compact-ratio <= copy-ratio <= live-ratio");
+    die ("Ratios must satisfy mark-compact-ratio <= copy-ratio <= live-ratio.");
   /* We align s->ram by pageSize so that we can test whether or not we
    * we are using mark-compact by comparing heap size to ram size.  If
    * we didn't round, the size might be slightly off.

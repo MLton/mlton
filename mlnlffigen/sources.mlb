@@ -17,6 +17,7 @@ local
       endian.sml
       endian-big.sml
       endian-little.sml
+      sizes-amd64.sml
       sizes-ppc.sml
       sizes-sparc.sml
       sizes-x86.sml

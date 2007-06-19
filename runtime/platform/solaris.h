@@ -1,5 +1,9 @@
 #include <inttypes.h>
 
+#include <unistd.h>
+
+#include <dirent.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -16,6 +20,8 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/sockio.h> /* For SIOCATMARK. */
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
@@ -23,6 +29,8 @@
 #include <syslog.h>
 #include <termios.h>
 #include <ucontext.h>
+#include <unistd.h>
+#include <utime.h>
 
 #include "feround.h"
 #include "float-math.h"

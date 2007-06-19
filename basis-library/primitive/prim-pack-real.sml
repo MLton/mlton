@@ -15,37 +15,19 @@ open Primitive
 structure PackReal32 =
    struct
       type real = Real32.real
+      type word = Word32.word
 
-      val subArr = 
-         _import "PackReal32_subArr": Word8.word array * C_Ptrdiff.t -> real;
-      val subArrRev = 
-         _import "PackReal32_subArrRev": Word8.word array * C_Ptrdiff.t -> real;
-      val subVec = 
-         _import "PackReal32_subVec": Word8.word vector * C_Ptrdiff.t -> real;
-      val subVecRev = 
-         _import "PackReal32_subVecRev": Word8.word vector * C_Ptrdiff.t -> real;
-      val update = 
-         _import "PackReal32_update": Word8.word array * C_Ptrdiff.t * real -> unit;
-      val updateRev = 
-         _import "PackReal32_updateRev": Word8.word array * C_Ptrdiff.t * real -> unit;
+      val castFromWord = _prim "Word32_castToReal32": word -> real;
+      val castToWord = _prim "Real32_castToWord32": real -> word;
    end
 
 structure PackReal64 =
    struct
       type real = Real64.real
+      type word = Word64.word
 
-      val subArr = 
-         _import "PackReal64_subArr": Word8.word array * C_Ptrdiff.t -> real;
-      val subArrRev = 
-         _import "PackReal64_subArrRev": Word8.word array * C_Ptrdiff.t -> real;
-      val subVec = 
-         _import "PackReal64_subVec": Word8.word vector * C_Ptrdiff.t -> real;
-      val subVecRev =
-         _import "PackReal64_subVecRev": Word8.word vector * C_Ptrdiff.t -> real;
-      val update =
-         _import "PackReal64_update": Word8.word array * C_Ptrdiff.t * real -> unit;
-      val updateRev =
-         _import "PackReal64_updateRev": Word8.word array * C_Ptrdiff.t * real -> unit;
+      val castFromWord = _prim "Word64_castToReal64": word -> real;
+      val castToWord = _prim "Real64_castToWord64": real -> word;
    end
 
 end

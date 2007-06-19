@@ -41,19 +41,23 @@ signature PRIM_INT_INF =
          end
 
       val abs: int -> int
+      val +! : int * int -> int
       val +? : int * int -> int
       val + : int * int -> int
       val divMod: int * int -> int * int
       val div: int * int -> int
       val gcd: int * int -> int
       val mod: int * int -> int
+      val *! : int * int -> int
       val *? : int * int -> int
       val * : int * int -> int
+      val ~! : int -> int
       val ~? : int -> int
       val ~ : int -> int
       val quotRem: int * int -> int * int
       val quot: int * int -> int
       val rem: int * int -> int
+      val -! : int * int -> int
       val -? : int * int -> int
       val - : int * int -> int
 
@@ -665,6 +669,9 @@ structure IntInf =
          val castToWord8 = sextdToWord8
          val castToInt8 = sextdToInt8
          fun schckToWord8 i =
+            if not Primitive.Controls.detectOverflow
+               then sextdToWord8 i
+            else
             case chckToWord8Aux i of
                Small w => ObjptrWord.schckToWord8 w
              | Big (isneg, extra, ans) => 
@@ -688,6 +695,9 @@ structure IntInf =
                        end
          fun schckToInt8 i = IntWordConv.idFromWord8ToInt8 (schckToWord8 i)
          fun zchckToWord8 i =
+            if not Primitive.Controls.detectOverflow
+               then zextdToWord8 i
+            else
             case chckToWord8Aux i of
                Small w => ObjptrWord.schckToWord8 w
              | Big (isneg, extra, ans) => 
@@ -713,6 +723,9 @@ structure IntInf =
          val castToWord16 = sextdToWord16
          val castToInt16 = sextdToInt16
          fun schckToWord16 i =
+            if not Primitive.Controls.detectOverflow
+               then sextdToWord16 i
+            else
             case chckToWord16Aux i of
                Small w => ObjptrWord.schckToWord16 w
              | Big (isneg, extra, ans) => 
@@ -736,6 +749,9 @@ structure IntInf =
                        end
          fun schckToInt16 i = IntWordConv.idFromWord16ToInt16 (schckToWord16 i)
          fun zchckToWord16 i =
+            if not Primitive.Controls.detectOverflow
+               then zextdToWord16 i
+            else
             case chckToWord16Aux i of
                Small w => ObjptrWord.schckToWord16 w
              | Big (isneg, extra, ans) => 
@@ -761,6 +777,9 @@ structure IntInf =
          val castToWord32 = sextdToWord32
          val castToInt32 = sextdToInt32
          fun schckToWord32 i =
+            if not Primitive.Controls.detectOverflow
+               then sextdToWord32 i
+            else
             case chckToWord32Aux i of
                Small w => ObjptrWord.schckToWord32 w
              | Big (isneg, extra, ans) => 
@@ -784,6 +803,9 @@ structure IntInf =
                        end
          fun schckToInt32 i = IntWordConv.idFromWord32ToInt32 (schckToWord32 i)
          fun zchckToWord32 i =
+            if not Primitive.Controls.detectOverflow
+               then zextdToWord32 i
+            else
             case chckToWord32Aux i of
                Small w => ObjptrWord.schckToWord32 w
              | Big (isneg, extra, ans) => 
@@ -809,6 +831,9 @@ structure IntInf =
          val castToWord64 = sextdToWord64
          val castToInt64 = sextdToInt64
          fun schckToWord64 i =
+            if not Primitive.Controls.detectOverflow
+               then sextdToWord64 i
+            else
             case chckToWord64Aux i of
                Small w => ObjptrWord.schckToWord64 w
              | Big (isneg, extra, ans) => 
@@ -832,6 +857,9 @@ structure IntInf =
                        end
          fun schckToInt64 i = IntWordConv.idFromWord64ToInt64 (schckToWord64 i)
          fun zchckToWord64 i =
+            if not Primitive.Controls.detectOverflow
+               then zextdToWord64 i
+            else
             case chckToWord64Aux i of
                Small w => ObjptrWord.schckToWord64 w
              | Big (isneg, extra, ans) => 
@@ -920,9 +948,9 @@ structure IntInf =
                 | SOME i => i
             end
       in
-         val bigAdd = make (I.+, Prim.+, S.max, 1)
-         val bigSub = make (I.-, Prim.-, S.max, 1)
-         val bigMul = make (I.*, Prim.*, S.+, 0)
+         val bigAdd = make (I.+!, Prim.+, S.max, 1)
+         val bigSub = make (I.-!, Prim.-, S.max, 1)
+         val bigMul = make (I.*!, Prim.*, S.+, 0)
       end
 
       fun bigNeg (arg: bigInt): bigInt =
@@ -1248,19 +1276,23 @@ structure IntInf =
         end
 
       val abs = bigAbs
+      val op +! = bigAdd
       val op +? = bigAdd
       val op + = bigAdd
       val divMod = bigDivMod
       val op div = bigDiv
       val gcd = bigGcd
       val op mod = bigMod
+      val op *! = bigMul
       val op *? = bigMul
       val op * = bigMul
+      val op ~! = bigNeg
       val op ~? = bigNeg
       val op ~ = bigNeg
       val quotRem = bigQuotRem
       val quot = bigQuot
       val rem = bigRem
+      val op -! = bigSub
       val op -? = bigSub
       val op - = bigSub
 

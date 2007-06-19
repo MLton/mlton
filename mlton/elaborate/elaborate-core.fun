@@ -732,7 +732,7 @@ structure Type =
                 end)
          in
             [("Bool", CType.bool, Tycon.bool),
-             ("Pointer", CType.pointer, Tycon.pointer),
+             ("CPointer", CType.cpointer, Tycon.cpointer),
              ("Real32", CType.real RealSize.R32, Tycon.real RealSize.R32),
              ("Real64", CType.real RealSize.R64, Tycon.real RealSize.R64),
              ("Thread", CType.thread, Tycon.thread)]
@@ -740,7 +740,7 @@ structure Type =
                      let
                         open CType
                      in
-                        [Int8, Int16, Int32]
+                        [Word8, Word16, Word32]
                      end)
             @ sized (Tycon.int o IntSize.fromBits,
                      let
@@ -772,17 +772,17 @@ structure Type =
                            Tycon.equals (c, c')),
                 fn {ctype, name, ...} => {ctype = ctype, name = name})
 
-      fun toUnaryCType (t: t): {ctype: CType.t, name: string} option =
+      and toUnaryCType (t: t): {ctype: CType.t, name: string} option =
          case deConOpt t of
             NONE => NONE
           | SOME (c, ts) =>
                if List.exists (unary, fn c' => Tycon.equals (c, c'))
                   andalso 1 = Vector.length ts
-                  andalso isSome (toNullaryCType (Vector.sub (ts, 0)))
-                  then SOME {ctype = CType.pointer, name = "Pointer"}
+                  andalso isSome (toCType (Vector.sub (ts, 0)))
+                  then SOME {ctype = CType.objptr, name = "Objptr"}
                   else NONE
 
-      fun toCType (ty: t): {ctype: CType.t, name: string} option =
+      and toCType (ty: t): {ctype: CType.t, name: string} option =
          case toNullaryCType ty of
             NONE => toUnaryCType ty
           | SOME {ctype, name} => SOME {ctype = ctype, name = name}
@@ -835,7 +835,7 @@ structure Type =
                           NONE => NONE
                         | SOME ret => SOME (arg, ret)))
       fun toCPtrType (ty: t): z option =
-         if Type.isPointer ty
+         if Type.isCPointer ty
             then let val {ctype, name} = valOf (toCType ty)
                  in SOME {ctype = ctype, name = name, ty = ty}
                  end
@@ -852,9 +852,9 @@ fun parseIEAttributes (attributes: ImportExportAttribute.t list): Convention.t o
                      if let
                            open Control
                         in
-                           case !targetOS of
-                              Cygwin => true
-                            | MinGW => true
+                           case !Target.os of
+                              Target.Cygwin => true
+                            | Target.MinGW => true
                             | _ => false
                         end
                         then Convention.Stdcall
@@ -873,7 +873,7 @@ fun import {attributes: ImportExportAttribute.t list,
                      List.layout ImportExportAttribute.layout attributes])
       fun invalidType () =
          Control.error 
-         (region,
+         (region, 
           str "invalid type for _import",
           Type.layoutPretty elabedTy)
    in
@@ -892,7 +892,7 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
-               val addrTy = Type.word (WordSize.pointer ())
+               val addrTy = Type.cpointer
                val func =
                   CFunction.T {args = let
                                          val args = Vector.map (args, #ty)
@@ -940,12 +940,18 @@ fun primApp {args, prim, result: Type.t} =
    end
 
 local
-   val zeroExp = Cexp.make (Cexp.Const
-                            (fn () => Const.word (WordX.zero WordSize.default)),
-                            Type.defaultWord)
-   val oneExp = Cexp.make (Cexp.Const
-                           (fn () => Const.word (WordX.one WordSize.default)),
-                           Type.defaultWord)
+   val zeroExpBool =
+      Cexp.make (Cexp.Const
+                 (fn () => Const.word (WordX.zero WordSize.bool)),
+                 Type.word WordSize.bool)
+   val oneExpBool = 
+      Cexp.make (Cexp.Const
+                 (fn () => Const.word (WordX.one WordSize.bool)),
+                 Type.word WordSize.bool)
+   fun zeroExpPtrdiff () =
+      Cexp.make (Cexp.Const
+                 (fn () => Const.word (WordX.zero (WordSize.cptrdiff ()))),
+                 Type.word (WordSize.cptrdiff ()))
 
    fun mkAddress {expandedPtrTy: Type.t,
                   name: string,
@@ -959,10 +965,10 @@ local
                 ptrExp: Cexp.t}: Cexp.t =
       let
          val fetchExp = 
-            primApp {args = Vector.new2 (ptrExp, zeroExp),
-                     prim = Prim.pointerGet ctypeCbTy,
+            primApp {args = Vector.new2 (ptrExp, zeroExpPtrdiff ()),
+                     prim = Prim.cpointerGet ctypeCbTy,
                      result = if isBool 
-                                 then Type.defaultWord 
+                                 then Type.word WordSize.bool
                                  else expandedCbTy}
       in
          if not isBool then fetchExp else
@@ -977,8 +983,8 @@ local
                              ({exp = Cexp.truee, lay = NONE, pat = Cpat.falsee},
                               {exp = Cexp.falsee, lay = NONE, pat = Cpat.truee}),
                      test = primApp
-                            {args = Vector.new2 (fetchExp, zeroExp),
-                             prim = Prim.wordEqual WordSize.default,
+                            {args = Vector.new2 (fetchExp, zeroExpBool),
+                             prim = Prim.wordEqual WordSize.bool,
                              result = expandedCbTy}}
       end
 
@@ -995,12 +1001,12 @@ local
                         redundantMatch = Control.Elaborate.DiagEIW.Ignore,
                         region = Region.bogus,
                         rules = Vector.new2 
-                                ({exp = oneExp, lay = NONE, pat = Cpat.truee},
-                                 {exp = zeroExp, lay = NONE, pat = Cpat.falsee}),
+                                ({exp = oneExpBool, lay = NONE, pat = Cpat.truee},
+                                 {exp = zeroExpBool, lay = NONE, pat = Cpat.falsee}),
                         test = valueExp}
       in
-         primApp {args = Vector.new3 (ptrExp, zeroExp, valueExp),
-                  prim = Prim.pointerSet ctypeCbTy,
+         primApp {args = Vector.new3 (ptrExp, zeroExpPtrdiff (), valueExp),
+                  prim = Prim.cpointerSet ctypeCbTy,
                   result = Type.unit}
       end
 
@@ -1070,7 +1076,7 @@ in
              let
                 val error = fn () =>
                    (error ()
-                    ; ignore (escape Type.defaultWord)
+                    ; ignore (escape Type.word8)
                     ; Error.bug "ElaborateCore.symbolDirect.escape")
              in
                 case Type.deTupleOpt expandedTy of
@@ -1105,10 +1111,10 @@ in
              end)
          val ctypeCbTy =
             case Type.toCBaseType expandedCbTy of
-               NONE => (error (); CType.word (WordSize.default, {signed = false}))
+               NONE => (error (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
          val addrExp =
-            mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
+            mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
                        cty = SOME ctypeCbTy}
          val () =
@@ -1139,7 +1145,7 @@ in
              let
                 val error = fn () =>
                    (error ()
-                    ; ignore (escape (Type.pointer, Type.defaultWord))
+                    ; ignore (escape (Type.cpointer, Type.word8))
                     ; Error.bug "ElaborateCore.symbolIndirect.escape")
              in
                 case Type.deArrowOpt expandedTy of
@@ -1177,7 +1183,7 @@ in
              end)
          val ctypeCbTy =
             case Type.toCBaseType expandedCbTy of
-               NONE => (error (); CType.word (WordSize.default, {signed = false}))
+               NONE => (error (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
          val () =
             case Type.toCPtrType expandedPtrTy of
@@ -1196,49 +1202,6 @@ in
                 argType = expandedPtrTy,
                 body = symExp,
                 mayInline = true},
-               elabedTy)
-      end
-
-   fun importSymbol {attributes: ImportExportAttribute.t list,
-                     elabedTy: Type.t,
-                     expandedTy: Type.t,
-                     name: string,
-                     region: Region.t}: Cexp.t =
-      let
-         val () =
-            Control.warning 
-            (region,
-             str "_import of non-function is deprecated, use _symbol",
-             empty)
-         fun invalidAttributes () =
-            Control.error 
-            (region, seq [str "invalid attributes for _import: ",
-                          List.layout ImportExportAttribute.layout attributes],
-             Layout.empty)
-         val () =
-            if List.isEmpty attributes
-               then ()
-               else invalidAttributes ()
-         fun error () =
-            Control.error
-            (region, str "invalid type for _import",
-             Type.layoutPretty elabedTy)
-         val expandedCbTy = expandedTy
-         val ctypeCbTy =
-            case Type.toCBaseType expandedCbTy of
-               NONE => (error (); CType.word (WordSize.default, {signed = false}))
-             | SOME {ctype, ...} => ctype
-         val isBool = Type.isBool expandedCbTy
-         val addrExp =
-            mkAddress {expandedPtrTy = Type.word (WordSize.pointer ()),
-                       name = name,
-                       cty = SOME ctypeCbTy}
-         fun wrap (e, t) = Cexp.make (Cexp.node e, t)
-      in
-         wrap (mkFetch {ctypeCbTy = ctypeCbTy, 
-                        isBool = isBool,
-                        expandedCbTy = expandedCbTy,
-                        ptrExp = addrExp},
                elabedTy)
       end
 end
@@ -2765,20 +2728,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                          NONE => error ()
                                        | SOME (argTy, resTy) =>
                                             (case Type.deArrowOpt argTy of
-                                                NONE => 
-                                                   let
-                                                      val elabedExportTy =
-                                                         Type.arrow (elabedTy, Type.unit)
-                                                      val () =
-                                                         Control.warning
-                                                         (region,
-                                                          seq [str "_export with partial annotation is deprecated, ",
-                                                               str "use ", 
-                                                               Type.layoutPretty (elabedExportTy)],
-                                                          empty)
-                                                   in
-                                                      (expandedTy, elabedExportTy)
-                                                   end
+                                                NONE => error ()
                                               | SOME _ => 
                                                    let
                                                       val () =
@@ -2832,7 +2782,8 @@ fun elaborateDec (d, {env = E, nest}) =
                                    let
                                       val error = fn () =>
                                          (error ()
-                                          ; ignore (escape (Type.pointer, Type.arrow (Type.unit, Type.unit)))
+                                          ; ignore (escape (Type.cpointer, 
+                                                            Type.arrow (Type.unit, Type.unit)))
                                           ; Error.bug "ElaborateCore.elabExp.IImport.escape")
                                    in
                                       case Type.deArrowOpt expandedTy of
@@ -2868,21 +2819,13 @@ fun elaborateDec (d, {env = E, nest}) =
                                val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                             in
-                               case Type.deArrowOpt expandedTy of
-                                  NONE => 
-                                     importSymbol {attributes = attributes,
-                                                   elabedTy = elabedTy,
-                                                   expandedTy = expandedTy,
-                                                   name = name,
-                                                   region = region}
-                                | SOME _ =>
-                                     eta ({elabedTy = elabedTy,
-                                           expandedTy = expandedTy,
-                                           prim = import {attributes = attributes,
-                                                          name = SOME name,
-                                                          region = region,
-                                                          elabedTy = elabedTy,
-                                                          expandedTy = expandedTy}})
+                               eta ({elabedTy = elabedTy,
+                                     expandedTy = expandedTy,
+                                     prim = import {attributes = attributes,
+                                                    name = SOME name,
+                                                    region = region,
+                                                    elabedTy = elabedTy,
+                                                    expandedTy = expandedTy}})
                             end
                        | ISymbol {ty} =>
                             let

@@ -109,6 +109,6 @@ signature CMEMACCESS = sig
     val unwrap_double    : cc_double    -> MLRep.Double.real
 
     (* unsafe pointer <-> int conversion *)
-    val p2i : addr -> MLRep.Int.Unsigned.word
-    val i2p : MLRep.Int.Unsigned.word -> addr
+    val p2i : addr -> MLRep.Long.Unsigned.word
+    val i2p : MLRep.Long.Unsigned.word -> addr
 end

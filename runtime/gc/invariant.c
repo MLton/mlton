@@ -59,9 +59,10 @@ bool invariantForGC (GC_state s) {
   assert (isFrontierAligned (s, s->heap.start + s->heap.oldGenSize));
   assert (isFrontierAligned (s, s->heap.nursery));
   assert (isFrontierAligned (s, s->frontier));
+  assert (s->heap.start + s->heap.oldGenSize <= s->heap.nursery);
+  assert (s->heap.nursery <= s->heap.start + s->heap.size);
   assert (s->heap.nursery <= s->frontier);
   unless (0 == s->heap.size) {
-    assert (s->heap.nursery <= s->frontier);
     assert (s->frontier <= s->limitPlusSlop);
     assert (s->limit == s->limitPlusSlop - GC_HEAP_LIMIT_SLOP);
     assert (hasHeapBytesFree (s, 0, 0));
@@ -80,7 +81,7 @@ bool invariantForGC (GC_state s) {
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
                         assertIsObjptrInFromSpace, FALSE);
   /* Current thread. */
-  __attribute__ ((unused)) GC_stack stack = getStackCurrent(s);
+  GC_stack stack = getStackCurrent(s);
   assert (isStackReservedAligned (s, stack->reserved));
   assert (s->stackBottom == getStackBottom (s, stack));
   assert (s->stackTop == getStackTop (s, stack));

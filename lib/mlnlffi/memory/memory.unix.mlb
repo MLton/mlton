@@ -1,0 +1,34 @@
+local
+   $(SML_LIB)/basis/basis.mlb
+   $(SML_LIB)/basis/mlton.mlb
+   $(SML_LIB)/basis/c-types.mlb
+in
+   ann
+      "forceUsed"
+      "sequenceNonUnit warn"
+      "warnUnused true"
+   in
+      local
+         linkage.sig
+         ann "allowFFI true" in
+            linkage-libdl.sml
+         end
+         bitop-fn.sml
+         mlrep.sml
+         memaccess.sig
+         memaccess.sml
+         memalloc.sig
+         ann "allowFFI true" in
+            memalloc-unix.sml
+         end
+         memory.sig
+         memory.sml
+      in
+         signature CMEMORY
+         structure CMemory
+         signature DYN_LINKAGE
+         structure DynLinkage
+         structure MLRep
+      end
+   end
+end

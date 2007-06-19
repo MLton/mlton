@@ -112,7 +112,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val class = IEEEReal.mkClass R.class
 
       val abs =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86
             then abs
          else
             fn x =>
@@ -136,7 +136,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       fun isNormal r = class r = NORMAL
 
       val op ?= =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86 orelse MLton.Codegen.isAmd64
             then R.?=
          else
             fn (x, y) =>
@@ -238,7 +238,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             man * (if Int.< (exp, 0) then zero else posInf)
 
       val fromManExp =
-         if MLton.Codegen.isNative
+         if MLton.Codegen.isX86
             then fromManExp
          else
             fn {exp, man} =>
@@ -782,7 +782,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
 
             (* The x86 doesn't get exp right on infs. *)
             val exp =
-               if MLton.Codegen.isNative
+               if MLton.Codegen.isX86
                   andalso let open MLton.Platform.Arch in host = X86 end
                   then (fn x =>
                         case class x of
@@ -872,5 +872,27 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          end
    end
 
-structure Real32 = Real (Primitive.Real32)
-structure Real64 = Real (Primitive.Real64)
+(* All of the Real{32,64}.nextAfter{Down,Up} functions work by
+ * converting the real to a word of equivalent size and doing an
+ * increment or decrement on the word.  This works because the SML
+ * Basis Library code that calls these functions handles all the
+ * special cases (nans and infs).  Also, because of the way IEEE
+ * floating point numbers are represented, word {de,in}crement
+ * automatically does the right thing at the boundary between normals
+ * and denormals.  Also, convienently, maxFinite+1 = posInf.  
+ *)
+
+structure Real32 = Real (open Primitive.Real32
+                         local open Primitive.PackReal32 in
+                            fun nextAfterDown r = 
+                               castFromWord (Word32.- (castToWord r, 0wx1))
+                            fun nextAfterUp r = 
+                               castFromWord (Word32.+ (castToWord r, 0wx1))
+                         end)
+structure Real64 = Real (open Primitive.Real64
+                         local open Primitive.PackReal64 in
+                            fun nextAfterDown r = 
+                               castFromWord (Word64.- (castToWord r, 0wx1))
+                            fun nextAfterUp r = 
+                               castFromWord (Word64.+ (castToWord r, 0wx1))
+                         end)

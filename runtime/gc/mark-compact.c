@@ -11,7 +11,6 @@
 /* ---------------------------------------------------------------- */
 
 void copyForThreadInternal (pointer dst, pointer src) {
-
   if (OBJPTR_SIZE > GC_HEADER_SIZE) {
     size_t count;
 
@@ -36,7 +35,6 @@ void copyForThreadInternal (pointer dst, pointer src) {
       dst -= OBJPTR_SIZE;
       src += OBJPTR_SIZE;
     }
-
   } else /* (GC_HEADER_SIZE == OBJPTR_SIZE) */ {
     *((GC_header*)dst) = *((GC_header*)src);
   }
@@ -77,7 +75,7 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
     if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
-    w = (GC_weak)(p + (offsetofWeak(s)));
+    w = (GC_weak)(p + offsetofWeak (s));
     objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap.start));
     /* If it's not threaded and unmarked, clear the weak pointer. */
     if ((GC_VALID_HEADER_MASK & objptrHeader)
@@ -134,9 +132,9 @@ thread:
         /* Compress all of the unmarked into one vector.  We require
          * (GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) space to be available
          * because that is the smallest possible array.  You cannot
-         * use GC_ARRAY_HEADER_SIZE because even zero-length arrays
-         * require extra space for the forwarding pointer.  If you did
-         * use GC_ARRAY_HEADER_SIZE,
+         * use GC_ARRAY_HEADER_SIZE because even very small (including
+         * zero-length) arrays require extra space for the forwarding
+         * pointer.  If you did use GC_ARRAY_HEADER_SIZE,
          * updateBackwardPointersAndSlideForMarkCompact would skip the
          * extra space and be completely busted.
          */

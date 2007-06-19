@@ -137,75 +137,23 @@ After some experiments on those, we might be able to find a more
 manageable set for users.
 */
 
-#if (defined (GC_MODEL_A) || defined (GC_MODEL_NATIVE32))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT    0
-#define GC_MODEL_USEBASE  FALSE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_AX))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   0
-#define GC_MODEL_USEBASE TRUE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_B))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   1
-#define GC_MODEL_USEBASE FALSE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_BX))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   1
-#define GC_MODEL_USEBASE TRUE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_C))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   2
-#define GC_MODEL_USEBASE FALSE
-#define GC_MODEL_MINALIGN_SHIFT 3
-#elif (defined (GC_MODEL_CX))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   2
-#define GC_MODEL_USEBASE TRUE
-#define GC_MODEL_MINALIGN_SHIFT 3
-#elif (defined (GC_MODEL_D))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   2
-#define GC_MODEL_USEBASE FALSE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_DX))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   2
-#define GC_MODEL_USEBASE TRUE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_E))
-#define GC_MODEL_BITSIZE 32
-#define GC_MODEL_SHIFT   3
-#define GC_MODEL_USEBASE FALSE
-#define GC_MODEL_MINALIGN_SHIFT 3
-#elif (defined (GC_MODEL_EX))
-#define GC_MODEL_BITSIZE  32
-#define GC_MODEL_SHIFT    3
-#define GC_MODEL_USEBASE  TRUE
-#define GC_MODEL_MINALIGN_SHIFT 3
-#elif (defined (GC_MODEL_F))
-#define GC_MODEL_BITSIZE  40
-#define GC_MODEL_SHIFT    0
-#define GC_MODEL_USEBASE  FALSE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_FX))
-#define GC_MODEL_BITSIZE  40
-#define GC_MODEL_SHIFT    0
-#define GC_MODEL_USEBASE  TRUE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#elif (defined (GC_MODEL_G) || defined (GC_MODEL_NATIVE64))
-#define GC_MODEL_BITSIZE  64
-#define GC_MODEL_SHIFT    0
-#define GC_MODEL_USEBASE  FALSE
-#define GC_MODEL_MINALIGN_SHIFT 2
-#else 
-#error gc model unknown
+#if defined (GC_MODEL_NATIVE32)
+#define GC_MODEL_OBJPTR_SIZE 32
+#define GC_MODEL_OBJPTR_SHIFT 0
+#define GC_MODEL_OBJPTR_BASE 0
+#define GC_MODEL_HEADER_SIZE 32
+#define GC_MODEL_ARRLEN_SIZE 32
+#elif defined (GC_MODEL_NATIVE64)
+#define GC_MODEL_OBJPTR_SIZE 64
+#define GC_MODEL_OBJPTR_SHIFT 0
+#define GC_MODEL_OBJPTR_BASE 0
+#define GC_MODEL_HEADER_SIZE 64
+#define GC_MODEL_ARRLEN_SIZE 64
+#else
+#error GC_MODEL_* unspecified
 #endif
-#define GC_MODEL_NONOBJPTR ((GC_MODEL_MINALIGN_SHIFT - GC_MODEL_SHIFT) > 0)
+
+#define GC_MODEL_MINALIGN_SHIFT max(2, GC_MODEL_OBJPTR_SHIFT + 1)
 #define GC_MODEL_MINALIGN TWOPOWER(GC_MODEL_MINALIGN_SHIFT)
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

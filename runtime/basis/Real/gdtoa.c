@@ -11,19 +11,11 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   int ex;
   static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, 0 };
   int i;
-  ULong *L;
+  ULong L[1];
   char *result;
   ULong sign;
-  int x0, x1;
 
-  if (MLton_Platform_Arch_bigendian) {
-    x0 = 0;
-    x1 = 1;
-  } else {
-    x0 = 1;
-    x1 = 0;
-  }
-  L = (ULong*)&f;
+  memcpy(L, &f, sizeof(Real32_t));
   sign = L[0] & 0x80000000L;
   bits[0] = L[0] & 0x7fffff;
   if (0 != (ex = (L[0] >> 23) & 0xff))
@@ -44,19 +36,19 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
   int ex;
   static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0 };
   int i;
-  ULong *L;
+  ULong L[2];
   char *result;
   ULong sign;
   int x0, x1;
 
-  if (MLton_Platform_Arch_bigendian) {
+  if (isBigEndian()) {
     x0 = 0;
     x1 = 1;
   } else {
     x0 = 1;
     x1 = 0;
   }
-  L = (ULong*)&d;
+  memcpy(L, &d, sizeof(Real64_t));
   sign = L[x0] & 0x80000000L;
   bits[0] = L[x1];
   bits[1] = L[x0] & 0xfffff;

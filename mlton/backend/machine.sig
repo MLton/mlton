@@ -19,7 +19,7 @@ signature MACHINE =
       include MACHINE_STRUCTS
 
       structure ObjectType: OBJECT_TYPE
-      structure PointerTycon: POINTER_TYCON
+      structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
       structure Switch: SWITCH
       structure Type: REP_TYPE
@@ -27,7 +27,7 @@ signature MACHINE =
       sharing Atoms = Type
       sharing Atoms = Switch
       sharing ObjectType = Type.ObjectType
-      sharing PointerTycon = ObjectType.PointerTycon = Type.PointerTycon
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
       sharing Runtime = ObjectType.Runtime = Type.Runtime
 
       structure ChunkLabel: ID
@@ -88,6 +88,7 @@ signature MACHINE =
              | Global of Global.t
              | Label of Label.t
              | Line (* expand by codegen into int constant *)
+             | Null
              | Offset of {base: t,
                           offset: Bytes.t,
                           ty: Type.t}
@@ -142,7 +143,7 @@ signature MACHINE =
             (* Error if dsts and srcs aren't of same length. *)
             val moves: {dsts: Operand.t vector,
                         srcs: Operand.t vector} -> t vector
-            val object: {dst: Operand.t, header: word, size: Words.t} -> t vector
+            val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
          end
 
       structure FrameInfo:
@@ -266,7 +267,7 @@ signature MACHINE =
                       *)
                      frameOffsets: Bytes.t vector vector,
                      handlesSignals: bool,
-                     intInfs: (Global.t * string) list,
+                     intInfs: (Global.t * IntInf.t) list,
                      main: {chunkLabel: ChunkLabel.t,
                             label: Label.t},
                      maxFrameSize: Bytes.t,

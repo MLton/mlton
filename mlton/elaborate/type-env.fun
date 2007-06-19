@@ -790,15 +790,15 @@ structure Type =
           | Overload Overload.Char => true
           | _ => false
 
+      fun isCPointer t =
+         case toType t of
+            Con (c, _) => Tycon.isCPointer c
+          | _ => false
+
       fun isInt t =
          case toType t of
             Con (c, _) => Tycon.isIntX c
           | Overload Overload.Int => true
-          | _ => false
-
-      fun isPointer t =
-         case toType t of
-            Con (c, _) => Tycon.isPointer c
           | _ => false
 
       fun isUnit t =
@@ -1276,14 +1276,12 @@ structure Type =
          (CharSize.all, fn s =>
           setSynonym (Tycon.char s,
                       Tycon.word (WordSize.fromBits (CharSize.bits s))))
-
+         
       val () =
          List.foreach
          (IntSize.all, fn s =>
           setSynonym (Tycon.int s,
                       Tycon.word (WordSize.fromBits (IntSize.bits s))))
-
-      val () = setSynonym (Tycon.pointer, Tycon.word (WordSize.pointer ()))
 
       structure Overload =
          struct

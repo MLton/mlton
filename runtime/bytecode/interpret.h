@@ -9,8 +9,6 @@
 #define _INTERPRET_H_
 
 #include <stdio.h>
-#include "ml-types.h"
-#include "c-types.h"
 #include "assert.h"
 
 #define regs(ty)                                \

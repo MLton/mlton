@@ -41,6 +41,21 @@ datatype 'a t =
  | Array_sub (* backend *)
  | Array_toVector (* backend *)
  | Array_update (* backend *)
+ | CPointer_add (* codegen *)
+ | CPointer_diff (* codegen *)
+ | CPointer_equal (* codegen *)
+ | CPointer_fromWord (* codegen *)
+ | CPointer_getCPointer (* ssa to rssa *)
+ | CPointer_getObjptr (* ssa to rssa *)
+ | CPointer_getReal of RealSize.t (* ssa to rssa *)
+ | CPointer_getWord of WordSize.t (* ssa to rssa *)
+ | CPointer_lt (* codegen *)
+ | CPointer_setCPointer (* ssa to rssa *)
+ | CPointer_setObjptr (* ssa to rssa *)
+ | CPointer_setReal of RealSize.t (* ssa to rssa *)
+ | CPointer_setWord of WordSize.t (* ssa to rssa *)
+ | CPointer_sub (* codegen *)
+ | CPointer_toWord (* codegen *)
  | Exn_extra (* implement exceptions *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
@@ -93,12 +108,6 @@ datatype 'a t =
  | MLton_serialize (* unused *)
  | MLton_size (* ssa to rssa *)
  | MLton_touch (* backend *)
- | Pointer_getPointer (* ssa to rssa *)
- | Pointer_getReal of RealSize.t (* ssa to rssa *)
- | Pointer_getWord of WordSize.t (* ssa to rssa *)
- | Pointer_setPointer (* ssa to rssa *)
- | Pointer_setReal of RealSize.t (* ssa to rssa *)
- | Pointer_setWord of WordSize.t (* ssa to rssa *)
  | Real_Math_acos of RealSize.t (* codegen *)
  | Real_Math_asin of RealSize.t (* codegen *)
  | Real_Math_atan of RealSize.t (* codegen *)
@@ -112,6 +121,7 @@ datatype 'a t =
  | Real_Math_tan of RealSize.t (* codegen *)
  | Real_abs of RealSize.t (* codegen *)
  | Real_add of RealSize.t (* codegen *)
+ | Real_castToWord of RealSize.t * WordSize.t (* codegen *)
  | Real_div of RealSize.t (* codegen *)
  | Real_equal of RealSize.t (* codegen *)
  | Real_ldexp of RealSize.t (* codegen *)
@@ -122,17 +132,17 @@ datatype 'a t =
  | Real_mulsub of RealSize.t (* codegen *)
  | Real_neg of RealSize.t         (* codegen *)
  | Real_qequal of RealSize.t (* codegen *)
+ | Real_rndToReal of RealSize.t * RealSize.t (* codegen *)
+ | Real_rndToWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Real_round of RealSize.t (* codegen *)
  | Real_sub of RealSize.t (* codegen *)
- | Real_toReal of RealSize.t * RealSize.t (* codegen *)
- | Real_toWord of RealSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Ref_assign (* backend *)
  | Ref_deref (* backend *)
  | Ref_ref (* backend *)
  | String_toWord8Vector (* defunctorize *)
  | Thread_atomicBegin (* backend *)
  | Thread_atomicEnd (* backend *)
- | Thread_canHandle (* backend *)
+ | Thread_atomicState (* backend *)
  | Thread_copy (* ssa to rssa *)
  | Thread_copyCurrent (* ssa to rssa *)
  | Thread_returnToC (* codegen *)
@@ -151,7 +161,9 @@ datatype 'a t =
  | Word_add of WordSize.t (* codegen *)
  | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
  | Word_andb of WordSize.t (* codegen *)
+ | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
  | Word_equal of WordSize.t (* codegen *)
+ | Word_extdToWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Word_lshift of WordSize.t (* codegen *)
  | Word_lt of WordSize.t * {signed: bool} (* codegen *)
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
@@ -162,19 +174,18 @@ datatype 'a t =
  | Word_orb of WordSize.t (* codegen *)
  | Word_quot of WordSize.t * {signed: bool} (* codegen *)
  | Word_rem of WordSize.t * {signed: bool} (* codegen *)
+ | Word_rndToReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
  | Word_rol of WordSize.t (* codegen *)
  | Word_ror of WordSize.t (* codegen *)
  | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
  | Word_sub of WordSize.t (* codegen *)
  | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
  | Word_toIntInf (* ssa to rssa *)
- | Word_toReal of WordSize.t * RealSize.t * {signed: bool} (* codegen *)
- | Word_toWord of WordSize.t * WordSize.t * {signed: bool} (* codegen *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* ssa to rssa *)
- | Word8Array_subWord (* ssa to rssa *)
- | Word8Array_updateWord (* ssa to rssa *)
- | Word8Vector_subWord (* ssa to rssa *)
+ | Word8Array_subWord of WordSize.t (* ssa to rssa *)
+ | Word8Array_updateWord of WordSize.t  (* ssa to rssa *)
+ | Word8Vector_subWord of WordSize.t  (* ssa to rssa *)
  | Word8Vector_toString (* defunctorize *)
  | World_save (* ssa to rssa *)
 
@@ -190,15 +201,20 @@ fun toString (n: 'a t): string =
       fun sign {signed} = if signed then "WordS" else "WordU"
       fun word (s: WordSize.t, str: string): string =
          concat ["Word", WordSize.toString s, "_", str]
+      fun word8Seq (seq: string, oper: string, s: WordSize.t): string =
+         concat ["Word8", seq, "_", oper, "Word", WordSize.toString s]
       fun wordS (s: WordSize.t, sg, str: string): string =
          concat [sign sg, WordSize.toString s, "_", str]
       val realC = ("Real", RealSize.toString)
       val wordC = ("Word", WordSize.toString)
       fun wordCS sg = (sign sg, WordSize.toString)
-      fun coerce ((n, sizeToString), (n', sizeToString'), s, s'): string =
-         concat [n, sizeToString s, "_to", n', sizeToString' s']
-      fun pointerGet (ty, s) = concat ["Pointer_get", ty, s]
-      fun pointerSet (ty, s) = concat ["Pointer_set", ty, s]
+      fun coerce (k, (n, sizeToString), (n', sizeToString'), s, s'): string =
+         concat [n, sizeToString s, "_", k ,"To", n', sizeToString' s']
+      fun cast (c, c', s, s') = coerce ("cast", c, c', s, s')
+      fun extd (c, c', s, s') = coerce ("extd", c, c', s, s')
+      fun rnd (c, c', s, s') = coerce ("rnd", c, c', s, s')
+      fun cpointerGet (ty, s) = concat ["CPointer_get", ty, s]
+      fun cpointerSet (ty, s) = concat ["CPointer_set", ty, s]
    in
       case n of
          Array_array => "Array_array"
@@ -207,6 +223,21 @@ fun toString (n: 'a t): string =
        | Array_sub => "Array_sub"
        | Array_toVector => "Array_toVector"
        | Array_update => "Array_update"
+       | CPointer_add => "CPointer_add"
+       | CPointer_diff => "CPointer_diff"
+       | CPointer_equal => "CPointer_equal"
+       | CPointer_fromWord => "CPointer_fromWord"
+       | CPointer_getCPointer => "CPointer_getCPointer"
+       | CPointer_getObjptr => "CPointer_getObjptr"
+       | CPointer_getReal s => cpointerGet ("Real", RealSize.toString s)
+       | CPointer_getWord s => cpointerGet ("Word", WordSize.toString s)
+       | CPointer_lt => "CPointer_lt"
+       | CPointer_setCPointer => "CPointer_setCPointer"
+       | CPointer_setObjptr => "CPointer_setObjptr"
+       | CPointer_setReal s => cpointerSet ("Real", RealSize.toString s)
+       | CPointer_setWord s => cpointerSet ("Word", WordSize.toString s)
+       | CPointer_sub => "CPointer_sub"
+       | CPointer_toWord => "CPointer_toWord"
        | Exn_extra => "Exn_extra"
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
@@ -244,12 +275,6 @@ fun toString (n: 'a t): string =
        | MLton_share => "MLton_share"
        | MLton_size => "MLton_size"
        | MLton_touch => "MLton_touch"
-       | Pointer_getPointer => "Pointer_getPointer"
-       | Pointer_getReal s => pointerGet ("Real", RealSize.toString s)
-       | Pointer_getWord s => pointerGet ("Word", WordSize.toString s)
-       | Pointer_setPointer => "Pointer_setPointer"
-       | Pointer_setReal s => pointerSet ("Real", RealSize.toString s)
-       | Pointer_setWord s => pointerSet ("Word", WordSize.toString s)
        | Real_Math_acos s => real (s, "Math_acos")
        | Real_Math_asin s => real (s, "Math_asin")
        | Real_Math_atan s => real (s, "Math_atan")
@@ -263,6 +288,7 @@ fun toString (n: 'a t): string =
        | Real_Math_tan s => real (s, "Math_tan")
        | Real_abs s => real (s, "abs")
        | Real_add s => real (s, "add")
+       | Real_castToWord (s1, s2) => cast (realC, wordC, s1, s2)
        | Real_div s => real (s, "div")
        | Real_equal s => real (s, "equal")
        | Real_ldexp s => real (s, "ldexp")
@@ -273,17 +299,17 @@ fun toString (n: 'a t): string =
        | Real_mulsub s => real (s, "mulsub")
        | Real_neg s => real (s, "neg")
        | Real_qequal s => real (s, "qequal")
+       | Real_rndToReal (s1, s2) => rnd (realC, realC, s1, s2)
+       | Real_rndToWord (s1, s2, sg) => rnd (realC, wordCS sg, s1, s2)
        | Real_round s => real (s, "round")
        | Real_sub s => real (s, "sub")
-       | Real_toWord (s1, s2, sg) => coerce (realC, wordCS sg, s1, s2)
-       | Real_toReal (s1, s2) => coerce (realC, realC, s1, s2)
        | Ref_assign => "Ref_assign"
        | Ref_deref => "Ref_deref"
        | Ref_ref => "Ref_ref"
        | String_toWord8Vector => "String_toWord8Vector"
        | Thread_atomicBegin => "Thread_atomicBegin"
        | Thread_atomicEnd => "Thread_atomicEnd"
-       | Thread_canHandle => "Thread_canHandle"
+       | Thread_atomicState => "Thread_atomicState"
        | Thread_copy => "Thread_copy"
        | Thread_copyCurrent => "Thread_copyCurrent"
        | Thread_returnToC => "Thread_returnToC"
@@ -295,15 +321,17 @@ fun toString (n: 'a t): string =
        | Weak_canGet => "Weak_canGet"
        | Weak_get => "Weak_get"
        | Weak_new => "Weak_new"
-       | Word8Array_subWord => "Word8Array_subWord"
-       | Word8Array_updateWord => "Word8Array_updateWord"
-       | Word8Vector_subWord => "Word8Vector_subWord"
+       | Word8Array_subWord w => word8Seq ("Array", "sub", w)
+       | Word8Array_updateWord w => word8Seq ("Array", "update", w)
+       | Word8Vector_subWord w => word8Seq ("Vector", "sub", w)
        | Word8Vector_toString => "Word8Vector_toString"
        | WordVector_toIntInf => "WordVector_toIntInf"
        | Word_add s => word (s, "add")
        | Word_addCheck (s, sg) => wordS (s, sg, "addCheck")
        | Word_andb s => word (s, "andb")
+       | Word_castToReal (s1, s2) => cast (wordC, realC, s1, s2)
        | Word_equal s => word (s, "equal")
+       | Word_extdToWord (s1, s2, sg) => extd (wordCS sg, wordC, s1, s2)
        | Word_lshift s => word (s, "lshift")
        | Word_lt (s, sg) => wordS (s, sg, "lt")
        | Word_mul (s, sg) => wordS (s, sg, "mul")
@@ -314,14 +342,13 @@ fun toString (n: 'a t): string =
        | Word_orb s => word (s, "orb")
        | Word_quot (s, sg) => wordS (s, sg, "quot")
        | Word_rem (s, sg) => wordS (s, sg, "rem")
+       | Word_rndToReal (s1, s2, sg) => rnd (wordCS sg, realC, s1, s2)
        | Word_rol s => word (s, "rol")
        | Word_ror s => word (s, "ror")
        | Word_rshift (s, sg) => wordS (s, sg, "rshift")
        | Word_sub s => word (s, "sub")
        | Word_subCheck (s, sg) => wordS (s, sg, "subCheck")
        | Word_toIntInf => "Word_toIntInf"
-       | Word_toReal (s1, s2, sg) => coerce (wordCS sg, realC, s1, s2)
-       | Word_toWord (s1, s2, sg) => coerce (wordCS sg, wordC, s1, s2)
        | Word_xorb s => word (s, "xorb")
        | World_save => "World_save"
    end
@@ -335,6 +362,21 @@ val equals: 'a t * 'a t -> bool =
     | (Array_sub, Array_sub) => true
     | (Array_toVector, Array_toVector) => true
     | (Array_update, Array_update) => true
+    | (CPointer_add, CPointer_add) => true
+    | (CPointer_diff, CPointer_diff) => true
+    | (CPointer_equal, CPointer_equal) => true
+    | (CPointer_fromWord, CPointer_fromWord) => true
+    | (CPointer_getCPointer, CPointer_getCPointer) => true
+    | (CPointer_getObjptr, CPointer_getObjptr) => true
+    | (CPointer_getReal s, CPointer_getReal s') => RealSize.equals (s, s')
+    | (CPointer_getWord s, CPointer_getWord s') => WordSize.equals (s, s')
+    | (CPointer_lt, CPointer_lt) => true
+    | (CPointer_setCPointer, CPointer_setCPointer) => true
+    | (CPointer_setObjptr, CPointer_setObjptr) => true
+    | (CPointer_setReal s, CPointer_setReal s') => RealSize.equals (s, s')
+    | (CPointer_setWord s, CPointer_setWord s') => WordSize.equals (s, s')
+    | (CPointer_sub, CPointer_sub) => true
+    | (CPointer_toWord, CPointer_toWord) => true
     | (Exn_extra, Exn_extra) => true
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
@@ -372,12 +414,6 @@ val equals: 'a t * 'a t -> bool =
     | (MLton_share, MLton_share) => true
     | (MLton_size, MLton_size) => true
     | (MLton_touch, MLton_touch) => true
-    | (Pointer_getPointer, Pointer_getPointer) => true
-    | (Pointer_getReal s, Pointer_getReal s') => RealSize.equals (s, s')
-    | (Pointer_getWord s, Pointer_getWord s') => WordSize.equals (s, s')
-    | (Pointer_setPointer, Pointer_setPointer) => true
-    | (Pointer_setReal s, Pointer_setReal s') => RealSize.equals (s, s')
-    | (Pointer_setWord s, Pointer_setWord s') => WordSize.equals (s, s')
     | (Real_Math_acos s, Real_Math_acos s') => RealSize.equals (s, s')
     | (Real_Math_asin s, Real_Math_asin s') => RealSize.equals (s, s')
     | (Real_Math_atan s, Real_Math_atan s') => RealSize.equals (s, s')
@@ -391,6 +427,9 @@ val equals: 'a t * 'a t -> bool =
     | (Real_Math_tan s, Real_Math_tan s') => RealSize.equals (s, s')
     | (Real_abs s, Real_abs s') => RealSize.equals (s, s')
     | (Real_add s, Real_add s') => RealSize.equals (s, s')
+    | (Real_castToWord (s1, s2), Real_castToWord (s1', s2')) =>
+         RealSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
     | (Real_div s, Real_div s') => RealSize.equals (s, s')
     | (Real_equal s, Real_equal s') => RealSize.equals (s, s')
     | (Real_ldexp s, Real_ldexp s') => RealSize.equals (s, s')
@@ -401,21 +440,21 @@ val equals: 'a t * 'a t -> bool =
     | (Real_mulsub s, Real_mulsub s') => RealSize.equals (s, s')
     | (Real_neg s, Real_neg s') => RealSize.equals (s, s')
     | (Real_qequal s, Real_qequal s') => RealSize.equals (s, s')
-    | (Real_round s, Real_round s') => RealSize.equals (s, s')
-    | (Real_sub s, Real_sub s') => RealSize.equals (s, s')
-    | (Real_toReal (s1, s2), Real_toReal (s1', s2')) =>
+    | (Real_rndToReal (s1, s2), Real_rndToReal (s1', s2')) =>
          RealSize.equals (s1, s1') andalso RealSize.equals (s2, s2')
-    | (Real_toWord (s1, s2, sg), Real_toWord (s1', s2', sg')) =>
+    | (Real_rndToWord (s1, s2, sg), Real_rndToWord (s1', s2', sg')) =>
          RealSize.equals (s1, s1')
          andalso WordSize.equals (s2, s2')
          andalso sg = sg'
+    | (Real_round s, Real_round s') => RealSize.equals (s, s')
+    | (Real_sub s, Real_sub s') => RealSize.equals (s, s')
     | (Ref_assign, Ref_assign) => true
     | (Ref_deref, Ref_deref) => true
     | (Ref_ref, Ref_ref) => true
     | (String_toWord8Vector, String_toWord8Vector) => true
     | (Thread_atomicBegin, Thread_atomicBegin) => true
     | (Thread_atomicEnd, Thread_atomicEnd) => true
-    | (Thread_canHandle, Thread_canHandle) => true
+    | (Thread_atomicState, Thread_atomicState) => true
     | (Thread_copy, Thread_copy) => true
     | (Thread_copyCurrent, Thread_copyCurrent) => true
     | (Thread_returnToC, Thread_returnToC) => true
@@ -431,6 +470,13 @@ val equals: 'a t * 'a t -> bool =
     | (Word_addCheck (s, sg), Word_addCheck (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_andb s, Word_andb s') => WordSize.equals (s, s')
+    | (Word_castToReal (s1, s2), Word_castToReal (s1', s2')) =>
+         WordSize.equals (s1, s1')
+         andalso RealSize.equals (s2, s2')
+    | (Word_extdToWord (s1, s2, sg), Word_extdToWord (s1', s2', sg')) =>
+         WordSize.equals (s1, s1')
+         andalso WordSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_equal s, Word_equal s') => WordSize.equals (s, s')
     | (Word_lshift s, Word_lshift s') => WordSize.equals (s, s')
     | (Word_lt (s, sg), Word_lt (s', sg')) =>
@@ -447,6 +493,10 @@ val equals: 'a t * 'a t -> bool =
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_rem (s, sg), Word_rem (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
+    | (Word_rndToReal (s1, s2, sg), Word_rndToReal (s1', s2', sg')) =>
+         WordSize.equals (s1, s1')
+         andalso RealSize.equals (s2, s2')
+         andalso sg = sg'
     | (Word_rol s, Word_rol s') => WordSize.equals (s, s')
     | (Word_ror s, Word_ror s') => WordSize.equals (s, s')
     | (Word_rshift (s, sg), Word_rshift (s', sg')) =>
@@ -455,19 +505,11 @@ val equals: 'a t * 'a t -> bool =
     | (Word_subCheck (s, sg), Word_subCheck (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_toIntInf, Word_toIntInf) => true
-    | (Word_toReal (s1, s2, sg), Word_toReal (s1', s2', sg')) =>
-         WordSize.equals (s1, s1')
-         andalso RealSize.equals (s2, s2')
-         andalso sg = sg'
-    | (Word_toWord (s1, s2, sg), Word_toWord (s1', s2', sg')) =>
-         WordSize.equals (s1, s1')
-         andalso WordSize.equals (s2, s2')
-         andalso sg = sg'
     | (Word_xorb s, Word_xorb s') => WordSize.equals (s, s')
     | (WordVector_toIntInf, WordVector_toIntInf) => true
-    | (Word8Array_subWord, Word8Array_subWord) => true
-    | (Word8Array_updateWord, Word8Array_updateWord) => true
-    | (Word8Vector_subWord, Word8Vector_subWord) => true
+    | (Word8Array_subWord s, Word8Array_subWord s') => WordSize.equals (s, s')
+    | (Word8Array_updateWord s, Word8Array_updateWord s') => WordSize.equals (s, s')
+    | (Word8Vector_subWord s, Word8Vector_subWord s') => WordSize.equals (s, s')
     | (Word8Vector_toString, Word8Vector_toString) => true
     | (World_save, World_save) => true
     | _ => false
@@ -481,6 +523,21 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Array_sub => Array_sub
     | Array_toVector => Array_toVector
     | Array_update => Array_update
+    | CPointer_add => CPointer_add
+    | CPointer_diff => CPointer_diff
+    | CPointer_equal => CPointer_equal
+    | CPointer_fromWord => CPointer_fromWord
+    | CPointer_getCPointer => CPointer_getCPointer
+    | CPointer_getObjptr => CPointer_getObjptr
+    | CPointer_getReal z => CPointer_getReal z
+    | CPointer_getWord z => CPointer_getWord z
+    | CPointer_lt => CPointer_lt
+    | CPointer_setCPointer => CPointer_setCPointer
+    | CPointer_setObjptr => CPointer_setObjptr
+    | CPointer_setReal z => CPointer_setReal z
+    | CPointer_setWord z => CPointer_setWord z
+    | CPointer_sub => CPointer_sub
+    | CPointer_toWord => CPointer_toWord
     | Exn_extra => Exn_extra
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
@@ -518,12 +575,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | MLton_share => MLton_share
     | MLton_size => MLton_size
     | MLton_touch => MLton_touch
-    | Pointer_getPointer => Pointer_getPointer
-    | Pointer_getReal z => Pointer_getReal z
-    | Pointer_getWord z => Pointer_getWord z
-    | Pointer_setPointer => Pointer_setPointer
-    | Pointer_setReal z => Pointer_setReal z
-    | Pointer_setWord z => Pointer_setWord z
     | Real_Math_acos z => Real_Math_acos z
     | Real_Math_asin z => Real_Math_asin z
     | Real_Math_atan z => Real_Math_atan z
@@ -537,6 +588,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Real_Math_tan z => Real_Math_tan z
     | Real_abs z => Real_abs z
     | Real_add z => Real_add z
+    | Real_castToWord z => Real_castToWord z
     | Real_div z => Real_div z
     | Real_equal z => Real_equal z
     | Real_ldexp z => Real_ldexp z
@@ -547,17 +599,17 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Real_mulsub z => Real_mulsub z
     | Real_neg z => Real_neg z
     | Real_qequal z => Real_qequal z
+    | Real_rndToReal z => Real_rndToReal z
+    | Real_rndToWord z => Real_rndToWord z
     | Real_round z => Real_round z
     | Real_sub z => Real_sub z
-    | Real_toReal z => Real_toReal z
-    | Real_toWord z => Real_toWord z
     | Ref_assign => Ref_assign
     | Ref_deref => Ref_deref
     | Ref_ref => Ref_ref
     | String_toWord8Vector => String_toWord8Vector
     | Thread_atomicBegin => Thread_atomicBegin
     | Thread_atomicEnd => Thread_atomicEnd
-    | Thread_canHandle => Thread_canHandle
+    | Thread_atomicState => Thread_atomicState
     | Thread_copy => Thread_copy
     | Thread_copyCurrent => Thread_copyCurrent
     | Thread_returnToC => Thread_returnToC
@@ -572,7 +624,9 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_add z => Word_add z
     | Word_addCheck z => Word_addCheck z
     | Word_andb z => Word_andb z
+    | Word_castToReal z => Word_castToReal z
     | Word_equal z => Word_equal z
+    | Word_extdToWord z => Word_extdToWord z
     | Word_lshift z => Word_lshift z
     | Word_lt z => Word_lt z
     | Word_mul z => Word_mul z
@@ -581,21 +635,20 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Word_negCheck z => Word_negCheck z
     | Word_notb z => Word_notb z
     | Word_orb z => Word_orb z
-    | Word_rol z => Word_rol z
     | Word_quot z => Word_quot z
     | Word_rem z => Word_rem z
+    | Word_rndToReal z => Word_rndToReal z
+    | Word_rol z => Word_rol z
     | Word_ror z => Word_ror z
     | Word_rshift z => Word_rshift z
     | Word_sub z => Word_sub z
     | Word_subCheck z => Word_subCheck z
     | Word_toIntInf => Word_toIntInf
-    | Word_toReal z => Word_toReal z
-    | Word_toWord z => Word_toWord z
     | Word_xorb z => Word_xorb z
     | WordVector_toIntInf => WordVector_toIntInf
-    | Word8Array_subWord => Word8Array_subWord
-    | Word8Array_updateWord => Word8Array_updateWord
-    | Word8Vector_subWord => Word8Vector_subWord
+    | Word8Array_subWord z => Word8Array_subWord z
+    | Word8Array_updateWord z => Word8Array_updateWord z
+    | Word8Vector_subWord z => Word8Vector_subWord z
     | Word8Vector_toString => Word8Vector_toString
     | World_save => World_save
 
@@ -606,6 +659,45 @@ val arrayLength = Array_length
 val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
+val cpointerAdd = CPointer_add
+val cpointerDiff = CPointer_diff
+val cpointerEqual = CPointer_equal
+fun cpointerGet ctype = 
+   let datatype z = datatype CType.t
+   in
+      case ctype of
+         CPointer => CPointer_getCPointer
+       | Int8 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+       | Int16 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 16))
+       | Int32 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 32))
+       | Int64 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 64))
+       | Objptr => CPointer_getObjptr
+       | Real32 => CPointer_getReal RealSize.R32
+       | Real64 => CPointer_getReal RealSize.R64
+       | Word8 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 8))
+       | Word16 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 16))
+       | Word32 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 32))
+       | Word64 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 64))
+   end
+val cpointerLt = CPointer_lt
+fun cpointerSet ctype = 
+   let datatype z = datatype CType.t
+   in
+      case ctype of
+         CPointer => CPointer_setCPointer
+       | Int8 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+       | Int16 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 16))
+       | Int32 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 32))
+       | Int64 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 64))
+       | Objptr => CPointer_setObjptr
+       | Real32 => CPointer_setReal RealSize.R32
+       | Real64 => CPointer_setReal RealSize.R64
+       | Word8 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 8))
+       | Word16 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 16))
+       | Word32 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 32))
+       | Word64 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 64))
+   end
+val cpointerSub = CPointer_sub
 val deref = Ref_deref
 val eq = MLton_eq
 val equal = MLton_equal
@@ -614,39 +706,7 @@ val ffiSymbol = FFI_Symbol
 val intInfEqual = IntInf_equal
 val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
-fun pointerGet ctype =
-   let datatype z = datatype CType.t
-   in
-      case ctype of
-         Int8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
-       | Int16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
-       | Int32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
-       | Int64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
-       | Pointer => Pointer_getPointer
-       | Real32 => Pointer_getReal RealSize.R32
-       | Real64 => Pointer_getReal RealSize.R64
-       | Word8 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 8))
-       | Word16 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 16))
-       | Word32 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 32))
-       | Word64 => Pointer_getWord (WordSize.fromBits (Bits.fromInt 64))
-   end
-fun pointerSet ctype =
-   let datatype z = datatype CType.t
-   in
-      case ctype of
-         Int8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
-       | Int16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
-       | Int32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
-       | Int64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
-       | Pointer => Pointer_setPointer
-       | Real32 => Pointer_setReal RealSize.R32
-       | Real64 => Pointer_setReal RealSize.R64
-       | Word8 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 8))
-       | Word16 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 16))
-       | Word32 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 32))
-       | Word64 => Pointer_setWord (WordSize.fromBits (Bits.fromInt 64))
-   end
-
+val realCastToWord = Real_castToWord
 val reff = Ref_ref
 val touch = MLton_touch
 val vectorLength = Vector_length
@@ -654,6 +714,7 @@ val vectorSub = Vector_sub
 val wordAdd = Word_add
 val wordAddCheck = Word_addCheck
 val wordAndb = Word_andb
+val wordCastToReal = Word_castToReal
 val wordEqual = Word_equal
 val wordLshift = Word_lshift
 val wordLt = Word_lt
@@ -664,7 +725,7 @@ val wordNotb = Word_notb
 val wordOrb = Word_orb
 val wordRshift = Word_rshift
 val wordSub = Word_sub
-val wordToWord = Word_toWord
+val wordExtdToWord = Word_extdToWord
 
 val isCommutative =
    fn IntInf_equal => true
@@ -702,6 +763,21 @@ val kind: 'a t -> Kind.t =
        | Array_sub => DependsOnState
        | Array_toVector => DependsOnState
        | Array_update => SideEffect
+       | CPointer_add => Functional
+       | CPointer_diff => Functional
+       | CPointer_equal => Functional
+       | CPointer_fromWord => Functional
+       | CPointer_getCPointer => DependsOnState
+       | CPointer_getObjptr => DependsOnState
+       | CPointer_getReal _ => DependsOnState
+       | CPointer_getWord _ => DependsOnState
+       | CPointer_lt => Functional
+       | CPointer_setCPointer => SideEffect
+       | CPointer_setObjptr => SideEffect
+       | CPointer_setReal _ => SideEffect
+       | CPointer_setWord _ => SideEffect
+       | CPointer_sub => Functional
+       | CPointer_toWord => Functional
        | Exn_extra => Functional
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
@@ -739,12 +815,6 @@ val kind: 'a t -> Kind.t =
        | MLton_share => SideEffect
        | MLton_size => DependsOnState
        | MLton_touch => SideEffect
-       | Pointer_getPointer => DependsOnState
-       | Pointer_getReal _ => DependsOnState
-       | Pointer_getWord _ => DependsOnState
-       | Pointer_setPointer => SideEffect
-       | Pointer_setReal _ => SideEffect
-       | Pointer_setWord _ => SideEffect
        | Real_Math_acos _ => Functional
        | Real_Math_asin _ => Functional
        | Real_Math_atan _ => Functional
@@ -758,6 +828,7 @@ val kind: 'a t -> Kind.t =
        | Real_Math_tan _ => Functional
        | Real_abs _ => Functional
        | Real_add _ => Functional
+       | Real_castToWord _ => Functional
        | Real_div _ => Functional
        | Real_equal _ => Functional
        | Real_ldexp _ => Functional
@@ -768,17 +839,17 @@ val kind: 'a t -> Kind.t =
        | Real_mulsub _ => Functional
        | Real_neg _ => Functional
        | Real_qequal _ => Functional
+       | Real_rndToReal _ => Functional
+       | Real_rndToWord _ => Functional
        | Real_round _ => DependsOnState  (* depends on rounding mode *)
        | Real_sub _ => Functional
-       | Real_toReal _ => Functional
-       | Real_toWord _ => Functional
        | Ref_assign => SideEffect
        | Ref_deref => DependsOnState
        | Ref_ref => Moveable
        | String_toWord8Vector => Functional
        | Thread_atomicBegin => SideEffect
        | Thread_atomicEnd => SideEffect
-       | Thread_canHandle => DependsOnState
+       | Thread_atomicState => DependsOnState
        | Thread_copy => Moveable
        | Thread_copyCurrent => SideEffect
        | Thread_returnToC => SideEffect
@@ -790,15 +861,17 @@ val kind: 'a t -> Kind.t =
        | Weak_canGet => DependsOnState
        | Weak_get => DependsOnState
        | Weak_new => Moveable
-       | Word8Array_subWord => DependsOnState
-       | Word8Array_updateWord => SideEffect
-       | Word8Vector_subWord => Functional
+       | Word8Array_subWord _ => DependsOnState
+       | Word8Array_updateWord _ => SideEffect
+       | Word8Vector_subWord _ => Functional
        | Word8Vector_toString => Functional
        | WordVector_toIntInf => Functional
        | Word_add _ => Functional
        | Word_addCheck _ => SideEffect
        | Word_andb _ => Functional
+       | Word_castToReal _ => Functional
        | Word_equal _ => Functional
+       | Word_extdToWord _ => Functional
        | Word_lshift _ => Functional
        | Word_lt _ => Functional
        | Word_mul _ => Functional
@@ -809,14 +882,13 @@ val kind: 'a t -> Kind.t =
        | Word_orb _ => Functional
        | Word_quot _ => Functional
        | Word_rem _ => Functional
+       | Word_rndToReal _ => Functional
        | Word_rol _ => Functional
        | Word_ror _ => Functional
        | Word_rshift _ => Functional
        | Word_sub _ => Functional
        | Word_subCheck _ => SideEffect
        | Word_toIntInf => Functional
-       | Word_toReal _ => Functional
-       | Word_toWord _ => Functional
        | Word_xorb _ => Functional
        | World_save => SideEffect
    end
@@ -883,6 +955,10 @@ local
        (Word_xorb s)]
       @ wordSigns (s, true)
       @ wordSigns (s, false)
+   fun word8Seqs (s: WordSize.t) =
+      [(Word8Array_subWord s),
+       (Word8Array_updateWord s),
+       (Word8Vector_subWord s)]
 in
    val all: unit t list =
       [Array_array,
@@ -891,6 +967,17 @@ in
        Array_sub,
        Array_toVector,
        Array_update,
+       CPointer_add,
+       CPointer_diff,
+       CPointer_equal,
+       CPointer_fromWord,
+       CPointer_getCPointer,
+       CPointer_getObjptr,
+       CPointer_lt,
+       CPointer_setCPointer,
+       CPointer_setObjptr,
+       CPointer_sub,
+       CPointer_toWord,
        Exn_extra,
        Exn_name,
        Exn_setExtendExtra,
@@ -926,15 +1013,13 @@ in
        MLton_share,
        MLton_size,
        MLton_touch,
-       Pointer_getPointer,
-       Pointer_setPointer,
        Ref_assign,
        Ref_deref,
        Ref_ref,
        String_toWord8Vector,
        Thread_atomicBegin,
        Thread_atomicEnd,
-       Thread_canHandle,
+       Thread_atomicState,
        Thread_copy,
        Thread_copyCurrent,
        Thread_returnToC,
@@ -948,9 +1033,6 @@ in
        Weak_new,
        Word_toIntInf,
        WordVector_toIntInf,
-       Word8Array_subWord,
-       Word8Array_updateWord,
-       Word8Vector_subWord,
        Word8Vector_toString,
        World_save]
       @ List.concat [List.concatMap (RealSize.all, reals),
@@ -960,27 +1042,32 @@ in
            val word = WordSize.all
            fun coerces (name, sizes, sizes', ac) =
               List.fold
+              (sizes, ac, fn (s, ac) =>
+               List.fold 
+               (sizes', ac, fn (s', ac) =>
+                name (s, s') :: ac))
+           fun coercesS (name, sizes, sizes', ac) =
+              List.fold
               ([false, true], ac, fn (signed, ac) =>
-               List.fold
-               (sizes, ac, fn (s, ac) =>
-                List.fold (sizes', ac, fn (s', ac) =>
-                           name (s, s', {signed = signed}) :: ac)))
+               coerces (fn (s, s') => name (s, s', {signed = signed}),
+                        sizes, sizes', ac))
+           fun casts (name, sizes, ac) =
+              List.fold (sizes, ac, fn (s, ac) => name s :: ac)
         in
-           coerces (Real_toWord, real, word,
-                    coerces (Word_toReal, word, real,
-                             coerces (Word_toWord, word, word,
-                                      List.fold
-                                      (real, [], fn (s, ac) =>
-                                       List.fold
-                                       (real, ac, fn (s', ac) =>
-                                        Real_toReal (s, s') :: ac)))))
+           casts (fn rs => Real_castToWord (rs, WordSize.fromBits (RealSize.bits rs)), real, 
+           coerces (Real_rndToReal, real, real,
+           coercesS (Real_rndToWord, real, word,
+           casts (fn rs => Word_castToReal (WordSize.fromBits (RealSize.bits rs), rs), real,
+           coercesS (Word_extdToWord, word, word,
+           coercesS (Word_rndToReal, word, real, []))))))
         end
+     @ List.concatMap (WordSize.prims, word8Seqs)
      @ let
           fun doit (all, get, set) =
              List.concatMap (all, fn s => [get s, set s])
        in
-          List.concat [doit (RealSize.all, Pointer_getReal, Pointer_setReal),
-                       doit (WordSize.prims, Pointer_getWord, Pointer_setWord)]
+          List.concat [doit (RealSize.all, CPointer_getReal, CPointer_setReal),
+                       doit (WordSize.prims, CPointer_getWord, CPointer_setWord)]
        end
 end
 
@@ -1042,8 +1129,10 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)
        | MLton_touch => one (arg 0)
-       | Pointer_getPointer => one result
-       | Pointer_setPointer => one (arg 2)
+       | CPointer_getCPointer => one result
+       | CPointer_getObjptr => one result
+       | CPointer_setCPointer => one (arg 2)
+       | CPointer_setObjptr => one (arg 2)
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
@@ -1143,6 +1232,7 @@ fun ('a, 'b) apply (p: 'a t,
       val bool = ApplyResult.Bool
       val intInf = ApplyResult.Const o Const.intInf
       val intInfConst = intInf o IntInf.fromInt
+      val null = ApplyResult.Const Const.null
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.word w)
       val f = ApplyResult.falsee
@@ -1187,16 +1277,20 @@ fun ('a, 'b) apply (p: 'a t,
                        | Relation.EQUAL => 0
                        | Relation.GREATER => 1
                 in
-                   word (WordX.fromIntInf (i, WordSize.default))
+                   word (WordX.fromIntInf (i, WordSize.compareRes))
                 end
            | (IntInf_equal, [IntInf i1, IntInf i2]) => bool (i1 = i2)
            | (IntInf_toWord, [IntInf i]) =>
                 (case SmallIntInf.toWord i of
                     NONE => ApplyResult.Unknown
-                  | SOME w => word (WordX.fromIntInf (Word.toIntInf w,
-                                                      WordSize.default)))
+                  | SOME w => word w)
            | (MLton_eq, [c1, c2]) => eq (c1, c2)
            | (MLton_equal, [c1, c2]) => equal (c1, c2)
+           | (CPointer_fromWord, [Word w]) =>
+                 if WordX.isZero w
+                    then null
+                 else ApplyResult.Unknown
+           | (CPointer_toWord, [Null]) => word (WordX.zero (WordSize.cpointer ()))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
            | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
@@ -1224,10 +1318,8 @@ fun ('a, 'b) apply (p: 'a t,
                 wordS (WordX.rshift, s, w1, w2)
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
            | (Word_subCheck s, [Word w1, Word w2]) => wcheck (op -, s, w1, w2)
-           | (Word_toIntInf, [Word w]) =>
-                intInf (SmallIntInf.fromWord
-                        (Word.fromIntInf (WordX.toIntInf w)))
-           | (Word_toWord (_, s, {signed}), [Word w]) =>
+           | (Word_toIntInf, [Word w]) => intInf (SmallIntInf.fromWord w)
+           | (Word_extdToWord (_, s, {signed}), [Word w]) =>
                 word (if signed then WordX.resizeX (w, s)
                       else WordX.resize (w, s))
            | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
@@ -1334,7 +1426,7 @@ fun ('a, 'b) apply (p: 'a t,
                                       (w,
                                        WordX.fromIntInf (Bits.toIntInf
                                                          (WordSize.bits s),
-                                                         WordSize.default),
+                                                         WordSize.shiftArg),
                                        {signed = false}))
                                      then zero s
                                   else Unknown
@@ -1343,7 +1435,16 @@ fun ('a, 'b) apply (p: 'a t,
                           else Unknown
                in
                   case p of
-                     Word_add _ => add ()
+                     CPointer_add => 
+                        if WordX.isZero w
+                           then Var x
+                        else Unknown
+                   | CPointer_sub =>
+                        if WordX.isZero w
+                           andalso inOrder
+                           then Var x
+                        else Unknown
+                   | Word_add _ => add ()
                    | Word_addCheck _ => add ()
                    | Word_andb s =>
                         if WordX.isZero w
@@ -1493,8 +1594,11 @@ fun ('a, 'b) apply (p: 'a t,
                              datatype z = datatype ApplyResult.t
                           in
                              case p of
-                                IntInf_compare =>
-                                   word (WordX.zero WordSize.default)
+                                CPointer_diff => word (WordX.zero (WordSize.cpointer ()))
+                              | CPointer_equal => t
+                              | CPointer_lt => f
+                              | IntInf_compare =>
+                                   word (WordX.zero WordSize.compareRes)
                               | IntInf_equal => t
                               | MLton_eq => t
                               | MLton_equal => t

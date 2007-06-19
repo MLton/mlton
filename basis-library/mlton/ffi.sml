@@ -17,6 +17,8 @@ local
       (fn i => get (p, C_Ptrdiff.fromInt i), 
        fn x => set (p, C_Ptrdiff.fromInt 0, x))
 in
+   fun getCPointer i = Pointer.getCPointer (Prim.cpointerArray, C_Ptrdiff.fromInt i)
+   fun setCPointer x = Pointer.setCPointer (Prim.cpointerArray, C_Ptrdiff.fromInt 0, x)
    val (getInt8, setInt8) =
       make (Prim.int8Array, Pointer.getInt8, Pointer.setInt8)
    val (getInt16, setInt16) =
@@ -25,8 +27,8 @@ in
       make (Prim.int32Array, Pointer.getInt32, Pointer.setInt32)
    val (getInt64, setInt64) =
       make (Prim.int64Array, Pointer.getInt64, Pointer.setInt64)
-   fun getPointer i = Pointer.getPointer (Prim.pointerArray, C_Ptrdiff.fromInt i)
-   fun setPointer x = Pointer.setPointer (Prim.pointerArray, C_Ptrdiff.fromInt 0, x)
+   fun getObjptr i = Pointer.getObjptr (Prim.objptrArray, C_Ptrdiff.fromInt i)
+   fun setObjptr x = Pointer.setObjptr (Prim.objptrArray, C_Ptrdiff.fromInt 0, x)
    val (getReal32, setReal32) =
       make (Prim.real32Array, Pointer.getReal32, Pointer.setReal32)
    val (getReal64, setReal64) =

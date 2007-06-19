@@ -99,19 +99,24 @@ functor Sequence (S: sig
        *)
 
       local
-         fun doit (toInt, fromInt, maxInt') =
-            (SeqIndex.maxLen', toInt SeqIndex.maxLen') 
-            handle Overflow => (fromInt maxInt', maxInt')
+         fun doit (precision, toInt, fromInt, maxInt') =
+            if Primitive.Int32.>= (valOf SeqIndex.precision, precision)
+               then (fromInt maxInt', maxInt')
+            else (SeqIndex.maxLen', toInt SeqIndex.maxLen')
          structure S =
             Int_ChooseInt
             (type 'a t = SeqIndex.int * 'a
-             val fInt8 = doit (SeqIndex.schckToInt8, SeqIndex.schckFromInt8,
+             val fInt8 = doit (valOf Primitive.Int8.precision,
+                               SeqIndex.schckToInt8, SeqIndex.schckFromInt8,
                                Primitive.Int8.maxInt')
-             val fInt16 = doit (SeqIndex.schckToInt16, SeqIndex.schckFromInt16,
+             val fInt16 = doit (valOf Primitive.Int16.precision,
+                               SeqIndex.schckToInt16, SeqIndex.schckFromInt16,
                                 Primitive.Int16.maxInt')
-             val fInt32 = doit (SeqIndex.schckToInt32, SeqIndex.schckFromInt32,
+             val fInt32 = doit (valOf Primitive.Int32.precision,
+                                SeqIndex.schckToInt32, SeqIndex.schckFromInt32,
                                 Primitive.Int32.maxInt')
-             val fInt64 = doit (SeqIndex.schckToInt64, SeqIndex.schckFromInt64,
+             val fInt64 = doit (valOf Primitive.Int64.precision,
+                                SeqIndex.schckToInt64, SeqIndex.schckFromInt64,
                                 Primitive.Int64.maxInt')
              val fIntInf = (SeqIndex.maxLen', SeqIndex.schckToIntInf SeqIndex.maxLen'))
       in

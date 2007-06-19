@@ -32,7 +32,7 @@ struct
   fun implementsPrim (p: 'a Prim.t) =
      let
         datatype z = datatype RealSize.t
-        datatype z = datatype WordSize.prim
+        datatype z = datatype WordSize.prim 
         fun w32168 s =
            case WordSize.prim s of
               W8 => true
@@ -42,7 +42,14 @@ struct
         datatype z = datatype Prim.Name.t
      in
         case Prim.name p of
-           FFI_Symbol _ => true
+           CPointer_add => true
+         | CPointer_diff => true
+         | CPointer_equal => true
+         | CPointer_fromWord => true
+         | CPointer_lt => true
+         | CPointer_sub => true
+         | CPointer_toWord => true
+         | FFI_Symbol _ => true
          | Real_Math_acos _ => true
          | Real_Math_asin _ => true
          | Real_Math_atan _ => true
@@ -66,23 +73,15 @@ struct
          | Real_mulsub _ => true
          | Real_neg _ => true
          | Real_qequal _ => true
+         | Real_rndToReal _ => true
+         | Real_rndToWord (_, s2, {signed}) => signed andalso w32168 s2
          | Real_round _ => true
          | Real_sub _ => true
-         | Real_toReal _ => true
-         | Real_toWord (s1, s2, {signed}) =>
-              signed
-              andalso (case (s1, WordSize.prim s2) of
-                          (R64, W32) => true
-                        | (R64, W16) => true
-                        | (R64, W8) => true
-                        | (R32, W32) => true
-                        | (R32, W16) => true
-                        | (R32, W8) => true
-                        | _ => false)
          | Word_add _ => true
          | Word_addCheck _ => true
          | Word_andb _ => true
          | Word_equal s => w32168 s
+         | Word_extdToWord (s1, s2, _) => w32168 s1 andalso w32168 s2
          | Word_lshift s => w32168 s
          | Word_lt (s, _) => w32168 s
          | Word_mul (s, _) => w32168 s
@@ -93,33 +92,12 @@ struct
          | Word_orb _ => true
          | Word_quot (s, _) => w32168 s
          | Word_rem (s, _) => w32168 s
+         | Word_rndToReal (s1, _, {signed}) => signed andalso w32168 s1
          | Word_rol s => w32168 s
          | Word_ror s => w32168 s
          | Word_rshift (s, _) => w32168 s
          | Word_sub _ => true
          | Word_subCheck _ => true
-         | Word_toReal (s1, s2, {signed}) =>
-              signed
-              andalso (case (WordSize.prim s1, s2) of
-                          (W32, R64) => true
-                        | (W32, R32) => true
-                        | (W16, R64) => true
-                        | (W16, R32) => true
-                        | (W8, R64) => true
-                        | (W8, R32) => true
-                        | _ => false)
-         | Word_toWord (s1, s2, _) =>
-              (case (WordSize.prim s1, WordSize.prim s2) of
-                  (W32, W32) => true
-                | (W32, W16) => true
-                | (W32, W8) => true
-                | (W16, W32) => true
-                | (W16, W16) => true
-                | (W16, W8) => true
-                | (W8, W32) => true
-                | (W8, W16) => true
-                | (W8, W8) => true
-                | _ => false)
          | Word_xorb _ => true
          | _ => false
      end
@@ -727,7 +705,14 @@ struct
         AppendList.appends
         [comment_begin,
          (case Prim.name prim of
-             FFI_Symbol {name, ...}
+               CPointer_add => binal Instruction.ADD
+             | CPointer_diff => binal Instruction.SUB
+             | CPointer_equal => cmp Instruction.E
+             | CPointer_fromWord => mov ()
+             | CPointer_lt => cmp Instruction.B
+             | CPointer_sub => binal Instruction.SUB
+             | CPointer_toWord => mov ()
+             | FFI_Symbol {name, ...}
              => let     
                    val (dst,dstsize) = getDst1 ()
                 in
@@ -1010,7 +995,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4500,
+                        src2 = Operand.immediate_int' (0x4500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.Z,
@@ -1041,7 +1026,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx500,
+                        src2 = Operand.immediate_int' (0x500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.Z,
@@ -1073,11 +1058,11 @@ struct
                        Assembly.instruction_binal
                        {oper = Instruction.AND,
                         dst = fpswTempContentsOperand,
-                        src = Operand.immediate_const_word 0wx4500,
+                        src = Operand.immediate_int' (0x4500, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_cmp
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4000,
+                        src2 = Operand.immediate_int' (0x4000, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.E,
@@ -1108,7 +1093,7 @@ struct
                         check = false},
                        Assembly.instruction_test
                        {src1 = fpswTempContentsOperand,
-                        src2 = Operand.immediate_const_word 0wx4400,
+                        src2 = Operand.immediate_int' (0x4400, WordSize.word16),
                         size = Size.WORD},
                        Assembly.instruction_setcc
                        {condition = Instruction.NE,
@@ -1117,7 +1102,7 @@ struct
                     transfer = NONE}]
                 end
              | Real_abs _ => funa Instruction.FABS
-             | Real_toReal (s, s')
+             | Real_rndToReal (s, s')
              => let
                   val (dst,dstsize) = getDst1 ()
                   val (src,srcsize) = getSrc1 ()
@@ -1160,7 +1145,7 @@ struct
                     | (R32, R64) => movx ()
                     | (R32, R32) => mov ()
                 end 
-             | Real_toWord (s, s', _)
+             | Real_rndToWord (s, s', _)
              => let
                   fun default () =
                     let
@@ -1190,10 +1175,10 @@ struct
                        {entry = NONE,
                         statements 
                         = [Assembly.instruction_pfmovti
-                           {dst = dst,
+                           {dst = tmp,
                             src = src,
                             srcsize = srcsize,
-                            dstsize = dstsize},
+                            dstsize = tmpsize},
                            Assembly.instruction_xvom
                            {src = tmp,
                             dst = dst,
@@ -1276,7 +1261,7 @@ struct
                                    fn (dst,dstsize) => [Assembly.instruction_binal
                                                         {dst = dst,
                                                          oper = Instruction.ADC,
-                                                         src = Operand.immediate_const_int 0,
+                                                         src = Operand.immediate_zero,
                                                          size = dstsize}]))
              | Word_notb s => 
                 (case WordSize.prim s of
@@ -1299,7 +1284,7 @@ struct
                   | W16 => binal Instruction.SUB
                   | W32 => binal Instruction.SUB
                   | W64 => binal64 (Instruction.SUB, Instruction.SBB))
-             | Word_toReal (s, s', _)
+             | Word_rndToReal (s, s', _)
              => let
                   fun default () =
                     let
@@ -1351,7 +1336,7 @@ struct
                     | (W8, R32) => default' ()
                     | _ => Error.bug "x86MLton.prim: Word_toReal, W64"
                 end
-             | Word_toWord (s, s', {signed}) =>
+             | Word_extdToWord (s, s', {signed}) =>
                   let
                      val b = WordSize.bits s
                      val b' = WordSize.bits s'
@@ -1776,10 +1761,9 @@ struct
                 | W16 => unal (x86.Instruction.NEG, x86.Instruction.O)
                 | W32 => unal (x86.Instruction.NEG, x86.Instruction.O)
                 | W64 => neg64 ())
-           | Word_subCheck (s, {signed}) =>
+           | Word_subCheck (s, sg) =>
                 let
-                   val flag =
-                      if signed then x86.Instruction.O else x86.Instruction.C
+                   val flag = flag sg
                 in
                    case WordSize.prim s of
                       W8 => binal (x86.Instruction.SUB, flag)

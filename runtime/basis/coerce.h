@@ -1,25 +1,25 @@
 
-#define coerce(f, t)                            \
+#define coerce(n, f, t)                         \
   MLTON_CODEGEN_STATIC_INLINE                   \
-  t f##_to##t (f x) {                           \
+  t f##_##n##To##t (f x) {                      \
     return (t)x;                                \
   }
-#define bothFromWordCoerce(from, to)            \
-coerce (Word##S##from, to)                      \
-coerce (Word##U##from, to)
-#define bothToWordCoerce(from, to)              \
-coerce (from, Word##S##to)                      \
-coerce (from, Word##U##to)
+#define bothFromWordCoerce(name, from, to)      \
+coerce (name, Word##S##from, to)                \
+coerce (name, Word##U##from, to)
+#define bothToWordCoerce(name, from, to)        \
+coerce (name, from, Word##S##to)                \
+coerce (name, from, Word##U##to)
 
 #define allWord(size)                           \
-bothFromWordCoerce(size, Real32)                \
-bothFromWordCoerce(size, Real64)                \
-bothToWordCoerce(Real32, size)                  \
-bothToWordCoerce(Real64, size)                  \
-bothFromWordCoerce(size, Word8)                 \
-bothFromWordCoerce(size, Word16)                \
-bothFromWordCoerce(size, Word32)                \
-bothFromWordCoerce(size, Word64)
+bothFromWordCoerce(rnd, size, Real32)           \
+bothFromWordCoerce(rnd, size, Real64)           \
+bothToWordCoerce(rnd, Real32, size)             \
+bothToWordCoerce(rnd, Real64, size)             \
+bothFromWordCoerce(extd, size, Word8)           \
+bothFromWordCoerce(extd, size, Word16)          \
+bothFromWordCoerce(extd, size, Word32)          \
+bothFromWordCoerce(extd, size, Word64)
 
 allWord(8)
 allWord(16)
@@ -30,9 +30,24 @@ allWord(64)
 #undef bothToWordCoerce
 #undef bothFromWordCoerce
 
-coerce(Real32,Real32)
-coerce(Real32,Real64)
-coerce(Real64,Real32)
-coerce(Real64,Real64)
+coerce(rnd, Real32, Real32)
+coerce(rnd, Real32, Real64)
+coerce(rnd, Real64, Real32)
+coerce(rnd, Real64, Real64)
 
 #undef coerce
+
+#define cast(f, t)                              \
+  MLTON_CODEGEN_STATIC_INLINE                   \
+  t f##_castTo##t (f x) {                       \
+    t y;                                        \
+    memcpy(&y, &x, sizeof(t));                  \
+    return y;                                   \
+  }
+
+cast(Real32, Word32)
+cast(Word32, Real32)
+cast(Real64, Word64)
+cast(Word64, Real64)
+
+#undef cast

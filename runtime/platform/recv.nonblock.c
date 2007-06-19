@@ -18,7 +18,7 @@ static void clear_nonblock(int fd, int flags)
         fd_modify(fd, flags, 0, O_NONBLOCK);
 }
 
-int mlton_recv(int s, void *buf, int len, int flags)
+int MLton_recv(int s, void *buf, int len, int flags)
 {
         int ret;
         set_nonblock(s, flags);
@@ -27,7 +27,7 @@ int mlton_recv(int s, void *buf, int len, int flags)
         return ret;
 }
 
-int mlton_recvfrom(int s, void *buf, int len, int flags, void *from,
+int MLton_recvfrom(int s, void *buf, int len, int flags, void *from,
                    socklen_t *fromlen)
 {
         int ret;

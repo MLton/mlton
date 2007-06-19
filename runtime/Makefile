@@ -23,14 +23,14 @@ FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 GCOPTFLAGS :=
-DEBUGFLAGS :=
+DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
 GCDEBUGFLAGS :=
 WARNFLAGS :=
 OPTWARNFLAGS :=
 DEBUGWARNFLAGS :=
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -m32
+FLAGS += -m64
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
 OPTFLAGS += -mcpu=opteron
 endif
@@ -58,6 +58,7 @@ ifeq ($(findstring $(GCC_VERSION), 3.3 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param max-inline-insns-single=1000
 ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param inline-unit-growth=125
+GCOPTFLAGS += --param large-function-growth=1100
 OPTWARNFLAGS += -Winline
 endif
 endif
@@ -107,8 +108,8 @@ endif
 CC := gcc -std=gnu99
 CPPFLAGS := 
 CFLAGS := -I. -Iplatform $(FLAGS)
-OPTCFLAGS := $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
-DEBUGCFLAGS := $(CPPFLAGS) $(CFLAGS) -g2 -O1 -DASSERT=1 $(DEBUGFLAGS)
+OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
+DEBUGCFLAGS := $(CFLAGS) -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
 GCDEBUGCFLAGS = $(GCDEBUGFLAGS)
 WARNCFLAGS :=
@@ -148,7 +149,7 @@ WARNCFLAGS += -Wmissing-field-initializers
 endif
 WARNCFLAGS += -Wmissing-noreturn
 WARNCFLAGS += -Wmissing-format-attribute
-WARNCFLAGS += -Wpacked
+# WARNCFLAGS += -Wpacked
 # WARNCFLAGS += -Wpadded
 WARNCFLAGS += -Wredundant-decls
 WARNCFLAGS += -Wnested-externs
@@ -189,13 +190,7 @@ BASISHFILES :=							\
 	basis-ffi.h						\
 	$(shell find basis -type f | grep '\.h$$')
 BASISCFILES :=							\
-	$(shell find basis -type f | grep '\.c$$' | grep -v Real/)
-# REAL_BASISCFILES is for files that we don't want compiled in the
-# big lump when compiling COMPILE_FAST.
-# Real/*.c can't be there because gcc -O2 messes some of them up.
-REAL_BASISCFILES :=						\
-	$(shell find basis -type f | grep '\.c$$' | grep Real/)
-
+	$(shell find basis -type f | grep '\.c$$')
 
 HFILES :=							\
 	cenv.h							\
@@ -215,6 +210,7 @@ DEBUG_OBJS := 							\
 	platform-gdb.o						\
 	platform/$(TARGET_OS)-gdb.o
 
+OMIT_BYTECODE := yes
 ifeq ($(OMIT_BYTECODE), yes)
 else
   OBJS += bytecode/interpret.o
@@ -222,20 +218,23 @@ else
 endif
 
 ifeq ($(COMPILE_FAST), yes)
-  OBJS += basis.o basis/Real/real-basis.o
-  DEBUG_OBJS += basis-gdb.o basis/Real/real-basis-gdb.o
+  OBJS += basis.o
+  DEBUG_OBJS += basis-gdb.o
 else
   OBJS += 							\
-	$(foreach f, $(basename $(BASISCFILES)), $(f).o)	\
-	$(foreach f, $(basename $(REAL_BASISCFILES)), $(f).o)
+	$(foreach f, $(basename $(BASISCFILES)), $(f).o)
   DEBUG_OBJS += 						\
-	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)	\
-	$(foreach f, $(basename $(REAL_BASISCFILES)), $(f)-gdb.o)
+	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)
 endif
 
-all:  libgdtoa.a libmlton.a libmlton-gdb.a 			\
-	gen/c-types.sml gen/basis-ffi.sml			\
-	bytecode/opcodes
+ALL := libgdtoa.a libmlton.a libmlton-gdb.a
+ALL += gen/c-types.sml gen/basis-ffi.sml
+ifeq ($(OMIT_BYTECODE), yes)
+else
+  ALL += bytecode/opcodes
+endif
+
+all: $(ALL)
 
 libgdtoa.a: gdtoa/arith.h
 	cd gdtoa && 						\
@@ -268,10 +267,6 @@ libmlton-gdb.a: $(DEBUG_OBJS)
 basis.c: $(BASISCFILES)
 	rm -f basis.c
 	cat $(BASISCFILES) >> basis.c
-
-basis/Real/real-basis.c: $(REAL_BASISCFILES)
-	rm -f basis/Real/real-basis.c
-	cat $(REAL_BASISCFILES) >> basis/Real/real-basis.c
 
 gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.c util.h util.o
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-types gen/gen-types.c util.o
@@ -324,17 +319,6 @@ basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
 
 basis.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
-
-# It looks like we don't follow the C spec w.r.t. aliasing.  And gcc
-# -O2 catches us on the code in Real/*.c where we treat a double as a
-# chunk of two words.  Files that have been known to cause problems
-# are class.c and gdtoa.c.  But there may be others.  So, we compile
-# with -fno-strict-aliasing to prevent gcc from taking advantage of
-# this aspect of the C spec.
-basis/Real/%-gdb.o: basis/Real/%.c gdtoa/arith.h $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-basis/Real/%.o: basis/Real/%.c gdtoa/arith.h  $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -O1 -fno-strict-aliasing -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<

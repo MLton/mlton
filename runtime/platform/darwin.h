@@ -2,6 +2,10 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+#include <unistd.h>
+
+#include <dirent.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -14,7 +18,9 @@
 #include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/sysctl.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
@@ -22,6 +28,7 @@
 #include <syslog.h>
 #include <termios.h>
 #include <ucontext.h>
+#include <utime.h>
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE

@@ -6,6 +6,7 @@
  *)
 
 type int = Int.t
+type word = Word.t
 
 signature WORD_X_STRUCTS = 
    sig
@@ -22,11 +23,14 @@ signature WORD_X =
       val add: t * t -> t
       val allOnes: WordSize.t -> t
       val andb: t * t -> t
+      val compare: t * t * {signed: bool} -> order
+      val div: t * t * {signed: bool} -> t
       val equals: t * t -> bool
-      val ge: t * t * {signed: bool} -> bool
-      val gt: t * t * {signed: bool} -> bool
       val fromChar: char -> t (* returns a word of size 8 *)
       val fromIntInf: IntInf.t * WordSize.t -> t
+      val ge: t * t * {signed: bool} -> bool
+      val gt: t * t * {signed: bool} -> bool
+      val hash: t -> word
       val isAllOnes: t -> bool
       val isOne: t -> bool
       val isMax: t * {signed: bool} -> bool
@@ -39,6 +43,7 @@ signature WORD_X =
       val lt: t * t * {signed: bool} -> bool
       val max: WordSize.t * {signed: bool} -> t
       val min: WordSize.t * {signed: bool} -> t
+      val mod: t * t * {signed: bool} -> t
       val mul: t * t * {signed: bool} -> t
       val neg: t -> t
       val notb: t -> t

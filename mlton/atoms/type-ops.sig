@@ -32,6 +32,7 @@ signature TYPE_OPS =
       val arrow: t * t -> t
       val bool: t
       val con: tycon * t vector -> t
+      val cpointer: t
       val deArray: t -> t
       val deArrow: t -> t * t
       val deArrowOpt: t -> (t * t) option
@@ -41,12 +42,10 @@ signature TYPE_OPS =
       val deTupleOpt: t -> t vector option
       val deVector: t -> t
       val deWeak: t -> t
-      val defaultWord: t
       val exn: t
       val intInf: t
       val isTuple: t -> bool
       val list: t -> t
-      val pointer: t
       val real: realSize -> t
       val reff: t -> t
       val thread: t
@@ -58,4 +57,5 @@ signature TYPE_OPS =
       val word: wordSize -> t
       val word8: t
       val word8Vector: t
+      val word32: t
    end

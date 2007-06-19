@@ -60,6 +60,7 @@ signature SSA_TREE =
 
             datatype dest =
                Array of t
+             | CPointer
              | Datatype of Tycon.t
              | IntInf
              | Real of RealSize.t

@@ -38,21 +38,31 @@ static const char* objectTypeTagToString (GC_objectTypeTag tag);
  * 01 - 19   : type index bits, index into GC_state->objectTypes.
  * 20 - 30   : counter bits, used by mark compact GC (initially 0)
  *      31   : mark bit, used by mark compact GC (initially 0)
+ * 32 - 63   : 0wx00000000  (only w/ 64-bit header)
  */
-typedef uint32_t GC_header;
+
+#define GC_HEADER_TYPE__(z) uint ## z ## _t
+#define GC_HEADER_TYPE_(z) GC_HEADER_TYPE__(z)
+#define GC_HEADER_TYPE GC_HEADER_TYPE_(GC_MODEL_HEADER_SIZE)
+typedef GC_HEADER_TYPE GC_header;
 #define GC_HEADER_SIZE sizeof(GC_header)
-#define PRIxHDR PRIx32
-#define FMTHDR "0x%08"PRIxHDR
+#define PRIxHDR__(z) PRIx ## z
+#define PRIxHDR_(z) PRIxHDR__(z)
+#define PRIxHDR PRIxHDR_(GC_MODEL_HEADER_SIZE)
+#define FMTHDR "%08"PRIxHDR
+
+COMPILE_TIME_ASSERT(sizeof_objptr__eq__sizeof_header,
+                    sizeof(objptr) == sizeof(GC_header));
 
 #define GC_VALID_HEADER_MASK ((GC_header)0x1)
 #define TYPE_INDEX_BITS    19
-#define TYPE_INDEX_MASK    0x000FFFFE
+#define TYPE_INDEX_MASK    ((GC_header)0x000FFFFE)
 #define TYPE_INDEX_SHIFT   1
 #define COUNTER_BITS       10
-#define COUNTER_MASK       0x7FF00000
+#define COUNTER_MASK       ((GC_header)0x7FF00000)
 #define COUNTER_SHIFT      20
 #define MARK_BITS          1
-#define MARK_MASK          0x80000000
+#define MARK_MASK          ((GC_header)0x80000000)
 #define MARK_SHIFT         31
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
@@ -71,7 +81,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
 /*
  * Normal objects have the following layout:
  *
- * header word32 :: 
+ * header :: 
  * (non heap-pointers)* :: 
  * (heap pointers)*
  *
@@ -80,7 +90,7 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
  * native word size.  MLton's aggressive representation strategies may
  * pack multiple primitive values into the same native word.
  * Likewise, a primitive value may span multiple native words (e.g.,
- * Word64.word).
+ * Word64.word on an x86).
 */
 #define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
 

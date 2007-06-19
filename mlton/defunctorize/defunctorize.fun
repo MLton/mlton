@@ -1024,12 +1024,12 @@ fun defunctorize (CoreML.Program.T {decs}) =
                         datatype z = datatype Prim.Name.t
                      in
                         if (case Prim.name prim of
-                               Real_toReal (s1, s2) =>
+                               Real_rndToReal (s1, s2) =>
                                   RealSize.equals (s1, s2)
                              | String_toWord8Vector => true
-                             | Word8Vector_toString => true
-                             | Word_toWord (s1, s2, _) => 
+                             | Word_extdToWord (s1, s2, _) => 
                                   WordSize.equals (s1, s2)
+                             | Word8Vector_toString => true
                              | _ => false)
                            then Vector.sub (args, 0)
                         else

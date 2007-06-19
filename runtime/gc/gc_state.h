@@ -17,7 +17,7 @@ struct GC_state {
   pointer limit; /* limit = heap.start + heap.size */
   pointer stackTop; /* Top of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
-  uint32_t exnStack;
+  size_t exnStack;
   /* Alphabetized fields follow. */
   size_t alignment; /* */
   bool amInGC;
@@ -51,7 +51,7 @@ struct GC_state {
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
-  uint32_t (*returnAddressToFrameIndex) (GC_returnAddress ra);
+  GC_frameIndex (*returnAddressToFrameIndex) (GC_returnAddress ra);
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
@@ -92,11 +92,11 @@ void GC_setSummary (GC_state s, bool b);
 void GC_setRusageMeasureGC (GC_state s, bool b);
 void GC_setHashConsDuringGC (GC_state s, bool b);
 
-GC_thread GC_getCurrentThread (GC_state s);
-GC_thread GC_getSavedThread (GC_state s);
-void GC_setCallFromCHandlerThread (GC_state s, GC_thread thread);
-void GC_setSavedThread (GC_state s, GC_thread thread);
-void GC_setSignalHandlerThread (GC_state s, GC_thread thread);
+pointer GC_getCurrentThread (GC_state s);
+pointer GC_getSavedThread (GC_state s);
+void GC_setCallFromCHandlerThread (GC_state s, pointer p);
+void GC_setSavedThread (GC_state s, pointer p);
+void GC_setSignalHandlerThread (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 

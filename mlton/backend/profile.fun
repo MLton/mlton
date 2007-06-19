@@ -15,13 +15,11 @@ structure CFunction =
    struct
       open CFunction
 
-      local
-         open Type
-      in
-         val gcState = gcState
-         val Word32 = word (Bits.fromInt 32)
-         val unit = unit
-      end
+      structure CType =
+         struct
+            open CType
+            val gcState = cpointer
+         end
 
       local
          fun make {args, name, prototype} =
@@ -34,22 +32,22 @@ structure CFunction =
                modifiesFrontier = false,
                prototype = (prototype, NONE),
                readsStackTop = true,
-               return = unit,
+               return = Type.unit,
                target = Target.Direct name,
                writesStackTop = false}
       in
-         val profileEnter =
-            make {args = Vector.new1 gcState,
+         val profileEnter = fn () =>
+            make {args = Vector.new1 (Type.gcState ()),
                   name = "GC_profileEnter",
-                  prototype = Vector.new1 CType.Pointer}
-         val profileInc =
-            make {args = Vector.new2 (gcState, Word32),
+                  prototype = Vector.new1 CType.gcState}
+         val profileInc = fn () =>
+            make {args = Vector.new2 (Type.gcState (), Type.csize ()),
                   name = "GC_profileInc",
-                  prototype = Vector.new2 (CType.Pointer, CType.Word32)}
-         val profileLeave =
-            make {args = Vector.new1 gcState,
+                  prototype = Vector.new2 (CType.gcState, CType.csize ())}
+         val profileLeave = fn () =>
+            make {args = Vector.new1 (Type.gcState ()),
                   name = "GC_profileLeave",
-                  prototype = Vector.new1 CType.Pointer}
+                  prototype = Vector.new1 CType.gcState}
       end
    end
 
@@ -319,7 +317,7 @@ fun profile program =
             {dst = curSourceSeqsIndex,
              src = Operand.word (WordX.fromIntInf 
                                  (IntInf.fromInt sourceSeqsIndex,
-                                  WordSize.default))}
+                                  WordSize.word32))}
          end
       fun codeCoverageStatementFromIndex (sourceSeqsIndex: int): Statement.t =
          if needProfileLabels
@@ -512,7 +510,7 @@ fun profile program =
                                                | _ => false)
                         then
                            let
-                              val func = CFunction.profileLeave
+                              val func = CFunction.profileLeave ()
                               val newLabel = Label.newNoname ()
                               val _ =
                                  addFrameProfileIndex
@@ -569,7 +567,7 @@ fun profile program =
             fun profileEnter (pushes: Push.t list,
                               transfer: Transfer.t): Transfer.t =
                let
-                  val func = CFunction.profileEnter
+                  val func = CFunction.profileEnter ()
                   val newLabel = Label.newNoname ()
                   val index = sourceSeqIndex (Push.toSources pushes)
                   val _ = addFrameProfileIndex (newLabel, index)
@@ -678,7 +676,7 @@ fun profile program =
                                  val newLabel = Label.newNoname ()
                                  val _ =
                                     addFrameProfilePushes (newLabel, pushes)
-                                 val func = CFunction.profileInc
+                                 val func = CFunction.profileInc ()
                                  val amount =
                                     case profile of
                                        ProfileAlloc => Bytes.toInt bytesAllocated
@@ -691,7 +689,7 @@ fun profile program =
                                               Operand.word
                                               (WordX.fromIntInf
                                                (IntInf.fromInt amount,
-                                                WordSize.default)))),
+                                                WordSize.csize ())))),
                                      func = func,
                                      return = SOME newLabel}
                                  val sourceSeq = Push.toSources pushes
@@ -742,8 +740,7 @@ fun profile program =
                             case s of
                                Object {size, ...} =>
                                   {args = args,
-                                   bytesAllocated = Bytes.+ (bytesAllocated,
-                                                             Words.toBytes size),
+                                   bytesAllocated = Bytes.+ (bytesAllocated, size),
                                    kind = kind,
                                    label = label,
                                    leaves = leaves,

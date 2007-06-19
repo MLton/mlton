@@ -1,4 +1,4 @@
-/* Copyright (C) 2000-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2000-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -38,8 +38,8 @@ Word32 wordTemp1L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
-static Word32 returnAddressToFrameIndex (Word32 w) {
-        return *((Word32*)(w - sizeof(Word32)));
+static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
+        return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex)));
 }
 
 #define Main(al, mg, mfs, mmc, pk, ps, ml)                              \

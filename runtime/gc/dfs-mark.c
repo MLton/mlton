@@ -187,7 +187,7 @@ markArrayElt:
     todo += bytesNonObjptrs;
 markInArray:
     if (DEBUG_DFS_MARK)
-      fprintf (stderr, "markInArray arrayIndex = %"PRIu32" objptrIndex = %"PRIu32"\n",
+      fprintf (stderr, "markInArray arrayIndex = %"PRIxARRCTR" objptrIndex = %"PRIu32"\n",
                arrayIndex, objptrIndex);
     assert (arrayIndex < getArrayLength (cur));
     assert (objptrIndex < numObjptrs);

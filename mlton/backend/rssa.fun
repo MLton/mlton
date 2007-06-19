@@ -50,17 +50,19 @@ structure Operand =
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
-       | PointerTycon of PointerTycon.t
+       | ObjptrTycon of ObjptrTycon.t
        | Runtime of GCField.t
        | Var of {var: Var.t,
                  ty: Type.t}
+
+      val null = Const Const.null
 
       val word = Const o Const.word
 
       fun zero s = word (WordX.fromIntInf (0, s))
 
       fun bool b =
-         word (WordX.fromIntInf (if b then 1 else 0, WordSize.default))
+         word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
 
       val ty =
          fn ArrayOffset {ty, ...} => ty
@@ -70,19 +72,18 @@ structure Operand =
                   datatype z = datatype Const.t
                in
                   case c of
-                     IntInf _ => Type.intInf
+                     IntInf _ => Type.intInf ()
+                   | Null => Type.cpointer ()
                    | Real r => Type.real (RealX.size r)
-                   | Word w => Type.constant w
-                   | WordVector v =>
-                        Type.wordVector (WordSize.bits
-                                         (WordXVector.elementSize v))
+                   | Word w => Type.ofWordX w
+                   | WordVector v => Type.ofWordXVector v
                end
-          | EnsuresBytesFree => Type.defaultWord
-          | File => Type.cPointer ()
-          | GCState => Type.gcState
-          | Line => Type.defaultWord
+          | EnsuresBytesFree => Type.csize ()
+          | File => Type.cpointer ()
+          | GCState => Type.gcState ()
+          | Line => Type.cint ()
           | Offset {ty, ...} => ty
-          | PointerTycon _ => Type.defaultWord
+          | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | Var {ty, ...} => ty
 
@@ -97,15 +98,16 @@ structure Operand =
                               Bytes.layout offset]]
              | Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-             | Const c => Const.layout c
+             | Const c => seq [Const.layout c, constrain (ty z)]
              | EnsuresBytesFree => str "<EnsuresBytesFree>"
              | File => str "<File>"
              | GCState => str "<GCState>"
              | Line => str "<Line>"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
-                       tuple [layout base, Bytes.layout offset]]
-             | PointerTycon pt => PointerTycon.layout pt
+                       tuple [layout base, Bytes.layout offset],
+                       constrain ty]
+             | ObjptrTycon opt => ObjptrTycon.layout opt
              | Runtime r => GCField.layout r
              | Var {var, ...} => Var.layout var
          end
@@ -184,7 +186,7 @@ structure Statement =
                   src: Operand.t}
        | Object of {dst: Var.t * Type.t,
                     header: word,
-                    size: Words.t}
+                    size: Bytes.t}
        | PrimApp of {args: Operand.t vector,
                      dst: (Var.t * Type.t) option,
                      prim: Type.t Prim.t}
@@ -264,13 +266,13 @@ structure Statement =
                   seq [Var.layout x, constrain t, str " = ", Operand.layout src]
              | Move {dst, src} =>
                   mayAlign [Operand.layout dst,
-                            seq [str " = ", Operand.layout src]]
+                            seq [str "= ", Operand.layout src]]
              | Object {dst = (dst, ty), header, size} =>
                   mayAlign
                   [seq [Var.layout dst, constrain ty],
                    seq [str "= Object ",
                         record [("header", seq [str "0x", Word.layout header]),
-                                ("size", Words.layout size)]]]
+                                ("size", Bytes.layout size)]]]
              | PrimApp {dst, prim, args, ...} =>
                   let
                      val rest =
@@ -297,27 +299,69 @@ structure Statement =
       fun clear (s: t) =
          foreachDef (s, Var.clear o #1)
 
-      fun resize (z: Operand.t, b: Bits.t): Operand.t * t list =
+      fun resize (src: Operand.t, dstTy: Type.t): Operand.t * t list =
          let
-            val ty = Operand.ty z
-            val w = Type.width ty
+            val srcTy = Operand.ty src
+
+            val (src, srcTy, ssSrc, dstTy, finishDst) =
+               case (Type.deReal srcTy, Type.deReal dstTy) of
+                  (NONE, NONE) => 
+                     (src, srcTy, [], dstTy, fn dst => (dst, []))
+                | (SOME rs, NONE) =>
+                     let
+                        val ws = WordSize.fromBits (RealSize.bits rs)
+                        val tmp = Var.newNoname ()
+                        val tmpTy = Type.word ws
+                     in
+                        (Operand.Var {ty = tmpTy, var = tmp},
+                         tmpTy,
+                         [PrimApp {args = Vector.new1 src,
+                                   dst = SOME (tmp, tmpTy),
+                                   prim = Prim.realCastToWord (rs, ws)}],
+                         dstTy, fn dst => (dst, []))
+                     end
+                | (NONE, SOME rs) =>
+                     let
+                        val ws = WordSize.fromBits (RealSize.bits rs)
+                        val tmp = Var.newNoname ()
+                        val tmpTy = Type.real rs
+                     in
+                        (src, srcTy, [],
+                         Type.word ws,
+                         fn dst =>
+                         (Operand.Var {ty = tmpTy, var = tmp},
+                          [PrimApp {args = Vector.new1 dst,
+                                    dst = SOME (tmp, tmpTy),
+                                    prim = Prim.wordCastToReal (ws, rs)}]))
+                     end
+                | (SOME _, SOME _) =>
+                     (src, srcTy, [], dstTy, fn dst => (dst, []))
+
+            val srcW = Type.width srcTy
+            val dstW = Type.width dstTy
+
+            val (dst, ssConv) =
+               if Bits.equals (srcW, dstW)
+                  then (Operand.cast (src, dstTy), [])
+               else let
+                       val tmp = Var.newNoname ()
+                       val tmpTy = dstTy
+                    in
+                       (Operand.Var {ty = tmpTy, var = tmp},
+                        [PrimApp {args = Vector.new1 src,
+                                  dst = SOME (tmp, tmpTy),
+                                  prim = (Prim.wordExtdToWord 
+                                          (WordSize.fromBits srcW, 
+                                           WordSize.fromBits dstW, 
+                                           {signed = false}))}])
+                    end
+
+            val (dst, ssDst) = finishDst dst
          in
-            if Bits.equals (b, w)
-               then (z, [])
-            else
-               let
-                  val tmp = Var.newNoname ()
-                  val tmpTy = Type.resize (ty, b)
-               in
-                  (Operand.Var {ty = tmpTy, var = tmp},
-                   [PrimApp {args = Vector.new1 z,
-                             dst = SOME (tmp, tmpTy),
-                             prim = Prim.wordToWord (WordSize.fromBits w,
-                                                     WordSize.fromBits b,
-                                                     {signed = false})}])
-               end
+            (dst, ssSrc @ ssConv @ ssDst)
          end
    end
+
 datatype z = datatype Statement.t
 
 structure Transfer =
@@ -371,11 +415,11 @@ structure Transfer =
              | Switch s => Switch.layout s
          end
 
-      val bug =
+      fun bug () =
          CCall {args = (Vector.new1
                         (Operand.Const
                          (Const.string "control shouldn't reach here"))),
-                func = Type.BuiltInCFunction.bug,
+                func = Type.BuiltInCFunction.bug (),
                 return = NONE}
 
       fun 'a foldDefLabelUse (t, a: 'a,
@@ -439,19 +483,19 @@ structure Transfer =
          foreachDef (t, Var.clear o #1)
 
       local
-         fun make i = WordX.fromIntInf (i, WordSize.default)
+         fun make i = WordX.fromIntInf (i, WordSize.bool)
       in
          fun ifBool (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
                      default = NONE,
-                     size = WordSize.default,
+                     size = WordSize.bool,
                      test = test})
          fun ifZero (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new1 (make 0, truee),
                      default = SOME falsee,
-                     size = WordSize.default,
+                     size = WordSize.bool,
                      test = test})
       end
 
@@ -846,7 +890,7 @@ structure Program =
          in
             output (str "\nObjectTypes:")
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
-                               output (seq [str "pt_", Int.layout i,
+                               output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
             ; output (str "\nMain:")
             ; Function.layouts (main, output)
@@ -886,20 +930,31 @@ structure Program =
                       ; SOME s)
                in
                   case s of
-                     Bind {dst = (x, _), isMutable, src} =>
+                     Bind {dst = (dst, dstTy), isMutable, src} =>
                         if isMutable
                            then keep ()
                         else
                            let
                               datatype z = datatype Operand.t
+                              fun getSrc src =
+                                 case src of
+                                    Cast (src, _) => getSrc src
+                                  | Const _ => SOME src
+                                  | Var _ => SOME src
+                                  | _ => NONE
                            in
-                              if (case src of
-                                     Const _ => true
-                                   | Var _ => true
-                                   | _ => false)
-                                 then (setReplaceVar (x, src)
-                                       ; NONE)
-                              else keep ()
+                              case getSrc src of
+                                 NONE => keep ()
+                               | SOME src =>
+                                    let
+                                       val src = 
+                                          if Type.equals (Operand.ty src, dstTy)
+                                             then src
+                                          else Cast (src, dstTy)
+                                    in
+                                       setReplaceVar (dst, src)
+                                       ; NONE
+                                    end
                            end
                    | PrimApp {args, dst, prim} =>
                         let
@@ -1335,8 +1390,8 @@ structure Program =
                 Err.check ("objectType",
                            fn () => ObjectType.isOk ty,
                            fn () => ObjectType.layout ty))
-            fun tyconTy (pt: PointerTycon.t): ObjectType.t =
-               Vector.sub (objectTypes, PointerTycon.index pt)
+            fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
+               Vector.sub (objectTypes, ObjptrTycon.index opt)
             val () = checkScopes p
             val {get = labelBlock: Label.t -> Block.t,
                  set = setLabelBlock, ...} =
@@ -1363,7 +1418,7 @@ structure Program =
                              ; Type.arrayOffsetIsOk {base = Operand.ty base,
                                                      index = Operand.ty index,
                                                      offset = offset,
-                                                     pointerTy = tyconTy,
+                                                     tyconTy = tyconTy,
                                                      result = ty,
                                                      scale = scale})
                        | Cast (z, ty) =>
@@ -1379,9 +1434,9 @@ structure Program =
                        | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
                                              offset = offset,
-                                             pointerTy = tyconTy,
+                                             tyconTy = tyconTy,
                                              result = ty}
-                       | PointerTycon _ => true
+                       | ObjptrTycon _ => true
                        | Runtime _ => true
                        | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
@@ -1410,11 +1465,10 @@ structure Program =
                    | Object {dst = (_, ty), header, size} =>
                         let
                            val tycon =
-                              PointerTycon.fromIndex
+                              ObjptrTycon.fromIndex
                               (Runtime.headerToTypeIndex header)
-                           val size = Words.toBytes size
                         in
-                           Type.isSubtype (Type.pointer tycon, ty)
+                           Type.isSubtype (Type.objptr tycon, ty)
                            andalso
                            Bytes.equals
                            (size,
@@ -1428,7 +1482,7 @@ structure Program =
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
                                   Bytes.equals
-                                  (size, Bytes.+ (Runtime.normalHeaderSize,
+                                  (size, Bytes.+ (Runtime.headerSize (),
                                                   Type.bytes ty))
                               | _ => false)
                         end
@@ -1448,8 +1502,13 @@ structure Program =
                           | _ => false)
                    | SetSlotExnStack => true
                end
-            fun goto {args: Type.t vector,
-                      dst: Label.t}: bool =
+            val statementOk = 
+               Trace.trace ("Rssa.statementOk",
+                            Statement.layout,
+                            Bool.layout)
+                           statementOk
+            fun gotoOk {args: Type.t vector,
+                        dst: Label.t}: bool =
                let
                   val Block.T {args = formals, kind, ...} = labelBlock dst
                in
@@ -1459,7 +1518,7 @@ structure Program =
                               Kind.Jump => true
                             | _ => false)
                end
-            fun labelIsNullaryJump l = goto {dst = l, args = Vector.new0 ()}
+            fun labelIsNullaryJump l = gotoOk {dst = l, args = Vector.new0 ()}
             fun tailIsOk (caller: Type.t vector option,
                           callee: Type.t vector option): bool =
                case (caller, callee) of
@@ -1587,8 +1646,8 @@ structure Program =
                               end
                          | Goto {args, dst} =>
                               (checkOperands args
-                               ; goto {args = Vector.map (args, Operand.ty),
-                                       dst = dst})
+                               ; gotoOk {args = Vector.map (args, Operand.ty),
+                                         dst = dst})
                          | Raise zs =>
                               (checkOperands zs
                                ; (case raises of
@@ -1609,6 +1668,11 @@ structure Program =
                               Switch.isOk (s, {checkUse = checkOperand,
                                                labelIsOk = labelIsNullaryJump})
                      end
+                  val transferOk =
+                     Trace.trace ("Rssa.transferOk",
+                                  Transfer.layout,
+                                  Bool.layout)
+                     transferOk
                   fun blockOk (Block.T {args, kind, statements, transfer, ...})
                      : bool =
                      let
@@ -1650,6 +1714,11 @@ structure Program =
                      in
                         true
                      end
+                  val blockOk =
+                     Trace.trace ("Rssa.blockOk",
+                                  Block.layout,
+                                  Bool.layout)
+                                 blockOk
 
                   val _ = 
                      Vector.foreach

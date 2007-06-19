@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -58,10 +58,10 @@ val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val buildConstants: bool ref = ref false
-val coalesce: int option ref = ref NONE
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
+val explicitChunk: Control.chunk option ref = ref NONE
 val explicitCodegen: Control.codegen option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
@@ -105,25 +105,34 @@ fun setTargetType (target: string, usage): unit =
          let 
             open Control
          in
-            targetArch := arch
-            ; targetOS := os
+            Target.arch := arch
+            ; Target.os := os
          end
 
-fun hasNative () =
+fun hasCodegen (cg) =
    let
-      datatype z = datatype Control.arch
+      datatype z = datatype Control.Target.arch
+      datatype z = datatype Control.codegen
    in
-      case !Control.targetArch of
-         AMD64 => true
-       | X86 => true
-       | _ => false
+      case !Control.Target.arch of
+         AMD64 => (case cg of
+                      Bytecode => false
+                    | x86Codegen => false
+                    | _ => true)
+       | X86 => (case cg of
+                    amd64Codegen => false
+                  | _ => true)
+       | _ => (case cg of
+                  amd64Codegen => false
+                | x86Codegen => false
+                | _ => true)
    end
 
 fun defaultAlignIs8 () =
    let
-      open Control
+      datatype z = datatype Control.Target.arch
    in
-      case !targetArch of
+      case !Control.Target.arch of
          HPPA => true
        | Sparc => true
        | _ => false
@@ -146,6 +155,7 @@ fun makeOptions {usage} =
                usage (concat ["invalid -", flag, " flag: ", s])
       open Control Popt
       datatype z = datatype MLton.Platform.Arch.t
+      datatype z = datatype MLton.Platform.OS.t
       fun tokenizeOpt f opts =
          List.foreach (String.tokens (opts, Char.isSpace), 
                        fn opt => f opt)
@@ -182,17 +192,47 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString 
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "coalesce", " <n>", "coalesce chunk size for C codegen",
-        Int (fn n => coalesce := SOME n)),
+       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify method",
+        SpaceString (fn s =>
+                     explicitChunk
+                     := SOME (case s of
+                                 "func" => ChunkPerFunc 
+                               | "one" => OneChunk
+                               | _ => let
+                                         val usage = fn () =>
+                                            usage (concat ["invalid -chunkify flag: ", s])
+                                      in 
+                                         if String.hasPrefix (s, {prefix = "coalesce"})
+                                            then let
+                                                    val s = String.dropPrefix (s, 8)
+                                                 in
+                                                    if String.forall (s, Char.isDigit)
+                                                       then (case Int.fromString s of
+                                                                NONE => usage ()
+                                                              | SOME n => Coalesce 
+                                                                          {limit = n})
+                                                       else usage ()
+                                                 end
+                                            else usage ()
+                                      end))),
        (Normal, "codegen",
-        concat [" {", if hasNative () then "native|" else "", "bytecode|c}"],
+        concat [" {", 
+                String.concatWith 
+                (List.keepAllMap
+                 ([(x86Codegen,"x86"),(amd64Codegen,"amd64"),
+                   (CCodegen,"c"),(Bytecode,"bytecode")],
+                  fn (cg,str) => if hasCodegen cg then SOME str else NONE),
+                 "|"),
+                "}"],
         "which code generator to use",
         SpaceString (fn s =>
                      explicitCodegen
                      := SOME (case s of
-                                 "bytecode" => Bytecode
+                                 "bytecode" => (* Bytecode *)
+                                               usage "can't use bytecode codegen"
                                | "c" => CCodegen
-                               | "native" => Native
+                               | "x86" => x86Codegen
+                               | "amd64" => amd64Codegen
                                | _ => usage (concat
                                              ["invalid -codegen flag: ", s])))),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
@@ -589,6 +629,8 @@ val usage = fn s => (usage s; raise Fail "unreachable")
 fun commandLine (args: string list): unit =
    let
       open Control
+      datatype z = datatype MLton.Platform.Arch.t
+      datatype z = datatype MLton.Platform.OS.t
       val args =
          case args of
             lib :: args =>
@@ -597,38 +639,24 @@ fun commandLine (args: string list): unit =
           | _ => Error.bug "incorrect args from shell script"
       val () = setTargetType ("self", usage)
       val result = parse args
-      val targetArch = !targetArch
+      val targetArch = !Target.arch
       val () =
          align := (case !explicitAlign of
                       NONE => if defaultAlignIs8 () then Align8 else Align4
                     | SOME a => a)
       val () =
          codegen := (case !explicitCodegen of
-                        NONE => if hasNative () then Native else CCodegen
+                        NONE => if hasCodegen (x86Codegen) 
+                                   then x86Codegen 
+                                else if hasCodegen (amd64Codegen) 
+                                   then amd64Codegen
+                                else CCodegen
                       | SOME c => c)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
-      val () =
-         case !show of
-            NONE => ()
-          | SOME info =>
-            (case info of
-                Show.Anns =>
-                Layout.outputl (Control.Elaborate.document {expert = !expert},
-                                Out.standard)
-              | Show.PathMap =>
-                let
-                   open Layout
-                in
-                   outputl (align
-                            (List.map (Control.mlbPathMap (),
-                                       fn {var, path, ...} =>
-                                       str (concat [var, " ", path]))),
-                            Out.standard)
-                end
-             ; let open OS.Process in exit success end)
       val () = if !profileTimeSet
                   then (case !codegen of
-                           Native => profile := ProfileTimeLabel
+                           x86Codegen => profile := ProfileTimeLabel
+                         | amd64Codegen => profile := ProfileTimeLabel
                          | _ => profile := ProfileTimeField)
                   else ()
       val () = if !exnHistory
@@ -651,13 +679,44 @@ fun commandLine (args: string list): unit =
           | Self => "self"
       val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
       val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
-      val targetOS = !targetOS
+      val targetOS = !Target.os
       val () =
          Control.labelsHaveExtra_ := (case targetOS of
                                          Cygwin => true
                                        | Darwin => true
                                        | MinGW => true
                                        | _ => false)
+      val () =
+         case targetArch of
+            AMD64 => 
+               let
+                  val word32 = Bits.fromInt 32
+                  val word64 = Bits.fromInt 64
+               in
+                  Control.Target.setSizes
+                  {cint = word32,
+                   cpointer = word64,
+                   cptrdiff = word64,
+                   csize = word64,
+                   header = word64,
+                   mplimb = word64,
+                   objptr = word64,
+                   seqIndex = word64}
+               end
+          | _ =>
+               let
+                  val word32 = Bits.fromInt 32
+               in
+                  Control.Target.setSizes
+                  {cint = word32,
+                   cpointer = word32,
+                   cptrdiff = word32,
+                   csize = word32,
+                   header = word32,
+                   mplimb = word32,
+                   objptr = word32,
+                   seqIndex = word32}
+               end
       val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
@@ -691,23 +750,21 @@ fun commandLine (args: string list): unit =
                else ["-b", s]
           | Self => []
       val _ =
-         if !codegen = Native andalso not (hasNative ())
-            then usage (concat ["can't use native codegen on ",
+         if not (hasCodegen (!codegen))
+            then usage (concat ["can't use codegen on ",
                                 MLton.Platform.Arch.toString targetArch])
          else ()
       val _ =
          chunk :=
-         (case !codegen of
-             Bytecode => OneChunk
-           | CCodegen => Coalesce {limit = (case !coalesce of
-                                               NONE => 4096
-                                             | SOME n => n)}
-           | Native =>
-                if isSome (!coalesce)
-                   then usage "can't use -coalesce and -codegen native"
-                else ChunkPerFunc)
-      val _ = if not (!Control.codegen = Native) andalso !Native.IEEEFP
-                 then usage "must use native codegen with -ieee-fp true"
+         (case !explicitChunk of
+             NONE => (case !codegen of
+                         Bytecode => OneChunk
+                       | CCodegen => Coalesce {limit = 4096}
+                       | x86Codegen => ChunkPerFunc
+                       | amd64Codegen => ChunkPerFunc)
+           | SOME c => c)
+      val _ = if not (!Control.codegen = x86Codegen) andalso !Native.IEEEFP
+                 then usage "must use x86 codegen with -ieee-fp true"
               else ()
       val _ =
          if !keepDot andalso List.isEmpty (!keepPasses)
@@ -749,6 +806,25 @@ fun commandLine (args: string list): unit =
                else ()
       fun printVersion (out: Out.t): unit =
          Out.output (out, concat [version, " ", build, "\n"])
+      val () =
+         case !show of
+            NONE => ()
+          | SOME info =>
+            (case info of
+                Show.Anns =>
+                Layout.outputl (Control.Elaborate.document {expert = !expert},
+                                Out.standard)
+              | Show.PathMap =>
+                let
+                   open Layout
+                in
+                   outputl (align
+                            (List.map (Control.mlbPathMap (),
+                                       fn {var, path, ...} =>
+                                       str (concat [var, " ", path]))),
+                            Out.standard)
+                end
+             ; let open OS.Process in exit success end)
    in
       case result of
       Result.No msg => usage msg

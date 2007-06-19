@@ -28,9 +28,24 @@ fun fromBits (b: Bits.t): t =
 fun isValidSize (i: int) =
    (1 <= i andalso i <= 32) orelse i = 64
 
-val byte = fromBits (Bits.fromInt 8)
+val byte = fromBits (Bits.inByte)
 
+fun bigIntInfWord () = fromBits (Control.Target.Size.mplimb ())
+fun cint () = fromBits (Control.Target.Size.cint ())
+fun cpointer () = fromBits (Control.Target.Size.cpointer ())
+fun cptrdiff () = fromBits (Control.Target.Size.cptrdiff ())
+fun csize () = fromBits (Control.Target.Size.csize ())
+fun objptr () = fromBits (Control.Target.Size.objptr ())
+fun objptrHeader () = fromBits (Control.Target.Size.header ())
+fun seqIndex () = fromBits (Control.Target.Size.seqIndex ())
+fun smallIntInfWord () = objptr ()
 val bool = fromBits (Bits.fromInt 32)
+val compareRes = fromBits (Bits.fromInt 32)
+val shiftArg = fromBits (Bits.fromInt 32)
+val word8 = fromBits (Bits.fromInt 8)
+val word16 = fromBits (Bits.fromInt 16)
+val word32 = fromBits (Bits.fromInt 32)
+val word64 = fromBits (Bits.fromInt 64)
 
 val allVector = Vector.tabulate (65, fn i =>
                                   if isValidSize i
@@ -40,10 +55,6 @@ val allVector = Vector.tabulate (65, fn i =>
 val all: t list = Vector.toList (Vector.keepAllMap (allVector, fn so => so))
 
 val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
-
-val default = fromBits Bits.inWord
-
-fun pointer () = fromBits Bits.inWord
 
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>

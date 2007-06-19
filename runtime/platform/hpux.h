@@ -5,6 +5,10 @@
 #include <fenv.h>
 #include <inttypes.h>
 
+#include <unistd.h>
+
+#include <dirent.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <math.h>
 #include <netdb.h>
@@ -16,11 +20,14 @@
 #include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <syslog.h>
 #include <termios.h>
+#include <utime.h>
 
 #include "setenv.h"
 

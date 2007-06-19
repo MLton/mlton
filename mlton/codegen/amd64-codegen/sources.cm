@@ -1,0 +1,52 @@
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ * Copyright (C) 1997-2000 NEC Research Institute.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+Group
+
+functor amd64Codegen
+
+is
+
+../../../lib/mlton/sources.cm
+../../ast/sources.cm
+../../atoms/sources.cm
+../../control/sources.cm
+../../backend/sources.cm
+../c-codegen/sources.cm
+
+peephole.sig
+peephole.fun
+amd64.sig
+amd64.fun
+amd64-pseudo.sig
+amd64-mlton-basic.sig
+amd64-mlton-basic.fun
+amd64-liveness.sig
+amd64-liveness.fun
+amd64-mlton.sig
+amd64-mlton.fun
+amd64-allocate-registers.sig
+amd64-allocate-registers.fun
+amd64-entry-transfer.sig
+amd64-entry-transfer.fun
+amd64-jump-info.sig
+amd64-jump-info.fun
+amd64-loop-info.sig
+amd64-loop-info.fun
+amd64-live-transfers.sig
+amd64-live-transfers.fun
+amd64-generate-transfers.sig
+amd64-generate-transfers.fun
+amd64-simplify.sig
+amd64-simplify.fun
+amd64-translate.sig
+amd64-translate.fun
+amd64-validate.sig
+amd64-validate.fun
+amd64-codegen.sig
+amd64-codegen.fun

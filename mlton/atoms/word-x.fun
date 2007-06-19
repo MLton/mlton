@@ -53,6 +53,8 @@ fun layout w = Layout.str (concat ["0x", toString w])
 
 fun zero s = make (0, s)
 
+val hash = IntInf.hash o toIntInf
+
 local
    val make: (IntInf.t * Word.t -> IntInf.t) -> t * t -> t =
       fn f => fn (w, w') =>
@@ -175,6 +177,8 @@ local
          then make (f (toIntInfSg (w, s), toIntInfSg (w', s)), size w)
       else Error.bug (concat ["WordX.", name])
 in
+   val op div = make (IntInf.div, "div")
+   val op mod = make (IntInf.mod, "mod")
    val mul = make (IntInf.*, "mul")
    val quot = make (IntInf.quot, "quot")
    val rem = make (IntInf.rem, "rem")
@@ -187,6 +191,7 @@ local
          then f (toIntInfSg (w, sg), toIntInfSg (w', sg))
       else Error.bug (concat ["WordX.", name])
 in
+   val compare = make (IntInf.compare, "compare")
    val lt = make (IntInf.<, "lt")
    val le = make (IntInf.<=, "le")
    val gt = make (IntInf.>, "gt")

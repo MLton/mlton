@@ -110,7 +110,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
     if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
       GC_weak w;
 
-      w = (GC_weak)(s->forwardState.back + GC_NORMAL_HEADER_SIZE + (offsetofWeak (s)));
+      w = (GC_weak)(s->forwardState.back + GC_NORMAL_HEADER_SIZE + offsetofWeak (s));
       if (DEBUG_WEAK)
         fprintf (stderr, "forwarding weak "FMTPTR" ",
                  (uintptr_t)w);

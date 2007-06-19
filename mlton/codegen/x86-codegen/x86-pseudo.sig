@@ -7,7 +7,6 @@
  *)
 
 type int = Int.t
-type word = Word.t
 
 signature X86_PSEUDO =
   sig
@@ -16,8 +15,11 @@ signature X86_PSEUDO =
     structure Label: ID
     structure RepType: REP_TYPE
     structure Runtime: RUNTIME
+    structure WordSize: WORD_SIZE
+    structure WordX: WORD_X
     sharing CFunction = RepType.CFunction
     sharing CType = RepType.CType
+    sharing WordSize = CType.WordSize = WordX.WordSize
 
     val tracer : string -> ('a -> 'b) -> 
                  (('a -> 'b) * (unit -> unit))
@@ -41,35 +43,15 @@ signature X86_PSEUDO =
 
     structure Immediate :
       sig
-        datatype const
-          = Char of char
-          | Int of int
-          | Word of word
-        datatype un
-          = Negation
-          | Complementation
-        datatype bin
-          = Multiplication
-          | Division
-          | Remainder
-          | ShiftLeft
-          | ShiftRight
-          | BitOr
-          | BitAnd
-          | BitXor
-          | BitOrNot
-          | Addition
-          | Subtraction
         type t
 
-        val const : const -> t
-        val const_char : char -> t
-        val const_int : int -> t
-        val const_word : word -> t
+        val word : WordX.t -> t
+        val int' : int * WordSize.t -> t
+        val int : int -> t
+        val zero : t
         val label : Label.t -> t
-        val binexp : {oper: bin,
-                      exp1: t,
-                      exp2: t} -> t
+        val labelPlusWord : Label.t * WordX.t -> t
+        val labelPlusInt : Label.t * int -> t
       end
 
     structure Scale :
@@ -144,9 +126,10 @@ signature X86_PSEUDO =
         val toString : t -> string
 
         val immediate : Immediate.t -> t
-        val immediate_const_char : char -> t
-        val immediate_const_int : int -> t
-        val immediate_const_word : word -> t
+        val immediate_word : WordX.t -> t
+        val immediate_int' : int * WordSize.t -> t
+        val immediate_int : int -> t
+        val immediate_zero : t
         val immediate_label : Label.t -> t
         val deImmediate : t -> Immediate.t option
         val label : Label.t -> t
@@ -440,7 +423,7 @@ signature X86_PSEUDO =
           sig
             type 'a t
 
-            val word : (word * 'a) list -> 'a t
+            val word : (WordX.t * 'a) list -> 'a t
           end
 
         type t
@@ -493,3 +476,6 @@ signature X86_PSEUDO =
 
       end
   end
+
+functor x86PseudoCheck(structure S : X86) : X86_PSEUDO = S
+

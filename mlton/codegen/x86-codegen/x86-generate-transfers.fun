@@ -23,9 +23,10 @@ struct
      structure CFunction = CFunction
   end
 
-  val rec ones : int -> word
-    = fn 0 => 0wx0
-       | n => Word.orb(Word.<<(ones (n-1), 0wx1),0wx1)
+  val ones : int * WordSize.t -> WordX.t
+    = fn (i, ws) => (WordX.notb o WordX.lshift) 
+                    (WordX.allOnes ws,
+                     WordX.fromIntInf (IntInf.fromInt i, ws))
 
   val tracerTop = x86.tracerTop
 
@@ -424,7 +425,7 @@ struct
                                    {registers = [Register.esp]})
 
         val (mkCCallLabel, mkSymbolStubs) =
-           if !Control.targetOS = MLton.Platform.OS.Darwin
+           if !Control.Target.os = MLton.Platform.OS.Darwin
               then 
                  let
                     val set: (word * String.t * Label.t) HashSet.t =
@@ -478,15 +479,15 @@ struct
                                  then
                                     AppendList.single
                                     (Assembly.pseudoop_p2align 
-                                     (Immediate.const_int 4,
+                                     (Immediate.int 4,
                                       NONE,
-                                      SOME (Immediate.const_int 7)))
+                                      SOME (Immediate.int 7)))
                               else if falling
                                       then AppendList.empty
                                    else
                                       AppendList.single
                                       (Assembly.pseudoop_p2align
-                                       (Immediate.const_int 4, 
+                                       (Immediate.int 4, 
                                         NONE, 
                                         NONE))
                            val assumes =
@@ -567,7 +568,7 @@ struct
                                                  val stackTop 
                                                    = x86MLton.gcState_stackTopContentsOperand ()
                                                  val bytes 
-                                                   = x86.Operand.immediate_const_int (~ size)
+                                                   = x86.Operand.immediate_int (~ size)
                                                in
                                                  AppendList.cons
                                                  ((* stackTop += bytes *)
@@ -584,9 +585,9 @@ struct
                                           AppendList.appends
                                           [AppendList.fromList
                                            [Assembly.pseudoop_p2align 
-                                            (Immediate.const_int 4, NONE, NONE),
+                                            (Immediate.int 4, NONE, NONE),
                                             Assembly.pseudoop_long 
-                                            [Immediate.const_int frameLayoutsIndex],
+                                            [Immediate.int frameLayoutsIndex],
                                             Assembly.label label],
                                            AppendList.fromList
                                            (ProfileLabel.toAssemblyOpt profileLabel),
@@ -624,7 +625,7 @@ struct
                             => AppendList.appends
                                [AppendList.fromList
                                 [Assembly.pseudoop_p2align 
-                                 (Immediate.const_int 4, NONE, NONE),
+                                 (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_global label,
                                  Assembly.label label],
                                 AppendList.fromList
@@ -639,9 +640,9 @@ struct
                                AppendList.appends
                                [AppendList.fromList
                                 [Assembly.pseudoop_p2align
-                                 (Immediate.const_int 4, NONE, NONE),
+                                 (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_long
-                                 [Immediate.const_int frameLayoutsIndex],
+                                 [Immediate.int frameLayoutsIndex],
                                  Assembly.label label],
                                 AppendList.fromList
                                 (ProfileLabel.toAssemblyOpt profileLabel),
@@ -651,7 +652,7 @@ struct
                                      val stackTop 
                                         = x86MLton.gcState_stackTopContentsOperand ()
                                      val bytes 
-                                        = x86.Operand.immediate_const_int (~ size)
+                                        = x86.Operand.immediate_int (~ size)
                                   in
                                      AppendList.cons
                                      ((* stackTop += bytes *)
@@ -669,9 +670,9 @@ struct
                             => AppendList.appends
                                [AppendList.fromList
                                 [Assembly.pseudoop_p2align 
-                                 (Immediate.const_int 4, NONE, NONE),
+                                 (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_long
-                                 [Immediate.const_int frameLayoutsIndex],
+                                 [Immediate.int frameLayoutsIndex],
                                  Assembly.label label],
                                 AppendList.fromList
                                 (ProfileLabel.toAssemblyOpt profileLabel),
@@ -681,7 +682,7 @@ struct
                                      val stackTop 
                                         = x86MLton.gcState_stackTopContentsOperand ()
                                      val bytes 
-                                        = x86.Operand.immediate_const_int (~ size)
+                                        = x86.Operand.immediate_int (~ size)
                                   in
                                      AppendList.cons
                                      ((* stackTop += bytes *)
@@ -898,7 +899,7 @@ struct
                                 AppendList.fromList
                                 [Assembly.instruction_cmp
                                  {src1 = test,
-                                  src2 = Operand.immediate_const_word k,
+                                  src2 = Operand.immediate_word k,
                                   size = size},
                                  Assembly.directive_saveregalloc
                                  {live = MemLocSet.add
@@ -964,7 +965,7 @@ struct
                      val stackTopMinusWordDeref
                        = x86MLton.gcState_stackTopMinusWordDerefOperand ()
                      val bytes 
-                       = x86.Operand.immediate_const_int size
+                       = x86.Operand.immediate_int size
 
                      val liveReturn = x86Liveness.LiveInfo.getLive(liveInfo, return)
                      val liveHandler 
@@ -1143,7 +1144,7 @@ struct
                                          [Assembly.instruction_binal
                                           {oper = Instruction.SUB,
                                            dst = c_stackP,
-                                           src = Operand.immediate_const_int 8,
+                                           src = Operand.immediate_int 8,
                                            size = pointerSize},
                                           Assembly.instruction_pfmov
                                           {src = arg,
@@ -1155,7 +1156,7 @@ struct
                                          [Assembly.instruction_binal
                                           {oper = Instruction.SUB,
                                            dst = c_stackP,
-                                           src = Operand.immediate_const_int 4,
+                                           src = Operand.immediate_int 4,
                                            size = pointerSize},
                                           Assembly.instruction_pfmov
                                           {src = arg,
@@ -1197,7 +1198,7 @@ struct
                                      (Assembly.instruction_binal
                                       {oper = Instruction.SUB,
                                        dst = c_stackP,
-                                       src = Operand.immediate_const_int space,
+                                       src = Operand.immediate_int space,
                                        size = pointerSize}),
                                      pushArgs),
                                     size_args + space)
@@ -1222,7 +1223,7 @@ struct
                                     = x86MLton.gcState_stackTopMinusWordDeref ()
                                   val stackTopMinusWordDeref
                                     = x86MLton.gcState_stackTopMinusWordDerefOperand ()
-                                  val bytes = x86.Operand.immediate_const_int size
+                                  val bytes = x86.Operand.immediate_int size
 
                                   val live =
                                     x86Liveness.LiveInfo.getLive(liveInfo, return)
@@ -1379,7 +1380,7 @@ struct
                                  (Assembly.instruction_binal
                                   {oper = Instruction.ADD,
                                    dst = c_stackP,
-                                   src = Operand.immediate_const_int size_args,
+                                   src = Operand.immediate_int size_args,
                                    size = pointerSize}))
                            else AppendList.empty
                      val continue
@@ -1427,30 +1428,36 @@ struct
           = case transfer
               of Switch {test, cases, default}
                => let
-                     type 'a ops =
-                        {zero: 'a,
-                         even: 'a -> bool,
-                         incFn: 'a -> 'a,
-                         decFn: 'a -> 'a,
-                         halfFn: 'a -> 'a,
-                         ltFn: 'a * 'a -> bool,
-                         gtFn: 'a * 'a -> bool,
-                         min: 'a,
-                         minFn: 'a * 'a -> 'a,
-                         max: 'a,
-                         maxFn: 'a * 'a -> 'a,
-                         range: 'a * 'a -> word}
+                     val ws =
+                        case Operand.size test of
+                           SOME Size.BYTE => WordSize.word8
+                         | SOME Size.WORD => WordSize.word16
+                         | SOME Size.LONG => WordSize.word32
+                         | _ => Error.bug "x86GenerateTransfers.effectJumpTable: Switch"
+
+                     val zero = WordX.zero ws
+                     val one = WordX.one ws
+                     val two = WordX.add (one, one)
+                     fun even w = WordX.isZero (WordX.mod (w, two, {signed = false}))
+                     fun incFn w = WordX.add (w, one)
+                     fun decFn w = WordX.sub (w, one)
+                     fun halfFn w = WordX.div (w, two, {signed = false})
+                     fun ltFn (w1, w2) = WordX.lt (w1, w2, {signed = false})
+                     val min = WordX.min (ws, {signed = false})
+                     fun minFn (w1, w2) = if WordX.lt (w1, w2, {signed = false}) 
+                                             then w1
+                                          else w2
+                     val max = WordX.max (ws, {signed = false})
+                     fun maxFn (w1, w2) = if WordX.gt (w1, w2, {signed = false}) 
+                                             then w1
+                                          else w2
+                     fun range (w1, w2) = WordX.sub (w2, w1)
 
                     val Liveness.T {dead, ...}
                       = livenessTransfer {transfer = transfer,
                                           liveInfo = liveInfo}
 
-                    fun reduce(cases,
-                               {even,
-                                decFn, halfFn,
-                                min, minFn,
-                                max, maxFn,
-                                ...} : 'a ops)
+                    fun reduce(cases)
                       = let
                           fun reduce' cases
                             = let
@@ -1492,11 +1499,11 @@ struct
 
                                          val shift' = 1 + shift''
                                          val mask' 
-                                           = Word.orb
-                                             (Word.<<(mask'', 0wx1),
+                                           = WordX.orb
+                                             (WordX.lshift(mask'', WordX.one WordSize.word32),
                                               if allOdd
-                                                then 0wx1
-                                                else 0wx0)
+                                                then WordX.one WordSize.word32
+                                                else WordX.zero WordSize.word32)
                                        in
                                          (cases'', 
                                           minK'', maxK'', length'',
@@ -1504,18 +1511,14 @@ struct
                                        end
                                   else (cases, 
                                         minK, maxK, length,
-                                        0, 0wx0)
+                                        0, WordX.zero WordSize.word32)
                               end
                         in 
                           reduce' cases
                         end
 
                     fun doitTable(cases,
-                                  {zero,
-                                   incFn, 
-                                   ...} : ''a ops,
-                                  minK, _, rangeK, shift, mask,
-                                  constFn)
+                                  minK, _, rangeK, shift, mask)
                       = let
                           val jump_table_label
                             = Label.newString "jumpTable"
@@ -1528,7 +1531,7 @@ struct
                           val rec filler 
                             = fn ([],_) => []
                                | (cases as (i,target)::cases',j)
-                               => if i = j
+                               => if WordX.equals (i, j)
                                     then let
                                            val target'
                                              = pushCompensationBlock
@@ -1554,14 +1557,14 @@ struct
                           val indexTemp
                             = MemLoc.imm 
                               {base = Immediate.label (Label.fromString "indexTemp"),
-                               index = Immediate.const_int 0,
+                               index = Immediate.zero,
                                scale = Scale.Four,
                                size = Size.LONG,
                                class = MemLoc.Class.Temp}
                           val checkTemp
                             = MemLoc.imm 
                               {base = Immediate.label (Label.fromString "checkTemp"),
-                               index = Immediate.const_int 0,
+                               index = Immediate.zero,
                                scale = Scale.Four,
                                size = Size.LONG,
                                class = MemLoc.Class.Temp}
@@ -1623,16 +1626,16 @@ struct
                                        size = Size.LONG},
                                       Assembly.instruction_binal
                                       {oper = Instruction.AND,
-                                       src = Operand.immediate_const_word 
-                                             (ones shift),
+                                       src = Operand.immediate_word 
+                                             (ones (shift, WordSize.word32)),
                                        dst = checkTemp,
                                        size = Size.LONG}],
-                                     if mask = 0wx0
+                                     if WordX.isZero mask
                                        then AppendList.empty
                                        else AppendList.single
                                             (Assembly.instruction_binal
                                              {oper = Instruction.SUB,
-                                              src = Operand.immediate_const_word mask,
+                                              src = Operand.immediate_word mask,
                                               dst = checkTemp,
                                               size = Size.LONG}),
                                      AppendList.fromList
@@ -1655,17 +1658,17 @@ struct
                                        target = Operand.label defaultC},
                                       Assembly.instruction_sral
                                       {oper = Instruction.SAR,
-                                       count = Operand.immediate_const_int shift,
+                                       count = Operand.immediate_int shift,
                                        dst = indexTemp,
                                        size = Size.LONG}]]
                                   end
                              else AppendList.empty,
-                           if minK = zero
+                           if WordX.equals (minK, zero)
                              then AppendList.empty
                              else AppendList.single
                                   (Assembly.instruction_binal
                                    {oper = Instruction.SUB,
-                                    src = Operand.immediate (constFn minK),
+                                    src = Operand.immediate_word minK,
                                     dst = indexTemp,
                                     size = Size.LONG}),
                           AppendList.fromList
@@ -1682,7 +1685,7 @@ struct
                                        reserve = false}]},
                            Assembly.instruction_cmp
                            {src1 = indexTemp,
-                            src2 = Operand.immediate_const_word rangeK,
+                            src2 = Operand.immediate_word rangeK,
                             size = Size.LONG},
                            Assembly.directive_saveregalloc
                            {id = idT,
@@ -1707,29 +1710,27 @@ struct
                           AppendList.fromList
                           [Assembly.pseudoop_data (),
                            Assembly.pseudoop_p2align 
-                           (Immediate.const_int 4, NONE, NONE),
+                           (Immediate.int 4, NONE, NONE),
                            Assembly.label jump_table_label,
                            Assembly.pseudoop_long jump_table,
                            Assembly.pseudoop_text ()]]
                         end
 
-                    fun doit(cases,
-                             ops as {ltFn, 
-                                     range,
-                                     ...} : ''a ops,
-                             constFn)
+                    fun doit(cases)
                       = let
                           val (cases, 
                                minK, maxK, length,
                                shift, mask) 
-                            = reduce(cases, ops)
+                            = reduce(cases)
 
                           val rangeK 
                             = range(minK,maxK)
                         in
                           if length >= 8 
                              andalso
-                             Word.div(rangeK,0wx2) <= Word.fromInt length
+                             WordX.lt (WordX.div(rangeK,two,{signed=false}),
+                                       WordX.fromIntInf (IntInf.fromInt length, ws),
+                                       {signed = false})
                             then let
                                    val cases 
                                      = List.insertionSort
@@ -1738,10 +1739,8 @@ struct
                                          => ltFn(k,k'))
                                  in 
                                    doitTable(cases, 
-                                             ops,
                                              minK, maxK, rangeK,
-                                             shift, mask,
-                                             constFn)
+                                             shift, mask)
                                  end
                             else effectDefault gef
                                                {label = label, 
@@ -1750,21 +1749,7 @@ struct
                   in
                     case cases
                       of Transfer.Cases.Word cases
-                       => doit
-                          (cases,
-                           {zero = 0wx0,
-                            even = fn w => Word.mod(w,0wx2) = 0wx0,
-                            incFn = fn x => Word.+(x,0wx1),
-                            decFn = fn x => Word.-(x,0wx1),
-                            halfFn = fn x => Word.div(x,0wx2),
-                            ltFn = Word.<,
-                            gtFn = Word.>,
-                            min = 0wx0,
-                            minFn = Word.min,
-                            max = 0wxFFFFFFFF,
-                            maxFn = Word.max,
-                            range = fn (min,max) => max - min},
-                           Immediate.const_word)
+                       => doit cases
                   end
                | _ => effectDefault gef 
                                     {label = label,

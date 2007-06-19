@@ -30,7 +30,11 @@ in
       ../config/bind/string-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
-      ../config/choose.sml
+      ../config/choose-char.sml
+      ../config/choose-int.sml
+      ../config/choose-real.sml
+      ../config/choose-string.sml
+      ../config/choose-word.sml
       ../config/c/word-to-bool.sml
    end end
 
@@ -72,6 +76,4 @@ in
 
    (* Check compatibility between primitives and runtime functions. *)
    check-real.sml
-   check-pack-word.sml
-   check-pack-real.sml
 end

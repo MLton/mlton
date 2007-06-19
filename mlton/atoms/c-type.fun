@@ -11,11 +11,12 @@ struct
 open S
 
 datatype t =
-   Int8
+   CPointer
+ | Int8
  | Int16
  | Int32
  | Int64
- | Pointer
+ | Objptr
  | Real32
  | Real64
  | Word8
@@ -23,38 +24,39 @@ datatype t =
  | Word32
  | Word64
 
-val all = [Int8, Int16, Int32, Int64,
-           Pointer,
+val all = [CPointer,
+           Int8, Int16, Int32, Int64,
+           Objptr,
            Real32, Real64,
            Word8, Word16, Word32, Word64]
 
-val bool = Int32
-
-val pointer = Pointer
-
-val thread = Pointer
+val cpointer = CPointer
+val objptr = Objptr
+val thread = objptr
 
 val equals: t * t -> bool = op =
 
 fun memo (f: t -> 'a): t -> 'a =
    let
-      val pointer = f Pointer
-      val real32 = f Real32
-      val real64 = f Real64
+      val cpointer = f CPointer
       val int8 = f Int8
       val int16 = f Int16
       val int32 = f Int32
       val int64 = f Int64
+      val objptr = f Objptr
+      val real32 = f Real32
+      val real64 = f Real64
       val word8 = f Word8
       val word16 = f Word16
       val word32 = f Word32
       val word64 = f Word64
    in
-      fn Int8 => int8
+      fn CPointer => cpointer
+       | Int8 => int8
        | Int16 => int16
        | Int32 => int32
        | Int64 => int64
-       | Pointer => pointer
+       | Objptr => objptr
        | Real32 => real32
        | Real64 => real64
        | Word8 => word8
@@ -64,11 +66,12 @@ fun memo (f: t -> 'a): t -> 'a =
    end
 
 val toString =
-   fn Int8 => "Int8"
+   fn CPointer => "CPointer"
+    | Int8 => "Int8"
     | Int16 => "Int16"
     | Int32 => "Int32"
     | Int64 => "Int64"
-    | Pointer => "Pointer"
+    | Objptr => "Objptr" (* CHECK *)
     | Real32 => "Real32"
     | Real64 => "Real64"
     | Word8 => "Word8"
@@ -80,11 +83,12 @@ val layout = Layout.str o toString
 
 fun size (t: t): Bytes.t =
    case t of
-      Int8 => Bytes.fromInt 1
+      CPointer => Bits.toBytes (Control.Target.Size.cpointer ())
+    | Int8 => Bytes.fromInt 1
     | Int16 => Bytes.fromInt 2
     | Int32 => Bytes.fromInt 4
     | Int64 => Bytes.fromInt 8
-    | Pointer => Bytes.inPointer
+    | Objptr => Bits.toBytes (Control.Target.Size.objptr ())
     | Real32 => Bytes.fromInt 4
     | Real64 => Bytes.fromInt 8
     | Word8 => Bytes.fromInt 1
@@ -94,11 +98,12 @@ fun size (t: t): Bytes.t =
 
 fun name t =
    case t of
-      Int8 => "I8"
+      CPointer => "Q" (* CHECK *)
+    | Int8 => "I8"
     | Int16 => "I16"
     | Int32 => "I32"
     | Int64 => "I64"
-    | Pointer => "P"
+    | Objptr => "P" (* CHECK *)
     | Real32 => "R32"
     | Real64 => "R64"
     | Word8 => "W8"
@@ -115,8 +120,8 @@ fun real (s: RealSize.t): t =
     | 64 => Real64
     | _ => Error.bug "CType.real"
 
-fun word (s: WordSize.t, {signed: bool}): t =
-   case (signed, Bits.toInt (WordSize.bits s)) of
+fun word' (b: Bits.t, {signed: bool}): t =
+   case (signed, Bits.toInt b) of
       (false, 8) => Word8
     | (true, 8) => Int8
     | (false, 16) => Word16
@@ -125,6 +130,31 @@ fun word (s: WordSize.t, {signed: bool}): t =
     | (true, 32) => Int32
     | (false, 64) => Word64
     | (true, 64) => Int64
-    | _ => Error.bug "CType.word"
+    | _ => Error.bug "CType.word'"
+
+fun word (s: WordSize.t, {signed: bool}): t =
+   word' (WordSize.bits s, {signed = signed})
+
+val cint =
+   Promise.lazy
+   (fn () => word' (Control.Target.Size.cint (),
+                    {signed = true}))
+val csize =
+   Promise.lazy
+   (fn () => word' (Control.Target.Size.cint (),
+                    {signed = true}))
+
+val seqIndex =
+   Promise.lazy
+   (fn () => word' (Control.Target.Size.seqIndex (),
+                    {signed = true}))
+
+val objptrHeader =
+   Promise.lazy
+   (fn () => word' (Control.Target.Size.header (),
+                    {signed = true}))
+
+val bool = word (WordSize.bool, {signed = true})
+val shiftArg = word (WordSize.shiftArg, {signed = false})
 
 end

@@ -53,8 +53,10 @@
         loadStorePrimsOfTy (mode, Word16)               \
         loadStorePrimsOfTy (mode, Word32)               \
         loadStorePrimsOfTy (mode, Word64)               \
-        loadStoreGlobal (mode, Pointer, Word32)         \
-        loadStoreRegister (mode, Pointer, Word32)       \
+        loadStoreGlobal (mode, CPointer, Word32)        \
+        loadStoreRegister (mode, CPointer, Word32)      \
+        loadStoreGlobal (mode, Objptr, Word32)          \
+        loadStoreRegister (mode, Objptr, Word32)        \
         loadStoreFrontier (mode)                        \
         loadStoreStackTop (mode)
 

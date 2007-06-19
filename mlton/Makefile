@@ -18,13 +18,14 @@ AOUT := mlton-compile
 UP := upgrade-basis.sml
 PATH := $(BIN):$(shell echo $$PATH)
 
-FLAGS := @MLton max-heap 640m ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
+FLAGS := @MLton ram-slop 0.7 gc-summary $(RUNTIME_ARGS) --
 
 ifeq (self, $(shell if [ -x "$(BIN)/mlton" ]; then echo self; fi))
   # We're compiling MLton with itself, so don't use any stubs.
   FILE := mlton.mlb
   FLAGS += -default-ann 'sequenceNonUnit warn'
   FLAGS += -default-ann 'warnUnused true'
+  # FLAGS += -type-check true -show-types true
 else
 ifeq (cygwin, $(HOST_OS))
   # The stubs don't work on Cygwin, since they define spawn in terms of
@@ -91,6 +92,10 @@ $(UP):
 mlton.sml: $(SOURCES)
 	rm -f mlton.sml && mlton -stop sml mlton.cm && chmod -w mlton.sml
 
+.PHONY: def-use
+def-use:
+	mlton -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+
 .PHONY: clean
 clean:
 	../bin/clean
@@ -103,10 +108,6 @@ clean:
 # 'sml-cm'.
 #
 SML	:= sml
-
-.PHONY: def-use
-def-use:
-	mlton -stop tc -show-def-use /tmp/z.def-use $(FILE)
 
 .PHONY: nj-mlton
 nj-mlton: $(SOURCES)

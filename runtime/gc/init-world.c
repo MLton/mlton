@@ -24,7 +24,7 @@ size_t sizeofIntInfFromString (GC_state s, const char *str) {
 
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
-  size_t numBytes;
+  size_t dataBytes;
   size_t total;
 
   total = 0;
@@ -32,13 +32,13 @@ size_t sizeofInitialBytesLive (GC_state s) {
     total += sizeofIntInfFromString (s, s->intInfInits[i].mlstr);
   }
   for (i = 0; i < s->vectorInitsLength; ++i) {
-    numBytes = 
+    dataBytes = 
       s->vectorInits[i].bytesPerElement
       * s->vectorInits[i].numElements;
     total += align (GC_ARRAY_HEADER_SIZE
-                    + ((0 == numBytes)
+                    + ((dataBytes < OBJPTR_SIZE)
                        ? OBJPTR_SIZE
-                       : numBytes),
+                       : dataBytes),
                     s->alignment);
   }
   return total;
@@ -89,8 +89,8 @@ void initVectors (GC_state s) {
     bytesPerElement = inits[i].bytesPerElement;
     dataBytes = bytesPerElement * inits[i].numElements;
     objectSize = align (GC_ARRAY_HEADER_SIZE
-                        + ((0 == dataBytes)
-                           ? POINTER_SIZE
+                        + ((dataBytes < OBJPTR_SIZE)
+                           ? OBJPTR_SIZE
                            : dataBytes),
                         s->alignment);
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
@@ -155,6 +155,6 @@ void initWorld (GC_state s) {
   s->heap.oldGenSize = s->frontier - s->heap.start;
   setGCStateCurrentHeap (s, 0, 0);
   thread = newThread (s, sizeofStackInitial (s));
-  switchToThread (s, pointerToObjptr((pointer)thread, s->heap.start));
+  switchToThread (s, pointerToObjptr((pointer)thread - offsetofThread (s), s->heap.start));
 }
 

@@ -11,8 +11,6 @@
 #endif
 #include "platform.h"
 
-#include "interpret.h"
-
 /* No need to declare inlined math functions, since <math.h> comes
  * with "platform.h".
  */
@@ -28,6 +26,8 @@
 #endif
 #include "c-chunk.h"    // c-chunk.h must come before opcode.h because it
                         // redefines some opcode symbols
+
+#include "interpret.h"
 #include "opcode.h"
 
 enum {
@@ -58,9 +58,11 @@ struct GC_state gcState;
         static ty ty##VReg[1000];               \
         ty ty##Reg[1000]
 
-extern Pointer globalPointer[];
-extern Pointer globalPointerNonRoot[];
-static Pointer PointerVReg[1000];
+extern Pointer globalCPointer[];
+static Pointer CPointerVReg[1000];
+extern Pointer globalObjptr[];
+extern Pointer globalObjptrNonRoot[];
+static Pointer ObjptrVReg[1000];
 
 regs(Real32);
 regs(Real64);

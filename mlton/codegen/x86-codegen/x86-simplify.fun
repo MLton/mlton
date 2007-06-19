@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,10 +11,6 @@ struct
 
   open S
   open x86
-
-  val rec ones : int -> word
-    = fn 0 => 0wx0
-       | n => Word.orb(Word.<<(ones (n-1), 0wx1),0wx1)
 
   val tracer = x86.tracer
   val tracerTop = x86.tracerTop
@@ -609,11 +605,11 @@ struct
 
       local
         val getImmediate1
-          = fn Immediate.Const (Immediate.Char #"\001") => SOME false
-             | Immediate.Const (Immediate.Int 1) => SOME false
-             | Immediate.Const (Immediate.Int ~1) => SOME true
-             | Immediate.Const (Immediate.Word 0wx1) => SOME false
-             | Immediate.Const (Immediate.Word 0wxFFFFFFFF) => SOME true
+          = fn Immediate.Word w => if WordX.isOne w
+                                      then SOME false
+                                   else if WordX.isNegOne w
+                                      then SOME true
+                                   else NONE
              | _ => NONE
 
         val isInstructionADDorSUB_srcImmediate1 : statement_type -> bool
@@ -718,38 +714,29 @@ struct
 
       local
         val rec log2'
-          = fn (0wx0, _) => NONE
-             | (w : Word32.word, i : int)
-             => if 0wx1 = Word32.andb(w, 0wx1)
-                  then case w
-                         of 0wx00000001 => SOME (i, false)
-                          | 0wxFFFFFFFF => SOME (i, true)
-                          | _ => NONE
-                  else log2' (Word32.~>>(w, 0wx1), i + 1)
+          = fn (w : WordX.t, i : int) =>
+            if WordX.isZero w then NONE
+            else if WordX.isOne (WordX.andb (w, WordX.one (WordX.size w)))
+               then if WordX.isOne w
+                       then SOME (i, false)
+                    else if WordX.isNegOne w
+                       then SOME (i, true)
+                    else NONE
+               else log2' (WordX.rshift (w, WordX.one (WordX.size w), {signed = true}), i + 1)
         fun log2 w = log2' (w, 0 : int)
         fun divTemp size
           = MemLoc.imm {base = Immediate.label (Label.fromString "divTemp"),
-                        index = Immediate.const_int 0,
+                        index = Immediate.zero,
                         scale = Scale.Four,
                         size = size,
                         class = MemLoc.Class.Temp}
 
         val isImmediatePow2
-          = fn Immediate.Const (Immediate.Char c) 
-             => isSome (log2 (Word.fromChar c))
-             | Immediate.Const (Immediate.Int i) 
-             => isSome (log2 (Word.fromInt i))
-             | Immediate.Const (Immediate.Word w) 
-             => isSome (log2 w)
+          = fn Immediate.Word w => isSome (log2 w)
              | _ => false
 
         val getImmediateLog2
-          = fn Immediate.Const (Immediate.Char c) 
-             => log2 (Word.fromChar c)
-             | Immediate.Const (Immediate.Int i) 
-             => log2 (Word.fromInt i)
-             | Immediate.Const (Immediate.Word w)
-             => log2 w
+          = fn Immediate.Word w => log2 w 
              | _ => NONE
 
         val isInstructionMULorDIV_srcImmediatePow2 : statement_type -> bool
@@ -939,7 +926,7 @@ struct
                                   = (fn l
                                       => (Assembly.instruction_sral
                                           {oper = Instruction.SAL,
-                                           count = Operand.immediate_const_int i,
+                                           count = Operand.immediate_int i,
                                            dst = dst,
                                            size = size})::
                                          (if b
@@ -991,7 +978,7 @@ struct
                                 val statements
                                   = (Assembly.instruction_sral
                                      {oper = Instruction.SAL,
-                                      count = Operand.immediate_const_int i,
+                                      count = Operand.immediate_int i,
                                       dst = dst,
                                       size = size})::
                                     (List.concat [comments, finish])
@@ -1071,7 +1058,7 @@ struct
                                                   {oper = Instruction.SAR,
                                                    dst = divTemp,
                                                    count 
-                                                   = Operand.immediate_const_int 
+                                                   = Operand.immediate_int 
                                                      (i - 1),
                                                    size = size})::
                                                  l
@@ -1082,7 +1069,7 @@ struct
                                                   {oper = Instruction.SHR,
                                                    dst = divTemp,
                                                    count 
-                                                   = Operand.immediate_const_int 
+                                                   = Operand.immediate_int 
                                                      (width - i),
                                                    size = size})::
                                                  l
@@ -1095,7 +1082,7 @@ struct
                                             size = size})::
                                           (Assembly.instruction_sral
                                            {oper = Instruction.SAR,
-                                            count = Operand.immediate_const_int i,
+                                            count = Operand.immediate_int i,
                                             dst = dst,
                                             size = size})::
                                           l) o
@@ -1149,7 +1136,7 @@ struct
                                 val statements
                                   = (Assembly.instruction_sral
                                      {oper = Instruction.SHR,
-                                      count = Operand.immediate_const_int i,
+                                      count = Operand.immediate_int i,
                                       dst = dst,
                                       size = size})::
                                     (List.concat [comments, finish])
@@ -1324,7 +1311,7 @@ struct
                                   = (fn l
                                       => (Assembly.instruction_sral
                                           {oper = Instruction.SAL,
-                                           count = Operand.immediate_const_int i,
+                                           count = Operand.immediate_int i,
                                            dst = dst,
                                            size = size})::
                                          (if b
@@ -1449,11 +1436,11 @@ struct
           = fn Assembly.Instruction (Instruction.CMP
                                      {src1 = Operand.Immediate immediate,
                                       ...})
-             => Immediate.zero immediate
+             => Immediate.isZero immediate
              | Assembly.Instruction (Instruction.CMP
                                      {src2 = Operand.Immediate immediate,
                                       ...})
-             => Immediate.zero immediate
+             => Immediate.isZero immediate
              | _ => false
 
         val isTransfer_Iff_E_NE
@@ -1493,7 +1480,7 @@ struct
                         of (SOME _, NONE) => src2
                          | (NONE, SOME _) => src1
                          | (SOME immediate1, SOME _)
-                         => if Immediate.zero immediate1
+                         => if Immediate.isZero immediate1
                               then src2
                               else src1
                          | _ => Error.bug "x86Simplify.PeeholeBlock: elimCMP0:src"
@@ -1755,7 +1742,7 @@ struct
                           (cases,
                            fn (w,target) 
                             => (x86JumpInfo.decNear(jumpInfo, target);
-                                w = test))
+                                WordX.equals (w, test)))
 
                       val transfer
                         = if Transfer.Cases.isEmpty cases
@@ -1837,7 +1824,7 @@ struct
                                      = Transfer.Cases.extract
                                        (cases,
                                         fn (w,target) =>
-                                        (Immediate.const_word w, target))
+                                        (Immediate.word w, target))
                                    val size
                                      = case Operand.size test
                                          of SOME size => size

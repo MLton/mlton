@@ -1,0 +1,66 @@
+(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+ *    Jagannathan, and Stephen Weeks.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+ann  
+   "deadCode true"
+   "sequenceNonUnit warn"
+   "nonexhaustiveMatch warn" "redundantMatch warn"
+   "warnUnused true" "forceUsed"
+in
+   local
+      basis.mlb
+      local
+         config/choose-int.sml
+         config/choose-real.sml
+         config/choose-word.sml
+         config/c/word-to-bool.sml
+         config/bind/int-top.sml 
+         config/bind/real-top.sml 
+         config/bind/word-top.sml 
+      in ann "forceUsed" in
+         config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
+      end end
+   in
+      structure C_Char
+      structure C_SChar
+      functor C_SChar_ChooseIntN
+      structure C_UChar
+      functor C_UChar_ChooseWordN
+
+      structure C_Short
+      structure C_SShort
+      functor C_SShort_ChooseIntN
+      structure C_UShort
+      functor C_UShort_ChooseWordN
+
+      structure C_Int
+      structure C_SInt
+      functor C_SInt_ChooseIntN
+      structure C_UInt
+      functor C_UInt_ChooseWordN
+
+      structure C_Long
+      structure C_SLong
+      functor C_SLong_ChooseIntN
+      structure C_ULong
+      functor C_ULong_ChooseWordN
+
+      structure C_LongLong
+      structure C_SLongLong
+      functor C_SLongLong_ChooseIntN
+      structure C_ULongLong
+      functor C_ULongLong_ChooseWordN
+
+      structure C_Float
+      functor C_Float_ChooseRealN
+      structure C_Double
+      functor C_Double_ChooseRealN
+
+      structure C_Size
+      functor C_Size_ChooseWordN
+   end
+end

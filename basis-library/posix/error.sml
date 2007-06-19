@@ -273,7 +273,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
                       handlers: (syserror * (unit -> 'b)) list}: 'b =
                      err {default = fn () =>
                           if restart andalso errno = intr andalso !restartFlag
-                             then if Thread.canHandle () = 0w0
+                             then if Thread.atomicState () = 0w0
                                      then call errUnblocked
                                      else let val finish = !blocker ()
                                           in 
