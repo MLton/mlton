@@ -14,5 +14,6 @@ local
    ../mlton.mlb
    ../sml-nj.mlb
    ../unsafe.mlb
+   ../c-types.mlb
 in
 end
