@@ -653,25 +653,6 @@ fun commandLine (args: string list): unit =
                                 else CCodegen
                       | SOME c => c)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
-      val () =
-         case !show of
-            NONE => ()
-          | SOME info =>
-            (case info of
-                Show.Anns =>
-                Layout.outputl (Control.Elaborate.document {expert = !expert},
-                                Out.standard)
-              | Show.PathMap =>
-                let
-                   open Layout
-                in
-                   outputl (align
-                            (List.map (Control.mlbPathMap (),
-                                       fn {var, path, ...} =>
-                                       str (concat [var, " ", path]))),
-                            Out.standard)
-                end
-             ; let open OS.Process in exit success end)
       val () = if !profileTimeSet
                   then (case !codegen of
                            x86Codegen => profile := ProfileTimeLabel
@@ -825,6 +806,25 @@ fun commandLine (args: string list): unit =
                else ()
       fun printVersion (out: Out.t): unit =
          Out.output (out, concat [version, " ", build, "\n"])
+      val () =
+         case !show of
+            NONE => ()
+          | SOME info =>
+            (case info of
+                Show.Anns =>
+                Layout.outputl (Control.Elaborate.document {expert = !expert},
+                                Out.standard)
+              | Show.PathMap =>
+                let
+                   open Layout
+                in
+                   outputl (align
+                            (List.map (Control.mlbPathMap (),
+                                       fn {var, path, ...} =>
+                                       str (concat [var, " ", path]))),
+                            Out.standard)
+                end
+             ; let open OS.Process in exit success end)
    in
       case result of
       Result.No msg => usage msg
