@@ -740,7 +740,7 @@ structure Type =
                      let
                         open CType
                      in
-                        [Int8, Int16, Int32]
+                        [Word8, Word16, Word32]
                      end)
             @ sized (Tycon.int o IntSize.fromBits,
                      let

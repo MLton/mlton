@@ -14,10 +14,6 @@ http://mlton.org/pipermail/mlton/2006-June/028927.html
 http://mlton.org/pipermail/mlton/2006-June/028946.html
  + http://mlton.org/pipermail/mlton/2006-June/028947.html
 
-(* Char signedness *)
-http://mlton.org/pipermail/mlton/2006-July/028970.html
- + http://mlton.org/pipermail/mlton/2006-July/028982.html
-
 (* auto-gen GC specific runtime imports *)
 http://mlton.org/pipermail/mlton/2006-July/028975.html
 
