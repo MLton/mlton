@@ -58,10 +58,10 @@ Pass \fIoption\fP to \fBgcc\fP when assembling.
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
-\fB-codegen \fI{\fBnative\fP|\fBbytecode\fP|\fBc\fP}\fP\fR
-Generate native code, byte code, or C code.  With \fB-codegen
-native\fP, \fBMLton\fP typically compiles more quickly and generates
-better code.
+\fB-codegen \fI{\fBx86\fP|\fBamd64\fP|\fBbytecode\fP|\fBc\fP}\fP\fR
+Generate native code, byte code, or C code.  With \fB-codegen x86\fP
+or \fB-codegen amd64\fP, \fBMLton\fP typically compiles more quickly
+and generates better code.
 
 .TP
 \fB-const '\fIname value\fP'\fR
@@ -110,9 +110,9 @@ from SML to C.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
-Cause the native code generator to be pedantic about following the IEEE
+Cause the x86 native code generator to be pedantic about following the IEEE
 floating point standard.  By default, it is not, because of the
-performance cost.  This only has an effect with \fB-codegen native\fP.
+performance cost.  This only has an effect with \fB-codegen x86\fP.
 
 .TP
 \fB-inline \fIn\fP\fR
@@ -169,6 +169,11 @@ expression, and \fBif\fP expression.
 \fB-profile-stack \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
 If true, the profiler will gather profiling data for all
 functions on the stack, not just the currently executing function.
+
+.TP
+\fB-profile-val \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
+If true, the profiler will separately gather profiling data
+for each (expansive) \fBval\fP declaration.
 
 .TP
 \fB-runtime \fIarg\fP\fR
@@ -338,7 +343,7 @@ heap size for \fBmax-heap\fP is accounted for as with
 \fBfixed-heap\fP.
 
 .TP
-\fB-no-load-world\fP
+\fBno-load-world\fP
 Disable \fBload-world\fP.  This can be used as an argument to the
 compiler via \fB-runtime no-load-world\fP to create executables that
 will not load a world.  This may be useful to ensure that set-uid
