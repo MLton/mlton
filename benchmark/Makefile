@@ -52,7 +52,7 @@ test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH := $(BENCH)
-QBFLAGS := -mlton "~/devel/mlton/mlton-20051202-1.i386-linux/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.x86_64/build/bin/mlton -codegen {native,c} -align {4,8}"
+QBFLAGS := -mlton "~/devel/mlton/mlton-20051202-1.i386-linux/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {amd64,c} -align {4,8}"
 
 .PHONY: qtest
 qtest: $(NAME)
