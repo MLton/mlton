@@ -36,19 +36,21 @@ structure Zone = Zone (S)
 (*
 fun inlineNonRecursive (product, small) p =
    Ref.fluidLet
-   (Control.inline,
-    Control.NonRecursive {product = product, small = small},
+   (Control.inline, 
+    Control.NonRecursive {product = product, small = small}, 
     fn () => Inline.inline p)
 fun inlineLeaf size p =
    Ref.fluidLet
-   (Control.inline,
-    Control.Leaf {size = SOME size},
-    fn () => Inline.inline p)
+   (Control.inlineIntoMain, true, fn () =>
+    Ref.fluidLet
+    (Control.inline, Control.Leaf {size = SOME size}, 
+     fn () => Inline.inline p))
 fun inlineLeafNoLoop size p =
    Ref.fluidLet
-   (Control.inline,
-    Control.LeafNoLoop {size = SOME size},
-    fn () => Inline.inline p)
+   (Control.inlineIntoMain, true, fn () =>
+    Ref.fluidLet
+    (Control.inline, Control.LeafNoLoop {size = SOME size}, 
+     fn () => Inline.inline p))
 *)
 
 type pass = {name: string,
