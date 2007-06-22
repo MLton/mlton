@@ -591,10 +591,10 @@ fun main args =
                           if true
                              then
                                 let
-                                   val (outTmpFile, _) =
-                                      File.temp {prefix = "tmp", suffix = "out"}
-                                   val (errTmpFile, _) =
-                                      File.temp {prefix = "tmp", suffix = "err"}
+                                   val outTmpFile =
+                                      File.tempName {prefix = "tmp", suffix = "out"}
+                                   val errTmpFile =
+                                      File.tempName {prefix = "tmp", suffix = "err"}
                                    val {compile, run, size} =
                                      ignoreOutput
                                      (fn () => test {bench = bench})
