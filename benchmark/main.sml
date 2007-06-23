@@ -591,10 +591,12 @@ fun main args =
                           if true
                              then
                                 let
+(*
                                    val outTmpFile =
                                       File.tempName {prefix = "tmp", suffix = "out"}
                                    val errTmpFile =
                                       File.tempName {prefix = "tmp", suffix = "err"}
+*)
                                    val {compile, run, size} =
                                      ignoreOutput
                                      (fn () => test {bench = bench})
@@ -603,6 +605,7 @@ fun main args =
                                          andalso Option.isNone run
                                          then List.push (failures, bench)
                                       else ()
+(*
                                    val out = 
                                       case !outData of 
                                          NONE => NONE
@@ -633,6 +636,9 @@ fun main args =
                                              end)
                                    val _ = File.remove outTmpFile
                                    val _ = File.remove errTmpFile
+*)
+                                   val out = NONE
+                                   val err = NONE
                                    fun add (v, ac) =
                                       case v of
                                          NONE => ac

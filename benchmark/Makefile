@@ -54,6 +54,8 @@ test: $(NAME)
 QBENCH := $(BENCH)
 QBFLAGS := -mlton "~/devel/mlton/mlton-20051202-1.i386-linux/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {amd64,c} -align {4,8}"
 
+QBFLAGS := -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {amd64} -align {4} {-drop-pass introduceLoops1,} -inline-leaf {'(20;0;0)','(20;20;0)','(20;20;20)','(40;0;0)','(40;40;0)','(40;40;40)','(40;20;0)','(40;20;10)'}"
+
 .PHONY: qtest
 qtest: $(NAME)
 	cd tests && ../benchmark $(QBFLAGS) $(QBENCH) && $(MAKE) clean
