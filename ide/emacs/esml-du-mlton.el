@@ -152,7 +152,32 @@ beginning of the symbol."
 
 (defun esml-du-sym-to-uses (sym ctx)
   (esml-du-reload ctx)
-  (gethash sym (esml-du-ctx-sym-to-uses-table ctx)))
+  (let ((file-to-poss (def-use-make-hash-table)))
+    ;; Process by buffer/file as it avoids repeated work
+    (mapc (function
+           (lambda (ref)
+             (puthash (def-use-ref-src ref)
+                      (cons ref
+                            (gethash (def-use-ref-src ref) file-to-poss))
+                      file-to-poss)))
+          (gethash sym (esml-du-ctx-sym-to-uses-table ctx)))
+    ;; Remove references to modified buffers
+    (mapc (function
+           (lambda (buffer)
+             (when (buffer-modified-p buffer)
+               (remhash (def-use-buffer-file-truename buffer)
+                        file-to-poss))))
+          (buffer-list))
+    ;; Remove references to modified files
+    (mapc (function
+           (lambda (file)
+             (when (def-use-attr-newer?
+                     (file-attributes file)
+                     (esml-du-ctx-attr ctx))
+               (remhash file file-to-poss))))
+          (def-use-hash-table-to-key-list file-to-poss))
+    (apply (function nconc)
+           (def-use-hash-table-to-value-list file-to-poss))))
 
 (defun esml-du-stop-parsing (ctx)
   (let ((buffer (esml-du-ctx-buf ctx)))

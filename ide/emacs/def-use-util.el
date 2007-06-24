@@ -12,9 +12,9 @@
 ;; In Gnu Emacs, `buffer-file-truename' is abbreviated while in XEmacs it
 ;; isn't.  This isn't in compat.el, because we want to use our cached
 ;; version of `file-truename', namely `def-use-file-truename'.
-(defun def-use-buffer-file-truename ()
+(defun def-use-buffer-file-truename (&rest buffer)
   "Returns the true filename of the current buffer."
-  (let ((name (buffer-file-name)))
+  (let ((name (apply (function buffer-file-name) buffer)))
     (when name
       (def-use-file-truename name))))
 
@@ -98,11 +98,16 @@ table."
               (lambda (key value)
                 (push (cons key value) result)))
              hash-table)
-    (nreverse result)))
+    result))
 
 (defun def-use-hash-table-to-key-list (hash-table)
-  "Returns a list of the keys of the set (identity hash-table)."
+  "Returns a list of the keys of hash-table."
   (mapcar (function car)
+          (def-use-hash-table-to-assoc-list hash-table)))
+
+(defun def-use-hash-table-to-value-list (hash-table)
+  "Returns a list of the values of the hash-table."
+  (mapcar (function cdr)
           (def-use-hash-table-to-assoc-list hash-table)))
 
 (defun def-use-set-to-list (set)
