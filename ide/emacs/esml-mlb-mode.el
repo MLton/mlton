@@ -89,7 +89,7 @@ specified by `esml-mlb-mlb-path-map-files' or by running the command
   :set 'esml-mlb-set-custom-and-update
   :group 'esml-mlb)
 
-(defcustom esml-mlb-completion-ignored-files-regexp "\\.[^.].*\\|CVS/"
+(defcustom esml-mlb-completion-ignored-files-regexp "\\.[^.].*\\|CVS/\\|.*~"
   "Completion ignores files (and directories) whose names match this
 regexp."
   :type 'regexp
