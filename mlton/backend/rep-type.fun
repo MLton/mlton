@@ -659,7 +659,9 @@ fun checkOffset {base, offset, result} =
                         Bits => loop (Bits.zero, (bits (Bits.- (width ty, offset))) :: tys)
                       | _ => false)
    in
-      loop (Bytes.toBits offset, getTys base)
+      if Control.Target.bigEndian ()
+         then true
+      else loop (Bytes.toBits offset, getTys base)
    end
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
