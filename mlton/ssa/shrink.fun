@@ -503,6 +503,10 @@ fun shrinkFunction {globals: Statement.t vector} =
             labelMeaning
          fun meaningLabel m =
             Block.label (Vector.sub (blocks, LabelMeaning.blockIndex m))
+         fun labelArgs l =
+            Block.args (Vector.sub (blocks, labelIndex l))
+         fun meaningArgs m =
+            Block.args (Vector.sub (blocks, LabelMeaning.blockIndex m))
          fun save (f, s) =
             File.withOut
             (concat ["/tmp/", Func.toString (Function.name f),
@@ -704,6 +708,20 @@ fun shrinkFunction {globals: Statement.t vector} =
                          Transfer.layout,
                          Layout.tuple2 (List.layout Statement.layout,
                                         Transfer.layout))
+         val traceSimplifyCase =
+            Trace.trace
+            ("Ssa2.Shrink2.simplifyCase",
+             fn {canMove, cantSimplify, cases, default, gone, test} =>
+             Layout.record [("canMove", List.layout Statement.layout canMove),
+                            ("cantSimplify", Layout.str "fn () => ..."),
+                            ("gone", Layout.str "fn () => ..."),
+                            ("test", VarInfo.layout test),
+                            ("cases/default", 
+                             (Transfer.layout o Transfer.Case)
+                             {cases = cases,
+                              default = default,
+                              test = VarInfo.var test})],
+             Layout.tuple2 (List.layout Statement.layout, Transfer.layout))
          val newBlocks = ref []
          fun simplifyLabel l =
             let
@@ -839,11 +857,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                               let
                                  fun isEta (m: LabelMeaning.t,
                                             ps: Position.t vector): bool =
-                                    Vector.length ps
-                                    = (Vector.length
-                                       (Block.args
-                                        (Vector.sub
-                                         (blocks, LabelMeaning.blockIndex m))))
+                                    Vector.length ps = Vector.length (meaningArgs m)
                                     andalso
                                     Vector.foralli
                                     (ps,
@@ -932,9 +946,10 @@ fun shrinkFunction {globals: Statement.t vector} =
                                  args = simplifyVars args, 
                                  return = simplifyLabel return})
                    ) arg
-         and simplifyCase {canMove, cantSimplify, 
-                           cases, default, gone, test: VarInfo.t}
-            : Statement.t list * Transfer.t =
+         and simplifyCase arg : Statement.t list * Transfer.t =
+            traceSimplifyCase
+            (fn {canMove, cantSimplify, 
+                 cases, default, gone, test: VarInfo.t} =>
             let
                (* tryToEliminate makes sure that the destination meaning
                 * hasn't already been simplified.  If it has, then we can't
@@ -964,8 +979,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                      val l = Cases.hd cases
                      fun isOk (l': Label.t): bool = Label.equals (l, l')
                   in
-                     if 0 = Vector.length (Block.args
-                                           (Vector.sub (blocks, labelIndex l)))
+                     if 0 = Vector.length (labelArgs l)
                         andalso Cases.forall (cases, isOk)
                         andalso (case default of
                                     NONE => true
@@ -975,12 +989,12 @@ fun shrinkFunction {globals: Statement.t vector} =
                            tryToEliminate (labelMeaning l)
                      else
                         let
-                           fun findCase (cases, is, args) =
+                           fun findCase (cases, isCon, args) =
                               let
                                  val n = Vector.length cases
-                                 fun doit (j, args) =
+                                 fun doit (l, args) =
                                     let
-                                       val m = labelMeaning j
+                                       val m = labelMeaning l
                                        val _ = addLabelMeaning m
                                        val _ = gone ()
                                     in
@@ -991,13 +1005,13 @@ fun shrinkFunction {globals: Statement.t vector} =
                                        then
                                           (case default of
                                               NONE => (gone (); ([], Bug))
-                                            | SOME j => doit (j, Vector.new0 ()))
+                                            | SOME l => doit (l, Vector.new0 ()))
                                     else
                                        let
-                                          val (i, j) = Vector.sub (cases, k)
+                                          val (con, l) = Vector.sub (cases, k)
                                        in
-                                          if is i
-                                             then doit (j, args)
+                                          if isCon con
+                                             then doit (l, args)
                                           else loop (k + 1)
                                        end
                               in
@@ -1020,7 +1034,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                             | _ => cantSimplify ()
                         end
                   end
-            end
+            end) arg
          and goto (dst: Label.t, args: VarInfo.t vector)
             : Statement.t list * Transfer.t =
             gotoMeaning ([], labelMeaning dst, args)
@@ -1239,7 +1253,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                           raises = raises,
                           returns = returns,
                           start = meaningLabel start}
-(*       val _ = save (f, "post") *)
+         val _ = if true then () else save (f, "post")
          val _ = Function.clear f
       in
          f
