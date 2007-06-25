@@ -997,6 +997,10 @@ fun shrinkFunction {globals: Statement.t vector} =
                                  val n = Vector.length cases
                                  fun doit (l, args) =
                                     let
+                                       val args =
+                                          if 0 = Vector.length (labelArgs l)
+                                             then Vector.new0 ()
+                                          else args
                                        val m = labelMeaning l
                                        val () = addLabelMeaning m
                                        val () = gone ()
@@ -1040,9 +1044,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                              {con = SOME con, ...}) => 
                                           findCase (cases,
                                                     fn c => Con.equals (con, c),
-                                                    if 0 = Vector.length args
-                                                       then Vector.new0 ()
-                                                    else Vector.new1 variant)
+                                                    Vector.new1 variant)
                                      | _ => cantSimplify ()
                                  end
                             | _ => cantSimplify ()
