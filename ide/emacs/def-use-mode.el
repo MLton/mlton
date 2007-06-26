@@ -65,8 +65,16 @@
   :group 'def-use)
 
 (defcustom def-use-delay 0.125
-  "Idle time in seconds to delay before updating highlighting."
-  :type '(number :tag "seconds")
+  "Idle time in seconds to delay before updating highlighting or nil if
+you wish to disable highlighting.
+
+Note that because highlighting runs on an idle timer, it may take a while
+before highlighting is first applied after it has been enabled by changing
+this customization variable. "
+  :type '(choice
+          (const :tag "disable" nil)
+          (number :tag "seconds"))
+  :set (function def-use-set-custom-and-update)
   :group 'def-use)
 
 (defcustom def-use-priority 1000
@@ -477,7 +485,9 @@ the symbol."
     (setq def-use-highlight-timer nil)))
 
 (defun def-use-create-highlight-timer ()
-  (unless def-use-highlight-timer
+  (def-use-delete-highlight-timer)
+  (when (and def-use-delay
+             (def-use-mode-enabled-in-some-buffer))
     (setq def-use-highlight-timer
           (run-with-idle-timer
            def-use-delay t (function def-use-highlight-current)))))
@@ -514,10 +524,8 @@ the symbol."
   :lighter " DU"
   :group 'def-use
   :global t
-  (def-use-delete-highlight-timer)
   (def-use-delete-highlighting)
-  (when (def-use-mode-enabled-in-some-buffer)
-    (def-use-create-highlight-timer)))
+  (def-use-create-highlight-timer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Finalization
@@ -527,6 +535,7 @@ the symbol."
 (defun def-use-update ()
   "Update data based on customization variables."
   (def-use-create-marker-ring)
+  (def-use-create-highlight-timer)
   (def-use-build-mode-map))
 
 (def-use-update)
