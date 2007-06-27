@@ -46,6 +46,12 @@ is needed."
                  (const :tag "Disable polling" nil))
   :group 'esml-du)
 
+(defcustom esml-du-notify 'never
+  "Notify certain events."
+  :type '(choice (const :tag "Never" never)
+                 (const :tag "Always" always))
+  :group 'esml-du)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interface
 
@@ -359,7 +365,8 @@ Returns the symbol read and deletes the read symbol from the buffer."
   (clrhash (esml-du-ctx-ref-to-sym-table ctx))
   (clrhash (esml-du-ctx-sym-to-uses-table ctx))
   (garbage-collect)
-  (message "Loaded %s" (esml-du-ctx-duf ctx))
+  (when (memq esml-du-notify '(always))
+    (message "Loaded %s" (esml-du-ctx-duf ctx)))
   (when (eq 'eager esml-du-background-parsing)
     (esml-du-parse ctx)))
 
@@ -387,9 +394,11 @@ altough the editor may feel a bit sluggish."
         (esml-du-stop-parsing ctx)
         (esml-du-ctx-set-parsing? nil ctx)
         (esml-du-ctx-inc-parse-cnt ctx)
-        (message "Finished parsing %s." (esml-du-ctx-duf ctx))))
+        (when (memq esml-du-notify '(always))
+          (message "Finished parsing %s." (esml-du-ctx-duf ctx)))))
      ctx)
-    (message "Parsing %s in the background..." (esml-du-ctx-duf ctx))))
+    (when (memq esml-du-notify '(always))
+      (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
