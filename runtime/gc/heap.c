@@ -165,22 +165,23 @@ bool createHeap (GC_state s, GC_heap h,
   /* mmap toggling back and forth between high and low addresses to
    * decrease the chance of virtual memory fragmentation causing an mmap
    * to fail.  This is important for large heaps.
+   * Note that the loop always trys a NULL address last.
    */
   for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
-    const size_t highAddress = ((size_t)0xf8) << ((POINTER_SIZE - 1) * CHAR_BIT);
-    const size_t step = (size_t)0x08000000;
-    const size_t count = highAddress / step;
+    const unsigned int countLog2 = 5;
+    const unsigned int count = 0x1 << countLog2;
+    const size_t step = (size_t)0x1 << ((POINTER_SIZE * CHAR_BIT) - countLog2);
 
     static bool direction = TRUE;
     unsigned int i;
 
     assert (isAligned (h->size, s->sysvals.pageSize));
-    for (i = 0; i <= count; i++) {
+    for (i = 1; i <= count; i++) {
       size_t address;
 
-      address = i * step;
+      address = (size_t)i * step;
       if (direction)
-        address = highAddress - address;
+        address = (size_t)0x0 - address;
       h->start = GC_mmapAnon ((pointer)address, h->size);
       if ((void*)-1 == h->start)
         h->start = (void*)NULL;
