@@ -968,7 +968,7 @@ structure TupleRep =
       (* TupleRep.make decides how to layout a sequence of types in an object,
        * or in the case of a vector, in a vector element.
        * Vectors are treated slightly specially because we don't require element
-       * widths to be a multiple of the word size.
+       * widths to be a multiple of the word32 size.
        * At the front of the object, we place all the word64s, followed by
        * all the word32s.  Then, we pack in all the types that are smaller than a
        * word32.  This is done by packing in a sequence of words, greedily,
