@@ -711,7 +711,7 @@ fun shrinkFunction {globals: Statement.t vector} =
          val traceSimplifyCase =
             Trace.trace
             ("Ssa2.Shrink2.simplifyCase",
-             fn {canMove, cantSimplify, cases, default, gone, test} =>
+             fn {canMove, cases, default, test, ...} =>
              Layout.record [("canMove", List.layout Statement.layout canMove),
                             ("cantSimplify", Layout.str "fn () => ..."),
                             ("gone", Layout.str "fn () => ..."),
