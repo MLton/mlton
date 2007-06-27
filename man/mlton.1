@@ -8,7 +8,7 @@ language
 .SH DESCRIPTION
 .PP
 \fBMLton\fP is run from the command line with a collection of options
-followed by a file name and a list of files to compile, assemble, and
+followed by a file name and a list of files with which to compile, assemble, and
 link with.  The simplest case is to run \fBmlton foo.sml\fP, where
 \fBfoo.sml\fP contains a valid SML program, in which case MLton
 compiles the program to produce an executable \fBfoo\fP.  Since
@@ -34,7 +34,7 @@ which intermediate files are saved and can stop the compilation process
 early, at some intermediate pass, in which case compilation can be
 resumed by passing the generated files to \fBMLton\fP.  \fBMLton\fP
 uses the input file suffix to determine the type of input program.
-The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, and \fB.sml\fP.
+The possibilities are \fB.c\fP, \fB.cm\fP, \fB.mlb\fP, \fB.o\fP, \fB.S\fP, and \fB.sml\fP.
 
 With no arguments, \fBMLton\fP prints the version number and exits.
 For a usage message, run \fBMLton\fP with an invalid switch, e.g.
@@ -105,8 +105,8 @@ and \fB-disable-ann warnUnused\fP.
 
 .TP
 \fB-export-header \fIfile\fP\fR
-Write to \fIfile\fP C prototypes for all of the functions exported
-from SML to C.
+Write C prototypes to \fIfile\fP for all of the functions in the
+program exported from SML to C.
 
 .TP
 \fB-ieee-fp \fI{\fBfalse\fP|\fBtrue\fP}\fP\fR
@@ -200,6 +200,15 @@ An executable created with \fB-runtime stop\fP doesn't proces any
 \fB@MLton\fP arguments.  This is useful to create an executable,
 e.g. \fBecho\fP, that must treat \fB@MLton\fP like any other
 command-line argument.
+.in +.5i
+\fB% mlton -runtime stop echo.sml\fP
+.in -.5i
+.in +.5i
+\fB% echo @MLton --\fP
+.in -.5i
+.in +.5i
+\fB@MLton --\fP
+.in -.5i
 
 .TP
 \fB-show-basis \fIfile\fP\fR
@@ -332,7 +341,7 @@ termination.
 \fBload-world \fIworld\fP\fR
 Restart the computation with the file specified by \fIworld\fP, which must have
 been created by a call to \fBMLton.World.save\fP by the same
-executable.
+executable.  See the \fBMLton Guide\fP for details.
 
 .TP
 \fBmax-heap \fIx{\fBk\fP|\fBK\fP|\fBm\fP|\fBM\fP|\fBg\fP|\fBG\fP}\fP\fR
