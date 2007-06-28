@@ -85,7 +85,7 @@
 (defun def-use-show-dus ()
   "Show a list of def-use sources."
   (interactive)
-  (let ((buffer (get-buffer-create "<:Def-Use Sources:>")))
+  (let ((buffer (get-buffer-create def-use-show-dus-buffer-name)))
     (with-current-buffer buffer
       (buffer-disable-undo)
       (setq buffer-read-only t)
