@@ -3,9 +3,8 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(require 'cl)
 (require 'compile)
-(require 'compat)
+(require 'bg-build-util)
 
 ;; This is a minor mode for ``handsfree'' background batch building.  See
 ;; http://mlton.org/EmacsBgBuildMode for further information.
@@ -13,8 +12,7 @@
 ;; NOTE: This mode is not yet quite complete!  Expect several crucial
 ;; usability improvements in the near future.
 ;;
-;; XXX: Mode for status display, navigation, and removing of project cfgs
-;; XXX: Commands: goto-last-build-buffer, start-build
+;; XXX: Commands: goto-last-build-buffer
 ;; XXX: Better compilation-mode:
 ;;      - Give count of warnings and errors
 ;;      - Highlighting in XEmacs
@@ -92,39 +90,6 @@ unlimited."
   :group 'bg-build)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Utils
-
-(defun bg-build-cons-once (entry list)
-  (cons entry (remove* entry list :test (function equal))))
-
-(defun bg-build-flatmap (fn list)
-  (apply (function append) (mapcar fn list)))
-
-(defun bg-build-remove-from-assoc (alist key)
-  (remove*
-   nil alist
-   :test (function
-          (lambda (_ key-value)
-            (equal key (car key-value))))))
-
-(defun bg-build-replace-in-assoc (alist key value)
-  (cons (cons key value)
-        (bg-build-remove-from-assoc alist key)))
-
-(defun bg-build-assoc-cdr (key alist)
-  "Same as (cdr (assoc key alist)) except that doesn't attempt to call cdr
-on nil."
-  (let ((key-value (assoc key (cdr alist))))
-    (when key-value
-      (cdr key-value))))
-
-(defun bg-build-const (value)
-  "Returns a function that returns the given value."
-  (lexical-let ((value value))
-    (lambda (&rest _)
-      value)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project Object
 
 (defun* bg-build-prj (file &key name build? shell)
@@ -192,7 +157,8 @@ The expression should evaluate to a bg-build project object."
                               (apply (function bg-build-prj) ,file args)))
                           ,(read (current-buffer)))))))
     (setq bg-build-projects
-          (bg-build-replace-in-assoc bg-build-projects file data))))
+          (bg-build-replace-in-assoc bg-build-projects file data)))
+  (bg-build-status-update))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Running Builds
@@ -217,6 +183,9 @@ The expression should evaluate to a bg-build project object."
         (when (buffer-live-p buffer)
           (with-current-buffer buffer
             (compilation-mode)
+            (compat-add-local-hook
+             'kill-buffer-hook
+             (bg-build-kill-buffer-hook project))
             (setq buffer-read-only nil)
             (let ((point (point))
                   (point-max (point-max)))
@@ -247,7 +216,8 @@ The expression should evaluate to a bg-build project object."
     (lambda ()
       (let ((file (car project)))
         (setq bg-build-finished-builds
-              (bg-build-remove-from-assoc bg-build-finished-builds file))))))
+              (bg-build-remove-from-assoc bg-build-finished-builds file)))
+      (bg-build-status-update))))
 
 (defvar bg-build-counter 0)
 
@@ -284,7 +254,8 @@ The expression should evaluate to a bg-build project object."
                   (< (length bg-build-live-builds)
                      bg-build-max-live-builds)))
     (bg-build-start-build (car (last bg-build-build-queue)))
-    (setq bg-build-build-queue (butlast bg-build-build-queue))))
+    (setq bg-build-build-queue (butlast bg-build-build-queue)))
+  (bg-build-status-update))
 
 (defun bg-build-build-project (project)
   (setq bg-build-build-queue
@@ -326,6 +297,122 @@ The expression should evaluate to a bg-build project object."
          (compat-abbreviate-file-name (file-truename (buffer-file-name)))
          bg-build-saved-files))
   (bg-build-create-timer))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Status Mode
+
+(defconst bg-build-status-buffer-name "<:Bg-Build Status:>")
+
+(defconst bg-build-status-mode-map
+  (let ((result (make-sparse-keymap)))
+    (mapc (function
+           (lambda (key-command)
+             (define-key result
+               (read (car key-command))
+               (cdr key-command))))
+          `(("[(b)]"      . ,(function bury-buffer))
+            ("[(q)]"      . ,(function bg-build-kill-current-buffer))
+            ("[(k)]"      . ,(function bg-build-status-rem-project))
+            ("[(p)]"      . ,(function bg-build-status-visit-project-file))
+            ("[(f)]"      . ,(function bg-build-status-visit-finished-build))
+            ("[(l)]"      . ,(function bg-build-status-visit-live-build))
+            ("[(return)]" . ,(function bg-build-status-start-build))))
+    result))
+
+(define-derived-mode bg-build-status-mode fundamental-mode "Bg-Build-Status"
+  "Major mode for browsing bg-build related data."
+  :group 'bg-build-status)
+
+(defun bg-build-status ()
+  "Show a buffer with bg-build mode related data."
+  (interactive)
+  (let ((buffer (get-buffer-create bg-build-status-buffer-name)))
+    (with-current-buffer buffer
+      (buffer-disable-undo)
+      (setq buffer-read-only t)
+      (bg-build-status-mode))
+    (switch-to-buffer buffer))
+  (bg-build-status-update))
+
+(defun bg-build-status-update ()
+  (let ((buffer (get-buffer bg-build-status-buffer-name)))
+    (when buffer
+      (with-current-buffer buffer
+        (let ((point (point)))
+          (setq buffer-read-only nil)
+          (goto-char 1)
+          (delete-char (buffer-size))
+          (insert "Status | Project
+-------+------------------------------------------------------------------\n")
+          (mapc (function
+                 (lambda (project)
+                   (let ((file (car project)))
+                   (insert (if (assoc file bg-build-live-builds) "L" " ")
+                           (if (assoc file bg-build-finished-builds) "F" " ")
+                           "     | "
+                           (bg-build-prj-name project) " (" file ")"
+                           "\n"))))
+                bg-build-projects)
+          (insert "\n"
+                  "Total of " (number-to-string bg-build-counter) " builds started.\n")
+          (when bg-build-build-queue
+            (insert "\n"
+                    "Build queue:\n\n")
+            (mapc (function
+                   (lambda (project)
+                     (insert "  " (bg-build-prj-name project) "\n")))
+                  bg-build-build-queue))
+          (setq buffer-read-only t)
+          (goto-char point))))))
+
+(defun bg-build-status-the-project ()
+  (let ((idx (- (bg-build-current-line) 3)))
+    (when (and (<= 0 idx)
+               (< idx (length bg-build-projects)))
+      (nth idx bg-build-projects))))
+
+(defun bg-build-status-rem-project ()
+  "Removes the project from bg-build."
+  (interactive)
+  (let ((project (bg-build-status-the-project)))
+    (when project
+      (setq bg-build-projects
+            (bg-build-remove-from-assoc bg-build-projects (car project)))
+      (bg-build-status-update))))
+
+(defun bg-build-status-visit-project-file ()
+  "Visits the project file of the project."
+  (interactive)
+  (let ((project (bg-build-status-the-project)))
+    (when project
+      (find-file (car project)))))
+
+(defun bg-build-status-visit-finished-build ()
+  "Visits the buffer of the finished build of the project."
+  (interactive)
+  (let ((project (bg-build-status-the-project)))
+    (when project
+      (let ((build (assoc (car project) bg-build-finished-builds)))
+        (if build
+            (switch-to-buffer (cdr build))
+          (message "That project has no finished builds."))))))
+
+(defun bg-build-status-visit-live-build ()
+  "Visits the buffer of the live build of the project."
+  (interactive)
+  (let ((project (bg-build-status-the-project)))
+    (when project
+      (let ((build (assoc (car project) bg-build-live-builds)))
+        (if build
+            (switch-to-buffer (process-buffer (cdr build)))
+          (message "That project has no live builds."))))))
+
+(defun bg-build-status-start-build ()
+  "Starts a new build of the project."
+  (interactive)
+  (let ((project (bg-build-status-the-project)))
+    (when project
+      (bg-build-build-project project))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode
