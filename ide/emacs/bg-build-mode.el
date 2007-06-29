@@ -15,8 +15,10 @@
 ;; XXX: Commands: goto-last-build-buffer
 ;; XXX: Better compilation-mode:
 ;;      - Give count of warnings and errors
+;;      - Is there a supported way to just parse the error messages and
+;;        access the results of the parse?  If not, I'll probably have to
+;;        write a new new compilation mode.
 ;;      - Highlighting in XEmacs
-;; XXX: Reload project file automatically
 ;; XXX: Combinators for making common project configurations:
 ;;      - E.g. grep for saved files from given file
 ;; XXX: Highlight (lines with) errors and warnings
@@ -123,7 +125,9 @@ unlimited."
                ((stringp shell)
                 (bg-build-const (split-string shell "[ \n\t]+")))
                (t
-                (compat-error "Shell command required!"))))))
+                (compat-error "Shell command required!"))))
+   (cons 'attr
+         (file-attributes file))))
 
 (defun bg-build-call-prj (project fun &rest args)
   (let* ((file (car project))
@@ -281,6 +285,16 @@ The expression should evaluate to a bg-build project object."
 (defvar bg-build-saved-files nil)
 
 (defun bg-build-files-saved-timeout ()
+  (mapc
+   (function
+    (lambda (project)
+      (let ((file (car project))
+            (data (cdr project)))
+        (when (bg-build-attr-newer?
+               (file-attributes file)
+               (bg-build-assoc-cdr 'attr data))
+          (bg-build-add-project file)))))
+   bg-build-projects)
   (let ((saved-files bg-build-saved-files))
     (setq bg-build-saved-files nil)
     (mapc

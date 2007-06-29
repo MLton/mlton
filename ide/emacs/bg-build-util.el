@@ -58,6 +58,20 @@ on nil."
   "Returns the current line number counting from 1."
   (+ 1 (count-lines 1 (bg-build-point-at-current-line))))
 
+(defun bg-build-time-to-double (time)
+  "Converts a time to a double."
+  (+ (* (car time) 65536.0)
+     (cadr time)
+     (if (cddr time) (* (caddr time) 1e-06) 0)))
+
+(defun bg-build-attr-newer? (attr1 attr2)
+  "Returns non-nil iff the modification time of `attr1' is later than the
+modification time of `attr2'.  Note that this also returns nil when either
+one of the modification times is nil."
+  (and attr1 attr2
+       (> (bg-build-time-to-double (nth 5 attr1))
+          (bg-build-time-to-double (nth 5 attr2)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'bg-build-util)
