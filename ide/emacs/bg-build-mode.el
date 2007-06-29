@@ -41,8 +41,8 @@
 Functionality:
 - Each time a file is saved, and after a user configurable delay period
   has been exhausted, a build is started silently in the background.
-- When the build is finished, a status indicator is displayed
-  non-intrusively.
+- When the build is finished, an optional status message is displayed and
+  an optional action on failed builds is performed.
 - At any time, you can switch to a bg-build buffer where all the messages
   from the build are shown.
 - After the build has finished you can jump to locations of warnings and
@@ -53,6 +53,13 @@ Functionality:
 - A project configuration file specifies the commands required to build a
   project."
   :group 'compilation)
+
+(defcustom bg-build-action-on-failure (function first-error)
+  "Optional action to perform on build failure."
+  :type '(choice
+          (const :tag "None" (function (lambda () nil)))
+          (function :tag "Action"))
+  :group 'bg-build)
 
 (defcustom bg-build-delay 1.0
   "Idle time in seconds to delay before automatically starting a build
@@ -206,9 +213,10 @@ The expression should evaluate to a bg-build project object."
          ((and (memq bg-build-notify '(always))
                (string-match "FINISHED\n" event))
           (message "SUCCEEDED: %s" (bg-build-prj-name project)))
-         ((and (memq bg-build-notify '(always on-failure))
-               (string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event))
-          (message "FAILED: %s" (bg-build-prj-name project)))))
+         ((string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event)
+          (funcall bg-build-action-on-failure)
+          (when (memq bg-build-notify '(always on-failure))
+            (message "FAILED: %s" (bg-build-prj-name project))))))
       (bg-build-check-build-queue))))
 
 (defun bg-build-kill-buffer-hook (project)
