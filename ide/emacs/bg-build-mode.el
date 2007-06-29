@@ -361,21 +361,16 @@ The expression should evaluate to a bg-build project object."
           (mapc (function
                  (lambda (project)
                    (let ((file (car project)))
-                   (insert (if (assoc file bg-build-live-builds) "L" " ")
+                   (insert (let ((n (length (member project bg-build-build-queue))))
+                             (if (zerop n) "  " (format "%2d" n)))
+                           (if (assoc file bg-build-live-builds) "L" " ")
                            (if (assoc file bg-build-finished-builds) "F" " ")
-                           "     | "
+                           "   | "
                            (bg-build-prj-name project) " (" file ")"
                            "\n"))))
                 bg-build-projects)
           (insert "\n"
                   "Total of " (number-to-string bg-build-counter) " builds started.\n")
-          (when bg-build-build-queue
-            (insert "\n"
-                    "Build queue:\n\n")
-            (mapc (function
-                   (lambda (project)
-                     (insert "  " (bg-build-prj-name project) "\n")))
-                  bg-build-build-queue))
           (setq buffer-read-only t)
           (goto-char point))))))
 
