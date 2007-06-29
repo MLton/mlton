@@ -150,26 +150,37 @@ unlimited."
 
 (defvar bg-build-projects nil)
 
-(defun bg-build-add-project (file)
+(defvar bg-build-add-project-history nil)
+
+(defun bg-build-add-project (&optional file)
   "Adds a project file to bg-build minor mode.  This basically
 reads and evaluates the first Emacs Lisp expression from specified file.
 The expression should evaluate to a bg-build project object."
-  (interactive "fSpecify bg-build -file: ")
-  (let* ((file (compat-abbreviate-file-name (file-truename file)))
-         (directory (file-name-directory file))
-         (data (with-temp-buffer
-                 (buffer-disable-undo)
-                 (insert-file-contents file)
-                 (setq default-directory directory)
-                 (goto-char (point-min))
-                 (eval `(labels
-                            ((bg-build
-                              (&rest args)
-                              (apply (function bg-build-prj) ,file args)))
-                          ,(read (current-buffer)))))))
-    (setq bg-build-projects
-          (bg-build-replace-in-assoc bg-build-projects file data)))
-  (bg-build-status-update))
+  (interactive)
+  (cond
+   ((not file)
+    (bg-build-add-project
+     (read-file-name
+      "Specify bg-build -file: " nil nil t nil 'bg-build-add-project-history)))
+   ((not (and (file-readable-p file)
+              (file-regular-p file)))
+    (compat-error "Specified file is not a regular readable file"))
+   (t
+    (let* ((file (compat-abbreviate-file-name (file-truename file)))
+           (directory (file-name-directory file))
+           (data (with-temp-buffer
+                   (buffer-disable-undo)
+                   (insert-file-contents file)
+                   (setq default-directory directory)
+                   (goto-char (point-min))
+                   (eval `(labels
+                              ((bg-build
+                                (&rest args)
+                                (apply (function bg-build-prj) ,file args)))
+                            ,(read (current-buffer)))))))
+      (setq bg-build-projects
+            (bg-build-replace-in-assoc bg-build-projects file data)))
+    (bg-build-status-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Running Builds

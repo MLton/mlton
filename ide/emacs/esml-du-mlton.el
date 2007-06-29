@@ -55,25 +55,35 @@ is needed."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interface
 
-(defun esml-du-mlton (duf)
+(defvar esml-du-mlton-history nil)
+
+(defun esml-du-mlton (&optional duf)
   "Gets def-use information from a def-use file produced by MLton."
-  (interactive "fSpecify def-use -file: ")
-  (run-with-idle-timer
-   0.5 nil
-   (function
-    (lambda (duf)
-      (let ((duf (def-use-file-truename duf)))
-        (unless (member duf esml-du-live-dufs)
-          (let ((ctx (esml-du-ctx duf)))
-            (esml-du-load ctx)
-            (add-to-list 'esml-du-live-dufs duf)
-            (def-use-add-dus
-              (function esml-du-title)
-              (function esml-du-sym-at-ref)
-              (function esml-du-sym-to-uses)
-              (function esml-du-finalize)
-              ctx))))))
-   duf))
+  (interactive)
+  (cond
+   ((not duf)
+    (esml-du-mlton
+     (read-file-name
+      "Specify def-use -file: " nil nil t nil 'esml-du-mlton-history)))
+   ((not (and (file-readable-p duf)
+              (file-regular-p duf)))
+    (compat-error "Specified file is not a regular readable file"))
+   ((run-with-idle-timer
+     0.5 nil
+     (function
+      (lambda (duf)
+        (let ((duf (def-use-file-truename duf)))
+          (unless (member duf esml-du-live-dufs)
+            (let ((ctx (esml-du-ctx duf)))
+              (esml-du-load ctx)
+              (add-to-list 'esml-du-live-dufs duf)
+              (def-use-add-dus
+                (function esml-du-title)
+                (function esml-du-sym-at-ref)
+                (function esml-du-sym-to-uses)
+                (function esml-du-finalize)
+                ctx))))))
+     duf))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Move to symbol
