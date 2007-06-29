@@ -209,6 +209,7 @@ The expression should evaluate to a bg-build project object."
                   bg-build-finished-builds)))
         (setq bg-build-live-builds
               (bg-build-remove-from-assoc bg-build-live-builds file))
+        (bg-build-check-build-queue)
         (cond
          ((and (memq bg-build-notify '(always))
                (string-match "FINISHED\n" event))
@@ -216,8 +217,7 @@ The expression should evaluate to a bg-build project object."
          ((string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event)
           (funcall bg-build-action-on-failure)
           (when (memq bg-build-notify '(always on-failure))
-            (message "FAILED: %s" (bg-build-prj-name project))))))
-      (bg-build-check-build-queue))))
+            (message "FAILED: %s" (bg-build-prj-name project)))))))))
 
 (defun bg-build-kill-buffer-hook (project)
   (lexical-let ((project project))
@@ -257,13 +257,18 @@ The expression should evaluate to a bg-build project object."
 (defvar bg-build-build-queue nil)
 
 (defun bg-build-check-build-queue ()
-  (while (and bg-build-build-queue
-              (or (not bg-build-max-live-builds)
-                  (< (length bg-build-live-builds)
-                     bg-build-max-live-builds)))
-    (bg-build-start-build (car (last bg-build-build-queue)))
-    (setq bg-build-build-queue (butlast bg-build-build-queue)))
-  (bg-build-status-update))
+  (bg-build-status-update)
+  (run-with-idle-timer
+   0.01 nil
+   (function
+    (lambda ()
+      (when (and bg-build-build-queue
+                 (or (not bg-build-max-live-builds)
+                     (< (length bg-build-live-builds)
+                        bg-build-max-live-builds)))
+        (bg-build-start-build (car (last bg-build-build-queue)))
+        (setq bg-build-build-queue (butlast bg-build-build-queue))
+        (bg-build-check-build-queue))))))
 
 (defun bg-build-build-project (project)
   (setq bg-build-build-queue
@@ -320,7 +325,8 @@ The expression should evaluate to a bg-build project object."
                (cdr key-command))))
           `(("[(b)]"      . ,(function bury-buffer))
             ("[(q)]"      . ,(function bg-build-kill-current-buffer))
-            ("[(k)]"      . ,(function bg-build-status-rem-project))
+            ("[(a)]"      . ,(function bg-build-add-project))
+            ("[(r)]"      . ,(function bg-build-status-rem-project))
             ("[(p)]"      . ,(function bg-build-status-visit-project-file))
             ("[(f)]"      . ,(function bg-build-status-visit-finished-build))
             ("[(l)]"      . ,(function bg-build-status-visit-live-build))
