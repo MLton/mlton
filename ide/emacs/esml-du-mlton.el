@@ -62,14 +62,17 @@ is needed."
    0.5 nil
    (function
     (lambda (duf)
-      (let ((ctx (esml-du-ctx (def-use-file-truename duf))))
-        (esml-du-load ctx)
-        (def-use-add-dus
-          (function esml-du-title)
-          (function esml-du-sym-at-ref)
-          (function esml-du-sym-to-uses)
-          (function esml-du-finalize)
-          ctx))))
+      (let ((duf (def-use-file-truename duf)))
+        (unless (member duf esml-du-live-dufs)
+          (let ((ctx (esml-du-ctx duf)))
+            (esml-du-load ctx)
+            (add-to-list 'esml-du-live-dufs duf)
+            (def-use-add-dus
+              (function esml-du-title)
+              (function esml-du-sym-at-ref)
+              (function esml-du-sym-to-uses)
+              (function esml-du-finalize)
+              ctx))))))
    duf))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,12 +193,18 @@ beginning of the symbol."
     (when buffer
       (kill-buffer buffer))))
 
+(defvar esml-du-live-dufs nil)
+
 (defun esml-du-finalize (ctx)
   (esml-du-stop-parsing ctx)
   (let ((timer (esml-du-ctx-poll-timer ctx)))
     (when timer
       (compat-delete-timer timer)
-      (esml-du-ctx-set-poll-timer nil ctx))))
+      (esml-du-ctx-set-poll-timer nil ctx)))
+  (setq esml-du-live-dufs
+        (remove* (esml-du-ctx-duf ctx)
+                 esml-du-live-dufs
+                 :test (function equal))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context
