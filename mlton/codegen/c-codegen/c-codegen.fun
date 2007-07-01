@@ -134,12 +134,6 @@ structure Operand =
 fun implementsPrim (p: 'a Prim.t): bool =
    let
       datatype z = datatype Prim.Name.t
-      fun w32168 s =
-         case WordSize.prim s of
-            W8 => true
-          | W16 => true
-          | W32 => true
-          | W64 => false
    in
       case Prim.name p of
          CPointer_add => true
@@ -186,7 +180,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       | Word_mulCheck (s, _) => w32168 s
+       | Word_mulCheck _ => true
        | Word_neg _ => true
        | Word_negCheck _ => true
        | Word_notb _ => true
