@@ -142,7 +142,7 @@ val cint =
 val csize =
    Promise.lazy
    (fn () => word' (Control.Target.Size.cint (),
-                    {signed = true}))
+                    {signed = false}))
 
 val seqIndex =
    Promise.lazy
@@ -152,7 +152,7 @@ val seqIndex =
 val objptrHeader =
    Promise.lazy
    (fn () => word' (Control.Target.Size.header (),
-                    {signed = true}))
+                    {signed = false}))
 
 val bool = word (WordSize.bool, {signed = true})
 val shiftArg = word (WordSize.shiftArg, {signed = false})
