@@ -29,7 +29,7 @@
 (defun bg-build-assoc-cdr (key alist)
   "Same as (cdr (assoc key alist)) except that doesn't attempt to call cdr
 on nil."
-  (let ((key-value (assoc key (cdr alist))))
+  (let ((key-value (assoc key alist)))
     (when key-value
       (cdr key-value))))
 
