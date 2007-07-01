@@ -9,19 +9,9 @@
 ;; This is a minor mode for ``handsfree'' background batch building.  See
 ;; http://mlton.org/EmacsBgBuildMode for further information.
 
-;; NOTE: This mode is not yet quite complete!  Expect several crucial
-;; usability improvements in the near future.
-;;
-;; XXX: Commands: goto-last-build-buffer
-;; XXX: Better compilation-mode:
-;;      - Give count of warnings and errors
-;;      - Is there a supported way to just parse the error messages and
-;;        access the results of the parse?  If not, I'll probably have to
-;;        write a new new compilation mode.
-;;      - Highlighting in XEmacs
+;; XXX: Highlight (lines with) errors and warnings
 ;; XXX: Combinators for making common project configurations:
 ;;      - E.g. grep for saved files from given file
-;; XXX: Highlight (lines with) errors and warnings
 ;; XXX: Locate project file(s) automatically
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,7 +47,15 @@ Functionality:
   :group 'compilation)
 
 (defcustom bg-build-action-on-failure (function first-error)
-  "Optional action to perform on build failure."
+  "Optional action to perform when build fails."
+  :type '(choice
+          (const :tag "None" (function (lambda () nil)))
+          (function :tag "Action"))
+  :group 'bg-build)
+
+(defcustom bg-build-action-on-messages (function first-error)
+  "Optional action to perform when build does not fail, but produces
+messages (typically warnings)."
   :type '(choice
           (const :tag "None" (function (lambda () nil)))
           (function :tag "Action"))
@@ -90,12 +88,11 @@ unlimited."
           (number :tag "Number"))
   :group 'bg-build)
 
-(defcustom bg-build-notify 'on-failure
+(defcustom bg-build-notify '(messages failure)
   "When to notify about completed builds."
-  :type '(choice
-          (const :tag "Always" always)
-          (const :tag "Never" never)
-          (const :tag "On failure" on-failure))
+  :type '(set (const :tag "Success"  success)
+              (const :tag "Messages" messages)
+              (const :tag "Failure"  failure))
   :group 'bg-build)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -196,6 +193,20 @@ The expression should evaluate to a bg-build project object."
         (interrupt-process (cdr live)))
     (bg-build-check-build-queue)))
 
+(defvar bg-build-messages nil)
+
+(defun bg-build-parse-messages ()
+  (let ((original-display-message
+         (symbol-function 'display-message)))
+    (fset 'display-message
+          (function
+           (lambda (label &rest args)
+             (unless (eq label 'progress)
+               (apply original-display-message label args)))))
+    (unwind-protect
+        (funcall compilation-parse-errors-function nil nil)
+      (fset 'display-message original-display-message))))
+
 (defun bg-build-process-sentinel (project)
   (lexical-let ((project project))
     (lambda (process event)
@@ -218,18 +229,36 @@ The expression should evaluate to a bg-build project object."
               (when previous
                 (kill-buffer (cdr previous))))
             (push (cons file buffer)
-                  bg-build-finished-builds)))
+                  bg-build-finished-builds)
+            (bg-build-parse-messages)
+            (set (make-local-variable 'bg-build-messages)
+                 (and (listp compilation-error-list)
+                      compilation-error-list))))
         (setq bg-build-live-builds
               (bg-build-remove-from-assoc bg-build-live-builds file))
         (bg-build-check-build-queue)
         (cond
-         ((and (memq bg-build-notify '(always))
-               (string-match "FINISHED\n" event))
-          (message "SUCCEEDED: %s" (bg-build-prj-name project)))
          ((string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event)
-          (funcall bg-build-action-on-failure)
-          (when (memq bg-build-notify '(always on-failure))
-            (message "FAILED: %s" (bg-build-prj-name project)))))))))
+          (with-current-buffer buffer
+            (funcall bg-build-action-on-failure))
+          (when (memq 'failure bg-build-notify)
+            (message "FAILED, %d MESSAGE(S): %s"
+                     (with-current-buffer buffer
+                       (length bg-build-messages))
+                     (bg-build-prj-name project))))
+         ((and (with-current-buffer buffer
+                 bg-build-messages)
+               (memq 'messages bg-build-notify)
+               (string-match "FINISHED\n" event))
+          (with-current-buffer buffer
+            (funcall bg-build-action-on-messages))
+          (message "%d MESSAGE(S): %s"
+                   (with-current-buffer buffer
+                     (length bg-build-messages))
+                   (bg-build-prj-name project)))
+         ((and (memq 'success bg-build-notify)
+               (string-match "FINISHED\n" event))
+          (message "SUCCEEDED: %s" (bg-build-prj-name project))))))))
 
 (defun bg-build-kill-buffer-hook (project)
   (lexical-let ((project project))
@@ -383,16 +412,26 @@ The expression should evaluate to a bg-build project object."
           (mapc (function
                  (lambda (project)
                    (let ((file (car project)))
-                   (insert (let ((n (length (member project bg-build-build-queue))))
-                             (if (zerop n) "  " (format "%2d" n)))
-                           (if (assoc file bg-build-live-builds) "L" " ")
-                           (if (assoc file bg-build-finished-builds) "F" " ")
-                           "   | "
-                           (bg-build-prj-name project) " (" file ")"
-                           "\n"))))
+                     (insert (let ((n (length (member project bg-build-build-queue))))
+                               (if (zerop n) "  " (format "%2d" n)))
+                             (if (assoc file bg-build-live-builds) "L" " ")
+                             (let ((buffer
+                                    (bg-build-assoc-cdr
+                                     file bg-build-finished-builds)))
+                               (cond ((and buffer
+                                           (with-current-buffer buffer
+                                             bg-build-messages))
+                                      "FM")
+                                     (buffer
+                                      "F ")
+                                     (t
+                                      "  ")))
+                             "  | "
+                             (bg-build-prj-name project) " (" file ")"
+                             "\n"))))
                 bg-build-projects)
-          (insert "\n"
-                  "Total of " (number-to-string bg-build-counter) " builds started.\n")
+          (insert "\nTotal of " (number-to-string bg-build-counter)
+                  " builds started.\n")
           (setq buffer-read-only t)
           (goto-char point))))))
 
