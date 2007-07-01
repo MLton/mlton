@@ -31,7 +31,7 @@ typedef Pointer Objptr;
 #endif
 
 #define GCState ((Pointer)&gcState)
-#define ExnStack *(Word32*)(GCState + ExnStackOffset)
+#define ExnStack *(size_t*)(GCState + ExnStackOffset)
 #define FrontierMem *(Pointer*)(GCState + FrontierOffset)
 #define Frontier frontier
 #define StackBottom *(Pointer*)(GCState + StackBottomOffset)
@@ -171,7 +171,7 @@ typedef Pointer Objptr;
 
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(Word32*)(StackTop - sizeof(void*));               \
+                l_nextFun = *(uintptr_t*)(StackTop - sizeof(void*));            \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
                                         __FILE__, __LINE__, l_nextFun);         \
