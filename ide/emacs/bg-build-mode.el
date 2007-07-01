@@ -209,13 +209,10 @@ The expression should evaluate to a bg-build project object."
              'kill-buffer-hook
              (bg-build-kill-buffer-hook project))
             (setq buffer-read-only nil)
-            (let ((point (point))
-                  (point-max (point-max)))
-              (goto-char point-max)
+            (let ((point (point)))
+              (goto-char (point-max))
               (insert "\n" event)
-              (if (= point point-max)
-                  (goto-line 3)
-                  (goto-char point)))
+              (goto-char point))
             (setq buffer-read-only t)
             (let ((previous (assoc file bg-build-finished-builds)))
               (when previous
