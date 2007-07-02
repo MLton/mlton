@@ -116,8 +116,7 @@ fun hasCodegen (cg) =
    in
       case !Control.Target.arch of
          AMD64 => (case cg of
-                      Bytecode => false
-                    | x86Codegen => false
+                      x86Codegen => false
                     | _ => true)
        | X86 => (case cg of
                     amd64Codegen => false
@@ -228,8 +227,7 @@ fun makeOptions {usage} =
         SpaceString (fn s =>
                      explicitCodegen
                      := SOME (case s of
-                                 "bytecode" => (* Bytecode *)
-                                               usage "can't use bytecode codegen"
+                                 "bytecode" => Bytecode
                                | "c" => CCodegen
                                | "x86" => x86Codegen
                                | "amd64" => amd64Codegen

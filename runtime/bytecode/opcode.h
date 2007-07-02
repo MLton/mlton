@@ -8,42 +8,43 @@
 #ifndef _OPCODE_H_
 #define _OPCODE_H_
 
-#define coercePrims()                                   \
-        coerce (Real32, Real64, Real32, Real64)         \
-        coerce (Real32, Word32, Real32, WordS32)        \
-        coerce (Real64, Real32, Real64, Real32)         \
-        coerce (Real64, Word32, Real64, WordS32)        \
-        coerce (Word16, Real32, WordS16, Real32)        \
-        coerce (Word16, Real64, WordS16, Real64)        \
-        coerce (Word16, Word32, WordS16, Word32)        \
-        coerce (Word16, Word64, WordS16, Word64)        \
-        coerce (Word32, Real32, WordS32, Real32)        \
-        coerce (Word32, Real64, WordS32, Real64)        \
-        coerce (Word32, Word64, WordS32, Word64)        \
-        coerce (Word8, Real32, WordS8, Real32)          \
-        coerce (Word8, Real64, WordS8, Real64)          \
-        coerce (Word8, Word16, WordS8, Word16)          \
-        coerce (Word8, Word32, WordS8, Word32)          \
-        coerce (Word8, Word64, WordS8, Word64)          \
-        coerce (Word16, Word32, WordU16, Word32)        \
-        coerce (Word16, Word64, WordU16, Word64)        \
-        coerce (Word16, Word8, WordU16, Word8)          \
-        coerce (Word32, Word16, WordU32, Word16)        \
-        coerce (Word32, Word64, WordU32, Word64)        \
-        coerce (Word32, Word8, WordU32, Word8)          \
-        coerce (Word64, Word16, WordU64, Word16)        \
-        coerce (Word64, Word32, WordU64, Word32)        \
-        coerce (Word64, Word8, WordU64, Word8)          \
-        coerce (Word8, Word16, WordU8, Word16)          \
-        coerce (Word8, Word32, WordU8, Word32)          \
-        coerce (Word8, Word64, WordU8, Word64)
+#define coercePrims()                           \
+        allWordCoercePrims(8)                   \
+        allWordCoercePrims(16)                  \
+        allWordCoercePrims(32)                  \
+        allWordCoercePrims(64)                  \
+        coerce(rnd, Real32, Real32, Real32, Real32)     \
+        coerce(rnd, Real32, Real64, Real32, Real64)     \
+        coerce(rnd, Real64, Real32, Real64, Real32)     \
+        coerce(rnd, Real64, Real64, Real64, Real64)     \
+        coerce(cast, Real32, Word32, Real32, Word32)    \
+        coerce(cast, Word32, Real32, Word32, Real32)    \
+        coerce(cast, Real64, Word64, Real64, Word64)    \
+        coerce(cast, Word64, Real64, Word64, Real64)
+
+#define allWordCoercePrims(size)                        \
+        bothFromWordCoercePrims(rnd, size, Real32)      \
+        bothFromWordCoercePrims(rnd, size, Real64)      \
+        bothToWordCoercePrims(rnd, Real32, size)        \
+        bothToWordCoercePrims(rnd, Real64, size)        \
+        bothFromWordCoercePrims(extd, size, Word8)      \
+        bothFromWordCoercePrims(extd, size, Word16)     \
+        bothFromWordCoercePrims(extd, size, Word32)     \
+        bothFromWordCoercePrims(extd, size, Word64)
+
+#define bothFromWordCoercePrims(name, from, to)                 \
+        coerce (name, Word##from, to, Word##S##from, to)        \
+        coerce (name, Word##from, to, Word##U##from, to)
+#define bothToWordCoercePrims(name, from, to)                   \
+        coerce (name, from, Word##to, from, Word##S##to)        \
+        coerce (name, from, Word##to, from, Word##U##to)
 
 #define loadStorePrimsOfTy(mode, ty)            \
         loadStoreArrayOffset (mode, ty)         \
         loadStoreContents (mode, ty)            \
-        loadStoreGlobal (mode, ty, ty)          \
+        loadStoreGlobal (mode, ty)              \
         loadStoreOffset (mode, ty)              \
-        loadStoreRegister (mode, ty, ty)        \
+        loadStoreRegister (mode, ty)            \
         loadStoreStackOffset (mode, ty)
 
 #define loadStorePrims(mode)                            \
@@ -53,10 +54,10 @@
         loadStorePrimsOfTy (mode, Word16)               \
         loadStorePrimsOfTy (mode, Word32)               \
         loadStorePrimsOfTy (mode, Word64)               \
-        loadStoreGlobal (mode, CPointer, Word32)        \
-        loadStoreRegister (mode, CPointer, Word32)      \
-        loadStoreGlobal (mode, Objptr, Word32)          \
-        loadStoreRegister (mode, Objptr, Word32)        \
+        loadStoreGlobalPointer (mode, CPointer)         \
+        loadStoreGlobalPointer (mode, Objptr)           \
+        loadStoreRegisterPointer (mode, CPointer)       \
+        loadStoreRegisterPointer (mode, Objptr)         \
         loadStoreFrontier (mode)                        \
         loadStoreStackTop (mode)
 
@@ -69,9 +70,20 @@
         binary (Real##size, Real##size##_mul)           \
         unary (Real##size, Real##size##_neg)            \
         unary (Real##size, Real##size##_round)          \
-        binary (Real##size, Real##size##_sub)
+        binary (Real##size, Real##size##_sub)           \
+        unary (Real##size, Real##size##_Math_acos)      \
+        unary (Real##size, Real##size##_Math_asin)      \
+        unary (Real##size, Real##size##_Math_atan)      \
+        binary (Real##size, Real##size##_Math_atan2)    \
+        unary (Real##size, Real##size##_Math_cos)       \
+        unary (Real##size, Real##size##_Math_exp)       \
+        unary (Real##size, Real##size##_Math_ln)        \
+        unary (Real##size, Real##size##_Math_log10)     \
+        unary (Real##size, Real##size##_Math_sin)       \
+        unary (Real##size, Real##size##_Math_sqrt)      \
+        unary (Real##size, Real##size##_Math_tan)
 
-#define wordPrimsOfSizeNoMul(size)                      \
+#define wordPrimsOfSize(size)                           \
         binary (Word##size, Word##size##_add)           \
         binary (Word##size, Word##size##_andb)          \
         compare (Word##size, Word##size##_equal)        \
@@ -95,17 +107,25 @@
         binary (Word##size, Word##size##_xorb)          \
         binaryCheck (Word##size, WordS##size##_addCheck)        \
         binaryCheck (Word##size, WordU##size##_addCheck)        \
+        binaryCheck (Word##size, WordS##size##_mulCheck)        \
+        binaryCheck (Word##size, WordU##size##_mulCheck)        \
         unaryCheck (Word##size, Word##size##_negCheck)          \
         binaryCheck (Word##size, WordS##size##_subCheck)        \
         loadWord (size)
 
-#define wordPrimsOfSize(size)                                   \
-        wordPrimsOfSizeNoMul(size)                              \
-        binaryCheck (Word##size, WordS##size##_mulCheck)        \
-        binaryCheck (Word##size, WordU##size##_mulCheck)        \
+#define cpointerPrims()                                 \
+        cpointerBinary (CPointer_add)                   \
+        cpointerBinary (CPointer_sub)                   \
+        cpointerCompare(CPointer_equal)                 \
+        cpointerCompare(CPointer_lt)                    \
+        cpointerCoerceFrom (CPointer_fromWord)          \
+        cpointerCoerceTo (CPointer_toWord)              \
+        cpointerDiff (CPointer_diff)                    \
+        cpointerLoadWord (CPointer_loadWord)
 
 #define prims()                                         \
         coercePrims ()                                  \
+        cpointerPrims ()                                \
         loadGCState ()                                  \
         loadStorePrims (load)                           \
         loadStorePrims (store)                          \
@@ -114,7 +134,7 @@
         wordPrimsOfSize (8)                             \
         wordPrimsOfSize (16)                            \
         wordPrimsOfSize (32)                            \
-        wordPrimsOfSizeNoMul (64)
+        wordPrimsOfSize (64)
 
 #define opcodes()                               \
         prims()                                 \
@@ -141,24 +161,30 @@
 
 #define binary(ty, f)  opcodeGen (f)
 #define binaryCheck(ty, f)  opcodeGen (f)
+#define coerceOp(n, f, t)  opcodeGen (f##_##n##To##t)
+#define coerce(n, f1, t1, f2, t2)  coerceOp (n, f2, t2)
 #define compare(ty, f)  opcodeGen (f)
+#define cpointerBinary(f)  opcodeGen (f)
+#define cpointerCompare(f)  opcodeGen (f)
+#define cpointerCoerceFrom(f)  opcodeGen (f)
+#define cpointerCoerceTo(f)  opcodeGen (f)
+#define cpointerDiff(f)  opcodeGen (f)
+#define cpointerLoadWord(f)  opcodeGen (f)
 #define loadStoreArrayOffset(mode, ty)  opcodeName2 (ty, mode##ArrayOffset)
 #define loadStoreContents(mode, ty)  opcodeName2 (ty, mode##Contents)
 #define loadStoreFrontier(mode) opcodeGen (mode##Frontier)
 #define loadGCState() opcodeGen (loadGCState)
-#define loadStoreGlobal(mode, ty, ty2)  opcodeName2 (ty, mode##Global)
+#define loadStoreGlobal(mode, ty)  opcodeName2 (ty, mode##Global)
+#define loadStoreGlobalPointer(mode, ty)  opcodeName2 (ty, mode##Global)
 #define loadStoreOffset(mode, ty)  opcodeName2 (ty, mode##Offset)
-#define loadStoreRegister(mode, ty, ty2)  opcodeName2 (ty, mode##Register)
+#define loadStoreRegister(mode, ty)  opcodeName2 (ty, mode##Register)
+#define loadStoreRegisterPointer(mode, ty)  opcodeName2 (ty, mode##Register)
 #define loadStoreStackOffset(mode, ty)  opcodeName2 (ty, mode##StackOffset)
 #define loadStoreStackTop(mode)  opcodeGen (mode##StackTop)
 #define loadWord(size)  opcodeName (Word, size, loadWord)
 #define shift(ty, f)  opcodeGen (f)
 #define unary(ty, f)  opcodeGen (f)
 #define unaryCheck(ty, f)  opcodeGen (f)
-
-#define coerceOp(f, t)  opcodeGen (f##_to##t)
-
-#define coerce(f1, t1, f2, t2)  coerceOp (f2, t2)
 
 // Define the opcode strings.
 
@@ -178,20 +204,28 @@ enum {
         opcodes ()
 };
 
-typedef Word8 Opcode;
+typedef Word16 Opcode;
 
-#undef coerce
-#undef coerceOp
 #undef binary
 #undef binaryCheck
+#undef coerce
+#undef coerceOp
 #undef compare
+#undef cpointerBinary
+#undef cpointerCompare
+#undef cpointerCoerceFrom
+#undef cpointerCoerceTo
+#undef cpointerDiff
+#undef cpointerLoadWord
 #undef loadGCState
 #undef loadStoreArrayOffset
 #undef loadStoreContents
 #undef loadStoreFrontier
 #undef loadStoreGlobal
+#undef loadStoreGlobalPointer
 #undef loadStoreOffset
 #undef loadStoreRegister
+#undef loadStoreRegisterPointer
 #undef loadStoreStackOffset
 #undef loadStoreStackTop
 #undef loadWord

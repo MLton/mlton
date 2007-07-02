@@ -210,7 +210,7 @@ DEBUG_OBJS := 							\
 	platform-gdb.o						\
 	platform/$(TARGET_OS)-gdb.o
 
-OMIT_BYTECODE := yes
+OMIT_BYTECODE := no
 ifeq ($(OMIT_BYTECODE), yes)
 else
   OBJS += bytecode/interpret.o
@@ -309,10 +309,10 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
+	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-shadow -w -c -o $@ $<
 
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -o $@ $<
+	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -w -o $@ $<
 
 basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<

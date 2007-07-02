@@ -46,20 +46,11 @@ fun implementsPrim p =
       datatype z = datatype Prim.Name.t
    in
       case Prim.name p of
-         Real_Math_acos _ => false
-       | Real_Math_asin _ => false
-       | Real_Math_atan _ => false
-       | Real_Math_atan2 _ => false
-       | Real_Math_cos _ => false
-       | Real_Math_exp _ => false
-       | Real_Math_ln _ => false
-       | Real_Math_log10 _ => false
-       | Real_Math_sin _ => false
-       | Real_Math_sqrt _ => false
-       | Real_Math_tan _ => false
-       | Real_ldexp _ => false
+         Real_ldexp _ => false
        | Real_muladd _ => false
        | Real_mulsub _ => false
+       | Word_quot _ => true
+       | Word_rem _ => true
        | _ => CCodegen.implementsPrim p
    end
 
@@ -79,11 +70,11 @@ structure CType =
                             | CType.Objptr => NONE 
                             | _ => SOME (f t))
          in
-            CType.memo (fn t =>
-                        valOf (case t of
-                                  CType.CPointer => m CType.Word32
-                                | CType.Objptr => m CType.Word32
-                                | _ => m t))
+            fn t =>
+            valOf (case t of
+                      CType.CPointer => m (CType.csize ())
+                    | CType.Objptr => m (CType.csize ())
+                    | _ => m t)
          end
 
       val noSigned =
@@ -318,7 +309,9 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
             val function =
                concat ["(", "*(", CFunction.cPointerType f, " fptr)) "]
             val display =
-               concat ["{\n\tWord32 fptr = PopReg (Word32);\n\t",
+               concat ["{\n\t", CType.toStringOrig (CType.csize ()), 
+                       " fptr = PopReg (", CType.toStringOrig (CType.csize ()), 
+                       ");\n\t",
                        callC {function = function,
                               prototype = CFunction.prototype f},
                        "\t}\n"]
@@ -424,7 +417,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
            | W16 => emitWord16
            | W32 => emitWord32
            | W64 => emitWord64) (WordX.toIntInf w)
-      val emitOpcode = emitWord8
+      val emitOpcode = emitWord16
       val emitPrim: 'a Prim.t -> unit =
          fn p => emitOpcode (opcode (Prim.toString p))
       fun emitCallC (index: int): unit =
@@ -445,13 +438,10 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
             val () = List.push (occurrenceOffsets, !offset)
             val () = if !emitted then () else List.push (needToEmit, l)
          in
-            emitWord32 0
+            emitWordX (WordX.zero (WordSize.cpointer ()))
          end
       val emitLabel =
          Trace.trace ("Bytecode.emitLabel", Label.layout, Unit.layout) emitLabel
-      fun emitLoadWord32Zero () =
-         (emitOpcode (wordOpcode (Load, CType.Word32))
-          ; emitWord32 0)
       fun loadStoreStackOffset (offset, cty, ls) =
          (emitOpcode (stackOffset (ls, cty))
           ; emitWord16 (Bytes.toIntInf offset))
@@ -473,7 +463,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
              | Contents {oper, ...} =>
                    (emitLoadOperand oper
                     ; emitOpcode (contents (ls, cty)))
-             | File => emitLoadWord32Zero ()
+             | File => emitOperand (Null, ls)
              | Frontier => emitOpcode (frontier ls)
              | GCState => emitOpcode (gcState ls)
              | Global g =>
@@ -484,7 +474,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
              | Label l =>
                   (emitOpcode (wordOpcode (ls, cty))
                    ; emitLabel l)
-             | Line => emitLoadWord32Zero ()
+             | Line => (emitOpcode (wordOpcode (ls, cty))
+                        ; emitWordX (WordX.zero (WordSize.cint ())))
              | Null => (emitOpcode (wordOpcode (ls, cty))
                         ; emitWordX (WordX.zero (WordSize.cpointer ())))
              | Offset {base, offset = off, ...} =>
@@ -503,6 +494,10 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                      Load => (emitOpcode (wordOpcode (ls, cty)); emitWordX w)
                    | Store => Error.bug "Bytecode.emitOperand: Word, Store"
          end
+      val emitLoadOperand =
+         Trace.trace
+         ("Bytecode.emitLoadOperand", Operand.layout, Unit.layout)
+         emitLoadOperand
       val emitOperand =
          Trace.trace2
          ("Bytecode.emitOperand", Operand.layout, LoadStore.layout, Unit.layout)
