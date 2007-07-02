@@ -63,7 +63,7 @@ is needed."
   (cond
    ((not duf)
     (esml-du-mlton
-     (read-file-name
+     (compat-read-file-name
       "Specify def-use -file: " nil nil t nil 'esml-du-mlton-history)))
    ((not (and (file-readable-p duf)
               (file-regular-p duf)))

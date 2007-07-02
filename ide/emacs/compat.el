@@ -31,6 +31,11 @@
     (defalias 'compat-delete-timer (function delete-itimer))
   (defalias 'compat-delete-timer (function cancel-timer)))
 
+(if (string-match "XEmacs" emacs-version)
+    (defalias 'compat-read-file-name (function read-file-name))
+  (defun compat-read-file-name (&optional a b c d e f)
+    (funcall (function read-file-name) a b c d e)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'compat)
