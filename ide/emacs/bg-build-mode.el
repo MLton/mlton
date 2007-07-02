@@ -113,6 +113,30 @@ all to disable highlighting."
               (const :tag "Failure"  failure))
   :group 'bg-build)
 
+(defcustom bg-build-projects-auto-load nil
+  "Automatic loading of `bg-build-projects-recent' at startup."
+  :type '(choice
+          (const :tag "Disabled" nil)
+          (const :tag "Enabled" t))
+  :set (function
+        (lambda (sym val)
+          (custom-set-default sym val)
+          (unless bg-build-load-time
+            (customize-save-variable
+             'bg-build-projects-recent
+             (when bg-build-projects-auto-load
+               (mapcar (function car)
+                       bg-build-projects))))))
+  :group 'bg-build)
+
+(defcustom bg-build-projects-recent '()
+  "Automatically updated List of BGB files currently or previously loaded.
+This customization variable is not usually manipulated directly by the
+user."
+  :type '(repeat
+          (file :tag "BGB file" :must-match t))
+  :group 'bg-build)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Project Object
 
@@ -165,6 +189,13 @@ all to disable highlighting."
 
 (defvar bg-build-projects nil)
 
+(defun bg-build-set-projects (projects)
+  (setq bg-build-projects projects)
+  (when bg-build-projects-auto-load
+    (customize-save-variable
+     'bg-build-projects-recent
+     (mapcar (function car) projects))))
+
 (defvar bg-build-add-project-history nil)
 
 (defun bg-build-add-project (&optional file)
@@ -193,8 +224,8 @@ The expression should evaluate to a bg-build project object."
                                 (&rest args)
                                 (apply (function bg-build-prj) ,file args)))
                             ,(read (current-buffer)))))))
-      (setq bg-build-projects
-            (bg-build-replace-in-assoc bg-build-projects file data)))
+      (bg-build-set-projects
+       (bg-build-replace-in-assoc bg-build-projects file data)))
     (bg-build-status-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -556,8 +587,8 @@ The expression should evaluate to a bg-build project object."
   (interactive)
   (let ((project (bg-build-status-the-project)))
     (when project
-      (setq bg-build-projects
-            (bg-build-remove-from-assoc bg-build-projects (car project)))
+      (bg-build-set-projects
+       (bg-build-remove-from-assoc bg-build-projects (car project)))
       (bg-build-status-update))))
 
 (defun bg-build-status-visit-project-file ()
@@ -643,5 +674,17 @@ The expression should evaluate to a bg-build project object."
   (bg-build-build-mode-map))
 
 (bg-build-update)
+
+(run-with-idle-timer
+ 1.0 nil
+ (function
+  (lambda ()
+    (when bg-build-projects-auto-load
+      (mapc (function
+             (lambda (file)
+               (when (and (file-readable-p file)
+                          (file-regular-p file))
+                 (bg-build-add-project file))))
+            bg-build-projects-recent)))))
 
 (provide 'bg-build-mode)
