@@ -141,7 +141,7 @@ val cint =
                     {signed = true}))
 val csize =
    Promise.lazy
-   (fn () => word' (Control.Target.Size.cint (),
+   (fn () => word' (Control.Target.Size.csize (),
                     {signed = false}))
 
 val seqIndex =
