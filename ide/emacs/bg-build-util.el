@@ -72,6 +72,23 @@ one of the modification times is nil."
        (> (bg-build-time-to-double (nth 5 attr1))
           (bg-build-time-to-double (nth 5 attr2)))))
 
+(defun bg-build-pos-to-point (pos)
+  "Returns the value of point in the current buffer at the position given
+as a (line . col) pair."
+  (save-excursion
+    (goto-line (car pos))
+    (+ (point) (cdr pos))))
+
+(defun bg-build-point-to-pos (point)
+  "Returns the position as a (line . col) pair corresponding to the
+specified point in the current buffer."
+  (save-excursion
+    (goto-char point)
+    (beginning-of-line)
+    (let ((line (+ (count-lines 1 (point)) 1))
+          (col (- point (point))))
+      (cons line col))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'bg-build-util)

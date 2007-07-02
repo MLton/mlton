@@ -9,7 +9,7 @@
 ;; This is a minor mode for ``handsfree'' background batch building.  See
 ;; http://mlton.org/EmacsBgBuildMode for further information.
 
-;; XXX: Highlight (lines with) errors and warnings
+;; XXX: Cleanup.
 ;; XXX: Combinators for making common project configurations:
 ;;      - E.g. grep for saved files from given file
 ;; XXX: Locate project file(s) automatically
@@ -80,12 +80,30 @@ type `M-x describe-function bg-build <TAB>' to see the available commands."
   :set (function bg-build-set-custom-and-update)
   :group 'bg-build)
 
+(defcustom bg-build-highlighting-overlay-priority 500
+  "Priority of highlighting overlays."
+  :type 'integer
+  :group 'bg-build)
+
 (defcustom bg-build-max-live-builds 1
   "Maximum number of live build processes to run concurrently or nil for
 unlimited."
   :type '(choice
           (const :tag "Unlimited" nil)
           (number :tag "Number"))
+  :group 'bg-build)
+
+(defface bg-build-message-sexp-face
+  '((((class color)) (:background "orange"))
+    (t (:background "gray")))
+  "Face for highlighting sexps that are referred to in messages."
+  :group 'faces
+  :group 'bg-build)
+
+(defcustom bg-build-message-highlighting '(sexp)
+  "How to highlight source locations corresponding to messages.  Unselect
+all to disable highlighting."
+  :type '(set (const :tag "Sexp" sexp))
   :group 'bg-build)
 
 (defcustom bg-build-notify '(messages failure)
@@ -157,7 +175,7 @@ The expression should evaluate to a bg-build project object."
   (cond
    ((not file)
     (bg-build-add-project
-     (read-file-name
+     (compat-read-file-name
       "Specify bg-build -file: " nil nil t nil 'bg-build-add-project-history)))
    ((not (and (file-readable-p file)
               (file-regular-p file)))
@@ -197,15 +215,99 @@ The expression should evaluate to a bg-build project object."
 
 (defun bg-build-parse-messages ()
   (let ((original-display-message
-         (symbol-function 'display-message)))
-    (fset 'display-message
-          (function
-           (lambda (label &rest args)
-             (unless (eq label 'progress)
-               (apply original-display-message label args)))))
+         (when (fboundp 'display-message)
+           (symbol-function 'display-message))))
+    (when (fboundp 'display-message)
+      (fset 'display-message
+            (function
+             (lambda (label &rest args)
+               (unless (eq label 'progress)
+                 (apply original-display-message label args))))))
     (unwind-protect
         (funcall compilation-parse-errors-function nil nil)
-      (fset 'display-message original-display-message))))
+      (when (fboundp 'display-message)
+        (fset 'display-message original-display-message)))))
+
+;; XXX: The following advice depends on the internals of the compilation mode.
+(defadvice next-error (after bg-build-next-error activate)
+  (with-current-buffer compilation-last-buffer
+    (bg-build-highlight-messages)))
+
+(defadvice compile-goto-error (after bg-build-compile-goto-error activate)
+  (with-current-buffer compilation-last-buffer
+    (bg-build-highlight-messages)))
+
+(defvar bg-build-highlighting-overlays nil)
+
+(defun bg-build-parse-message (message)
+  (when (consp message)
+    (let ((marker (car message))
+          (message (cdr message)))
+      (cond
+       ((markerp message)
+        (let* ((buffer (marker-buffer message))
+               (file (buffer-file-name buffer))
+               (point (marker-position message))
+               (pos (bg-build-point-to-pos point)))
+          (cons file pos)))
+       ((consp message)
+        (cons (caar message)
+              (cons (cadr message)
+                    (1- (or (caddr message) 1)))))))))
+
+(defun bg-build-delete-highlighting-overlays ()
+  (mapc (function
+         (lambda (maybe-overlay)
+           (when (overlayp maybe-overlay)
+             (delete-overlay maybe-overlay))))
+        bg-build-highlighting-overlays)
+  (setq bg-build-highlighting-overlays nil))
+
+(defun bg-build-highlight-messages ()
+  (when (and bg-build-messages
+             bg-build-message-highlighting)
+    (let ((file-to-buffer (bg-build-make-hash-table)))
+      (mapc (function
+             (lambda (buffer)
+               (puthash (buffer-file-name buffer)
+                        buffer
+                        file-to-buffer)))
+            (buffer-list))
+      (setq bg-build-highlighting-overlays
+            (mapcar (function
+                     (lambda (info-or-overlay)
+                       (if (overlayp info-or-overlay)
+                           info-or-overlay
+                         (let* ((info info-or-overlay)
+                                (file (car info))
+                                (pos (cdr info))
+                                (buffer (gethash file file-to-buffer)))
+                           (if (not buffer)
+                               info-or-overlay
+                             (with-current-buffer buffer
+                               (let* ((begin
+                                       (bg-build-pos-to-point pos))
+                                      (beyond
+                                       (save-excursion
+                                         (goto-char begin)
+                                         (condition-case ()
+                                             (forward-sexp)
+                                           (error
+                                            (condition-case ()
+                                                (forward-word 1)
+                                              (error
+                                               ))))
+                                         (point)))
+                                      (overlay
+                                       (make-overlay begin beyond)))
+                                 (overlay-put
+                                  overlay 'priority
+                                  bg-build-highlighting-overlay-priority)
+                                 (overlay-put
+                                  overlay 'face
+                                  'bg-build-message-sexp-face)
+                                 overlay)))))))
+                    bg-build-highlighting-overlays)))))
 
 (defun bg-build-process-sentinel (project)
   (lexical-let ((project project))
@@ -233,10 +335,16 @@ The expression should evaluate to a bg-build project object."
             (bg-build-parse-messages)
             (set (make-local-variable 'bg-build-messages)
                  (and (listp compilation-error-list)
-                      compilation-error-list))))
+                      compilation-error-list))
+            (set (make-local-variable 'bg-build-highlighting-overlays)
+                 (mapcar (function bg-build-parse-message)
+                         bg-build-messages))))
         (setq bg-build-live-builds
               (bg-build-remove-from-assoc bg-build-live-builds file))
         (bg-build-check-build-queue)
+        (when (buffer-live-p buffer)
+          (with-current-buffer buffer
+            (bg-build-highlight-messages)))
         (cond
          ((string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event)
           (with-current-buffer buffer
@@ -246,8 +354,9 @@ The expression should evaluate to a bg-build project object."
                      (with-current-buffer buffer
                        (length bg-build-messages))
                      (bg-build-prj-name project))))
-         ((and (with-current-buffer buffer
-                 bg-build-messages)
+         ((and (when (buffer-live-p buffer)
+                 (with-current-buffer buffer
+                   bg-build-messages))
                (memq 'messages bg-build-notify)
                (string-match "FINISHED\n" event))
           (with-current-buffer buffer
@@ -266,6 +375,7 @@ The expression should evaluate to a bg-build project object."
       (let ((file (car project)))
         (setq bg-build-finished-builds
               (bg-build-remove-from-assoc bg-build-finished-builds file)))
+      (bg-build-delete-highlighting-overlays)
       (bg-build-status-update))))
 
 (defvar bg-build-counter 0)
