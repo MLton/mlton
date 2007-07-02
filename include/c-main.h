@@ -18,7 +18,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 
 #define Main(al, mg, mfs, mmc, pk, ps, mc, ml)                          \
 /* Globals */                                                           \
-int nextFun;                                                            \
+uintptr_t nextFun;                                                      \
 int returnToC;                                                          \
 void MLton_callFromC () {                                               \
         struct cont cont;                                               \

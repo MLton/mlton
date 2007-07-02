@@ -100,14 +100,14 @@ typedef Pointer Objptr;
         DeclareChunk(n) {                                       \
                 struct cont cont;                               \
                 register unsigned int frontier asm("g5");       \
-                int l_nextFun = nextFun;                        \
+                uintptr_t l_nextFun = nextFun;                  \
                 register unsigned int stackTop asm("g6");
 #else
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
                 struct cont cont;               \
                 Pointer frontier;               \
-                int l_nextFun = nextFun;        \
+                uintptr_t l_nextFun = nextFun;  \
                 Pointer stackTop;
 #endif
 

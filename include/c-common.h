@@ -17,7 +17,7 @@ struct cont {
         void *nextChunk;
 };
 
-extern int nextFun;
+extern uintptr_t nextFun;
 extern int returnToC;
 extern struct cont (*nextChunks []) (void);
 extern struct GC_state gcState;
