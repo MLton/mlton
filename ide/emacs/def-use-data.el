@@ -121,17 +121,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Queries
 
+(defun def-use-query (fn)
+  "Queries the def-use -sources with the given function and moves the
+satisfied dus to the front."
+  (let ((prev nil)
+        (work def-use-dus-list)
+        (result nil))
+    (while (and work
+                (not (setq result (funcall fn (car work)))))
+      (setq prev work)
+      (setq work (cdr work)))
+    (when (and prev work)
+      (setcdr prev (cdr work))
+      (setcdr work def-use-dus-list)
+      (setq def-use-dus-list work)
+      (def-use-show-dus-update))
+    result))
+
 (defun def-use-sym-at-ref (ref)
   (when ref
-    (loop for dus in def-use-dus-list do
-      (let ((it (def-use-dus-sym-at-ref dus ref)))
-        (when it (return it))))))
+    (def-use-query
+      (function
+       (lambda (dus)
+         (def-use-dus-sym-at-ref dus ref))))))
 
 (defun def-use-sym-to-uses (sym)
   (when sym
-    (loop for dus in def-use-dus-list do
-      (let ((it (def-use-dus-sym-to-uses dus sym)))
-        (when it (return it))))))
+    (def-use-query
+      (function
+       (lambda (dus)
+         (def-use-dus-sym-to-uses dus sym))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
