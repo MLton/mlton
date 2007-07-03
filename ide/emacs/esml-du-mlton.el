@@ -52,38 +52,54 @@ is needed."
                  (const :tag "Always" always))
   :group 'esml-du)
 
+(defcustom esml-du-dufs-auto-load nil
+  "Automatic loading of `esml-du-dufs-recent' at startup."
+  :type '(choice
+          (const :tag "Disabled" nil)
+          (const :tag "Enabled" t))
+  :group 'esml-du)
+
+(defcustom esml-du-dufs-recent '()
+  "Automatically updated list of def-use -files currently or previously
+loaded.  This customization variable is not usually manipulated directly
+by the user."
+  :type '(repeat
+          (file :tag "Def-Use file" :must-match t))
+  :group 'esml-du)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interface
 
 (defvar esml-du-mlton-history nil)
 
-(defun esml-du-mlton (&optional duf)
+(defun esml-du-mlton (&optional duf dont-save)
   "Gets def-use information from a def-use file produced by MLton."
   (interactive)
   (cond
    ((not duf)
     (esml-du-mlton
      (compat-read-file-name
-      "Specify def-use -file: " nil nil t nil 'esml-du-mlton-history)))
+      "Specify def-use -file: " nil nil t nil 'esml-du-mlton-history)
+     dont-save))
    ((not (and (file-readable-p duf)
               (file-regular-p duf)))
     (compat-error "Specified file is not a regular readable file"))
    ((run-with-idle-timer
      0.5 nil
      (function
-      (lambda (duf)
+      (lambda (duf dont-save)
         (let ((duf (def-use-file-truename duf)))
           (unless (member duf esml-du-live-dufs)
             (let ((ctx (esml-du-ctx duf)))
               (esml-du-load ctx)
-              (add-to-list 'esml-du-live-dufs duf)
+              (esml-du-set-live-dufs (cons duf esml-du-live-dufs) dont-save)
               (def-use-add-dus
                 (function esml-du-title)
                 (function esml-du-sym-at-ref)
                 (function esml-du-sym-to-uses)
                 (function esml-du-finalize)
                 ctx))))))
-     duf))))
+     duf dont-save))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Move to symbol
@@ -205,16 +221,24 @@ beginning of the symbol."
 
 (defvar esml-du-live-dufs nil)
 
+(defun esml-du-set-live-dufs (dufs &optional dont-save)
+  (setq esml-du-live-dufs dufs)
+  (when (and (not dont-save)
+             esml-du-dufs-auto-load)
+    (customize-save-variable
+     'esml-du-dufs-recent
+     (copy-list dufs))))
+
 (defun esml-du-finalize (ctx)
   (esml-du-stop-parsing ctx)
   (let ((timer (esml-du-ctx-poll-timer ctx)))
     (when timer
       (compat-delete-timer timer)
       (esml-du-ctx-set-poll-timer nil ctx)))
-  (setq esml-du-live-dufs
-        (remove* (esml-du-ctx-duf ctx)
-                 esml-du-live-dufs
-                 :test (function equal))))
+  (esml-du-set-live-dufs
+   (remove* (esml-du-ctx-duf ctx)
+            esml-du-live-dufs
+            :test (function equal))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context
@@ -420,5 +444,17 @@ altough the editor may feel a bit sluggish."
       (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(run-with-idle-timer
+ 1.0 nil
+ (function
+  (lambda ()
+    (when esml-du-dufs-auto-load
+      (mapc (function
+             (lambda (file)
+               (when (and (file-readable-p file)
+                          (file-regular-p file))
+                 (esml-du-mlton file t))))
+            esml-du-dufs-recent)))))
 
 (provide 'esml-du-mlton)
