@@ -118,19 +118,10 @@ all to disable highlighting."
   :type '(choice
           (const :tag "Disabled" nil)
           (const :tag "Enabled" t))
-  :set (function
-        (lambda (sym val)
-          (custom-set-default sym val)
-          (unless bg-build-load-time
-            (customize-save-variable
-             'bg-build-projects-recent
-             (when bg-build-projects-auto-load
-               (mapcar (function car)
-                       bg-build-projects))))))
   :group 'bg-build)
 
 (defcustom bg-build-projects-recent '()
-  "Automatically updated List of BGB files currently or previously loaded.
+  "Automatically updated list of BGB files currently or previously loaded.
 This customization variable is not usually manipulated directly by the
 user."
   :type '(repeat
@@ -189,16 +180,17 @@ user."
 
 (defvar bg-build-projects nil)
 
-(defun bg-build-set-projects (projects)
+(defun bg-build-set-projects (projects &optional dont-save)
   (setq bg-build-projects projects)
-  (when bg-build-projects-auto-load
+  (when (and (not dont-save)
+             bg-build-projects-auto-load)
     (customize-save-variable
      'bg-build-projects-recent
      (mapcar (function car) projects))))
 
 (defvar bg-build-add-project-history nil)
 
-(defun bg-build-add-project (&optional file)
+(defun bg-build-add-project (&optional file dont-save)
   "Adds a project file to bg-build minor mode.  This basically
 reads and evaluates the first Emacs Lisp expression from specified file.
 The expression should evaluate to a bg-build project object."
@@ -207,7 +199,8 @@ The expression should evaluate to a bg-build project object."
    ((not file)
     (bg-build-add-project
      (compat-read-file-name
-      "Specify bg-build -file: " nil nil t nil 'bg-build-add-project-history)))
+      "Specify bg-build -file: " nil nil t nil 'bg-build-add-project-history)
+     dont-save))
    ((not (and (file-readable-p file)
               (file-regular-p file)))
     (compat-error "Specified file is not a regular readable file"))
@@ -225,7 +218,8 @@ The expression should evaluate to a bg-build project object."
                                 (apply (function bg-build-prj) ,file args)))
                             ,(read (current-buffer)))))))
       (bg-build-set-projects
-       (bg-build-replace-in-assoc bg-build-projects file data)))
+       (bg-build-replace-in-assoc bg-build-projects file data)
+       dont-save))
     (bg-build-status-update))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -272,8 +266,7 @@ The expression should evaluate to a bg-build project object."
 
 (defun bg-build-parse-message (message)
   (when (consp message)
-    (let ((marker (car message))
-          (message (cdr message)))
+    (let ((message (cdr message)))
       (cond
        ((markerp message)
         (let* ((buffer (marker-buffer message))
@@ -471,7 +464,7 @@ The expression should evaluate to a bg-build project object."
         (when (bg-build-attr-newer?
                (file-attributes file)
                (bg-build-assoc-cdr 'attr data))
-          (bg-build-add-project file)))))
+          (bg-build-add-project file t)))))
    bg-build-projects)
   (let ((saved-files bg-build-saved-files))
     (setq bg-build-saved-files nil)
@@ -684,7 +677,7 @@ The expression should evaluate to a bg-build project object."
              (lambda (file)
                (when (and (file-readable-p file)
                           (file-regular-p file))
-                 (bg-build-add-project file))))
+                 (bg-build-add-project file t))))
             bg-build-projects-recent)))))
 
 (provide 'bg-build-mode)
