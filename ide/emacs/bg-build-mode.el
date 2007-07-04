@@ -231,9 +231,19 @@ The expression should evaluate to a bg-build project object."
 
 (defun bg-build-interrupt-build (project)
   (let* ((file (car project))
-         (live (assoc file bg-build-live-builds)))
-    (if live
-        (interrupt-process (cdr live)))
+         (proc (bg-build-assoc-cdr file bg-build-live-builds)))
+    (cond
+     ((and proc (process-live-p proc))
+      ;; Ok.  We interrupt the build.
+      (interrupt-process proc))
+     (proc
+      ;; Hmm...  Shouldn't normally happen.  The sentinel is supposed
+      ;; to remove the build from the live list, so probably something
+      ;; unexpected occurred in the sentinel.
+      (setq bg-build-live-builds
+            (bg-build-remove-from-assoc
+             bg-build-live-builds
+             file))))
     (bg-build-check-build-queue)))
 
 (defvar bg-build-messages nil)
