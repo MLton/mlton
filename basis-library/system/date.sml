@@ -160,8 +160,7 @@ structure Date :> DATE =
     (* Check whether date may be passed to ISO/ANSI C functions: *)
 
     fun okDate (T {year, month, day, hour, minute, second, ...}) =
-        1900 <= year 
-        andalso 1 <= day    andalso day    <= monthdays year month
+        1 <= day    andalso day    <= monthdays year month
         andalso 0 <= hour   andalso hour   <= 23
         andalso 0 <= minute andalso minute <= 59
         andalso 0 <= second andalso second <= 61 (* leap seconds *)

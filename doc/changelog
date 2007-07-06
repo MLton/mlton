@@ -1,6 +1,9 @@
 Here are the changes since version 20051202.
 
 * 2007-07-6
+   - Fixed bug in Date module of Basis Library; some functions would
+     erroneously raise Date when given a year <= 1900.  Thanks to Joe
+     Hurd for the bug report.
    - Fixed a long-standing bug in monomorphisation pass.  Thanks to
      Vesa Karvonen for the bug report.
 
