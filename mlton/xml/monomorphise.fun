@@ -75,7 +75,7 @@ structure Cache:
 
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
    let
-      val {get = getVar: Var.t -> Stype.t vector -> SvarExp.t,
+      val {get = getVar: Var.t -> (Stype.t vector -> SvarExp.t),
            set = setVar, ...} =
          Property.getSet (Var.plist, Property.initRaise ("var", Var.layout))
       val setVar =
@@ -108,6 +108,10 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
          ("Monomorphise.setTyvar", Tyvar.layout, Stype.layout, Unit.layout)
          setTyvar
       fun setTyvars (tyvs, tys) = Vector.foreach2 (tyvs, tys, setTyvar)
+      val setTyvars =
+         Trace.trace2 
+         ("Monomorphise.setTyvars", Vector.layout Tyvar.layout, Vector.layout Stype.layout, Unit.layout)
+         setTyvars
       fun monoType (t: Xtype.t): Stype.t =
          Xtype.hom {ty = t,
                     var = getTyvar,
@@ -121,6 +125,12 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
             NONE => NONE
           | SOME t => SOME (monoType t)
       fun monoTypes ts = Vector.map (ts, monoType)
+      fun monoVar (x: Var.t, ts: Xtype.t vector): SvarExp.t = getVar x (monoTypes ts)
+      val monoVar =
+         Trace.trace2 
+         ("Monomorphise.monoVar", 
+          Var.layout, Vector.layout Xtype.layout, SvarExp.layout)
+         monoVar
       fun monoCon (c: Con.t, ts: Xtype.t vector): Con.t = getCon c (monoTypes ts)
       val monoCon =
          Trace.trace2 
@@ -258,7 +268,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       (*              monoExp               *)
       (*------------------------------------*)
       fun monoVarExp (XvarExp.T {var, targs}) =
-         getVar var (monoTypes targs)
+         monoVar (var, targs)
       val monoVarExp =
          Trace.trace 
          ("Monomorphise.monoVarExp", XvarExp.layout, SvarExp.layout) 
@@ -269,8 +279,8 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
          (fn (e: Xexp.t) =>
           let
              val {decs, result} = Xexp.dest e
-             val thunks = List.fold (decs, [], fn (d, thunks) =>
-                                     monoDec d :: thunks)
+             val thunks = 
+                List.fold (decs, [], fn (dec, thunks) => monoDec dec :: thunks)
              val result = monoVarExp result
              val decs =
                 List.fold (thunks, [], fn (thunk, decs) => thunk () @ decs)
@@ -337,78 +347,86 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       (*------------------------------------*)
       and monoDec arg: unit -> Sdec.t list =
          traceMonoDec
-         (fn Xdec.MonoVal {var, ty, exp} =>
-          let
-             val (var, _) = renameMono (var, ty)
-          in fn () => [Sdec.MonoVal {var = var,
-                                     ty = monoType ty,
-                                     exp = monoPrimExp exp}]
-          end
-       | Xdec.PolyVal {var, tyvars, ty, exp} =>
-            let
-               val cache = Cache.new ()
-               val _ =
-                  setVar (var, fn ts =>
-                          (setTyvars (tyvars, ts)
-                           ; Cache.getOrAdd (cache, ts, fn () =>
-                                             SvarExp.mono (Var.new var))))
-            in
-               fn () =>
-               List.fold
-               (Cache.toList cache, [], fn ((ts, ve), decs) =>
-                (setTyvars (tyvars, ts)
-                 ; let val {decs = decs', result} = Sexp.dest (monoExp exp)
-                   in decs'
-                      @ (Sdec.MonoVal {var = SvarExp.var ve,
-                                       ty = monoType ty,
-                                       exp = SprimExp.Var result} :: decs)
-                   end))
-            end
-       | Xdec.Fun {tyvars, decs} =>
-            let
-               val cache = Cache.new ()
-               val _ =
-                  Vector.foreachi
-                  (decs, fn (n, {var, ...}) =>
-                   setVar
-                   (var, fn ts =>
+         (fn (d: Xdec.t) =>
+          case d of
+             Xdec.MonoVal {var, ty, exp} =>
+                let
+                   val (var, _) = renameMono (var, ty)
+                in 
+                   fn () => 
+                   [Sdec.MonoVal {var = var,
+                                  ty = monoType ty,
+                                  exp = monoPrimExp exp}]
+                end
+           | Xdec.PolyVal {var, tyvars, ty, exp} =>
+                let
+                   val cache = Cache.new ()
+                   val _ =
+                      setVar 
+                      (var, fn ts =>
+                       (setTyvars (tyvars, ts)
+                        ; Cache.getOrAdd (cache, ts, fn () =>
+                                          SvarExp.mono (Var.new var))))
+                in
+                   fn () =>
+                   List.fold
+                   (Cache.toList cache, [], fn ((ts, ve), decs) =>
                     (setTyvars (tyvars, ts)
-                     ; Vector.sub (Cache.getOrAdd
-                                   (cache, ts, fn () =>
-                                    Vector.map (decs,
-                                                SvarExp.mono o Var.new o #var)),
-                                   n))))
-            in fn () =>
-               List.revMap
-               (Cache.toList cache, fn (ts, xs) =>
-                (setTyvars (tyvars, ts)
-                 ; Vector.foreach2 (decs, xs, fn ({var, ...}, var') =>
-                                    setVar (var, fn _ => var'))
-                 ; (Sdec.Fun
-                    {tyvars = Vector.new0 (),
-                     decs = (Vector.map2
-                             (decs, xs, fn ({ty, lambda, ...}, ve) =>
-                              {var = SvarExp.var ve,
-                               ty = monoType ty,
-                               lambda = monoLambda lambda}))})))
-            end
-       | Xdec.Exception {con, arg} =>
-            let
-               val con' =
-                  if Con.equals (con, Con.overflow)
-                     then
-                        (* We avoid renaming Overflow because the closure
-                         * converter needs to recognize it.  This is not
-                         * safe in general, but is OK in this case because
-                         * we know there is only one Overflow excon.
-                         *)
-                        con
-                  else Con.new con
-               val _ = setCon (con, fn _ => con')
-            in
-               fn () => [Sdec.Exception {con = con',
-                                         arg = monoTypeOpt arg}]
-            end) arg
+                     ; let 
+                          val {decs = decs', result} = Sexp.dest (monoExp exp)
+                       in 
+                          decs'
+                          @ (Sdec.MonoVal {var = SvarExp.var ve,
+                                           ty = monoType ty,
+                                           exp = SprimExp.Var result} :: decs)
+                       end))
+                end
+           | Xdec.Fun {tyvars, decs} =>
+                let
+                   val cache = Cache.new ()
+                   val _ =
+                      Vector.foreachi
+                      (decs, fn (n, {var, ...}) =>
+                       setVar
+                       (var, fn ts =>
+                        (setTyvars (tyvars, ts)
+                         ; Vector.sub (Cache.getOrAdd
+                                       (cache, ts, fn () =>
+                                        Vector.map (decs, SvarExp.mono o Var.new o #var)),
+                                       n))))
+                in 
+                   fn () =>
+                   List.revMap
+                   (Cache.toList cache, fn (ts, xs) =>
+                    (setTyvars (tyvars, ts)
+                     ; Vector.foreach2 (decs, xs, fn ({var, ...}, var') =>
+                                        setVar (var, fn _ => var'))
+                     ; (Sdec.Fun
+                        {tyvars = Vector.new0 (),
+                         decs = (Vector.map2
+                                 (decs, xs, fn ({ty, lambda, ...}, ve) =>
+                                  {var = SvarExp.var ve,
+                                   ty = monoType ty,
+                                   lambda = monoLambda lambda}))})))
+                end
+           | Xdec.Exception {con, arg} =>
+                let
+                   val con' =
+                      if Con.equals (con, Con.overflow)
+                         then
+                            (* We avoid renaming Overflow because the closure
+                             * converter needs to recognize it.  This is not
+                             * safe in general, but is OK in this case because
+                             * we know there is only one Overflow excon.
+                             *)
+                            con
+                      else Con.new con
+                   val _ = setCon (con, fn _ => con')
+                in
+                   fn () => 
+                   [Sdec.Exception {con = con',
+                                    arg = monoTypeOpt arg}]
+                end) arg
       (*------------------------------------*)
       (*     main code for monomorphise     *)
       (*------------------------------------*)
