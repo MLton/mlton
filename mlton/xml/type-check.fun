@@ -61,16 +61,19 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
            set = setVar, ...} =
          Property.getSet (Var.plist,
                           Property.initRaise ("var scheme", Var.layout))
-(*
       val getVar = 
          Trace.trace 
-         ("Xml.TypeCheck.getVar", Var.layout, Layout.ignore) 
+         ("Xml.TypeCheck.getVar", Var.layout, fn {tyvars, ty} =>
+          Layout.record [("tyvars", Vector.layout Tyvar.layout tyvars),
+                         ("ty", Type.layout ty)])
          getVar
       val setVar = 
          Trace.trace2 
-         ("Xml.TypeCheck.setVar", Var.layout, Layout.ignore, Layout.ignore) 
+         ("Xml.TypeCheck.setVar", Var.layout, fn {tyvars, ty} =>
+          Layout.record [("tyvars", Vector.layout Tyvar.layout tyvars),
+                         ("ty", Type.layout ty)], 
+          Layout.ignore)
          setVar
-*)
       fun checkVarExp (VarExp.T {var, targs}): Type.t =
          let
             val _ = checkTypes targs
@@ -109,10 +112,17 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                | _ => Type.error ("constructor pattern mismatch", Pat.layout p)
          end
       val traceCheckExp =
-         Trace.trace ("Xml.TypeCheck.checkExp", Exp.layout, Type.layout)
+         Trace.trace 
+         ("Xml.TypeCheck.checkExp", Exp.layout, Type.layout)
       val traceCheckPrimExp = 
          Trace.trace2
          ("Xml.TypeCheck.checkPrimExp", PrimExp.layout, Type.layout, Type.layout)
+      val traceCheckLambda = 
+         Trace.trace 
+         ("Xml.TypeCheck.checkLambda", Lambda.layout, Type.layout)
+      val traceCheckDec = 
+         Trace.trace 
+         ("Xml.TypeCheck.checkDec", Dec.layout, Unit.layout)
       local
          val exnType = ref NONE
       in
@@ -134,9 +144,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
           let val {decs, result} = Exp.dest exp
           in List.foreach (decs, checkDec)
              ; checkVarExp result
-          end handle e => (Layout.outputl (Exp.layout exp, Out.error)
-                           ; raise e))
-         arg
+          end) arg
       and checkPrimExp arg: Type.t =
          traceCheckPrimExp
          (fn (e: PrimExp.t, ty: Type.t) => 
@@ -258,15 +266,19 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                   else Type.tuple (checkVarExps xs)
              | Var x => checkVarExp x
          end) arg
-      and checkLambda l: Type.t =
+      and checkLambda arg: Type.t =
+         traceCheckLambda
+         (fn (l: Lambda.t) =>
          let
             val {arg, argType, body, ...} = Lambda.dest l
             val _ = checkType argType
             val _ = setVar (arg, {tyvars = Vector.new0 (), ty = argType})
          in
             Type.arrow (argType, checkExp body)
-         end
-      and checkDec d =
+         end) arg
+      and checkDec arg: unit =
+         traceCheckDec
+         (fn (d: Dec.t) =>
          let
             val check = fn (t, t') => check (t, t', fn () => Dec.layout d)
          in
@@ -291,8 +303,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                    ; check (ty, checkExp exp)
                    ; unbindTyvars tyvars
                    ; setVar (var, {tyvars = tyvars, ty = ty}))
-         end handle e => (Layout.outputl (Dec.layout d, Out.error)
-                          ; raise e)
+         end) arg
       val _ =
          Vector.foreach
          (datatypes, fn {tycon, tyvars, cons} =>
