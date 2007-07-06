@@ -1,5 +1,9 @@
 Here are the changes since version 20051202.
 
+* 2007-07-6
+   - Fixed a long-standing bug in monomorphisation pass.  Thanks to
+     Vesa Karvonen for the bug report.
+
 * 2007-05-18
    - Native amd64 code generator for amd64-* targets.
    - Eliminate native option from -codegen flag.
@@ -13,7 +17,7 @@ Here are the changes since version 20051202.
    - Added real/word casts in MLton structure.
 
 * 2007-04-12
-   - Added primitivs for bit cast of word to/from real.
+   - Added primitives for bit cast of word to/from real.
    - Implement PackReal<N>{Big,Little} using PackWord<N>{Big,Little}
      and bit casts.
 
@@ -1299,7 +1303,7 @@ Summary:
 * 2001-9-21
   - Fixed MLton.World.{load,save} so that the saved world does not store the
     max heap size.  Instead, the max heap size is computed upon load world in
-    exactly the same way as at program startup.  This fixes a long standing (but
+    exactly the same way as at program startup.  This fixes a long-standing (but
     only recently noticed) problem in which mlton (which uses a saved world)
     would attempt to use as much memory as was on the machine used to build
     world.mlton.

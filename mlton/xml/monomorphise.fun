@@ -371,13 +371,15 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                    fn () =>
                    List.fold
                    (Cache.toList cache, [], fn ((ts, ve), decs) =>
-                    (setTyvars (tyvars, ts)
+                    (setVar (var, fn _ => ve)
                      ; let 
+                          val _ = setTyvars (tyvars, ts)
+                          val ty = monoType ty
                           val {decs = decs', result} = Sexp.dest (monoExp exp)
                        in 
                           decs'
                           @ (Sdec.MonoVal {var = SvarExp.var ve,
-                                           ty = monoType ty,
+                                           ty = ty,
                                            exp = SprimExp.Var result} :: decs)
                        end))
                 end
@@ -398,16 +400,21 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                    fn () =>
                    List.revMap
                    (Cache.toList cache, fn (ts, xs) =>
-                    (setTyvars (tyvars, ts)
-                     ; Vector.foreach2 (decs, xs, fn ({var, ...}, var') =>
-                                        setVar (var, fn _ => var'))
+                    (Vector.foreach2 (decs, xs, fn ({var, ...}, ve) =>
+                                      setVar (var, fn _ => ve))
                      ; (Sdec.Fun
                         {tyvars = Vector.new0 (),
                          decs = (Vector.map2
                                  (decs, xs, fn ({ty, lambda, ...}, ve) =>
-                                  {var = SvarExp.var ve,
-                                   ty = monoType ty,
-                                   lambda = monoLambda lambda}))})))
+                                  let
+                                     val _ = setTyvars (tyvars, ts)
+                                     val ty = monoType ty
+                                     val lambda = monoLambda lambda
+                                  in
+                                     {var = SvarExp.var ve,
+                                      ty = ty,
+                                      lambda = lambda}
+                                  end))})))
                 end
            | Xdec.Exception {con, arg} =>
                 let
