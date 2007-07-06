@@ -351,11 +351,11 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
           case d of
              Xdec.MonoVal {var, ty, exp} =>
                 let
-                   val (var, _) = renameMono (var, ty)
+                   val (var, ty) = renameMono (var, ty)
                 in 
                    fn () => 
                    [Sdec.MonoVal {var = var,
-                                  ty = monoType ty,
+                                  ty = ty,
                                   exp = monoPrimExp exp}]
                 end
            | Xdec.PolyVal {var, tyvars, ty, exp} =>
