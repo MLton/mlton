@@ -105,7 +105,7 @@ structure CtlExtra =
                                      else (intLen - 1) - i)
                           val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
-                          loop (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                          loop (i + 1, C_Int.orb (w, C_Int.<< (acc, 0w4)))
                        end
          in
             loop (0, 0)
@@ -149,7 +149,7 @@ structure CtlExtra =
                                      else (sizeLen - 1) - i)
                           val w = C_Size.castFromSysWord (Word8.castToSysWord w)
                        in
-                          loop (i + 1, C_Size.andb (w, C_Size.<< (acc, 0w4)))
+                          loop (i + 1, C_Size.orb (w, C_Size.<< (acc, 0w4)))
                        end
          in
             C_Size.toInt (loop (0, 0wx0))
@@ -189,7 +189,7 @@ structure CtlExtra =
                                      else (intLen - 1) - i)
                           val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
-                          loopBool (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                          loopBool (i + 1, C_Int.orb (w, C_Int.<< (acc, 0w4)))
                        end
             fun loopInt (i, acc) =
                if i >= intLen
@@ -202,7 +202,7 @@ structure CtlExtra =
                                                else (intLen - 1) - i))
                           val w = C_Int.castFromSysWord (Word8.castToSysWord w)
                        in
-                          loopInt (i + 1, C_Int.andb (w, C_Int.<< (acc, 0w4)))
+                          loopInt (i + 1, C_Int.orb (w, C_Int.<< (acc, 0w4)))
                        end
          in
             if loopBool (0, 0) = 0

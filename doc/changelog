@@ -1,6 +1,11 @@
 Here are the changes since version 20051202.
 
-* 2007-07-6
+* 2007-07-07
+   - Fixed bug in Socket module of Basis Library; unmarshalling of
+     socket options (for get* functions) used andb rather than orb.
+     Thanks to Anders Petersson for the bug report (and patch).
+
+* 2007-07-06
    - Fixed bug in Date module of Basis Library; some functions would
      erroneously raise Date when given a year <= 1900.  Thanks to Joe
      Hurd for the bug report.
