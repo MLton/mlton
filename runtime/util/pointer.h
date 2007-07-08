@@ -20,6 +20,8 @@ typedef pointerAux* pointer;
 #else
 #error __WORDSIZE unknown
 #endif
+#elif __LP64__
+#define FMTPTR "0x%016"PRIxPTR
 #else
 #define FMTPTR "0x%08"PRIxPTR
 #endif

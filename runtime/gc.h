@@ -23,6 +23,8 @@ typedef GC_state GCState_t;
 #else
 #error unknown __WORDSIZE
 #endif
+#elif (defined __LP64__)
+#define GC_MODEL_NATIVE64
 #else
 #define GC_MODEL_NATIVE32
 #endif
