@@ -12,7 +12,7 @@ size_t GC_pageSize (void) {
 }
 
 size_t GC_totalRam (void) {
-  int physMem;
+  size_t physMem;
   size_t len;
   int mib[2];
 
