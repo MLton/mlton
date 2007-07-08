@@ -34,7 +34,17 @@ enum {
   DEBUG_BYTECODE = FALSE,
 };
 
-typedef GC_arrayLength ArrayIndex;
+#if defined (GC_MODEL_NATIVE32)
+#define WordPointer Word32
+#define WordArrayIndex Word32
+#elif defined (GC_MODEL_NATIVE64)
+#define WordPointer Word64
+#define WordArrayIndex Word64
+#else
+#error GC_MODEL_* unspecified
+#endif
+
+typedef WordArrayIndex ArrayIndex;
 typedef Word16 ArrayOffset;
 typedef Word16 CallCIndex;
 typedef Word16 GlobalIndex;
@@ -44,7 +54,6 @@ typedef Pointer ProgramCounter;
 typedef Word16 RegIndex;
 typedef Word8 Scale;
 typedef Int16 StackOffset;  // StackOffset must be signed.
-typedef Pointer StackTop;
 
 struct GC_state gcState;
 
@@ -108,6 +117,8 @@ enum {
         case MODE_store:                        \
                 maybe z = (t) (PopReg (t2));    \
                 break;                          \
+        default:                                \
+                assert (FALSE);                 \
         }
 
 #define loadStore(mode, t, z)  loadStoreGen(mode, t, t, z)
@@ -122,16 +133,8 @@ enum {
                 Fetch (ArrayOffset, arrayOffset);                               \
                 Fetch (Scale, arrayScale);                                      \
                 if (disassemble) goto mainLoop;                                 \
-                if (sizeof(ArrayIndex) == 4) {                                  \
-                        arrayIndex = PopReg (Word32);                           \
-                } else if (sizeof(ArrayIndex) == 8) {                           \
-                        arrayIndex = PopReg (Word64);                           \
-                } else { assert (FALSE); }                                      \
-                if (sizeof(Pointer) == 4) {                                     \
-                        arrayBase = (Pointer) (PopReg (Word32));                \
-                } else if (sizeof(Pointer) == 8) {                              \
-                        arrayBase = (Pointer) (PopReg (Word64));                \
-                } else { assert (FALSE); }                                      \
+                arrayIndex = PopRegX (WordArrayIndex);                          \
+                arrayBase = (Pointer) (PopRegX (WordPointer));                  \
                 loadStore (mode, ty,                                            \
                                 *(ty*)(arrayBase + (arrayIndex * arrayScale) + arrayOffset)); \
                 goto mainLoop;                                                  \
@@ -142,11 +145,7 @@ enum {
                 if (disassemble) goto mainLoop;                 \
         {                                                       \
                 Pointer base;                                   \
-                if (sizeof(Pointer) == 4) {                     \
-                        base = (Pointer) (PopReg (Word32));     \
-                } else if (sizeof(Pointer) == 8) {              \
-                        base = (Pointer) (PopReg (Word64));     \
-                } else { assert (FALSE); }                      \
+                base = (Pointer) (PopRegX (WordPointer));       \
                 loadStore (mode, ty, C (ty, base));             \
                 goto mainLoop;                                  \
         }
@@ -154,21 +153,13 @@ enum {
 #define loadStoreFrontier(mode)                                 \
         case opcodeSym (mode##Frontier):                        \
                 if (disassemble) goto mainLoop;                 \
-                if (sizeof(Pointer) == 4) {                     \
-                        loadStoreGen (mode, Pointer, Word32, Frontier); \
-                } else if (sizeof(Pointer) == 8) {              \
-                        loadStoreGen (mode, Pointer, Word64, Frontier); \
-                } else { assert (FALSE); }                      \
+                loadStoreGen (mode, Pointer, WordPointer, Frontier); \
                 goto mainLoop;
 
 #define loadGCState()                                   \
         case opcodeSym (loadGCState):                   \
                 if (disassemble) goto mainLoop;         \
-                if (sizeof(Pointer) == 4) {             \
-                        StoreReg (Word32, (Word32)&gcState); \
-                } else if (sizeof(Pointer) == 8) {      \
-                        StoreReg (Word64, (Word64)&gcState); \
-                } else { assert (FALSE); }              \
+                StoreReg (WordPointer, (WordPointer)&gcState); \
                 goto mainLoop;
 
 #define loadStoreGlobal(mode, ty)                                       \
@@ -187,11 +178,7 @@ enum {
                 GlobalIndex globalIndex;                                        \
                 Fetch (GlobalIndex, globalIndex);                               \
                 if (disassemble) goto mainLoop;                                 \
-                if (sizeof(Pointer) == 4) {                                     \
-                        loadStoreGen (mode, ty, Word32, G (ty, globalIndex));   \
-                } else if (sizeof(Pointer) == 8) {                              \
-                        loadStoreGen (mode, ty, Word64, G (ty, globalIndex));   \
-                } else { assert (FALSE); }                                      \
+                loadStoreGen (mode, ty, WordPointer, G (ty, globalIndex));      \
                 goto mainLoop;                                                  \
         }
 
@@ -201,11 +188,7 @@ enum {
                 GlobalIndex globalIndex;                                        \
                 Fetch (GlobalIndex, globalIndex);                               \
                 if (disassemble) goto mainLoop;                                 \
-                if (sizeof(Pointer) == 4) {                                     \
-                        loadStoreGen (mode, Objptr, Word32, GPNR (globalIndex)); \
-                } else if (sizeof(Pointer) == 8) {                              \
-                        loadStoreGen (mode, Objptr, Word64, GPNR (globalIndex)); \
-                } else { assert (FALSE); }                                      \
+                loadStoreGen (mode, Objptr, WordPointer, GPNR (globalIndex));   \
                 goto mainLoop;                                                  \
         }
 
@@ -216,11 +199,7 @@ enum {
                 Offset offset;                                          \
                 Fetch (Offset, offset);                                 \
                 if (disassemble) goto mainLoop;                         \
-                if (sizeof(Pointer) == 4) {                             \
-                        base = (Pointer) (PopReg (Word32));             \
-                } else if (sizeof(Pointer) == 8) {                      \
-                        base = (Pointer) (PopReg (Word64));             \
-                } else { assert (FALSE); }                              \
+                base = (Pointer) (PopRegX (WordPointer));               \
                 maybe loadStore (mode, ty, O (ty, base, offset));       \
                 goto mainLoop;                                          \
         }
@@ -241,11 +220,7 @@ enum {
                 RegIndex regIndex;                                              \
                 Fetch (RegIndex, regIndex);                                     \
                 if (disassemble) goto mainLoop;                                 \
-                if (sizeof(Pointer) == 4) {                                     \
-                        loadStoreGen (mode, ty, Word32, R (ty, regIndex));      \
-                } else if (sizeof(Pointer) == 8) {                              \
-                        loadStoreGen (mode, ty, Word64, R (ty, regIndex));      \
-                } else { assert (FALSE); }                                      \
+                loadStoreGen (mode, ty, WordPointer, R (ty, regIndex));         \
                 goto mainLoop;                                                  \
         }
 
@@ -262,11 +237,7 @@ enum {
 #define loadStoreStackTop(mode)                                 \
         case opcodeSym (mode##StackTop):                        \
                 if (disassemble) goto mainLoop;                 \
-                if (sizeof(Pointer) == 4) {                     \
-                        loadStoreGen (mode, Pointer, Word32, StackTop); \
-                } else if (sizeof(Pointer) == 8) {              \
-                        loadStoreGen (mode, Pointer, Word64, StackTop); \
-                } else { assert (FALSE); }                      \
+                loadStoreGen (mode, Pointer, WordPointer, StackTop); \
                 goto mainLoop;
 
 #define loadWord(size)                                  \
@@ -334,15 +305,10 @@ enum {
                 if (disassemble) goto mainLoop;         \
         {                                               \
                 Pointer t0;                             \
-                if (sizeof(Pointer) == 4) {             \
-                        t0 = (Pointer) PopReg (Word32); \
-                        Word32 t1 = PopReg (Word32);    \
-                        PushReg (Word32) = (Word32) f (t0, t1); \
-                } else if (sizeof(Pointer) == 8) {      \
-                        t0 = (Pointer) PopReg (Word64); \
-                        Word64 t1 = PopReg (Word64);    \
-                        PushReg (Word64) = (Word64) f (t0, t1); \
-                } else { assert (FALSE); }              \
+                t0 = (Pointer) (PopRegX (WordPointer)); \
+                WordPointer t1 = PopRegX (WordPointer); \
+                Pointer t2 = f (t0, t1);                \
+                PushRegX (WordPointer) = (WordPointer) t2; \
                 goto mainLoop;                          \
         }
 #define cpointerCompare(f)                              \
@@ -350,13 +316,8 @@ enum {
                 if (disassemble) goto mainLoop;         \
         {                                               \
                 Pointer t0, t1;                         \
-                if (sizeof(Pointer) == 4) {             \
-                        t0 = (Pointer) PopReg (Word32); \
-                        t1 = (Pointer) PopReg (Word32); \
-                } else if (sizeof(Pointer) == 8) {      \
-                        t0 = (Pointer) PopReg (Word64); \
-                        t1 = (Pointer) PopReg (Word64); \
-                } else { assert (FALSE); }              \
+                t0 = (Pointer) (PopRegX (WordPointer)); \
+                t1 = (Pointer) (PopRegX (WordPointer)); \
                 PushReg (Word32) = f (t0, t1);          \
                 goto mainLoop;                          \
         }
@@ -364,13 +325,9 @@ enum {
         case opcodeSym (f):                             \
                 if (disassemble) goto mainLoop;         \
         {                                               \
-                if (sizeof(Pointer) == 4) {             \
-                        Word32 t0 = PopReg (Word32);    \
-                        PushReg (Word32) = (Word32) f (t0); \
-                } else if (sizeof(Pointer) == 8) {      \
-                        Word64 t0 = PopReg (Word64);    \
-                        PushReg (Word64) = (Word64) f (t0); \
-                } else { assert (FALSE); }              \
+                WordPointer t0 = PopRegX (WordPointer); \
+                Pointer t1 = f (t0);                    \
+                PushRegX (WordPointer) = (WordPointer) t1; \
                 goto mainLoop;                          \
         }
 #define cpointerCoerceTo(f)                             \
@@ -378,13 +335,8 @@ enum {
                 if (disassemble) goto mainLoop;         \
         {                                               \
                 Pointer t0;                             \
-                if (sizeof(size_t) == 4) {              \
-                        t0 = (Pointer) PopReg (Word32); \
-                        PushReg (Word32) = f (t0);      \
-                } else if (sizeof(size_t) == 8) {       \
-                        t0 = (Pointer) PopReg (Word64); \
-                        PushReg (Word64) = f (t0);      \
-                } else { assert (FALSE); }              \
+                t0 = (Pointer) (PopRegX (WordPointer)); \
+                PushRegX (WordPointer) = f (t0);        \
                 goto mainLoop;                          \
         }
 #define cpointerDiff(f)                                 \
@@ -392,26 +344,16 @@ enum {
                 if (disassemble) goto mainLoop;         \
         {                                               \
                 Pointer t0, t1;                         \
-                if (sizeof(Pointer) == 4) {             \
-                        t0 = (Pointer) PopReg (Word32); \
-                        t1 = (Pointer) PopReg (Word32); \
-                        PushReg (Word32) = f (t0, t1);  \
-                } else if (sizeof(Pointer) == 8) {      \
-                        t0 = (Pointer) PopReg (Word64); \
-                        t1 = (Pointer) PopReg (Word64); \
-                        PushReg (Word64) = f (t0, t1);  \
-                } else { assert (FALSE); }              \
+                t0 = (Pointer) (PopRegX (WordPointer)); \
+                t1 = (Pointer) (PopRegX (WordPointer)); \
+                PushRegX (WordPointer) = f (t0, t1);    \
                 goto mainLoop;                          \
         }
 #define cpointerLoadWord(f)                             \
         case opcodeSym (f):                             \
         {                                               \
                 size_t t0;                              \
-                if (sizeof(size_t) == 4) {              \
-                        Fetch (Word32, t0);             \
-                } else if (sizeof(size_t) == 8) {       \
-                        Fetch (Word64, t0);             \
-                } else { assert (FALSE); }              \
+                Fetch (WordPointer, t0);                \
                 if (disassemble) goto mainLoop;         \
                 StoreReg (CPointer, (CPointer)t0);      \
                 goto mainLoop;                          \
@@ -494,18 +436,26 @@ enum {
 
 typedef char *String;
 
-#define Cache()                                 \
+#undef CacheFrontier
+#undef CacheStackTop
+#undef FlushFrontier
+#undef FlushStackTop
+#define CacheFrontier()                         \
         do {                                    \
                 frontier = gcState.frontier;    \
+        } while (0)
+#define CacheStackTop()                         \
+        do {                                    \
                 stackTop = gcState.stackTop;    \
         } while (0)
-
-#define Flush()                                 \
+#define FlushFrontier()                         \
         do {                                    \
                 gcState.frontier = frontier;    \
+        } while (0)
+#define FlushStackTop()                         \
+        do {                                    \
                 gcState.stackTop = stackTop;    \
         } while (0)
-
 
 #define disp(ty,ty2,fmt)                                        \
         for (i = 0; i < ty##RegI; ++i)                          \
@@ -536,7 +486,7 @@ static void interpret (Bytecode b, CodeOffset codeOffset, Bool disassemble) {
         Bool overflow = FALSE;
         ProgramCounter pc;
         ProgramCounter pcMax;
-        StackTop stackTop;
+        Pointer stackTop;
 
         code = b->code;
         pcMax = b->code + b->codeSize;
@@ -552,7 +502,8 @@ static void interpret (Bytecode b, CodeOffset codeOffset, Bool disassemble) {
         else {
                 pc = code + codeOffset;
         }
-        Cache ();
+        CacheFrontier ();
+        CacheStackTop ();
 mainLoop:
         if (DEBUG_BYTECODE)
                 displayRegs ();
@@ -569,8 +520,32 @@ mainLoop:
         assert (opc < (cardof (opcodeStrings)));
         if (DEBUG or DEBUG_BYTECODE or disassemble)
                 fprintf (stderr, "%s", opcodeStrings[opc]);
-        switch (opc) {
+        switch ((enum OpcodeEnum)opc) {
         prims ();
+        case opcodeSym (CacheFrontier):
+        {
+                if (disassemble) goto mainLoop;
+                CacheFrontier ();
+                goto mainLoop;
+        }
+        case opcodeSym (FlushFrontier):
+        {
+                if (disassemble) goto mainLoop;
+                FlushFrontier ();
+                goto mainLoop;
+        }
+        case opcodeSym (CacheStackTop):
+        {
+                if (disassemble) goto mainLoop;
+                CacheStackTop ();
+                goto mainLoop;
+        }
+        case opcodeSym (FlushStackTop):
+        {
+                if (disassemble) goto mainLoop;
+                FlushStackTop ();
+                goto mainLoop;
+        }
         case opcodeSym (BranchIfZero):
         {
                 Label label;
@@ -584,9 +559,11 @@ mainLoop:
         case opcodeSym (CallC):
                 Fetch (CallCIndex, callCIndex);
                 unless (disassemble) {
-                        Flush ();
+                        FlushFrontier ();
+                        FlushStackTop ();
                         MLton_callC (callCIndex);
-                        Cache ();
+                        CacheFrontier ();
+                        CacheStackTop ();
                 }
                 goto mainLoop;
         case opcodeSym (Goto):
@@ -605,10 +582,8 @@ mainLoop:
                         Goto (label);
                 goto mainLoop;
         }
-        case opcodeSym (ProfileLabel):
-                die ("ProfileLabel not implemented");
         case opcodeSym (Raise):
-                maybe stackTop = gcState.stackBottom + gcState.exnStack;
+                maybe StackTop = gcState.stackBottom + gcState.exnStack;
                 // fall through to Return.
         case opcodeSym (Return):
                 Goto (*(Label*)(StackTop - sizeof (Label)));
@@ -618,6 +593,8 @@ mainLoop:
         Switch(64);
         case opcodeSym (Thread_returnToC):
                 maybe goto done;
+        default:
+                assert (FALSE);
         }
         assert (FALSE);
 done:

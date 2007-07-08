@@ -55,7 +55,9 @@ typedef struct Bytecode {
 
 
 #define PopReg(ty) (assert (ty##RegI > 0), ty##Reg [--ty##RegI])
+#define PopRegX(ty) PopReg(ty)
 #define PushReg(ty) ty##Reg [ty##RegI++]
+#define PushRegX(ty) PushReg(ty)
 
 void MLton_callC (int i);  // provided by client
 void MLton_Bytecode_interpret (Bytecode b, CodeOffset codeOffset);

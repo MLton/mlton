@@ -290,6 +290,8 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   case PROFILE_TIME_LABEL:
     kind = "time\n";
     break;
+  default:
+    assert (FALSE);
   }
   writeString (f, kind);
   writeString (f, s->profiling.stack ? "stack\n" : "current\n");
@@ -443,6 +445,8 @@ void initProfiling (GC_state s) {
     case PROFILE_TIME_LABEL:
       initProfilingTime (s);
       break;
+    default:
+      assert (FALSE);
     }
     atexitForProfilingState = s;
     atexit (atexitForProfiling);

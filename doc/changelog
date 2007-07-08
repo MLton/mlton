@@ -1,6 +1,8 @@
 Here are the changes since version 20051202.
 
 * 2007-07-07
+   - Updates to bytecode code generator: support for amd64-* targets,
+     support for profiling (including exception history).
    - Fixed bug in Socket module of Basis Library; unmarshalling of
      socket options (for get* functions) used andb rather than orb.
      Thanks to Anders Petersson for the bug report (and patch).

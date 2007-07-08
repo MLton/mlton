@@ -323,7 +323,6 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
          end
       val callC = opcode "CallC"
       val jumpOnOverflow = opcode "JumpOnOverflow"
-      val profileLabel = opcode "ProfileLabel"
       val raisee = opcode "Raise"
       val returnOp = opcode "Return"
       datatype z = datatype WordSize.prim
@@ -524,20 +523,27 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
             Move z => move z
           | Noop => ()
           | PrimApp z => primApp z
-          | ProfileLabel _ => emitOpcode profileLabel
+          | ProfileLabel _ => Error.bug "Bytecode.output.emitStatement: profileLabel"
       val emitStatement =
          Trace.trace ("Bytecode.emitStatement", Statement.layout, Unit.layout)
          emitStatement
       val gotoOp = opcode "Goto"
       val pointerSize = WordSize.cpointer ()
+      val flushStackTopOp = opcode "FlushStackTop"
+      val amTimeProfiling = 
+         !Control.profile = Control.ProfileTimeField
+         orelse !Control.profile = Control.ProfileTimeLabel
       fun shiftStackTop (size: Bytes.t) =
-         primApp {args = (Vector.new2
-                          (Operand.StackTop,
-                           Operand.Word (WordX.fromIntInf
-                                         (Bytes.toIntInf size,
-                                          pointerSize)))),
-                  dst = SOME Operand.StackTop,
-                  prim = Prim.wordAdd pointerSize}
+         (primApp {args = (Vector.new2
+                           (Operand.StackTop,
+                            Operand.Word (WordX.fromIntInf
+                                          (Bytes.toIntInf size,
+                                           pointerSize)))),
+                   dst = SOME Operand.StackTop,
+                   prim = Prim.wordAdd pointerSize}
+          ; if amTimeProfiling
+               then emitOpcode flushStackTopOp
+            else ())
       fun push (label: Label.t, size: Bytes.t): unit =
          (move {dst = (Operand.StackOffset
                        (StackOffset.T

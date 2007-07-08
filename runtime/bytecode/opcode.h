@@ -138,13 +138,16 @@
 
 #define opcodes()                               \
         prims()                                 \
+        opcodeGen (CacheFrontier)               \
+        opcodeGen (FlushFrontier)               \
+        opcodeGen (CacheStackTop)               \
+        opcodeGen (FlushStackTop)               \
         opcodeGen (BranchIfZero)                \
         opcodeGen (CallC)                       \
         opcodeGen (Goto)                        \
         opcodeGen (loadGPNR)                    \
         opcodeGen (storeGPNR)                   \
         opcodeGen (JumpOnOverflow)              \
-        opcodeGen (ProfileLabel)                \
         opcodeGen (Raise)                       \
         opcodeGen (Return)                      \
         opcodeGen (Switch8)                     \
@@ -200,7 +203,7 @@ const char *opcodeStrings [] = {
 
 #define opcodeGen(z) opcodeSym (z),
 
-enum {
+enum OpcodeEnum {
         opcodes ()
 };
 

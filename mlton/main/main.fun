@@ -784,8 +784,8 @@ fun commandLine (args: string list): unit =
                                 andalso not (warnMatch)
                                 andalso not (!keepDefUse))
       val _ =
-         if !codegen = Bytecode andalso !profile <> ProfileNone
-            then usage (concat ["bytecode doesn't support profiling\n"])
+         if !codegen = Bytecode andalso !profile = ProfileTimeLabel
+            then usage (concat ["bytecode doesn't support time-label profiling\n"])
          else ()
       val _ =
          case targetOS of

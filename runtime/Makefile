@@ -123,7 +123,7 @@ endif
 # -Wformat=2 implies -Wformat-nonliteral, which causes one spurious warning.
 WARNCFLAGS += -Wformat=2
 WARNCFLAGS += -Wno-format-nonliteral
-# WARNCFLAGS += -Wswitch-default -Wswitch-enum
+WARNCFLAGS += -Wswitch-default -Wswitch-enum
 WARNCFLAGS += -Wuninitialized
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Winit-self
@@ -309,10 +309,10 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-shadow -w -c -o $@ $<
+	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
-	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-shadow -c -w -o $@ $<
+	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
 basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
