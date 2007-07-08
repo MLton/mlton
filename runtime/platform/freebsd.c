@@ -16,9 +16,15 @@ void GC_displayMem () {
 }
 
 static void catcher (__attribute__ ((unused)) int sig,
-                     __attribute__ ((unused)) siginfo_t *sip, 
+                     __attribute__ ((unused)) siginfo_t *sip,
                      ucontext_t *ucp) {
+#if (defined (__x86_64__))
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.mc_rip);
+#elif (defined (__i386__))
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.mc_eip);
+#else
+#error Profiling handler is missing for this architecture
+#endif
 }
 
 void GC_setSigProfHandler (struct sigaction *sa) {
