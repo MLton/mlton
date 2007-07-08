@@ -76,6 +76,9 @@ x86_64*)
 i?86_64)
         HOST_ARCH=amd64
 ;;
+amd64)
+        HOST_ARCH=amd64
+;;
 arm*)
         HOST_ARCH=arm
 ;;
