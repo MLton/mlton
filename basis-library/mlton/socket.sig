@@ -10,7 +10,7 @@ signature MLTON_SOCKET =
    sig
       structure Address:
          sig
-            type t
+            type t = NetHostDB.in_addr
          end
 
       structure Ctl:
@@ -30,7 +30,7 @@ signature MLTON_SOCKET =
 
       structure Port:
          sig
-            type t
+            type t = int
          end
 
       type t

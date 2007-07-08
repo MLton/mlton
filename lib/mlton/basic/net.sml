@@ -8,8 +8,6 @@
 structure Net: NET =
 struct
 
-type port = int
-
 val repeat: {limit: Time.t, tries: int} option ref = ref NONE
 
 local
@@ -47,6 +45,7 @@ fun ethernetIsUp (): bool =
 val message = Trace.Immediate.messageStr
 
 structure Socket = MLton.Socket
+type port = Socket.Port.t
 
 fun connect {host: string, port: port}: In.t * Out.t =
    let
@@ -75,7 +74,7 @@ fun server (p: port, c: In.t * Out.t -> unit): unit =
                Process.try (fn () => Socket.accept socket, "accept failed")
             val name =
                case Socket.Host.getByAddress a of
-                  NONE => Word.toString a
+                  NONE => NetHostDB.toString a
                 | SOME {name, ...} => name
             val _ =
                Process.doubleFork
