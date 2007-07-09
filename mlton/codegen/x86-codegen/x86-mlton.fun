@@ -63,6 +63,7 @@ struct
          | Real_Math_tan _ => true
          | Real_abs _ => true
          | Real_add _ => true
+         | Real_castToWord _ => false (* !! *)
          | Real_div _ => true
          | Real_equal _ => true
          | Real_ldexp _ => true
@@ -77,9 +78,11 @@ struct
          | Real_rndToWord (_, s2, {signed}) => signed andalso w32168 s2
          | Real_round _ => true
          | Real_sub _ => true
+         | Thread_returnToC => false
          | Word_add _ => true
          | Word_addCheck _ => true
          | Word_andb _ => true
+         | Word_castToReal _ => false (* !! *)
          | Word_equal s => w32168 s
          | Word_extdToWord (s1, s2, _) => w32168 s1 andalso w32168 s2
          | Word_lshift s => w32168 s
