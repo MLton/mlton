@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -76,21 +76,21 @@ MLton's implementation(s) of the <a href="MLNLFFI">MLNLFFI</a> library differs f
 
      
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> C <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> ('t, 'f, 'c) obj
-    <B><FONT COLOR="#A020F0">eqtype</FONT></B> ('t, 'f, 'c) obj'
-    ...
-    <B><FONT COLOR="#A020F0">type</FONT></B> ('<B><FONT COLOR="#A020F0">o</FONT></B>, 'f) ptr   
-    <B><FONT COLOR="#A020F0">eqtype</FONT></B> ('<B><FONT COLOR="#A020F0">o</FONT></B>, 'f) ptr'
-    ...
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'f fptr
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'f ptr'
-    ...
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> T : <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-        <B><FONT COLOR="#A020F0">type</FONT></B> ('t, 'f) typ
-        ...
-    <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> C = <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('t, 'f, 'c) obj
+    </FONT></B><B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> ('t, 'f, 'c) obj'
+    </FONT></B>...
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('o, 'f) ptr   
+    </FONT></B><B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> ('o, 'f) ptr'
+    </FONT></B>...
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'f fptr
+    </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'f ptr'
+    </FONT></B>...
+    <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B>
+        <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('t, 'f) typ
+        </FONT></B>...
+    <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  <em>The rule for <tt>('t,&nbsp;'f,&nbsp;'c)&nbsp;obj</tt>,<tt>('t,&nbsp;'f,&nbsp;'c)&nbsp;ptr</tt>, and also <tt>('t,&nbsp;'f)&nbsp;T.typ</tt> is that whenever <tt>F&nbsp;fptr</tt> occurs within the instantiation of <tt>'t</tt>, then <tt>'f</tt> must be instantiated to <tt>F</tt>.  In all other cases, <tt>'f</tt> will be instantiated to <tt>unit</tt>.</em> (In the actual MLton implementation, an abstract type <tt>naf</tt> (not-a-function) is used instead of <tt>unit</tt>.) 
@@ -139,50 +139,50 @@ MLton's implementation(s) of the <a href="MLNLFFI">MLNLFFI</a> library differs f
 <p>
  MLton (in both of the above implementations) provides a richer <tt>MLRep</tt> structure, utilizing <tt>Int&lt;N&gt;</tt> and <tt>Word&lt;N&gt;</tt> structures. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> MLRep <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Char <B><FONT COLOR="#5F9EA0">=</FONT></B>
-       <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signed <B><FONT COLOR="#5F9EA0">=</FONT></B> Int8
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Unsigned <B><FONT COLOR="#5F9EA0">=</FONT></B> Word8
+<B><FONT COLOR="#0000FF">structure</FONT></B> MLRep = <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Char =
+       <B><FONT COLOR="#0000FF">struct</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Signed = Int8
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Unsigned = Word8
           <I><FONT COLOR="#B22222">(* word-style bit-operations on integers... *)</FONT></I>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> SignedBitops <B><FONT COLOR="#5F9EA0">=</FONT></B> IntBitOps(<B><FONT COLOR="#5F9EA0">structure</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> Signed
-                                             <B><FONT COLOR="#5F9EA0">structure</FONT></B> W <B><FONT COLOR="#5F9EA0">=</FONT></B> Unsigned)
-       <B><FONT COLOR="#A020F0">end</FONT></B>
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Short <B><FONT COLOR="#5F9EA0">=</FONT></B>
-       <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signed <B><FONT COLOR="#5F9EA0">=</FONT></B> Int16
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Unsigned <B><FONT COLOR="#5F9EA0">=</FONT></B> Word16
+          <B><FONT COLOR="#0000FF">structure</FONT></B> SignedBitops = IntBitOps(<B><FONT COLOR="#0000FF">structure</FONT></B> I = Signed
+                                             <B><FONT COLOR="#0000FF">structure</FONT></B> W = Unsigned)
+       <B><FONT COLOR="#0000FF">end</FONT></B>
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Short =
+       <B><FONT COLOR="#0000FF">struct</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Signed = Int16
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Unsigned = Word16
           <I><FONT COLOR="#B22222">(* word-style bit-operations on integers... *)</FONT></I>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> SignedBitops <B><FONT COLOR="#5F9EA0">=</FONT></B> IntBitOps(<B><FONT COLOR="#5F9EA0">structure</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> Signed
-                                             <B><FONT COLOR="#5F9EA0">structure</FONT></B> W <B><FONT COLOR="#5F9EA0">=</FONT></B> Unsigned)
-       <B><FONT COLOR="#A020F0">end</FONT></B>
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Int <B><FONT COLOR="#5F9EA0">=</FONT></B>
-       <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signed <B><FONT COLOR="#5F9EA0">=</FONT></B> Int32
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Unsigned <B><FONT COLOR="#5F9EA0">=</FONT></B> Word32
+          <B><FONT COLOR="#0000FF">structure</FONT></B> SignedBitops = IntBitOps(<B><FONT COLOR="#0000FF">structure</FONT></B> I = Signed
+                                             <B><FONT COLOR="#0000FF">structure</FONT></B> W = Unsigned)
+       <B><FONT COLOR="#0000FF">end</FONT></B>
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Int =
+       <B><FONT COLOR="#0000FF">struct</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Signed = Int32
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Unsigned = Word32
           <I><FONT COLOR="#B22222">(* word-style bit-operations on integers... *)</FONT></I>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> SignedBitops <B><FONT COLOR="#5F9EA0">=</FONT></B> IntBitOps(<B><FONT COLOR="#5F9EA0">structure</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> Signed
-                                             <B><FONT COLOR="#5F9EA0">structure</FONT></B> W <B><FONT COLOR="#5F9EA0">=</FONT></B> Unsigned)
-       <B><FONT COLOR="#A020F0">end</FONT></B>  
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Long <B><FONT COLOR="#5F9EA0">=</FONT></B>
-       <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signed <B><FONT COLOR="#5F9EA0">=</FONT></B> Int32
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Unsigned <B><FONT COLOR="#5F9EA0">=</FONT></B> Word32
+          <B><FONT COLOR="#0000FF">structure</FONT></B> SignedBitops = IntBitOps(<B><FONT COLOR="#0000FF">structure</FONT></B> I = Signed
+                                             <B><FONT COLOR="#0000FF">structure</FONT></B> W = Unsigned)
+       <B><FONT COLOR="#0000FF">end</FONT></B>  
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Long =
+       <B><FONT COLOR="#0000FF">struct</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Signed = Int32
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Unsigned = Word32
           <I><FONT COLOR="#B22222">(* word-style bit-operations on integers... *)</FONT></I>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> SignedBitops <B><FONT COLOR="#5F9EA0">=</FONT></B> IntBitOps(<B><FONT COLOR="#5F9EA0">structure</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> Signed
-                                             <B><FONT COLOR="#5F9EA0">structure</FONT></B> W <B><FONT COLOR="#5F9EA0">=</FONT></B> Unsigned)
-       <B><FONT COLOR="#A020F0">end</FONT></B>
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> LongLong <B><FONT COLOR="#5F9EA0">=</FONT></B>
-       <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Signed <B><FONT COLOR="#5F9EA0">=</FONT></B> Int64
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> Unsigned <B><FONT COLOR="#5F9EA0">=</FONT></B> Word64
+          <B><FONT COLOR="#0000FF">structure</FONT></B> SignedBitops = IntBitOps(<B><FONT COLOR="#0000FF">structure</FONT></B> I = Signed
+                                             <B><FONT COLOR="#0000FF">structure</FONT></B> W = Unsigned)
+       <B><FONT COLOR="#0000FF">end</FONT></B>
+    <B><FONT COLOR="#0000FF">structure</FONT></B> LongLong =
+       <B><FONT COLOR="#0000FF">struct</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Signed = Int64
+          <B><FONT COLOR="#0000FF">structure</FONT></B> Unsigned = Word64
           <I><FONT COLOR="#B22222">(* word-style bit-operations on integers... *)</FONT></I>
-          <B><FONT COLOR="#5F9EA0">structure</FONT></B> SignedBitops <B><FONT COLOR="#5F9EA0">=</FONT></B> IntBitOps(<B><FONT COLOR="#5F9EA0">structure</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> Signed
-                                             <B><FONT COLOR="#5F9EA0">structure</FONT></B> W <B><FONT COLOR="#5F9EA0">=</FONT></B> Unsigned)
-       <B><FONT COLOR="#A020F0">end</FONT></B>
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Float <B><FONT COLOR="#5F9EA0">=</FONT></B> Real32
-    <B><FONT COLOR="#5F9EA0">structure</FONT></B> Double <B><FONT COLOR="#5F9EA0">=</FONT></B> Real64
-<B><FONT COLOR="#A020F0">end</FONT></B>
+          <B><FONT COLOR="#0000FF">structure</FONT></B> SignedBitops = IntBitOps(<B><FONT COLOR="#0000FF">structure</FONT></B> I = Signed
+                                             <B><FONT COLOR="#0000FF">structure</FONT></B> W = Unsigned)
+       <B><FONT COLOR="#0000FF">end</FONT></B>
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Float = Real32
+    <B><FONT COLOR="#0000FF">structure</FONT></B> Double = Real64
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  This would appear to be a better interface, even when an implementation must choose <tt>Int32</tt> and <tt>Word32</tt> as the representation for smaller C-types. 
 </p>

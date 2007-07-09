@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -139,11 +139,7 @@ This pass also removes Useless and Transparent constructors.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a>
- 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
@@ -169,8 +165,8 @@ it removes uses of polymorphic equality that must return true
 <p>
 We must keep track of Transparent constructors whose argument type uses <tt>array</tt> because of datatypes like the following: 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> t <B><FONT COLOR="#228B22">vector</FONT></B>
-</PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
+</FONT></B></PRE>
  Such a datatype has Cardinality.Many, but we cannot eliminate the datatype and replace the lhs by the rhs, i.e. we must keep the circularity around. 
 </p>
 <p>
@@ -179,13 +175,13 @@ Must do similar things for <tt>vectors</tt>.
 <p>
 Also, to eliminate as many Transparent constructors as possible, for something like the following, 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#228B22">array</FONT></B>
-       <B><FONT COLOR="#A020F0">and</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> U <B><FONT COLOR="#A020F0">of</FONT></B> t <B><FONT COLOR="#228B22">vector</FONT></B>
-</PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array
+       </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t vector
+</FONT></B></PRE>
  we (arbitrarily) expand one of the datatypes first. The result will be something like 
 <pre class=code>
-  <B><FONT COLOR="#A020F0">datatype</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> U <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B>
-</PRE>
+  <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">U</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u array array
+</FONT></B></PRE>
  where all uses of <tt>t</tt> are replaced by <tt>u&nbsp;array</tt>. 
 </p>
 </div>
@@ -194,5 +190,5 @@ Also, to eliminate as many Transparent constructors as possible, for something l
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:25:02 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-02 17:39:32 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

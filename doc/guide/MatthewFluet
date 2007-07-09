@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,13 +55,18 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Matthew Fluet ( <a class="external" href="mailto:mfluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mfluet@acm.org</a> , <a class="external" href="http://www.cs.cornell.edu/People/fluet"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://www.cs.cornell.edu/People/fluet</a> ) is a PhD student in the <a class="external" href="http://www.cs.cornell.edu"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Computer Science Department</a> at <a class="external" href="http://www.cornell.edu"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cornell University</a>. <hr>
+Matthew Fluet ( <a class="external" href="mailto:mfluet@acm.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">mfluet@acm.org</a> , <a class="external" href="http://ttic.uchicago.edu/~fluet"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://ttic.uchicago.edu/~fluet</a> ) is an Assistant Research Professor at the <a class="external" href="http://www.tti-c.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Toyota Technological Institute at Chicago</a>. <hr>
  <p>
 Current MLton projects: 
 </p>
 
     <ul>
 
+    <li>
+<p>
+ Porting MLton to x86_64 
+</p>
+</li>
     <li>
 <p>
  Migrating SSA optimizations to SSA2 
@@ -95,5 +100,5 @@ Current MLton projects:
 
 <p>
 <hr>
-Last edited on 2005-12-01 19:37:05 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-02 15:51:09 by <span title="128.135.191.161"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

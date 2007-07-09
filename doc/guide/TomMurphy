@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Tom Murphy VII is a long time MLton user and occasional contributor. He works on programming languages for his PhD work at Carnegie Mellon in Pittsburgh, USA. <p>
+Tom Murphy VII is a long time MLton user and occasional contributor. He works on programming languages for his PhD work at Carnegie Mellon in Pittsburgh, USA. <a href="AdamGoode">AdamGoode</a> lives on the same floor of Wean Hall. <p>
 <a class="external" href="http://tom7.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Home page</a> 
 </p>
 </div>
@@ -64,5 +64,5 @@ Tom Murphy VII is a long time MLton user and occasional contributor. He works on
 
 <p>
 <hr>
-Last edited on 2005-09-27 05:20:33 by <span title="h-72-244-69-64.phlapafg.dynamic.covad.net"><a href="TomMurphy">TomMurphy</a></span>.
+Last edited on 2007-01-23 21:57:44 by <span title="GS82.SP.CS.CMU.EDU"><a href="TomMurphy">TomMurphy</a></span>.
 </body></html>

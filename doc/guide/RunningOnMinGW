@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,10 +55,33 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, a library for porting Unix applications to Windows.  Some library functionality is missing or changed. 
+MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a>, a library for porting Unix applications to Windows.  Some library functionality is missing or changed. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+
     <ul>
 
     <li>
+<p>
+ To compile MLton on MinGW: 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ The <a href="GnuMP">GnuMP</a> library is required. 
+</p>
+</li>
+        <li>
+<p>
+ The Bash shell is required.  If you are using a prebuilt MSYS, you   probably want to symlink bash to sh. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li class="gap">
 <p>
  Many functions are unimplemented and will <tt>raise&nbsp;SysErr</tt>. 
 </p>
@@ -396,5 +419,5 @@ MLton runs on <a class="external" href="http://mingw.org"><img src="moin-www.png
 
 <p>
 <hr>
-Last edited on 2006-09-07 00:27:10 by <span title="ppp-71-139-189-102.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 20:20:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

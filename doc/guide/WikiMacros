@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,23 +60,19 @@ Here are the wiki macros available in addition to the usual <a href="MoinMoin">M
 
     <li>
 <p>
- <tt>[[Cite(anchor,&nbsp;text)]]</tt> displays text as a link to the  corresponding reference on the <a href="References">References</a> page.  <br>
+ <tt>[[Cite(anchor[,text])]]</tt> displays text as a link to the corresponding reference on the <a href="References">References</a> page.  <br>
 Examples: <a href = "References#FluetWeeks01"> a paper</a> 
 </p>
 </li>
     <li class="gap">
 <p>
- <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
-Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
-, 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/mlton/main/main.fun"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
- 
+ <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewsVN page for <tt>pathToFile</tt>.   <br>
+Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/mlton/main/main.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
 </p>
 </li>
     <li class="gap">
 <p>
- <tt>[[IncludeSVN(pathToFile,&nbsp;type)]]</tt> textually includes the latest contents of <tt>pathToFile</tt>, formatted with <a href="Enscript">Enscript</a> as <tt>type</tt> (as in the <tt>!#syntax</tt> processor).  If <tt>type</tt> is omitted, use the extension of <tt>pathToFile</tt>.  <br>
+ <tt>[[IncludeSVN(pathToFile[,type][,[start]:[end]...])]]</tt> textually includes the latest contents of <tt>pathToFile</tt>.  The contents are formatted with <a href="Enscript">Enscript</a> using highlighting mode <tt>type</tt>, as in the <tt>!#syntax</tt> processor; if <tt>type</tt> is omitted, the macro uses the extension of <tt>pathToFile</tt>.  A sequence of ranges may be used to specify the lines to be formatted; in each range, the absence of <tt>start</tt> implicitly denotes the start of the file and the absence of <tt>end</tt> implicitly denotes the end of the file; furthermore, negative <tt>start</tt> and <tt>end</tt> may be used to index relative to the end of the file.  <br>
 Example: 
 </p>
 <p>
@@ -88,13 +84,13 @@ Example:
  * See the file MLton-LICENSE for details.
  *)</FONT></I>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Main <B><FONT COLOR="#5F9EA0">=</FONT></B> Main ()
+<B><FONT COLOR="#0000FF">structure</FONT></B> Main = Main ()
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Trace.Immediate
+      <B><FONT COLOR="#0000FF">open</FONT></B> Trace.Immediate
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      debug <B><FONT COLOR="#5F9EA0">:=</FONT></B> Out Out.error
+      debug := Out Out.error
       ; flagged ()
       ; on []
    <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -104,20 +100,14 @@ Example:
 </li>
     <li class="gap">
 <p>
- <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewCVS page for  <tt>pathToFile</tt>.   <br>
-Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>
-, 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/main/main.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.fun</a>
- 
+ <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewCVS page for <tt>pathToFile</tt>.   <br>
+Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/main/main.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
 </p>
 </li>
     <li class="gap">
 <p>
- <tt>[[ViewSVNSDir(pathToDir)]]</tt> displays a link to the ViewCVS  page for <tt>pathToDir</tt>.   <br>
-Examples: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a>
- 
+ <tt>[[ViewSVNDir(pathToDir)]]</tt> displays a link to the ViewCVS page for <tt>pathToDir</tt>.   <br>
+Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a> 
 </p>
 </li>
 </ul>
@@ -128,5 +118,5 @@ Examples:
 
 <p>
 <hr>
-Last edited on 2005-08-10 12:43:15 by <span title="net-79206.roam.fas.harvard.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-11-03 09:09:20 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

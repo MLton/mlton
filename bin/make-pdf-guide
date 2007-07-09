@@ -30,7 +30,7 @@ pdf='mlton-guide.pdf'
 script='.script'
 titlepage='title.html'
 tmp="/tmp/mlton-guide.$$"
-version=`date +%Y%m%d`
+version=`cat $src/doc/guide/VERSION`
 
 rm -rf "$tmp"
 mkdir "$tmp"

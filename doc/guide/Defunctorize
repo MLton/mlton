@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,11 +74,6 @@ This pass converts a <a href="CoreML">CoreML</a> program to an <a href="XML">XML
 </li>
     <li>
 <p>
- <a class="nonexistent" href="LookupConstants">LookupConstants</a> 
-</p>
-</li>
-    <li>
-<p>
  polymorphic <tt>val</tt> dec expansion 
 </p>
 </li>
@@ -92,11 +87,7 @@ This pass converts a <a href="CoreML">CoreML</a> program to an <a href="XML">XML
 
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/defunctorize/defunctorize.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/defunctorize/defunctorize.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/defunctorize/defunctorize.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/defunctorize/defunctorize.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">defunctorize.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 This pass is grossly misnamed and does not perform defunctorization. 
 </p>
@@ -107,12 +98,12 @@ This pass moves all <tt>datatype</tt> declarations to the top level.
 <p>
 <a href="StandardML">Standard ML</a> <tt>datatype</tt> declarations can contain type variables that are not bound in the declaration itself.  For example, the following program is valid. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> 'a f (x: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> f (x: 'a) =
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'b t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
-      <B><FONT COLOR="#A020F0">val</FONT></B> y: <B><FONT COLOR="#228B22">int</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T (x, 1)
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'b t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> y: int t = T (x, <B><FONT COLOR="#5F9EA0">1</FONT></B>)
    <B><FONT COLOR="#A020F0">in</FONT></B> 
-      13
+      <B><FONT COLOR="#5F9EA0">13</FONT></B>
    <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
@@ -146,5 +137,5 @@ The Defunctorize pass originally eliminated  <a href="StandardML">Standard ML</a
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:19:26 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:40:00 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,29 +60,11 @@ Elaborate is a translation pass from the <a href="AST">AST</a> <a href="Intermed
 This pass performs type inference and type checking according to the <a href="DefinitionOfStandardML"> Definition</a>.  It also defunctorizes the program, eliminating all module-level constructs. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.fun</a>
-<br>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.fun</a>
-<br>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.fun</a>
-<br>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/elaborate-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.fun</a>
-<br>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/elaborate.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/elaborate-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/elaborate-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/elaborate-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 At the modules level, the Elaborate pass: 
 </p>
@@ -91,11 +73,7 @@ At the modules level, the Elaborate pass:
 
     <li>
 <p>
- elaborates signatures with interfaces (see 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/interface.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.sig</a>
- and 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/interface.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.fun</a>
-).   
+ elaborates signatures with interfaces (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/interface.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.sig</a> and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/interface.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.fun</a>).   
 </p>
 </li>
 
@@ -125,11 +103,7 @@ At the modules level, the Elaborate pass:
 
             <ul>
 
-   This is implemented by building a dummy structure realized from the    signature, just as we would for a functor argument when type    checking a functor.  The dummy structure contains exactly the type    information that is in the signature, which is what opacity    requires.  We then replace the variables (and constructors) in the    dummy structure with the corresponding variables (and constructors)    from the actual structure so that the translation to <a href="CoreML">CoreML</a>    uses the right stuff.  For each tycon in the dummy structure, we    keep track of the corresponding type structure in the actual    structure.  This is used when producing the <a href="CoreML">CoreML</a> types (see    <tt>expandOpaque</tt> in 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/type-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.sig</a>
- and    
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/elaborate/type-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.fun</a>
-). 
+   This is implemented by building a dummy structure realized from the    signature, just as we would for a functor argument when type    checking a functor.  The dummy structure contains exactly the type    information that is in the signature, which is what opacity    requires.  We then replace the variables (and constructors) in the    dummy structure with the corresponding variables (and constructors)    from the actual structure so that the translation to <a href="CoreML">CoreML</a>    uses the right stuff.  For each tycon in the dummy structure, we    keep track of the corresponding type structure in the actual    structure.  This is used when producing the <a href="CoreML">CoreML</a> types (see    <tt>expandOpaque</tt> in <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/type-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.sig</a> and    <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/elaborate/type-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.fun</a>). 
             </ul>
 
 
@@ -204,8 +178,8 @@ Here are a number of examples of elaboration.
 <p>
  All variables bound in <tt>val</tt> declarations are renamed.    
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
-<B><FONT COLOR="#A020F0">val</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> y = x
 </PRE>
   
 <pre>val x_0 = 13 
@@ -217,8 +191,8 @@ val y_0 = x_0
 <p>
  All variables in <tt>fun</tt> declarations are renamed.   
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> g x
-<B><FONT COLOR="#A020F0">and</FONT></B> g y <B><FONT COLOR="#5F9EA0">=</FONT></B> f y
+<B><FONT COLOR="#A020F0">fun</FONT></B> f x = g x
+<B><FONT COLOR="#A020F0">and</FONT></B> g y = f y
 </PRE>
   
 <pre>fun f_0 x_0 = g_0 x_0
@@ -230,9 +204,9 @@ and g_0 y_0 = f_0 y_0
 <p>
  Type abbreviations are removed, and the abbreviation is expanded  wherever it is used.   
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-<B><FONT COLOR="#A020F0">type</FONT></B> 'b t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'b u <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (x : <B><FONT COLOR="#228B22">bool</FONT></B> t) <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a u </FONT></B>=<B><FONT COLOR="#228B22"> int * 'a
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'b t </FONT></B>=<B><FONT COLOR="#228B22"> 'b u * real
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f (x : bool t) = x
 </PRE>
  
 <pre>fun f_0 (x_0 : (int * bool) * real) = x_0
@@ -243,9 +217,9 @@ and g_0 y_0 = f_0 y_0
 <p>
  Exception declarations create a new constructor and rename the  type.   
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-<B><FONT COLOR="#A020F0">exception</FONT></B> E <B><FONT COLOR="#A020F0">of</FONT></B> t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t * real
+</FONT></B></PRE>
    
 <pre>exception E_0 of int * real
 </pre>
@@ -255,8 +229,8 @@ and g_0 y_0 = f_0 y_0
 <p>
  The type and value constructors in datatype declarations are renamed.  
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> real * t
+</FONT></B></PRE>
   
 <pre>datatype t_0 = A_0 of int | B_0 of real * t_0
 </pre>
@@ -284,12 +258,12 @@ val z_0 = x_0
 <p>
  Structure declarations are eliminated, with all declarations   moved to the top level.  Long identifiers are renamed.  
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> x : t <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> y : S.t <B><FONT COLOR="#5F9EA0">=</FONT></B> S.x
+<B><FONT COLOR="#0000FF">structure</FONT></B> S =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x : t = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> y : S.t = S.x
 </PRE>
   
 <pre>val x_0 : int = 13
@@ -301,14 +275,14 @@ val y_0 : int = x_0
 <p>
  Open declarations are eliminated.  
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
-<B><FONT COLOR="#A020F0">val</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> 14
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-     <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 15
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">open</FONT></B> S
-<B><FONT COLOR="#A020F0">val</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B> x <B><FONT COLOR="#5F9EA0">+</FONT></B> y
+<B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> y = <B><FONT COLOR="#5F9EA0">14</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">15</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">open</FONT></B> S
+<B><FONT COLOR="#A020F0">val</FONT></B> z = x + y
 </PRE>
   
 <pre>val x_0 = 13
@@ -322,13 +296,13 @@ val z_0 = x_1 + y_0
 <p>
  Functor declarations are eliminated, and the body of a functor is  duplicated wherever the functor is applied.  
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> F(<B><FONT COLOR="#A020F0">val</FONT></B> x : <B><FONT COLOR="#228B22">int</FONT></B>) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-     <B><FONT COLOR="#A020F0">val</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> F1 <B><FONT COLOR="#5F9EA0">=</FONT></B> F(<B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 13)
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> F2 <B><FONT COLOR="#5F9EA0">=</FONT></B> F(<B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 14)
-<B><FONT COLOR="#A020F0">val</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B> F1.y <B><FONT COLOR="#5F9EA0">+</FONT></B> F2.y
+<B><FONT COLOR="#0000FF">functor</FONT></B> F(<B><FONT COLOR="#A020F0">val</FONT></B> x : int) =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> y = x
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> F1 = F(<B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">13</FONT></B>)
+<B><FONT COLOR="#0000FF">structure</FONT></B> F2 = F(<B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">14</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> z = F1.y + F2.y
 </PRE>
   
 <pre>val x_0 = 13
@@ -343,16 +317,16 @@ val z_0 = y_0 + y_1
 <p>
  Signature constraints are eliminated.  Note that signatures do  affect how subsequent variables are renamed.  
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S : <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-                 <B><FONT COLOR="#A020F0">val</FONT></B> x : <B><FONT COLOR="#228B22">int</FONT></B>
-              <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> 14
-      <B><FONT COLOR="#A020F0">val</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#A020F0">open</FONT></B> S
-<B><FONT COLOR="#A020F0">val</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B> x <B><FONT COLOR="#5F9EA0">+</FONT></B> y
+<B><FONT COLOR="#A020F0">val</FONT></B> y = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S : <B><FONT COLOR="#0000FF">sig</FONT></B>
+                 <B><FONT COLOR="#A020F0">val</FONT></B> x : int
+              <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">14</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> y = x
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">open</FONT></B> S
+<B><FONT COLOR="#A020F0">val</FONT></B> z = x + y
 </PRE>
   
 <pre>val y_0 = 13
@@ -370,5 +344,5 @@ val z_0 = x_0 + y_0
 
 <p>
 <hr>
-Last edited on 2005-12-01 03:54:13 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-02 17:43:51 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

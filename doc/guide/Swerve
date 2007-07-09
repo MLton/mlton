@@ -32,7 +32,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,13 +65,18 @@ Excerpt from the included <tt>README</tt>:
 
         <ul>
 
-  <em>Total testing of this port consisted of a successful compile,   startup, and serving one html page with one gif image.  Given    that the original code was throughly designed and implemented in a   thoughtful manner and I expect it is quite usable modulo a few minor   bugs introduced by my porting effort.</em> </ul>
+  <em>Total testing of this port consisted of a successful compile,   startup, and serving one html page with one gif image.  Given    that the original code was throughly designed and implemented in a   thoughtful manner and I expect it is quite usable modulo a few minor   bugs introduced by my porting effort.</em> 
+        </ul>
 
+
+<p>
+Swerve is described in <a href = "References#Shipman02">Shipman02</a>. 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-10-24 00:55:35 by <span title="ursula.cs.purdue.edu">PhilipSchatz</span>.
+Last edited on 2006-11-15 01:50:36 by <span title="ppp-71-139-192-244.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
 </body></html>

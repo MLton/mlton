@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,13 +57,13 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_WORD <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_WORD =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
          
-      <B><FONT COLOR="#A020F0">val</FONT></B> rol: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> ror: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> rol: t * word -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> ror: t * word -&gt; t
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

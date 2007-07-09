@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -105,16 +105,12 @@ Similarly, if a tuple is explicitly available at all uses of a constructor, then
 
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-12-01 04:41:06 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-11-02 17:52:58 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

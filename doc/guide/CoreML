@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,11 +60,7 @@ Core ML is an <a href="IntermediateLanguage">IntermediateLanguage</a>,  translat
 CoreML is polymorphic, higher-order, and has nested patterns. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/core-ml/core-ml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">core-ml.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/core-ml/core-ml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">core-ml.fun</a>
- <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/core-ml/core-ml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">core-ml.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/core-ml/core-ml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">core-ml.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
 The CoreML <a href="IntermediateLanguage">IntermediateLanguage</a> has no independent type checker. 
 </p>
@@ -75,5 +71,5 @@ The CoreML <a href="IntermediateLanguage">IntermediateLanguage</a> has no indepe
 
 <p>
 <hr>
-Last edited on 2005-12-01 03:00:12 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-02 17:56:39 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

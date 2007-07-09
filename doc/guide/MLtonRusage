@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,14 +57,14 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_RUSAGE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> {utime: Time.time, <I><FONT COLOR="#B22222">(* user time *)</FONT></I>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RUSAGE =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> {utime: Time.time, <I><FONT COLOR="#B22222">(* user time *)</FONT></I>
                 stime: Time.time} <I><FONT COLOR="#B22222">(* system time *)</FONT></I>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> measureGC: <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>         
-      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> {children: t, gc: t, self: t}
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> measureGC: bool -&gt; unit         
+      <B><FONT COLOR="#A020F0">val</FONT></B> rusage: unit -&gt; {children: t, gc: t, self: t}
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

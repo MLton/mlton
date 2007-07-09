@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,7 +61,7 @@ The key idea to <em>fold</em> is to define functions <tt>fold</tt>, <tt>step0</t
 
 <pre class=code>
 fold (a, f) (step0 h1) (step0 h2) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> f (hn (... (h2 (h1 a))))
+= f (hn (... (h2 (h1 a))))
 </PRE>
 <p>
  
@@ -77,13 +77,13 @@ The functions <tt>fold</tt>, <tt>step0</tt>, and <tt>$</tt> are easy to define.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> $ (a, f) <B><FONT COLOR="#5F9EA0">=</FONT></B> f a
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">id</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fold</FONT></I></B></FONT></B> (a, f) g <B><FONT COLOR="#5F9EA0">=</FONT></B> g (a, f)
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> h (a, f) <B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h a, f)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> $ (a, f) = f a
+<B><FONT COLOR="#A020F0">fun</FONT></B> id x = x
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> fold (a, f) g = g (a, f)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step0 h (a, f) = fold (h a, f)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -95,14 +95,14 @@ We've placed <tt>fold</tt> and <tt>step0</tt> in the <tt>Fold</tt> structure but
 Plugging in the definitions, it is easy to verify the equation from above. 
 <pre class=code>
 fold (a, f) (step0 h1) (step0 h2) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> step0 h1 (a, f) (step0 h2) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h1 a, f) (step0 h2) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> step0 h2 (h1 a, f) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h2 (h1 a), f) ... (step0 hn) $
+= step0 h1 (a, f) (step0 h2) ... (step0 hn) $
+= fold (h1 a, f) (step0 h2) ... (step0 hn) $
+= step0 h2 (h1 a, f) ... (step0 hn) $
+= fold (h2 (h1 a), f) ... (step0 hn) $
 ...
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (hn (... (h2 (h1 a))), f) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> $ (hn (... (h2 (h1 a))), f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> f (hn (... (h2 (h1 a))))
+= fold (hn (... (h2 (h1 a))), f) $
+= $ (hn (... (h2 (h1 a))), f)
+= f (hn (... (h2 (h1 a))))
 </PRE>
  
 </p>
@@ -129,11 +129,11 @@ It is simple to define <tt>f</tt> and <tt>a</tt>.  We define <tt>f</tt> as a fol
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> base <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">finish</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (base, finish) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 step z
+<B><FONT COLOR="#A020F0">val</FONT></B> base = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> finish () = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> step () = ()
+<B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (base, finish) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 step z
 </PRE>
 <p>
  
@@ -144,11 +144,11 @@ One can easily apply the fold equation to verify by hand that <tt>f</tt> applied
 
 <pre class=code>
 f a ... a $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> finish (step (... (step base)))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> finish (step (... ()))
+= finish (step (... (step base)))
+= finish (step (... ()))
 ...
-<B><FONT COLOR="#5F9EA0">=</FONT></B> finish ()
-<B><FONT COLOR="#5F9EA0">=</FONT></B> ()
+= finish ()
+= ()
 </PRE>
 <p>
  
@@ -159,7 +159,7 @@ Let's look at an example that computes something: a variable-argument function <
 </p>
 
 <pre class=code>
-sum (a i1) (a i2) ... (a im) $ <B><FONT COLOR="#5F9EA0">=</FONT></B> i1 <B><FONT COLOR="#5F9EA0">+</FONT></B> i2 <B><FONT COLOR="#5F9EA0">+</FONT></B> ... <B><FONT COLOR="#5F9EA0">+</FONT></B> im
+sum (a i1) (a i2) ... (a im) $ = i1 + i2 + ... + im
 </PRE>
 <p>
  
@@ -169,8 +169,8 @@ The idea is simple -- the folder starts with a base accumulator of <tt>0</tt> an
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> sum <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (0, <B><FONT COLOR="#A020F0">fn</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s) z
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">a</FONT></I></B></FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i <B><FONT COLOR="#5F9EA0">+</FONT></B> s)
+<B><FONT COLOR="#A020F0">val</FONT></B> sum = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (<B><FONT COLOR="#5F9EA0">0</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt; s) z
+<B><FONT COLOR="#A020F0">fun</FONT></B> a i = Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt; i + s)
 </PRE>
 <p>
  
@@ -180,7 +180,7 @@ Using the fold equation, one can verify the following.
 </p>
 
 <pre class=code>
-sum (a 1) (a 2) (a 3) $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 6
+sum (a <B><FONT COLOR="#5F9EA0">1</FONT></B>) (a <B><FONT COLOR="#5F9EA0">2</FONT></B>) (a <B><FONT COLOR="#5F9EA0">3</FONT></B>) $ = <B><FONT COLOR="#5F9EA0">6</FONT></B>
 </PRE>
 <p>
  
@@ -191,11 +191,11 @@ It is sometimes syntactically convenient to omit the parentheses around the step
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Fold
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> h (a, f) b <B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h (b, a), f)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Fold
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step1 h (a, f) b = fold (h (b, a), f)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -206,8 +206,8 @@ From the definition of <tt>step1</tt>, we have the following equivalence.
 
 <pre class=code>
 fold (a, f) (step1 h) b
-<B><FONT COLOR="#5F9EA0">=</FONT></B> step1 h (a, f) b
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h (b, a), f)
+= step1 h (a, f) b
+= fold (h (b, a), f)
 </PRE>
 <p>
  
@@ -218,10 +218,10 @@ Using the above equivalence, we can compute the following equation for <tt>step1
 
 <pre class=code>
 fold (a, f) (step1 h1) b1 (step1 h2) b2 ... (step1 hn) bn $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h1 (b1, a), f) (step1 h2) b2 ... (step1 hn) bn $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h2 (b2, h1 (b1, a)), f) ... (step1 hn) bn $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (hn (bn, ... (h2 (b2, h1 (b1, a)))), f) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> f (hn (bn, ... (h2 (b2, h1 (b1, a)))))
+= fold (h1 (b1, a), f) (step1 h2) b2 ... (step1 hn) bn $
+= fold (h2 (b2, h1 (b1, a)), f) ... (step1 hn) bn $
+= fold (hn (bn, ... (h2 (b2, h1 (b1, a)))), f) $
+= f (hn (bn, ... (h2 (b2, h1 (b1, a)))))
 </PRE>
 <p>
  
@@ -231,8 +231,8 @@ Here is an example using <tt>step1</tt> to define a variable-argument product fu
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> prod <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (1, <B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p) z
-<B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, p) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i <B><FONT COLOR="#5F9EA0">*</FONT></B> p) z
+<B><FONT COLOR="#A020F0">val</FONT></B> prod = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt; p) z
+<B><FONT COLOR="#A020F0">val</FONT></B> ` = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, p) =&gt; i * p) z
 </PRE>
 <p>
  
@@ -240,7 +240,7 @@ Here is an example using <tt>step1</tt> to define a variable-argument product fu
 <p>
 The functions <tt>prod</tt> and <tt>`</tt> satisfy the following equation. 
 <pre class=code>
-prod `i1 `i2 ... `im $ <B><FONT COLOR="#5F9EA0">=</FONT></B> i1 <B><FONT COLOR="#5F9EA0">*</FONT></B> i2 <B><FONT COLOR="#5F9EA0">*</FONT></B> ... <B><FONT COLOR="#5F9EA0">*</FONT></B> im
+prod `i1 `i2 ... `im $ = i1 * i2 * ... * im
 </PRE>
  
 </p>
@@ -263,8 +263,8 @@ SML already has a syntax for list literals, e.g. <tt>[w,&nbsp;x,&nbsp;y,&nbsp;z]
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ([], rev) z
-<B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">::</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> list = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ([], rev) z
+<B><FONT COLOR="#A020F0">val</FONT></B> ` = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step1 (<B><FONT COLOR="#A020F0">op</FONT></B> ::) z
 </PRE>
 <p>
  
@@ -277,7 +277,7 @@ With these definitions one can write a list like:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#228B22">list</FONT></B> `w `x `y `z $
+list `w `x `y `z $
 </PRE>
 <p>
  
@@ -287,7 +287,7 @@ While the example is not practically useful, it does demonstrate the need for th
 </p>
 
 <pre class=code>
-rev (<B><FONT COLOR="#228B22">list</FONT></B> `w `x `y `z $)
+rev (list `w `x `y `z $)
 </PRE>
 <p>
  
@@ -305,7 +305,7 @@ Just as <tt>fold</tt> is analogous to a fold left, in which the functions are ap
 
 <pre class=code>
 foldr (a, f) (step0 h1) (step0 h2) ... (step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> f (h1 (h2 (... (hn a))))
+= f (h1 (h2 (... (hn a))))
 </PRE>
 <p>
  
@@ -315,11 +315,11 @@ The implementation of fold right is easy, using fold.  The idea is for the fold 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Foldr <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">foldr</FONT></I></B></FONT></B> (a, f) <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.fold (f, <B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a)
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> h <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Foldr =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> foldr (a, f) = Fold.fold (f, <B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step0 h = Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -330,19 +330,19 @@ Verifying the fold-right equation is straightforward, using the fold-left equati
 
 <pre class=code>
 foldr (a, f) (Foldr.step0 h1) (Foldr.step0 h2) ... (Foldr.step0 hn) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (f, <B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a) 
-    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h1))
-    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h2))
+= fold (f, <B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a) 
+    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h1))
+    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h2))
     ...
-    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> hn)) $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a)
-  ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> hn) (... ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h2) ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h1) f))))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a)
-  ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> hn) (... ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> h2) (f <B><FONT COLOR="#A020F0">o</FONT></B> h1))))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a) ((<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> hn) (... (f <B><FONT COLOR="#A020F0">o</FONT></B> h1 <B><FONT COLOR="#A020F0">o</FONT></B> h2)))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g a) (f <B><FONT COLOR="#A020F0">o</FONT></B> h1 <B><FONT COLOR="#A020F0">o</FONT></B> h2 <B><FONT COLOR="#A020F0">o</FONT></B> ... <B><FONT COLOR="#A020F0">o</FONT></B> hn)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (f <B><FONT COLOR="#A020F0">o</FONT></B> h1 <B><FONT COLOR="#A020F0">o</FONT></B> h2 <B><FONT COLOR="#A020F0">o</FONT></B> ... <B><FONT COLOR="#A020F0">o</FONT></B> hn) a
-<B><FONT COLOR="#5F9EA0">=</FONT></B> f (h1 (h2 (... (hn a))))
+    (Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o hn)) $
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a)
+  ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o hn) (... ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h2) ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h1) f))))
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a)
+  ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o hn) (... ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o h2) (f o h1))))
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a) ((<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g o hn) (... (f o h1 o h2)))
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> g =&gt; g a) (f o h1 o h2 o ... o hn)
+= (f o h1 o h2 o ... o hn) a
+= f (h1 (h2 (... (hn a))))
 </PRE>
 <p>
  
@@ -352,11 +352,11 @@ One can also define the fold-right analogue of <tt>step1</tt>.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Foldr <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Foldr
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> h <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (b, g) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g <B><FONT COLOR="#A020F0">o</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> h (b, a)))
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Foldr =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Foldr
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step1 h = Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (b, g) =&gt; g o (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; h (b, a)))
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -367,8 +367,8 @@ Revisiting the list literal example from earlier, we can use fold right to defin
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Foldr.foldr ([], <B><FONT COLOR="#A020F0">fn</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> l) z
-<B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Foldr.step1 (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">::</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> list = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Foldr.foldr ([], <B><FONT COLOR="#A020F0">fn</FONT></B> l =&gt; l) z
+<B><FONT COLOR="#A020F0">val</FONT></B> ` = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Foldr.step1 (<B><FONT COLOR="#A020F0">op</FONT></B> ::) z
 </PRE>
 <p>
  
@@ -378,7 +378,7 @@ As before, with these definitions, one can write a list like:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#228B22">list</FONT></B> `w `x `y `z $
+list `w `x `y `z $
 </PRE>
 <p>
  
@@ -392,9 +392,9 @@ All of the examples so far have used the same step function throughout a fold.  
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (0, <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i) z
-<B><FONT COLOR="#A020F0">val</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i <B><FONT COLOR="#5F9EA0">*</FONT></B> 2) z
-<B><FONT COLOR="#A020F0">val</FONT></B> O <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i <B><FONT COLOR="#5F9EA0">*</FONT></B> 2 <B><FONT COLOR="#5F9EA0">+</FONT></B> 1) z
+<B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (<B><FONT COLOR="#5F9EA0">0</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; i) z
+<B><FONT COLOR="#A020F0">val</FONT></B> I = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; i * <B><FONT COLOR="#5F9EA0">2</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> O = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; i * <B><FONT COLOR="#5F9EA0">2</FONT></B> + <B><FONT COLOR="#5F9EA0">1</FONT></B>) z
 </PRE>
 <p>
  
@@ -404,11 +404,11 @@ Here we have one folder, <tt>n</tt>, that can be used with two different stepper
 </p>
 
 <pre class=code>
-n O $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 0
-n I $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 1
-n I O $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 2
-n I O I $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 5
-n I I I O $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 14
+n O $ = <B><FONT COLOR="#5F9EA0">0</FONT></B>
+n I $ = <B><FONT COLOR="#5F9EA0">1</FONT></B>
+n I O $ = <B><FONT COLOR="#5F9EA0">2</FONT></B>
+n I O I $ = <B><FONT COLOR="#5F9EA0">5</FONT></B>
+n I I I O $ = <B><FONT COLOR="#5F9EA0">14</FONT></B>
 </PRE>
 <p>
  
@@ -421,9 +421,9 @@ Not only can one use different instances of <tt>step0</tt> in the same fold, one
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (0, <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i) z
-<B><FONT COLOR="#A020F0">val</FONT></B> O <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> n <B><FONT COLOR="#5F9EA0">*</FONT></B> 8) z
-<B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, n) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> n <B><FONT COLOR="#5F9EA0">*</FONT></B> 8 <B><FONT COLOR="#5F9EA0">+</FONT></B> i) z
+<B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (<B><FONT COLOR="#5F9EA0">0</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; i) z
+<B><FONT COLOR="#A020F0">val</FONT></B> O = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; n * <B><FONT COLOR="#5F9EA0">8</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> ` = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, n) =&gt; n * <B><FONT COLOR="#5F9EA0">8</FONT></B> + i) z
 </PRE>
 <p>
  
@@ -433,9 +433,9 @@ Using the straightforward generalization of the fold equation to mixed steppers,
 </p>
 
 <pre class=code>
-n 0 $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 0
-n `3 O $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 24
-n `1 O `7 $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 71
+n <B><FONT COLOR="#5F9EA0">0</FONT></B> $ = <B><FONT COLOR="#5F9EA0">0</FONT></B>
+n `<B><FONT COLOR="#5F9EA0">3</FONT></B> O $ = <B><FONT COLOR="#5F9EA0">24</FONT></B>
+n `<B><FONT COLOR="#5F9EA0">1</FONT></B> O `<B><FONT COLOR="#5F9EA0">7</FONT></B> $ = <B><FONT COLOR="#5F9EA0">71</FONT></B>
 </PRE>
 <p>
  
@@ -455,10 +455,10 @@ For example, consider the following.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ((), id) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>) z
-<B><FONT COLOR="#A020F0">val</FONT></B> b <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 13) z
-<B><FONT COLOR="#A020F0">val</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (1, 2)) z
+<B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ((), id) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> b = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#5F9EA0">13</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> c = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>)) z
 </PRE>
 <p>
  
@@ -468,9 +468,9 @@ Using the fold equation, one can verify the following equations.
 </p>
 
 <pre class=code>
-f a $ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>: <B><FONT COLOR="#228B22">string</FONT></B>
-f b $ <B><FONT COLOR="#5F9EA0">=</FONT></B> 13: <B><FONT COLOR="#228B22">int</FONT></B>
-f c $ <B><FONT COLOR="#5F9EA0">=</FONT></B> (1, 2): <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
+f a $ = <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>: string
+f b $ = <B><FONT COLOR="#5F9EA0">13</FONT></B>: int
+f c $ = (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>): int * int
 </PRE>
 <p>
  
@@ -483,8 +483,8 @@ The following example shows how the type of a fold can depend on the number of a
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> grow <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ([], <B><FONT COLOR="#A020F0">fn</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> l) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> [x]) z
+<B><FONT COLOR="#A020F0">val</FONT></B> grow = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ([], <B><FONT COLOR="#A020F0">fn</FONT></B> l =&gt; l) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; [x]) z
 </PRE>
 <p>
  
@@ -494,9 +494,9 @@ Using the fold equation, one can verify the following equations.
 </p>
 
 <pre class=code>
-grow $ <B><FONT COLOR="#5F9EA0">=</FONT></B> []: 'a <B><FONT COLOR="#228B22">list</FONT></B>
-grow a $ <B><FONT COLOR="#5F9EA0">=</FONT></B> [[]]: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
-grow a a $ <B><FONT COLOR="#5F9EA0">=</FONT></B> [[[]]]: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
+grow $ = []: 'a list
+grow a $ = [[]]: 'a list list
+grow a a $ = [[[]]]: 'a list list list
 </PRE>
 <p>
  
@@ -513,8 +513,8 @@ Fold is especially useful when it returns a curried function whose arity depends
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> makeSum <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold (id, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f 0) z
-<B><FONT COLOR="#A020F0">val</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x <B><FONT COLOR="#5F9EA0">+</FONT></B> i)) z
+<B><FONT COLOR="#A020F0">val</FONT></B> makeSum = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold (id, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f <B><FONT COLOR="#5F9EA0">0</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> I = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; f (x + i)) z
 </PRE>
 <p>
  
@@ -525,9 +525,9 @@ The <tt>makeSum</tt> folder constructs a function whose arity depends on the num
 <p>
 One can use the fold equation to verify that the <tt>makeSum</tt> works correctly.  For example, one can easily check by hand the following equations. 
 <pre class=code>
-makeSum I $ 1 <B><FONT COLOR="#5F9EA0">=</FONT></B> 1
-makeSum I I $ 1 2 <B><FONT COLOR="#5F9EA0">=</FONT></B> 3
-makeSum I I I $ 1 2 3 <B><FONT COLOR="#5F9EA0">=</FONT></B> 6
+makeSum I $ <B><FONT COLOR="#5F9EA0">1</FONT></B> = <B><FONT COLOR="#5F9EA0">1</FONT></B>
+makeSum I I $ <B><FONT COLOR="#5F9EA0">1</FONT></B> <B><FONT COLOR="#5F9EA0">2</FONT></B> = <B><FONT COLOR="#5F9EA0">3</FONT></B>
+makeSum I I I $ <B><FONT COLOR="#5F9EA0">1</FONT></B> <B><FONT COLOR="#5F9EA0">2</FONT></B> <B><FONT COLOR="#5F9EA0">3</FONT></B> = <B><FONT COLOR="#5F9EA0">6</FONT></B>
 </PRE>
  
 </p>
@@ -536,9 +536,9 @@ Returning a function becomes especially interesting when there are steppers of d
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> makeSum <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Foldr.foldr (id, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f 0.0) z
-<B><FONT COLOR="#A020F0">val</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Foldr.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x <B><FONT COLOR="#5F9EA0">+</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> i)) z
-<B><FONT COLOR="#A020F0">val</FONT></B> R <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Foldr.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x: <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x <B><FONT COLOR="#5F9EA0">+</FONT></B> r)) z
+<B><FONT COLOR="#A020F0">val</FONT></B> makeSum = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Foldr.foldr (id, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f <B><FONT COLOR="#5F9EA0">0.0</FONT></B>) z
+<B><FONT COLOR="#A020F0">val</FONT></B> I = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Foldr.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; f (x + real i)) z
+<B><FONT COLOR="#A020F0">val</FONT></B> R = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Foldr.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> x: real =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> r =&gt; f (x + r)) z
 </PRE>
 <p>
  
@@ -548,9 +548,9 @@ With these definitions, <tt>makeSum&nbsp;I&nbsp;R&nbsp;$</tt> is of type  <tt>in
 </p>
 
 <pre class=code>
-makeSum I $ 1 <B><FONT COLOR="#5F9EA0">=</FONT></B> 1.0
-makeSum I R $ 1 2.5 <B><FONT COLOR="#5F9EA0">=</FONT></B> 3.5
-makeSum R I I $ 1.5 2 3 <B><FONT COLOR="#5F9EA0">=</FONT></B> 6.5
+makeSum I $ <B><FONT COLOR="#5F9EA0">1</FONT></B> = <B><FONT COLOR="#5F9EA0">1.0</FONT></B>
+makeSum I R $ <B><FONT COLOR="#5F9EA0">1</FONT></B> <B><FONT COLOR="#5F9EA0">2.5</FONT></B> = <B><FONT COLOR="#5F9EA0">3.5</FONT></B>
+makeSum R I I $ <B><FONT COLOR="#5F9EA0">1.5</FONT></B> <B><FONT COLOR="#5F9EA0">2</FONT></B> <B><FONT COLOR="#5F9EA0">3</FONT></B> = <B><FONT COLOR="#5F9EA0">6.5</FONT></B>
 </PRE>
 <p>
  
@@ -567,7 +567,7 @@ It is sometimes useful to combine a number of steps together and name them as a 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> IR <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold u I R
+<B><FONT COLOR="#A020F0">val</FONT></B> IR = <B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; Fold.fold u I R
 </PRE>
 <p>
  
@@ -577,7 +577,7 @@ With this definition in place, one can verify the following.
 </p>
 
 <pre class=code>
-makeSum IR IR $ 1 2.2 3 4.4 <B><FONT COLOR="#5F9EA0">=</FONT></B> 10.6
+makeSum IR IR $ <B><FONT COLOR="#5F9EA0">1</FONT></B> <B><FONT COLOR="#5F9EA0">2.2</FONT></B> <B><FONT COLOR="#5F9EA0">3</FONT></B> <B><FONT COLOR="#5F9EA0">4.4</FONT></B> = <B><FONT COLOR="#5F9EA0">10.6</FONT></B>
 </PRE>
 <p>
  
@@ -587,7 +587,7 @@ In general, one can combine steps <tt>s1</tt>, <tt>s2</tt>, ... <tt>sn</tt> as
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold u s1 s2 ... sn
+<B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; Fold.fold u s1 s2 ... sn
 </PRE>
 <p>
  
@@ -597,9 +597,9 @@ The following calculation shows why a compound step behaves as the composition o
 </p>
 
 <pre class=code>
-fold u (<B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fold u s1 s2 ... sn)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fold u s1 s2 ... sn) u
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold u s1 s2 ... sn
+fold u (<B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; fold u s1 s2 ... sn)
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; fold u s1 s2 ... sn) u
+= fold u s1 s2 ... sn
 </PRE>
 <p>
  
@@ -613,7 +613,7 @@ More precisely, we want to define a post-composition function <tt>post</tt> that
 </p>
 
 <pre class=code>
-post (w, g) s1 ... sn $ <B><FONT COLOR="#5F9EA0">=</FONT></B> g (w s1 ... sn $)
+post (w, g) s1 ... sn $ = g (w s1 ... sn $)
 </PRE>
 <p>
  
@@ -623,11 +623,11 @@ Here is the definition of <tt>post</tt>.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Fold
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">post</FONT></I></B></FONT></B> (w, g) s <B><FONT COLOR="#5F9EA0">=</FONT></B> w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h))
-   <B><FONT COLOR="#A020F0">end</FONT></B>  
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Fold
+      <B><FONT COLOR="#A020F0">fun</FONT></B> post (w, g) s = w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h))
+   <B><FONT COLOR="#0000FF">end</FONT></B>  
 </PRE>
 <p>
  
@@ -638,11 +638,11 @@ The following calculations show that <tt>post</tt> satisfies the desired equatio
 
 <pre class=code>
 post (w, g) s
-<B><FONT COLOR="#5F9EA0">=</FONT></B> w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (a, f) (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h)) (a, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (a, g <B><FONT COLOR="#A020F0">o</FONT></B> f) s
+= w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h))
+= fold (a, f) (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h))
+= (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h)) (a, f)
+= s (a, g o f)
+= fold (a, g o f) s
 </PRE>
 <p>
  
@@ -653,11 +653,11 @@ Now, suppose <tt>si&nbsp;=&nbsp;step0&nbsp;hi</tt> for <tt>i</tt> from <tt>1</tt
 
 <pre class=code>
 post (w, g) s1 s2 ... sn $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (a, g <B><FONT COLOR="#A020F0">o</FONT></B> f) s1 s2 ... sn $
-<B><FONT COLOR="#5F9EA0">=</FONT></B> (g <B><FONT COLOR="#A020F0">o</FONT></B> f) (hn (... (h1 a)))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> g (f (hn (... (h1 a))))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> g (fold (a, f) s1 ... sn $)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> g (w s1 ... sn $)
+= fold (a, g o f) s1 s2 ... sn $
+= (g o f) (hn (... (h1 a)))
+= g (f (hn (... (h1 a))))
+= g (fold (a, f) s1 ... sn $)
+= g (w s1 ... sn $)
 </PRE>
 <p>
  
@@ -671,7 +671,7 @@ We now define a peculiar-looking function, <tt>lift0</tt>, that is, equationally
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">lift0</FONT></I></B></FONT></B> s (a, f) <B><FONT COLOR="#5F9EA0">=</FONT></B> fold (fold (a, id) s $, f)
+<B><FONT COLOR="#A020F0">fun</FONT></B> lift0 s (a, f) = fold (fold (a, id) s $, f)
 </PRE>
 <p>
  
@@ -681,7 +681,7 @@ Using the definitions, we can prove the following equation.
 </p>
 
 <pre class=code>
-fold (a, f) (lift0 (step0 h)) <B><FONT COLOR="#5F9EA0">=</FONT></B> fold (a, f) (step0 h)
+fold (a, f) (lift0 (step0 h)) = fold (a, f) (step0 h)
 </PRE>
 <p>
  
@@ -692,15 +692,15 @@ Here is the proof.
 
 <pre class=code>
 fold (a, f) (lift0 (step0 h))
-<B><FONT COLOR="#5F9EA0">=</FONT></B> lift0 (step0 h) (a, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (fold (a, id) (step0 h) $, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (step0 h (a, id) $, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (fold (h a, id) $, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold ($ (h a, id), f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (id (h a), f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (h a, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> step0 h (a, f)
-<B><FONT COLOR="#5F9EA0">=</FONT></B> fold (a, f) (step0 h)
+= lift0 (step0 h) (a, f)
+= fold (fold (a, id) (step0 h) $, f)
+= fold (step0 h (a, id) $, f)
+= fold (fold (h a, id) $, f)
+= fold ($ (h a, id), f)
+= fold (id (h a), f)
+= fold (h a, f)
+= step0 h (a, f)
+= fold (a, f) (step0 h)
 </PRE>
 <p>
  
@@ -717,59 +717,59 @@ Here is the <tt>FOLD</tt> signature, and a recaptulation of the entire <tt>Fold<
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> FOLD <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> FOLD =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step </FONT></B>=<B><FONT COLOR="#228B22"> 'a * ('b -&gt; 'c) -&gt; 'd
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) t </FONT></B>=<B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step -&gt; 'd
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, 'a2, 'b, 'c, 'd) step0 </FONT></B>=<B><FONT COLOR="#228B22">
          ('a1, 'b, 'c, ('a2, 'b, 'c, 'd) t) step
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         ('a12, 'b, 'c, 'a11 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a2, 'b, 'c, 'd) t) step
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 </FONT></B>=<B><FONT COLOR="#228B22">
+         ('a12, 'b, 'c, 'a11 -&gt; ('a2, 'b, 'c, 'd) t) step
          
-      <B><FONT COLOR="#A020F0">val</FONT></B> fold: 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b, 'c, 'd) t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fold: 'a * ('b -&gt; 'c) -&gt; ('a, 'b, 'c, 'd) t
       <B><FONT COLOR="#A020F0">val</FONT></B> lift0: ('a1, 'a2, 'a2, 'a2, 'a2) step0
-                 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0
-      <B><FONT COLOR="#A020F0">val</FONT></B> post: ('a, 'b, 'c1, 'd) t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('c1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c2)
-                <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b, 'c2, 'd) t
-      <B><FONT COLOR="#A020F0">val</FONT></B> step0: ('a1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0
-      <B><FONT COLOR="#A020F0">val</FONT></B> step1: ('a11 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a12 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2)
-                 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+                 -&gt; ('a1, 'a2, 'b, 'c, 'd) step0
+      <B><FONT COLOR="#A020F0">val</FONT></B> post: ('a, 'b, 'c1, 'd) t * ('c1 -&gt; 'c2)
+                -&gt; ('a, 'b, 'c2, 'd) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> step0: ('a1 -&gt; 'a2) -&gt; ('a1, 'a2, 'b, 'c, 'd) step0
+      <B><FONT COLOR="#A020F0">val</FONT></B> step1: ('a11 * 'a12 -&gt; 'a2)
+                 -&gt; ('a11, 'a12, 'a2, 'b, 'c, 'd) step1
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> FOLD <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold:&gt; FOLD =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step </FONT></B>=<B><FONT COLOR="#228B22"> 'a * ('b -&gt; 'c) -&gt; 'd
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) t </FONT></B>=<B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step -&gt; 'd
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, 'a2, 'b, 'c, 'd) step0 </FONT></B>=<B><FONT COLOR="#228B22">
          ('a1, 'b, 'c, ('a2, 'b, 'c, 'd) t) step
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         ('a12, 'b, 'c, 'a11 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a2, 'b, 'c, 'd) t) step
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 </FONT></B>=<B><FONT COLOR="#228B22">
+         ('a12, 'b, 'c, 'a11 -&gt; ('a2, 'b, 'c, 'd) t) step
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fold</FONT></I></B></FONT></B> (a: 'a, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c)
-               (g: ('a, 'b, 'c, 'd) step): 'd <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fold (a: 'a, f: 'b -&gt; 'c)
+               (g: ('a, 'b, 'c, 'd) step): 'd =
          g (a, f)
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> (h: 'a1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2)
-                (a1: 'a1, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step0 (h: 'a1 -&gt; 'a2)
+                (a1: 'a1, f: 'b -&gt; 'c): ('a2, 'b, 'c, 'd) t =
          fold (h a1, f)
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> (h: 'a11 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a12 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2)
-                (a12: 'a12, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c)
-                (a11: 'a11): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step1 (h: 'a11 * 'a12 -&gt; 'a2)
+                (a12: 'a12, f: 'b -&gt; 'c)
+                (a11: 'a11): ('a2, 'b, 'c, 'd) t =
          fold (h (a11, a12), f)
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">lift0</FONT></I></B></FONT></B> (s: ('a1, 'a2, 'a2, 'a2, 'a2) step0)
-                (a: 'a1, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> lift0 (s: ('a1, 'a2, 'a2, 'a2, 'a2) step0)
+                (a: 'a1, f: 'b -&gt; 'c): ('a2, 'b, 'c, 'd) t =
          fold (fold (a, id) s $, f)
             
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">post</FONT></I></B></FONT></B> (w: ('a, 'b, 'c1, 'd) t,
-                g: 'c1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c2)
-               (s: ('a, 'b, 'c2, 'd) step): 'd <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h))
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> post (w: ('a, 'b, 'c1, 'd) t,
+                g: 'c1 -&gt; 'c2)
+               (s: ('a, 'b, 'c2, 'd) step): 'd =
+         w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h))
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -777,8 +777,8 @@ Here is the <tt>FOLD</tt> signature, and a recaptulation of the entire <tt>Fold<
 <p>
 That's a lot to swallow, so let's walk through it one step at a time. First, we have the definition of type <tt>Fold.step</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step </FONT></B>=<B><FONT COLOR="#228B22"> 'a * ('b -&gt; 'c) -&gt; 'd
+</FONT></B></PRE>
  
 </p>
 <p>
@@ -787,24 +787,24 @@ As a fold proceeds over its arguments, it maintains two things: the accumulator,
 <p>
 A folder, of type <tt>Fold.t</tt>, is a function that consumes a single step.   
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) t </FONT></B>=<B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) step -&gt; 'd
+</FONT></B></PRE>
  
 </p>
 <p>
 Expanding out the type, we have: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd) t </FONT></B>=<B><FONT COLOR="#228B22"> ('a * ('b -&gt; 'c) -&gt; 'd) -&gt; 'd
+</FONT></B></PRE>
  
 </p>
 <p>
-This shows that the only thing a folder does is to hand its accumulator (<tt>'a</tt>) and finisher (<tt>'b&nbsp;-&gt;&nbsp;'c</tt>) to the next step (<tt>'a&nbsp;*&nbsp;('b&nbsp;-&gt;&nbsp;'c)&nbsp;-&gt;&nbsp;'d</tt>).  If SML had first-class polymorphism, we would write the fold type as follows. 
+This shows that the only thing a folder does is to hand its accumulator (<tt>'a</tt>) and finisher (<tt>'b&nbsp;-&gt;&nbsp;'c</tt>) to the next step (<tt>'a&nbsp;*&nbsp;('b&nbsp;-&gt;&nbsp;'c)&nbsp;-&gt;&nbsp;'d</tt>).  If SML had <a href="FirstClassPolymorphism">first-class polymorphism</a>, we would write the fold type as follows. 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c) t <B><FONT COLOR="#5F9EA0">=</FONT></B> Forall 'd. ('a, 'b, 'c, 'd) step <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c) t </FONT></B>=<B><FONT COLOR="#228B22"> Forall 'd. ('a, 'b, 'c, 'd) step -&gt; 'd
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -814,9 +814,9 @@ This type definition shows that a folder had nothing to do with the rest of the 
 <p>
 We now can understand the type of <tt>fold</tt>, which takes the initial value of the accumulator and the finishing function, and constructs a folder, i.e. a function awaiting the next step. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> fold: 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b, 'c, 'd) t
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fold</FONT></I></B></FONT></B> (a: 'a, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c)
-         (g: ('a, 'b, 'c, 'd) step): 'd <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> fold: 'a * ('b -&gt; 'c) -&gt; ('a, 'b, 'c, 'd) t
+<B><FONT COLOR="#A020F0">fun</FONT></B> fold (a: 'a, f: 'b -&gt; 'c)
+         (g: ('a, 'b, 'c, 'd) step): 'd =
    g (a, f)
 </PRE>
  
@@ -826,9 +826,9 @@ Continuing on, we have the type of step functions.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B> 
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, 'a2, 'b, 'c, 'd) step0 </FONT></B>=<B><FONT COLOR="#228B22"> 
    ('a1, 'b, 'c, ('a2, 'b, 'c, 'd) t) step
-</PRE>
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -837,9 +837,9 @@ Expanding out the type a bit gives:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-   'a1 <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a2, 'b, 'c, 'd) t
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, 'a2, 'b, 'c, 'd) step0 </FONT></B>=<B><FONT COLOR="#228B22"> 
+   'a1 * ('b -&gt; 'c) -&gt; ('a2, 'b, 'c, 'd) t
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -847,11 +847,11 @@ Expanding out the type a bit gives:
 So, a step function takes the accumulator (<tt>'a1</tt>) and finishing function (<tt>'b&nbsp;-&gt;&nbsp;'c</tt>), which will be passed to it by the previous folder, and transforms them to a new folder.  This new folder has a new accumulator (<tt>'a2</tt>) and the same finishing function. 
 </p>
 <p>
-Again, imagining that SML had first-class polymorphism makes the type clearer. 
+Again, imagining that SML had <a href="FirstClassPolymorphism">first-class polymorphism</a> makes the type clearer. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a1, 'a2) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B> 
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, 'a2) step0 </FONT></B>=<B><FONT COLOR="#228B22"> 
    Forall ('b, 'c). ('a1, 'b, 'c, ('a2, 'b, 'c) t) step
-</PRE>
+</FONT></B></PRE>
  
 </p>
 <p>
@@ -859,9 +859,9 @@ Thus, in essence, a <tt>step0</tt> function is a wrapper around a function of ty
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> step0: ('a1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> (h: 'a1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2)
-          (a1: 'a1, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> step0: ('a1 -&gt; 'a2) -&gt; ('a1, 'a2, 'b, 'c, 'd) step0
+<B><FONT COLOR="#A020F0">fun</FONT></B> step0 (h: 'a1 -&gt; 'a2)
+          (a1: 'a1, f: 'b -&gt; 'c): ('a2, 'b, 'c, 'd) t =
    fold (h a1, f)
 </PRE>
 <p>
@@ -870,9 +870,9 @@ Thus, in essence, a <tt>step0</tt> function is a wrapper around a function of ty
 <p>
 It is not much beyond <tt>step0</tt> to understand <tt>step1</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   ('a12, 'b, 'c, 'a11 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a2, 'b, 'c, 'd) t) step
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 </FONT></B>=<B><FONT COLOR="#228B22">
+   ('a12, 'b, 'c, 'a11 -&gt; ('a2, 'b, 'c, 'd) t) step
+</FONT></B></PRE>
  
 </p>
 <p>
@@ -880,22 +880,22 @@ A <tt>step1</tt> function takes the accumulator (<tt>'a12</tt>) and finisher (<t
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> (h: 'a11 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a12 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a2)
-          (a12: 'a12, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c)
-          (a11: 'a11): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> step1 (h: 'a11 * 'a12 -&gt; 'a2)
+          (a12: 'a12, f: 'b -&gt; 'c)
+          (a11: 'a11): ('a2, 'b, 'c, 'd) t =
    fold (h (a11, a12), f)
 </PRE>
 <p>
  
 </p>
 <p>
-With first-class polymorphism, a <tt>step1</tt> function is more clearly seen as a wrapper around a binary function of type  <tt>'a11&nbsp;*&nbsp;'a12&nbsp;-&gt;&nbsp;'a2</tt>. 
+With <a href="FirstClassPolymorphism">first-class polymorphism</a>, a <tt>step1</tt> function is more clearly seen as a wrapper around a binary function of type  <tt>'a11&nbsp;*&nbsp;'a12&nbsp;-&gt;&nbsp;'a2</tt>. 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a11, 'a12, 'a2) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   Forall ('b, 'c). ('a12, 'b, 'c, 'a11 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a2, 'b, 'c) t) step
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a11, 'a12, 'a2) step1 </FONT></B>=<B><FONT COLOR="#228B22">
+   Forall ('b, 'c). ('a12, 'b, 'c, 'a11 -&gt; ('a2, 'b, 'c) t) step
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -904,12 +904,12 @@ The type of <tt>post</tt> is clear: it takes a folder with a finishing function 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> post: ('a, 'b, 'c1, 'd) t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('c1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c2)
-          <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b, 'c2, 'd) t
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">post</FONT></I></B></FONT></B> (w: ('a, 'b, 'c1, 'd) t,
-          g: 'c1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c2)
-         (s: ('a, 'b, 'c2, 'd) step): 'd <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s (a, g <B><FONT COLOR="#A020F0">o</FONT></B> h))
+<B><FONT COLOR="#A020F0">val</FONT></B> post: ('a, 'b, 'c1, 'd) t * ('c1 -&gt; 'c2)
+          -&gt; ('a, 'b, 'c2, 'd) t
+<B><FONT COLOR="#A020F0">fun</FONT></B> post (w: ('a, 'b, 'c1, 'd) t,
+          g: 'c1 -&gt; 'c2)
+         (s: ('a, 'b, 'c2, 'd) step): 'd =
+   w (<B><FONT COLOR="#A020F0">fn</FONT></B> (a, h) =&gt; s (a, g o h))
 </PRE>
 <p>
  
@@ -923,8 +923,8 @@ Let's type check our simplest example, a variable-argument fold. Recall that we 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
+<B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
 </PRE>
 <p>
  
@@ -934,9 +934,9 @@ Since the accumulator and finisher are uninteresting, we'll use some abbreviatio
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'd step <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B>, <B><FONT COLOR="#228B22">unit</FONT></B>, <B><FONT COLOR="#228B22">unit</FONT></B>, 'd) Fold.step
-<B><FONT COLOR="#A020F0">type</FONT></B> 'd fold <B><FONT COLOR="#5F9EA0">=</FONT></B> 'd step <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'd step </FONT></B>=<B><FONT COLOR="#228B22"> (unit, unit, unit, 'd) Fold.step
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'd fold </FONT></B>=<B><FONT COLOR="#228B22"> 'd step -&gt; 'd
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -951,7 +951,7 @@ a: 'd step
 <p>
 Suppose we want to type check  
 <pre class=code>
-f a a a $: <B><FONT COLOR="#228B22">unit</FONT></B>
+f a a a $: unit
 </PRE>
  As a reminder, the fully parenthesized expression is  
 <pre class=code>
@@ -959,17 +959,17 @@ f a a a $: <B><FONT COLOR="#228B22">unit</FONT></B>
 </PRE>
  The observation that we will use repeatedly is that for any type <tt>z</tt>, if <tt>f:&nbsp;z&nbsp;fold</tt> and <tt>s:&nbsp;z&nbsp;step</tt>, then <tt>f&nbsp;s:&nbsp;z</tt>. So, if we want  
 <pre class=code>
-(f a a a) $: <B><FONT COLOR="#228B22">unit</FONT></B>
+(f a a a) $: unit
 </PRE>
   then we must have  
 <pre class=code>
-f a a a: <B><FONT COLOR="#228B22">unit</FONT></B> fold
-$: <B><FONT COLOR="#228B22">unit</FONT></B> step
+f a a a: unit fold
+$: unit step
 </PRE>
  Applying the observation again, we must have  
 <pre class=code>
-f a a: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold
-a: <B><FONT COLOR="#228B22">unit</FONT></B> fold step
+f a a: unit fold fold
+a: unit fold step
 </PRE>
  
 </p>
@@ -978,11 +978,11 @@ Applying the observation two more times leads to the following type derivation.
 </p>
 
 <pre class=code>
-f: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold fold fold  a: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold fold step
-f a: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold fold     a: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold step
-f a a: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold        a: <B><FONT COLOR="#228B22">unit</FONT></B> fold step
-f a a a: <B><FONT COLOR="#228B22">unit</FONT></B> fold           $: <B><FONT COLOR="#228B22">unit</FONT></B> step
-f a a a $: <B><FONT COLOR="#228B22">unit</FONT></B>
+f: unit fold fold fold fold  a: unit fold fold fold step
+f a: unit fold fold fold     a: unit fold fold step
+f a a: unit fold fold        a: unit fold step
+f a a a: unit fold           $: unit step
+f a a a $: unit
 </PRE>
 <p>
  
@@ -995,11 +995,11 @@ One can expand some of the type definitions in <tt>f</tt> to see that it is inde
 </p>
 
 <pre class=code>
-f: <B><FONT COLOR="#228B22">unit</FONT></B> fold fold fold step 
-   <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> fold fold step
-   <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> fold step
-   <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> step
-   <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+f: unit fold fold fold step 
+   -&gt; unit fold fold step
+   -&gt; unit fold step
+   -&gt; unit step
+   -&gt; unit
 </PRE>
 <p>
  
@@ -1015,11 +1015,11 @@ Generalizing this type derivation to uses of fold where the accumulator and fini
 </p>
 <h2 id="head-f1a127be542fc4a883aa37976ca48c19faf93b98">Typing lift</h2>
 <p>
-The lack of first-class polymorphism in SML causes problems if one wants to use a step in a first-class way.  Consider the following <tt>double</tt> function, which takes a step, <tt>s</tt>, and produces a composite step that does <tt>s</tt> twice. 
+The lack of <a href="FirstClassPolymorphism">first-class polymorphism</a> in SML causes problems if one wants to use a step in a first-class way.  Consider the following <tt>double</tt> function, which takes a step, <tt>s</tt>, and produces a composite step that does <tt>s</tt> twice. 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">double</FONT></I></B></FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold u s s
+<B><FONT COLOR="#A020F0">fun</FONT></B> double s = <B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; Fold.fold u s s
 </PRE>
 <p>
  
@@ -1033,9 +1033,9 @@ Fortunately, we can define a function, <tt>lift0</tt>, that takes a monotyped st
 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> lift0: ('a1, 'a2, 'a2, 'a2, 'a2) step0
-           <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1, 'a2, 'b, 'c, 'd) step0
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">lift0</FONT></I></B></FONT></B> (s: ('a1, 'a2, 'a2, 'a2, 'a2) step0)
-          (a: 'a1, f: 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c): ('a2, 'b, 'c, 'd) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+           -&gt; ('a1, 'a2, 'b, 'c, 'd) step0
+<B><FONT COLOR="#A020F0">fun</FONT></B> lift0 (s: ('a1, 'a2, 'a2, 'a2, 'a2) step0)
+          (a: 'a1, f: 'b -&gt; 'c): ('a2, 'b, 'c, 'd) t =
    fold (fold (a, id) s $, f)
 </PRE>
 <p>
@@ -1044,11 +1044,11 @@ Fortunately, we can define a function, <tt>lift0</tt>, that takes a monotyped st
 <p>
 The following definition of <tt>double</tt> uses <tt>lift0</tt>, appropriately eta wrapped, to fix the problem. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">double</FONT></I></B></FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> double s =
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.lift0 s z
+      <B><FONT COLOR="#A020F0">val</FONT></B> s = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.lift0 s z
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      <B><FONT COLOR="#A020F0">fn</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold u s s
+      <B><FONT COLOR="#A020F0">fn</FONT></B> u =&gt; Fold.fold u s s
    <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
  
@@ -1058,10 +1058,10 @@ With that definition of <tt>double</tt> in place, we can use it as in the follow
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
-<B><FONT COLOR="#A020F0">val</FONT></B> a2 <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> double a z
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f a a2 a a2 $
+<B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
+<B><FONT COLOR="#A020F0">val</FONT></B> a2 = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; double a z
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f a a2 a a2 $
 </PRE>
 <p>
  
@@ -1075,17 +1075,17 @@ For clarity and to avoid mistakes, it can be useful to hide the type of the accu
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#A020F0">type</FONT></B> ac
-     <B><FONT COLOR="#A020F0">val</FONT></B> f: (ac, ac, <B><FONT COLOR="#228B22">unit</FONT></B>, 'd) Fold.t
+<B><FONT COLOR="#0000FF">structure</FONT></B> S:&gt;
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ac
+     </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> f: (ac, ac, unit, 'd) Fold.t
      <B><FONT COLOR="#A020F0">val</FONT></B> s: (ac, ac, 'b, 'c, 'd) Fold.step0
-  <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-     <B><FONT COLOR="#A020F0">type</FONT></B> ac <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-     <B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
-     <B><FONT COLOR="#A020F0">val</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()) z
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B> =
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+     <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ac </FONT></B>=<B><FONT COLOR="#228B22"> unit
+     </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.fold ((), <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
+     <B><FONT COLOR="#A020F0">val</FONT></B> s = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()) z
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -1146,5 +1146,5 @@ Fold has a number of practical applications.  Here are some of them.
 
 <p>
 <hr>
-Last edited on 2006-03-28 00:58:28 by <span title="adsl-71-141-33-187.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 23:03:59 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

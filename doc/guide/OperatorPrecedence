@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,12 +57,12 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 <a href="StandardML">Standard ML</a> has a built in notion of precedence for certain symbols.  Every program that includes the  <a href="BasisLibrary">Basis Library</a> automatically gets the following infix declarations.  Higher number indicates higher precedence. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">infix</FONT></B> 7 <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B> <B><FONT COLOR="#5F9EA0">mod</FONT></B> <B><FONT COLOR="#5F9EA0">div</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B> 6 <B><FONT COLOR="#5F9EA0">+</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B> <B><FONT COLOR="#5F9EA0">^</FONT></B>
-<B><FONT COLOR="#A020F0">infixr</FONT></B> 5 <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#5F9EA0">@</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B> 4 <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">&lt;&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> &lt; <B><FONT COLOR="#5F9EA0">&lt;=</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B> 3 <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#A020F0">o</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B> 0 <B><FONT COLOR="#A020F0">before</FONT></B>
+<B><FONT COLOR="#A020F0">infix</FONT></B> 7 * / mod div
+<B><FONT COLOR="#A020F0">infix</FONT></B> 6 + - ^
+<B><FONT COLOR="#A020F0">infixr</FONT></B> 5 :: @
+<B><FONT COLOR="#A020F0">infix</FONT></B> 4 = &lt;&gt; &gt; &gt;= &lt; &lt;=
+<B><FONT COLOR="#A020F0">infix</FONT></B> 3 := o
+<B><FONT COLOR="#A020F0">infix</FONT></B> 0 before
 </PRE>
 <p>
  

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,42 +57,42 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 This module is a subset of the <tt>Unsafe</tt> module provided by SML/NJ. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> UNSAFE_MONO_ARRAY <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> elem
+<B><FONT COLOR="#0000FF">signature</FONT></B> UNSAFE_MONO_ARRAY =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> array
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> elem
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> create: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> sub: <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> elem
-      <B><FONT COLOR="#A020F0">val</FONT></B> update: <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> elem <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> create: int -&gt; array
+      <B><FONT COLOR="#A020F0">val</FONT></B> sub: array * int -&gt; elem
+      <B><FONT COLOR="#A020F0">val</FONT></B> update: array * int * elem -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> UNSAFE_MONO_VECTOR <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> elem
-      <B><FONT COLOR="#A020F0">type</FONT></B> <B><FONT COLOR="#228B22">vector</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> UNSAFE_MONO_VECTOR =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> elem
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> vector
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> sub: <B><FONT COLOR="#228B22">vector</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> elem
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> sub: vector * int -&gt; elem
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> UNSAFE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Array:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> create: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#228B22">array</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> sub: 'a <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-            <B><FONT COLOR="#A020F0">val</FONT></B> update: 'a <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> CharArray: UNSAFE_MONO_ARRAY
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> CharVector: UNSAFE_MONO_VECTOR
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Real64Array: UNSAFE_MONO_ARRAY
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Vector:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> sub: 'a <B><FONT COLOR="#228B22">vector</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Word8Array: UNSAFE_MONO_ARRAY
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Word8Vector: UNSAFE_MONO_VECTOR
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> UNSAFE =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Array:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> create: int * 'a -&gt; 'a array
+            <B><FONT COLOR="#A020F0">val</FONT></B> sub: 'a array * int -&gt; 'a
+            <B><FONT COLOR="#A020F0">val</FONT></B> update: 'a array * int * 'a -&gt; unit
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> CharArray: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> CharVector: UNSAFE_MONO_VECTOR
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Real64Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Vector:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> sub: 'a vector * int -&gt; 'a
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word8Array: UNSAFE_MONO_ARRAY
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word8Vector: UNSAFE_MONO_VECTOR
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

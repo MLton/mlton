@@ -15,8 +15,9 @@
 
 
 <link rel="Appendix" title="060916-mlton.pdf" href="http://mlton.org/pages/References/attachments/060916-mlton.pdf">
-<link rel="Appendix" title="CejtinEtAl00.ps.gz" href="http://mlton.org/pages/References/attachments/CejtinEtAl00.ps.gz">
+<link rel="Appendix" title="CejtinEtAl00.pdf" href="http://mlton.org/pages/References/attachments/CejtinEtAl00.pdf">
 <link rel="Appendix" title="FluetWeeks01.ps.gz" href="http://mlton.org/pages/References/attachments/FluetWeeks01.ps.gz">
+<link rel="Appendix" title="Shipman02.pdf" href="http://mlton.org/pages/References/attachments/Shipman02.pdf">
 </head>
 
 <body lang="en" dir="ltr">
@@ -34,7 +35,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -98,7 +99,7 @@ urchinTracker();
 
     <li>
 <p>
- <a id="BaudinetMacqueen85"></a>  <a class="external" href="http://citeseer.ist.psu.edu/baudinet85tree.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Tree Pattern Matching for ML</a>.  Marianne Baudinet, David MacQueen.  1985. 
+ <a id="BaudinetMacQueen85"></a>  <a class="external" href="http://citeseer.ist.psu.edu/baudinet85tree.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Tree Pattern Matching for ML</a>.  Marianne Baudinet, David MacQueen.  1985. 
 </p>
 </li>
 
@@ -152,7 +153,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="BerryEtAl93"></a>  <a class="external" href="http://portal.acm.org/citation.cfm?id=143191&amp;coll=ACM&amp;dl=ACM&amp;CFID=2858735&amp;CFTOKEN=15796996"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A semantics for ML concurrency primitives</a>.  Dave Berry, Robin Milner, and David N. Turner.  <a href="#POPL">POPL</a> 1992. 
+ <a id="BerryEtAl93"></a>  <a class="external" href="http://portal.acm.org/citation.cfm?id=143191"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A semantics for ML concurrency primitives</a>.  Dave Berry, Robin Milner, and David N. Turner.  <a href="#POPL">POPL</a> 1992. 
 </p>
 </li>
     <li class="gap">
@@ -205,7 +206,7 @@ urchinTracker();
 
     <li>
 <p>
- <a id="CejtinEtAl00"></a>  <a href="http://mlton.org/pages/References/attachments/CejtinEtAl00.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Flow-directed Closure Conversion for Typed Languages</a>.  Henry Cejtin, Suresh Jagannathan, and Stephen Weeks.  <a href="#ESOP">ESOP</a> 2000. 
+ <a id="CejtinEtAl00"></a>  <a href="http://mlton.org/pages/References/attachments/CejtinEtAl00.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Flow-directed Closure Conversion for Typed Languages</a>.  Henry Cejtin, Suresh Jagannathan, and Stephen Weeks.  <a href="#ESOP">ESOP</a> 2000. 
 </p>
 </li>
 
@@ -230,6 +231,11 @@ urchinTracker();
  <a id="CooperMorrisett90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/cooper90adding.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Adding Threads to Standard ML</a>.  Eric C. Cooper and J. Gregory Morrisett.    CMU Technical Report CMU-CS-90-186, 1990. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <a id="CouttsEtAl07"></a>  <a class="external" href="http://www.cse.unsw.edu.au/~dons/papers/CLS07.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Stream Fusion: From Lists to Streams to Nothing at All</a>.  Duncan Coutts, Roman Leshchinskiy, and Don Stewart.  Submitted for publication.  April 2007. 
+</p>
+</li>
 
     </ul>
 
@@ -242,6 +248,11 @@ urchinTracker();
     <ul>
 
     <li>
+<p>
+ <a id="DamasMilner82"></a>  <a class="external" href="http://portal.acm.org/citation.cfm?id=582176"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Principal Type-Schemes for Functional Programs</a>.  Luis Damas and Robin Milner.  <a href="#POPL">POPL</a> 1982. 
+</p>
+</li>
+    <li class="gap">
 <p>
  <a id="Danvy98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/danvy98functional.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Functional Unparsing</a>.  Olivier Danvy.  BRICS Technical Report RS 98-12, 1998. 
 </p>
@@ -260,12 +271,17 @@ urchinTracker();
 
     <li class="gap">
 <p>
- <a id="DoligezLeroy93"></a>  <a class="external" href="http://citeseer.ist.psu.edu/doligez93concurrent.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A concurrent, generational garbage collector for a multithreaded implementation of ML</a>.  Damien Doligez and Xavier Leroy.  <a href="#POPL">POPL</a> 1993. 
+ <a id="DoligezLeroy93"></a>  <a class="external" href="http://citeseer.ist.psu.edu/doligez93concurrent.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Concurrent, Generational Garbage Collector for a Multithreaded Implementation of ML</a>.  Damien Doligez and Xavier Leroy.  <a href="#POPL">POPL</a> 1993. 
 </p>
 </li>
     <li class="gap">
 <p>
- <a id="Dreyer06"></a>  <a class="external" href="http://ttic.uchicago.edu/~dreyer/papers/mtc/main-short.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Modular Type Classes</a>.  Derek Dreyer, Robert Harper, Manuel M.T. Chakravarty.  University of Chicago Technical Report TR-2006-03, 2006. 
+ <a id="Dreyer07"></a>  <a class="external" href="http://ttic.uchicago.edu/~dreyer/papers/mtc/main-long.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Modular Type Classes</a>.  Derek Dreyer, Robert Harper, Manuel M.T. Chakravarty.  University of Chicago Technical Report TR-2007-02, 2006. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="DreyerBlume07"></a>  <a class="external" href="http://ttic.uchicago.edu/~dreyer/papers/infmod/main-short.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Principal Type Schemes for Modular Programs</a>.  Derek Dreyer and Matthias Blume.  <a href="#ESOP">ESOP</a> 2007. 
 </p>
 </li>
     <li class="gap">
@@ -364,7 +380,7 @@ urchinTracker();
 
     <li>
 <p>
- <a id="GansnerReppy93"></a>  <a class="external" href="http://citeseer.ist.psu.edu/gansner93multithreaded.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Multi-threaded Higher-order User Interface Toolkit</a>.  Emden R. Gansner and John H. Reppy.  User Interface Software, 1993. 
+ <a id="GansnerReppy93"></a>  <a class="external" href="http://citeseer.ist.psu.edu/gansner93multithreaded.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Multi-Threaded Higher-order User Interface Toolkit</a>.  Emden R. Gansner and John H. Reppy.  User Interface Software, 1993. 
 </p>
 </li>
     <li class="gap">
@@ -402,12 +418,22 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="HansenRichel99"></a>  <a class="external" href="http://www.it.dtu.dk/introSML"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Introduction to Programming using SML</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0201398206&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0201398206.  Michael R. Hansen, Hans Rischel.  Addison-Wesley, 1999. 
+ <a id="HansenRichel99"></a>  <a class="external" href="http://www.it.dtu.dk/introSML"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Introduction to Programming Using SML</a>  (<a class="external" href="http://www3.addall.com/New/submitNew.cgi?query=0201398206&amp;type=ISBN"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0201398206.  Michael R. Hansen, Hans Rischel.  Addison-Wesley, 1999. 
 </p>
 </li>
     <li class="gap">
 <p>
- <a id="HauserBenson04"></a>  <a class="external" href="http://doi.ieeecomputersociety.org/10.1109/CSD.2004.1309122"><img src="moin-www.png" alt="[WWW]" height="11" width="11">On the Practicality and Desirability of Highly-concurrent, Mostly-functional Programming</a>.  Carl H. Hauser, David B. Benson.  <a href="#ACSD">ACSD</a> 2004. 
+ <a id="HarperEtAl93"></a>  <a class="external" href="http://citeseer.comp.nus.edu.sg/11210.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Typing First-Class Continuations in ML</a>.  Robert Harper, Bruce F. Duba, and David MacQueen.  <a href="#JFP">JFP</a> 1993. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="HarperMitchell92"></a>  <a class="external" href="http://citeseer.ist.psu.edu/harper92type.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">On the Type Structure of Standard ML</a>.  Robert Harper and John C. Mitchell.  <a href="#TOPLAS">TOPLAS</a> 1992. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="HauserBenson04"></a>  <a class="external" href="http://doi.ieeecomputersociety.org/10.1109/CSD.2004.1309122"><img src="moin-www.png" alt="[WWW]" height="11" width="11">On the Practicality and Desirability of Highly-concurrent, Mostly-functional Programming</a>.  Carl H. Hauser and David B. Benson.  <a href="#ACSD">ACSD</a> 2004. 
 </p>
 </li>
 
@@ -417,6 +443,11 @@ urchinTracker();
             </ul>
 
 
+    <li class="gap">
+<p>
+ <a id="HeckmanWilhelm97"></a>  <a class="external" href="http://rw4.cs.uni-sb.de/~heckmann/abstracts/neuform.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Functional Description of TeX's Formula Layout</a>.  Reinhold Heckmann and Reinhard Wilhelm.  <a href="#JFP">JFP</a> 1997. 
+</p>
+</li>
     <li class="gap">
 <p>
  <a id="HicksEtAl03"></a>  <a class="external" href="http://www.eecs.harvard.edu/~greg/cyclone/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Safe and Flexible Memory Management in Cyclone</a>.  Mike Hicks, Greg Morrisett, Dan Grossman, and Trevor Jim.    University of Maryland Technical Report CS-TR-4514, 2003. 
@@ -464,7 +495,7 @@ urchinTracker();
 
     <li>
 <p>
- <a id="Kahrs93"></a>  <a class="external" href="http://www.cs.kent.ac.uk/pubs/1993/569/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Mistakes and ambiguities in the definition of Standard ML</a>.  Stefan Kahrs.  University of Edinburgh Technical Report ECS-LFCS-93-257, 1993. 
+ <a id="Kahrs93"></a>  <a class="external" href="http://www.cs.kent.ac.uk/pubs/1993/569/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Mistakes and Ambiguities in the Definition of Standard ML</a>.  Stefan Kahrs.  University of Edinburgh Technical Report ECS-LFCS-93-257, 1993. 
 </p>
 <p>
  There are also the <a class="external" href="http://www.cs.kent.ac.uk/~smk/errors-new.ps.Z"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addenda</a>  published in 1996. 
@@ -480,6 +511,11 @@ urchinTracker();
     <li class="gap">
 <p>
  <a id="Kennedy04"></a>  <a class="external" href="http://research.microsoft.com/~akenn/fun/picklercombinators.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Pickler Combinators</a>.  Andrew Kennedy.  <a href="#JFP">JFP</a> 2004. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="KoserEtAl03"></a>  <a class="external" href="http://www.cs.princeton.edu/~hlarsen/work/dpcool-paper.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml2java: A Source To Source Translator</a>.  Justin Koser, Haakon Larsen, Jeffrey A. Vaughan.  <a href="#DPCOOL">DPCOOL</a> 2003. 
 </p>
 </li>
 
@@ -505,7 +541,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="Leroy90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/leroy90zinc.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The ZINC experiment: an economical implementation of the ML language</a>.  Xavier Leroy.  Technical report 117, INRIA, 1990. 
+ <a id="Leroy90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/leroy90zinc.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">The ZINC Experiment: an Economical Implementation of the ML Language</a>.  Xavier Leroy.  Technical report 117, INRIA, 1990. 
 </p>
 </li>
 
@@ -517,7 +553,7 @@ urchinTracker();
 
     <li class="gap">
 <p>
- <a id="Leroy93"></a>  <a class="external" href="http://pauillac.inria.fr/~xleroy/leroy.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Polymorphism by name for references and continuations</a>.  Xavier Leroy.  <a href="#POPL">POPL</a> 1993. 
+ <a id="Leroy93"></a>  <a class="external" href="http://pauillac.inria.fr/~xleroy/leroy.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Polymorphism by Name for References and Continuations</a>.  Xavier Leroy.  <a href="#POPL">POPL</a> 1993. 
 </p>
 </li>
     <li class="gap">
@@ -538,7 +574,7 @@ urchinTracker();
 
     <li>
 <p>
- <a id="MarlowEtAl01"></a>  <a class="external" href="http://www.haskell.org/~simonmar/papers/async.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Asynchronous exceptions in Haskell</a>.  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.  <a href="#PLDI">PLDI</a> 2001. 
+ <a id="MarlowEtAl01"></a>  <a class="external" href="http://www.haskell.org/~simonmar/papers/async.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Asynchronous Exceptions in Haskell</a>.  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.  <a href="#PLDI">PLDI</a> 2001. 
 </p>
 </li>
 
@@ -549,6 +585,11 @@ urchinTracker();
         </ul>
 
 
+    <li class="gap">
+<p>
+ <a id="MacQueenEtAl84"></a>  <a class="external" href="http://portal.acm.org/citation.cfm?id=800017.800528"><img src="moin-www.png" alt="[WWW]" height="11" width="11">An Ideal Model for Recursive Polymorphic Types</a>.  David Mac<strong></strong>Queen, Gordon Plotkin, Ravi Sethi.  <a href="#POPL">POPL</a> 1984. 
+</p>
+</li>
     <li class="gap">
 <p>
  <a id="Matthews91"></a>  <a class="external" href="http://www.lfcs.inf.ed.ac.uk/reports/91/ECS-LFCS-91-174/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Distributed Concurrent Implementation of Standard ML</a>.  David Matthews.  University of Edinburgh Technical Report ECS-LFCS-91-174, 1991. 
@@ -566,7 +607,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="MeierNorgaard93"></a>  <a class="external" href="http://www.itu.dk/stud/speciale/bmkn/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Just-In-Time backend for Moscow ML 2.00 in SML</a>.  Bjarke Meier, Kristian Nørgaard.  Masters Thesis, 2003. 
+ <a id="MeierNorgaard93"></a>  <a class="external" href="http://www.itu.dk/stud/speciale/bmkn/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Just-In-Time Backend for Moscow ML 2.00 in SML</a>.  Bjarke Meier, Kristian Nørgaard.  Masters Thesis, 2003. 
 </p>
 </li>
 
@@ -577,6 +618,11 @@ urchinTracker();
             </ul>
 
 
+    <li class="gap">
+<p>
+ <a id="Milner78"></a>  A Theory of Type Polymorphism in Programming.  Robin Milner.  Journal of Computer and System Sciences, 1978. 
+</p>
+</li>
     <li class="gap">
 <p>
  <a id="Milner82"></a>  <a class="external" href="http://www.dcs.ed.ac.uk/home/stg/tutorial/papers/evolved.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">How ML Evolved</a>.  Robin Milner.  Polymorphism--The ML/LCF/Hope Newsletter, 1983. 
@@ -630,7 +676,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="MorrisettTolmach93"></a>  <a class="external" href="http://portal.acm.org/affiliated/citation.cfm?id=155353&amp;coll=ACM&amp;dl=ACM&amp;CFID=15151515&amp;CFTOKEN=6184618"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Procs and locks: a portable multiprocessing platform for Standard ML of New Jersey</a>.  J. Gregory Morrisett and Andrew Tolmach.  <a href="#PPoPP">PPoPP</a> 1993. 
+ <a id="MorrisettTolmach93"></a>  <a class="external" href="http://portal.acm.org/affiliated/citation.cfm?id=155353"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Procs and Locks: a Portable Multiprocessing Platform for Standard ML of New Jersey</a>.  J. Gregory Morrisett and Andrew Tolmach.  <a href="#PPoPP">PPoPP</a> 1993. 
 </p>
 </li>
     <li class="gap">
@@ -666,6 +712,11 @@ urchinTracker();
  <a id="Neumann99Thesis"></a>  <a class="external" href="http://citeseer.ist.psu.edu/neumann99parsing.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Parsing and Querying XML Documents in SML</a>.  Andreas Neumann.  Doctoral Thesis, 1999. 
 </p>
 </li>
+    <li class="gap">
+<p>
+ <a id="NguyenOhori06"></a>  <a class="external" href="http://www.pllab.riec.tohoku.ac.jp/~ohori/research/NguyenOhoriPPDP06.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compiling ML Polymorphism with Explicit Layout Bitmap</a>.  Huu-Duc Nguyen and Atsushi Ohori.  <a href="#PPDP">PPDP</a> 2006. 
+</p>
+</li>
 
     </ul>
 
@@ -680,6 +731,26 @@ urchinTracker();
     <li>
 <p>
  <a id="Okasaki99"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521663504"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Purely Functional Data Structures</a>.  ISBN 0521663504.  Chris Okasaki.  Cambridge University Press, 1999. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Ohori89"></a>  <a class="external" href="http://www.pllab.riec.tohoku.ac.jp/~ohori/research/fpca89.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Simple Semantics for ML Polymorphism</a>.  Atsushi Ohori.  <a href="#FPCA">FPCA</a> 1989. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Ohori95"></a>  <a class="external" href="http://www.pllab.riec.tohoku.ac.jp/~ohori/research/toplas95.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Polymorphic Record Calculus and Its Compilation</a>.  Atsushi Ohori.  <a href="#TOPLAS">TOPLAS</a> 1995. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="OhoriTakamizawa97"></a>  <a class="external" href="http://www.pllab.riec.tohoku.ac.jp/~ohori/research/jlsc97.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">An Unboxed Operational Semantics for ML Polymorphism</a>.  Atsushi Ohori and Tomonobu Takamizawa.  <a href="#LASC">LASC</a> 1997. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="Ohori99"></a>  <a class="external" href="http://www.pllab.riec.tohoku.ac.jp/~ohori/research/ic98.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Type-Directed Specialization of Polymorphism</a>.  Atsushi Ohori.  <a href="#IC">IC</a> 1999. 
 </p>
 </li>
 
@@ -735,6 +806,11 @@ urchinTracker();
     <li class="gap">
 <p>
  <a id="Ramsey03"></a>  <a class="external" href="http://www.eecs.harvard.edu/~nr/pubs/embed-abstract.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Embedding an Interpreted Language Using Higher-Order Functions and Types</a>.  Norman Ramsey.  <a href="#IVME">IVME</a> 2003. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="RamseyFisherGovereau05"></a>  <a class="external" href="http://www.eecs.harvard.edu/~nr/pubs/els-abstract.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">An Expressive Language of Signatures</a>.  Norman Ramsey, Kathleen Fisher, and Paul Govereau.  <a href="#ICFP">ICFP</a> 2005. 
 </p>
 </li>
     <li class="gap">
@@ -811,7 +887,7 @@ urchinTracker();
 
     <li class="gap">
 <p>
- <a id="Sestoft96"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sestoft96ml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML pattern match compilation and partial evaluation</a>.  Peter Sestoft.  Partial Evaluation, 1996.  
+ <a id="Sestoft96"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sestoft96ml.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML Pattern Match Compilation and Partial Evaluation</a>.  Peter Sestoft.  Partial Evaluation, 1996.  
 </p>
 </li>
 
@@ -823,12 +899,19 @@ urchinTracker();
 
     <li class="gap">
 <p>
- <a id="Shipman02"></a>  Anthony L. Shipman.  <a class="external" href="http://web.access.net.au/felixadv/files/output/book/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Unix System Programming with Standard ML</a>, 2002. 
+ <a id="Shipman02"></a>  <a href="http://mlton.org/pages/References/attachments/Shipman02.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Unix System Programming with Standard ML</a>.  Anthony L. Shipman.  2002. 
 </p>
 </li>
+
+        <ul>
+
+  <em>Includes a description of the <a href="Swerve">Swerve</a> HTTP server written in SML.</em> 
+        </ul>
+
+
     <li class="gap">
 <p>
- <a id="Signoles03"></a>  <a class="external" href="http://www.lri.fr/~signoles/publis/jfla2003.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Calcul statique des applications de modules parametres</a>.  Julien Signoles.  <a href="#JFLA">JFLA</a> 2003. 
+ <a id="Signoles03"></a>  <a class="external" href="http://www.lri.fr/~signoles/publis/jfla2003.ps.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Calcul Statique des Applications de Modules Parametres</a>.  Julien Signoles.  <a href="#JFLA">JFLA</a> 2003. 
 </p>
 </li>
 
@@ -840,7 +923,19 @@ urchinTracker();
 
     <li class="gap">
 <p>
- <a id="SwaseyEtAl06"></a>  <a class="external" href="http://www.cs.cmu.edu/~tom7/papers/smlsc2-ml06.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Separate Compilation Extension to Standard ML</a>.  David Swasey, Tom Murphy VII, Karl Crary and Robert Harper  <a href="#ML">ML</a> 2006. 
+ <a id="SittampalamEtAl04"></a>  <a class="external" href="http://citeseer.ist.psu.edu/sittampalam04incremental.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Incremental Execution of Transformation Specifications</a>.  Ganesh Sittampalam, Oege de Moor, and Ken Friis Larsen.  <a href="#POPL">POPL</a> 2004. 
+</p>
+</li>
+
+            <ul>
+
+   <em>Mentions a port from Moscow ML to MLton of <a class="external" href="http://www.itu.dk/research/muddy/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MuDDY</a>, an SML wrapper around the <a class="external" href="http://sourceforge.net/projects/buddy"><img src="moin-www.png" alt="[WWW]" height="11" width="11">BuDDY</a> BDD package.</em> 
+            </ul>
+
+
+    <li class="gap">
+<p>
+ <a id="SwaseyEtAl06"></a>  <a class="external" href="http://www.cs.cmu.edu/~tom7/papers/smlsc2-ml06.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Separate Compilation Extension to Standard ML</a>.  David Swasey, Tom Murphy VII, Karl Crary and Robert Harper.  <a href="#ML">ML</a> 2006. 
 </p>
 </li>
 
@@ -866,7 +961,12 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a id="Tofte90"></a>  Type Inference for Polymorphic References.  Mads Tofte.  Information and Computation, 89(1), 1990. 
+ <a id="Tofte90"></a>  Type Inference for Polymorphic References.  Mads Tofte.  <a href="#IC">IC</a> 1990. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <a id="TolmachAppel95"></a>  <a class="external" href="http://citeseer.ist.psu.edu/tolmach93debugger.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Debugger for Standard ML</a>.  Andrew Tolmach and Andrew W. Appel.  <a href="#JFP">JFP</a> 1995. 
 </p>
 </li>
     <li class="gap">
@@ -922,6 +1022,11 @@ urchinTracker();
     <ul>
 
     <li>
+<p>
+ <a id="Wand84"></a>  <a class="external" href="http://portal.acm.org/citation.cfm?id=800527"><img src="moin-www.png" alt="[WWW]" height="11" width="11">A Types-as-Sets Semantics for Milner-Style Polymorphism</a>.  Mitchell Wand.  <a href="#POPL">POPL</a> 1984. 
+</p>
+</li>
+    <li class="gap">
 <p>
  <a id="Wang01"></a>  <a class="external" href="http://ncstrl.cs.princeton.edu/expand.php?id=TR-640-01"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Managing Memory with Types</a>.  Daniel C. Wang.  PhD Thesis. 
 </p>
@@ -985,6 +1090,9 @@ urchinTracker();
 
 <p>
 <a id="X_References"></a> <h2 id="head-c032adc1ff629c9b66f22749ad667e6beadf144b">X</h2>
+
+</p>
+<p>
 <a id="Y_References"></a> <h2 id="head-23eb4d3f4155395a74e9d534f97ff4c1908f5aac">Y</h2>
 
 </p>
@@ -1004,6 +1112,18 @@ urchinTracker();
 <a id="Z_References"></a> <h2 id="head-909f99a779adb66a76fc53ab56c7dd1caf35d0fd">Z</h2>
 
 </p>
+
+    <ul>
+
+    <li>
+<p>
+ <a id="ZiarekEtAl06"></a>  <a class="external" href="http://www.cs.purdue.edu/homes/suresh/abstracts.html#icfp06"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Stabilizers: A Modular Checkpointing Abstraction for Concurrent Functional Programs</a>.  Lukasz Ziarek, Philip Schatz, and Suresh Jagannathan.  <a href="#ICFP">ICFP</a> 2006. 
+</p>
+</li>
+
+    </ul>
+
+
 <h2 id="head-a90aba13b6feb8ff1a5141d94cb1fc2fe96e9477">Abbreviations</h2>
 
     <ul>
@@ -1025,6 +1145,11 @@ urchinTracker();
 </li>
     <li>
 <p>
+ <a id="DPCOOL"></a> DPCOOL = Workshop on Declarative Programming in the Context of OO Languages 
+</p>
+</li>
+    <li>
+<p>
  <a id="ESOP"></a> ESOP = European Symposium on Programming 
 </p>
 </li>
@@ -1035,12 +1160,17 @@ urchinTracker();
 </li>
     <li>
 <p>
- <a id="FPCA"></a> FPCA = Conference on Functional Programming and Computer Architecture 
+ <a id="FPCA"></a> FPCA = Conference on Functional Programming Languages and Computer Architecture 
 </p>
 </li>
     <li>
 <p>
  <a id="HOSC"></a> HOSC = Higher-Order and Symbolic Computation 
+</p>
+</li>
+    <li>
+<p>
+ <a id="IC"></a> IC = Information and Computation 
 </p>
 </li>
     <li>
@@ -1131,5 +1261,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2006-10-19 19:33:38 by <span title="ppp-71-139-198-88.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:13:38 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

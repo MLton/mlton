@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,20 +57,20 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 <a href="StandardML">Standard ML</a> programmers often face the problem of how to provide a variable-arity polymorphic function.  For example, suppose one is defining a combinator library, e.g. for parsing or pickling. The signature for such a library might look something like the following. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> COMBINATOR <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+<B><FONT COLOR="#0000FF">signature</FONT></B> COMBINATOR =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>: <B><FONT COLOR="#228B22">int</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>: <B><FONT COLOR="#228B22">real</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>: <B><FONT COLOR="#228B22">string</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>: <B><FONT COLOR="#228B22">unit</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple2: 'a1 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2 t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2) t
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple3: 'a1 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a3 t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a3) t
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple4: 'a1 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a3 t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a4 t 
-                  <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a1 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a2 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a3 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a4) t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> int: int t
+      <B><FONT COLOR="#A020F0">val</FONT></B> real: real t
+      <B><FONT COLOR="#A020F0">val</FONT></B> string: string t
+      <B><FONT COLOR="#A020F0">val</FONT></B> unit: unit t
+      <B><FONT COLOR="#A020F0">val</FONT></B> tuple2: 'a1 t * 'a2 t -&gt; ('a1 * 'a2) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> tuple3: 'a1 t * 'a2 t * 'a3 t -&gt; ('a1 * 'a2 * 'a3) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> tuple4: 'a1 t * 'a2 t * 'a3 t * 'a4 t 
+                  -&gt; ('a1 * 'a2 * 'a3 * 'a4) t
       ...
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -80,7 +80,7 @@ The question is how to define a variable-arity tuple combinator. Traditionally, 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> tupleN: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#228B22">list</FONT></B> t
+<B><FONT COLOR="#A020F0">val</FONT></B> tupleN: 'a list -&gt; 'a list t
 </PRE>
 <p>
  
@@ -96,34 +96,34 @@ Fortunately, using <a href="Fold01N">Fold01N</a> and <a href="ProductType">produ
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Pickler <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Pickler =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a -&gt; string
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> unit = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> Int.toString
+      <B><FONT COLOR="#A020F0">val</FONT></B> int = Int.toString
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> Real.toString
+      <B><FONT COLOR="#A020F0">val</FONT></B> real = Real.toString
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> id
+      <B><FONT COLOR="#A020F0">val</FONT></B> string = id
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a accum <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a accum </FONT></B>=<B><FONT COLOR="#228B22"> 'a * string list -&gt; string list
          
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> tuple =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
          Fold01N.fold
-         {finish <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> ps <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">concat</FONT></B> (rev (ps (x, []))),
-          start <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (x, l) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p x <B><FONT COLOR="#5F9EA0">::</FONT></B> l,
-          zero <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>}
+         {finish = <B><FONT COLOR="#A020F0">fn</FONT></B> ps =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; concat (rev (ps (x, []))),
+          start = <B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> (x, l) =&gt; p x :: l,
+          zero = unit}
          z
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> ` =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
          Fold01N.step1
-         {combine <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> (p, p') <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (x &amp; x', l) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p' x' <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;,&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">::</FONT></B> p (x, l))}
+         {combine = (<B><FONT COLOR="#A020F0">fn</FONT></B> (p, p') =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> (x &amp; x', l) =&gt; p' x' :: <B><FONT COLOR="#BC8F8F">&quot;,&quot;</FONT></B> :: p (x, l))}
          z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -156,10 +156,10 @@ For example, with <tt>Pickler</tt> in scope, one can prove the following equatio
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> tuple $ ()
-<B><FONT COLOR="#BC8F8F">&quot;1&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> tuple `<B><FONT COLOR="#228B22">int</FONT></B> $ 1
-<B><FONT COLOR="#BC8F8F">&quot;1,2.0&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> tuple `<B><FONT COLOR="#228B22">int</FONT></B> `<B><FONT COLOR="#228B22">real</FONT></B> $ (1 &amp; 2.0)
-<B><FONT COLOR="#BC8F8F">&quot;1,2.0,three&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> tuple `<B><FONT COLOR="#228B22">int</FONT></B> `<B><FONT COLOR="#228B22">real</FONT></B> `<B><FONT COLOR="#228B22">string</FONT></B> $ (1 &amp; 2.0 &amp; <B><FONT COLOR="#BC8F8F">&quot;three&quot;</FONT></B>)
+<B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> = tuple $ ()
+<B><FONT COLOR="#BC8F8F">&quot;1&quot;</FONT></B> = tuple `int $ <B><FONT COLOR="#5F9EA0">1</FONT></B>
+<B><FONT COLOR="#BC8F8F">&quot;1,2.0&quot;</FONT></B> = tuple `int `real $ (<B><FONT COLOR="#5F9EA0">1</FONT></B> &amp; <B><FONT COLOR="#5F9EA0">2.0</FONT></B>)
+<B><FONT COLOR="#BC8F8F">&quot;1,2.0,three&quot;</FONT></B> = tuple `int `real `string $ (<B><FONT COLOR="#5F9EA0">1</FONT></B> &amp; <B><FONT COLOR="#5F9EA0">2.0</FONT></B> &amp; <B><FONT COLOR="#BC8F8F">&quot;three&quot;</FONT></B>)
 </PRE>
 <p>
  
@@ -169,23 +169,23 @@ Here is the signature for <tt>Pickler</tt>.  It shows why the <tt>accum</tt> typ
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> PICKLER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+<B><FONT COLOR="#0000FF">signature</FONT></B> PICKLER =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
          
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>: <B><FONT COLOR="#228B22">int</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>: <B><FONT COLOR="#228B22">real</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>: <B><FONT COLOR="#228B22">string</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>: <B><FONT COLOR="#228B22">unit</FONT></B> t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> int: int t
+      <B><FONT COLOR="#A020F0">val</FONT></B> real: real t
+      <B><FONT COLOR="#A020F0">val</FONT></B> string: string t
+      <B><FONT COLOR="#A020F0">val</FONT></B> unit: unit t
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a accum
-      <B><FONT COLOR="#A020F0">val</FONT></B> ` : ('a accum, 'b t, ('a, 'b) prod accum,
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a accum
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> ` : ('a accum, 'b t, ('a, 'b) prod accum,
                'z1, 'z2, 'z3, 'z4, 'z5, 'z6, 'z7) Fold01N.step1
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple: ('a t, 'a accum, 'b accum, 'b t, <B><FONT COLOR="#228B22">unit</FONT></B> t,
+      <B><FONT COLOR="#A020F0">val</FONT></B> tuple: ('a t, 'a accum, 'b accum, 'b t, unit t,
                   'z1, 'z2, 'z3, 'z4, 'z5) Fold01N.t
-   <B><FONT COLOR="#A020F0">end</FONT></B>      
+   <B><FONT COLOR="#0000FF">end</FONT></B>      
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Pickler: PICKLER <B><FONT COLOR="#5F9EA0">=</FONT></B> Pickler
+<B><FONT COLOR="#0000FF">structure</FONT></B> Pickler: PICKLER = Pickler
 </PRE>
 <p>
  

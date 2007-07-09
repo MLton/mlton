@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -76,6 +76,11 @@ Here are notes about using MLton on the following platforms. <h2 id="head-fe3dae
 </li>
     <li>
 <p>
+ <a href="RunningOnHPUX">HPUX</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="RunningOnLinux">Linux</a> 
 </p>
 </li>
@@ -109,12 +114,27 @@ Here are notes about using MLton on the following platforms. <h2 id="head-fe3dae
 
     <li>
 <p>
+ <a href="RunningOnAMD64">AMD64</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnAMD64">HPPA</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="RunningOnPowerPC">PowerPC</a> 
 </p>
 </li>
     <li>
 <p>
  <a href="RunningOnSparc">Sparc</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="RunningOnX86">X86</a> 
 </p>
 </li>
 
@@ -138,5 +158,5 @@ Here are notes about using MLton on the following platforms. <h2 id="head-fe3dae
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:27:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 20:31:56 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

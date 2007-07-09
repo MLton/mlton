@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ We will define constants <tt>I</tt>, <tt>II</tt>, <tt>W</tt>, and <tt>`</tt> so 
 </p>
 
 <pre class=code>
-I 10 `1`2`3 $
+I <B><FONT COLOR="#5F9EA0">10</FONT></B> `<B><FONT COLOR="#5F9EA0">1</FONT></B>`<B><FONT COLOR="#5F9EA0">2</FONT></B>`<B><FONT COLOR="#5F9EA0">3</FONT></B> $
 </PRE>
 <p>
  
@@ -70,7 +70,7 @@ denotes <tt>123:int</tt> in base 10, while
 </p>
 
 <pre class=code>
-II 8 `2`3 $
+II <B><FONT COLOR="#5F9EA0">8</FONT></B> `<B><FONT COLOR="#5F9EA0">2</FONT></B>`<B><FONT COLOR="#5F9EA0">3</FONT></B> $
 </PRE>
 <p>
  
@@ -80,7 +80,7 @@ denotes <tt>19:IntInf.int</tt> in base 8, and
 </p>
 
 <pre class=code>
-W 2 `1`1`0`1 $
+W <B><FONT COLOR="#5F9EA0">2</FONT></B> `<B><FONT COLOR="#5F9EA0">1</FONT></B>`<B><FONT COLOR="#5F9EA0">1</FONT></B>`<B><FONT COLOR="#5F9EA0">0</FONT></B>`<B><FONT COLOR="#5F9EA0">1</FONT></B> $
 </PRE>
 <p>
  
@@ -93,19 +93,19 @@ Here is the code.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Num <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">make</FONT></I></B></FONT></B> (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B>, <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">+</FONT></B>, i2x) iBase <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Num =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> make (<B><FONT COLOR="#A020F0">op</FONT></B> *, <B><FONT COLOR="#A020F0">op</FONT></B> +, i2x) iBase =
           <B><FONT COLOR="#A020F0">let</FONT></B>
-             <B><FONT COLOR="#A020F0">val</FONT></B> xBase <B><FONT COLOR="#5F9EA0">=</FONT></B> i2x iBase
+             <B><FONT COLOR="#A020F0">val</FONT></B> xBase = i2x iBase
           <B><FONT COLOR="#A020F0">in</FONT></B>
              Fold.fold
-                ((i2x 0,
-                  <B><FONT COLOR="#A020F0">fn</FONT></B> (i, x) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                     <B><FONT COLOR="#A020F0">if</FONT></B> 0 <B><FONT COLOR="#5F9EA0">&lt;=</FONT></B> i <B><FONT COLOR="#A020F0">andalso</FONT></B> i &lt; iBase <B><FONT COLOR="#A020F0">then</FONT></B>
-                        x <B><FONT COLOR="#5F9EA0">*</FONT></B> xBase <B><FONT COLOR="#5F9EA0">+</FONT></B> i2x i
+                ((i2x <B><FONT COLOR="#5F9EA0">0</FONT></B>,
+                  <B><FONT COLOR="#A020F0">fn</FONT></B> (i, x) =&gt;
+                     <B><FONT COLOR="#A020F0">if</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt;= i <B><FONT COLOR="#A020F0">andalso</FONT></B> i &lt; iBase <B><FONT COLOR="#A020F0">then</FONT></B>
+                        x * xBase + i2x i
                      <B><FONT COLOR="#A020F0">else</FONT></B>
-                        <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (<B><FONT COLOR="#A020F0">concat</FONT></B>
+                        <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (concat
                                        [<B><FONT COLOR="#BC8F8F">&quot;Num: &quot;</FONT></B>, Int.toString i,
                                         <B><FONT COLOR="#BC8F8F">&quot; is not a valid\
                                         \ digit in base &quot;</FONT></B>,
@@ -113,20 +113,20 @@ Here is the code.
                  fst)
           <B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">I</FONT></I></B></FONT></B>  ? <B><FONT COLOR="#5F9EA0">=</FONT></B> make (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B>, <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">+</FONT></B>, id) ?
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">II</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> make (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B>, <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">+</FONT></B>, IntInf.fromInt) ?
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">W</FONT></I></B></FONT></B>  ? <B><FONT COLOR="#5F9EA0">=</FONT></B> make (<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B>, <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">+</FONT></B>, Word.fromInt) ?
+      <B><FONT COLOR="#A020F0">fun</FONT></B> I  ? = make (<B><FONT COLOR="#A020F0">op</FONT></B> *, <B><FONT COLOR="#A020F0">op</FONT></B> +, id) ?
+      <B><FONT COLOR="#A020F0">fun</FONT></B> II ? = make (<B><FONT COLOR="#A020F0">op</FONT></B> *, <B><FONT COLOR="#A020F0">op</FONT></B> +, IntInf.fromInt) ?
+      <B><FONT COLOR="#A020F0">fun</FONT></B> W  ? = make (<B><FONT COLOR="#A020F0">op</FONT></B> *, <B><FONT COLOR="#A020F0">op</FONT></B> +, Word.fromInt) ?
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> ` ? <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, (x, step)) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> ` ? = Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (i, (x, step)) =&gt;
                                (step (i, x), step)) ?
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> 10
-      <B><FONT COLOR="#A020F0">val</FONT></B> b <B><FONT COLOR="#5F9EA0">=</FONT></B> 11
-      <B><FONT COLOR="#A020F0">val</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> 12
-      <B><FONT COLOR="#A020F0">val</FONT></B> d <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
-      <B><FONT COLOR="#A020F0">val</FONT></B> e <B><FONT COLOR="#5F9EA0">=</FONT></B> 14
-      <B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> 15
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> a = <B><FONT COLOR="#5F9EA0">10</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> b = <B><FONT COLOR="#5F9EA0">11</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> c = <B><FONT COLOR="#5F9EA0">12</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> d = <B><FONT COLOR="#5F9EA0">13</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> e = <B><FONT COLOR="#5F9EA0">14</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#5F9EA0">15</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -136,7 +136,7 @@ where
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fst</FONT></I></B></FONT></B> (x, _) <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">fun</FONT></B> fst (x, _) = x
 </PRE>
 <p>
  

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,47 +78,47 @@ for longer discussions on some of these utilities.
 
 <pre class=code>
 <I><FONT COLOR="#B22222">(* Operator precedence table *)</FONT></I>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   8  <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B> <B><FONT COLOR="#5F9EA0">div</FONT></B> <B><FONT COLOR="#5F9EA0">mod</FONT></B>        <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   7  <B><FONT COLOR="#5F9EA0">+</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B> <B><FONT COLOR="#5F9EA0">^</FONT></B>              <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
-<B><FONT COLOR="#A020F0">infixr</FONT></B>  6  <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#5F9EA0">@</FONT></B>               <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   5  <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">&lt;&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> &lt; <B><FONT COLOR="#5F9EA0">&lt;=</FONT></B>     <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   4  &lt;\ \<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-<B><FONT COLOR="#A020F0">infixr</FONT></B>  4  &lt;<B><FONT COLOR="#5F9EA0">/</FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   3  <B><FONT COLOR="#A020F0">o</FONT></B>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   2  <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B>
-<B><FONT COLOR="#A020F0">infixr</FONT></B>  2  <B><FONT COLOR="#5F9EA0">|</FONT></B>&lt;
-<B><FONT COLOR="#A020F0">infix</FONT></B>   1  <B><FONT COLOR="#5F9EA0">:=</FONT></B>                 <I><FONT COLOR="#B22222">(* -2 from Basis Library *)</FONT></I>
-<B><FONT COLOR="#A020F0">infix</FONT></B>   0  <B><FONT COLOR="#A020F0">before</FONT></B> &amp;
+<B><FONT COLOR="#A020F0">infix</FONT></B>   8  * / div mod        <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   7  + - ^              <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  6  :: @               <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   5  = &lt;&gt; &gt; &gt;= &lt; &lt;=     <I><FONT COLOR="#B22222">(* +1 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   4  &lt;\ \&gt;
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  4  &lt;/ /&gt;
+<B><FONT COLOR="#A020F0">infix</FONT></B>   3  o
+<B><FONT COLOR="#A020F0">infix</FONT></B>   2  &gt;|
+<B><FONT COLOR="#A020F0">infixr</FONT></B>  2  |&lt;
+<B><FONT COLOR="#A020F0">infix</FONT></B>   1  :=                 <I><FONT COLOR="#B22222">(* -2 from Basis Library *)</FONT></I>
+<B><FONT COLOR="#A020F0">infix</FONT></B>   0  before &amp;
 
 <I><FONT COLOR="#B22222">(* Some basic combinators *)</FONT></I>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">const</FONT></I></B></FONT></B> x _ <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">cross</FONT></I></B></FONT></B> (f, g) (x, y) <B><FONT COLOR="#5F9EA0">=</FONT></B> (f x, g y)
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">curry</FONT></I></B></FONT></B> f x y <B><FONT COLOR="#5F9EA0">=</FONT></B> f (x, y)
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fail</FONT></I></B></FONT></B> e _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> e
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">id</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">fun</FONT></B> const x _ = x
+<B><FONT COLOR="#A020F0">fun</FONT></B> cross (f, g) (x, y) = (f x, g y)
+<B><FONT COLOR="#A020F0">fun</FONT></B> curry f x y = f (x, y)
+<B><FONT COLOR="#A020F0">fun</FONT></B> fail e _ = <B><FONT COLOR="#A020F0">raise</FONT></B> e
+<B><FONT COLOR="#A020F0">fun</FONT></B> id x = x
 
 <I><FONT COLOR="#B22222">(* Product type *)</FONT></I>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) product <B><FONT COLOR="#5F9EA0">=</FONT></B> &amp; <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) product </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">&amp;</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
 
 <I><FONT COLOR="#B22222">(* Sum type *)</FONT></I>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) sum <B><FONT COLOR="#5F9EA0">=</FONT></B> INL <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> INR <B><FONT COLOR="#A020F0">of</FONT></B> 'b
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) sum </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">INL</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">INR</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'b
 
 <I><FONT COLOR="#B22222">(* Some type shorthands *)</FONT></I>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a uop <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a fix <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a uop <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a thunk <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a effect <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b) emb <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a)
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a uop </FONT></B>=<B><FONT COLOR="#228B22"> 'a -&gt; 'a
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a fix </FONT></B>=<B><FONT COLOR="#228B22"> 'a uop -&gt; 'a
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a thunk </FONT></B>=<B><FONT COLOR="#228B22"> unit -&gt; 'a
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a effect </FONT></B>=<B><FONT COLOR="#228B22"> 'a -&gt; unit
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) emb </FONT></B>=<B><FONT COLOR="#228B22"> ('a -&gt; 'b) * ('b -&gt; 'a)
 
 <I><FONT COLOR="#B22222">(* Infixing, sectioning, and application operators *)</FONT></I>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">x</FONT></I></B></FONT></B> &lt;\ f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x, y)
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> \<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> f y
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> <B><FONT COLOR="#5F9EA0">/</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x, y)
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">x</FONT></I></B></FONT></B> &lt;<B><FONT COLOR="#5F9EA0">/</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> f x
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> x &lt;\ f = <B><FONT COLOR="#A020F0">fn</FONT></B> y =&gt; f (x, y)
+<B><FONT COLOR="#A020F0">fun</FONT></B> f \&gt; y = f y
+<B><FONT COLOR="#A020F0">fun</FONT></B> f /&gt; y = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; f (x, y)
+<B><FONT COLOR="#A020F0">fun</FONT></B> x &lt;/ f = f x
 
 <I><FONT COLOR="#B22222">(* Piping operators *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>&lt;<B><FONT COLOR="#5F9EA0">/</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B><B><FONT COLOR="#5F9EA0">|</FONT></B>&lt; <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>\<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>&gt;| = <B><FONT COLOR="#A020F0">op</FONT></B>&lt;/
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B>|&lt; = <B><FONT COLOR="#A020F0">op</FONT></B>\&gt;
 </PRE>
 <p>
  

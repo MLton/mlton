@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -81,23 +81,23 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>char&nbsp;*</tt> </td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
 </tr>
 <tr>
 <td>
  <tt>bool</tt> </td>
 <td>
- <tt>Int32</tt> </td>
+ <tt>Bool</tt> </td>
 <td>
- <tt>long</tt> </td>
+ <tt>int32_t</tt> </td>
 </tr>
 <tr>
 <td>
  <tt>char</tt> </td>
 <td>
- <tt>Int8</tt> </td>
+ <tt>Char8</tt> </td>
 <td>
- <tt>char</tt> </td>
+ <tt>uint8_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -105,7 +105,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Int8</tt> </td>
 <td>
- <tt>char</tt> </td>
+ <tt>int8_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -113,7 +113,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Int16</tt> </td>
 <td>
- <tt>short</tt> </td>
+ <tt>int16_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -121,7 +121,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Int32</tt> </td>
 <td>
- <tt>long</tt> </td>
+ <tt>int32_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -129,7 +129,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Int64</tt> </td>
 <td>
- <tt>long&nbsp;long</tt> </td>
+ <tt>int64_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -137,7 +137,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Int32</tt> </td>
 <td>
- <tt>long</tt> </td>
+ <tt>int32_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -145,7 +145,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>char&nbsp;*</tt> </td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
 </tr>
 <tr>
 <td>
@@ -177,7 +177,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>char&nbsp;*</tt> </td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
 </tr>
 <tr>
 <td>
@@ -185,7 +185,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>char&nbsp;*</tt> <strong>(read-only)</strong></td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> <strong>(read-only)</strong></td>
 </tr>
 <tr>
 <td>
@@ -193,7 +193,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>char&nbsp;*</tt> <strong>(read-only)</strong></td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> <strong>(read-only)</strong></td>
 </tr>
 <tr>
 <td>
@@ -201,7 +201,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Word8</tt> </td>
 <td>
- <tt>unsigned&nbsp;char</tt> </td>
+ <tt>uint8_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -209,7 +209,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Word16</tt> </td>
 <td>
- <tt>unsigned&nbsp;short</tt> </td>
+ <tt>uint16_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -217,7 +217,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Word32</tt> </td>
 <td>
- <tt>unsigned&nbsp;long</tt> </td>
+ <tt>uint32_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -225,7 +225,7 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Word64</tt> </td>
 <td>
- <tt>unsigned&nbsp;long&nbsp;long</tt> </td>
+ <tt>uint64_t</tt> </td>
 </tr>
 <tr>
 <td>
@@ -233,12 +233,12 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Word32</tt> </td>
 <td>
- <tt>unsigned&nbsp;int</tt> </td>
+ <tt>uint32_t</tt> </td>
 </tr>
 </table>
 </div>
 <p>
-Because MLton assumes that vectors and strings are read-only (and will perform optimizations that, for instance, cause them to share space), you must not modify the data pointed to by the <tt>char&nbsp;*</tt> in C code. 
+Because MLton assumes that vectors and strings are read-only (and will perform optimizations that, for instance, cause them to share space), you must not modify the data pointed to by the <tt>unsigned&nbsp;char&nbsp;*</tt> in C code. 
 </p>
 <p>
 Although the C type of an array, ref, or vector is always <tt>Pointer</tt>, in reality, the object has the natural C representation.  Your C code should cast to the appropriate C type if you want to keep the C compiler from complaining. 
@@ -252,5 +252,5 @@ When calling an <a href="CallingFromSMLToC"> imported C function from SML</a> th
 
 <p>
 <hr>
-Last edited on 2005-12-01 04:27:38 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-06-27 01:43:17 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

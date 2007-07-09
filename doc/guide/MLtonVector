@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,10 +57,10 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_VECTOR <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> unfoldi: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#228B22">vector</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_VECTOR =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> unfoldi: int * 'b * (int * 'b -&gt; 'a * 'b) -&gt; 'a vector
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

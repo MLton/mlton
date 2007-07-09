@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,12 +61,12 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 
     <li>
 <p>
- You must install the <tt>binutils</tt>, <tt>gcc</tt>, and <tt>make</tt>  packages.  You can find out how to get these at  <a class="external" href="http://www.sunfreeware.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sunfreeware.com</a> 
+ You must install the <tt>binutils</tt>, <tt>gcc</tt>, and <tt>make</tt>  packages.  You can find out how to get these at  <a class="external" href="http://www.sunfreeware.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sunfreeware.com</a>. 
 </p>
 </li>
     <li class="gap">
 <p>
- Making the documentation requires that you install <tt>latex</tt>  and <tt>dvips</tt>, which are available in the <tt>tetex</tt> package.  It  also requires <tt>hevea</tt>, for which we haven't yet tracked down a  package. 
+ Making the documentation requires that you install <tt>latex</tt>  and <tt>dvips</tt>, which are available in the <tt>tetex</tt> package.  It  also requires <tt>htmldoc</tt>, for which we haven't yet tracked down a  package. 
 </p>
 </li>
     <li class="gap">
@@ -95,5 +95,5 @@ MLton runs fine on Solaris. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:24:41 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 20:20:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

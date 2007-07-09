@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,22 +57,22 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 A common use pattern of <a href="Fold">Fold</a> is to define a variable-arity function that combines multiple arguments together using a binary function.  It is slightly tricky to do this directly using fold, because of the special treatment required for the case of zero or one argument.  Here is a structure, <tt>Fold01N</tt>, that solves the problem once and for all, and eases the definition of such functions. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold01N <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fold</FONT></I></B></FONT></B> {finish, start, zero} <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Fold.fold ((id, finish, <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> zero, start),
-                    <B><FONT COLOR="#A020F0">fn</FONT></B> (finish, _, p, _) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> finish (p ()))
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold01N =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> fold {finish, start, zero} =
+         Fold.fold ((id, finish, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; zero, start),
+                    <B><FONT COLOR="#A020F0">fn</FONT></B> (finish, _, p, _) =&gt; finish (p ()))
       
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> {combine, input} <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, finish, _, f) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step0 {combine, input} =
+         Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, finish, _, f) =&gt;
                      (finish,
                       finish,
-                      <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f input,
-                      <B><FONT COLOR="#A020F0">fn</FONT></B> x' <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> combine (f input, x')))
+                      <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f input,
+                      <B><FONT COLOR="#A020F0">fn</FONT></B> x' =&gt; combine (f input, x')))
          
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> {combine} z input <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         step0 {combine <B><FONT COLOR="#5F9EA0">=</FONT></B> combine, input <B><FONT COLOR="#5F9EA0">=</FONT></B> input} z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step1 {combine} z input =
+         step0 {combine = combine, input = input} z
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -82,8 +82,8 @@ If one has a value <tt>zero</tt>, and functions <tt>start</tt>, <tt>c</tt>, and 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold01N.fold {finish <B><FONT COLOR="#5F9EA0">=</FONT></B> finish, start <B><FONT COLOR="#5F9EA0">=</FONT></B> start, zero <B><FONT COLOR="#5F9EA0">=</FONT></B> zero} z
-<B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold01N.step1 {combine <B><FONT COLOR="#5F9EA0">=</FONT></B> c} z
+<B><FONT COLOR="#A020F0">val</FONT></B> f = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold01N.fold {finish = finish, start = start, zero = zero} z
+<B><FONT COLOR="#A020F0">val</FONT></B> ` = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold01N.step1 {combine = c} z
 </PRE>
 <p>
  
@@ -91,10 +91,10 @@ If one has a value <tt>zero</tt>, and functions <tt>start</tt>, <tt>c</tt>, and 
 <p>
 One can then use the fold equation to prove the following equations. 
 <pre class=code>
-f $ <B><FONT COLOR="#5F9EA0">=</FONT></B> zero
-f `a1 $ <B><FONT COLOR="#5F9EA0">=</FONT></B> finish (start a1)
-f `a1 `a2 $ <B><FONT COLOR="#5F9EA0">=</FONT></B> finish (c (start a1, a2))
-f `a1 `a2 `a3 $ <B><FONT COLOR="#5F9EA0">=</FONT></B> finish (c (c (start a1, a2), a3))
+f $ = zero
+f `a1 $ = finish (start a1)
+f `a1 `a2 $ = finish (c (start a1, a2))
+f `a1 `a2 `a3 $ = finish (c (c (start a1, a2), a3))
 ...
 </PRE>
  
@@ -108,78 +108,78 @@ Here is the signature for <tt>Fold01N</tt>.  We use a trick to avoid having to d
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold01N <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('input, 'accum1, 'accum2, 'answer, 'zero,
-            'a, 'b, 'c, 'd, 'e) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         (('zero <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'zero)
-          <B><FONT COLOR="#5F9EA0">*</FONT></B> ('accum2 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'answer)
-          <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'zero)
-          <B><FONT COLOR="#5F9EA0">*</FONT></B> ('input <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1),
-          ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">*</FONT></B> 'c <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">*</FONT></B> 'd,
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold01N =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('input, 'accum1, 'accum2, 'answer, 'zero,
+            'a, 'b, 'c, 'd, 'e) t </FONT></B>=<B><FONT COLOR="#228B22">
+         (('zero -&gt; 'zero)
+          * ('accum2 -&gt; 'answer)
+          * (unit -&gt; 'zero)
+          * ('input -&gt; 'accum1),
+          ('a -&gt; 'b) * 'c * (unit -&gt; 'a) * 'd,
           'b,
           'e) Fold.t
 
-       <B><FONT COLOR="#A020F0">type</FONT></B> ('input1, 'accum1, 'input2, 'accum2,
-            'a, 'b, 'c, 'd, 'e, 'f) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b <B><FONT COLOR="#5F9EA0">*</FONT></B> 'c <B><FONT COLOR="#5F9EA0">*</FONT></B> ('input1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1),
-          'b <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('input2 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum2),
+       </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('input1, 'accum1, 'input2, 'accum2,
+            'a, 'b, 'c, 'd, 'e, 'f) step0 </FONT></B>=<B><FONT COLOR="#228B22">
+         ('a * 'b * 'c * ('input1 -&gt; 'accum1),
+          'b * 'b * (unit -&gt; 'accum1) * ('input2 -&gt; 'accum2),
           'd, 'e, 'f) Fold.step0
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('accum1, 'input, 'accum2,
-            'a, 'b, 'c, 'd, 'e, 'f, 'g) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('accum1, 'input, 'accum2,
+            'a, 'b, 'c, 'd, 'e, 'f, 'g) step1 </FONT></B>=<B><FONT COLOR="#228B22">
          ('a,
-          'b <B><FONT COLOR="#5F9EA0">*</FONT></B> 'c <B><FONT COLOR="#5F9EA0">*</FONT></B> 'd <B><FONT COLOR="#5F9EA0">*</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1),
-          'c <B><FONT COLOR="#5F9EA0">*</FONT></B> 'c <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('input <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum2),
+          'b * 'c * 'd * ('a -&gt; 'accum1),
+          'c * 'c * (unit -&gt; 'accum1) * ('input -&gt; 'accum2),
           'e, 'f, 'g) Fold.step1
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> FOLD_01N <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> FOLD_01N =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) t </FONT></B>=<B><FONT COLOR="#228B22">
          ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.t
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step0 <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step0 </FONT></B>=<B><FONT COLOR="#228B22">
          ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.step0
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) step1 </FONT></B>=<B><FONT COLOR="#228B22">
          ('a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, 'j) Fold01N.step1
       
-      <B><FONT COLOR="#A020F0">val</FONT></B> fold:
-         {finish: 'accum2 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'answer,
-          start: 'input <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum1,
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fold:
+         {finish: 'accum2 -&gt; 'answer,
+          start: 'input -&gt; 'accum1,
           zero: 'zero}
-         <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('input, 'accum1, 'accum2, 'answer, 'zero,
+         -&gt; ('input, 'accum1, 'accum2, 'answer, 'zero,
              'a, 'b, 'c, 'd, 'e) t
 
       <B><FONT COLOR="#A020F0">val</FONT></B> step0:
-         {combine: 'accum1 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'input2 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum2,
+         {combine: 'accum1 * 'input2 -&gt; 'accum2,
           input: 'input1}
-         <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('input1, 'accum1, 'input2, 'accum2,
+         -&gt; ('input1, 'accum1, 'input2, 'accum2,
              'a, 'b, 'c, 'd, 'e, 'f) step0
          
       <B><FONT COLOR="#A020F0">val</FONT></B> step1:
-         {combine: 'accum1 <B><FONT COLOR="#5F9EA0">*</FONT></B> 'input <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'accum2}
-         <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('accum1, 'input, 'accum2,
+         {combine: 'accum1 * 'input -&gt; 'accum2}
+         -&gt; ('accum1, 'input, 'accum2,
              'a, 'b, 'c, 'd, 'e, 'f, 'g) step1
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fold01N: FOLD_01N <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Fold01N
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fold01N: FOLD_01N =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Fold01N
       
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fold</FONT></I></B></FONT></B> {finish, start, zero} <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Fold.fold ((id, finish, <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> zero, start),
-                    <B><FONT COLOR="#A020F0">fn</FONT></B> (finish, _, p, _) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> finish (p ()))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> fold {finish, start, zero} =
+         Fold.fold ((id, finish, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; zero, start),
+                    <B><FONT COLOR="#A020F0">fn</FONT></B> (finish, _, p, _) =&gt; finish (p ()))
       
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step0</FONT></I></B></FONT></B> {combine, input} <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, finish, _, f) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step0 {combine, input} =
+         Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, finish, _, f) =&gt;
                      (finish,
                       finish,
-                      <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f input,
-                      <B><FONT COLOR="#A020F0">fn</FONT></B> x' <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> combine (f input, x')))
+                      <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f input,
+                      <B><FONT COLOR="#A020F0">fn</FONT></B> x' =&gt; combine (f input, x')))
          
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">step1</FONT></I></B></FONT></B> {combine} z input <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         step0 {combine <B><FONT COLOR="#5F9EA0">=</FONT></B> combine, input <B><FONT COLOR="#5F9EA0">=</FONT></B> input} z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> step1 {combine} z input =
+         step0 {combine = combine, input = input} z
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

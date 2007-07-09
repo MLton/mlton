@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,8 +74,6 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="LambdaLift">LambdaLift</a>: <a href="SXMLSimplify">SXMLSimplify</a></li>
 <li>
-<a class="nonexistent" href="LookupConstants">LookupConstants</a>: <a href="Defunctorize">Defunctorize</a></li>
-<li>
 <a class="nonexistent" href="MLDoc">MLDoc</a>: <a href="Libraries">Libraries</a></li>
 <li>
 <a class="nonexistent" href="MLLex">MLLex</a>: <a href="Documentation">Documentation</a>, <a href="Features">Features</a>, <a href="FrontEnd">FrontEnd</a>, <a href="Installation">Installation</a>, <a href="Libraries">Libraries</a></li>
@@ -86,13 +84,7 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="MLYacc">MLYacc</a>: <a href="Documentation">Documentation</a>, <a href="Features">Features</a>, <a href="FrontEnd">FrontEnd</a>, <a href="Installation">Installation</a>, <a href="Libraries">Libraries</a>, <a href="MLBasisAvailableLibraries">MLBasisAvailableLibraries</a></li>
 <li>
-<a class="nonexistent" href="McCorkle">McCorkle</a>: <a href="Credits">Credits</a></li>
-<li>
-<a class="nonexistent" href="PackWord">PackWord</a>: <a href="RayRacine">RayRacine</a></li>
-<li>
 <a class="nonexistent" href="SimplyTyped">SimplyTyped</a>: <a href="IntermediateLanguage">IntermediateLanguage</a>, <a href="SSA">SSA</a>, <a href="SSA2">SSA2</a></li>
-<li>
-<a class="nonexistent" href="TypeError">TypeError</a>: <a href="Bugs20051202">Bugs20051202</a></li>
 <li>
 <a class="nonexistent" href="TypeInference">TypeInference</a>: <a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
 <li>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -72,6 +72,11 @@ Standard ML (SML) is a programming language that combines excellent support for 
     <li>
 <p>
  <a href="StandardMLImplementations">Implementations</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://google.com/coop/cse?cx=014714656471597805969%3Afzuz7eybmcy"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML web search</a> from Google Co-op 
 </p>
 </li>
 
@@ -187,12 +192,32 @@ Standard ML (SML) is a programming language that combines excellent support for 
 </li>
     <li>
 <p>
+ <a href="ReturnStatement">ReturnStatement</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="Serialization">Serialization</a> 
 </p>
 </li>
     <li>
 <p>
+ <a href="StandardMLGotchas">StandardMLGotchas</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="StyleGuide">StyleGuide</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="TipsForWritingConciseSML">TipsForWritingConciseSML</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="TypeVariableScope">TypeVariableScope</a> 
 </p>
 </li>
     <li>
@@ -262,5 +287,5 @@ Standard ML (SML) is a programming language that combines excellent support for 
 
 <p>
 <hr>
-Last edited on 2006-08-03 11:19:55 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-07-08 22:31:15 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

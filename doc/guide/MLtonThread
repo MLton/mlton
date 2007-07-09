@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,31 +57,31 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_THREAD <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> AtomicState:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> NonAtomic <B><FONT COLOR="#5F9EA0">|</FONT></B> Atomic <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_THREAD =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> AtomicState:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">NonAtomic</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Atomic</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+         </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomically: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomicBegin: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomicEnd: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomicState: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> AtomicState.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> atomically: (unit -&gt; 'a) -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> atomicBegin: unit -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> atomicEnd: unit -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> atomicState: unit -&gt; AtomicState.t
 
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Runnable:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Runnable:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+         </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> atomicSwitch: ('a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Runnable.t) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> new: ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> prepend: 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b t
-      <B><FONT COLOR="#A020F0">val</FONT></B> prepare: 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Runnable.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> switch: ('a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Runnable.t) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> atomicSwitch: ('a t -&gt; Runnable.t) -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> new: ('a -&gt; unit) -&gt; 'a t
+      <B><FONT COLOR="#A020F0">val</FONT></B> prepend: 'a t * ('b -&gt; 'a) -&gt; 'b t
+      <B><FONT COLOR="#A020F0">val</FONT></B> prepare: 'a t * 'a -&gt; Runnable.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> switch: ('a t -&gt; Runnable.t) -&gt; 'a
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -243,93 +243,93 @@ urchinTracker();
 <h2 id="head-b59f5a84d311ffa9c081e150b9d22e77bb539300">Example of non-preemptive threads</h2>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Queue:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+<B><FONT COLOR="#0000FF">structure</FONT></B> Queue:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> new: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> enque: 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> deque: 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a option
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> {front: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>, back: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> new: unit -&gt; 'a t
+      <B><FONT COLOR="#A020F0">val</FONT></B> enque: 'a t * 'a -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> deque: 'a t -&gt; 'a option
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {front: 'a list ref, back: 'a list ref}
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">new</FONT></I></B></FONT></B>() <B><FONT COLOR="#5F9EA0">=</FONT></B> T{front <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> [], back <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> []}
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> new() = T{front = ref [], back = ref []}
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">enque</FONT></I></B></FONT></B>(T{back, ...}, x) <B><FONT COLOR="#5F9EA0">=</FONT></B> back <B><FONT COLOR="#5F9EA0">:=</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>back
+      <B><FONT COLOR="#A020F0">fun</FONT></B> enque(T{back, ...}, x) = back := x :: !back
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">deque</FONT></I></B></FONT></B>(T{front, back}) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>front <B><FONT COLOR="#A020F0">of</FONT></B>
-            [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>back <B><FONT COLOR="#A020F0">of</FONT></B>
-                      [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
-                    <B><FONT COLOR="#5F9EA0">|</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B> rev l
+      <B><FONT COLOR="#A020F0">fun</FONT></B> deque(T{front, back}) =
+         <B><FONT COLOR="#A020F0">case</FONT></B> !front <B><FONT COLOR="#A020F0">of</FONT></B>
+            [] =&gt; (<B><FONT COLOR="#A020F0">case</FONT></B> !back <B><FONT COLOR="#A020F0">of</FONT></B>
+                      [] =&gt; NONE
+                    | l =&gt; <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> l = rev l
                            <B><FONT COLOR="#A020F0">in</FONT></B> <B><FONT COLOR="#A020F0">case</FONT></B> l <B><FONT COLOR="#A020F0">of</FONT></B>
-                              [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;deque&quot;</FONT></B>
-                            <B><FONT COLOR="#5F9EA0">|</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (back <B><FONT COLOR="#5F9EA0">:=</FONT></B> []; front <B><FONT COLOR="#5F9EA0">:=</FONT></B> l; <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x)
+                              [] =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;deque&quot;</FONT></B>
+                            | x :: l =&gt; (back := []; front := l; SOME x)
                            <B><FONT COLOR="#A020F0">end</FONT></B>)
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (front <B><FONT COLOR="#5F9EA0">:=</FONT></B> l; <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x) 
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+          | x :: l =&gt; (front := l; SOME x) 
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Thread:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> exit: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> run: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawn: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> yield: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> MLton
-      <B><FONT COLOR="#A020F0">open</FONT></B> Thread
+<B><FONT COLOR="#0000FF">structure</FONT></B> Thread:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> exit: unit -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> run: unit -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawn: (unit -&gt; unit) -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> yield: unit -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> MLton
+      <B><FONT COLOR="#0000FF">open</FONT></B> Thread
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> topLevel: Thread.Runnable.t option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> topLevel: Thread.Runnable.t option ref = ref NONE
 
       <B><FONT COLOR="#A020F0">local</FONT></B>
-         <B><FONT COLOR="#A020F0">val</FONT></B> threads: Thread.Runnable.t Queue.t <B><FONT COLOR="#5F9EA0">=</FONT></B> Queue.new()
+         <B><FONT COLOR="#A020F0">val</FONT></B> threads: Thread.Runnable.t Queue.t = Queue.new()
       <B><FONT COLOR="#A020F0">in</FONT></B>
-<B><FONT COLOR="#A020F0">         fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">ready</FONT></I></B></FONT></B> (t: Thread.Runnable.t) : <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> 
+         <B><FONT COLOR="#A020F0">fun</FONT></B> ready (t: Thread.Runnable.t) : unit = 
             Queue.enque(threads, t)
-<B><FONT COLOR="#A020F0">         fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">next</FONT></I></B></FONT></B> () : Thread.Runnable.t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> next () : Thread.Runnable.t =
             <B><FONT COLOR="#A020F0">case</FONT></B> Queue.deque threads <B><FONT COLOR="#A020F0">of</FONT></B>
-               <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> valOf(<B><FONT COLOR="#5F9EA0">!</FONT></B>topLevel)
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
+               NONE =&gt; valOf(!topLevel)
+             | SOME t =&gt; t
       <B><FONT COLOR="#A020F0">end</FONT></B>
    
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a exit(): 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> switch(<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> next())
+      <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> exit(): 'a = switch(<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; next())
       
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">new</FONT></I></B></FONT></B>(f: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>): Thread.Runnable.t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> new(f: unit -&gt; unit): Thread.Runnable.t =
          Thread.prepare
-         (Thread.new (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ((f() <B><FONT COLOR="#A020F0">handle</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> exit())
+         (Thread.new (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ((f() <B><FONT COLOR="#A020F0">handle</FONT></B> _ =&gt; exit())
                                 ; exit())),
           ())
          
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">schedule</FONT></I></B></FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> (ready t; next())
+      <B><FONT COLOR="#A020F0">fun</FONT></B> schedule t = (ready t; next())
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">yield</FONT></I></B></FONT></B>(): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> switch(<B><FONT COLOR="#A020F0">fn</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> schedule (Thread.prepare (t, ())))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> yield(): unit = switch(<B><FONT COLOR="#A020F0">fn</FONT></B> t =&gt; schedule (Thread.prepare (t, ())))
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawn <B><FONT COLOR="#5F9EA0">=</FONT></B> ready <B><FONT COLOR="#A020F0">o</FONT></B> new
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawn = ready o new
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">run</FONT></I></B></FONT></B>(): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         (switch(<B><FONT COLOR="#A020F0">fn</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                 (topLevel <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> (Thread.prepare (t, ()))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> run(): unit =
+         (switch(<B><FONT COLOR="#A020F0">fn</FONT></B> t =&gt;
+                 (topLevel := SOME (Thread.prepare (t, ()))
                   ; next()))
-          ; topLevel <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+          ; topLevel := NONE)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#A020F0">print</FONT></B>(<B><FONT COLOR="#A020F0">concat</FONT></B>[Int.toString n, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (print(concat[Int.toString n, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
             ; Thread.yield()
-            ; loop(n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1))
+            ; loop(n - <B><FONT COLOR="#5F9EA0">1</FONT></B>))
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop' <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (Thread.spawn(<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> loop n); loop'(n <B><FONT COLOR="#5F9EA0">-</FONT></B> 2))
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop' =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (Thread.spawn(<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; loop n); loop'(n - <B><FONT COLOR="#5F9EA0">2</FONT></B>))
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> Thread.spawn(<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> loop' 10)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = Thread.spawn(<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; loop' <B><FONT COLOR="#5F9EA0">10</FONT></B>)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> Thread.run()
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = Thread.run()
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = print <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
 </PRE>
 <p>
  
@@ -337,103 +337,103 @@ urchinTracker();
 <h2 id="head-5312b6df875ff55a1aac1703500af9a957b9a09a">Example of preemptive threads</h2>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Queue:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
+<B><FONT COLOR="#0000FF">structure</FONT></B> Queue:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> new: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> enque: 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> deque: 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a option
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> {front: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>, back: 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>}
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> new: unit -&gt; 'a t
+      <B><FONT COLOR="#A020F0">val</FONT></B> enque: 'a t * 'a -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> deque: 'a t -&gt; 'a option
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {front: 'a list ref, back: 'a list ref}
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">new</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> T {front <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> [], back <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> []}
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> new () = T {front = ref [], back = ref []}
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">enque</FONT></I></B></FONT></B> (T {back, ...}, x) <B><FONT COLOR="#5F9EA0">=</FONT></B> back <B><FONT COLOR="#5F9EA0">:=</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>back
+      <B><FONT COLOR="#A020F0">fun</FONT></B> enque (T {back, ...}, x) = back := x :: !back
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">deque</FONT></I></B></FONT></B> (T {front, back}) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>front <B><FONT COLOR="#A020F0">of</FONT></B>
-            [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>back <B><FONT COLOR="#A020F0">of</FONT></B>
-                      [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
-                    <B><FONT COLOR="#5F9EA0">|</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B> rev l
+      <B><FONT COLOR="#A020F0">fun</FONT></B> deque (T {front, back}) =
+         <B><FONT COLOR="#A020F0">case</FONT></B> !front <B><FONT COLOR="#A020F0">of</FONT></B>
+            [] =&gt; (<B><FONT COLOR="#A020F0">case</FONT></B> !back <B><FONT COLOR="#A020F0">of</FONT></B>
+                      [] =&gt; NONE
+                    | l =&gt; <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> l = rev l
                            <B><FONT COLOR="#A020F0">in</FONT></B> <B><FONT COLOR="#A020F0">case</FONT></B> l <B><FONT COLOR="#A020F0">of</FONT></B>
-                              [] <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;deque&quot;</FONT></B>
-                            <B><FONT COLOR="#5F9EA0">|</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (back <B><FONT COLOR="#5F9EA0">:=</FONT></B> []; front <B><FONT COLOR="#5F9EA0">:=</FONT></B> l; <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x)
+                              [] =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;deque&quot;</FONT></B>
+                            | x :: l =&gt; (back := []; front := l; SOME x)
                            <B><FONT COLOR="#A020F0">end</FONT></B>)
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> x <B><FONT COLOR="#5F9EA0">::</FONT></B> l <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (front <B><FONT COLOR="#5F9EA0">:=</FONT></B> l; <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x) 
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+          | x :: l =&gt; (front := l; SOME x) 
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Thread:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> exit: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> run: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawn: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> yield: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Posix.Signal
-      <B><FONT COLOR="#A020F0">open</FONT></B> MLton
-      <B><FONT COLOR="#A020F0">open</FONT></B> Itimer Signal Thread
+<B><FONT COLOR="#0000FF">structure</FONT></B> Thread:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> exit: unit -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> run: unit -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawn: (unit -&gt; unit) -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> yield: unit -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#0000FF">open</FONT></B> Posix.Signal
+      <B><FONT COLOR="#0000FF">open</FONT></B> MLton
+      <B><FONT COLOR="#0000FF">open</FONT></B> Itimer Signal Thread
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> topLevel: Thread.Runnable.t option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> topLevel: Thread.Runnable.t option ref = ref NONE
 
       <B><FONT COLOR="#A020F0">local</FONT></B>
-         <B><FONT COLOR="#A020F0">val</FONT></B> threads: Thread.Runnable.t Queue.t <B><FONT COLOR="#5F9EA0">=</FONT></B> Queue.new ()
+         <B><FONT COLOR="#A020F0">val</FONT></B> threads: Thread.Runnable.t Queue.t = Queue.new ()
       <B><FONT COLOR="#A020F0">in</FONT></B>
-<B><FONT COLOR="#A020F0">         fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">ready</FONT></I></B></FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> Queue.enque (threads, t)
-<B><FONT COLOR="#A020F0">         fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">next</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> ready t = Queue.enque (threads, t)
+         <B><FONT COLOR="#A020F0">fun</FONT></B> next () =
             <B><FONT COLOR="#A020F0">case</FONT></B> Queue.deque threads <B><FONT COLOR="#A020F0">of</FONT></B>
-               <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> valOf (<B><FONT COLOR="#5F9EA0">!</FONT></B>topLevel)
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
+               NONE =&gt; valOf (!topLevel)
+             | SOME t =&gt; t
       <B><FONT COLOR="#A020F0">end</FONT></B>
    
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a exit (): 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> switch (<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> next ())
+      <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> exit (): 'a = switch (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; next ())
       
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">new</FONT></I></B></FONT></B> (f: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>): Thread.Runnable.t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> new (f: unit -&gt; unit): Thread.Runnable.t =
          Thread.prepare
-         (Thread.new (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ((f () <B><FONT COLOR="#A020F0">handle</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> exit ())
+         (Thread.new (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ((f () <B><FONT COLOR="#A020F0">handle</FONT></B> _ =&gt; exit ())
                                 ; exit ())),
           ())
          
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">schedule</FONT></I></B></FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> (ready t; next ())
+      <B><FONT COLOR="#A020F0">fun</FONT></B> schedule t = (ready t; next ())
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">yield</FONT></I></B></FONT></B> (): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> switch (<B><FONT COLOR="#A020F0">fn</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> schedule (Thread.prepare (t, ())))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> yield (): unit = switch (<B><FONT COLOR="#A020F0">fn</FONT></B> t =&gt; schedule (Thread.prepare (t, ())))
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawn <B><FONT COLOR="#5F9EA0">=</FONT></B> ready <B><FONT COLOR="#A020F0">o</FONT></B> new
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawn = ready o new
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">setItimer</FONT></I></B></FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> setItimer t =
          Itimer.set (Itimer.Real,
-                     {value <B><FONT COLOR="#5F9EA0">=</FONT></B> t,
-                      interval <B><FONT COLOR="#5F9EA0">=</FONT></B> t})
+                     {value = t,
+                      interval = t})
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">run</FONT></I></B></FONT></B> (): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         (switch (<B><FONT COLOR="#A020F0">fn</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                  (topLevel <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> (Thread.prepare (t, ()))
-                   ; new (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (setHandler (alrm, Handler.handler schedule)
-                                    ; setItimer (Time.fromMilliseconds 20)))))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> run (): unit =
+         (switch (<B><FONT COLOR="#A020F0">fn</FONT></B> t =&gt;
+                  (topLevel := SOME (Thread.prepare (t, ()))
+                   ; new (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; (setHandler (alrm, Handler.handler schedule)
+                                    ; setItimer (Time.fromMilliseconds <B><FONT COLOR="#5F9EA0">20</FONT></B>)))))
           ; setItimer Time.zeroTime
           ; ignore alrm
-          ; topLevel <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+          ; topLevel := NONE)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> delay <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> delay (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1)
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> delay =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; delay (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>)
          
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (delay 500000; loop (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1))
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (delay <B><FONT COLOR="#5F9EA0">500000</FONT></B>; loop (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>))
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop' <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (Thread.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> loop n); loop' (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1))
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> loop' =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (Thread.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; loop n); loop' (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>))
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> Thread.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> loop' 10)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = Thread.spawn (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; loop' <B><FONT COLOR="#5F9EA0">10</FONT></B>)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> Thread.run ()
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = Thread.run ()
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = print <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
 </PRE>
 <p>
  

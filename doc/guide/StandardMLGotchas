@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,18 +55,21 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-This page contains brief explanations of some recurring sources of confusion and problems that SML newbies encounter. <h4 id="head-d153f77b9f48402c9dba22f2ebe391ae24b06832">The and keyword</h4>
+This page contains brief explanations of some recurring sources of confusion and problems that SML newbies encounter. <p>
+Many confusions about the syntax of SML seem to arise from the use of an interactive REPL (Read-Eval Print Loop) while trying to learn the basics of the language.  While writing your first SML programs, you should keep the source code of your programs in a form that is accepted by a SML compiler as a whole. 
+</p>
+<h4 id="head-d685d6ac284370652bba2e2a7d86c4399c393136">The {{{and}}} keyword</h4>
 <p>
 It is a common mistake to misuse the <tt>and</tt> keyword or to not know how to introduce mutually recursive definitions.  The purpose of the <tt>and</tt> keyword is to introduce mutually recursive definitions of functions and datatypes.  For example, 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">isEven</FONT></I></B></FONT></B> 0w0 <B><FONT COLOR="#5F9EA0">=</FONT></B> true
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> isEven 0w1 <B><FONT COLOR="#5F9EA0">=</FONT></B> false
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> isEven n <B><FONT COLOR="#5F9EA0">=</FONT></B> isOdd (n<B><FONT COLOR="#5F9EA0">-</FONT></B>0w1)
-<B><FONT COLOR="#A020F0">and</FONT></B> isOdd 0w0 <B><FONT COLOR="#5F9EA0">=</FONT></B> false
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> isOdd 0w1 <B><FONT COLOR="#5F9EA0">=</FONT></B> true
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> isOdd n <B><FONT COLOR="#5F9EA0">=</FONT></B> isEven (n<B><FONT COLOR="#5F9EA0">-</FONT></B>0w1)
+<B><FONT COLOR="#A020F0">fun</FONT></B> isEven <B><FONT COLOR="#5F9EA0">0w0</FONT></B> = true
+  | isEven <B><FONT COLOR="#5F9EA0">0w1</FONT></B> = false
+  | isEven n = isOdd (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)
+<B><FONT COLOR="#A020F0">and</FONT></B> isOdd <B><FONT COLOR="#5F9EA0">0w0</FONT></B> = false
+  | isOdd <B><FONT COLOR="#5F9EA0">0w1</FONT></B> = true
+  | isOdd n = isEven (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)
 </PRE>
 <p>
  
@@ -76,16 +79,16 @@ and
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> decl <B><FONT COLOR="#5F9EA0">=</FONT></B> VAL <B><FONT COLOR="#A020F0">of</FONT></B> id <B><FONT COLOR="#5F9EA0">*</FONT></B> pat <B><FONT COLOR="#5F9EA0">*</FONT></B> expr
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> decl </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">VAL</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> id * pat * expr
            <I><FONT COLOR="#B22222">(* | ... *)</FONT></I>
-     <B><FONT COLOR="#A020F0">and</FONT></B> expr <B><FONT COLOR="#5F9EA0">=</FONT></B> LET <B><FONT COLOR="#A020F0">of</FONT></B> decl <B><FONT COLOR="#5F9EA0">*</FONT></B> expr
+     </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> expr </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">LET</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> decl * expr
            <I><FONT COLOR="#B22222">(* | ... *)</FONT></I>
-</PRE>
+</FONT></B></PRE>
 <p>
  
 </p>
 <p>
-You can also use <tt>and</tt> as a shorthand in a couple of other places, but it is not obligatory. 
+You can also use <tt>and</tt> as a shorthand in a couple of other places, but it is not necessary. 
 </p>
 <h4 id="head-b73586d63b2830f6d817e9b9150d4be4bdb9b049">Constructed patterns</h4>
 <p>
@@ -93,8 +96,8 @@ It is a common mistake to forget to parenthesize constructed patterns in <tt>fun
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">length</FONT></I></B></FONT></B> nil <B><FONT COLOR="#5F9EA0">=</FONT></B> 0
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> length h <B><FONT COLOR="#5F9EA0">::</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> 1 <B><FONT COLOR="#5F9EA0">+</FONT></B> length t
+<B><FONT COLOR="#A020F0">fun</FONT></B> length nil = <B><FONT COLOR="#5F9EA0">0</FONT></B>
+  | length h :: t = <B><FONT COLOR="#5F9EA0">1</FONT></B> + length t
 </PRE>
 <p>
  
@@ -104,33 +107,33 @@ The pattern <tt>h&nbsp;::&nbsp;t</tt> needs to be parenthesized:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">length</FONT></I></B></FONT></B> nil <B><FONT COLOR="#5F9EA0">=</FONT></B> 0
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> length (h <B><FONT COLOR="#5F9EA0">::</FONT></B> t) <B><FONT COLOR="#5F9EA0">=</FONT></B> 1 <B><FONT COLOR="#5F9EA0">+</FONT></B> length t
+<B><FONT COLOR="#A020F0">fun</FONT></B> length nil = <B><FONT COLOR="#5F9EA0">0</FONT></B>
+  | length (h :: t) = <B><FONT COLOR="#5F9EA0">1</FONT></B> + length t
 </PRE>
 <p>
  
 </p>
 <p>
-The parentheses are needed, because a <tt>fun</tt> definition may specify multiple curried formal parameters. 
+The parentheses are needed, because a <tt>fun</tt> definition may have multiple consecutive constructed patterns through currying. 
 </p>
 <p>
 The same applies to nonfix constructors.  For example, the parentheses in 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">valOf</FONT></I></B></FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Option
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> valOf (<B><FONT COLOR="#5F9EA0">SOME</FONT></B> x) <B><FONT COLOR="#5F9EA0">=</FONT></B> x
+<B><FONT COLOR="#A020F0">fun</FONT></B> valOf NONE = <B><FONT COLOR="#A020F0">raise</FONT></B> Option
+  | valOf (SOME x) = x
 </PRE>
 <p>
  
 </p>
 <p>
-are required.  However, the outermost constructed pattern in a <tt>fn</tt> or <tt>case</tt> expression need not be parenthesized.  Both 
+are required.  However, the outermost constructed pattern in a <tt>fn</tt> or <tt>case</tt> expression need not be parenthesized, because in those cases there is always just one constructed pattern.  So, both 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> valOf <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Option
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
+<B><FONT COLOR="#A020F0">val</FONT></B> valOf = <B><FONT COLOR="#A020F0">fn</FONT></B> NONE =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Option
+             | SOME x =&gt; x
 </PRE>
 <p>
  
@@ -140,9 +143,9 @@ and
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">valOf</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B>
-                 <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Option
-               <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
+<B><FONT COLOR="#A020F0">fun</FONT></B> valOf x = <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B>
+                 NONE =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Option
+               | SOME x =&gt; x
 </PRE>
 <p>
  
@@ -156,18 +159,18 @@ It is a common mistake to confuse expressions and declarations.  Normally a SML 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> dt <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> ... <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> Fn (...) <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> dt </FONT></B>=<B><FONT COLOR="#228B22"> </FONT></B>...
+<B><FONT COLOR="#A020F0">fun</FONT></B> f ... = ...
+<B><FONT COLOR="#0000FF">functor</FONT></B> Fn (...) = ...
 <B><FONT COLOR="#A020F0">infix</FONT></B> ...
 <B><FONT COLOR="#A020F0">infixr</FONT></B> ...
-<B><FONT COLOR="#A020F0">local</FONT></B> ... <B><FONT COLOR="#A020F0">in</FONT></B> ... <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">local</FONT></B> ... <B><FONT COLOR="#0000FF">in</FONT></B> ... <B><FONT COLOR="#0000FF">end</FONT></B>
 <B><FONT COLOR="#A020F0">nonfix</FONT></B> ...
-<B><FONT COLOR="#A020F0">open</FONT></B> ...
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Struct <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-<B><FONT COLOR="#A020F0">val</FONT></B> v <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
+<B><FONT COLOR="#0000FF">open</FONT></B> ...
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG = ...
+<B><FONT COLOR="#0000FF">structure</FONT></B> Struct = ...
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> </FONT></B>...
+<B><FONT COLOR="#A020F0">val</FONT></B> v = ...
 </PRE>
 <p>
  
@@ -190,7 +193,7 @@ To specify a side-effecting computation in a source file, you can write:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
+<B><FONT COLOR="#A020F0">val</FONT></B> () = ...
 </PRE>
 <p>
  
@@ -213,7 +216,7 @@ A number of standard operators (<tt>+</tt>, <tt>-</tt>, <tt>~</tt>, <tt>*</tt>, 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">min</FONT></I></B></FONT></B> (x, y) <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> y &lt; x <B><FONT COLOR="#A020F0">then</FONT></B> y <B><FONT COLOR="#A020F0">else</FONT></B> x
+<B><FONT COLOR="#A020F0">fun</FONT></B> min (x, y) = <B><FONT COLOR="#A020F0">if</FONT></B> y &lt; x <B><FONT COLOR="#A020F0">then</FONT></B> y <B><FONT COLOR="#A020F0">else</FONT></B> x
 </PRE>
 <p>
  
@@ -223,7 +226,7 @@ are not overloaded themselves.  SML doesn't really support (user-defined) overlo
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> min : <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> min : int * int -&gt; int
 </PRE>
 <p>
  
@@ -233,7 +236,7 @@ See <a href="Overloading">Overloading</a> and <a href="TypeIndexedValues">TypeIn
 </p>
 <h4 id="head-1158dc6391ca1c282b0274da233e5b47974ab44c">Semicolons</h4>
 <p>
-It is a common mistake to use redundant semicolons in SML code.  This is probably caused by the fact that in a SML REPL, a semicolon (and enter) is used to signal the implementation that it should evaluate the preceding chunk of code as a unit.  In SML source files, semicolons are really needed in only two places.  Namely, in expressions of the form 
+It is a common mistake to use redundant semicolons in SML code.  This is probably caused by the fact that in a SML REPL, a semicolon (and enter) is used to signal the REPL that it should evaluate the preceding chunk of code as a unit.  In SML source files, semicolons are really needed in only two places.  Namely, in expressions of the form 
 </p>
 
 <pre class=code>
@@ -252,11 +255,18 @@ and
 <p>
  
 </p>
+<p>
+Note that semicolons act as expression (or declaration) separators rather than as terminators. 
+</p>
 <h4 id="head-72e54dc34abda1fd4474891b84fd2cdee65e658e">Stale bindings</h4>
 <h4 id="head-80eea6d8744ff759ee13086143a80641754b67b7">Unresolved records</h4>
 <h4 id="head-403e61388aa56bd37081a03b6455c2a4b2991e43">Value restriction</h4>
 <p>
 See <a href="ValueRestriction">ValueRestriction</a>. 
+</p>
+<h4 id="head-2ae43ee231b8601d841d31e22732569161aeb94e">Type Variable Scope</h4>
+<p>
+See <a href="TypeVariableScope">TypeVariableScope</a>. 
 </p>
 </div>
 
@@ -264,5 +274,5 @@ See <a href="ValueRestriction">ValueRestriction</a>.
 
 <p>
 <hr>
-Last edited on 2006-08-14 10:17:53 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-07-08 22:31:22 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

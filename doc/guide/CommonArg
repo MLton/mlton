@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -87,11 +87,7 @@ L_3 (c)
 </pre>which saves a number of resources: time of setting up the arguments for the jump to <tt>L_3</tt>, space (either stack or pseudo-registers) for the arguments of <tt>L_3</tt>, etc.  It may also expose some other optimizations, if more information is known about <tt>x</tt> or <tt>y</tt>. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/common-arg.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.sig</a>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/mlton/ssa/common-arg.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.fun</a>
- <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/common-arg.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/common-arg.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">common-arg.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 Three analyses were originally proposed to drive the optimization transformation.  Only the <em>Dominator Analysis</em> is currently implemented.  (Implementations of the other analyses are available in the Subversion repository.) 
 </p>
@@ -105,7 +101,7 @@ The simplest analysis I could think of maintains
 For each variable <tt>v</tt> bound in a <tt>Statement.t</tt> or in the <tt>Function.t</tt> args, then <tt>List.push(varInfo&nbsp;v,&nbsp;NONE)</tt>. For each  <tt>L&nbsp;(x1,&nbsp;...,&nbsp;xn)</tt> transfer where <tt>(a1,&nbsp;...,&nbsp;an)</tt> are the formals of <tt>L</tt>, then <tt>List.push(varInfo&nbsp;ai,&nbsp;SOME&nbsp;xi)</tt>. For each block argument a used in an unknown context (e.g., arguments of blocks used as continuations, handlers, arith success, runtime return, or case switch labels), then <tt>List.push(varInfo&nbsp;a,&nbsp;NONE)</tt>. 
 </p>
 <p>
-Now, any block argument <tt>a</tt> such that <tt>varInfo&nbsp;a&nbsp;=&nbsp;xs</tt>, where all of the elements of <tt>xs</tt> are equal to <tt>SOME&nbsp;x</tt>, can be optimized by setting  <tt>a&nbsp;=&nbsp;x</tt> at the beginning of the block and dropping the argument from <tt>{Goto</tt> transfers. 
+Now, any block argument <tt>a</tt> such that <tt>varInfo&nbsp;a&nbsp;=&nbsp;xs</tt>, where all of the elements of <tt>xs</tt> are equal to <tt>SOME&nbsp;x</tt>, can be optimized by setting  <tt>a&nbsp;=&nbsp;x</tt> at the beginning of the block and dropping the argument from <tt>Goto</tt> transfers. 
 </p>
 <p>
 That takes care of the example above.  We can clearly do slightly better, by changing the transformation criteria to the following: any block argument a such that <tt>varInfo&nbsp;a&nbsp;=&nbsp;xs</tt>, where all of the elements of <tt>xs</tt> are equal to <tt>SOME&nbsp;x</tt> <em>or</em> are equal to <tt>SOME&nbsp;a</tt>, can be optimized by setting  <tt>a&nbsp;=&nbsp;x</tt>  at the beginning of the block and dropping the argument from <tt>Goto</tt> transfers.  This optimizes a case like:  
@@ -150,7 +146,7 @@ The interdependency the arguments to <tt>L_3</tt> and <tt>L_5</tt> suggest perfo
 <pre>varInfo: Var.t -&gt; VarLattice.t
 </pre> where  
 <pre>VarLattice.t ~=~ Bot | Point of Var.t | Top
-</pre> (but as implemented by the <a class="nonexistent" href="FlatLattice">FlatLattice</a> functor with a <tt>lessThan</tt> list and <tt>value&nbsp;ref</tt> under the hood), initialized to <tt>Bot</tt>. 
+</pre> (but is implemented by the <a class="nonexistent" href="FlatLattice">FlatLattice</a> functor with a <tt>lessThan</tt> list and <tt>value&nbsp;ref</tt> under the hood), initialized to <tt>Bot</tt>. 
 </p>
 <p>
 For each variable <tt>v</tt> bound in a <tt>Statement.t</tt> or in the <tt>Function.t</tt> args, then <tt>VarLattice.&lt;=&nbsp;(Point&nbsp;v,&nbsp;varInfo&nbsp;v)</tt> For each  <tt>L&nbsp;(x1,&nbsp;...,&nbsp;xn)</tt> transfer where <tt>(a1,&nbsp;...,&nbsp;an)</tt> are the formals of <tt>L</tt>}, then <tt>VarLattice.&lt;=&nbsp;(varInfo&nbsp;xi,&nbsp;varInfo&nbsp;ai)</tt>. For each block argument a used in an unknown context, then <tt>VarLattice.&lt;=&nbsp;(Point&nbsp;a,&nbsp;varInfo&nbsp;a)</tt>. 
@@ -261,5 +257,5 @@ On the downside, the optimization doesn't have a huge impact on runtime, althoug
 
 <p>
 <hr>
-Last edited on 2005-11-30 23:32:23 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 21:23:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

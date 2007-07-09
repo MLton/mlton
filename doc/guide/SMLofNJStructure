@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,31 +57,31 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SML_OF_NJ <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Cont:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> 'a cont
-            <B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-            <B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> SysInfo:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">exception</FONT></B> UNKNOWN
-            <B><FONT COLOR="#A020F0">datatype</FONT></B> os_kind <B><FONT COLOR="#5F9EA0">=</FONT></B> BEOS <B><FONT COLOR="#5F9EA0">|</FONT></B> MACOS <B><FONT COLOR="#5F9EA0">|</FONT></B> OS2 <B><FONT COLOR="#5F9EA0">|</FONT></B> UNIX <B><FONT COLOR="#5F9EA0">|</FONT></B> WIN32
+<B><FONT COLOR="#0000FF">signature</FONT></B> SML_OF_NJ =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Cont:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a cont
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> callcc: ('a cont -&gt; 'a) -&gt; 'a
+            <B><FONT COLOR="#A020F0">val</FONT></B> throw: 'a cont -&gt; 'a -&gt; 'b
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> SysInfo:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">UNKNOWN</FONT>
+            </FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> os_kind </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">BEOS</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MACOS</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">OS2</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">UNIX</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">WIN32</FONT>
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> getHostArch: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> getOSKind: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> os_kind
-            <B><FONT COLOR="#A020F0">val</FONT></B> getOSName: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> getHostArch: unit -&gt; string
+            <B><FONT COLOR="#A020F0">val</FONT></B> getOSKind: unit -&gt; os_kind
+            <B><FONT COLOR="#A020F0">val</FONT></B> getOSName: unit -&gt; string
+         <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> exnHistory: exn <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> exportFn: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> OS.Process.status) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> exportML: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getAllArgs: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getArgs: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getCmdName: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> exnHistory: exn -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> exportFn: string * (string * string list -&gt; OS.Process.status) -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> exportML: string -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> getAllArgs: unit -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> getArgs: unit -&gt; string list
+      <B><FONT COLOR="#A020F0">val</FONT></B> getCmdName: unit -&gt; string
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

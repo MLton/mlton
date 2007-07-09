@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -98,6 +98,11 @@ In addition to the pipermail archive at mlton.org, there are archives of both  <
  Very active <tt>MLton@mlton.org</tt> list members who might otherwise  be expected to provide a fast response should send a message when  they will be offline for more than a few days.  The convention is to  put "<em>userid</em> offline until <em>date</em>" in the subject line to make it  easy to scan.  
 </p>
 </li>
+    <li class="gap">
+<p>
+ Discussions started on the mailing lists should stay on the mailing lists.  Private replies may be bounced to the mailing list for the benefit of those following the discussion. 
+</p>
+</li>
 
     </ul>
 
@@ -119,5 +124,5 @@ In addition to the pipermail archive at mlton.org, there are archives of both  <
 
 <p>
 <hr>
-Last edited on 2005-12-01 02:58:05 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-03-17 18:41:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

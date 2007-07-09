@@ -33,7 +33,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -70,7 +70,7 @@ urchinTracker();
     </ul>
 
 
-<h3 id="head-3229609e15436ec51bcf00818a69a84dbc58a0c2">License</h3>
+<h2 id="head-3229609e15436ec51bcf00818a69a84dbc58a0c2">License</h2>
 
     <ul>
 
@@ -83,7 +83,7 @@ urchinTracker();
     </ul>
 
 
-<h3 id="head-ed58f29743f8e14b9c8e13d41e070a1cc1d1c9f5">Instructions</h3>
+<h2 id="head-ed58f29743f8e14b9c8e13d41e070a1cc1d1c9f5">Instructions</h2>
 
     <ul>
 
@@ -150,20 +150,20 @@ urchinTracker();
 <h2 id="head-9e9cf3221a30246219863f1d2366e36cb580debc">Documentation</h2>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> STABLE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#A020F0">type</FONT></B> checkpoint
+<B><FONT COLOR="#0000FF">signature</FONT></B> STABLE =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> checkpoint
 
-     <B><FONT COLOR="#A020F0">val</FONT></B> stable: ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b)
-     <B><FONT COLOR="#A020F0">val</FONT></B> stabilize: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+     </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> stable: ('a -&gt; 'b) -&gt; ('a -&gt; 'b)
+     <B><FONT COLOR="#A020F0">val</FONT></B> stabilize: unit -&gt; 'a
 
-     <B><FONT COLOR="#A020F0">val</FONT></B> stableCP: (('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>)) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 
-                    (('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">*</FONT></B>  checkpoint)
-     <B><FONT COLOR="#A020F0">val</FONT></B> stabilizeCP: checkpoint <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> stableCP: (('a -&gt; 'b) * (unit -&gt; unit)) -&gt; 
+                    (('a -&gt; 'b) *  checkpoint)
+     <B><FONT COLOR="#A020F0">val</FONT></B> stabilizeCP: checkpoint -&gt; unit
 
-     <B><FONT COLOR="#A020F0">val</FONT></B> unmonitoredAssign: ('a <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-     <B><FONT COLOR="#A020F0">val</FONT></B> monitoredAssign: ('a <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+     <B><FONT COLOR="#A020F0">val</FONT></B> unmonitoredAssign: ('a ref * 'a) -&gt; unit
+     <B><FONT COLOR="#A020F0">val</FONT></B> monitoredAssign: ('a ref * 'a) -&gt; unit
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -262,14 +262,35 @@ urchinTracker();
     </ul>
 
 
+<h2 id="head-a479c9c34e878d07b4d67a73a48f432ad7dc53c8">Download</h2>
+
+    <ul>
+
+    <li>
 <p>
-<a href="http://mlton.org/pages/Stabilizers/attachments/stabilizers_alpha_2006-10-09.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">stabilizers_alpha_2006-10-09.tar.gz</a> 
+ <a href="http://mlton.org/pages/Stabilizers/attachments/stabilizers_alpha_2006-10-09.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">stabilizers_alpha_2006-10-09.tar.gz</a> 
 </p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href = "References#ZiarekEtAl06">ZiarekEtAl06</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2006-10-09 20:34:58 by <span title="ursula.cs.purdue.edu">PhilipSchatz</span>.
+Last edited on 2007-07-08 21:34:40 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

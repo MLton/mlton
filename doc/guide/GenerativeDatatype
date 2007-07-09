@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,13 +57,13 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 In <a href="StandardML">Standard ML</a>, datatype declarations are said to be <em>generative</em>, because each time a datatype declaration is evaluated, it yields a new type.  Thus, any attempt to mix the types will lead to a type error at compile-time.  The following program, which does not type check, demonstrates this. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> F () <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S1 <B><FONT COLOR="#5F9EA0">=</FONT></B> F ()
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S2 <B><FONT COLOR="#5F9EA0">=</FONT></B> F ()
-<B><FONT COLOR="#A020F0">val</FONT></B> _: S1.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> S2.t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
+<B><FONT COLOR="#0000FF">functor</FONT></B> F () =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT>
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S1 = F ()
+<B><FONT COLOR="#0000FF">structure</FONT></B> S2 = F ()
+<B><FONT COLOR="#A020F0">val</FONT></B> _: S1.t -&gt; S2.t = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
 </PRE>
 <p>
  
@@ -73,11 +73,11 @@ Generativity also means that two different datatype declarations define differen
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B
-<B><FONT COLOR="#A020F0">val</FONT></B> a1 <B><FONT COLOR="#5F9EA0">=</FONT></B> A
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B
-<B><FONT COLOR="#A020F0">val</FONT></B> a2 <B><FONT COLOR="#5F9EA0">=</FONT></B> A
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> a1 <B><FONT COLOR="#A020F0">else</FONT></B> a2
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT>
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> a1 = A
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT>
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> a2 = A
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">if</FONT></B> true <B><FONT COLOR="#A020F0">then</FONT></B> a1 <B><FONT COLOR="#A020F0">else</FONT></B> a2
 </PRE>
 <p>
  

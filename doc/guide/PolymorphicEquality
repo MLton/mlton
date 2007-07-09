@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,7 +57,7 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 Polymorphic equality is a built-in function in  <a href="StandardML">Standard ML</a> that compares two values of the same type for equality.  It is specified as 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> : ''a <B><FONT COLOR="#5F9EA0">*</FONT></B> ''a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> = : ''a * ''a -&gt; bool
 </PRE>
 <p>
  
@@ -152,12 +152,12 @@ Because equality of mutable values is not structural, arrays and refs can be com
 </p>
 <h2 id="head-2d02f1ba2142e6814e7dcdf979c4523b6443b90c">Equality of datatypes</h2>
 <p>
-Polymorphic equality of datatypes is structural.  Two values of the same datatype are equal if they are of the same variant and if the variant's arguments are equal (recursively).  So, with the datatype 
+Polymorphic equality of datatypes is structural.  Two values of the same datatype are equal if they are of the same <a href="Variant">variant</a> and if the <a href="Variant">variant</a>'s arguments are equal (recursively).  So, with the datatype 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -169,7 +169,7 @@ As polymorphic equality descends two values to compare them, it uses pointer equ
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> ...
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int ref </FONT></B>|<B><FONT COLOR="#228B22"> </FONT></B>...
 </PRE>
 <p>
  
@@ -180,12 +180,12 @@ then <tt>A&nbsp;(ref&nbsp;13)&nbsp;=&nbsp;A&nbsp;(ref&nbsp;13)</tt> is type corr
 <p>
 One weakness of the SML type system is that datatypes do not inherit the special property of the <tt>ref</tt> and <tt>array</tt> type constructors that allows them to be compared regardless of their component type.  For example, after declaring 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">ref</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a ref
+</FONT></B></PRE>
  one might expect to be able to compare two values of type  <tt>real&nbsp;t</tt>, because pointer comparison on a ref cell would suffice. Unfortunately, the type system can only express that a user-defined datatype <a href="AdmitsEquality">admits equality</a> or not.  In this case, <tt>t</tt> admits equality, which means that <tt>int&nbsp;t</tt> can be compared but that <tt>real&nbsp;t</tt> can not.  We can confirm this with the program 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#A020F0">ref</FONT></B>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (x: <B><FONT COLOR="#228B22">real</FONT></B> t, y: <B><FONT COLOR="#228B22">real</FONT></B> t) <B><FONT COLOR="#5F9EA0">=</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> y
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a ref
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f (x: real t, y: real t) = x = y
 </PRE>
  on which MLton reports the following error. 
 <pre>Error: z.sml 2.34.
@@ -212,12 +212,12 @@ MLton uses some optimizations to improve performance.
 </li>
     <li class="gap">
 <p>
- If a datatype is an enum (e.g. <tt>datatype&nbsp;t&nbsp;=&nbsp;A&nbsp;|&nbsp;B&nbsp;|&nbsp;C</tt>),  then a single comparison suffices to compare values of the datatype.  No case dispatch is required to determine whether the two values are  of the same variant. 
+ If a datatype is an enum (e.g. <tt>datatype&nbsp;t&nbsp;=&nbsp;A&nbsp;|&nbsp;B&nbsp;|&nbsp;C</tt>),  then a single comparison suffices to compare values of the datatype.  No case dispatch is required to determine whether the two values are  of the same <a href="Variant">variant</a>. 
 </p>
 </li>
     <li class="gap">
 <p>
- When comparing a known constant non-value-carrying variant, use a  single comparison.  For example, the following code will compile into  a single comparison for <tt>A&nbsp;=&nbsp;x</tt>. 
+ When comparing a known constant non-value-carrying <a href="Variant">variant</a>, use a  single comparison.  For example, the following code will compile into  a single comparison for <tt>A&nbsp;=&nbsp;x</tt>. 
 <pre> datatype t = A | B | C of ...
  ... if A = x then ...</pre>
 </p>
@@ -258,5 +258,5 @@ MLton uses some optimizations to improve performance.
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:31:02 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:57:41 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

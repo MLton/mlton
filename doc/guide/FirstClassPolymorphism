@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -58,9 +58,9 @@ urchinTracker();
 First-class polymorphism is the ability to treat polymorphic functions just like other values: pass them as arguments, store them in data structures, etc.  Although <a href="StandardML">Standard ML</a> does have polymorphic functions, it does not support first-class polymorphism. <p>
 For example, the following declares and uses the polymorphic function <tt>id</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> id <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> id 13
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> id = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = id <B><FONT COLOR="#5F9EA0">13</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
 </PRE>
  
 </p>
@@ -69,7 +69,7 @@ If SML supported first-class polymorphism, we could write the following.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">useId</FONT></I></B></FONT></B> id <B><FONT COLOR="#5F9EA0">=</FONT></B> (id 13; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">fun</FONT></B> useId id = (id <B><FONT COLOR="#5F9EA0">13</FONT></B>; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
 </PRE>
 <p>
  
@@ -88,7 +88,7 @@ The error message arises because MLton infers from <tt>id&nbsp;13</tt> that <tt>
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">useId</FONT></I></B></FONT></B> (id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> (id 13; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">fun</FONT></B> useId (id: 'a -&gt; 'a) = (id <B><FONT COLOR="#5F9EA0">13</FONT></B>; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
 </PRE>
 <p>
  
@@ -112,7 +112,7 @@ The errors arise because the argument <tt>id</tt> is <em>not</em> polymorphic; r
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">useId</FONT></I></B></FONT></B> (id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a, x: 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> id x  <I><FONT COLOR="#B22222">(* type correct *)</FONT></I>
+<B><FONT COLOR="#A020F0">fun</FONT></B> useId (id: 'a -&gt; 'a, x: 'a) = id x  <I><FONT COLOR="#B22222">(* type correct *)</FONT></I>
 </PRE>
 <p>
  
@@ -122,8 +122,8 @@ So, what is the difference between the type specification on <tt>id</tt> in the 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">useId</FONT></I></B></FONT></B> (id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> (id 13; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#A020F0">fun</FONT></B> useId (id: 'a -&gt; 'a) = (id <B><FONT COLOR="#5F9EA0">13</FONT></B>; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)
 </PRE>
 <p>
  
@@ -133,8 +133,8 @@ While the type specifications on <tt>id</tt> look identical, they mean different
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> 'a id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x
-<B><FONT COLOR="#A020F0">fun</FONT></B> 'a useId (id: 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">=</FONT></B> (id 13; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)  <I><FONT COLOR="#B22222">(* type error *)</FONT></I>
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> id: 'a -&gt; 'a = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x
+<B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> useId (id: 'a -&gt; 'a) = (id <B><FONT COLOR="#5F9EA0">13</FONT></B>; id <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>)  <I><FONT COLOR="#B22222">(* type error *)</FONT></I>
 </PRE>
 <p>
  

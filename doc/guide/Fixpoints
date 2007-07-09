@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,20 +60,20 @@ First the signature of the fixpoint framework:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> FIX <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'a t1
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'a t2
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a t1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t2
+<B><FONT COLOR="#0000FF">signature</FONT></B> FIX =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t1
+    </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t2
+    </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t1 -&gt; 'a t2
 
-    <B><FONT COLOR="#A020F0">exception</FONT></B> Fix
+    </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Fix</FONT>
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> fix : 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a fix
-    <B><FONT COLOR="#A020F0">val</FONT></B> pure : ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a uop) thunk <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> tier : ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a effect) thunk <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> iso : ('a, 'b) emb <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">^</FONT></B> : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b) product t
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fix : 'a t -&gt; 'a fix
+    <B><FONT COLOR="#A020F0">val</FONT></B> pure : ('a * 'a uop) thunk -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> tier : ('a * 'a effect) thunk -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> iso : ('a, 'b) emb -&gt; 'b t -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> ^ : 'a t * 'b t -&gt; ('a, 'b) product t
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -89,45 +89,45 @@ Here is an implementation:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fix :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> FIX <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t1 <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t2 <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a uop
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a t1 <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t2
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fix :&gt; FIX =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t1 </FONT></B>=<B><FONT COLOR="#228B22"> unit
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t2 </FONT></B>=<B><FONT COLOR="#228B22"> 'a * 'a uop
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t1 -&gt; 'a t2
 
-      <B><FONT COLOR="#A020F0">exception</FONT></B> Fix
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Fix</FONT>
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fix</FONT></I></B></FONT></B> a f <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fix a f =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) <B><FONT COLOR="#5F9EA0">=</FONT></B> a ()
+            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = a ()
          <B><FONT COLOR="#A020F0">in</FONT></B>
             ta (f a)
          <B><FONT COLOR="#A020F0">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> pure <B><FONT COLOR="#5F9EA0">=</FONT></B> id
+      <B><FONT COLOR="#A020F0">val</FONT></B> pure = id
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">tier</FONT></I></B></FONT></B> th () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> tier th () =
           <B><FONT COLOR="#A020F0">let</FONT></B>
-             <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) <B><FONT COLOR="#5F9EA0">=</FONT></B> th ()
+             <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = th ()
           <B><FONT COLOR="#A020F0">in</FONT></B>
-             (a, const a <B><FONT COLOR="#A020F0">o</FONT></B> ta)
+             (a, const a o ta)
           <B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">iso</FONT></I></B></FONT></B> (a2b, b2a) b () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> iso (a2b, b2a) b () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) <B><FONT COLOR="#5F9EA0">=</FONT></B> b ()
+            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) = b ()
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            (b2a b, b2a <B><FONT COLOR="#A020F0">o</FONT></B> tb <B><FONT COLOR="#A020F0">o</FONT></B> a2b)
+            (b2a b, b2a o tb o a2b)
          <B><FONT COLOR="#A020F0">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> (a <B><FONT COLOR="#5F9EA0">^</FONT></B> b) () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> (a ^ b) () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) <B><FONT COLOR="#5F9EA0">=</FONT></B> a ()
-            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) <B><FONT COLOR="#5F9EA0">=</FONT></B> b ()
+            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = a ()
+            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) = b ()
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            (a &amp; b, <B><FONT COLOR="#A020F0">fn</FONT></B> a &amp; b <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ta a &amp; tb b)
+            (a &amp; b, <B><FONT COLOR="#A020F0">fn</FONT></B> a &amp; b =&gt; ta a &amp; tb b)
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -137,18 +137,18 @@ Let's then take a look at some examples.  First a simple tier for functions:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Fn :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> Y : ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) Fix.t
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">Y</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Fn :&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> Y : ('a -&gt; 'b) Fix.t
+   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
                              <B><FONT COLOR="#A020F0">let</FONT></B>
-                                <B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> (fail Fix.Fix)
-<B><FONT COLOR="#A020F0">                                fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r x
+                                <B><FONT COLOR="#A020F0">val</FONT></B> r = ref (fail Fix.Fix)
+                                <B><FONT COLOR="#A020F0">fun</FONT></B> f x = !r x
                              <B><FONT COLOR="#A020F0">in</FONT></B>
-                                (f, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">:=</FONT></B>)
+                                (f, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> :=)
                              <B><FONT COLOR="#A020F0">end</FONT></B>) ?
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -158,15 +158,15 @@ Here is an example of a mutually recursive definition of functions:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> isEven &amp; isOdd <B><FONT COLOR="#5F9EA0">=</FONT></B>
-    <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">open</FONT></B> Fix Fn <B><FONT COLOR="#A020F0">in</FONT></B> fix (Y<B><FONT COLOR="#5F9EA0">^</FONT></B>Y) <B><FONT COLOR="#A020F0">end</FONT></B>
-       (<B><FONT COLOR="#A020F0">fn</FONT></B> isEven &amp; isOdd <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-           (<B><FONT COLOR="#A020F0">fn</FONT></B> 0w0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> 0w1 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> isOdd (n<B><FONT COLOR="#5F9EA0">-</FONT></B>0w1)) &amp;
-           (<B><FONT COLOR="#A020F0">fn</FONT></B> 0w0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> 0w1 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> isEven (n<B><FONT COLOR="#5F9EA0">-</FONT></B>0w1)))
+<B><FONT COLOR="#A020F0">val</FONT></B> isEven &amp; isOdd =
+    <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> Fix Fn <B><FONT COLOR="#A020F0">in</FONT></B> fix (Y^Y) <B><FONT COLOR="#A020F0">end</FONT></B>
+       (<B><FONT COLOR="#A020F0">fn</FONT></B> isEven &amp; isOdd =&gt;
+           (<B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0w0</FONT></B> =&gt; true
+             | <B><FONT COLOR="#5F9EA0">0w1</FONT></B> =&gt; false
+             | n =&gt; isOdd (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)) &amp;
+           (<B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0w0</FONT></B> =&gt; false
+             | <B><FONT COLOR="#5F9EA0">0w1</FONT></B> =&gt; true
+             | n =&gt; isEven (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)))
 </PRE>
 <p>
  
@@ -176,34 +176,34 @@ Our second example is a naive implementation of lazy promises:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Promise :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> lazy : 'a thunk <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> force : 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
+<B><FONT COLOR="#0000FF">structure</FONT></B> Promise :&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> lazy : 'a thunk -&gt; 'a t
+      <B><FONT COLOR="#A020F0">val</FONT></B> force : 'a t -&gt; 'a
       <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t' <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Exn <B><FONT COLOR="#A020F0">of</FONT></B> exn
-       <B><FONT COLOR="#5F9EA0">|</FONT></B> Thunk <B><FONT COLOR="#A020F0">of</FONT></B> 'a thunk
-       <B><FONT COLOR="#5F9EA0">|</FONT></B> Value <B><FONT COLOR="#A020F0">of</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a t' <B><FONT COLOR="#A020F0">ref</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">lazy</FONT></I></B></FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> (Thunk f)
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">force</FONT></I></B></FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>t <B><FONT COLOR="#A020F0">of</FONT></B>
-            Exn e <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> e
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> Thunk f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-            (t <B><FONT COLOR="#5F9EA0">:=</FONT></B> Value (f ())
-             <B><FONT COLOR="#A020F0">handle</FONT></B> e <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t <B><FONT COLOR="#5F9EA0">:=</FONT></B> Exn e
+   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t' </FONT></B>=<B><FONT COLOR="#228B22">
+         <FONT COLOR="#B8860B">Exn</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn
+       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Thunk</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a thunk
+       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Value</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t' ref
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> lazy f = ref (Thunk f)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> force t =
+         <B><FONT COLOR="#A020F0">case</FONT></B> !t <B><FONT COLOR="#A020F0">of</FONT></B>
+            Exn e =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> e
+          | Thunk f =&gt;
+            (t := Value (f ())
+             <B><FONT COLOR="#A020F0">handle</FONT></B> e =&gt; t := Exn e
            ; force t)
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> Value v <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> v
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">Y</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+          | Value v =&gt; v
+      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
                              <B><FONT COLOR="#A020F0">let</FONT></B>
-                                <B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> lazy (fail Fix.Fix)
+                                <B><FONT COLOR="#A020F0">val</FONT></B> r = lazy (fail Fix.Fix)
                              <B><FONT COLOR="#A020F0">in</FONT></B>
-                                (r, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#A020F0">o</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>)
+                                (r, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> := o !)
                              <B><FONT COLOR="#A020F0">end</FONT></B>) ?
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -213,18 +213,18 @@ An example use of our naive lazy promises is to implement equally naive lazy str
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Stream :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> cons : 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> get : 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a t) option
+<B><FONT COLOR="#0000FF">structure</FONT></B> Stream :&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> cons : 'a * 'a t -&gt; 'a t
+      <B><FONT COLOR="#A020F0">val</FONT></B> get : 'a t -&gt; ('a * 'a t) option
       <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> IN <B><FONT COLOR="#A020F0">of</FONT></B> ('a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a t) option Promise.t
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">cons</FONT></I></B></FONT></B> (x, xs) <B><FONT COLOR="#5F9EA0">=</FONT></B> IN (Promise.lazy (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> (x, xs)))
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">get</FONT></I></B></FONT></B> (IN p) <B><FONT COLOR="#5F9EA0">=</FONT></B> Promise.force p
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">Y</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> Fix.iso (<B><FONT COLOR="#A020F0">fn</FONT></B> IN p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p, IN) Promise.Y ?
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ('a * 'a t) option Promise.t
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> cons (x, xs) = IN (Promise.lazy (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; SOME (x, xs)))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> get (IN p) = Promise.force p
+      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.iso (<B><FONT COLOR="#A020F0">fn</FONT></B> IN p =&gt; p, IN) Promise.Y ?
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -234,11 +234,11 @@ Note that above we make use of the <tt>Fix.iso</tt> combinator.  Here is a finit
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> ones <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> ones =
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> Fix Stream
+      <B><FONT COLOR="#0000FF">open</FONT></B> Fix Stream
    <B><FONT COLOR="#A020F0">in</FONT></B>
-      fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> ones <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> cons (1, ones))
+      fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> ones =&gt; cons (<B><FONT COLOR="#5F9EA0">1</FONT></B>, ones))
    <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ rejects 
 <pre class=code>
-(<B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B>)
+(<B><FONT COLOR="#A020F0">op</FONT></B> *)
 </PRE>
  as an unmatched close comment. 
 </p>
@@ -76,7 +76,7 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows <tt>=</tt> to be rebound by the declaration: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> 13
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> = = <B><FONT COLOR="#5F9EA0">13</FONT></B>
 </PRE>
  This is explicitly forbidden on page 5 of the Definition. 
 </p>
@@ -85,11 +85,11 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows rebinding <tt>true</tt>, <tt>false</tt>, <tt>nil</tt>, <tt>::</tt>, and <tt>ref</tt> by the declarations: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">true</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">false</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">nil</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">op</FONT></I></B></FONT></B> <B><FONT COLOR="#5F9EA0">::</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">ref</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> true () = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> false () = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> nil () = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> :: () = ()
+<B><FONT COLOR="#A020F0">fun</FONT></B> ref () = ()
 </PRE>
  This is explicitly forbidden on page 9 of the Definition. 
 </p>
@@ -98,8 +98,8 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ extends the syntax of the language to allow vector expressions and patterns like the following: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> v <B><FONT COLOR="#5F9EA0">=</FONT></B> #[1,2,3]
-<B><FONT COLOR="#A020F0">val</FONT></B> #[x,y,z] <B><FONT COLOR="#5F9EA0">=</FONT></B> v
+<B><FONT COLOR="#A020F0">val</FONT></B> v = #[<B><FONT COLOR="#5F9EA0">1</FONT></B>,<B><FONT COLOR="#5F9EA0">2</FONT></B>,<B><FONT COLOR="#5F9EA0">3</FONT></B>]
+<B><FONT COLOR="#A020F0">val</FONT></B> #[x,y,z] = v
 </PRE>
  
 </p>
@@ -108,8 +108,8 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ extends the syntax of the language to allow <em>or patterns</em> like the following: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> foo <B><FONT COLOR="#5F9EA0">=</FONT></B> Foo <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> Bar <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-<B><FONT COLOR="#A020F0">val</FONT></B> (Foo x <B><FONT COLOR="#5F9EA0">|</FONT></B> Bar x) <B><FONT COLOR="#5F9EA0">=</FONT></B> Foo 13
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> foo </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Foo</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Bar</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> (Foo x | Bar x) = Foo <B><FONT COLOR="#5F9EA0">13</FONT></B>
 </PRE>
  
 </p>
@@ -118,17 +118,17 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows higher-order functors, that is, functors can be components of structures and can be passed as functor arguments and returned as functor results.  As a consequence, SML/NJ allows abbreviated functor definitions, as in the following: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> t
-    <B><FONT COLOR="#A020F0">val</FONT></B> x: t
-  <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> F (<B><FONT COLOR="#5F9EA0">structure</FONT></B> A: S): S <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-  <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A.t <B><FONT COLOR="#5F9EA0">*</FONT></B> A.t
-    <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> (A.x, A.x)
-  <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> G <B><FONT COLOR="#5F9EA0">=</FONT></B> F
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x: t
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> F (<B><FONT COLOR="#0000FF">structure</FONT></B> A: S): S = 
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> A.t * A.t
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x = (A.x, A.x)
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> G = F
 </PRE>
   
 </p>
@@ -142,21 +142,21 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows duplicate type specifications in signatures when the duplicates are introduced by <tt>include</tt>, as in the following: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
-      <B><FONT COLOR="#A020F0">type</FONT></B> u
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG2 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
-      <B><FONT COLOR="#A020F0">type</FONT></B> v
-   <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">include</FONT></B> SIG1
-      <B><FONT COLOR="#A020F0">include</FONT></B> SIG2
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG1 =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG2 =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> v
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">include</FONT></B> SIG1
+      <B><FONT COLOR="#0000FF">include</FONT></B> SIG2
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  This is disallowed by rule 77 of the Definition. 
 </p>
@@ -165,12 +165,12 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows sharing constraints between type abbreviations in signatures, as in the following: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">sharing</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> u
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int * int
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int * int
+      </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  These are disallowed by rule 78 of the Definition. 
 </p>
@@ -179,13 +179,13 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ disallows multiple <tt>where&nbsp;type</tt> specifications of the same type name, as in the following 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#A020F0">type</FONT></B> t
-     <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> t
-  <B><FONT COLOR="#A020F0">end</FONT></B>
-  <B><FONT COLOR="#A020F0">where</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-</PRE>
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+     </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> t
+  </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B></PRE>
  This is allowed by rule 84 of the Definition. 
 </p>
 </li>
@@ -193,14 +193,14 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows <tt>and</tt> in <tt>sharing</tt> specs in signatures, as in 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
-      <B><FONT COLOR="#A020F0">type</FONT></B> u
-      <B><FONT COLOR="#A020F0">type</FONT></B> v
-      <B><FONT COLOR="#A020F0">sharing</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> u
-      <B><FONT COLOR="#A020F0">and</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> v
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> S =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> v
+      </FONT></B><B><FONT COLOR="#0000FF">sharing</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u
+      </FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> v
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -209,27 +209,27 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ does not expand the <tt>withtype</tt> derived form as described by the Definition.  According to page 55 of the Definition, the type bindings of a <tt>withtype</tt> declaration are substituted simultaneously in the connected datatype.  Consider the following program. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B>
-    A <B><FONT COLOR="#A020F0">of</FONT></B> t
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> u
-<B><FONT COLOR="#A020F0">withtype</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-<B><FONT COLOR="#A020F0">and</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> u
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
+</FONT></B><B><FONT COLOR="#A020F0">withtype</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> u
+</FONT></B></PRE>
  According to the Definition, it should be expanded to the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B>
-    A <B><FONT COLOR="#A020F0">of</FONT></B> u
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
+  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B></PRE>
  However, SML/NJ expands <tt>withtype</tt> bindings sequentially, meaning that earlier bindings are expanded within later ones.  Hence, the above program is expanded to the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B>
-    A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-  <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> real
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> a </FONT></B>=<B><FONT COLOR="#228B22">
+    <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+  </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+</FONT></B></PRE>
  
 </p>
 </li>
@@ -242,35 +242,35 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ allows a <tt>where</tt> structure specification that is similar to a <tt>where&nbsp;type</tt> specification.  For example: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#5F9EA0">structure</FONT></B> T : <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B>
-  <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#A020F0">where</FONT></B> T <B><FONT COLOR="#5F9EA0">=</FONT></B> S
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> T = S
 </PRE>
  This is equivalent to: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#5F9EA0">structure</FONT></B> T : <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B>
-  <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#A020F0">where</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> T.t <B><FONT COLOR="#5F9EA0">=</FONT></B> S.t
-</PRE>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> T.t </FONT></B>=<B><FONT COLOR="#228B22"> S.t
+</FONT></B></PRE>
  SML/NJ also allows a definitional structure specification that is similar to a definitional type specification.  For example: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#5F9EA0">structure</FONT></B> T : <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> S
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> = S
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  This is equivalent to the previous examples and to: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-     <B><FONT COLOR="#5F9EA0">structure</FONT></B> T : <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#A020F0">where</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> S.t
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+     <B><FONT COLOR="#0000FF">structure</FONT></B> T : <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> S.t
+  </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -279,14 +279,14 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ disallows binding non-datatypes with datatype replication.  For example, it rejects the following program that should be allowed according to the Definition. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b) t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
-<B><FONT COLOR="#A020F0">datatype</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">datatype</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) t </FONT></B>=<B><FONT COLOR="#228B22"> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <B><FONT COLOR="#A020F0">datatype</FONT></B> t
+</FONT></B></PRE>
  This idiom can be useful when one wants to rename a type without rewriting all the type arguments.  For example, the above would have to be written in SML/NJ as follows. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b) t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b) u <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a, 'b) t
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) t </FONT></B>=<B><FONT COLOR="#228B22"> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) u </FONT></B>=<B><FONT COLOR="#228B22"> ('a, 'b) t
+</FONT></B></PRE>
  
 </p>
 </li>
@@ -294,15 +294,15 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ disallows sharing a structure with one of its substructures.  For example, SML/NJ disallows the following. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> SIG <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> S:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t
-            <B><FONT COLOR="#5F9EA0">structure</FONT></B> T: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#A020F0">sharing</FONT></B> S <B><FONT COLOR="#5F9EA0">=</FONT></B> S.T
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SIG =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> S:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+            </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> T: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">sharing</FONT></B> S = S.T
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  This signature is allowed by the Definition. 
 </p>
@@ -311,8 +311,8 @@ Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="Definit
 <p>
  SML/NJ disallows polymorphic generalization of refutable patterns.  For example, SML/NJ disallows the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> [x] <B><FONT COLOR="#5F9EA0">=</FONT></B> [[]]
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> (1 <B><FONT COLOR="#5F9EA0">::</FONT></B> x, <B><FONT COLOR="#BC8F8F">&quot;one&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">::</FONT></B> x)
+<B><FONT COLOR="#A020F0">val</FONT></B> [x] = [[]]
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = (<B><FONT COLOR="#5F9EA0">1</FONT></B> :: x, <B><FONT COLOR="#BC8F8F">&quot;one&quot;</FONT></B> :: x)
 </PRE>
  
 </p>
@@ -332,7 +332,7 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
 <p>
  SML/NJ exposes the equality of the <tt>vector</tt> type in structures  such as <tt>Word8Vector</tt> that abstractly match <tt>MONO_VECTOR</tt>,  which says <tt>type&nbsp;vector</tt>, not <tt>eqtype&nbsp;vector</tt>.  So, for  example, SML/NJ accepts the following program: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (v: Word8Vector.<B><FONT COLOR="#228B22">vector</FONT></B>) <B><FONT COLOR="#5F9EA0">=</FONT></B> v <B><FONT COLOR="#5F9EA0">=</FONT></B> v
+<B><FONT COLOR="#A020F0">fun</FONT></B> f (v: Word8Vector.vector) = v = v
 </PRE>
  
 </p>

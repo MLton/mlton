@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,83 +74,83 @@ The type and the semicolon are not optional.
 This example uses <tt>dlopen</tt> and friends (imported using normal <tt>_import</tt>) to dynamically load the math library (<tt>libm</tt>) and call the <tt>cos</tt> function. Suppose <tt>iimport.sml</tt> contains the following. 
 </p>
 <p>
-<pre class=code><B><FONT COLOR="#5F9EA0">signature</FONT></B> DYN_LINK <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> hndl
-      <B><FONT COLOR="#A020F0">type</FONT></B> mode
-      <B><FONT COLOR="#A020F0">type</FONT></B> fptr
+<pre class=code><B><FONT COLOR="#0000FF">signature</FONT></B> DYN_LINK =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> hndl
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> mode
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> fptr
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlopen : <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> mode <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> hndl
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym : hndl <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fptr
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose : hndl <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> dlopen : string * mode -&gt; hndl
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym : hndl * string -&gt; fptr
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose : hndl -&gt; unit
 
       <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_LAZY : mode
       <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_NOW : mode
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> DynLink :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> DYN_LINK <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> hndl <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Pointer.t
-      <B><FONT COLOR="#A020F0">type</FONT></B> mode <B><FONT COLOR="#5F9EA0">=</FONT></B> Word32.<B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> fptr <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Pointer.t
+<B><FONT COLOR="#0000FF">structure</FONT></B> DynLink :&gt; DYN_LINK =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> hndl </FONT></B>=<B><FONT COLOR="#228B22"> MLton.Pointer.t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> mode </FONT></B>=<B><FONT COLOR="#228B22"> Word32.word
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> fptr </FONT></B>=<B><FONT COLOR="#228B22"> MLton.Pointer.t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlopen <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         _import <B><FONT COLOR="#BC8F8F">&quot;dlopen&quot;</FONT></B> : <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> mode <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> hndl;
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlerror <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         _import <B><FONT COLOR="#BC8F8F">&quot;dlerror&quot;</FONT></B>: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> MLton.Pointer.t;
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         _import <B><FONT COLOR="#BC8F8F">&quot;dlsym&quot;</FONT></B> : hndl <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fptr;
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         _import <B><FONT COLOR="#BC8F8F">&quot;dlclose&quot;</FONT></B> : hndl <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int32.<B><FONT COLOR="#228B22">int</FONT></B>;
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> dlopen =
+         _import <B><FONT COLOR="#BC8F8F">&quot;dlopen&quot;</FONT></B> : string * mode -&gt; hndl;
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlerror =
+         _import <B><FONT COLOR="#BC8F8F">&quot;dlerror&quot;</FONT></B>: unit -&gt; MLton.Pointer.t;
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym =
+         _import <B><FONT COLOR="#BC8F8F">&quot;dlsym&quot;</FONT></B> : hndl * string -&gt; fptr;
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose =
+         _import <B><FONT COLOR="#BC8F8F">&quot;dlclose&quot;</FONT></B> : hndl -&gt; Int32.int;
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_LAZY <B><FONT COLOR="#5F9EA0">=</FONT></B> 0wx00001 <I><FONT COLOR="#B22222">(* Lazy function call binding.  *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_NOW  <B><FONT COLOR="#5F9EA0">=</FONT></B> 0wx00002 <I><FONT COLOR="#B22222">(* Immediate function call binding.  *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_LAZY = <B><FONT COLOR="#5F9EA0">0wx00001</FONT></B> <I><FONT COLOR="#B22222">(* Lazy function call binding.  *)</FONT></I>
+      <B><FONT COLOR="#A020F0">val</FONT></B> RTLD_NOW  = <B><FONT COLOR="#5F9EA0">0wx00002</FONT></B> <I><FONT COLOR="#B22222">(* Immediate function call binding.  *)</FONT></I>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlerror <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlerror = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> addr <B><FONT COLOR="#5F9EA0">=</FONT></B> dlerror ()
+            <B><FONT COLOR="#A020F0">val</FONT></B> addr = dlerror ()
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">if</FONT></B> addr <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Pointer.null
-               <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+            <B><FONT COLOR="#A020F0">if</FONT></B> addr = MLton.Pointer.null
+               <B><FONT COLOR="#A020F0">then</FONT></B> NONE
                <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B>
-<B><FONT COLOR="#A020F0">                       fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">loop</FONT></I></B></FONT></B> (index, cs) <B><FONT COLOR="#5F9EA0">=</FONT></B>
+                       <B><FONT COLOR="#A020F0">fun</FONT></B> loop (index, cs) =
                           <B><FONT COLOR="#A020F0">let</FONT></B>
-                             <B><FONT COLOR="#A020F0">val</FONT></B> w <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Pointer.getWord8 (addr, index)
-                             <B><FONT COLOR="#A020F0">val</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> Byte.byteToChar w
+                             <B><FONT COLOR="#A020F0">val</FONT></B> w = MLton.Pointer.getWord8 (addr, index)
+                             <B><FONT COLOR="#A020F0">val</FONT></B> c = Byte.byteToChar w
                           <B><FONT COLOR="#A020F0">in</FONT></B>
-                             <B><FONT COLOR="#A020F0">if</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
-                                <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> (implode (rev cs))
-                                <B><FONT COLOR="#A020F0">else</FONT></B> loop (index <B><FONT COLOR="#5F9EA0">+</FONT></B> 1, c<B><FONT COLOR="#5F9EA0">::</FONT></B>cs)
+                             <B><FONT COLOR="#A020F0">if</FONT></B> c = #<B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
+                                <B><FONT COLOR="#A020F0">then</FONT></B> SOME (implode (rev cs))
+                                <B><FONT COLOR="#A020F0">else</FONT></B> loop (index + <B><FONT COLOR="#5F9EA0">1</FONT></B>, c::cs)
                           <B><FONT COLOR="#A020F0">end</FONT></B>
                     <B><FONT COLOR="#A020F0">in</FONT></B>
-                       loop (0, [])
+                       loop (<B><FONT COLOR="#5F9EA0">0</FONT></B>, [])
                     <B><FONT COLOR="#A020F0">end</FONT></B>
          <B><FONT COLOR="#A020F0">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlopen <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (filename, mode) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlopen = <B><FONT COLOR="#A020F0">fn</FONT></B> (filename, mode) =&gt;
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> filename <B><FONT COLOR="#5F9EA0">=</FONT></B> filename <B><FONT COLOR="#5F9EA0">^</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> hndl <B><FONT COLOR="#5F9EA0">=</FONT></B> dlopen (filename, mode)
+            <B><FONT COLOR="#A020F0">val</FONT></B> filename = filename ^ <B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> hndl = dlopen (filename, mode)
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">if</FONT></B> hndl <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Pointer.null
+            <B><FONT COLOR="#A020F0">if</FONT></B> hndl = MLton.Pointer.null
                <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (<B><FONT COLOR="#A020F0">case</FONT></B> dlerror () <B><FONT COLOR="#A020F0">of</FONT></B>
-                                   <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;???&quot;</FONT></B>
-                                 <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s)
+                                   NONE =&gt; <B><FONT COLOR="#BC8F8F">&quot;???&quot;</FONT></B>
+                                 | SOME s =&gt; s)
                <B><FONT COLOR="#A020F0">else</FONT></B> hndl
          <B><FONT COLOR="#A020F0">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> (hndl, symbol) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlsym = <B><FONT COLOR="#A020F0">fn</FONT></B> (hndl, symbol) =&gt;
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> symbol <B><FONT COLOR="#5F9EA0">=</FONT></B> symbol <B><FONT COLOR="#5F9EA0">^</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> fptr <B><FONT COLOR="#5F9EA0">=</FONT></B> dlsym (hndl, symbol)
+            <B><FONT COLOR="#A020F0">val</FONT></B> symbol = symbol ^ <B><FONT COLOR="#BC8F8F">&quot;\000&quot;</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> fptr = dlsym (hndl, symbol)
          <B><FONT COLOR="#A020F0">in</FONT></B>
             <B><FONT COLOR="#A020F0">case</FONT></B> dlerror () <B><FONT COLOR="#A020F0">of</FONT></B>
-               <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fptr
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail s
+               NONE =&gt; fptr
+             | SOME s =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail s
          <B><FONT COLOR="#A020F0">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> hndl <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-         <B><FONT COLOR="#A020F0">if</FONT></B> MLton.Platform.OS.host <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Platform.OS.Darwin
+      <B><FONT COLOR="#A020F0">val</FONT></B> dlclose = <B><FONT COLOR="#A020F0">fn</FONT></B> hndl =&gt;
+         <B><FONT COLOR="#A020F0">if</FONT></B> MLton.Platform.OS.host = MLton.Platform.OS.Darwin
             <B><FONT COLOR="#A020F0">then</FONT></B> ()  <I><FONT COLOR="#B22222">(* Darwin reports the following error message if you
                       * try to close a dynamic library.
                       *   &quot;dynamic libraries cannot be closed&quot;
@@ -158,40 +158,40 @@ This example uses <tt>dlopen</tt> and friends (imported using normal <tt>_import
                       *)</FONT></I>
          <B><FONT COLOR="#A020F0">else</FONT></B>
             <B><FONT COLOR="#A020F0">let</FONT></B>
-               <B><FONT COLOR="#A020F0">val</FONT></B> res <B><FONT COLOR="#5F9EA0">=</FONT></B> dlclose hndl
+               <B><FONT COLOR="#A020F0">val</FONT></B> res = dlclose hndl
             <B><FONT COLOR="#A020F0">in</FONT></B>
-               <B><FONT COLOR="#A020F0">if</FONT></B> res <B><FONT COLOR="#5F9EA0">=</FONT></B> 0
+               <B><FONT COLOR="#A020F0">if</FONT></B> res = <B><FONT COLOR="#5F9EA0">0</FONT></B>
                   <B><FONT COLOR="#A020F0">then</FONT></B> ()
                <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (<B><FONT COLOR="#A020F0">case</FONT></B> dlerror () <B><FONT COLOR="#A020F0">of</FONT></B>
-                                   <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;???&quot;</FONT></B>
-                                 <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> s)
+                                   NONE =&gt; <B><FONT COLOR="#BC8F8F">&quot;???&quot;</FONT></B>
+                                 | SOME s =&gt; s)
             <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> dll <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> dll =
    <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#A020F0">open</FONT></B> MLton.Platform.OS
+      <B><FONT COLOR="#0000FF">open</FONT></B> MLton.Platform.OS
    <B><FONT COLOR="#A020F0">in</FONT></B>
       <B><FONT COLOR="#A020F0">case</FONT></B> host <B><FONT COLOR="#A020F0">of</FONT></B>
-         Cygwin <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;cygwin1.dll&quot;</FONT></B>
-       <B><FONT COLOR="#5F9EA0">|</FONT></B> Darwin <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;libm.dylib&quot;</FONT></B>
-       <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;libm.so&quot;</FONT></B>
+         Cygwin =&gt; <B><FONT COLOR="#BC8F8F">&quot;cygwin1.dll&quot;</FONT></B>
+       | Darwin =&gt; <B><FONT COLOR="#BC8F8F">&quot;libm.dylib&quot;</FONT></B>
+       | _ =&gt; <B><FONT COLOR="#BC8F8F">&quot;libm.so&quot;</FONT></B>
    <B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> hndl <B><FONT COLOR="#5F9EA0">=</FONT></B> DynLink.dlopen (dll, DynLink.RTLD_LAZY)
+<B><FONT COLOR="#A020F0">val</FONT></B> hndl = DynLink.dlopen (dll, DynLink.RTLD_LAZY)
 
-<B><FONT COLOR="#A020F0">local</FONT></B>
-   <B><FONT COLOR="#A020F0">val</FONT></B> double_to_double <B><FONT COLOR="#5F9EA0">=</FONT></B>
-      _import <B><FONT COLOR="#5F9EA0">*</FONT></B> : DynLink.fptr <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>;
-   <B><FONT COLOR="#A020F0">val</FONT></B> cos_fptr <B><FONT COLOR="#5F9EA0">=</FONT></B> DynLink.dlsym (hndl, <B><FONT COLOR="#BC8F8F">&quot;cos&quot;</FONT></B>)
-<B><FONT COLOR="#A020F0">in</FONT></B>
-   <B><FONT COLOR="#A020F0">val</FONT></B> cos <B><FONT COLOR="#5F9EA0">=</FONT></B> double_to_double cos_fptr
-<B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">local</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> double_to_double =
+      _import * : DynLink.fptr -&gt; real -&gt; real;
+   <B><FONT COLOR="#A020F0">val</FONT></B> cos_fptr = DynLink.dlsym (hndl, <B><FONT COLOR="#BC8F8F">&quot;cos&quot;</FONT></B>)
+<B><FONT COLOR="#0000FF">in</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> cos = double_to_double cos_fptr
+<B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [<B><FONT COLOR="#BC8F8F">&quot;    Math.cos(2.0) = &quot;</FONT></B>, Real.toString (Math.cos 2.0), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>,
-                       <B><FONT COLOR="#BC8F8F">&quot;libm.so::cos(2.0) = &quot;</FONT></B>, Real.toString (cos 2.0), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [<B><FONT COLOR="#BC8F8F">&quot;    Math.cos(2.0) = &quot;</FONT></B>, Real.toString (Math.cos <B><FONT COLOR="#5F9EA0">2.0</FONT></B>), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>,
+                       <B><FONT COLOR="#BC8F8F">&quot;libm.so::cos(2.0) = &quot;</FONT></B>, Real.toString (cos <B><FONT COLOR="#5F9EA0">2.0</FONT></B>), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> DynLink.dlclose hndl
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = DynLink.dlclose hndl
 </PRE>
  
 </p>
@@ -215,9 +215,7 @@ This example also shows the <tt>-target-link-opt</tt> option, which uses the swi
 
     <li>
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a>
- 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a> 
 </p>
 </li>
 </ul>
@@ -228,5 +226,5 @@ This example also shows the <tt>-target-link-opt</tt> option, which uses the swi
 
 <p>
 <hr>
-Last edited on 2005-11-30 23:18:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-02 17:49:16 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

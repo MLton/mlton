@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
     <li>
 <p>
- The optimizer reports an internal error ("<a class="nonexistent" href="TypeError">TypeError</a>") when an  imported C function is called but not used.  Thanks to <tt>jq</tt> for  the bug report. 
+ The optimizer reports an internal error (<tt>TypeError</tt>) when an  imported C function is called but not used.  Thanks to <tt>jq</tt> for  the bug report. 
 </p>
 </li>
 </ul>
@@ -89,5 +89,5 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
 <p>
 <hr>
-Last edited on 2006-10-13 11:19:07 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-07-08 21:15:34 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

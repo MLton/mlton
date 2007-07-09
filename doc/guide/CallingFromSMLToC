@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -75,23 +75,23 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <pre class=code><I><FONT COLOR="#B22222">(* main.sml *)</FONT></I>
 
 <I><FONT COLOR="#B22222">(* Declare ffi to be implemented by calling the C function ffi. *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> ffi <B><FONT COLOR="#5F9EA0">=</FONT></B> _import <B><FONT COLOR="#BC8F8F">&quot;ffi&quot;</FONT></B>: <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">char</FONT></B>;
-<B><FONT COLOR="#A020F0">open</FONT></B> Array
+<B><FONT COLOR="#A020F0">val</FONT></B> ffi = _import <B><FONT COLOR="#BC8F8F">&quot;ffi&quot;</FONT></B>: real array * int ref * int -&gt; char;
+<B><FONT COLOR="#0000FF">open</FONT></B> Array
 
-<B><FONT COLOR="#A020F0">val</FONT></B> size <B><FONT COLOR="#5F9EA0">=</FONT></B> 10
-<B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> i)
-<B><FONT COLOR="#A020F0">val</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> 0
-<B><FONT COLOR="#A020F0">val</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B> 17
+<B><FONT COLOR="#A020F0">val</FONT></B> size = <B><FONT COLOR="#5F9EA0">10</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> a = tabulate (size, <B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; real i)
+<B><FONT COLOR="#A020F0">val</FONT></B> r = ref <B><FONT COLOR="#5F9EA0">0</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> n = <B><FONT COLOR="#5F9EA0">17</FONT></B>
 
 <I><FONT COLOR="#B22222">(* Call the C function *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> ffi (a, r, n)
+<B><FONT COLOR="#A020F0">val</FONT></B> c = ffi (a, r, n)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) <B><FONT COLOR="#5F9EA0">=</FONT></B> _symbol <B><FONT COLOR="#BC8F8F">&quot;FFI_INT&quot;</FONT></B>: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>) <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>);
+<B><FONT COLOR="#A020F0">val</FONT></B> (nGet, nSet) = _symbol <B><FONT COLOR="#BC8F8F">&quot;FFI_INT&quot;</FONT></B>: (unit -&gt; int) * (int -&gt; unit);
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString (nGet ()), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = print (concat [Int.toString (nGet ()), <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
 
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">if</FONT></B> c <B><FONT COLOR="#5F9EA0">=</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r <B><FONT COLOR="#5F9EA0">=</FONT></B> 45
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
+   print (<B><FONT COLOR="#A020F0">if</FONT></B> c = #<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> <B><FONT COLOR="#A020F0">andalso</FONT></B> !r = <B><FONT COLOR="#5F9EA0">45</FONT></B>
              <B><FONT COLOR="#A020F0">then</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;success\n&quot;</FONT></B>
           <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;fail\n&quot;</FONT></B>)
 </PRE>
@@ -103,19 +103,19 @@ The function name is followed by a (possibly empty) sequence of attributes, anal
 <p>
 <pre class=code>#<B><FONT COLOR="#5F9EA0">include</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;platform.h&quot;</FONT></B>
 
-Int FFI_INT = 13;
-Word FFI_WORD = 0xFF;
+Int32 FFI_INT = 13;
+Word32 FFI_WORD = 0xFF;
 Bool FFI_BOOL = TRUE;
-Real FFI_REAL = 3.14159;
+Real64 FFI_REAL = 3.14159;
 
-Char <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int n) {
+Char8 <B><FONT COLOR="#0000FF">ffi</FONT></B> (Pointer a1, Pointer a2, Int32 n) {
         <B><FONT COLOR="#228B22">double</FONT></B> *ds = (<B><FONT COLOR="#228B22">double</FONT></B>*)a1;
         <B><FONT COLOR="#228B22">int</FONT></B> *p = (<B><FONT COLOR="#228B22">int</FONT></B>*)a2;
         <B><FONT COLOR="#228B22">int</FONT></B> i;
         <B><FONT COLOR="#228B22">double</FONT></B> sum;
 
         sum = 0.0;
-        <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; GC_arrayNumElements (a1); ++i) {
+        <B><FONT COLOR="#A020F0">for</FONT></B> (i = 0; i &lt; GC_getArrayLength (a1); ++i) {
                 sum += ds[i];
                 ds[i] += n;
         }
@@ -139,16 +139,12 @@ success
 
     <li>
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a>
- 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a> 
 </p>
 </li>
     <li>
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20061025-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a>
- 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a> 
 </p>
 </li>
 
@@ -172,5 +168,5 @@ success
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:17:30 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2006-11-14 01:25:50 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

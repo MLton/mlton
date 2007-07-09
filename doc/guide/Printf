@@ -32,7 +32,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,22 +61,22 @@ Here is a definition for <tt>printf</tt> and <tt>fprintf</tt>, along with format
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Printf <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> $ (_, f) <B><FONT COLOR="#5F9EA0">=</FONT></B> f (<B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p ()) ignore
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fprintf</FONT></I></B></FONT></B> out f <B><FONT COLOR="#5F9EA0">=</FONT></B> f (out, id)
-      <B><FONT COLOR="#A020F0">val</FONT></B> printf <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fprintf TextIO.stdOut z
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">one</FONT></I></B></FONT></B> ((out, f), make) g <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         g (out, <B><FONT COLOR="#A020F0">fn</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-            f (<B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-               make (<B><FONT COLOR="#A020F0">fn</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 
-                     r (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (p (); TextIO.output (out, s))))))
-      <B><FONT COLOR="#A020F0">fun</FONT></B> ` x s <B><FONT COLOR="#5F9EA0">=</FONT></B> one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f s)
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">spec</FONT></I></B></FONT></B> to x <B><FONT COLOR="#5F9EA0">=</FONT></B> one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f <B><FONT COLOR="#A020F0">o</FONT></B> to)
-      <B><FONT COLOR="#A020F0">val</FONT></B> B <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Bool.toString z
-      <B><FONT COLOR="#A020F0">val</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Int.toString z
-      <B><FONT COLOR="#A020F0">val</FONT></B> R <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Real.toString z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Printf =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> $ (_, f) = f (<B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt; p ()) ignore
+      <B><FONT COLOR="#A020F0">fun</FONT></B> fprintf out f = f (out, id)
+      <B><FONT COLOR="#A020F0">val</FONT></B> printf = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; fprintf TextIO.stdOut z
+      <B><FONT COLOR="#A020F0">fun</FONT></B> one ((out, f), make) g =
+         g (out, <B><FONT COLOR="#A020F0">fn</FONT></B> r =&gt;
+            f (<B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt;
+               make (<B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt; 
+                     r (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; (p (); TextIO.output (out, s))))))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> ` x s = one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f s)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> spec to x = one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f o to)
+      <B><FONT COLOR="#A020F0">val</FONT></B> B = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Bool.toString z
+      <B><FONT COLOR="#A020F0">val</FONT></B> I = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Int.toString z
+      <B><FONT COLOR="#A020F0">val</FONT></B> R = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Real.toString z
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -86,7 +86,7 @@ Here's an example use.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> printf `<B><FONT COLOR="#BC8F8F">&quot;Int=&quot;</FONT></B>I`<B><FONT COLOR="#BC8F8F">&quot;  Bool=&quot;</FONT></B>B`<B><FONT COLOR="#BC8F8F">&quot;  Real=&quot;</FONT></B>R`<B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B> $ 1 false 2.0
+<B><FONT COLOR="#A020F0">val</FONT></B> () = printf `<B><FONT COLOR="#BC8F8F">&quot;Int=&quot;</FONT></B>I`<B><FONT COLOR="#BC8F8F">&quot;  Bool=&quot;</FONT></B>B`<B><FONT COLOR="#BC8F8F">&quot;  Real=&quot;</FONT></B>R`<B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B> $ <B><FONT COLOR="#5F9EA0">1</FONT></B> false <B><FONT COLOR="#5F9EA0">2.0</FONT></B>
 </PRE>
 <p>
  
@@ -109,9 +109,9 @@ SML <tt>printf</tt> is more powerful than its C counterpart in a number of ways.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> printf `<B><FONT COLOR="#BC8F8F">&quot;Int=&quot;</FONT></B>I`<B><FONT COLOR="#BC8F8F">&quot;  Bool=&quot;</FONT></B>B`<B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B> $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f 1 true
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f 2 false
+<B><FONT COLOR="#A020F0">val</FONT></B> f: int -&gt; bool -&gt; unit = printf `<B><FONT COLOR="#BC8F8F">&quot;Int=&quot;</FONT></B>I`<B><FONT COLOR="#BC8F8F">&quot;  Bool=&quot;</FONT></B>B`<B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B> $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f <B><FONT COLOR="#5F9EA0">1</FONT></B> true
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f <B><FONT COLOR="#5F9EA0">2</FONT></B> false
 </PRE>
 <p>
  
@@ -149,28 +149,28 @@ Printf is best viewed as a special case of variable-argument <a href="Fold">Fold
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Printf <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">fprintf</FONT></I></B></FONT></B> out <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         Fold.fold ((out, id), <B><FONT COLOR="#A020F0">fn</FONT></B> (_, f) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (<B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> p ()) ignore)
+<B><FONT COLOR="#0000FF">structure</FONT></B> Printf =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> fprintf out =
+         Fold.fold ((out, id), <B><FONT COLOR="#A020F0">fn</FONT></B> (_, f) =&gt; f (<B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt; p ()) ignore)
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> printf <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fprintf TextIO.stdOut z
+      <B><FONT COLOR="#A020F0">val</FONT></B> printf = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; fprintf TextIO.stdOut z
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">one</FONT></I></B></FONT></B> ((out, f), make) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         (out, <B><FONT COLOR="#A020F0">fn</FONT></B> r <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-          f (<B><FONT COLOR="#A020F0">fn</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-             make (<B><FONT COLOR="#A020F0">fn</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                   r (<B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (p (); TextIO.output (out, s))))))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> one ((out, f), make) =
+         (out, <B><FONT COLOR="#A020F0">fn</FONT></B> r =&gt;
+          f (<B><FONT COLOR="#A020F0">fn</FONT></B> p =&gt;
+             make (<B><FONT COLOR="#A020F0">fn</FONT></B> s =&gt;
+                   r (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; (p (); TextIO.output (out, s))))))
          
-      <B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (s, x) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f s)) z
+      <B><FONT COLOR="#A020F0">val</FONT></B> ` =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (s, x) =&gt; one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f s)) z
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">spec</FONT></I></B></FONT></B> to <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f <B><FONT COLOR="#A020F0">o</FONT></B> to))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> spec to = Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; one (x, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; f o to))
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> B <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Bool.toString z
-      <B><FONT COLOR="#A020F0">val</FONT></B> I <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Int.toString z
-      <B><FONT COLOR="#A020F0">val</FONT></B> R <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> spec Real.toString z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> B = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Bool.toString z
+      <B><FONT COLOR="#A020F0">val</FONT></B> I = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Int.toString z
+      <B><FONT COLOR="#A020F0">val</FONT></B> R = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; spec Real.toString z
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -193,6 +193,11 @@ val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
 
     <li>
 <p>
+ <a href="PrintfGentle">PrintfGentle</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href = "References#Danvy98"> Functional Unparsing</a> 
 </p>
 </li>
@@ -204,5 +209,5 @@ val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
 
 <p>
 <hr>
-Last edited on 2006-03-21 22:06:10 by <span title="adsl-71-141-16-94.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 20:54:14 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

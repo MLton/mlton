@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -158,20 +158,20 @@ We could use the following files.
 
  
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> EITHER_GLOBAL <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) either <B><FONT COLOR="#5F9EA0">=</FONT></B> Left <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> Right <B><FONT COLOR="#A020F0">of</FONT></B> 'b
-    <B><FONT COLOR="#A020F0">val</FONT></B> &amp;  : ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b) either <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c
-    <B><FONT COLOR="#A020F0">val</FONT></B> &amp;&amp; : ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c) <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'd) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b) either <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('c, 'd) either
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> EITHER_GLOBAL =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) either </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Left</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Right</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'b
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> &amp;  : ('a -&gt; 'c) * ('b -&gt; 'c) -&gt; ('a, 'b) either -&gt; 'c
+    <B><FONT COLOR="#A020F0">val</FONT></B> &amp;&amp; : ('a -&gt; 'c) * ('b -&gt; 'd) -&gt; ('a, 'b) either -&gt; ('c, 'd) either
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> EITHER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">include</FONT></B> EITHER_GLOBAL
-    <B><FONT COLOR="#A020F0">val</FONT></B> isLeft  : ('a, 'b) either <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-    <B><FONT COLOR="#A020F0">val</FONT></B> isRight : ('a, 'b) either <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> EITHER =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#0000FF">include</FONT></B> EITHER_GLOBAL
+    <B><FONT COLOR="#A020F0">val</FONT></B> isLeft  : ('a, 'b) either -&gt; bool
+    <B><FONT COLOR="#A020F0">val</FONT></B> isRight : ('a, 'b) either -&gt; bool
     ...
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -188,17 +188,17 @@ We could use the following files.
 
  
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Either : EITHER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-    <B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) either <B><FONT COLOR="#5F9EA0">=</FONT></B> Left <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> Right <B><FONT COLOR="#A020F0">of</FONT></B> 'b
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> &amp; g <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-      <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B> Left z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f z <B><FONT COLOR="#5F9EA0">|</FONT></B> Right z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> g z
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> &amp;&amp; g <B><FONT COLOR="#5F9EA0">=</FONT></B> (Left <B><FONT COLOR="#A020F0">o</FONT></B> f) &amp; (Right <B><FONT COLOR="#A020F0">o</FONT></B> g)
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">isLeft</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> ((<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> true) &amp; (<B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> false)) x
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">isRight</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> (not <B><FONT COLOR="#A020F0">o</FONT></B> isLeft) x
+<B><FONT COLOR="#0000FF">structure</FONT></B> Either : EITHER =
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) either </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Left</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Right</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'b
+    </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f &amp; g = <B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt;
+      <B><FONT COLOR="#A020F0">case</FONT></B> x <B><FONT COLOR="#A020F0">of</FONT></B> Left z =&gt; f z | Right z =&gt; g z
+    <B><FONT COLOR="#A020F0">fun</FONT></B> f &amp;&amp; g = (Left o f) &amp; (Right o g)
+    <B><FONT COLOR="#A020F0">fun</FONT></B> isLeft x = ((<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; true) &amp; (<B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; false)) x
+    <B><FONT COLOR="#A020F0">fun</FONT></B> isRight x = (not o isLeft) x
     ...
-  <B><FONT COLOR="#A020F0">end</FONT></B>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> EitherGlobal : EITHER_GLOBAL <B><FONT COLOR="#5F9EA0">=</FONT></B> Either
+  <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> EitherGlobal : EITHER_GLOBAL = Either
 </PRE>
 <p>
  
@@ -232,7 +232,7 @@ We could use the following files.
 
  
 <pre class=code>
-<B><FONT COLOR="#A020F0">open</FONT></B> EitherGlobal
+<B><FONT COLOR="#0000FF">open</FONT></B> EitherGlobal
 </PRE>
 <p>
  

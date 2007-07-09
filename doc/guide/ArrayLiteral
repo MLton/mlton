@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -96,44 +96,44 @@ Here is the implementation of <tt>A</tt>, <tt>V</tt>, and <tt>`</tt>.  We place 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Literal:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a z
-      <B><FONT COLOR="#A020F0">val</FONT></B> A: ('a z, 'a z, 'a <B><FONT COLOR="#228B22">array</FONT></B>, 'd) Fold.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> V: ('a z, 'a z, 'a <B><FONT COLOR="#228B22">vector</FONT></B>, 'd) Fold.t
+<B><FONT COLOR="#0000FF">structure</FONT></B> Literal:&gt;
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a z
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> A: ('a z, 'a z, 'a array, 'd) Fold.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> V: ('a z, 'a z, 'a vector, 'd) Fold.t
       <B><FONT COLOR="#A020F0">val</FONT></B> ` : ('a, 'a z, 'a z, 'b, 'c, 'd) Fold.step1
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a z <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a option <B><FONT COLOR="#5F9EA0">*</FONT></B> ('a <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>)
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a z </FONT></B>=<B><FONT COLOR="#228B22"> int * 'a option * ('a array -&gt; unit)
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> A <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> A =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
          Fold.fold
-         ((0, <B><FONT COLOR="#5F9EA0">NONE</FONT></B>, ignore),
-          <B><FONT COLOR="#A020F0">fn</FONT></B> (n, opt, fill) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+         ((<B><FONT COLOR="#5F9EA0">0</FONT></B>, NONE, ignore),
+          <B><FONT COLOR="#A020F0">fn</FONT></B> (n, opt, fill) =&gt;
           <B><FONT COLOR="#A020F0">case</FONT></B> opt <B><FONT COLOR="#A020F0">of</FONT></B>
-             <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                Array.tabulate (0, <B><FONT COLOR="#A020F0">fn</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;array0&quot;</FONT></B>)
-           <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+             NONE =&gt;
+                Array.tabulate (<B><FONT COLOR="#5F9EA0">0</FONT></B>, <B><FONT COLOR="#A020F0">fn</FONT></B> _ =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> Fail <B><FONT COLOR="#BC8F8F">&quot;array0&quot;</FONT></B>)
+           | SOME x =&gt;
                 <B><FONT COLOR="#A020F0">let</FONT></B>
-                   <B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> Array.<B><FONT COLOR="#228B22">array</FONT></B> (n, x)
-                   <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> fill a
+                   <B><FONT COLOR="#A020F0">val</FONT></B> a = Array.array (n, x)
+                   <B><FONT COLOR="#A020F0">val</FONT></B> () = fill a
                 <B><FONT COLOR="#A020F0">in</FONT></B>
                    a
                 <B><FONT COLOR="#A020F0">end</FONT></B>)
          z
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> V <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Fold.post (A, Array.<B><FONT COLOR="#228B22">vector</FONT></B>) z
+      <B><FONT COLOR="#A020F0">val</FONT></B> V = <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; Fold.post (A, Array.vector) z
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 
+      <B><FONT COLOR="#A020F0">val</FONT></B> ` = 
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt; 
          Fold.step1
-         (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, (i, opt, fill)) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-          (i <B><FONT COLOR="#5F9EA0">+</FONT></B> 1, 
-           <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x, 
-           <B><FONT COLOR="#A020F0">fn</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (Array.update (a, i, x); fill a)))
+         (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, (i, opt, fill)) =&gt;
+          (i + <B><FONT COLOR="#5F9EA0">1</FONT></B>, 
+           SOME x, 
+           <B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; (Array.update (a, i, x); fill a)))
          z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

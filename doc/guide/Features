@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -69,7 +69,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li>
 <p>
- hppa 
+ <a href="RunningOnAMD64">AMD64</a>: 
 </p>
 </li>
 
@@ -77,7 +77,12 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- Debian Linux 
+ <a href="RunningOnFreeBSD">FreeBSD</a>  
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian, Red Hat, ...) 
 </p>
 </li>
 
@@ -86,7 +91,29 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li class="gap">
 <p>
- <a href="RunningOnPowerPC">PowerPC</a> 
+ <a href="RunningOnHPPA">HPPA</a>: 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnHPUX">HPUX</a> 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnLinux">Linux</a> (Debian) 
+</p>
+</li>
+
+            </ul>
+
+
+        <li class="gap">
+<p>
+ <a href="RunningOnPowerPC">PowerPC</a>: 
 </p>
 </li>
 
@@ -99,7 +126,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
             <li>
 <p>
- Debian Linux 
+ <a href="RunningOnLinux">Linux</a> (Debian) 
 </p>
 </li>
 
@@ -108,7 +135,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li class="gap">
 <p>
- X86:  
+ <a href="RunningOnX86">X86</a>:  
 </p>
 </li>
 
@@ -117,6 +144,11 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
             <li>
 <p>
  <a href="RunningOnCygwin">Cygwin</a>/Windows 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnDarwin">Darwin</a> (Mac OS X) 
 </p>
 </li>
             <li>
@@ -158,7 +190,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- Debian Linux 
+ <a href="RunningOnLinux">Linux</a> (Debian) 
 </p>
 </li>
             <li>
@@ -510,5 +542,5 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
 <p>
 <hr>
-Last edited on 2006-07-20 19:37:02 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:44:17 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

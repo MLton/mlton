@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,63 +57,63 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_PROCESS <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> pid
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PROCESS =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> pid
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawn: {args: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>, path: <B><FONT COLOR="#228B22">string</FONT></B>} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> pid
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawne: {args: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>, env: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>, path: <B><FONT COLOR="#228B22">string</FONT></B>} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> pid
-      <B><FONT COLOR="#A020F0">val</FONT></B> spawnp: {args: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>, file: <B><FONT COLOR="#228B22">string</FONT></B>} <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> pid
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> spawn: {args: string list, path: string} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawne: {args: string list, env: string list, path: string} -&gt; pid
+      <B><FONT COLOR="#A020F0">val</FONT></B> spawnp: {args: string list, file: string} -&gt; pid
 
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Child:
-        <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-          <B><FONT COLOR="#A020F0">type</FONT></B> ('use, 'dir) t
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Child:
+        <B><FONT COLOR="#0000FF">sig</FONT></B>
+          <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('use, 'dir) t
 
-          <B><FONT COLOR="#A020F0">val</FONT></B> binIn: (BinIO.instream, input) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> BinIO.instream
-          <B><FONT COLOR="#A020F0">val</FONT></B> binOut: (BinIO.outstream, output) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> BinIO.outstream
-          <B><FONT COLOR="#A020F0">val</FONT></B> fd: (Posix.FileSys.file_desc, 'dir) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Posix.FileSys.file_desc
-          <B><FONT COLOR="#A020F0">val</FONT></B> remember: (any, 'dir) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('use, 'dir) t
-          <B><FONT COLOR="#A020F0">val</FONT></B> textIn: (TextIO.instream, input) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> TextIO.instream
-          <B><FONT COLOR="#A020F0">val</FONT></B> textOut: (TextIO.outstream, output) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> TextIO.outstream
-        <B><FONT COLOR="#A020F0">end</FONT></B>
+          </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> binIn: (BinIO.instream, input) t -&gt; BinIO.instream
+          <B><FONT COLOR="#A020F0">val</FONT></B> binOut: (BinIO.outstream, output) t -&gt; BinIO.outstream
+          <B><FONT COLOR="#A020F0">val</FONT></B> fd: (Posix.FileSys.file_desc, 'dir) t -&gt; Posix.FileSys.file_desc
+          <B><FONT COLOR="#A020F0">val</FONT></B> remember: (any, 'dir) t -&gt; ('use, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> textIn: (TextIO.instream, input) t -&gt; TextIO.instream
+          <B><FONT COLOR="#A020F0">val</FONT></B> textOut: (TextIO.outstream, output) t -&gt; TextIO.outstream
+        <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Param:
-        <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-          <B><FONT COLOR="#A020F0">type</FONT></B> ('use, 'dir) t
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Param:
+        <B><FONT COLOR="#0000FF">sig</FONT></B>
+          <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('use, 'dir) t
 
-          <B><FONT COLOR="#A020F0">val</FONT></B> child: (chain, 'dir) Child.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (none, 'dir) t
-          <B><FONT COLOR="#A020F0">val</FONT></B> fd: Posix.FileSys.file_desc <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (none, 'dir) t
-          <B><FONT COLOR="#A020F0">val</FONT></B> file: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (none, 'dir) t
-          <B><FONT COLOR="#A020F0">val</FONT></B> forget: ('use, 'dir) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (any, 'dir) t
+          </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> child: (chain, 'dir) Child.t -&gt; (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> fd: Posix.FileSys.file_desc -&gt; (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> file: string -&gt; (none, 'dir) t
+          <B><FONT COLOR="#A020F0">val</FONT></B> forget: ('use, 'dir) t -&gt; (any, 'dir) t
           <B><FONT COLOR="#A020F0">val</FONT></B> null: (none, 'dir) t
           <B><FONT COLOR="#A020F0">val</FONT></B> pipe: ('use, 'dir) t
           <B><FONT COLOR="#A020F0">val</FONT></B> self: (none, 'dir) t
-        <B><FONT COLOR="#A020F0">end</FONT></B>
+        <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> ('stdin, 'stdout, 'stderr) t
-      <B><FONT COLOR="#A020F0">type</FONT></B> any
-      <B><FONT COLOR="#A020F0">type</FONT></B> chain
-      <B><FONT COLOR="#A020F0">type</FONT></B> input
-      <B><FONT COLOR="#A020F0">type</FONT></B> none
-      <B><FONT COLOR="#A020F0">type</FONT></B> output
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('stdin, 'stdout, 'stderr) t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> any
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> chain
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> input
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> none
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> output
 
-      <B><FONT COLOR="#A020F0">exception</FONT></B> MisuseOfForget
-      <B><FONT COLOR="#A020F0">exception</FONT></B> DoublyRedirected
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MisuseOfForget</FONT>
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">DoublyRedirected</FONT>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> create:
-         {args: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B>,
-          env: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#228B22">list</FONT></B> option,
-          path: <B><FONT COLOR="#228B22">string</FONT></B>,
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> create:
+         {args: string list,
+          env: string list option,
+          path: string,
           stderr: ('stderr, output) Param.t,
           stdin: ('stdin, input) Param.t,
           stdout: ('stdout, output) Param.t}
-         <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('stdin, 'stdout, 'stderr) t
-      <B><FONT COLOR="#A020F0">val</FONT></B> getStderr: ('stdin, 'stdout, 'stderr) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('stderr, input) Child.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> getStdin:  ('stdin, 'stdout, 'stderr) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('stdin, output) Child.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> getStdout: ('stdin, 'stdout, 'stderr) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('stdout, input) Child.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> kill: ('stdin, 'stdout, 'stderr) t <B><FONT COLOR="#5F9EA0">*</FONT></B> Posix.Signal.signal <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> reap: ('stdin, 'stdout, 'stderr) t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Posix.Process.exit_status
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+         -&gt; ('stdin, 'stdout, 'stderr) t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStderr: ('stdin, 'stdout, 'stderr) t -&gt; ('stderr, input) Child.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStdin:  ('stdin, 'stdout, 'stderr) t -&gt; ('stdin, output) Child.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getStdout: ('stdin, 'stdout, 'stderr) t -&gt; ('stdout, input) Child.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> kill: ('stdin, 'stdout, 'stderr) t * Posix.Signal.signal -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> reap: ('stdin, 'stdout, 'stderr) t -&gt; Posix.Process.exit_status
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -492,27 +492,27 @@ The following example program launches the <tt>ipconfig</tt> utility, pipes its 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">open</FONT></B> MLton.Process
-<B><FONT COLOR="#A020F0">val</FONT></B> p <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-        create {args <B><FONT COLOR="#5F9EA0">=</FONT></B> [ <B><FONT COLOR="#BC8F8F">&quot;/all&quot;</FONT></B> ],
-                env <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>,
-                path <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;C:\\WINDOWS\\system32\\ipconfig.exe&quot;</FONT></B>,
-                stderr <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.self,
-                stdin <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.null,
-                stdout <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.pipe}
-<B><FONT COLOR="#A020F0">val</FONT></B> q <B><FONT COLOR="#5F9EA0">=</FONT></B>
-        create {args <B><FONT COLOR="#5F9EA0">=</FONT></B> [ <B><FONT COLOR="#BC8F8F">&quot;IP-Ad&quot;</FONT></B> ],
-                env <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>,
-                path <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;C:\\msys\\bin\\grep.exe&quot;</FONT></B>,
-                stderr <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.self,
-                stdin <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.child (getStdout p),
-                stdout <B><FONT COLOR="#5F9EA0">=</FONT></B> Param.pipe}
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">suck</FONT></I></B></FONT></B> h <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">open</FONT></B> MLton.Process
+<B><FONT COLOR="#A020F0">val</FONT></B> p = 
+        create {args = [ <B><FONT COLOR="#BC8F8F">&quot;/all&quot;</FONT></B> ],
+                env = NONE,
+                path = <B><FONT COLOR="#BC8F8F">&quot;C:\\WINDOWS\\system32\\ipconfig.exe&quot;</FONT></B>,
+                stderr = Param.self,
+                stdin = Param.null,
+                stdout = Param.pipe}
+<B><FONT COLOR="#A020F0">val</FONT></B> q =
+        create {args = [ <B><FONT COLOR="#BC8F8F">&quot;IP-Ad&quot;</FONT></B> ],
+                env = NONE,
+                path = <B><FONT COLOR="#BC8F8F">&quot;C:\\msys\\bin\\grep.exe&quot;</FONT></B>,
+                stderr = Param.self,
+                stdin = Param.child (getStdout p),
+                stdout = Param.pipe}
+<B><FONT COLOR="#A020F0">fun</FONT></B> suck h =
         <B><FONT COLOR="#A020F0">case</FONT></B> TextIO.inputLine h <B><FONT COLOR="#A020F0">of</FONT></B>
-                <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-                <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#BC8F8F">&quot;'&quot;</FONT></B> <B><FONT COLOR="#5F9EA0">^</FONT></B> s <B><FONT COLOR="#5F9EA0">^</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;'\n&quot;</FONT></B>); suck h)
+                NONE =&gt; ()
+                | SOME s =&gt; (print (<B><FONT COLOR="#BC8F8F">&quot;'&quot;</FONT></B> ^ s ^ <B><FONT COLOR="#BC8F8F">&quot;'\n&quot;</FONT></B>); suck h)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> suck (Child.textIn (getStdout q))
+<B><FONT COLOR="#A020F0">val</FONT></B> () = suck (Child.textIn (getStdout q))
 </PRE>
 <p>
  

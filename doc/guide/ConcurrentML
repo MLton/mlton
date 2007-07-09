@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,12 +60,12 @@ All of the core CML functionality is present.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> CML: CML
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> SyncVar: SYNC_VAR
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Mailbox: MAILBOX
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Multicast: MULTICAST
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> SimpleRPC: SIMPLE_RPC
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> RunCML: RUN_CML
+<B><FONT COLOR="#0000FF">structure</FONT></B> CML: CML
+<B><FONT COLOR="#0000FF">structure</FONT></B> SyncVar: SYNC_VAR
+<B><FONT COLOR="#0000FF">structure</FONT></B> Mailbox: MAILBOX
+<B><FONT COLOR="#0000FF">structure</FONT></B> Multicast: MULTICAST
+<B><FONT COLOR="#0000FF">structure</FONT></B> SimpleRPC: SIMPLE_RPC
+<B><FONT COLOR="#0000FF">structure</FONT></B> RunCML: RUN_CML
 </PRE>
 <p>
  
@@ -73,12 +73,12 @@ All of the core CML functionality is present.
 <p>
 The <tt>RUN_CML</tt> signature is minimal. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> RUN_CML <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> isRunning: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> doit: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">*</FONT></B> Time.time option <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> OS.Process.status
-      <B><FONT COLOR="#A020F0">val</FONT></B> shutdown: OS.Process.status <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> RUN_CML =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> isRunning: unit -&gt; bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> doit: (unit -&gt; unit) * Time.time option -&gt; OS.Process.status
+      <B><FONT COLOR="#A020F0">val</FONT></B> shutdown: OS.Process.status -&gt; 'a
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  MLton's <tt>RunCML</tt> structure does not include all of the cleanup and logging operations of SML/NJ's <tt>RunCML</tt> structure.  However, the implementation does include the <tt>CML.timeOutEvt</tt> and <tt>CML.atTimeEvt</tt> functions, and a preemptive scheduler that knows to sleep when there are no ready threads and some threads blocked on time events. 
 </p>

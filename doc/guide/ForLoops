@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -68,20 +68,20 @@ The following implementation imitates both the syntax and semantics of the OCaml
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> for <B><FONT COLOR="#5F9EA0">=</FONT></B> to <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> downto <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> for </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">to</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * int
+             </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">downto</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * int
 
-<B><FONT COLOR="#A020F0">infix</FONT></B> to downto
+</FONT></B><B><FONT COLOR="#A020F0">infix</FONT></B> to downto
 
-<B><FONT COLOR="#A020F0">val</FONT></B> for <B><FONT COLOR="#5F9EA0">=</FONT></B>
-    <B><FONT COLOR="#A020F0">fn</FONT></B> lo to up <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-       (<B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B><B><FONT COLOR="#A020F0"> fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">loop</FONT></I></B></FONT></B> lo <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> lo <B><FONT COLOR="#5F9EA0">&gt;</FONT></B> up <B><FONT COLOR="#A020F0">then</FONT></B> ()
-                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f lo; loop (lo<B><FONT COLOR="#5F9EA0">+</FONT></B>1))
-                <B><FONT COLOR="#A020F0">in</FONT></B> loop lo <B><FONT COLOR="#A020F0">end</FONT></B>)
-     <B><FONT COLOR="#5F9EA0">|</FONT></B> up downto lo <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-       (<B><FONT COLOR="#A020F0">fn</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B><B><FONT COLOR="#A020F0"> fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">loop</FONT></I></B></FONT></B> up <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> up &lt; lo <B><FONT COLOR="#A020F0">then</FONT></B> ()
-                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f up; loop (up<B><FONT COLOR="#5F9EA0">-</FONT></B>1))
-                <B><FONT COLOR="#A020F0">in</FONT></B> loop up <B><FONT COLOR="#A020F0">end</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> for =
+    <B><FONT COLOR="#A020F0">fn</FONT></B> lo to up =&gt;
+       (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#0000FF">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop lo = <B><FONT COLOR="#A020F0">if</FONT></B> lo &gt; up <B><FONT COLOR="#A020F0">then</FONT></B> ()
+                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f lo; loop (lo+<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+                <B><FONT COLOR="#0000FF">in</FONT></B> loop lo <B><FONT COLOR="#0000FF">end</FONT></B>)
+     | up downto lo =&gt;
+       (<B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; <B><FONT COLOR="#0000FF">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> loop up = <B><FONT COLOR="#A020F0">if</FONT></B> up &lt; lo <B><FONT COLOR="#A020F0">then</FONT></B> ()
+                                  <B><FONT COLOR="#A020F0">else</FONT></B> (f up; loop (up-<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+                <B><FONT COLOR="#0000FF">in</FONT></B> loop up <B><FONT COLOR="#0000FF">end</FONT></B>)
 </PRE>
 <p>
  
@@ -89,13 +89,13 @@ The following implementation imitates both the syntax and semantics of the OCaml
 <p>
 For example, 
 <pre class=code>
-for (1 to 9)
-    (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (Int.toString i))
+for (<B><FONT COLOR="#5F9EA0">1</FONT></B> to <B><FONT COLOR="#5F9EA0">9</FONT></B>)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; print (Int.toString i))
 </PRE>
  would print <tt>123456789</tt> and 
 <pre class=code>
-for (9 downto 1)
-    (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (Int.toString i))
+for (<B><FONT COLOR="#5F9EA0">9</FONT></B> downto <B><FONT COLOR="#5F9EA0">1</FONT></B>)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; print (Int.toString i))
 </PRE>
  would print <tt>987654321</tt>. 
 </p>
@@ -103,9 +103,9 @@ for (9 downto 1)
 Straightforward formatting of nested loops 
 <pre class=code>
 for (a to b)
-    (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt;
         for (c to d)
-            (<B><FONT COLOR="#A020F0">fn</FONT></B> j <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+            (<B><FONT COLOR="#A020F0">fn</FONT></B> j =&gt;
                 ...))
 </PRE>
  is fairly readable, but tends to cause the body of the loop to be indented quite deeply. 
@@ -114,8 +114,8 @@ for (a to b)
 <p>
 The above design has an annoying feature.  In practice, the upper bound of the iterated range is almost always excluded and most loops would subtract one from the upper bound: 
 <pre class=code>
-for (0 to n<B><FONT COLOR="#5F9EA0">-</FONT></B>1) ...
-for (n<B><FONT COLOR="#5F9EA0">-</FONT></B>1 downto 0) ...
+for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to n-<B><FONT COLOR="#5F9EA0">1</FONT></B>) ...
+for (n-<B><FONT COLOR="#5F9EA0">1</FONT></B> downto <B><FONT COLOR="#5F9EA0">0</FONT></B>) ...
 </PRE>
  It is probably better to break convention and exclude the upper bound by default, because it leads to more concise code and becomes idiomatic with very little practise.  The iterator combinators described below exclude the upper bound by default. 
 </p>
@@ -126,31 +126,31 @@ While the simple <tt>for</tt>-function described in the previous section is prob
 <p>
 Since the types of the combinators may be a bit difficult to infer from their implementations, let's first take a look at a signature of the iterator combinator library: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> ITER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> ITER =
+  <B><FONT COLOR="#0000FF">sig</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> ('a -&gt; unit) -&gt; unit
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> return : 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b t) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b t
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> return : 'a -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> &gt;&gt;= : 'a t * ('a -&gt; 'b t) -&gt; 'b t
 
     <B><FONT COLOR="#A020F0">val</FONT></B> none : 'a t
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> to : <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> t
-    <B><FONT COLOR="#A020F0">val</FONT></B> downto : <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> t
+    <B><FONT COLOR="#A020F0">val</FONT></B> to : int * int -&gt; int t
+    <B><FONT COLOR="#A020F0">val</FONT></B> downto : int * int -&gt; int t
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> inList : 'a <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> inVector : 'a <B><FONT COLOR="#228B22">vector</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> inArray : 'a <B><FONT COLOR="#228B22">array</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> inList : 'a list -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> inVector : 'a vector -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> inArray : 'a array -&gt; 'a t
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> using : ('a, 'b) StringCvt.reader <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> using : ('a, 'b) StringCvt.reader -&gt; 'b -&gt; 'a t
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> when : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> by : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'b t
-    <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">@</FONT></B><B><FONT COLOR="#5F9EA0">@</FONT></B> : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B><B><FONT COLOR="#5F9EA0">*</FONT></B> : 'a t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b) product t
+    <B><FONT COLOR="#A020F0">val</FONT></B> when : 'a t * ('a -&gt; bool) -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> by : 'a t * ('a -&gt; 'b) -&gt; 'b t
+    <B><FONT COLOR="#A020F0">val</FONT></B> @@ : 'a t * 'a t -&gt; 'a t
+    <B><FONT COLOR="#A020F0">val</FONT></B> ** : 'a t * 'b t -&gt; ('a, 'b) product t
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> for : 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">val</FONT></B> for : 'a -&gt; 'a
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -158,8 +158,8 @@ Since the types of the combinators may be a bit difficult to infer from their im
 Several of the above combinators are meant to be used as infix operators. Here is a set of suitable infix declarations: 
 <pre class=code>
 <B><FONT COLOR="#A020F0">infix</FONT></B> 2 to downto
-<B><FONT COLOR="#A020F0">infix</FONT></B> 1 <B><FONT COLOR="#5F9EA0">@</FONT></B><B><FONT COLOR="#5F9EA0">@</FONT></B> when by
-<B><FONT COLOR="#A020F0">infix</FONT></B> 0 <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B><B><FONT COLOR="#5F9EA0">*</FONT></B>
+<B><FONT COLOR="#A020F0">infix</FONT></B> 1 @@ when by
+<B><FONT COLOR="#A020F0">infix</FONT></B> 0 &gt;&gt;= **
 </PRE>
  
 </p>
@@ -228,42 +228,42 @@ A few notes are in order:
 <p>
 The below implementation of the <tt>ITER</tt>-signature makes use of the following basic combinators: 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">const</FONT></I></B></FONT></B> x _ <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">flip</FONT></I></B></FONT></B> f x y <B><FONT COLOR="#5F9EA0">=</FONT></B> f y x
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">id</FONT></I></B></FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">opt</FONT></I></B></FONT></B> fno fso <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fno () <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fso ?
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">pass</FONT></I></B></FONT></B> x f <B><FONT COLOR="#5F9EA0">=</FONT></B> f x
+<B><FONT COLOR="#A020F0">fun</FONT></B> const x _ = x
+<B><FONT COLOR="#A020F0">fun</FONT></B> flip f x y = f y x
+<B><FONT COLOR="#A020F0">fun</FONT></B> id x = x
+<B><FONT COLOR="#A020F0">fun</FONT></B> opt fno fso = <B><FONT COLOR="#A020F0">fn</FONT></B> NONE =&gt; fno () | SOME ? =&gt; fso ?
+<B><FONT COLOR="#A020F0">fun</FONT></B> pass x f = f x
 </PRE>
  
 </p>
 <p>
 Here is an implementation the <tt>ITER</tt>-signature: 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Iter :<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ITER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-  <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Iter :&gt; ITER =
+  <B><FONT COLOR="#0000FF">struct</FONT></B>
+    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> ('a -&gt; unit) -&gt; unit
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> return <B><FONT COLOR="#5F9EA0">=</FONT></B> pass
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> a2iB) f <B><FONT COLOR="#5F9EA0">=</FONT></B> iA (flip a2iB f)
+    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> return = pass
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA &gt;&gt;= a2iB) f = iA (flip a2iB f)
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> none <B><FONT COLOR="#5F9EA0">=</FONT></B> ignore
+    <B><FONT COLOR="#A020F0">val</FONT></B> none = ignore
 
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (l to u) f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `l <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> l&lt;u <B><FONT COLOR="#A020F0">then</FONT></B> (f l; `(l<B><FONT COLOR="#5F9EA0">+</FONT></B>1)) <B><FONT COLOR="#A020F0">else</FONT></B> () <B><FONT COLOR="#A020F0">in</FONT></B> `l <B><FONT COLOR="#A020F0">end</FONT></B>
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (u downto l) f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> u<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>l <B><FONT COLOR="#A020F0">then</FONT></B> (f (u<B><FONT COLOR="#5F9EA0">-</FONT></B>1); `(u<B><FONT COLOR="#5F9EA0">-</FONT></B>1)) <B><FONT COLOR="#A020F0">else</FONT></B> () <B><FONT COLOR="#A020F0">in</FONT></B> `u <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (l to u) f = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `l = <B><FONT COLOR="#A020F0">if</FONT></B> l&lt;u <B><FONT COLOR="#A020F0">then</FONT></B> (f l; `(l+<B><FONT COLOR="#5F9EA0">1</FONT></B>)) <B><FONT COLOR="#A020F0">else</FONT></B> () <B><FONT COLOR="#A020F0">in</FONT></B> `l <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (u downto l) f = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `u = <B><FONT COLOR="#A020F0">if</FONT></B> u&gt;l <B><FONT COLOR="#A020F0">then</FONT></B> (f (u-<B><FONT COLOR="#5F9EA0">1</FONT></B>); `(u-<B><FONT COLOR="#5F9EA0">1</FONT></B>)) <B><FONT COLOR="#A020F0">else</FONT></B> () <B><FONT COLOR="#A020F0">in</FONT></B> `u <B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">inList</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> flip List.app ?
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">inVector</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> flip Vector.app ?
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">inArray</FONT></I></B></FONT></B> ? <B><FONT COLOR="#5F9EA0">=</FONT></B> flip Array.app ?
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inList ? = flip List.app ?
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inVector ? = flip Vector.app ?
+    <B><FONT COLOR="#A020F0">fun</FONT></B> inArray ? = flip Array.app ?
 
-<B><FONT COLOR="#A020F0">    fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">using</FONT></I></B></FONT></B> get s f <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `s <B><FONT COLOR="#5F9EA0">=</FONT></B> opt (const ()) (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, s) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (f x; `s)) (get s) <B><FONT COLOR="#A020F0">in</FONT></B> `s <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">fun</FONT></B> using get s f = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">fun</FONT></B> `s = opt (const ()) (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, s) =&gt; (f x; `s)) (get s) <B><FONT COLOR="#A020F0">in</FONT></B> `s <B><FONT COLOR="#A020F0">end</FONT></B>
 
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA when p) f <B><FONT COLOR="#5F9EA0">=</FONT></B> iA (<B><FONT COLOR="#A020F0">fn</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">if</FONT></B> p a <B><FONT COLOR="#A020F0">then</FONT></B> f a <B><FONT COLOR="#A020F0">else</FONT></B> ())
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA by g) f <B><FONT COLOR="#5F9EA0">=</FONT></B> iA (f <B><FONT COLOR="#A020F0">o</FONT></B> g)
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA <B><FONT COLOR="#5F9EA0">@</FONT></B><B><FONT COLOR="#5F9EA0">@</FONT></B> iB) f <B><FONT COLOR="#5F9EA0">=</FONT></B> (iA f : <B><FONT COLOR="#228B22">unit</FONT></B>; iB f)
-    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA <B><FONT COLOR="#5F9EA0">*</FONT></B><B><FONT COLOR="#5F9EA0">*</FONT></B> iB) f <B><FONT COLOR="#5F9EA0">=</FONT></B> iA (<B><FONT COLOR="#A020F0">fn</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> iB (<B><FONT COLOR="#A020F0">fn</FONT></B> b <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (a &amp; b)))
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA when p) f = iA (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; <B><FONT COLOR="#A020F0">if</FONT></B> p a <B><FONT COLOR="#A020F0">then</FONT></B> f a <B><FONT COLOR="#A020F0">else</FONT></B> ())
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA by g) f = iA (f o g)
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA @@ iB) f = (iA f : unit; iB f)
+    <B><FONT COLOR="#A020F0">fun</FONT></B> (iA ** iB) f = iA (<B><FONT COLOR="#A020F0">fn</FONT></B> a =&gt; iB (<B><FONT COLOR="#A020F0">fn</FONT></B> b =&gt; f (a &amp; b)))
 
-    <B><FONT COLOR="#A020F0">val</FONT></B> for <B><FONT COLOR="#5F9EA0">=</FONT></B> id
-  <B><FONT COLOR="#A020F0">end</FONT></B>
+    <B><FONT COLOR="#A020F0">val</FONT></B> for = id
+  <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -273,23 +273,23 @@ Note that some of the above combinators (e.g. <tt>**</tt>) could be expressed in
 <p>
 To use the above combinators the <tt>Iter</tt>-structure needs to be opened 
 <pre class=code>
-<B><FONT COLOR="#A020F0">open</FONT></B> Iter
+<B><FONT COLOR="#0000FF">open</FONT></B> Iter
 </PRE>
  and one usually also wants to declare the infix status of the operators as shown earlier. 
 </p>
 <p>
 Here is an example that illustrates some of the features: 
 <pre class=code>
-for (0 to 10 when (<B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x <B><FONT COLOR="#5F9EA0">mod</FONT></B> 3 <B><FONT COLOR="#5F9EA0">&lt;&gt;</FONT></B> 0) <B><FONT COLOR="#5F9EA0">*</FONT></B><B><FONT COLOR="#5F9EA0">*</FONT></B> inList [<B><FONT COLOR="#BC8F8F">&quot;a&quot;</FONT></B>, <B><FONT COLOR="#BC8F8F">&quot;b&quot;</FONT></B>] <B><FONT COLOR="#5F9EA0">*</FONT></B><B><FONT COLOR="#5F9EA0">*</FONT></B> 2 downto 1 by <B><FONT COLOR="#228B22">real</FONT></B>)
-    (<B><FONT COLOR="#A020F0">fn</FONT></B> x &amp; y &amp; z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-       <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B><B><FONT COLOR="#5F9EA0">^</FONT></B>Int.toString x<B><FONT COLOR="#5F9EA0">^</FONT></B><B><FONT COLOR="#BC8F8F">&quot;, \&quot;&quot;</FONT></B><B><FONT COLOR="#5F9EA0">^</FONT></B>y<B><FONT COLOR="#5F9EA0">^</FONT></B><B><FONT COLOR="#BC8F8F">&quot;\&quot;, &quot;</FONT></B><B><FONT COLOR="#5F9EA0">^</FONT></B>Real.toString z<B><FONT COLOR="#5F9EA0">^</FONT></B><B><FONT COLOR="#BC8F8F">&quot;)\n&quot;</FONT></B>))
+for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to <B><FONT COLOR="#5F9EA0">10</FONT></B> when (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x mod <B><FONT COLOR="#5F9EA0">3</FONT></B> &lt;&gt; <B><FONT COLOR="#5F9EA0">0</FONT></B>) ** inList [<B><FONT COLOR="#BC8F8F">&quot;a&quot;</FONT></B>, <B><FONT COLOR="#BC8F8F">&quot;b&quot;</FONT></B>] ** <B><FONT COLOR="#5F9EA0">2</FONT></B> downto <B><FONT COLOR="#5F9EA0">1</FONT></B> by real)
+    (<B><FONT COLOR="#A020F0">fn</FONT></B> x &amp; y &amp; z =&gt;
+       print (<B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B>^Int.toString x^<B><FONT COLOR="#BC8F8F">&quot;, \&quot;&quot;</FONT></B>^y^<B><FONT COLOR="#BC8F8F">&quot;\&quot;, &quot;</FONT></B>^Real.toString z^<B><FONT COLOR="#BC8F8F">&quot;)\n&quot;</FONT></B>))
 </PRE>
  
 </p>
 <p>
 Using the <tt>Iter</tt> combinators one can easily produce more complicated iterators.  For example, here is an iterator over a "triangle": 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">triangle</FONT></I></B></FONT></B> (l, u) <B><FONT COLOR="#5F9EA0">=</FONT></B> l to u <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> i to u <B><FONT COLOR="#5F9EA0">&gt;</FONT></B><B><FONT COLOR="#5F9EA0">&gt;=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> j <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> return (i, j)))
+<B><FONT COLOR="#A020F0">fun</FONT></B> triangle (l, u) = l to u &gt;&gt;= (<B><FONT COLOR="#A020F0">fn</FONT></B> i =&gt; i to u &gt;&gt;= (<B><FONT COLOR="#A020F0">fn</FONT></B> j =&gt; return (i, j)))
 </PRE>
  
 </p>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,6 +56,26 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The contents of these pages have been moved to other pages. <p>
+The survey pages are currently unused. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Survey">Survey</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="SurveyDone">SurveyDone</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
 These templates are used by other pages. 
 </p>
 
@@ -79,5 +99,5 @@ These templates are used by other pages.
 
 <p>
 <hr>
-Last edited on 2005-12-02 13:11:48 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-07-08 21:49:15 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

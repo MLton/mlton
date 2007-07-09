@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,13 +55,24 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton is available as a <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">port</a>. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+MLton runs fine on <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a>. <p>
+MLton is available as a <a class="external" href="http://www.freebsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">port</a>. 
+</p>
+<h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
 
     <ul>
 
     <li>
 <p>
  Executables often run more slowly than on a comparable Linux  machine.  We conjecture that part of this is due to costs due    to heap resizing and kernel zeroing of pages.  Any help  in solving the problem would be appreciated. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ FreeBSD defaults to a datasize limit of 512M, even if you have more  than that amount of memory in the computer. Hence, your MLton process  will be limited in the amount of memory it has. To fix this problem,  turn up the datasize and the default datasize available to a process:  Edit <strong>/boot/loader.conf</strong> to set the limits. For example, the setting  
+<pre>   kern.maxdsiz="671088640"
+   kern.dfldsiz="671088640"
+   kern.maxssiz="134217728"</pre> will give a process 640M of datasize memory, default to 640M available   and set 128M of stack size memory. 
 </p>
 </li>
 </ul>
@@ -72,5 +83,5 @@ MLton is available as a <a class="external" href="http://www.freebsd.org/"><img 
 
 <p>
 <hr>
-Last edited on 2006-07-20 19:36:37 by <span title="ppp-71-139-187-151.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 20:19:56 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

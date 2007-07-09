@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -90,10 +90,10 @@ An equality type is a type to which <a href="PolymorphicEquality">PolymorphicEqu
 <p>
 To check that a type t is an equality type, use the following idiom. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B> t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> </FONT></B>...
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>

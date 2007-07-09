@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,14 +57,14 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_WORLD <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> status <B><FONT COLOR="#5F9EA0">=</FONT></B> Clone <B><FONT COLOR="#5F9EA0">|</FONT></B> Original
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_WORLD =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> status </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Clone</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Original</FONT>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> load: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> save: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> status
-      <B><FONT COLOR="#A020F0">val</FONT></B> saveThread: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Thread.Runnable.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> load: string -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> save: string -&gt; status
+      <B><FONT COLOR="#A020F0">val</FONT></B> saveThread: string * Thread.Runnable.t -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -128,11 +128,11 @@ urchinTracker();
 <p>
 Suppose that <tt>save-world.sml</tt> contains the following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">open</FONT></B> MLton.World
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">open</FONT></B> MLton.World
+<B><FONT COLOR="#A020F0">val</FONT></B> _ =
    <B><FONT COLOR="#A020F0">case</FONT></B> save <B><FONT COLOR="#BC8F8F">&quot;world&quot;</FONT></B> <B><FONT COLOR="#A020F0">of</FONT></B>
-      Original <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;I am the original\n&quot;</FONT></B>
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> Clone <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;I am the clone\n&quot;</FONT></B>
+      Original =&gt; print <B><FONT COLOR="#BC8F8F">&quot;I am the original\n&quot;</FONT></B>
+    | Clone =&gt; print <B><FONT COLOR="#BC8F8F">&quot;I am the clone\n&quot;</FONT></B>
 </PRE>
  
 </p>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,8 +65,8 @@ In some respects MLton's type checker is more powerful than other SML compilers,
 <p>
  MLton resolves flexible record patterns using a larger context than  many other SML compilers.  For example, MLton accepts the  following. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> {x, ...} <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> f {x <B><FONT COLOR="#5F9EA0">=</FONT></B> 13, y <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>}
+<B><FONT COLOR="#A020F0">fun</FONT></B> f {x, ...} = x
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = f {x = <B><FONT COLOR="#5F9EA0">13</FONT></B>, y = <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>}
 </PRE>
  
 </p>
@@ -75,13 +75,13 @@ In some respects MLton's type checker is more powerful than other SML compilers,
 <p>
  MLton uses as large a context as possible to resolve the type of  variables constrained by the value restriction to be monotypes.  For  example, MLton accepts the following. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> f: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> y)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> f: int -&gt; int
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> f = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; x) (<B><FONT COLOR="#A020F0">fn</FONT></B> y =&gt; y)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -121,9 +121,9 @@ In a type error message, MLton often has a number of choices in deciding what na
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (x: t) <B><FONT COLOR="#5F9EA0">=</FONT></B> x
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> f <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+</FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> f (x: t) = x
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = f <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
 </PRE>
 <p>
  
@@ -145,14 +145,14 @@ In signature matching, most recently defined is taken to include all of the defi
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> x: <B><FONT COLOR="#228B22">int</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> x: int
+   <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#BC8F8F">&quot;foo&quot;</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -174,15 +174,15 @@ In signatures with type equations, this can be somewhat confusing. For example.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> S:
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
-      <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> t
-   <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">char</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> S:
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> t
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> char
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -58,31 +58,7 @@ urchinTracker();
 Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
 <ol>
 <li>
-<a href="CompilingWithSMLNJ">CompilingWithSMLNJ</a></li>
-<li>
-<a href="FirstClassPolymorphism">FirstClassPolymorphism</a></li>
-<li>
-<a href="LanguageChanges">LanguageChanges</a></li>
-<li>
-<a href="MLmon">MLmon</a></li>
-<li>
 <a href="PortStatus">PortStatus</a></li>
-<li>
-<a href="PrintfGentle">PrintfGentle</a></li>
-<li>
-<a href="Roadmap">Roadmap</a></li>
-<li>
-<a href="ShowProf">ShowProf</a></li>
-<li>
-<a href="Stabilizers">Stabilizers</a></li>
-<li>
-<a href="StandardMLGotchas">StandardMLGotchas</a></li>
-<li>
-<a href="Survey">Survey</a></li>
-<li>
-<a href="SurveyDone">SurveyDone</a></li>
-<li>
-<a href="Variant">Variant</a></li>
 <li>
 <a href="ZZZOrphanedPages">ZZZOrphanedPages</a></li>
 </ol>

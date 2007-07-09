@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,11 +57,11 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 In <a href="StandardML">Standard ML</a>, a type constructor is a function from types to types.  Type constructors can be <em>nullary</em>, meaning that they take no arguments, as in <tt>char</tt>, <tt>int</tt>, and <tt>real</tt>. Type constructors can be <em>unary</em>, meaning that they take one argument, as in <tt>array</tt>, <tt>list</tt>, and <tt>vector</tt>.  A program can define a new type constructor in two ways: a <tt>type</tt> definition or a <tt>datatype</tt> declaration.  User-defined type constructors can can take any number of arguments. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>            <I><FONT COLOR="#B22222">(* 0 arguments *)</FONT></I>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>                    <I><FONT COLOR="#B22222">(* 1 argument *)</FONT></I>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b  <I><FONT COLOR="#B22222">(* 2 arguments *)</FONT></I>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a, 'b, 'c) t <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> ('b  <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'c)  <I><FONT COLOR="#B22222">(* 3 arguments *)</FONT></I>
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * real            <I><FONT COLOR="#B22222">(* 0 arguments *)</FONT></I>
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a * int                    <I><FONT COLOR="#B22222">(* 1 argument *)</FONT></I>
+</FONT></B><B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b  <I><FONT COLOR="#B22222">(* 2 arguments *)</FONT></I>
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b, 'c) t </FONT></B>=<B><FONT COLOR="#228B22"> 'a * ('b  -&gt; 'c)  <I><FONT COLOR="#B22222">(* 3 arguments *)</FONT></I>
+</FONT></B></PRE>
 <p>
  
 </p>

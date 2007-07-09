@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,15 +57,15 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_RANDOM <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> alphaNumChar: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">char</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> alphaNumString: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> rand: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> seed: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> option
-      <B><FONT COLOR="#A020F0">val</FONT></B> srand: <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> useed: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> option
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_RANDOM =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> alphaNumChar: unit -&gt; char
+      <B><FONT COLOR="#A020F0">val</FONT></B> alphaNumString: int -&gt; string
+      <B><FONT COLOR="#A020F0">val</FONT></B> rand: unit -&gt; word
+      <B><FONT COLOR="#A020F0">val</FONT></B> seed: unit -&gt; word option
+      <B><FONT COLOR="#A020F0">val</FONT></B> srand: word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> useed: unit -&gt; word option
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

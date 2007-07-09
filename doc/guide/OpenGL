@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,9 +60,7 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
 
     <li>
 <p>
- <a href="MikeThomas">MikeThomas</a> built a low-level interface, directly translating many  of the functions, covering GL, GLU, and GLUT.  This is available in  the MLton <a href="Sources">Sources</a>: 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/lib/opengl"><img src="moin-www.png" alt="[WWW]" height="11" width="11">opengl</a>
-.  The code contains a  number of small, standard OpenGL examples translated to SML. 
+ <a href="MikeThomas">MikeThomas</a> built a low-level interface, directly translating many  of the functions, covering GL, GLU, and GLUT.  This is available in  the MLton <a href="Sources">Sources</a>: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/lib/opengl"><img src="moin-www.png" alt="[WWW]" height="11" width="11">opengl</a>.  The code contains a  number of small, standard OpenGL examples translated to SML. 
 </p>
 </li>
     <li class="gap">
@@ -90,5 +88,5 @@ There are at least two interfaces to OpenGL for MLton/SML, both of which should 
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:29:26 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-11-02 17:31:46 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

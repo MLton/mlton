@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,14 +60,14 @@ Here is an SML signature for property lists such that for any type of value a ne
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> PROPERTY_LIST <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> PROPERTY_LIST =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> new: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> newProperty: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> {add: t <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>,
-                                peek: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a option}
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> new: unit -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> newProperty: unit -&gt; {add: t * 'a -&gt; unit,
+                                peek: t -&gt; 'a option}
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -77,19 +77,19 @@ Here is a functor demonstrating the use of property lists.  It first creates a p
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> Test (P: PROPERTY_LIST) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> pl <B><FONT COLOR="#5F9EA0">=</FONT></B> P.new ()
+<B><FONT COLOR="#0000FF">functor</FONT></B> Test (P: PROPERTY_LIST) =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> pl = P.new ()
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> {add <B><FONT COLOR="#5F9EA0">=</FONT></B> addInt: P.t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>, peek <B><FONT COLOR="#5F9EA0">=</FONT></B> peekInt} <B><FONT COLOR="#5F9EA0">=</FONT></B> P.newProperty ()
-      <B><FONT COLOR="#A020F0">val</FONT></B> {add <B><FONT COLOR="#5F9EA0">=</FONT></B> addReal: P.t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>, peek <B><FONT COLOR="#5F9EA0">=</FONT></B> peekReal} <B><FONT COLOR="#5F9EA0">=</FONT></B> P.newProperty ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> {add = addInt: P.t * int -&gt; unit, peek = peekInt} = P.newProperty ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> {add = addReal: P.t * real -&gt; unit, peek = peekReal} = P.newProperty ()
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> addInt (pl, 13)
-      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> addReal (pl, 17.0)
-      <B><FONT COLOR="#A020F0">val</FONT></B> s1 <B><FONT COLOR="#5F9EA0">=</FONT></B> Int.toString (valOf (peekInt pl))
-      <B><FONT COLOR="#A020F0">val</FONT></B> s2 <B><FONT COLOR="#5F9EA0">=</FONT></B> Real.toString (valOf (peekReal pl))
-      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [s1, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s2, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = addInt (pl, <B><FONT COLOR="#5F9EA0">13</FONT></B>)
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = addReal (pl, <B><FONT COLOR="#5F9EA0">17.0</FONT></B>)
+      <B><FONT COLOR="#A020F0">val</FONT></B> s1 = Int.toString (valOf (peekInt pl))
+      <B><FONT COLOR="#A020F0">val</FONT></B> s2 = Real.toString (valOf (peekReal pl))
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [s1, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s2, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -105,22 +105,22 @@ Because property lists can hold values of any type, their implementation require
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> PropertyList (U: UNIVERSAL_TYPE): PROPERTY_LIST <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> U.t <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> PropertyList (U: UNIVERSAL_TYPE): PROPERTY_LIST =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> U.t list ref
 
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">new</FONT></I></B></FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> T (<B><FONT COLOR="#A020F0">ref</FONT></B> [])
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> new () = T (ref [])
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a newProperty () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> newProperty () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (inject, out) <B><FONT COLOR="#5F9EA0">=</FONT></B> U.embed ()
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">add</FONT></I></B></FONT></B> (T r, a: 'a): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> inject a <B><FONT COLOR="#5F9EA0">::</FONT></B> (<B><FONT COLOR="#5F9EA0">!</FONT></B>r)
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">peek</FONT></I></B></FONT></B> (T r) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-               Option.map (valOf <B><FONT COLOR="#A020F0">o</FONT></B> out) (List.find (isSome <B><FONT COLOR="#A020F0">o</FONT></B> out) (<B><FONT COLOR="#5F9EA0">!</FONT></B>r))
+            <B><FONT COLOR="#A020F0">val</FONT></B> (inject, out) = U.embed ()
+            <B><FONT COLOR="#A020F0">fun</FONT></B> add (T r, a: 'a): unit = r := inject a :: (!r)
+            <B><FONT COLOR="#A020F0">fun</FONT></B> peek (T r) =
+               Option.map (valOf o out) (List.find (isSome o out) (!r))
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            {add <B><FONT COLOR="#5F9EA0">=</FONT></B> add, peek <B><FONT COLOR="#5F9EA0">=</FONT></B> peek}
+            {add = add, peek = peek}
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -128,7 +128,7 @@ Because property lists can hold values of any type, their implementation require
 <p>
 If <tt>U:&nbsp;UNIVERSAL_TYPE</tt>, then we can test our code as follows. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Z <B><FONT COLOR="#5F9EA0">=</FONT></B> Test (PropertyList (U))
+<B><FONT COLOR="#0000FF">structure</FONT></B> Z = Test (PropertyList (U))
 </PRE>
  
 </p>
@@ -137,11 +137,7 @@ Of course, a serious implementation of property lists would have to handle dupli
 </p>
 <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
 <p>
-MLton relies heavily on property lists for attaching information to syntax tree nodes in its intermediate languages.  See  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/lib/mlton/basic/property-list.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.sig</a>
-  
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/lib/mlton/basic/property-list.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.fun</a>
-. 
+MLton relies heavily on property lists for attaching information to syntax tree nodes in its intermediate languages.  See  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/lib/mlton/basic/property-list.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.sig</a>  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/lib/mlton/basic/property-list.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.fun</a>. 
 </p>
 <p>
 <a class="nonexistent" href="MLRISC">MLRISC</a> <a href = "References#LeungGeorge98">uses property lists extensively</a>. 
@@ -152,5 +148,5 @@ MLton relies heavily on property lists for attaching information to syntax tree 
 
 <p>
 <hr>
-Last edited on 2005-08-19 15:30:27 by <span title="cfs32.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-11-02 17:44:53 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

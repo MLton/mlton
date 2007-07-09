@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ Realistically, a program needs to make use of the  <a href="BasisLibrary">Basis 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> valOf (Int.maxInt)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = valOf (Int.maxInt)
 </PRE>
 <p>
  

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -64,7 +64,7 @@ For type definition
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> ('a1, ..., 'an) t <B><FONT COLOR="#5F9EA0">=</FONT></B> ...
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a1, ..., 'an) t </FONT></B>=<B><FONT COLOR="#228B22"> </FONT></B>...
 </PRE>
 <p>
  
@@ -77,8 +77,8 @@ For a nullary type definition, this amounts to the right-hand side being an equa
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> bool * int
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -87,8 +87,8 @@ type constructor <tt>t</tt> admits equality because <tt>bool&nbsp;*&nbsp;int</tt
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> bool * int * real
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -100,8 +100,8 @@ For another example, after the definition
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> bool * 'a
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -113,8 +113,8 @@ On the other hand, after the definition
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> real * 'a
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -126,20 +126,20 @@ We can check that a type constructor admits equality using an <tt>eqtype</tt> sp
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Ok: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B> 'a t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B> 
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Ok: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> = 
+   <B><FONT COLOR="#0000FF">struct</FONT></B> 
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> bool * 'a
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Bad: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B> 'a t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> 
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B> 
-      <B><FONT COLOR="#A020F0">type</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Bad: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> = 
+   <B><FONT COLOR="#0000FF">struct</FONT></B> 
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> real * int * 'a
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -152,29 +152,29 @@ On <tt>structure&nbsp;Bad</tt>, MLton reports the following error.
 </p>
 <h2 id="head-c494234542affd2943bc7247d524477b03bc18bc">Datatype declarations</h2>
 <p>
-For a type constructor declared by a datatype declaration to admit equality, every variant of the datatype must admit equality.  For example, the following datatype admits equality because <tt>bool</tt> and <tt>char&nbsp;*&nbsp;int</tt> are equality types. 
+For a type constructor declared by a datatype declaration to admit equality, every <a href="Variant">variant</a> of the datatype must admit equality.  For example, the following datatype admits equality because <tt>bool</tt> and <tt>char&nbsp;*&nbsp;int</tt> are equality types. 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">char</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> bool </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> char * int
+</FONT></B></PRE>
 <p>
  
 </p>
 <p>
 Nullary constructors trivially admit equality, so that the following datatype admits equality. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#5F9EA0">|</FONT></B> C
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">C</FONT>
+</FONT></B></PRE>
  
 </p>
 <p>
-For a parameterized datatype constructor to admit equality, we consider each variant as a type definition, and require that the definition admit equality.  For example, for the datatype  
+For a parameterized datatype constructor to admit equality, we consider each <a href="Variant">variant</a> as a type definition, and require that the definition admit equality.  For example, for the datatype  
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> 'a
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> bool * 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -183,9 +183,9 @@ the type definitions
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a tA <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-<B><FONT COLOR="#A020F0">type</FONT></B> 'a tB <B><FONT COLOR="#5F9EA0">=</FONT></B> 'a 
-</PRE>
+<B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a tA </FONT></B>=<B><FONT COLOR="#228B22"> bool * 'a
+</FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a tB </FONT></B>=<B><FONT COLOR="#228B22"> 'a 
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -197,8 +197,8 @@ On the other hand, the following datatype does not admit equality.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> bool * 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> real * 'a
+</FONT></B></PRE>
 <p>
  
 </p>
@@ -207,10 +207,10 @@ As with type definitions, we can check using an <tt>eqtype</tt> specification.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Bad: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B> 'a t <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> 'a t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Bad: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> bool * 'a </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> real * 'a
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -230,35 +230,35 @@ A recursive datatype like
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int * t
+</FONT></B></PRE>
 <p>
  
 </p>
 <p>
-introduces a new problem, since in order to decide whether <tt>t</tt> admits equality, we need to know for the <tt>B</tt> variant whether <tt>t</tt> admits equality.  The <a href="DefinitionOfStandardML">Definition</a> answers this question by requiring a type constructor to admit equality if it is consistent to do so.  So, in our above example, if we assume that <tt>t</tt> admits equality, then the variant  <tt>B&nbsp;of&nbsp;int&nbsp;*&nbsp;t</tt> admits equality.  Then, since the <tt>A</tt> variant trivially admits equality, so does the type constructor <tt>t</tt>. Thus, it was consistent to assume that <tt>t</tt> admits equality, and so, <tt>t</tt> does admit equality. 
+introduces a new problem, since in order to decide whether <tt>t</tt> admits equality, we need to know for the <tt>B</tt> <a href="Variant">variant</a> whether <tt>t</tt> admits equality.  The <a href="DefinitionOfStandardML">Definition</a> answers this question by requiring a type constructor to admit equality if it is consistent to do so.  So, in our above example, if we assume that <tt>t</tt> admits equality, then the <a href="Variant">variant</a>  <tt>B&nbsp;of&nbsp;int&nbsp;*&nbsp;t</tt> admits equality.  Then, since the <tt>A</tt> <a href="Variant">variant</a> trivially admits equality, so does the type constructor <tt>t</tt>. Thus, it was consistent to assume that <tt>t</tt> admits equality, and so, <tt>t</tt> does admit equality. 
 </p>
 <p>
 On the other hand, in the following declaration 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> t
-</PRE>
- if we assume that <tt>t</tt> admits equality, then the <tt>B</tt> variant does not admit equality.  Hence, the type constructor <tt>t</tt> does not admit equality, and our assumption was inconsistent.  Hence, <tt>t</tt> does not admit equality. 
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> real * t
+</FONT></B></PRE>
+ if we assume that <tt>t</tt> admits equality, then the <tt>B</tt> <a href="Variant">variant</a> does not admit equality.  Hence, the type constructor <tt>t</tt> does not admit equality, and our assumption was inconsistent.  Hence, <tt>t</tt> does not admit equality. 
 </p>
 <p>
 The same kind of reasoning applies to mutually recursive datatypes as well.  For example, the following defines both <tt>t</tt> and <tt>u</tt> to admit equality. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> u
-<B><FONT COLOR="#A020F0">and</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> C <B><FONT COLOR="#5F9EA0">|</FONT></B> D <B><FONT COLOR="#A020F0">of</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u
+</FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">C</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">D</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+</FONT></B></PRE>
  
 </p>
 <p>
 But the following defines neither <tt>t</tt> nor <tt>u</tt> to admit equality. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-<B><FONT COLOR="#A020F0">and</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> C <B><FONT COLOR="#5F9EA0">|</FONT></B> D <B><FONT COLOR="#A020F0">of</FONT></B> t
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u * real
+</FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">C</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">D</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+</FONT></B></PRE>
  
 </p>
 <p>
@@ -266,11 +266,11 @@ As always, we can check whether a type admits equality using an <tt>eqtype</tt> 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Bad: <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B> t <B><FONT COLOR="#A020F0">eqtype</FONT></B> u <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> u <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-      <B><FONT COLOR="#A020F0">and</FONT></B> u <B><FONT COLOR="#5F9EA0">=</FONT></B> C <B><FONT COLOR="#5F9EA0">|</FONT></B> D <B><FONT COLOR="#A020F0">of</FONT></B> t
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Bad: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> u * real
+      </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">C</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">D</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> t
+   </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -291,5 +291,5 @@ Error: z.sml 1.16.
 
 <p>
 <hr>
-Last edited on 2005-12-02 06:44:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:57:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

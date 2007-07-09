@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,12 +57,12 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 A universal type is a type into which all other types can be embedded. Here's a <a href="StandardML">Standard ML</a> signature for a universal type. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> UNIVERSAL_TYPE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> UNIVERSAL_TYPE =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> embed: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t) <B><FONT COLOR="#5F9EA0">*</FONT></B> (t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a option)
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> embed: unit -&gt; ('a -&gt; t) * (t -&gt; 'a option)
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -73,26 +73,26 @@ The idea is that <tt>type&nbsp;t</tt> is the universal type and that each call t
 <p>
 Here's an example embedding integers and reals into a universal type. 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">functor</FONT></B> Test (U: UNIVERSAL_TYPE): <B><FONT COLOR="#5F9EA0">sig</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> (intIn: <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> U.t, intOut) <B><FONT COLOR="#5F9EA0">=</FONT></B> U.embed ()
-      <B><FONT COLOR="#A020F0">val</FONT></B> r: U.t <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> (intIn 13)
-      <B><FONT COLOR="#A020F0">val</FONT></B> s1 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> intOut (<B><FONT COLOR="#5F9EA0">!</FONT></B>r) <B><FONT COLOR="#A020F0">of</FONT></B>
-            <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int.toString i
-      <B><FONT COLOR="#A020F0">val</FONT></B> (realIn: <B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> U.t, realOut) <B><FONT COLOR="#5F9EA0">=</FONT></B> U.embed ()
-      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> realIn 13.0
-      <B><FONT COLOR="#A020F0">val</FONT></B> s2 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> intOut (<B><FONT COLOR="#5F9EA0">!</FONT></B>r) <B><FONT COLOR="#A020F0">of</FONT></B>
-            <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> i <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int.toString i
-      <B><FONT COLOR="#A020F0">val</FONT></B> s3 <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">case</FONT></B> realOut (<B><FONT COLOR="#5F9EA0">!</FONT></B>r) <B><FONT COLOR="#A020F0">of</FONT></B>
-            <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
-          <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Real.toString x
-      <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [s1, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s2, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s3, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">functor</FONT></B> Test (U: UNIVERSAL_TYPE): <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#0000FF">end</FONT></B> =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> (intIn: int -&gt; U.t, intOut) = U.embed ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> r: U.t ref = ref (intIn <B><FONT COLOR="#5F9EA0">13</FONT></B>)
+      <B><FONT COLOR="#A020F0">val</FONT></B> s1 =
+         <B><FONT COLOR="#A020F0">case</FONT></B> intOut (!r) <B><FONT COLOR="#A020F0">of</FONT></B>
+            NONE =&gt; <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
+          | SOME i =&gt; Int.toString i
+      <B><FONT COLOR="#A020F0">val</FONT></B> (realIn: real -&gt; U.t, realOut) = U.embed ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = r := realIn <B><FONT COLOR="#5F9EA0">13.0</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> s2 =
+         <B><FONT COLOR="#A020F0">case</FONT></B> intOut (!r) <B><FONT COLOR="#A020F0">of</FONT></B>
+            NONE =&gt; <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
+          | SOME i =&gt; Int.toString i
+      <B><FONT COLOR="#A020F0">val</FONT></B> s3 =
+         <B><FONT COLOR="#A020F0">case</FONT></B> realOut (!r) <B><FONT COLOR="#A020F0">of</FONT></B>
+            NONE =&gt; <B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B>
+          | SOME x =&gt; Real.toString x
+      <B><FONT COLOR="#A020F0">val</FONT></B> () = print (concat [s1, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s2, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s3, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>])
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
  
 </p>
@@ -113,21 +113,21 @@ While the intended use of SML exceptions is for exception handling, an accidenta
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> U:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> UNIVERSAL_TYPE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> exn
+<B><FONT COLOR="#0000FF">structure</FONT></B> U:&gt; UNIVERSAL_TYPE =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> exn
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a embed () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> embed () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">exception</FONT></B> E <B><FONT COLOR="#A020F0">of</FONT></B> 'a
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">project</FONT></I></B></FONT></B> (e: t): 'a option <B><FONT COLOR="#5F9EA0">=</FONT></B>
+            <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+            </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> project (e: t): 'a option =
                <B><FONT COLOR="#A020F0">case</FONT></B> e <B><FONT COLOR="#A020F0">of</FONT></B>
-                  E a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> a
-                <B><FONT COLOR="#5F9EA0">|</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+                  E a =&gt; SOME a
+                | _ =&gt; NONE
          <B><FONT COLOR="#A020F0">in</FONT></B>
             (E, project)
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -135,29 +135,29 @@ While the intended use of SML exceptions is for exception handling, an accidenta
 <h2 id="head-ce424b82430977939b90a4c1cb21f7a8e6f6301c">Implementation Using Functions and References</h2>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> U:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> UNIVERSAL_TYPE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> T <B><FONT COLOR="#A020F0">of</FONT></B> {clear: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>,
-                         store: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>}
+<B><FONT COLOR="#0000FF">structure</FONT></B> U:&gt; UNIVERSAL_TYPE =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> {clear: unit -&gt; unit,
+                         store: unit -&gt; unit}
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a embed () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> embed () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">inject</FONT></I></B></FONT></B> (a: 'a): t <B><FONT COLOR="#5F9EA0">=</FONT></B>
-               T {clear <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>,
-                  store <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> a}
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">project</FONT></I></B></FONT></B> (T {clear, store}): 'a option <B><FONT COLOR="#5F9EA0">=</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option ref = ref NONE
+            <B><FONT COLOR="#A020F0">fun</FONT></B> inject (a: 'a): t =
+               T {clear = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; r := NONE,
+                  store = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; r := SOME a}
+            <B><FONT COLOR="#A020F0">fun</FONT></B> project (T {clear, store}): 'a option =
                <B><FONT COLOR="#A020F0">let</FONT></B>
-                  <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> store ()
-                  <B><FONT COLOR="#A020F0">val</FONT></B> res <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r
-                  <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> clear ()
+                  <B><FONT COLOR="#A020F0">val</FONT></B> () = store ()
+                  <B><FONT COLOR="#A020F0">val</FONT></B> res = !r
+                  <B><FONT COLOR="#A020F0">val</FONT></B> () = clear ()
                <B><FONT COLOR="#A020F0">in</FONT></B>
                   res
                <B><FONT COLOR="#A020F0">end</FONT></B>
          <B><FONT COLOR="#A020F0">in</FONT></B>
             (inject, project)
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -170,19 +170,19 @@ One could try to simplify the above implementation by eliminating the <tt>clear<
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> U:<B><FONT COLOR="#5F9EA0">&gt;</FONT></B> UNIVERSAL_TYPE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> U:&gt; UNIVERSAL_TYPE =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> unit -&gt; unit
 
-      <B><FONT COLOR="#A020F0">fun</FONT></B> 'a embed () <B><FONT COLOR="#5F9EA0">=</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#228B22">'a</FONT></B> embed () =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">inject</FONT></I></B></FONT></B> (a: 'a): t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> a
-<B><FONT COLOR="#A020F0">            fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">project</FONT></I></B></FONT></B> (f: t): 'a option <B><FONT COLOR="#5F9EA0">=</FONT></B> (r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>; f (); <B><FONT COLOR="#5F9EA0">!</FONT></B>r)
+            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option ref = ref NONE
+            <B><FONT COLOR="#A020F0">fun</FONT></B> inject (a: 'a): t = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; r := SOME a
+            <B><FONT COLOR="#A020F0">fun</FONT></B> project (f: t): 'a option = (r := NONE; f (); !r)
          <B><FONT COLOR="#A020F0">in</FONT></B>
             (inject, project)
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

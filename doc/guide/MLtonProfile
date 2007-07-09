@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,21 +57,21 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_PROFILE <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Data:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PROFILE =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Data:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> equals: t <B><FONT COLOR="#5F9EA0">*</FONT></B> t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> free: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> malloc: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-            <B><FONT COLOR="#A020F0">val</FONT></B> write: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> equals: t * t -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> free: t -&gt; unit
+            <B><FONT COLOR="#A020F0">val</FONT></B> malloc: unit -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> write: t * string -&gt; unit
+         <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> isOn: <B><FONT COLOR="#228B22">bool</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> withData: Data.t <B><FONT COLOR="#5F9EA0">*</FONT></B> (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> isOn: bool
+      <B><FONT COLOR="#A020F0">val</FONT></B> withData: Data.t * (unit -&gt; 'a) -&gt; 'a
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -176,44 +176,44 @@ Here is an example, taken from the <tt>examples/profiling</tt> directory, showin
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Profile <B><FONT COLOR="#5F9EA0">=</FONT></B> MLton.Profile
+<B><FONT COLOR="#0000FF">structure</FONT></B> Profile = MLton.Profile
    
-<B><FONT COLOR="#A020F0">val</FONT></B> fibData <B><FONT COLOR="#5F9EA0">=</FONT></B> Profile.Data.malloc ()
-<B><FONT COLOR="#A020F0">val</FONT></B> takData <B><FONT COLOR="#5F9EA0">=</FONT></B> Profile.Data.malloc ()
+<B><FONT COLOR="#A020F0">val</FONT></B> fibData = Profile.Data.malloc ()
+<B><FONT COLOR="#A020F0">val</FONT></B> takData = Profile.Data.malloc ()
 
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">wrap</FONT></I></B></FONT></B> (f, d) x <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   Profile.withData (d, <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f x)
+<B><FONT COLOR="#A020F0">fun</FONT></B> wrap (f, d) x =
+   Profile.withData (d, <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; f x)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> fib <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 0
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> 1 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 1
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> fib (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 1) <B><FONT COLOR="#5F9EA0">+</FONT></B> fib (n <B><FONT COLOR="#5F9EA0">-</FONT></B> 2)
-<B><FONT COLOR="#A020F0">val</FONT></B> fib <B><FONT COLOR="#5F9EA0">=</FONT></B> wrap (fib, fibData)
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> fib =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; <B><FONT COLOR="#5F9EA0">0</FONT></B>
+    | <B><FONT COLOR="#5F9EA0">1</FONT></B> =&gt; <B><FONT COLOR="#5F9EA0">1</FONT></B>
+    | n =&gt; fib (n - <B><FONT COLOR="#5F9EA0">1</FONT></B>) + fib (n - <B><FONT COLOR="#5F9EA0">2</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> fib = wrap (fib, fibData)
 
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">tak</FONT></I></B></FONT></B> (x,y,z) <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> tak (x,y,z) =
    <B><FONT COLOR="#A020F0">if</FONT></B> not (y &lt; x)
       <B><FONT COLOR="#A020F0">then</FONT></B> z
-   <B><FONT COLOR="#A020F0">else</FONT></B> tak (tak (x <B><FONT COLOR="#5F9EA0">-</FONT></B> 1, y, z),
-             tak (y <B><FONT COLOR="#5F9EA0">-</FONT></B> 1, z, x),
-             tak (z <B><FONT COLOR="#5F9EA0">-</FONT></B> 1, x, y))
-<B><FONT COLOR="#A020F0">val</FONT></B> tak <B><FONT COLOR="#5F9EA0">=</FONT></B> wrap (tak, takData)
+   <B><FONT COLOR="#A020F0">else</FONT></B> tak (tak (x - <B><FONT COLOR="#5F9EA0">1</FONT></B>, y, z),
+             tak (y - <B><FONT COLOR="#5F9EA0">1</FONT></B>, z, x),
+             tak (z - <B><FONT COLOR="#5F9EA0">1</FONT></B>, x, y))
+<B><FONT COLOR="#A020F0">val</FONT></B> tak = wrap (tak, takData)
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (fib 38; f (n<B><FONT COLOR="#5F9EA0">-</FONT></B>1))
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> f 2
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> f =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (fib <B><FONT COLOR="#5F9EA0">38</FONT></B>; f (n-<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = f <B><FONT COLOR="#5F9EA0">2</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> g <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> 0 <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ()
-    <B><FONT COLOR="#5F9EA0">|</FONT></B> n <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (tak (18,12,6); g (n<B><FONT COLOR="#5F9EA0">-</FONT></B>1))
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> g 500
+<B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> g =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0</FONT></B> =&gt; ()
+    | n =&gt; (tak (<B><FONT COLOR="#5F9EA0">18</FONT></B>,<B><FONT COLOR="#5F9EA0">12</FONT></B>,<B><FONT COLOR="#5F9EA0">6</FONT></B>); g (n-<B><FONT COLOR="#5F9EA0">1</FONT></B>))
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = g <B><FONT COLOR="#5F9EA0">500</FONT></B>
 
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">done</FONT></I></B></FONT></B> (data, file) <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> done (data, file) =
    (Profile.Data.write (data, file)
     ; Profile.Data.free data)
     
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> done (fibData, <B><FONT COLOR="#BC8F8F">&quot;mlmon.fib.out&quot;</FONT></B>)
-<B><FONT COLOR="#A020F0">val</FONT></B> _ <B><FONT COLOR="#5F9EA0">=</FONT></B> done (takData, <B><FONT COLOR="#BC8F8F">&quot;mlmon.tak.out&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = done (fibData, <B><FONT COLOR="#BC8F8F">&quot;mlmon.fib.out&quot;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> _ = done (takData, <B><FONT COLOR="#BC8F8F">&quot;mlmon.tak.out&quot;</FONT></B>)
 </PRE>
 <p>
  

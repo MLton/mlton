@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,38 +57,38 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_SOCKET <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Address:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Ctl:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> getERROR: ('a, 'b) Socket.sock <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> option) option
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Host:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> {name: <B><FONT COLOR="#228B22">string</FONT></B>}
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_SOCKET =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Address:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> word
+         </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Ctl:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> getERROR: ('a, 'b) Socket.sock -&gt; (string * int option) option
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Host:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> {name: string}
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> getByAddress: Address.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t option
-            <B><FONT COLOR="#A020F0">val</FONT></B> getByName: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t option
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Port:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> getByAddress: Address.t -&gt; t option
+            <B><FONT COLOR="#A020F0">val</FONT></B> getByName: string -&gt; t option
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Port:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> int
+         </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> accept: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Address.t <B><FONT COLOR="#5F9EA0">*</FONT></B> Port.t <B><FONT COLOR="#5F9EA0">*</FONT></B> TextIO.instream <B><FONT COLOR="#5F9EA0">*</FONT></B> TextIO.outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> connect: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Port.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> TextIO.instream <B><FONT COLOR="#5F9EA0">*</FONT></B> TextIO.outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> fdToSock: Posix.FileSys.file_desc <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> ('a, 'b) Socket.sock
-      <B><FONT COLOR="#A020F0">val</FONT></B> listen: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Port.t <B><FONT COLOR="#5F9EA0">*</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> listenAt: Port.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> shutdownRead: TextIO.instream <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> shutdownWrite: TextIO.outstream <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> accept: t -&gt; Address.t * Port.t * TextIO.instream * TextIO.outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> connect: string * Port.t -&gt; TextIO.instream * TextIO.outstream
+      <B><FONT COLOR="#A020F0">val</FONT></B> fdToSock: Posix.FileSys.file_desc -&gt; ('a, 'b) Socket.sock
+      <B><FONT COLOR="#A020F0">val</FONT></B> listen: unit -&gt; Port.t * t
+      <B><FONT COLOR="#A020F0">val</FONT></B> listenAt: Port.t -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> shutdownRead: TextIO.instream -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> shutdownWrite: TextIO.outstream -&gt; unit
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

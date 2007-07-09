@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,46 +57,46 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_SIGNAL <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B> t
-      <B><FONT COLOR="#A020F0">type</FONT></B> signal <B><FONT COLOR="#5F9EA0">=</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_SIGNAL =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> signal </FONT></B>=<B><FONT COLOR="#228B22"> t
 
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Handler:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Handler:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> default: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> handler: (Thread.Runnable.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Thread.Runnable.t) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> default: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> handler: (Thread.Runnable.t -&gt; Thread.Runnable.t) -&gt; t
             <B><FONT COLOR="#A020F0">val</FONT></B> ignore: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> isDefault: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> isIgnore: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> simple: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> isDefault: t -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> isIgnore: t -&gt; bool
+            <B><FONT COLOR="#A020F0">val</FONT></B> simple: (unit -&gt; unit) -&gt; t
+         <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Mask:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B> t
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Mask:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
                
-            <B><FONT COLOR="#A020F0">val</FONT></B> all: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> allBut: signal <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-            <B><FONT COLOR="#A020F0">val</FONT></B> block: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> getBlocked: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-            <B><FONT COLOR="#A020F0">val</FONT></B> isMember: t <B><FONT COLOR="#5F9EA0">*</FONT></B> signal <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">bool</FONT></B>
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> all: t
+            <B><FONT COLOR="#A020F0">val</FONT></B> allBut: signal list -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> block: t -&gt; unit
+            <B><FONT COLOR="#A020F0">val</FONT></B> getBlocked: unit -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> isMember: t * signal -&gt; bool
             <B><FONT COLOR="#A020F0">val</FONT></B> none: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> setBlocked: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> some: signal <B><FONT COLOR="#228B22">list</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-            <B><FONT COLOR="#A020F0">val</FONT></B> unblock: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> setBlocked: t -&gt; unit
+            <B><FONT COLOR="#A020F0">val</FONT></B> some: signal list -&gt; t
+            <B><FONT COLOR="#A020F0">val</FONT></B> unblock: t -&gt; unit
+         <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> getHandler: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Handler.t
-      <B><FONT COLOR="#A020F0">val</FONT></B> handled: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Mask.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getHandler: t -&gt; Handler.t
+      <B><FONT COLOR="#A020F0">val</FONT></B> handled: unit -&gt; Mask.t
       <B><FONT COLOR="#A020F0">val</FONT></B> prof: t
-      <B><FONT COLOR="#A020F0">val</FONT></B> restart: <B><FONT COLOR="#228B22">bool</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setHandler: t <B><FONT COLOR="#5F9EA0">*</FONT></B> Handler.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> suspend: Mask.t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> restart: bool ref
+      <B><FONT COLOR="#A020F0">val</FONT></B> setHandler: t * Handler.t -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> suspend: Mask.t -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> vtalrm: t
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

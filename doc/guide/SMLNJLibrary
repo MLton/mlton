@@ -33,7 +33,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -226,9 +226,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
     <li>
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a>
- 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a> 
 </p>
 </li>
 </ul>
@@ -239,5 +237,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2006-03-04 17:06:17 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2006-11-02 17:31:29 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

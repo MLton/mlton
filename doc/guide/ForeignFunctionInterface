@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's foreign function interface (FFI) extends Standard ML and makes it easy to take the address of C global objects, access C global variables, call from SML to C, and call from C to SML. <h2 id="head-0efc2e6be4c23b9a513d7ce0dcff8ed80e8912e7">Overview</h2>
+MLton's foreign function interface (FFI) extends Standard ML and makes it easy to take the address of C global objects, access C global variables, call from SML to C, and call from C to SML.  MLton also provides <a href="MLNLFFI">ML-NLFFI</a>, which is a higher-level FFI for calling C functions and manipulating C data from SML. <h2 id="head-0efc2e6be4c23b9a513d7ce0dcff8ed80e8912e7">Overview</h2>
 
     <ul>
 
@@ -108,5 +108,5 @@ MLton's foreign function interface (FFI) extends Standard ML and makes it easy t
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:19:50 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-05-21 06:24:27 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

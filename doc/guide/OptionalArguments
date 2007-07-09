@@ -32,7 +32,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,8 +61,8 @@ For example, suppose that we have the following definition of a function <tt>f</
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">f</FONT></I></B></FONT></B> (i, r, s) <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString i, <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>, Real.toString r, <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>, s]
+<B><FONT COLOR="#A020F0">fun</FONT></B> f (i, r, s) =
+   concat [Int.toString i, <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>, Real.toString r, <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>, s]
 </PRE>
 <p>
  
@@ -73,9 +73,9 @@ Using the <tt>OptionalArg</tt> structure described below, we can define a functi
 
 <pre class=code>
 f' $
-f' `2 $
-f' `2 `3.0 $
-f' `2 `3.0 `<B><FONT COLOR="#BC8F8F">&quot;four&quot;</FONT></B> $
+f' `<B><FONT COLOR="#5F9EA0">2</FONT></B> $
+f' `<B><FONT COLOR="#5F9EA0">2</FONT></B> `<B><FONT COLOR="#5F9EA0">3.0</FONT></B> $
+f' `<B><FONT COLOR="#5F9EA0">2</FONT></B> `<B><FONT COLOR="#5F9EA0">3.0</FONT></B> `<B><FONT COLOR="#BC8F8F">&quot;four&quot;</FONT></B> $
 </PRE>
 <p>
  
@@ -88,11 +88,11 @@ Here is the definition of <tt>f'</tt> using the <tt>OptionalArg</tt> structure, 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f' <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">open</FONT></B> OptionalArg <B><FONT COLOR="#A020F0">in</FONT></B>
-      make (D 1) (D 2.0) (D <B><FONT COLOR="#BC8F8F">&quot;three&quot;</FONT></B>) $
-   <B><FONT COLOR="#A020F0">end</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> i &amp; r &amp; s <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (i, r, s))
+<B><FONT COLOR="#A020F0">val</FONT></B> f' =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
+   <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> OptionalArg <B><FONT COLOR="#A020F0">in</FONT></B>
+      make (D <B><FONT COLOR="#5F9EA0">1</FONT></B>) (D <B><FONT COLOR="#5F9EA0">2.0</FONT></B>) (D <B><FONT COLOR="#BC8F8F">&quot;three&quot;</FONT></B>) $
+   <B><FONT COLOR="#A020F0">end</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> i &amp; r &amp; s =&gt; f (i, r, s))
    z
 </PRE>
 <p>
@@ -106,12 +106,12 @@ In general, the definition of an optional-argument function looks like the follo
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-   <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">open</FONT></B> OptionalArg <B><FONT COLOR="#A020F0">in</FONT></B>
-      make (D &lt;default1<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>) (D &lt;default2<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>) ... (D &lt;defaultn<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>) $
-   <B><FONT COLOR="#A020F0">end</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> x1 &amp; x2 &amp; ... &amp; xn <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-        &lt;function code goes here<B><FONT COLOR="#5F9EA0">&gt;</FONT></B>)
+<B><FONT COLOR="#A020F0">val</FONT></B> f =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
+   <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> OptionalArg <B><FONT COLOR="#A020F0">in</FONT></B>
+      make (D &lt;default1&gt;) (D &lt;default2&gt;) ... (D &lt;defaultn&gt;) $
+   <B><FONT COLOR="#A020F0">end</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> x1 &amp; x2 &amp; ... &amp; xn =&gt;
+        &lt;function code goes here&gt;)
    z
 </PRE>
 <p>
@@ -122,30 +122,30 @@ Here is the definition of <tt>OptionalArg</tt>.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> OptionalArg <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> make <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> OptionalArg =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> make =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
          Fold.fold
-         ((id, <B><FONT COLOR="#A020F0">fn</FONT></B> (f, x) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f x),
-          <B><FONT COLOR="#A020F0">fn</FONT></B> (d, r) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">fn</FONT></B> func <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-          Fold.fold ((id, d ()), <B><FONT COLOR="#A020F0">fn</FONT></B> (f, d) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+         ((id, <B><FONT COLOR="#A020F0">fn</FONT></B> (f, x) =&gt; f x),
+          <B><FONT COLOR="#A020F0">fn</FONT></B> (d, r) =&gt; <B><FONT COLOR="#A020F0">fn</FONT></B> func =&gt;
+          Fold.fold ((id, d ()), <B><FONT COLOR="#A020F0">fn</FONT></B> (f, d) =&gt;
                      <B><FONT COLOR="#A020F0">let</FONT></B>
-                        <B><FONT COLOR="#A020F0">val</FONT></B> d &amp; () <B><FONT COLOR="#5F9EA0">=</FONT></B> r (id, f d)
+                        <B><FONT COLOR="#A020F0">val</FONT></B> d &amp; () = r (id, f d)
                      <B><FONT COLOR="#A020F0">in</FONT></B>
                         func d
                      <B><FONT COLOR="#A020F0">end</FONT></B>))
          z
          
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">D</FONT></I></B></FONT></B> d <B><FONT COLOR="#5F9EA0">=</FONT></B> Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (f, r) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-                            (<B><FONT COLOR="#A020F0">fn</FONT></B> ds <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (d &amp; ds),
-                             <B><FONT COLOR="#A020F0">fn</FONT></B> (f, a &amp; b) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> r (<B><FONT COLOR="#A020F0">fn</FONT></B> x <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f a &amp; x, b)))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> D d = Fold.step0 (<B><FONT COLOR="#A020F0">fn</FONT></B> (f, r) =&gt;
+                            (<B><FONT COLOR="#A020F0">fn</FONT></B> ds =&gt; f (d &amp; ds),
+                             <B><FONT COLOR="#A020F0">fn</FONT></B> (f, a &amp; b) =&gt; r (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; f a &amp; x, b)))
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> ` <B><FONT COLOR="#5F9EA0">=</FONT></B>
-         <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-         Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, (f, _ &amp; d)) <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> (<B><FONT COLOR="#A020F0">fn</FONT></B> d <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> f (x &amp; d), d))
+      <B><FONT COLOR="#A020F0">val</FONT></B> ` =
+         <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
+         Fold.step1 (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, (f, _ &amp; d)) =&gt; (<B><FONT COLOR="#A020F0">fn</FONT></B> d =&gt; f (x &amp; d), d))
          z
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -169,11 +169,11 @@ Labelled optional arguments are a simple extension of <a href="FunctionalRecordU
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> f =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
    Fold.post
-   (updateAB {a <B><FONT COLOR="#5F9EA0">=</FONT></B> 0, b <B><FONT COLOR="#5F9EA0">=</FONT></B> 0.0},
-    <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b} <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString a, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>,
+   (updateAB {a = <B><FONT COLOR="#5F9EA0">0</FONT></B>, b = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>},
+    <B><FONT COLOR="#A020F0">fn</FONT></B> {a, b} =&gt; print (concat [Int.toString a, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>,
                                 Real.toString b, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>]))
    z
 </PRE>
@@ -186,10 +186,10 @@ The idea is that <tt>f</tt> is the post composition (using <tt>Fold.post</tt>) o
 <p>
 Here are some example calls to <tt>f</tt>. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f (U#a 13) $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f (U#a 13) (U#b 17.5) $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f (U#b 17.5) (U#a 13) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f (U#a <B><FONT COLOR="#5F9EA0">13</FONT></B>) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f (U#a <B><FONT COLOR="#5F9EA0">13</FONT></B>) (U#b <B><FONT COLOR="#5F9EA0">17.5</FONT></B>) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f (U#b <B><FONT COLOR="#5F9EA0">17.5</FONT></B>) (U#a <B><FONT COLOR="#5F9EA0">13</FONT></B>) $
 </PRE>
  
 </p>
@@ -199,12 +199,12 @@ Notice that a caller can supply neither of the arguments, either of the argument
 <p>
 Here is another example. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> f <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#A020F0">fn</FONT></B> z <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> f =
+   <B><FONT COLOR="#A020F0">fn</FONT></B> z =&gt;
    Fold.post
-   (updateBCD {b <B><FONT COLOR="#5F9EA0">=</FONT></B> 0, c <B><FONT COLOR="#5F9EA0">=</FONT></B> 0.0, d <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&lt;&gt;&quot;</FONT></B>},
-    <B><FONT COLOR="#A020F0">fn</FONT></B> {b, c, d} <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-    <B><FONT COLOR="#A020F0">print</FONT></B> (<B><FONT COLOR="#A020F0">concat</FONT></B> [Int.toString b, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>,
+   (updateBCD {b = <B><FONT COLOR="#5F9EA0">0</FONT></B>, c = <B><FONT COLOR="#5F9EA0">0.0</FONT></B>, d = <B><FONT COLOR="#BC8F8F">&quot;&lt;&gt;&quot;</FONT></B>},
+    <B><FONT COLOR="#A020F0">fn</FONT></B> {b, c, d} =&gt;
+    print (concat [Int.toString b, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>,
                    Real.toString c, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>,
                    d, <B><FONT COLOR="#BC8F8F">&quot;\n&quot;</FONT></B>]))
    z
@@ -214,9 +214,9 @@ Here is another example.
 <p>
 Here are some example calls. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f (U#d <B><FONT COLOR="#BC8F8F">&quot;goodbye&quot;</FONT></B>) $
-<B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> f (U#d <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>) (U#b 17) (U#c 19.3) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f (U#d <B><FONT COLOR="#BC8F8F">&quot;goodbye&quot;</FONT></B>) $
+<B><FONT COLOR="#A020F0">val</FONT></B> () = f (U#d <B><FONT COLOR="#BC8F8F">&quot;hello&quot;</FONT></B>) (U#b <B><FONT COLOR="#5F9EA0">17</FONT></B>) (U#c <B><FONT COLOR="#5F9EA0">19.3</FONT></B>) $
 </PRE>
  
 </p>

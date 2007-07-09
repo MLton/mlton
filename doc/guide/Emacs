@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -86,9 +86,7 @@ There are a few Emacs modes for SML.
 
     <li class="gap">
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a>
- contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a> contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
 </p>
 </li>
     <li class="gap">
@@ -116,15 +114,21 @@ There is a mode for editing <a href="MLBasis"> ML Basis</a> files.
 
     <li>
 <p>
- 
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20061025-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a>
- 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a> (+ other files) 
 </p>
 </li>
 
     </ul>
 
 
+<h2 id="head-50fc5c9c229626045a37381fd07f13e910551890">Definitions and uses</h2>
+<p>
+There is a mode that supports the precise def-use information that MLton can output.  It highlights definitions and uses and provides commands for navigation (e.g. jump-to-def, jump-to-next, list-all-refs).  It can be handy, for example, for navigating in the MLton compiler source code.  See <a href="EmacsDefUseMode">EmacsDefUseMode</a> for further information. 
+</p>
+<h2 id="head-7de6b40c953fe9d8e7942b13fb6e0adfff9a2f33">Building on the background</h2>
+<p>
+Tired of manually starting/stopping/restarting builds after editing files?  Now you don't have to.  See <a href="EmacsBgBuildMode">EmacsBgBuildMode</a> for further information. 
+</p>
 <h2 id="head-38a2998cc83b4215b89f0b96917e58d59fdfae52">Error messages</h2>
 <p>
 MLton's error messages are not in the format that the Emacs <tt>next-error</tt> parser natively understands.  There are a couple of ways to fix this.  The easiest way is to add the following to your <tt>.emacs</tt> to cause Emacs to recognize MLton's error messages. 
@@ -157,5 +161,5 @@ Alternatively, you could use a sed script to rewrite MLton's errors. Here is one
 
 <p>
 <hr>
-Last edited on 2005-12-01 03:57:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-06-27 10:59:46 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

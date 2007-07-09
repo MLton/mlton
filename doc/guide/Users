@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -126,6 +126,11 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 </li>
     <li>
 <p>
+ <a class="external" href="http://www.eecs.harvard.edu/~stein/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">DesynchFS</a>, a programming model and distributed file system for large clusters 
+</p>
+</li>
+    <li>
+<p>
  <a class="external" href="http://www.fantasy-coders.de/projects/gh/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Guugelhupf</a>, a simple search engine. 
 </p>
 </li>
@@ -162,6 +167,11 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
     <li>
 <p>
  <a class="external" href="http://www-2.cs.cmu.edu/%7Etom7/ssapre/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SSA PRE</a>, an implementation of Partial Redundancy Elimination for MLton. 
+</p>
+</li>
+    <li>
+<p>
+ <a href="Stabilizers">Stabilizers</a>, a modular checkpointing abstraction for concurrent functional programs. 
 </p>
 </li>
     <li>
@@ -205,5 +215,5 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 
 <p>
 <hr>
-Last edited on 2006-09-01 17:29:17 by <span title="st-66-99-2-26.chipublib.org"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-07-08 21:42:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

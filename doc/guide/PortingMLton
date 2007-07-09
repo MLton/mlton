@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -358,7 +358,7 @@ On the target machine, move the libraries to the right place.  That is, in <tt>b
     <li class="gap">
 <p>
 On the target machine, compile and link MLton.  That is, in the  mlton directory, do something like: 
-<pre> gcc -c -Ibuild/lib/include -O1 -w mlton/mlton.*.[cS]
+<pre> gcc -c -Ibuild/lib/include -Ibuild/lib/self/include -O1 -w mlton/mlton.*.[cS]
  gcc -o build/lib/mlton-compile \
         -Lbuild/lib/self \
         -L/usr/local/lib \
@@ -404,5 +404,5 @@ The above description is based on the following emails sent to the MLton list.
 
 <p>
 <hr>
-Last edited on 2006-04-30 14:19:01 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
+Last edited on 2007-06-26 11:16:54 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
 </body></html>

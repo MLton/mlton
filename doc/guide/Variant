@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,8 +57,8 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 A <em>variant</em> is an arm of a datatype declaration.  For example, the datatype 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> A <B><FONT COLOR="#5F9EA0">|</FONT></B> B <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">|</FONT></B> C <B><FONT COLOR="#A020F0">of</FONT></B> <B><FONT COLOR="#228B22">real</FONT></B>
-</PRE>
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">A</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">B</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">C</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> real
+</FONT></B></PRE>
 <p>
  
 </p>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,8 +65,8 @@ In most situations the syntax is quite convenient.  However, there are sitiuatio
 <p>
 In such situations, it is useful to have a binary product datatype with an infix constructor defined as follows. 
 <pre class=code>
-<B><FONT COLOR="#A020F0">datatype</FONT></B> ('a, 'b) product <B><FONT COLOR="#5F9EA0">=</FONT></B> &amp; <B><FONT COLOR="#A020F0">of</FONT></B> 'a <B><FONT COLOR="#5F9EA0">*</FONT></B> 'b
-<B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
+<B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> ('a, 'b) product </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">&amp;</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a * 'b
+</FONT></B><B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
 </PRE>
  
 </p>

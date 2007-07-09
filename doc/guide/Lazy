@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,10 +60,10 @@ In a lazy (or non-strict) language, the arguments to a function are not evaluate
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> LAZY <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> lazy: (<B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a) <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">signature</FONT></B> LAZY =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> lazy: (unit -&gt; 'a) -&gt; unit -&gt; 'a
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -73,24 +73,24 @@ This is easy to implement in SML.
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">structure</FONT></B> Lazy: LAZY <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">struct</FONT></B>
-<B><FONT COLOR="#A020F0">      fun </FONT></B><B><FONT COLOR="#0000FF"><B><I><FONT COLOR="#000000">lazy</FONT></I></B></FONT></B> (th: <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a): <B><FONT COLOR="#228B22">unit</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> 'a <B><FONT COLOR="#5F9EA0">=</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Lazy: LAZY =
+   <B><FONT COLOR="#0000FF">struct</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> lazy (th: unit -&gt; 'a): unit -&gt; 'a =
          <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B> <B><FONT COLOR="#A020F0">ref</FONT></B> <B><FONT COLOR="#5F9EA0">NONE</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> r: 'a option ref = ref NONE
          <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">fn</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
-            <B><FONT COLOR="#A020F0">case</FONT></B> <B><FONT COLOR="#5F9EA0">!</FONT></B>r <B><FONT COLOR="#A020F0">of</FONT></B>
-               <B><FONT COLOR="#5F9EA0">NONE</FONT></B> <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B>
+            <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
+            <B><FONT COLOR="#A020F0">case</FONT></B> !r <B><FONT COLOR="#A020F0">of</FONT></B>
+               NONE =&gt;
                   <B><FONT COLOR="#A020F0">let</FONT></B>
-                     <B><FONT COLOR="#A020F0">val</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B> th ()
-                     <B><FONT COLOR="#A020F0">val</FONT></B> () <B><FONT COLOR="#5F9EA0">=</FONT></B> r <B><FONT COLOR="#5F9EA0">:=</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> a
+                     <B><FONT COLOR="#A020F0">val</FONT></B> a = th ()
+                     <B><FONT COLOR="#A020F0">val</FONT></B> () = r := SOME a
                   <B><FONT COLOR="#A020F0">in</FONT></B>
                      a
                   <B><FONT COLOR="#A020F0">end</FONT></B>
-             <B><FONT COLOR="#5F9EA0">|</FONT></B> <B><FONT COLOR="#5F9EA0">SOME</FONT></B> a <B><FONT COLOR="#5F9EA0">=</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> a
+             | SOME a =&gt; a
          <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

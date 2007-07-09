@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,7 +65,7 @@ MLton was designed and implemented by <a href="HenryCejtin">HenryCejtin</a>, <a 
 </li>
     <li class="gap">
 <p>
- <a href="MatthewFluet">MatthewFluet</a> implemented the X86 native code generator, ported  <tt>mlprof</tt> to work with the native code generator, did a lot of work  on the SSA optimizer, both adding new optimizations and improving or  porting existing optimizations, updated the   <a href="BasisLibrary">Basis Library</a> implementation, ported  <a href="ConcurrentML">ConcurrentML</a> and <a href="MLNLFFI">ML-NLFFI</a> to MLton, and implemented the   <a href="MLBasis"> ML Basis system</a>.  
+ <a href="MatthewFluet">MatthewFluet</a> implemented the X86 and AMD64 native code generators,  ported <tt>mlprof</tt> to work with the native code generator, did a lot  of work on the SSA optimizer, both adding new optimizations and  improving or porting existing optimizations, updated the  <a href="BasisLibrary">Basis Library</a> implementation, ported  <a href="ConcurrentML">ConcurrentML</a> and <a href="MLNLFFI">ML-NLFFI</a> to MLton, implemented the   <a href="MLBasis"> ML Basis system</a>, and ported MLton to 64-bit platforms. 
 </p>
 </li>
     <li class="gap">
@@ -150,7 +150,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Eric <a class="nonexistent" href="McCorkle">McCorkle</a> ported MLton to Intel Mac. 
+ Eric Mc<strong></strong>Corkle ported MLton to Intel Mac. 
 </p>
 </li>
     <li class="gap">
@@ -170,7 +170,12 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Filip Pizlo ported MLton to Darwin. 
+ Filip Pizlo ported MLton to (PowerPC) Darwin. 
+</p>
+</li>
+    <li class="gap">
+<p>
+ John Reppy assisted in porting MLton to Intel Mac. 
 </p>
 </li>
     <li class="gap">
@@ -190,7 +195,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Luke Ziarek assisted in porting MLton to Darwin. 
+ Luke Ziarek assisted in porting MLton to (PowerPC) Darwin. 
 </p>
 </li>
 
@@ -256,5 +261,5 @@ We have also benefited from other software development tools and used code from 
 
 <p>
 <hr>
-Last edited on 2006-10-11 18:32:42 by <span title="ppp-71-139-168-160.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-08 22:13:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

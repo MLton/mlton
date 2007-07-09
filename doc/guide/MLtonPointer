@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,38 +57,38 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_POINTER <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">eqtype</FONT></B> t
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_POINTER =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">eqtype</FONT></B><B><FONT COLOR="#228B22"> t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> add: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> compare: t <B><FONT COLOR="#5F9EA0">*</FONT></B> t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> order
-      <B><FONT COLOR="#A020F0">val</FONT></B> diff: t <B><FONT COLOR="#5F9EA0">*</FONT></B> t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getInt8: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int8.<B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getInt16: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int16.<B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getInt32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int32.<B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getInt64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Int64.<B><FONT COLOR="#228B22">int</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getPointer: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-      <B><FONT COLOR="#A020F0">val</FONT></B> getReal32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Real32.<B><FONT COLOR="#228B22">real</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getReal64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Real64.<B><FONT COLOR="#228B22">real</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getWord8: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Word8.<B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getWord16: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Word16.<B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getWord32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Word32.<B><FONT COLOR="#228B22">word</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> getWord64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> Word64.<B><FONT COLOR="#228B22">word</FONT></B>
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> add: t * word -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> compare: t * t -&gt; order
+      <B><FONT COLOR="#A020F0">val</FONT></B> diff: t * t -&gt; word
+      <B><FONT COLOR="#A020F0">val</FONT></B> getInt8: t * int -&gt; Int8.int
+      <B><FONT COLOR="#A020F0">val</FONT></B> getInt16: t * int -&gt; Int16.int
+      <B><FONT COLOR="#A020F0">val</FONT></B> getInt32: t * int -&gt; Int32.int
+      <B><FONT COLOR="#A020F0">val</FONT></B> getInt64: t * int -&gt; Int64.int
+      <B><FONT COLOR="#A020F0">val</FONT></B> getPointer: t * int -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> getReal32: t * int -&gt; Real32.real
+      <B><FONT COLOR="#A020F0">val</FONT></B> getReal64: t * int -&gt; Real64.real
+      <B><FONT COLOR="#A020F0">val</FONT></B> getWord8: t * int -&gt; Word8.word
+      <B><FONT COLOR="#A020F0">val</FONT></B> getWord16: t * int -&gt; Word16.word
+      <B><FONT COLOR="#A020F0">val</FONT></B> getWord32: t * int -&gt; Word32.word
+      <B><FONT COLOR="#A020F0">val</FONT></B> getWord64: t * int -&gt; Word64.word
       <B><FONT COLOR="#A020F0">val</FONT></B> null: t
-      <B><FONT COLOR="#A020F0">val</FONT></B> setInt8: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Int8.<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setInt16: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Int16.<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setInt32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Int32.<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setInt64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Int64.<B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setPointer: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setReal32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Real32.<B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setReal64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Real64.<B><FONT COLOR="#228B22">real</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setWord8: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Word8.<B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setWord16: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Word16.<B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setWord32: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Word32.<B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> setWord64: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">int</FONT></B> <B><FONT COLOR="#5F9EA0">*</FONT></B> Word64.<B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">unit</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> sub: t <B><FONT COLOR="#5F9EA0">*</FONT></B> <B><FONT COLOR="#228B22">word</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> setInt8: t * int * Int8.int -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setInt16: t * int * Int16.int -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setInt32: t * int * Int32.int -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setInt64: t * int * Int64.int -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setPointer: t * int * t -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setReal32: t * int * Real32.real -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setReal64: t * int * Real64.real -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setWord8: t * int * Word8.word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setWord16: t * int * Word16.word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setWord32: t * int * Word32.word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> setWord64: t * int * Word64.word -&gt; unit
+      <B><FONT COLOR="#A020F0">val</FONT></B> sub: t * word -&gt; t
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  

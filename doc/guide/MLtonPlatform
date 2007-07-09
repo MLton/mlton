@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20061025</a>
+      <a class = mltona href="Home">MLton 20070709</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,28 +57,28 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 
 <pre class=code>
-<B><FONT COLOR="#5F9EA0">signature</FONT></B> MLTON_PLATFORM <B><FONT COLOR="#5F9EA0">=</FONT></B>
-   <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> Arch:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> Alpha <B><FONT COLOR="#5F9EA0">|</FONT></B> AMD64 <B><FONT COLOR="#5F9EA0">|</FONT></B> ARM <B><FONT COLOR="#5F9EA0">|</FONT></B> HPPA <B><FONT COLOR="#5F9EA0">|</FONT></B> IA64 <B><FONT COLOR="#5F9EA0">|</FONT></B> m68k 
-                       <B><FONT COLOR="#5F9EA0">|</FONT></B> MIPS <B><FONT COLOR="#5F9EA0">|</FONT></B> PowerPC <B><FONT COLOR="#5F9EA0">|</FONT></B> S390 <B><FONT COLOR="#5F9EA0">|</FONT></B> Sparc <B><FONT COLOR="#5F9EA0">|</FONT></B> X86
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_PLATFORM =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Arch:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Alpha</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">AMD64</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">ARM</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">HPPA</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IA64</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">m68k</FONT> 
+                       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MIPS</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">PowerPC</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">S390</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Sparc</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">X86</FONT>
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> fromString: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t option
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fromString: string -&gt; t option
             <B><FONT COLOR="#A020F0">val</FONT></B> host: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> toString: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> toString: t -&gt; string
+         <B><FONT COLOR="#0000FF">end</FONT></B>
          
-      <B><FONT COLOR="#5F9EA0">structure</FONT></B> OS:
-         <B><FONT COLOR="#5F9EA0">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">datatype</FONT></B> t <B><FONT COLOR="#5F9EA0">=</FONT></B> Cygwin <B><FONT COLOR="#5F9EA0">|</FONT></B> Darwin <B><FONT COLOR="#5F9EA0">|</FONT></B> FreeBSD <B><FONT COLOR="#5F9EA0">|</FONT></B> Linux 
-                       <B><FONT COLOR="#5F9EA0">|</FONT></B> MinGW <B><FONT COLOR="#5F9EA0">|</FONT></B> NetBSD <B><FONT COLOR="#5F9EA0">|</FONT></B> OpenBSD <B><FONT COLOR="#5F9EA0">|</FONT></B> Solaris
+      <B><FONT COLOR="#0000FF">structure</FONT></B> OS:
+         <B><FONT COLOR="#0000FF">sig</FONT></B>
+            <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Cygwin</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Darwin</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">FreeBSD</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Linux</FONT> 
+                       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MinGW</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">NetBSD</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">OpenBSD</FONT> </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Solaris</FONT>
 
-            <B><FONT COLOR="#A020F0">val</FONT></B> fromString: <B><FONT COLOR="#228B22">string</FONT></B> <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> t option
+            </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fromString: string -&gt; t option
             <B><FONT COLOR="#A020F0">val</FONT></B> host: t
-            <B><FONT COLOR="#A020F0">val</FONT></B> toString: t <B><FONT COLOR="#5F9EA0">-</FONT></B><B><FONT COLOR="#5F9EA0">&gt;</FONT></B> <B><FONT COLOR="#228B22">string</FONT></B>
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+            <B><FONT COLOR="#A020F0">val</FONT></B> toString: t -&gt; string
+         <B><FONT COLOR="#0000FF">end</FONT></B>
+   <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
