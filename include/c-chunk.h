@@ -113,8 +113,8 @@ typedef Pointer Objptr;
 
 #define ChunkSwitch(n)                                                  \
                 if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n",  \
-                                        __FILE__, __LINE__, n, l_nextFun);      \
+                        fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n", \
+                                        __FILE__, __LINE__, n, (int)l_nextFun); \
                 CacheFrontier();                                        \
                 CacheStackTop();                                        \
                 while (1) {                                             \
@@ -174,7 +174,7 @@ typedef Pointer Objptr;
                 l_nextFun = *(uintptr_t*)(StackTop - sizeof(void*));            \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
-                                        __FILE__, __LINE__, l_nextFun);         \
+                                        __FILE__, __LINE__, (int)l_nextFun);    \
                 goto top;                                                       \
         } while (0)
 
@@ -206,6 +206,12 @@ typedef Pointer Objptr;
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
 #define MLTON_CODEGEN_WORDSQUOTREM(func) 
 #endif
+/* Declare memcpy, since <string.h> isn't included.
+ */
+#ifndef MLTON_CODEGEN_MAMCPY
+#define MLTON_CODEGEN_MEMCPY(decl)
+#endif
+MLTON_CODEGEN_MEMCPY(void * memcpy(void *, const void*, size_t);)
 #include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/cpointer.h"

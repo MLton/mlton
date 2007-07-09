@@ -403,10 +403,10 @@ structure Statement =
              PrimApp {args = Vector.new2 (Frontier,
                                           bytes (Runtime.headerSize ())),
                       dst = SOME dst,
-                      prim = Prim.wordAdd (WordSize.cpointer ())},
+                      prim = Prim.cpointerAdd},
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
-                      prim = Prim.wordAdd (WordSize.cpointer ())})
+                      prim = Prim.cpointerAdd})
          end
 
       fun foldOperands (s, ac, f) =

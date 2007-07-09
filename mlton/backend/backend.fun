@@ -558,11 +558,11 @@ let
                                    (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
                                   WordSize.cpointer ())))),
                        dst = SOME tmp,
-                       prim = Prim.wordAdd (WordSize.cpointer ())},
+                       prim = Prim.cpointerAdd},
                       M.Statement.PrimApp
                       {args = Vector.new2 (tmp, stackBottomOp),
                        dst = SOME exnStackOp,
-                       prim = Prim.wordSub (WordSize.cpointer ())})
+                       prim = Prim.cpointerDiff})
                   end
              | SetExnStackSlot =>
                   (* ExnStack = *(uint* )(stackTop + offset);   *)

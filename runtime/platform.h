@@ -113,6 +113,12 @@
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE /*static inline*/
 #endif
+#ifndef MLTON_CODEGEN_MATHFN
+#define MLTON_CODEGEN_MATHFN(decl) 
+#endif
+#ifndef MLTON_CODEGEN_WORDSQUOTREM
+#define MLTON_CODEGEN_WORDSQUOTREM(func) func
+#endif
 #include "basis-ffi.h"
 
 #include "gc.h"

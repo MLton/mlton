@@ -1,8 +1,4 @@
 
-#ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func) func
-#endif
-
 #define binary(kind, name, op)                                          \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \

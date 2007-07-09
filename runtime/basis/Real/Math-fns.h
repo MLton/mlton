@@ -1,8 +1,4 @@
 
-#ifndef MLTON_CODEGEN_MATHFN
-#define MLTON_CODEGEN_MATHFN(decl) 
-#endif
-
 #define unaryReal(g, h)                                         \
   MLTON_CODEGEN_MATHFN(Real64_t h(Real64_t x);)                 \
   MLTON_CODEGEN_STATIC_INLINE                                   \

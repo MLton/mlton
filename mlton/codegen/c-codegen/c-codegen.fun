@@ -632,7 +632,7 @@ fun output {program as Machine.Program.T {chunks,
                                        C.bytes offset]]
              | Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
              | Contents {oper, ty} => contents (ty, toString oper)
-             | File => "__FILE__"
+             | File => "(CPointer)(__FILE__)"
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
