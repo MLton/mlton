@@ -12,7 +12,7 @@ typedef unsigned char pointerAux __attribute__ ((aligned (4), may_alias));
 typedef pointerAux* pointer;
 
 #define POINTER_SIZE sizeof(pointer)
-#ifdef __WORDSIZE
+#if defined(__WORDSIZE)
 #if __WORDSIZE == 32
 #define FMTPTR "0x%08"PRIxPTR
 #elif __WORDSIZE == 64
@@ -20,7 +20,7 @@ typedef pointerAux* pointer;
 #else
 #error __WORDSIZE unknown
 #endif
-#elif __LP64__
+#elif defined(__LP64__)
 #define FMTPTR "0x%016"PRIxPTR
 #else
 #define FMTPTR "0x%08"PRIxPTR

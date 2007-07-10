@@ -15,7 +15,7 @@ struct GC_state;
 typedef struct GC_state *GC_state;
 typedef GC_state GCState_t;
 
-#ifdef __WORDSIZE
+#if defined(__WORDSIZE)
 #if __WORDSIZE == 32
 #define GC_MODEL_NATIVE32
 #elif __WORDSIZE == 64
@@ -23,7 +23,7 @@ typedef GC_state GCState_t;
 #else
 #error unknown __WORDSIZE
 #endif
-#elif (defined __LP64__)
+#elif defined(__LP64__)
 #define GC_MODEL_NATIVE64
 #else
 #define GC_MODEL_NATIVE32
