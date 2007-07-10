@@ -432,6 +432,12 @@ signature AMD64 =
         (* Scalar SSE unary arithmetic instructions. *)
         datatype sse_unas
           = SSE_SQRTS (* square root; p. 360,362 *)
+        (* Packed SSE binary logical instructions (used as scalar). *)
+        datatype sse_binlp
+          = SSE_ANDNP (* and-not; p. 17,19 *)
+          | SSE_ANDP (* and; p. 21,23 *)
+          | SSE_ORP (* or; p. 206,208 *)
+          | SSE_XORP (* xor; p. 391,393 *)
 
         (* amd64 Instructions.
          * src operands are not changed by the instruction.
@@ -572,6 +578,12 @@ signature AMD64 =
                          src: Operand.t,
                          dst: Operand.t,
                          size: Size.t}
+          (* Packed SSE binary logic instructions (used as scalar). 
+           *)
+          | SSE_BinLP of {oper: sse_binlp,
+                          src: Operand.t,
+                          dst: Operand.t,
+                          size: Size.t}
           (* Scalar SSE move instruction.
            *)
           | SSE_MOVS of {src: Operand.t,
@@ -938,6 +950,10 @@ signature AMD64 =
                                     src: Operand.t,
                                     dst: Operand.t,
                                     size: Size.t} -> t
+        val instruction_sse_binlp : {oper: Instruction.sse_binlp,
+                                     src: Operand.t,
+                                     dst: Operand.t,
+                                     size: Size.t} -> t
         val instruction_sse_movs : {src: Operand.t,
                                     dst: Operand.t,
                                     size: Size.t} -> t

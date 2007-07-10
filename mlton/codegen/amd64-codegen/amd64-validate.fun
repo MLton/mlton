@@ -988,6 +988,62 @@ struct
                      | _ => (Operand.validate {operand = src}) andalso
                             (Operand.validate {operand = dst})
                 end
+             | SSE_BinLP {src, dst, size, ...}
+               (* Packed SSE binary logical instructions (used as scalar).
+                * Require src/dst operands as follows:
+                *
+                *              dst
+                *          reg xmm imm lab add 
+                *      reg
+                *      xmm      X
+                *  src imm
+                *      lab
+                *      add     (x)
+                *
+                * Require size modifier class as follows: FLT
+                * Disallow address for src, since it would be a 128-bit load.
+                *)
+             => let
+                  val _ = if Size.class size = Size.FLT
+                            then ()
+                            else Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, size"
+                  val _ = case Operand.size src
+                            of NONE => ()
+                             | SOME srcsize 
+                             => if srcsize = size
+                                  then ()
+                                  else Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, srcsize"
+                  val _ = case Operand.size dst
+                            of NONE => ()
+                             | SOME dstsize 
+                             => if dstsize = size
+                                  then ()
+                                  else Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dstsize"
+                in
+                  case (src,dst)
+                    of (Operand.MemLoc _, _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, src:MemLoc"
+                     | (_, Operand.MemLoc _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dst:MemLoc"
+                     | (Operand.Register _, _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, src:Register"
+                     | (Operand.Immediate _, _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, src:Immediate"
+                     | (Operand.Label _, _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, src:Label"
+                     | (Operand.Address _, _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, src:Address"
+                     | (_, Operand.Register _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dst:Register"
+                     | (_, Operand.Immediate _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dst:Immediate"
+                     | (_, Operand.Label _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dst:Label"
+                     | (_, Operand.Address _)
+                     => Error.bug "amd64Validate.Instruction.validate: SSE_BinLP, dst:Address"
+                     | _ => (Operand.validate {operand = src}) andalso
+                            (Operand.validate {operand = dst})
+                end
              | SSE_MOVS {src, dst, size, ...}
                (* Scalar SSE move instruction.
                 * Require src/dst operands as follows:

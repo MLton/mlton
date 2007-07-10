@@ -6710,14 +6710,15 @@ struct
        *      xmm      X
        *  src imm
        *      lab
-       *      add      X
+       *      add      ?
        *)
-      fun allocateXmmSrcDst {src: Operand.t,
-                              dst: Operand.t,
-                              move_dst: bool,
-                              size: Size.t,
-                              info as {dead, remove, ...}: Liveness.t,
-                              registerAllocation: RegisterAllocation.t}
+      fun allocateXmmSrcDstAux {src: Operand.t,
+                                address_src: bool,
+                                dst: Operand.t,
+                                move_dst: bool,
+                                size: Size.t,
+                                info as {dead, remove, ...}: Liveness.t,
+                                registerAllocation: RegisterAllocation.t}
         = if Operand.eq(src, dst)
             then let
                    val {operand = final_src_dst, 
@@ -6772,7 +6773,7 @@ struct
                                   = RA.allocateXmmOperand 
                                     {operand = src,
                                      options = {xmmregister = true,
-                                                address = true},
+                                                address = address_src},
                                      info = info,
                                      size = size,
                                      move = true,
@@ -6797,7 +6798,7 @@ struct
                                   = RA.allocateXmmOperand 
                                     {operand = src,
                                      options = {xmmregister = true,
-                                                address = true},
+                                                address = address_src},
                                      info = info,
                                      size = size,
                                      move = true,
@@ -6909,7 +6910,57 @@ struct
                              assembly_dst],
                           registerAllocation = registerAllocation}
                        end
-                    | _ => Error.bug "amd64AllocateRegisters.Instruction.allocateXmmSrcDst"
+                    | _ => Error.bug "amd64AllocateRegisters.Instruction.allocateXmmSrcDstAux"
+
+      (*
+       * Require src/dst operands as follows:
+       *
+       *              dst
+       *          reg xmm imm lab add 
+       *      reg
+       *      xmm      X
+       *  src imm
+       *      lab
+       *      add      X
+       *)
+      fun allocateXmmSrcDst {src: Operand.t,
+                             dst: Operand.t,
+                             move_dst: bool,
+                             size: Size.t,
+                             info: Liveness.t,
+                             registerAllocation: RegisterAllocation.t}
+         = allocateXmmSrcDstAux {src = src,
+                                 address_src = true,
+                                 dst = dst,
+                                 move_dst = move_dst,
+                                 size = size,
+                                 info = info,
+                                 registerAllocation = registerAllocation}
+
+      (*
+       * Require src/dst operands as follows:
+       *
+       *              dst
+       *          reg xmm imm lab add 
+       *      reg
+       *      xmm      X
+       *  src imm
+       *      lab
+       *      add
+       *)
+      fun allocateXmmSrcDstReg {src: Operand.t,
+                                dst: Operand.t,
+                                move_dst: bool,
+                                size: Size.t,
+                                info: Liveness.t,
+                                registerAllocation: RegisterAllocation.t}
+         = allocateXmmSrcDstAux {src = src,
+                                 address_src = false,
+                                 dst = dst,
+                                 move_dst = move_dst,
+                                 size = size,
+                                 info = info,
+                                 registerAllocation = registerAllocation}
 
       (* 
        * Require src1/src2 operands as follows:
@@ -9197,6 +9248,78 @@ struct
 
                         val instruction 
                           = Instruction.SSE_UnAS
+                            {oper = oper,
+                             src = final_src,
+                             dst = final_dst,
+                             size = size}
+
+                        val {uses = final_uses,
+                             defs = final_defs,
+                             ...}
+                          = Instruction.uses_defs_kills instruction
+
+                        val {assembly = assembly_post,
+                             registerAllocation}
+                          = RA.post {uses = uses,
+                                     final_uses = final_uses,
+                                     defs = defs,
+                                     final_defs = final_defs,
+                                     kills = kills,
+                                     info = info,
+                                     registerAllocation = registerAllocation}
+                      in
+                        {assembly
+                         = AppendList.appends 
+                           [assembly_pre,
+                            assembly_src_dst,
+                            AppendList.single
+                            (Assembly.instruction instruction),
+                            assembly_post],
+                           registerAllocation = registerAllocation}
+                      end
+                in
+                  default ()
+                end
+             | SSE_BinLP {oper, src, dst, size}
+               (* Packed SSE binary logical instructions (used as scalar).
+                * Require src/dst operands as follows:
+                *
+                *              dst
+                *          reg xmm imm lab add 
+                *      reg
+                *      xmm      X
+                *  src imm
+                *      lab
+                *      add     (x)
+                *
+                * Disallow address for src, since it would be a 128-bit load.
+                *)
+             => let
+                  val {uses,defs,kills} 
+                    = Instruction.uses_defs_kills instruction
+                  val {assembly = assembly_pre,
+                       registerAllocation}
+                    = RA.pre {uses = uses,
+                              defs = defs,
+                              kills = kills,
+                              info = info,
+                              registerAllocation = registerAllocation}
+
+                  fun default ()
+                    = let
+                        val {final_src,
+                             final_dst,
+                             assembly_src_dst,
+                             registerAllocation}
+                          = allocateXmmSrcDstReg {src = src,
+                                                  dst = dst,
+                                                  move_dst = true,
+                                                  size = size,
+                                                  info = info,
+                                                  registerAllocation = registerAllocation}
+
+                        val instruction 
+                          = Instruction.SSE_BinLP
                             {oper = oper,
                              src = final_src,
                              dst = final_dst,

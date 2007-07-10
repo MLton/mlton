@@ -217,6 +217,12 @@ signature AMD64_PSEUDO =
         (* Scalar SSE unary arithmetic instructions. *)
         datatype sse_unas
           = SSE_SQRTS (* square root; p. 360,362 *)
+        (* Packed SSE binary logical instructions (used as scalar). *)
+        datatype sse_binlp
+          = SSE_ANDNP (* and-not; p. 17,19 *)
+          | SSE_ANDP (* and; p. 21,23 *)
+          | SSE_ORP (* or; p. 206,208 *)
+          | SSE_XORP (* xor; p. 391,393 *)
 
         type t
       end
@@ -326,6 +332,10 @@ signature AMD64_PSEUDO =
                                     src: Operand.t,
                                     dst: Operand.t,
                                     size: Size.t} -> t
+        val instruction_sse_binlp : {oper: Instruction.sse_binlp,
+                                     src: Operand.t,
+                                     dst: Operand.t,
+                                     size: Size.t} -> t
         val instruction_sse_movs : {src: Operand.t,
                                     dst: Operand.t,
                                     size: Size.t} -> t

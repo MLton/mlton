@@ -112,7 +112,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val class = IEEEReal.mkClass R.class
 
       val abs =
-         if MLton.Codegen.isX86
+         if MLton.Codegen.isX86 orelse MLton.Codegen.isAmd64
             then abs
          else
             fn x =>

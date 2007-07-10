@@ -61,7 +61,7 @@ struct
          | Real_Math_sin _ => false
          | Real_Math_sqrt _ => true
          | Real_Math_tan _ => false
-         | Real_abs _ => false (* !! *)
+         | Real_abs _ => true
          | Real_add _ => true
          | Real_castToWord _ => true
          | Real_div _ => true
@@ -72,7 +72,7 @@ struct
          | Real_mul _ => true
          | Real_muladd _ => true
          | Real_mulsub _ => true
-         | Real_neg _ => false (* !! *)
+         | Real_neg _ => true
          | Real_qequal _ => true
          | Real_rndToReal _ => true
          | Real_rndToWord (_, _, {signed}) => signed
@@ -675,6 +675,42 @@ struct
                      transfer = NONE}]
                 end
              | Real_Math_sqrt _ => sse_unas Instruction.SSE_SQRTS
+             | Real_abs s =>
+                let
+                   val (dst,dstsize) = getDst1 ()
+                   val (src,srcsize) = getSrc1 ()
+                   val _ 
+                     = Assert.assert
+                       ("amd64MLton.prim: Real_abs, dstsize/srcsize",
+                        fn () => srcsize = dstsize)
+                   fun mkConst wordSize
+                     = WordX.rshift
+                       (WordX.allOnes wordSize,
+                        WordX.one wordSize,
+                        {signed = false})
+
+                   val (const,constsize) 
+                     = case s of
+                         R32 => (mkConst WordSize.word32, Size.LONG)
+                       | R64 => (mkConst WordSize.word64, Size.QUAD)
+                in
+                   AppendList.fromList
+                   [Block.mkBlock'
+                    {entry = NONE,
+                     statements 
+                     = [Assembly.instruction_sse_movd
+                        {dst = dst,
+                         dstsize = dstsize,
+                         src = Operand.immediate_word const,
+                         srcsize = constsize},
+                        Assembly.instruction_sse_binlp
+                        {oper = Instruction.SSE_ANDP,
+                         src = src,
+                         dst = dst,
+                         size = dstsize}],
+                     transfer = NONE}]
+
+                end
              | Real_add _ => sse_binas Instruction.SSE_ADDS
              | Real_castToWord _ => sse_movd ()
              | Real_div _ => sse_binas Instruction.SSE_DIVS
@@ -789,6 +825,42 @@ struct
              | Real_mul _ => sse_binas Instruction.SSE_MULS
              | Real_muladd _ => sse_binas_mul Instruction.SSE_ADDS
              | Real_mulsub _ => sse_binas_mul Instruction.SSE_SUBS
+             | Real_neg s =>
+                let
+                   val (dst,dstsize) = getDst1 ()
+                   val (src,srcsize) = getSrc1 ()
+                   val _ 
+                     = Assert.assert
+                       ("amd64MLton.prim: Real_neg, dstsize/srcsize",
+                        fn () => srcsize = dstsize)
+                   fun mkConst wordSize
+                     = (WordX.notb o WordX.rshift)
+                       (WordX.allOnes wordSize,
+                        WordX.one wordSize,
+                        {signed = false})
+
+                   val (const,constsize) 
+                     = case s of
+                         R32 => (mkConst WordSize.word32, Size.LONG)
+                       | R64 => (mkConst WordSize.word64, Size.QUAD)
+                in
+                   AppendList.fromList
+                   [Block.mkBlock'
+                    {entry = NONE,
+                     statements 
+                     = [Assembly.instruction_sse_movd
+                        {dst = dst,
+                         dstsize = dstsize,
+                         src = Operand.immediate_word const,
+                         srcsize = constsize},
+                        Assembly.instruction_sse_binlp
+                        {oper = Instruction.SSE_XORP,
+                         src = src,
+                         dst = dst,
+                         size = dstsize}],
+                     transfer = NONE}]
+
+                end
              | Real_qequal _ =>
                 let
                    val (dst,dstsize) = getDst1 ()

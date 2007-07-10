@@ -1601,7 +1601,21 @@ struct
           in 
             fn SSE_SQRTS => str "sqrts"
           end
-
+      (* Packed SSE binary logical instructions (used as scalar). *)
+      datatype sse_binlp
+        = SSE_ANDNP (* and-not; p. 17,19 *)
+        | SSE_ANDP (* and; p. 21,23 *)
+        | SSE_ORP (* or; p. 206,208 *)
+        | SSE_XORP (* xor; p. 391,393 *)
+      val sse_binlp_layout
+        = let
+             open Layout
+          in
+             fn SSE_ANDNP => str "andnp"
+              | SSE_ANDP => str "andp"
+              | SSE_ORP => str "orp"
+              | SSE_XORP => str "xorp"
+          end
 
       (* amd64 Instructions.
        * src operands are not changed by the instruction.
@@ -1742,6 +1756,12 @@ struct
                        src: Operand.t,
                        dst: Operand.t,
                        size: Size.t}
+        (* Packed SSE binary logical instructions (used as scalar). 
+         *)
+        | SSE_BinLP of {oper: sse_binlp,
+                        src: Operand.t,
+                        dst: Operand.t,
+                        size: Size.t}
         (* Scalar SSE move instruction.
          *)
         | SSE_MOVS of {src: Operand.t,
@@ -1961,6 +1981,11 @@ struct
                      Size.layout size,
                      Operand.layout src,
                      Operand.layout dst)
+             | SSE_BinLP {oper, src, dst, size}
+             => bin (sse_binlp_layout oper,
+                     Size.layout size,
+                     Operand.layout src,
+                     Operand.layout dst)
              | SSE_MOVS {src, dst, size}
              => bin (str "movs", 
                      Size.layout size,
@@ -2163,6 +2188,8 @@ struct
            => {uses = [src, dst], defs = [dst], kills = []}
            | SSE_UnAS {src, dst, ...}
            => {uses = [src], defs = [dst], kills = []}
+           | SSE_BinLP {src, dst, ...}
+           => {uses = [src, dst], defs = [dst], kills = []}
            | SSE_MOVS {src, dst, ...}
            => {uses = [src], defs = [dst], kills = []}
            | SSE_COMIS {src1, src2, ...}
@@ -2402,6 +2429,8 @@ struct
            => {srcs = SOME [src, dst], dsts = SOME [dst]}
            | SSE_UnAS {src, dst, ...}
            => {srcs = SOME [src], dsts = SOME [dst]}
+           | SSE_BinLP {src, dst, ...}
+           => {srcs = SOME [src, dst], dsts = SOME [dst]}
            | SSE_MOVS {src, dst, ...}
            => {srcs = SOME [src], dsts = SOME [dst]}
            | SSE_COMIS {src1, src2, ...}
@@ -2529,6 +2558,11 @@ struct
                         src = replacer {use = true, def = false} src,
                         dst = replacer {use = false, def = true} dst,
                         size = size}
+           | SSE_BinLP {oper, src, dst, size}
+           => SSE_BinLP {oper = oper,
+                         src = replacer {use = true, def = false} src,
+                         dst = replacer {use = true, def = true} dst,
+                         size = size}
            | SSE_MOVS {src, dst, size}
            => SSE_MOVS {src = replacer {use = true, def = false} src,
                         dst = replacer {use = false, def = true} dst,
@@ -2590,6 +2624,7 @@ struct
       val lea = LEA
       val sse_binas = SSE_BinAS
       val sse_unas = SSE_UnAS
+      val sse_binlp = SSE_BinLP
       val sse_movs = SSE_MOVS
       val sse_comis = SSE_COMIS
       val sse_ucomis = SSE_UCOMIS
@@ -3291,6 +3326,7 @@ struct
       val instruction_lea = Instruction o Instruction.lea
       val instruction_sse_binas = Instruction o Instruction.sse_binas
       val instruction_sse_unas = Instruction o Instruction.sse_unas
+      val instruction_sse_binlp = Instruction o Instruction.sse_binlp
       val instruction_sse_movs = Instruction o Instruction.sse_movs
       val instruction_sse_comis = Instruction o Instruction.sse_comis
       val instruction_sse_ucomis = Instruction o Instruction.sse_ucomis
