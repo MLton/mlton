@@ -592,65 +592,89 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          fun 'a make {fromIntUnsafe: 'a -> real,
                       toIntUnsafe: real -> 'a,
                       other : {maxInt': 'a,
-                               minInt': 'a}} =
-            let
-               val maxInt' = #maxInt' other
-               val minInt' = #minInt' other
-               val maxInt = fromIntUnsafe maxInt'
-               val minInt = fromIntUnsafe minInt'
-            in
-               (fromIntUnsafe,
-                fn (m: rounding_mode) => fn x =>
-                case class x of
-                   INF => raise Overflow
-                 | NAN => raise Domain
-                 | _ => if minInt <= x
-                           then if x <= maxInt
+                               minInt': 'a,
+                               precision': int}} =
+            (fromIntUnsafe,
+             if Int.< (precision, #precision' other)
+                then let
+                        val maxInt' = #maxInt' other
+                        val minInt' = #minInt' other
+                        (* maxInt can't be represented exactly. *)
+                        (* minInt can be represented exactly. *)
+                        val (maxInt,minInt) = 
+                           IEEEReal.withRoundingMode
+                           (TO_ZERO, fn () => (fromIntUnsafe maxInt',
+                                               fromIntUnsafe minInt'))
+                     in
+                        fn (m: rounding_mode) => fn x =>
+                        case class x of
+                           INF => raise Overflow
+                         | NAN => raise Domain
+                         | _ => if minInt <= x andalso x <= maxInt
                                    then toIntUnsafe (roundReal (x, m))
-                        else if x < maxInt + one
-                           then (case m of
-                                    TO_NEGINF => maxInt'
-                                  | TO_POSINF => raise Overflow
-                                  | TO_ZERO => maxInt'
-                                  | TO_NEAREST =>
-                                       (* Depends on maxInt being odd. *)
-                                       if x - maxInt >= half
-                                          then raise Overflow
-                                          else maxInt')
-                           else raise Overflow
-                        else if x > minInt - one
-                           then (case m of
-                                    TO_NEGINF => raise Overflow
-                                  | TO_POSINF => minInt'
-                                  | TO_ZERO => minInt'
-                                  | TO_NEAREST =>
-                                       (* Depends on minInt being even. *)
-                                       if x - minInt < ~half
-                                          then raise Overflow
-                                          else minInt')
-                           else raise Overflow)
-            end
+                                else raise Overflow
+                     end
+             else let
+                     val maxInt' = #maxInt' other
+                     val minInt' = #minInt' other
+                     val maxInt = fromIntUnsafe maxInt'
+                     val minInt = fromIntUnsafe minInt'
+                  in
+                     fn (m: rounding_mode) => fn x =>
+                     case class x of
+                        INF => raise Overflow
+                      | NAN => raise Domain
+                      | _ => if minInt <= x
+                                then if x <= maxInt
+                                        then toIntUnsafe (roundReal (x, m))
+                             else if x < maxInt + one
+                                then (case m of
+                                         TO_NEGINF => maxInt'
+                                       | TO_POSINF => raise Overflow
+                                       | TO_ZERO => maxInt'
+                                       | TO_NEAREST =>
+                                            (* Depends on maxInt being odd. *)
+                                            if x - maxInt >= half
+                                               then raise Overflow
+                                            else maxInt')
+                                else raise Overflow
+                             else if x > minInt - one
+                                then (case m of
+                                         TO_NEGINF => raise Overflow
+                                       | TO_POSINF => minInt'
+                                       | TO_ZERO => minInt'
+                                       | TO_NEAREST =>
+                                            (* Depends on minInt being even. *)
+                                            if x - minInt < ~half
+                                               then raise Overflow
+                                            else minInt')
+                             else raise Overflow
+                  end)
       in
          val (fromInt8,toInt8) =
             make {fromIntUnsafe = R.fromInt8Unsafe,
                   toIntUnsafe = R.toInt8Unsafe,
                   other = {maxInt' = Int8.maxInt',
-                           minInt' = Int8.minInt'}}
+                           minInt' = Int8.minInt',
+                           precision' = Int8.precision'}}
          val (fromInt16,toInt16) =
             make {fromIntUnsafe = R.fromInt16Unsafe,
                   toIntUnsafe = R.toInt16Unsafe,
                   other = {maxInt' = Int16.maxInt',
-                           minInt' = Int16.minInt'}}
+                           minInt' = Int16.minInt',
+                           precision' = Int16.precision'}}
          val (fromInt32,toInt32) =
             make {fromIntUnsafe = R.fromInt32Unsafe,
                   toIntUnsafe = R.toInt32Unsafe,
                   other = {maxInt' = Int32.maxInt',
-                           minInt' = Int32.minInt'}}
+                           minInt' = Int32.minInt',
+                           precision' = Int32.precision'}}
          val (fromInt64,toInt64) =
             make {fromIntUnsafe = R.fromInt64Unsafe,
                   toIntUnsafe = R.toInt64Unsafe,
                   other = {maxInt' = Int64.maxInt',
-                           minInt' = Int64.minInt'}}
+                           minInt' = Int64.minInt',
+                           precision' = Int64.precision'}}
       end
 
       val fromIntInf: IntInf.int -> real =
