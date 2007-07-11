@@ -58,22 +58,17 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                       toRealUnsafe: real -> 'a,
                       other : {precision: Primitive.Int32.int}} =
             if R.precision = #precision other
-               then (fromRealUnsafe,
-                     fn (_: rounding_mode) => fromRealUnsafe,
-                     toRealUnsafe,
-                     fn (_: rounding_mode) => toRealUnsafe)
-               else (fromRealUnsafe,
-                     fn (m: rounding_mode) => fn r =>
+               then (fn (_: rounding_mode) => fromRealUnsafe,
+                     toRealUnsafe)
+               else (fn (m: rounding_mode) => fn r =>
                      IEEEReal.withRoundingMode (m, fn () => fromRealUnsafe r),
-                     toRealUnsafe,
-                     fn (m: rounding_mode) => fn r =>
-                     IEEEReal.withRoundingMode (m, fn () => toRealUnsafe r))
+                     toRealUnsafe)
       in
-         val (_,fromReal32M,toReal32,_) =
+         val (fromReal32,toReal32) =
             make {fromRealUnsafe = R.fromReal32Unsafe,
                   toRealUnsafe = R.toReal32Unsafe,
                   other = {precision = Primitive.Real32.precision}}
-         val (_,fromReal64M,toReal64,_) =
+         val (fromReal64,toReal64) =
             make {fromRealUnsafe = R.fromReal64Unsafe,
                   toRealUnsafe = R.toReal64Unsafe,
                   other = {precision = Primitive.Real64.precision}}
@@ -91,8 +86,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          structure S =
             LargeReal_ChooseRealN
             (type 'a t = rounding_mode -> 'a -> real
-             val fReal32 = fromReal32M
-             val fReal64 = fromReal64M)
+             val fReal32 = fromReal32
+             val fReal64 = fromReal64)
       in
          val fromLarge = S.f
       end
@@ -605,9 +600,6 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                val minInt = fromIntUnsafe minInt'
             in
                (fromIntUnsafe,
-                fn (m: rounding_mode) => fn i =>
-                IEEEReal.withRoundingMode (m, fn () => fromIntUnsafe i),
-                toIntUnsafe,
                 fn (m: rounding_mode) => fn x =>
                 case class x of
                    INF => raise Overflow
@@ -639,22 +631,22 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                            else raise Overflow)
             end
       in
-         val (fromInt8,_,_,toInt8M) =
+         val (fromInt8,toInt8) =
             make {fromIntUnsafe = R.fromInt8Unsafe,
                   toIntUnsafe = R.toInt8Unsafe,
                   other = {maxInt' = Int8.maxInt',
                            minInt' = Int8.minInt'}}
-         val (fromInt16,_,_,toInt16M) =
+         val (fromInt16,toInt16) =
             make {fromIntUnsafe = R.fromInt16Unsafe,
                   toIntUnsafe = R.toInt16Unsafe,
                   other = {maxInt' = Int16.maxInt',
                            minInt' = Int16.minInt'}}
-         val (fromInt32,_,_,toInt32M) =
+         val (fromInt32,toInt32) =
             make {fromIntUnsafe = R.fromInt32Unsafe,
                   toIntUnsafe = R.toInt32Unsafe,
                   other = {maxInt' = Int32.maxInt',
                            minInt' = Int32.minInt'}}
-         val (fromInt64,_,_,toInt64M) =
+         val (fromInt64,toInt64) =
             make {fromIntUnsafe = R.fromInt64Unsafe,
                   toIntUnsafe = R.toInt64Unsafe,
                   other = {maxInt' = Int64.maxInt',
@@ -677,7 +669,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                if sign then ~ x else x
             end
 
-      val toIntInfM: rounding_mode -> real -> LargeInt.int =
+      val toIntInf: rounding_mode -> real -> LargeInt.int =
          fn mode => fn x =>
          case class x of
             INF => raise Overflow
@@ -729,11 +721,11 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          structure S =
             Int_ChooseInt
             (type 'a t = rounding_mode -> real -> 'a
-             val fInt8 = toInt8M
-             val fInt16 = toInt16M
-             val fInt32 = toInt32M
-             val fInt64 = toInt64M
-             val fIntInf = toIntInfM)
+             val fInt8 = toInt8
+             val fInt16 = toInt16
+             val fInt32 = toInt32
+             val fInt64 = toInt64
+             val fIntInf = toIntInf)
       in
          val toInt = S.f
       end
@@ -741,11 +733,11 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          structure S =
             LargeInt_ChooseInt
             (type 'a t = rounding_mode -> real -> 'a
-             val fInt8 = toInt8M
-             val fInt16 = toInt16M
-             val fInt32 = toInt32M
-             val fInt64 = toInt64M
-             val fIntInf = toIntInfM)
+             val fInt8 = toInt8
+             val fInt16 = toInt16
+             val fInt32 = toInt32
+             val fInt64 = toInt64
+             val fIntInf = toIntInf)
       in
          val toLargeInt = S.f
       end
