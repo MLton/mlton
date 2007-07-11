@@ -2007,16 +2007,16 @@ struct
                           str "2", str "s", Size.layout dstsize],
                      Operand.layout src,
                      Operand.layout dst)
-             | SSE_CVTSFP2SI {src, srcsize, dst, ...}
+             | SSE_CVTSFP2SI {src, srcsize, dst, dstsize, ...}
              => bin (str "cvt",
                      seq [str "s", Size.layout srcsize,
-                          str "2", str "si"],
+                          str "2", str "si", Size.layout dstsize],
                      Operand.layout src,
                      Operand.layout dst)
-             | SSE_CVTSI2SFP {src, dst, dstsize, ...}
+             | SSE_CVTSI2SFP {src, srcsize, dst, dstsize, ...}
              => bin (str "cvt",
                      seq [str "si", 
-                          str "2", str "s", Size.layout dstsize],
+                          str "2", str "s", Size.layout dstsize, Size.layout srcsize],
                      Operand.layout src,
                      Operand.layout dst)
              | SSE_MOVD {src, dst, ...}
