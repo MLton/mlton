@@ -26,7 +26,7 @@ allWordCoerce(16)
 allWordCoerce(32)
 allWordCoerce(64)
 
-#undef allWorCoerced
+#undef allWordCoerce
 #undef bothToWordCoerce
 #undef bothFromWordCoerce
 
