@@ -98,6 +98,7 @@ by the user."
                 (function esml-du-sym-at-ref)
                 (function esml-du-sym-to-uses)
                 (function esml-du-finalize)
+                (function esml-du-ctx-attr)
                 ctx))))))
      duf dont-save))))
 

@@ -35,8 +35,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Def-use sources
 
-(defun def-use-add-dus (title sym-at-ref sym-to-uses finalize &rest args)
-  (push (cons args (cons sym-at-ref (cons sym-to-uses (cons title finalize))))
+(defun def-use-add-dus (title sym-at-ref sym-to-uses finalize attr &rest args)
+  (push (cons args (cons sym-at-ref (cons sym-to-uses (cons attr (cons title finalize)))))
         def-use-dus-list)
   (def-use-show-dus-update))
 
@@ -52,11 +52,14 @@
 (defun def-use-dus-sym-to-uses (dus sym)
   (apply (caddr dus) sym (car dus)))
 
-(defun def-use-dus-title (dus)
+(defun def-use-dus-attr (dus)
   (apply (cadddr dus) (car dus)))
 
+(defun def-use-dus-title (dus)
+  (apply (cadddr (cdr dus)) (car dus)))
+
 (defun def-use-dus-finalize (dus)
-  (apply (cddddr dus) (car dus)))
+  (apply (cddddr (cdr dus)) (car dus)))
 
 (defvar def-use-dus-list nil)
 
@@ -121,6 +124,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Queries
 
+(defun def-use-attrs ()
+  (sort (mapcar (function def-use-dus-attr)
+                def-use-dus-list)
+        (function def-use-attr-newer?)))
+
 (defun def-use-query (fn)
   "Queries the def-use -sources with the given function and moves the
 satisfied dus to the front."
@@ -138,12 +146,30 @@ satisfied dus to the front."
       (def-use-show-dus-update))
     result))
 
-(defun def-use-sym-at-ref (ref)
-  (when ref
-    (def-use-query
-      (function
-       (lambda (dus)
-         (def-use-dus-sym-at-ref dus ref))))))
+(defun def-use-sym-at-ref (ref &optional no-apology)
+  (let ((result
+         (when ref
+           (def-use-query
+             (function
+              (lambda (dus)
+                (def-use-dus-sym-at-ref dus ref)))))))
+    (unless (or result no-apology)
+      (let* ((attrs (def-use-attrs))
+             (file (def-use-ref-src ref))
+             (attr (file-attributes file))
+             (buffer (def-use-find-buffer-visiting-file file)))
+        (message
+         "Sorry, no info on the symbol.  Probable reason:  %s"
+         (cond
+          ((not attrs)
+           "There are no def-use sources.")
+          ((def-use-attr-newer? attr (car attrs))
+           "The file is newer than any def-use source.")
+          ((buffer-modified-p buffer)
+           "The buffer has been modified.")
+          (t
+           "The symbol may not be in any def-use source.")))))
+    result))
 
 (defun def-use-sym-to-uses (sym)
   (when sym

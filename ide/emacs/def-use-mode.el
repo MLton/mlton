@@ -172,19 +172,19 @@ when there really is a symbol at the point."
            (end (progn (def-use-move-to-symbol-end) (point))))
       (buffer-substring start end))))
 
-(defun def-use-sym-at-point (point)
+(defun def-use-sym-at-point (point &optional no-apology)
   "Returns symbol information for the symbol at the specified point."
   (let ((ref (def-use-ref-at-point point)))
     (when ref
-      (let ((sym (def-use-sym-at-ref ref)))
+      (let ((sym (def-use-sym-at-ref ref no-apology)))
         (when (and sym
                    (string= (def-use-sym-name sym)
                             (def-use-extract-sym-name-at-point point)))
           sym)))))
 
-(defun def-use-current-sym ()
+(defun def-use-current-sym (&optional no-apology)
   "Returns symbol information for the symbol at the current point."
-  (def-use-sym-at-point (point)))
+  (def-use-sym-at-point (point) no-apology))
 
 (defun def-use-current-ref ()
   "Returns a reference to the symbol at the current point."
@@ -192,8 +192,6 @@ when there really is a symbol at the point."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
-
-(defconst def-use-apology "Sorry, no information on the symbol at point.")
 
 (defvar def-use-marker-ring (make-ring def-use-marker-ring-length)
   "Ring of markers which are locations from which \\[def-use-jump-to-def],
@@ -220,8 +218,7 @@ when there really is a symbol at the point."
   "Jumps to the definition of the symbol under the cursor."
   (interactive "P")
   (let ((sym (def-use-current-sym)))
-    (if (not sym)
-        (message "%s" def-use-apology)
+    (when sym
       (ring-insert def-use-marker-ring (point-marker))
       (def-use-goto-ref (def-use-sym-ref sym) other-window))))
 
@@ -230,8 +227,7 @@ when there really is a symbol at the point."
   (interactive "P")
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
-    (if (not sym)
-        (message "%s" def-use-apology)
+    (when sym
       (let* ((refs (def-use-all-refs-sorted sym))
              (refs (if reverse (reverse refs) refs))
              (refs (append refs refs)))
@@ -298,8 +294,7 @@ the symbol."
   (interactive "P")
   (let* ((ref (def-use-current-ref))
          (sym (def-use-sym-at-ref ref)))
-    (if (not sym)
-        (message "%s" def-use-apology)
+    (when sym
       (let* ((name (concat "<:" (def-use-format-sym sym) ":>"))
              (buffer (get-buffer name)))
         (if buffer
@@ -374,8 +369,7 @@ the symbol."
   "Shows info on the symbol under the cursor."
   (interactive)
   (let ((sym (def-use-current-sym)))
-    (if (not sym)
-        (message "%s" def-use-apology)
+    (when sym
       (message "%s" (def-use-format-sym sym)))))
 
 (defun def-use-format-sym (sym)
@@ -472,7 +466,7 @@ the symbol."
   "Highlights the symbol at the point."
   (save-excursion
     (save-window-excursion
-      (def-use-highlight-sym (def-use-current-sym)))))
+      (def-use-highlight-sym (def-use-current-sym t)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Highlighting timer
