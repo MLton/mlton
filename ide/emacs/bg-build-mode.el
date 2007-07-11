@@ -418,7 +418,9 @@ The expression should evaluate to a bg-build project object."
   (setq bg-build-counter (1+ bg-build-counter))
   (let* ((file (car project))
          (directory (file-name-directory file))
-         (name (format "*%s (bg-build: %d)*" (bg-build-prj-name project) bg-build-counter))
+         (name (format "*%s (bg-build: %d)*"
+                       (bg-build-prj-name project)
+                       bg-build-counter))
          (shell (bg-build-prj-shell project)))
     (when (and name shell)
       (let* ((buffer (generate-new-buffer name))
@@ -556,23 +558,24 @@ The expression should evaluate to a bg-build project object."
           (mapc (function
                  (lambda (project)
                    (let ((file (car project)))
-                     (insert (let ((n (length (member project bg-build-build-queue))))
-                               (if (zerop n) "  " (format "%2d" n)))
-                             (if (assoc file bg-build-live-builds) "L" " ")
-                             (let ((buffer
-                                    (bg-build-assoc-cdr
-                                     file bg-build-finished-builds)))
-                               (cond ((and buffer
-                                           (with-current-buffer buffer
-                                             bg-build-messages))
-                                      "FM")
-                                     (buffer
-                                      "F ")
-                                     (t
-                                      "  ")))
-                             "  | "
-                             (bg-build-prj-name project) " (" file ")"
-                             "\n"))))
+                     (insert
+                      (let ((n (length (member project bg-build-build-queue))))
+                        (if (zerop n) "  " (format "%2d" n)))
+                      (if (assoc file bg-build-live-builds) "L" " ")
+                      (let ((buffer
+                             (bg-build-assoc-cdr
+                              file bg-build-finished-builds)))
+                        (cond ((and buffer
+                                    (with-current-buffer buffer
+                                      bg-build-messages))
+                               "FM")
+                              (buffer
+                               "F ")
+                              (t
+                               "  ")))
+                      "  | "
+                      (bg-build-prj-name project) " (" file ")"
+                      "\n"))))
                 bg-build-projects)
           (insert "\nTotal of " (number-to-string bg-build-counter)
                   " builds started.\n")
