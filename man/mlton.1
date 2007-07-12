@@ -58,10 +58,10 @@ Pass \fIoption\fP to \fBgcc\fP when assembling.
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
 .TP
-\fB-codegen \fI{\fBx86\fP|\fBamd64\fP|\fBbytecode\fP|\fBc\fP}\fP\fR
-Generate native code, byte code, or C code.  With \fB-codegen x86\fP
-or \fB-codegen amd64\fP, \fBMLton\fP typically compiles more quickly
-and generates better code.
+\fB-codegen \fI{\fBnative\fP|\fBx86\fP|\fBamd64\fP|\fBc\fP|\fBbytecode\fP}\fP\fR
+Generate native code, C code, or byte code.  With \fB-codegen
+native\fP (\fB-codegen x86\fP or \fB-codegen amd64\fP), \fBMLton\fP
+typically compiles more quickly and generates better code.
 
 .TP
 \fB-const '\fIname value\fP'\fR
@@ -252,8 +252,8 @@ Like \fB-as-opt\fP, this passes \fIoption\fP to \fBgcc\fP when assembling,
 except it only passes \fIoption\fP when the target architecture or
 operating system is \fItarget\fP.
 Valid values for \fItarget\fP are:
-\fBhppa\fP, \fBpowerpc\fP, \fBsparc\fP, \fBx86\fP,
-\fBcygwin\fP, \fBdarwin\fP, \fBfreebsd\fP, \fBlinux\fP,
+\fBamd64\fP, \fBhppa\fP, \fBpowerpc\fP, \fBsparc\fP, \fBx86\fP,
+\fBcygwin\fP, \fBdarwin\fP, \fBfreebsd\fP, \fBhpux\P, \fBlinux\fP,
 \fBmingw\fP, \fBnetbsd\fP, \fBopenbsd\fP, \fBsolaris\fP.
 
 .TP
