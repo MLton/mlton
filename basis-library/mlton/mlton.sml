@@ -53,6 +53,16 @@ structure IntInf =
       type t = int
    end
 structure Itimer = MLtonItimer
+structure LargeReal =
+   struct
+      open LargeReal
+      type t = real
+   end
+structure LargeWord =
+   struct
+      open LargeWord
+      type t = word
+   end
 structure Platform = MLtonPlatform
 structure Pointer = MLtonPointer
 structure ProcEnv = MLtonProcEnv
@@ -60,6 +70,11 @@ structure Process = MLtonProcess
 (* structure Ptrace = MLtonPtrace *)
 structure Profile = MLtonProfile
 structure Random = MLtonRandom
+structure Real = 
+   struct
+      open Real
+      type t = real
+   end
 structure Real32 = 
    struct
       open Real32

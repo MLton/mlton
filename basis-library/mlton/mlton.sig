@@ -32,6 +32,8 @@ signature MLTON =
       structure GC: MLTON_GC
       structure IntInf: MLTON_INT_INF
       structure Itimer: MLTON_ITIMER
+      structure LargeReal: MLTON_REAL
+      structure LargeWord: MLTON_WORD
       structure Platform: MLTON_PLATFORM
       structure Pointer: MLTON_POINTER
       structure ProcEnv: MLTON_PROC_ENV
@@ -39,6 +41,7 @@ signature MLTON =
       structure Profile: MLTON_PROFILE
 (*      structure Ptrace: MLTON_PTRACE *)
       structure Random: MLTON_RANDOM 
+      structure Real: MLTON_REAL
       structure Real32: sig
                            include MLTON_REAL
                            val castFromWord: Word32.word -> t
