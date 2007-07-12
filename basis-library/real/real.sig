@@ -53,6 +53,11 @@ signature PRE_REAL =
       val fromReal32Unsafe: Primitive.Real32.real -> real
       val fromReal64Unsafe: Primitive.Real64.real -> real
 
+      val fromWord8Unsafe: Primitive.Word8.word -> real
+      val fromWord16Unsafe: Primitive.Word16.word -> real
+      val fromWord32Unsafe: Primitive.Word32.word -> real
+      val fromWord64Unsafe: Primitive.Word64.word -> real
+
       val toInt8Unsafe: real -> Primitive.Int8.int
       val toInt16Unsafe: real -> Primitive.Int16.int
       val toInt32Unsafe: real -> Primitive.Int32.int
@@ -60,6 +65,11 @@ signature PRE_REAL =
 
       val toReal32Unsafe: real -> Primitive.Real32.real
       val toReal64Unsafe: real -> Primitive.Real64.real
+
+      val toWord8Unsafe: real -> Primitive.Word8.word
+      val toWord16Unsafe: real -> Primitive.Word16.word
+      val toWord32Unsafe: real -> Primitive.Word32.word
+      val toWord64Unsafe: real -> Primitive.Word64.word
   end
 
 signature REAL_GLOBAL =
@@ -140,4 +150,9 @@ signature REAL_EXTRA =
    sig
       include REAL
       val realSize: Int.int
+
+      val fromWord: word -> real
+      val fromLargeWord: LargeWord.word -> real
+      val toWord: IEEEReal.rounding_mode -> real -> word
+      val toLargeWord: IEEEReal.rounding_mode -> real -> LargeWord.word
    end

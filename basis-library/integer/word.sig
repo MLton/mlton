@@ -62,6 +62,8 @@ signature WORD_EXTRA =
       val zero: word
       val one: word
 
+      val maxWord' : word
+
       val toWord: word -> Word.word
       val toWordX: word -> Word.word
       val fromWord: Word.word -> word

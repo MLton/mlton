@@ -771,6 +771,147 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       val trunc = toInt TO_ZERO
       val round = toInt TO_NEAREST
 
+      local
+         fun 'a make {fromWordUnsafe: 'a -> real,
+                      toWordUnsafe: real -> 'a,
+                      other : {maxWord': 'a,
+                               wordSize: int,
+                               zeroWord: 'a}} =
+            (fromWordUnsafe,
+             if Int.<= (precision, #wordSize other)
+                then let
+                        val maxWord' = #maxWord' other
+                        (* maxWord can't be represented exactly. *)
+                        val maxWord = 
+                           IEEEReal.withRoundingMode
+                           (TO_ZERO, fn () => fromWordUnsafe maxWord')
+                        val zeroWord = #zeroWord other
+                     in
+                        fn (m: rounding_mode) => fn x =>
+                        case class x of
+                           INF => raise Overflow
+                         | NAN => raise Domain
+                         | _ => if zero <= x
+                                   then if x <= maxWord
+                                           then toWordUnsafe (roundReal (x, m))
+                                        else raise Overflow
+                                else if x > ~one 
+                                   then (case m of
+                                            TO_NEGINF => raise Overflow
+                                          | TO_POSINF => zeroWord
+                                          | TO_ZERO => zeroWord
+                                          | TO_NEAREST =>
+                                               if x < ~half
+                                                  then raise Overflow
+                                               else zeroWord)
+                                else raise Overflow
+                     end
+             else let
+                     val maxWord' = #maxWord' other
+                     val maxWord = fromWordUnsafe maxWord'
+                     val zeroWord = #zeroWord other
+                  in
+                     fn (m: rounding_mode) => fn x =>
+                     case class x of
+                        INF => raise Overflow
+                      | NAN => raise Domain
+                      | _ => if zero <= x
+                                then if x <= maxWord
+                                        then toWordUnsafe (roundReal (x, m))
+                             else if x < maxWord + one
+                                then (case m of
+                                         TO_NEGINF => maxWord'
+                                       | TO_POSINF => raise Overflow
+                                       | TO_ZERO => maxWord'
+                                       | TO_NEAREST =>
+                                            (* Depends on maxWord being odd. *)
+                                            if x - maxWord >= half
+                                               then raise Overflow
+                                            else maxWord')
+                                else raise Overflow
+                             else if x > ~one 
+                                then (case m of
+                                         TO_NEGINF => raise Overflow
+                                       | TO_POSINF => zeroWord
+                                       | TO_ZERO => zeroWord
+                                       | TO_NEAREST =>
+                                            if x < ~half
+                                               then raise Overflow
+                                            else zeroWord)
+                             else raise Overflow
+                  end)
+      in
+         val (fromWord8,toWord8) =
+            make {fromWordUnsafe = R.fromWord8Unsafe,
+                  toWordUnsafe = R.toWord8Unsafe,
+                  other = {maxWord' = Word8.maxWord',
+                           wordSize = Word8.wordSize,
+                           zeroWord = Word8.zero}}
+         val (fromWord16,toWord16) =
+            make {fromWordUnsafe = R.fromWord16Unsafe,
+                  toWordUnsafe = R.toWord16Unsafe,
+                  other = {maxWord' = Word16.maxWord',
+                           wordSize = Word16.wordSize,
+                           zeroWord = Word16.zero}}
+         val (fromWord32,toWord32) =
+            make {fromWordUnsafe = R.fromWord32Unsafe,
+                  toWordUnsafe = R.toWord32Unsafe,
+                  other = {maxWord' = Word32.maxWord',
+                           wordSize = Word32.wordSize,
+                           zeroWord = Word32.zero}}
+         val (fromWord64,toWord64) =
+            make {fromWordUnsafe = R.fromWord64Unsafe,
+                  toWordUnsafe = R.toWord64Unsafe,
+                  other = {maxWord' = Word64.maxWord',
+                           wordSize = Word64.wordSize,
+                           zeroWord = Word64.zero}}
+      end
+
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = 'a -> real
+             val fWord8 = fromWord8
+             val fWord16 = fromWord16
+             val fWord32 = fromWord32
+             val fWord64 = fromWord64)
+      in
+         val fromWord = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = 'a -> real
+             val fWord8 = fromWord8
+             val fWord16 = fromWord16
+             val fWord32 = fromWord32
+             val fWord64 = fromWord64)
+      in
+         val fromLargeWord = S.f
+      end
+      local
+         structure S =
+            Word_ChooseWordN
+            (type 'a t = rounding_mode -> real -> 'a
+             val fWord8 = toWord8
+             val fWord16 = toWord16
+             val fWord32 = toWord32
+             val fWord64 = toWord64)
+      in
+         val toWord = S.f
+      end
+      local
+         structure S =
+            LargeWord_ChooseWordN
+            (type 'a t = rounding_mode -> real -> 'a
+             val fWord8 = toWord8
+             val fWord16 = toWord16
+             val fWord32 = toWord32
+             val fWord64 = toWord64)
+      in
+         val toLargeWord = S.f
+      end
+
       structure Math =
          struct
             open Prim.Math

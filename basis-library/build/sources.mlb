@@ -357,6 +357,7 @@ in
    ../mlton/weak.sml
    ../mlton/finalizable.sig
    ../mlton/finalizable.sml
+   ../mlton/real.sig
    ../mlton/word.sig
    ../mlton/world.sig
    ../mlton/world.sml

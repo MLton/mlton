@@ -57,6 +57,8 @@ signature PRIM_WORD =
       val zero: word
       val one: word
 
+      val maxWord': word
+
       val div: word * word -> word
       val mod: word * word -> word
 
@@ -83,6 +85,8 @@ functor MkNum0 (S: MKNUM0_ARG): sig
 
             val zero = zextdFromWord32 0w0
             val one = zextdFromWord32 0w1
+
+            val maxWord' = notb zero
 
             local
                fun make f (w, w') =

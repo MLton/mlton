@@ -32,6 +32,7 @@ in
       signature MLTON_PROCESS
       signature MLTON_PROFILE
       signature MLTON_RANDOM
+      signature MLTON_REAL
       signature MLTON_RLIMIT
       signature MLTON_RUSAGE
       signature MLTON_SIGNAL

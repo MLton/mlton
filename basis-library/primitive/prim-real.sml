@@ -76,6 +76,12 @@ signature PRIM_REAL =
       val fromReal32Unsafe: Primitive.Real32.real -> real
       val fromReal64Unsafe: Primitive.Real64.real -> real
 
+      (* Word to float; depends on rounding mode. *)
+      val fromWord8Unsafe: Primitive.Word8.word -> real
+      val fromWord16Unsafe: Primitive.Word16.word -> real
+      val fromWord32Unsafe: Primitive.Word32.word -> real
+      val fromWord64Unsafe: Primitive.Word64.word -> real
+
       (* Float to integer, taking lowbits. *)
       val toInt8Unsafe: real -> Primitive.Int8.int
       val toInt16Unsafe: real -> Primitive.Int16.int
@@ -85,6 +91,12 @@ signature PRIM_REAL =
       (* Float to float; depends on rounding mode. *)
       val toReal32Unsafe: real -> Primitive.Real32.real
       val toReal64Unsafe: real -> Primitive.Real64.real
+
+      (* Float to word, taking lowbits. *)
+      val toWord8Unsafe: real -> Primitive.Word8.word
+      val toWord16Unsafe: real -> Primitive.Word16.word
+      val toWord32Unsafe: real -> Primitive.Word32.word
+      val toWord64Unsafe: real -> Primitive.Word64.word
    end
 
 structure Primitive = struct
@@ -156,6 +168,11 @@ structure Real32 : PRIM_REAL =
       val fromReal32Unsafe = _prim "Real32_rndToReal32": Real32.real -> real;
       val fromReal64Unsafe = _prim "Real64_rndToReal32": Real64.real -> real;
 
+      val fromWord8Unsafe = _prim "WordU8_rndToReal32": Word8.word -> real;
+      val fromWord16Unsafe = _prim "WordU16_rndToReal32": Word16.word -> real;
+      val fromWord32Unsafe = _prim "WordU32_rndToReal32": Word32.word -> real;
+      val fromWord64Unsafe = _prim "WordU64_rndToReal32": Word64.word -> real;
+
       val toInt8Unsafe = _prim "Real32_rndToWordS8": real -> Int8.int;
       val toInt16Unsafe = _prim "Real32_rndToWordS16": real -> Int16.int;
       val toInt32Unsafe = _prim "Real32_rndToWordS32": real -> Int32.int;
@@ -163,6 +180,11 @@ structure Real32 : PRIM_REAL =
 
       val toReal32Unsafe = _prim "Real32_rndToReal32": real -> Real32.real;
       val toReal64Unsafe = _prim "Real32_rndToReal64": real -> Real64.real;
+
+      val toWord8Unsafe = _prim "Real32_rndToWordU8": real -> Word8.word;
+      val toWord16Unsafe = _prim "Real32_rndToWordU16": real -> Word16.word;
+      val toWord32Unsafe = _prim "Real32_rndToWordU32": real -> Word32.word;
+      val toWord64Unsafe = _prim "Real32_rndToWordU64": real -> Word64.word;
    end
 structure Real32 =
    struct
@@ -243,6 +265,11 @@ structure Real64 : sig
       val fromReal32Unsafe = _prim "Real32_rndToReal64": Real32.real -> real;
       val fromReal64Unsafe = _prim "Real64_rndToReal64": Real64.real -> real;
 
+      val fromWord8Unsafe = _prim "WordU8_rndToReal64": Word8.word -> real;
+      val fromWord16Unsafe = _prim "WordU16_rndToReal64": Word16.word -> real;
+      val fromWord32Unsafe = _prim "WordU32_rndToReal64": Word32.word -> real;
+      val fromWord64Unsafe = _prim "WordU64_rndToReal64": Word64.word -> real;
+
       val toInt8Unsafe = _prim "Real64_rndToWordS8": real -> Int8.int;
       val toInt16Unsafe = _prim "Real64_rndToWordS16": real -> Int16.int;
       val toInt32Unsafe = _prim "Real64_rndToWordS32": real -> Int32.int;
@@ -250,6 +277,11 @@ structure Real64 : sig
 
       val toReal32Unsafe = _prim "Real64_rndToReal32": real -> Real32.real;
       val toReal64Unsafe = _prim "Real64_rndToReal64": real -> Real64.real;
+
+      val toWord8Unsafe = _prim "Real64_rndToWordU8": real -> Word8.word;
+      val toWord16Unsafe = _prim "Real64_rndToWordU16": real -> Word16.word;
+      val toWord32Unsafe = _prim "Real64_rndToWordU32": real -> Word32.word;
+      val toWord64Unsafe = _prim "Real64_rndToWordU64": real -> Word64.word;
 
       val castFromWord64 = _prim "Word64_castToReal64": Word64.t -> real;
       val castToWord64 = _prim "Real64_castToWord64": real -> Word64.t;

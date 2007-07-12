@@ -38,12 +38,14 @@ signature MLTON =
       structure Process: MLTON_PROCESS
       structure Profile: MLTON_PROFILE
 (*      structure Ptrace: MLTON_PTRACE *)
-      structure Random: MLTON_RANDOM
+      structure Random: MLTON_RANDOM 
       structure Real32: sig
-                           val castFromWord: Word32.word -> Real32.real
-                           val castToWord: Real32.real -> Word32.word
+                           include MLTON_REAL
+                           val castFromWord: Word32.word -> t
+                           val castToWord: t -> Word32.word
                         end
       structure Real64: sig
+                           include MLTON_REAL
                            val castFromWord: Word64.word -> Real64.real
                            val castToWord: Real64.real -> Word64.word
                         end
