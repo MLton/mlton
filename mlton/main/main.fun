@@ -62,7 +62,8 @@ val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunk: Control.chunk option ref = ref NONE
-val explicitCodegen: Control.codegen option ref = ref NONE
+datatype explicitCodegen = Native | Explicit of Control.codegen
+val explicitCodegen: explicitCodegen option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
 val keepSML = ref false
@@ -126,6 +127,14 @@ fun hasCodegen (cg) =
                 | x86Codegen => false
                 | _ => true)
    end
+fun hasNativeCodegen () =
+   let
+      datatype z = datatype Control.codegen
+   in
+      hasCodegen amd64Codegen
+      orelse hasCodegen x86Codegen
+   end
+   
 
 fun defaultAlignIs8 () =
    let
@@ -218,21 +227,25 @@ fun makeOptions {usage} =
         concat [" {", 
                 String.concatWith 
                 (List.keepAllMap
-                 ([(x86Codegen,"x86"),(amd64Codegen,"amd64"),
-                   (CCodegen,"c"),(Bytecode,"bytecode")],
-                  fn (cg,str) => if hasCodegen cg then SOME str else NONE),
+                 (Native :: (List.map (Control.Codegen.all, Explicit)),
+                  fn cg => 
+                  case cg of
+                     Native => if hasNativeCodegen () then SOME "native" else NONE
+                   | Explicit cg => if hasCodegen cg 
+                                       then SOME (Control.Codegen.toString cg)
+                                    else NONE),
                  "|"),
                 "}"],
         "which code generator to use",
         SpaceString (fn s =>
                      explicitCodegen
-                     := SOME (case s of
-                                 "bytecode" => Bytecode
-                               | "c" => CCodegen
-                               | "x86" => x86Codegen
-                               | "amd64" => amd64Codegen
-                               | _ => usage (concat
-                                             ["invalid -codegen flag: ", s])))),
+                     := SOME (if s = "native"
+                                 then Native
+                              else (case List.peek 
+                                         (Control.Codegen.all, fn cg => 
+                                          s = Control.Codegen.toString cg) of
+                                       SOME cg => Explicit cg
+                                     | NONE => usage (concat ["invalid -codegen flag: ", s]))))),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
@@ -649,7 +662,14 @@ fun commandLine (args: string list): unit =
                                 else if hasCodegen (amd64Codegen) 
                                    then amd64Codegen
                                 else CCodegen
-                      | SOME c => c)
+                      | SOME Native => if hasCodegen (x86Codegen)
+                                          then x86Codegen
+                                       else if hasCodegen (amd64Codegen)
+                                          then amd64Codegen
+                                       else usage (concat ["can't use native codegen on ",
+                                                           MLton.Platform.Arch.toString targetArch, 
+                                                           " target"])
+                      | SOME (Explicit cg) => cg)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () = if !profileTimeSet
                   then (case !codegen of
@@ -749,17 +769,21 @@ fun commandLine (args: string list): unit =
           | Self => []
       val _ =
          if not (hasCodegen (!codegen))
-            then usage (concat ["can't use codegen on ",
-                                MLton.Platform.Arch.toString targetArch])
+            then usage (concat ["can't use ",
+                                Control.Codegen.toString (!codegen),
+                                " codegen on ",
+                                MLton.Platform.Arch.toString targetArch,
+                                " target"])
          else ()
       val _ =
          chunk :=
          (case !explicitChunk of
              NONE => (case !codegen of
-                         Bytecode => OneChunk
+                         amd64Codegen => ChunkPerFunc
+                       | Bytecode => OneChunk
                        | CCodegen => Coalesce {limit = 4096}
                        | x86Codegen => ChunkPerFunc
-                       | amd64Codegen => ChunkPerFunc)
+                       )
            | SOME c => c)
       val _ = if not (!Control.codegen = x86Codegen) andalso !Native.IEEEFP
                  then usage "must use x86 codegen with -ieee-fp true"
@@ -785,7 +809,7 @@ fun commandLine (args: string list): unit =
                                 andalso not (!keepDefUse))
       val _ =
          if !codegen = Bytecode andalso !profile = ProfileTimeLabel
-            then usage (concat ["bytecode doesn't support time-label profiling\n"])
+            then usage (concat ["bytecode codegen doesn't support -profile time-label\n"])
          else ()
       val _ =
          case targetOS of

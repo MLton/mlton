@@ -35,13 +35,20 @@ signature CONTROL_FLAGS =
 
       val chunk: chunk ref
 
-      datatype codegen =
-         Bytecode
-       | CCodegen
-       | x86Codegen
-       | amd64Codegen
+      structure Codegen:
+         sig
+            datatype t =
+               Bytecode
+             | CCodegen
+             | x86Codegen
+             | amd64Codegen
+            val all: t list
+            val toString: t -> string
+         end
 
-      val codegen: codegen ref
+      datatype codegen = datatype Codegen.t
+
+      val codegen: Codegen.t ref
 
       val contifyIntoMain: bool ref
 

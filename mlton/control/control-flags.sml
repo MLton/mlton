@@ -57,22 +57,24 @@ val chunk = control {name = "chunk",
 structure Codegen =
    struct
       datatype t =
-         Bytecode
+         amd64Codegen
+       | Bytecode
        | CCodegen
        | x86Codegen
-       | amd64Codegen
+
+      val all = [x86Codegen,amd64Codegen,CCodegen,Bytecode]
 
       val toString: t -> string =
-         fn Bytecode => "Bytecode"
-          | CCodegen => "C"
+         fn amd64Codegen => "amd64"
+          | Bytecode => "bytecode"
+          | CCodegen => "c"
           | x86Codegen => "x86"
-          | amd64Codegen => "amd64"
    end
 
 datatype codegen = datatype Codegen.t
 
 val codegen = control {name = "codegen",
-                       default = x86Codegen,
+                       default = Codegen.x86Codegen,
                        toString = Codegen.toString}
 
 val contifyIntoMain = control {name = "contifyIntoMain",
