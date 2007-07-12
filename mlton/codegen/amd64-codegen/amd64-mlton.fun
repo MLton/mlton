@@ -75,8 +75,8 @@ struct
          | Real_neg _ => true
          | Real_qequal _ => true
          | Real_rndToReal _ => true
-         | Real_rndToWord (_, _, {signed}) => signed
-         | Real_round _ => false (* ?? *)
+         | Real_rndToWord (_, s2, {signed}) => signed orelse w32168 s2
+         | Real_round _ => false
          | Real_sub _ => true
          | Thread_returnToC => false
          | Word_add _ => true
@@ -906,7 +906,7 @@ struct
                         then sse_movs ()
                      else sse_cvtsfp2sfp ()
                   end
-             | Real_rndToWord (_, s', _) =>
+             | Real_rndToWord (_, s', {signed}) =>
                   let
                      fun default () =
                         let
@@ -948,11 +948,13 @@ struct
                              transfer = NONE}]
                         end
                   in
-                     case WordSize.prim s' of
-                        W8 => default' ()
-                      | W16 => default' ()
-                      | W32 => default ()
-                      | W64 => default ()
+                     case (WordSize.prim s', signed) of
+                        (W8, _) => default' ()
+                      | (W16, _) => default' ()
+                      | (W32, false) => default' ()
+                      | (W32, true) => default ()
+                      | (W64, true) => default ()
+                      | _ => Error.bug "amd64MLton.prim: Real_rndToWord, W64, false"
                   end
              | Real_sub _ => sse_binas Instruction.SSE_SUBS
              | Word_add _ => binal Instruction.ADD
