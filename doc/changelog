@@ -56,7 +56,7 @@ Here are the changes since version 20051202.
 
 * 2007-02-20
    - Fixed bug in PackReal<N>.toBytes.  Thanks to Eric McCorkle for the
-     bug report.
+     bug report (and patch).
 
 * 2007-02-18
    - Added command line switch -profile-val, to profile the evaluation of
@@ -147,7 +147,7 @@ Here are the changes since version 20051202.
   - Added MLRISC from SML/NJ 110.57 to standard distribution.
 
 * 2006-03-03
-  - Fixed bug in simplifier that could eliminate an irredundant test.
+  - Fixed bug in SSA simplifier that could eliminate an irredundant test.
 
 * 2006-03-02
   - Ported a bugfix from SML/NJ for a bug with the combination of withNack
