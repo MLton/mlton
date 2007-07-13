@@ -9,7 +9,7 @@ ann
    "deadCode true"
    "sequenceNonUnit warn"
    "nonexhaustiveMatch warn" "redundantMatch warn"
-   "warnUnused false" "forceUsed"
+   "warnUnused true" "forceUsed"
 in
    local
       ../../build/sources.mlb

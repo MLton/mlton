@@ -43,21 +43,29 @@ structure MLtonExn =
 
       local
          val message = PrimitiveFFI.Stdio.print
-      in
-         fun 'a topLevelHandler (exn: exn): 'a =
-            (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
-             ; (case history exn of
-                   [] => ()
-                 | l =>
-                      (message "with history:\n"
-                       ; (List.app (fn s => message (concat ["\t", s, "\n"]))
-                          l)))
+         fun 'a wrapHandler (handler: exn -> unit) exn : 'a =
+            (handler exn
+             ; message "Top-level handler returned.\n"
              ; Exit.exit Exit.Status.failure)
-            handle _ => (message "Toplevel handler raised exception.\n"
+            handle _ => (message "Top-level handler raised exception.\n"
                          ; Primitive.MLton.halt Exit.Status.failure
-                         (* The following raise is unreachable, but must be there
-                          * so that the expression is of type 'a.
-                          *)
-                         ; raise Fail "bug")
+                         ; raise Fail "MLton.Exn.wrapHandler")
+      in
+         val getTopLevelHandler = Primitive.TopLevel.getHandler
+         val setTopLevelHandler = Primitive.TopLevel.setHandler o wrapHandler
+         fun 'a defaultTopLevelHandler (exn: exn): 'a =
+            wrapHandler
+            (fn exn =>
+             (message (concat ["unhandled exception: ", exnMessage exn, "\n"])
+              ; (case history exn of
+                    [] => ()
+                  | l =>
+                       (message "with history:\n"
+                        ; List.app (fn s => message (concat ["\t", s, "\n"])) l))
+              ; Exit.exit Exit.Status.failure))
+            exn
+         fun 'a topLevelHandler (exn: exn) : 'a =
+            (getTopLevelHandler () exn
+             ; raise Fail "MLton.Exn.topLevelHandler")
       end
    end

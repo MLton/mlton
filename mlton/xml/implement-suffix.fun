@@ -63,6 +63,11 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
              | PrimApp {args, prim, ...} =>
                   let
                      datatype z = datatype Prim.Name.t
+                     fun deref (var, ty) =
+                        primExp
+                        (PrimApp {prim = Prim.deref,
+                                  targs = Vector.new1 ty,
+                                  args = Vector.new1 (VarExp.mono var)})
                      fun assign (var, ty) =
                         primExp
                         (PrimApp {prim = Prim.assign,
@@ -71,7 +76,10 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
                                                       Vector.sub (args, 0))})
                   in
                      case Prim.name prim of
-                        TopLevel_setSuffix =>
+                        TopLevel_getSuffix =>
+                           deref (topLevelSuffix,
+                                  Type.arrow (Type.unit, Type.unit))
+                      | TopLevel_setSuffix =>
                            assign (topLevelSuffix,
                                    Type.arrow (Type.unit, Type.unit))
                       | _ => keep ()

@@ -7,7 +7,7 @@
  *)
 
 local
-   fun 'a check (x: 'a, y: 'a) : unit = ()
+   fun 'a check (_: 'a, _: 'a) : unit = ()
 
    local
       structure R1 = Primitive.Real32

@@ -76,6 +76,8 @@ structure Ref =
 
 structure TopLevel =
    struct
+      val getHandler = _prim "TopLevel_getHandler": unit -> (exn -> unit);
+      val getSuffix = _prim "TopLevel_getSuffix": unit -> (unit -> unit);
       val setHandler = _prim "TopLevel_setHandler": (exn -> unit) -> unit;
       val setSuffix = _prim "TopLevel_setSuffix": (unit -> unit) -> unit;
    end

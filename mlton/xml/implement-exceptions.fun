@@ -428,6 +428,11 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
              | PrimApp {args, prim, ...} =>
                   let
                      datatype z = datatype Prim.Name.t
+                     fun deref (var, ty) =
+                        primExp
+                        (PrimApp {prim = Prim.deref,
+                                  targs = Vector.new1 ty,
+                                  args = Vector.new1 (VarExp.mono var)})
                      fun assign (var, ty) =
                         primExp
                         (PrimApp {prim = Prim.assign,
@@ -444,6 +449,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
                       | Exn_setExtendExtra =>
                            assign (extendExtraVar, extendExtraType)
                       | Exn_setInitExtra => primExp (Tuple (Vector.new0 ()))
+                      | TopLevel_getHandler =>
+                           deref (topLevelHandler,
+                                  Type.arrow (Type.exn, Type.unit))
                       | TopLevel_setHandler =>
                            assign (topLevelHandler,
                                    Type.arrow (Type.exn, Type.unit))

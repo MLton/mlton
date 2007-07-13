@@ -151,6 +151,8 @@ datatype 'a t =
   * on the stack.
   *)
  | Thread_switchTo (* ssa to rssa *)
+ | TopLevel_getHandler (* implement exceptions *)
+ | TopLevel_getSuffix (* implement suffix *)
  | TopLevel_setHandler (* implement exceptions *)
  | TopLevel_setSuffix (* implement suffix *)
  | Vector_length (* ssa to rssa *)
@@ -314,6 +316,8 @@ fun toString (n: 'a t): string =
        | Thread_copyCurrent => "Thread_copyCurrent"
        | Thread_returnToC => "Thread_returnToC"
        | Thread_switchTo => "Thread_switchTo"
+       | TopLevel_getHandler => "TopLevel_getHandler"
+       | TopLevel_getSuffix => "TopLevel_getSuffix"
        | TopLevel_setHandler => "TopLevel_setHandler"
        | TopLevel_setSuffix => "TopLevel_setSuffix"
        | Vector_length => "Vector_length"
@@ -459,6 +463,8 @@ val equals: 'a t * 'a t -> bool =
     | (Thread_copyCurrent, Thread_copyCurrent) => true
     | (Thread_returnToC, Thread_returnToC) => true
     | (Thread_switchTo, Thread_switchTo) => true
+    | (TopLevel_getHandler, TopLevel_getHandler) => true
+    | (TopLevel_getSuffix, TopLevel_getSuffix) => true
     | (TopLevel_setHandler, TopLevel_setHandler) => true
     | (TopLevel_setSuffix, TopLevel_setSuffix) => true
     | (Vector_length, Vector_length) => true
@@ -614,6 +620,8 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Thread_copyCurrent => Thread_copyCurrent
     | Thread_returnToC => Thread_returnToC
     | Thread_switchTo => Thread_switchTo
+    | TopLevel_getHandler => TopLevel_getHandler
+    | TopLevel_getSuffix => TopLevel_getSuffix
     | TopLevel_setHandler => TopLevel_setHandler
     | TopLevel_setSuffix => TopLevel_setSuffix
     | Vector_length => Vector_length
@@ -854,6 +862,8 @@ val kind: 'a t -> Kind.t =
        | Thread_copyCurrent => SideEffect
        | Thread_returnToC => SideEffect
        | Thread_switchTo => SideEffect
+       | TopLevel_getHandler => DependsOnState
+       | TopLevel_getSuffix => DependsOnState
        | TopLevel_setHandler => SideEffect
        | TopLevel_setSuffix => SideEffect
        | Vector_length => Functional
@@ -1024,6 +1034,8 @@ in
        Thread_copyCurrent,
        Thread_returnToC,
        Thread_switchTo,
+       TopLevel_getHandler,
+       TopLevel_getSuffix,
        TopLevel_setHandler,
        TopLevel_setSuffix,
        Vector_length,

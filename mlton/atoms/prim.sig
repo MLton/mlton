@@ -141,6 +141,8 @@ signature PRIM =
               * on the stack.
               *)
              | Thread_switchTo (* ssa to rssa *)
+             | TopLevel_getHandler (* implement exceptions *)
+             | TopLevel_getSuffix (* implement suffix *)
              | TopLevel_setHandler (* implement exceptions *)
              | TopLevel_setSuffix (* implement suffix *)
              | Vector_length (* ssa to ssa2 *)
