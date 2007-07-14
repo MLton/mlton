@@ -33,26 +33,6 @@ structure RemoveUnused2 = RemoveUnused2 (S)
 (* structure Useless = Useless (S) *)
 structure Zone = Zone (S)
 
-(*
-fun inlineNonRecursive (product, small) p =
-   Ref.fluidLet
-   (Control.inline, 
-    Control.NonRecursive {product = product, small = small}, 
-    fn () => Inline.inline p)
-fun inlineLeaf size p =
-   Ref.fluidLet
-   (Control.inlineIntoMain, true, fn () =>
-    Ref.fluidLet
-    (Control.inline, Control.Leaf {size = SOME size}, 
-     fn () => Inline.inline p))
-fun inlineLeafNoLoop size p =
-   Ref.fluidLet
-   (Control.inlineIntoMain, true, fn () =>
-    Ref.fluidLet
-    (Control.inline, Control.LeafNoLoop {size = SOME size}, 
-     fn () => Inline.inline p))
-*)
-
 type pass = {name: string,
              doit: Program.t -> Program.t}
 
@@ -60,6 +40,7 @@ val ssa2PassesDefault =
    {name = "deepFlatten", doit = DeepFlatten.flatten} ::
    {name = "refFlatten", doit = RefFlatten.flatten} ::
    {name = "removeUnused5", doit = RemoveUnused2.remove} ::
+   {name = "removeUnused5Shrink", doit = S.shrink} ::
    {name = "zone", doit = Zone.zone} ::
    nil
 
