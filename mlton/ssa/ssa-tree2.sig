@@ -280,6 +280,11 @@ signature SSA_TREE2 =
 
             val clear: t -> unit
             val clearTop: t -> unit
+            (* dfs (p, v) visits the functions in depth-first order, applying v f
+             * for function f to yield v', then visiting f's descendents,
+             * then applying v' ().
+             *)
+            val dfs: t * (Function.t -> unit -> unit) -> unit
             val foreachPrimApp:
                t * ({args: Var.t vector, prim: Type.t Prim.t} -> unit) -> unit
             val foreachVar: t * (Var.t * Type.t -> unit) -> unit

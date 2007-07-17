@@ -55,8 +55,48 @@ val eliminateDeadBlocksFunction = DeadBlocks.eliminateFunction
 (* quell unused warning *)
 val _ = eliminateDeadBlocksFunction
 val eliminateDeadBlocks = DeadBlocks.eliminate
-(* quell unused warning *)
-val _ = eliminateDeadBlocks
+
+
+structure Order = 
+struct
+
+fun orderFunctions (p as Program.T {globals, datatypes, functions, main}) =
+   let
+      val functions = ref []
+      val () =
+         Program.dfs
+         (p, fn f =>
+          let
+             val {args, mayInline, name, raises, returns, start, ...} =
+                Function.dest f
+             val blocks = ref []
+             val () =
+                Function.dfs
+                (f, fn b =>
+                 (List.push (blocks, b)
+                  ; fn () => ()))
+             val f = Function.new {args = args,
+                                   blocks = Vector.fromListRev (!blocks),
+                                   mayInline = mayInline,
+                                   name = name,
+                                   raises = raises,
+                                   returns = returns,
+                                   start = start}
+          in
+             List.push (functions, f)
+             ; fn () => ()
+          end)
+   in
+      Program.T {datatypes = datatypes,
+                 globals = globals,
+                 functions = List.rev (!functions),
+                 main = main}
+   end
+
+end
+
+val orderFunctions = Order.orderFunctions
+
 
 structure Reverse =
 struct

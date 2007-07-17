@@ -40,8 +40,8 @@ val ssa2PassesDefault =
    {name = "deepFlatten", doit = DeepFlatten.flatten} ::
    {name = "refFlatten", doit = RefFlatten.flatten} ::
    {name = "removeUnused5", doit = RemoveUnused2.remove} ::
-   {name = "removeUnused5Shrink", doit = S.shrink} ::
    {name = "zone", doit = Zone.zone} ::
+   {name = "orderFunctions2", doit = S.orderFunctions} ::
    nil
 
 val ssa2PassesMinimal =
@@ -69,6 +69,7 @@ local
                 ("removeUnused", RemoveUnused2.remove), 
                 ("zone", Zone.zone),
                 ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+                ("orderFunctions",S.orderFunctions),
                 ("reverseFunctions",S.reverseFunctions),
                 ("shrink", S.shrink)],
                mkSimplePassGen)

@@ -1692,6 +1692,43 @@ structure Program =
             NONE => Error.bug "SsaTree.Program.mainFunction: no main function"
           | SOME f => f
 
+      fun dfs (p, v) =
+         let
+            val T {functions, main, ...} = p
+            val functions = Vector.fromList functions
+            val numFunctions = Vector.length functions
+            val {get = funcIndex, set = setFuncIndex, rem, ...} =
+               Property.getSetOnce (Func.plist,
+                                    Property.initRaise ("index", Func.layout))
+            val _ = Vector.foreachi (functions, fn (i, f) =>
+                                     setFuncIndex (#name (Function.dest f), i))
+            val visited = Array.array (numFunctions, false)
+            fun visit (f: Func.t): unit =
+               let
+                  val i = funcIndex f
+               in
+                  if Array.sub (visited, i)
+                     then ()
+                  else
+                     let
+                        val _ = Array.update (visited, i, true)
+                        val f = Vector.sub (functions, i)
+                        val v' = v f
+                        val _ = Function.dfs 
+                                (f, fn Block.T {transfer, ...} =>
+                                 (Transfer.foreachFunc (transfer, visit)
+                                  ; fn () => ()))
+                        val _ = v' ()
+                     in
+                        ()
+                     end
+               end
+            val _ = visit main
+            val _ = Vector.foreach (functions, rem o Function.name)
+         in
+            ()
+         end
+
       fun profile (T {datatypes, functions, globals, main}) =
          let
             val functions =

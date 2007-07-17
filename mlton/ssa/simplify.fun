@@ -86,6 +86,7 @@ val ssaPassesDefault =
    {name = "redundant", doit = Redundant.redundant} ::
    {name = "knownCase", doit = KnownCase.simplify} ::
    {name = "removeUnused4", doit = RemoveUnused.remove} ::
+   {name = "orderFunctions1", doit = S.orderFunctions} ::
    nil
 
 val ssaPassesMinimal =
@@ -200,6 +201,7 @@ local
                  ("breakCriticalEdges",fn p => 
                   S.breakCriticalEdges (p, {codeMotion = true})),
                  ("eliminateDeadBlocks",S.eliminateDeadBlocks),
+                 ("orderFunctions",S.orderFunctions),
                  ("reverseFunctions",S.reverseFunctions),
                  ("shrink", S.shrink)], 
                 mkSimplePassGen))

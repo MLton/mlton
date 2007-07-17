@@ -33,5 +33,6 @@ signature PREPASSES =
       val dropProfile: Program.t -> Program.t
       val eliminateDeadBlocksFunction: Function.t -> Function.t
       val eliminateDeadBlocks: Program.t -> Program.t
+      val orderFunctions: Program.t -> Program.t
       val reverseFunctions: Program.t -> Program.t
    end
