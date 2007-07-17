@@ -422,6 +422,11 @@ structure Transfer =
                 func = Type.BuiltInCFunction.bug (),
                 return = NONE}
 
+      fun foreachFunc (t, f : Func.t -> unit) : unit =
+         case t of
+            Call {func, ...} => f func
+          | _ => ()
+
       fun 'a foldDefLabelUse (t, a: 'a,
                               {def: Var.t * Type.t * 'a -> 'a,
                                label: Label.t * 'a -> 'a,
@@ -906,6 +911,79 @@ structure Program =
                objectTypes = objectTypes})
       (* quell unused warning *)
       val _ = dropProfile
+
+      fun dfs (p, v) =
+         let
+            val T {functions, main, ...} = p
+            val functions = Vector.fromList (main::functions)
+            val numFunctions = Vector.length functions
+            val {get = funcIndex, set = setFuncIndex, rem, ...} =
+               Property.getSetOnce (Func.plist,
+                                    Property.initRaise ("index", Func.layout))
+            val _ = Vector.foreachi (functions, fn (i, f) =>
+                                     setFuncIndex (#name (Function.dest f), i))
+            val visited = Array.array (numFunctions, false)
+            fun visit (f: Func.t): unit =
+               let
+                  val i = funcIndex f
+               in
+                  if Array.sub (visited, i)
+                     then ()
+                  else
+                     let
+                        val _ = Array.update (visited, i, true)
+                        val f = Vector.sub (functions, i)
+                        val v' = v f
+                        val _ = Function.dfs 
+                                (f, fn Block.T {transfer, ...} =>
+                                 (Transfer.foreachFunc (transfer, visit)
+                                  ; fn () => ()))
+                        val _ = v' ()
+                     in
+                        ()
+                     end
+               end
+            val _ = visit (Function.name main)
+            val _ = Vector.foreach (functions, rem o Function.name)
+         in
+            ()
+         end
+
+      fun orderFunctions (p as T {handlesSignals, objectTypes, ...}) =
+         let
+            val functions = ref []
+            val () =
+               dfs
+               (p, fn f =>
+                let
+                   val {args, name, raises, returns, start, ...} =
+                      Function.dest f
+                   val blocks = ref []
+                   val () =
+                      Function.dfs
+                      (f, fn b =>
+                       (List.push (blocks, b)
+                        ; fn () => ()))
+                   val f = Function.new {args = args,
+                                         blocks = Vector.fromListRev (!blocks),
+                                         name = name,
+                                         raises = raises,
+                                         returns = returns,
+                                         start = start}
+                in
+                   List.push (functions, f)
+                   ; fn () => ()
+                end)
+            val (main, functions) =
+               case List.rev (!functions) of
+                  main::functions => (main, functions)
+                | _ => Error.bug "Rssa.orderFunctions: main/functions"
+         in
+            T {functions = functions,
+               handlesSignals = handlesSignals,
+               main = main,
+               objectTypes = objectTypes}
+         end
 
       fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
          let

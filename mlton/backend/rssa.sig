@@ -152,6 +152,7 @@ signature RSSA =
             val foreachDefLabelUse: t * {def: Var.t * Type.t -> unit,
                                          label: Label.t -> unit,
                                          use: Var.t -> unit} -> unit
+            val foreachFunc: t * (Func.t -> unit) -> unit
             val foreachLabel: t * (Label.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
             val ifBool: Operand.t * {falsee: Label.t, truee: Label.t} -> t
@@ -225,8 +226,14 @@ signature RSSA =
 
             val clear: t -> unit
             val checkHandlers: t -> unit
+            (* dfs (p, v) visits the functions in depth-first order, applying v f
+             * for function f to yield v', then visiting b's descendents,
+             * then applying v' ().
+             *)
+            val dfs: t * (Function.t -> unit -> unit) -> unit
             val dropProfile: t -> t
             val layouts: t * (Layout.t -> unit) -> unit
+            val orderFunctions: t -> t
             val shrink: t -> t
             val typeCheck: t -> unit
          end

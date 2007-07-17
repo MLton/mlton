@@ -176,6 +176,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                 suffix = "rssa",
                 thunk = fn () => Profile.profile program,
                 typeCheck = R.Program.typeCheck o #1}
+            val program =
+               maybePass ("rssaOrderFunctions", Rssa.Program.orderFunctions, program)
          in
             (program, makeProfileInfo)
          end
