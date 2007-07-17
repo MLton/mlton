@@ -60,7 +60,7 @@ val eliminateDeadBlocks = DeadBlocks.eliminate
 structure Order = 
 struct
 
-fun orderFunctions (p as Program.T {globals, datatypes, functions, main}) =
+fun orderFunctions (p as Program.T {globals, datatypes, main, ...}) =
    let
       val functions = ref []
       val () =
