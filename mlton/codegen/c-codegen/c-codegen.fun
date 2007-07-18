@@ -317,7 +317,7 @@ fun outputDeclarations
          declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
                        fn (_, {frameOffsetsIndex, isC, size}) =>
                        concat ["{",
-                               C.bool isC,
+                               if isC then "C_FRAME" else "ML_FRAME",
                                ", frameOffsets", C.int frameOffsetsIndex,
                                ", ", C.bytes size,
                                "}"])
