@@ -233,6 +233,7 @@ signature RSSA =
             val dfs: t * (Function.t -> unit -> unit) -> unit
             val dropProfile: t -> t
             val layouts: t * (Layout.t -> unit) -> unit
+            val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
             val shrink: t -> t
             val typeCheck: t -> unit

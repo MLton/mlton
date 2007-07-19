@@ -903,6 +903,33 @@ structure Program =
             ; List.foreach (functions, fn f => Function.layouts (f, output))
          end
 
+      fun layoutStats (T {functions, main, objectTypes, ...}) =
+         let
+            val numStatements = ref 0
+            val numBlocks = ref 0
+            val _ =
+               List.foreach
+               (main::functions, fn f =>
+                let
+                   val {blocks, ...} = Function.dest f
+                in
+                   Vector.foreach
+                   (blocks, fn Block.T {statements, ...} =>
+                    (Int.inc numBlocks
+                     ; numStatements := !numStatements + Vector.length statements))
+                end)
+            val numFunctions = 1 + List.length functions
+            open Layout
+         in
+            align
+            (List.map
+             ([("num functions", Int.layout numFunctions),
+               ("num blocks", Int.layout (!numBlocks)),
+               ("num statements", Int.layout (!numStatements)),
+               ("num objectTypes", Int.layout (Vector.length objectTypes))],
+              fn (name, value) => seq [str (name ^ " "), value]))
+         end
+
       fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
@@ -1127,7 +1154,7 @@ structure Program =
       fun shrink (T {functions, handlesSignals, main, objectTypes}) =
          let
             val p = 
-               T {functions = List.map (functions, Function.shrink),
+               T {functions = List.revMap (functions, Function.shrink),
                   handlesSignals = handlesSignals,
                   main = Function.shrink main,
                   objectTypes = objectTypes}

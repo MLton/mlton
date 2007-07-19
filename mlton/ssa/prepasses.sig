@@ -30,7 +30,6 @@ signature PREPASSES =
          Function.t * {codeMotion: bool} -> Function.t
       val breakCriticalEdges: 
          Program.t * {codeMotion: bool} -> Program.t
-      val dropProfile: Program.t -> Program.t
       val eliminateDeadBlocksFunction: Function.t -> Function.t
       val eliminateDeadBlocks: Program.t -> Program.t
       val orderFunctions: Program.t -> Program.t

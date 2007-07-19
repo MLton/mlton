@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor Profile (S: PROFILE_STRUCTS): PROFILE = 
+functor ImplementProfiling (S: IMPLEMENT_PROFILING_STRUCTS): IMPLEMENT_PROFILING = 
 struct
 
 open S
@@ -135,7 +135,7 @@ val traceEnter =
                  SourceInfo.layout,
                  Layout.tuple2 (List.layout Push.layout, Bool.layout))
 
-fun profile program =
+fun doit program =
    if !Control.profile = Control.ProfileNone
       then (program, fn _ => NONE)
    else

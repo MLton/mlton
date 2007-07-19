@@ -281,7 +281,7 @@ signature CONTROL_FLAGS =
 
       val profileC: Regexp.Compiled.t list ref
 
-      datatype profileIL = ProfileSSA | ProfileSSA2 | ProfileSource
+      datatype profileIL = ProfileSource | ProfileSSA | ProfileSSA2
       val profileIL: profileIL ref
 
       val profileInclExcl: (Regexp.Compiled.t * bool) list ref

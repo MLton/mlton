@@ -895,12 +895,12 @@ val profileC = control {name = "profile C",
 
 structure ProfileIL =
    struct
-      datatype t = ProfileSSA | ProfileSSA2 | ProfileSource
+      datatype t = ProfileSource | ProfileSSA | ProfileSSA2
 
       val toString =
-         fn ProfileSSA => "ProfileSSA"
+         fn ProfileSource => "ProfileSource"
+          | ProfileSSA => "ProfileSSA"
           | ProfileSSA2 => "ProfileSSA2"
-          | ProfileSource => "ProfileSource"
    end
 
 datatype profileIL = datatype ProfileIL.t

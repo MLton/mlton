@@ -25,6 +25,7 @@ structure DeepFlatten = DeepFlatten (S)
 (* structure LocalRef = LocalRef (S) *)
 (* structure LoopInvariant = LoopInvariant (S) *)
 (* structure PolyEqual = PolyEqual (S) *)
+structure Profile2 = Profile2 (S)
 (* structure Redundant = Redundant (S) *)
 (* structure RedundantTests = RedundantTests (S) *)
 structure RefFlatten = RefFlatten (S)
@@ -41,7 +42,6 @@ val ssa2PassesDefault =
    {name = "refFlatten", doit = RefFlatten.flatten} ::
    {name = "removeUnused5", doit = RemoveUnused2.remove} ::
    {name = "zone", doit = Zone.zone} ::
-   {name = "orderFunctions2", doit = S.orderFunctions} ::
    nil
 
 val ssa2PassesMinimal =
@@ -63,8 +63,9 @@ local
 
 
    val passGens = 
-      List.map([("deepFlatten", DeepFlatten.flatten),
-                ("dropProfile", S.dropProfile),
+      List.map([("addProfile", Profile2.addProfile),
+                ("deepFlatten", DeepFlatten.flatten),
+                ("dropProfile", Profile2.dropProfile),
                 ("refFlatten", RefFlatten.flatten),
                 ("removeUnused", RemoveUnused2.remove), 
                 ("zone", Zone.zone),
@@ -105,15 +106,40 @@ end
 
 fun stats p = Control.message (Control.Detail, fn () => Program.layoutStats p)
 
+fun pass ({name, doit, midfix}, p) =
+   let
+      val _ =
+         let open Control
+         in maybeSaveToFile
+            ({name = name, 
+              suffix = midfix ^ "pre.ssa2"},
+             Control.No, p, Control.Layouts Program.layouts)
+         end
+      val p =
+         Control.passTypeCheck
+         {name = name,
+          suffix = midfix ^ "post.ssa2",
+          style = Control.No,
+          thunk = fn () => doit p,
+          display = Control.Layouts Program.layouts,
+          typeCheck = typeCheck}
+      val _ = stats p
+   in
+      p
+   end 
+fun maybePass ({name, doit, midfix}, p) =
+   if List.exists (!Control.dropPasses, fn re =>
+                   Regexp.Compiled.matchesAll (re, name))
+      then p
+   else pass ({name = name, doit = doit, midfix = midfix}, p)
+
 fun simplify p =
    let
       fun simplify' n p =
          let
-            val mkSuffix = if n = 0
-                             then fn s => s
-                             else let val n' = Int.toString n
-                                  in fn s => concat [n',".",s]
-                                  end
+            val midfix = if n = 0
+                            then ""
+                         else concat [Int.toString n,"."]
          in
             if n = !Control.loopPasses
                then p
@@ -121,29 +147,7 @@ fun simplify p =
                  (n + 1)
                  (List.fold
                   (!ssa2Passes, p, fn ({name, doit}, p) =>
-                   if List.exists (!Control.dropPasses, fn re =>
-                                   Regexp.Compiled.matchesAll (re, name))
-                      then p
-                   else
-                     let
-                       val _ =
-                          let open Control
-                          in maybeSaveToFile
-                             ({name = name, suffix = mkSuffix "pre.ssa2"},
-                              Control.No, p, Control.Layouts Program.layouts)
-                          end
-                       val p =
-                          Control.passTypeCheck
-                          {name = name,
-                           suffix = mkSuffix "post.ssa2",
-                           style = Control.No,
-                           thunk = fn () => doit p,
-                           display = Control.Layouts Program.layouts,
-                           typeCheck = typeCheck}
-                       val _ = stats p
-                     in
-                       p
-                     end))
+                   maybePass ({name = name, doit = doit, midfix = midfix}, p)))
          end
    in
      stats p
@@ -160,8 +164,13 @@ val simplify = fn p => let
                          val p =
                             if !Control.profile <> Control.ProfileNone
                                andalso !Control.profileIL = Control.ProfileSSA2
-                               then Program.profile p
+                               then pass ({name = "addProfile2",
+                                           doit = Profile2.addProfile,
+                                           midfix = ""}, p)
                             else p
+                         val p = maybePass ({name = "orderFunctions2",
+                                             doit = S.orderFunctions,
+                                             midfix = ""}, p)
                          val _ = typeCheck p
                        in
                          p

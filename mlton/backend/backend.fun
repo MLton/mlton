@@ -51,10 +51,10 @@ structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
+structure ImplementProfiling = ImplementProfiling (structure Machine = Machine
+                                                   structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
-structure Profile = Profile (structure Machine = Machine
-                             structure Rssa = Rssa)
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
@@ -151,35 +151,68 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 suffix = "rssa",
                                 thunk = fn () => doit program,
                                 typeCheck = R.Program.typeCheck}
-      fun maybePass (name, doit, program) =
-         if List.exists (!Control.dropPasses, fn re =>
-                         Regexp.Compiled.matchesAll (re, name))
-            then program
-         else pass (name, doit, program)
       val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
-      fun rssaSimplify program = 
+      fun rssaSimplify p = 
          let
-            val program = 
-               maybePass ("rssaShrink1", Rssa.Program.shrink, program)
-            val program = pass ("insertLimitChecks", LimitCheck.insert, program)
-            val program = pass ("insertSignalChecks", SignalCheck.insert, program)
-            val program = pass ("implementHandlers", ImplementHandlers.doit, program)
-            val program = 
-               maybePass ("rssaShrink2", Rssa.Program.shrink, program)
-            val () = R.Program.checkHandlers program
-            val (program, makeProfileInfo) =
-               Control.passTypeCheck
-               {display = Control.Layouts (fn ((program, _), output) =>
-                                           Rssa.Program.layouts (program, output)),
-                name = "implementProfiling",
-                style = Control.No,
-                suffix = "rssa",
-                thunk = fn () => Profile.profile program,
-                typeCheck = R.Program.typeCheck o #1}
-            val program =
-               maybePass ("rssaOrderFunctions", Rssa.Program.orderFunctions, program)
+            open Rssa
+            fun stats p = 
+               Control.message (Control.Detail, fn () => Program.layoutStats p)
+            fun pass ({name, doit}, p) =
+               let
+                  val _ =
+                     let open Control
+                     in maybeSaveToFile
+                        ({name = name, 
+                          suffix = "pre.rssa"},
+                         Control.No, p, Control.Layouts Program.layouts)
+                     end
+                  val p =
+                     Control.passTypeCheck
+                     {name = name,
+                      suffix = "post.rssa",
+                      style = Control.No,
+                      thunk = fn () => doit p,
+                      display = Control.Layouts Program.layouts,
+                      typeCheck = Program.typeCheck}
+                  val _ = stats p
+               in
+                  p
+               end 
+            fun maybePass ({name, doit}, p) =
+               if List.exists (!Control.dropPasses, fn re =>
+                               Regexp.Compiled.matchesAll (re, name))
+                  then p
+               else pass ({name = name, doit = doit}, p)
+            val p = maybePass ({name = "rssaShrink1", 
+                                doit = Program.shrink}, p)
+            val p = pass ({name = "insertLimitChecks", 
+                           doit = LimitCheck.insert}, p)
+            val p = pass ({name = "insertSignalChecks", 
+                           doit = SignalCheck.insert}, p)
+            val p = pass ({name = "implementHandlers", 
+                           doit = ImplementHandlers.doit}, p)
+            val p = maybePass ({name = "rssaShrink2", 
+                                doit = Program.shrink}, p)
+            val () = Program.checkHandlers p
+            val (p, makeProfileInfo) =
+               let
+                  val makeProfileInfoRef = 
+                     ref (fn _ => Error.bug "Backend.toMachine.rssaSimplify: makeProfileInfoRef")
+                  fun doit p =
+                     let
+                        val (p, makeProfileInfo) = ImplementProfiling.doit p
+                     in
+                        makeProfileInfoRef := makeProfileInfo
+                        ; p
+                     end
+                  val p = pass ({name = "implementProfiling", doit = doit}, p)
+               in
+                  (p, !makeProfileInfoRef)
+               end
+            val p = maybePass ({name = "rssaOrderFunctions", 
+                                doit = Program.orderFunctions}, p)
          in
-            (program, makeProfileInfo)
+            (p, makeProfileInfo)
          end
       val (program, makeProfileInfo) =
          Control.passTypeCheck

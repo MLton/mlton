@@ -258,42 +258,4 @@ end
 
 val reverseFunctions = Reverse.reverseFunctions
 
-
-structure DropProfile =
-struct
-
-fun dropFunction f =
-   let
-      val {args, blocks, mayInline, name, raises, returns, start} =
-         Function.dest f
-      val blocks =
-         Vector.map
-         (blocks, fn Block.T {args, label, statements, transfer} =>
-          Block.T {args = args,
-                   label = label,
-                   statements = Vector.keepAll
-                                (statements, 
-                                 fn Statement.T {exp = Exp.Profile _, ...} => false
-                                  | _ => true),
-                   transfer = transfer})
-   in
-      Function.new {args = args,
-                    blocks = blocks,
-                    mayInline = mayInline,
-                    name = name,
-                    raises = raises,
-                    returns = returns,
-                    start = start}
-   end
-
-fun drop (Program.T {datatypes, globals, functions, main}) =
-   (Control.profile := Control.ProfileNone
-    ; Program.T {datatypes = datatypes,
-                 globals = globals,
-                 functions = List.map (functions, dropFunction),
-                 main = main})
-end
-
-val dropProfile = DropProfile.drop
-
 end

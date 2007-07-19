@@ -37,6 +37,13 @@ local
    shrink2.fun
    flat-lattice.sig
    ann "forceUsed" in flat-lattice.fun end
+   n-point-lattice.sig
+   ann "forceUsed" in n-point-lattice.fun end
+   two-point-lattice.sig
+   two-point-lattice.fun
+   three-point-lattice.sig
+   ann "forceUsed" in three-point-lattice.fun end
+
    common-arg.sig
    common-arg.fun
    common-block.sig
@@ -45,8 +52,6 @@ local
    common-subexp.fun
    global.sig
    global.fun
-   two-point-lattice.sig
-   two-point-lattice.fun
    multi.sig
    multi.fun
    constant-propagation.sig
@@ -61,10 +66,6 @@ local
    inline.fun
    introduce-loops.sig
    introduce-loops.fun
-   n-point-lattice.sig
-   ann "forceUsed" in n-point-lattice.fun end
-   three-point-lattice.sig
-   ann "forceUsed" in three-point-lattice.fun end
    restore.sig
    restore.fun
    known-case.sig
@@ -77,6 +78,10 @@ local
    loop-invariant.fun
    poly-equal.sig
    poly-equal.fun
+   profile.sig
+   profile.fun
+   profile2.sig
+   profile2.fun
    redundant-tests.sig
    redundant-tests.fun
    redundant.sig
