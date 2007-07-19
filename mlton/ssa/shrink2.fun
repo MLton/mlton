@@ -513,13 +513,16 @@ fun shrinkFunction {globals: Statement.t vector} =
          fun meaningArgs m =
             Block.args (Vector.sub (blocks, LabelMeaning.blockIndex m))
          fun save (f, s) =
-            File.withOut
-            (concat ["/tmp/", Func.toString (Function.name f),
-                     ".", s, ".dot"],
-             fn out =>
-             Layout.outputl
-             (#graph (Function.layoutDot (f, fn _ => NONE)),
-              out))
+            let
+               val {destroy, graph, ...} = 
+                  Function.layoutDot (f, fn _ => NONE)
+            in
+               File.withOut
+               (concat ["/tmp/", Func.toString (Function.name f),
+                        ".", s, ".dot"],
+                fn out => Layout.outputl (graph, out))
+               ; destroy ()
+            end
          val () = if true then () else save (f, "pre")
          (* *)
          val () =
