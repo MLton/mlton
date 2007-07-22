@@ -48,16 +48,16 @@ Functionality:
 
 (defcustom bg-build-action-on-failure (function first-error)
   "Optional action to perform when build fails."
-  :type '(choice
-          (const :tag "None" (function (lambda () nil)))
+  :type `(choice
+          (const :tag "None" ,(function (lambda () nil)))
           (function :tag "Action"))
   :group 'bg-build)
 
 (defcustom bg-build-action-on-messages (function first-error)
   "Optional action to perform when build does not fail, but produces
 messages (typically warnings)."
-  :type '(choice
-          (const :tag "None" (function (lambda () nil)))
+  :type `(choice
+          (const :tag "None" ,(function (lambda () nil)))
           (function :tag "Action"))
   :group 'bg-build)
 
