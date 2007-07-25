@@ -53,7 +53,7 @@ void growStackCurrent (GC_state s) {
 
   size = sizeofStackGrow (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
-    fprintf (stderr, "Growing stack to size %s.\n",
+    fprintf (stderr, "[GC: Growing stack to size %s bytes.]\n",
              uintmaxToCommaString(sizeofStackWithHeaderAligned (s, size)));
   assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
   stack = newStack (s, size, TRUE);
@@ -97,7 +97,7 @@ void performGC (GC_state s,
 
   enterGC (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Starting gc.  Request %s nursery bytes and %s old-gen bytes.\n",
+    fprintf (stderr, "[GC: Starting gc; request %s nursery bytes and %s old-gen bytes.]\n",
              uintmaxToCommaString(nurseryBytesRequested),
              uintmaxToCommaString(oldGenBytesRequested));
   assert (invariantForGC (s));
@@ -130,9 +130,8 @@ void performGC (GC_state s,
   } else
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "Finished gc.\n");
-    fprintf (stderr, "time: %s ms\n", uintmaxToCommaString(gcTime));
-    fprintf (stderr, "old gen size: %s bytes (%.1f%%)\n", 
+    fprintf (stderr, "[GC: Finished gc; time: %s ms, old-gen: %s bytes (%.1f%%).]\n",
+             uintmaxToCommaString(gcTime),
              uintmaxToCommaString(s->heap.oldGenSize),
              100.0 * ((double)(s->heap.oldGenSize) 
                       / (double)(s->heap.size)));
@@ -178,7 +177,7 @@ void ensureHasHeapBytesFree (GC_state s,
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force,
             char *file, int line) {
-  if (DEBUG or s->controls.messages)
+  if (DEBUG)
     fprintf (stderr, "%s %d: GC_collect\n", file, line);
   enter (s);
   /* When the mutator requests zero bytes, it may actually need as

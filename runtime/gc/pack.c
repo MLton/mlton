@@ -11,7 +11,8 @@ void GC_pack (GC_state s) {
 
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Packing heap of size %s.\n",
+    fprintf (stderr, "[GC: Packing heap at "FMTPTR" of size %s bytes.]\n",
+             (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   /* Could put some code here to skip the GC if there hasn't been much
    * allocated since the last collection.  But you would still need to
@@ -26,7 +27,8 @@ void GC_pack (GC_state s) {
   }
   releaseHeap (s, &s->secondaryHeap);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Packed heap to size %s.\n",
+    fprintf (stderr, "[GC: Packed heap at "FMTPTR" to size %s bytes.]\n",
+             (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   leave (s);
 }
@@ -34,7 +36,8 @@ void GC_pack (GC_state s) {
 void GC_unpack (GC_state s) {
   enter (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Unpacking heap of size %s.\n",
+    fprintf (stderr, "[GC: Unpacking heap at "FMTPTR" of size %s bytes.]\n", 
+             (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   /* The enterGC is needed here because minorGC and resizeHeap might
    * move the stack, and the SIGPROF catcher would then see a bogus
@@ -48,7 +51,8 @@ void GC_unpack (GC_state s) {
   setGCStateCurrentThreadAndStack (s);
   leaveGC (s);
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Unpacked heap to size %s.\n",
+    fprintf (stderr, "[GC: Unpacked heap at "FMTPTR" to size %s bytes.]\n",
+             (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   leave (s);
 }

@@ -277,15 +277,15 @@ done:
 }
 
 void majorMarkCompactGC (GC_state s) {
+  size_t bytesMarkCompacted;
   struct rusage ru_start;
 
   if (detailedGCTime (s))
     startTiming (&ru_start);
   s->cumulativeStatistics.numMarkCompactGCs++;
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "Major mark-compact GC.\n");
-    fprintf (stderr, "heap = "FMTPTR" of size %s\n",
-             (uintptr_t) s->heap.start, 
+    fprintf (stderr, "[GC: Major mark-compact; heap at "FMTPTR" of size %s bytes.]\n",
+             (uintptr_t)(s->heap.start), 
              uintmaxToCommaString(s->heap.size));
   }
   if (s->hashConsDuringGC) {
@@ -301,12 +301,14 @@ void majorMarkCompactGC (GC_state s) {
   updateForwardPointersForMarkCompact (s);
   updateBackwardPointersAndSlideForMarkCompact (s);
   clearCrossMap (s);
-  s->cumulativeStatistics.bytesMarkCompacted += s->heap.oldGenSize;
+  bytesMarkCompacted = s->heap.oldGenSize;
+  s->cumulativeStatistics.bytesMarkCompacted += bytesMarkCompacted;
   s->lastMajorStatistics.kind = GC_MARK_COMPACT;
   if (detailedGCTime (s))
     stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMarkCompact);
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "Major mark-compact GC done.\n");
+    fprintf (stderr, "[GC: Major mark-compact done; %s bytes mark compacted.]\n",
+             uintmaxToCommaString(bytesMarkCompacted));
     if (s->hashConsDuringGC)
       printBytesHashConsedMessage(s, 
                                   s->lastMajorStatistics.bytesHashConsed 

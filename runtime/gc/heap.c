@@ -110,8 +110,8 @@ void releaseHeap (GC_state s, GC_heap h) {
   if (NULL == h->start)
     return;
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "Releasing heap at "FMTPTR" of size %s.\n",
-             (uintptr_t)h->start,
+    fprintf (stderr, "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
+             (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
   GC_release (h->start, h->size);
   initHeap (s, h);
@@ -127,8 +127,8 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
   if (keep < h->size) {
     if (DEBUG or s->controls.messages)
       fprintf (stderr,
-               "Shrinking heap at "FMTPTR" of size %s to %s bytes.\n",
-               (uintptr_t)h->start,
+               "[GC: Shrinking heap at "FMTPTR" of size %s bytes to size %s bytes.]\n",
+               (uintptr_t)(h->start),
                uintmaxToCommaString(h->size),
                uintmaxToCommaString(keep));
     GC_decommit (h->start + keep, h->size - keep);
@@ -190,17 +190,17 @@ bool createHeap (GC_state s, GC_heap h,
         if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
           s->cumulativeStatistics.maxHeapSizeSeen = h->size;
         if (DEBUG or s->controls.messages)
-          fprintf (stderr, "Created heap of size %s at "FMTPTR".\n",
-                   uintmaxToCommaString(h->size),
-                   (uintptr_t)h->start);
+          fprintf (stderr, "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
+                   (uintptr_t)(h->start),
+                   uintmaxToCommaString(h->size));
         assert (h->size >= minSize);
         return TRUE;
       }
     }
     if (s->controls.messages)
       fprintf(stderr, 
-              "[Requested %s cannot be satisfied, "
-              "backing off by %s (min size = %s).]\n",
+              "[GC: Creating heap of size %s bytes cannot be satisfied; "
+              "backing off by %s bytes (min size = %s).]\n",
               sizeToBytesApproxString (h->size),
               sizeToBytesApproxString (backoff), 
               sizeToBytesApproxString (minSize));
