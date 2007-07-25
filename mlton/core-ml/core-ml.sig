@@ -74,6 +74,7 @@ signature CORE_ML =
                App of t * t
              | Case of {kind: string,
                         lay: unit -> Layout.t,
+                        nest: string list,
                         noMatch: noMatch,
                         nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
                         nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
@@ -103,6 +104,7 @@ signature CORE_ML =
             val andAlso: t * t -> t
             val casee: {kind: string,
                         lay: unit -> Layout.t,
+                        nest: string list,
                         noMatch: noMatch,
                         nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
                         nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
@@ -166,6 +168,7 @@ signature CORE_ML =
                        tyvars: unit -> Tyvar.t vector,
                        vbs: {exp: Exp.t,
                              lay: unit -> Layout.t,
+                             nest: string list,
                              pat: Pat.t,
                              patRegion: Region.t} vector}
 

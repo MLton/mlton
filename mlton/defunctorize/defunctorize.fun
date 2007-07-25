@@ -110,6 +110,7 @@ fun casee {caseType: Xtype.t,
            conTycon,
            kind: string,
            lay: unit -> Layout.t,
+           nest: string list,
            noMatch,
            nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
            nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
@@ -130,17 +131,21 @@ fun casee {caseType: Xtype.t,
             val exp = Xexp.raisee (f e, {extend = true}, caseType)
             val exp =
                fn () =>
-               if mayWrap andalso
-                  let
+               if let
                      open Control
                   in
                      !profile <> ProfileNone 
                      andalso !profileIL = ProfileSource
                      andalso !profileRaise
                   end
-                  then enterLeave (exp, caseType,
-                                   SourceInfo.function {name = ["raise"],
-                                                        region = region})
+                  then case mayWrap of
+                          NONE => exp
+                        | SOME kind => 
+                             enterLeave 
+                             (exp, caseType,
+                              SourceInfo.function 
+                              {name = (concat ["<raise ", kind, ">"]) :: nest,
+                               region = region})
                else exp
          in
             Vector.concat
@@ -158,9 +163,9 @@ fun casee {caseType: Xtype.t,
             case noMatch of
                Impossible => cases
              | RaiseAgain =>
-                  raiseExn (fn e => Xexp.monoVar (e, Xtype.exn), false)
-             | RaiseBind => raiseExn (fn _ => Xexp.bind, true)
-             | RaiseMatch => raiseExn (fn _ => Xexp.match, true)
+                  raiseExn (fn e => Xexp.monoVar (e, Xtype.exn), NONE)
+             | RaiseBind => raiseExn (fn _ => Xexp.bind, SOME "Bind")
+             | RaiseMatch => raiseExn (fn _ => Xexp.match, SOME "Match")
          end
       val examples = ref (fn () => Vector.new0 ())
       fun matchCompile () =                                  
@@ -730,7 +735,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                   val bodyType = et
                   val e =
                      Vector.foldr
-                     (vbs, e, fn ({exp, lay, pat, patRegion}, e) =>
+                     (vbs, e, fn ({exp, lay, nest, pat, patRegion}, e) =>
                       let
                          fun patDec (p: NestedPat.t,
                                      e: Xexp.t,
@@ -744,6 +749,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                    conTycon = conTycon,
                                    kind = "declaration",
                                    lay = lay,
+                                   nest = nest,
                                    noMatch = Cexp.RaiseBind,
                                    nonexhaustiveExnMatch = nonexhaustiveExnMatch,
                                    nonexhaustiveMatch = if mayWarn
@@ -935,7 +941,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                         func = #1 (loopExp e1),
                                         ty = ty}
                      end
-                | Case {kind, lay, noMatch,
+                | Case {kind, lay, nest, noMatch,
                         nonexhaustiveExnMatch, nonexhaustiveMatch, redundantMatch, 
                         region, rules, test, ...} =>
                      casee {caseType = ty,
@@ -946,6 +952,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                             conTycon = conTycon,
                             kind = kind,
                             lay = lay,
+                            nest = nest,
                             noMatch = noMatch,
                             nonexhaustiveExnMatch = nonexhaustiveExnMatch,
                             nonexhaustiveMatch = nonexhaustiveMatch,

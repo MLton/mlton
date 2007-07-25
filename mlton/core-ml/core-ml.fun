@@ -151,6 +151,7 @@ datatype dec =
            tyvars: unit -> Tyvar.t vector,
            vbs: {exp: exp,
                  lay: unit -> Layout.t,
+                 nest: string list,
                  pat: Pat.t,
                  patRegion: Region.t} vector}
 and exp = Exp of {node: expNode,
@@ -159,6 +160,7 @@ and expNode =
    App of exp * exp
   | Case of {kind: string,
              lay: unit -> Layout.t,
+             nest: string list,
              noMatch: noMatch,
              nonexhaustiveExnMatch: Control.Elaborate.DiagDI.t,
              nonexhaustiveMatch: Control.Elaborate.DiagEIW.t,
@@ -365,6 +367,7 @@ structure Exp =
       fun iff (test, thenCase, elseCase): t =
          casee {kind = "if",
                 lay = fn () => Layout.empty,
+                nest = [],
                 noMatch = Impossible,
                 nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
                 nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,

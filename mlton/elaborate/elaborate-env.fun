@@ -2917,6 +2917,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                             vbs = (Vector.new1
                                                    {exp = e,
                                                     lay = fn _ => Layout.empty,
+                                                    nest = [],
                                                     pat = Pat.var (x, strType),
                                                     patRegion = region})})
                             in

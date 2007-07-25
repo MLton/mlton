@@ -376,16 +376,28 @@ in
       else ()
 end
 
-fun approximate (l: Layout.t): Layout.t =
+fun approximateN (l: Layout.t, prefixMax, suffixMax): Layout.t =
    let
       val s = Layout.toString l
       val n = String.size s
    in
       Layout.str
-      (if n <= 60
-          then s
-       else concat [String.prefix (s, 35), "  ...  ", String.suffix (s, 25)])
+      (case suffixMax of
+          NONE =>
+             if n <= prefixMax
+                then s
+             else concat [String.prefix (s, prefixMax - 5), "  ..."]
+        | SOME suffixMax =>
+             if n <= prefixMax + suffixMax
+                then s
+             else concat [String.prefix (s, prefixMax - 2), 
+                          "  ...  ",
+                          String.suffix (s, suffixMax - 5)])
    end
+fun approximate (l: Layout.t): Layout.t =
+   approximateN (l, 35, SOME 25)
+fun approximatePrefix (l: Layout.t): Layout.t =
+   approximateN (l, 15, NONE)
 
 val elaboratePat:
    unit
@@ -974,6 +986,7 @@ local
          if not isBool then fetchExp else
          Cexp.casee {kind = "",
                      lay = fn () => Layout.empty,
+                     nest = [],
                      noMatch = Cexp.Impossible,
                      nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
                      nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
@@ -995,6 +1008,7 @@ local
             if not isBool then valueExp else
             Cexp.casee {kind = "",
                         lay = fn () => Layout.empty,
+                        nest = [],
                         noMatch = Cexp.Impossible,
                         nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
                         nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
@@ -1869,9 +1883,22 @@ fun elaborateDec (d, {env = E, nest}) =
                                          profileBody 
                                          andalso !Control.profileBranch,
                                          fn () =>
-                                         SourceInfo.function
-                                         {name = "<branch>" :: nest,
-                                          region = bodyRegion})
+                                         let
+                                            open Layout
+                                            val name =
+                                               concat ["<case ",
+                                                       Layout.toString
+                                                       (approximatePrefix
+                                                        (seq
+                                                         (separateRight 
+                                                          (Vector.toListMap 
+                                                           (args, Apat.layout), " ")))),
+                                                       ">"]
+                                         in
+                                            SourceInfo.function
+                                            {name = name :: nest,
+                                             region = bodyRegion}
+                                         end)
                                      val _ =
                                         Option.app
                                         (resultType, fn t =>
@@ -1941,6 +1968,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                             Cexp.casee
                                             {kind = "function",
                                              lay = lay,
+                                             nest = nest,
                                              noMatch = Cexp.RaiseMatch,
                                              nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                              nonexhaustiveMatch = nonexhaustiveMatch (),
@@ -2092,6 +2120,23 @@ fun elaborateDec (d, {env = E, nest}) =
                              val patRegion = Apat.region pat
                              val expRegion = Aexp.region exp
                              val exp = elabExp (exp, nest, Apat.getName pat)
+                             val exp =
+                                Cexp.enterLeave
+                                (exp, 
+                                 profileBody 
+                                 andalso !Control.profileVal
+                                 andalso Cexp.isExpansive exp, fn () =>
+                                 let
+                                    val name =
+                                       concat ["<val ",
+                                               Layout.toString
+                                               (approximatePrefix
+                                                (Apat.layout pat)),
+                                               ">"]
+                                 in
+                                    SourceInfo.function {name = name :: nest,
+                                                         region = expRegion}
+                                 end)
                           in
                              {exp = exp,
                               expRegion = expRegion,
@@ -2160,6 +2205,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                 Cexp.enterLeave
                                 (Cexp.casee {kind = "function",
                                              lay = lay,
+                                             nest = nest,
                                              noMatch = Cexp.RaiseMatch,
                                              nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                              nonexhaustiveMatch = nonexhaustiveMatch (),
@@ -2207,27 +2253,6 @@ fun elaborateDec (d, {env = E, nest}) =
                                   align [seq [str "pattern:    ", p],
                                          seq [str "expression: ", e],
                                          lay ()]))
-                             val exp =
-                                Cexp.enterLeave
-                                (exp, 
-                                 profileBody 
-                                 andalso !Control.profileVal 
-                                 andalso Cexp.isExpansive exp, fn () =>
-                                 let
-                                    val bound = Vector.map (bound, #1)
-                                    val name = 
-                                       concat ["<val>:",
-                                               if Vector.length bound = 1
-                                                  then (Avar.toString 
-                                                        (Vector.sub (bound, 0)))
-                                               else (Vector.toString 
-                                                     Avar.toString 
-                                                     bound)]
-                                 in
-                                    SourceInfo.function
-                                    {name = name :: nest,
-                                     region = expRegion}
-                                 end)
                           in
                              {bound = bound,
                               exp = exp,
@@ -2266,6 +2291,7 @@ fun elaborateDec (d, {env = E, nest}) =
                          Vector.map (vbs, fn {exp, lay, pat, patRegion, ...} =>
                                      {exp = exp,
                                       lay = lay,
+                                      nest = nest,
                                       pat = pat,
                                       patRegion = patRegion})
                       (* According to page 28 of the Definition, we should
@@ -2357,6 +2383,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.casee {kind = "case",
                                   lay = lay,
+                                  nest = nest,
                                   noMatch = Cexp.RaiseMatch,
                                   nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                                   nonexhaustiveMatch = nonexhaustiveMatch (),
@@ -2462,7 +2489,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                    {name = name :: nest,
                                     region = Aexp.region e})
                             in
-                               (wrap (b, b', "<true>"), wrap (c, c', "<false>"))
+                               (wrap (b, b', "<case true>"), wrap (c, c', "<case false>"))
                             end
                    in
                       Cexp.iff (a', b', c')
@@ -2556,6 +2583,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                               Cexp.casee
                                               {kind = "",
                                                lay = fn _ => Layout.empty,
+                                               nest = [],
                                                noMatch = Cexp.Impossible,
                                                nonexhaustiveExnMatch = Control.Elaborate.DiagDI.Default,
                                                nonexhaustiveMatch = Control.Elaborate.DiagEIW.Ignore,
@@ -3042,6 +3070,7 @@ fun elaborateDec (d, {env = E, nest}) =
             val body =
                Cexp.casee {kind = kind,
                            lay = lay,
+                           nest = nest,
                            noMatch = noMatch,
                            nonexhaustiveExnMatch = nonexhaustiveExnMatch (),
                            nonexhaustiveMatch = nonexhaustiveMatch (),
@@ -3073,37 +3102,48 @@ fun elaborateDec (d, {env = E, nest}) =
                           approximate
                           (seq [Apat.layout pat, str " => ", Aexp.layout exp])
                        end
-                    val (p, _) =
+                    val patOrig = pat
+                    val (pat, _) =
                        elaboratePat () (pat, E, {bind = true, isRvb = false},
                                         preError)
                     val _ =
                        unify
-                       (Cpat.ty p, argType, preError, fn (l1, l2) =>
-                        (Apat.region pat,
+                       (Cpat.ty pat, argType, preError, fn (l1, l2) =>
+                        (Apat.region patOrig,
                          str "rule patterns disagree",
                          align [seq [str "pattern:  ", l1],
                                 seq [str "previous: ", l2],
                                 seq [str "in: ", lay ()]]))
-                    val e = elabExp (exp, nest, NONE)
+                    val expOrig = exp
+                    val exp = elabExp (exp, nest, NONE)
                     val _ =
                        unify
-                       (Cexp.ty e, resultType, preError, fn (l1, l2) =>
-                        (Aexp.region exp,
+                       (Cexp.ty exp, resultType, preError, fn (l1, l2) =>
+                        (Aexp.region expOrig,
                          str "rule results disagree",
                          align [seq [str "result:   ", l1],
                                 seq [str "previous: ", l2],
                                 seq [str "in: ", lay ()]]))
-                    val e =
+                    val exp =
                        Cexp.enterLeave
-                       (e, 
-                        profileBody andalso !Control.profileBranch, 
+                       (exp, 
+                        profileBody andalso !Control.profileBranch,
                         fn () =>
-                        SourceInfo.function {name = "<branch>" :: nest,
-                                             region = Aexp.region exp})
+                        let
+                           val name =
+                              concat ["<case ",
+                                      Layout.toString
+                                      (approximatePrefix
+                                       (Apat.layout patOrig)),
+                                      ">"]
+                        in
+                           SourceInfo.function {name = name :: nest,
+                                                region = Aexp.region expOrig}
+                        end)
                  in
-                    {exp = e,
+                    {exp = exp,
                      lay = SOME lay,
-                     pat = p}
+                     pat = pat}
                  end))
          in
             {argType = argType,
