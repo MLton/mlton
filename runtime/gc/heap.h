@@ -22,8 +22,8 @@
 */
 
 typedef struct GC_heap {
-  size_t oldGenSize; /* size of old generation */
   pointer nursery; /* start of nursery */
+  size_t oldGenSize; /* size of old generation */
   size_t size; /* size of heap */
   pointer start; /* start of heap (and old generation) */
 } *GC_heap;

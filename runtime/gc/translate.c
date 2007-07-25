@@ -10,19 +10,16 @@
 /*                          translateHeap                           */
 /* ---------------------------------------------------------------- */
 
-struct translateState {
-  pointer from;
-  pointer to;
-};
-static struct translateState translateState;
-
-void translateObjptr (__attribute__ ((unused)) GC_state s, 
+void translateObjptr (GC_state s, 
                       objptr *opp) {
   pointer p;
+  pointer from, to;
 
-  p = objptrToPointer (*opp, translateState.from);
-  p = (p - translateState.from) + translateState.to;
-  *opp = pointerToObjptr (p, translateState.to);
+  from = s->translateState.from;
+  to = s->translateState.to;
+  p = objptrToPointer (*opp, from);
+  p = (p - from) + to;
+  *opp = pointerToObjptr (p, to);
 }
 
 /* translateHeap (s, from, to, size)
@@ -30,17 +27,17 @@ void translateObjptr (__attribute__ ((unused)) GC_state s,
 void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
   pointer limit;
 
-  if (DEBUG or s->controls.messages)
-    fprintf (stderr, "[GC: Translating heap at "FMTPTR" of size %s bytes to "FMTPTR".]\n",
-             (uintptr_t)from,
-             uintmaxToCommaString(size),
-             (uintptr_t)to);
   if (from == to)
     return;
-  else {
-    translateState.from = from;
-    translateState.to = to;
-  }
+
+  if (DEBUG or s->controls.messages)
+    fprintf (stderr, 
+             "[GC: Translating heap at "FMTPTR" of size %s bytes from "FMTPTR".]\n",
+             (uintptr_t)to,
+             uintmaxToCommaString(size),
+             (uintptr_t)from);
+  s->translateState.from = from;
+  s->translateState.to = to;
   /* Translate globals and heap. */
   foreachGlobalObjptr (s, translateObjptr);
   limit = to + size;

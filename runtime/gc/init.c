@@ -307,9 +307,10 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->sysvals.ram = align ((size_t)(s->controls.ratios.ramSlop * s->sysvals.totalRam), 
                           s->sysvals.pageSize);
   if (DEBUG or DEBUG_RESIZING or s->controls.messages)
-    fprintf (stderr, "[GC: total RAM = %s, using RAM = %s.]\n",
+    fprintf (stderr, "[GC: Found %s bytes of RAM; using %s bytes (%.1f%% of RAM).]\n",
              uintmaxToCommaString(s->sysvals.totalRam),
-             uintmaxToCommaString(s->sysvals.ram));
+             uintmaxToCommaString(s->sysvals.ram),
+             100.0 * s->controls.ratios.ramSlop);
   if (DEBUG_SOURCES or DEBUG_PROFILE) {
     uint32_t i;
     for (i = 0; i < s->sourceMaps.frameSourcesLength; i++) {

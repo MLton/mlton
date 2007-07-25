@@ -6,6 +6,15 @@
  * See the file MLton-LICENSE for details.
  */
 
+#if (defined (MLTON_GC_INTERNAL_TYPES))
+
+struct GC_translateState {
+  pointer from;
+  pointer to;
+};
+
+#endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
+
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 static inline void translateObjptr (GC_state s, objptr *opp);

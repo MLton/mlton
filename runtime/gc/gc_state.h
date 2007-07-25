@@ -64,6 +64,7 @@ struct GC_state {
   pointer stackBottom; /* Bottom of stack in current thread. */
   uintmax_t startTime; /* The time when GC_init or GC_loadWorld was called. */
   struct GC_sysvals sysvals;
+  struct GC_translateState translateState;
   struct GC_vectorInit *vectorInits;
   uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */

@@ -284,7 +284,10 @@ void majorMarkCompactGC (GC_state s) {
     startTiming (&ru_start);
   s->cumulativeStatistics.numMarkCompactGCs++;
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "[GC: Major mark-compact; heap at "FMTPTR" of size %s bytes.]\n",
+    fprintf (stderr, 
+             "[GC: Starting major mark-compact;]\n");
+    fprintf (stderr,
+             "[GC:\theap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(s->heap.start), 
              uintmaxToCommaString(s->heap.size));
   }
@@ -307,7 +310,8 @@ void majorMarkCompactGC (GC_state s) {
   if (detailedGCTime (s))
     stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMarkCompact);
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "[GC: Major mark-compact done; %s bytes mark compacted.]\n",
+    fprintf (stderr, 
+             "[GC: Finished major mark-compact; mark compacted %s bytes.]\n",
              uintmaxToCommaString(bytesMarkCompacted));
     if (s->hashConsDuringGC)
       printBytesHashConsedMessage(s, 

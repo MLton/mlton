@@ -53,7 +53,8 @@ void growStackCurrent (GC_state s) {
 
   size = sizeofStackGrow (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
-    fprintf (stderr, "[GC: Growing stack to size %s bytes.]\n",
+    fprintf (stderr, 
+             "[GC: Growing stack to size %s bytes.]\n",
              uintmaxToCommaString(sizeofStackWithHeaderAligned (s, size)));
   assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
   stack = newStack (s, size, TRUE);
@@ -96,10 +97,33 @@ void performGC (GC_state s,
   size_t totalBytesRequested;
 
   enterGC (s);
-  if (DEBUG or s->controls.messages)
-    fprintf (stderr, "[GC: Starting gc; request %s nursery bytes and %s old-gen bytes.]\n",
+  s->cumulativeStatistics.numGCs++;
+  if (DEBUG or s->controls.messages) {
+    size_t nurserySize = s->heap.size - (s->heap.nursery - s->heap.start);
+    size_t nurseryUsed = s->frontier - s->heap.nursery;
+    fprintf (stderr, 
+             "[GC: Starting gc #%s; requesting %s nursery bytes and %s old-gen bytes,]\n",
+             uintmaxToCommaString(s->cumulativeStatistics.numGCs),
              uintmaxToCommaString(nurseryBytesRequested),
              uintmaxToCommaString(oldGenBytesRequested));
+    fprintf (stderr, 
+             "[GC:\theap at "FMTPTR" of size %s bytes,]\n",
+             (uintptr_t)(s->heap.start),
+             uintmaxToCommaString(s->heap.size));
+    fprintf (stderr, 
+             "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
+             uintmaxToCommaString(nurserySize),
+             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
+    fprintf (stderr, 
+             "[GC:\tand old-gen of size %s bytes (%.1f%% of heap),]\n",
+             uintmaxToCommaString(s->heap.oldGenSize),
+             100.0 * ((double)(s->heap.oldGenSize) / (double)(s->heap.size)));
+    fprintf (stderr, 
+             "[GC:\tand nursery using %s bytes (%.1f%% of heap, %.1f%% of nursery).]\n",
+             uintmaxToCommaString(nurseryUsed),
+             100.0 * ((double)(nurseryUsed) / (double)(s->heap.size)),
+             100.0 * ((double)(nurseryUsed) / (double)(nurserySize)));
+  }
   assert (invariantForGC (s));
   if (needGCTime (s))
     startTiming (&ru_start);
@@ -130,11 +154,23 @@ void performGC (GC_state s,
   } else
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, "[GC: Finished gc; time: %s ms, old-gen: %s bytes (%.1f%%).]\n",
-             uintmaxToCommaString(gcTime),
+    size_t nurserySize = s->heap.size - (s->heap.nursery - s->heap.start);
+    fprintf (stderr, 
+             "[GC: Finished gc #%s; time %s ms,]\n",
+             uintmaxToCommaString(s->cumulativeStatistics.numGCs),
+             uintmaxToCommaString(gcTime));
+    fprintf (stderr, 
+             "[GC:\theap at "FMTPTR" of size %s bytes,]\n",
+             (uintptr_t)(s->heap.start),
+             uintmaxToCommaString(s->heap.size));
+    fprintf (stderr, 
+             "[GC:\twith nursery of size %s bytes (%.1f%% of heap),]\n",
+             uintmaxToCommaString(nurserySize),
+             100.0 * ((double)(nurserySize) / (double)(s->heap.size)));
+    fprintf (stderr, 
+             "[GC:\tand old-gen of size %s bytes (%.1f%% of heap).]\n",
              uintmaxToCommaString(s->heap.oldGenSize),
-             100.0 * ((double)(s->heap.oldGenSize) 
-                      / (double)(s->heap.size)));
+             100.0 * ((double)(s->heap.oldGenSize) / (double)(s->heap.size)));
   }
   /* Send a GC signal. */
   if (s->signalsInfo.gcSignalHandled

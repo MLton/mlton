@@ -24,6 +24,7 @@ struct GC_cumulativeStatistics {
 
   uintmax_t numLimitChecks;
 
+  uintmax_t numGCs;
   uintmax_t numCopyingGCs;
   uintmax_t numHashConsGCs;
   uintmax_t numMarkCompactGCs;

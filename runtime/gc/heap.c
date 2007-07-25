@@ -51,8 +51,8 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
              and ratio >= 2 * s->controls.ratios.copy) {
     /* Split RAM in half.  Round down by pageSize so that the total
      * amount of space taken isn't greater than RAM once rounding
-     * happens.  This is so resizeHeap2 doesn't get confused and free
-     * a semispace in a misguided attempt to avoid paging.
+     * happens.  This is so resizeHeapSecondary doesn't get confused
+     * and free a semispace in a misguided attempt to avoid paging.
      */
     res = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
   } else if (ratio >= s->controls.ratios.copy + s->controls.ratios.grow) {
@@ -110,7 +110,8 @@ void releaseHeap (GC_state s, GC_heap h) {
   if (NULL == h->start)
     return;
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
+    fprintf (stderr, 
+             "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
   GC_release (h->start, h->size);
@@ -190,20 +191,23 @@ bool createHeap (GC_state s, GC_heap h,
         if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
           s->cumulativeStatistics.maxHeapSizeSeen = h->size;
         if (DEBUG or s->controls.messages)
-          fprintf (stderr, "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
+          fprintf (stderr, 
+                   "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
                    (uintptr_t)(h->start),
                    uintmaxToCommaString(h->size));
         assert (h->size >= minSize);
         return TRUE;
       }
     }
-    if (s->controls.messages)
-      fprintf(stderr, 
-              "[GC: Creating heap of size %s bytes cannot be satisfied; "
-              "backing off by %s bytes (min size = %s).]\n",
-              sizeToBytesApproxString (h->size),
-              sizeToBytesApproxString (backoff), 
-              sizeToBytesApproxString (minSize));
+    if (s->controls.messages) {
+      fprintf (stderr, 
+               "[GC: Creating heap of size %s bytes cannot be satisfied,]\n",
+               uintmaxToCommaString (h->size));
+      fprintf (stderr,
+               "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
+               uintmaxToCommaString (backoff), 
+               uintmaxToCommaString (minSize));
+    }
   }
   h->size = 0;
   return FALSE;
@@ -267,13 +271,18 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   pointer orig;
   size_t size;
 
-  curHeapp = &s->heap;
   assert (desiredSize >= s->heap.size);
-  if (DEBUG_RESIZING)
-    fprintf (stderr, "Growing heap at "FMTPTR" of size %s to %s bytes.\n",
+  if (DEBUG_RESIZING or s->controls.messages) {
+    fprintf (stderr, 
+             "[GC: Growing heap at "FMTPTR" of size %s bytes,]\n",
              (uintptr_t)s->heap.start,
-             uintmaxToCommaString(s->heap.size),
-             uintmaxToCommaString(desiredSize));
+             uintmaxToCommaString(s->heap.size));
+    fprintf (stderr,
+             "[GC:\tto desired size of %s bytes and minimum size of %s bytes.]\n",
+             uintmaxToCommaString(desiredSize),
+             uintmaxToCommaString(minSize));
+  }
+  curHeapp = &s->heap;
   orig = curHeapp->start;
   size = curHeapp->oldGenSize;
   assert (size <= s->heap.size);
@@ -311,9 +320,21 @@ copy:
     /* Write the heap to disk and try again. */
     void *data;
 
+    if (DEBUG or s->controls.messages) {
+      fprintf (stderr, 
+               "[GC: Writing heap at "FMTPTR" of size %s bytes to disk.]\n",
+               (uintptr_t)orig, 
+               uintmaxToCommaString(size));
+    }
     data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
+      if (DEBUG or s->controls.messages) {
+        fprintf (stderr, 
+                 "[GC: Reading heap at "FMTPTR" of size %s bytes from disk.]\n",
+                 (uintptr_t)orig,
+                 uintmaxToCommaString(size));
+      }
       GC_diskBack_read (data, curHeapp->start, size);
       GC_diskBack_close (data);
     } else {
