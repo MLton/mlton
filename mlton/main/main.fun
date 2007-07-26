@@ -340,10 +340,23 @@ fun makeOptions {usage} =
         boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
         intRef indentation),
-       (Normal, "inline", " <n>", "set inlining threshold", Int setInlineSize),
+       (Normal, "inline", " <n>", "set inlining threshold", intRef inline),
        (Expert, "inline-into-main", " {true|false}",
         "inline functions into main",
         boolRef inlineIntoMain),
+       (Expert, "inline-leaf-size", " 20", "set leaf inlining threshold",
+        SpaceString (fn s => 
+                     inlineLeafSize := 
+                     (if s = "inf"
+                         then NONE
+                      else if String.forall (s, Char.isDigit)
+                         then Int.fromString s
+                      else (usage o concat)
+                           ["invalid -inline-leaf-size flag: ", s]))),
+       (Expert, "inline-leaf-loops", " {true|false}", " leaf inline loops",
+        boolRef inlineLeafLoops),
+       (Expert, "inline-leaf-repeat", " {false|true}", " repeat leaf inline",
+        boolRef inlineLeafRepeat),
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
         SpaceString (fn s =>
                      case s of

@@ -31,30 +31,16 @@ structure RemoveUnused = RemoveUnused (S)
 structure SimplifyTypes = SimplifyTypes (S)
 structure Useless = Useless (S)
 
-fun inlineNonRecursive (product, small) p =
-   Ref.fluidLet
-   (Control.inline, 
-    Control.NonRecursive {product = product, small = small}, 
-    fn () => Inline.inline p)
-fun inlineLeaf size p =
-   Ref.fluidLet
-   (Control.inlineIntoMain, true, fn () =>
-    Ref.fluidLet
-    (Control.inline, Control.Leaf {size = SOME size}, 
-     fn () => Inline.inline p))
-fun inlineLeafNoLoop size p =
-   Ref.fluidLet
-   (Control.inlineIntoMain, true, fn () =>
-    Ref.fluidLet
-    (Control.inline, Control.LeafNoLoop {size = SOME size}, 
-     fn () => Inline.inline p))
-
 type pass = {name: string,
              doit: Program.t -> Program.t}
 
 val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.remove} ::
-   {name = "leafInline", doit = inlineLeaf 20} ::
+   {name = "introduceLoops1", doit = IntroduceLoops.introduceLoops} ::
+   {name = "inlineLeaf", doit = fn p => 
+    Inline.inlineLeaf (p, {loops = !Control.inlineLeafLoops,
+                           repeat = !Control.inlineLeafRepeat,
+                           size = !Control.inlineLeafSize})} ::
    {name = "contify1", doit = Contify.contify} ::
    {name = "localFlatten1", doit = LocalFlatten.flatten} ::
    {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
@@ -71,11 +57,12 @@ val ssaPassesDefault =
     *)
    {name = "polyEqual", doit = PolyEqual.polyEqual} ::
    {name = "contify2", doit = Contify.contify} ::
-   {name = "inline", doit = Inline.inline} ::
+   {name = "inlineNonRecursive", doit = fn p =>
+    Inline.inlineNonRecursive (p, {small = !Control.inline, product = 320})} ::
    {name = "localFlatten2", doit = LocalFlatten.flatten} ::
    {name = "removeUnused3", doit = RemoveUnused.remove} ::
    {name = "contify3", doit = Contify.contify} ::
-   {name = "introduceLoops", doit = IntroduceLoops.introduceLoops} ::
+   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
    {name = "loopInvariant", doit = LoopInvariant.loopInvariant} ::
    {name = "localRef", doit = LocalRef.eliminate} ::
    {name = "flatten", doit = Flatten.flatten} ::
@@ -114,22 +101,30 @@ local
       let
          val count = Counter.new 1
          fun nums s =
-            if s = ""
-               then SOME []
-            else if String.sub (s, 0) = #"(" 
-                  andalso String.sub (s, String.size s - 1)= #")"
-               then let
-                       val s = String.dropFirst (String.dropLast s)
-                    in
-                       case List.fold (String.split (s, #","), SOME [],
-                                       fn (s,SOME nums) => (case Int.fromString s of
-                                                               SOME i => SOME (i::nums)
-                                                             | NONE => NONE)
-                                        | (_, NONE) => NONE) of
-                          SOME (l as _::_) => SOME (List.rev l)
-                        | _ => NONE
-                    end
-            else NONE
+            Exn.withEscape
+            (fn escape =>
+             if s = ""
+                then SOME []
+             else let
+                     val l = String.length s
+                  in
+                     if String.sub (s, 0) = #"(" 
+                        andalso String.sub (s, l - 1)= #")"
+                        then let
+                                val s = String.substring2 (s, {start = 1, finish = l - 1})
+                                fun doit s =
+                                   if s = "inf"
+                                      then NONE
+                                   else if String.forall (s, Char.isDigit)
+                                           then Int.fromString s
+                                        else escape NONE
+                             in
+                                case List.map (String.split (s, #","), doit) of
+                                   l as _::_ => SOME l
+                                 | _ => NONE
+                             end
+                    else NONE
+                 end)
       in
          fn s =>
          if String.hasPrefix (s, {prefix = "inlineNonRecursive"})
@@ -139,39 +134,77 @@ local
                                             Int.toString product, ",",
                                             Int.toString small, ")#",
                                             Int.toString (Counter.next count)],
-                             doit = inlineNonRecursive (product, small)}
+                             doit = (fn p => 
+                                     Inline.inlineNonRecursive 
+                                     (p, {small = small, product = product}))}
                     val s = String.dropPrefix (s, String.size "inlineNonRecursive")
                  in
                     case nums s of
                        SOME [] => mk (320, 60)
-                     | SOME [product, small] => mk (product, small)
+                     | SOME [SOME product, SOME small] => mk (product, small)
                      | _ => NONE
                  end
-         else if String.hasPrefix (s, {prefix = "inlineLeafNoLoop"})
+         else if String.hasPrefix (s, {prefix = "inlineLeafRepeat"})
             then let
                     fun mk size =
-                       SOME {name = concat ["inlineLeafNoLoop(", 
-                                            Int.toString size, ")#",
+                       SOME {name = concat ["inlineLeafRepeat(", 
+                                            Option.toString Int.toString size, ")#",
                                             Int.toString (Counter.next count)],
-                             doit = inlineLeafNoLoop size}
-                    val s = String.dropPrefix (s, String.size "inlineLeafNoLoop")
+                             doit = (fn p => 
+                                     Inline.inlineLeafRepeat
+                                     (p, {size = size}))}
+                    val s = String.dropPrefix (s, String.size "inlineLeafRepeat")
                  in
                     case nums s of
-                       SOME [] => mk 20
+                       SOME [] => mk (SOME 20)
                      | SOME [size] => mk size
                      | _ => NONE
                  end
-         else if String.hasPrefix (s, {prefix = "inlineLeaf"})
+         else if String.hasPrefix (s, {prefix = "inlineLeafRepeatNoLoop"})
             then let
                     fun mk size =
-                       SOME {name = concat ["inlineLeaf(", 
-                                            Int.toString size, ")#",
+                       SOME {name = concat ["inlineLeafRepeatNoLoop(", 
+                                            Option.toString Int.toString size, ")#",
                                             Int.toString (Counter.next count)],
-                             doit = inlineLeaf size}
-                    val s = String.dropPrefix (s, String.size "inlineLeaf")
+                             doit = (fn p => 
+                                     Inline.inlineLeafRepeatNoLoop
+                                     (p, {size = size}))}
+                    val s = String.dropPrefix (s, String.size "inlineLeafRepeatNoLoop")
                  in
                     case nums s of
-                       SOME [] => mk 20
+                       SOME [] => mk (SOME 20)
+                     | SOME [size] => mk size
+                     | _ => NONE
+                 end
+         else if String.hasPrefix (s, {prefix = "inlineLeafOnceNoLoop"})
+            then let
+                    fun mk size =
+                       SOME {name = concat ["inlineLeafOnceNoLoop(", 
+                                            Option.toString Int.toString size, ")#",
+                                            Int.toString (Counter.next count)],
+                             doit = (fn p => 
+                                     Inline.inlineLeafOnceNoLoop 
+                                     (p, {size = size}))}
+                    val s = String.dropPrefix (s, String.size "inlineLeafOnceNoLoop")
+                 in
+                    case nums s of
+                       SOME [] => mk (SOME 20)
+                     | SOME [size] => mk size
+                     | _ => NONE
+                 end
+         else if String.hasPrefix (s, {prefix = "inlineLeafOnce"})
+            then let
+                    fun mk size =
+                       SOME {name = concat ["inlineLeafOnce(", 
+                                            Option.toString Int.toString size, ")#",
+                                            Int.toString (Counter.next count)],
+                             doit = (fn p => 
+                                     Inline.inlineLeafOnce
+                                     (p, {size = size}))}
+                    val s = String.dropPrefix (s, String.size "inlineLeafOnce")
+                 in
+                    case nums s of
+                       SOME [] => mk (SOME 20)
                      | SOME [size] => mk size
                      | _ => NONE
                  end

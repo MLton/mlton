@@ -151,13 +151,11 @@ signature CONTROL_FLAGS =
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 
-      datatype inline =
-         NonRecursive of {product: int,
-                          small: int}
-       | Leaf of {size: int option}
-       | LeafNoLoop of {size: int option}
-      val inline: inline ref
-      val setInlineSize: int -> unit
+      val inline: int ref
+
+      val inlineLeafSize: int option ref
+      val inlineLeafLoops: bool ref
+      val inlineLeafRepeat: bool ref
 
       val inlineIntoMain: bool ref
 

@@ -653,41 +653,21 @@ val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}
 
-structure Inline =
-   struct
-      datatype t =
-         NonRecursive of {product: int,
-                          small: int}
-       | Leaf of {size: int option}
-       | LeafNoLoop of {size: int option}
-
-      local open Layout
-         val iol = Option.layout Int.layout
-      in
-         val layout = 
-            fn NonRecursive {product, small} =>
-            seq [str "NonRecursive ",
-                record [("product", Int.layout product),
-                       ("small", Int.layout small)]]
-             | Leaf {size} => seq [str "Leaf ", iol size]
-             | LeafNoLoop {size} => seq [str "LeafNoLoop ", iol size]
-      end
-      val toString = Layout.toString o layout
-   end
-
-datatype inline = datatype Inline.t
-
 val inline = control {name = "inline",
-                      default = NonRecursive {product = 320,
-                                              small = 60},
-                      toString = Inline.toString}
+                      default = 60, 
+                      toString = Int.toString}
 
-fun setInlineSize (size: int): unit =
-   inline := (case !inline of
-                 NonRecursive {small, ...} =>
-                    NonRecursive {product = size, small = small}
-               | Leaf _ => Leaf {size = SOME size}
-               | LeafNoLoop _ => LeafNoLoop {size = SOME size})
+val inlineLeafLoops = control {name = "inlineLeafLoops",
+                               default = true,
+                               toString = Bool.toString}
+
+val inlineLeafRepeat = control {name = "inlineLeafRepeat",
+                                default = false,
+                                toString = Bool.toString}
+
+val inlineLeafSize = control {name = "inlineLeafSize",
+                              default = SOME 20,
+                              toString = Option.toString Int.toString}
 
 val inlineIntoMain = control {name = "inlineIntoMain",
                               default = true,
