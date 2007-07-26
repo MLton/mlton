@@ -657,6 +657,10 @@ val inline = control {name = "inline",
                       default = 60, 
                       toString = Int.toString}
 
+val inlineIntoMain = control {name = "inlineIntoMain",
+                              default = true,
+                              toString = Bool.toString}
+
 val inlineLeafLoops = control {name = "inlineLeafLoops",
                                default = true,
                                toString = Bool.toString}
@@ -668,10 +672,6 @@ val inlineLeafRepeat = control {name = "inlineLeafRepeat",
 val inlineLeafSize = control {name = "inlineLeafSize",
                               default = SOME 20,
                               toString = Option.toString Int.toString}
-
-val inlineIntoMain = control {name = "inlineIntoMain",
-                              default = true,
-                              toString = Bool.toString}
 
 val inputFile = control {name = "input file",
                          default = "<bogus>",

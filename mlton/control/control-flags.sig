@@ -153,11 +153,11 @@ signature CONTROL_FLAGS =
 
       val inline: int ref
 
+      val inlineIntoMain: bool ref
+
       val inlineLeafSize: int option ref
       val inlineLeafLoops: bool ref
       val inlineLeafRepeat: bool ref
-
-      val inlineIntoMain: bool ref
 
       (* The input file on the command line, minus path and extension. *)
       val inputFile: File.t ref
