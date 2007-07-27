@@ -12,8 +12,6 @@ coerce (name, from, Word##S##to)                \
 coerce (name, from, Word##U##to)
 
 #define allWordCoerce(size)                     \
-bothFromWordCoerce(rnd, size, Real32)           \
-bothFromWordCoerce(rnd, size, Real64)           \
 bothToWordCoerce(rnd, Real32, size)             \
 bothToWordCoerce(rnd, Real64, size)             \
 bothFromWordCoerce(extd, size, Word8)           \

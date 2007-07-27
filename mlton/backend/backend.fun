@@ -443,15 +443,11 @@ let
                            Type.ofWordXVector v,
                            v))
       end
-      fun realOp (r: RealX.t): M.Operand.t =
-         if !Control.codegen = Control.CCodegen
-            then M.Operand.Real r
-         else globalReal r
       fun bogusOp (t: Type.t): M.Operand.t =
          case Type.deReal t of
             NONE => M.Operand.Word (WordX.fromIntInf
                                     (0, WordSize.fromBits (Type.width t)))
-          | SOME s => realOp (RealX.zero s)
+          | SOME s => globalReal (RealX.zero s)
       fun constOperand (c: Const.t): M.Operand.t =
          let
             datatype z = datatype Const.t
@@ -462,7 +458,7 @@ let
                       NONE => globalIntInf i
                     | SOME w => M.Operand.Word w)
              | Null => M.Operand.Null
-             | Real r => realOp r
+             | Real r => globalReal r
              | Word w => M.Operand.Word w
              | WordVector v => globalVector v
          end
