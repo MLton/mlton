@@ -1,5 +1,10 @@
 Here are the changes since version 20051202.
 
+* 2007-07-26
+   - Fixed bug in treatment of floating-point operations.  FP ops
+     depend on the current rounding mode, but were being treated as
+     pure.  Thanks to Sean McLaughlin for the bug report.
+
 * 2007-07-13
    - Added MLton.Exn.{default,get,set}TopLevelHandler.
 
