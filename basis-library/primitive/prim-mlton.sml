@@ -228,7 +228,7 @@ structure Pointer =
       val add =
          _prim "CPointer_add": pointer * C_Size.word -> pointer;
       val sub =
-         _prim "CPointer_add": pointer * C_Size.word -> pointer;
+         _prim "CPointer_sub": pointer * C_Size.word -> pointer;
       val diff =
          _prim "CPointer_diff": pointer * pointer -> C_Size.word;
       val < = _prim "CPointer_lt": pointer * pointer -> bool;
