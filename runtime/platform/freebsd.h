@@ -14,11 +14,11 @@
 #include <pwd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/time.h>
+#include <sys/resource.h> /* <sys/resource.h> might not #include <sys/time.h> */
 #include <sys/times.h>
 #include <sys/un.h>
 #include <sys/utsname.h>
