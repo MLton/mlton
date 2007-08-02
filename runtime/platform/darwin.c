@@ -8,6 +8,7 @@
 #include "mkdir2.c"
 #include "mmap-protect.c"
 #include "nonwin.c"
+#include "sysctl.c"
 #include "use-mmap.c"
 
 code_pointer GC_getTextEnd (void) {
@@ -43,19 +44,4 @@ static void catcher (__attribute__ ((unused)) int sig,
 void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
-size_t GC_pageSize (void) {
-        long int pageSize = sysconf(_SC_PAGESIZE);
-        return (size_t)pageSize;
-}
-
-size_t GC_totalRam (void) {
-        int mem;
-        size_t len;
-
-        len = sizeof (int);
-        if (-1 == sysctlbyname ("hw.physmem", &mem, &len, NULL, 0))
-                diee ("sysctl failed");
-        return mem;
 }
