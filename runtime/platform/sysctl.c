@@ -48,7 +48,11 @@ size_t GC_totalRam (void) {
 
   len = 0;
   mib[0] = CTL_HW;
-#ifdef HW_PHYSMEM64
+#if defined(HW_MEMSIZE)
+  /* Darwin */
+  mib[1] = HW_MEMSIZE;
+#elif defined(HW_PHYSMEM64)
+  /* NetBSD */
   mib[1] = HW_PHYSMEM64;
 #else
   mib[1] = HW_PHYSMEM;
