@@ -396,7 +396,7 @@ int main (__attribute__ ((unused)) int argc,
   chksystype(clock_t, "Clock");
   chksystype(dev_t, "Dev");
   chksystype(gid_t, "GId");
-  chksystype(id_t, "Id");
+  // chksystype(id_t, "Id");
   chksystype(ino_t, "INo");
   chksystype(mode_t, "Mode");
   chksystype(nlink_t, "NLink");

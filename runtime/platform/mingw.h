@@ -46,7 +46,6 @@ typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 typedef short nlink_t; // type of st_nlink in sys/stat.h
 
 // bullshit typedefs:
-typedef int id_t; // waitid() doesn't exist on windows
 typedef unsigned int nfds_t; // we have a fake poll() with this many fds
 
 int getpagesize (void);

@@ -39,7 +39,6 @@ structure C_Clock : sig
                     end = C_Clock
 structure C_Dev : C_SYSTYPE = C_Dev
 structure C_GId : C_SYSTYPE = C_GId
-structure C_Id : C_SYSTYPE = C_Id
 structure C_INo : C_SYSTYPE = C_INo
 structure C_Mode : C_FLAGTYPE = C_Mode
 structure C_NLink : sig
