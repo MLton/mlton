@@ -27,7 +27,7 @@ size_t GC_pageSize (void) {
   }
 }
 
-size_t GC_totalRam (void) {
+uintmax_t GC_physMem (void) {
   size_t len;
   int mib[2];
 
@@ -60,6 +60,6 @@ size_t GC_totalRam (void) {
       diee ("sysctl failed");
     return (uintmax_t)physMem;
   } else {
-    die ("GC_totalRam");
+    die ("GC_physMem");
   }
 }
