@@ -5,17 +5,12 @@ size_t GC_pageSize (void) {
   return (size_t)pageSize;
 }
 
-size_t GC_totalRam (void) {
+uintmax_t GC_physMem (void) {
   size_t pageSize = GC_pageSize ();
   long int physPages;
-  uintmax_t totalRam;
+  uintmax_t physMem;
 
   physPages = sysconf (_SC_PHYS_PAGES);
-  totalRam = (uintmax_t)pageSize * (uintmax_t)physPages;
-  if (sizeof(size_t) >= sizeof(uintmax_t)) {
-    return (uintmax_t)totalRam;
-  } else {
-    totalRam = min(totalRam, (uintmax_t)SIZE_MAX);
-    return (size_t)totalRam;
-  }
+  physMem = (uintmax_t)pageSize * (uintmax_t)physPages;
+  return physMem;
 }

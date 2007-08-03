@@ -159,7 +159,7 @@ void GC_release (void *base, size_t length);
 void GC_decommit (void *base, size_t length);
 
 size_t GC_pageSize (void);
-size_t GC_totalRam (void);
+uintmax_t GC_physMem (void);
 
 void GC_setCygwinUseMmap (bool b);
 

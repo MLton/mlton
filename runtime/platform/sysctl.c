@@ -11,32 +11,17 @@ size_t GC_pageSize (void) {
     unsigned long long int pageSize;
     if (-1 == sysctl (mib, 2, &pageSize, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned long long int)) {
-      return (size_t)pageSize;
-    } else {
-      pageSize = min(pageSize, (unsigned long long int)SIZE_MAX);
-      return (size_t)pageSize;
-    }
+    return (size_t)pageSize;
   } else if (len == sizeof(unsigned long int)) {
     unsigned long int pageSize;
     if (-1 == sysctl (mib, 2, &pageSize, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned long int)) {
-      return (size_t)pageSize;
-    } else {
-      pageSize = min(pageSize, (unsigned long int)SIZE_MAX);
-      return (size_t)pageSize;
-    }
+    return (size_t)pageSize;
   } else if (len == sizeof(unsigned int)) {
     unsigned int pageSize;
     if (-1 == sysctl (mib, 2, &pageSize, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned int)) {
-      return (size_t)pageSize;
-    } else {
-      pageSize = min(pageSize, (unsigned int)SIZE_MAX);
-      return (size_t)pageSize;
-    }
+    return (size_t)pageSize;
   } else {
     die ("GC_pageSize");
   }
@@ -63,32 +48,17 @@ size_t GC_totalRam (void) {
     unsigned long long int physMem;
     if (-1 == sysctl (mib, 2, &physMem, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned long long int)) {
-      return (size_t)physMem;
-    } else {
-      physMem = min(physMem, (unsigned long long int)SIZE_MAX);
-      return (size_t)physMem;
-    }
+    return (uintmax_t)physMem;
   } else if (len == sizeof(unsigned long int)) {
     unsigned long int physMem;
     if (-1 == sysctl (mib, 2, &physMem, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned long int)) {
-      return (size_t)physMem;
-    } else {
-      physMem = min(physMem, (unsigned long int)SIZE_MAX);
-      return (size_t)physMem;
-    }
+    return (uintmax_t)physMem;
   } else if (len == sizeof(unsigned int)) {
     unsigned int physMem;
     if (-1 == sysctl (mib, 2, &physMem, &len, NULL, 0))
       diee ("sysctl failed");
-    if (sizeof(size_t) >= sizeof(unsigned int)) {
-      return (size_t)physMem;
-    } else {
-      physMem = min(physMem, (unsigned int)SIZE_MAX);
-      return (size_t)physMem;
-    }
+    return (uintmax_t)physMem;
   } else {
     die ("GC_totalRam");
   }

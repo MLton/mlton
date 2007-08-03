@@ -283,8 +283,8 @@ int GC_init (GC_state s, int argc, char **argv) {
   sigemptyset (&s->signalsInfo.signalsHandled);
   sigemptyset (&s->signalsInfo.signalsPending);
   s->startTime = getCurrentTime ();
-  s->sysvals.totalRam = GC_totalRam ();
   s->sysvals.pageSize = GC_pageSize ();
+  s->sysvals.physMem = GC_physMem ();
   s->weaks = NULL;
   s->saveWorldStatus = true;
 
@@ -304,13 +304,16 @@ int GC_init (GC_state s, int argc, char **argv) {
    * we are using mark-compact by comparing heap size to ram size.  If
    * we didn't round, the size might be slightly off.
    */
-  s->sysvals.ram = align ((size_t)(s->controls.ratios.ramSlop * s->sysvals.totalRam), 
-                          s->sysvals.pageSize);
+  uintmax_t ram;
+  ram = alignMax ((uintmax_t)(s->controls.ratios.ramSlop * s->sysvals.physMem), 
+                  (uintmax_t)(s->sysvals.pageSize));
+  ram = min (ram, (uintmax_t)SIZE_MAX);
+  s->sysvals.ram = (size_t)ram;
   if (DEBUG or DEBUG_RESIZING or s->controls.messages)
     fprintf (stderr, "[GC: Found %s bytes of RAM; using %s bytes (%.1f%% of RAM).]\n",
-             uintmaxToCommaString(s->sysvals.totalRam),
+             uintmaxToCommaString(s->sysvals.physMem),
              uintmaxToCommaString(s->sysvals.ram),
-             100.0 * s->controls.ratios.ramSlop);
+             100.0 * ((double)ram / (double)(s->sysvals.physMem)));
   if (DEBUG_SOURCES or DEBUG_PROFILE) {
     uint32_t i;
     for (i = 0; i < s->sourceMaps.frameSourcesLength; i++) {
