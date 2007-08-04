@@ -36,7 +36,6 @@ type pass = {name: string,
 
 val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.remove} ::
-   {name = "introduceLoops1", doit = IntroduceLoops.introduceLoops} ::
    {name = "inlineLeaf", doit = fn p => 
     Inline.inlineLeaf (p, {loops = !Control.inlineLeafLoops,
                            repeat = !Control.inlineLeafRepeat,
@@ -62,7 +61,7 @@ val ssaPassesDefault =
    {name = "localFlatten2", doit = LocalFlatten.flatten} ::
    {name = "removeUnused3", doit = RemoveUnused.remove} ::
    {name = "contify3", doit = Contify.contify} ::
-   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
+   {name = "introduceLoops", doit = IntroduceLoops.introduceLoops} ::
    {name = "loopInvariant", doit = LoopInvariant.loopInvariant} ::
    {name = "localRef", doit = LocalRef.eliminate} ::
    {name = "flatten", doit = Flatten.flatten} ::
