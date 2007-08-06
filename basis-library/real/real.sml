@@ -305,8 +305,22 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                     | _ => x - realTrunc (x/y) * y))
 
       (* fromDecimal, scan, fromString: decimal -> binary conversions *)
+      fun strto (str: NullString.t, 
+                 rounding_mode: IEEEReal.rounding_mode) =
+         let 
+            val rounding : C_Int.int =
+               case rounding_mode of
+                  TO_NEAREST => 1
+                | TO_NEGINF => 3
+                | TO_POSINF => 2
+                | TO_ZERO => 0
+         in
+            Prim.strto (str, rounding)
+         end
       exception Bad
-      fun fromDecimal ({class, digits, exp, sign}: IEEEReal.decimal_approx) =
+      fun fromDecimalWithRoundingMode
+          ({class, digits, exp, sign}: IEEEReal.decimal_approx,
+           rounding_mode: IEEEReal.rounding_mode) =
          let
             fun doit () =
                let
@@ -314,11 +328,19 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      if Int.< (exp, 0)
                         then concat ["-", Int.toString (Int.~ exp)]
                         else Int.toString exp
-(*                val x = concat ["0.", digits, "E", exp, "\000"] *)
-                  val n  = Int.+ (4, Int.+ (List.length digits, String.size exp))
+(*
+                  val str = concat [if sign then "-" else "", 
+                                    "0.", digits, 
+                                    "E", exp, "\000"]
+*)
+                  val n = Int.+ (if sign then 1 else 0,
+                          Int.+ (4 (* "0." + "E" + "\000" *),
+                          Int.+ (List.length digits,
+                                 String.size exp)))
                   val a = Array.arrayUninit n
                   fun upd (i, c) = (Array.update (a, i, c); Int.+ (i, 1))
                   val i = 0
+                  val i = if sign then upd (i, #"-") else i
                   val i = upd (i, #"0")
                   val i = upd (i, #".")
                   val i =
@@ -331,12 +353,10 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   val i = upd (i, #"E")
                   val i = CharVector.foldl (fn (c, i) => upd (i, c)) i exp
                   val _ = upd (i, #"\000")
-                  val x = Vector.unsafeFromArray a
-                  val x = Prim.strto (NullString.fromString x)
+                  val str = Vector.unsafeFromArray a
+                  val x = strto (NullString.fromString str, rounding_mode)
                in
-                  if sign
-                     then ~ x
-                  else x
+                  x
                end
          in
             SOME (case class of
@@ -348,10 +368,15 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
             handle Bad => NONE
          end
 
+      fun fromDecimal da = fromDecimalWithRoundingMode (da, TO_NEAREST)
+
       fun scan reader state =
          case IEEEReal.scan reader state of
             NONE => NONE
-          | SOME (da, state) => SOME (valOf (fromDecimal da), state)
+          | SOME (da, state) => 
+               SOME (valOf (fromDecimalWithRoundingMode
+                            (da, IEEEReal.getRoundingMode ())),
+                     state)
 
       val fromString = StringCvt.scanString scan
 
@@ -360,7 +385,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
       local
          val one = One.make (fn () => ref (0: C_Int.int))
       in
-         fun gdtoa (x: real, mode: mode, ndig: int) =
+         fun gdtoa (x: real, mode: mode, ndig: int, 
+                    rounding_mode: IEEEReal.rounding_mode) =
             let
                val mode : C_Int.int =
                   case mode of
@@ -368,9 +394,15 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                    | Gen => 0
                    | Sci => 2
                val ndig : C_Int.int = C_Int.fromInt ndig
+               val rounding : C_Int.int =
+                  case rounding_mode of
+                     TO_NEAREST => 1
+                   | TO_NEGINF => 3
+                   | TO_POSINF => 2
+                   | TO_ZERO => 0
             in
                One.use (one, fn decpt =>
-                        (Prim.gdtoa (x, mode, ndig, decpt), 
+                        (Prim.gdtoa (x, mode, ndig, rounding, decpt), 
                          C_Int.toInt (!decpt)))
             end
       end
@@ -391,7 +423,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                      sign = signBit x}
           | c => 
                let
-                  val (cs, exp) = gdtoa (x, Gen, 0)
+                  val (cs, exp) = gdtoa (x, Gen, 0, TO_NEAREST)
                   fun loop (i, ac) =
                      if Int.< (i, 0)
                         then ac
@@ -456,7 +488,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          fun sci (x: real, ndig: int): string =
             let
                val sign = if x < zero then "~" else ""
-               val (cs, decpt) = gdtoa (x, Sci, Int.+ (1, ndig))
+               val (cs, decpt) = 
+                  gdtoa (x, Sci, Int.+ (1, ndig), IEEEReal.getRoundingMode ())
                val length = CUtil.C_String.length cs
                val whole = String.tabulate (1, fn _ => CUtil.C_String.sub (cs, 0))
                val frac =
@@ -548,7 +581,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                            fn x =>
                            let
                               val sign = if x < zero then "~" else ""
-                              val (cs, decpt) = gdtoa (x, Fix, n)
+                              val (cs, decpt) = 
+                                 gdtoa (x, Fix, n, IEEEReal.getRoundingMode ())
                            in
                               fix (sign, cs, decpt, n)
                            end
@@ -679,19 +713,16 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
 
       val fromIntInf: IntInf.int -> real =
          fn i =>
-(*
-         fromInt (IntInf.toInt i)
-         handle Overflow =>
-*)
-            let
-               val (i, sign) =
-                  if IntInf.< (i, 0)
-                     then (IntInf.~ i, true)
-                  else (i, false)
-               val x = Prim.strto (NullString.nullTerm (IntInf.toString i))
-            in
-               if sign then ~ x else x
-            end
+         let
+            val str =
+               if IntInf.< (i, 0)
+                  then "-" ^ (IntInf.toString (IntInf.~ i))
+               else IntInf.toString i
+            val x = strto (NullString.nullTerm str,
+                           IEEEReal.getRoundingMode ())
+         in
+            x
+         end
 
       val toIntInf: rounding_mode -> real -> LargeInt.int =
          fn mode => fn x =>
@@ -709,12 +740,7 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
                   case class x of
                      INF => raise Overflow
                    | _ => 
-(*
-                        if minInt <= x andalso x <= maxInt
-                           then IntInf.fromInt (Prim.toInt x)
-                        else
-*)
-                           valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
+                        valOf (IntInf.fromString (fmt (StringCvt.FIX (SOME 0)) x))
                end
 
       local
@@ -1036,7 +1062,8 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
  * special cases (nans and infs).  Also, because of the way IEEE
  * floating point numbers are represented, word {de,in}crement
  * automatically does the right thing at the boundary between normals
- * and denormals.  Also, convienently, maxFinite+1 = posInf.  
+ * and denormals.  Also, convienently, maxFinite+1 = posInf and
+ * minFinite-1 = negInf. 
  *)
 
 structure Real32 = Real (open Primitive.Real32

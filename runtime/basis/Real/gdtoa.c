@@ -6,10 +6,11 @@
 #endif
 
 /* This code is patterned on g_dfmt from the gdtoa sources. */
-C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt) {
+C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, 
+                         C_Int_t rounding, Ref(C_Int_t) decpt) {
   ULong bits[1];
   int ex;
-  static FPI fpi = { 24, 1-127-24+1,  254-127-24+1, 1, 0 };
+  FPI fpi = { 24, 1-127-24+1, 254-127-24+1, (int)rounding, 0 };
   int i;
   ULong L[1];
   char *result;
@@ -24,17 +25,18 @@ C_String_t Real32_gdtoa (Real32_t f, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
     ex = 1;
   ex -= 0x7f + 23;
   i = STRTOG_Normal;
-  result = gdtoa (&fpi, ex, bits, &i, (int)mode, (int)ndig, (int*)decpt, NULL);
+  result = gdtoa__gdtoa (&fpi, ex, bits, &i, (int)mode, (int)ndig, (int*)decpt, NULL);
   if (DEBUG)
-    fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
-             result, (double)f, (int)mode, (int)ndig, *((int*)decpt));
+    fprintf (stderr, "%s = gdtoa (%g, %d, %d, %d)   decpt = %d\n", 
+             result, (double)f, (int)mode, (int)ndig, (int)rounding, *((int*)decpt));
   return (C_String_t)result;
 }
 
-C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) decpt) {
+C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, 
+                         C_Int_t rounding, Ref(C_Int_t) decpt) {
   ULong bits[2];
   int ex;
-  static FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, 1, 0 };
+  FPI fpi = { 53, 1-1023-53+1, 2046-1023-53+1, (int)rounding, 0 };
   int i;
   ULong L[2];
   char *result;
@@ -58,9 +60,9 @@ C_String_t Real64_gdtoa (Real64_t d, C_Int_t mode, C_Int_t ndig, Ref(C_Int_t) de
     ex = 1;
   ex -= 0x3ff + 52;
   i = STRTOG_Normal;
-  result = gdtoa (&fpi, ex, bits, &i, mode, ndig, (int*)decpt, NULL);
+  result = gdtoa__gdtoa (&fpi, ex, bits, &i, mode, ndig, (int*)decpt, NULL);
   if (DEBUG)
-    fprintf (stderr, "%s = gdtoa (%g, %d, %d)   decpt = %d\n", 
-             result, d, (int)mode, (int)ndig, *((int*)decpt));
+    fprintf (stderr, "%s = gdtoa (%g, %d, %d, %d)   decpt = %d\n", 
+             result, d, (int)mode, (int)ndig, (int)rounding, *((int*)decpt));
   return (C_String_t)result;
 }

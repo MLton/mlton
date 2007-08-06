@@ -1,5 +1,12 @@
 Here are the changes since version 20051202.
 
+* 2007-08-06
+   - Fixed bug in treatment of Real<N>.{scan,fromString} operations.
+     Real<N>.{scan,fromString} were using TO_NEAREST semantics, but
+     should obey current rounding mode.  (Only Real<N>.fromDecimal is
+     specified to always have TO_NEAREST semantics.)  Thanks to Sean
+     McLaughlin for the bug report.
+
 * 2007-07-27
    - Fixed bugs in constant-folding of floating-point operations with C
      codegen.

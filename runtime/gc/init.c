@@ -22,13 +22,13 @@ static bool stringToBool (char *s) {
 
 // From gdtoa/gdtoa.h.
 // Can't include the whole thing because it brings in too much junk.
-float gdtoa_strtof (const char *, char **);
+float gdtoa__strtof (const char *, char **);
 
 static float stringToFloat (char *s) {
   char *endptr;
   float f;
 
-  f = gdtoa_strtof (s, &endptr);
+  f = gdtoa__strtof (s, &endptr);
   if (s == endptr)
     die ("Invalid @MLton float: %s.", s);
   return f;

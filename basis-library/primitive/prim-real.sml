@@ -54,7 +54,7 @@ signature PRIM_REAL =
       val abs: real -> real
       val class: real -> C_Int.t
       val frexp: real * C_Int.t ref -> real
-      val gdtoa: real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t
+      val gdtoa: real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t
       val ldexp: real * C_Int.t -> real
       val maxFinite: real
       val minNormalPos: real
@@ -64,7 +64,7 @@ signature PRIM_REAL =
       val nextAfterUp: real -> real
       val round: real -> real
       val signBit: real -> C_Int.t
-      val strto: Primitive.NullString8.t -> real
+      val strto: Primitive.NullString8.t * C_Int.t -> real
 
       (* Integer to float; depends on rounding mode. *)
       val fromInt8Unsafe: Primitive.Int8.int -> real
@@ -148,7 +148,7 @@ structure Real32 : PRIM_REAL =
       val abs = _prim "Real32_abs": real -> real;
       val class = _import "Real32_class": real -> C_Int.t;
       val frexp = _import "Real32_frexp": real * C_Int.t ref -> real;
-      val gdtoa = _import "Real32_gdtoa": real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
+      val gdtoa = _import "Real32_gdtoa": real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
       val ldexp = _prim "Real32_ldexp": real * C_Int.t -> real;
       val maxFinite = #1 _symbol "Real32_maxFinite": real GetSet.t; ()
       val minNormalPos = #1 _symbol "Real32_minNormalPos": real GetSet.t; ()
@@ -158,7 +158,7 @@ structure Real32 : PRIM_REAL =
       val nextAfterUp = _import "Real32_nextAfterUp": real -> real;
       val round = _prim "Real32_round": real -> real;
       val signBit = _import "Real32_signBit": real -> C_Int.t;
-      val strto = _import "Real32_strto": NullString8.t -> real;
+      val strto = _import "Real32_strto": NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal32": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal32": Int16.int -> real;
@@ -245,7 +245,7 @@ structure Real64 : sig
       val abs = _prim "Real64_abs": real -> real;
       val class = _import "Real64_class": real -> C_Int.t;
       val frexp = _import "Real64_frexp": real * C_Int.t ref -> real;
-      val gdtoa = _import "Real64_gdtoa": real * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
+      val gdtoa = _import "Real64_gdtoa": real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
       val ldexp = _prim "Real64_ldexp": real * C_Int.t -> real;
       val maxFinite = #1 _symbol "Real64_maxFinite": real GetSet.t; ()
       val minNormalPos = #1 _symbol "Real64_minNormalPos": real GetSet.t; ()
@@ -255,7 +255,7 @@ structure Real64 : sig
       val nextAfterUp = _import "Real64_nextAfterUp": real -> real;
       val round = _prim "Real64_round": real -> real;
       val signBit = _import "Real64_signBit": real -> C_Int.t;
-      val strto = _import "Real64_strto": NullString8.t -> real;
+      val strto = _import "Real64_strto": NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal64": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal64": Int16.int -> real;
