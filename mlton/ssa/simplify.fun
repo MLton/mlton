@@ -36,10 +36,12 @@ type pass = {name: string,
 
 val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.remove} ::
-   {name = "inlineLeaf", doit = fn p => 
-    Inline.inlineLeaf (p, {loops = !Control.inlineLeafLoops,
-                           repeat = !Control.inlineLeafRepeat,
-                           size = !Control.inlineLeafSize})} ::
+   {name = "introduceLoops1", doit = IntroduceLoops.introduceLoops} ::
+   {name = "loopInvariant1", doit = LoopInvariant.loopInvariant} ::
+   {name = "inlineLeaf1", doit = fn p => 
+    Inline.inlineLeaf (p, !Control.inlineLeafA)} ::
+   {name = "inlineLeaf2", doit = fn p => 
+    Inline.inlineLeaf (p, !Control.inlineLeafB)} ::
    {name = "contify1", doit = Contify.contify} ::
    {name = "localFlatten1", doit = LocalFlatten.flatten} ::
    {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
@@ -57,12 +59,12 @@ val ssaPassesDefault =
    {name = "polyEqual", doit = PolyEqual.polyEqual} ::
    {name = "contify2", doit = Contify.contify} ::
    {name = "inlineNonRecursive", doit = fn p =>
-    Inline.inlineNonRecursive (p, {small = !Control.inline, product = 320})} ::
+    Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
    {name = "localFlatten2", doit = LocalFlatten.flatten} ::
    {name = "removeUnused3", doit = RemoveUnused.remove} ::
    {name = "contify3", doit = Contify.contify} ::
-   {name = "introduceLoops", doit = IntroduceLoops.introduceLoops} ::
-   {name = "loopInvariant", doit = LoopInvariant.loopInvariant} ::
+   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
+   {name = "loopInvariant2", doit = LoopInvariant.loopInvariant} ::
    {name = "localRef", doit = LocalRef.eliminate} ::
    {name = "flatten", doit = Flatten.flatten} ::
    {name = "localFlatten3", doit = LocalFlatten.flatten} ::
@@ -98,6 +100,7 @@ local
 
    val inlinePassGen =
       let
+         datatype t = Bool of bool | IntOpt of int option
          val count = Counter.new 1
          fun nums s =
             Exn.withEscape
@@ -112,11 +115,15 @@ local
                         then let
                                 val s = String.substring2 (s, {start = 1, finish = l - 1})
                                 fun doit s =
-                                   if s = "inf"
-                                      then NONE
+                                   if s = "true"
+                                      then Bool true
+                                   else if s = "false"
+                                      then Bool false
+                                   else if s = "inf"
+                                      then IntOpt NONE
                                    else if String.forall (s, Char.isDigit)
-                                           then Int.fromString s
-                                        else escape NONE
+                                      then IntOpt (Int.fromString s)
+                                   else escape NONE
                              in
                                 case List.map (String.split (s, #","), doit) of
                                    l as _::_ => SOME l
@@ -139,72 +146,26 @@ local
                     val s = String.dropPrefix (s, String.size "inlineNonRecursive")
                  in
                     case nums s of
-                       SOME [] => mk (320, 60)
-                     | SOME [SOME product, SOME small] => mk (product, small)
+                       SOME [IntOpt (SOME product), IntOpt (SOME small)] => 
+                          mk (product, small)
                      | _ => NONE
                  end
-         else if String.hasPrefix (s, {prefix = "inlineLeafRepeat"})
+         else if String.hasPrefix (s, {prefix = "inlineLeaf"})
             then let
-                    fun mk size =
+                    fun mk (loops, repeat, size) =
                        SOME {name = concat ["inlineLeafRepeat(", 
+                                            Bool.toString loops, ",",
+                                            Bool.toString repeat, ",",
                                             Option.toString Int.toString size, ")#",
                                             Int.toString (Counter.next count)],
                              doit = (fn p => 
-                                     Inline.inlineLeafRepeat
-                                     (p, {size = size}))}
-                    val s = String.dropPrefix (s, String.size "inlineLeafRepeat")
+                                     Inline.inlineLeaf
+                                     (p, {loops = loops, repeat = repeat, size = size}))}
+                    val s = String.dropPrefix (s, String.size "inlineLeaf")
                  in
                     case nums s of
-                       SOME [] => mk (SOME 20)
-                     | SOME [size] => mk size
-                     | _ => NONE
-                 end
-         else if String.hasPrefix (s, {prefix = "inlineLeafRepeatNoLoop"})
-            then let
-                    fun mk size =
-                       SOME {name = concat ["inlineLeafRepeatNoLoop(", 
-                                            Option.toString Int.toString size, ")#",
-                                            Int.toString (Counter.next count)],
-                             doit = (fn p => 
-                                     Inline.inlineLeafRepeatNoLoop
-                                     (p, {size = size}))}
-                    val s = String.dropPrefix (s, String.size "inlineLeafRepeatNoLoop")
-                 in
-                    case nums s of
-                       SOME [] => mk (SOME 20)
-                     | SOME [size] => mk size
-                     | _ => NONE
-                 end
-         else if String.hasPrefix (s, {prefix = "inlineLeafOnceNoLoop"})
-            then let
-                    fun mk size =
-                       SOME {name = concat ["inlineLeafOnceNoLoop(", 
-                                            Option.toString Int.toString size, ")#",
-                                            Int.toString (Counter.next count)],
-                             doit = (fn p => 
-                                     Inline.inlineLeafOnceNoLoop 
-                                     (p, {size = size}))}
-                    val s = String.dropPrefix (s, String.size "inlineLeafOnceNoLoop")
-                 in
-                    case nums s of
-                       SOME [] => mk (SOME 20)
-                     | SOME [size] => mk size
-                     | _ => NONE
-                 end
-         else if String.hasPrefix (s, {prefix = "inlineLeafOnce"})
-            then let
-                    fun mk size =
-                       SOME {name = concat ["inlineLeafOnce(", 
-                                            Option.toString Int.toString size, ")#",
-                                            Int.toString (Counter.next count)],
-                             doit = (fn p => 
-                                     Inline.inlineLeafOnce
-                                     (p, {size = size}))}
-                    val s = String.dropPrefix (s, String.size "inlineLeafOnce")
-                 in
-                    case nums s of
-                       SOME [] => mk (SOME 20)
-                     | SOME [size] => mk size
+                       SOME [Bool loops, Bool repeat, IntOpt size] => 
+                          mk (loops, repeat, size)
                      | _ => NONE
                  end
          else NONE

@@ -548,36 +548,17 @@ fun transform {program as Program.T {datatypes, globals, functions, main},
       program
    end
 
-fun inlineLeafOnce (p, {size}) =
-   if size = SOME 0
-      then p
-   else transform {program = p,
-                   shouldInline = leafOnce (p, {size = size}),
-                   inlineIntoMain = true}
-fun inlineLeafOnceNoLoop (p, {size}) =
-   if size = SOME 0
-      then p
-   else transform {program = p,
-                   shouldInline = leafOnceNoLoop (p, {size = size}),
-                   inlineIntoMain = true}
-fun inlineLeafRepeat (p, {size}) =
-   if size = SOME 0
-      then p
-   else transform {program = p,
-                   shouldInline = leafRepeat (p, {size = size}),
-                   inlineIntoMain = true}
-fun inlineLeafRepeatNoLoop (p, {size}) =
-   if size = SOME 0
-      then p
-   else transform {program = p,
-                   shouldInline = leafRepeatNoLoop (p, {size = size}),
-                   inlineIntoMain = true}
 fun inlineLeaf (p, {loops, repeat, size}) =
-   case (loops, repeat) of
-      (false, false) => inlineLeafOnce (p, {size = size})
-    | (false, true) => inlineLeafRepeat (p, {size = size})
-    | (true, false) => inlineLeafOnceNoLoop (p, {size = size})
-    | (true, true) => inlineLeafRepeatNoLoop (p, {size = size})
+   if size = SOME 0
+      then p
+   else transform {program = p,
+                   shouldInline = 
+                   case (loops, repeat) of
+                      (false, false) => leafOnce (p, {size = size})
+                    | (false, true) => leafRepeat (p, {size = size})
+                    | (true, false) => leafOnceNoLoop (p, {size = size})
+                    | (true, true) => leafRepeatNoLoop (p, {size = size}),
+                   inlineIntoMain = true}
 fun inlineNonRecursive (p, arg) =
    transform {program = p,
               shouldInline = nonRecursive (p, arg),

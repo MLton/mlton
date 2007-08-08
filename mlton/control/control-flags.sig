@@ -151,13 +151,12 @@ signature CONTROL_FLAGS =
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 
-      val inline: int ref
-
       val inlineIntoMain: bool ref
 
-      val inlineLeafSize: int option ref
-      val inlineLeafLoops: bool ref
-      val inlineLeafRepeat: bool ref
+      val inlineLeafA: {loops: bool, repeat: bool, size: int option} ref
+      val inlineLeafB: {loops: bool, repeat: bool, size: int option} ref
+
+      val inlineNonRec: {small: int, product: int} ref
 
       (* The input file on the command line, minus path and extension. *)
       val inputFile: File.t ref

@@ -19,10 +19,6 @@ signature INLINE =
 
       val inlineLeaf: 
          Program.t * {loops: bool, repeat: bool, size: int option} -> Program.t
-      val inlineLeafOnce: Program.t * {size:int option} -> Program.t
-      val inlineLeafOnceNoLoop: Program.t * {size:int option} -> Program.t
-      val inlineLeafRepeat: Program.t * {size:int option} -> Program.t
-      val inlineLeafRepeatNoLoop: Program.t * {size:int option} -> Program.t
-         
-      val inlineNonRecursive: Program.t * {small:int,product:int} -> Program.t
+      val inlineNonRecursive: 
+         Program.t * {small:int,product:int} -> Program.t
    end

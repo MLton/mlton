@@ -340,23 +340,70 @@ fun makeOptions {usage} =
         boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
         intRef indentation),
-       (Normal, "inline", " <n>", "set inlining threshold", intRef inline),
+       (Normal, "inline", " <n>", "set inlining threshold", 
+        Int (fn i => inlineNonRec := {small = i,
+                                      product = #product (!inlineNonRec)})),
        (Expert, "inline-into-main", " {true|false}",
         "inline functions into main",
         boolRef inlineIntoMain),
-       (Expert, "inline-leaf-size", " 20", "set leaf inlining threshold",
-        SpaceString (fn s => 
-                     inlineLeafSize := 
-                     (if s = "inf"
-                         then NONE
-                      else if String.forall (s, Char.isDigit)
-                         then Int.fromString s
-                      else (usage o concat)
-                           ["invalid -inline-leaf-size flag: ", s]))),
-       (Expert, "inline-leaf-loops", " {true|false}", " leaf inline loops",
-        boolRef inlineLeafLoops),
-       (Expert, "inline-leaf-repeat", " {false|true}", " repeat leaf inline",
-        boolRef inlineLeafRepeat),
+       (Expert, "inline-leafa-loops", " {true|false}", "leaf inline loops",
+        Bool (fn loops =>
+              case !inlineLeafA of
+                 {repeat, size, ...} =>
+                    inlineLeafA :=
+                    {loops = loops, repeat = repeat, size = size})),
+       (Expert, "inline-leafa-repeat", " {true|false}", "leaf inline repeat",
+        Bool (fn repeat =>
+              case !inlineLeafA of
+                 {loops, size, ...} =>
+                    inlineLeafA :=
+                    {loops = loops, repeat = repeat, size = size})),
+       (Expert, "inline-leafa-size", " <n>", "set leaf inlining threshold (20)",
+        SpaceString (fn s =>
+                     case !inlineLeafA of
+                        {loops, repeat, ...} =>
+                           inlineLeafA :=
+                           {loops = loops, repeat = repeat,
+                            size = (if s = "inf"
+                                       then NONE
+                                    else if String.forall (s, Char.isDigit)
+                                       then Int.fromString s
+                                    else (usage o concat)
+                                         ["invalid -inline-leaf-size flag: ", s])})),
+       (Expert, "inline-leafb-loops", " {true|false}", "leaf inline loops",
+        Bool (fn loops =>
+              case !inlineLeafB of
+                 {repeat, size, ...} =>
+                    inlineLeafB :=
+                    {loops = loops, repeat = repeat, size = size})),
+       (Expert, "inline-leafb-repeat", " {true|false}", "leaf inline repeat",
+        Bool (fn repeat =>
+              case !inlineLeafB of
+                 {loops, size, ...} =>
+                    inlineLeafB :=
+                    {loops = loops, repeat = repeat, size = size})),
+       (Expert, "inline-leafb-size", " <n>", "set leaf inlining threshold (40)",
+        SpaceString (fn s =>
+                     case !inlineLeafB of
+                        {loops, repeat, ...} =>
+                           inlineLeafB :=
+                           {loops = loops, repeat = repeat,
+                            size = (if s = "inf"
+                                       then NONE
+                                    else if String.forall (s, Char.isDigit)
+                                       then Int.fromString s
+                                    else (usage o concat)
+                                         ["invalid -inline-leaf-size flag: ", s])})),
+       (Expert, "inline-nonrec-product", " <n>", "set inlining threshold (320)", 
+        Int (fn product => 
+             case !inlineNonRec of
+                {small, ...} =>
+                   inlineNonRec := {small = small, product = product})),
+       (Expert, "inline-nonrec-small", " <n>", "set inlining threshold (60)", 
+        Int (fn small => 
+             case !inlineNonRec of
+                {product, ...} =>
+                   inlineNonRec := {small = small, product = product})),
        (Normal, "keep", " {g|o|sml}", "save intermediate files",
         SpaceString (fn s =>
                      case s of
@@ -439,6 +486,30 @@ fun makeOptions {usage} =
         SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
+       (Expert, "polyvariance-product", " <n>", "set polyvariance threshold (300)",
+        Int (fn product => 
+             case !polyvariance of
+                SOME {rounds, small, ...} =>
+                   polyvariance := SOME {product = product,
+                                         rounds = rounds,
+                                         small = small}
+              | _ => ())),
+       (Expert, "polyvariance-rounds", " <n>", "set polyvariance rounds (2)",
+        Int (fn rounds => 
+             case !polyvariance of
+                SOME {product, small, ...} =>
+                   polyvariance := SOME {product = product,
+                                         rounds = rounds,
+                                         small = small}
+              | _ => ())),
+       (Expert, "polyvariance-small", " <n>", "set polyvariance threshold (30)",
+        Int (fn small => 
+             case !polyvariance of
+                SOME {product, rounds, ...} =>
+                   polyvariance := SOME {product = product,
+                                         rounds = rounds,
+                                         small = small}
+              | _ => ())),
        (Expert, "prefer-abs-paths", " {false|true}",
         "prefer absolute paths when referring to files",
         boolRef preferAbsPaths),

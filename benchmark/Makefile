@@ -31,15 +31,6 @@ $(NAME).sml: $(NAME).cm $(shell "$(MLTON)" -stop f $(NAME).cm)
 clean:
 	../bin/clean
 
-.PHONY: install
-install: $(NAME)
-	if [ `whoami` != 'root' ]; then echo >&2 'You should be root'; exit 1; fi
-	cp -p $(NAME) /usr/bin/
-
-.PHONY: tags
-tags:
-	etags *.fun *.sig *.sml
-
 BENCH := barnes-hut boyer checksum count-graphs DLXSimulator fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form tailfib tak tensor tsp tyan vector-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH := barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern
 
@@ -52,9 +43,11 @@ test: $(NAME)
 	cd tests && ../benchmark $(BFLAGS) $(BENCH)
 
 QBENCH := $(BENCH)
-QBFLAGS := -mlton "~/devel/mlton/mlton-20051202-1.i386-linux/build/bin/mlton -codegen {native,c} -align {4,8}" -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {amd64,c} -align {4,8}"
-
-QBFLAGS := -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton -codegen {amd64} -align {4} {-drop-pass introduceLoops1,} -inline-leaf {'(20;0;0)','(20;20;0)','(20;20;20)','(40;0;0)','(40;40;0)','(40;40;40)','(40;20;0)','(40;20;10)'}"
+QBFLAGS := -mlton "~/devel/mlton/mlton-20061119-1.x86-darwin/build/bin/mlton"
+QBFLAGS += -mlton "~/devel/mlton/mlton.svn.trunk/build/bin/mlton"
+# QBFLAGS += -mlton "~/devel/mlton/mlton.svn.trunk.inline/build/bin/mlton -drop-pass introduceLoops1 -drop-pass loopInvariant1 -inline-leafa-loops true -inline-leafa-repeat false -inline-leafa-size 20 -drop-pass inlineLeaf2"
+# QBFLAGS += -mlton "~/devel/mlton/mlton.svn.trunk.inline/build/bin/mlton -inline-leafa-loops true -inline-leafa-repeat true -inline-leafa-size 20 -inline-leafb-loops true -inline-leafb-repeat true -inline-leafb-size 40"
+QBFLAGS += -mlton "~/devel/mlton/mlton.svn.trunk.inline/build/bin/mlton"
 
 .PHONY: qtest
 qtest: $(NAME)

@@ -653,25 +653,42 @@ val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}
 
-val inline = control {name = "inline",
-                      default = 60, 
-                      toString = Int.toString}
-
 val inlineIntoMain = control {name = "inlineIntoMain",
                               default = true,
                               toString = Bool.toString}
 
-val inlineLeafLoops = control {name = "inlineLeafLoops",
-                               default = true,
-                               toString = Bool.toString}
+val inlineLeafA = 
+   control {name = "inlineLeafA",
+            default = {loops = true,
+                       repeat = true,
+                       size = SOME 20},
+            toString =
+            fn {loops, repeat, size} =>
+            Layout.toString
+            (Layout.record [("loops", Bool.layout loops),
+                            ("repeat", Bool.layout repeat),
+                            ("size", Option.layout Int.layout size)])}
+val inlineLeafB = 
+   control {name = "inlineLeafB",
+            default = {loops = true,
+                       repeat = true,
+                       size = SOME 40},
+            toString =
+            fn {loops, repeat, size} =>
+            Layout.toString
+            (Layout.record [("loops", Bool.layout loops),
+                            ("repeat", Bool.layout repeat),
+                            ("size", Option.layout Int.layout size)])}
 
-val inlineLeafRepeat = control {name = "inlineLeafRepeat",
-                                default = false,
-                                toString = Bool.toString}
-
-val inlineLeafSize = control {name = "inlineLeafSize",
-                              default = SOME 20,
-                              toString = Option.toString Int.toString}
+val inlineNonRec =
+   control {name = "inlineNonRec",
+            default = {small = 60,
+                       product = 320},
+            toString =
+            fn {small, product} =>
+            Layout.toString
+            (Layout.record [("small", Int.layout small),
+                            ("product", Int.layout product)])}
 
 val inputFile = control {name = "input file",
                          default = "<bogus>",
