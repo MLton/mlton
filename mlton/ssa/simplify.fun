@@ -9,6 +9,8 @@
 functor Simplify (S: SIMPLIFY_STRUCTS): SIMPLIFY = 
 struct
 
+type int = Int.t
+
 open S
 
 structure CommonArg = CommonArg (S)
