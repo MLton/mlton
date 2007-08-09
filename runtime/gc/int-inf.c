@@ -18,7 +18,7 @@ static inline bool isEitherSmall (objptr arg1, objptr arg2) {
 }
 
 static inline bool areSmall (objptr arg1, objptr arg2) {
-  return (arg1 & arg2 & (objptr)1);
+  return ((arg1 & arg2) & (objptr)1);
 }
 
 /*
@@ -54,7 +54,7 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
     if (arg == (objptr)1) {
       res->_mp_size = 0;
     } else {
-      objptr highBitMask = (objptr)1 << (CHAR_BIT * OBJPTR_SIZE - 1);
+      const objptr highBitMask = (objptr)1 << (CHAR_BIT * OBJPTR_SIZE - 1);
       bool neg = (arg & highBitMask) != (objptr)0;
       if (neg) {
         res->_mp_size = - (mp_size_t)LIMBS_PER_OBJPTR;
