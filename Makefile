@@ -449,7 +449,9 @@ install-docs:
 		cd "$(SRC)/doc" &&					\
 		$(CP) changelog examples guide license README "$(TDOC)/"	\
 	)
-	mv "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/"
+	if [ -r "$(TDOC)/guide/mlton-guide.pdf" ]; then 		\
+		mv "$(TDOC)/guide/mlton-guide.pdf" "$(TDOC)/";		\
+	fi
 	(								\
 		cd "$(SRC)/util" &&					\
 		$(CP) cmcat cm2mlb "$(TDOC)/"				\
