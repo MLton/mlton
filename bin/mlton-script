@@ -70,11 +70,11 @@ doit () {
 # The darwin linker complains (loudly) about non-existent library
 # search paths.
 darwinLinkOpts=''
-if [ -d '/sw/lib' ]; then
-        darwinLinkOpts="$darwinLinkOpts -L/sw/lib"
-fi
 if [ -d '/opt/local/lib' ]; then
         darwinLinkOpts="$darwinLinkOpts -L/opt/local/lib"
+fi
+if [ -d '/sw/lib' ]; then
+        darwinLinkOpts="$darwinLinkOpts -L/sw/lib"
 fi
 
 doit "$lib" \
