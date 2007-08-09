@@ -734,25 +734,40 @@ fun commandLine (args: string list): unit =
           | _ => Error.bug "incorrect args from shell script"
       val () = setTargetType ("self", usage)
       val result = parse args
+
+      val target = !target
+      val targetStr =
+         case target of
+            Cross s => s
+          | Self => "self"
+      val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
       val targetArch = !Target.arch
+      val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
+      val targetOS = !Target.os
+      val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
+
+      val stop = !stop
+
       val () =
          align := (case !explicitAlign of
                       NONE => if defaultAlignIs8 () then Align8 else Align4
                     | SOME a => a)
       val () =
          codegen := (case !explicitCodegen of
-                        NONE => if hasCodegen (x86Codegen) 
-                                   then x86Codegen 
-                                else if hasCodegen (amd64Codegen) 
-                                   then amd64Codegen
-                                else CCodegen
-                      | SOME Native => if hasCodegen (x86Codegen)
-                                          then x86Codegen
-                                       else if hasCodegen (amd64Codegen)
-                                          then amd64Codegen
-                                       else usage (concat ["can't use native codegen on ",
-                                                           MLton.Platform.Arch.toString targetArch, 
-                                                           " target"])
+                        NONE => 
+                           if hasCodegen (x86Codegen) 
+                              then x86Codegen 
+                           else if hasCodegen (amd64Codegen) 
+                               then amd64Codegen
+                           else CCodegen
+                      | SOME Native => 
+                           if hasCodegen (x86Codegen)
+                              then x86Codegen
+                           else if hasCodegen (amd64Codegen)
+                              then amd64Codegen
+                           else usage (concat ["can't use native codegen on ",
+                                               MLton.Platform.Arch.toString targetArch, 
+                                               " target"])
                       | SOME (Explicit cg) => cg)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
       val () = if !profileTimeSet
@@ -768,60 +783,46 @@ fun commandLine (args: string list): unit =
                          | _ => usage "can't use -profile with Exn.keepHistory"
                         ; profileRaise := true)
                else ()
+
       val () =
          Compile.setCommandLineConstant
          {name = "CallStack.keep",
           value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
-      val gcc = !gcc
-      val stop = !stop
-      val target = !target
-      val targetStr =
-         case target of
-            Cross s => s
-          | Self => "self"
-      val _ = libTargetDir := OS.Path.concat (!libDir, targetStr)
-      val archStr = String.toLower (MLton.Platform.Arch.toString targetArch)
-      val targetOS = !Target.os
+
       val () =
-         Control.labelsHaveExtra_ := (case targetOS of
-                                         Cygwin => true
-                                       | Darwin => true
-                                       | MinGW => true
-                                       | _ => false)
-      val () =
-         case targetArch of
-            AMD64 => 
-               let
-                  val word32 = Bits.fromInt 32
-                  val word64 = Bits.fromInt 64
-               in
-                  Control.Target.setSizes
-                  {cint = word32,
-                   cpointer = word64,
-                   cptrdiff = word64,
-                   csize = word64,
-                   header = word64,
-                   mplimb = word64,
-                   objptr = word64,
-                   seqIndex = word64}
-               end
-          | _ =>
-               let
-                  val word32 = Bits.fromInt 32
-               in
-                  Control.Target.setSizes
-                  {cint = word32,
-                   cpointer = word32,
-                   cptrdiff = word32,
-                   csize = word32,
-                   header = word32,
-                   mplimb = word32,
-                   objptr = word32,
-                   seqIndex = word32}
-               end
-      val OSStr = String.toLower (MLton.Platform.OS.toString targetOS)
+         let
+            val sizeMap =
+               List.map
+               (File.lines (OS.Path.joinDirFile {dir = !Control.libTargetDir,
+                                                 file = "sizes"}),
+                fn line =>
+                case String.tokens (line, Char.isSpace) of
+                   [ty, "=", size] =>
+                      (case Int.fromString size of
+                          NONE => Error.bug (concat ["strange size: ", size])
+                        | SOME size => 
+                             (ty, Bytes.toBits (Bytes.fromInt size)))
+                 | _ => Error.bug (concat ["strange size mapping: ", line]))
+            fun lookup ty' =
+               case List.peek (sizeMap, fn (ty, _) => String.equals (ty, ty')) of
+                  NONE => Error.bug (concat ["missing size mapping: ", ty'])
+                | SOME (_, size) => size
+         in
+            Control.Target.setSizes
+            {cint = lookup "cint",
+             cpointer = lookup "cpointer",
+             cptrdiff = lookup "cptrdiff",
+             csize = lookup "csize",
+             header = lookup "header",
+             mplimb = lookup "mplimb",
+             objptr = lookup "objptr",
+             seqIndex = lookup "seqIndex"}
+         end
+
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
+
+      val gcc = !gcc
       fun addTargetOpts opts =
          List.fold
          (!opts, [], fn ({opt, pred}, ac) =>
@@ -859,6 +860,12 @@ fun commandLine (args: string list): unit =
                                 MLton.Platform.Arch.toString targetArch,
                                 " target"])
          else ()
+      val () =
+         Control.labelsHaveExtra_ := (case targetOS of
+                                         Cygwin => true
+                                       | Darwin => true
+                                       | MinGW => true
+                                       | _ => false)
       val _ =
          chunk :=
          (case !explicitChunk of

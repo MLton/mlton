@@ -228,7 +228,7 @@ else
 endif
 
 ALL := libgdtoa.a libmlton.a libmlton-gdb.a
-ALL += gen/c-types.sml gen/basis-ffi.sml
+ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 ifeq ($(OMIT_BYTECODE), yes)
 else
   ALL += bytecode/opcodes
@@ -288,6 +288,12 @@ gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
 basis-ffi.h: gen/basis-ffi.h
 	rm -f basis-ffi.h
 	cp gen/basis-ffi.h basis-ffi.h
+
+gen/sizes: gen/gen-sizes.c libmlton.a
+	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o gen/gen-sizes -I. -L. -lmlton gen/gen-sizes.c util.o
+	rm -f gen/sizes
+	cd gen && ./gen-sizes
+	rm -f gen/gen-sizes$(EXE)
 
 bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
 	$(CC) $(OPTCFLAGS) $(WARNCFLAGS) -o bytecode/print-opcodes bytecode/print-opcodes.c
