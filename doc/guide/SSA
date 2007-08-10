@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -63,8 +63,8 @@ SSA is a <a class="nonexistent" href="FirstOrder">FirstOrder</a>, <a class="none
 An SSA program consists of a collection of datatype declarations, a sequence of global statements, and a collection of functions, along with a distinguished "main" function.  Each function consists of a collection of basic blocks, where each basic block is a sequence of statements ending with some control transfer. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/ssa.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/ssa-tree.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/ssa.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/ssa-tree.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
 Type checking of a SSA program verifies the following: 
 </p>
@@ -106,7 +106,7 @@ Type checking of a SSA program verifies the following:
 
 
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/type-check.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/type-check.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>

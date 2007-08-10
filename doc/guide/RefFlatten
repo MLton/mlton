@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -64,7 +64,7 @@ This pass flattens a <tt>ref</tt> cell into its containing object. The idea is t
 </pre>where the <tt>[m]</tt> indicates a mutable field of a tuple.  
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/ref-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ref-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/ref-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ref-flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The savings is obvious, I hope.  We avoid an extra heap-allocated object for the <tt>ref</tt>, which in the above case saves two words.  We also save the time and code for the extra indirection at each get and set.  There are lots of useful data structures (singly-linked and doubly-linked lists, union-find, fibonacci heaps, ...) that I believe we are paying through the nose right now because of the absence of ref flattening. 
 </p>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@ Get the regressions working using a cross compiler.
 
 
 <p>
-MLton has a native code generator only for X86, so, if you are porting to another architecture, you must use the C code generator.  These notes do not cover building a new native code generator. 
+MLton has a native code generator only for AMD64 and X86, so, if you are porting to another architecture, you must use the C code generator.  These notes do not cover building a new native code generator. 
 </p>
 <p>
 Some of the following steps will not be necessary if MLton already supports the architecture or operating system you are porting to. 
@@ -404,5 +404,5 @@ The above description is based on the following emails sent to the MLton list.
 
 <p>
 <hr>
-Last edited on 2007-06-26 11:16:54 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
+Last edited on 2007-07-12 18:42:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

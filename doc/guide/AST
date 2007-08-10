@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,10 +60,10 @@ AST is the <a href="IntermediateLanguage">IntermediateLanguage</a> produced by t
 The abstract syntax tree produced by the <a href="FrontEnd">FrontEnd</a>. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-programs.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-programs.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ast/ast-programs.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-programs.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-modules.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ast/ast-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-modules.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-core.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ast/ast-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-core.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ast"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-programs.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-programs.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ast/ast-programs.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-programs.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-modules.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ast/ast-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-modules.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ast/ast-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-core.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ast/ast-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast-core.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ast"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ast</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
 The AST <a href="IntermediateLanguage">IntermediateLanguage</a> has no independent type checker. Type inference is performed on an AST program as part of <a href="Elaborate">Elaborate</a>. 
 </p>

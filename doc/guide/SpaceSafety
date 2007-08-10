@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -64,6 +64,11 @@ Informally, space safety is a property of a language implementation that asympto
  Chapter 12 of <a href = "References#Appel92">Appel92</a> 
 </p>
 </li>
+    <li>
+<p>
+ <a href = "References#Clinger98">Clinger98</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -72,5 +77,5 @@ Informally, space safety is a property of a language implementation that asympto
 
 <p>
 <hr>
-Last edited on 2004-12-30 20:20:57 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-07-14 14:05:22 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

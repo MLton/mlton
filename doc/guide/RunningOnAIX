@@ -5,7 +5,7 @@
 
 
 
-<title>RunningOnOpenBSD - MLton Standard ML Compiler (SML Compiler)</title>
+<title>RunningOnAIX - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -37,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      RunningOnOpenBSD
+      RunningOnAIX
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -55,13 +55,13 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on <a class="external" href="http://www.openbsd.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a>. <h2 id="head-b05203cf89b60eb36609a1a8b7f3cafe0927486a">Known issues</h2>
+MLton runs fine on AIX. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
 
     <ul>
 
     <li>
 <p>
- Our socket regression test fails.  We suspect this is not a   bug and is simply due to our test relying on a certain   behavior when connecting to a socket that has not yet   accepted, which is handled differently on OpenBSD than other   platforms.  Any help in understanding and resolving this issue   is appreciated. 
+ <a href="RunningOnPowerPC">RunningOnPowerPC</a> 
 </p>
 </li>
 </ul>
@@ -72,5 +72,5 @@ MLton runs fine on <a class="external" href="http://www.openbsd.org/"><img src="
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:20:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-07-12 19:01:02 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

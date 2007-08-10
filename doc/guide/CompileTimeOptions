@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -100,13 +100,13 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-codegen&nbsp;{x86|amd64|bytecode|c}&nbsp;</tt> 
+ <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}&nbsp;</tt> 
 </p>
 </li>
 
             <ul>
 
-   Generate native code, byte code, or C code.  With    <tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>, MLton typically    compiles more quickly and generates better code. 
+   Generate native code, byte code, or C code.  With    <tt>-codegen&nbsp;native</tt> (<tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>), MLton typically    compiles more quickly and generates better code. 
             </ul>
 
 
@@ -458,7 +458,7 @@ after type checking </td>
 
             <ul>
 
-   Like <tt>-as-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    assembling, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>hppa</tt>, <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>,    <tt>cygwin</tt>, <tt>darwin</tt>, <tt>freebsd</tt>, <tt>linux</tt>,    <tt>mingw</tt>, <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
+   Like <tt>-as-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    assembling, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>amd64</tt>, <tt>hppa</tt>, <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>,    <tt>cygwin</tt>, <tt>darwin</tt>, <tt>freebsd</tt>, <tt>hpux</tt>, <tt>linux</tt>,    <tt>mingw</tt>, <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
             </ul>
 
 
@@ -533,5 +533,5 @@ after type checking </td>
 
 <p>
 <hr>
-Last edited on 2007-06-27 01:46:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-07-12 18:41:59 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

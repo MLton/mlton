@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -215,7 +215,7 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
 </p>
 </li>
 </ul>

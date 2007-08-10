@@ -18,6 +18,8 @@
 <link rel="Appendix" title="amd64-linux.bench-c.txt" href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench-c.txt">
 <link rel="Appendix" title="amd64-linux.bench.txt" href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench.txt">
 <link rel="Appendix" title="amd64-linux.log" href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.log">
+<link rel="Appendix" title="inline-repeat-loops.amd64-linux.bench-amd64.txt" href="http://mlton.org/pages/PortStatus/attachments/inline-repeat-loops.amd64-linux.bench-amd64.txt">
+<link rel="Appendix" title="inline-repeat.amd64-linux.bench-amd64.txt" href="http://mlton.org/pages/PortStatus/attachments/inline-repeat.amd64-linux.bench-amd64.txt">
 <link rel="Appendix" title="sparc-solaris.log" href="http://mlton.org/pages/PortStatus/attachments/sparc-solaris.log">
 <link rel="Appendix" title="x86-darwin.bench-c.txt" href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-c.txt">
 <link rel="Appendix" title="x86-darwin.bench-x86.txt" href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-x86.txt">
@@ -44,7 +46,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -83,7 +85,7 @@ This table accumulates logs and benchmarks.
 <td>
  Matthew </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:amd64-linux.bench.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">amd64-linux.bench.txt</a> </td>
 </tr>
 <tr>
 <td>
@@ -93,7 +95,7 @@ This table accumulates logs and benchmarks.
 <td>
  Jesper </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/x86-freebsd.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:x86-freebsd.bench.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/x86-freebsd.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">x86-freebsd.bench.txt</a> </td>
 </tr>
 <tr>
 <td>
@@ -103,7 +105,7 @@ This table accumulates logs and benchmarks.
 <td>
  Matthew </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/x86-linux.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:x86-linux.bench.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/x86-linux.bench.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">x86-linux.bench.txt</a> </td>
 <td>
  possibly bogus; x86-linux virtual machine hosted on amd64-linux physical machine </td>
 </tr>
@@ -122,7 +124,27 @@ This table accumulates logs and benchmarks.
 <td>
  amd64 codegen </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench-amd64.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:amd64-linux.bench-amd64.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/inline-repeat-loops.amd64-linux.bench-amd64.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">inline-repeat-loops.amd64-linux.bench-amd64.txt</a> </td>
+</tr>
+<tr>
+<td>
+ amd64 </td>
+<td>
+ Linux </td>
+<td>
+ amd64 codegen </td>
+<td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/inline-repeat.amd64-linux.bench-amd64.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">inline-repeat.amd64-linux.bench-amd64.txt</a> </td>
+</tr>
+<tr>
+<td>
+ amd64 </td>
+<td>
+ Linux </td>
+<td>
+ amd64 codegen </td>
+<td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench-amd64.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">amd64-linux.bench-amd64.txt</a> </td>
 </tr>
 <tr>
 <td>
@@ -132,7 +154,7 @@ This table accumulates logs and benchmarks.
 <td>
  c codegen </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench-c.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:amd64-linux.bench-c.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/amd64-linux.bench-c.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">amd64-linux.bench-c.txt</a> </td>
 </tr>
 <tr>
 <td>
@@ -142,7 +164,7 @@ This table accumulates logs and benchmarks.
 <td>
  x86 codegen </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-x86.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:x86-darwin.bench-x86.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-x86.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">x86-darwin.bench-x86.txt</a> </td>
 </tr>
 <tr>
 <td>
@@ -152,7 +174,7 @@ This table accumulates logs and benchmarks.
 <td>
  c codegen </td>
 <td>
- <a href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-c.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">attachment:x86-darwin.bench-c.txt</a> </td>
+ <a href="http://mlton.org/pages/PortStatus/attachments/x86-darwin.bench-c.txt"><img src="moin-www.png" alt="[WWW]" height="11" width="11">x86-darwin.bench-c.txt</a> </td>
 </tr>
 </table>
 </div>
@@ -315,5 +337,5 @@ Logs produced with <tt>(gmake&nbsp;all-no-docs&nbsp;;&nbsp;./bin/regression)&nbs
 
 <p>
 <hr>
-Last edited on 2007-06-25 07:54:08 by <span title="port1394.ds1-vby.adsl.cybercity.dk"><a href="JesperLouisAndersen">JesperLouisAndersen</a></span>.
+Last edited on 2007-08-07 14:36:24 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

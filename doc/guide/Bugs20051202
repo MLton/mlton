@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,6 +56,216 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 Here are the known bugs in MLton 20051202, listed in reverse chronological order of date reported. <p>
+<a id="15"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.fmt:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real&lt;N&gt;.fmt</a>,   <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.fromString:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real&lt;N&gt;.fromString</a>,   <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.scan:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real&lt;N&gt;.scan</a>, and   <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.toString:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real&lt;N&gt;.toString</a>   functions of the <a href="BasisLibrary">basis library</a> implementation.    These functions were using <tt>TO_NEAREST</tt> semantics, but   should obey the current rounding mode.  (Only   <tt>Real&lt;N&gt;.fmt&nbsp;StringCvt.EXACT</tt>, <tt>Real&lt;N&gt;.fromDecimal</tt>,   and <tt>Real&lt;N&gt;.toDecimal</tt> are specified to override the   current rounding mode with <tt>TO_NEAREST</tt> semantics.)    Thanks to Sean McLaughlin for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5827&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5827</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="15"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the treatment of floating-point operations.  FP ops  depend on the current rounding mode, but were being treated as  pure.  Thanks to Sean McLaughlin for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5794&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5794</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="14"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the <a class="external" href="http://mlton.org/basis/real.html#SIG:REAL.toInt:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Real32.toInt</a>  function of the <a href="BasisLibrary">basis library</a>  implementation could lead incorrect results when applied to a  <tt>Real.real</tt> value numerically close to <tt>valOf(Int.maxInt)</tt>.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5764&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5764</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="13"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The <a class="external" href="http://mlton.org/basis/socket.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Socket</a>  structure of the <a href="BasisLibrary">basis library</a> implementation used  <tt>andb</tt> rather than <tt>orb</tt> to unmarshal socket options (for  <tt>Socket.Ctl.get&lt;OPT&gt;</tt> functions).  Thanks to Anders Petersson for  the bug report and patch.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5735&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5735</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="12"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in the <a class="external" href="http://mlton.org/basis/date.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Date</a> structure  of the <a href="BasisLibrary">basis library</a> implementation yielded some  functions that would erroneously raise <tt>Date</tt> when applied to a  year before 1900.  Thanks to Joe Hurd for the bug report.  Fixed by  revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5732&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5732</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="11"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in monomorphisation pass could exhibit the error   <tt>Type&nbsp;error:&nbsp;type&nbsp;mismatch</tt>.  Thanks to Vesa Karvonen for the bug  report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5731&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5731</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="10"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The   <a class="external" href="http://mlton.org/basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL"><img src="moin-www.png" alt="[WWW]" height="11" width="11">PackReal&lt;N&gt;.toBytes</a>   function in the <a href="BasisLibrary">basis library</a> implementation  incorrectly shared (and mutated) the result vector.  Thanks to Eric  McCorkle for the bug report and patch.  Fixed by revision  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5281&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5281</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="9"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in elaboration of FFI forms.  Using a unary FFI types (e.g.,  <tt>array</tt>, <tt>ref</tt>, <tt>vector</tt>) in places where  <tt>MLton.Pointer.t</tt> was required would lead to an internal error  <tt>TypeError</tt>.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4890&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4890</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="8"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The <a class="external" href="http://mlton.org/basis/mono-vector.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MONO_VECTOR</a> signature  of the <a href="BasisLibrary">basis library</a> implementation incorrectly omits  the specification of <tt>find</tt>.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4707&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4707</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="7"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The optimizer reports an internal error (<tt>TypeError</tt>) when an  imported C function is called but not used.  Thanks to <tt>jq</tt> for  the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4690&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4690</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="6"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Bug in pass to flatten data structures.  Thanks to Joe Hurd for the  bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4662&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4662</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="5"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The native codegen's implementation of th C-calling convention  failed to widen 16-bit arguments to 32-bits.  Fixed by revision  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4631&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4631</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="4"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ The <a class="external" href="http://mlton.org/basis/pack-float.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">PACK_REAL</a> structures  of the <a href="BasisLibrary">basis library</a> implementation used byte, rather  than element, indexing.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4411&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4411</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
+<a id="3"></a> 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>MLton.share</tt> could cause a segmentation fault.  Fixed by  revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4400&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4400</a>. 
+</p>
+</li>
+
+    </ul>
+
+
+<p>
 <a id="2"></a> 
 </p>
 
@@ -63,7 +273,7 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
     <li>
 <p>
- The <a class="external" href="http://mlton.org/basis/mono-vector.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MONO_VECTOR</a> signature  of the <a href="BasisLibrary">basis library</a> implementation incorrectly omits  the specification of <tt>find</tt>. 
+ The SSA simplifier could eliminate an irredundant test.  Fixed by  revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4370&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4370</a>. 
 </p>
 </li>
 
@@ -78,7 +288,7 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
     <li>
 <p>
- The optimizer reports an internal error (<tt>TypeError</tt>) when an  imported C function is called but not used.  Thanks to <tt>jq</tt> for  the bug report. 
+ A program with a very large number of functors could exhibit the  error <tt>ElaborateEnv.functorClosure:&nbsp;firstTycons</tt>.  Fixed by  revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4344&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4344</a>. 
 </p>
 </li>
 </ul>
@@ -89,5 +299,5 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
 <p>
 <hr>
-Last edited on 2007-07-08 21:15:34 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-06 22:08:51 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

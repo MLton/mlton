@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-The optimization passes for the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> are collected and controlled by the <tt>XmlSimplify</tt> functor (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml-simplify.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-simplify.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/xml/xml-simplify.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-simplify.fun</a>).   <p>
+The optimization passes for the <a href="XML">XML</a> <a href="IntermediateLanguage">IntermediateLanguage</a> are collected and controlled by the <tt>XmlSimplify</tt> functor (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml-simplify.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-simplify.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/xml-simplify.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-simplify.fun</a>).   <p>
 The following optimization passes are implemented: 
 </p>
 

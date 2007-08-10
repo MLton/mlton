@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -139,7 +139,7 @@ This pass also removes Useless and Transparent constructors.
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/simplify-types.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/simplify-types.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">simplify-types.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>

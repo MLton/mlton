@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -189,6 +189,11 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
  <a class="external" href="http://www.twelf.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Twelf</a> an implementation of the LF logical framework. 
 </p>
 </li>
+    <li>
+<p>
+ <a class="external" href="http://regiment.us"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WaveScript</a>, part of the <a class="external" href="http://wavescope.csail.mit.edu/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">WaveScope</a> sensor network project.  Produces MLton code in backend.  <a class="external" href="http://www.lecs.cs.ucla.edu/~girod/aensbox/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Used on embedded devices.</a>  
+</p>
+</li>
 
     </ul>
 
@@ -215,5 +220,5 @@ Here is a list of companies, projects, and courses that use or have used MLton. 
 
 <p>
 <hr>
-Last edited on 2007-07-08 21:42:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-07-11 19:57:59 by <span title="c-66-229-219-21.hsd1.fl.comcast.net">RyanNewton</span>.
 </body></html>

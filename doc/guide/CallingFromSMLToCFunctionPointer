@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -215,7 +215,7 @@ This example also shows the <tt>-target-link-opt</tt> option, which uses the swi
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070809-release/doc/examples/ffi/iimport.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">iimport.sml</a> 
 </p>
 </li>
 </ul>

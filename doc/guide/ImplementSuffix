@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ ImplementSuffix is a pass for the <a href="SXML">SXML</a> <a href="IntermediateL
 This pass implements the <tt>TopLevel_setSuffix</tt> primitive, which installs a function to exit the program. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-suffix.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-suffix.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/xml/implement-suffix.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-suffix.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/implement-suffix.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-suffix.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/implement-suffix.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">implement-suffix.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 ImplementSuffix works by introducing a new <tt>ref</tt> cell to contain the function of type <tt>unit&nbsp;-&gt;&nbsp;unit</tt> that should be called on program exit. 
 </p>

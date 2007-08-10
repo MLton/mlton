@@ -35,7 +35,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,6 +67,11 @@ urchinTracker();
     <ul>
 
     <li>
+<p>
+ <a id="AcarEtAl06"></a>  <a class="external" href="http://ttic.uchicago.edu/~umut/papers/pldi06.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">An Experimental Analysis of Self-Adjusting Computation</a>  Umut Acar, Guy Blelloch, Matthias Blume, and Kanat Tangwongsan.  <a href="#PLDI">PLDI</a> 2006. 
+</p>
+</li>
+    <li class="gap">
 <p>
  <a id="Appel92"></a>  <a class="external" href="http://us.cambridge.org/titles/catalogue.asp?isbn=0521416957"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Compiling with Continuations</a>  (<a class="external" href="http://www.addall.com/New/submitNew.cgi?query=0-521-41695-7&amp;type=ISBN&amp;location=10000&amp;state=&amp;dispCurr=USD"><img src="moin-www.png" alt="[WWW]" height="11" width="11">addall</a>).  ISBN 0521416957.  Andrew W. Appel.  Cambridge University Press, 1992. 
 </p>
@@ -228,6 +233,11 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
+ <a id="Clinger98"></a>  <a class="external" href="http://citeseer.ist.psu.edu/clinger98proper.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Proper Tail Recursion and Space Efficiency</a>.  William D. Clinger.  <a href="#PLDI">PLDI</a> 1998. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <a id="CooperMorrisett90"></a>  <a class="external" href="http://citeseer.ist.psu.edu/cooper90adding.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Adding Threads to Standard ML</a>.  Eric C. Cooper and J. Gregory Morrisett.    CMU Technical Report CMU-CS-90-186, 1990. 
 </p>
 </li>
@@ -265,7 +275,7 @@ urchinTracker();
 
         <ul>
 
-  <em>Describes ways to improve widget concurency, handling of input   focus, X resources and selections.</em> 
+  <em>Describes ways to improve widget concurrency, handling of input   focus, X resources and selections.</em> 
         </ul>
 
 
@@ -899,6 +909,11 @@ urchinTracker();
 
     <li class="gap">
 <p>
+ <a id="ShaoAppel94"></a>  <a class="external" href="http://flint.cs.yale.edu/flint/publications/closure.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Space-Efficient Closure Representations</a>.  Zhong Shao and Andrew W. Appel.  <a href="#LFP">LFP</a> 2006. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <a id="Shipman02"></a>  <a href="http://mlton.org/pages/References/attachments/Shipman02.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Unix System Programming with Standard ML</a>.  Anthony L. Shipman.  2002. 
 </p>
 </li>
@@ -1210,6 +1225,11 @@ urchinTracker();
 </li>
     <li>
 <p>
+ <a id="LFP"></a> LFP = Lisp and Functional Programming 
+</p>
+</li>
+    <li>
+<p>
  <a id="ML"></a> ML = Workshop on ML 
 </p>
 </li>
@@ -1261,5 +1281,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:13:38 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-02 21:28:13 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

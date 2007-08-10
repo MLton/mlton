@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -139,12 +139,12 @@ success
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070809-release/doc/examples/ffi/import.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">import.sml</a> 
 </p>
 </li>
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070709-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070809-release/doc/examples/ffi/ffi-import.c"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ffi-import.c</a> 
 </p>
 </li>
 

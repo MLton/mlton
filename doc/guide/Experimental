@@ -39,7 +39,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,6 +66,82 @@ urchinTracker();
 <p>
 This page is for experimental releases of MLton.  These versions are not as well tested as our <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">public releases</a>, and may not be available for our all our usual platforms. 
 </p>
+<h2 id="head-669a7baae61a221c7fdd94eaf85dca08088ba756">20070809 binary packages (release candidate; SVN revision 5842)</h2>
+
+    <ul>
+
+    <li>
+<p>
+ amd64-linux 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+  
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ powerpc-darwin 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+  install of GMP) 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ x86-darwin 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+  install of GMP) 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ x86-linux 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+  
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
 <h2 id="head-cef4e367fd084cbb01e01dd3eedd010b10cc6351">20070518 binary packages</h2>
 
     <ul>
@@ -274,5 +350,5 @@ This was built on HP-UX 11.00, should work on 11.11 and 11.23 as well.
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:54:08 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-09 22:54:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

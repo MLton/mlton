@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070709</a>
+      <a class = mltona href="Home">MLton 20070809</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ RedundantTests is an optimization pass for the <a href="SSA">SSA</a> <a href="In
 This pass simplifies conditionals whose results are implied by a previous conditional test. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/redundant-tests.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant-tests.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070709-release/mlton/ssa/redundant-tests.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant-tests.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/redundant-tests.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant-tests.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/redundant-tests.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant-tests.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 An additional test will sometimes eliminate the overflow test when adding or subtracting 1.  In particular, it will eliminate it in the following cases: 
 <pre>if x &lt; y
