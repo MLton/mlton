@@ -3,34 +3,29 @@ Here are the changes from version 20051202 to version 200708??.
 Summary:
   + New platforms:
    o amd64-linux, amd64-freebsd, ...
+   o hppa-hpux, ...
    o powerpc-aix, ...
-   o hppa-hpux,
    o x86: Darwin (Mac OS X)
   + Compiler.
+   o Command-line switches.
+    * Added: -codegen {amd64,x86}, -default-type <type>, -profile-val,
+	-{,target}-{as,cc,link}-opt-quote.
    o Bytecode codegen.
     * support for profiling.
     * support for exception history.
-   o Command-line switches.
-    * Added: -codegen {amd64,x86}, -default-type <ty>, -profile-val,
-	-{,target}-{as,cc,link}-opt-quote.
-    * Changed: ???
-    * Deprecated: ???
-    * Removed: ???
   + Language.
-   o ML Basis annotations.
-    * Added: none
-    * Deprecated: none
-    * Removed: none
   + Libraries.
    o Basis Library.
     * Added: PackWord16Big, PackWord16Little, PackWord64Big,
 	PackWord64Little.
    o MLton structure.
-    * Added: LargeReal, LargeWord, Real, Real32, Real64,
-	Vector.create, Word16, Word32, Word64, Word8Array, Word8Vector.
-    * Changed: Vector.unfoldi.
+    * Added: MLton.LargeReal, MLton.LargeWord, MLton.Real, MLton.Real32,
+	MLton.Real64, MLton.Vector.create, MLton.Word16, MLton.Word32,
+	MLton.Word64, MLton.Word8Array, MLton.Word8Vector.
+    * Changed: MLton.Vector.unfoldi.
     * Removed: ???
    o Other libraries.
+    * Added: MLRISC Libary.
     * Updated: SML/NJ library.
   + Tools.
 
