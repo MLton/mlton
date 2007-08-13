@@ -10,8 +10,7 @@ Summary:
    o Support for 64-bit platforms.
     * Native amd64 codegen.
    o Command-line switches.
-    * Added: -codegen {amd64,x86}, -default-type <type>, -profile-val,
-	-{,target}-{as,cc,link}-opt-quote.
+    * Added: -codegen {amd64,x86}, -default-type <type>, -profile-val.
     * Changed: -stop f (now includes .mlb files)
    o Bytecode codegen.
     * support for profiling.
