@@ -43,7 +43,15 @@ val safe = Primitive.Controls.safe
 
 structure Array = Array
 structure BinIO = MLtonIO (BinIO)
-structure CallStack = MLtonCallStack
+(*structure CallStack = MLtonCallStack*)
+structure CharArray = struct
+   open CharArray
+   type t = array
+end
+structure CharVector = struct
+   open CharVector
+   type t = vector
+end
 structure Cont = MLtonCont
 structure Exn = MLtonExn
 structure Finalizable = MLtonFinalizable
@@ -122,12 +130,10 @@ structure Word64 =
       open Word64
       type t = word
    end
-
 structure Word8Array = struct
    open Word8Array
    type t = array
 end
-
 structure Word8Vector = struct
    open Word8Vector
    type t = vector

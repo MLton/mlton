@@ -23,11 +23,13 @@ Summary:
 	PackWord64Little.
     * Bug Fixes: see changelog.
    o MLton structure.
-    * Added: MLton.BinIO.tempPrefix, MLton.IntInf.BigWord,
-        MLton.IntInf.SmallInt, MLton.Exn.defaultTopLevelHandler,
-	MLton.Exn.getTopLevelHandler, MLton.Exn.setTopLevelHandler,
-	MLton.LargeReal, MLton.LargeWord, MLton.Real, MLton.Real32,
-	MLton.Real64, MLton.Rlimit.Rlim, MLton.TextIO.tempPrefix,
+    * Added: MLTON_MONO_ARRAY, MLTON_MONO_VECTOR, MLTON_REAL, 
+        MLton.BinIO.tempPrefix, MLton.CharArray, MLton.CharVector,
+        MLton.IntInf.BigWord, MLton.IntInf.SmallInt,
+        MLton.Exn.defaultTopLevelHandler,
+        MLton.Exn.getTopLevelHandler, MLton.Exn.setTopLevelHandler,
+        MLton.LargeReal, MLton.LargeWord, MLton.Real, MLton.Real32,
+        MLton.Real64, MLton.Rlimit.Rlim, MLton.TextIO.tempPrefix,
         MLton.Vector.create, MLton.Word.bswap, MLton.Word8.bswap,
         MLton.Word16, MLton.Word32, MLton.Word64, MLton.Word8Array,
         MLton.Word8Vector.
