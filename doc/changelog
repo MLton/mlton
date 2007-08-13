@@ -7,9 +7,12 @@ Summary:
    o powerpc-aix, ...
    o x86: Darwin (Mac OS X)
   + Compiler.
+   o Support for 64-bit platforms.
+    * Native amd64 codegen.
    o Command-line switches.
     * Added: -codegen {amd64,x86}, -default-type <type>, -profile-val,
 	-{,target}-{as,cc,link}-opt-quote.
+    * Changed: -stop f (now includes .mlb files)
    o Bytecode codegen.
     * support for profiling.
     * support for exception history.
@@ -18,15 +21,22 @@ Summary:
    o Basis Library.
     * Added: PackWord16Big, PackWord16Little, PackWord64Big,
 	PackWord64Little.
+    * Bug Fixes: see changelog.
    o MLton structure.
-    * Added: MLton.LargeReal, MLton.LargeWord, MLton.Real, MLton.Real32,
-	MLton.Real64, MLton.Vector.create, MLton.Word16, MLton.Word32,
-	MLton.Word64, MLton.Word8Array, MLton.Word8Vector.
-    * Changed: MLton.Vector.unfoldi.
-    * Removed: ???
+    * Added: MLton.BinIO.tempPrefix, MLton.IntInf.BigWord,
+        MLton.IntInf.SmallInt, MLton.Exn.defaultTopLevelHandler,
+	MLton.Exn.getTopLevelHandler, MLton.Exn.setTopLevelHandler,
+	MLton.LargeReal, MLton.LargeWord, MLton.Real, MLton.Real32,
+	MLton.Real64, MLton.Rlimit.Rlim, MLton.TextIO.tempPrefix,
+        MLton.Vector.create, MLton.Word.bswap, MLton.Word8.bswap,
+        MLton.Word16, MLton.Word32, MLton.Word64, MLton.Word8Array,
+        MLton.Word8Vector.
+    * Changed: MLton.Array.unfoldi, MLton.IntInf.rep, MLton.Rlimit,
+        MLton.Vector.unfoldi. 
+    * Deprecated: MLton.Socket
    o Other libraries.
-    * Added: MLRISC Libary.
-    * Updated: SML/NJ library.
+    * Added: MLRISC libary.
+    * Updated: ckit library, SML/NJ library.
   + Tools.
 
 * 2007-08-06
@@ -52,7 +62,8 @@ Summary:
    - Restored native option to -codegen flag.
 
 * 2007-07-11
-   - Fixed bug in Real32.toInt.
+   - Fixed bug in Real32.toInt: conversion of real values close to
+     Int.maxInt could be incorrect.
 
 * 2007-07-07
    - Updates to bytecode code generator: support for amd64-* targets,
