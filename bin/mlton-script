@@ -84,16 +84,14 @@ doit "$lib" \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lgdtoa -lm -lgmp'                            \
         -mlb-path-map "$lib/mlb-path-map"                        \
-        -target-as-opt amd64 '-m64 -mtune=opteron'               \
-        -target-cc-opt amd64 '-m64 -mtune=opteron'               \
+        -target-as-opt amd64 '-m64'                              \
+        -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt darwin                                    \
                 '-I/opt/local/include -I/sw/include'             \
         -target-cc-opt freebsd '-I/usr/local/include'            \
         -target-cc-opt netbsd '-I/usr/pkg/include'               \
         -target-cc-opt openbsd '-I/usr/local/include'            \
-        -target-cc-opt solaris                                   \
-                '-Wa,-xarch=v8plusa -mcpu=ultrasparc'            \
-        -target-cc-opt sparc '-mcpu=v8 -m32'                     \
+        -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86                                       \
                 '-fno-strength-reduce
                 -fschedule-insns
