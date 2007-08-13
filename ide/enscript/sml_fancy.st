@@ -470,6 +470,7 @@ state sml_fancy extends sml_verbose
     sml_andbind[0] = SML_AND_VALBIND;
   }
   /\b(where)\b/ { 
+    sml_finish_typctxt ();
     sml_keyword ($0, SML_MODULES_LEVEL); 
   }
   /\b(while)\b/ { 
