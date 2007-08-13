@@ -530,25 +530,9 @@ structure Elaborate =
                                              | _ => NONE}, 
                                ac)
             end
+         val _ = makeDeprecatedBool
       in
          val ac = {parseId = parseId, parseIdAndArgs = parseIdAndArgs}
-
-         val ac =
-            makeDeprecatedBool ({altIds = ["allowFFI"],
-                                 altArgs = fn b => [[Bool.toString b]],
-                                 name = "allowExport"}, ac)
-         val ac =
-            makeDeprecatedBool ({altIds = ["allowFFI"],
-                                 altArgs = fn b => [[Bool.toString b]],
-                                 name = "allowImport"}, ac)
-         val ac =
-            makeDeprecatedBool ({altIds = ["sequenceNonUnit"],
-                                 altArgs = fn true => [["warn"]] | false => [["ignore"]],
-                                 name = "sequenceUnit"}, ac)
-         val ac =
-            makeDeprecatedBool ({altIds = ["nonexhaustiveMatch", "redundantMatch"],
-                                 altArgs = fn true => [["warn"], ["warn"]] | false => [["ignore"], ["ignore"]],
-                                 name = "warnMatch"}, ac)
          val {parseId, parseIdAndArgs} = ac
       end
 
