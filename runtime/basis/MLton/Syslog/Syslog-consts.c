@@ -4,6 +4,13 @@ const C_Int_t MLton_Syslog_Logopt_LOG_CONS = LOG_CONS;
 const C_Int_t MLton_Syslog_Logopt_LOG_NDELAY = LOG_NDELAY;
 const C_Int_t MLton_Syslog_Logopt_LOG_NOWAIT = LOG_NOWAIT;
 const C_Int_t MLton_Syslog_Logopt_LOG_ODELAY = LOG_ODELAY;
+/* NOT STANDARD */
+#if (defined (LOG_PERROR))
+const C_Int_t MLton_Syslog_Logopt_LOG_PERROR = LOG_PERROR;
+#else
+const C_Int_t MLton_Syslog_Logopt_LOG_PERROR = -1;
+#endif
+/* */
 const C_Int_t MLton_Syslog_Logopt_LOG_PID = LOG_PID;
 
 const C_Int_t MLton_Syslog_Facility_LOG_AUTH = LOG_AUTH;
@@ -21,6 +28,13 @@ const C_Int_t MLton_Syslog_Facility_LOG_LOCAL7 = LOG_LOCAL7;
 const C_Int_t MLton_Syslog_Facility_LOG_LPR = LOG_LPR;
 const C_Int_t MLton_Syslog_Facility_LOG_MAIL = LOG_MAIL;
 const C_Int_t MLton_Syslog_Facility_LOG_NEWS = LOG_NEWS;
+/* NOT STANDARD */
+#if (defined (LOG_SYSLOG))
+const C_Int_t MLton_Syslog_Facility_LOG_SYSLOG = LOG_SYSLOG;
+#else
+const C_Int_t MLton_Syslog_Facility_LOG_SYSLOG = -1;
+#endif
+/* */
 const C_Int_t MLton_Syslog_Facility_LOG_USER = LOG_USER;
 const C_Int_t MLton_Syslog_Facility_LOG_UUCP = LOG_UUCP;
 

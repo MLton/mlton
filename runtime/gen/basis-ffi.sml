@@ -94,7 +94,10 @@ val get = _import "MLton_Rlimit_get" : C_Int.t -> (C_Int.t) C_Errno.t;
 val getHard = _import "MLton_Rlimit_getHard" : unit -> C_RLim.t;
 val getSoft = _import "MLton_Rlimit_getSoft" : unit -> C_RLim.t;
 val INFINITY = _const "MLton_Rlimit_INFINITY" : C_RLim.t;
+val MEMLOCK = _const "MLton_Rlimit_MEMLOCK" : C_Int.t;
 val NOFILE = _const "MLton_Rlimit_NOFILE" : C_Int.t;
+val NPROC = _const "MLton_Rlimit_NPROC" : C_Int.t;
+val RSS = _const "MLton_Rlimit_RSS" : C_Int.t;
 val set = _import "MLton_Rlimit_set" : C_Int.t * C_RLim.t * C_RLim.t -> (C_Int.t) C_Errno.t;
 val STACK = _const "MLton_Rlimit_STACK" : C_Int.t;
 end
@@ -134,6 +137,7 @@ val LOG_LOCAL7 = _const "MLton_Syslog_Facility_LOG_LOCAL7" : C_Int.t;
 val LOG_LPR = _const "MLton_Syslog_Facility_LOG_LPR" : C_Int.t;
 val LOG_MAIL = _const "MLton_Syslog_Facility_LOG_MAIL" : C_Int.t;
 val LOG_NEWS = _const "MLton_Syslog_Facility_LOG_NEWS" : C_Int.t;
+val LOG_SYSLOG = _const "MLton_Syslog_Facility_LOG_SYSLOG" : C_Int.t;
 val LOG_USER = _const "MLton_Syslog_Facility_LOG_USER" : C_Int.t;
 val LOG_UUCP = _const "MLton_Syslog_Facility_LOG_UUCP" : C_Int.t;
 end
@@ -143,6 +147,7 @@ val LOG_CONS = _const "MLton_Syslog_Logopt_LOG_CONS" : C_Int.t;
 val LOG_NDELAY = _const "MLton_Syslog_Logopt_LOG_NDELAY" : C_Int.t;
 val LOG_NOWAIT = _const "MLton_Syslog_Logopt_LOG_NOWAIT" : C_Int.t;
 val LOG_ODELAY = _const "MLton_Syslog_Logopt_LOG_ODELAY" : C_Int.t;
+val LOG_PERROR = _const "MLton_Syslog_Logopt_LOG_PERROR" : C_Int.t;
 val LOG_PID = _const "MLton_Syslog_Logopt_LOG_PID" : C_Int.t;
 end
 val openlog = _import "MLton_Syslog_openlog" : NullString8.t * C_Int.t * C_Int.t -> unit;

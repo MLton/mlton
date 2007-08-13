@@ -25,6 +25,9 @@ in
    val NDELAY = LOG_NDELAY
    val NOWAIT = LOG_NOWAIT
    val ODELAY = LOG_ODELAY
+(* NOT STANDARD *)
+   val PERROR = LOG_PERROR
+(* *)
    val PID = LOG_PID
 end
 
@@ -48,9 +51,9 @@ in
    val LPR = LOG_LPR
    val MAIL = LOG_MAIL
    val NEWS = LOG_NEWS
-(* NOT STANDARD
+(* NOT STANDARD *)
    val SYSLOG = LOG_SYSLOG
-*)
+(* *)
    val USER = LOG_USER
    val UUCP = LOG_UUCP
 end

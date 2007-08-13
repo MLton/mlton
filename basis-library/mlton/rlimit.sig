@@ -26,11 +26,11 @@ signature MLTON_RLIMIT =
       val stackSize: t           (* STACK   max stack size *)
       val virtualMemorySize: t   (* AS      virtual memory limit *)
 
-(* NOT STANDARD
+(* NOT STANDARD *)
       val lockedInMemorySize: t  (* MEMLOCK max locked address space *)
       val numProcesses: t        (* NPROC   max number of processes *)
       val residentSetSize: t     (* RSS     max resident set size *)
- *)
+(* *)
 
       val get: t -> {hard: RLim.t, soft: RLim.t}
       val set: t * {hard: RLim.t, soft: RLim.t} -> unit

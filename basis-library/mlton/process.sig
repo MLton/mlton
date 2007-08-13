@@ -9,6 +9,10 @@ signature MLTON_PROCESS =
    sig
       type pid
 
+      val spawn: {args: string list, path: string} -> pid
+      val spawne: {args: string list, env: string list, path: string} -> pid
+      val spawnp: {file: string, args: string list} -> pid
+
       (* Process handle *)
       type ('stdin, 'stdout, 'stderr) t
 
@@ -69,7 +73,4 @@ signature MLTON_PROCESS =
       val getStdout: ('stdin, 'stdout, 'stderr) t -> ('stdout, input) Child.t
       val kill: ('stdin, 'stdout, 'stderr) t * Posix.Signal.signal -> unit
       val reap: ('stdin, 'stdout, 'stderr) t -> Posix.Process.exit_status
-      val spawn: {args: string list, path: string} -> pid
-      val spawne: {args: string list, env: string list, path: string} -> pid
-      val spawnp: {file: string, args: string list} -> pid
    end
