@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC Library</a>  is a framework for retargetable and optimizing compiler back ends.  The MLRISC Library is distributed with SML/NJ. Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20060304, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.58. 
+As of 20070812, MLton includes a port of the MLRISC Library synchronized with SML/NJ version 110.65. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -215,7 +215,7 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
 </p>
 </li>
 </ul>
@@ -226,5 +226,5 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:40:53 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 02:31:12 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

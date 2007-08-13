@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -68,6 +68,7 @@ urchinTracker();
       <B><FONT COLOR="#A020F0">val</FONT></B> newIn: Posix.IO.file_desc * string -&gt; instream
       <B><FONT COLOR="#A020F0">val</FONT></B> newOut: Posix.IO.file_desc * string -&gt; outstream
       <B><FONT COLOR="#A020F0">val</FONT></B> outFd: outstream -&gt; Posix.IO.file_desc
+      <B><FONT COLOR="#A020F0">val</FONT></B> tempPrefix: string -&gt; string
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -144,7 +145,19 @@ urchinTracker();
 
         <ul>
 
-  returns the file descriptor corresponding to <tt>out</tt>. </ul>
+  returns the file descriptor corresponding to <tt>out</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>tempPrefix&nbsp;s</tt> 
+</p>
+</li>
+
+        <ul>
+
+  adds a suitable system or user specific prefix (directory) for temp files. </ul>
 
 </ul>
 
@@ -154,5 +167,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:27:48 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:56:04 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

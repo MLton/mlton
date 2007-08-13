@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ urchinTracker();
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/ide/enscript/sml_simple.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_simple.st</a> -- Provides highlighting of keywords, string and character constants, and (nested) comments.  
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/enscript/sml_simple.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_simple.st</a> -- Provides highlighting of keywords, string and character constants, and (nested) comments.  
 <pre class=code>
 <I><FONT COLOR="#B22222">(* Comments (* can be nested *) *)</FONT></I>
 <B><FONT COLOR="#A020F0">structure</FONT></B> S = <B><FONT COLOR="#A020F0">struct</FONT></B>
@@ -72,7 +72,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/ide/enscript/sml_verbose.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_verbose.st</a> -- Supersedes the above, adding  highlighting of numeric constants.  Due to the limited parsing  available, numeric record labels are highlighted as numeric  constants, in all contexts.  Likewise, a binding precedence separated  from <tt>infix</tt> or <tt>infixr</tt> by a newline is highlighted as a  numeric constant and a numeric record label selector separated from  <tt>#</tt> by a newline is highlighted as a numeric constant.  
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/enscript/sml_verbose.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_verbose.st</a> -- Supersedes the above, adding  highlighting of numeric constants.  Due to the limited parsing  available, numeric record labels are highlighted as numeric  constants, in all contexts.  Likewise, a binding precedence separated  from <tt>infix</tt> or <tt>infixr</tt> by a newline is highlighted as a  numeric constant and a numeric record label selector separated from  <tt>#</tt> by a newline is highlighted as a numeric constant.  
 </p>
  
 <pre class=code>
@@ -94,7 +94,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/ide/enscript/sml_fancy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_fancy.st</a> -- Supersedes the above, adding  highlighting of type and constructor bindings, highlighting of  explicit binding of type variables at <tt>val</tt> and <tt>fun</tt> declarations, and  separate highlighting of core and modules level keywords.  Due to the  limited parsing available, it is assumed that the input is a  syntactically correct, top-level declaration.  
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/enscript/sml_fancy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_fancy.st</a> -- Supersedes the above, adding  highlighting of type and constructor bindings, highlighting of  explicit binding of type variables at <tt>val</tt> and <tt>fun</tt> declarations, and  separate highlighting of core and modules level keywords.  Due to the  limited parsing available, it is assumed that the input is a  syntactically correct, top-level declaration.  
 <pre class=code>
 <B><FONT COLOR="#0000FF">structure</FONT></B> S = <B><FONT COLOR="#0000FF">struct</FONT></B>
   <B><FONT COLOR="#A020F0">val</FONT></B> x = (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>, <B><FONT COLOR="#BC8F8F">&quot;three&quot;</FONT></B>)
@@ -115,7 +115,7 @@ urchinTracker();
 </li>
     <li class="gap">
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/ide/enscript/sml_gaudy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_gaudy.st</a> -- Supersedes the above, adding  highlighting of type annotations, in both expressions and signatures.  Due to the limited parsing available, it is assumed that the input is  a syntactically correct, top-level declaration.   
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/enscript/sml_gaudy.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_gaudy.st</a> -- Supersedes the above, adding  highlighting of type annotations, in both expressions and signatures.  Due to the limited parsing available, it is assumed that the input is  a syntactically correct, top-level declaration.   
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> S = <B><FONT COLOR="#0000FF">sig</FONT></B>
   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
@@ -172,7 +172,7 @@ urchinTracker();
 
             <li>
 <p>
- Append <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/ide/enscript/sml_all.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_all.st</a> to <tt>/usr/share/enscript/enscript.st</tt> 
+ Append <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/enscript/sml_all.st?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sml_all.st</a> to <tt>/usr/share/enscript/enscript.st</tt> 
 </p>
 </li>
             <li>

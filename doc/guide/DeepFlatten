@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -63,7 +63,7 @@ This pass flattens into mutable fields of objects and into vectors.
 For example, an <tt>(int&nbsp;*&nbsp;int)&nbsp;ref</tt> is represented by a 2 word object, and an <tt>(int&nbsp;*&nbsp;int)&nbsp;array</tt> contains pairs of <tt>int</tt>s, rather than pointers to pairs of <tt>int</tt>s. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/deep-flatten.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/deep-flatten.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">deep-flatten.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
 

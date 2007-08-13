@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -93,8 +93,8 @@ This pass implements a whole family of compile-time reductions, like:
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/shrink2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/shrink2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink2.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/shrink.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/shrink.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/shrink2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/shrink2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">shrink2.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>

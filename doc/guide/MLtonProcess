@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,7 +65,19 @@ urchinTracker();
       <B><FONT COLOR="#A020F0">val</FONT></B> spawne: {args: string list, env: string list, path: string} -&gt; pid
       <B><FONT COLOR="#A020F0">val</FONT></B> spawnp: {args: string list, file: string} -&gt; pid
 
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Child:
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('stdin, 'stdout, 'stderr) t
+
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> input
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> output
+
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> none
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> chain
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> any
+
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MisuseOfForget</FONT>
+      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">DoublyRedirected</FONT>
+
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Child:
         <B><FONT COLOR="#0000FF">sig</FONT></B>
           <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('use, 'dir) t
 
@@ -90,17 +102,7 @@ urchinTracker();
           <B><FONT COLOR="#A020F0">val</FONT></B> self: (none, 'dir) t
         <B><FONT COLOR="#0000FF">end</FONT></B>
 
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('stdin, 'stdout, 'stderr) t
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> any
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> chain
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> input
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> none
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> output
-
-      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">MisuseOfForget</FONT>
-      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">DoublyRedirected</FONT>
-
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> create:
+      <B><FONT COLOR="#A020F0">val</FONT></B> create:
          {args: string list,
           env: string list option,
           path: string,
@@ -523,5 +525,5 @@ The following example program launches the <tt>ipconfig</tt> utility, pipes its 
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:22:19 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:56:19 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

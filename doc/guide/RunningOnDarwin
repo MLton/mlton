@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,7 +73,7 @@ MLton runs fine on Darwin (and on Mac OS X).
 
     <li>
 <p>
- <a class="nonexistent" href="TimeProfiling">TimeProfiling</a> may give inaccurate results on multi-processor machines.  The <tt>SIGPROF</tt> signal, used to sample the profiled program, is supposed to be delivered 100 times a second (i.e., at 10000us intervals), but there can be delays of over 1 minute between the delivery of consecutive <tt>SIGPROF</tt> signals.  A more complete description may be found <a class="external" href="http://lists.apple.com/archives/Unix-porting/2007/Aug/msg00000.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">here</a>. 
+ <a href="ProfilingTime">ProfilingTime</a> may give inaccurate results on multi-processor machines.  The <tt>SIGPROF</tt> signal, used to sample the profiled program, is supposed to be delivered 100 times a second (i.e., at 10000us intervals), but there can be delays of over 1 minute between the delivery of consecutive <tt>SIGPROF</tt> signals.  A more complete description may be found <a class="external" href="http://lists.apple.com/archives/Unix-porting/2007/Aug/msg00000.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">here</a> and <a class="external" href="http://lists.apple.com/archives/Darwin-dev/2007/Aug/msg00045.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">here</a>. 
 </p>
 </li>
 
@@ -102,5 +102,5 @@ MLton runs fine on Darwin (and on Mac OS X).
 
 <p>
 <hr>
-Last edited on 2007-08-01 22:50:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 19:03:38 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

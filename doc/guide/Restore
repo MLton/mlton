@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -68,8 +68,8 @@ This pass restores the SSA condition for a violating <a href="SSA">SSA</a> or <a
 
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/restore.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/restore.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/restore2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/restore2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore2.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/restore.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/restore.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/restore2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/restore2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">restore2.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>

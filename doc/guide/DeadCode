@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ Dead-code elimination is an optimization pass for the <a href="CoreML">CoreML</a
 This pass eliminates declarations from the  <a href="BasisLibrary">Basis Library</a> not needed by the user program. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/core-ml/dead-code.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dead-code.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/core-ml/dead-code.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dead-code.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/core-ml/dead-code.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dead-code.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/core-ml/dead-code.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dead-code.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 In order to compile small programs rapidly, a pass of dead code elimination is run in order to eliminate as much of the Basis Library as possible.  The dead code elimination algorithm used is not safe in general, and only works because the Basis Library implementation has special properties: 
 </p>

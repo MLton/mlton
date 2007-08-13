@@ -81,7 +81,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -148,10 +148,10 @@ There are tables for <a href="#RunTime">run time</a>, <a href="#CodeSize">code s
 All benchmarks were compiled and run on a 2.6 GHz Celeron with 2G of RAM.  The benchmarks were compiled with the default settings for all the compilers, except for Moscow ML, which was passed the  <tt>-orthodox&nbsp;-standalone&nbsp;-toplevel</tt> switches.  The Poly/ML executables were produced by <tt>use</tt>'ing the file, followed by a <tt>PolyML.commit</tt>.  The SML/NJ executables were produced by wrapping the entire program in a <tt>local</tt> declaration whose body performs an <tt>SMLofNJ.exportFn</tt>. 
 </p>
 <p>
-For more details, or if you want to run the benchmarks yourself, please see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/benchmark"><img src="moin-www.png" alt="[WWW]" height="11" width="11">benchmark</a> directory of our <a href="Sources">Sources</a>. 
+For more details, or if you want to run the benchmarks yourself, please see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/benchmark"><img src="moin-www.png" alt="[WWW]" height="11" width="11">benchmark</a> directory of our <a href="Sources">Sources</a>. 
 </p>
 <p>
-All of the benchmarks are available for download from this page.  Some of the benchmarks were obtained from the SML/NJ benchmark suite.  Some of the benchmarks expect certain input files to exist in the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/benchmark/tests/DATA"><img src="moin-www.png" alt="[WWW]" height="11" width="11">DATA</a> subdirectory. 
+All of the benchmarks are available for download from this page.  Some of the benchmarks were obtained from the SML/NJ benchmark suite.  Some of the benchmarks expect certain input files to exist in the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/benchmark/tests/DATA"><img src="moin-www.png" alt="[WWW]" height="11" width="11">DATA</a> subdirectory. 
 </p>
 
     <ul>

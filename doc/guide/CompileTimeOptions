@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 MLton's compile-time options control the name of the output file, the verbosity of compile-time messages, and whether or not certain optimizations are performed.  They also can specify which intermediate files are saved and can stop the compilation process early, at some intermediate pass, in which case compilation can be resumed by passing the generated files to MLton.  MLton uses the input file suffix to determine the type of input program.  The possibilities are <tt>.c</tt>, <tt>.cm</tt>, <tt>.mlb</tt>, <tt>.o</tt>, <tt>.S</tt>, and <tt>.sml</tt>. <p>
-With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a number of choices (e.g. <tt>{true|false}&nbsp;</tt>), the first value listed is the default. 
+With no arguments, MLton prints the version number and exits.  For a usage message, run MLton with an invalid switch, e.g.  <tt>mlton&nbsp;-z</tt>.  In the explanation below and in the usage message, for flags that take a number of choices (e.g. <tt>{true|false}</tt>), the first value listed is the default. 
 </p>
 <h2 id="head-6bf5da9c080bee3a8142586c412aa39971137eee">Options</h2>
 
@@ -64,7 +64,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li>
 <p>
- <tt>-align&nbsp;{4|8}&nbsp;</tt> 
+ <tt>-align&nbsp;{4|8}</tt> 
 </p>
 </li>
 
@@ -76,7 +76,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-as-opt</tt> <em>option</em> 
+ <tt>-as-opt&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
@@ -88,7 +88,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-cc-opt</tt> <em>option</em> 
+ <tt>-cc-opt&nbsp;</tt><em>option</em> 
 </p>
 </li>
 
@@ -100,7 +100,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}&nbsp;</tt> 
+ <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}</tt> 
 </p>
 </li>
 
@@ -127,7 +127,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
         <li>
 <p>
- <tt>Exn.keepHistory&nbsp;{false|true}&nbsp;</tt> 
+ <tt>Exn.keepHistory&nbsp;{false|true}</tt> 
 </p>
 </li>
 
@@ -161,7 +161,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
             <ul>
 
-   Specify the default binding for a primitive type.  For example,    <tt>-default-type&nbsp;word64</tt> causes the top-level type <tt>word</tt>    and the top-level structure <tt>Word</tt> in the [:<a class="badinterwiki" title="BasisLibrary" href="InterWiki"><img src="moin-inter.png" alt="[BasisLibrary]" height="16" width="16">Basis</a>    Library] to be equal to <tt>Word64.word</tt> and <tt>Word64:WORD</tt>,    respectively.  Similarly, <tt>-default-type&nbsp;intinf</tt> causes the    top-level type <tt>int</tt> and the top-level structure <tt>Int</tt> in    the <a href="BasisLibrary">Basis Library</a> to be equal to <tt>IntInf.int</tt>    and <tt>IntInf:INTEGER</tt>, respectively. 
+   Specify the default binding for a primitive type.  For example,    <tt>-default-type&nbsp;word64</tt> causes the top-level type <tt>word</tt>    and the top-level structure <tt>Word</tt> in the     <a href="BasisLibrary">Basis Library</a> to be equal to <tt>Word64.word</tt> and <tt>Word64:WORD</tt>,    respectively.  Similarly, <tt>-default-type&nbsp;intinf</tt> causes the    top-level type <tt>int</tt> and the top-level structure <tt>Int</tt> in    the <a href="BasisLibrary">Basis Library</a> to be equal to <tt>IntInf.int</tt>    and <tt>IntInf:INTEGER</tt>, respectively. 
             </ul>
 
 
@@ -197,7 +197,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-ieee-fp&nbsp;{false|true}&nbsp;</tt> 
+ <tt>-ieee-fp&nbsp;</tt>{false|true} 
 </p>
 </li>
 
@@ -221,7 +221,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-keep&nbsp;{g|o|sml}&nbsp;</tt> 
+ <tt>-keep&nbsp;{g|o|sml}</tt> 
 </p>
 </li>
 
@@ -292,7 +292,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-profile&nbsp;{no|alloc|count|time}&nbsp;</tt> 
+ <tt>-profile&nbsp;{no|alloc|count|time}</tt> 
 </p>
 </li>
 
@@ -304,7 +304,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-profile-branch&nbsp;{false|true}&nbsp;</tt> 
+ <tt>-profile-branch&nbsp;{false|true}</tt> 
 </p>
 </li>
 
@@ -316,7 +316,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-profile-stack&nbsp;{false|true}&nbsp;</tt> 
+ <tt>-profile-stack&nbsp;{false|true}</tt> 
 </p>
 </li>
 
@@ -328,7 +328,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-profile-val&nbsp;{false|true}&nbsp;</tt> 
+ <tt>-profile-val&nbsp;{false|true}</tt> 
 </p>
 </li>
 
@@ -390,7 +390,7 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li class="gap">
 <p>
- <tt>-stop&nbsp;{f|g|o|sml|tc}&nbsp;</tt> 
+ <tt>-stop&nbsp;{f|g|o|sml|tc}</tt> 
 </p>
 </li>
 
@@ -440,7 +440,7 @@ after type checking </td>
 
     <li class="gap">
 <p>
- <tt>-target&nbsp;{self|</tt>...<tt>}&nbsp;</tt> 
+ <tt>-target&nbsp;{self|</tt><em>...</em><tt>}</tt> 
 </p>
 </li>
 
@@ -488,7 +488,7 @@ after type checking </td>
 
     <li class="gap">
 <p>
- <tt>-verbose&nbsp;{0|1|2|3}&nbsp;</tt> 
+ <tt>-verbose&nbsp;{0|1|2|3}</tt> 
 </p>
 </li>
 
@@ -533,5 +533,5 @@ after type checking </td>
 
 <p>
 <hr>
-Last edited on 2007-07-12 18:41:59 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 18:53:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

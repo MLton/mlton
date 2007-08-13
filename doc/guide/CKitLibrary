@@ -33,7 +33,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -58,7 +58,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The <a class="external" href="http://www.smlnj.org/doc/ckit"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit Library</a> is a C front end written in SML that translates C source code (after preprocessing) into abstract syntax represented as a set of SML datatypes.  The ckit Library is distributed with SML/NJ.  Due to differences between SML/NJ and MLton, this library will not work out-of-the box with MLton. <p>
-As of 20050818, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.57. 
+As of 20070812, MLton includes a port of the ckit Library synchronized with SML/NJ version 110.65. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -152,7 +152,7 @@ The following changes were made to the ckit Library, in addition to deriving the
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/lib/ckit-lib/ckit.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit.patch</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/lib/ckit-lib/ckit.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ckit.patch</a> 
 </p>
 </li>
 </ul>
@@ -163,5 +163,5 @@ The following changes were made to the ckit Library, in addition to deriving the
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:48:22 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 02:31:06 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

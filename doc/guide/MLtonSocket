@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,11 +61,11 @@ urchinTracker();
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Address:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> word
+            <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> NetHostDB.in_addr
          </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Ctl:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> getERROR: ('a, 'b) Socket.sock -&gt; (string * int option) option
+            <B><FONT COLOR="#A020F0">val</FONT></B> getERROR: ('af, 'sock_type) Socket.sock -&gt; (string * Posix.Error.syserror option) option
          <B><FONT COLOR="#0000FF">end</FONT></B>
       <B><FONT COLOR="#0000FF">structure</FONT></B> Host:
          <B><FONT COLOR="#0000FF">sig</FONT></B>
@@ -83,18 +83,19 @@ urchinTracker();
 
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> accept: t -&gt; Address.t * Port.t * TextIO.instream * TextIO.outstream
       <B><FONT COLOR="#A020F0">val</FONT></B> connect: string * Port.t -&gt; TextIO.instream * TextIO.outstream
-      <B><FONT COLOR="#A020F0">val</FONT></B> fdToSock: Posix.FileSys.file_desc -&gt; ('a, 'b) Socket.sock
       <B><FONT COLOR="#A020F0">val</FONT></B> listen: unit -&gt; Port.t * t
       <B><FONT COLOR="#A020F0">val</FONT></B> listenAt: Port.t -&gt; t
       <B><FONT COLOR="#A020F0">val</FONT></B> shutdownRead: TextIO.instream -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> shutdownWrite: TextIO.outstream -&gt; unit
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> fdToSock: Posix.FileSys.file_desc -&gt; ('a, 'b) Socket.sock
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
 </p>
 <p>
-This module contains a bare minimum of functionality to do TCP/IP programming.  This module is implemented on top of the <tt>Socket</tt> module of the Standard Basis Library.  We encourage you to use the standard <tt>Socket</tt> module, since we may eliminate <tt>MLton.Socket</tt> some day. 
+This module contains a bare minimum of functionality to do TCP/IP programming.  This module is implemented on top of the <tt>Socket</tt> module of the <a href="BasisLibrary">Basis Library</a>.  We encourage you to use the standard <tt>Socket</tt> module, since <tt>MLton.Socket</tt> is deprecated. 
 </p>
 
     <ul>
@@ -197,18 +198,6 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
     <li class="gap">
 <p>
- <tt>fdToSock&nbsp;fd</tt> 
-</p>
-</li>
-
-        <ul>
-
-  coerces a file descriptor to a socket. 
-        </ul>
-
-
-    <li class="gap">
-<p>
  <tt>listen&nbsp;()</tt> 
 </p>
 </li>
@@ -251,7 +240,19 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
         <ul>
 
-  causes the write part of the socket associated with <tt>out</tt> to be   shutdown.  </ul>
+  causes the write part of the socket associated with <tt>out</tt> to be   shutdown.  
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>fdToSock&nbsp;fd</tt> 
+</p>
+</li>
+
+        <ul>
+
+  coerces a file descriptor to a socket. </ul>
 
 </ul>
 
@@ -261,5 +262,5 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:07:28 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:56:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

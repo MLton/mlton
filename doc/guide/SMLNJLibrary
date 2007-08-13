@@ -33,7 +33,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -58,7 +58,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The  <a class="external" href="http://www.smlnj.org/doc/smlnj-lib/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML/NJ Library</a>  is a collection of libraries that are distributed with SML/NJ.  Due to differences between SML/NJ and MLton, these libraries will not work out-of-the box with MLton.   <p>
-As of 20050818, MLton includes a port of the SML/NJ Library, currently synchronized with SML/NJ version 110.57. 
+As of 20070812, MLton includes a port of the SML/NJ Library, currently synchronized with SML/NJ version 110.65. 
 </p>
 <h2 id="head-0bb18642b70b9f8a9c12ccf39487328f306b8e19">Usage</h2>
 
@@ -226,7 +226,7 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/lib/smlnj-lib/smlnj-lib.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">smlnj-lib.patch</a> 
 </p>
 </li>
 </ul>
@@ -237,5 +237,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:31:29 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 02:31:18 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

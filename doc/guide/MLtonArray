@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -59,7 +59,7 @@ urchinTracker();
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_ARRAY =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> unfoldi: int * 'b * (int * 'b -&gt; 'a * 'b) -&gt; 'a array
+      <B><FONT COLOR="#A020F0">val</FONT></B> unfoldi: int * 'b * (int * 'b -&gt; 'a * 'b) -&gt; 'a array * 'b
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
@@ -86,5 +86,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:27:14 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:55:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

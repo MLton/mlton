@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -76,11 +76,11 @@ Below is a complete list of what MLton implements.
 <li>
 <a href="#head-82cd3eec71dfcc66e035e18592934036165aa125">Top-level structures</a></li>
 <li>
+<a href="#head-e38fb58e344e0ee67d4aa08c60df9fbd642e8e1c">Top-level functors</a></li>
+<li>
 <a href="#head-0ac17def4aced0cc961aa5b65385be04cfcf6eb5">Type equivalences</a></li>
 <li>
 <a href="#head-bc488aeca21efb00463538004d56839b48f23e7d">Real and Math functions</a></li>
-<li>
-<a href="#head-e38fb58e344e0ee67d4aa08c60df9fbd642e8e1c">Top-level functors</a></li>
 </ol>
 
  
@@ -311,8 +311,12 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;PackReal64Little:&nbsp;PACK_REAL</tt> <br>
 <tt>structure&nbsp;PackRealBig:&nbsp;PACK_REAL</tt> <br>
 <tt>structure&nbsp;PackRealLittle:&nbsp;PACK_REAL</tt> <br>
+<tt>structure&nbsp;PackWord16Big:&nbsp;PACK_WORD</tt> <br>
+<tt>structure&nbsp;PackWord16Little:&nbsp;PACK_WORD</tt> <br>
 <tt>structure&nbsp;PackWord32Big:&nbsp;PACK_WORD</tt> <br>
 <tt>structure&nbsp;PackWord32Little:&nbsp;PACK_WORD</tt> <br>
+<tt>structure&nbsp;PackWord64Big:&nbsp;PACK_WORD</tt> <br>
+<tt>structure&nbsp;PackWord64Little:&nbsp;PACK_WORD</tt> <br>
 <tt>structure&nbsp;Position:&nbsp;INTEGER</tt> <br>
 <tt>structure&nbsp;Posix:&nbsp;POSIX</tt> <br>
 <tt>structure&nbsp;Real:&nbsp;REAL</tt> <br>
@@ -411,21 +415,6 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;Word64Vector:&nbsp;MONO_VECTOR</tt> <br>
 <tt>structure&nbsp;Word64VectorSlice:&nbsp;MONO_VECTOR_SLICE</tt> 
 </p>
-<h2 id="head-0ac17def4aced0cc961aa5b65385be04cfcf6eb5">Type equivalences</h2>
-The following types are equivalent. 
-<pre>Int.int = Int32.int
-Int64.int = FixedInt.int = Position.int
-IntInf.int = LargeInt.int
-Real.real = Real64.real = LargeReal.real
-Word.word = Word32.word = SysWord.word
-Word64.word = LargeWord.word
-</pre><h2 id="head-bc488aeca21efb00463538004d56839b48f23e7d">Real and Math functions</h2>
-<p>
-The <tt>Real</tt>, <tt>Real32</tt>, and <tt>Real64</tt> modules are implemented using the <tt>C</tt> math library, so the SML functions will reflect the behavior of the underlying library function.  We have made some effort to unify the differences between the math libraries on different platforms, and in particular to handle exceptional cases according to the Basis Library specification.  However, there will be differences due to different numerical algorithms and cases we may have missed. Please submit a <a href="Bug">bug report</a> if you encounter an error in the handling of an exceptional case. 
-</p>
-<p>
-On x86, real arithmetic is implemented internally using 80 bits of precision.  Using higher precision for intermediate results in computations can lead to different results than if all the computation is done at 32 or 64 bits.  If you require strict IEEE compliance, you can compile with <tt>-ieee-fp&nbsp;true</tt>, which will cause intermediate results to be stored after each operation.  This may cause a substantial performance penalty. 
-</p>
 <h2 id="head-e38fb58e344e0ee67d4aa08c60df9fbd642e8e1c">Top-level functors</h2>
 <p>
 <tt>ImperativeIO</tt> <br>
@@ -435,11 +424,34 @@ On x86, real arithmetic is implemented internally using 80 bits of precision.  U
 <p>
 MLton's <tt>StreamIO</tt> functor takes structures <tt>ArraySlice</tt> and <tt>VectorSlice</tt> in addition to the arguments specified in the Basis Library specification. 
 </p>
+<h2 id="head-0ac17def4aced0cc961aa5b65385be04cfcf6eb5">Type equivalences</h2>
+<p>
+The following types are equivalent. 
+<pre>FixedInt = Int64.int
+LargeInt = IntInf.int
+LargeReal.real = Real64.real
+LargeWord = Word64.word
+</pre>
+</p>
+<p>
+The default <tt>int</tt>, <tt>real</tt>, and <tt>word</tt> types may be set by the <tt>-default-type&nbsp;</tt><em>type</em> <a href="CompileTimeOptions"> compiler option</a>.  By default, the following types are equivalent: 
+<pre>int = Int.int = Int32.int
+real = Real.real = Real64.real
+word = Word.word = Word32.word
+</pre>
+</p>
+<h2 id="head-bc488aeca21efb00463538004d56839b48f23e7d">Real and Math functions</h2>
+<p>
+The <tt>Real</tt>, <tt>Real32</tt>, and <tt>Real64</tt> modules are implemented using the <tt>C</tt> math library, so the SML functions will reflect the behavior of the underlying library function.  We have made some effort to unify the differences between the math libraries on different platforms, and in particular to handle exceptional cases according to the Basis Library specification.  However, there will be differences due to different numerical algorithms and cases we may have missed. Please submit a <a href="Bug">bug report</a> if you encounter an error in the handling of an exceptional case. 
+</p>
+<p>
+On x86, real arithmetic is implemented internally using 80 bits of precision.  Using higher precision for intermediate results in computations can lead to different results than if all the computation is done at 32 or 64 bits.  If you require strict IEEE compliance, you can compile with <tt>-ieee-fp&nbsp;true</tt>, which will cause intermediate results to be stored after each operation.  This may cause a substantial performance penalty. 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-11-30 23:04:45 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-10 20:43:41 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

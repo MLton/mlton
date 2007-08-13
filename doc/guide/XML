@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,10 +60,10 @@ XML is an <a href="IntermediateLanguage">IntermediateLanguage</a>,  translated f
 XML is polymorphic, higher-order, with flat patterns.  Every XML expression is annotated with its type.  Polymorphic generalization is made explicit through type variables annotating <tt>val</tt> and <tt>fun</tt> declarations.  Polymorphic instantiation is made explicit by specifying type arguments at variable references. XML patterns can not be nested and can not contain wildcards, constraints, flexible records, or layering. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/xml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-tree.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/xml-tree.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-tree.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/xml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/xml-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-tree.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/xml-tree.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">xml-tree.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
-XML also has a type checker, used for debugging.  At present, the type checker is also the best specification of the type system of XML.  If you need more details, the type checker (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/type-check.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a>), is pretty short. 
+XML also has a type checker, used for debugging.  At present, the type checker is also the best specification of the type system of XML.  If you need more details, the type checker (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/type-check.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/type-check.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check.fun</a>), is pretty short. 
 </p>
 <p>
 Since the type checker does not affect the output of the compiler (unless it reports an error), it can be turned off.  The type checker recursively descends the program, checking that the type annotating each node is the same as the type synthesized from the types of the expressions subnodes. 

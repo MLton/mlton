@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,8 +60,8 @@ SXML is an <a href="IntermediateLanguage">IntermediateLanguage</a>,  translated 
 SXML is a simply-typed version of <a href="XML">XML</a>. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/sxml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/sxml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/xml/sxml-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml-tree.sig</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/sxml.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/sxml.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/sxml-tree.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">sxml-tree.sig</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
 SXML shares the type checker for <a href="XML">XML</a>. 
 </p>

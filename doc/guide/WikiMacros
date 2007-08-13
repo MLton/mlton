@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,7 +67,7 @@ Examples: <a href = "References#FluetWeeks01"> a paper</a>
     <li class="gap">
 <p>
  <tt>[[DownloadSVN(pathToFile)]]</tt> displays a download link to the ViewSVN page for <tt>pathToFile</tt>.   <br>
-Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070809-release/mlton/main/main.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
+Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/trunk/Makefile"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070813-release/mlton/main/main.sml"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
 </p>
 </li>
     <li class="gap">
@@ -101,13 +101,13 @@ Example:
     <li class="gap">
 <p>
  <tt>[[ViewSVN(pathToFile)]]</tt> displays a link to the ViewSVN page for <tt>pathToFile</tt>.   <br>
-Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/main/main.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
+Examples: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/Makefile?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Makefile</a>, <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/main/main.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main.sml</a> 
 </p>
 </li>
     <li class="gap">
 <p>
  <tt>[[ViewSVNDir(pathToDir)]]</tt> displays a link to the ViewSVN page for <tt>pathToDir</tt>.   <br>
-Example: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a> 
+Example: <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/main"><img src="moin-www.png" alt="[WWW]" height="11" width="11">main</a> 
 </p>
 </li>
     <li class="gap">

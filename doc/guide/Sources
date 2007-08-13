@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,11 +73,11 @@ If the first line of a commit log message begins with "<tt>MAIL&nbsp;</tt>", the
 </p>
 <h2 id="head-164b3d4809f98d0458414f1bf9cf3c9dcba16bb5">Changelog</h2>
 <p>
-See the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/doc/changelog?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> for a list of changes and bug fixes. 
+See the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/doc/changelog?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> for a list of changes and bug fixes. 
 </p>
 <h2 id="head-5e1dd8155002a7d7db24335015acaddd25a44f09">CVS</h2>
 <p>
-Prior to 20050730, we used <a href="CVS">CVS</a>.  We left the CVS server up until 20060809, at which point it was taken down. 
+Prior to 20050730, we used CVS.  We left the CVS server up until 20060809, at which point it was taken down. 
 </p>
 </div>
 
@@ -85,5 +85,5 @@ Prior to 20050730, we used <a href="CVS">CVS</a>.  We left the CVS server up unt
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:32:18 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-10 19:45:16 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -5,7 +5,7 @@
 
 
 
-<title>RunningOnHPUX - MLton Standard ML Compiler (SML Compiler)</title>
+<title>MLtonMonoVector - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -37,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      RunningOnHPUX
+      MLtonMonoVector
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -55,13 +55,40 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton runs fine on HPUX. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+<pre class=code>
+<B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_MONO_VECTOR =
+   <B><FONT COLOR="#0000FF">sig</FONT></B>
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> elem
+      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fromPoly: elem vector -&gt; t
+      <B><FONT COLOR="#A020F0">val</FONT></B> toPoly: t -&gt; elem vector
+   <B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
+<p>
+ 
+</p>
 
     <ul>
 
     <li>
 <p>
- <a href="RunningOnHPPA">RunningOnHPPA</a> 
+ <tt>type&nbsp;t</tt>  type of monomorphic vector 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>type&nbsp;elem</tt>  type of vector elements 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>fromPoly&nbsp;v</tt>  convert a polymorphic vector to its monomorphic counterpart; in MLton, this is a constant-time operation 
+</p>
+</li>
+    <li class="gap">
+<p>
+ <tt>toPoly&nbsp;v</tt>  convert a monomorphic vector to its polymorphic counterpart; in MLton, this is a constant-time operation 
 </p>
 </li>
 </ul>
@@ -72,5 +99,5 @@ MLton runs fine on HPUX. <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:27:02 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 21:55:11 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

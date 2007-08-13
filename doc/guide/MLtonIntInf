@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -64,9 +64,12 @@ urchinTracker();
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> areSmall: t * t -&gt; bool
       <B><FONT COLOR="#A020F0">val</FONT></B> gcd: t * t -&gt; t
       <B><FONT COLOR="#A020F0">val</FONT></B> isSmall: t -&gt; bool
+
+      <B><FONT COLOR="#0000FF">structure</FONT></B> BigWord : WORD
+      <B><FONT COLOR="#0000FF">structure</FONT></B> SmallInt : INTEGER
       <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> rep </FONT></B>=<B><FONT COLOR="#228B22">
-         <FONT COLOR="#B8860B">Big</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> word vector
-       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Small</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> int
+         <FONT COLOR="#B8860B">Big</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> BigWord.word vector
+       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Small</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> SmallInt.int
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> rep: t -&gt; rep
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
@@ -74,7 +77,7 @@ urchinTracker();
  
 </p>
 <p>
-MLton represents an arbitrary precision integer either as an unboxed 32 bit word with the bottom bit set to 1 and the top 31 bits representing a small integer in [-2<sup>30</sup>, 2<sup>30</sup>), or as a pointer to a vector of words where the first word indicates the sign and the rest are the limbs of <a href="GnuMP">GnuMP</a> big integer. 
+MLton represents an arbitrary precision integer either as an unboxed word with the bottom bit set to 1 and the top bits representing a small signed integer, or as a pointer to a vector of words, where the first word indicates the sign and the rest are the limbs of a <a href="GnuMP">GnuMP</a> big integer. 
 </p>
 
     <ul>
@@ -129,6 +132,30 @@ MLton represents an arbitrary precision integer either as an unboxed 32 bit word
 
     <li class="gap">
 <p>
+ <tt>BigWord&nbsp;:&nbsp;WORD</tt> 
+</p>
+</li>
+
+        <ul>
+
+  representation of a big <tt>IntInf.int</tt> as a vector of words;   on 32-bit platforms, <tt>BigWord</tt> is likely to be equivalent to   <tt>Word32</tt>, and on 64-bit platforms, <tt>BigWord</tt> is likely to be   equivalent to <tt>Word64</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>SmallInt&nbsp;:&nbsp;INTEGER</tt> 
+</p>
+</li>
+
+        <ul>
+
+  representation of a small <tt>IntInf.int</tt> as a signed integer;   on 32-bit platforms, <tt>SmallInt</tt> is likely to be equivalent to   <tt>Int32</tt>, and on 64-bit platforms, <tt>SmallInt</tt> is likely to be   equivalent to <tt>Int64</tt>. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>datatype&nbsp;rep</tt> 
 </p>
 </li>
@@ -157,5 +184,5 @@ MLton represents an arbitrary precision integer either as an unboxed 32 bit word
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:46:17 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-13 22:58:25 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

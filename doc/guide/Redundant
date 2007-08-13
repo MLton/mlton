@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ Redundant is an optimization pass for the <a href="SSA">SSA</a> <a href="Interme
 ??? 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/redundant.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070809-release/mlton/ssa/redundant.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/redundant.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/redundant.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">redundant.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The reason Redundant got put in was due to some output of the <a href="ClosureConvert">ClosureConvert</a> pass converter where the environment record, or components of it, were passed around in several places.  That may have been more relevant with polyvariant analyses (which are long gone). But it still seems possibly relevant, especially with more aggressive flattening, which should reveal some fields in nested closure records that are redundant. 
 </p>

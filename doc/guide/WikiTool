@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 We have written a simple command-line tool that makes it possible to edit wiki pages using your favorite text editor instead of within a browser text box.  The tool provides a CVS/SVN-like command-line interface that can be used to update local copies of files from the web and to commit local modifications to the web. <p>
-The tool is written in SML (of course) and is [<a href="http://mlton.org/cgi-bin/viewcvs.cgi/mlton/wiki/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://mlton.org/cgi-bin/viewcvs.cgi/mlton/wiki/</a> available in the MLton CVS].  To compile it, you need to have the latest SVN of the MLton library sources, and point the MLB path variable <tt>MLTON_SRC_LIB</tt> at the <tt>lib/mlton</tt> dir in the sources. 
+The tool is written in SML (of course) and is available in the MLton <a href="Sources">Sources</a> (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/tools/wiki"><img src="moin-www.png" alt="[WWW]" height="11" width="11">wiki</a>).  To compile it, you need to have the latest SVN of the MLton library sources, and point the MLB path variable <tt>MLTON_SRC_LIB</tt> at the <tt>lib/mlton</tt> dir in the sources. 
 </p>
 <p>
 Here's a quick tutorial on how to use the tool 
@@ -104,7 +104,7 @@ Logout.
 
 
 <p>
-That's it for the simple use.  There are also other commands like cvs. 
+That's it for the simple use.  There are also other commands like CVS/SVN. 
 </p>
 
     <ul>
@@ -117,7 +117,7 @@ That's it for the simple use.  There are also other commands like cvs.
 </li>
     <li class="gap">
 <p>
- Schedule a new file to be added (must be later committed, just like  CVS) .  
+ Schedule a new file to be added (must be later committed, just like  CVS/SVN) .  
 <pre> wiki add NewFile</pre>
 </p>
 </li>
@@ -161,5 +161,5 @@ This code is a two-day hack and is not widely used.  But we've found it useful. 
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:21:22 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 18:33:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

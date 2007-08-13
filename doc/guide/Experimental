@@ -16,12 +16,11 @@
 
 <link rel="Appendix" title="mlton-20051202-1.hppa-hpux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20051202-1.hppa-hpux.tgz">
 <link rel="Appendix" title="mlton-20060513-1.powerpc-aix5.x.tar.gz" href="http://mlton.org/pages/Experimental/attachments/mlton-20060513-1.powerpc-aix5.x.tar.gz">
-<link rel="Appendix" title="mlton-20061030-1.x86-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20061030-1.x86-darwin.tgz">
-<link rel="Appendix" title="mlton-20061031-1.x86-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20061031-1.x86-darwin.tgz">
-<link rel="Appendix" title="mlton-20061119-1.x86-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20061119-1.x86-darwin.tgz">
-<link rel="Appendix" title="mlton-20070220-1.x86-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070220-1.x86-darwin.tgz">
-<link rel="Appendix" title="mlton-20070321-1.amd64-linux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070321-1.amd64-linux.tgz">
-<link rel="Appendix" title="mlton-20070518-1.amd64-linux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070518-1.amd64-linux.tgz">
+<link rel="Appendix" title="mlton-20070809-1.amd64-linux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.amd64-linux.tgz">
+<link rel="Appendix" title="mlton-20070809-1.powerpc-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.powerpc-darwin.tgz">
+<link rel="Appendix" title="mlton-20070809-1.x86-darwin.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.x86-darwin.tgz">
+<link rel="Appendix" title="mlton-20070809-1.x86-linux.tgz" href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.x86-linux.tgz">
+<link rel="Appendix" title="mlton-guide.pdf" href="http://mlton.org/pages/Experimental/attachments/mlton-guide.pdf">
 </head>
 
 <body lang="en" dir="ltr">
@@ -39,7 +38,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,10 +65,15 @@ urchinTracker();
 <p>
 This page is for experimental releases of MLton.  These versions are not as well tested as our <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">public releases</a>, and may not be available for our all our usual platforms. 
 </p>
-<h2 id="head-669a7baae61a221c7fdd94eaf85dca08088ba756">20070809 binary packages (release candidate; SVN revision 5842)</h2>
+<h2 id="head-de650f3646d580a6386c1682abb534e0725b823d">20070809 binary packages (release candidate; SVN revision 5844)</h2>
 
     <ul>
 
+    <li>
+<p>
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-guide.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-guide.pdf</a> 
+</p>
+</li>
     <li>
 <p>
  amd64-linux 
@@ -80,7 +84,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
-  
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.amd64-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070809-1.amd64-linux.tgz</a> 
 </p>
 </li>
 
@@ -97,7 +101,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
-  install of GMP) 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070809-1.powerpc-darwin.tgz</a>, dynamically linked against GMP in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of GMP) 
 </p>
 </li>
 
@@ -114,7 +118,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
-  install of GMP) 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.x86-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070809-1.x86-darwin.tgz</a>, dynamically linked against GMP in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of GMP) 
 </p>
 </li>
 
@@ -131,157 +135,7 @@ This page is for experimental releases of MLton.  These versions are not as well
 
         <li>
 <p>
-  
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-cef4e367fd084cbb01e01dd3eedd010b10cc6351">20070518 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- amd64-linux 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070518-1.amd64-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070518-1.amd64-linux.tgz</a> 
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-bd93b27cf30f4a4c9b14d3411aff5919da248814">20070321 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- amd64-linux 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070321-1.amd64-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070321-1.amd64-linux.tgz</a> 
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-9d72eadb5339aeff62fbb60707c0a809822692c8">20070220 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- x86-darwin 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070220-1.x86-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070220-1.x86-darwin.tgz</a>, statically linked against GMP 
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-af9f3225bc6ce537a516833aca944940c19e2b5d">20061030 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- x86-darwin 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20061119-1.x86-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20061119-1.x86-darwin.tgz</a>, dynamically linked against GMP in <tt>/opt/local/lib</tt> (suitable for <a class="external" href="http://macports.com"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MacPorts</a> install of GMP) 
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-843dbc3c9a73e78b9620abd67247282c38d4640d">20061031 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- x86-darwin 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20061031-1.x86-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20061031-1.x86-darwin.tgz</a>, dynamically linked against GMP in <tt>/sw/lib</tt> (suitable for <a class="external" href="http://fink.sourceforge.net"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fink</a> install of GMP) 
-</p>
-</li>
-
-        </ul>
-
-
-
-    </ul>
-
-
-<h2 id="head-af9f3225bc6ce537a516833aca944940c19e2b5d-2">20061030 binary packages</h2>
-
-    <ul>
-
-    <li>
-<p>
- x86-darwin 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/pages/Experimental/attachments/mlton-20061030-1.x86-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20061030-1.x86-darwin.tgz</a>, dynamically linked against GMP in <tt>/usr/local/lib</tt> (suitable for source build of GMP) 
+ <a href="http://mlton.org/pages/Experimental/attachments/mlton-20070809-1.x86-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton-20070809-1.x86-linux.tgz</a> 
 </p>
 </li>
 
@@ -350,5 +204,5 @@ This was built on HP-UX 11.00, should work on 11.11 and 11.23 as well.
 
 <p>
 <hr>
-Last edited on 2007-08-09 22:54:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-10 03:46:14 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

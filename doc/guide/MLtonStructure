@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -67,19 +67,36 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
 
       <B><FONT COLOR="#0000FF">structure</FONT></B> Array: MLTON_ARRAY
       <B><FONT COLOR="#0000FF">structure</FONT></B> BinIO: MLTON_BIN_IO
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Cont: MLTON_CONT
+      <B><FONT COLOR="#0000FF">structure</FONT></B> CharArray: MLTON_MONO_ARRAY <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> CharArray.array
+                                            </FONT></B><B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> elem </FONT></B>=<B><FONT COLOR="#228B22"> CharArray.elem
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> CharVector: MLTON_MONO_VECTOR <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> CharVector.vector
+                                              </FONT></B><B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> elem </FONT></B>=<B><FONT COLOR="#228B22"> CharVector.elem
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Cont: MLTON_CONT
       <B><FONT COLOR="#0000FF">structure</FONT></B> Exn: MLTON_EXN
       <B><FONT COLOR="#0000FF">structure</FONT></B> Finalizable: MLTON_FINALIZABLE
       <B><FONT COLOR="#0000FF">structure</FONT></B> GC: MLTON_GC
       <B><FONT COLOR="#0000FF">structure</FONT></B> IntInf: MLTON_INT_INF
       <B><FONT COLOR="#0000FF">structure</FONT></B> Itimer: MLTON_ITIMER
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Platform: MLTON_PLATFORM
+      <B><FONT COLOR="#0000FF">structure</FONT></B> LargeReal: MLTON_REAL <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> LargeReal.real
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> LargeWord: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> LargeWord.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Platform: MLTON_PLATFORM
       <B><FONT COLOR="#0000FF">structure</FONT></B> Pointer: MLTON_POINTER
       <B><FONT COLOR="#0000FF">structure</FONT></B> ProcEnv: MLTON_PROC_ENV
       <B><FONT COLOR="#0000FF">structure</FONT></B> Process: MLTON_PROCESS
       <B><FONT COLOR="#0000FF">structure</FONT></B> Profile: MLTON_PROFILE
       <B><FONT COLOR="#0000FF">structure</FONT></B> Random: MLTON_RANDOM
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Rlimit: MLTON_RLIMIT
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Real: MLTON_REAL <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Real.real
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Real32: <B><FONT COLOR="#0000FF">sig</FONT></B>
+                           <B><FONT COLOR="#0000FF">include</FONT></B> MLTON_REAL
+                           <B><FONT COLOR="#A020F0">val</FONT></B> castFromWord: Word32.word -&gt; t
+                           <B><FONT COLOR="#A020F0">val</FONT></B> castToWord: t -&gt; Word32.word
+                        <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Real32.real
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Real64: <B><FONT COLOR="#0000FF">sig</FONT></B>
+                           <B><FONT COLOR="#0000FF">include</FONT></B> MLTON_REAL
+                           <B><FONT COLOR="#A020F0">val</FONT></B> castFromWord: Word64.word -&gt; t
+                           <B><FONT COLOR="#A020F0">val</FONT></B> castToWord: t -&gt; Word64.word
+                        <B><FONT COLOR="#0000FF">end</FONT></B> <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Real64.real
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Rlimit: MLTON_RLIMIT
       <B><FONT COLOR="#0000FF">structure</FONT></B> Rusage: MLTON_RUSAGE
       <B><FONT COLOR="#0000FF">structure</FONT></B> Signal: MLTON_SIGNAL
       <B><FONT COLOR="#0000FF">structure</FONT></B> Socket: MLTON_SOCKET
@@ -88,8 +105,15 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
       <B><FONT COLOR="#0000FF">structure</FONT></B> Thread: MLTON_THREAD
       <B><FONT COLOR="#0000FF">structure</FONT></B> Vector: MLTON_VECTOR
       <B><FONT COLOR="#0000FF">structure</FONT></B> Weak: MLTON_WEAK
-      <B><FONT COLOR="#0000FF">structure</FONT></B> Word: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> word </FONT></B>=<B><FONT COLOR="#228B22"> Word.word
-      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word8: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> word </FONT></B>=<B><FONT COLOR="#228B22"> Word8.word
+      <B><FONT COLOR="#0000FF">structure</FONT></B> Word: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word8: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word8.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word16: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word16.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word32: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word32.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word64: MLTON_WORD <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word64.word
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word8Array: MLTON_MONO_ARRAY <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word8Array.array
+                                             </FONT></B><B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> elem </FONT></B>=<B><FONT COLOR="#228B22"> Word8Array.elem
+      </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> Word8Vector: MLTON_MONO_VECTOR <B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> Word8Vector.vector
+                                               </FONT></B><B><FONT COLOR="#0000FF">where</FONT></B> <B><FONT COLOR="#0000FF">type</FONT></B><B><FONT COLOR="#228B22"> elem </FONT></B>=<B><FONT COLOR="#228B22"> Word8Vector.elem
       </FONT></B><B><FONT COLOR="#0000FF">structure</FONT></B> World: MLTON_WORLD
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
@@ -147,6 +171,16 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
 </li>
     <li>
 <p>
+ <a href="MLtonMonoArray">MLtonMonoArray</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MLtonMonoVector">MLtonMonoVector</a> 
+</p>
+</li>
+    <li>
+<p>
  <a href="MLtonPlatform">MLtonPlatform</a> 
 </p>
 </li>
@@ -168,6 +202,11 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
     <li>
 <p>
  <a href="MLtonRandom">MLtonRandom</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a href="MLtonReal">MLtonReal</a> 
 </p>
 </li>
     <li>
@@ -382,5 +421,5 @@ The size of a continuation option ref is &lt; 1000.
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:10:46 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 22:53:51 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

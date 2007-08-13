@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,6 +61,10 @@ urchinTracker();
    <B><FONT COLOR="#0000FF">sig</FONT></B>
       <B><FONT COLOR="#A020F0">val</FONT></B> addExnMessager: (exn -&gt; string option) -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> history: exn -&gt; string list
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> defaultTopLevelHandler: exn -&gt; 'a
+      <B><FONT COLOR="#A020F0">val</FONT></B> getTopLevelHandler: unit -&gt; (exn -&gt; unit)
+      <B><FONT COLOR="#A020F0">val</FONT></B> setTopLevelHandler: (exn -&gt; unit) -&gt; unit
       <B><FONT COLOR="#A020F0">val</FONT></B> topLevelHandler: exn -&gt; 'a
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
@@ -99,13 +103,49 @@ urchinTracker();
 
     <li class="gap">
 <p>
+ <tt>defaultTopLevelHandler&nbsp;e</tt> 
+</p>
+</li>
+
+        <ul>
+
+  function that behaves as the default top level handler;   that is, print out the unhandled exception message for <tt>e</tt> and   exit. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>getTopLevelHandler&nbsp;()</tt> 
+</p>
+</li>
+
+        <ul>
+
+  get the top level handler. 
+        </ul>
+
+
+    <li class="gap">
+<p>
+ <tt>setTopLevelHandler&nbsp;f</tt> 
+</p>
+</li>
+
+        <ul>
+
+  set the top level handler to the function <tt>f</tt>.  The function   <tt>f</tt> should not raise an exception or return normally. 
+        </ul>
+
+
+    <li class="gap">
+<p>
  <tt>topLevelHandler&nbsp;e</tt> 
 </p>
 </li>
 
         <ul>
 
-  behaves as if the top level handler received the exception <tt>e</tt>,   that is, print out the unhandled exception message for <tt>e</tt> and   exit. </ul>
+  behaves as if the top level handler received the exception <tt>e</tt>. </ul>
 
 </ul>
 
@@ -115,5 +155,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:22:01 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:55:55 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

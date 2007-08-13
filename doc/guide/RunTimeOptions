@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,7 +73,7 @@ Run-time options can also control MLton, as in
 
     <li>
 <p>
- <tt>fixed-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}&nbsp;</tt> 
+ <tt>fixed-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt> 
 </p>
 </li>
 
@@ -135,7 +135,7 @@ Run-time options can also control MLton, as in
 
     <li class="gap">
 <p>
- <tt>load-world&nbsp;</tt><em>world</em> 
+ load-world `<em>world</em> 
 </p>
 </li>
 
@@ -147,7 +147,7 @@ Run-time options can also control MLton, as in
 
     <li class="gap">
 <p>
- <tt>max-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}&nbsp;</tt> 
+ <tt>max-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt> 
 </p>
 </li>
 
@@ -199,5 +199,5 @@ Run-time options can also control MLton, as in
 
 <p>
 <hr>
-Last edited on 2005-12-02 06:13:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 18:53:05 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

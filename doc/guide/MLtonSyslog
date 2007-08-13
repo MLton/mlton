@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070809</a>
+      <a class = mltona href="Home">MLton 20070813</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -63,6 +63,8 @@ urchinTracker();
          
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> CONS     : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> NDELAY   : openflag
+      <B><FONT COLOR="#A020F0">val</FONT></B> NOWAIT   : openflag
+      <B><FONT COLOR="#A020F0">val</FONT></B> ODELAY   : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> PERROR   : openflag
       <B><FONT COLOR="#A020F0">val</FONT></B> PID      : openflag
 
@@ -154,5 +156,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:11:30 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-13 20:56:45 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
