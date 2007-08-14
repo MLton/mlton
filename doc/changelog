@@ -5,7 +5,7 @@ Summary:
    o amd64-linux, amd64-freebsd, ...
    o hppa-hpux, ...
    o powerpc-aix, ...
-   o x86: Darwin (Mac OS X)
+   o x86-darwin (Mac OS X)
   + Compiler.
    o Support for 64-bit platforms.
     * Native amd64 codegen.
@@ -14,8 +14,8 @@ Summary:
         -profile-val {false|true}.
     * Changed: -stop f (file listing now includes .mlb files)
    o Bytecode codegen.
-    * support for profiling.
-    * support for exception history.
+    * Support for profiling.
+    * Support for exception history.
   + Language.
   + Libraries.
    o Basis Library.
