@@ -17,12 +17,18 @@ void GC_release (void *base,
         Windows_release (base);
 }
 
-Word32 GC_totalRam (void) {
-        MEMORYSTATUS memStat;
+uintmax_t GC_physMem (void) {
+        MEMORYSTATUS memstat;
 
-        memStat.dwLength = sizeof(memStat);
-        GlobalMemoryStatus(&memStat);
-        return memStat.dwTotalPhys;
+        memstat.dwLength = sizeof(memstat);
+        GlobalMemoryStatus(&memstat);
+        return (uintmax_t)memstat.dwTotalPhys;
+}
+
+size_t GC_pageSize (void) {
+        SYSTEM_INFO sysinfo;
+        GetSystemInfo(&sysinfo);
+        return (size_t)sysinfo.dwPageSize;
 }
 
 HANDLE fileDesHandle (int fd) {
@@ -31,12 +37,6 @@ HANDLE fileDesHandle (int fd) {
 
   t = _get_osfhandle (fd);
   return (HANDLE)t;
-}
-
-size_t GC_pageSize (void) {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        return sysinfo.dwPageSize;
 }
 
 int mkstemp (char *template) {
