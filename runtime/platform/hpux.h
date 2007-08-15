@@ -17,6 +17,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/poll.h>
+#include <sys/privgrp.h>
 #include <sys/ptrace.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
@@ -30,6 +31,16 @@
 #include <utime.h>
 
 #include "setenv.h"
+
+#if defined(SO_TOE)
+#define HPUX_VERSION 1123
+#elif defined(PRIV_PSET)
+#define HPUX_VERSION 1111
+#elif defined(PRIV_SPUCTL)
+#define HPUX_VERSION 1100
+#else
+#error "HP-UX 11.00 is the oldest supported version."
+#endif
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
@@ -54,27 +65,32 @@
 #define AF_INET6 22 /* Internet Protocol, Version 6 */
 #define PF_INET6 AF_INET6
 
-struct sockaddr_in6 { 
+struct sockaddr_in6 {
   int dummy; // quell gcc warnings about "struct has no members"
 };
+#endif /* !AF_INET6 */
+
+#if HPUX_VERSION <= 1111
 struct sockaddr_storage {
   union {
     struct sockaddr_in sa_in;
     struct sockaddr_un sa_un;
   } sa;
-}
-
-#endif
+};
+#endif /* HPUX_VERSION <= 1111 */
 
 typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 
+#if HPUX_VERSION <= 1100
 /* These GCC builtins aren't defined in the system headers. */
 float modff(float x, float *iptr);
 float rintf(float x);
 float frexpf(float x, int *exp);
 float ldexpf(float x, int exp);
+#endif /* HPUX_VERSION <= 1100 */
 
 #define PRIxPTR "lx"
+#define PRIuPTR "lu"
 
 /* These are incorrectly defined in the system headers. */
 #undef PRIu32

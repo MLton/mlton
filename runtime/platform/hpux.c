@@ -9,9 +9,10 @@
 
 #include "diskBack.unix.c"
 #include "mkdir2.c"
+#include "mmap-protect.c"
+#include "nonwin.c"
 #include "recv.nonblock.c"
 #include "setenv.putenv.c"
-#include "mmap-protect.c"
 #include "use-mmap.c"
 
 extern unsigned char __text_start;
@@ -104,7 +105,15 @@ void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
 }
 
-size_t GC_totalRam (void) {
+size_t GC_pageSize (void) {
+        struct pst_static buf;
+
+        if (pstat_getstatic (&buf, sizeof (buf), 1, 0) < 0)
+                diee ("failed to get page size");
+        return buf.page_size;
+}
+
+uintmax_t GC_physMem (void) {
         struct pst_static buf;
 
         if (pstat_getstatic (&buf, sizeof (buf), 1, 0) < 0)
