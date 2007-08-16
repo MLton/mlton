@@ -523,7 +523,7 @@ diff -N -C 2 -r ckit/src/ast/type-util.sml ckit-mlton/src/ast/type-util.sml
   				  , List.map (functionArgConv tidtab) argl
 diff -N -C 2 -r ckit/src/ckit-lib.mlb ckit-mlton/src/ckit-lib.mlb
 *** ckit/src/ckit-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- ckit-mlton/src/ckit-lib.mlb	2007-08-12 21:28:57.000000000 -0500
+--- ckit-mlton/src/ckit-lib.mlb	2007-08-15 21:45:10.000000000 -0500
 ***************
 *** 0 ****
 --- 1,888 ----

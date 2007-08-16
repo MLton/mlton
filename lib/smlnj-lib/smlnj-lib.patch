@@ -1,6 +1,6 @@
 diff -N -C 2 -r smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/controls-lib.mlb
 *** smlnj-lib/Controls/controls-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/Controls/controls-lib.mlb	2007-08-12 21:28:49.000000000 -0500
+--- smlnj-lib-mlton/Controls/controls-lib.mlb	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,170 ----
@@ -176,7 +176,7 @@ diff -N -C 2 -r smlnj-lib/Controls/controls-lib.mlb smlnj-lib-mlton/Controls/con
 + end
 diff -N -C 2 -r smlnj-lib/HashCons/hash-cons-lib.mlb smlnj-lib-mlton/HashCons/hash-cons-lib.mlb
 *** smlnj-lib/HashCons/hash-cons-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2007-08-12 21:28:50.000000000 -0500
+--- smlnj-lib-mlton/HashCons/hash-cons-lib.mlb	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -489,7 +489,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-elements-fn.sml smlnj-lib-mlton/HTML/html-el
   	  in
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.desc
 *** smlnj-lib/HTML/html-gram.desc	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HTML/html-gram.desc	2007-08-12 21:28:49.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.desc	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,6055 ----
@@ -6550,7 +6550,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.desc smlnj-lib-mlton/HTML/html-gram.des
 + 788 goto table entries
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
 *** smlnj-lib/HTML/html-gram.sig	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HTML/html-gram.sig	2007-08-12 21:28:49.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.sig	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,140 ----
@@ -6696,7 +6696,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sig smlnj-lib-mlton/HTML/html-gram.sig
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
 *** smlnj-lib/HTML/html-gram.sml	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HTML/html-gram.sml	2007-08-12 21:28:49.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-gram.sml	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,2478 ----
@@ -9180,7 +9180,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-gram.sml smlnj-lib-mlton/HTML/html-gram.sml
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 *** smlnj-lib/HTML/html-lex.sml	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HTML/html-lex.sml	2007-08-12 21:28:49.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-lex.sml	2007-08-15 21:45:03.000000000 -0500
 ***************
 *** 0 ****
 --- 1,672 ----
@@ -9858,7 +9858,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lex.sml smlnj-lib-mlton/HTML/html-lex.sml
 + end
 diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 *** smlnj-lib/HTML/html-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/HTML/html-lib.mlb	2007-08-12 21:28:50.000000000 -0500
+--- smlnj-lib-mlton/HTML/html-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,300 ----
@@ -10164,7 +10164,7 @@ diff -N -C 2 -r smlnj-lib/HTML/html-lib.mlb smlnj-lib-mlton/HTML/html-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 *** smlnj-lib/INet/inet-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/INet/inet-lib.mlb	2007-08-12 21:28:50.000000000 -0500
+--- smlnj-lib-mlton/INet/inet-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,144 ----
@@ -10314,7 +10314,7 @@ diff -N -C 2 -r smlnj-lib/INet/inet-lib.mlb smlnj-lib-mlton/INet/inet-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 *** smlnj-lib/PP/pp-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/PP/pp-lib.mlb	2007-08-12 21:28:51.000000000 -0500
+--- smlnj-lib-mlton/PP/pp-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,212 ----
@@ -10532,7 +10532,7 @@ diff -N -C 2 -r smlnj-lib/PP/pp-lib.mlb smlnj-lib-mlton/PP/pp-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/Reactive/reactive-lib.mlb smlnj-lib-mlton/Reactive/reactive-lib.mlb
 *** smlnj-lib/Reactive/reactive-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/Reactive/reactive-lib.mlb	2007-08-12 21:28:51.000000000 -0500
+--- smlnj-lib-mlton/Reactive/reactive-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,70 ----
@@ -10629,7 +10629,7 @@ diff -N -C 2 -r smlnj-lib/README.mlton smlnj-lib-mlton/README.mlton
 +  * {{{HTML/html-attrs-fn.sml}}} (modified): Rewrote use of ''or-patterns''.
 diff -N -C 2 -r smlnj-lib/RegExp/regexp-lib.mlb smlnj-lib-mlton/RegExp/regexp-lib.mlb
 *** smlnj-lib/RegExp/regexp-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/RegExp/regexp-lib.mlb	2007-08-12 21:28:51.000000000 -0500
+--- smlnj-lib-mlton/RegExp/regexp-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,214 ----
@@ -10868,7 +10868,7 @@ diff -N -C 2 -r smlnj-lib/smlnj-lib.mlb smlnj-lib-mlton/smlnj-lib.mlb
 + end
 diff -N -C 2 -r smlnj-lib/Unix/unix-lib.mlb smlnj-lib-mlton/Unix/unix-lib.mlb
 *** smlnj-lib/Unix/unix-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/Unix/unix-lib.mlb	2007-08-12 21:28:51.000000000 -0500
+--- smlnj-lib-mlton/Unix/unix-lib.mlb	2007-08-15 21:45:04.000000000 -0500
 ***************
 *** 0 ****
 --- 1,45 ----
@@ -11090,7 +11090,7 @@ diff -N -C 2 -r smlnj-lib/Util/redblack-set-fn.sml smlnj-lib-mlton/Util/redblack
   
 diff -N -C 2 -r smlnj-lib/Util/smlnj-lib.mlb smlnj-lib-mlton/Util/smlnj-lib.mlb
 *** smlnj-lib/Util/smlnj-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- smlnj-lib-mlton/Util/smlnj-lib.mlb	2007-08-12 21:28:52.000000000 -0500
+--- smlnj-lib-mlton/Util/smlnj-lib.mlb	2007-08-15 21:45:06.000000000 -0500
 ***************
 *** 0 ****
 --- 1,1106 ----

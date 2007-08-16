@@ -944,6 +944,1666 @@ diff -N -C 2 -r MLRISC/alpha/mltree/alpha.sml MLRISC-mlton/alpha/mltree/alpha.sm
 !                   | T.LABEXP _ => (T.Basis.swapCond cond,e2,e1)
                     | _ => (cond,e1,e2)
             in  case cond of
+diff -N -C 2 -r MLRISC/amd64/amd64MC.sml MLRISC-mlton/amd64/amd64MC.sml
+*** MLRISC/amd64/amd64MC.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/amd64MC.sml	2007-08-15 21:13:01.000000000 -0500
+***************
+*** 1,7 ****
+  functor AMD64MCEmitter
+    (structure Instr : AMD64INSTR
+!    structure Shuffle : AMD64SHUFFLE where I = Instr
+!    structure MLTreeEval : MLTREE_EVAL where T = Instr.T
+!    structure AsmEmitter : INSTRUCTION_EMITTER where I = Instr) : MC_EMIT = 
+  struct
+    structure I = Instr
+--- 1,68 ----
+  functor AMD64MCEmitter
+    (structure Instr : AMD64INSTR
+!    structure Shuffle : AMD64SHUFFLE (* where I = Instr *)
+!                        where type I.Constant.const = Instr.Constant.const
+!                          and type I.Region.region = Instr.Region.region
+!                          and type I.T.Basis.cond = Instr.T.Basis.cond
+!                          and type I.T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                          and type I.T.Basis.ext = Instr.T.Basis.ext
+!                          and type I.T.Basis.fcond = Instr.T.Basis.fcond
+!                          and type I.T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                          and type ('s,'r,'f,'c) I.T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                          and type ('s,'r,'f,'c) I.T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                          and type ('s,'r,'f,'c) I.T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                          and type ('s,'r,'f,'c) I.T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                          and type I.T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                          and type I.T.ccexp = Instr.T.ccexp
+!                          and type I.T.fexp = Instr.T.fexp
+!                          (* and type I.T.labexp = Instr.T.labexp *)
+!                          and type I.T.mlrisc = Instr.T.mlrisc
+!                          and type I.T.oper = Instr.T.oper
+!                          and type I.T.rep = Instr.T.rep
+!                          and type I.T.rexp = Instr.T.rexp
+!                          and type I.T.stm = Instr.T.stm
+!                          (* and type I.addressing_mode = Instr.addressing_mode *)
+!                          and type I.binaryOp = Instr.binaryOp
+!                          and type I.bitOp = Instr.bitOp
+!                          and type I.cond = Instr.cond
+!                          and type I.fbin_op = Instr.fbin_op
+!                          and type I.fcom_op = Instr.fcom_op
+!                          and type I.fmove_op = Instr.fmove_op
+!                          and type I.fsize = Instr.fsize
+!                          and type I.instr = Instr.instr
+!                          and type I.instruction = Instr.instruction
+!                          and type I.isize = Instr.isize
+!                          and type I.move = Instr.move
+!                          and type I.multDivOp = Instr.multDivOp
+!                          and type I.operand = Instr.operand
+!                          and type I.shiftOp = Instr.shiftOp
+!                          and type I.unaryOp = Instr.unaryOp
+!    structure MLTreeEval : MLTREE_EVAL (* where T = Instr.T *)
+!                           where type T.Basis.cond = Instr.T.Basis.cond
+!                             and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                             and type T.Basis.ext = Instr.T.Basis.ext
+!                             and type T.Basis.fcond = Instr.T.Basis.fcond
+!                             and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                             and type T.Constant.const = Instr.T.Constant.const
+!                             and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                             and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                             and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                             and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                             and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                             and type T.Region.region = Instr.T.Region.region
+!                             and type T.ccexp = Instr.T.ccexp
+!                             and type T.fexp = Instr.T.fexp
+!                             (* and type T.labexp = Instr.T.labexp *)
+!                             and type T.mlrisc = Instr.T.mlrisc
+!                             and type T.oper = Instr.T.oper
+!                             and type T.rep = Instr.T.rep
+!                             and type T.rexp = Instr.T.rexp
+!                             and type T.stm = Instr.T.stm
+!    structure AsmEmitter : INSTRUCTION_EMITTER (* where I = Instr *)
+!                           where type I.addressing_mode = Instr.addressing_mode
+!                             and type I.ea = Instr.ea
+!                             and type I.instr = Instr.instr
+!                             and type I.instruction = Instr.instruction
+!                             and type I.operand = Instr.operand) : MC_EMIT = 
+  struct
+    structure I = Instr
+***************
+*** 328,332 ****
+  		     | I.SARQ => shift(64, 7, src)
+  		     | I.SHRQ => shift(64, 5, src)
+! 		     | (I.IMULL | I.MULQ) => 
+  		       let val sz = if binOp = I.IMULQ then 64 else 32
+  		       in (case (src, dst) 
+--- 389,407 ----
+  		     | I.SARQ => shift(64, 7, src)
+  		     | I.SHRQ => shift(64, 5, src)
+! 		     | (I.IMULL) => 
+! 		       let val sz = if binOp = I.IMULQ then 64 else 32
+! 		       in (case (src, dst) 
+! 			    of (I.Immed(i), I.Direct (_, dstR)) =>
+! 			       (case size i
+! 				 of Bits32 => 
+! 				    encodeLongImm sz (0wx69, reg (rNum dstR), dst, i)
+! 				  | _ => encodeByteImm sz (0wx6b, reg (rNum dstR), dst, i)
+! 			       (* esac *))
+! 			     | (_, I.Direct (_, dstR)) => 
+! 			       eBytes (encode32' ([0wx0f, 0wxaf], reg (rNum dstR), src))
+! 			     | _ => error "imul"
+! 			  (* esac *))
+! 		       end 
+! 		     | (I.MULQ) => 
+  		       let val sz = if binOp = I.IMULQ then 64 else 32
+  		       in (case (src, dst) 
+***************
+*** 380,396 ****
+  	     | I.CDQ => eByte(0x99)
+  	     | I.SAHF => eByte(0x9e)
+! 	     | ( I.PUSHL (I.Immed i) | I.PUSHQ (I.Immed i) )=> 
+  	       (case size i 
+  		 of Bits32 => eBytes(0wx68 :: eLong(i))
+  		  | _ => eBytes [0wx6a, toWord8 i]
+  	       (* esac *))
+! 	     | ( I.PUSHL (I.Direct (_, r)) |
+! 		 I.PUSHQ (I.Direct (_, r)) ) => eByte (0x50+rNum r)
+! 	     | ( I.PUSHL opnd | I.PUSHQ opnd ) => encode32 (0wxff, opcode 6, opnd)
+  	     | I.POP (I.Direct (_, r)) => eByte (0x58+rNum r)
+  	     | I.POP opnd => encode32 (0wx8f, opcode 0, opnd)		     
+  	     | I.LEAL{r32, addr} => encodeReg32(0wx8d, r32, addr)			  
+  	     | I.LEAQ{r64, addr} => encodeReg64(0wx8d, r64, addr)			  
+! 	     | I.MOVE{mvOp=mvOp as (I.MOVL | I.MOVQ), src, dst} => 
+  	       let val sz = case mvOp of I.MOVL => 32 | I.MOVQ => 64
+  		   fun mv(I.Immed(i), I.Direct (_, r)) =
+--- 455,486 ----
+  	     | I.CDQ => eByte(0x99)
+  	     | I.SAHF => eByte(0x9e)
+! 	     | ( I.PUSHL (I.Immed i) )=> 
+  	       (case size i 
+  		 of Bits32 => eBytes(0wx68 :: eLong(i))
+  		  | _ => eBytes [0wx6a, toWord8 i]
+  	       (* esac *))
+! 	     | ( I.PUSHQ (I.Immed i) )=> 
+! 	       (case size i 
+! 		 of Bits32 => eBytes(0wx68 :: eLong(i))
+! 		  | _ => eBytes [0wx6a, toWord8 i]
+! 	       (* esac *))
+! 	     | ( I.PUSHL (I.Direct (_, r)) ) => eByte (0x50+rNum r)
+! 	     | ( I.PUSHQ (I.Direct (_, r)) ) => eByte (0x50+rNum r)
+! 	     | ( I.PUSHL opnd ) => encode32 (0wxff, opcode 6, opnd)
+! 	     | ( I.PUSHQ opnd ) => encode32 (0wxff, opcode 6, opnd)
+  	     | I.POP (I.Direct (_, r)) => eByte (0x58+rNum r)
+  	     | I.POP opnd => encode32 (0wx8f, opcode 0, opnd)		     
+  	     | I.LEAL{r32, addr} => encodeReg32(0wx8d, r32, addr)			  
+  	     | I.LEAQ{r64, addr} => encodeReg64(0wx8d, r64, addr)			  
+! 	     | I.MOVE{mvOp=mvOp as (I.MOVL), src, dst} => 
+! 	       let val sz = case mvOp of I.MOVL => 32 | I.MOVQ => 64
+! 		   fun mv(I.Immed(i), I.Direct (_, r)) =
+!                        eBytes(Word8.+(0wxb8, Word8.fromInt(rNum r))::eLong(i))
+! 		     | mv(I.Immed(i), _) = encodeLongImm sz (0wxc7, opcode 0, dst, i)
+! 		     | mv(I.ImmedLabel le,dst) = mv(I.Immed(lexp le),dst)
+! 		     | mv(I.LabelEA le,dst) = error "MOVL: LabelEA"
+! 		     | mv(src,dst) = arith(sz, 0wx88, opcode 0) (src, dst)
+! 	       in  mv(src,dst) end
+! 	     | I.MOVE{mvOp=mvOp as (I.MOVQ), src, dst} => 
+  	       let val sz = case mvOp of I.MOVL => 32 | I.MOVQ => 64
+  		   fun mv(I.Immed(i), I.Direct (_, r)) =
+***************
+*** 449,453 ****
+  	     | I.CMPL{lsrc, rsrc} => arith(32, 0wx38, opcode 7) (rsrc, lsrc)
+  	     | I.CMPQ{lsrc, rsrc} => arith(64, 0wx38, opcode 7) (rsrc, lsrc)
+! 	     | (I.CMPW _ | I.CMPB _) => error "CMP"
+  	     | I.TESTQ{lsrc, rsrc} => test(64, rsrc, lsrc)
+  	     | I.TESTL{lsrc, rsrc} => test(32, rsrc, lsrc)
+--- 539,544 ----
+  	     | I.CMPL{lsrc, rsrc} => arith(32, 0wx38, opcode 7) (rsrc, lsrc)
+  	     | I.CMPQ{lsrc, rsrc} => arith(64, 0wx38, opcode 7) (rsrc, lsrc)
+! 	     | (I.CMPW _) => error "CMP"
+! 	     | (I.CMPB _) => error "CMP"
+  	     | I.TESTQ{lsrc, rsrc} => test(64, rsrc, lsrc)
+  	     | I.TESTL{lsrc, rsrc} => test(32, rsrc, lsrc)
+diff -N -C 2 -r MLRISC/amd64/amd64.mdl MLRISC-mlton/amd64/amd64.mdl
+*** MLRISC/amd64/amd64.mdl	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/amd64.mdl	2007-08-15 21:21:20.000000000 -0500
+***************
+*** 533,537 ****
+            let val n = size fbinOp
+            in  case Char.toLower(String.sub(fbinOp,n-1)) of
+!                 (#"s" | #"l") => String.substring(fbinOp,0,n-1)
+                | _ => fbinOp
+            end
+--- 533,538 ----
+            let val n = size fbinOp
+            in  case Char.toLower(String.sub(fbinOp,n-1)) of
+!                 (#"s") => String.substring(fbinOp,0,n-1)
+!               | (#"l") => String.substring(fbinOp,0,n-1)
+                | _ => fbinOp
+            end
+***************
+*** 666,673 ****
+  	asm: (case (src,binOp) of
+                 (I.Direct _,  (* tricky business here for shifts *)
+!                (I.SARQ | I.SHRQ | I.SHLQ |
+! 		I.SARL | I.SHRL | I.SHLL |
+!                 I.SARW | I.SHRW | I.SHLW |
+!                 I.SARB | I.SHRB | I.SHLB)) => ``<binOp>\t%cl, <dst>''
+               | _ => ``<binOp>\t<src>, <dst>''
+               )
+--- 667,693 ----
+  	asm: (case (src,binOp) of
+                 (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SARQ) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHRQ) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHLQ) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SARL) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHRL) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHLL) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SARW) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHRW) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHLW) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SARB) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHRB) => ``<binOp>\t%cl, <dst>''
+!              | (I.Direct _,  (* tricky business here for shifts *)
+!                 I.SHLB) => ``<binOp>\t%cl, <dst>''
+               | _ => ``<binOp>\t<src>, <dst>''
+               )
+diff -N -C 2 -r MLRISC/amd64/backpatch/amd64Jumps.sml MLRISC-mlton/amd64/backpatch/amd64Jumps.sml
+*** MLRISC/amd64/backpatch/amd64Jumps.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/backpatch/amd64Jumps.sml	2007-08-13 23:34:12.000000000 -0500
+***************
+*** 6,12 ****
+  functor AMD64Jumps
+    (structure Instr : AMD64INSTR
+!    structure Eval : MLTREE_EVAL where T = Instr.T
+!    structure Shuffle : AMD64SHUFFLE where I = Instr
+!    structure MCEmitter : MC_EMIT where I = Instr) : SDI_JUMPS = 
+  struct
+    structure I = Instr
+--- 6,74 ----
+  functor AMD64Jumps
+    (structure Instr : AMD64INSTR
+!    structure Eval : MLTREE_EVAL (* where T = Instr.T *)
+!                     where type T.Basis.cond = Instr.T.Basis.cond
+!                       and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                       and type T.Basis.ext = Instr.T.Basis.ext
+!                       and type T.Basis.fcond = Instr.T.Basis.fcond
+!                       and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                       and type T.Constant.const = Instr.T.Constant.const
+!                       and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                       and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                       and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                       and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                       and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                       and type T.Region.region = Instr.T.Region.region
+!                       and type T.ccexp = Instr.T.ccexp
+!                       and type T.fexp = Instr.T.fexp
+!                       (* and type T.labexp = Instr.T.labexp *)
+!                       and type T.mlrisc = Instr.T.mlrisc
+!                       and type T.oper = Instr.T.oper
+!                       and type T.rep = Instr.T.rep
+!                       and type T.rexp = Instr.T.rexp
+!                       and type T.stm = Instr.T.stm
+!    structure Shuffle : AMD64SHUFFLE (* where I = Instr *)
+!                        where type I.Constant.const = Instr.Constant.const
+!                          and type I.Region.region = Instr.Region.region
+!                          and type I.T.Basis.cond = Instr.T.Basis.cond
+!                          and type I.T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                          and type I.T.Basis.ext = Instr.T.Basis.ext
+!                          and type I.T.Basis.fcond = Instr.T.Basis.fcond
+!                          and type I.T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                          and type ('s,'r,'f,'c) I.T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                          and type ('s,'r,'f,'c) I.T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                          and type ('s,'r,'f,'c) I.T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                          and type ('s,'r,'f,'c) I.T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                          and type I.T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                          and type I.T.ccexp = Instr.T.ccexp
+!                          and type I.T.fexp = Instr.T.fexp
+!                          (* and type I.T.labexp = Instr.T.labexp *)
+!                          and type I.T.mlrisc = Instr.T.mlrisc
+!                          and type I.T.oper = Instr.T.oper
+!                          and type I.T.rep = Instr.T.rep
+!                          and type I.T.rexp = Instr.T.rexp
+!                          and type I.T.stm = Instr.T.stm
+!                          (* and type I.addressing_mode = Instr.addressing_mode *)
+!                          and type I.binaryOp = Instr.binaryOp
+!                          and type I.bitOp = Instr.bitOp
+!                          and type I.cond = Instr.cond
+!                          and type I.fbin_op = Instr.fbin_op
+!                          and type I.fcom_op = Instr.fcom_op
+!                          and type I.fmove_op = Instr.fmove_op
+!                          and type I.fsize = Instr.fsize
+!                          and type I.instr = Instr.instr
+!                          and type I.instruction = Instr.instruction
+!                          and type I.isize = Instr.isize
+!                          and type I.move = Instr.move
+!                          and type I.multDivOp = Instr.multDivOp
+!                          and type I.operand = Instr.operand
+!                          and type I.shiftOp = Instr.shiftOp
+!                          and type I.unaryOp = Instr.unaryOp
+!    structure MCEmitter : MC_EMIT (* where I = Instr *)
+!                          where type I.addressing_mode = Instr.addressing_mode
+!                            and type I.ea = Instr.ea
+!                            and type I.instr = Instr.instr
+!                            and type I.instruction = Instr.instruction
+!                            and type I.operand = Instr.operand
+!   ) : SDI_JUMPS = 
+  struct
+    structure I = Instr
+***************
+*** 40,47 ****
+  	   | I.MOVE{src, dst, ...} => operand src orelse operand dst
+  	   | I.LEAL{addr, ...} => operand addr
+! 	   | I.LEAQ{addr, ...} => operand addr
+! 	   | ( I.CMPQ arg | I.CMPL arg | I.CMPW arg | I.CMPB arg 
+! 	     | I.TESTQ arg | I.TESTL arg | I.TESTW arg | I.TESTB arg) => cmptest arg
+! 	   | I.MULTDIV{src, ...} => operand src
+  	   | I.MUL3{src1, ...} => operand src1
+  	   | I.MULQ3{src1, ...} => operand src1
+--- 102,115 ----
+  	   | I.MOVE{src, dst, ...} => operand src orelse operand dst
+  	   | I.LEAL{addr, ...} => operand addr
+! 	   | I.LEAQ{addr, ...} => operand addr	
+! 	   | ( I.CMPQ arg ) => cmptest arg
+! 	   | ( I.CMPL arg ) => cmptest arg
+! 	   | ( I.CMPW arg ) => cmptest arg
+! 	   | ( I.CMPB arg ) => cmptest arg
+!            | ( I.TESTQ arg ) => cmptest arg
+!            | ( I.TESTL arg ) => cmptest arg
+!            | ( I.TESTW arg ) => cmptest arg
+!            | ( I.TESTB arg ) => cmptest arg
+!            | I.MULTDIV{src, ...} => operand src
+  	   | I.MUL3{src1, ...} => operand src1
+  	   | I.MULQ3{src1, ...} => operand src1
+***************
+*** 49,53 ****
+  	   | I.SET{opnd, ...} => operand opnd
+  	   | I.CMOV{src, dst, ...} => operand src 
+! 	   | (I.PUSHQ opnd | I.PUSHL opnd | I.PUSHW opnd | I.PUSHB opnd) => operand opnd
+  	   | I.POP opnd =>  operand opnd
+  	   | _ => false
+--- 117,124 ----
+  	   | I.SET{opnd, ...} => operand opnd
+  	   | I.CMOV{src, dst, ...} => operand src 
+! 	   | (I.PUSHQ opnd) => operand opnd
+! 	   | (I.PUSHL opnd) => operand opnd
+! 	   | (I.PUSHW opnd) => operand opnd
+! 	   | (I.PUSHB opnd) => operand opnd
+  	   | I.POP opnd =>  operand opnd
+  	   | _ => false
+diff -N -C 2 -r MLRISC/amd64/emit/amd64Asm.sml MLRISC-mlton/amd64/emit/amd64Asm.sml
+*** MLRISC/amd64/emit/amd64Asm.sml	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/emit/amd64Asm.sml	2007-08-15 21:23:07.000000000 -0500
+***************
+*** 7,16 ****
+  
+  functor AMD64AsmEmitter(structure S : INSTRUCTION_STREAM
+!                         structure Instr : AMD64INSTR
+!                            where T = S.P.T
+!                         structure Shuffle : AMD64SHUFFLE
+!                            where I = Instr
+!                         structure MLTreeEval : MLTREE_EVAL
+!                            where T = Instr.T
+                         ) : INSTRUCTION_EMITTER =
+  struct
+--- 7,89 ----
+  
+  functor AMD64AsmEmitter(structure S : INSTRUCTION_STREAM
+!                         structure Instr : AMD64INSTR (* where T = S.P.T *)
+!                                         where type T.Basis.cond = S.P.T.Basis.cond
+!                                           and type T.Basis.div_rounding_mode = S.P.T.Basis.div_rounding_mode
+!                                           and type T.Basis.ext = S.P.T.Basis.ext
+!                                           and type T.Basis.fcond = S.P.T.Basis.fcond
+!                                           and type T.Basis.rounding_mode = S.P.T.Basis.rounding_mode
+!                                           and type T.Constant.const = S.P.T.Constant.const
+!                                           and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) S.P.T.Extension.ccx
+!                                           and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) S.P.T.Extension.fx
+!                                           and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) S.P.T.Extension.rx
+!                                           and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) S.P.T.Extension.sx
+!                                           and type T.I.div_rounding_mode = S.P.T.I.div_rounding_mode
+!                                           and type T.Region.region = S.P.T.Region.region
+!                                           and type T.ccexp = S.P.T.ccexp
+!                                           and type T.fexp = S.P.T.fexp
+!                                           (* and type T.labexp = S.P.T.labexp *)
+!                                           and type T.mlrisc = S.P.T.mlrisc
+!                                           and type T.oper = S.P.T.oper
+!                                           and type T.rep = S.P.T.rep
+!                                           and type T.rexp = S.P.T.rexp
+!                                           and type T.stm = S.P.T.stm
+!                         structure Shuffle : AMD64SHUFFLE (* where I = Instr *)
+!                                           where type I.Constant.const = Instr.Constant.const
+!                                             and type I.Region.region = Instr.Region.region
+!                                             and type I.T.Basis.cond = Instr.T.Basis.cond
+!                                             and type I.T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                                             and type I.T.Basis.ext = Instr.T.Basis.ext
+!                                             and type I.T.Basis.fcond = Instr.T.Basis.fcond
+!                                             and type I.T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                                             and type ('s,'r,'f,'c) I.T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                                             and type ('s,'r,'f,'c) I.T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                                             and type ('s,'r,'f,'c) I.T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                                             and type ('s,'r,'f,'c) I.T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                                             and type I.T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                                             and type I.T.ccexp = Instr.T.ccexp
+!                                             and type I.T.fexp = Instr.T.fexp
+!                                             (* and type I.T.labexp = Instr.T.labexp *)
+!                                             and type I.T.mlrisc = Instr.T.mlrisc
+!                                             and type I.T.oper = Instr.T.oper
+!                                             and type I.T.rep = Instr.T.rep
+!                                             and type I.T.rexp = Instr.T.rexp
+!                                             and type I.T.stm = Instr.T.stm
+!                                             (* and type I.addressing_mode = Instr.addressing_mode *)
+!                                             and type I.binaryOp = Instr.binaryOp
+!                                             and type I.bitOp = Instr.bitOp
+!                                             and type I.cond = Instr.cond
+!                                             and type I.fbin_op = Instr.fbin_op
+!                                             and type I.fcom_op = Instr.fcom_op
+!                                             and type I.fmove_op = Instr.fmove_op
+!                                             and type I.fsize = Instr.fsize
+!                                             and type I.instr = Instr.instr
+!                                             and type I.instruction = Instr.instruction
+!                                             and type I.isize = Instr.isize
+!                                             and type I.move = Instr.move
+!                                             and type I.multDivOp = Instr.multDivOp
+!                                             and type I.operand = Instr.operand
+!                                             and type I.shiftOp = Instr.shiftOp
+!                                             and type I.unaryOp = Instr.unaryOp
+!                         structure MLTreeEval : MLTREE_EVAL (* where T = Instr.T *)
+!                                              where type T.Basis.cond = Instr.T.Basis.cond
+!                                                and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                                                and type T.Basis.ext = Instr.T.Basis.ext
+!                                                and type T.Basis.fcond = Instr.T.Basis.fcond
+!                                                and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                                                and type T.Constant.const = Instr.T.Constant.const
+!                                                and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                                                and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                                                and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                                                and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                                                and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                                                and type T.Region.region = Instr.T.Region.region
+!                                                and type T.ccexp = Instr.T.ccexp
+!                                                and type T.fexp = Instr.T.fexp
+!                                                (* and type T.labexp = Instr.T.labexp *)
+!                                                and type T.mlrisc = Instr.T.mlrisc
+!                                                and type T.oper = Instr.T.oper
+!                                                and type T.rep = Instr.T.rep
+!                                                and type T.rexp = Instr.T.rexp
+!                                                and type T.stm = Instr.T.stm
+                         ) : INSTRUCTION_EMITTER =
+  struct
+***************
+*** 347,351 ****
+         in 
+            (case Char.toLower (String.sub (fbinOp, n - 1)) of
+!             (#"s" | #"l") => String.substring (fbinOp, 0, n - 1)
+            | _ => fbinOp
+            )
+--- 420,425 ----
+         in 
+            (case Char.toLower (String.sub (fbinOp, n - 1)) of
+!             (#"s") => String.substring (fbinOp, 0, n - 1)
+!           | (#"l") => String.substring (fbinOp, 0, n - 1)
+            | _ => fbinOp
+            )
+***************
+*** 488,503 ****
+           (case (src, binOp) of
+             (I.Direct _, 
+!            ( I.SARQ |
+!            I.SHRQ |
+!            I.SHLQ |
+!            I.SARL |
+!            I.SHRL |
+!            I.SHLL |
+!            I.SARW |
+!            I.SHRW |
+!            I.SHLW |
+!            I.SARB |
+!            I.SHRB |
+!            I.SHLB )) => 
+             ( emit_binaryOp binOp; 
+               emit "\t%cl, "; 
+--- 562,621 ----
+           (case (src, binOp) of
+             (I.Direct _, 
+!            ( I.SARQ )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHRQ )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHLQ )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SARL )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHRL )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHLL )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!         | (I.Direct _, 
+!            ( I.SARW )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHRW )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHLW )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!         | (I.Direct _, 
+!            ( I.SARB )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHRB )) =>
+!            ( emit_binaryOp binOp; 
+!              emit "\t%cl, "; 
+!              emit_dst dst )
+!          | (I.Direct _, 
+!            ( I.SHLB )) =>
+             ( emit_binaryOp binOp; 
+               emit "\t%cl, "; 
+diff -N -C 2 -r MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml MLRISC-mlton/amd64/flowgraph/amd64GasPseudoOps.sml
+*** MLRISC/amd64/flowgraph/amd64GasPseudoOps.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/flowgraph/amd64GasPseudoOps.sml	2007-08-13 23:15:41.000000000 -0500
+***************
+*** 6,10 ****
+  functor AMD64GasPseudoOps 
+     ( structure T : MLTREE
+!      structure MLTreeEval : MLTREE_EVAL  where T = T
+      ) : PSEUDO_OPS_BASIS = 
+  
+--- 6,30 ----
+  functor AMD64GasPseudoOps 
+     ( structure T : MLTREE
+!      structure MLTreeEval : MLTREE_EVAL (* where T = T *)
+!                             where type T.Basis.cond = T.Basis.cond
+!                               and type T.Basis.div_rounding_mode = T.Basis.div_rounding_mode
+!                               and type T.Basis.ext = T.Basis.ext
+!                               and type T.Basis.fcond = T.Basis.fcond
+!                               and type T.Basis.rounding_mode = T.Basis.rounding_mode
+!                               and type T.Constant.const = T.Constant.const
+!                               and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) T.Extension.ccx
+!                               and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) T.Extension.fx
+!                               and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) T.Extension.rx
+!                               and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) T.Extension.sx
+!                               and type T.I.div_rounding_mode = T.I.div_rounding_mode
+!                               and type T.Region.region = T.Region.region
+!                               and type T.ccexp = T.ccexp
+!                               and type T.fexp = T.fexp
+!                               (* and type T.labexp = T.labexp *)
+!                               and type T.mlrisc = T.mlrisc
+!                               and type T.oper = T.oper
+!                               and type T.rep = T.rep
+!                               and type T.rexp = T.rexp
+!                               and type T.stm = T.stm
+      ) : PSEUDO_OPS_BASIS = 
+  
+diff -N -C 2 -r MLRISC/amd64/instructions/amd64CompInstrExt.sml MLRISC-mlton/amd64/instructions/amd64CompInstrExt.sml
+*** MLRISC/amd64/instructions/amd64CompInstrExt.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64CompInstrExt.sml	2007-08-15 21:10:59.000000000 -0500
+***************
+*** 7,15 ****
+  signature AMD64COMP_INSTR_EXT = sig
+    structure I : AMD64INSTR
+!   structure TS : MLTREE_STREAM
+! 		 where T = I.T
+!   structure CFG : CONTROL_FLOW_GRAPH 
+!  	         where I = I
+!                    and P = TS.S.P
+  
+    type reducer = 
+--- 7,58 ----
+  signature AMD64COMP_INSTR_EXT = sig
+    structure I : AMD64INSTR
+!   structure TS : MLTREE_STREAM (* where T = I.T *)
+!                  where type T.Basis.cond = I.T.Basis.cond
+!                    and type T.Basis.div_rounding_mode = I.T.Basis.div_rounding_mode
+!                    and type T.Basis.ext = I.T.Basis.ext
+!                    and type T.Basis.fcond = I.T.Basis.fcond
+!                    and type T.Basis.rounding_mode = I.T.Basis.rounding_mode
+!                    and type T.Constant.const = I.T.Constant.const
+!                    and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) I.T.Extension.ccx
+!                    and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) I.T.Extension.fx
+!                    and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) I.T.Extension.rx
+!                    and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) I.T.Extension.sx
+!                    and type T.I.div_rounding_mode = I.T.I.div_rounding_mode
+!                    and type T.Region.region = I.T.Region.region
+!                    and type T.ccexp = I.T.ccexp
+!                    and type T.fexp = I.T.fexp
+!                    (* and type T.labexp = I.T.labexp *)
+!                    and type T.mlrisc = I.T.mlrisc
+!                    and type T.oper = I.T.oper
+!                    and type T.rep = I.T.rep
+! 	           and type T.rexp = I.T.rexp
+!                    and type T.stm = I.T.stm
+!   structure CFG : CONTROL_FLOW_GRAPH (* where I = I and P = TS.S.P *)
+!                   where type I.addressing_mode = I.addressing_mode
+!                     and type I.ea = I.ea
+!                     and type I.instr = I.instr
+!                     and type I.instruction = I.instruction
+!                     and type I.operand = I.operand
+!                   where type P.Client.pseudo_op = TS.S.P.Client.pseudo_op
+!                     and type P.T.Basis.cond = TS.S.P.T.Basis.cond
+!                     and type P.T.Basis.div_rounding_mode = TS.S.P.T.Basis.div_rounding_mode
+!                     and type P.T.Basis.ext = TS.S.P.T.Basis.ext
+!                     and type P.T.Basis.fcond = TS.S.P.T.Basis.fcond
+!                     and type P.T.Basis.rounding_mode = TS.S.P.T.Basis.rounding_mode
+!                     and type P.T.Constant.const = TS.S.P.T.Constant.const
+!                     and type ('s,'r,'f,'c) P.T.Extension.ccx = ('s,'r,'f,'c) TS.S.P.T.Extension.ccx
+!                     and type ('s,'r,'f,'c) P.T.Extension.fx = ('s,'r,'f,'c) TS.S.P.T.Extension.fx
+!                     and type ('s,'r,'f,'c) P.T.Extension.rx = ('s,'r,'f,'c) TS.S.P.T.Extension.rx
+!                     and type ('s,'r,'f,'c) P.T.Extension.sx = ('s,'r,'f,'c) TS.S.P.T.Extension.sx
+!                     and type P.T.I.div_rounding_mode = TS.S.P.T.I.div_rounding_mode
+!                     and type P.T.Region.region = TS.S.P.T.Region.region
+!                     and type P.T.ccexp = TS.S.P.T.ccexp
+!                     and type P.T.fexp = TS.S.P.T.fexp
+!                     (* and type P.T.labexp = TS.S.P.T.labexp *)
+!                     and type P.T.mlrisc = TS.S.P.T.mlrisc
+!                     and type P.T.oper = TS.S.P.T.oper
+!                     and type P.T.rep = TS.S.P.T.rep
+!                     and type P.T.rexp = TS.S.P.T.rexp
+!                     and type P.T.stm = TS.S.P.T.stm
+  
+    type reducer = 
+***************
+*** 28,36 ****
+  functor AMD64CompInstrExt
+    ( structure I : AMD64INSTR
+!     structure TS  : MLTREE_STREAM
+! 		   where T = I.T
+!     structure CFG : CONTROL_FLOW_GRAPH 
+! 		   where P = TS.S.P
+! 		     and I = I
+     ) : AMD64COMP_INSTR_EXT = 
+  struct
+--- 71,122 ----
+  functor AMD64CompInstrExt
+    ( structure I : AMD64INSTR
+!     structure TS  : MLTREE_STREAM (* where T = I.T *)
+!                     where type T.Basis.cond = I.T.Basis.cond
+!                       and type T.Basis.div_rounding_mode = I.T.Basis.div_rounding_mode
+!                       and type T.Basis.ext = I.T.Basis.ext
+!                       and type T.Basis.fcond = I.T.Basis.fcond
+!                       and type T.Basis.rounding_mode = I.T.Basis.rounding_mode
+!                       and type T.Constant.const = I.T.Constant.const
+!                       and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) I.T.Extension.ccx
+!                       and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) I.T.Extension.fx
+!                       and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) I.T.Extension.rx
+!                       and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) I.T.Extension.sx
+!                       and type T.I.div_rounding_mode = I.T.I.div_rounding_mode
+!                       and type T.Region.region = I.T.Region.region
+!                       and type T.ccexp = I.T.ccexp
+!                       and type T.fexp = I.T.fexp
+!                       (* and type T.labexp = I.T.labexp *)
+!                       and type T.mlrisc = I.T.mlrisc
+!                       and type T.oper = I.T.oper
+!                       and type T.rep = I.T.rep
+!                       and type T.rexp = I.T.rexp
+!                       and type T.stm = I.T.stm
+!     structure CFG : CONTROL_FLOW_GRAPH (* where P = TS.S.P and I = I *)
+!                     where type P.Client.pseudo_op = TS.S.P.Client.pseudo_op
+!                       and type P.T.Basis.cond = TS.S.P.T.Basis.cond
+!                       and type P.T.Basis.div_rounding_mode = TS.S.P.T.Basis.div_rounding_mode
+!                       and type P.T.Basis.ext = TS.S.P.T.Basis.ext
+!                       and type P.T.Basis.fcond = TS.S.P.T.Basis.fcond
+!                       and type P.T.Basis.rounding_mode = TS.S.P.T.Basis.rounding_mode
+!                       and type P.T.Constant.const = TS.S.P.T.Constant.const
+!                       and type ('s,'r,'f,'c) P.T.Extension.ccx = ('s,'r,'f,'c) TS.S.P.T.Extension.ccx
+!                       and type ('s,'r,'f,'c) P.T.Extension.fx = ('s,'r,'f,'c) TS.S.P.T.Extension.fx
+!                       and type ('s,'r,'f,'c) P.T.Extension.rx = ('s,'r,'f,'c) TS.S.P.T.Extension.rx
+!                       and type ('s,'r,'f,'c) P.T.Extension.sx = ('s,'r,'f,'c) TS.S.P.T.Extension.sx
+!                       and type P.T.I.div_rounding_mode = TS.S.P.T.I.div_rounding_mode
+!                       and type P.T.Region.region = TS.S.P.T.Region.region
+!                       and type P.T.ccexp = TS.S.P.T.ccexp
+!                       and type P.T.fexp = TS.S.P.T.fexp
+!                       (* and type P.T.labexp = TS.S.P.T.labexp *)
+!                       and type P.T.mlrisc = TS.S.P.T.mlrisc
+!                       and type P.T.oper = TS.S.P.T.oper
+!                       and type P.T.rep = TS.S.P.T.rep
+!                       and type P.T.rexp = TS.S.P.T.rexp
+!                       and type P.T.stm = TS.S.P.T.stm
+!                     where type I.addressing_mode = I.addressing_mode
+!                       and type I.ea = I.ea
+!                       and type I.instr = I.instr
+!                       and type I.instruction = I.instruction
+!                       and type I.operand = I.operand
+     ) : AMD64COMP_INSTR_EXT = 
+  struct
+diff -N -C 2 -r MLRISC/amd64/instructions/amd64Instr.sml MLRISC-mlton/amd64/instructions/amd64Instr.sml
+*** MLRISC/amd64/instructions/amd64Instr.sml	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Instr.sml	2007-08-13 22:49:20.000000000 -0500
+***************
+*** 9,13 ****
+  sig
+     structure C : AMD64CELLS
+!    structure CB : CELLS_BASIS = CellsBasis
+     structure T : MLTREE
+     structure Constant: CONSTANT
+--- 9,22 ----
+  sig
+     structure C : AMD64CELLS
+!    structure CB : CELLS_BASIS (* = CellsBasis *)
+!                   where type CellSet.cellset = CellsBasis.CellSet.cellset
+!                     and type 'a ColorTable.hash_table = 'a CellsBasis.ColorTable.hash_table
+!                     and type 'a HashTable.hash_table = 'a CellsBasis.HashTable.hash_table
+!                     and type SortedCells.sorted_cells = CellsBasis.SortedCells.sorted_cells
+!                     and type cell = CellsBasis.cell
+!                     and type cellColor = CellsBasis.cellColor
+!                     and type cellkind = CellsBasis.cellkind
+!                     and type cellkindDesc = CellsBasis.cellkindDesc
+!                     and type cellkindInfo = CellsBasis.cellkindInfo
+     structure T : MLTREE
+     structure Constant: CONSTANT
+diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.peep MLRISC-mlton/amd64/instructions/amd64Peephole.peep
+*** MLRISC/amd64/instructions/amd64Peephole.peep	2007-05-29 16:53:56.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Peephole.peep	2007-08-15 21:43:01.000000000 -0500
+***************
+*** 21,25 ****
+     (structure Instr : AMD64INSTR
+      structure Eval  : MLTREE_EVAL
+!       sharing Instr.T = Eval.T
+     ) : PEEPHOLE =
+  struct
+--- 21,45 ----
+     (structure Instr : AMD64INSTR
+      structure Eval  : MLTREE_EVAL
+!       (* sharing Instr.T = Eval.T *)
+!       where type T.Basis.cond = Instr.T.Basis.cond
+!         and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!         and type T.Basis.ext = Instr.T.Basis.ext
+!         and type T.Basis.fcond = Instr.T.Basis.fcond
+!         and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!         and type T.Constant.const = Instr.T.Constant.const
+!         and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!         and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!         and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!         and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!         and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!         and type T.Region.region = Instr.T.Region.region
+!         and type T.ccexp = Instr.T.ccexp
+!         and type T.fexp = Instr.T.fexp
+!         (* and type T.labexp = Instr.T.labexp *)
+!         and type T.mlrisc = Instr.T.mlrisc
+!         and type T.oper = Instr.T.oper
+!         and type T.rep = Instr.T.rep
+!         and type T.rexp = Instr.T.rexp
+!         and type T.stm = Instr.T.stm
+     ) : PEEPHOLE =
+  struct
+diff -N -C 2 -r MLRISC/amd64/instructions/amd64Peephole.sml MLRISC-mlton/amd64/instructions/amd64Peephole.sml
+*** MLRISC/amd64/instructions/amd64Peephole.sml	2007-05-29 16:53:56.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Peephole.sml	2007-08-15 21:44:02.000000000 -0500
+***************
+*** 13,17 ****
+  
+  (*#line 23.7 "amd64Peephole.peep"*)
+!                       sharing Instr.T = Eval.T
+                       ): PEEPHOLE =
+  struct
+--- 13,37 ----
+  
+  (*#line 23.7 "amd64Peephole.peep"*)
+!                       (* sharing Instr.T = Eval.T *)
+!                       where type T.Basis.cond = Instr.T.Basis.cond
+!                        and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                        and type T.Basis.ext = Instr.T.Basis.ext
+!                        and type T.Basis.fcond = Instr.T.Basis.fcond
+!                        and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                        and type T.Constant.const = Instr.T.Constant.const
+!                        and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                        and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                        and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                        and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                        and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                        and type T.Region.region = Instr.T.Region.region
+!                        and type T.ccexp = Instr.T.ccexp
+!                        and type T.fexp = Instr.T.fexp
+!                        (* and type T.labexp = Instr.T.labexp *)
+!                        and type T.mlrisc = Instr.T.mlrisc
+!                        and type T.oper = Instr.T.oper
+!                        and type T.rep = Instr.T.rep
+!                        and type T.rexp = Instr.T.rexp
+!                        and type T.stm = Instr.T.stm
+                       ): PEEPHOLE =
+  struct
+diff -N -C 2 -r MLRISC/amd64/instructions/amd64Props.sml MLRISC-mlton/amd64/instructions/amd64Props.sml
+*** MLRISC/amd64/instructions/amd64Props.sml	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/instructions/amd64Props.sml	2007-08-15 21:08:22.000000000 -0500
+***************
+*** 16,23 ****
+  functor AMD64Props (
+      structure Instr : AMD64INSTR
+!     structure MLTreeHash : MLTREE_HASH 
+!         where T = Instr.T
+!     structure MLTreeEval : MLTREE_EVAL 
+!         where T = Instr.T
+    ) : AMD64INSN_PROPERTIES =
+    struct
+--- 16,61 ----
+  functor AMD64Props (
+      structure Instr : AMD64INSTR
+!     structure MLTreeHash : MLTREE_HASH (* where T = Instr.T *)
+!                            where type T.Basis.cond = Instr.T.Basis.cond
+!                              and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                              and type T.Basis.ext = Instr.T.Basis.ext
+!                              and type T.Basis.fcond = Instr.T.Basis.fcond
+!                              and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                              and type T.Constant.const = Instr.T.Constant.const
+!                              and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                              and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                              and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                              and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                              and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                              and type T.Region.region = Instr.T.Region.region
+!                              and type T.ccexp = Instr.T.ccexp
+!                              and type T.fexp = Instr.T.fexp
+!                              (* and type T.labexp = Instr.T.labexp *)
+!                              and type T.mlrisc = Instr.T.mlrisc
+!                              and type T.oper = Instr.T.oper
+!                              and type T.rep = Instr.T.rep
+!                              and type T.rexp = Instr.T.rexp
+!                              and type T.stm = Instr.T.stm
+!     structure MLTreeEval : MLTREE_EVAL (* where T = Instr.T *)
+!                            where type T.Basis.cond = Instr.T.Basis.cond
+!                              and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!                              and type T.Basis.ext = Instr.T.Basis.ext
+!                              and type T.Basis.fcond = Instr.T.Basis.fcond
+!                              and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!                              and type T.Constant.const = Instr.T.Constant.const
+!                              and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!                              and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!                              and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!                              and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!                              and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!                              and type T.Region.region = Instr.T.Region.region
+!                              and type T.ccexp = Instr.T.ccexp
+!                              and type T.fexp = Instr.T.fexp
+!                              (* and type T.labexp = Instr.T.labexp *)
+!                              and type T.mlrisc = Instr.T.mlrisc
+!                              and type T.oper = Instr.T.oper
+!                              and type T.rep = Instr.T.rep
+!                              and type T.rexp = Instr.T.rexp
+!                              and type T.stm = Instr.T.stm
+    ) : AMD64INSN_PROPERTIES =
+    struct
+***************
+*** 40,48 ****
+        | instrKind (I.INSTR instr) = (case instr
+  	of I.NOP => IK_NOP
+! 	 | ( I.CALL {cutsTo=_::_, ...} | I.CALLQ {cutsTo=_::_, ...} ) =>
+  	   IK_CALL_WITH_CUTS
+! 	 | ( I.JMP _ | I.JCC _ | I.RET _ | I.INTO
+! 	   | I.CMOV _ | I.CMOVQ _ ) => IK_JUMP
+! 	 | ( I.CALL _ | I. CALLQ _ ) => IK_CALL
+  	 | I.PHI {} => IK_PHI
+  	 | I.SOURCE {} => IK_SOURCE
+--- 78,93 ----
+        | instrKind (I.INSTR instr) = (case instr
+  	of I.NOP => IK_NOP
+! 	 | ( I.CALL {cutsTo=_::_, ...} ) =>
+  	   IK_CALL_WITH_CUTS
+! 	 | ( I.CALLQ {cutsTo=_::_, ...} ) =>
+! 	   IK_CALL_WITH_CUTS
+! 	 | ( I.JMP _ ) => IK_JUMP
+! 	 | ( I.JCC _ ) => IK_JUMP
+! 	 | ( I.RET _ ) => IK_JUMP
+! 	 | ( I.INTO) => IK_JUMP
+! 	 | ( I.CMOV _ ) => IK_JUMP
+! 	 | ( I.CMOVQ _ ) => IK_JUMP
+! 	 | ( I.CALL _ ) => IK_CALL
+! 	 | ( I.CALLQ _ ) => IK_CALL
+  	 | I.PHI {} => IK_PHI
+  	 | I.SOURCE {} => IK_SOURCE
+***************
+*** 57,62 ****
+  
+      fun moveTmpR (I.ANNOTATION {i, ...}) = moveTmpR i
+!       | moveTmpR ( I.COPY {k=CB.GP, tmp=SOME (I.Direct (_, r)), ...}
+!                  | I.COPY {k=CB.FP, tmp=SOME (I.FDirect r), ...} ) = 
+  	SOME r
+        | moveTmpR _ = NONE
+--- 102,108 ----
+  
+      fun moveTmpR (I.ANNOTATION {i, ...}) = moveTmpR i
+!       | moveTmpR ( I.COPY {k=CB.GP, tmp=SOME (I.Direct (_, r)), ...} ) = 
+! 	SOME r
+!       | moveTmpR ( I.COPY {k=CB.FP, tmp=SOME (I.FDirect r), ...} ) = 
+  	SOME r
+        | moveTmpR _ = NONE
+***************
+*** 176,182 ****
+  	    in
+  	      case multDivOp
+! 	       of (I.IDIVL1 | I.DIVL1 | I.IDIVQ1 | I.DIVQ1) => 
+  	           (raxPair, C.rdx::C.rax::uses)
+! 	        | (I.IMULL1 | I.MULL1 | I.IMULQ1 | I.MULQ1) => 
+  	          (raxPair, C.rax::uses)
+  	      (* end case *)
+--- 222,240 ----
+  	    in
+  	      case multDivOp
+! 	       of (I.IDIVL1) => 
+! 	           (raxPair, C.rdx::C.rax::uses)
+!                 | (I.DIVL1) => 
+! 	           (raxPair, C.rdx::C.rax::uses)
+!                 | (I.IDIVQ1) => 
+! 	           (raxPair, C.rdx::C.rax::uses)
+!                 | (I.DIVQ1) => 
+  	           (raxPair, C.rdx::C.rax::uses)
+! 	        | (I.IMULL1) => 
+! 	          (raxPair, C.rax::uses)
+! 	        | (I.MULL1) => 
+! 	          (raxPair, C.rax::uses)
+! 	        | (I.IMULQ1) => 
+! 	          (raxPair, C.rax::uses)
+! 	        | (I.MULQ1) => 
+  	          (raxPair, C.rax::uses)
+  	      (* end case *)
+***************
+*** 185,198 ****
+  	fun push opnd = ([C.stackptrR], operandAcc (opnd, [C.stackptrR]))
+  	fun f i = (case i
+! 	    of ( I.JMP (opnd, _) | I.JCC {opnd, ...} ) => ([], 	operandUse opnd)
+! 	     | ( I.CALL {opnd, defs, uses, ...} |
+! 	         I.CALLQ {opnd, defs, uses, ...} )=>
+   	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
+  	     | I.MOVE {src, dst=I.Direct (_, r), ...} => ([r], operandUse src) 
+  	     | I.MOVE {src, dst, ...} => ([], operandAcc (dst, operandUse src))
+! 	     | ( I.LEAL {r32=r, addr} | I.LEAQ {r64=r, addr} ) =>
+  	       ([r], operandUse addr)
+! 	     | ( I.CMPQ arg | I.CMPL arg | I.CMPW arg | I.CMPB arg
+! 	       | I.TESTQ arg | I.TESTL arg | I.TESTW arg | I.TESTB arg )  =>
+  	       cmpTest arg
+  	     | I.BITOP{lsrc, rsrc, ...} => cmpTest {lsrc=lsrc,rsrc=rsrc}
+--- 243,273 ----
+  	fun push opnd = ([C.stackptrR], operandAcc (opnd, [C.stackptrR]))
+  	fun f i = (case i
+! 	    of ( I.JMP (opnd, _) ) => ([], 	operandUse opnd)
+!              | ( I.JCC {opnd, ...} ) => ([], 	operandUse opnd)
+! 	     | ( I.CALL {opnd, defs, uses, ...} )=>
+!  	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
+! 	     | ( I.CALLQ {opnd, defs, uses, ...} )=>
+   	       (C.getReg defs, operandAcc (opnd, C.getReg uses))
+  	     | I.MOVE {src, dst=I.Direct (_, r), ...} => ([r], operandUse src) 
+  	     | I.MOVE {src, dst, ...} => ([], operandAcc (dst, operandUse src))
+! 	     | ( I.LEAL {r32=r, addr} ) =>
+! 	       ([r], operandUse addr)
+! 	     | ( I.LEAQ {r64=r, addr} ) =>
+  	       ([r], operandUse addr)
+! 	     | ( I.CMPQ arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.CMPL arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.CMPW arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.CMPB arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.TESTQ arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.TESTL arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.TESTW arg )  =>
+! 	       cmpTest arg
+! 	     | ( I.TESTB arg )  =>
+  	       cmpTest arg
+  	     | I.BITOP{lsrc, rsrc, ...} => cmpTest {lsrc=lsrc,rsrc=rsrc}
+***************
+*** 210,221 ****
+  	     | I.CMPXCHG {src, dst, ...} =>
+  	       (C.rax::operandDef dst, C.rax::operandAcc (src, operandUse dst))
+! 	     | ( I.ENTER _ | I.LEAVE ) => ([C.rsp, C.rbp], [C.rsp, C.rbp])
+  	     | I.MULTDIV arg => multDiv arg
+! 	     | ( I.MUL3  {src1, dst, ...} | I.MULQ3 {src1, dst, ...} ) => 
+  	       ([dst], operandUse src1)
+! 	     | ( I.UNARY{opnd, ...} | I.SET {opnd, ...} ) => unary opnd
+! 	     | (I.PUSHQ arg | I.PUSHL arg | I.PUSHW arg | I.PUSHB arg ) => push arg
+  	     | I.POP arg => (C.stackptrR::operandDef arg, [C.stackptrR])
+! 	     | ( I.PUSHFD | I.POPFD )=> rspOnly ()
+  	     | I.CDQ => ([C.rdx], [C.rax])
+  	     | I.FMOVE {dst, src, ...} => ([], operandAcc (dst, operandUse src))
+--- 285,304 ----
+  	     | I.CMPXCHG {src, dst, ...} =>
+  	       (C.rax::operandDef dst, C.rax::operandAcc (src, operandUse dst))
+! 	     | ( I.ENTER _ ) => ([C.rsp, C.rbp], [C.rsp, C.rbp])
+! 	     | ( I.LEAVE ) => ([C.rsp, C.rbp], [C.rsp, C.rbp])
+  	     | I.MULTDIV arg => multDiv arg
+! 	     | ( I.MUL3  {src1, dst, ...} ) => 
+! 	       ([dst], operandUse src1)
+! 	     | ( I.MULQ3 {src1, dst, ...} ) => 
+  	       ([dst], operandUse src1)
+! 	     | ( I.UNARY{opnd, ...} ) => unary opnd
+! 	     | ( I.SET {opnd, ...} ) => unary opnd
+! 	     | ( I.PUSHQ arg ) => push arg
+! 	     | ( I.PUSHL arg ) => push arg
+! 	     | ( I.PUSHW arg ) => push arg
+! 	     | ( I.PUSHB arg ) => push arg
+  	     | I.POP arg => (C.stackptrR::operandDef arg, [C.stackptrR])
+! 	     | ( I.POPFD )=> rspOnly ()
+! 	     | ( I.POPFD )=> rspOnly ()
+  	     | I.CDQ => ([C.rdx], [C.rax])
+  	     | I.FMOVE {dst, src, ...} => ([], operandAcc (dst, operandUse src))
+***************
+*** 253,259 ****
+               | I.FBINOP {dst, src, ...} => ([dst], [src])
+               | I.FCOM {dst, src, ...} => ([dst], operand src)
+!              | ( I.FSQRTS {dst, src} | I.FSQRTD {dst, src} )=> 
+                 (operand dst, operand src)
+!              | ( I.CALL {defs, uses, ...} | I.CALLQ {defs, uses, ...} ) =>
+                 (C.getFreg defs, C.getFreg uses)
+               | _ => ([], [])
+--- 336,346 ----
+               | I.FBINOP {dst, src, ...} => ([dst], [src])
+               | I.FCOM {dst, src, ...} => ([dst], operand src)
+!              | ( I.FSQRTS {dst, src} )=> 
+                 (operand dst, operand src)
+!              | ( I.FSQRTD {dst, src} )=> 
+!                (operand dst, operand src)
+!              | ( I.CALL {defs, uses, ...} ) =>
+!                (C.getFreg defs, C.getFreg uses)
+!              | ( I.CALLQ {defs, uses, ...} ) =>
+                 (C.getFreg defs, C.getFreg uses)
+               | _ => ([], [])
+***************
+*** 300,344 ****
+  	 | I.MOVE {mvOp, ...} => 
+  	   (case mvOp
+! 	     of ( I.MOVQ | I.MOVSWQ | I.MOVZWQ | I.MOVSBQ | 
+! 		  I.MOVZBQ | I.MOVSLQ ) => 64
+! 	      | ( I.MOVL | I.MOVSWL | I.MOVZWL | I.MOVSBL | 
+! 		  I.MOVZBL ) => 32
+  	      | I.MOVW => 16
+  	      | I.MOVB => 8
+  	   (* esac *))
+! 	 | ( I.CALL _ | I.LEAL _ | I.CMPL _ | I.TESTL _ | I.CMOV _ | I.MUL3 _ )
+! 	     => 32
+! 	 | ( I.CALLQ _ | I.LEAQ _ | I.CMPQ _ | I.TESTQ _ | I.CMOVQ _ | I.MULQ3 _ )
+! 	     => 64 
+! 	 | ( I.CMPW _ | I.TESTW _ ) => 16
+! 	 | ( I.CMPB _ | I.TESTB _ ) => 8 
+  	 | I.SHIFT {shiftOp, ...} => (case shiftOp
+! 	   of ( I.SHLDL | I.SHRDL ) => 32
+  	   (* esac *))
+  	 | I.UNARY {unOp, ...} =>
+  	   (case unOp
+! 	     of ( I.DECQ | I.INCQ | I.NEGQ | I.NOTQ | 
+! 		  I.LOCK_DECQ | I.LOCK_INCQ | I.LOCK_NEGQ | I.LOCK_NOTQ ) => 64
+! 	      | ( I.DECL | I.INCL | I.NEGL | I.NOTL ) => 32
+! 	      | ( I.DECW | I.INCW | I.NEGW | I.NOTW ) => 16
+! 	      | ( I.DECB | I.INCB | I.NEGB | I.NOTB ) => 8
+  	   (* esac *))
+  	 | I.MULTDIV {multDivOp, ...} => 
+  	   (case multDivOp
+! 	     of ( I.IMULL1 | I.MULL1 | I.IDIVL1 | I.DIVL1 ) => 32
+! 	      | ( I.IMULQ1 | I.MULQ1 | I.IDIVQ1 | I.DIVQ1 ) => 64
+  	   (* esac *))
+  	 | I.BINARY {binOp, ...} => 
+  	   (case binOp
+! 	     of ( I.ADDQ | I.SUBQ | I.ANDQ | I.ORQ | I.XORQ | I.SHLQ | I.SARQ 
+! 	        | I.SHRQ | I.MULQ | I.IMULQ | I.ADCQ | I.SBBQ ) => 64
+! 	      | ( I.ADDL | I.SUBL | I.ANDL | I.ORL | I.XORL | I.SHLL | I.SARL
+!                 | I.SHRL | I.MULL | I.IMULL | I.ADCL | I.SBBL | I.BTSL | I.BTCL
+!                 | I.BTRL | I.ROLL | I.RORL | I.XCHGL ) => 32
+! 	      | ( I.ADDW | I.SUBW | I.ANDW | I.ORW | I.XORW | I.SHLW | I.SARW 
+!                 | I.SHRW | I.MULW | I.IMULW | I.BTSW | I.BTCW | I.BTRW | I.ROLW 
+!                 | I.RORW | I.XCHGW ) => 16
+! 	      | ( I.ADDB | I.SUBB | I.ANDB | I.ORB | I.XORB | I.SHLB | I.SARB 
+!                 | I.SHRB | I.MULB | I.IMULB | I.XCHGB ) => 8
+  	      | _ => raise Fail "" (* 64*)
+  	   (* esac *))
+--- 387,517 ----
+  	 | I.MOVE {mvOp, ...} => 
+  	   (case mvOp
+! 	     of ( I.MOVQ ) => 64
+!               | ( I.MOVSWQ ) => 64
+!               | ( I.MOVZWQ ) => 64
+!               | ( I.MOVSBQ ) => 64
+!               | ( I.MOVZBQ ) => 64
+!               | ( I.MOVSLQ ) => 64
+! 	      | ( I.MOVL ) => 32
+!               | ( I.MOVSWL ) => 32
+!               | ( I.MOVZWL ) => 32 
+!               | ( I.MOVSBL ) => 32
+!               | ( I.MOVZBL ) => 32
+  	      | I.MOVW => 16
+  	      | I.MOVB => 8
+  	   (* esac *))
+! 	 | ( I.CALL _ ) => 32
+!          | ( I.LEAL _ ) => 32
+!          | ( I.CMPL _ ) => 32
+!          | ( I.TESTL _ ) => 32
+!          | ( I.CMOV _ ) => 32
+!          | ( I.MUL3 _ ) => 32
+! 	 | ( I.CALLQ _ ) => 64
+!          | ( I.LEAQ _ ) => 64
+!          | ( I.CMPQ _ ) => 64
+!          | ( I.TESTQ _ ) => 64
+!          | ( I.CMOVQ _ ) => 64
+!          | ( I.MULQ3 _ ) => 64 
+! 	 | ( I.CMPW _ ) => 16
+! 	 | ( I.TESTW _ ) => 16
+! 	 | ( I.CMPB _ ) => 8 
+! 	 | ( I.TESTB _ ) => 8 
+  	 | I.SHIFT {shiftOp, ...} => (case shiftOp
+! 	   of ( I.SHLDL ) => 32
+!             | ( I.SHRDL ) => 32
+  	   (* esac *))
+  	 | I.UNARY {unOp, ...} =>
+  	   (case unOp
+! 	     of ( I.DECQ ) => 64
+!               | ( I.INCQ ) => 64
+!               | ( I.NEGQ ) => 64
+!               | ( I.NOTQ ) => 64
+!               | ( I.LOCK_DECQ ) => 64
+!               | ( I.LOCK_INCQ ) => 64
+!               | ( I.LOCK_NEGQ ) => 64
+!               | ( I.LOCK_NOTQ ) => 64
+! 	      | ( I.DECL ) => 32
+!               | ( I.INCL ) => 32
+!               | ( I.NEGL ) => 32
+!               | ( I.NOTL ) => 32
+! 	      | ( I.DECW ) => 16
+!               | ( I.INCW ) => 16
+!               | ( I.NEGW ) => 16
+!               | ( I.NOTW ) => 16
+! 	      | ( I.DECB ) => 8
+!               | ( I.INCB ) => 8
+!               | ( I.NEGB ) => 8
+!               | ( I.NOTB ) => 8
+  	   (* esac *))
+  	 | I.MULTDIV {multDivOp, ...} => 
+  	   (case multDivOp
+! 	     of ( I.IMULL1 ) => 32
+!               | ( I.MULL1 ) => 32
+!               | ( I.IDIVL1 ) => 32
+!               | ( I.DIVL1 ) => 32
+! 	      | ( I.IMULQ1 ) => 64 
+!               | ( I.MULQ1 ) => 64
+!               | ( I.IDIVQ1 ) => 64
+!               | ( I.DIVQ1 ) => 64
+  	   (* esac *))
+  	 | I.BINARY {binOp, ...} => 
+  	   (case binOp
+! 	     of ( I.ADDQ ) => 64
+!               | ( I.SUBQ ) => 64
+!               | ( I.ANDQ ) => 64
+!               | ( I.ORQ ) => 64
+!               | ( I.XORQ ) => 64
+!               | ( I.SHLQ ) => 64
+!               | ( I.SARQ ) => 64
+!               | ( I.SHRQ ) => 64
+!               | ( I.MULQ ) => 64
+!               | ( I.IMULQ ) => 64
+!               | ( I.ADCQ ) => 64
+!               | ( I.SBBQ ) => 64
+! 	      | ( I.ADDL ) => 32
+!               | ( I.SUBL ) => 32 
+!               | ( I.ANDL ) => 32 
+!               | ( I.ORL ) => 32 
+!               | ( I.XORL ) => 32 
+!               | ( I.SHLL ) => 32 
+!               | ( I.SARL ) => 32 
+!               | ( I.SHRL ) => 32 
+!               | ( I.MULL ) => 32 
+!               | ( I.IMULL ) => 32 
+!               | ( I.ADCL ) => 32 
+!               | ( I.SBBL ) => 32 
+!               | ( I.BTSL ) => 32 
+!               | ( I.BTCL ) => 32 
+!               | ( I.BTRL ) => 32 
+!               | ( I.ROLL ) => 32 
+!               | ( I.RORL ) => 32 
+!               | ( I.XCHGL ) => 32
+! 	      | ( I.ADDW ) => 16
+!               | ( I.SUBW ) => 16
+!               | ( I.ANDW ) => 16
+!               | ( I.ORW ) => 16
+!               | ( I.XORW ) => 16
+!               | ( I.SHLW ) => 16
+!               | ( I.SARW ) => 16
+!               | ( I.SHRW ) => 16
+!               | ( I.MULW ) => 16
+!               | ( I.IMULW ) => 16
+!               | ( I.BTSW ) => 16
+!               | ( I.BTCW ) => 16
+!               | ( I.BTRW ) => 16
+!               | ( I.ROLW ) => 16
+!               | ( I.RORW ) => 16
+!               | ( I.XCHGW ) => 16
+! 	      | ( I.ADDB ) => 8
+!               | ( I.SUBB ) => 8
+!               | ( I.ANDB ) => 8
+!               | ( I.ORB ) => 8
+!               | ( I.XORB ) => 8
+!               | ( I.SHLB ) => 8
+!               | ( I.SARB ) => 8
+!               | ( I.SHRB ) => 8
+!               | ( I.MULB ) => 8
+!               | ( I.IMULB ) => 8
+!               | ( I.XCHGB ) => 8
+  	      | _ => raise Fail "" (* 64*)
+  	   (* esac *))
+***************
+*** 348,362 ****
+      fun szOfFinstr instr = (case instr
+          of I.FMOVE {fmvOp, ...} => (case fmvOp
+!            of ( I.MOVSS | I.CVTSS2SD | I.CVTSS2SI | I.CVTSS2SIQ ) => 32
+!             | ( I.MOVSD | I.CVTSD2SS | I.CVTSD2SI | I.CVTSD2SIQ ) => 64
+              | _ => error "AMD64Props.szOfFinstr"
+             (* end case *))
+           | I.FCOM {comOp, ...} => (case comOp
+!            of ( I.COMISS | I.UCOMISS ) => 32
+!             | ( I.COMISD | I.UCOMISD ) => 64
+             (* end case *))
+           | I.FBINOP {binOp, ...} => (case binOp
+!            of ( I.ADDSS | I.SUBSS | I.MULSS | I.DIVSS ) => 32
+!             | ( I.ADDSD | I.SUBSD | I.MULSD | I.DIVSD ) => 64
+             (* end case *))
+           | I.FSQRTS _ => 32
+--- 521,549 ----
+      fun szOfFinstr instr = (case instr
+          of I.FMOVE {fmvOp, ...} => (case fmvOp
+!            of ( I.MOVSS ) => 32
+!             | ( I.CVTSS2SD ) => 32
+!             | ( I.CVTSS2SI ) => 32
+!             | ( I.CVTSS2SIQ ) => 32
+!             | ( I.MOVSD ) => 64
+!             | ( I.CVTSD2SS ) => 64
+!             | ( I.CVTSD2SI ) => 64
+!             | ( I.CVTSD2SIQ ) => 64
+              | _ => error "AMD64Props.szOfFinstr"
+             (* end case *))
+           | I.FCOM {comOp, ...} => (case comOp
+!            of ( I.COMISS ) => 32
+!             | ( I.UCOMISS ) => 32
+!             | ( I.COMISD ) => 64
+!             | ( I.UCOMISD ) => 64
+             (* end case *))
+           | I.FBINOP {binOp, ...} => (case binOp
+!            of ( I.ADDSS ) => 32
+!             | ( I.SUBSS ) => 32
+!             | ( I.MULSS ) => 32
+!             | ( I.DIVSS ) => 32
+!             | ( I.ADDSD ) => 64
+!             | ( I.SUBSD ) => 64
+!             | ( I.MULSD ) => 64
+!             | ( I.DIVSD ) => 64
+             (* end case *))
+           | I.FSQRTS _ => 32
+diff -N -C 2 -r MLRISC/amd64/mltree/amd64-gen.sml MLRISC-mlton/amd64/mltree/amd64-gen.sml
+*** MLRISC/amd64/mltree/amd64-gen.sml	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/mltree/amd64-gen.sml	2007-08-15 21:40:15.000000000 -0500
+***************
+*** 6,13 ****
+  functor AMD64Gen (
+      structure I : AMD64INSTR
+!     structure MLTreeUtils : MLTREE_UTILS
+! 	where T = I.T
+!     structure ExtensionComp : MLTREE_EXTENSION_COMP
+!         where I = I and T = I.T) : MLTREECOMP = 
+    struct
+  
+--- 6,57 ----
+  functor AMD64Gen (
+      structure I : AMD64INSTR
+!     structure MLTreeUtils : MLTREE_UTILS (* where T = I.T *)
+!                             where type T.Basis.cond = I.T.Basis.cond
+!                               and type T.Basis.div_rounding_mode = I.T.Basis.div_rounding_mode
+!                               and type T.Basis.ext = I.T.Basis.ext
+!                               and type T.Basis.fcond = I.T.Basis.fcond
+!                               and type T.Basis.rounding_mode = I.T.Basis.rounding_mode
+!                               and type T.Constant.const = I.T.Constant.const
+!                               and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) I.T.Extension.ccx
+!                               and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) I.T.Extension.fx
+!                               and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) I.T.Extension.rx
+!                               and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) I.T.Extension.sx
+!                               and type T.I.div_rounding_mode = I.T.I.div_rounding_mode
+!                                and type T.Region.region = I.T.Region.region
+!                               and type T.ccexp = I.T.ccexp
+!                               and type T.fexp = I.T.fexp
+!                               (* and type T.labexp = I.T.labexp *)
+!                               and type T.mlrisc = I.T.mlrisc
+!                               and type T.oper = I.T.oper
+!                               and type T.rep = I.T.rep
+!                               and type T.rexp = I.T.rexp
+!                               and type T.stm = I.T.stm
+!     structure ExtensionComp : MLTREE_EXTENSION_COMP (* where I = I and T = I.T *)
+!                               where type I.addressing_mode = I.addressing_mode
+!                                 and type I.ea = I.ea
+!                                 and type I.instr = I.instr
+!                                 and type I.instruction = I.instruction
+!                                 and type I.operand = I.operand
+!                               where type T.Basis.cond = I.T.Basis.cond
+!                                 and type T.Basis.div_rounding_mode = I.T.Basis.div_rounding_mode
+!                                 and type T.Basis.ext = I.T.Basis.ext
+!                                 and type T.Basis.fcond = I.T.Basis.fcond
+!                                 and type T.Basis.rounding_mode = I.T.Basis.rounding_mode
+!                                 and type T.Constant.const = I.T.Constant.const
+!                                 and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) I.T.Extension.ccx
+!                                 and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) I.T.Extension.fx
+!                                 and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) I.T.Extension.rx
+!                                 and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) I.T.Extension.sx
+!                                 and type T.I.div_rounding_mode = I.T.I.div_rounding_mode
+!                                 and type T.Region.region = I.T.Region.region
+!                                 and type T.ccexp = I.T.ccexp
+!                                 and type T.fexp = I.T.fexp
+!                                 (* and type T.labexp = I.T.labexp *)
+!                                 and type T.mlrisc = I.T.mlrisc
+!                                 and type T.oper = I.T.oper
+!                                 and type T.rep = I.T.rep
+!                                 and type T.rexp = I.T.rexp
+!                                 and type T.stm = I.T.stm
+!   ) : MLTREECOMP = 
+    struct
+  
+***************
+*** 318,322 ****
+          (* reduce an expression into an operand *)
+          and operand ty (T.LI i) = I.Immed (toInt32 i)
+!           | operand _ (x as (T.CONST _ | T.LABEL _)) = I.ImmedLabel x
+            | operand _ (T.LABEXP le) = I.ImmedLabel le
+            | operand _ (T.REG(ty,r)) = gpr (ty, r)
+--- 362,367 ----
+          (* reduce an expression into an operand *)
+          and operand ty (T.LI i) = I.Immed (toInt32 i)
+!           | operand _ (x as (T.CONST _ )) = I.ImmedLabel x
+!           | operand _ (x as (T.LABEL _)) = I.ImmedLabel x
+            | operand _ (T.LABEXP le) = I.ImmedLabel le
+            | operand _ (T.REG(ty,r)) = gpr (ty, r)
+***************
+*** 719,723 ****
+  		of T.REG (ty, r) => move' (ty, gpr (ty, r), dstOpnd, an)
+  		 | T.LI z => move' (ty, I.Immed (toInt32 z), dstOpnd, an)
+! 		 | (T.CONST _ | T.LABEL _) => 
+                     move' (ty, I.ImmedLabel e, dstOpnd, an)
+  		 | T.LABEXP le => move' (ty, I.ImmedLabel le, dstOpnd, an)
+--- 764,770 ----
+  		of T.REG (ty, r) => move' (ty, gpr (ty, r), dstOpnd, an)
+  		 | T.LI z => move' (ty, I.Immed (toInt32 z), dstOpnd, an)
+! 		 | (T.CONST _) => 
+!                    move' (ty, I.ImmedLabel e, dstOpnd, an)
+! 		 | (T.LABEL _) => 
+                     move' (ty, I.ImmedLabel e, dstOpnd, an)
+  		 | T.LABEXP le => move' (ty, I.ImmedLabel le, dstOpnd, an)
+***************
+*** 1147,1151 ****
+  	 * since it doesn't need to write out the result in a register.
+  	 *)
+! 	and cmpWithZero(cc as (T.EQ | T.NE), e as T.ANDB(ty, a, b), an) = 
+  		(case ty 
+  		  of 8 => test(ty, I.TESTB, a, b, an)
+--- 1194,1206 ----
+  	 * since it doesn't need to write out the result in a register.
+  	 *)
+! 	and cmpWithZero(cc as (T.EQ), e as T.ANDB(ty, a, b), an) = 
+! 		(case ty 
+! 		  of 8 => test(ty, I.TESTB, a, b, an)
+! 		  | 16 => test(ty, I.TESTW, a, b, an)
+! 		  | 32 => test(ty, I.TESTL, a, b, an)
+! 		  | 64 => test(ty, I.TESTQ, a, b, an)
+! 		  | _  => expr (e, newReg(), an); 
+! 		cc)  
+! 	 | cmpWithZero(cc as (T.NE), e as T.ANDB(ty, a, b), an) = 
+  		(case ty 
+  		  of 8 => test(ty, I.TESTB, a, b, an)
+diff -N -C 2 -r MLRISC/amd64/ra/amd64RegAlloc.sml MLRISC-mlton/amd64/ra/amd64RegAlloc.sml
+*** MLRISC/amd64/ra/amd64RegAlloc.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/ra/amd64RegAlloc.sml	2007-08-15 21:34:55.000000000 -0500
+***************
+*** 7,19 ****
+        structure I : AMD64INSTR
+        structure SpillHeur : RA_SPILL_HEURISTICS 
+!       structure Props : AMD64INSN_PROPERTIES
+!           where I = I
+!       structure CFG : CONTROL_FLOW_GRAPH
+!           where I = I
+!       structure Spill : RA_SPILL
+!           where I = I
+!       structure Asm : INSTRUCTION_EMITTER
+!           where I = I
+!           and   S.P = CFG.P
+  
+        type spill_info
+--- 7,55 ----
+        structure I : AMD64INSTR
+        structure SpillHeur : RA_SPILL_HEURISTICS 
+!       structure Props : AMD64INSN_PROPERTIES (* where I = I *)
+!                         where type I.addressing_mode = I.addressing_mode
+!                           and type I.ea = I.ea
+!                           and type I.instr = I.instr
+!                           and type I.instruction = I.instruction
+!                           and type I.operand = I.operand
+!       structure CFG : CONTROL_FLOW_GRAPH (* where I = I *)
+!                       where type I.addressing_mode = I.addressing_mode
+!                         and type I.ea = I.ea
+!                         and type I.instr = I.instr
+!                         and type I.instruction = I.instruction
+!                         and type I.operand = I.operand
+!       structure Spill : RA_SPILL (* where I = I *)
+!                       where type I.addressing_mode = I.addressing_mode
+!                         and type I.ea = I.ea
+!                         and type I.instr = I.instr
+!                         and type I.instruction = I.instruction
+!                         and type I.operand = I.operand
+!       structure Asm : INSTRUCTION_EMITTER (* where I = I and S.P = CFG.P *)
+!                            where type I.addressing_mode = I.addressing_mode
+!                              and type I.ea = I.ea
+!                              and type I.instr = I.instr
+!                              and type I.instruction = I.instruction
+!                              and type I.operand = I.operand
+!                            where type S.P.Client.pseudo_op = CFG.P.Client.pseudo_op
+!                              and type S.P.T.Basis.cond = CFG.P.T.Basis.cond
+!                              and type S.P.T.Basis.div_rounding_mode = CFG.P.T.Basis.div_rounding_mode
+!                              and type S.P.T.Basis.ext = CFG.P.T.Basis.ext
+!                              and type S.P.T.Basis.fcond = CFG.P.T.Basis.fcond
+!                              and type S.P.T.Basis.rounding_mode = CFG.P.T.Basis.rounding_mode
+!                              and type S.P.T.Constant.const = CFG.P.T.Constant.const
+!                              and type ('s,'r,'f,'c) S.P.T.Extension.ccx = ('s,'r,'f,'c) CFG.P.T.Extension.ccx
+!                              and type ('s,'r,'f,'c) S.P.T.Extension.fx = ('s,'r,'f,'c) CFG.P.T.Extension.fx
+!                              and type ('s,'r,'f,'c) S.P.T.Extension.rx = ('s,'r,'f,'c) CFG.P.T.Extension.rx
+!                              and type ('s,'r,'f,'c) S.P.T.Extension.sx = ('s,'r,'f,'c) CFG.P.T.Extension.sx
+!                              and type S.P.T.I.div_rounding_mode = CFG.P.T.I.div_rounding_mode
+!                              and type S.P.T.Region.region = CFG.P.T.Region.region
+!                              and type S.P.T.ccexp = CFG.P.T.ccexp
+!                              and type S.P.T.fexp = CFG.P.T.fexp
+!                              (* and type S.P.T.labexp = CFG.P.T.labexp *)
+!                              and type S.P.T.mlrisc = CFG.P.T.mlrisc
+!                              and type S.P.T.oper = CFG.P.T.oper
+!                              and type S.P.T.rep = CFG.P.T.rep
+!                              and type S.P.T.rexp = CFG.P.T.rexp
+!                              and type S.P.T.stm = CFG.P.T.stm
+  
+        type spill_info
+***************
+*** 138,145 ****
+      structure RA = 
+          RegisterAllocator
+!           (SpillHeur)
+!           (MemoryRA
+               (RADeadCodeElim
+!                 (ClusterRA
+                     (structure Flowgraph = CFG
+                      structure Asm = Asm
+--- 174,181 ----
+      structure RA = 
+          RegisterAllocator
+!           (structure SpillHeuristics = SpillHeur
+!            structure Flowgraph = MemoryRA
+               (RADeadCodeElim
+!                 (structure Flowgraph = ClusterRA
+                     (structure Flowgraph = CFG
+                      structure Asm = Asm
+***************
+*** 147,152 ****
+                      structure Spill = Spill
+                     )
+!                  )
+!                 (fun cellkind CB.GP = true | cellkind _ = false
+                   val deadRegs = deadRegs
+                   val affectedBlocks = affectedBlocks
+--- 183,187 ----
+                      structure Spill = Spill
+                     )
+!                  fun cellkind CB.GP = true | cellkind _ = false
+                   val deadRegs = deadRegs
+                   val affectedBlocks = affectedBlocks
+diff -N -C 2 -r MLRISC/amd64/ra/amd64SpillInstr.sml MLRISC-mlton/amd64/ra/amd64SpillInstr.sml
+*** MLRISC/amd64/ra/amd64SpillInstr.sml	2007-05-30 16:34:40.000000000 -0500
+--- MLRISC-mlton/amd64/ra/amd64SpillInstr.sml	2007-08-15 21:30:03.000000000 -0500
+***************
+*** 7,12 ****
+  functor AMD64SpillInstr (
+        structure I : AMD64INSTR
+!       structure Props : AMD64INSN_PROPERTIES
+!           where I = I
+      ) : ARCH_SPILL_INSTR =
+    struct
+--- 7,16 ----
+  functor AMD64SpillInstr (
+        structure I : AMD64INSTR
+!       structure Props : AMD64INSN_PROPERTIES (* where I = I *)
+!                         where type I.addressing_mode = I.addressing_mode
+!                           and type I.ea = I.ea
+!                           and type I.instr = I.instr
+!                           and type I.instruction = I.instruction
+!                           and type I.operand = I.operand
+      ) : ARCH_SPILL_INSTR =
+    struct
+***************
+*** 70,74 ****
+          in
+            (case ea
+!             of ( I.Displace _ | I.Indexed _ ) => move ()
+               | _ => error "spillToEA"
+            (* end case *))
+--- 74,79 ----
+          in
+            (case ea
+!             of ( I.Displace _ ) => move ()
+!              | ( I.Indexed _ ) => move ()
+               | _ => error "spillToEA"
+            (* end case *))
+***************
+*** 82,86 ****
+          in
+            (case ea
+!             of ( I.Displace _ | I.Indexed _ ) => move ()
+               | _ => error "reloadFromEA"
+            (* end case *))
+--- 87,92 ----
+          in
+            (case ea
+!             of ( I.Displace _ ) => move ()
+!              | ( I.Indexed _ ) => move ()
+               | _ => error "reloadFromEA"
+            (* end case *))
+***************
+*** 99,105 ****
+  		    	        return=return, uses=uses, 
+  			        cutsTo=cutsTo, mem=mem, pops=pops}, an)
+! 		 | I.MOVE {mvOp as (I.MOVZBQ|I.MOVSBQ|I.MOVZWQ|I.MOVSWQ|
+! 		                    I.MOVSLQ|I.MOVZBL|I.MOVSBL|I.MOVZWL|
+! 		                    I.MOVSWL), src, dst} => let
+  		   val tmpR = newReg ()
+  		   val tmp = I.Direct (sz, tmpR)
+--- 105,173 ----
+  		    	        return=return, uses=uses, 
+  			        cutsTo=cutsTo, mem=mem, pops=pops}, an)
+! 		 | I.MOVE {mvOp as (I.MOVZBQ), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVSBQ), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVZWQ), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVSWQ), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVSLQ), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVZBL), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVSBL), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVZWL), src, dst} => let
+! 		   val tmpR = newReg ()
+! 		   val tmp = I.Direct (sz, tmpR)
+! 		   in
+! 		     {proh=[tmpR], newReg=SOME tmpR,
+! 		      code=[mark (I.MOVE {mvOp=mvOp, src=src, dst=tmp}, an),
+! 		            I.move {mvOp=sMvOp, src=tmp, dst=spillLoc}]}
+! 		   end
+! 		 | I.MOVE {mvOp as (I.MOVSWL), src, dst} => let
+  		   val tmpR = newReg ()
+  		   val tmp = I.Direct (sz, tmpR)
+***************
+*** 164,169 ****
+  		 | I.BINARY {binOp, src, dst} => let 
+  		   (* note: dst = r *)
+! 		   fun multBinOp(I.MULQ|I.MULL|I.MULW|I.MULB|
+! 				 I.IMULQ|I.IMULL|I.IMULW|I.IMULB) = true
+  		     | multBinOp _ = false
+  		   in
+--- 232,243 ----
+  		 | I.BINARY {binOp, src, dst} => let 
+  		   (* note: dst = r *)
+! 		   fun multBinOp(I.MULQ) = true
+!                      | multBinOp(I.MULL) = true
+!                      | multBinOp(I.MULW) = true
+!                      | multBinOp(I.MULB) = true
+!                      | multBinOp(I.IMULQ) = true
+!                      | multBinOp(I.IMULL) = true
+!                      | multBinOp(I.IMULW) = true
+!                      | multBinOp(I.IMULB) = true
+  		     | multBinOp _ = false
+  		   in
+diff -N -C 2 -r MLRISC/amd64/staged-allocation/amd64-svid.sml MLRISC-mlton/amd64/staged-allocation/amd64-svid.sml
+*** MLRISC/amd64/staged-allocation/amd64-svid.sml	2007-05-29 16:02:35.000000000 -0500
+--- MLRISC-mlton/amd64/staged-allocation/amd64-svid.sml	2007-08-13 22:55:35.000000000 -0500
+***************
+*** 147,152 ****
+        | C_FSTK of (T.fty * T.I.machine_int) (* floating-point argument on the call stack *)
+  
+!     fun kindOfCTy (CTy.C_float | CTy.C_double | CTy.C_long_double) = K_FPR
+!       | kindOfCTy (CTy.C_STRUCT _ | CTy.C_UNION _ | CTy.C_ARRAY _) = K_MEM
+        | kindOfCTy _ = K_GPR
+      fun szToLoc cty {sz, align} = (sz * 8, kindOfCTy cty, align)
+--- 147,156 ----
+        | C_FSTK of (T.fty * T.I.machine_int) (* floating-point argument on the call stack *)
+  
+!     fun kindOfCTy (CTy.C_float) = K_FPR
+!       | kindOfCTy (CTy.C_double) = K_FPR
+!       | kindOfCTy (CTy.C_long_double) = K_FPR
+!       | kindOfCTy (CTy.C_STRUCT _) = K_MEM
+!       | kindOfCTy (CTy.C_UNION _) = K_MEM
+!       | kindOfCTy (CTy.C_ARRAY _) = K_MEM
+        | kindOfCTy _ = K_GPR
+      fun szToLoc cty {sz, align} = (sz * 8, kindOfCTy cty, align)
 diff -N -C 2 -r MLRISC/backpatch/backpatch.sml MLRISC-mlton/backpatch/backpatch.sml
 *** MLRISC/backpatch/backpatch.sml	2002-03-11 21:56:23.000000000 -0600
 --- MLRISC-mlton/backpatch/backpatch.sml	2007-07-31 19:42:46.000000000 -0500
@@ -1327,10 +2987,10 @@ diff -N -C 2 -r MLRISC/c-calls/unimplemented-c-calls.sml MLRISC-mlton/c-calls/un
       structure T = T
 diff -N -C 2 -r MLRISC/cm/proxyLib.cm MLRISC-mlton/cm/proxyLib.cm
 *** MLRISC/cm/proxyLib.cm	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/cm/proxyLib.cm	2007-07-31 19:42:46.000000000 -0500
+--- MLRISC-mlton/cm/proxyLib.cm	2007-08-13 22:47:29.000000000 -0500
 ***************
 *** 0 ****
---- 1,50 ----
+--- 1,57 ----
 + Group
 +         group(proxyGrp.cm)
 + is
@@ -1342,6 +3002,12 @@ diff -N -C 2 -r MLRISC/cm/proxyLib.cm MLRISC-mlton/cm/proxyLib.cm
 + bind:(anchor:ALPHA-RTL.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:ALPHA-Sched.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:ALPHA-SSA.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64-GC.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64-Peephole.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64-RTL.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64-Sched.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:AMD64-SSA.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:Control.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:GC.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:Graphs.cm value:$SMLNJ-MLRISC)
@@ -1370,6 +3036,7 @@ diff -N -C 2 -r MLRISC/cm/proxyLib.cm MLRISC-mlton/cm/proxyLib.cm
 + bind:(anchor:RA.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:Region.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:RTL.cm value:$SMLNJ-MLRISC)
++ bind:(anchor:SA.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:Sched.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:SPARC.cm value:$SMLNJ-MLRISC)
 + bind:(anchor:SPARC-GC.cm value:$SMLNJ-MLRISC)
@@ -2865,7 +4532,7 @@ diff -N -C 2 -r MLRISC/library/hash-array.sml MLRISC-mlton/library/hash-array.sm
            val array'': int * (int -> 'a) -> 'a array
 diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 *** MLRISC/mlb/ALPHA.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/ALPHA.mlb	2007-08-12 21:29:03.000000000 -0500
+--- MLRISC-mlton/mlb/ALPHA.mlb	2007-08-15 21:45:17.000000000 -0500
 ***************
 *** 0 ****
 --- 1,474 ----
@@ -3343,9 +5010,716 @@ diff -N -C 2 -r MLRISC/mlb/ALPHA.mlb MLRISC-mlton/mlb/ALPHA.mlb
 + end
 + 
 + end
+diff -N -C 2 -r MLRISC/mlb/AMD64.mlb MLRISC-mlton/mlb/AMD64.mlb
+*** MLRISC/mlb/AMD64.mlb	1969-12-31 18:00:00.000000000 -0600
+--- MLRISC-mlton/mlb/AMD64.mlb	2007-08-15 21:45:18.000000000 -0500
+***************
+*** 0 ****
+--- 1,635 ----
++ 
++ ann
++   "nonexhaustiveMatch warn" "redundantMatch warn"
++   "sequenceNonUnit ignore"
++   "warnUnused false" "forceUsed"
++ in
++ 
++ local
++   basis l24 = 
++     bas
++       (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/unsafe.mlb
++     end
++   basis l121 = 
++     bas
++       (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++     end
++   basis l5 = 
++     bas
++       (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
++     end
++   basis l43 = 
++     bas
++       (* $Control.cm(=$SMLNJ-MLRISC)/Control.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Control.mlb
++     end
++   basis l223 = 
++     bas
++       (* $Graphs.cm(=$SMLNJ-MLRISC)/Graphs.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb
++     end
++   basis l28 = 
++     bas
++       (* $Lib.cm(=$SMLNJ-MLRISC)/Lib.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Lib.mlb
++     end
++   basis l267 = 
++     bas
++       (* $MLTREE.cm(=$SMLNJ-MLRISC)/MLTREE.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLTREE.mlb
++     end
++   basis l58 = 
++     bas
++       (* $SA.cm(=$SMLNJ-MLRISC)/SA.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/SA.mlb
++     end
++ in
++ local
++    $(SML_LIB)/basis/pervasive.mlb
++    local
++       open l5
++    in
++       signature gs_0 = REGION
++    end
++    local
++       open l5
++    in
++       signature gs_1 = CONSTANT
++    end
++    local
++       open l5
++    in
++       signature gs_2 = MLTREE
++    end
++    local
++       open l5
++    in
++       signature gs_3 = CELLS_BASIS
++    end
++    local
++       open l5
++    in
++       structure gs_4 = CellsBasis
++    end
++    local
++       open l5
++    in
++       structure gs_5 = Label
++    end
++    local
++       open l24
++    in
++       structure gs_6 = Int32
++    end
++    local
++       open l28
++    in
++       structure gs_7 = Annotations
++    end
++    local
++       open l5
++    in
++       functor gs_8 = Cells
++    end
++    local
++       open l24
++    in
++       structure gs_9 = Int
++    end
++    local
++       open l5
++    in
++       signature gs_10 = CELLS
++    end
++    local
++       open l43
++    in
++       signature gs_11 = MLRISC_ERROR_MSG
++       structure gs_12 = MLRiscErrorMsg
++    end
++    local
++       signature CELLS = gs_10
++       functor Cells = gs_8
++       structure CellsBasis = gs_4
++       structure Int = gs_9
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       ../amd64/instructions/amd64Cells.sml
++    in
++       signature gs_13 = AMD64CELLS
++       structure gs_14 = AMD64Cells
++    end
++    local
++       signature AMD64CELLS = gs_13
++       structure AMD64Cells = gs_14
++       structure Annotations = gs_7
++       signature CELLS_BASIS = gs_3
++       signature CONSTANT = gs_1
++       structure CellsBasis = gs_4
++       structure Int32 = gs_6
++       structure Label = gs_5
++       signature MLTREE = gs_2
++       signature REGION = gs_0
++       ../amd64/instructions/amd64Instr.sml
++    in
++       signature gs_15 = AMD64INSTR
++       functor gs_16 = AMD64Instr
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       ../amd64/mltree/amd64-opcodes.sml
++    in
++       functor gs_17 = AMD64Opcodes
++    end
++    local
++       open l58
++    in
++       signature gs_18 = C_CALL
++    end
++    local
++       open l58
++    in
++       functor gs_19 = StagedAllocationFn
++    end
++    local
++       open l5
++    in
++       structure gs_20 = CTypes
++    end
++    local
++       open l24
++    in
++       structure gs_21 = Word
++    end
++    local
++       structure CTypes = gs_20
++       structure Int = gs_9
++       structure Word = gs_21
++       ../amd64/staged-allocation/c-sizes.sml
++    in
++       structure gs_22 = CSizes
++    end
++    local
++       signature AMD64CELLS = gs_13
++       structure AMD64Cells = gs_14
++       structure CSizes = gs_22
++       structure CTypes = gs_20
++       signature C_CALL = gs_18
++       structure CellsBasis = gs_4
++       structure Int = gs_9
++       signature MLTREE = gs_2
++       functor StagedAllocationFn = gs_19
++       ../amd64/staged-allocation/amd64-svid.sml
++    in
++       functor gs_23 = AMD64SVID
++    end
++    local
++       open l5
++    in
++       signature gs_24 = MC_EMIT
++    end
++    local
++       open l24
++    in
++       structure gs_25 = Word32
++    end
++    local
++       open l24
++    in
++       structure gs_26 = Word8
++    end
++    local
++       open l24
++    in
++       structure gs_27 = LargeWord
++    end
++    local
++       open l24
++    in
++       structure gs_28 = Word8Vector
++    end
++    local
++       open l5
++    in
++       signature gs_29 = INSTRUCTION_EMITTER
++    end
++    local
++       open l5
++    in
++       signature gs_30 = MLTREE_EVAL
++    end
++    local
++       open l5
++    in
++       functor gs_31 = Shuffle
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       structure CellsBasis = gs_4
++       functor Shuffle = gs_31
++       ../amd64/instructions/amd64Shuffle.sml
++    in
++       signature gs_32 = AMD64SHUFFLE
++       functor gs_33 = AMD64Shuffle
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       signature AMD64SHUFFLE = gs_32
++       functor AMD64Shuffle = gs_33
++       structure CellsBasis = gs_4
++       signature INSTRUCTION_EMITTER = gs_29
++       structure Int = gs_9
++       structure Int32 = gs_6
++       structure LargeWord = gs_27
++       signature MC_EMIT = gs_24
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE_EVAL = gs_30
++       structure Word = gs_21
++       structure Word32 = gs_25
++       structure Word8 = gs_26
++       structure Word8Vector = gs_28
++       ../amd64/amd64MC.sml
++    in
++       functor gs_34 = AMD64MCEmitter
++    end
++    local
++       open l5
++    in
++       signature gs_35 = PSEUDO_OPS_BASIS
++    end
++    local
++       open l5
++    in
++       functor gs_36 = GasPseudoOps
++    end
++    local
++       open l5
++    in
++       functor gs_37 = PseudoOpsLittle
++    end
++    local
++       open l121
++    in
++       structure gs_38 = Format
++    end
++    local
++       open l5
++    in
++       structure gs_39 = PseudoOpsBasisTyp
++    end
++    local
++       structure Format = gs_38
++       functor GasPseudoOps = gs_36
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE = gs_2
++       signature MLTREE_EVAL = gs_30
++       signature PSEUDO_OPS_BASIS = gs_35
++       structure PseudoOpsBasisTyp = gs_39
++       functor PseudoOpsLittle = gs_37
++       structure Word32 = gs_25
++       ../amd64/flowgraph/amd64GasPseudoOps.sml
++    in
++       functor gs_40 = AMD64GasPseudoOps
++    end
++    local
++       open l5
++    in
++       signature gs_41 = MLTREE_HASH
++    end
++    local
++       open l5
++    in
++       signature gs_42 = INSN_PROPERTIES
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       structure CellsBasis = gs_4
++       signature INSN_PROPERTIES = gs_42
++       structure Int = gs_9
++       structure Int32 = gs_6
++       structure Label = gs_5
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE_EVAL = gs_30
++       signature MLTREE_HASH = gs_41
++       structure Word = gs_21
++       ../amd64/instructions/amd64Props.sml
++    in
++       signature gs_43 = AMD64INSN_PROPERTIES
++       functor gs_44 = AMD64Props
++    end
++    local
++       open l5
++    in
++       signature gs_45 = SDI_JUMPS
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       signature AMD64SHUFFLE = gs_32
++       functor AMD64Shuffle = gs_33
++       signature MC_EMIT = gs_24
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE_EVAL = gs_30
++       signature SDI_JUMPS = gs_45
++       structure Word8Vector = gs_28
++       ../amd64/backpatch/amd64Jumps.sml
++    in
++       functor gs_46 = AMD64Jumps
++    end
++    local
++       open l5
++    in
++       signature gs_47 = CONTROL_FLOW_GRAPH
++    end
++    local
++       open l5
++    in
++       signature gs_48 = MLTREE_STREAM
++    end
++    local
++       ../amd64/instructions/amd64InstrExt.sml
++    in
++       structure gs_49 = AMD64InstrExt
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       structure AMD64InstrExt = gs_49
++       signature CONTROL_FLOW_GRAPH = gs_47
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE_STREAM = gs_48
++       ../amd64/instructions/amd64CompInstrExt.sml
++    in
++       signature gs_50 = AMD64COMP_INSTR_EXT
++       functor gs_51 = AMD64CompInstrExt
++    end
++    local
++       open l5
++    in
++       signature gs_52 = ASM_FORMAT_UTIL
++       structure gs_53 = AsmFormatUtil
++    end
++    local
++       open l5
++    in
++       signature gs_54 = ASM_STREAM
++       structure gs_55 = AsmStream
++    end
++    local
++       open l24
++    in
++       structure gs_56 = TextIO
++    end
++    local
++       open l24
++    in
++       structure gs_57 = String
++    end
++    local
++       open l24
++    in
++       structure gs_58 = Char
++    end
++    local
++       open l5
++    in
++       structure gs_59 = AsmFlags
++    end
++    local
++       open l5
++    in
++       signature gs_60 = INSTRUCTION_STREAM
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       signature AMD64SHUFFLE = gs_32
++       functor AMD64Shuffle = gs_33
++       signature ASM_FORMAT_UTIL = gs_52
++       signature ASM_STREAM = gs_54
++       structure Annotations = gs_7
++       structure AsmFlags = gs_59
++       structure AsmFormatUtil = gs_53
++       structure AsmStream = gs_55
++       structure CellsBasis = gs_4
++       structure Char = gs_58
++       signature INSTRUCTION_EMITTER = gs_29
++       signature INSTRUCTION_STREAM = gs_60
++       structure Int = gs_9
++       structure Int32 = gs_6
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREE_EVAL = gs_30
++       structure String = gs_57
++       structure TextIO = gs_56
++       ../amd64/emit/amd64Asm.sml
++    in
++       functor gs_61 = AMD64AsmEmitter
++    end
++    local
++       open l5
++    in
++       signature gs_62 = CFG_OPTIMIZATION
++    end
++    local
++       open l5
++    in
++       functor gs_63 = GetReg
++    end
++    local
++       open l5
++    in
++       signature gs_64 = PRINT_FLOWGRAPH
++       functor gs_65 = PrintFlowgraph
++    end
++    local
++       open l5
++    in
++       functor gs_66 = RegisterAllocator
++    end
++    local
++       open l5
++    in
++       functor gs_67 = MemoryRA
++    end
++    local
++       open l5
++    in
++       functor gs_68 = RADeadCodeElim
++    end
++    local
++       open l5
++    in
++       functor gs_69 = ClusterRA
++    end
++    local
++       open l121
++    in
++       structure gs_70 = IntHashTable
++    end
++    local
++       open l43
++    in
++       signature gs_71 = MLRISC_CONTROL
++       structure gs_72 = MLRiscControl
++    end
++    local
++       open l223
++    in
++       structure gs_73 = Graph
++    end
++    local
++       open l24
++    in
++       structure gs_74 = Array
++    end
++    local
++       open l5
++    in
++       signature gs_75 = RA_SPILL
++    end
++    local
++       open l5
++    in
++       signature gs_76 = RA_SPILL_HEURISTICS
++    end
++    local
++       open l5
++    in
++       structure gs_77 = RAGraph
++    end
++    local
++       open l5
++    in
++       signature gs_78 = ARCH_SPILL_INSTR
++    end
++    local
++       signature AMD64INSN_PROPERTIES = gs_43
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       functor AMD64Props = gs_44
++       signature ARCH_SPILL_INSTR = gs_78
++       structure CellsBasis = gs_4
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscErrorMsg = gs_12
++       ../amd64/ra/amd64SpillInstr.sml
++    in
++       functor gs_79 = AMD64SpillInstr
++    end
++    local
++       signature AMD64INSN_PROPERTIES = gs_43
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       functor AMD64Props = gs_44
++       functor AMD64SpillInstr = gs_79
++       structure Annotations = gs_7
++       structure Array = gs_74
++       signature CFG_OPTIMIZATION = gs_62
++       signature CONTROL_FLOW_GRAPH = gs_47
++       structure CellsBasis = gs_4
++       functor ClusterRA = gs_69
++       functor GetReg = gs_63
++       structure Graph = gs_73
++       signature INSTRUCTION_EMITTER = gs_29
++       structure IntHashTable = gs_70
++       signature MLRISC_CONTROL = gs_71
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscControl = gs_72
++       structure MLRiscErrorMsg = gs_12
++       functor MemoryRA = gs_67
++       signature PRINT_FLOWGRAPH = gs_64
++       functor PrintFlowgraph = gs_65
++       functor RADeadCodeElim = gs_68
++       structure RAGraph = gs_77
++       signature RA_SPILL = gs_75
++       signature RA_SPILL_HEURISTICS = gs_76
++       functor RegisterAllocator = gs_66
++       ../amd64/ra/amd64RegAlloc.sml
++    in
++       functor gs_80 = AMD64RegAlloc
++    end
++    local
++       open l5
++    in
++       functor gs_81 = MLTreeGen
++    end
++    local
++       open l5
++    in
++       functor gs_82 = MLTreeSize
++    end
++    local
++       open l28
++    in
++       signature gs_83 = PROBABILITY
++       structure gs_84 = Probability
++    end
++    local
++       open l5
++    in
++       structure gs_85 = MLRiscAnnotations
++    end
++    local
++       open l5
++    in
++       signature gs_86 = MLTREECOMP
++       signature gs_87 = MLTREE_EXTENSION_COMP
++    end
++    local
++       open l267
++    in
++       signature gs_88 = MLTREE_UTILS
++    end
++    local
++       signature AMD64INSTR = gs_15
++       functor AMD64Instr = gs_16
++       functor AMD64Opcodes = gs_17
++       structure CellsBasis = gs_4
++       structure Int32 = gs_6
++       structure Label = gs_5
++       signature MLRISC_ERROR_MSG = gs_11
++       structure MLRiscAnnotations = gs_85
++       structure MLRiscErrorMsg = gs_12
++       signature MLTREECOMP = gs_86
++       signature MLTREE_EXTENSION_COMP = gs_87
++       signature MLTREE_UTILS = gs_88
++       functor MLTreeGen = gs_81
++       functor MLTreeSize = gs_82
++       signature PROBABILITY = gs_83
++       structure Probability = gs_84
++       functor Shuffle = gs_31
++       structure Word = gs_21
++       structure Word32 = gs_25
++       ../amd64/mltree/amd64-gen.sml
++    in
++       functor gs_89 = AMD64Gen
++    end
++ in
++    functor AMD64AsmEmitter = gs_61
++    signature AMD64CELLS = gs_13
++    structure AMD64Cells = gs_14
++    functor AMD64CompInstrExt = gs_51
++    functor AMD64GasPseudoOps = gs_40
++    functor AMD64Gen = gs_89
++    signature AMD64INSN_PROPERTIES = gs_43
++    signature AMD64INSTR = gs_15
++    functor AMD64Instr = gs_16
++    structure AMD64InstrExt = gs_49
++    functor AMD64Jumps = gs_46
++    functor AMD64MCEmitter = gs_34
++    functor AMD64Opcodes = gs_17
++    functor AMD64Props = gs_44
++    functor AMD64RegAlloc = gs_80
++    signature AMD64SHUFFLE = gs_32
++    functor AMD64SVID = gs_23
++    functor AMD64Shuffle = gs_33
++    functor AMD64SpillInstr = gs_79
++    structure CSizes = gs_22
++ end
++ end
++ 
++ end
+diff -N -C 2 -r MLRISC/mlb/AMD64-Peephole.mlb MLRISC-mlton/mlb/AMD64-Peephole.mlb
+*** MLRISC/mlb/AMD64-Peephole.mlb	1969-12-31 18:00:00.000000000 -0600
+--- MLRISC-mlton/mlb/AMD64-Peephole.mlb	2007-08-15 21:45:18.000000000 -0500
+***************
+*** 0 ****
+--- 1,60 ----
++ 
++ ann
++   "nonexhaustiveMatch warn" "redundantMatch warn"
++   "sequenceNonUnit ignore"
++   "warnUnused false" "forceUsed"
++ in
++ 
++ local
++   basis l8 = 
++     bas
++       (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
++     end
++   basis l4 = 
++     bas
++       (* $Peephole.cm(=$SMLNJ-MLRISC)/Peephole.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/Peephole.mlb
++     end
++   basis l16 = 
++     bas
++       (* $AMD64.cm(=$SMLNJ-MLRISC)/AMD64.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb
++     end
++ in
++ local
++    $(SML_LIB)/basis/pervasive.mlb
++    local
++       open l4
++    in
++       signature gs_0 = PEEPHOLE
++    end
++    local
++       open l8
++    in
++       structure gs_1 = CellsBasis
++    end
++    local
++       open l8
++    in
++       signature gs_2 = MLTREE_EVAL
++    end
++    local
++       open l16
++    in
++       signature gs_3 = AMD64INSTR
++       functor gs_4 = AMD64Instr
++    end
++    local
++       signature AMD64INSTR = gs_3
++       functor AMD64Instr = gs_4
++       structure CellsBasis = gs_1
++       signature MLTREE_EVAL = gs_2
++       signature PEEPHOLE = gs_0
++       ../amd64/instructions/amd64Peephole.sml
++    in
++       functor gs_5 = AMD64Peephole
++    end
++ in
++    functor AMD64Peephole = gs_5
++ end
++ end
++ 
++ end
 diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 *** MLRISC/mlb/Control.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/Control.mlb	2007-08-12 21:29:03.000000000 -0500
+--- MLRISC-mlton/mlb/Control.mlb	2007-08-15 21:45:18.000000000 -0500
 ***************
 *** 0 ****
 --- 1,104 ----
@@ -3455,7 +5829,7 @@ diff -N -C 2 -r MLRISC/mlb/Control.mlb MLRISC-mlton/mlb/Control.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 *** MLRISC/mlb/Graphs.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/Graphs.mlb	2007-08-12 21:29:04.000000000 -0500
+--- MLRISC-mlton/mlb/Graphs.mlb	2007-08-15 21:45:19.000000000 -0500
 ***************
 *** 0 ****
 --- 1,708 ----
@@ -4169,7 +6543,7 @@ diff -N -C 2 -r MLRISC/mlb/Graphs.mlb MLRISC-mlton/mlb/Graphs.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 *** MLRISC/mlb/HPPA.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/HPPA.mlb	2007-08-12 21:29:04.000000000 -0500
+--- MLRISC-mlton/mlb/HPPA.mlb	2007-08-15 21:45:19.000000000 -0500
 ***************
 *** 0 ****
 --- 1,492 ----
@@ -4667,7 +7041,7 @@ diff -N -C 2 -r MLRISC/mlb/HPPA.mlb MLRISC-mlton/mlb/HPPA.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 *** MLRISC/mlb/IA32.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/IA32.mlb	2007-08-12 21:29:06.000000000 -0500
+--- MLRISC-mlton/mlb/IA32.mlb	2007-08-15 21:45:21.000000000 -0500
 ***************
 *** 0 ****
 --- 1,800 ----
@@ -5473,7 +7847,7 @@ diff -N -C 2 -r MLRISC/mlb/IA32.mlb MLRISC-mlton/mlb/IA32.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 *** MLRISC/mlb/IA32-Peephole.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/IA32-Peephole.mlb	2007-08-12 21:29:06.000000000 -0500
+--- MLRISC-mlton/mlb/IA32-Peephole.mlb	2007-08-15 21:45:21.000000000 -0500
 ***************
 *** 0 ****
 --- 1,60 ----
@@ -5539,7 +7913,7 @@ diff -N -C 2 -r MLRISC/mlb/IA32-Peephole.mlb MLRISC-mlton/mlb/IA32-Peephole.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 *** MLRISC/mlb/Lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/Lib.mlb	2007-08-12 21:29:06.000000000 -0500
+--- MLRISC-mlton/mlb/Lib.mlb	2007-08-15 21:45:21.000000000 -0500
 ***************
 *** 0 ****
 --- 1,263 ----
@@ -5808,7 +8182,7 @@ diff -N -C 2 -r MLRISC/mlb/Lib.mlb MLRISC-mlton/mlb/Lib.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 *** MLRISC/mlb/MLRISC.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/MLRISC.mlb	2007-08-12 21:29:07.000000000 -0500
+--- MLRISC-mlton/mlb/MLRISC.mlb	2007-08-15 21:45:23.000000000 -0500
 ***************
 *** 0 ****
 --- 1,1730 ----
@@ -7544,7 +9918,7 @@ diff -N -C 2 -r MLRISC/mlb/MLRISC.mlb MLRISC-mlton/mlb/MLRISC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 *** MLRISC/mlb/MLTREE.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/MLTREE.mlb	2007-08-12 21:29:08.000000000 -0500
+--- MLRISC-mlton/mlb/MLTREE.mlb	2007-08-15 21:45:23.000000000 -0500
 ***************
 *** 0 ****
 --- 1,209 ----
@@ -7759,7 +10133,7 @@ diff -N -C 2 -r MLRISC/mlb/MLTREE.mlb MLRISC-mlton/mlb/MLTREE.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 *** MLRISC/mlb/Peephole.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/Peephole.mlb	2007-08-12 21:29:08.000000000 -0500
+--- MLRISC-mlton/mlb/Peephole.mlb	2007-08-15 21:45:23.000000000 -0500
 ***************
 *** 0 ****
 --- 1,61 ----
@@ -7826,7 +10200,7 @@ diff -N -C 2 -r MLRISC/mlb/Peephole.mlb MLRISC-mlton/mlb/Peephole.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 *** MLRISC/mlb/PPC.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/PPC.mlb	2007-08-12 21:29:09.000000000 -0500
+--- MLRISC-mlton/mlb/PPC.mlb	2007-08-15 21:45:24.000000000 -0500
 ***************
 *** 0 ****
 --- 1,573 ----
@@ -8405,7 +10779,7 @@ diff -N -C 2 -r MLRISC/mlb/PPC.mlb MLRISC-mlton/mlb/PPC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 *** MLRISC/mlb/RA.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/RA.mlb	2007-08-12 21:29:09.000000000 -0500
+--- MLRISC-mlton/mlb/RA.mlb	2007-08-15 21:45:24.000000000 -0500
 ***************
 *** 0 ****
 --- 1,152 ----
@@ -8561,9 +10935,105 @@ diff -N -C 2 -r MLRISC/mlb/RA.mlb MLRISC-mlton/mlb/RA.mlb
 + end
 + 
 + end
+diff -N -C 2 -r MLRISC/mlb/SA.mlb MLRISC-mlton/mlb/SA.mlb
+*** MLRISC/mlb/SA.mlb	1969-12-31 18:00:00.000000000 -0600
+--- MLRISC-mlton/mlb/SA.mlb	2007-08-15 21:45:24.000000000 -0500
+***************
+*** 0 ****
+--- 1,90 ----
++ 
++ ann
++   "nonexhaustiveMatch warn" "redundantMatch warn"
++   "sequenceNonUnit ignore"
++   "warnUnused false" "forceUsed"
++ in
++ 
++ local
++   basis l30 = 
++     bas
++       (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/unsafe.mlb
++     end
++   basis l26 = 
++     bas
++       (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
++     end
++   basis l4 = 
++     bas
++       (* $MLRISC.cm(=$SMLNJ-MLRISC)/MLRISC.cm ====> *) $(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb
++     end
++ in
++ local
++    $(SML_LIB)/basis/pervasive.mlb
++    local
++       open l4
++    in
++       signature gs_0 = MLTREE
++    end
++    local
++       signature MLTREE = gs_0
++       ../staged-allocation/staged-allocation-sig.sml
++    in
++       signature gs_1 = STAGED_ALLOCATION
++       signature gs_2 = TARGET_LANG
++    end
++    local
++       open l4
++    in
++       structure gs_3 = CTypes
++    end
++    local
++       structure CTypes = gs_3
++       signature MLTREE = gs_0
++       ../staged-allocation/c-call-sig.sml
++    in
++       signature gs_4 = C_CALL
++    end
++    local
++       open l4
++    in
++       structure gs_5 = CellsBasis
++    end
++    local
++       structure CellsBasis = gs_5
++       signature STAGED_ALLOCATION = gs_1
++       signature TARGET_LANG = gs_2
++       ../staged-allocation/call-conv-sig.sml
++    in
++       signature gs_6 = CALL_CONV
++    end
++    local
++       open l26
++    in
++       structure gs_7 = IntBinaryMap
++    end
++    local
++       open l30
++    in
++       structure gs_8 = Int
++    end
++    local
++       structure Int = gs_8
++       structure IntBinaryMap = gs_7
++       signature MLTREE = gs_0
++       signature STAGED_ALLOCATION = gs_1
++       signature TARGET_LANG = gs_2
++       ../staged-allocation/staged-allocation-fn.sml
++    in
++       functor gs_9 = StagedAllocationFn
++    end
++ in
++    signature CALL_CONV = gs_6
++    signature C_CALL = gs_4
++    signature STAGED_ALLOCATION = gs_1
++    functor StagedAllocationFn = gs_9
++    signature TARGET_LANG = gs_2
++ end
++ end
++ 
++ end
 diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 *** MLRISC/mlb/SPARC.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/SPARC.mlb	2007-08-12 21:29:09.000000000 -0500
+--- MLRISC-mlton/mlb/SPARC.mlb	2007-08-15 21:45:25.000000000 -0500
 ***************
 *** 0 ****
 --- 1,538 ----
@@ -9107,7 +11577,7 @@ diff -N -C 2 -r MLRISC/mlb/SPARC.mlb MLRISC-mlton/mlb/SPARC.mlb
 + end
 diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 *** MLRISC/mlb/Visual.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlb/Visual.mlb	2007-08-12 21:29:09.000000000 -0500
+--- MLRISC-mlton/mlb/Visual.mlb	2007-08-15 21:45:25.000000000 -0500
 ***************
 *** 0 ****
 --- 1,252 ----
@@ -9365,13 +11835,15 @@ diff -N -C 2 -r MLRISC/mlb/Visual.mlb MLRISC-mlton/mlb/Visual.mlb
 + end
 diff -N -C 2 -r MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
 *** MLRISC/mlrisc-lib.mlb	1969-12-31 18:00:00.000000000 -0600
---- MLRISC-mlton/mlrisc-lib.mlb	2007-08-12 21:29:09.000000000 -0500
+--- MLRISC-mlton/mlrisc-lib.mlb	2007-08-15 21:45:25.000000000 -0500
 ***************
 *** 0 ****
---- 1,17 ----
+--- 1,20 ----
 + (* DO NOT USE.  Only suitable for type-checking purposes. *)
 + local
 + mlb/ALPHA.mlb
++ mlb/AMD64.mlb
++ mlb/AMD64-Peephole.mlb
 + mlb/Control.mlb
 + mlb/Graphs.mlb
 + mlb/HPPA.mlb
@@ -9383,6 +11855,7 @@ diff -N -C 2 -r MLRISC/mlrisc-lib.mlb MLRISC-mlton/mlrisc-lib.mlb
 + mlb/Peephole.mlb
 + mlb/PPC.mlb
 + mlb/RA.mlb
++ mlb/SA.mlb
 + mlb/SPARC.mlb
 + mlb/Visual.mlb
 + in end
@@ -13105,6 +15578,23 @@ diff -N -C 2 -r MLRISC/sparc/mltree/sparc.sml MLRISC-mlton/sparc/mltree/sparc.sm
 !                   | T.LABEL _ => (T.Basis.swapCond cond,b,a)
                     | _ => (cond,a,b)
             in  if V9 then
+diff -N -C 2 -r MLRISC/staged-allocation/staged-allocation-fn.sml MLRISC-mlton/staged-allocation/staged-allocation-fn.sml
+*** MLRISC/staged-allocation/staged-allocation-fn.sml	2007-04-12 17:51:44.000000000 -0500
+--- MLRISC-mlton/staged-allocation/staged-allocation-fn.sml	2007-08-13 22:54:09.000000000 -0500
+***************
+*** 10,14 ****
+  	structure T : MLTREE
+  	structure TargetLang : TARGET_LANG
+! ) :> STAGED_ALLOCATION where TL = TargetLang = struct
+  
+    structure T = T
+--- 10,15 ----
+  	structure T : MLTREE
+  	structure TargetLang : TARGET_LANG
+! ) :> STAGED_ALLOCATION (* where TL = TargetLang *)
+!                        where type TL.location_kind = TargetLang.location_kind = struct
+  
+    structure T = T
 diff -N -C 2 -r MLRISC/Tools/Parser/mdl.grm.desc MLRISC-mlton/Tools/Parser/mdl.grm.desc
 *** MLRISC/Tools/Parser/mdl.grm.desc	1969-12-31 18:00:00.000000000 -0600
 --- MLRISC-mlton/Tools/Parser/mdl.grm.desc	2007-07-31 19:45:24.000000000 -0500
@@ -41305,7 +43795,7 @@ diff -N -C 2 -r MLRISC/visualization/cfgViewer.sml MLRISC-mlton/visualization/cf
      structure CFG = CFG
 diff -N -C 2 -r MLRISC/x86/backpatch/x86Jumps.sml MLRISC-mlton/x86/backpatch/x86Jumps.sml
 *** MLRISC/x86/backpatch/x86Jumps.sml	2002-01-09 13:44:22.000000000 -0600
---- MLRISC-mlton/x86/backpatch/x86Jumps.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/backpatch/x86Jumps.sml	2007-08-13 23:34:06.000000000 -0500
 ***************
 *** 6,12 ****
   functor X86Jumps
@@ -41439,7 +43929,7 @@ diff -N -C 2 -r MLRISC/x86/c-calls/ia32-svid.sml MLRISC-mlton/x86/c-calls/ia32-s
   		  | conv => error (concat [
 diff -N -C 2 -r MLRISC/x86/emit/x86Asm.sml MLRISC-mlton/x86/emit/x86Asm.sml
 *** MLRISC/x86/emit/x86Asm.sml	2005-10-14 10:16:07.000000000 -0500
---- MLRISC-mlton/x86/emit/x86Asm.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/emit/x86Asm.sml	2007-08-15 21:23:03.000000000 -0500
 ***************
 *** 7,19 ****
   
@@ -41678,7 +44168,7 @@ diff -N -C 2 -r MLRISC/x86/flowgraph/x86-darwin-pseudo-ops.sml MLRISC-mlton/x86/
   
 diff -N -C 2 -r MLRISC/x86/flowgraph/x86GasPseudoOps.sml MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml
 *** MLRISC/x86/flowgraph/x86GasPseudoOps.sml	2002-01-15 10:16:39.000000000 -0600
---- MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/flowgraph/x86GasPseudoOps.sml	2007-08-13 23:15:46.000000000 -0500
 ***************
 *** 6,10 ****
   functor X86GasPseudoOps 
@@ -41714,7 +44204,7 @@ diff -N -C 2 -r MLRISC/x86/flowgraph/x86GasPseudoOps.sml MLRISC-mlton/x86/flowgr
   
 diff -N -C 2 -r MLRISC/x86/instructions/x86comp-instr-ext.sml MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml
 *** MLRISC/x86/instructions/x86comp-instr-ext.sml	2002-02-06 13:11:13.000000000 -0600
---- MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86comp-instr-ext.sml	2007-08-15 21:11:01.000000000 -0500
 ***************
 *** 7,15 ****
   signature X86COMP_INSTR_EXT = sig
@@ -41845,7 +44335,7 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86comp-instr-ext.sml MLRISC-mlton/x86/i
   struct
 diff -N -C 2 -r MLRISC/x86/instructions/x86Instr.sml MLRISC-mlton/x86/instructions/x86Instr.sml
 *** MLRISC/x86/instructions/x86Instr.sml	2002-03-21 16:01:11.000000000 -0600
---- MLRISC-mlton/x86/instructions/x86Instr.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Instr.sml	2007-08-13 22:49:22.000000000 -0500
 ***************
 *** 9,13 ****
   sig
@@ -41870,38 +44360,43 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Instr.sml MLRISC-mlton/x86/instructio
      structure Constant: CONSTANT
 diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.peep MLRISC-mlton/x86/instructions/x86Peephole.peep
 *** MLRISC/x86/instructions/x86Peephole.peep	2002-02-07 15:05:19.000000000 -0600
---- MLRISC-mlton/x86/instructions/x86Peephole.peep	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Peephole.peep	2007-08-15 21:44:09.000000000 -0500
 ***************
-*** 22,25 ****
---- 22,46 ----
+*** 21,25 ****
+     (structure Instr : X86INSTR
       structure Eval  : MLTREE_EVAL
-        sharing Instr.T = Eval.T
-+       (* sharing Instr.T = Eval.T *)
-+       where type T.Basis.cond = Instr.T.Basis.cond
-+         and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
-+         and type T.Basis.ext = Instr.T.Basis.ext
-+         and type T.Basis.fcond = Instr.T.Basis.fcond
-+         and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
-+         and type T.Constant.const = Instr.T.Constant.const
-+         and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
-+         and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
-+         and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
-+         and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
-+         and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
-+         and type T.Region.region = Instr.T.Region.region
-+         and type T.ccexp = Instr.T.ccexp
-+         and type T.fexp = Instr.T.fexp
-+         (* and type T.labexp = Instr.T.labexp *)
-+         and type T.mlrisc = Instr.T.mlrisc
-+         and type T.oper = Instr.T.oper
-+         and type T.rep = Instr.T.rep
-+         and type T.rexp = Instr.T.rexp
-+         and type T.stm = Instr.T.stm
+!       sharing Instr.T = Eval.T
+     ) : PEEPHOLE =
+  struct
+--- 21,45 ----
+     (structure Instr : X86INSTR
+      structure Eval  : MLTREE_EVAL
+!       (* sharing Instr.T = Eval.T *)
+!       where type T.Basis.cond = Instr.T.Basis.cond
+!         and type T.Basis.div_rounding_mode = Instr.T.Basis.div_rounding_mode
+!         and type T.Basis.ext = Instr.T.Basis.ext
+!         and type T.Basis.fcond = Instr.T.Basis.fcond
+!         and type T.Basis.rounding_mode = Instr.T.Basis.rounding_mode
+!         and type T.Constant.const = Instr.T.Constant.const
+!         and type ('s,'r,'f,'c) T.Extension.ccx = ('s,'r,'f,'c) Instr.T.Extension.ccx
+!         and type ('s,'r,'f,'c) T.Extension.fx = ('s,'r,'f,'c) Instr.T.Extension.fx
+!         and type ('s,'r,'f,'c) T.Extension.rx = ('s,'r,'f,'c) Instr.T.Extension.rx
+!         and type ('s,'r,'f,'c) T.Extension.sx = ('s,'r,'f,'c) Instr.T.Extension.sx
+!         and type T.I.div_rounding_mode = Instr.T.I.div_rounding_mode
+!         and type T.Region.region = Instr.T.Region.region
+!         and type T.ccexp = Instr.T.ccexp
+!         and type T.fexp = Instr.T.fexp
+!         (* and type T.labexp = Instr.T.labexp *)
+!         and type T.mlrisc = Instr.T.mlrisc
+!         and type T.oper = Instr.T.oper
+!         and type T.rep = Instr.T.rep
+!         and type T.rexp = Instr.T.rexp
+!         and type T.stm = Instr.T.stm
      ) : PEEPHOLE =
   struct
 diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.sml MLRISC-mlton/x86/instructions/x86Peephole.sml
 *** MLRISC/x86/instructions/x86Peephole.sml	2002-02-21 18:15:55.000000000 -0600
---- MLRISC-mlton/x86/instructions/x86Peephole.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Peephole.sml	2007-08-15 21:43:48.000000000 -0500
 ***************
 *** 13,17 ****
   
@@ -41937,7 +44432,7 @@ diff -N -C 2 -r MLRISC/x86/instructions/x86Peephole.sml MLRISC-mlton/x86/instruc
   struct
 diff -N -C 2 -r MLRISC/x86/instructions/x86Props.sml MLRISC-mlton/x86/instructions/x86Props.sml
 *** MLRISC/x86/instructions/x86Props.sml	2002-03-21 16:01:11.000000000 -0600
---- MLRISC-mlton/x86/instructions/x86Props.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/instructions/x86Props.sml	2007-08-13 23:17:11.000000000 -0500
 ***************
 *** 6,11 ****
   functor X86Props
@@ -42237,7 +44732,7 @@ diff -N -C 2 -r MLRISC/x86/mltree/x86-fp.sml MLRISC-mlton/x86/mltree/x86-fp.sml
 --- 1758,1759 ----
 diff -N -C 2 -r MLRISC/x86/mltree/x86.sml MLRISC-mlton/x86/mltree/x86.sml
 *** MLRISC/x86/mltree/x86.sml	2004-11-17 15:07:35.000000000 -0600
---- MLRISC-mlton/x86/mltree/x86.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/mltree/x86.sml	2007-08-15 21:38:11.000000000 -0500
 ***************
 *** 33,49 ****
    * -- Allen
@@ -42503,7 +44998,7 @@ diff -N -C 2 -r MLRISC/x86/omit-frameptr/x86omit-frameptr.sml MLRISC-mlton/x86/o
   struct
 diff -N -C 2 -r MLRISC/x86/ra/x86RA.sml MLRISC-mlton/x86/ra/x86RA.sml
 *** MLRISC/x86/ra/x86RA.sml	2003-05-22 17:46:30.000000000 -0500
---- MLRISC-mlton/x86/ra/x86RA.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/ra/x86RA.sml	2007-08-15 21:33:25.000000000 -0500
 ***************
 *** 110,120 ****
   functor X86RA 
@@ -42639,7 +45134,7 @@ diff -N -C 2 -r MLRISC/x86/ra/x86Rewrite.sig MLRISC-mlton/x86/ra/x86Rewrite.sig
     val rewriteDef : I.instruction * CB.cell * CB.cell -> I.instruction
 diff -N -C 2 -r MLRISC/x86/ra/x86SpillInstr.sml MLRISC-mlton/x86/ra/x86SpillInstr.sml
 *** MLRISC/x86/ra/x86SpillInstr.sml	2005-10-14 11:28:24.000000000 -0500
---- MLRISC-mlton/x86/ra/x86SpillInstr.sml	2007-07-31 19:45:16.000000000 -0500
+--- MLRISC-mlton/x86/ra/x86SpillInstr.sml	2007-08-15 21:24:37.000000000 -0500
 ***************
 *** 9,13 ****
    *)
