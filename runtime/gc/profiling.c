@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s, 
+GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s,
                                                        GC_sourceIndex i)
  {
   GC_profileMasterIndex pmi;
@@ -16,7 +16,7 @@ GC_profileMasterIndex sourceIndexToProfileMasterIndex (GC_state s,
   return pmi;
 }
 
-GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s, 
+GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s,
                                                         GC_profileMasterIndex i) {
   assert (i >= s->sourceMaps.sourcesLength);
   return i - s->sourceMaps.sourcesLength;
@@ -54,9 +54,9 @@ void addToStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   ps = getProfileStackInfo (s, i);
   if (DEBUG_PROFILE)
     fprintf (stderr, "adding %s to stack  lastTotal = %"PRIuMAX"  lastTotalGC = %"PRIuMAX"\n",
-             getSourceName (s, i), 
-             p->total,
-             p->totalGC);
+             getSourceName (s, i),
+             (uintmax_t)p->total,
+             (uintmax_t)p->totalGC);
   ps->lastTotal = p->total;
   ps->lastTotalGC = p->totalGC;
 }
@@ -115,9 +115,9 @@ void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i) {
   ps = getProfileStackInfo (s, i);
   if (DEBUG_PROFILE)
     fprintf (stderr, "removing %s from stack  ticksInc = %"PRIuMAX"  ticksGCInc = %"PRIuMAX"\n",
-             profileIndexSourceName (s, i), 
-             p->total - ps->lastTotal,
-             p->totalGC - ps->lastTotalGC);
+             profileIndexSourceName (s, i),
+             (uintmax_t)(p->total - ps->lastTotal),
+             (uintmax_t)(p->totalGC - ps->lastTotalGC));
   ps->ticks += p->total - ps->lastTotal;
   ps->ticksGC += p->totalGC - ps->lastTotalGC;
 }
@@ -173,18 +173,18 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
   GC_sourceIndex topSourceIndex;
 
   if (DEBUG_PROFILE)
-    fprintf (stderr, "incForProfiling (%zu, "FMTSSI")\n",
-             amount, sourceSeqIndex);
+    fprintf (stderr, "incForProfiling (%"PRIuMAX", "FMTSSI")\n",
+             (uintmax_t)amount, sourceSeqIndex);
   assert (sourceSeqIndex < s->sourceMaps.sourceSeqsLength);
   sourceSeq = s->sourceMaps.sourceSeqs[sourceSeqIndex];
-  topSourceIndex = 
-    sourceSeq[0] > 0 
-    ? sourceSeq[sourceSeq[0]] 
+  topSourceIndex =
+    sourceSeq[0] > 0
+    ? sourceSeq[sourceSeq[0]]
     : SOURCES_INDEX_UNKNOWN;
   if (DEBUG_PROFILE) {
     profileIndent ();
-    fprintf (stderr, "bumping %s by %zu\n",
-             getSourceName (s, topSourceIndex), amount);
+    fprintf (stderr, "bumping %s by %"PRIuMAX"\n",
+             getSourceName (s, topSourceIndex), (uintmax_t)amount);
   }
   s->profiling.data->countTop[topSourceIndex] += amount;
   s->profiling.data->countTop[sourceIndexToProfileMasterIndex (s, topSourceIndex)] += amount;
@@ -200,7 +200,7 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
 
 void GC_profileInc (GC_state s, size_t amount) {
   if (DEBUG_PROFILE)
-    fprintf (stderr, "GC_profileInc (%zu)\n", amount);
+    fprintf (stderr, "GC_profileInc (%"PRIuMAX")\n", (uintmax_t)amount);
   incForProfiling (s, amount,
                    s->amInGC
                    ? SOURCE_SEQ_GC
@@ -210,7 +210,7 @@ void GC_profileInc (GC_state s, size_t amount) {
 void GC_profileAllocInc (GC_state s, size_t amount) {
   if (s->profiling.isOn and (PROFILE_ALLOC == s->profiling.kind)) {
     if (DEBUG_PROFILE)
-      fprintf (stderr, "GC_profileAllocInc (%zu)\n", amount);
+      fprintf (stderr, "GC_profileAllocInc (%"PRIuMAX")\n", (uintmax_t)amount);
     GC_profileInc (s, amount);
   }
 }
@@ -304,12 +304,12 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   writeUint32U (f, s->sourceMaps.sourcesLength);
   writeNewline (f);
   for (GC_sourceIndex i = 0; i < s->sourceMaps.sourcesLength; i++)
-    writeProfileCount (s, f, p, 
+    writeProfileCount (s, f, p,
                        (GC_profileMasterIndex)i);
   writeUint32U (f, s->sourceMaps.sourceNamesLength);
   writeNewline (f);
   for (GC_sourceNameIndex i = 0; i < s->sourceMaps.sourceNamesLength; i++)
-    writeProfileCount (s, f, p,  
+    writeProfileCount (s, f, p,
                        (GC_profileMasterIndex)(i + s->sourceMaps.sourcesLength));
   fclose_safe (f);
 }
@@ -466,14 +466,14 @@ void GC_profileDone (GC_state s) {
   s->profiling.isOn = FALSE;
   p = s->profiling.data;
   if (s->profiling.stack) {
-    uint32_t profileMasterLength = 
+    uint32_t profileMasterLength =
       s->sourceMaps.sourcesLength + s->sourceMaps.sourceNamesLength;
     for (profileMasterIndex = 0;
          profileMasterIndex < profileMasterLength;
          profileMasterIndex++) {
       if (p->stack[profileMasterIndex].numOccurrences > 0) {
         if (DEBUG_PROFILE)
-          fprintf (stderr, "done leaving %s\n", 
+          fprintf (stderr, "done leaving %s\n",
                    profileIndexSourceName (s, profileMasterIndex));
         removeFromStackForProfiling (s, profileMasterIndex);
       }
@@ -488,4 +488,3 @@ GC_profileData GC_getProfileCurrent (GC_state s) {
 void GC_setProfileCurrent (GC_state s, GC_profileData p) {
   s->profiling.data = p;
 }
-

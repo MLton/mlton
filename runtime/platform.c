@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -31,7 +31,7 @@ void MLton_exit (GC_state s, C_Int_t status) {
 }
 
 void MLton_allocTooLarge (void) {
-  fprintf (stderr, "Out of memory: attempt to allocate more than %zu bytes.\n", 
-           (size_t)0x7FFFFFFF);
+  fprintf (stderr, "Out of memory: attempt to allocate more than %"PRIuMAX" bytes.\n",
+           (uintmax_t)0x7FFFFFFF);
   exit (2);
 }

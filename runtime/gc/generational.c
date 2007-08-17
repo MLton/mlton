@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,27 +12,27 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
   fprintf(stream,
           "\t\tcardMap = "FMTPTR"\n"
           "\t\tcardMapAbsolute = "FMTPTR"\n"
-          "\t\tcardMapLength = %zu\n"
+          "\t\tcardMapLength = %"PRIuMAX"\n"
           "\t\tcrossMap = "FMTPTR"\n"
-          "\t\tcrossMapLength = %zu\n"
-          "\t\tcrossMapValidSize = %zu\n",
-          (uintptr_t)generational->cardMap, 
+          "\t\tcrossMapLength = %"PRIuMAX"\n"
+          "\t\tcrossMapValidSize = %"PRIuMAX"\n",
+          (uintptr_t)generational->cardMap,
           (uintptr_t)generational->cardMapAbsolute,
-          generational->cardMapLength, 
+          (uintmax_t)generational->cardMapLength,
           (uintptr_t)generational->crossMap,
-          generational->crossMapLength,
-          generational->crossMapValidSize);
+          (uintmax_t)generational->crossMapLength,
+          (uintmax_t)generational->crossMapValidSize);
   if (DEBUG_GENERATIONAL and DEBUG_DETAILED) {
     GC_crossMapIndex i;
 
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t"FMTCMI"  "FMTCME"  "FMTCME"\n", 
+        fprintf (stderr, "\t"FMTCMI"  "FMTCME"  "FMTCME"\n",
                  i, generational->crossMap[i],
                  CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]);
     fprintf (stderr, "\n");
-  }               
+  }
 }
 
 GC_cardMapIndex pointerToCardMapIndexAbsolute (pointer p) {
@@ -86,7 +86,7 @@ void setCardMapAbsolute (GC_state s) {
    * subsequent additions to mark the cards will overflow and put us
    * in the right place.
    */
-  s->generationalMaps.cardMapAbsolute = 
+  s->generationalMaps.cardMapAbsolute =
     s->generationalMaps.cardMap
     - pointerToCardMapIndexAbsolute (s->heap.start);
   if (DEBUG_CARD_MARKING)
@@ -98,7 +98,7 @@ pointer getCrossMapCardStart (GC_state s, pointer p) {
   /* The p - 1 is so that a pointer to the beginning of a card falls
    * into the index for the previous crossMap entry.
    */
-  return 
+  return
     (p == s->heap.start)
     ? s->heap.start
     : (p - 1) - ((uintptr_t)(p - 1) % CARD_SIZE);
@@ -107,7 +107,7 @@ pointer getCrossMapCardStart (GC_state s, pointer p) {
 void clearCardMap (GC_state s) {
   if (DEBUG_GENERATIONAL and DEBUG_DETAILED)
     fprintf (stderr, "clearCardMap ()\n");
-  memset (s->generationalMaps.cardMap, 0, 
+  memset (s->generationalMaps.cardMap, 0,
           s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE);
 }
 
@@ -115,7 +115,7 @@ void clearCrossMap (GC_state s) {
   if (DEBUG_GENERATIONAL and DEBUG_DETAILED)
     fprintf (stderr, "clearCrossMap ()\n");
   s->generationalMaps.crossMapValidSize = 0;
-  memset (s->generationalMaps.crossMap, CROSS_MAP_EMPTY, 
+  memset (s->generationalMaps.crossMap, CROSS_MAP_EMPTY,
           s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
 }
 
@@ -150,9 +150,9 @@ void createCardMapAndCrossMap (GC_state s) {
   if (DEBUG_MEM)
     fprintf (stderr, "Creating card/cross map of size %s\n",
              uintmaxToCommaString(totalMapSize));
-  s->generationalMaps.cardMap = 
+  s->generationalMaps.cardMap =
     GC_mmapAnon_safe (NULL, totalMapSize);
-  s->generationalMaps.crossMap = 
+  s->generationalMaps.crossMap =
     (s->generationalMaps.cardMap + (cardMapSize / CARD_MAP_ELEM_SIZE));
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "cardMap = "FMTPTR"  crossMap = "FMTPTR"\n",
@@ -178,7 +178,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
     oldCrossMapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
     createCardMapAndCrossMap (s);
     GC_memcpy ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
-               min (s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE, 
+               min (s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE,
                     oldCrossMapSize));
     if (DEBUG_MEM)
       fprintf (stderr, "Releasing card/cross map.\n");
@@ -255,7 +255,7 @@ loopObjects:
           and objectStart <= cardEnd);
   nextObject = objectStart + sizeofObject (s, advanceToObjectData (s, objectStart));
   if (DEBUG_GENERATIONAL) {
-    fprintf (stderr, 
+    fprintf (stderr,
              "\tloopObjects:\n"
              "\t  cardIndex = "FMTCMI"\n"
              "\t  cardStart = "FMTPTR"\n"
@@ -267,7 +267,7 @@ loopObjects:
   }
   if (nextObject > cardEnd) {
     /* We're about to move to a new card, so we are looking at the
-     * last object boundary in the current card.  
+     * last object boundary in the current card.
      * Store it in the crossMap.
      */
     size_t offset;
@@ -275,8 +275,8 @@ loopObjects:
     offset = (objectStart - cardStart) / CROSS_MAP_OFFSET_SCALE;
     assert (offset < CROSS_MAP_EMPTY);
     if (DEBUG_GENERATIONAL)
-      fprintf (stderr, "crossMap[%zu] = %zu\n",
-               cardIndex, offset);
+      fprintf (stderr, "crossMap[%"PRIuMAX"] = %"PRIuMAX"\n",
+               (uintmax_t)cardIndex, (uintmax_t)offset);
     s->generationalMaps.crossMap[cardIndex] = (GC_crossMapElem)offset;
     cardIndex = sizeToCardMapIndex (nextObject - 1 - s->heap.start);
     cardStart = s->heap.start + cardMapIndexToSize (cardIndex);
@@ -286,7 +286,7 @@ loopObjects:
   if (objectStart < oldGenEnd)
     goto loopObjects;
   assert (objectStart == oldGenEnd);
-  s->generationalMaps.crossMap[cardIndex] = 
+  s->generationalMaps.crossMap[cardIndex] =
     (GC_crossMapElem)(oldGenEnd - cardStart) / CROSS_MAP_OFFSET_SCALE;
   s->generationalMaps.crossMapValidSize = s->heap.oldGenSize;
 done:

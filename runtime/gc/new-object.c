@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2005, 2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -29,7 +29,7 @@ pointer newObject (GC_state s,
   } else {
     if (DEBUG_DETAILED)
       fprintf (stderr, "frontier changed from "FMTPTR" to "FMTPTR"\n",
-               (uintptr_t)s->frontier, 
+               (uintptr_t)s->frontier,
                (uintptr_t)(s->frontier + bytesRequested));
     frontier = s->frontier;
     s->frontier += bytesRequested;
@@ -39,31 +39,31 @@ pointer newObject (GC_state s,
   result = frontier + GC_NORMAL_HEADER_SIZE;
   assert (isAligned ((size_t)result, s->alignment));
   if (DEBUG)
-    fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %zu, %s)\n",
+    fprintf (stderr, FMTPTR " = newObject ("FMTHDR", %"PRIuMAX", %s)\n",
              (uintptr_t)result,
-             header, 
-             bytesRequested,
+             header,
+             (uintmax_t)bytesRequested,
              boolToString (allocInOldGen));
   return result;
 }
 
-GC_stack newStack (GC_state s, 
-                   size_t reserved, 
+GC_stack newStack (GC_state s,
+                   size_t reserved,
                    bool allocInOldGen) {
   GC_stack stack;
 
   reserved = alignStackReserved (s, reserved);
   if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
     s->cumulativeStatistics.maxStackSizeSeen = reserved;
-  stack = (GC_stack)(newObject (s, GC_STACK_HEADER, 
+  stack = (GC_stack)(newObject (s, GC_STACK_HEADER,
                                 sizeofStackWithHeaderAligned (s, reserved),
                                 allocInOldGen));
   stack->reserved = reserved;
   stack->used = 0;
   if (DEBUG_STACKS)
-    fprintf (stderr, FMTPTR " = newStack (%zu)\n", 
-             (uintptr_t)stack, 
-             reserved);
+    fprintf (stderr, FMTPTR " = newStack (%"PRIuMAX")\n",
+             (uintptr_t)stack,
+             (uintmax_t)reserved);
   return stack;
 }
 
@@ -74,20 +74,20 @@ GC_thread newThread (GC_state s, size_t reserved) {
 
   ensureHasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
-  res = newObject (s, GC_THREAD_HEADER, 
-                   sizeofThread (s), 
+  res = newObject (s, GC_THREAD_HEADER,
+                   sizeofThread (s),
                    FALSE);
   thread = (GC_thread)(res + offsetofThread (s));
   thread->bytesNeeded = 0;
   thread->exnStack = BOGUS_EXN_STACK;
   thread->stack = pointerToObjptr((pointer)stack, s->heap.start);
   if (DEBUG_THREADS)
-    fprintf (stderr, FMTPTR" = newThreadOfSize (%zu)\n",
-             (uintptr_t)thread, reserved);;
+    fprintf (stderr, FMTPTR" = newThreadOfSize (%"PRIuMAX")\n",
+             (uintptr_t)thread, (uintmax_t)reserved);;
   return thread;
 }
 
-static inline void setFrontier (GC_state s, pointer p, 
+static inline void setFrontier (GC_state s, pointer p,
                                 __attribute__ ((unused)) size_t bytes) {
   p = alignFrontier (s, p);
   assert ((size_t)(p - s->frontier) <= bytes);

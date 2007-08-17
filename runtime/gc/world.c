@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -19,13 +19,13 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
   start = readPointer (f);
   s->heap.oldGenSize = readSize (f);
   s->atomicState = readUint32 (f);
-  s->callFromCHandlerThread = readObjptr (f); 
-  s->currentThread = readObjptr (f); 
-  s->signalHandlerThread = readObjptr (f); 
-  createHeap (s, &s->heap, 
-              sizeofHeapDesired (s, s->heap.oldGenSize, 0), 
+  s->callFromCHandlerThread = readObjptr (f);
+  s->currentThread = readObjptr (f);
+  s->signalHandlerThread = readObjptr (f);
+  createHeap (s, &s->heap,
+              sizeofHeapDesired (s, s->heap.oldGenSize, 0),
               s->heap.oldGenSize);
-  createCardMapAndCrossMap (s); 
+  createCardMapAndCrossMap (s);
   fread_safe (s->heap.start, 1, s->heap.oldGenSize, f);
   if ((*(s->loadGlobals)) (f) != 0) diee("couldn't load globals");
   // unless (EOF == fgetc (file))
@@ -34,8 +34,8 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
    * since it changes pointers in all of them.
    */
   translateHeap (s, start, s->heap.start, s->heap.oldGenSize);
-  setGCStateCurrentHeap (s, 0, 0); 
-  setGCStateCurrentThreadAndStack (s); 
+  setGCStateCurrentHeap (s, 0, 0);
+  setGCStateCurrentThreadAndStack (s);
 }
 
 void loadWorldFromFileName (GC_state s, const char *fileName) {
@@ -45,7 +45,7 @@ void loadWorldFromFileName (GC_state s, const char *fileName) {
     fprintf (stderr, "loadWorldFromFileName (%s)\n", fileName);
   f = fopen_safe (fileName, "rb");
   loadWorldFromFILE (s, f);
-  fclose_safe (f); 
+  fclose_safe (f);
 }
 
 /* Don't use 'safe' functions, because we don't want the ML program to die.
@@ -60,9 +60,9 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   /* Compact the heap. */
   performGC (s, 0, 0, TRUE, TRUE);
   snprintf (buf, cardof(buf),
-            "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %zu\n",
-            (uintptr_t)s->heap.start, 
-            s->lastMajorStatistics.bytesLive);
+            "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %"PRIuMAX"\n",
+            (uintptr_t)s->heap.start,
+            (uintmax_t)s->lastMajorStatistics.bytesLive);
   len = strlen(buf) + 1; /* +1 to get the '\000' */
 
   if (fwrite (buf, 1, len, f) != len) return -1;

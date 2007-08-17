@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -17,10 +17,10 @@ size_t sizeofWeak (GC_state s) {
 
     splitHeader (s, GC_WEAK_GONE_HEADER, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
     check = GC_NORMAL_HEADER_SIZE + (bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE));
-    if (DEBUG_DETAILED) 
+    if (DEBUG_DETAILED)
       fprintf (stderr,
-               "sizeofWeak: res = %zu  check = %zu\n",
-               res, check);
+               "sizeofWeak: res = %"PRIuMAX"  check = %"PRIuMAX"\n",
+               (uintmax_t)res, (uintmax_t)check);
     assert (check == res);
   }
   assert (isAligned (res, s->alignment));
@@ -57,7 +57,7 @@ pointer GC_weakNew (GC_state s, GC_header header, pointer p) {
   GC_weak weak;
   pointer res;
 
-  res = newObject (s, header, 
+  res = newObject (s, header,
                    sizeofWeak (s),
                    FALSE);
   weak = (GC_weak)(res + offsetofWeak (s));

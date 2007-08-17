@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -20,9 +20,9 @@ bool isObjptrInToSpace (GC_state s, objptr op) {
   return isPointerInToSpace (s, p);
 }
 
-/* forward (s, opp) 
+/* forward (s, opp)
  * Forwards the object pointed to by *opp and updates *opp to point to
- * the new object.  
+ * the new object.
  * It also updates the crossMap.
  */
 void forwardObjptr (GC_state s, objptr *opp) {
@@ -55,7 +55,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
       skip = 0;
     } else if (ARRAY_TAG == tag) {
       headerBytes = GC_ARRAY_HEADER_SIZE;
-      objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
+      objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
                                          bytesNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
@@ -70,9 +70,9 @@ void forwardObjptr (GC_state s, objptr *opp) {
          * but don't violate the stack invariant.
          */
         if (stack->used <= stack->reserved / 4) {
-          size_t new = 
+          size_t new =
             alignStackReserved
-            (s, max (stack->reserved / 2, 
+            (s, max (stack->reserved / 2,
                      sizeofStackMinimumReserved (s, stack)));
           /* It's possible that new > stack->reserved if the stack
            * invariant is violated. In that case, we want to leave the
@@ -89,9 +89,9 @@ void forwardObjptr (GC_state s, objptr *opp) {
         }
       } else {
         /* Shrink heap stacks. */
-        stack->reserved = 
-          alignStackReserved 
-          (s, max((size_t)(s->controls.ratios.threadShrink * stack->reserved), 
+        stack->reserved =
+          alignStackReserved
+          (s, max((size_t)(s->controls.ratios.threadShrink * stack->reserved),
                   stack->used));
         if (DEBUG_STACKS)
           fprintf (stderr, "Shrinking stack to size %s.\n",
@@ -128,11 +128,11 @@ void forwardObjptr (GC_state s, objptr *opp) {
     }
     /* Store the forwarding pointer in the old object. */
     *((GC_header*)(p - GC_HEADER_SIZE)) = GC_FORWARDED;
-    *((objptr*)p) = pointerToObjptr (s->forwardState.back + headerBytes, 
+    *((objptr*)p) = pointerToObjptr (s->forwardState.back + headerBytes,
                                      s->forwardState.toStart);
     /* Update the back of the queue. */
     s->forwardState.back += size + skip;
-    assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE, 
+    assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_HEADER_SIZE,
                        s->alignment));
   }
   *opp = *((objptr*)p);
@@ -189,19 +189,19 @@ checkAll:
     goto done;
 checkCard:
   if (DEBUG_GENERATIONAL)
-    fprintf (stderr, "checking card %zu  objectStart = "FMTPTR"\n",
-             cardIndex, (uintptr_t)objectStart);
+    fprintf (stderr, "checking card %"PRIuMAX"  objectStart = "FMTPTR"\n",
+             (uintmax_t)cardIndex, (uintptr_t)objectStart);
   assert (objectStart < oldGenStart + cardMapIndexToSize (cardIndex + 1));
   if (cardMap[cardIndex]) {
     pointer lastObject;
 
     s->cumulativeStatistics.markedCards++;
     if (DEBUG_GENERATIONAL)
-      fprintf (stderr, "card %zu is marked  objectStart = "FMTPTR"\n", 
-               cardIndex, (uintptr_t)objectStart);
+      fprintf (stderr, "card %"PRIuMAX" is marked  objectStart = "FMTPTR"\n",
+               (uintmax_t)cardIndex, (uintptr_t)objectStart);
     assert (isFrontierAligned (s, objectStart));
     cardEnd = cardStart + CARD_SIZE;
-    if (oldGenEnd < cardEnd) 
+    if (oldGenEnd < cardEnd)
       cardEnd = oldGenEnd;
     assert (objectStart < cardEnd);
     lastObject = objectStart;
@@ -211,7 +211,7 @@ checkCard:
      * Weak.set, the foreachObjptrInRange will do the right thing on
      * weaks, since the weak pointer will never be into the nursery.
      */
-    objectStart = foreachObjptrInRange (s, objectStart, &cardEnd, 
+    objectStart = foreachObjptrInRange (s, objectStart, &cardEnd,
                                         forwardObjptrIfInNursery, FALSE);
     s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
     if (objectStart == oldGenEnd)
@@ -223,12 +223,12 @@ checkCard:
     unless (CROSS_MAP_EMPTY == crossMap[cardIndex])
       objectStart = cardStart + (size_t)(crossMap[cardIndex] * CROSS_MAP_OFFSET_SCALE);
     if (DEBUG_GENERATIONAL)
-      fprintf (stderr, 
-               "card %zu is not marked"
-               "  crossMap[%zu] == %zu"
-               "  objectStart = "FMTPTR"\n", 
-               cardIndex, cardIndex, 
-               (size_t)(crossMap[cardIndex] * CROSS_MAP_OFFSET_SCALE), 
+      fprintf (stderr,
+               "card %"PRIuMAX" is not marked"
+               "  crossMap[%"PRIuMAX"] == %"PRIuMAX""
+               "  objectStart = "FMTPTR"\n",
+               (uintmax_t)cardIndex, (uintmax_t)cardIndex,
+               (uintmax_t)(crossMap[cardIndex] * CROSS_MAP_OFFSET_SCALE),
                (uintptr_t)objectStart);
     cardIndex++;
     cardStart += CARD_SIZE;

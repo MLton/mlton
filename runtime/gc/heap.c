@@ -1,4 +1,4 @@
-/* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2005-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -10,12 +10,12 @@ void displayHeap (__attribute__ ((unused)) GC_state s,
                   FILE *stream) {
   fprintf(stream,
           "\t\tnursery = "FMTPTR"\n"
-          "\t\toldGenSize = %zu\n"
-          "\t\tsize = %zu\n"
+          "\t\toldGenSize = %"PRIuMAX"\n"
+          "\t\tsize = %"PRIuMAX"\n"
           "\t\tstart = "FMTPTR"\n",
           (uintptr_t)heap->nursery,
-          heap->oldGenSize,
-          heap->size,
+          (uintmax_t)heap->oldGenSize,
+          (uintmax_t)heap->size,
           (uintptr_t)heap->start);
 }
 
@@ -28,7 +28,7 @@ void initHeap (__attribute__ ((unused)) GC_state s,
   h->start = NULL;
 }
 
-/* sizeofHeapDesired (s, l, cs) 
+/* sizeofHeapDesired (s, l, cs)
  *
  * returns the desired heap size for a heap with l bytes live, given
  * that the current heap size is cs.
@@ -62,7 +62,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      * alone.  On the other hand, if it is bigger we want to leave res
      * as is so that the heap is shrunk, to try to avoid paging.
      */
-    if (currentSize <= res 
+    if (currentSize <= res
         and res <= 1.1 * currentSize)
       res = currentSize;
   } else if (ratio >= s->controls.ratios.markCompact) {
@@ -80,7 +80,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      * VM keeps around, growing could be very expensive, if it
      * involves paging the entire heap.  Hopefully the copy loop in
      * growHeap will make the right thing happen.
-     */ 
+     */
   }
   if (s->controls.fixedHeap > 0) {
     if (res > s->controls.fixedHeap / 2)
@@ -110,7 +110,7 @@ void releaseHeap (GC_state s, GC_heap h) {
   if (NULL == h->start)
     return;
   if (DEBUG or s->controls.messages)
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
@@ -137,16 +137,16 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
   }
 }
 
-/* createHeap (s, h, desiredSize, minSize) 
- * 
+/* createHeap (s, h, desiredSize, minSize)
+ *
  * allocates a heap of the size necessary to work with desiredSize
  * live data, and ensures that at least minSize is available.  It
  * returns TRUE if it is able to allocate the space, and returns FALSE
  * if it is unable.  If a reasonable size to space is already there,
  * then heapCreate leaves it.
  */
-bool createHeap (GC_state s, GC_heap h, 
-                 size_t desiredSize, 
+bool createHeap (GC_state s, GC_heap h,
+                 size_t desiredSize,
                  size_t minSize) {
   size_t backoff;
 
@@ -191,7 +191,7 @@ bool createHeap (GC_state s, GC_heap h,
         if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
           s->cumulativeStatistics.maxHeapSizeSeen = h->size;
         if (DEBUG or s->controls.messages)
-          fprintf (stderr, 
+          fprintf (stderr,
                    "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
                    (uintptr_t)(h->start),
                    uintmaxToCommaString(h->size));
@@ -200,12 +200,12 @@ bool createHeap (GC_state s, GC_heap h,
       }
     }
     if (s->controls.messages) {
-      fprintf (stderr, 
+      fprintf (stderr,
                "[GC: Creating heap of size %s bytes cannot be satisfied,]\n",
                uintmaxToCommaString (h->size));
       fprintf (stderr,
                "[GC:\tbacking off by %s bytes with minimum size of %s bytes.]\n",
-               uintmaxToCommaString (backoff), 
+               uintmaxToCommaString (backoff),
                uintmaxToCommaString (minSize));
     }
   }
@@ -216,9 +216,9 @@ bool createHeap (GC_state s, GC_heap h,
 /* createHeapSecondary (s, desiredSize)
  */
 bool createHeapSecondary (GC_state s, size_t desiredSize) {
-  if ((s->controls.fixedHeap > 0 
+  if ((s->controls.fixedHeap > 0
        and s->heap.size + desiredSize > s->controls.fixedHeap)
-      or (s->controls.maxHeap > 0 
+      or (s->controls.maxHeap > 0
           and s->heap.size + desiredSize > s->controls.maxHeap))
     return FALSE;
   return createHeap (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
@@ -226,8 +226,8 @@ bool createHeapSecondary (GC_state s, size_t desiredSize) {
 
 /* remapHeap (s, h, desiredSize, minSize)
  */
-bool remapHeap (GC_state s, GC_heap h, 
-                size_t desiredSize, 
+bool remapHeap (GC_state s, GC_heap h,
+                size_t desiredSize,
                 size_t minSize) {
   size_t backoff;
   size_t size;
@@ -273,7 +273,7 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
 
   assert (desiredSize >= s->heap.size);
   if (DEBUG_RESIZING or s->controls.messages) {
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Growing heap at "FMTPTR" of size %s bytes,]\n",
              (uintptr_t)s->heap.start,
              uintmaxToCommaString(s->heap.size));
@@ -299,7 +299,7 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
     from = curHeapp->start + size;
     to = newHeap.start + size;
     remaining = size;
-copy:                   
+copy:
     assert (remaining == (size_t)(from - curHeapp->start)
             and from >= curHeapp->start
             and to >= newHeap.start);
@@ -321,16 +321,16 @@ copy:
     void *data;
 
     if (DEBUG or s->controls.messages) {
-      fprintf (stderr, 
+      fprintf (stderr,
                "[GC: Writing heap at "FMTPTR" of size %s bytes to disk.]\n",
-               (uintptr_t)orig, 
+               (uintptr_t)orig,
                uintmaxToCommaString(size));
     }
     data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
       if (DEBUG or s->controls.messages) {
-        fprintf (stderr, 
+        fprintf (stderr,
                  "[GC: Reading heap at "FMTPTR" of size %s bytes from disk.]\n",
                  (uintptr_t)orig,
                  uintmaxToCommaString(size));
@@ -359,7 +359,7 @@ void resizeHeap (GC_state s, size_t minSize) {
 
   if (DEBUG_RESIZING)
     fprintf (stderr, "resizeHeap  minSize = %s  size = %s\n",
-             uintmaxToCommaString(minSize), 
+             uintmaxToCommaString(minSize),
              uintmaxToCommaString(s->heap.size));
   desiredSize = sizeofHeapDesired (s, minSize, s->heap.size);
   assert (minSize <= desiredSize);
@@ -393,6 +393,6 @@ void resizeHeapSecondary (GC_state s) {
       releaseHeap (s, &s->secondaryHeap);
   } else if (secondarySize > primarySize)
     shrinkHeap (s, &s->secondaryHeap, primarySize);
-  assert (0 == s->secondaryHeap.size 
+  assert (0 == s->secondaryHeap.size
           or s->heap.size == s->secondaryHeap.size);
 }

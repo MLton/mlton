@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,9 +6,9 @@
  * See the file MLton-LICENSE for details.
  */
 
-pointer GC_arrayAllocate (GC_state s, 
-                          size_t ensureBytesFree, 
-                          GC_arrayLength numElements, 
+pointer GC_arrayAllocate (GC_state s,
+                          size_t ensureBytesFree,
+                          GC_arrayLength numElements,
                           GC_header header) {
   uintmax_t arraySizeMax, arraySizeAlignedMax;
   size_t arraySize, arraySizeAligned;
@@ -21,8 +21,8 @@ pointer GC_arrayAllocate (GC_state s,
 
   splitHeader(s, header, NULL, NULL, &bytesNonObjptrs, &numObjptrs);
   if (DEBUG)
-    fprintf (stderr, "GC_arrayAllocate (%zu, "FMTARRLEN", "FMTHDR")\n",
-             ensureBytesFree, numElements, header);
+    fprintf (stderr, "GC_arrayAllocate (%"PRIuMAX", "FMTARRLEN", "FMTHDR")\n",
+             (uintmax_t)ensureBytesFree, numElements, header);
   bytesPerElement = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   arraySizeMax =
     (uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE;
@@ -40,10 +40,10 @@ pointer GC_arrayAllocate (GC_state s,
     arraySizeAligned = align(GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE, s->alignment);
   }
   if (DEBUG_ARRAY)
-    fprintf (stderr, 
-             "Array with "FMTARRLEN" elts of size %zu and total size %s and total aligned size %s.  "
+    fprintf (stderr,
+             "Array with "FMTARRLEN" elts of size %"PRIuMAX" and total size %s and total aligned size %s.  "
              "Ensure %s bytes free.\n",
-             numElements, bytesPerElement, 
+             numElements, (uintmax_t)bytesPerElement,
              uintmaxToCommaString(arraySize),
              uintmaxToCommaString(arraySizeAligned),
              uintmaxToCommaString(ensureBytesFree));
@@ -116,4 +116,4 @@ pointer GC_arrayAllocate (GC_state s,
    * to reflect what the mutator did with stackTop.
    */
   return result;
-}       
+}

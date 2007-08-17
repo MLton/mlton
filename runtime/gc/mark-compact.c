@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -48,7 +48,7 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
   opop = pointerToObjptr ((pointer)opp, s->heap.start);
   p = objptrToPointer (*opp, s->heap.start);
   if (FALSE)
-    fprintf (stderr, 
+    fprintf (stderr,
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
              (uintptr_t)opp, (uintptr_t)p, getHeader (p));
   headerp = getHeaderp (p);
@@ -125,8 +125,8 @@ thread:
       clearIfWeakAndUnmarkedForMarkCompact (s, p);
       size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
-        fprintf (stderr, "threading "FMTPTR" of size %zu\n",
-                 (uintptr_t)p, size);
+        fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
+                 (uintptr_t)p, (uintmax_t)size);
       if ((size_t)(front - endOfLastMarked) >= GC_ARRAY_HEADER_SIZE + OBJPTR_SIZE) {
         pointer newArray = endOfLastMarked;
         /* Compress all of the unmarked into one vector.  We require
@@ -139,12 +139,12 @@ thread:
          * extra space and be completely busted.
          */
         if (DEBUG_MARK_COMPACT)
-          fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %zu)\n",
+          fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %"PRIuMAX")\n",
                    (uintptr_t)endOfLastMarked, (uintptr_t)front,
-                   (size_t)(front - endOfLastMarked));
+                   (uintmax_t)(front - endOfLastMarked));
         *((GC_arrayCounter*)(newArray)) = 0;
         newArray += GC_ARRAY_COUNTER_SIZE;
-        *((GC_arrayLength*)(newArray)) = 
+        *((GC_arrayLength*)(newArray)) =
           ((size_t)(front - endOfLastMarked)) - GC_ARRAY_HEADER_SIZE;
         newArray += GC_ARRAY_LENGTH_SIZE;
         *((GC_header*)(newArray)) = GC_WORD8_VECTOR_HEADER;
@@ -223,13 +223,13 @@ unmark:
       size = sizeofObject (s, p);
       /* unmark */
       if (DEBUG_MARK_COMPACT)
-        fprintf (stderr, "unmarking "FMTPTR" of size %zu\n",
-                 (uintptr_t)p, size);
+        fprintf (stderr, "unmarking "FMTPTR" of size %"PRIuMAX"\n",
+                 (uintptr_t)p, (uintmax_t)size);
       *headerp = header & ~MARK_MASK;
       /* slide */
       if (DEBUG_MARK_COMPACT)
-        fprintf (stderr, "sliding "FMTPTR" down %zu\n",
-                 (uintptr_t)front, gap);
+        fprintf (stderr, "sliding "FMTPTR" down %"PRIuMAX"\n",
+                 (uintptr_t)front, (uintmax_t)gap);
       GC_memcpy (front, front - gap, size);
       front += size;
       goto updateObject;
@@ -237,8 +237,8 @@ unmark:
       /* It's not marked. */
       size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
-        fprintf (stderr, "skipping "FMTPTR" of size %zu\n",
-                 (uintptr_t)p, size);
+        fprintf (stderr, "skipping "FMTPTR" of size %"PRIuMAX"\n",
+                 (uintptr_t)p, (uintmax_t)size);
       gap += size;
       front += size;
       goto updateObject;
@@ -272,7 +272,8 @@ unmark:
 done:
   s->heap.oldGenSize = front - gap - s->heap.start;
   if (DEBUG_MARK_COMPACT)
-    fprintf (stderr, "oldGenSize = %zu\n", s->heap.oldGenSize);
+    fprintf (stderr, "oldGenSize = %"PRIuMAX"\n",
+             (uintmax_t)s->heap.oldGenSize);
   return;
 }
 
@@ -284,11 +285,11 @@ void majorMarkCompactGC (GC_state s) {
     startTiming (&ru_start);
   s->cumulativeStatistics.numMarkCompactGCs++;
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Starting major mark-compact;]\n");
     fprintf (stderr,
              "[GC:\theap at "FMTPTR" of size %s bytes.]\n",
-             (uintptr_t)(s->heap.start), 
+             (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   }
   if (s->hashConsDuringGC) {
@@ -310,12 +311,12 @@ void majorMarkCompactGC (GC_state s) {
   if (detailedGCTime (s))
     stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMarkCompact);
   if (DEBUG or s->controls.messages) {
-    fprintf (stderr, 
+    fprintf (stderr,
              "[GC: Finished major mark-compact; mark compacted %s bytes.]\n",
              uintmaxToCommaString(bytesMarkCompacted));
     if (s->hashConsDuringGC)
-      printBytesHashConsedMessage(s, 
-                                  s->lastMajorStatistics.bytesHashConsed 
+      printBytesHashConsedMessage(s,
+                                  s->lastMajorStatistics.bytesHashConsed
                                   + s->heap.oldGenSize);
   }
 }

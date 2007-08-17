@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -19,8 +19,8 @@ void *GC_mmapAnon_safe (void *p, size_t length) {
 
 static inline void GC_memcpy (pointer src, pointer dst, size_t size) {
   if (DEBUG_DETAILED)
-    fprintf (stderr, "GC_memcpy ("FMTPTR", "FMTPTR", %zu)\n",
-             (uintptr_t)src, (uintptr_t)dst, size);
+    fprintf (stderr, "GC_memcpy ("FMTPTR", "FMTPTR", %"PRIuMAX")\n",
+             (uintptr_t)src, (uintptr_t)dst, (uintmax_t)size);
   assert (isAligned ((size_t)src, sizeof(unsigned int)));
   assert (isAligned ((size_t)dst, sizeof(unsigned int)));
   assert (isAligned (size, sizeof(unsigned int)));

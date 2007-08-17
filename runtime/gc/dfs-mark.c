@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -25,9 +25,9 @@ bool isPointerMarkedByMode (pointer p, GC_markMode m) {
   }
 }
 
-/* dfsMarkByMode (s, r, m, shc) 
+/* dfsMarkByMode (s, r, m, shc)
  *
- * Sets all the mark bits in the object graph pointed to by r. 
+ * Sets all the mark bits in the object graph pointed to by r.
  *
  * If m is MARK_MODE, it sets the bits to 1.
  * If m is UNMARK_MODE, it sets the bits to 0.
@@ -54,7 +54,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   GC_header* nextHeaderp;
   GC_arrayCounter arrayIndex;
   pointer top; /* The top of the next stack frame to mark. */
-  GC_returnAddress returnAddress; 
+  GC_returnAddress returnAddress;
   GC_frameLayout frameLayout;
   GC_frameOffsets frameOffsets;
 
@@ -67,7 +67,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   prev = NULL;
   headerp = getHeaderp (cur);
   header = *headerp;
-  goto mark;      
+  goto mark;
 markNext:
   /* cur is the object that was being marked.
    * prev is the mark stack.
@@ -77,11 +77,11 @@ markNext:
    * todo is a pointer to the pointer inside cur that points to next.
    */
   if (DEBUG_DFS_MARK)
-    fprintf (stderr, 
+    fprintf (stderr,
              "markNext"
              "  cur = "FMTPTR"  next = "FMTPTR
              "  prev = "FMTPTR"  todo = "FMTPTR"\n",
-             (uintptr_t)cur, (uintptr_t)next, 
+             (uintptr_t)cur, (uintptr_t)next,
              (uintptr_t)prev, (uintptr_t)todo);
   assert (not isPointerMarkedByMode (next, mode));
   assert (nextHeaderp == getHeaderp (next));
@@ -99,7 +99,7 @@ mark:
     fprintf (stderr, "mark  cur = "FMTPTR"  prev = "FMTPTR"  mode = %s\n",
              (uintptr_t)cur, (uintptr_t)prev,
              (mode == MARK_MODE) ? "mark" : "unmark");
-  /* cur is the object to mark. 
+  /* cur is the object to mark.
    * prev is the mark stack.
    * headerp points to the header of cur.
    * header is the header of cur.
@@ -116,9 +116,9 @@ mark:
   *headerp = header;
   splitHeader (s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   if (NORMAL_TAG == tag) {
-    size += 
-      GC_NORMAL_HEADER_SIZE 
-      + bytesNonObjptrs 
+    size +=
+      GC_NORMAL_HEADER_SIZE
+      + bytesNonObjptrs
       + (numObjptrs * OBJPTR_SIZE);
     if (0 == numObjptrs) {
       /* There is nothing to mark. */
@@ -167,7 +167,7 @@ markNextInNormal:
      *     (i.e. the i'th pointer is at index i).
      *   todo is the start of the element.
      */
-    size += 
+    size +=
       GC_ARRAY_HEADER_SIZE
       + sizeofArrayNoHeader (s, getArrayLength (cur), bytesNonObjptrs, numObjptrs);
     if (0 == numObjptrs or 0 == getArrayLength (cur)) {
@@ -224,7 +224,7 @@ markNextInArray:
     goto markNext;
   } else {
     assert (STACK_TAG == tag);
-    size += 
+    size +=
       GC_STACK_HEADER_SIZE
       + sizeof (struct GC_stack) + ((GC_stack)cur)->reserved;
     top = getStackTop (s, (GC_stack)cur);
@@ -235,8 +235,8 @@ markInStack:
      */
     assert (getStackBottom (s, (GC_stack)cur) <= top);
     if (DEBUG_DFS_MARK)
-      fprintf (stderr, "markInStack  top = %zu\n",
-               (size_t)(top - getStackBottom (s, (GC_stack)cur)));
+      fprintf (stderr, "markInStack  top = %"PRIuMAX"\n",
+               (uintmax_t)(top - getStackBottom (s, (GC_stack)cur)));
     if (top == getStackBottom (s, (GC_stack)(cur)))
       goto ret;
     objptrIndex = 0;
@@ -275,7 +275,7 @@ markInFrame:
   assert (FALSE);
 ret:
   /* Done marking cur, continue with prev.
-   * Need to set the pointer in the prev object that pointed to cur 
+   * Need to set the pointer in the prev object that pointed to cur
    * to point back to prev, and restore prev.
    */
   if (DEBUG_DFS_MARK)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -16,7 +16,7 @@ size_t sizeofIntInfFromString (GC_state s, const char *str) {
   /* A slight overestimate. */
   double bytesPerChar = 0.415241011861 /* = ((log(10.0) / log(2.0)) / 8.0) */ ;
   double bytes = ceil((double)slen * bytesPerChar);
-  return align (GC_ARRAY_HEADER_SIZE 
+  return align (GC_ARRAY_HEADER_SIZE
                 + sizeof(mp_limb_t) // for the sign
                 + align((size_t)bytes, sizeof(mp_limb_t)),
                 s->alignment);
@@ -32,7 +32,7 @@ size_t sizeofInitialBytesLive (GC_state s) {
     total += sizeofIntInfFromString (s, s->intInfInits[i].mlstr);
   }
   for (i = 0; i < s->vectorInitsLength; ++i) {
-    dataBytes = 
+    dataBytes =
       s->vectorInits[i].bytesPerElement
       * s->vectorInits[i].numElements;
     total += align (GC_ARRAY_HEADER_SIZE
@@ -112,8 +112,8 @@ void initVectors (GC_state s) {
       typeIndex = WORD64_VECTOR_TYPE_INDEX;
       break;
     default:
-      die ("unknown bytes per element in vectorInit: %zu",
-           bytesPerElement);
+      die ("unknown bytes per element in vectorInit: %"PRIuMAX"",
+           (uintmax_t)bytesPerElement);
     }
     *((GC_header*)(frontier)) = buildHeaderFromTypeIndex (typeIndex);
     frontier = frontier + GC_HEADER_SIZE;
@@ -141,7 +141,7 @@ void initWorld (GC_state s) {
   for (i = 0; i < s->globalsLength; ++i)
     s->globals[i] = BOGUS_OBJPTR;
   s->lastMajorStatistics.bytesLive = sizeofInitialBytesLive (s);
-  createHeap (s, &s->heap, 
+  createHeap (s, &s->heap,
               sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
               s->lastMajorStatistics.bytesLive);
   createCardMapAndCrossMap (s);
@@ -157,4 +157,3 @@ void initWorld (GC_state s) {
   thread = newThread (s, sizeofStackInitial (s));
   switchToThread (s, pointerToObjptr((pointer)thread - offsetofThread (s), s->heap.start));
 }
-
