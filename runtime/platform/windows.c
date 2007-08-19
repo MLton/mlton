@@ -105,6 +105,8 @@ static void displayMaps (void) {
                 case PAGE_NOCACHE:
                         protect = "PAGE_NOCACHE";
                         break;
+                default:
+                        assert (FALSE);
                 }
                 switch (buf.State) {
                 case MEM_COMMIT:
@@ -116,6 +118,8 @@ static void displayMaps (void) {
                 case MEM_RESERVE:
                         state = "MEM_RESERVE";
                         break;
+                default:
+                        assert (FALSE);
                 }
                 fprintf(stderr, "0x%8x %10u  %s %s\n",
                         (unsigned int)buf.BaseAddress,
