@@ -51,8 +51,8 @@ endif
 ifeq ($(findstring $(GCC_VERSION), 3.3 3.4 4.0),$(GCC_VERSION))
 GCOPTFLAGS += --param max-inline-insns-single=1000
 ifeq ($(findstring $(GCC_VERSION), 3.4 4.0),$(GCC_VERSION))
-GCOPTFLAGS += --param inline-unit-growth=125
-GCOPTFLAGS += --param large-function-growth=1100
+GCOPTFLAGS += --param inline-unit-growth=200
+GCOPTFLAGS += --param large-function-growth=2200
 OPTWARNFLAGS += -Winline
 endif
 endif
