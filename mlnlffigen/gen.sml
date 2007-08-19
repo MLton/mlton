@@ -1,7 +1,7 @@
 (* gen.sml
  * 2005 Matthew Fluet (mfluet@acm.org)
  *  Adapted for MLton.
-(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.

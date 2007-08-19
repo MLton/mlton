@@ -1,4 +1,4 @@
-(* Copyright (C) 2005-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.

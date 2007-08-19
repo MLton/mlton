@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -9,7 +9,7 @@
 #include "util.h"
 
 static const char* mlTypesHPrefix[] = {
-  "/* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
+  "/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
   " * MLton is released under a BSD-style license.",
@@ -37,7 +37,7 @@ static const char* mlTypesHPrefix[] = {
 };
 
 static const char* cTypesHPrefix[] = {
-  "/* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
+  "/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
   " * MLton is released under a BSD-style license.",
@@ -51,7 +51,7 @@ static const char* cTypesHPrefix[] = {
 };
 
 static const char* cTypesSMLPrefix[] = {
-  "(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh",
+  "(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh",
   " *    Jagannathan, and Stephen Weeks.",
   " *",
   " * MLton is released under a BSD-style license.",
