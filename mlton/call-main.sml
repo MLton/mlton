@@ -6,4 +6,4 @@
  * See the file MLton-LICENSE for details.
  *)
 
-val _ = Main.exportMLton ()
+val _ = Main.exportMLton()
