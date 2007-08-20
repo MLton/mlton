@@ -81,13 +81,13 @@ struct sockaddr_storage {
 
 typedef long suseconds_t; // type of timeval.tv_usec in sys/time.h
 
-#if HPUX_VERSION <= 1100
-/* These GCC builtins aren't defined in the system headers. */
+#ifdef __hppa__
+/* These do not exist on HPPA, so we implement our own. */
 float modff(float x, float *iptr);
 float rintf(float x);
 float frexpf(float x, int *exp);
 float ldexpf(float x, int exp);
-#endif /* HPUX_VERSION <= 1100 */
+#endif /* __hppa__ */
 
 #define PRIxPTR "lx"
 #define PRIuPTR "lu"

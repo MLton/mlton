@@ -120,3 +120,25 @@ uintmax_t GC_physMem (void) {
                 diee ("failed to get physical memory size");
         return buf.physical_memory * buf.page_size;
 }
+
+#ifdef __hppa__
+float modff (float x, float *iptr)
+{
+        double d, i;
+        d = modf ((double)x, &i);
+        *iptr = (float)i;
+        return d;
+}
+
+float rintf (float x) {
+        return (float)rint ((double)x);
+}
+
+float frexpf (float x, int *e) {
+        return (float)frexp ((double)x, e);
+}
+
+float ldexpf (float x, int e) {
+        return (float)ldexp ((double)x, e);
+}
+#endif /* __hppa__ */
