@@ -173,7 +173,7 @@ freebsd:
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package  
 
-LIBRARIES := ckit-lib cml mlnlffi-lib mlyacc-lib smlnj-lib
+LIBRARIES := ckit-lib cml mlrisc-lib mlnlffi-lib mlyacc-lib smlnj-lib
 
 .PHONY: libraries-no-check
 libraries-no-check:
@@ -185,7 +185,7 @@ libraries-no-check:
 	$(CP) "$(SRC)/lib/cml/." "$(LIB)/sml/cml"
 	$(CP) "$(SRC)/lib/ckit-lib/ckit/." "$(LIB)/sml/ckit-lib"
 	$(CP) "$(SRC)/lib/mlnlffi/." "$(LIB)/sml/mlnlffi-lib"
-	true || $(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
+	$(CP) "$(SRC)/lib/mlrisc-lib/MLRISC/." "$(LIB)/sml/mlrisc-lib"
 	$(CP) "$(SRC)/lib/mlyacc/." "$(LIB)/sml/mlyacc-lib"
 	$(CP) "$(SRC)/lib/smlnj-lib/smlnj-lib/." "$(LIB)/sml/smlnj-lib"
 	find "$(LIB)/sml" -type d -name .cm | xargs rm -rf
