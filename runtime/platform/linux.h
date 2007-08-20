@@ -41,3 +41,19 @@
 #ifndef _GNU_SOURCE
 extern char **environ; /* for Posix_ProcEnv_environ */
 #endif
+
+/* The following is compatibility code with older glibc and kernel
+   versions. */
+
+#ifndef __suseconds_t_defined
+typedef __kernel_suseconds_t suseconds_t;
+#define __suseconds_t_defined
+#endif
+
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ <= 1
+typedef unsigned long int nfds_t;
+#endif
+
+#ifndef SO_ACCEPTCONN
+#define SO_ACCEPTCONN 30
+#endif
