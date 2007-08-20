@@ -382,7 +382,10 @@ The expression should evaluate to a bg-build project object."
         (cond
          ((string-match "EXITED ABNORMALLY WITH CODE \\([^\n]+\\)\n" event)
           (with-current-buffer buffer
-            (funcall bg-build-action-on-failure))
+            (condition-case ()
+                (funcall bg-build-action-on-failure)
+              (error
+               )))
           (when (memq 'failure bg-build-notify)
             (message "FAILED, %d MESSAGE(S): %s"
                      (with-current-buffer buffer
