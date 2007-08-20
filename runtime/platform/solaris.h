@@ -60,6 +60,10 @@
 int fpclassify32 (float f);
 int fpclassify64 (double d);
 
+#ifndef PRIuPTR
+#define PRIuPTR "u"
+#endif
+
 #ifndef PRIxPTR
 #define PRIxPTR "x"
 #endif
@@ -78,7 +82,7 @@ extern char **environ; /* for Posix_ProcEnv_environ */
 #define AF_INET6 26 /* Internet Protocol, Version 6 */
 #define PF_INET6 AF_INET6
 
-struct sockaddr_in6 { 
+struct sockaddr_in6 {
   int dummy; // quell gcc warnings about "struct has no members"
 };
 struct sockaddr_storage {
