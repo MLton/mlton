@@ -2,34 +2,39 @@ MLton is a whole-program optimizing compiler for the Standard ML
 programming language.  MLton has the following features.
 
   + Portability.  
-   MLton runs on the following platforms.
-   o HPPA: Debian.
-   o PowerPC: Debian, Mac OSX.
-   o X86: Linux, Cygwin/Windows, FreeBSD, MinGW/Windows, NetBSD, OpenBSD.
-   o Sparc: Debian, Solaris.
+   Runs on the following platforms.
+   o AMD64: FreeBSD, Linux (Debian, RedHat, ...).
+   o HPPA: HPUX, Linux (Debian).
+   o PowerPC: Darwin (Mac OS X), Linux (Debian).
+   o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, 
+      Linux (Debian, RedHat, ...), MinGW/Windows, NetBSD, OpenBSD.
+   o Sparc: Linux (Debian), Solaris.
   + Robustness.
-   o Supports the full SML 97 language.
-   o Follows the Definition of SML closely.
-   o Has a complete implementation of the Basis Library.
+   o Supports the full SML 97 language as given in The Definition 
+      of Standard ML (Revised).
+   o A complete implementation of the Basis Library.
    o Generates standalone executables.
-   o Compiles large programs (hundreds of thousands of lines).
-   o Supports large amounts of memory (up to 4G).
-   o Supports large arrays (up to 2G elements).
-   o Supports large files (using 64-bit integers for file positions).
+   o Compiles large programs.
+   o Support for large amounts of memory (up to 4G on 32-bit systems; 
+      more on 64-bit systems).
+   o Array lengths up to 2^31 - 1, the largest possible 
+      twos-complement 32-bit integer.
+   o Supports for large files, using 64-bit file positions.
   + Performance.
-   o Executables with excellent running times.
-   o Untagged and unboxed native integers and words.
-   o Unboxed reals.
-   o Unboxed arrays.
+   o Executables have excellent running times.
+   o Generates small executables.
+   o Untagged and unboxed native integers, reals, and words.
+   o Unboxed native arrays.
    o Multiple garbage collection strategies.
    o Fast arbitrary-precision arithmetic based on the GnuMP.
   + Tools.
-   o Source-level profiler for both time and allocation.
-   o Lexer generator.
-   o Parser generator.
+   o Source-level profiling for both time and allocation.
+   o MLLex lexer generator.
+   o MLYacc parser generator.
    o ML-NLFFIGEN.
   + Extensions.
-   o Fast C FFI for calling from SML to C and from C to SML.
+   o A simple and fast C FFI that supports calling from SML to C and 
+      from C to SML.
    o ML Basis system for programming in the very large.
    o Libraries for C pointers, continuations, interval timers, random
       numbers, resource limits, resource usage, signal handlers,
