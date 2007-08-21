@@ -28,7 +28,7 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t"PRIuMAX"  "FMTCME"  "FMTCME"\n",
+        fprintf (stderr, "\t%"PRIuMAX"  "FMTCME"  "FMTCME"\n",
                  (uintmax_t)i, generational->crossMap[i],
                  CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]);
     fprintf (stderr, "\n");
