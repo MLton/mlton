@@ -37,7 +37,7 @@ cd "$src/doc/guide"
 
 rm -f *
 
-drop='\(Download\|Experimental\|.*MoinEditorBackup\|OldPages\|PageSize\|Preferences\|RecentChanges\|TemporaryUpload\|WikiSandBox\)'
+drop='\(Download\|Experimental\|.*MoinEditorBackup\|OldPages\|PageSize\|Preferences\|RecentChanges\|SystemInfo\|TemporaryUpload\|WikiSandBox\)'
 
 if $useLocal; then 
 	(cd "$HOME/mlton/guide-in" && tar.write .) | tar.read;
