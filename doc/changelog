@@ -17,6 +17,8 @@ Summary:
     * Support for profiling.
     * Support for exception history.
   + Language.
+   o ML Basis annotations.
+    * Removed: allowExport, allowImport, sequenceUnit, warnMatch.
   + Libraries.
    o Basis Library.
     * Added: PackWord16Big, PackWord16Little, PackWord64Big,
@@ -40,6 +42,9 @@ Summary:
     * Added: MLRISC libary.
     * Updated: ckit library, SML/NJ library.
   + Tools.
+
+* 2007-08-12
+   - Removed deprecated ML Basis annotations.
 
 * 2007-08-06
    - Fixed bug in treatment of Real<N>.{scan,fromString} operations.
