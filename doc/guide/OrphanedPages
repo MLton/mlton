@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,6 +57,10 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 Pages that no other page links to.   Also see <a href="WantedPages">WantedPages</a>. <p>
 <ol>
+<li>
+<a href="Changelog">Changelog</a></li>
+<li>
+<a href="Download20051202">Download20051202</a></li>
 <li>
 <a href="Download200708XX">Download200708XX</a></li>
 <li>

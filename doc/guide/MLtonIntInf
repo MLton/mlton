@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -114,7 +114,7 @@ MLton represents an arbitrary precision integer either as an unboxed word with t
 
         <ul>
 
-  uses the GnuMP's fast gcd implementation. 
+  uses the <a class="nonexistent" href="GMP">GnuMP's</a> fast gcd implementation. 
         </ul>
 
 
@@ -184,5 +184,5 @@ MLton represents an arbitrary precision integer either as an unboxed word with t
 
 <p>
 <hr>
-Last edited on 2007-08-13 22:58:25 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:06:53 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

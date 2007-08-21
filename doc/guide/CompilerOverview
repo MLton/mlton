@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -264,7 +264,7 @@ The following table shows the overall structure of the compiler.  <a href="Inter
 
 
 <p>
-The <tt>Compile</tt> functor (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/main/compile.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">compile.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/main/compile.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">compile.fun</a>), controls the high-level view of the compiler passes, from <a href="FrontEnd">FrontEnd</a> to code generation. 
+The <tt>Compile</tt> functor (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/main/compile.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">compile.sig</a>,<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/main/compile.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">compile.fun</a>), controls the high-level view of the compiler passes, from <a href="FrontEnd">FrontEnd</a> to code generation. 
 </p>
 </div>
 

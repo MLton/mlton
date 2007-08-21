@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,7 +57,7 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 <p>
 <dl><dt>Python Version</dt><dd>2.3.5 (#2, Sep  4 2005, 22:01:42) 
-[GCC 3.3.5 (Debian 1:3.3.5-13)]</dd><dt>MoinMoin Version</dt><dd>Release 1.2.3 [Revision 1.186]</dd><dt>Number of pages</dt><dd>346</dd><dt>Number of system pages</dt><dd>2</dd><dt>Number of backup versions</dt><dd>1949</dd><dt>Accumulated page sizes</dt><dd>768866</dd><dt>Entries in edit log</dt><dd>2521 (249653 bytes)</dd><dt>Event log</dt><dd>100374593 bytes</dd><dt>Global extension macros</dt><dd>AbandonedPages, BR, FootNote, Form, FullSearch, GetText, Include, Navigation, OrphanedPages, PageHits, PageSize, RandomPage, RandomQuote, RecentChanges, ShowSmileys, StatsChart, SystemAdmin, TableOfContents, TeudView, WantedPages</dd><dt>Local extension macros</dt><dd>Cite, Div, DownloadSVN, Form, Improvement, IncludeSVN, Input, Span, TextArea, ViewCVS, ViewCVSDir, ViewSVN, ViewSVNDir, ViewSVNRev</dd><dt>Global extension actions</dt><dd>AttachFile, DeletePage, LikePages, LocalSiteMap, RenamePage, SpellCheck, links, rss_rc, titleindex</dd><dt>Local extension actions</dt><dd>AllLinks</dd><dt>Installed processors</dt><dd>CSV, Colorize</dd></dl 
+[GCC 3.3.5 (Debian 1:3.3.5-13)]</dd><dt>MoinMoin Version</dt><dd>Release 1.2.3 [Revision 1.186]</dd><dt>Number of pages</dt><dd>348</dd><dt>Number of system pages</dt><dd>2</dd><dt>Number of backup versions</dt><dd>2030</dd><dt>Accumulated page sizes</dt><dd>775260</dd><dt>Entries in edit log</dt><dd>2628 (260417 bytes)</dd><dt>Event log</dt><dd>102163734 bytes</dd><dt>Global extension macros</dt><dd>AbandonedPages, BR, FootNote, Form, FullSearch, GetText, Include, Navigation, OrphanedPages, PageHits, PageSize, RandomPage, RandomQuote, RecentChanges, ShowSmileys, StatsChart, SystemAdmin, TableOfContents, TeudView, WantedPages</dd><dt>Local extension macros</dt><dd>Cite, Div, DownloadSVN, Form, Improvement, IncludeSVN, Input, Span, TextArea, ViewCVS, ViewCVSDir, ViewSVN, ViewSVNDir, ViewSVNRev</dd><dt>Global extension actions</dt><dd>AttachFile, DeletePage, LikePages, LocalSiteMap, RenamePage, SpellCheck, links, rss_rc, titleindex</dd><dt>Local extension actions</dt><dd>AllLinks</dd><dt>Installed processors</dt><dd>CSV, Colorize</dd></dl 
 </p>
 </div>
 

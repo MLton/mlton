@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@ the expression <tt>fn&nbsp;x&nbsp;=&gt;&nbsp;x</tt> is syntactically a value, so
 the expression <tt>let&nbsp;in&nbsp;fn&nbsp;x&nbsp;=&gt;&nbsp;end&nbsp;end</tt> is not syntactically a value and so <tt>f</tt> can either have type <tt>int&nbsp;-&gt;&nbsp;int</tt> or  <tt>string&nbsp;-&gt;&nbsp;string</tt>, but not <tt>'a&nbsp;-&gt;&nbsp;'a</tt>.  Hence, the program does not type check. 
 </p>
 <p>
-The <a href="DefinitionOfStandardML">Definition of SML</a> spells out precisely which expressions are syntactic values (it refers to such expressions as <em>non-expansive</em>).  An expression is a value if it is of one of the following forms. 
+<a href="DefinitionOfStandardML">The Definition of Standard ML</a> spells out precisely which expressions are syntactic values (it refers to such expressions as <em>non-expansive</em>).  An expression is a value if it is of one of the following forms. 
 </p>
 
     <ul>
@@ -268,10 +268,10 @@ One might think that the value restriction could be relaxed, and that only types
  
 </p>
 <p>
-The previous version of Standard ML took a different approach (<a href = "References#MilnerEtAl90">MilnerEtAl90</a>, <a href = "References#Tofte90">Tofte90</a>, <a href="ImperativeTypeVariable">ImperativeTypeVariable</a>) than the value restriction.  It encoded information in the type system about when ref cells would be created, and used this to prevent a ref cell from holding multiple types.  Although it allowed more programs to be type checked, this approach had significant drawbacks.  First, it was significantly more complex, both for implementors and for programmers. Second, it had an unfortunate interaction with the modularity, because information about ref usage was exposed in module signatures.  This either prevented the use of references for implementing a signature, or required information that one would like to keep hidden to propagate across modules. 
+The previous version of Standard ML took a different approach (<a href = "References#MilnerEtAl90">MilnerEtAl90</a>, <a href = "References#Tofte90">Tofte90</a>, <a href="ImperativeTypeVariable">ImperativeTypeVariable</a>) than the value restriction.  It encoded information in the type system about when ref cells would be created, and used this to prevent a ref cell from holding multiple types.  Although it allowed more programs to be type checked, this approach had significant drawbacks.  First, it was significantly more complex, both for implementers and for programmers. Second, it had an unfortunate interaction with the modularity, because information about ref usage was exposed in module signatures.  This either prevented the use of references for implementing a signature, or required information that one would like to keep hidden to propagate across modules. 
 </p>
 <p>
-In the early nineties, Andrew Wright studied about 250,000 lines of existing SML code and discovered that it did not make significant use of the extended typing ability, and proposed the value restriction as a simpler alternative (<a href = "References#Wright95">Wright95</a>).  This was adopted in the revised <a href="DefinitionOfStandardML">Definition of SML</a>. 
+In the early nineties, Andrew Wright studied about 250,000 lines of existing SML code and discovered that it did not make significant use of the extended typing ability, and proposed the value restriction as a simpler alternative (<a href = "References#Wright95">Wright95</a>).  This was adopted in the revised <a href="DefinitionOfStandardML">Definition</a>. 
 </p>
 <h2 id="head-1d4c424ddb52840fa9f2ee0bf01858170229b540">Working with the value restriction</h2>
 <p>
@@ -351,5 +351,5 @@ Of course, one can hide the constructor <tt>T</tt> inside a <tt>local</tt> or be
 
 <p>
 <hr>
-Last edited on 2006-03-28 00:58:56 by <span title="adsl-71-141-33-187.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:43 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

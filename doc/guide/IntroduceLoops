@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -81,7 +81,7 @@ A <a href="SSA">SSA</a> function like
 </pre>
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/introduce-loops.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">introduce-loops.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/introduce-loops.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">introduce-loops.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/introduce-loops.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">introduce-loops.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/introduce-loops.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">introduce-loops.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 </div>
 
 

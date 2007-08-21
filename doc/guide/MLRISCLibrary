@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -87,6 +87,18 @@ The ALPHA backend</td>
 </tr>
   <tr>
 <td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb</tt></td>
+<td>
+The AMD64 backend</td>
+</tr>
+  <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/AMD64-Peephole.mlb</tt></td>
+<td>
+The AMD64 peephole optimizer</td>
+</tr>
+  <tr>
+<td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/Control.mlb</tt></td>
 <td>
  </td>
@@ -108,6 +120,12 @@ The HPPA backend</td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/IA32.mlb</tt></td>
 <td>
 The IA32 backend</td>
+</tr>
+  <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/IA32-Peephole.mlb</tt></td>
+<td>
+The IA32 peephole optimizer</td>
 </tr>
   <tr>
 <td>
@@ -136,6 +154,12 @@ The PPC backend</td>
   <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/RA.mlb</tt></td>
+<td>
+ </td>
+</tr>
+  <tr>
+<td>
+<tt>$(SML_LIB)/mlrisc-lib/mlb/SA.mlb</tt></td>
 <td>
  </td>
 </tr>
@@ -215,7 +239,7 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlrisc-lib/MLRISC.patch?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLRISC.patch</a> 
 </p>
 </li>
 </ul>
@@ -226,5 +250,5 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2007-08-13 02:31:12 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-16 02:51:35 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -99,7 +99,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <li>
 <p>
- <a href="RunningOnHPUX">HPUX</a> 
+ <a href="RunningOnHPUX">HPUX</a> (11.00 and above) 
 </p>
 </li>
             <li>
@@ -119,6 +119,11 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
             <ul>
 
+            <li>
+<p>
+ <a href="RunningOnAIX">AIX</a> (5.1 and above) 
+</p>
+</li>
             <li>
 <p>
  <a href="RunningOnDarwin">Darwin</a> (Mac OS X) 
@@ -216,7 +221,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
     <li>
 <p>
- Supports the full SML 97 language as given in <a href="DefinitionOfStandardML"> The Definition of Standard ML (Revised)</a>.  
+ Supports the full SML 97 language as given in <a href="DefinitionOfStandardML">The Definition of Standard ML (Revised)</a>.  
 </p>
 </li>
 
@@ -264,12 +269,12 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
     <li class="gap">
 <p>
- Support for large amounts of memory (up to 4G). 
+ Support for large amounts of memory (up to 4G on 32-bit systems; more on 64-bit systems). 
 </p>
 </li>
     <li class="gap">
 <p>
- Array lengths up to 2<sup>31</sup> - 1, the largest possible twos-complement 32 bit integer.  
+ Array lengths up to 2<sup>31</sup> - 1, the largest possible twos-complement 32-bit integer.  
 </p>
 </li>
     <li class="gap">
@@ -542,5 +547,5 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:44:17 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 05:14:01 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
 </body></html>

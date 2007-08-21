@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -66,10 +66,10 @@ Like <a href="SSA">SSA</a>, a <a href="SSA">SSA</a> program consists of a collec
 Unlike <a href="SSA">SSA</a>, SSA2 includes mutable fields in objects and makes the vector type constructor n-ary instead of unary.  This allows optimizations like <a href="RefFlatten">RefFlatten</a> and <a href="DeepFlatten">DeepFlatten</a> to be expressed. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/ssa2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa2.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/ssa-tree2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/ssa-tree2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree2.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/ssa2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/ssa2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa2.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/ssa-tree2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/ssa-tree2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ssa-tree2.fun</a> <h2 id="head-a6de4b535fedeaa8890bd890b60fe09f87b5f96a">Type Checking</h2>
 <p>
-Type checking of a SSA2 program verfies the following: 
+Type checking of a SSA2 program verifies the following: 
 </p>
 
     <ul>
@@ -109,7 +109,7 @@ Type checking of a SSA2 program verfies the following:
 
 
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/type-check2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/type-check2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check2.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/type-check2.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check2.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/type-check2.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-check2.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
@@ -121,5 +121,5 @@ SSA is an abbreviation for Static Single Assignment.
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:32:29 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:07:25 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

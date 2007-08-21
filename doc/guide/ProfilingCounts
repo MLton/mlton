@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,8 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-With MLton and <tt>mlprof</tt>, you can <a href="Profiling">profile</a> your program to find out how many times each function is called and how many times each branch is taken.  To do so, compile your program with <pre>-profile 
-count -profile-branch true</pre>. For example, suppose that <tt>tak.sml</tt>contains the following. <p>
+With MLton and <tt>mlprof</tt>, you can <a href="Profiling">profile</a> your program to find out how many times each function is called and how many times each branch is taken.  To do so, compile your program with <tt>-profile&nbsp;count&nbsp;-profile-branch&nbsp;true</tt>. For example, suppose that <tt>tak.sml</tt> contains the following. <p>
 <pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tak =
    <B><FONT COLOR="#0000FF">struct</FONT></B>
       <B><FONT COLOR="#A020F0">fun</FONT></B> tak1 (x, y, z) =
@@ -126,5 +125,5 @@ One use of <tt>-profile&nbsp;count</tt> is as a code-coverage tool, to help find
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:32:54 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 03:44:16 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

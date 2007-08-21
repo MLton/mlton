@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -76,7 +76,7 @@ A `w `x `y `z $
  
 </p>
 <p>
-This is as syntactically concice as the <tt>fromList</tt> expression. Furthermore, MLton, at least, will generate the efficient code as if one had written down a use of <tt>Array.array</tt> followed by four uses of <tt>Array.update</tt>. 
+This is as syntactically concise as the <tt>fromList</tt> expression. Furthermore, MLton, at least, will generate the efficient code as if one had written down a use of <tt>Array.array</tt> followed by four uses of <tt>Array.update</tt>. 
 </p>
 <p>
 Along with <tt>A</tt> and <tt>`</tt>, one can define a constant <tt>V</tt> that makes it possible to define vector literals with the same syntax, e.g., 
@@ -147,5 +147,5 @@ The idea of the code is for the fold to accumulate a count of the number of elem
 
 <p>
 <hr>
-Last edited on 2006-03-21 22:05:32 by <span title="adsl-71-141-16-94.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:05:16 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

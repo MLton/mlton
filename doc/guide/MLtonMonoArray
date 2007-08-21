@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,24 +73,50 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;t</tt>  type of monomorphic array 
+ <tt>type&nbsp;t</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type of monomorphic array 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>type&nbsp;elem</tt>  type of array elements 
+ <tt>type&nbsp;elem</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type of array elements 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>fromPoly&nbsp;a</tt>  convert a polymorphic array to its monomorphic counterpart; in MLton, this is a constant-time operation 
+ <tt>fromPoly&nbsp;a</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type cast a polymorphic array to its monomorphic counterpart; the argument and result arrays share the same identity 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>toPoly&nbsp;a</tt>  convert a monomorphic array to its polymorphic counterpart; in MLton, this is a constant-time operation 
+ <tt>toPoly&nbsp;a</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type cast a monomorphic array to its polymorphic counterpart; the argument and result arrays share the same identity </ul>
+
 </ul>
 
 </div>
@@ -99,5 +125,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 21:55:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 05:31:47 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

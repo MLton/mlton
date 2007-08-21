@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 <a href="MoinMoin">MoinMoin</a> supports a lot of  <a class="external" href="http://moinmaster.wikiwikiweb.de/HelpOnAccessControlLists"><img src="moin-www.png" alt="[WWW]" height="11" width="11">access control features</a>.   <p>
-Because people download binaries from the MLton web site, and we are worried about malicious users either changing those binaries, or changing the links that should point at those binaries, we allow editing of some pages (in particular, <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>, <a href="Home">Home</a>, and <a href="Experimental">Experimental</a>) only by <a href="TrustedGroup">TrustedGroup</a> members. 
+Because people download binaries from the MLton web site, and we are worried about malicious users either changing those binaries, or changing the links that should point at those binaries, we allow editing of some pages (in particular, <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>, <a href="Home">Home</a>, and <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a>) only by <a href="TrustedGroup">TrustedGroup</a> members. 
 </p>
 <p>
 All other pages are freely editable by any user with an account. 

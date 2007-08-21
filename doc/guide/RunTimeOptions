@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -135,7 +135,7 @@ Run-time options can also control MLton, as in
 
     <li class="gap">
 <p>
- load-world `<em>world</em> 
+ <tt>load-world&nbsp;</tt><em>world</em> 
 </p>
 </li>
 
@@ -199,5 +199,5 @@ Run-time options can also control MLton, as in
 
 <p>
 <hr>
-Last edited on 2007-08-13 18:53:05 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-14 23:25:13 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

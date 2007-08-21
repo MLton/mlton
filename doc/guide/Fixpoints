@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -79,7 +79,7 @@ First the signature of the fixpoint framework:
  
 </p>
 <p>
-<tt>fix</tt> is a <a href="TypeIndexedValues">type-indexed</a> function.  The type parameter to <tt>fix</tt> is called a "tier".  To compute fixpoints over products, one uses the <tt>^</tt> operator to combine tiers.  To provide a fixpoint combinator for an abstract type, one implements a tier providing a thunk whose instantation allocates a fresh "knot" and a procedure for "tying" it.  Naturally this means that not all possible ways of computing a fixpoint of a particular type are possible under this framework.  The <tt>pure</tt> combinator is a generalization of <tt>tier</tt>.  The <tt>iso</tt> combinator is provided for reusing existing tiers. 
+<tt>fix</tt> is a <a href="TypeIndexedValues">type-indexed</a> function.  The type parameter to <tt>fix</tt> is called a "tier".  To compute fixpoints over products, one uses the <tt>^</tt> operator to combine tiers.  To provide a fixpoint combinator for an abstract type, one implements a tier providing a thunk whose instantiation allocates a fresh "knot" and a procedure for "tying" it.  Naturally this means that not all possible ways of computing a fixpoint of a particular type are possible under this framework.  The <tt>pure</tt> combinator is a generalization of <tt>tier</tt>.  The <tt>iso</tt> combinator is provided for reusing existing tiers. 
 </p>
 <p>
 Note that instead of using an infix operator, we could alternatively employ an interface using <a href="Fold">Fold</a>.  Also, the tiers are eta-expanded to work around the <a href="ValueRestriction">value restriction</a>, while maintaining abstraction (the signature keeps tiers abstract). 
@@ -250,5 +250,5 @@ Note that above we make use of the <tt>Fix.iso</tt> combinator.  Here is a finit
 
 <p>
 <hr>
-Last edited on 2006-08-30 09:45:25 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-15 22:05:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

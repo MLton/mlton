@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -104,7 +104,7 @@ urchinTracker();
  <tt>toLargeWord&nbsp;mode&nbsp;r</tt> 
 </p>
 <p>
- convert the argument <tt>r</tt> to an integral type using the specified  rounding mode. They raise <tt>Overflow</tt> if the result is not  representable, in particular, if <tt>r</tt> is an infinity. They raise  <tt>Domain</tt> if <tt>r</tt> is NaN. 
+ convert the argument <tt>r</tt> to a word type using the specified  rounding mode. They raise <tt>Overflow</tt> if the result is not  representable, in particular, if <tt>r</tt> is an infinity. They raise  <tt>Domain</tt> if <tt>r</tt> is NaN. 
 </p>
 </li>
     <li class="gap">
@@ -130,7 +130,7 @@ urchinTracker();
  <tt>MLton.Real64.castToWord&nbsp;r</tt> 
 </p>
 <p>
- convert the argument <tt>r</tt> to an integral type as a bit-wise cast. 
+ convert the argument <tt>r</tt> to a word type as a bit-wise cast. 
 </p>
 </li>
 </ul>
@@ -141,5 +141,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 22:57:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-14 15:24:44 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton's type checker follows the Definition of SML closely, so you may find differences between MLton and other SML compilers that do not follow the Definition so closely.  In particular, SML/NJ has many deviations from the Definition -- please see <a href="SMLNJDeviations">SMLNJDeviations</a> for those that we are aware of. <p>
+MLton's type checker follows the <a href="DefinitionOfStandardML">Definition</a> closely, so you may find differences between MLton and other SML compilers that do not follow the Definition so closely.  In particular, SML/NJ has many deviations from the Definition -- please see <a href="SMLNJDeviations">SMLNJDeviations</a> for those that we are aware of. <p>
 In some respects MLton's type checker is more powerful than other SML compilers, so there are programs that MLton accepts that are rejected by some other SML compilers.  These kinds of programs fall into a few simple categories. 
 </p>
 
@@ -205,5 +205,5 @@ This error reflects the fact that the signature requires type <tt>u</tt> to equa
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:26:13 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:31 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

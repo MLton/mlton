@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -61,7 +61,7 @@ This pass adds free type variables to the <tt>val</tt> or <tt>fun</tt> declarati
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
 <p>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/scope.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/scope.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.fun</a> 
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/scope.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/scope.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">scope.fun</a> 
 </p>
 <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>

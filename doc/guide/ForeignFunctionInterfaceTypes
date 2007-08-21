@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -74,6 +74,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  C typedef </td>
 <td>
  C type </td>
+<td>
+ Note </td>
 </tr>
 <tr>
 <td>
@@ -82,6 +84,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Pointer</tt> </td>
 <td>
  <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -90,6 +94,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Bool</tt> </td>
 <td>
  <tt>int32_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -98,6 +104,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Char8</tt> </td>
 <td>
  <tt>uint8_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -106,6 +114,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Int8</tt> </td>
 <td>
  <tt>int8_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -114,6 +124,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Int16</tt> </td>
 <td>
  <tt>int16_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -122,6 +134,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Int32</tt> </td>
 <td>
  <tt>int32_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -130,6 +144,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Int64</tt> </td>
 <td>
  <tt>int64_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -138,6 +154,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Int32</tt> </td>
 <td>
  <tt>int32_t</tt> </td>
+<td>
+ <a href="#Default">(default)</a> </td>
 </tr>
 <tr>
 <td>
@@ -146,6 +164,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Pointer</tt> </td>
 <td>
  <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -154,6 +174,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Real32</tt> </td>
 <td>
  <tt>float</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -162,6 +184,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Real64</tt> </td>
 <td>
  <tt>double</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -170,6 +194,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Real64</tt> </td>
 <td>
  <tt>double</tt> </td>
+<td>
+ <a href="#Default">(default)</a> </td>
 </tr>
 <tr>
 <td>
@@ -178,6 +204,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Pointer</tt> </td>
 <td>
  <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -185,7 +213,9 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>unsigned&nbsp;char&nbsp;*</tt> <strong>(read-only)</strong></td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
+<td>
+ <a href="#ReadOnly">(read only)</a> </td>
 </tr>
 <tr>
 <td>
@@ -193,7 +223,9 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
 <td>
  <tt>Pointer</tt> </td>
 <td>
- <tt>unsigned&nbsp;char&nbsp;*</tt> <strong>(read-only)</strong></td>
+ <tt>unsigned&nbsp;char&nbsp;*</tt> </td>
+<td>
+ <a href="#ReadOnly">(read only)</a> </td>
 </tr>
 <tr>
 <td>
@@ -202,6 +234,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Word8</tt> </td>
 <td>
  <tt>uint8_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -210,6 +244,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Word16</tt> </td>
 <td>
  <tt>uint16_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -218,6 +254,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Word32</tt> </td>
 <td>
  <tt>uint32_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -226,6 +264,8 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Word64</tt> </td>
 <td>
  <tt>uint64_t</tt> </td>
+<td>
+ </td>
 </tr>
 <tr>
 <td>
@@ -234,11 +274,16 @@ The C header file that <tt>-export-header</tt> generates includes <tt>typedef</t
  <tt>Word32</tt> </td>
 <td>
  <tt>uint32_t</tt> </td>
+<td>
+ <a href="#Default">(default)</a> </td>
 </tr>
 </table>
 </div>
 <p>
-Because MLton assumes that vectors and strings are read-only (and will perform optimizations that, for instance, cause them to share space), you must not modify the data pointed to by the <tt>unsigned&nbsp;char&nbsp;*</tt> in C code. 
+<a id="Default"></a>Note (default): The default <tt>int</tt>, <tt>real</tt>, and <tt>word</tt> types may be set by the <tt>-default-type&nbsp;</tt><em>type</em> <a href="CompileTimeOptions"> compiler option</a>.  The given C typedef and C types correspond to the default behavior. 
+</p>
+<p>
+<a id="ReadOnly"></a>Note (read only):  Because MLton assumes that vectors and strings are read-only (and will perform optimizations that, for instance, cause them to share space), you must not modify the data pointed to by the <tt>unsigned&nbsp;char&nbsp;*</tt> in C code. 
 </p>
 <p>
 Although the C type of an array, ref, or vector is always <tt>Pointer</tt>, in reality, the object has the natural C representation.  Your C code should cast to the appropriate C type if you want to keep the C compiler from complaining. 
@@ -252,5 +297,5 @@ When calling an <a href="CallingFromSMLToC"> imported C function from SML</a> th
 
 <p>
 <hr>
-Last edited on 2007-06-27 01:43:17 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-16 01:14:48 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

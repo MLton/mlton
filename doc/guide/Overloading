@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -65,19 +65,19 @@ In <a href="StandardML">Standard ML</a>, constants (like <tt>13</tt>, <tt>0w13</
 <td>
  Int </td>
 <td>
- <tt>Int2.int</tt>, <tt>Int3.int</tt>, ... <tt>Int32.int</tt>, <tt>Int64.int</tt>, <tt>LargeInt.int</tt>, <tt>IntInf.int</tt> </td>
+ <tt>Int2.int</tt>, <tt>Int3.int</tt>, ... <tt>Int32.int</tt>, <tt>Int64.int</tt>, <tt>Int.int</tt>, <tt>IntInf.int</tt>, <tt>LargeInt.int</tt>, <tt>FixedInt.int</tt>, <tt>Position.int</tt> </td>
 </tr>
  <tr>
 <td>
  Real </td>
 <td>
- <tt>Real32.real</tt>, <tt>Real64.real</tt>, <tt>LargeReal.real</tt> </td>
+ <tt>Real32.real</tt>, <tt>Real64.real</tt>, <tt>Real.real</tt>, <tt>LargeReal.real</tt> </td>
 </tr>
  <tr>
 <td>
  Word </td>
 <td>
- <tt>Word2.word</tt>, <tt>Word3.word</tt>, ... <tt>Word32.word</tt>, <tt>Word64.int</tt>, <tt>LargeWord.word</tt> </td>
+ <tt>Word2.word</tt>, <tt>Word3.word</tt>, ... <tt>Word32.word</tt>, <tt>Word64.word</tt>, <tt>Word.word</tt>, <tt>LargeWord.word</tt>, <tt>SysWord.word</tt> </td>
 </tr>
 </table>
 </div>
@@ -98,19 +98,19 @@ The <a href="DefinitionOfStandardML">Definition</a> allows flexibility in how mu
 <td>
  Int </td>
 <td>
- Int32.int </td>
+ Int.int </td>
 </tr>
  <tr>
 <td>
  Real </td>
 <td>
- Real64.real </td>
+ Real.real </td>
 </tr>
  <tr>
 <td>
  Word </td>
 <td>
- Word64.word </td>
+ Word.word </td>
 </tr>
 </table>
 </div>
@@ -150,7 +150,7 @@ Other implementations may use a smaller context or different default types.
       <B><FONT COLOR="#A020F0">val</FONT></B> x = <B><FONT COLOR="#5F9EA0">0w0</FONT></B>
    <B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
-  The smallest enclosing structure declaration for <tt>0w0</tt> is   <tt>val&nbsp;x&nbsp;=&nbsp;0w0</tt>.  Hence, <tt>0w0</tt> receives the default type for  words, which is <tt>Word32.word</tt>. 
+  The smallest enclosing structure declaration for <tt>0w0</tt> is   <tt>val&nbsp;x&nbsp;=&nbsp;0w0</tt>.  Hence, <tt>0w0</tt> receives the default type for  words, which is <tt>Word.word</tt>. 
 </p>
 </li>
 </ul>
@@ -161,5 +161,5 @@ Other implementations may use a smaller context or different default types.
 
 <p>
 <hr>
-Last edited on 2005-12-02 01:19:19 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:01 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

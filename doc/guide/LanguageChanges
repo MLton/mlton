@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ We are sometimes asked to modify MLton to change the language it compiles.  In s
 
     <li>
 <p>
- The <a href="DefinitionOfStandardML">Definition of Standard ML</a> is an  extremely high standard of specification.  The value of the  Definition would be significantly diluted by changes that are not  specified at an equally high level, and the dilution increases with  the complexity of the language change and its interaction with other  language features.  
+ <a href="DefinitionOfStandardML">The Definition of Standard ML</a> is an  extremely high standard of specification.  The value of the  Definition would be significantly diluted by changes that are not  specified at an equally high level, and the dilution increases with  the complexity of the language change and its interaction with other  language features.  
 </p>
 </li>
     <li class="gap">
@@ -103,7 +103,7 @@ Despite these drawbacks, we have extended SML in a couple of cases.
 
 
 <p>
-We allow these language extensions because they provide functionality that is impossible to achieve without them.  The Definition does not define a foreign function interface.  So, we must either extend the language or greatly restrict the class of programs that can be written.  Similarly, the Definition does not provide a mechanism for namespace control at the module level, making it impossible to deliver packaged libraries and have a hope of users using them without name clashes.  The <a href="MLBasis"> ML Basis system</a> addresses this problem.  We have also provided a formal specification of the ML Basis system at the level of the Definition. 
+We allow these language extensions because they provide functionality that is impossible to achieve without them.  The Definition does not define a foreign function interface.  So, we must either extend the language or greatly restrict the class of programs that can be written.  Similarly, the Definition does not provide a mechanism for namespace control at the module level, making it impossible to deliver packaged libraries and have a hope of users using them without name clashes.  The ML Basis system addresses this problem.  We have also provided a formal specification of the ML Basis system at the level of the Definition. 
 </p>
 <h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
 
@@ -127,5 +127,5 @@ We allow these language extensions because they provide functionality that is im
 
 <p>
 <hr>
-Last edited on 2005-09-06 23:28:57 by <span title="cfs34.cs.cornell.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:06:40 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

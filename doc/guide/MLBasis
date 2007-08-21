@@ -32,7 +32,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,7 +57,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 The ML Basis system extends Standard ML to support programming-in-the-very-large, namespace management at the module level, separate delivery of library sources, and more.  While Standard ML modules are a sophisticated language for programming-in-the-large, it is difficult, if not impossible, to accomplish a number of routine namespace management operations when a program draws upon multiple libraries provided by different vendors.   <p>
-The ML Basis system is a simple, yet powerful, approach that builds upon the programmer's intuitive notion (and the <a href="DefinitionOfStandardML"> Definition of Standard ML's</a> formal notion) of the top-level environment (a <em>basis</em>).  The system is designed as a natural extension of <a href="StandardML"> Standard ML</a>; the formal specification of the ML Basis system (<a href="http://mlton.org/pages/MLBasis/attachments/mlb-formal.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pdf</a>) is given in the style of the Definition. 
+The ML Basis system is a simple, yet powerful, approach that builds upon the programmer's intuitive notion (and  <a href="DefinitionOfStandardML"> The Definition of Standard ML's</a> formal notion) of the top-level environment (a <em>basis</em>).  The system is designed as a natural extension of <a href="StandardML"> Standard ML</a>; the formal specification of the ML Basis system (<a href="http://mlton.org/pages/MLBasis/attachments/mlb-formal.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pdf</a>) is given in the style of the Definition. 
 </p>
 <p>
 Here are some of the key features of the ML Basis system: 
@@ -126,5 +126,5 @@ No naming convention for finding the file that defines a module.  To import a mo
 
 <p>
 <hr>
-Last edited on 2005-12-01 20:09:32 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:06:43 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

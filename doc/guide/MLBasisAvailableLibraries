@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -225,7 +225,7 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
         <ul>
 
-  The entire top-level value and type environment of the Basis   Library, with infix status.  This is the same as importing the above   six MLB files. </ul>
+  The entire top-level value and type environment of the    Basis Library, with infix status.  This is the same as   importing the above six MLB files. </ul>
 
 </div>
 
@@ -233,5 +233,5 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 <p>
 <hr>
-Last edited on 2006-06-02 15:32:30 by <span title="GS82.SP.CS.CMU.EDU"><a href="TomMurphy">TomMurphy</a></span>.
+Last edited on 2007-08-15 22:06:46 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

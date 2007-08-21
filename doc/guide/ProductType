@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ urchinTracker();
 </pre> and a product pattern is written as
 <pre>(p1, p2, ..., pN)
 </pre><p>
-In most situations the syntax is quite convenient.  However, there are sitiuations where the syntax is cumbersome.  There are also situations in which it is useful to construct and destruct n-ary products inductively, especially when using <a href="Fold">Fold</a>. 
+In most situations the syntax is quite convenient.  However, there are situations where the syntax is cumbersome.  There are also situations in which it is useful to construct and destruct n-ary products inductively, especially when using <a href="Fold">Fold</a>. 
 </p>
 <p>
 In such situations, it is useful to have a binary product datatype with an infix constructor defined as follows. 
@@ -129,5 +129,5 @@ While this doesn't stop the nesting, it makes the pattern significantly easier t
 
 <p>
 <hr>
-Last edited on 2006-03-21 22:04:54 by <span title="adsl-71-141-16-94.dsl.snfc21.sbcglobal.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:11 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

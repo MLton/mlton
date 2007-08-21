@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,24 +73,50 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;t</tt>  type of monomorphic vector 
+ <tt>type&nbsp;t</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type of monomorphic vector 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>type&nbsp;elem</tt>  type of vector elements 
+ <tt>type&nbsp;elem</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type of vector elements 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>fromPoly&nbsp;v</tt>  convert a polymorphic vector to its monomorphic counterpart; in MLton, this is a constant-time operation 
+ <tt>fromPoly&nbsp;v</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type cast a polymorphic vector to its monomorphic counterpart; in MLton, this is a constant-time operation 
+        </ul>
+
+
     <li class="gap">
 <p>
- <tt>toPoly&nbsp;v</tt>  convert a monomorphic vector to its polymorphic counterpart; in MLton, this is a constant-time operation 
+ <tt>toPoly&nbsp;v</tt> 
 </p>
 </li>
+
+        <ul>
+
+  type cast a monomorphic vector to its polymorphic counterpart; in MLton, this is a constant-time operation </ul>
+
 </ul>
 
 </div>
@@ -99,5 +125,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 21:55:11 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 05:32:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

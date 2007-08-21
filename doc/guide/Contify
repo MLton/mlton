@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -60,7 +60,7 @@ Contify is an optimization pass for the <a href="SSA">SSA</a> <a href="Intermedi
 Contification is a compiler optimization that turns a function that always returns to the same place into a continuation.  This exposes control-flow information that is required by many optimizations, including traditional loop optimizations. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/ssa/contify.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">contify.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/ssa/contify.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">contify.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/contify.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">contify.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/ssa/contify.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">contify.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 See <a href = "References#FluetWeeks01">Contification Using Dominators</a>.  The intermediate language described in that paper has since evolved to the <a href="SSA">SSA</a> <a href="IntermediateLanguage">IntermediateLanguage</a>; hence, the complication described in Section 6.1 is no longer relevant. 
 </p>

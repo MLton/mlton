@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -77,7 +77,7 @@ val z = f2 (3, 4)
 </pre>
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/xml/monomorphise.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/xml/monomorphise.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/xml/monomorphise.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/xml/monomorphise.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">monomorphise.fun</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 The monomorphiser works by making one pass over the entire program. On the way down, it creates a cache for each variable declared in a polymorphic declaration that maps a lists of type arguments to a new variable name.  At a variable reference, it consults the cache (based on the types the variable is applied to).  If there is already an entry in the cache, it is used.  If not, a new entry is created.  On the way up, the monomorphiser duplicates a variable declaration for each entry in the cache. 
 </p>

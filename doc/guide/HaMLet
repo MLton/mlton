@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,11 +55,11 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a class="external" href="http://www.ps.uni-sb.de/hamlet/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Hamlet</a> is a <a href="StandardMLImplementations">Standard ML Implementation</a>. It is intended as reference implementation of the  <a href="DefinitionOfStandardML">Definition of Standard ML</a> and not for serious practical work. </div>
+<a class="external" href="http://www.ps.uni-sb.de/hamlet/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HaMLet</a> is a <a href="StandardMLImplementations">Standard ML Implementation</a>. It is intended as reference implementation of  <a href="DefinitionOfStandardML">The Definition of Standard ML</a> and not for serious practical work. </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-12-01 04:32:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:06:37 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

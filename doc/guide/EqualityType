@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-An equality type is a type to which <a href="PolymorphicEquality">PolymorphicEquality</a> can be applied.  The <a href="DefinitionOfStandardML"> Definition</a> and the <a href="BasisLibrary">Basis Library</a> precisely spell out which types are equality types. 
+An equality type is a type to which <a href="PolymorphicEquality">PolymorphicEquality</a> can be applied.  The <a href="DefinitionOfStandardML">Definition</a> and the <a href="BasisLibrary">Basis Library</a> precisely spell out which types are equality types. 
     <ul>
 
     <li>
@@ -113,5 +113,5 @@ Vector.fromList [1, 2, 3] = Vector.tabulate (3, fn i =&gt; i + 1)
 
 <p>
 <hr>
-Last edited on 2005-12-02 01:19:02 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:05:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

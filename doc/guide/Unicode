@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -73,10 +73,10 @@ The current release of MLton does not support Unicode.  We are working on adding
 
 
 <p>
-There is no real support for Unicode in the Definition of Standard ML; there are only a few throw-away sentences along the lines of "ASCII must be a subset of the character set in programs". 
+There is no real support for Unicode in the <a href="DefinitionOfStandardML">Definition</a>; there are only a few throw-away sentences along the lines of "ASCII must be a subset of the character set in programs". 
 </p>
 <p>
-Neither is there real support for Unicode in the Standard ML Basis Library.  The general consensus (which includes the opinions of the editors of the Basis Library) is that the <tt>WideChar</tt> structure is insufficient for the purposes of Unicode.  There is no <tt>LargeChar</tt> structure, which in itself is a deficiency, since a programmer can not program against the largest supported character size. 
+Neither is there real support for Unicode in the <a href="BasisLibrary">Basis Library</a>. The general consensus (which includes the opinions of the editors of the Basis Library) is that the <tt>WideChar</tt> structure is insufficient for the purposes of Unicode.  There is no <tt>LargeChar</tt> structure, which in itself is a deficiency, since a programmer can not program against the largest supported character size. 
 </p>
 <p>
 MLton has some preliminary support for 16 and 32 bit characters and strings.  It is even possible to include arbitrary Unicode characters in 32-bit strings using a <tt>\Uxxxxxxxx</tt> escape sequence.  (This longer escape sequence is a minor extension over the Definition which only allows <tt>\uxxxx</tt>.)  This is by no means completely satisfactory in terms of support for Unicode, but it is what is currently available. 
@@ -124,5 +124,5 @@ The <a href="fxp">fxp</a> XML parser has some support for dealing with Unicode d
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:26:33 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:35 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

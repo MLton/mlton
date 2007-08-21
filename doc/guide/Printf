@@ -32,7 +32,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -182,7 +182,7 @@ Viewing <tt>printf</tt> as a fold opens up a number of possibilities. For exampl
 <pre>val IB = fn u =&gt; Fold.fold u `"Int="I`" Bool="B
 val () = printf IB`"  "IB`"\n" $ 1 true 3 false
 </pre><p>
-One can even parameterize over partial format strings. 
+One can even parametrize over partial format strings. 
 </p>
 
 <pre>fun XB X = fn u =&gt; Fold.fold u `"X="X`" Bool="B
@@ -209,5 +209,5 @@ val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
 
 <p>
 <hr>
-Last edited on 2007-07-08 20:54:14 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:07:07 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 <a class="external" href="http://www.smlnj.org/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML/NJ</a> is a <a href="StandardMLImplementations">Standard ML Compiler</a>. It is a native code compiler that runs on a variety of platforms and has a number of libraries and tools. <p>
-We maintain a list of SML/NJ's <a href="SMLNJDeviations">deviations</a> from the <a href="DefinitionOfStandardML">Definition of SML</a>. 
+We maintain a list of SML/NJ's <a href="SMLNJDeviations">deviations</a> from  <a href="DefinitionOfStandardML">The Definition of Standard ML</a>. 
 </p>
 <p>
 MLton has support for some features of SML/NJ in order to ease porting between MLton and SML/NJ. 
@@ -92,5 +92,5 @@ MLton has support for some features of SML/NJ in order to ease porting between M
 
 <p>
 <hr>
-Last edited on 2004-12-30 20:12:30 by <span title="adsl-64-166-225-13.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:07:16 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

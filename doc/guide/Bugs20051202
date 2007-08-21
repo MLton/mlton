@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
     <li>
 <p>
- Bug in the treatment of floating-point operations.  FP ops  depend on the current rounding mode, but were being treated as  pure.  Thanks to Sean McLaughlin for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5794&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5794</a>. 
+ Bug in the treatment of floating-point operations.  Floating-point operations  depend on the current rounding mode, but were being treated as  pure.  Thanks to Sean McLaughlin for the bug report.  Fixed by revision <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=5794&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">5794</a>. 
 </p>
 </li>
 
@@ -228,7 +228,7 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
     <li>
 <p>
- The native codegen's implementation of th C-calling convention  failed to widen 16-bit arguments to 32-bits.  Fixed by revision  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4631&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4631</a>. 
+ The native codegen's implementation of the C-calling convention  failed to widen 16-bit arguments to 32-bits.  Fixed by revision  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi?rev=4631&view=rev"><img src="moin-www.png" alt="[WWW]" height="11" width="11">4631</a>. 
 </p>
 </li>
 
@@ -299,5 +299,5 @@ Here are the known bugs in MLton 20051202, listed in reverse chronological order
 
 <p>
 <hr>
-Last edited on 2007-08-06 22:08:51 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:05:20 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

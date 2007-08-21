@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -103,7 +103,7 @@ There was only one complicated transformation: blocking multiple base events.  I
  
 </p>
 <p>
-When synchronizing on a set of base events, which are all blocked, we must invoke each <tt>BLOCKED</tt> function with the same transId and cleanUp (the transId is (checked and) set to CANCEL by the cleanUp function, which is invoked by the first enabled event; this "fizzles" every other event in the synchronization group that later becomes enabled). However, each <tt>BLOCKED</tt> function is implemented by a callcc, so that when the event is enabled, it throws back to the point of synchronization.  Hence, the next function (which doesn't return) is invoked by the <tt>BLOCKED</tt> function to escape the callcc and continue in the thread performing the synchronization.  In SML/NJ this is implemented as follows: 
+When synchronizing on a set of base events, which are all blocked, we must invoke each <tt>BLOCKED</tt> function with the same <tt>transId</tt> and <tt>cleanUp</tt> (the <tt>transId</tt> is (checked and) set to <tt>CANCEL</tt> by the <tt>cleanUp</tt> function, which is invoked by the first enabled event; this "fizzles" every other event in the synchronization group that later becomes enabled). However, each <tt>BLOCKED</tt> function is implemented by a callcc, so that when the event is enabled, it throws back to the point of synchronization.  Hence, the next function (which doesn't return) is invoked by the <tt>BLOCKED</tt> function to escape the callcc and continue in the thread performing the synchronization.  In SML/NJ this is implemented as follows: 
 <pre class=code>
 <B><FONT COLOR="#A020F0">fun</FONT></B> ext ([], blockFns) = callcc (<B><FONT COLOR="#A020F0">fn</FONT></B> k =&gt; <B><FONT COLOR="#0000FF">let</FONT></B>
       <B><FONT COLOR="#A020F0">val</FONT></B> throw = throw k
@@ -126,7 +126,7 @@ When synchronizing on a set of base events, which are all blocked, we must invok
 </pre>means that the naive transformation will result in nested switch-es. 
 </p>
 <p>
-We need to think a little more about what this code is trying to do. Essentially, each <tt>blockFn</tt> wants to capture this continuation, hold on to it until the event is enabled, and continue with next; when the event is enabled, before invoking the continuation and returning to the synchronization point, the cleanUp and other event specific operations are performed. 
+We need to think a little more about what this code is trying to do. Essentially, each <tt>blockFn</tt> wants to capture this continuation, hold on to it until the event is enabled, and continue with next; when the event is enabled, before invoking the continuation and returning to the synchronization point, the <tt>cleanUp</tt> and other event specific operations are performed. 
 </p>
 <p>
 To accomplish the same effect in the MLton thread implementation, we have the following: 
@@ -164,7 +164,7 @@ To accomplish the same effect in the MLton thread implementation, we have the fo
  
 </p>
 <p>
-To avoid the nested switch-es, I run the blockFn in it's own thread, whose only purpose is to return to the synchronization point.  This corresponds to the <tt>throw&nbsp;(blockFn&nbsp;{...})</tt> in the SML/NJ implementation.  I'm worried that this implementation might be a little expensive, starting a new thread for each blocked event (when there are only multiple blocked events in a synchronization group). But, I don't see another way of implementing this behavior in the MLton thread model. 
+To avoid the nested switch-es, I run the <tt>blockFn</tt> in it's own thread, whose only purpose is to return to the synchronization point.  This corresponds to the <tt>throw&nbsp;(blockFn&nbsp;{...})</tt> in the SML/NJ implementation.  I'm worried that this implementation might be a little expensive, starting a new thread for each blocked event (when there are only multiple blocked events in a synchronization group). But, I don't see another way of implementing this behavior in the MLton thread model. 
 </p>
 <p>
 Note that another way of thinking about what is going on is to consider each <tt>blockFn</tt> as prepending a different set of actions to the thread <tt>t</tt>.  It might be possible to give a <tt>MLton.Thread.unsafePrepend</tt>. 
@@ -288,5 +288,5 @@ that discuss concerns that SML/NJ's implementation is not space efficient, becau
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:18:52 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:05:31 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

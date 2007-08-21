@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -713,7 +713,7 @@ If <tt>lift0</tt> is the identity, then why even define it?  The answer lies in 
 Perhaps the most surprising aspect of fold is that it can be checked by the SML type system.  The types involved in fold expressions are complex; fortunately type inference is able to deduce them. Nevertheless, it is instructive to study the types of fold functions and steppers.  More importantly, it is essential to understand the typing aspects of fold in order to write down signatures of functions defined using fold and step. 
 </p>
 <p>
-Here is the <tt>FOLD</tt> signature, and a recaptulation of the entire <tt>Fold</tt> structure, with additional type annotations. 
+Here is the <tt>FOLD</tt> signature, and a recapitulation of the entire <tt>Fold</tt> structure, with additional type annotations. 
 </p>
 
 <pre class=code>
@@ -1008,7 +1008,7 @@ f: unit fold fold fold step
 This example shows why we must eta expand uses of <tt>fold</tt> and <tt>step0</tt> to work around the value restriction and make folders and steppers polymorphic.  The type of a fold function like <tt>f</tt> depends on the number of arguments, and so will vary from use to use. Similarly, each occurrence of an argument like <tt>a</tt> has a different type, depending on the number of remaining arguments. 
 </p>
 <p>
-This example also shows that the type of a folder, when fully expanded, is exponential in the number of arguments: there are as many nested occurrences of the <tt>fold</tt> type constructor as there are arguments, and each occurence duplicates its type argument.  One can observe this exponential behavior in a type checker that doesn't share enough of the representation of types (e.g. one that represents types as trees rather than directed acyclic graphs). 
+This example also shows that the type of a folder, when fully expanded, is exponential in the number of arguments: there are as many nested occurrences of the <tt>fold</tt> type constructor as there are arguments, and each occurrence duplicates its type argument.  One can observe this exponential behavior in a type checker that doesn't share enough of the representation of types (e.g. one that represents types as trees rather than directed acyclic graphs). 
 </p>
 <p>
 Generalizing this type derivation to uses of fold where the accumulator and finisher are more interesting is straightforward.  One simply includes the type of the accumulator, which may change, for each step, and the type of the finisher, which doesn't change from step to step. 
@@ -1146,5 +1146,5 @@ Fold has a number of practical applications.  Here are some of them.
 
 <p>
 <hr>
-Last edited on 2007-07-08 23:03:59 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:06:10 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

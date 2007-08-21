@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -86,7 +86,7 @@ There are a few Emacs modes for SML.
 
     <li class="gap">
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a> contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/ide/emacs/mlton.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">mlton.el</a> contains the Emacs lisp that <a href="StephenWeeks">StephenWeeks</a>  uses to interact with MLton (in addition to using <tt>sml-mode</tt>). 
 </p>
 </li>
     <li class="gap">
@@ -97,7 +97,7 @@ There are a few Emacs modes for SML.
 
         <ul>
 
-  Unlike the widespread <tt>sml-mode.el</tt> it doesn't try to indent   code based on ML syntax.  I gradually got sceptical about this   approach after writing the initial indentation support for caml mode   and watching it bloat insanely as the language added new features.   Also, any such attempts that I know of impose a particular coding   style, or at best a choice among a limited set of styles, which I   now oppose.  Instead my mode is based on a generic package which   provides manual bindable commands for common indentation operations   (example: indent the current line under the n-th occurrence of a   particular character in the previous non-blank line). 
+  Unlike the widespread <tt>sml-mode.el</tt> it doesn't try to indent   code based on ML syntax.  I gradually got skeptical about this   approach after writing the initial indentation support for caml mode   and watching it bloat insanely as the language added new features.   Also, any such attempts that I know of impose a particular coding   style, or at best a choice among a limited set of styles, which I   now oppose.  Instead my mode is based on a generic package which   provides manual bindable commands for common indentation operations   (example: indent the current line under the n-th occurrence of a   particular character in the previous non-blank line). 
         </ul>
 
 
@@ -114,7 +114,7 @@ There is a mode for editing <a href="MLBasis"> ML Basis</a> files.
 
     <li>
 <p>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a> (+ other files) 
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/ide/emacs/esml-mlb-mode.el?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">esml-mlb-mode.el</a> (+ other files) 
 </p>
 </li>
 
@@ -161,5 +161,5 @@ Alternatively, you could use a sed script to rewrite MLton's errors. Here is one
 
 <p>
 <hr>
-Last edited on 2007-06-27 10:59:46 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-15 22:05:44 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

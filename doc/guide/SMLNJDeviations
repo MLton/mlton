@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are some deviations of <a href="SMLNJ">SML/NJ</a> from the <a href="DefinitionOfStandardML">Definition of SML</a>.  Some of these are documented in the  <a class="external" href="http://www.smlnj.org/doc/Conversion/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML '97 Conversion Guide</a>. Since MLton does not deviate from the Definition, you should look here if you are having trouble porting a program from MLton to SML/NJ or vice versa.  If you discover other deviations of SML/NJ that aren't listed here, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
+Here are some deviations of <a href="SMLNJ">SML/NJ</a> from  <a href="DefinitionOfStandardML">The Definition of Standard ML</a>.  Some of these are documented in the  <a class="external" href="http://www.smlnj.org/doc/Conversion/index.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">SML '97 Conversion Guide</a>. Since MLton does not deviate from the Definition, you should look here if you are having trouble porting a program from MLton to SML/NJ or vice versa.  If you discover other deviations of SML/NJ that aren't listed here, please send mail to  <a class="external" href="mailto:MLton@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton@mlton.org</a>. 
     <ul>
 
     <li>
@@ -345,5 +345,5 @@ Here are some deviations of SML/NJ from the Basis Library Specification.
 
 <p>
 <hr>
-Last edited on 2006-08-15 07:55:07 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-15 22:07:20 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

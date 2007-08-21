@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -78,7 +78,7 @@ e <B><FONT COLOR="#A020F0">with</FONT></B> {a = <B><FONT COLOR="#5F9EA0">16</FON
  would create a copy of the record denoted by <tt>e</tt> with field <tt>a</tt> replaced with <tt>16</tt> and <tt>b</tt> replaced with <tt>17</tt>. 
 </p>
 <p>
-Since there is no such syntax in SML, we now show how to implement functional record update directly.  We first give a simple implementation that has a number of problems.  We then give an advanced implementation, that, while complex underneath, is a resuable library that admits simple use. 
+Since there is no such syntax in SML, we now show how to implement functional record update directly.  We first give a simple implementation that has a number of problems.  We then give an advanced implementation, that, while complex underneath, is a reusable library that admits simple use. 
 </p>
 <h2 id="head-fa2179e8b7b0b4d2c689f9612a22a231e6cd9bf2">Simple implementation</h2>
 <p>
@@ -265,5 +265,5 @@ With MLton, the efficiency of this approach is as good as one would expect with 
 
 <p>
 <hr>
-Last edited on 2007-07-08 23:04:15 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:06:30 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

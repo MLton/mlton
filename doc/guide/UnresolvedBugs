@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are the places where MLton deviates from the <a href="DefinitionOfStandardML">Definition of SML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the three deviations listed here are the only known deviations, and we have no plans to fix them.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
+Here are the places where MLton deviates from  <a href="DefinitionOfStandardML">The Definition of Standard ML</a>.  In general, MLton complies with the Definition quite closely, typically much more closely than other SML compilers (see, e.g., our list of <a href="SMLNJDeviations">SML/NJ's deviations</a>).  In fact, the three deviations listed here are the only known deviations, and we have no plans to fix them.  If you find a deviation not listed here, please report a <a href="Bug">Bug</a>. <p>
 We don't plan to fix these bugs because one of them (parsing nested cases) has historically never been accepted by any SML compiler, while the other three clearly indicate problems in the Definition. 
 </p>
 
@@ -83,7 +83,7 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <pre class=code>
  <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#A020F0">rec</FONT></B> NONE = <B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; ()
 </PRE>
-  The <a href="DefinitionOfStandardML"> Definition</a> (bizarrely) requires this  program to type check, but to raise <tt>Bind</tt>.  
+  The Definition (bizarrely) requires this  program to type check, but to raise <tt>Bind</tt>.  
 </p>
 <p>
  We have no plans to change this behavior, as the Definition's  behavior is clearly an error, a mismatch between the static semantics  and the dynamic semantics. 
@@ -91,7 +91,7 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 </li>
     <li class="gap">
 <p>
- MLton does not hide the equality aspect of types declared in  abstype declarations. So, MLton accepts programs like the following,  while the <a href="DefinitionOfStandardML"> Definition</a> rejects them. 
+ MLton does not hide the equality aspect of types declared in  abstype declarations. So, MLton accepts programs like the following,  while the Definition rejects them. 
 <pre class=code>
 <B><FONT COLOR="#A020F0">abstype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">end</FONT></B>
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) =&gt; t1 = t2
@@ -99,12 +99,12 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <B><FONT COLOR="#A020F0">abstype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> a = T <B><FONT COLOR="#A020F0">end</FONT></B>
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = a = a
 </PRE>
-  One consequence of this choice is that MLton accepts the following  program, in accordance with the <a href="DefinitionOfStandardML"> Definition</a>. 
+  One consequence of this choice is that MLton accepts the following  program, in accordance with the Definition. 
 <pre class=code>
  <B><FONT COLOR="#A020F0">abstype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq = <B><FONT COLOR="#A020F0">op</FONT></B> = <B><FONT COLOR="#A020F0">end</FONT></B>
  <B><FONT COLOR="#A020F0">val</FONT></B> _ = <B><FONT COLOR="#A020F0">fn</FONT></B> (t1, t2 : t) =&gt; eq (t1, t2)
 </PRE>
-  Other implementations will typically reject this program, because  they make an early choice for the type of <tt>eq</tt> to be   <tt>''a&nbsp;*&nbsp;''a&nbsp;-&gt;&nbsp;bool</tt> instead of <tt>t&nbsp;*&nbsp;t&nbsp;-&gt;&nbsp;bool</tt>.  The choice  is understandable, since the <a href="DefinitionOfStandardML">Definition</a>  accepts the following program. 
+  Other implementations will typically reject this program, because  they make an early choice for the type of <tt>eq</tt> to be   <tt>''a&nbsp;*&nbsp;''a&nbsp;-&gt;&nbsp;bool</tt> instead of <tt>t&nbsp;*&nbsp;t&nbsp;-&gt;&nbsp;bool</tt>.  The choice  is understandable, since the Definition  accepts the following program. 
 <pre class=code>
  <B><FONT COLOR="#A020F0">abstype</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">T</FONT> </FONT></B><B><FONT COLOR="#A020F0">with</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> eq = <B><FONT COLOR="#A020F0">op</FONT></B> = <B><FONT COLOR="#A020F0">end</FONT></B>
  <B><FONT COLOR="#A020F0">val</FONT></B> _ = eq (<B><FONT COLOR="#5F9EA0">1</FONT></B>, <B><FONT COLOR="#5F9EA0">2</FONT></B>)
@@ -114,7 +114,7 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 </li>
     <li class="gap">
 <p>
- MLton (re-)type checks each functor definition at every  corresponding functor application (a consequence of  defunctorization).  One consequence of this implementation is that  MLton accepts the following program, while the  <a href="DefinitionOfStandardML"> Definition</a> rejects it. 
+ MLton (re-)type checks each functor definition at every  corresponding functor application (the compilation technique of   defunctorization).  One consequence of this implementation is that  MLton accepts the following program, while the  Definition rejects it. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">functor</FONT></B> F (X: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>) = <B><FONT COLOR="#0000FF">struct</FONT></B>
     <B><FONT COLOR="#A020F0">val</FONT></B> f = id id
@@ -124,7 +124,7 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = A.f <B><FONT COLOR="#5F9EA0">10</FONT></B>
 <B><FONT COLOR="#A020F0">val</FONT></B> _ = B.f <B><FONT COLOR="#BC8F8F">&quot;dude&quot;</FONT></B>
 </PRE>
- On the other hand, other implementations will typically reject the  following program, while MLton and the   <a href="DefinitionOfStandardML"> Definition</a> accepts it. 
+ On the other hand, other implementations will typically reject the  following program, while MLton and the   Definition accept it. 
 <pre class=code>
 <B><FONT COLOR="#0000FF">functor</FONT></B> F (X: <B><FONT COLOR="#0000FF">sig</FONT></B> <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B><B><FONT COLOR="#0000FF">end</FONT></B>)
 = <B><FONT COLOR="#0000FF">struct</FONT></B>
@@ -146,5 +146,5 @@ We don't plan to fix these bugs because one of them (parsing nested cases) has h
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:17:06 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:07:38 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

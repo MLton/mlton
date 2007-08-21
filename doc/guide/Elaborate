@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -57,14 +57,14 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 Elaborate is a translation pass from the <a href="AST">AST</a> <a href="IntermediateLanguage">IntermediateLanguage</a> to the <a href="CoreML">CoreML</a> <a href="IntermediateLanguage">IntermediateLanguage</a>. <h2 id="head-55f8ebc805e65b5b71ddafdae390e3be2bcd69af">Description</h2>
 <p>
-This pass performs type inference and type checking according to the <a href="DefinitionOfStandardML"> Definition</a>.  It also defunctorizes the program, eliminating all module-level constructs. 
+This pass performs type inference and type checking according to the <a href="DefinitionOfStandardML">Definition</a>.  It also defunctorizes the program, eliminating all module-level constructs. 
 </p>
 <h2 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h2>
-<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/elaborate.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/elaborate-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/elaborate-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/elaborate-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/elaborate-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.fun</a><br>
- <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
+<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-env.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-modules.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-modules.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-modules.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-core.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.sig</a> <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/elaborate-core.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate-core.fun</a><br>
+ <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate"><img src="moin-www.png" alt="[WWW]" height="11" width="11">elaborate</a> <h2 id="head-35ec00231a68203708e39f0e2cc10b50c6bf62de">Details and Notes</h2>
 <p>
 At the modules level, the Elaborate pass: 
 </p>
@@ -73,7 +73,7 @@ At the modules level, the Elaborate pass:
 
     <li>
 <p>
- elaborates signatures with interfaces (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/interface.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.sig</a> and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/interface.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.fun</a>).   
+ elaborates signatures with interfaces (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/interface.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.sig</a> and <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/interface.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">interface.fun</a>).   
 </p>
 </li>
 
@@ -103,7 +103,7 @@ At the modules level, the Elaborate pass:
 
             <ul>
 
-   This is implemented by building a dummy structure realized from the    signature, just as we would for a functor argument when type    checking a functor.  The dummy structure contains exactly the type    information that is in the signature, which is what opacity    requires.  We then replace the variables (and constructors) in the    dummy structure with the corresponding variables (and constructors)    from the actual structure so that the translation to <a href="CoreML">CoreML</a>    uses the right stuff.  For each tycon in the dummy structure, we    keep track of the corresponding type structure in the actual    structure.  This is used when producing the <a href="CoreML">CoreML</a> types (see    <tt>expandOpaque</tt> in <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/trunk/mlton/elaborate/type-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.sig</a> and    <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-20070813-release/mlton/elaborate/type-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.fun</a>). 
+   This is implemented by building a dummy structure realized from the    signature, just as we would for a functor argument when type    checking a functor.  The dummy structure contains exactly the type    information that is in the signature, which is what opacity    requires.  We then replace the variables (and constructors) in the    dummy structure with the corresponding variables (and constructors)    from the actual structure so that the translation to <a href="CoreML">CoreML</a>    uses the right stuff.  For each tycon in the dummy structure, we    keep track of the corresponding type structure in the actual    structure.  This is used when producing the <a href="CoreML">CoreML</a> types (see    <tt>expandOpaque</tt> in <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/type-env.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.sig</a> and    <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/mlton/elaborate/type-env.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">type-env.fun</a>). 
             </ul>
 
 
@@ -344,5 +344,5 @@ val z_0 = x_0 + y_0
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:43:51 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-15 22:05:40 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -117,11 +117,11 @@ The above design has an annoying feature.  In practice, the upper bound of the i
 for (<B><FONT COLOR="#5F9EA0">0</FONT></B> to n-<B><FONT COLOR="#5F9EA0">1</FONT></B>) ...
 for (n-<B><FONT COLOR="#5F9EA0">1</FONT></B> downto <B><FONT COLOR="#5F9EA0">0</FONT></B>) ...
 </PRE>
- It is probably better to break convention and exclude the upper bound by default, because it leads to more concise code and becomes idiomatic with very little practise.  The iterator combinators described below exclude the upper bound by default. 
+ It is probably better to break convention and exclude the upper bound by default, because it leads to more concise code and becomes idiomatic with very little practice.  The iterator combinators described below exclude the upper bound by default. 
 </p>
 <h2 id="head-a43056e62b4e6692169c07351860dd6bb04042d0">Iterator combinators</h2>
 <p>
-While the simple <tt>for</tt>-function described in the previous section is probably good enough for many uses, it is a bit cumbersome when one needs to iterate over a cartesian product.  One might also want to iterate over more than just consecutive integers.  It turns out that one can provide a library of iterator combinators that allow one to implement iterators more flexibly. 
+While the simple <tt>for</tt>-function described in the previous section is probably good enough for many uses, it is a bit cumbersome when one needs to iterate over a Cartesian product.  One might also want to iterate over more than just consecutive integers.  It turns out that one can provide a library of iterator combinators that allow one to implement iterators more flexibly. 
 </p>
 <p>
 Since the types of the combinators may be a bit difficult to infer from their implementations, let's first take a look at a signature of the iterator combinator library: 
@@ -191,7 +191,7 @@ A few notes are in order:
 </li>
         <li>
 <p>
- The <tt>**</tt> combinator produces an iterator for the cartesian product   of the given iterators. 
+ The <tt>**</tt> combinator produces an iterator for the Cartesian product   of the given iterators. 
 </p>
 </li>
 
@@ -299,5 +299,5 @@ Using the <tt>Iter</tt> combinators one can easily produce more complicated iter
 
 <p>
 <hr>
-Last edited on 2006-03-26 14:16:53 by <span title="cs180212.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-15 22:06:21 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

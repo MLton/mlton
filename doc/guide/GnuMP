@@ -31,7 +31,7 @@ urchinTracker();
 		color: darkblue; 
 		font-size: 150%;
 		text-align: left;">
-      <a class = mltona href="Home">MLton 20070813</a>
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
     <td style = "
 		border: 0px;
 		font-size: 150%;
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-The <a class="external" href="http://www.gnu.org/software/gmp/gmp.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GnuMP</a> (GNU multiprecision library) is a library for arbitrary precision integer arithmetic.  MLton uses the GnuMP to implement the SML Basis <tt>IntInf</tt> module. <p>
+The <a class="external" href="http://www.gnu.org/software/gmp/gmp.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GnuMP</a> (GNU multiprecision library) is a library for arbitrary precision integer arithmetic.  MLton uses the GnuMP to implement the <a href="BasisLibrary"> Basis Library</a> <tt>IntInf</tt> module. <p>
 There is a known problem with the GnuMP, where it requires a lot of stack space for some computations, e.g. <tt>IntInf.toString</tt> of a million digit number.  If you run with stack size limited, you may see a segfault in such programs.  This problem is mentioned in the <a class="external" href="http://www.swox.com/gmp/#FAQ"><img src="moin-www.png" alt="[WWW]" height="11" width="11">GnuMP FAQ</a>, where they describe two solutions. 
 </p>
 
@@ -79,5 +79,5 @@ There is a known problem with the GnuMP, where it requires a lot of stack space 
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:20:35 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-15 22:06:35 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
