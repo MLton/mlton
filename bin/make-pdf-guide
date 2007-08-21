@@ -30,7 +30,7 @@ pdf='mlton-guide.pdf'
 script='.script'
 titlepage='title.html'
 tmp="/tmp/mlton-guide.$$"
-version=`cat $src/doc/guide/VERSION`
+version=`cat $src/doc/guide/MLTONWIKIVERSION`
 
 rm -rf "$tmp"
 mkdir "$tmp"
@@ -53,6 +53,7 @@ s;</FONT>;;g
 s;\(<div id="content"\);\1;
 s;<td colspan = 3;<td align = right;
 s;<img src=\"\(http://mlton.org[^>]*\)>;<img src="moin-www.png"><a href=\"\1>image</a>;g
+s;MLTONWIKIVERSION;$version;g
 EOF
 	"$bin/msed" -f "$script" <"$f" >.tmp
 	mv .tmp "$f"
