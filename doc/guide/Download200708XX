@@ -1,0 +1,326 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Download200708XX - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Download200708XX
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+Here you can download the latest public release of MLton, version 200708XX.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+
+        <ul>
+
+        <li>
+<p>
+ New platforms:  
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnLinux">Linux</a>, <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnFreeBSD">FreeBSD</a>, ... 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnHPPA">HPPA</a>/<a href="RunningOnHPUX">HPUX</a>, ... 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnPowerPC">PowerPC</a>/<a href="RunningOnAIX">AIX</a>, ... 
+</p>
+</li>
+            <li>
+<p>
+ <a href="RunningOnX86">X86</a>/<a href="RunningOnDarwin">Darwin (Mac OS X)</a>, ... 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ Compiler. 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ Support for 64-bit platforms. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Native amd64 codegen. 
+</p>
+</li>
+
+                </ul>
+
+
+            <li>
+<p>
+ <a href="CompileTimeOptions">Compile-time options</a>. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Added: <tt>-codegen&nbsp;amd64</tt>, <tt>-codegen&nbsp;x86</tt>, <tt>-default-type&nbsp;</tt><em>type</em>, <tt>-profile-val&nbsp;{false|true}</tt>. 
+</p>
+</li>
+                <li>
+<p>
+ Changed: <tt>-stop&nbsp;f</tt> (file listing now includes <tt>.mlb</tt> files). 
+</p>
+</li>
+
+                </ul>
+
+
+            <li>
+<p>
+ Bytecode codegen. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Support for exception history. 
+</p>
+</li>
+                <li>
+<p>
+ Support for profiling. 
+</p>
+</li>
+
+                </ul>
+
+
+
+            </ul>
+
+
+        <li>
+<p>
+ Language. 
+</p>
+</li>
+        <li>
+<p>
+ Libraries. 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ <a href="BasisLibrary">Basis Library</a>. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Added: <tt>PackWord16Big</tt>, <tt>PackWord16Little</tt>, <tt>PackWord64Big</tt>, <tt>PackWord64Little</tt>. 
+</p>
+</li>
+                <li>
+<p>
+ Bug Fixes: see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-200708XX-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>. 
+</p>
+</li>
+
+                </ul>
+
+
+            <li>
+<p>
+ <a href="MLtonStructure">MLton structure</a>. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Added: <tt>MLTON_MONO_ARRAY</tt>, <tt>MLTON_MONO_VECTOR</tt>, <tt>MLTON_REAL</tt>, <tt>MLton.BinIO.tempPrefix</tt>, <tt>MLton.CharArray</tt>, <tt>MLton.CharVector</tt>, <tt>MLton.Exn.defaultTopLevelHandler</tt>, <tt>MLton.Exn.getTopLevelHandler</tt>, <tt>MLton.Exn.setTopLevelHandler</tt>, <tt>MLton.IntInf.BigWord</tt>, <tt>Mlton.IntInf.SmallInt</tt>, <tt>MLton.LargeReal</tt>, <tt>MLton.LargeWord</tt>, <tt>MLton.Real</tt>, <tt>MLton.Real32</tt>, <tt>MLton.Real64</tt>, <tt>MLton.Rlimit.Rlim</tt>, <tt>MLton.TextIO.tempPrefix</tt>, <tt>MLton.Vector.create</tt>, <tt>MLton.Word.bswap</tt>, <tt>MLton.Word8.bswap</tt>, <tt>MLton.Word16</tt>, <tt>MLton.Word32</tt>, <tt>MLton.Word64</tt>, <tt>MLton.Word8Array</tt>, <tt>MLton.Word8Vector</tt>. 
+</p>
+</li>
+                <li>
+<p>
+ Changed: <tt>MLton.Array.unfoldi</tt>, <tt>MLton.IntInf.rep</tt>, <tt>MLton.Rlimit</tt>, <tt>MLton.Vector.unfoldi</tt>.  
+</p>
+</li>
+                <li>
+<p>
+ Deprecated: <tt>MLton.Socket</tt>. 
+</p>
+</li>
+
+                </ul>
+
+
+            <li>
+<p>
+ Other libraries. 
+</p>
+</li>
+
+                <ul>
+
+                <li>
+<p>
+ Added: <a href="MLRISCLibrary">MLRISC library</a>.  
+</p>
+</li>
+                <li>
+<p>
+ Updated: <a href="CKitLibrary">ckit library</a>, <a href="SMLNJLibrary">SML/NJ library</a>.  
+</p>
+</li>
+
+                </ul>
+
+
+
+            </ul>
+
+
+        <li>
+<p>
+ Tools. 
+</p>
+</li>
+
+        </ul>
+
+
+<p>
+For a complete list of changes and bug fixes since 20051202, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-200708XX-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20051202">Bugs20051202</a>. 
+</p>
+<h2 id="head-8c49abcb0ee11fc4a0e06cf7a412250e82455812">200708XX binary packages</h2>
+<p>
+
+</p>
+<h2 id="head-979916d6a2485d2f520cac2d82bc33988638f81b">200708XX sources</h2>
+<p>
+
+</p>
+<h2 id="head-c9f200c953410684e25381b86acb0096e9ca73f2">Packages available at other sites</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a class="external" href="http://packages.debian.org/cgi-bin/search_packages.pl?keywords=mlton&amp;searchon=names&amp;version=all&amp;release=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://www.freebsd.org/cgi/ports.cgi?query=mlton&amp;stype=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://koji.fedoraproject.org/koji/packageinfo?packageID=2541"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Fedora</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://packages.ubuntu.com/cgi-bin/search_packages.pl?keywords=mlton&amp;searchon=names&amp;version=all&amp;release=all"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Ubuntu</a> 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Bugs200708XX">Bugs200708XX</a> 
+</p>
+</li>
+    <li>
+<p>
+ <a class="external" href="http://mlton.org/guide/200708XX/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton Guide (200708XX)</a>.  A snapshot of the MLton wiki at the time of release. 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2007-08-19 20:55:35 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>
