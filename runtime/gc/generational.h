@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -26,7 +26,6 @@ typedef size_t GC_crossMapIndex;
 #define CROSS_MAP_ELEM_SIZE sizeof(GC_crossMapElem)
 #define CROSS_MAP_EMPTY ((GC_crossMapElem)255)
 #define CROSS_MAP_OFFSET_SCALE 4
-#define FMTCMI "%zu"
 #define FMTCME "%"PRIu8
 
 struct GC_generationalMaps {

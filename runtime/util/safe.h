@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -11,8 +11,8 @@ static inline void *calloc_safe (size_t count, size_t size) {
 
   res = calloc (count, size);
   if (NULL == res)
-    die ("calloc (%zu, %zu) failed.\n", 
-         count, size);
+    die ("calloc (%"PRIuMAX", %"PRIuMAX") failed.\n",
+         (uintmax_t)count, (uintmax_t)size);
   return res;
 }
 
@@ -51,19 +51,22 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
     if (feof (f))
        fprintf (stderr, "eof\n");
     else
-       fprintf (stderr, "errno = %d\n", ferror (f));  
-    diee ("fread ("FMTPTR", %zu, %zu, _) failed (only read %zu).\n",
-          (uintptr_t)buf, size, count, res);
+       fprintf (stderr, "errno = %d\n", ferror (f));
+    diee ("fread ("FMTPTR", %"PRIuMAX", %"PRIuMAX", _) failed "
+          "(only read %"PRIuMAX").\n",
+          (uintptr_t)buf, (uintmax_t)size, (uintmax_t)count, (uintmax_t)res);
   }
 }
 
-static inline void fwrite_safe (const void *buf, size_t size, size_t count, FILE *f) {
+static inline void fwrite_safe (const void *buf, size_t size, size_t count,
+                                FILE *f) {
   size_t res;
 
   res = fwrite (buf, size, count, f);
   if (res != count)
-    diee ("fwrite (_, %zu, %zu, _) failed (only wrote %zu).\n",
-          size, count, res);
+    diee ("fwrite (_, %"PRIuMAX", %"PRIuMAX", _) failed "
+          "(only wrote %"PRIuMAX").\n",
+          (uintmax_t)size, (uintmax_t)count, (uintmax_t)res);
 }
 
 static inline void *malloc_safe (size_t size) {
@@ -71,7 +74,7 @@ static inline void *malloc_safe (size_t size) {
 
   res = malloc (size);
   if (NULL == res)
-    die ("malloc (%zu) failed.\n", size);
+    die ("malloc (%"PRIuMAX") failed.\n", (uintmax_t)size);
   return res;
 }
 

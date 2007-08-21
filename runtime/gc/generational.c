@@ -28,8 +28,8 @@ void displayGenerationalMaps (__attribute__ ((unused)) GC_state s,
     fprintf (stderr, "crossMap trues\n");
     for (i = 0; i < generational->crossMapLength; i++)
       unless (CROSS_MAP_EMPTY == generational->crossMap[i])
-        fprintf (stderr, "\t"FMTCMI"  "FMTCME"  "FMTCME"\n",
-                 i, generational->crossMap[i],
+        fprintf (stderr, "\t"PRIuMAX"  "FMTCME"  "FMTCME"\n",
+                 (uintmax_t)i, generational->crossMap[i],
                  CROSS_MAP_OFFSET_SCALE * generational->crossMap[i]);
     fprintf (stderr, "\n");
   }
@@ -257,12 +257,12 @@ loopObjects:
   if (DEBUG_GENERATIONAL) {
     fprintf (stderr,
              "\tloopObjects:\n"
-             "\t  cardIndex = "FMTCMI"\n"
+             "\t  cardIndex = %"PRIuMAX"\n"
              "\t  cardStart = "FMTPTR"\n"
              "\t    cardEnd = "FMTPTR"\n"
              "\tobjectStart = "FMTPTR"\n"
              "\t nextObject = "FMTPTR"\n",
-             cardIndex, (uintptr_t)cardStart, (uintptr_t)cardEnd,
+             (uintmax_t)cardIndex, (uintptr_t)cardStart, (uintptr_t)cardEnd,
              (uintptr_t)objectStart, (uintptr_t)nextObject);
   }
   if (nextObject > cardEnd) {
