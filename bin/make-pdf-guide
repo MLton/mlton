@@ -40,7 +40,7 @@ cd "$tmp"
 
 # The grep -v takes out files that aren't wiki pages.
 # Hope that no files contain spaces or other specials -> `cat "$pages"` dies
-ls -1 | grep -v '\.' >"$pages"
+ls -1 | grep -v '\.' | grep -v "MLTONWIKIVERSION" >"$pages"
 
 echo 'Massaging HTML.'
 
