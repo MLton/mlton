@@ -223,7 +223,7 @@ structure MLton: MLTON =
                    | OpenBSD
                    | Solaris
 
-                  val host: t = Cygwin
+                  val host: t = Linux
 
                   val all = [(AIX, "AIX"),
                              (Cygwin, "Cygwin"),
