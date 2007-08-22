@@ -105,8 +105,6 @@ There are 334 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="Developers">Developers</a>
 <br><a href="Development">Development</a>
 <br><a href="Documentation">Documentation</a>
-<br><a href="Download20051202">Download20051202</a>
-<br><a href="Download200708XX">Download200708XX</a>
 <br><a href="Drawbacks">Drawbacks</a>
 <a name="E"><h3>E</h3></a><a href="Eclipse">Eclipse</a>
 <br><a href="EditingPages">EditingPages</a>
@@ -241,6 +239,7 @@ There are 334 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="OtherSites">OtherSites</a>
 <br><a href="Overloading">Overloading</a>
 <a name="P"><h3>P</h3></a><a href="PackedRepresentation">PackedRepresentation</a>
+<br><a href="PageSize">PageSize</a>
 <br><a href="ParallelMove">ParallelMove</a>
 <br><a href="Performance">Performance</a>
 <br><a href="PhantomType">PhantomType</a>
@@ -271,6 +270,8 @@ There are 334 pages. <p><p><a href="#A">A</a> | <a href="#B">B</a> | <a href="#C
 <br><a href="References">References</a>
 <br><a href="RefFlatten">RefFlatten</a>
 <br><a href="Regions">Regions</a>
+<br><a href="Release20051202">Release20051202</a>
+<br><a href="Release200708XX">Release200708XX</a>
 <br><a href="ReleaseChecklist">ReleaseChecklist</a>
 <br><a href="RemoveUnused">RemoveUnused</a>
 <br><a href="Restore">Restore</a>

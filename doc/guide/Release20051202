@@ -5,7 +5,7 @@
 
 
 
-<title>Download20051202 - MLton Standard ML Compiler (SML Compiler)</title>
+<title>Release20051202 - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -14,26 +14,6 @@
 <link rel="Start" href="Home">
 
 
-<link rel="Appendix" title="mlton-20051202-1-1.i386-freebsd.tbz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1-1.i386-freebsd.tbz">
-<link rel="Appendix" title="mlton-20051202-1.freebsd.src.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.freebsd.src.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386-cygwin.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-cygwin.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386-freebsd.tbz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-freebsd.tbz">
-<link rel="Appendix" title="mlton-20051202-1.i386-linux.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-linux.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386-mingw.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-mingw.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386-netbsd.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-netbsd.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386-openbsd.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-openbsd.tgz">
-<link rel="Appendix" title="mlton-20051202-1.i386.rpm" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386.rpm">
-<link rel="Appendix" title="mlton-20051202-1.portdir.shar" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.portdir.shar">
-<link rel="Appendix" title="mlton-20051202-1.powerpc-darwin.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.powerpc-darwin.tgz">
-<link rel="Appendix" title="mlton-20051202-1.sparc-solaris.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.sparc-solaris.tgz">
-<link rel="Appendix" title="mlton-20051202-1.src.rpm" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.src.rpm">
-<link rel="Appendix" title="mlton-20051202-1.src.tgz" href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.src.tgz">
-<link rel="Appendix" title="mlton_20051202-1.diff.gz" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1.diff.gz">
-<link rel="Appendix" title="mlton_20051202-1.dsc" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1.dsc">
-<link rel="Appendix" title="mlton_20051202-1_i386.changes" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1_i386.changes">
-<link rel="Appendix" title="mlton_20051202-1_i386.deb" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1_i386.deb">
-<link rel="Appendix" title="mlton_20051202-1_i386.stable.deb" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1_i386.stable.deb">
-<link rel="Appendix" title="mlton_20051202.orig.tar.gz" href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202.orig.tar.gz">
 </head>
 
 <body lang="en" dir="ltr">
@@ -57,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      Download20051202
+      Release20051202
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -75,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here you can download the latest public release of MLton, version 20051202.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases.  <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+Here you can download an archived public release of MLton, version 20051202. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
 
         <ul>
 
@@ -295,12 +275,12 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-cygwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> 1.5.18-1 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-cygwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Cygwin</a> 1.5.18-1 
 </p>
 </li>
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-freebsd.tbz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 5.4 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-freebsd.tbz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">FreeBSD</a> 5.4 
 </p>
 </li>
         <li>
@@ -313,22 +293,22 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
             <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1_i386.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> sid 
+ <a href="http://mlton.org/pages/Download/attachments/mlton_20051202-1_i386.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> sid 
 </p>
 </li>
             <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1_i386.stable.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> stable (Sarge) 
+ <a href="http://mlton.org/pages/Download/attachments/mlton_20051202-1_i386.stable.deb"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Debian</a> stable (Sarge) 
 </p>
 </li>
             <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RedHat</a> 7.1-9.3 FC1-FC4 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">RedHat</a> 7.1-9.3 FC1-FC4 
 </p>
 </li>
             <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tgz</a> for other distributions (glibc 2.3) 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-linux.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tgz</a> for other distributions (glibc 2.3) 
 </p>
 </li>
 
@@ -337,17 +317,17 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-mingw.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a> 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-mingw.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MinGW</a> 
 </p>
 </li>
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-netbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 2.0.2 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-netbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">NetBSD</a> 2.0.2 
 </p>
 </li>
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.i386-openbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 3.7 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.i386-openbsd.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">OpenBSD</a> 3.7 
 </p>
 </li>
 
@@ -364,7 +344,7 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 7.9.0 (Mac OS X) 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.powerpc-darwin.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Darwin</a> 7.9.0 (Mac OS X) 
 </p>
 </li>
 
@@ -381,7 +361,7 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
         <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.sparc-solaris.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Solaris</a> 8 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.sparc-solaris.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Solaris</a> 8 
 </p>
 </li>
 
@@ -398,17 +378,17 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
     <li>
 <p>
- <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.src.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source tgz</a> 
+ <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.src.tgz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source tgz</a> 
 </p>
 </li>
     <li>
 <p>
- Debian <a href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1.dsc"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dsc</a>,  <a href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202-1.diff.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">diff.gz</a>,  <a href="http://mlton.org/pages/Download20051202/attachments/mlton_20051202.orig.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">orig.tar.gz</a> 
+ Debian <a href="http://mlton.org/pages/Download/attachments/mlton_20051202-1.dsc"><img src="moin-www.png" alt="[WWW]" height="11" width="11">dsc</a>,  <a href="http://mlton.org/pages/Download/attachments/mlton_20051202-1.diff.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">diff.gz</a>,  <a href="http://mlton.org/pages/Download/attachments/mlton_20051202.orig.tar.gz"><img src="moin-www.png" alt="[WWW]" height="11" width="11">orig.tar.gz</a> 
 </p>
 </li>
     <li>
 <p>
- R<strong></strong>edHat <a href="http://mlton.org/pages/Download20051202/attachments/mlton-20051202-1.src.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source rpm</a> 
+ RedHat <a href="http://mlton.org/pages/Download/attachments/mlton-20051202-1.src.rpm"><img src="moin-www.png" alt="[WWW]" height="11" width="11">source rpm</a> 
 </p>
 </li>
 
@@ -465,5 +445,5 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
 <p>
 <hr>
-Last edited on 2007-08-21 05:51:47 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 20:35:51 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

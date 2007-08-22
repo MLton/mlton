@@ -77,10 +77,14 @@ urchinTracker();
 <p>
  <tt>type&nbsp;t</tt> 
 </p>
-<p>
- the type of reals.  For <tt>MLton.LargeReal</tt> this is  <tt>LargeReal.real</tt>, for <tt>MLton.Real</tt> this is <tt>Real.real</tt>,  for <tt>MLton.Real32</tt> this is <tt>Real32.real</tt>, for  <tt>MLton.Real64</tt> this is <tt>Real64.real</tt>. 
-</p>
 </li>
+
+        <ul>
+
+  the type of reals.  For <tt>MLton.LargeReal</tt> this is   <tt>LargeReal.real</tt>, for <tt>MLton.Real</tt> this is <tt>Real.real</tt>,   for <tt>MLton.Real32</tt> this is <tt>Real32.real</tt>, for   <tt>MLton.Real64</tt> this is <tt>Real64.real</tt>. 
+        </ul>
+
+
     <li class="gap">
 <p>
  <tt>fromWord&nbsp;w</tt> 
@@ -90,10 +94,14 @@ urchinTracker();
 <p>
  <tt>fromLargeWord&nbsp;w</tt> 
 </p>
-<p>
- convert the word <tt>w</tt> to a real value.  If the value of <tt>w</tt> is  larger than (the appropriate) <tt>REAL.maxFinite</tt>, then infinity is  returned.  If <tt>w</tt> cannot be exactly represented as a real value,  then the current rounding mode is used to determine the resulting  value. 
-</p>
 </li>
+
+        <ul>
+
+  convert the word <tt>w</tt> to a real value.  If the value of <tt>w</tt> is   larger than (the appropriate) <tt>REAL.maxFinite</tt>, then infinity is   returned.  If <tt>w</tt> cannot be exactly represented as a real value,   then the current rounding mode is used to determine the resulting   value. 
+        </ul>
+
+
     <li class="gap">
 <p>
  <tt>toWord&nbsp;mode&nbsp;r</tt> 
@@ -103,10 +111,14 @@ urchinTracker();
 <p>
  <tt>toLargeWord&nbsp;mode&nbsp;r</tt> 
 </p>
-<p>
- convert the argument <tt>r</tt> to a word type using the specified  rounding mode. They raise <tt>Overflow</tt> if the result is not  representable, in particular, if <tt>r</tt> is an infinity. They raise  <tt>Domain</tt> if <tt>r</tt> is NaN. 
-</p>
 </li>
+
+        <ul>
+
+  convert the argument <tt>r</tt> to a word type using the specified   rounding mode. They raise <tt>Overflow</tt> if the result is not   representable, in particular, if <tt>r</tt> is an infinity. They raise   <tt>Domain</tt> if <tt>r</tt> is NaN. 
+        </ul>
+
+
     <li class="gap">
 <p>
  <tt>MLton.Real32.castFromWord&nbsp;w</tt> 
@@ -116,10 +128,14 @@ urchinTracker();
 <p>
  <tt>MLton.Real64.castFromWord&nbsp;w</tt> 
 </p>
-<p>
- convert the argument <tt>w</tt> to a real type as a bit-wise cast. 
-</p>
 </li>
+
+        <ul>
+
+  convert the argument <tt>w</tt> to a real type as a bit-wise cast. 
+        </ul>
+
+
     <li class="gap">
 <p>
  <tt>MLton.Real32.castToWord&nbsp;r</tt> 
@@ -129,10 +145,12 @@ urchinTracker();
 <p>
  <tt>MLton.Real64.castToWord&nbsp;r</tt> 
 </p>
-<p>
- convert the argument <tt>r</tt> to a word type as a bit-wise cast. 
-</p>
 </li>
+
+        <ul>
+
+  convert the argument <tt>r</tt> to a word type as a bit-wise cast. </ul>
+
 </ul>
 
 </div>
@@ -141,5 +159,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-14 15:24:44 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-21 21:58:45 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

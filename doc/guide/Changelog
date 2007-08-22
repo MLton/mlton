@@ -74,6 +74,8 @@ Summary:
     * Support for profiling.
     * Support for exception history.
   + Language.
+   o ML Basis annotations.
+    * Removed: allowExport, allowImport, sequenceUnit, warnMatch.
   + Libraries.
    o Basis Library.
     * Added: PackWord16Big, PackWord16Little, PackWord64Big,
@@ -98,6 +100,9 @@ Summary:
     * Updated: ckit library, SML/NJ library.
   + Tools.
 
+* 2007-08-12
+   - Removed deprecated ML Basis annotations.
+
 * 2007-08-06
    - Fixed bug in treatment of Real&lt;N&gt;.{scan,fromString} operations.
      Real&lt;N&gt;.{scan,fromString} were using TO_NEAREST semantics, but
@@ -110,9 +115,9 @@ Summary:
      codegen.
 
 * 2007-07-26
-   - Fixed bug in treatment of floating-point operations.  FP ops
-     depend on the current rounding mode, but were being treated as
-     pure.  Thanks to Sean McLaughlin for the bug report.
+   - Fixed bug in treatment of floating-point operations.  Floating-point
+     operations depend on the current rounding mode, but were being
+     treated as pure.  Thanks to Sean McLaughlin for the bug report.
 
 * 2007-07-13
    - Added MLton.Exn.{default,get,set}TopLevelHandler.

@@ -114,7 +114,7 @@ This web site is a Wiki and is implemented using <a href="MoinMoin">MoinMoin</a>
 </li>
     <li class="gap">
 <p>
- <a href="http://mlton.org/PageSize"><img src="moin-www.png" alt="[WWW]" height="11" width="11">PageSize</a>.  Pages sorted in decreasing order of size. 
+ <a href="PageSize">PageSize</a>.  Pages sorted in decreasing order of size. 
 </p>
 </li>
     <li class="gap">
