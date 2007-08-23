@@ -76,38 +76,22 @@ A weak pointer is a pointer to an object that is nulled if the object becomes <a
 
     <li>
 <p>
- <tt>type&nbsp;'a&nbsp;t</tt> 
+ <tt>type&nbsp;'a&nbsp;t</tt>  <br>
+the type of weak pointers to objects of type <tt>'a</tt> 
 </p>
 </li>
-
-        <ul>
-
-  the type of weak pointers to objects of type <tt>'a</tt> 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>get&nbsp;w</tt> 
+ <tt>get&nbsp;w</tt>  <br>
+returns <tt>NONE</tt> if the object pointed to by <tt>w</tt> no longer  exists.  Otherwise, returns <tt>SOME</tt> of the object pointed to by  <tt>w</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns <tt>NONE</tt> if the object pointed to by <tt>w</tt> no longer   exists.  Otherwise, returns <tt>SOME</tt> of the object pointed to by   <tt>w</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>new&nbsp;x</tt> 
+ <tt>new&nbsp;x</tt>  <br>
+returns a weak pointer to <tt>x</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns a weak pointer to <tt>x</tt>. </ul>
-
 </ul>
 
 </div>
@@ -116,5 +100,5 @@ A weak pointer is a pointer to an object that is nulled if the object becomes <a
 
 <p>
 <hr>
-Last edited on 2006-08-21 19:41:38 by <span title="ppp-71-139-165-239.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:45:54 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

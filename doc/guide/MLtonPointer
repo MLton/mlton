@@ -98,98 +98,52 @@ urchinTracker();
 
     <li>
 <p>
- <tt>eqtype&nbsp;t</tt> 
+ <tt>eqtype&nbsp;t</tt>  <br>
+the type of pointers, i.e. machine addresses. 
 </p>
 </li>
-
-        <ul>
-
-  the type of pointers, i.e. machine addresses. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>add&nbsp;(p,&nbsp;w)</tt> 
+ <tt>add&nbsp;(p,&nbsp;w)</tt>  <br>
+returns the pointer <tt>w</tt> bytes after than <tt>p</tt>.  Does not check  for overflow. 
 </p>
 </li>
-
-        <ul>
-
-  returns the pointer <tt>w</tt> bytes after than <tt>p</tt>.  Does not check   for overflow. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>compare&nbsp;(p1,&nbsp;p2)</tt> 
+ <tt>compare&nbsp;(p1,&nbsp;p2)</tt>  <br>
+compares the pointer <tt>p1</tt> to the pointer <tt>p2</tt> (as addresses). 
 </p>
 </li>
-
-        <ul>
-
-  compares the pointer <tt>p1</tt> to the pointer <tt>p2</tt> (as addresses). 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>diff&nbsp;(p1,&nbsp;p2)</tt> 
+ <tt>diff&nbsp;(p1,&nbsp;p2)</tt>  <br>
+returns the number of bytes <tt>w</tt> such that <tt>add&nbsp;(p2,&nbsp;w)&nbsp;=&nbsp;p1</tt>.  Does not check for overflow. 
 </p>
 </li>
-
-        <ul>
-
-  returns the number of bytes <tt>w</tt> such that <tt>add&nbsp;(p2,&nbsp;w)&nbsp;=&nbsp;p1</tt>.   Does not check for overflow. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>get</tt><em>X</em><tt>&nbsp;(p,&nbsp;i)</tt> 
+ <tt>get</tt><em>X</em><tt>&nbsp;(p,&nbsp;i)</tt>  <br>
+returns the object stored at index i of the array of <em>X</em> objects  pointed to by <tt>p</tt>.  For example, <tt>getWord32&nbsp;(p,&nbsp;7)</tt> returns  the 32-bit word stored 28 bytes beyond <tt>p</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the object stored at index i of the array of <em>X</em> objects   pointed to by <tt>p</tt>.  For example, <tt>getWord32&nbsp;(p,&nbsp;7)</tt> returns   the 32-bit word stored 28 bytes beyond <tt>p</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>null</tt> 
+ <tt>null</tt>  <br>
+the null pointer, i.e. 0. 
 </p>
 </li>
-
-        <ul>
-
-  the null pointer, i.e. 0. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>set</tt><em>X</em><tt>&nbsp;(p,&nbsp;i,&nbsp;v)</tt> 
+ <tt>set</tt><em>X</em><tt>&nbsp;(p,&nbsp;i,&nbsp;v)</tt>  <br>
+assigns <tt>v</tt> to the object stored at index i of the array of <em>X</em>  objects pointed to by <tt>p</tt>.  For example,  <tt>setWord32&nbsp;(p,&nbsp;7,&nbsp;w)</tt> stores the 32-bit word <tt>w</tt> at the  address 28 bytes beyond <tt>p</tt>.  
 </p>
 </li>
-
-        <ul>
-
-  assigns <tt>v</tt> to the object stored at index i of the array of <em>X</em>   objects pointed to by <tt>p</tt>.  For example,   <tt>setWord32&nbsp;(p,&nbsp;7,&nbsp;w)</tt> stores the 32-bit word <tt>w</tt> at the   address 28 bytes beyond <tt>p</tt>.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>sub&nbsp;(p,&nbsp;w)</tt> 
+ <tt>sub&nbsp;(p,&nbsp;w)</tt>  <br>
+returns the pointer <tt>w</tt> bytes before <tt>p</tt>.  Does not check for  overflow. 
 </p>
 </li>
-
-        <ul>
-
-  returns the pointer <tt>w</tt> bytes before <tt>p</tt>.  Does not check for   overflow. </ul>
-
 </ul>
 
 </div>
@@ -198,5 +152,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2006-02-03 15:59:41 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:44:35 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

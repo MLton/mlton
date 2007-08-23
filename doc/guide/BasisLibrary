@@ -212,10 +212,15 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;Char:&nbsp;CHAR</tt> 
 </p>
 
-        <ul>
+    <ul>
 
-  <tt>Char</tt> characters correspond to ISO-8859-1.   The <tt>Char</tt> functions do not depend on locale. 
-        </ul>
+    <li>
+<p>
+ <tt>Char</tt> characters correspond to ISO-8859-1.  The <tt>Char</tt> functions do not depend on locale. 
+</p>
+</li>
+
+    </ul>
 
 
 <p>
@@ -228,10 +233,15 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;Date:&nbsp;DATE</tt> 
 </p>
 
-        <ul>
+    <ul>
 
-  <tt>Date.fromString</tt> and <tt>Date.scan</tt> accept a space in addition to a zero for   the first character of the day of the month.  The Basis Library   specification only allows a zero. 
-        </ul>
+    <li>
+<p>
+ <tt>Date.fromString</tt> and <tt>Date.scan</tt> accept a space in addition to a zero for the first character of the day of the month.  The Basis Library specification only allows a zero. 
+</p>
+</li>
+
+    </ul>
 
 
 <p>
@@ -342,6 +352,8 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 
     <ul>
 
+    <li>
+<p>
  The Basis Library specification requires functions like <tt>Socket.sendVec</tt> to  raise an exception if they fail.  However, on some platforms, sending  to a socket that hasn't yet been connected causes a <tt>SIGPIPE</tt> signal,  which invokes the default signal handler for <tt>SIGPIPE</tt> and causes the  program to terminate.  If you want the exception to be raised, you  can ignore <tt>SIGPIPE</tt> by adding the following to your program.  
 <pre class=code>
 <B><FONT COLOR="#A020F0">let</FONT></B>
@@ -350,9 +362,9 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
    setHandler (Posix.Signal.pipe, Handler.ignore)
 <B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
-<p>
  
 </p>
+</li>
 
     </ul>
 
@@ -361,10 +373,15 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>structure&nbsp;String:&nbsp;STRING</tt> 
 </p>
 
-        <ul>
+    <ul>
 
-  The <tt>String</tt> functions do not depend on locale. 
-        </ul>
+    <li>
+<p>
+ The <tt>String</tt> functions do not depend on locale. 
+</p>
+</li>
+
+    </ul>
 
 
 <p>
@@ -421,9 +438,18 @@ MLton does not implement the optional top-level value  <tt>use:&nbsp;string&nbsp
 <tt>PrimIO</tt> <br>
 <tt>StreamIO</tt> 
 </p>
+
+    <ul>
+
+    <li>
 <p>
-MLton's <tt>StreamIO</tt> functor takes structures <tt>ArraySlice</tt> and <tt>VectorSlice</tt> in addition to the arguments specified in the Basis Library specification. 
+ MLton's <tt>StreamIO</tt> functor takes structures <tt>ArraySlice</tt>  and <tt>VectorSlice</tt> in addition to the arguments specified in the  Basis Library specification. 
 </p>
+</li>
+
+    </ul>
+
+
 <h2 id="head-0ac17def4aced0cc961aa5b65385be04cfcf6eb5">Type equivalences</h2>
 <p>
 The following types are equivalent. 
@@ -453,5 +479,5 @@ On x86, real arithmetic is implemented internally using 80 bits of precision.  U
 
 <p>
 <hr>
-Last edited on 2007-08-10 20:43:41 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:19:17 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

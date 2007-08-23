@@ -75,62 +75,34 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;'a&nbsp;t</tt> 
+ <tt>type&nbsp;'a&nbsp;t</tt>  <br>
+the type of continuations that expect a value of type <tt>'a</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the type of continuations that expect a value of type <tt>'a</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>callcc&nbsp;f</tt> 
+ <tt>callcc&nbsp;f</tt>  <br>
+applies <tt>f</tt> to the current continuation.  This copies the entire  stack; hence, <tt>callcc</tt> takes time proportional to the current  stack size. 
 </p>
 </li>
-
-        <ul>
-
-  applies <tt>f</tt> to the current continuation.  This copies the entire   stack; hence, <tt>callcc</tt> takes time proportional to the current   stack size. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>prepend&nbsp;(k,&nbsp;f)</tt> 
+ <tt>prepend&nbsp;(k,&nbsp;f)</tt>  <br>
+composes a function <tt>f</tt> with a continuation <tt>k</tt> to create a  continuation that first does <tt>f</tt> and then does <tt>k</tt>.  This  is a constant time operation. 
 </p>
 </li>
-
-        <ul>
-
-  composes a function <tt>f</tt> with a continuation <tt>k</tt> to create a   continuation that first does <tt>f</tt> and then does <tt>k</tt>.  This   is a constant time operation. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>throw&nbsp;(k,&nbsp;v)</tt> 
+ <tt>throw&nbsp;(k,&nbsp;v)</tt>  <br>
+throws value <tt>v</tt> to continuation <tt>k</tt>.  This copies the entire  stack of <tt>k</tt>; hence, <tt>throw</tt> takes time proportional to the   size of this stack. 
 </p>
 </li>
-
-        <ul>
-
-  throws value <tt>v</tt> to continuation <tt>k</tt>.  This copies the entire   stack of <tt>k</tt>; hence, <tt>throw</tt> takes time proportional to the    size of this stack. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>throw'&nbsp;(k,&nbsp;th)</tt> 
+ <tt>throw'&nbsp;(k,&nbsp;th)</tt>  <br>
+a generalization of throw that evaluates <tt>th&nbsp;()</tt> in the context  of <tt>k</tt>.  Thus, for example, if <tt>th&nbsp;()</tt> raises an exception or  grabs another continuation, it will see <tt>k</tt>, not the current  continuation. 
 </p>
 </li>
-
-        <ul>
-
-  a generalization of throw that evaluates <tt>th&nbsp;()</tt> in the context   of <tt>k</tt>.  Thus, for example, if <tt>th&nbsp;()</tt> raises an exception or   grabs another continuation, it will see <tt>k</tt>, not the current   continuation. </ul>
-
 </ul>
 
 </div>
@@ -139,5 +111,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:27:22 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:43:48 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

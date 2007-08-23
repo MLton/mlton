@@ -73,50 +73,28 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+type of monomorphic array 
 </p>
 </li>
-
-        <ul>
-
-  type of monomorphic array 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;elem</tt> 
+ <tt>type&nbsp;elem</tt>  <br>
+type of array elements 
 </p>
 </li>
-
-        <ul>
-
-  type of array elements 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>fromPoly&nbsp;a</tt> 
+ <tt>fromPoly&nbsp;a</tt>  <br>
+type cast a polymorphic array to its monomorphic counterpart; the argument and result arrays share the same identity 
 </p>
 </li>
-
-        <ul>
-
-  type cast a polymorphic array to its monomorphic counterpart; the argument and result arrays share the same identity 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>toPoly&nbsp;a</tt> 
+ <tt>toPoly&nbsp;a</tt>  <br>
+type cast a monomorphic array to its polymorphic counterpart; the argument and result arrays share the same identity 
 </p>
 </li>
-
-        <ul>
-
-  type cast a monomorphic array to its polymorphic counterpart; the argument and result arrays share the same identity </ul>
-
 </ul>
 
 </div>
@@ -125,5 +103,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-21 05:31:47 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:44:22 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

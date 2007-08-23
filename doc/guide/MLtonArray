@@ -70,14 +70,10 @@ urchinTracker();
 
     <li>
 <p>
- <tt>unfoldi&nbsp;(n,&nbsp;b,&nbsp;f)</tt> 
+ <tt>unfoldi&nbsp;(n,&nbsp;b,&nbsp;f)</tt>  <br>
+constructs an array <em>a</em> of length <tt>n</tt>, whose elements <em>a<sub>i</sub></em>  are determined by the equations <em>b<sub>0</sub> = b</em> and   <em>(a<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. 
 </p>
 </li>
-
-        <ul>
-
-  constructs an array <em>a</em> of length <tt>n</tt>, whose elements <em>a<sub>i</sub></em>   are determined by the equations <em>b<sub>0</sub> = b</em> and    <em>(a<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. </ul>
-
 </ul>
 
 </div>
@@ -86,5 +82,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:55:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:43:43 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

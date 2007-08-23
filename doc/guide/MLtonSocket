@@ -102,158 +102,82 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
     <li>
 <p>
- <tt>type&nbsp;Address.t</tt> 
+ <tt>type&nbsp;Address.t</tt>  <br>
+the type of IP addresses. 
 </p>
 </li>
-
-        <ul>
-
-  the type of IP addresses. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Ctl.getERROR&nbsp;s</tt> 
+ <tt>Ctl.getERROR&nbsp;s</tt>  <br>
+like the Basis Library's <tt>Socket.Ctl.getERROR</tt>, except that it  returns more information.  <tt>NONE</tt> means that there was no error,  and <tt>SOME</tt> means that there was an error, and provides the error  message and error code, if any. 
 </p>
 </li>
-
-        <ul>
-
-  like the Basis Library's <tt>Socket.Ctl.getERROR</tt>, except that it   returns more information.  <tt>NONE</tt> means that there was no error,   and <tt>SOME</tt> means that there was an error, and provides the error   message and error code, if any. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Host.getByAddress&nbsp;a</tt> 
+ <tt>Host.getByAddress&nbsp;a</tt>  <br>
+looks up the hostname (using <tt>gethostbyaddr</tt>) corresponding to  <tt>a</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  looks up the hostname (using <tt>gethostbyaddr</tt>) corresponding to   <tt>a</tt>.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Host.getByName&nbsp;s</tt> 
+ <tt>Host.getByName&nbsp;s</tt>  <br>
+looks up the hostname (using <tt>gethostbyname</tt>) corresponding to  <tt>s</tt>.  
 </p>
 </li>
-
-        <ul>
-
-  looks up the hostname (using <tt>gethostbyname</tt>) corresponding to   <tt>s</tt>.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;Port.t</tt> 
+ <tt>type&nbsp;Port.t</tt>  <br>
+the type of TCP ports. 
 </p>
 </li>
-
-        <ul>
-
-  the type of TCP ports. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+the type of sockets. 
 </p>
 </li>
-
-        <ul>
-
-  the type of sockets. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>accept&nbsp;s</tt> 
+ <tt>accept&nbsp;s</tt>  <br>
+accepts a connection on socket <tt>s</tt> and return the address port of  the connecting socket, as well as streams corresponding to the  connection. 
 </p>
 </li>
-
-        <ul>
-
-  accepts a connection on socket <tt>s</tt> and return the address and   port of the connecting socket, as well as streams corresponding to   the connection. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>connect&nbsp;(h,&nbsp;p)</tt> 
+ <tt>connect&nbsp;(h,&nbsp;p)</tt>  <br>
+connects to host <tt>h</tt> on port <tt>p</tt>, returning the streams  corresponding to the connection. 
 </p>
 </li>
-
-        <ul>
-
-  connects to host <tt>h</tt> on port <tt>p</tt>, returning the streams   corresponding to the connection. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>listen&nbsp;()</tt> 
+ <tt>listen&nbsp;()</tt>  <br>
+listens to a port chosen by the system.  Returns the port and the  socket. 
 </p>
 </li>
-
-        <ul>
-
-  listens to a port chosen by the system.  Returns the port and the   socket. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>listenAt&nbsp;p</tt> 
+ <tt>listenAt&nbsp;p</tt>  <br>
+listens to port <tt>p</tt>.  Returns the socket. 
 </p>
 </li>
-
-        <ul>
-
-  listens to port <tt>p</tt>.  Returns the socket. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>shutdownRead&nbsp;ins</tt> 
+ <tt>shutdownRead&nbsp;ins</tt>  <br>
+causes the read part of the socket associated with <tt>ins</tt> to be  shutdown.  
 </p>
 </li>
-
-        <ul>
-
-  causes the read part of the socket associated with <tt>ins</tt> to be   shutdown.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>shutdownWrite&nbsp;out</tt> 
+ <tt>shutdownWrite&nbsp;out</tt>  <br>
+causes the write part of the socket associated with <tt>out</tt> to be  shutdown.  
 </p>
 </li>
-
-        <ul>
-
-  causes the write part of the socket associated with <tt>out</tt> to be   shutdown.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>fdToSock&nbsp;fd</tt> 
+ <tt>fdToSock&nbsp;fd</tt>  <br>
+coerces a file descriptor to a socket. 
 </p>
 </li>
-
-        <ul>
-
-  coerces a file descriptor to a socket. </ul>
-
 </ul>
 
 </div>
@@ -262,5 +186,5 @@ This module contains a bare minimum of functionality to do TCP/IP programming.  
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:33 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:24 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

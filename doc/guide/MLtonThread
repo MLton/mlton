@@ -94,148 +94,76 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;AtomicState.t</tt> 
+ <tt>type&nbsp;AtomicState.t</tt>  <br>
+the type of atomic states. 
 </p>
 </li>
-
-        <ul>
-
-  the type of atomic states. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>atomically&nbsp;f</tt> 
+ <tt>atomically&nbsp;f</tt>  <br>
+runs <tt>f</tt> in a critical section. 
 </p>
 </li>
-
-        <ul>
-
-  runs <tt>f</tt> in a critical section. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>atomicBegin&nbsp;()</tt> 
+ <tt>atomicBegin&nbsp;()</tt>  <br>
+begins a critical section. 
 </p>
 </li>
-
-        <ul>
-
-  begins a critical section. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>atomicEnd&nbsp;()</tt> 
+ <tt>atomicEnd&nbsp;()</tt>  <br>
+ends a critical section. 
 </p>
 </li>
-
-        <ul>
-
-  ends a critical section. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>atomicState&nbsp;()</tt> 
+ <tt>atomicState&nbsp;()</tt>  <br>
+returns the current atomic state. 
 </p>
 </li>
-
-        <ul>
-
-  returns the current atomic state. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;Runnable.t</tt> 
+ <tt>type&nbsp;Runnable.t</tt>  <br>
+the type of threads that can be resumed. 
 </p>
 </li>
-
-        <ul>
-
-  the type of threads that can be resumed. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;'a&nbsp;t</tt> 
+ <tt>type&nbsp;'a&nbsp;t</tt>  <br>
+the type of threads that expect a value of type <tt>'a</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the type of threads that expect a value of type <tt>'a</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>atomicSwitch&nbsp;f</tt> 
+ <tt>atomicSwitch&nbsp;f</tt>  <br>
+like <tt>switch</tt>, but assumes an atomic calling context.  Upon  <tt>switch</tt>ing back to the current thread, an implicit  <tt>atomicEnd</tt> is performed. 
 </p>
 </li>
-
-        <ul>
-
-  like <tt>switch</tt>, but assumes an atomic calling context.  Upon   <tt>switch</tt>ing back to the current thread, an implicit   <tt>atomicEnd</tt> is performed. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>new&nbsp;f</tt> 
+ <tt>new&nbsp;f</tt>  <br>
+creates a new thread that, when run, applies <tt>f</tt> to the value  given to the thread.  <tt>f</tt> must terminate by <tt>switch</tt>ing to  another thread or exiting the process. 
 </p>
 </li>
-
-        <ul>
-
-  creates a new thread that, when run, applies <tt>f</tt> to the value   given to the thread.  <tt>f</tt> must terminate by <tt>switch</tt>ing to   another thread or exiting the process. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>prepend&nbsp;(t,&nbsp;f)</tt> 
+ <tt>prepend&nbsp;(t,&nbsp;f)</tt>  <br>
+creates a new thread (destroying <tt>t</tt> in the process) that first  applies <tt>f</tt> to the value given to the thread and then continues  with <tt>t</tt>.  This is a constant time operation. 
 </p>
 </li>
-
-        <ul>
-
-  creates a new thread (destroying <tt>t</tt> in the process) that first   applies <tt>f</tt> to the value given to the thread and then continues   with <tt>t</tt>.  This is a constant time operation. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>prepare&nbsp;(t,&nbsp;v)</tt> 
+ <tt>prepare&nbsp;(t,&nbsp;v)</tt>  <br>
+prepares a new runnable thread (destroying <tt>t</tt> in the process)  that will evaluate <tt>t</tt> on <tt>v</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  prepares a new runnable thread (destroying <tt>t</tt> in the process)   that will evaluate <tt>t</tt> on <tt>v</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>switch&nbsp;f</tt> 
+ <tt>switch&nbsp;f</tt>  <br>
+applies <tt>f</tt> to the current thread to get <tt>rt</tt>, and then start  running thread <tt>rt</tt>.  It is an error for <tt>f</tt> to perform  another <tt>switch</tt>.  <tt>f</tt> is guaranteed to run atomically. 
 </p>
 </li>
-
-        <ul>
-
-  applies <tt>f</tt> to the current thread to get <tt>rt</tt>, and then start   running thread <tt>rt</tt>.  It is an error for <tt>f</tt> to perform   another <tt>switch</tt>.  <tt>f</tt> is guaranteed to run atomically. 
-        </ul>
-
-
 
     </ul>
 
@@ -444,5 +372,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:52:11 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:45 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

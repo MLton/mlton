@@ -73,26 +73,16 @@ urchinTracker();
 
     <li>
 <p>
- <tt>create&nbsp;n</tt> 
+ <tt>create&nbsp;n</tt>  <br>
+initiates the construction a vector <em>v</em> of length <tt>n</tt>,  returning functions to manipulate the vector.  The <tt>done</tt>  function may be called to return the created vector; it is an error  to call <tt>done</tt> before all entries have been initialized; it is an  error to call <tt>done</tt> after having called <tt>done</tt>.  The  <tt>sub</tt> function may be called to return an initialized vector  entry; it is not an error to call <tt>sub</tt> after having called  <tt>done</tt>.  The <tt>update</tt> function may be called to initialize a  vector entry; it is an error to call <tt>update</tt> after having called  <tt>done</tt>.  One must initialize vector entries in order from lowest  to highest; that is, before calling <tt>update&nbsp;(i,&nbsp;x)</tt>, one must  have already called <tt>update&nbsp;(j,&nbsp;x)</tt> for all <tt>j</tt> in   <tt>[0,&nbsp;i)</tt>.  The <tt>done</tt>, <tt>sub</tt>, and <tt>update</tt> functions  are all constant-time operations. 
 </p>
 </li>
-
-        <ul>
-
-  initiates the construction a vector <em>v</em> of length <tt>n</tt>,   returning functions to manipulate the vector.  The <tt>done</tt>   function may be called to return the created vector; it is an error   to call <tt>done</tt> before all entries have been initialized; it is   an error to call <tt>done</tt> after having called <tt>done</tt>.  The   <tt>sub</tt> function may be called to return an initialized vector   entry; it is not an error to call <tt>sub</tt> after having called   <tt>done</tt>.  The <tt>update</tt> function may be called to initialize a   vector entry; it is an error to call <tt>update</tt> after having   called <tt>done</tt>.  One must initialize vector entries in order from   lowest to highest; that is, before calling <tt>update&nbsp;(i,&nbsp;x)</tt>, one   must have already called <tt>update&nbsp;(j,&nbsp;x)</tt> for all <tt>j</tt> in   <tt>[0,&nbsp;i)</tt>.  The <tt>done</tt>, <tt>sub</tt>, and <tt>update</tt> functions   are all constant-time operations. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>unfoldi&nbsp;(n,&nbsp;b,&nbsp;f)</tt> 
+ <tt>unfoldi&nbsp;(n,&nbsp;b,&nbsp;f)</tt>  <br>
+constructs a vector <em>v</em> of length <tt>n</tt>, whose elements  <em>v<sub>i</sub></em> are determined by the equations <em>b<sub>0</sub> = b</em> and  <em>(v<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. 
 </p>
 </li>
-
-        <ul>
-
-  constructs a vector <em>v</em> of length <tt>n</tt>, whose elements   <em>v<sub>i</sub></em> are determined by the equations <em>b<sub>0</sub> = b</em> and   <em>(v<sub>i</sub>, b<sub>i+1</sub>) = f (i, b<sub>i</sub>)</em>. </ul>
-
 </ul>
 
 </div>
@@ -101,5 +91,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:49 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

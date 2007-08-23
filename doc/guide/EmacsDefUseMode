@@ -144,7 +144,7 @@ To use def-use mode one typically first sets up the program's makefile or build 
 Finally, one needs to tell the mode where to find the def-use information.  This is done with the <tt>esml-du-mlton</tt> command.  The esml-du package can also load recently used def-use files automatically at startup. 
 </p>
 <p>
-After doing all of the above, find a SML file covered by the def-use information, and place the cursor at some variable (definition or use, it doesn't matter). 
+After doing all of the above, find an SML file covered by the def-use information, and place the cursor at some variable (definition or use, it doesn't matter). 
 </p>
 </div>
 
@@ -152,5 +152,5 @@ After doing all of the above, find a SML file covered by the def-use information
 
 <p>
 <hr>
-Last edited on 2007-07-07 04:10:58 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-23 04:24:24 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

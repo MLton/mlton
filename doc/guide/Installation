@@ -66,100 +66,52 @@ Installation of MLton creates the following files and directories.
 
     <li>
 <p>
- <tt>/usr/bin/mllex</tt> 
+ <tt>/usr/bin/mllex</tt>  <br>
+The <a class="nonexistent" href="MLLex">MLLex</a> lexer generator. 
 </p>
 </li>
-
-            <ul>
-
-   The <a class="nonexistent" href="MLLex">MLLex</a> lexer generator. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/bin/mlnlffigen</tt> 
+ <tt>/usr/bin/mlnlffigen</tt>  <br>
+The <a href="MLNLFFI">ML-NLFFI</a> tool. 
 </p>
 </li>
-
-            <ul>
-
-   The <a href="MLNLFFI">ML-NLFFI</a> tool. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/bin/mlprof</tt> 
+ <tt>/usr/bin/mlprof</tt>  <br>
+A <a href="Profiling">Profiling</a> tool. 
 </p>
 </li>
-
-            <ul>
-
-   A <a href="Profiling">Profiling</a> tool. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/bin/mlton</tt> 
+ <tt>/usr/bin/mlton</tt>  <br>
+A script to call the compiler.  This script may be moved anywhere,  however, it makes use of files in <tt>/usr/lib/mlton</tt>.  
 </p>
 </li>
-
-            <ul>
-
-   A script to call the compiler.  This script may be moved anywhere,    however, it makes use of files in <tt>/usr/lib/mlton</tt>.  
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/bin/mlyacc</tt> 
+ <tt>/usr/bin/mlyacc</tt>  <br>
+The <a class="nonexistent" href="MLYacc">MLYacc</a> parser generator. 
 </p>
 </li>
-
-            <ul>
-
-   The <a class="nonexistent" href="MLYacc">MLYacc</a> parser generator. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/lib/mlton</tt> 
+ <tt>/usr/lib/mlton</tt>  <br>
+Directory containing libraries and include files needed during  compilation. 
 </p>
 </li>
-
-            <ul>
-
-   Directory containing libraries and include files needed during    compilation. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/share/man/man1/mllex.1</tt>, <tt>mlnlffigen.1</tt>, <tt>mlprof.1</tt>, <tt>mlton.1</tt>, <tt>mlyacc.1</tt> 
+ <tt>/usr/share/man/man1/mllex.1</tt>, <tt>mlnlffigen.1</tt>, <tt>mlprof.1</tt>, <tt>mlton.1</tt>, <tt>mlyacc.1</tt>  <br>
+Man pages. 
 </p>
 </li>
-
-            <ul>
-
-   Man pages. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>/usr/share/doc/mlton</tt> 
+ <tt>/usr/share/doc/mlton</tt>  <br>
+Directory containing the user guide for MLton, mllex, and mlyacc,  as well as example SML programs (in the <tt>examples</tt> dir), and  license information. 
 </p>
 </li>
-
-            <ul>
-
-   Directory containing the user guide for MLton, mllex, and mlyacc,    as well as example SML programs (in the <tt>examples</tt> dir), and    license information. 
-            </ul>
-
-
 
     </ul>
 
@@ -182,5 +134,5 @@ When installing the Cygwin <tt>tgz</tt>, you should use Cygwin's <tt>bash</tt> a
 
 <p>
 <hr>
-Last edited on 2005-12-08 16:14:00 by <span title="ppp-71-139-181-150.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 04:13:31 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -73,28 +73,23 @@ Run-time options can also control MLton, as in
 
     <li>
 <p>
- <tt>fixed-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt> 
-</p>
-</li>
-
-            <ul>
-
-   Use a fixed size heap of size <em>x</em>, where <em>x</em> is a real number    and the trailing letter indicates its units. 
+ <tt>fixed-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt>  <br>
+Use a fixed size heap of size <em>x</em>, where <em>x</em> is a real number  and the trailing letter indicates its units. 
 <div>
 <table>
-   <tr>
+ <tr>
 <td>
  <tt>k</tt> or <tt>K</tt> </td>
 <td>
  1024 </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>m</tt> or <tt>M</tt> </td>
 <td>
  1,048,576 </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>g</tt> or <tt>G</tt> </td>
 <td>
@@ -102,95 +97,54 @@ Run-time options can also control MLton, as in
 </tr>
 </table>
 </div>
-   A value of <tt>0</tt> means to use almost all the RAM present on the    machine. <p>
-   The heap size used by <tt>fixed-heap</tt> includes all memory    allocated by SML code, including memory for the stack (or stacks,    if there are multiple threads).  It does not, however, include any    memory used for code itself or memory used by C globals, the C    stack, or malloc. 
+ A value of <tt>0</tt> means to use almost all the RAM present on the  machine. 
 </p>
-
-            </ul>
-
-
-    <li class="gap">
 <p>
- <tt>gc-messages</tt> 
+ The heap size used by <tt>fixed-heap</tt> includes all memory  allocated by SML code, including memory for the stack (or stacks,  if there are multiple threads).  It does not, however, include any  memory used for code itself or memory used by C globals, the C  stack, or malloc. 
 </p>
 </li>
-
-            <ul>
-
-   Print a message at the start and end of every garbage collection. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>gc-summary</tt> 
+ <tt>gc-messages</tt>  <br>
+Print a message at the start and end of every garbage collection. 
 </p>
 </li>
-
-            <ul>
-
-   Print a summary of garbage collection statistics upon program termination. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>load-world&nbsp;</tt><em>world</em> 
+ <tt>gc-summary</tt>  <br>
+Print a summary of garbage collection statistics upon program termination. 
 </p>
 </li>
-
-            <ul>
-
-   Restart the computation with the file specified by <em>world</em>, which    must have been created by a call to <tt>MLton.World.save</tt> by the    same executable.  See <a href="MLtonWorld">MLtonWorld</a>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>max-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt> 
+ <tt>load-world&nbsp;</tt><em>world</em>  <br>
+Restart the computation with the file specified by <em>world</em>, which  must have been created by a call to <tt>MLton.World.save</tt> by the  same executable.  See <a href="MLtonWorld">MLtonWorld</a>. 
 </p>
 </li>
-
-            <ul>
-
-   Run the computation with an automatically resized heap that is    never larger than <em>x</em>, where <em>x</em> is a real number and the    trailing letter indicates the units as with <tt>fixed-heap</tt>.  The    heap size for <tt>max-heap</tt> is accounted for as with    <tt>fixed-heap</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>no-load-world</tt> 
+ <tt>max-heap&nbsp;</tt><em>x</em><tt>{k|K|m|M|g|G}</tt>  <br>
+Run the computation with an automatically resized heap that is  never larger than <em>x</em>, where <em>x</em> is a real number and the  trailing letter indicates the units as with <tt>fixed-heap</tt>.  The  heap size for <tt>max-heap</tt> is accounted for as with  <tt>fixed-heap</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   Disable <tt>load-world</tt>.  This can be used as an argument to the    compiler via <tt>-runtime&nbsp;no-load-world</tt> to create executables    that will not load a world.  This may be useful to ensure that    set-uid executables do not load some strange world. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>ram-slop&nbsp;</tt><em>x</em> 
+ <tt>no-load-world</tt>  <br>
+Disable <tt>load-world</tt>.  This can be used as an argument to the  compiler via <tt>-runtime&nbsp;no-load-world</tt> to create executables  that will not load a world.  This may be useful to ensure that  set-uid executables do not load some strange world. 
 </p>
 </li>
-
-            <ul>
-
-   Multiply <em>x</em> by the amount of RAM on the machine to obtain what    the runtime views as the amount of RAM it can use.  Typically    <em>x</em> is less than 1, and is used to account for space used by    other programs running on the same machine. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>stop</tt> 
+ <tt>ram-slop&nbsp;</tt><em>x</em>  <br>
+Multiply <em>x</em> by the amount of RAM on the machine to obtain what  the runtime views as the amount of RAM it can use.  Typically  <em>x</em> is less than 1, and is used to account for space used by  other programs running on the same machine. 
 </p>
 </li>
-
-            <ul>
-
-   Causes the runtime to stop processing <tt>@MLton</tt> arguments once    the next <tt>--</tt> is reached.  This can be used as an argument to    the compiler via <tt>-runtime&nbsp;stop</tt> to create executables that don't    process any <tt>@MLton</tt> arguments. </ul>
-
+    <li class="gap">
+<p>
+ <tt>stop</tt>  <br>
+Causes the runtime to stop processing <tt>@MLton</tt> arguments once  the next <tt>--</tt> is reached.  This can be used as an argument to  the compiler via <tt>-runtime&nbsp;stop</tt> to create executables that don't  process any <tt>@MLton</tt> arguments. 
+</p>
+</li>
 </ul>
 
 </div>
@@ -199,5 +153,5 @@ Run-time options can also control MLton, as in
 
 <p>
 <hr>
-Last edited on 2007-08-14 23:25:13 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:01:26 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

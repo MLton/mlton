@@ -74,38 +74,22 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+corresponds to a subset of the C <tt>struct&nbsp;rusage</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  corresponds to a subset of the C <tt>struct&nbsp;rusage</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>measureGC&nbsp;b</tt> 
+ <tt>measureGC&nbsp;b</tt>  <br>
+controls whether garbage collection time is separately measured  during program execution.  This affects the behavior of both  <tt>rusage</tt> and <tt>Timer.checkCPUTimes</tt>, both of which will return  gc times of zero with <tt>measureGC&nbsp;false</tt>.  Garbage collection time  is always measured when either <tt>gc-messages</tt> or <tt>gc-summary</tt>  is given as a <a href="RunTimeOptions">runtime system option</a>. 
 </p>
 </li>
-
-        <ul>
-
-  controls whether garbage collection time is separately measured   during program execution.  This affects the behavior of both   <tt>rusage</tt> and <tt>Timer.checkCPUTimes</tt>, both of which will   return gc times of zero with <tt>measureGC&nbsp;false</tt>.  Garbage   collection time is always measured when either <tt>gc-messages</tt> or   <tt>gc-summary</tt> is given as a    <a href="RunTimeOptions">runtime system option</a>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>rusage&nbsp;()</tt> 
+ <tt>rusage&nbsp;()</tt>  <br>
+corresponds to the C <tt>getrusage</tt> function.  It returns the  resource usage of the exited children, the garbage collector, and the  process itself.  The <tt>self</tt> component includes the usage of the  <tt>gc</tt> component, regardless of whether <tt>measureGC</tt> is  <tt>true</tt> or <tt>false</tt>.  If <tt>rusage</tt> is used in a program,  either directly, or indirectly via the <tt>Timer</tt> structure, then  <tt>measureGC&nbsp;true</tt> is automatically called at the start of the  program (it can still be disable by user code later). 
 </p>
 </li>
-
-        <ul>
-
-  corresponds to the C <tt>getrusage</tt> function.  It returns the   resource usage of the exited children, the garbage collector, and   the process itself.  The <tt>self</tt> component includes the usage of   the <tt>gc</tt> component, regardless of whether <tt>measureGC</tt> is   <tt>true</tt> or <tt>false</tt>.  If <tt>rusage</tt> is used in a program,   either directly, or indirectly via the <tt>Timer</tt> structure, then   <tt>measureGC&nbsp;true</tt> is automatically called at the start of the   program (it can still be disable by user code later). </ul>
-
 </ul>
 
 </div>
@@ -114,5 +98,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2006-04-26 04:24:45 by <span title="ppp-71-139-198-197.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:45:11 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

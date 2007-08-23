@@ -373,7 +373,7 @@ urchinTracker();
 
         <ul>
 
-  <em>The formalism behind G'CAML, which has an approach to ad-hoc   polymorphism based on <a href = "References#Dubois94">Dubois94</a>, the differences being in   how type checking works an an improved compilation approach for   typecase that does the matching at compile time, not run time.</em> 
+  <em>The formalism behind G'CAML, which has an approach to ad-hoc   polymorphism based on <a href = "References#Dubois95">Dubois95</a>, the differences being in   how type checking works an an improved compilation approach for   typecase that does the matching at compile time, not run time.</em> 
         </ul>
 
 
@@ -1270,6 +1270,11 @@ urchinTracker();
 </li>
     <li>
 <p>
+ <a id="TOPLAS"></a> TOPLAS = Transactions on Programming Languages and Systems 
+</p>
+</li>
+    <li>
+<p>
  <a id="TPHOLs"></a> TPHOLs = International Conference on Theorem Proving in Higher Order Logics 
 </p>
 </li>
@@ -1281,5 +1286,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-02 21:28:13 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 00:55:54 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

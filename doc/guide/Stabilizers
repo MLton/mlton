@@ -176,88 +176,46 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;checkpoint</tt> 
+ <tt>type&nbsp;checkpoint</tt>  <br>
+handle used to stabilize contexts other than the current one. 
 </p>
 </li>
-
-        <ul>
-
-  handle used to stabilize contexts other than the current one. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>stable&nbsp;f</tt> 
+ <tt>stable&nbsp;f</tt>  <br>
+returns a function identical to <tt>f</tt> that will execute within a stable section. 
 </p>
 </li>
-
-        <ul>
-
-  returns a function identical to <tt>f</tt> that will execute within a stable section. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>stabilize&nbsp;()</tt> 
+ <tt>stabilize&nbsp;()</tt>  <br>
+unrolls the effects made up to the current context   to at least the nearest enclosing {{stable}}} section.  These effects may have propagated to other threads,   so all affected threads are returned to a globally consistent previous state.  The return is undefined because control cannot resume after stabilize is called. 
 </p>
 </li>
-
-        <ul>
-
-  unrolls the effects made up to the current context    to at least the nearest enclosing {{stable}}} section.   These effects may have propagated to other threads,    so all affected threads are returned to a globally consistent previous state.   The return is undefined because control cannot resume after stabilize is called. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>stableCP&nbsp;(f,&nbsp;comp)</tt> 
+ <tt>stableCP&nbsp;(f,&nbsp;comp)</tt>  <br>
+returns a function <tt>f'</tt> and checkpoint tag <tt>cp</tt>.  Function <tt>f'</tt> is identical to <tt>f</tt> but when applied will execute within a stable section.  <tt>comp</tt> will be executed if <tt>f'</tt> is later stabilized.  <tt>cp</tt> is used by <tt>stabilizeCP</tt> to stabilize a given checkpoint. 
 </p>
 </li>
-
-        <ul>
-
-  returns a function <tt>f'</tt> and checkpoint tag <tt>cp</tt>.   Function <tt>f'</tt> is identical to <tt>f</tt> but when applied will execute within a stable section.   <tt>comp</tt> will be executed if <tt>f'</tt> is later stabilized.   <tt>cp</tt> is used by <tt>stabilizeCP</tt> to stabilize a given checkpoint. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>stabilizeCP&nbsp;cp</tt> 
+ <tt>stabilizeCP&nbsp;cp</tt>  <br>
+same as stabilize except that the (possibly current) checkpoint to stabilize is provided. 
 </p>
 </li>
-
-        <ul>
-
-  same as stabilize except that the (possibly current) checkpoint to stabilize is provided. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>unmonitoredAssign&nbsp;(r,&nbsp;v)</tt> 
+ <tt>unmonitoredAssign&nbsp;(r,&nbsp;v)</tt>  <br>
+standard assignment (<tt>:=</tt>).   The version of CML distributed rebinds <tt>:=</tt> to a monitored version so interesting effects can be recorded. 
 </p>
 </li>
-
-        <ul>
-
-  standard assignment (<tt>:=</tt>).    The version of CML distributed rebinds <tt>:=</tt>   to a monitored version so interesting effects can be recorded. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>monitoredAssign&nbsp;(r,&nbsp;v)</tt> 
+ <tt>monitoredAssign&nbsp;(r,&nbsp;v)</tt>  <br>
+the assignment operator that should be used in programs that use stabilizers. <tt>:=</tt> is rebound to this by including CML. 
 </p>
 </li>
-
-        <ul>
-
-  the assignment operator that should be used in programs that use stabilizers. <tt>:=</tt> is rebound to this by including CML. 
-        </ul>
-
-
 
     </ul>
 
@@ -292,5 +250,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-07-08 21:34:40 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:40:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

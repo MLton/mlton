@@ -59,7 +59,7 @@ urchinTracker();
 <pre class=code>
 <B><FONT COLOR="#0000FF">signature</FONT></B> MLTON_INT_INF =
    <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t
+      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> t </FONT></B>=<B><FONT COLOR="#228B22"> IntInf.int
 
       </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> areSmall: t * t -&gt; bool
       <B><FONT COLOR="#A020F0">val</FONT></B> gcd: t * t -&gt; t
@@ -84,98 +84,52 @@ MLton represents an arbitrary precision integer either as an unboxed word with t
 
     <li>
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+the same as type <tt>IntInf.int</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the same as type <tt>IntInf.int</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>areSmall&nbsp;(a,&nbsp;b)</tt> 
+ <tt>areSmall&nbsp;(a,&nbsp;b)</tt>  <br>
+returns true iff both <tt>a</tt> and <tt>b</tt> are small. 
 </p>
 </li>
-
-        <ul>
-
-  returns true iff both <tt>a</tt> and <tt>b</tt> are small. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>gcd&nbsp;(a,&nbsp;b)</tt> 
+ <tt>gcd&nbsp;(a,&nbsp;b)</tt>  <br>
+uses the <a class="nonexistent" href="GMP">GnuMP's</a> fast gcd implementation. 
 </p>
 </li>
-
-        <ul>
-
-  uses the <a class="nonexistent" href="GMP">GnuMP's</a> fast gcd implementation. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>isSmall&nbsp;a</tt> 
+ <tt>isSmall&nbsp;a</tt>  <br>
+returns true iff <tt>a</tt> is small. 
 </p>
 </li>
-
-        <ul>
-
-  returns true iff <tt>a</tt> is small. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>BigWord&nbsp;:&nbsp;WORD</tt> 
+ <tt>BigWord&nbsp;:&nbsp;WORD</tt>  <br>
+representation of a big <tt>IntInf.int</tt> as a vector of words; on  32-bit platforms, <tt>BigWord</tt> is likely to be equivalent to  <tt>Word32</tt>, and on 64-bit platforms, <tt>BigWord</tt> is likely to be  equivalent to <tt>Word64</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  representation of a big <tt>IntInf.int</tt> as a vector of words;   on 32-bit platforms, <tt>BigWord</tt> is likely to be equivalent to   <tt>Word32</tt>, and on 64-bit platforms, <tt>BigWord</tt> is likely to be   equivalent to <tt>Word64</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>SmallInt&nbsp;:&nbsp;INTEGER</tt> 
+ <tt>SmallInt&nbsp;:&nbsp;INTEGER</tt>  <br>
+representation of a small <tt>IntInf.int</tt> as a signed integer; on  32-bit platforms, <tt>SmallInt</tt> is likely to be equivalent to  <tt>Int32</tt>, and on 64-bit platforms, <tt>SmallInt</tt> is likely to be  equivalent to <tt>Int64</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  representation of a small <tt>IntInf.int</tt> as a signed integer;   on 32-bit platforms, <tt>SmallInt</tt> is likely to be equivalent to   <tt>Int32</tt>, and on 64-bit platforms, <tt>SmallInt</tt> is likely to be   equivalent to <tt>Int64</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>datatype&nbsp;rep</tt> 
+ <tt>datatype&nbsp;rep</tt>  <br>
+the underlying representation of an <tt>IntInf.int</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the underlying representation of an <tt>IntInf.int</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>rep&nbsp;i</tt> 
+ <tt>rep&nbsp;i</tt>  <br>
+returns the underlying representation of <tt>i</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the underlying representation of <tt>i</tt>. </ul>
-
 </ul>
 
 </div>
@@ -184,5 +138,5 @@ MLton represents an arbitrary precision integer either as an unboxed word with t
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:06:53 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:44:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

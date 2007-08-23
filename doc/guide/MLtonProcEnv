@@ -73,26 +73,16 @@ urchinTracker();
 
     <li>
 <p>
- <tt>setenv&nbsp;{name,&nbsp;value</tt>} 
+ <tt>setenv&nbsp;{name,&nbsp;value</tt>}  <br>
+like the C <tt>setenv</tt> function.  Does not require <tt>name</tt> or  <tt>value</tt> to be null terminated. 
 </p>
 </li>
-
-        <ul>
-
-  like the C <tt>setenv</tt> function.  Does not require <tt>name</tt> or   <tt>value</tt> to be null terminated. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>setgroups&nbsp;grps</tt> 
+ <tt>setgroups&nbsp;grps</tt>  <br>
+like the C <tt>setgroups</tt> function. 
 </p>
 </li>
-
-        <ul>
-
-  like the C <tt>setgroups</tt> function. </ul>
-
 </ul>
 
 </div>
@@ -101,5 +91,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:28:03 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:44:40 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

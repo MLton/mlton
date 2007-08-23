@@ -84,88 +84,46 @@ urchinTracker();
 
     <li>
 <p>
- <tt>isOn</tt> 
+ <tt>isOn</tt>  <br>
+a compile-time constant that is false only when compiling   <tt>-profile&nbsp;no</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   a compile-time constant that is false only when compiling     <tt>-profile&nbsp;no</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;Data.t</tt>  
+ <tt>type&nbsp;Data.t</tt>   <br>
+the type of a unit of profiling data.  In order to most efficiently  execute non-profiled programs, when compiling <tt>-profile&nbsp;no</tt> (the  default), <tt>Data.t</tt> is equivalent to <tt>unit&nbsp;ref</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   the type of a unit of profiling data.    In order to most efficiently execute non-profiled programs,    when compiling <tt>-profile&nbsp;no</tt> (the default), <tt>Data.t</tt> is    equivalent to <tt>unit&nbsp;ref</tt>.  
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>Data.equals&nbsp;(x,&nbsp;y)</tt> 
+ <tt>Data.equals&nbsp;(x,&nbsp;y)</tt>  <br>
+returns true if the <tt>x</tt> and <tt>y</tt> are the same unit of  profiling data. 
 </p>
 </li>
-
-            <ul>
-
-   returns true if the <tt>x</tt> and <tt>y</tt> are the same unit of    profiling data. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>Data.free&nbsp;x</tt> 
+ <tt>Data.free&nbsp;x</tt>  <br>
+frees the memory associated with the unit of profiling data <tt>x</tt>.  It is an error to free the current unit of profiling data or to free  a previously freed unit of profiling data.  When compiling  <tt>-profile&nbsp;no</tt>, <tt>Data.free&nbsp;x</tt> is a no-op. 
 </p>
 </li>
-
-            <ul>
-
-   frees the memory associated with the unit of profiling data    <tt>x</tt>.  It is an error to free the current unit of profiling data    or to free a previously freed unit of profiling data.  When    compiling <tt>-profile&nbsp;no</tt>, <tt>Data.free&nbsp;x</tt> is a no-op. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>Data.malloc&nbsp;()</tt> 
+ <tt>Data.malloc&nbsp;()</tt>  <br>
+returns a new unit of profiling data.  Each unit of profiling data is  allocated from the process address space (but is <em>not</em> in the MLton  heap) and consumes memory proportional to the number of source  functions.  When compiling <tt>-profile&nbsp;no</tt>, <tt>Data.malloc&nbsp;()</tt> is  equivalent to allocating a new <tt>unit&nbsp;ref</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   returns a new unit of profiling data.  Each unit of profiling data    is allocated from the process address space (but is <em>not</em> in the    MLton heap) and consumes memory proportional to the number of    source functions.  When compiling <tt>-profile&nbsp;no</tt>,    <tt>Data.malloc&nbsp;()</tt> is equivalent to allocating a new <tt>unit&nbsp;ref</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>write&nbsp;(x,&nbsp;f)</tt> 
+ <tt>write&nbsp;(x,&nbsp;f)</tt>  <br>
+writes the accumulated ticks in the unit of profiling data <tt>x</tt> to  file <tt>f</tt>.  It is an error to write a previously freed unit of  profiling data.  When compiling <tt>-profile&nbsp;no</tt>, <tt>write&nbsp;(x,&nbsp;f)</tt>  is a no-op.  A profiled program will always write the current unit of  profiling data at program exit to a file named <tt>mlmon.out</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   writes the accumulated ticks in the unit of profiling data <tt>x</tt>    to file <tt>f</tt>.  It is an error to write a previously freed unit    of profiling data.  When compiling <tt>-profile&nbsp;no</tt>,     <tt>write&nbsp;(x,&nbsp;f)</tt> is a no-op.  A profiled program will always    write the current unit of profiling data at program exit to a file    named <tt>mlmon.out</tt>.  
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>withData&nbsp;(d,&nbsp;f)</tt> 
+ <tt>withData&nbsp;(d,&nbsp;f)</tt>  <br>
+runs <tt>f</tt> with <tt>d</tt> as the unit of profiling data, and returns  the result of <tt>f</tt> after restoring the current unit of profiling  data.  When compiling <tt>-profile&nbsp;no</tt>, <tt>withData&nbsp;(d,&nbsp;f)</tt> is  equivalent to <tt>f&nbsp;()</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   runs <tt>f</tt> with <tt>d</tt> as the unit of profiling data, and    returns the result of <tt>f</tt> after restoring the current unit of    profiling data.  When compiling <tt>-profile&nbsp;no</tt>,     <tt>withData&nbsp;(d,&nbsp;f)</tt> is equivalent to <tt>f&nbsp;()</tt>. 
-            </ul>
-
-
 
     </ul>
 
@@ -260,5 +218,5 @@ tak       10.5%
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:21:31 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:44:58 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

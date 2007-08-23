@@ -116,38 +116,22 @@ urchinTracker();
 
     <li>
 <p>
- <tt>closelog&nbsp;()</tt> 
+ <tt>closelog&nbsp;()</tt>  <br>
+closes the connection to the system logger. 
 </p>
 </li>
-
-        <ul>
-
-  closes the connection to the system logger. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>log&nbsp;(l,&nbsp;s)</tt> 
+ <tt>log&nbsp;(l,&nbsp;s)</tt>  <br>
+logs message <tt>s</tt> at a loglevel <tt>l</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  logs message <tt>s</tt> at a loglevel <tt>l</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>openlog&nbsp;(name,&nbsp;flags,&nbsp;facility)</tt> 
+ <tt>openlog&nbsp;(name,&nbsp;flags,&nbsp;facility)</tt>  <br>
+opens a connection to the system logger. <tt>name</tt> will be prefixed  to each message, and is typically set to the program name. 
 </p>
 </li>
-
-        <ul>
-
-  opens a connection to the system logger. <tt>name</tt> will be prefixed   to each message, and is typically set to the program name. </ul>
-
 </ul>
 
 </div>
@@ -156,5 +140,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:45 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:37 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

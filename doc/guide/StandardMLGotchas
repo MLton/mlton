@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 This page contains brief explanations of some recurring sources of confusion and problems that SML newbies encounter. <p>
-Many confusions about the syntax of SML seem to arise from the use of an interactive REPL (Read-Eval Print Loop) while trying to learn the basics of the language.  While writing your first SML programs, you should keep the source code of your programs in a form that is accepted by a SML compiler as a whole. 
+Many confusions about the syntax of SML seem to arise from the use of an interactive REPL (Read-Eval Print Loop) while trying to learn the basics of the language.  While writing your first SML programs, you should keep the source code of your programs in a form that is accepted by an SML compiler as a whole. 
 </p>
 <h4 id="head-d685d6ac284370652bba2e2a7d86c4399c393136">The {{{and}}} keyword</h4>
 <p>
@@ -155,7 +155,7 @@ are fine.
 </p>
 <h4 id="head-8ab1923fa5e92fee24951419e65f282dd12cf824">Declarations and expressions</h4>
 <p>
-It is a common mistake to confuse expressions and declarations.  Normally a SML source file should only contain declarations.  The following are declarations: 
+It is a common mistake to confuse expressions and declarations.  Normally an SML source file should only contain declarations.  The following are declarations: 
 </p>
 
 <pre class=code>
@@ -236,7 +236,7 @@ See <a href="Overloading">Overloading</a> and <a href="TypeIndexedValues">TypeIn
 </p>
 <h4 id="head-1158dc6391ca1c282b0274da233e5b47974ab44c">Semicolons</h4>
 <p>
-It is a common mistake to use redundant semicolons in SML code.  This is probably caused by the fact that in a SML REPL, a semicolon (and enter) is used to signal the REPL that it should evaluate the preceding chunk of code as a unit.  In SML source files, semicolons are really needed in only two places.  Namely, in expressions of the form 
+It is a common mistake to use redundant semicolons in SML code.  This is probably caused by the fact that in an SML REPL, a semicolon (and enter) is used to signal the REPL that it should evaluate the preceding chunk of code as a unit.  In SML source files, semicolons are really needed in only two places.  Namely, in expressions of the form 
 </p>
 
 <pre class=code>
@@ -274,5 +274,5 @@ See <a href="TypeVariableScope">TypeVariableScope</a>.
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:31:22 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:25:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

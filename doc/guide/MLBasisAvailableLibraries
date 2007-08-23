@@ -55,177 +55,123 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-MLton comes with the following <a href="MLBasis">ML Basis</a> files available. <p>
-<tt>$(SML_LIB)/basis/basis.mlb</tt> 
-</p>
+MLton comes with the following <a href="MLBasis">ML Basis</a> files available. 
+    <ul>
 
-        <ul>
-
-  The <a href="BasisLibrary">Basis Library</a>. 
-        </ul>
-
-
+    <li>
 <p>
-<tt>$(SML_LIB)/basis/basis-1997.mlb</tt> 
+ <tt>$(SML_LIB)/basis/basis.mlb</tt>  <br>
+The <a href="BasisLibrary">Basis Library</a>. 
 </p>
-
-        <ul>
-
-  The (deprecated) 1997 version of the <a href="BasisLibrary">Basis Library</a>. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/mlton.mlb</tt> 
+ <tt>$(SML_LIB)/basis/basis-1997.mlb</tt>  <br>
+The (deprecated) 1997 version of the <a href="BasisLibrary">Basis Library</a>. 
 </p>
-
-        <ul>
-
-  The <a href="MLtonStructure">MLton</a> structure and signatures. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/sml-nj.mlb</tt> 
+ <tt>$(SML_LIB)/basis/mlton.mlb</tt>  <br>
+The <a href="MLtonStructure">MLton</a> structure and signatures. 
 </p>
-
-        <ul>
-
-  The <a href="SMLofNJStructure">SMLofNJ</a> structure and signature. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/unsafe.mlb</tt> 
+ <tt>$(SML_LIB)/basis/sml-nj.mlb</tt>  <br>
+The <a href="SMLofNJStructure">SMLofNJ</a> structure and signature. 
 </p>
-
-        <ul>
-
-  The <a href="UnsafeStructure">Unsafe</a> structure and signature. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb</tt> 
+ <tt>$(SML_LIB)/basis/unsafe.mlb</tt>  <br>
+The <a href="UnsafeStructure">Unsafe</a> structure and signature. 
 </p>
-
-        <ul>
-
-  Modules used by parsers built with <a class="nonexistent" href="MLYacc">MLYacc</a>. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/cml/cml.mlb</tt> 
+ <tt>$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb</tt>  <br>
+Modules used by parsers built with <a class="nonexistent" href="MLYacc">MLYacc</a>. 
 </p>
-
-        <ul>
-
-  <a href="ConcurrentML">ConcurrentML</a>, a library for message-passing concurrency. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt> 
+ <tt>$(SML_LIB)/cml/cml.mlb</tt>  <br>
+<a href="ConcurrentML">ConcurrentML</a>, a library for message-passing concurrency. 
 </p>
-
-        <ul>
-
-  <a href="MLNLFFI">ML-NLFFI</a>, a library for foreign function interfaces. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/smlnj-lib/...</tt> 
+ <tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt>  <br>
+<a href="MLNLFFI">ML-NLFFI</a>, a library for foreign function interfaces. 
 </p>
-
-        <ul>
-
-  <a href="SMLNJLibrary">SMLNJLibrary</a>, a collection of libraries distributed with SML/NJ. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt> 
+ <tt>$(SML_LIB)/smlnj-lib/...</tt>  <br>
+<a href="SMLNJLibrary">SMLNJLibrary</a>, a collection of libraries distributed with SML/NJ. 
 </p>
+</li>
+    <li class="gap">
+<p>
+ <tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt>  <br>
+<a href="CKitLibrary">CKitLibrary</a>, a library for C source code. 
+</p>
+</li>
 
-        <ul>
-
-  <a href="CKitLibrary">CKitLibrary</a>, a library for C source code. 
-        </ul>
+    </ul>
 
 
 <h2 id="head-b5773a8c56013cd129e0fe857d8a7d13604efcc0">Basis fragments</h2>
 <p>
 There are a number of specialized ML Basis files for importing fragments of the <a href="BasisLibrary"> Basis Library</a> that can not be expressed within SML. 
 </p>
+
+    <ul>
+
+    <li>
 <p>
-<tt>$(SML_LIB)/basis/pervasive-types.mlb</tt> 
+ <tt>$(SML_LIB)/basis/pervasive-types.mlb</tt>  <br>
+The top-level types and constructors of the Basis Library. 
 </p>
-
-        <ul>
-
-  The top-level types and constructors of the Basis Library. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/pervasive-exns.mlb</tt> 
+ <tt>$(SML_LIB)/basis/pervasive-exns.mlb</tt>  <br>
+The top-level exception constructors of the Basis Library. 
 </p>
-
-        <ul>
-
-  The top-level exception constructors of the Basis Library. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/pervasive-vals.mlb</tt> 
+ <tt>$(SML_LIB)/basis/pervasive-vals.mlb</tt>  <br>
+The top-level values of the Basis Library, without infix status. 
 </p>
-
-        <ul>
-
-  The top-level values of the Basis Library, without infix status. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/overloads.mlb</tt> 
+ <tt>$(SML_LIB)/basis/overloads.mlb</tt>  <br>
+The top-level overloaded values of the Basis Library, without infix  status. 
 </p>
-
-        <ul>
-
-  The top-level overloaded values of the Basis Library, without infix   status. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/equal.mlb</tt> 
+ <tt>$(SML_LIB)/basis/equal.mlb</tt>  <br>
+The polymorphic equality <tt>=</tt> and inequality <tt>&lt;&gt;</tt> values,  without infix status.  
 </p>
-
-        <ul>
-
-  The polymorphic equality <tt>=</tt> and inequality <tt>&lt;&gt;</tt> values,   without infix status.  
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/infixes.mlb</tt> 
+ <tt>$(SML_LIB)/basis/infixes.mlb</tt>  <br>
+The infix declarations of the Basis Library. 
 </p>
-
-        <ul>
-
-  The infix declarations of the Basis Library. 
-        </ul>
-
-
+</li>
+    <li class="gap">
 <p>
-<tt>$(SML_LIB)/basis/pervasive.mlb</tt> 
+ <tt>$(SML_LIB)/basis/pervasive.mlb</tt>  <br>
+The entire top-level value and type environment of the   Basis Library, with infix status.  This is the same as  importing the above six MLB files. 
 </p>
-
-        <ul>
-
-  The entire top-level value and type environment of the    Basis Library, with infix status.  This is the same as   importing the above six MLB files. </ul>
+</li>
+</ul>
 
 </div>
 
@@ -233,5 +179,5 @@ There are a number of specialized ML Basis files for importing fragments of the 
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:06:46 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:20:45 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

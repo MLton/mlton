@@ -114,21 +114,16 @@ it also gets things like
 
   val k = (l + n) + ((l + m) handle Overflow =&gt; ((l + m) 
                              handle Overflow =&gt; l + n)) 
-</pre> is rewritten so that <tt>(n&nbsp;+&nbsp;m)</tt> is computed exactly once, as
+</pre> is rewritten so that <tt>(n&nbsp;+&nbsp;m)</tt> is computed exactly once, as  are <tt>(l&nbsp;+&nbsp;n)</tt> and <tt>(l&nbsp;+&nbsp;m)</tt>. 
 </p>
 </li>
+</ul>
 
-    </ul>
-
-
-<p>
-are <tt>(l&nbsp;+&nbsp;n)</tt> and <tt>(l&nbsp;+&nbsp;m)</tt>. 
-</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:30:50 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:59:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

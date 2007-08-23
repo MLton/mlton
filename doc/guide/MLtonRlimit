@@ -95,62 +95,34 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;Rlim.t</tt> 
+ <tt>type&nbsp;Rlim.t</tt>  <br>
+the type of resource limits. 
 </p>
 </li>
-
-        <ul>
-
-  the type of resource limits. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>infinity</tt> 
+ <tt>infinity</tt>  <br>
+indicates that a resource is unlimited. 
 </p>
 </li>
-
-        <ul>
-
-  indicates that a resource is unlimited. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+the types of resources that can be inspected and modified. 
 </p>
 </li>
-
-        <ul>
-
-  the types of resources that can be inspected and modified. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>get&nbsp;r</tt> 
+ <tt>get&nbsp;r</tt>  <br>
+returns the current hard and soft limits for resource <tt>r</tt>. May  raise <tt>OS.SysErr</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the current hard and soft limits for resource <tt>r</tt>. May   raise <tt>OS.SysErr</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>set&nbsp;(r,&nbsp;{hard,&nbsp;soft})</tt> 
+ <tt>set&nbsp;(r,&nbsp;{hard,&nbsp;soft})</tt>  <br>
+sets the hard and soft limits for resource <tt>r</tt>.  May raise  <tt>OS.SysErr</tt>.  
 </p>
 </li>
-
-        <ul>
-
-  sets the hard and soft limits for resource <tt>r</tt>.  May raise   <tt>OS.SysErr</tt>.  </ul>
-
 </ul>
 
 </div>
@@ -159,5 +131,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:28 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:20:15 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

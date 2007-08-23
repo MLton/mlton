@@ -79,86 +79,46 @@ urchinTracker();
 
     <li>
 <p>
- <tt>inFd&nbsp;ins</tt> 
+ <tt>inFd&nbsp;ins</tt>  <br>
+returns the file descriptor corresponding to <tt>ins</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the file descriptor corresponding to <tt>ins</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>mkstemp&nbsp;s</tt> 
+ <tt>mkstemp&nbsp;s</tt>  <br>
+like the C <tt>mkstemp</tt> function, generates and open a temporary  file with prefix <tt>s</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  like the C <tt>mkstemp</tt> function, generates and open a temporary   file with prefix <tt>s</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>mkstemps&nbsp;{prefix,&nbsp;suffix}&nbsp;</tt> 
+ <tt>mkstemps&nbsp;{prefix,&nbsp;suffix}&nbsp;</tt>  <br>
+like <tt>mkstemp</tt>, except it has both a prefix and suffix. 
 </p>
 </li>
-
-        <ul>
-
-  like <tt>mkstemp</tt>, except it has both a prefix and suffix. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>newIn&nbsp;(fd,&nbsp;name)</tt> 
+ <tt>newIn&nbsp;(fd,&nbsp;name)</tt>  <br>
+creates a new instream from file descriptor  <tt>fd</tt>, with <tt>name</tt> used in any <tt>Io</tt> exceptions later  raised. 
 </p>
 </li>
-
-        <ul>
-
-  creates a new instream from file descriptor   <tt>fd</tt>, with <tt>name</tt> used in any <tt>Io</tt> exceptions later   raised. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>newOut&nbsp;(fd,&nbsp;name)</tt> 
+ <tt>newOut&nbsp;(fd,&nbsp;name)</tt>  <br>
+creates a new outstream from file descriptor <tt>fd</tt>, with  <tt>name</tt> used in any <tt>Io</tt> exceptions later raised. 
 </p>
 </li>
-
-        <ul>
-
-  creates a new outstream from file descriptor <tt>fd</tt>, with   <tt>name</tt> used in any <tt>Io</tt> exceptions later raised. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>outFd&nbsp;out</tt>  
+ <tt>outFd&nbsp;out</tt>   <br>
+returns the file descriptor corresponding to <tt>out</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the file descriptor corresponding to <tt>out</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>tempPrefix&nbsp;s</tt> 
+ <tt>tempPrefix&nbsp;s</tt>  <br>
+adds a suitable system or user specific prefix (directory) for temp files. 
 </p>
 </li>
-
-        <ul>
-
-  adds a suitable system or user specific prefix (directory) for temp files. </ul>
-
 </ul>
 
 </div>
@@ -167,5 +127,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:04 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:44:14 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

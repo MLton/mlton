@@ -115,7 +115,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Adam Goode provided the script to build the PDF MLton Guide. 
+ <a href="AdamGoode">AdamGoode</a> provided the script to build the PDF MLton Guide. 
 </p>
 </li>
     <li class="gap">
@@ -150,7 +150,7 @@ Many people have helped us over the years.  Here is an alphabetical list.
 </li>
     <li class="gap">
 <p>
- Eric Mc<strong></strong>Corkle ported MLton to Intel Mac. 
+ Eric McCorkle ported MLton to Intel Mac. 
 </p>
 </li>
     <li class="gap">
@@ -261,5 +261,5 @@ We have also benefited from other software development tools and used code from 
 
 <p>
 <hr>
-Last edited on 2007-07-08 22:13:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:04:00 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

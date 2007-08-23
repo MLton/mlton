@@ -74,62 +74,34 @@ urchinTracker();
 
     <li>
 <p>
- <tt>collect&nbsp;()</tt> 
+ <tt>collect&nbsp;()</tt>  <br>
+causes a garbage collection to occur. 
 </p>
 </li>
-
-        <ul>
-
-  causes a garbage collection to occur. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>pack&nbsp;()</tt> 
+ <tt>pack&nbsp;()</tt>  <br>
+shrinks the heap as much as possible so that other processes can use  available RAM. 
 </p>
 </li>
-
-        <ul>
-
-  shrinks the heap as much as possible so that other processes can use   available RAM. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>setMessages&nbsp;b</tt> 
+ <tt>setMessages&nbsp;b</tt>  <br>
+controls whether diagnostic messages are printed at the beginning and  end of each garbage collection.  It is the same as the  <tt>gc-messages</tt> runtime system option.  
 </p>
 </li>
-
-        <ul>
-
-  controls whether diagnostic messages are printed at the beginning and   end of each garbage collection.  It is the same as the   <tt>gc-messages</tt> runtime system option.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>setSummary&nbsp;b</tt> 
+ <tt>setSummary&nbsp;b</tt>  <br>
+controls whether a summary of garbage collection statistics is  printed upon termination of the program.  It is the same as the  <tt>gc-summary</tt> runtime system option.  
 </p>
 </li>
-
-        <ul>
-
-  controls whether a summary of garbage collection statistics is   printed upon termination of the program.  It is the same as the   <tt>gc-summary</tt> runtime system option.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>unpack&nbsp;()</tt> 
+ <tt>unpack&nbsp;()</tt>  <br>
+ resizes a packed heap to the size desired by the runtime. 
 </p>
 </li>
-
-        <ul>
-
-  resizes a packed heap to the size desired by the runtime. </ul>
-
 </ul>
 
 </div>
@@ -138,5 +110,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2004-11-02 04:24:34 by <span title="adsl-67-124-249-200.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:44:05 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -57,7 +57,7 @@ urchinTracker();
 <div id="content" lang="en" dir="ltr">
 An <a href="MLBasis">ML Basis</a> (MLB) file should have the <tt>.mlb</tt> suffix and should contain a basis declaration. <h2 id="head-17c7ba7676ad1ad6dd1c4e6b997adcae910262c9">Syntax</h2>
 <p>
-A basis declaration must be one of the following forms. 
+A basis declaration (<em>basdec</em>) must be one of the following forms. 
 </p>
 
     <ul>
@@ -117,7 +117,7 @@ A basis declaration must be one of the following forms.
 
 
 <p>
-A basis expression <em>basexp</em> must be of one the following forms. 
+A basis expression (<em>basexp</em>) must be of one the following forms. 
 </p>
 
     <ul>
@@ -145,7 +145,7 @@ A basis expression <em>basexp</em> must be of one the following forms.
 Nested SML-style comments (enclosed with <tt>(*</tt> and <tt>*)</tt>) are ignored (but <a href="LineDirective">LineDirective</a>s are recognized). 
 </p>
 <p>
-Paths can be relative or absolute.  Relative paths are relative to the directory containing the MLB file.  Paths may include path variables and are expanded according to a <a href="MLBasisPathMap">path map</a>.  Unquoted paths may include alpha-numeric characters and the symbols "<tt>-</tt>" and "<tt>_</tt>", along with the arc separator "<tt>/</tt>" and extension separator "<tt>.</tt>".  More complicated paths, including paths with spaces, may be included by quoting the path with <tt>"</tt>.  A quoted path is lexed as a SML string constant. 
+Paths can be relative or absolute.  Relative paths are relative to the directory containing the MLB file.  Paths may include path variables and are expanded according to a <a href="MLBasisPathMap">path map</a>.  Unquoted paths may include alpha-numeric characters and the symbols "<tt>-</tt>" and "<tt>_</tt>", along with the arc separator "<tt>/</tt>" and extension separator "<tt>.</tt>".  More complicated paths, including paths with spaces, may be included by quoting the path with <tt>"</tt>.  A quoted path is lexed as an SML string constant. 
 </p>
 <p>
 <a href="MLBasisAnnotations">Annotations</a> allow a library author to control options that affect the elaboration of SML source files. 
@@ -172,5 +172,5 @@ An MLB file is elaborated starting in an empty basis.  Each MLB file is elaborat
 
 <p>
 <hr>
-Last edited on 2005-12-01 20:54:18 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 04:22:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

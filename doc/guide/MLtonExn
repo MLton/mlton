@@ -76,77 +76,43 @@ urchinTracker();
 
     <li>
 <p>
- <tt>addExnMessager&nbsp;f</tt> 
+ <tt>addExnMessager&nbsp;f</tt>  <br>
+adds <tt>f</tt> as a pretty-printer to be used by  <tt>General.exnMessage</tt> for converting exceptions to strings.  Messagers are tried in order from most recently added to least  recently added. 
 </p>
 </li>
-
-        <ul>
-
-  adds <tt>f</tt> as a pretty-printer to be used by   <tt>General.exnMessage</tt> for converting exceptions to strings.   Messagers are tried in order from most recently added to least   recently added. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>history&nbsp;e</tt> 
+ <tt>history&nbsp;e</tt>  <br>
+returns call stack at the point that <tt>e</tt> was first raised.  Each  element of the list is a file position.  The elements are in reverse  chronological order, i.e. the function called last is at the front of  the list. 
+</p>
+<p>
+ <tt>history&nbsp;e</tt> will return <tt>[]</tt> unless the program is compiled  with <tt>-const&nbsp;'Exn.keepHistory&nbsp;true'</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns call stack at the point that <tt>e</tt> was first raised.  Each   element of the list is a file position.  The elements are in   reverse chronological order, i.e. the function called last is at the   front of the list. <p>
-  <tt>history&nbsp;e</tt> will return <tt>[]</tt> unless the program is compiled   with <tt>-const&nbsp;'Exn.keepHistory&nbsp;true'</tt>. 
-</p>
-
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>defaultTopLevelHandler&nbsp;e</tt> 
+ <tt>defaultTopLevelHandler&nbsp;e</tt>  <br>
+function that behaves as the default top level handler;  that is, print out the unhandled exception message for <tt>e</tt> and  exit. 
 </p>
 </li>
-
-        <ul>
-
-  function that behaves as the default top level handler;   that is, print out the unhandled exception message for <tt>e</tt> and   exit. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>getTopLevelHandler&nbsp;()</tt> 
+ <tt>getTopLevelHandler&nbsp;()</tt>  <br>
+get the top level handler. 
 </p>
 </li>
-
-        <ul>
-
-  get the top level handler. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>setTopLevelHandler&nbsp;f</tt> 
+ <tt>setTopLevelHandler&nbsp;f</tt>  <br>
+set the top level handler to the function <tt>f</tt>.  The function  <tt>f</tt> should not raise an exception or return normally. 
 </p>
 </li>
-
-        <ul>
-
-  set the top level handler to the function <tt>f</tt>.  The function   <tt>f</tt> should not raise an exception or return normally. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>topLevelHandler&nbsp;e</tt> 
+ <tt>topLevelHandler&nbsp;e</tt>  <br>
+behaves as if the top level handler received the exception <tt>e</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  behaves as if the top level handler received the exception <tt>e</tt>. </ul>
-
 </ul>
 
 </div>
@@ -155,5 +121,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:55:55 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:43:53 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

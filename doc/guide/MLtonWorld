@@ -74,52 +74,28 @@ urchinTracker();
 
     <li>
 <p>
- <tt>datatype&nbsp;status</tt> 
+ <tt>datatype&nbsp;status</tt>  <br>
+specifies whether a world is original or restarted (a clone). 
 </p>
 </li>
-
-        <ul>
-
-  specifies whether a world is original or restarted (a clone). 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>load&nbsp;f</tt> 
+ <tt>load&nbsp;f</tt>  <br>
+loads the saved computation from file <tt>f</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  loads the saved computation from file <tt>f</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>save&nbsp;f</tt> 
+ <tt>save&nbsp;f</tt>  <br>
+saves the entire state of the computation to the file <tt>f</tt>.  The  computation can then be restarted at a later time using  <tt>World.load</tt> or the <tt>load-world</tt>   <a href="RunTimeOptions">runtime option</a>.  The call to <tt>save</tt> in the  original computation returns <tt>Original</tt> and the call in the  restarted world returns <tt>Clone</tt>.  
 </p>
 </li>
-
-        <ul>
-
-  saves the entire state of the computation to the file <tt>f</tt>.  The   computation can then be restarted at a later time using   <tt>World.load</tt> or the <tt>load-world</tt>    <a href="RunTimeOptions">runtime option</a>.  The call to <tt>save</tt> in the   original computation returns <tt>Original</tt> and the call in the   restarted world returns <tt>Clone</tt>.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>saveThread&nbsp;(f,&nbsp;rt)</tt> 
+ <tt>saveThread&nbsp;(f,&nbsp;rt)</tt>  <br>
+saves the entire state of the computation to the file <tt>f</tt> that  will resume with thread <tt>rt</tt> upon restart.  
 </p>
 </li>
-
-        <ul>
-
-  saves the entire state of the computation to the file <tt>f</tt> that   will resume with thread <tt>rt</tt> upon restart.  
-        </ul>
-
-
 
     </ul>
 
@@ -155,5 +131,5 @@ I am the clone
 
 <p>
 <hr>
-Last edited on 2005-12-01 23:17:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:46:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -112,304 +112,154 @@ A signal handler is never invoked while the running thread is in a critical sect
 
     <li>
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+the type of signals. 
 </p>
 </li>
-
-        <ul>
-
-  the type of signals. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;Handler.t</tt> 
+ <tt>type&nbsp;Handler.t</tt>  <br>
+the type of signal handlers. 
 </p>
 </li>
-
-        <ul>
-
-  the type of signal handlers. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.default</tt> 
+ <tt>Handler.default</tt>  <br>
+handles the signal with the default action. 
 </p>
 </li>
-
-        <ul>
-
-  handles the signal with the default action. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.handler&nbsp;f</tt> 
+ <tt>Handler.handler&nbsp;f</tt>  <br>
+returns a handler <tt>h</tt> such that when a signal <tt>s</tt> is handled  by <tt>h</tt>, <tt>f</tt> will be passed the thread that was interrupted by  <tt>s</tt> and should return the thread that will resume execution. 
 </p>
 </li>
-
-        <ul>
-
-  returns a handler <tt>h</tt> such that when a signal <tt>s</tt> is handled   by <tt>h</tt>, <tt>f</tt> will be passed the thread that was interrupted by   <tt>s</tt> and should return the thread that will resume execution. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.ignore</tt> 
+ <tt>Handler.ignore</tt>  <br>
+is a handler that will ignore the signal. 
 </p>
 </li>
-
-        <ul>
-
-  is a handler that will ignore the signal. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.isDefault</tt> 
+ <tt>Handler.isDefault</tt>  <br>
+returns true if the handler is the default handler. 
 </p>
 </li>
-
-        <ul>
-
-  returns true if the handler is the default handler. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.isIgnore</tt> 
+ <tt>Handler.isIgnore</tt>  <br>
+returns true if the handler is the ignore handler. 
 </p>
 </li>
-
-        <ul>
-
-  returns true if the handler is the ignore handler. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Handler.simple&nbsp;f</tt> 
+ <tt>Handler.simple&nbsp;f</tt>  <br>
+returns a handler that executes <tt>f&nbsp;()</tt> and does not switch  threads. 
 </p>
 </li>
-
-        <ul>
-
-  returns a handler that executes <tt>f&nbsp;()</tt> and does not switch   threads. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>type&nbsp;Mask.t</tt> 
+ <tt>type&nbsp;Mask.t</tt>  <br>
+the type of signal masks, which are sets of blocked signals. 
 </p>
 </li>
-
-        <ul>
-
-  the type of signal masks, which are sets of blocked signals. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.all</tt> 
+ <tt>Mask.all</tt>  <br>
+a mask of all signals. 
 </p>
 </li>
-
-        <ul>
-
-  a mask of all signals. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.allBut&nbsp;l</tt> 
+ <tt>Mask.allBut&nbsp;l</tt>  <br>
+a mask of all signals except for those in <tt>l</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  a mask of all signals except for those in <tt>l</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.block&nbsp;m</tt> 
+ <tt>Mask.block&nbsp;m</tt>  <br>
+blocks all signals in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  blocks all signals in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.getBlocked&nbsp;()</tt> 
+ <tt>Mask.getBlocked&nbsp;()</tt>  <br>
+gets the signal mask <tt>m</tt>, i.e. a signal is blocked if and only  if it is in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  gets the signal mask <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.isMember&nbsp;(m,&nbsp;s)</tt> 
+ <tt>Mask.isMember&nbsp;(m,&nbsp;s)</tt>  <br>
+returns true if the signal <tt>s</tt> is in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns true if the signal <tt>s</tt> is in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.none</tt> 
+ <tt>Mask.none</tt>  <br>
+a mask of no signals. 
 </p>
 </li>
-
-        <ul>
-
-  a mask of no signals. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.setBlocked&nbsp;m</tt> 
+ <tt>Mask.setBlocked&nbsp;m</tt>  <br>
+sets the signal mask to <tt>m</tt>, i.e. a signal is blocked if and only  if it is in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  sets the signal mask to <tt>m</tt>, i.e. a signal is blocked if and only   if it is in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.some&nbsp;l</tt> 
+ <tt>Mask.some&nbsp;l</tt>  <br>
+a mask of the signals in <tt>l</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  a mask of the signals in <tt>l</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Mask.unblock&nbsp;m</tt> 
+ <tt>Mask.unblock&nbsp;m</tt>  <br>
+unblocks all signals in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  unblocks all signals in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>getHandler&nbsp;s</tt> 
+ <tt>getHandler&nbsp;s</tt>  <br>
+returns the current handler for signal <tt>s</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the current handler for signal <tt>s</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>handled&nbsp;()</tt> 
+ <tt>handled&nbsp;()</tt>  <br>
+returns the signal mask <tt>m</tt> corresponding to the currently handled  signals; i.e., a signal is handled if and only if it is in <tt>m</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the signal mask <tt>m</tt> corresponding to the currently handled   signals; i.e., a signal is handled if and only if it is in <tt>m</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>prof</tt> 
+ <tt>prof</tt>  <br>
+<tt>SIGPROF</tt>, the profiling signal. 
 </p>
 </li>
-
-        <ul>
-
-  <tt>SIGPROF</tt>, the profiling signal. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>restart</tt> 
+ <tt>restart</tt>  <br>
+dynamically determines the behavior of interrupted system calls; when  <tt>true</tt>, interrupted system calls are restarted; when <tt>false</tt>,  interrupted system calls raise <tt>OS.SysError</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  dynamically determines the behavior of interrupted system calls; when   <tt>true</tt>, interrupted system calls are restarted; when <tt>false</tt>,   interrupted system calls raise <tt>OS.SysError</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>setHandler&nbsp;(s,&nbsp;h)</tt> 
+ <tt>setHandler&nbsp;(s,&nbsp;h)</tt>  <br>
+sets the handler for signal <tt>s</tt> to <tt>h</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  sets the handler for signal <tt>s</tt> to <tt>h</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>suspend&nbsp;m</tt> 
+ <tt>suspend&nbsp;m</tt>  <br>
+temporarily sets the signal mask to <tt>m</tt> and suspends until an  unmasked signal is received and handled, at which point  <tt>suspend</tt> resets the mask and returns. 
 </p>
 </li>
-
-        <ul>
-
-  temporarily sets the signal mask to <tt>m</tt> and suspends until an   unmasked signal is received and handled, at which point   <tt>suspend</tt> resets the mask and returns. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>vtalrm</tt> 
+ <tt>vtalrm</tt>  <br>
+<tt>SIGVTALRM</tt>, the signal for virtual timers. 
 </p>
 </li>
-
-        <ul>
-
-  <tt>SIGVTALRM</tt>, the signal for virtual timers. 
-        </ul>
-
-
 
     </ul>
 
@@ -446,5 +296,5 @@ A system call that must be restarted while in a critical section  will be restar
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:22:43 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:45:18 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

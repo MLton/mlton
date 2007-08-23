@@ -88,98 +88,52 @@ urchinTracker();
 
     <li>
 <p>
- <tt>datatype&nbsp;Arch.t</tt> 
+ <tt>datatype&nbsp;Arch.t</tt>  <br>
+processor architectures 
 </p>
 </li>
-
-        <ul>
-
-  processor architectures 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Arch.fromString&nbsp;a</tt> 
+ <tt>Arch.fromString&nbsp;a</tt>  <br>
+converts from string to architecture.  Case insensitive. 
 </p>
 </li>
-
-        <ul>
-
-  converts from string to architecture.  Case insensitive. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Arch.host</tt> 
+ <tt>Arch.host</tt>  <br>
+the architecture for which the program is compiled. 
 </p>
 </li>
-
-        <ul>
-
-  the architecture for which the program is compiled. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>Arch.toString</tt> 
+ <tt>Arch.toString</tt>  <br>
+string for architecture. 
 </p>
 </li>
-
-        <ul>
-
-  string for architecture. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>datatype&nbsp;OS.t</tt> 
+ <tt>datatype&nbsp;OS.t</tt>  <br>
+operating systems 
 </p>
 </li>
-
-        <ul>
-
-  operating systems 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>OS.fromString</tt> 
+ <tt>OS.fromString</tt>  <br>
+converts from string to operating system.  Case insensitive. 
 </p>
 </li>
-
-        <ul>
-
-  converts from string to operating system.  Case insensitive. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>OS.host</tt> 
+ <tt>OS.host</tt>  <br>
+the operating system for which the program is compiled. 
 </p>
 </li>
-
-        <ul>
-
-  the operating system for which the program is compiled. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>OS.toString</tt> 
+ <tt>OS.toString</tt>  <br>
+string for operating system. 
 </p>
 </li>
-
-        <ul>
-
-  string for operating system. </ul>
-
 </ul>
 
 </div>
@@ -188,5 +142,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:08 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:44:30 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -79,64 +79,34 @@ A <em>finalizable</em> value is a container to which finalizers can be attached.
 
     <li>
 <p>
- <tt>addFinalizer&nbsp;(v,&nbsp;f)</tt> 
+ <tt>addFinalizer&nbsp;(v,&nbsp;f)</tt>  <br>
+adds <tt>f</tt> as a finalizer to <tt>v</tt>.  This means that sometime  after the last call to <tt>withValue</tt> on <tt>v</tt> completes and  <tt>v</tt> becomes unreachable, <tt>f</tt> will be called with the value of  <tt>v</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  adds <tt>f</tt> as a finalizer to <tt>v</tt>.  This means that sometime   after the last call to <tt>withValue</tt> on <tt>v</tt> completes and   <tt>v</tt> becomes unreachable, <tt>f</tt> will be called with the value of   <tt>v</tt>.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>finalizeBefore&nbsp;(v1,&nbsp;v2)</tt> 
+ <tt>finalizeBefore&nbsp;(v1,&nbsp;v2)</tt>  <br>
+ensures that <tt>v1</tt> will be finalized before <tt>v2</tt>.  A cycle of  values <tt>v</tt> = <tt>v1</tt>, ..., <tt>vn</tt> = <tt>v</tt> with  <tt>finalizeBefore&nbsp;(vi,&nbsp;vi+1)</tt> will result in none of the <tt>vi</tt>  being finalized. 
 </p>
 </li>
-
-        <ul>
-
-  ensures that <tt>v1</tt> will be finalized before <tt>v2</tt>.  A cycle of   values <tt>v</tt> = <tt>v1</tt>, ..., <tt>vn</tt> = <tt>v</tt> with   <tt>finalizeBefore&nbsp;(vi,&nbsp;vi+1)</tt> will result in none of the <tt>vi</tt>   being finalized. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>new&nbsp;x</tt> 
+ <tt>new&nbsp;x</tt>  <br>
+creates a new finalizable value, <tt>v</tt>, with value <tt>x</tt>.  The  finalizers of <tt>v</tt> will run sometime after the last call to  <tt>withValue</tt> on <tt>v</tt> when the garbage collector determines that  <tt>v</tt> is unreachable. 
 </p>
 </li>
-
-        <ul>
-
-  creates a new finalizable value, <tt>v</tt>, with value <tt>x</tt>.  The   finalizers of <tt>v</tt> will run sometime after the last call to   <tt>withValue</tt> on <tt>v</tt> when the garbage collector determines that   <tt>v</tt> is unreachable.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>touch&nbsp;v</tt> 
+ <tt>touch&nbsp;v</tt>  <br>
+ensures that <tt>v</tt>'s finalizers will not run before the call to  <tt>touch</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  ensures that <tt>v</tt>'s finalizers will not run before the call to   <tt>touch</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>withValue&nbsp;(v,&nbsp;f)</tt> 
+ <tt>withValue&nbsp;(v,&nbsp;f)</tt>  <br>
+returns the result of applying <tt>f</tt> to the value of <tt>v</tt> and  ensures that <tt>v</tt>'s finalizers will not run before <tt>f</tt>  completes.  The call to <tt>f</tt> is a nontail call. 
 </p>
 </li>
-
-        <ul>
-
-  returns the result of applying <tt>f</tt> to the value of <tt>v</tt> and   ensures that <tt>v</tt>'s finalizers will not run before <tt>f</tt>   completes.  The call to <tt>f</tt> is a nontail call. 
-        </ul>
-
-
 
     </ul>
 
@@ -346,5 +316,5 @@ Finalizers in MLton are asynchronous.  That is, they run at an unspecified time,
 
 <p>
 <hr>
-Last edited on 2006-08-21 19:41:33 by <span title="ppp-71-139-165-239.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:44:00 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

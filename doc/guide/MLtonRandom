@@ -75,74 +75,40 @@ urchinTracker();
 
     <li>
 <p>
- <tt>alphaNumChar&nbsp;()</tt> 
+ <tt>alphaNumChar&nbsp;()</tt>  <br>
+returns a random alphanumeric character. 
 </p>
 </li>
-
-        <ul>
-
-  returns a random alphanumeric character. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>alphaNumString&nbsp;n</tt> 
+ <tt>alphaNumString&nbsp;n</tt>  <br>
+returns a string of length <tt>n</tt> of random alphanumeric  characters.  
 </p>
 </li>
-
-        <ul>
-
-  returns a string of length <tt>n</tt> of random alphanumeric   characters.  
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>rand&nbsp;()</tt> 
+ <tt>rand&nbsp;()</tt>  <br>
+returns the next pseudo-random number. 
 </p>
 </li>
-
-        <ul>
-
-  returns the next pseudo-random number. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>seed&nbsp;()</tt> 
+ <tt>seed&nbsp;()</tt>  <br>
+returns a random word from <tt>/dev/random</tt>.  Useful as an arg to  <tt>srand</tt>.  If <tt>/dev/random</tt> can not be read from,   <tt>seed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>seed</tt> may block  until enough random bits are available. 
 </p>
 </li>
-
-        <ul>
-
-  returns a random word from <tt>/dev/random</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/random</tt> can not be read from,    <tt>seed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>seed</tt> may block   until enough random bits are available. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>srand&nbsp;w</tt> 
+ <tt>srand&nbsp;w</tt>  <br>
+sets the seed used by <tt>rand</tt> to <tt>w</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  sets the seed used by <tt>rand</tt> to <tt>w</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>useed&nbsp;()</tt> 
+ <tt>useed&nbsp;()</tt>  <br>
+returns a random word from <tt>/dev/urandom</tt>.  Useful as an arg to  <tt>srand</tt>.  If <tt>/dev/urandom</tt> can not be read from,   <tt>useed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>useed</tt> will never  block -- it will instead return lower quality random bits. 
 </p>
 </li>
-
-        <ul>
-
-  returns a random word from <tt>/dev/urandom</tt>.  Useful as an arg to   <tt>srand</tt>.  If <tt>/dev/urandom</tt> can not be read from,    <tt>useed&nbsp;()</tt> returns <tt>NONE</tt>.  A call to <tt>useed</tt> will never   block -- it will instead return lower quality random bits. </ul>
-
 </ul>
 
 </div>
@@ -151,5 +117,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-02 04:22:31 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:45:02 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

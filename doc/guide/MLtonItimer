@@ -76,26 +76,16 @@ urchinTracker();
 
     <li>
 <p>
- <tt>set&nbsp;(t,&nbsp;{interval,&nbsp;value})</tt> 
+ <tt>set&nbsp;(t,&nbsp;{interval,&nbsp;value})</tt>  <br>
+sets the interval timer (using <tt>setitimer</tt>) specified by <tt>t</tt> to  the given <tt>interval</tt> and <tt>value</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  sets the interval timer (using <tt>setitimer</tt>) specified by <tt>t</tt> to   the given <tt>interval</tt> and <tt>value</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>signal&nbsp;t</tt> 
+ <tt>signal&nbsp;t</tt>  <br>
+returns the signal corresponding to <tt>t</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  returns the signal corresponding to <tt>t</tt>. </ul>
-
 </ul>
 
 </div>
@@ -104,5 +94,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-01 22:27:07 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:44:18 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

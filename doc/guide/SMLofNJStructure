@@ -94,122 +94,64 @@ urchinTracker();
 
     <li>
 <p>
- <tt>structure&nbsp;Cont</tt> 
+ <tt>structure&nbsp;Cont</tt>  <br>
+implements continuations. 
 </p>
 </li>
-
-        <ul>
-
-  implements continuations. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>SysInfo.getHostArch&nbsp;()</tt> 
+ <tt>SysInfo.getHostArch&nbsp;()</tt>  <br>
+returns the string for the architecture. 
 </p>
 </li>
-
-        <ul>
-
-  returns the string for the architecture. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>SysInfo.getOSKind</tt> 
+ <tt>SysInfo.getOSKind</tt>  <br>
+returns the OS kind. 
 </p>
 </li>
-
-        <ul>
-
-  returns the OS kind. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>SysInfo.getOSName&nbsp;()</tt> 
+ <tt>SysInfo.getOSName&nbsp;()</tt>  <br>
+returns the string for the host. 
 </p>
 </li>
-
-        <ul>
-
-  returns the string for the host. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>exnHistory</tt> 
+ <tt>exnHistory</tt>  <br>
+the same as <tt>MLton.Exn.history</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the same as <tt>MLton.Exn.history</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>getCmdName&nbsp;()</tt> 
+ <tt>getCmdName&nbsp;()</tt>  <br>
+the same as <tt>CommandLine.name&nbsp;()</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the same as <tt>CommandLine.name&nbsp;()</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>getArgs&nbsp;()</tt> 
+ <tt>getArgs&nbsp;()</tt>  <br>
+the same as <tt>CommandLine.arguments&nbsp;()</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the same as <tt>CommandLine.arguments&nbsp;()</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>getAllArgs&nbsp;()</tt> 
+ <tt>getAllArgs&nbsp;()</tt>  <br>
+the same as <tt>getCmdName()::getArgs()</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the same as <tt>getCmdName()::getArgs()</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>exportFn&nbsp;f</tt> 
+ <tt>exportFn&nbsp;f</tt>  <br>
+saves the state of the computation to a file that will apply <tt>f</tt>  to the command-line arguments upon restart. 
 </p>
 </li>
-
-        <ul>
-
-  saves the state of the computation to a file that will apply <tt>f</tt>   to the command-line arguments upon restart. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>exportML&nbsp;f</tt> 
+ <tt>exportML&nbsp;f</tt>  <br>
+saves the state of the computation to file <tt>f</tt> and continue.  Returns <tt>true</tt> in the restarted computation and <tt>false</tt> in  the continuing computation. 
 </p>
 </li>
-
-        <ul>
-
-  saves the state of the computation to file <tt>f</tt> and continue.   Returns <tt>true</tt> in the restarted computation and <tt>false</tt> in   the continuing computation. </ul>
-
 </ul>
 
 </div>
@@ -218,5 +160,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-02 02:31:55 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 03:46:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

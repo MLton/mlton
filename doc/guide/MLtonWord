@@ -73,50 +73,28 @@ urchinTracker();
 
     <li>
 <p>
- <tt>type&nbsp;t</tt> 
+ <tt>type&nbsp;t</tt>  <br>
+the type of words.  For <tt>MLton.LargeWord</tt> this is <tt>LargeWord.word</tt>, for <tt>MLton.Word</tt> this is <tt>Word.word</tt>, for <tt>MLton.Word8</tt> this is <tt>Word8.word</tt>, for <tt>MLton.Word16</tt> this is <tt>Word16.word</tt>, for <tt>MLton.Word32</tt> this is <tt>Word32.word</tt>, for <tt>MLton.Word64</tt> this is <tt>Word64.word</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  the type of words.  For <tt>MLton.LargeWord</tt> this is <tt>LargeWord.word</tt>, for <tt>MLton.Word</tt> this is <tt>Word.word</tt>, for <tt>MLton.Word8</tt> this is <tt>Word8.word</tt>, for <tt>MLton.Word16</tt> this is <tt>Word16.word</tt>, for <tt>MLton.Word32</tt> this is <tt>Word32.word</tt>, for <tt>MLton.Word64</tt> this is <tt>Word64.word</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>bswap&nbsp;w</tt> 
+ <tt>bswap&nbsp;w</tt>  <br>
+byte swap. 
 </p>
 </li>
-
-        <ul>
-
-  byte swap. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>rol&nbsp;(w,&nbsp;w')</tt> 
+ <tt>rol&nbsp;(w,&nbsp;w')</tt>  <br>
+rotates left (circular). 
 </p>
 </li>
-
-        <ul>
-
-  rotates left (circular). 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>ror&nbsp;(w,&nbsp;w')</tt> 
+ <tt>ror&nbsp;(w,&nbsp;w')</tt>  <br>
+rotates right (circular). 
 </p>
 </li>
-
-        <ul>
-
-  rotates right (circular). </ul>
-
 </ul>
 
 </div>
@@ -125,5 +103,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2007-08-13 20:56:53 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:58 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

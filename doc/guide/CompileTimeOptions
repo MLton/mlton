@@ -64,467 +64,295 @@ With no arguments, MLton prints the version number and exits.  For a usage messa
 
     <li>
 <p>
- <tt>-align&nbsp;{4|8}</tt> 
+ <tt>-align&nbsp;{4|8}</tt>  <br>
+Aligns object sizes and doubles in memory by the specified  alignment.  The default varies depending on architecture. 
 </p>
 </li>
-
-            <ul>
-
-   Aligns object sizes and doubles in memory by the specified    alignment.  The default varies depending on architecture. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-as-opt&nbsp;</tt><em>option</em> 
+ <tt>-as-opt&nbsp;</tt><em>option</em>  <br>
+Pass <em>option</em> to <tt>gcc</tt> when assembling. 
 </p>
 </li>
-
-            <ul>
-
-   Pass <em>option</em> to <tt>gcc</tt> when assembling. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-cc-opt&nbsp;</tt><em>option</em> 
+ <tt>-cc-opt&nbsp;</tt><em>option</em>  <br>
+Pass <em>option</em> to <tt>gcc</tt> when compiling C code. 
 </p>
 </li>
-
-            <ul>
-
-   Pass <em>option</em> to <tt>gcc</tt> when compiling C code. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}</tt> 
+ <tt>-codegen&nbsp;{native|x86|amd64|c|bytecode}</tt>  <br>
+Generate native code, byte code, or C code.  With  <tt>-codegen&nbsp;native</tt> (<tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>), MLton typically  compiles more quickly and generates better code. 
 </p>
 </li>
-
-            <ul>
-
-   Generate native code, byte code, or C code.  With    <tt>-codegen&nbsp;native</tt> (<tt>-codegen&nbsp;x86</tt> or <tt>-codegen&nbsp;amd64</tt>), MLton typically    compiles more quickly and generates better code. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-const&nbsp;'</tt><em>name</em><tt>&nbsp;</tt><em>value</em><tt>'</tt> 
+ <tt>-const&nbsp;'</tt><em>name</em><tt>&nbsp;</tt><em>value</em><tt>'</tt>  <br>
+Set the value of a compile-time constant.  Here is a list of  available constants, their default values, and what they control. 
 </p>
 </li>
-
-            <ul>
-
-   Set the value of a compile-time constant.  Here is a list of    available constants, their default values, and what they control. 
-            </ul>
-
-
 
         <ul>
 
         <li>
 <p>
- <tt>Exn.keepHistory&nbsp;{false|true}</tt> 
+ <tt>Exn.keepHistory&nbsp;{false|true}</tt>   <br>
+Enable <tt>MLton.Exn.history</tt>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is   a performance cost to setting this to <tt>true</tt>, both in memory   usage of exceptions and in run time, because of additional work   that must be performed at each exception construction, raise, and   handle. 
 </p>
 </li>
-
-                <ul>
-
-    Enable <tt>MLton.Exn.history</tt>.  See <a href="MLtonExn">MLtonExn</a> for details.  There is     a performance cost to setting this to <tt>true</tt>, both in memory     usage of exceptions and in run time, because of additional work     that must be performed at each exception construction, raise, and     handle. 
-                </ul>
-
-
 
         </ul>
 
 
     <li class="gap">
 <p>
- <tt>-default-ann&nbsp;</tt><em>ann</em> 
+ <tt>-default-ann&nbsp;</tt><em>ann</em>  <br>
+Specify default <a href="MLBasisAnnotations">ML Basis annotations</a>.  For  example, <tt>-default-ann&nbsp;'warnUnused&nbsp;true'</tt> causes unused  variable warnings to be enabled by default.  A default is  overridden by the corresponding annotation in an ML Basis file. 
 </p>
 </li>
-
-            <ul>
-
-   Specify default <a href="MLBasisAnnotations">ML Basis annotations</a>.  For    example, <tt>-default-ann&nbsp;'warnUnused&nbsp;true'</tt> causes unused    variable warnings to be enabled by default.  A default is    overridden by the corresponding annotation in an ML Basis file. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-default-type&nbsp;</tt><em>type</em> 
+ <tt>-default-type&nbsp;</tt><em>type</em>  <br>
+Specify the default binding for a primitive type.  For example,  <tt>-default-type&nbsp;word64</tt> causes the top-level type <tt>word</tt>  and the top-level structure <tt>Word</tt> in the   <a href="BasisLibrary">Basis Library</a> to be equal to <tt>Word64.word</tt> and <tt>Word64:WORD</tt>,  respectively.  Similarly, <tt>-default-type&nbsp;intinf</tt> causes the  top-level type <tt>int</tt> and the top-level structure <tt>Int</tt> in  the <a href="BasisLibrary">Basis Library</a> to be equal to <tt>IntInf.int</tt>  and <tt>IntInf:INTEGER</tt>, respectively. 
 </p>
 </li>
-
-            <ul>
-
-   Specify the default binding for a primitive type.  For example,    <tt>-default-type&nbsp;word64</tt> causes the top-level type <tt>word</tt>    and the top-level structure <tt>Word</tt> in the     <a href="BasisLibrary">Basis Library</a> to be equal to <tt>Word64.word</tt> and <tt>Word64:WORD</tt>,    respectively.  Similarly, <tt>-default-type&nbsp;intinf</tt> causes the    top-level type <tt>int</tt> and the top-level structure <tt>Int</tt> in    the <a href="BasisLibrary">Basis Library</a> to be equal to <tt>IntInf.int</tt>    and <tt>IntInf:INTEGER</tt>, respectively. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-disable-ann&nbsp;</tt><em>ann</em> 
-</p>
-</li>
-
-            <ul>
-
-   Ignore the specified <a href="MLBasisAnnotations">ML Basis annotation</a> in    every ML Basis file.  For example, to see <em>all</em> match and unused    warnings, compile with 
+ <tt>-disable-ann&nbsp;</tt><em>ann</em>  <br>
+Ignore the specified <a href="MLBasisAnnotations">ML Basis annotation</a> in  every ML Basis file.  For example, to see <em>all</em> match and unused  warnings, compile with 
 <pre>-default-ann 'warnUnused true'
 -disable-ann forceUsed 
 -disable-ann nonexhaustiveMatch
 -disable-ann redundantMatch
 -disable-ann warnUnused
 </pre>
-            </ul>
-
-
-    <li class="gap">
-<p>
- <tt>-export-header&nbsp;</tt><em>file</em> 
 </p>
 </li>
-
-            <ul>
-
-   Write C prototypes to <em>file</em> for all of the functions in the    program <a href="CallingFromCToSML">exported from SML to C</a>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-ieee-fp&nbsp;</tt>{false|true} 
+ <tt>-export-header&nbsp;</tt><em>file</em>  <br>
+Write C prototypes to <em>file</em> for all of the functions in the  program <a href="CallingFromCToSML">exported from SML to C</a>. 
 </p>
 </li>
-
-            <ul>
-
-   Cause the native code generator to be pedantic about following the    IEEE floating point standard.  By default, it is not, because of    the performance cost.  This only has an effect with     <tt>-codegen&nbsp;x86</tt>.  
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-inline&nbsp;</tt><em>n</em> 
+ <tt>-ieee-fp&nbsp;</tt>{false|true}  <br>
+Cause the native code generator to be pedantic about following the  IEEE floating point standard.  By default, it is not, because of  the performance cost.  This only has an effect with   <tt>-codegen&nbsp;x86</tt>.  
 </p>
 </li>
-
-            <ul>
-
-   Set the inlining threshold used in the optimizer.  The threshold is    an approximate measure of code size of a procedure.  The default is    <tt>320</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-keep&nbsp;{g|o|sml}</tt> 
+ <tt>-inline&nbsp;</tt><em>n</em>  <br>
+Set the inlining threshold used in the optimizer.  The threshold is  an approximate measure of code size of a procedure.  The default is  <tt>320</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   Save intermediate files.  If no <tt>-keep</tt> argument is given, then    only the output file is saved. 
+    <li class="gap">
+<p>
+ <tt>-keep&nbsp;{g|o|sml}</tt>  <br>
+Save intermediate files.  If no <tt>-keep</tt> argument is given, then  only the output file is saved. 
 <div>
 <table>
-   <tr>
+ <tr>
 <td>
  <tt>g</tt> </td>
 <td>
  generated <tt>.S</tt> and <tt>.c</tt> files passed to gcc and the assembler </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>o</tt> </td>
 <td>
  object (<tt>.o</tt>) files </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>sml</tt> </td>
 <td>
  SML file </td>
 </tr>
+
+</p>
 </table>
 </div>
-
-            </ul>
-
-
+</li>
     <li class="gap">
 <p>
- <tt>-link-opt&nbsp;</tt><em>option</em> 
+ <tt>-link-opt&nbsp;</tt><em>option</em>  <br>
+Pass <em>option</em> to <tt>gcc</tt> when linking.  You can use this to  specify library search paths, e.g. <tt>-link-opt&nbsp;-Lpath</tt>, and  libraries to link with, e.g. <tt>-link-opt&nbsp;-lfoo</tt>, or even both at  the same time, e.g. <tt>-link-opt&nbsp;'-Lpath&nbsp;-lfoo'</tt>.  If you wish to  pass an option to the linker, you must use <tt>gcc</tt>'s <tt>-Wl,</tt>  syntax, e.g., <tt>-link-opt&nbsp;'-Wl,--export-dynamic'</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   Pass <em>option</em> to <tt>gcc</tt> when linking.  You can use this to    specify library search paths, e.g. <tt>-link-opt&nbsp;-Lpath</tt>, and    libraries to link with, e.g. <tt>-link-opt&nbsp;-lfoo</tt>, or even both at    the same time, e.g. <tt>-link-opt&nbsp;'-Lpath&nbsp;-lfoo'</tt>.  If you wish to    pass an option to the linker, you must use <tt>gcc</tt>'s <tt>-Wl,</tt>    syntax, e.g., <tt>-link-opt&nbsp;'-Wl,--export-dynamic'</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-mlb-path-map&nbsp;</tt><em>file</em> 
+ <tt>-mlb-path-map&nbsp;</tt><em>file</em>  <br>
+Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define  additional MLB path variables.  Multiple uses of  <tt>-mlb-path-map</tt> are allowed, with variable definitions in later  path maps taking precedence over earlier ones. 
 </p>
 </li>
-
-            <ul>
-
-   Use <em>file</em> as an <a href="MLBasisPathMap">ML Basis path map</a> to define    additional MLB path variables.  Multiple uses of    <tt>-mlb-path-map</tt> are allowed, with variable definitions in later    path maps taking precedence over earlier ones. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-output&nbsp;</tt><em>file</em> 
+ <tt>-output&nbsp;</tt><em>file</em>  <br>
+Specify the name of the final output file. The default name is the  input file name with its suffix removed and an appropriate,  possibly empty, suffix added. 
 </p>
 </li>
-
-            <ul>
-
-   Specify the name of the final output file. The default name is the    input file name with its suffix removed and an appropriate,    possibly empty, suffix added. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-profile&nbsp;{no|alloc|count|time}</tt> 
+ <tt>-profile&nbsp;{no|alloc|count|time}</tt>  <br>
+Produce an executable that gathers <a href="Profiling">Profiling</a> data.  When  such an executable is run, it produces an <tt>mlmon.out</tt> file. 
 </p>
 </li>
-
-            <ul>
-
-   Produce an executable that gathers <a href="Profiling">Profiling</a> data.  When    such an executable is run, it produces an <tt>mlmon.out</tt> file. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-profile-branch&nbsp;{false|true}</tt> 
+ <tt>-profile-branch&nbsp;{false|true}</tt>  <br>
+If true, the profiler will separately gather profiling data for   each branch of a function definition, <tt>case</tt> expression, and  <tt>if</tt> expression.  
 </p>
 </li>
-
-            <ul>
-
-   If true, the profiler will separately gather profiling data for     each branch of a function definition, <tt>case</tt> expression, and    <tt>if</tt> expression.  
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-profile-stack&nbsp;{false|true}</tt> 
+ <tt>-profile-stack&nbsp;{false|true}</tt>  <br>
+If <tt>true</tt>, the executable will gather profiling data for all  functions on the stack, not just the currently executing function.  See <a href="ProfilingTheStack">ProfilingTheStack</a>. 
 </p>
 </li>
-
-            <ul>
-
-   If <tt>true</tt>, the executable will gather profiling data for all    functions on the stack, not just the currently executing function.    See <a href="ProfilingTheStack">ProfilingTheStack</a>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-profile-val&nbsp;{false|true}</tt> 
+ <tt>-profile-val&nbsp;{false|true}</tt>  <br>
+If <tt>true</tt>, the profiler will separately gather profiling data  for each (expansive) <tt>val</tt> declaration. 
 </p>
 </li>
-
-            <ul>
-
-   If <tt>true</tt>, the profiler will separately gather profiling data    for each (expansive) <tt>val</tt> declaration. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-runtime&nbsp;</tt><em>arg</em> 
+ <tt>-runtime&nbsp;</tt><em>arg</em>  <br>
+Pass argument to the runtime system via <tt>@MLton</tt>.  See  <a href="RunTimeOptions">RunTimeOptions</a>.  The argument will be processed before other  <tt>@MLton</tt> command line switches.  Multiple uses of  <tt>-runtime</tt> are allowed, and will pass all the arguments in  order.  If the same runtime switch occurs more than once, then the  last setting will take effect.  There is no need to supply the  leading <tt>@MLton</tt> or the trailing <tt>--</tt>; these will be  supplied automatically. 
 </p>
-</li>
-
-            <ul>
-
-   Pass argument to the runtime system via <tt>@MLton</tt>.  See    <a href="RunTimeOptions">RunTimeOptions</a>.  The argument will be processed before other    <tt>@MLton</tt> command line switches.  Multiple uses of    <tt>-runtime</tt> are allowed, and will pass all the arguments in    order.  If the same runtime switch occurs more than once, then the    last setting will take effect.  There is no need to supply the    leading <tt>@MLton</tt> or the trailing <tt>--</tt>; these will be    supplied automatically. <p>
-   An argument to <tt>-runtime</tt> may contain spaces, which will cause    the argument to be treated as a sequence of words by the runtime.    For example the command line: 
+<p>
+ An argument to <tt>-runtime</tt> may contain spaces, which will cause  the argument to be treated as a sequence of words by the runtime.  For example the command line: 
 </p>
-   
+ 
 <pre>mlton -runtime 'ram-slop 0.4' foo.sml</pre><p>
-   will cause <tt>foo</tt> to run as if it had been called like: 
+ will cause <tt>foo</tt> to run as if it had been called like: 
 </p>
-   
+ 
 <pre>foo @MLton ram-slop 0.4 --</pre><p>
-   An executable created with <tt>-runtime&nbsp;stop</tt> doesn't process any    <tt>@MLton</tt> arguments.  This is useful to create an executable,    e.g. <tt>echo</tt>, that must treat <tt>@MLton</tt> like any other    command-line argument.  
+ An executable created with <tt>-runtime&nbsp;stop</tt> doesn't process any  <tt>@MLton</tt> arguments.  This is useful to create an executable,  e.g. <tt>echo</tt>, that must treat <tt>@MLton</tt> like any other  command-line argument.  
 </p>
-   
+ 
 <pre>% mlton -runtime stop echo.sml
 % echo @MLton --
-@MLton --</pre>
-            </ul>
-
-
+@MLton --</pre></li>
     <li class="gap">
 <p>
- <tt>-show-basis&nbsp;</tt><em>file</em> 
+ <tt>-show-basis&nbsp;</tt><em>file</em>  <br>
+Pretty print to <em>file</em> the basis defined by the input program.  See <a href="ShowBasis">ShowBasis</a>. 
 </p>
 </li>
-
-            <ul>
-
-   Pretty print to <em>file</em> the basis defined by the input program.    See <a href="ShowBasis">ShowBasis</a>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-show-def-use&nbsp;</tt><em>file</em> 
+ <tt>-show-def-use&nbsp;</tt><em>file</em>  <br>
+Output def-use information to <em>file</em>.  Each identifier that is  defined appears on a line, followed on subsequent lines by the  position of each use. 
 </p>
 </li>
-
-            <ul>
-
-   Output def-use information to <em>file</em>.  Each identifier that is    defined appears on a line, followed on subsequent lines by the    position of each use. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-stop&nbsp;{f|g|o|sml|tc}</tt> 
-</p>
-</li>
-
-            <ul>
-
-   Specify when to stop. 
+ <tt>-stop&nbsp;{f|g|o|sml|tc}</tt>  <br>
+Specify when to stop. 
 <div>
 <table>
-   <tr>
+ <tr>
 <td>
  <tt>f</tt> </td>
 <td>
  list of files on stdout (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>g</tt> </td>
 <td>
  generated <tt>.S</tt> and <tt>.c</tt> files </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>o</tt> </td>
 <td>
  object (<tt>.o</tt>) files </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>sml</tt> </td>
 <td>
  SML file (only makes sense when input is <tt>foo.cm</tt> or <tt>foo.mlb</tt>) </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>tc</tt> </td>
 <td>
 after type checking </td>
 </tr>
+
+</p>
 </table>
 </div>
 <p>
-   If you compile with <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume    compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>    or <tt>.o</tt> files.  
-</p>
-
-            </ul>
-
-
-    <li class="gap">
-<p>
- <tt>-target&nbsp;{self|</tt><em>...</em><tt>}</tt> 
+ If you compile with <tt>-stop&nbsp;g</tt> or <tt>-stop&nbsp;o</tt>, you can resume  compilation by running MLton on the generated <tt>.c</tt> and <tt>.S</tt>  or <tt>.o</tt> files.  
 </p>
 </li>
-
-            <ul>
-
-   Generate an executable that runs on the specified platform.  The    default is <tt>self</tt>, which means to compile for the machine that    MLton is running on.  To use any other target, you must first    install a <a href="CrossCompiling"> cross compiler</a>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-target-as-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
+ <tt>-target&nbsp;{self|</tt><em>...</em><tt>}</tt>  <br>
+Generate an executable that runs on the specified platform.  The  default is <tt>self</tt>, which means to compile for the machine that  MLton is running on.  To use any other target, you must first  install a <a href="CrossCompiling"> cross compiler</a>. 
 </p>
 </li>
-
-            <ul>
-
-   Like <tt>-as-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    assembling, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em>    are: <tt>amd64</tt>, <tt>hppa</tt>, <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>,    <tt>cygwin</tt>, <tt>darwin</tt>, <tt>freebsd</tt>, <tt>hpux</tt>, <tt>linux</tt>,    <tt>mingw</tt>, <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-target-cc-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
+ <tt>-target-as-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em>  <br>
+Like <tt>-as-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when  assembling, except it only passes <em>option</em> when the target architecture  or operating system is <em>target</em>.  Valid values for <em>target</em>  are: <tt>amd64</tt>, <tt>hppa</tt>, <tt>powerpc</tt>, <tt>sparc</tt>, <tt>x86</tt>,  <tt>cygwin</tt>, <tt>darwin</tt>, <tt>freebsd</tt>, <tt>hpux</tt>, <tt>linux</tt>,  <tt>mingw</tt>, <tt>netbsd</tt>, <tt>openbsd</tt>, <tt>solaris</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   Like <tt>-cc-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when compiling    C code, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em> are    as for <tt>-target-as-opt</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-target-link-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em> 
+ <tt>-target-cc-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em>  <br>
+Like <tt>-cc-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when compiling  C code, except it only passes <em>option</em> when the target architecture  or operating system is <em>target</em>.  Valid values for <em>target</em> are  as for <tt>-target-as-opt</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   Like <tt>-link-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when    linking, except it only passes <em>option</em> when the target architecture    or operating system is <em>target</em>.  Valid values for <em>target</em> are    as for <tt>-target-as-opt</tt>. 
-            </ul>
-
-
     <li class="gap">
 <p>
- <tt>-verbose&nbsp;{0|1|2|3}</tt> 
+ <tt>-target-link-opt&nbsp;</tt><em>target</em><tt>&nbsp;</tt><em>option</em>  <br>
+Like <tt>-link-opt</tt>, this passes <em>option</em> to <tt>gcc</tt> when  linking, except it only passes <em>option</em> when the target architecture  or operating system is <em>target</em>.  Valid values for <em>target</em> are  as for <tt>-target-as-opt</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   How verbose to be about what passes are running.  The default is    <tt>0</tt>. 
+    <li class="gap">
+<p>
+ <tt>-verbose&nbsp;{0|1|2|3}</tt>  <br>
+How verbose to be about what passes are running.  The default is  <tt>0</tt>. 
 <div>
 <table>
-   <tr>
+ <tr>
 <td>
  <tt>0</tt> </td>
 <td>
  silent </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>1</tt> </td>
 <td>
  calls to compiler, assembler, and linker </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>2</tt> </td>
 <td>
  1, plus intermediate compiler passes </td>
 </tr>
-   <tr>
+ <tr>
 <td>
  <tt>3</tt> </td>
 <td>
  2, plus some data structure sizes </td>
 </tr>
+
+</p>
 </table>
 </div>
-</ul>
-
+</li>
 </ul>
 
 </div>
@@ -533,5 +361,5 @@ after type checking </td>
 
 <p>
 <hr>
-Last edited on 2007-08-13 18:53:50 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:01:06 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

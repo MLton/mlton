@@ -274,64 +274,34 @@ The <tt>MLton</tt> structure contains a lot of functionality that is not availab
 
     <li>
 <p>
- <tt>eq&nbsp;(x,&nbsp;y)</tt> 
+ <tt>eq&nbsp;(x,&nbsp;y)</tt>  <br>
+returns true if <tt>x</tt> and <tt>y</tt> are equal as pointers.  For  simple types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt>, this is the  same as equals.  For arrays, datatypes, strings, tuples, and vectors,  this is a simple pointer equality.  The semantics is a bit murky. 
 </p>
 </li>
-
-        <ul>
-
-  returns true if <tt>x</tt> and <tt>y</tt> are equal as pointers.  For   simple types like <tt>char</tt>, <tt>int</tt>, and <tt>word</tt>, this is the   same as equals.  For arrays, datatypes, strings, tuples, and   vectors, this is a simple pointer equality.  The semantics is a bit   murky. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>isMLton</tt> 
+ <tt>isMLton</tt>  <br>
+is always true in a MLton implementation, and is always false in a  stub implementation. 
 </p>
 </li>
-
-        <ul>
-
-  is always true in a MLton implementation, and is always false in a   stub implementation. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>share&nbsp;x</tt> 
+ <tt>share&nbsp;x</tt>  <br>
+maximizes sharing in the heap for the object graph reachable from  <tt>x</tt>. 
 </p>
 </li>
-
-        <ul>
-
-  maximizes sharing in the heap for the object graph reachable from   <tt>x</tt>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>shareAll&nbsp;()</tt> 
+ <tt>shareAll&nbsp;()</tt>  <br>
+maximizes sharing in the heap by sharing space for equivalent  immutable objects.  A call to <tt>shareAll</tt> performs a major garbage  collection, and takes time proportional to the size of the heap. 
 </p>
 </li>
-
-        <ul>
-
-  maximizes sharing in the heap by sharing space for equivalent   immutable objects.  A call to <tt>shareAll</tt> performs a major   garbage collection, and takes time proportional to the size of the   heap. 
-        </ul>
-
-
     <li class="gap">
 <p>
- <tt>size&nbsp;x</tt> 
+ <tt>size&nbsp;x</tt>  <br>
+returns the amount of heap space (in bytes) taken by the value of  <tt>x</tt>, including all objects reachable from <tt>x</tt> by following  pointers.  It takes time proportional to the size of <tt>x</tt>.  See  below for an example. 
 </p>
 </li>
-
-        <ul>
-
-  returns the amount of heap space (in bytes) taken by the value of   <tt>x</tt>, including all objects reachable from <tt>x</tt> by following   pointers.  It takes time proportional to the size of <tt>x</tt>.  See   below for an example. 
-        </ul>
-
-
 
     </ul>
 
@@ -421,5 +391,5 @@ The size of a continuation option ref is &lt; 1000.
 
 <p>
 <hr>
-Last edited on 2007-08-13 22:53:51 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 03:45:32 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

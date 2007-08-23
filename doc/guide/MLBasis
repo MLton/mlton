@@ -72,7 +72,7 @@ Explicit file order: The order of files (and, hence, the order of  evaluation) i
 </li>
     <li class="gap">
 <p>
-Implicit dependencies: A source file (corresponding to a SML  top-level declaration) is elaborated in the environment described by  preceding declarations.  It is not necessary to explicitly list the  dependencies of a file. 
+Implicit dependencies: A source file (corresponding to an SML  top-level declaration) is elaborated in the environment described by  preceding declarations.  It is not necessary to explicitly list the  dependencies of a file. 
 </p>
 </li>
     <li class="gap">
@@ -126,5 +126,5 @@ No naming convention for finding the file that defines a module.  To import a mo
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:06:43 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 04:24:53 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
