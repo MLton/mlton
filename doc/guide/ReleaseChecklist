@@ -274,6 +274,16 @@ This ensures that the guide distributed with the release looks updated for the r
 </li>
         <li>
 <p>
+ Make sure that <strong>ReleaseYYYYMMDD</strong> and <strong>BugsYYYYMMDD</strong> are added to the repository. 
+</p>
+</li>
+        <li>
+<p>
+ Make sure that <strong>ReleaseYYYYMM??</strong> and <strong>BugsYYYYMM??</strong> are removed from the repository (if they were added during the advanced preparation). 
+</p>
+</li>
+        <li>
+<p>
  Commit changes to <tt>doc/guide</tt>. 
 </p>
 </li>
@@ -520,5 +530,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2007-08-24 20:38:33 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-24 21:39:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

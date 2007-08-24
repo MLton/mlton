@@ -221,52 +221,28 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
     <li>
 <p>
- Supports the full SML 97 language as given in <a href="DefinitionOfStandardML">The Definition of Standard ML (Revised)</a>.  
+ Supports the full SML 97 language as given in <a href="DefinitionOfStandardML">The Definition of Standard ML (Revised)</a>.   <br>
+If there is a program that is valid according to The Definition that  is rejected by MLton, or a program that is invalid according to the  Definition that is accepted by MLton, it is a bug.  For a list of  known bugs, see <a href="UnresolvedBugs">UnresolvedBugs</a>. 
 </p>
 </li>
-
-        <ul>
-
-  If there is a program that is valid according to The Definition that   is rejected by MLton, or a program that is invalid according to the   Definition that is accepted by MLton, it is a bug.  For a list of   known bugs, see <a href="UnresolvedBugs">UnresolvedBugs</a>. 
-        </ul>
-
-
     <li class="gap">
 <p>
- A complete implementation of the <a href="BasisLibrary">Basis Library</a>. 
+ A complete implementation of the <a href="BasisLibrary">Basis Library</a>.  <br>
+MLton's implementation matches latest Basis Library specification,  and includes a complete implementation of all the required modules,  as well as many of the optional modules. 
 </p>
 </li>
-
-        <ul>
-
-  MLton's implementation matches latest Basis Library specification,   and includes a complete implementation of all the required modules,   as well as many of the optional modules. 
-        </ul>
-
-
     <li class="gap">
 <p>
- Generates standalone executables. 
+ Generates standalone executables.  <br>
+No additional code or libraries are necessary in order to run an  executable, except for the standard shared libraries.  MLton can  also generate statically linked executables. 
 </p>
 </li>
-
-        <ul>
-
-  No additional code or libraries are necessary in order to run an   executable, except for the standard shared libraries.  MLton can   also generate statically linked executables. 
-        </ul>
-
-
     <li class="gap">
 <p>
- Compiles large programs. 
+ Compiles large programs.  <br>
+MLton is sufficiently efficient and robust that it can compile large  programs, including itself (over 140K lines).  The distributed  version of MLton was compiled by MLton. 
 </p>
 </li>
-
-        <ul>
-
-  MLton is sufficiently efficient and robust that it can compile large   programs, including itself (over 140K lines).  The distributed   version of MLton was compiled by MLton. 
-        </ul>
-
-
     <li class="gap">
 <p>
  Support for large amounts of memory (up to 4G on 32-bit systems; more on 64-bit systems). 
@@ -297,40 +273,22 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
     <li class="gap">
 <p>
- Generates small executables. 
+ Generates small executables.  <br>
+MLton takes advantage of whole-program compilation to perform very  aggressive dead-code elimination, which often leads to smaller  executables than with other SML compilers. 
 </p>
 </li>
-
-        <ul>
-
-  MLton takes advantage of whole-program compilation to perform very   aggressive dead-code elimination, which often leads to smaller   executables than with other SML compilers. 
-        </ul>
-
-
     <li class="gap">
 <p>
- Native integers, reals, and words. 
+ Native integers, reals, and words.  <br>
+In MLton, integers and words are 32 bits and arithmetic does not  have any overhead due to tagging or boxing.  Also, reals are stored  unboxed, avoiding any overhead due to boxing. 
 </p>
 </li>
-
-        <ul>
-
-  In MLton, integers and words are 32 bits and arithmetic does not   have any overhead due to tagging or boxing.  Also, reals are stored   unboxed, avoiding any overhead due to boxing. 
-        </ul>
-
-
     <li class="gap">
 <p>
- Unboxed native arrays. 
+ Unboxed native arrays.  <br>
+In MLton, an array (or vector) of integers, reals, or words uses the  natural C-like representation.  This is fast and supports easy  exchange of data with C.  Monomorphic arrays (and vectors) use the  same C-like representations as their polymorphic counterparts. 
 </p>
 </li>
-
-        <ul>
-
-  In MLton, an array (or vector) of integers, reals, or words uses the   natural C-like representation.  This is fast and supports easy   exchange of data with C.  Monomorphic arrays (and vectors) use the   same C-like representations as their polymorphic counterparts. 
-        </ul>
-
-
     <li class="gap">
 <p>
  Multiple <a href="GarbageCollection">garbage collection</a> strategies. 
@@ -338,7 +296,8 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 </li>
     <li class="gap">
 <p>
- Fast arbitrary precision arithmetic (<tt>IntInf</tt>) based on the  <a href="GnuMP">GnuMP</a>.  For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or more faster than Poly/ML or SML/NJ.   
+ Fast arbitrary precision arithmetic (<tt>IntInf</tt>) based on the <a href="GnuMP">GnuMP</a>.  <br>
+For <tt>IntInf</tt> intensive programs, MLton can be an order of  magnitude or more faster than Poly/ML or SML/NJ.   
 </p>
 </li>
 
@@ -379,7 +338,7 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
     <li>
 <p>
- A simple and fast C <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> that supports calling  from SML to C and from C to SML.  
+ A simple and fast C <a href="ForeignFunctionInterface">ForeignFunctionInterface</a> that supports calling from SML to C and from C to SML.  
 </p>
 </li>
     <li class="gap">
@@ -397,146 +356,76 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
         <li>
 <p>
- continuations 
+ <a href="MLtonCont">continuations</a>   <br>
+MLton supports continuations via <tt>callcc</tt> and <tt>throw</tt>. 
 </p>
 </li>
-
-            <ul>
-
-   MLton supports continuations via <tt>callcc</tt> and <tt>throw</tt>. 
-            </ul>
-
-
         <li class="gap">
 <p>
- finalization 
+ <a href="MLtonFinalizable">finalization</a>   <br>
+MLton supports finalizable values of arbitrary type. 
 </p>
 </li>
-
-            <ul>
-
-   MLton supports finalizable values of arbitrary type. 
-            </ul>
-
-
         <li class="gap">
 <p>
- interval timers 
+ <a href="MLtonItimer">interval timers</a>   <br>
+MLton supports the functionality of the C <tt>setitimer</tt> function. 
 </p>
 </li>
-
-            <ul>
-
-   MLton supports the functionality of the C <tt>setitimer</tt> function. 
-            </ul>
-
-
         <li class="gap">
 <p>
- random numbers 
+ <a href="MLtonRandom">random numbers</a>   <br>
+MLton has functions similar to the C <tt>rand</tt> and <tt>srand</tt> functions, as well as support for access to <tt>/dev/random</tt> and <tt>/dev/urandom</tt>.  
 </p>
 </li>
-
-            <ul>
-
-   MLton has functions similar to the C <tt>rand</tt> and <tt>srand</tt> functions, as well as support for access to <tt>/dev/random</tt> and <tt>/dev/urandom</tt>.  
-            </ul>
-
-
         <li class="gap">
 <p>
- resource limits 
+ <a href="MLtonRlimit">resource limits</a>   <br>
+MLton has functions similar to the C <tt>getrlimit</tt> and <tt>setrlimit</tt> functions. 
 </p>
 </li>
-
-            <ul>
-
-   MLton has functions similar to the C <tt>getrlimit</tt> and <tt>setrlimit</tt> functions. 
-            </ul>
-
-
         <li class="gap">
 <p>
- resource usage 
+ <a href="MLtonRusage">resource usage</a>   <br>
+MLton supports a subset of the functionality of the C <tt>getrusage</tt> function. 
 </p>
 </li>
-
-            <ul>
-
-   MLton supports a subset of the functionality of the C <tt>getrusage</tt> function. 
-            </ul>
-
-
         <li class="gap">
 <p>
- signal handlers 
+ <a href="MLtonSignal">signal handlers</a>   <br>
+MLton supports signal handlers written in SML.  Signal handlers run   in a separate MLton thread, and have access to the thread that was   interrupted by the signal.  Signal handlers can be used in   conjunction with threads to implement preemptive multitasking. 
 </p>
 </li>
-
-            <ul>
-
-   MLton supports signal handlers written in SML.  Signal handlers run    in a separate MLton thread, and have access to the thread that was    interrupted by the signal.  Signal handlers can be used in    conjunction with threads to implement preemptive multitasking. 
-            </ul>
-
-
         <li class="gap">
 <p>
- size primitive 
+ <a href="MLtonStructure">size primitive</a>   <br>
+MLton includes a primitive that returns the size (in bytes) of any object.  This can be useful in understanding the space behavior of a program. 
 </p>
 </li>
-
-            <ul>
-
-   MLton includes a primitive that returns the size (in bytes) of any object.  This can be useful in understanding the space behavior of a program. 
-            </ul>
-
-
         <li class="gap">
 <p>
- system logging 
+ <a href="MLtonSyslog">system logging</a>   <br>
+MLton has a complete interface to the C <tt>syslog</tt> function. 
 </p>
 </li>
-
-            <ul>
-
-   MLton has a complete interface to the C <tt>syslog</tt> function. 
-            </ul>
-
-
         <li class="gap">
 <p>
- threads 
+ <a href="MLtonThread">threads</a>   <br>
+MLton has support for its own threads, upon which either preemptive or non-preemptive multitasking can be implemented.  MLton also has support for <a href="ConcurrentML">Concurrent ML</a> (CML).  
 </p>
 </li>
-
-            <ul>
-
-   MLton has support for its own threads, upon which either preemptive or non-preemptive multitasking can be implemented.  MLton also has support for <a href="ConcurrentML">Concurrent ML</a> (CML).  
-            </ul>
-
-
         <li class="gap">
 <p>
- weak pointers 
+ <a href="MLtonWeak">weak pointers</a>   <br>
+MLton supports weak pointers, which allow the garbage collector to   reclaim objects that it would otherwise be forced to keep.  Weak   pointers are also used to provide finalization.  
 </p>
 </li>
-
-            <ul>
-
-   MLton supports weak pointers, which allow the garbage collector to    reclaim objects that it would otherwise be forced to keep.  Weak    pointers are also used to provide finalization.  
-            </ul>
-
-
         <li class="gap">
 <p>
- world save and restore 
+ <a href="MLtonWorld">world save and restore</a>   <br>
+MLton has a facility for saving the entire state of a computation to a file and restarting it later.  This facility can be used for staging and for checkpointing computations.  It can even be used from within signal handlers, allowing interrupt driven checkpointing. 
 </p>
 </li>
-
-            <ul>
-
-   MLton has a facility for saving the entire state of a computation to a file and restarting it later.  This facility can be used for staging and for checkpointing computations.  It can even be used from within signal handlers, allowing interrupt driven checkpointing. </ul>
-
 </ul>
 
 </ul>
@@ -547,5 +436,5 @@ MLton has the following features. <h2 id="head-b307b88c84327b1804aee227595be5334
 
 <p>
 <hr>
-Last edited on 2007-08-21 05:14:01 by <span title="82-203-177-2.dsl.gohome.fi">VilleLaurikari</span>.
+Last edited on 2007-08-24 21:51:26 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
