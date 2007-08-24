@@ -55,7 +55,10 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here you can download an archived public release of MLton, version 20051202. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+<p>
+Here you can download the latest public release of MLton, version 20051202.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases. 
+</p>
+<h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
 
         <ul>
 
@@ -259,7 +262,7 @@ Here you can download an archived public release of MLton, version 20051202. <h2
 
 
 <p>
-For a complete list of changes and bug fixes since 20041109, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20041109">Bugs20041109</a>. 
+For a complete list of changes and bug fixes since <a href="Release20041109">Release20041109</a>, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20051202-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20041109">Bugs20041109</a>. 
 </p>
 <h2 id="head-ec8ff1f2507082ab65a958e37a30a259d47ee297">20051202 binary packages</h2>
 
@@ -445,5 +448,5 @@ For a complete list of changes and bug fixes since 20041109, see the <a href = "
 
 <p>
 <hr>
-Last edited on 2007-08-21 20:35:51 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-24 20:21:14 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

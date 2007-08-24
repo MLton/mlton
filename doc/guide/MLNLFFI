@@ -67,8 +67,25 @@ Additionally, MLton has an initial port of the <tt>mlnlffigen</tt> tool from SML
 
     <li>
 <p>
- You can import the ML-NLFFI Library into an MLB file with  <tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt> 
+ You can import the ML-NLFFI Library into an MLB file with 
+<div>
+<table>
+ <tr>
+<td align="center">
+MLB file</td>
+<td align="center">
+Description</td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb</tt></td>
+<td>
+ </td>
+</tr>
+
 </p>
+</table>
+</div>
 </li>
     <li class="gap">
 <p>
@@ -103,5 +120,5 @@ Additionally, MLton has an initial port of the <tt>mlnlffigen</tt> tool from SML
 
 <p>
 <hr>
-Last edited on 2007-05-21 15:12:21 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:24:47 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

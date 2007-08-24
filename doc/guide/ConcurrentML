@@ -91,8 +91,25 @@ Because MLton does not wrap the Basis Library for CML, the "right" way to call a
 
     <li>
 <p>
- You can import the CML Library into an MLB file with  <tt>$(SML_LIB)/cml/cml.mlb</tt> 
+ You can import the CML Library into an MLB file with: 
+<div>
+<table>
+ <tr>
+<td align="center">
+MLB file</td>
+<td align="center">
+Description</td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/cml/cml.mlb</tt></td>
+<td>
+ </td>
+</tr>
+
 </p>
+</table>
+</div>
 </li>
     <li class="gap">
 <p>
@@ -127,5 +144,5 @@ Because MLton does not wrap the Basis Library for CML, the "right" way to call a
 
 <p>
 <hr>
-Last edited on 2005-12-02 03:33:39 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-23 17:24:44 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

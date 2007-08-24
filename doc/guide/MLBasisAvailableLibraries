@@ -108,6 +108,12 @@ Modules used by parsers built with <a class="nonexistent" href="MLYacc">MLYacc</
 </li>
     <li class="gap">
 <p>
+ <tt>$(SML_LIB)/mlrisc-lib/...</tt>  <br>
+<a href="MLRISCLibrary">MLRISCLibrary</a>, a library for retargetable and optimizing compiler back ends. 
+</p>
+</li>
+    <li class="gap">
+<p>
  <tt>$(SML_LIB)/smlnj-lib/...</tt>  <br>
 <a href="SMLNJLibrary">SMLNJLibrary</a>, a collection of libraries distributed with SML/NJ. 
 </p>
@@ -179,5 +185,5 @@ The entire top-level value and type environment of the   Basis Library, with inf
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:20:45 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:13:23 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

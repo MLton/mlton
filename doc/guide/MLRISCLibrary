@@ -65,123 +65,116 @@ As of 20070812, MLton includes a port of the MLRISC Library synchronized with SM
     <li>
 <p>
  You can import a sub-library of the MLRISC Library into an MLB file with: 
-</p>
-</li>
-
-        <ul>
-
-
 <div>
 <table>
-  <tr>
+ <tr>
 <td align="center">
 MLB file</td>
 <td align="center">
 Description</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/ALPHA.mlb</tt></td>
 <td>
 The ALPHA backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb</tt></td>
 <td>
 The AMD64 backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/AMD64-Peephole.mlb</tt></td>
 <td>
 The AMD64 peephole optimizer</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/Control.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/Graphs.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/HPPA.mlb</tt></td>
 <td>
 The HPPA backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/IA32.mlb</tt></td>
 <td>
 The IA32 backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/IA32-Peephole.mlb</tt></td>
 <td>
 The IA32 peephole optimizer</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/Lib.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/MLTREE.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/PPC.mlb</tt></td>
 <td>
 The PPC backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/RA.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/SA.mlb</tt></td>
 <td>
  </td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/SPARC.mlb</tt></td>
 <td>
 The Sparc backend</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/mlrisc-lib/mlb/Visual.mlb</tt></td>
 <td>
  </td>
 </tr>
+
+</p>
 </table>
 </div>
-
-        </ul>
-
-
-    <li>
+</li>
+    <li class="gap">
 <p>
  If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a> to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, note that the following map is included by default: 
 <pre>$SMLNJ-MLRISC   $(SML_LIB)/mlrisc-lib/mlb
@@ -211,7 +204,7 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 </li>
     <li>
 <p>
- eliminate <tt>withtype</tt> in signatures 
+ eliminate <tt>withtype</tt> in signatures. 
 </p>
 </li>
     <li>
@@ -250,5 +243,5 @@ The following changes were made to the MLRISC Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2007-08-16 02:51:35 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:24:50 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

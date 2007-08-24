@@ -97,7 +97,7 @@ returns true iff both <tt>a</tt> and <tt>b</tt> are small.
     <li class="gap">
 <p>
  <tt>gcd&nbsp;(a,&nbsp;b)</tt>  <br>
-uses the <a class="nonexistent" href="GMP">GnuMP's</a> fast gcd implementation. 
+uses the <a href="GnuMP">GnuMP's</a> fast gcd implementation. 
 </p>
 </li>
     <li class="gap">
@@ -138,5 +138,5 @@ returns the underlying representation of <tt>i</tt>.
 
 <p>
 <hr>
-Last edited on 2007-08-23 03:44:09 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 13:54:34 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

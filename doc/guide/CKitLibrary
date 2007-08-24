@@ -66,10 +66,27 @@ As of 20070812, MLton includes a port of the ckit Library synchronized with SML/
 
     <li>
 <p>
- You can import the ckit Library into an MLB file with  <tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt> 
+ You can import the ckit Library into an MLB file with: 
+<div>
+<table>
+ <tr>
+<td align="center">
+MLB file</td>
+<td align="center">
+Description</td>
+</tr>
+ <tr>
+<td>
+<tt>$(SML_LIB)/ckit-lib/ckit-lib.mlb</tt></td>
+<td>
+ </td>
+</tr>
+
 </p>
+</table>
+</div>
 </li>
-    <li>
+    <li class="gap">
 <p>
  If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a>  to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, note that  the following map is included by default: 
 <pre>$ckit-lib.cm/ckit-lib.cm   $(SML_LIB)/ckit-lib/ckit-lib.mlb
@@ -163,5 +180,5 @@ The following changes were made to the ckit Library, in addition to deriving the
 
 <p>
 <hr>
-Last edited on 2007-08-13 02:31:06 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:24:41 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

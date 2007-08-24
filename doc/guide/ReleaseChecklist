@@ -55,9 +55,365 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<h2 id="head-03200545ac3b97defb6680f6be627d65f60d17a2">Before Packaging</h2>
+<h2 id="head-bbf6fecd25db651b73d554ce89c2cce96cd27342">Advance preparation for release</h2>
 
     <ul>
+
+    <li>
+<p>
+ Catch up on <tt>doc/changelog</tt> documentation. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Write summary of changes from previous release. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Update <tt>doc/README</tt> with relevant changes. 
+</p>
+</li>
+    <li>
+<p>
+ Update <tt>man/{mlton,mlprof}.1</tt> with relevant changes and set dates. 
+</p>
+</li>
+    <li>
+<p>
+ Wiki 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Check <a href="OrphanedPages">OrphanedPages</a> and <a href="WantedPages">WantedPages</a>. 
+</p>
+</li>
+        <li>
+<p>
+ <a href="Features">Features</a> page should by synchronized with <tt>doc/README</tt>. 
+</p>
+</li>
+        <li>
+<p>
+ Catch up on <a href="Credits">Credits</a> acknowledgements. 
+</p>
+</li>
+        <li>
+<p>
+ Create <strong>ReleaseYYYYMM??</strong> (i.e., forthcoming release) based on <strong>ReleaseVVVVLLCC</strong> (i.e., previous release). 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ Update summary from <tt>doc/changelog</tt>. 
+</p>
+</li>
+            <li>
+<p>
+ Update attachment, SVN, and Wiki links to estimated release date. 
+</p>
+</li>
+            <li>
+<p>
+ Comment out lists and attachment links under <tt>YYYYMM??&nbsp;binary&nbsp;packages</tt> and <tt>YYYYMM??&nbsp;bsources</tt>. 
+</p>
+</li>
+            <li>
+<p>
+ Ensure page has <tt>#acl&nbsp;All:</tt> 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ Create <strong>BugsYYYYMM??</strong> based on <strong>BugsVVVVLLCC</strong>. 
+</p>
+</li>
+
+            <ul>
+
+            <li>
+<p>
+ Update SVN and Wiki links to estimated release date. 
+</p>
+</li>
+
+            </ul>
+
+
+        <li>
+<p>
+ Spell check pages. 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-5eff189d1b92b9902f7a939b5b3cf155fc41df98">Prepare Wiki for tagging</h2>
+<p>
+This ensures that the guide distributed with the release looks updated for the release. 
+</p>
+
+    <ul>
+
+    <li>
+<p>
+ Rename <strong>ReleaseYYYYMM??</strong> to <strong>ReleaseYYYYMMDD</strong> with proper release date. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Update attachment, SVN, and Wiki links to proper release date. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Rename <strong>BugsYYYYMM??</strong> to <strong>BugsYYYYMMDD</strong> with proper release date. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Update SVN and Wiki links to proper release date. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Update <strong>ReleaseVVVVLLCC</strong>. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Change intro to "<tt>This&nbsp;is&nbsp;an&nbsp;archived&nbsp;public&nbsp;release&nbsp;of&nbsp;MLton,&nbsp;version&nbsp;VVVVLLCC.</tt>" 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Update <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Change <tt>Include(ReleaseVVVVLLCC,&nbsp;"Release&nbsp;VVVVLLCC")</tt> to <tt>Include(ReleaseYYYYMMDD,"Release&nbsp;YYYYMMDD")</tt>. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Update <a href="Home">Home</a> with note of new release. 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-627b9649b75d2172fcfee12092a7f76b8e6dd7c5">Prepare sources for tagging</h2>
+
+    <ul>
+
+    <li>
+<p>
+ Run <tt>bin/grab-wiki</tt> to update <tt>doc/guide</tt>. 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Check that <tt>doc/guide/MLTONWIKIVERSION</tt> has proper release date. 
+</p>
+</li>
+        <li>
+<p>
+ Commit changes to <tt>doc/guide</tt>. 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<h2 id="head-2f229e7357b2cb6c62b989f51925b5d4ebbfaee5">Tag sources</h2>
+
+    <ul>
+
+    <li>
+<p>
+ Shell commands: 
+<pre>svn copy svn+ssh://mlton.org/svnroot/mlton/trunk svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release
+</pre>
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-3a39b68c35be609fae3db651a70893a29f102145">Packaging</h2>
+<h3 id="head-05ea6ff6b56e7d0a5c36b5577602bc6e65acfad7">Source release</h3>
+
+    <ul>
+
+    <li>
+<p>
+ Shell commands: 
+<pre>svn checkout svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release mlton-YYYYMMDD-1
+cd mlton-YYYYMMDD-1
+make clean clean-svn version VERSION=YYYYMMDD RELEASE=1
+cd ..
+tar -czpvf mlton-YYYYMMDD-1.src.tgz mlton-YYYYMMDD-1
+</pre>
+</p>
+</li>
+    <li>
+<p>
+ Update <strong>ReleaseYYYYMMDD</strong> with <tt>mlton-YYYYMMDD-1.src.tgz</tt> attachment. 
+</p>
+</li>
+
+    </ul>
+
+
+<h3 id="head-ec79a21642a39bec29bdea181aba0068a834d958">Binary releases</h3>
+
+    <ul>
+
+    <li>
+<p>
+ Download source release (<tt>mlton-YYYYMMDD-1.src.tgz</tt> from <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>). 
+</p>
+</li>
+    <li>
+<p>
+ Shell commands: 
+<pre>tar -xzpvf mlton-YYYYMMDD-1.src.tgz
+cd mlton-YYYYMMDD-1
+make
+</pre>
+</p>
+</li>
+    <li>
+<p>
+ If your platform doesn't have <tt>htmldoc</tt>, please build or get <tt>mlton-guide.pdf</tt> and copy to <tt>doc/guide</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ Shell commands: 
+<pre>make install
+cd install
+tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
+</pre>
+</p>
+</li>
+    <li>
+<p>
+ Update <strong>ReleaseYYYYMMDD</strong> with <tt>mlton-YYYYMMDD-1.ARCH-OS.tgz</tt> attachment. 
+</p>
+</li>
+
+    </ul>
+
+
+<h3 id="head-7dd6c24a1e80ce3673b6628d7353f5c27bf281c1">Package releases</h3>
+
+    <ul>
+
+    <li>
+<p>
+ Debian: ??? 
+</p>
+</li>
+    <li>
+<p>
+ RedHat: ??? 
+</p>
+</li>
+
+    </ul>
+
+
+<h2 id="head-2e8a57cc5c472f4ac3b071979a38e80db7e59e87">Website</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <tt>basis</tt> gets a snapshot of <a class="external" href="http://standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://standardml.org/Basis</a>. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>changelog</tt> gets a copy of <tt>doc/changelog</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ <tt>guide/YYYYMMDD</tt> gets a copy of <tt>doc/guide</tt> 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt> 
+</p>
+</li>
+
+        </ul>
+
 
     <li>
 <p>
@@ -69,76 +425,6 @@ urchinTracker();
 
         <li>
 <p>
- check <a href="OrphanedPages">OrphanedPages</a> and <a href="WantedPages">WantedPages</a>. 
-</p>
-</li>
-        <li>
-<p>
- spell check. 
-</p>
-</li>
-
-        </ul>
-
-
-    <li class="gap">
-<p>
- Check man pages and set the dates if necessary. 
-</p>
-</li>
-    <li class="gap">
-<p>
- Update <tt>doc/changelog</tt> with a summary. 
-</p>
-</li>
-
-    </ul>
-
-
-<h2 id="head-30db8ff616d944654421c7898cb9a50215bf78c0">After Packaging</h2>
-
-    <ul>
-
-    <li>
-<p>
- tag the release in the SVN repository. 
-</p>
-</li>
-    <li class="gap">
-<p>
- <tt>mlton.org</tt> 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <tt>basis</tt> gets a snapshot of <a class="external" href="http://standardml.org/Basis"><img src="moin-www.png" alt="[WWW]" height="11" width="11">http://standardml.org/Basis</a>. 
-</p>
-</li>
-        <li>
-<p>
- <tt>changelog</tt> gets a copy of <tt>doc/changelog</tt>. 
-</p>
-</li>
-        <li>
-<p>
- Put up MLton Guide. 
-</p>
-</li>
-        <li>
-<p>
- <a href="Home">Home</a> gets note of new release. 
-</p>
-</li>
-        <li>
-<p>
- <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a> gets release notes and executables. 
-</p>
-</li>
-        <li>
-<p>
  <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> is cleared. 
 </p>
 </li>
@@ -146,7 +432,15 @@ urchinTracker();
         </ul>
 
 
-    <li class="gap">
+
+    </ul>
+
+
+<h2 id="head-16561f6ffd9bbe95bb15fa4d972139f66e178854">Announce release</h2>
+
+    <ul>
+
+    <li>
 <p>
  Send mail to  
 </p>
@@ -200,9 +494,17 @@ urchinTracker();
  Update <a href="OtherSites">OtherSites</a> that have MLton pages. 
 </p>
 </li>
-    <li class="gap">
+
+    </ul>
+
+
+<h2 id="head-548f449b63ff41eaaff5a2d679ffa56b2015fc20">Misc.</h2>
+
+    <ul>
+
+    <li>
 <p>
- dupload Debian package. 
+ <tt>dupload</tt> Debian package. 
 </p>
 </li>
     <li class="gap">
@@ -218,5 +520,5 @@ urchinTracker();
 
 <p>
 <hr>
-Last edited on 2005-12-03 04:51:01 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-24 20:38:33 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

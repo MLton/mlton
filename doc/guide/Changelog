@@ -59,9 +59,9 @@ urchinTracker();
 
 Summary:
   + New platforms:
-   o amd64-linux, amd64-freebsd, ...
-   o hppa-hpux, ...
-   o powerpc-aix, ...
+   o amd64-linux, amd64-freebsd
+   o hppa-hpux
+   o powerpc-aix
    o x86-darwin (Mac OS X)
   + Compiler.
    o Support for 64-bit platforms.

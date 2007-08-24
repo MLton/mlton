@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 <a href="MoinMoin">MoinMoin</a> supports a lot of  <a class="external" href="http://moinmaster.wikiwikiweb.de/HelpOnAccessControlLists"><img src="moin-www.png" alt="[WWW]" height="11" width="11">access control features</a>.   <p>
-Because people download binaries from the MLton web site, and we are worried about malicious users either changing those binaries, or changing the links that should point at those binaries, we allow editing of some pages (in particular, <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>, <a href="Home">Home</a>, and <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a>) only by <a href="TrustedGroup">TrustedGroup</a> members. 
+Because people download binaries from the MLton web site, and we are worried about malicious users either changing those binaries, or changing the links that should point at those binaries, we allow editing of some pages (in particular, <a href="Home">Home</a>, <a href="http://mlton.org/Download"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Download</a>, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a>, and <strong>ReleaseYYYYMMDD</strong> pages) only by <a href="TrustedGroup">TrustedGroup</a> members. 
 </p>
 <p>
 All other pages are freely editable by any user with an account. 
@@ -67,5 +67,5 @@ All other pages are freely editable by any user with an account.
 
 <p>
 <hr>
-Last edited on 2005-11-30 19:54:23 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-24 20:29:18 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

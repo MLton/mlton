@@ -14,6 +14,7 @@
 <link rel="Start" href="Home">
 
 
+<link rel="Appendix" title="vesa-in-mlton-t-shirt.jpg" href="http://mlton.org/pages/VesaKarvonen/attachments/vesa-in-mlton-t-shirt.jpg">
 </head>
 
 <body lang="en" dir="ltr">
@@ -56,6 +57,9 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 Vesa Karvonen is a student at the <a class="external" href="http://www.cs.helsinki.fi/index.en.html"><img src="moin-www.png" alt="[WWW]" height="11" width="11">University of Helsinki</a>. His interests lie in the design and implementation of programming languages. <p>
+<img src="http://mlton.org/pages/VesaKarvonen/attachments/vesa-in-mlton-t-shirt.jpg?ts=1187963111" alt="vesa-in-mlton-t-shirt.jpg"> 
+</p>
+<p>
 Things he'd like to see for SML and hopes to be able to contribute towards: 
 </p>
 
@@ -91,18 +95,53 @@ Things he'd like to see for SML and hopes to be able to contribute towards:
 </li>
                 <li>
 <p>
- jump to definition 
+ jump to definition (see <a href="EmacsDefUseMode">EmacsDefUseMode</a>) 
 </p>
 </li>
 
                 </ul>
 
 
-        <li class="gap">
+  <a href="EmacsBgBuildMode">EmacsBgBuildMode</a> has also been written for working with MLton.         <li class="gap">
 <p>
- Documented and cataloged libraries. Perhaps something like   <a class="external" href="http://www.boost.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Boost</a>, but for SML libraries. 
+ Documented and cataloged libraries. Perhaps something like   <a class="external" href="http://www.boost.org"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Boost</a>, but for SML libraries.  Here is a partial   list of libraries Vesa is or has been working on: 
 </p>
 </li>
+
+                <ul>
+
+                <li>
+<p>
+ Extended Basis Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
+ Generic Programming Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/generic/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
+ Pretty Printing Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/prettier/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
+ Random Generator Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/random/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
+ Unit Test Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/unit-test/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
+ Windows Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/windows/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+</ul>
+
 </ul>
 
 </div>
@@ -111,5 +150,5 @@ Things he'd like to see for SML and hopes to be able to contribute towards:
 
 <p>
 <hr>
-Last edited on 2005-08-12 13:52:37 by <span title="cs78147176.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-24 13:47:27 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

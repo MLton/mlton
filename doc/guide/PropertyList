@@ -140,7 +140,7 @@ Of course, a serious implementation of property lists would have to handle dupli
 MLton relies heavily on property lists for attaching information to syntax tree nodes in its intermediate languages.  See  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.sig</a>  <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mlton/tags/on-MLTONWIKIVERSION-release/lib/mlton/basic/property-list.fun?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">property-list.fun</a>. 
 </p>
 <p>
-<a class="nonexistent" href="MLRISC">MLRISC</a> <a href = "References#LeungGeorge98">uses property lists extensively</a>. 
+The <a href="MLRISCLibrary">MLRISCLibrary</a> <a href = "References#LeungGeorge98">uses property lists extensively</a>. 
 </p>
 </div>
 
@@ -148,5 +148,5 @@ MLton relies heavily on property lists for attaching information to syntax tree 
 
 <p>
 <hr>
-Last edited on 2006-11-02 17:44:53 by <span title="76.16.241.4"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 13:55:21 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

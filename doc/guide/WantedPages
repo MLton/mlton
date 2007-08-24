@@ -68,8 +68,6 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <li>
 <a class="nonexistent" href="FlatLattice">FlatLattice</a>: <a href="CommonArg">CommonArg</a></li>
 <li>
-<a class="nonexistent" href="GMP">GMP</a>: <a href="MLtonIntInf">MLtonIntInf</a></li>
-<li>
 <a class="nonexistent" href="HigherOrder">HigherOrder</a>: <a href="IntermediateLanguage">IntermediateLanguage</a></li>
 <li>
 <a class="nonexistent" href="LambdaLift">LambdaLift</a>: <a href="SXMLSimplify">SXMLSimplify</a></li>
@@ -79,8 +77,6 @@ Pages that don't exist and the pages that link to them. Please help fill these i
 <a class="nonexistent" href="MLLex">MLLex</a>: <a href="Documentation">Documentation</a>, <a href="Features">Features</a>, <a href="FrontEnd">FrontEnd</a>, <a href="Installation">Installation</a>, <a href="Libraries">Libraries</a></li>
 <li>
 <a class="nonexistent" href="MLNLFFIGEN">MLNLFFIGEN</a>: <a href="Features">Features</a></li>
-<li>
-<a class="nonexistent" href="MLRISC">MLRISC</a>: <a href="PropertyList">PropertyList</a></li>
 <li>
 <a class="nonexistent" href="MLYacc">MLYacc</a>: <a href="Documentation">Documentation</a>, <a href="Features">Features</a>, <a href="FrontEnd">FrontEnd</a>, <a href="Installation">Installation</a>, <a href="Libraries">Libraries</a>, <a href="MLBasisAvailableLibraries">MLBasisAvailableLibraries</a></li>
 <li>

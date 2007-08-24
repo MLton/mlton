@@ -55,155 +55,172 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-In a strict language, such as <a href="StandardML">Standard ML</a>, you sometimes want to provide a fixpoint combinator for an abstract type <tt>t</tt> to make it possible to write recursive definitions.  While it is easy to write an ad hoc fixpoint combinator for a single abstract type, it is more challenging to provide a general purpose framework for computing fixpoints.  First of all, a single combinator <tt>fix</tt> with a type of the form <tt>(t&nbsp;-&gt;&nbsp;t)&nbsp;-&gt;&nbsp;t</tt> does not support mutual recursion over multiple values of type <tt>t</tt>.  To support mutual recursion, you might provide a family of fixpoint combinators having types of the form <tt>(u&nbsp;-&gt;&nbsp;u)&nbsp;-&gt;&nbsp;u</tt> where <tt>u</tt> is a type of the form <tt>t&nbsp;*&nbsp;...&nbsp;*&nbsp;t</tt>.  Unfortunately, even such a family of fixpoint combinators does not support mutual recursion over multiple different abstract types.  The gist of the problem is that we need a <a href="TypeIndexedValues">type-indexed</a> family of fixpoint combinators.  Below is a solution that allows for computing fixpoints over arbitrary products.  The code on this page makes use of some <a href="Utilities">Utilities</a>. <p>
-First the signature of the fixpoint framework: 
+This page discusses a framework that makes it possible to compute fixpoints over arbitrary products of abstract types.  The code is from an Extended Basis library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>). <p>
+First the signature of the framework: 
 </p>
-
-<pre class=code>
-<B><FONT COLOR="#0000FF">signature</FONT></B> FIX =
-  <B><FONT COLOR="#0000FF">sig</FONT></B>
-    <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t1
-    </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t2
-    </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t1 -&gt; 'a t2
-
-    </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Fix</FONT>
-
-    </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fix : 'a t -&gt; 'a fix
-    <B><FONT COLOR="#A020F0">val</FONT></B> pure : ('a * 'a uop) thunk -&gt; 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> tier : ('a * 'a effect) thunk -&gt; 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> iso : ('a, 'b) emb -&gt; 'b t -&gt; 'a t
-    <B><FONT COLOR="#A020F0">val</FONT></B> ^ : 'a t * 'b t -&gt; ('a, 'b) product t
-  <B><FONT COLOR="#0000FF">end</FONT></B>
-</PRE>
 <p>
+<pre class=code><I><FONT COLOR="#B22222">(**
+ * A framework for computing fixpoints.
+ *
+ * In a strict language you sometimes want to provide a fixpoint
+ * combinator for an abstract type {t} to make it possible to write
+ * recursive definitions.  Unfortunately, a single combinator {fix} of the
+ * type {(t -&gt; t) -&gt; t} does not support mutual recursion.  To support
+ * mutual recursion, you would need to provide a family of fixpoint
+ * combinators having types of the form {(u -&gt; u) -&gt; u} where {u} is a
+ * type of the form {t * ... * t}.  Unfortunately, even such a family of
+ * fixpoint combinators does not support mutual recursion over different
+ * abstract types.
+ *)</FONT></I>
+<B><FONT COLOR="#0000FF">signature</FONT></B> TIE = <B><FONT COLOR="#0000FF">sig</FONT></B>
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a dom </FONT></B><B><FONT COLOR="#A020F0">and</FONT></B><B><FONT COLOR="#228B22"> 'a cod
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a dom -&gt; 'a cod
+   <I><FONT COLOR="#B22222">(**
+    * The type of fixpoint witnesses.
+    *
+    * The type constructors {dom} and {cod} are used to expose the arrow
+    * {-&gt;} type constructor (to allow eta-expansion) while keeping the
+    * domain and codomain abstract.
+    *)</FONT></I>
+
+   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> fix : 'a t -&gt; 'a Fix.t
+   <I><FONT COLOR="#B22222">(**
+    * Produces a fixpoint combinator from the given witness.  For example,
+    * one can make a mutually recursive definition of functions:
+    *
+    *&gt; val isEven &amp; isOdd =
+    *&gt;     let open Tie in fix (function *` function) end
+    *&gt;        (fn isEven &amp; isOdd =&gt;
+    *&gt;            (fn 0 =&gt; true
+    *&gt;              | 1 =&gt; false
+    *&gt;              | n =&gt; isOdd (n-1)) &amp;
+    *&gt;            (fn 0 =&gt; false
+    *&gt;              | 1 =&gt; true
+    *&gt;              | n =&gt; isEven (n-1)))
+    *)</FONT></I>
+
+   <I><FONT COLOR="#B22222">(** == Making New Witnesses == *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> pure : ('a * 'a UnOp.t) Thunk.t -&gt; 'a t
+   <I><FONT COLOR="#B22222">(**
+    * {pure} is a more general version of {tier}.  It is mostly useful for
+    * computing fixpoints in a non-imperative manner.
+    *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> tier : ('a * 'a Effect.t) Thunk.t -&gt; 'a t
+   <I><FONT COLOR="#B22222">(**
+    * {tier} is used to define fixpoint tiers for new abstract types by
+    * providing a thunk whose instantiation allocates a mutable proxy and
+    * a procedure for updating it with the result.
+    *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> id : 'a -&gt; 'a t
+   <I><FONT COLOR="#B22222">(** {id x} is equivalent to {pure (const (x, id))}. *)</FONT></I>
+
+   <I><FONT COLOR="#B22222">(** == Combining Existing Tiers == *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> iso : 'b t -&gt; ('a, 'b) Iso.t -&gt; 'a t
+   <I><FONT COLOR="#B22222">(**
+    * Given an isomorphism between {'a} and {'b} and a witness for {'b},
+    * produces a witness for {'a}.  This is useful when you have a new
+    * type that is isomorphic to some old type for which you already have
+    * a witness.
+    *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> *` : 'a t * 'b t -&gt; ('a, 'b) Product.t t
+   <I><FONT COLOR="#B22222">(**
+    * Given witnesses for {'a} and {'b} produces a witness for the product
+    * {('a, 'b) Product.t}.  This is used when mutual recursion is needed.
+    *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> tuple2 : 'a t * 'b t -&gt; ('a * 'b) t
+   <I><FONT COLOR="#B22222">(**
+    * Given witnesses for {'a} and {'b} produces a witness for the product
+    * {'a * 'b}.
+    *)</FONT></I>
+
+   <I><FONT COLOR="#B22222">(** == Particular Tiers == *)</FONT></I>
+
+   <B><FONT COLOR="#A020F0">val</FONT></B> function : ('a -&gt; 'b) t
+   <I><FONT COLOR="#B22222">(** Witness for functions. *)</FONT></I>
+<B><FONT COLOR="#0000FF">end</FONT></B>
+</PRE>
  
 </p>
 <p>
-<tt>fix</tt> is a <a href="TypeIndexedValues">type-indexed</a> function.  The type parameter to <tt>fix</tt> is called a "tier".  To compute fixpoints over products, one uses the <tt>^</tt> operator to combine tiers.  To provide a fixpoint combinator for an abstract type, one implements a tier providing a thunk whose instantiation allocates a fresh "knot" and a procedure for "tying" it.  Naturally this means that not all possible ways of computing a fixpoint of a particular type are possible under this framework.  The <tt>pure</tt> combinator is a generalization of <tt>tier</tt>.  The <tt>iso</tt> combinator is provided for reusing existing tiers. 
+<tt>fix</tt> is a <a href="TypeIndexedValues">type-indexed</a> function.  The type-index parameter to <tt>fix</tt> is called a "witness".  To compute fixpoints over products, one uses the <tt>*`</tt> operator to combine witnesses.  To provide a fixpoint combinator for an abstract type, one implements a witness providing a thunk whose instantiation allocates a fresh, mutable proxy and a procedure for updating the proxy with the solution.  Naturally this means that not all possible ways of computing a fixpoint of a particular type are possible under the framework.  The <tt>pure</tt> combinator is a generalization of <tt>tier</tt>.  The <tt>iso</tt> combinator is provided for reusing existing witnesses. 
 </p>
 <p>
-Note that instead of using an infix operator, we could alternatively employ an interface using <a href="Fold">Fold</a>.  Also, the tiers are eta-expanded to work around the <a href="ValueRestriction">value restriction</a>, while maintaining abstraction (the signature keeps tiers abstract). 
+Note that instead of using an infix operator, we could alternatively employ an interface using <a href="Fold">Fold</a>.  Also, witnesses are eta-expanded to work around the <a href="ValueRestriction">value restriction</a>, while maintaining abstraction. 
 </p>
 <p>
-Here is an implementation: 
+Here is the implementation: 
 </p>
-
-<pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> Fix :&gt; FIX =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t1 </FONT></B>=<B><FONT COLOR="#228B22"> unit
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t2 </FONT></B>=<B><FONT COLOR="#228B22"> 'a * 'a uop
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t1 -&gt; 'a t2
-
-      </FONT></B><B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Fix</FONT>
-
-      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fix a f =
-         <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = a ()
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            ta (f a)
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-
-      <B><FONT COLOR="#A020F0">val</FONT></B> pure = id
-
-      <B><FONT COLOR="#A020F0">fun</FONT></B> tier th () =
-          <B><FONT COLOR="#A020F0">let</FONT></B>
-             <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = th ()
-          <B><FONT COLOR="#A020F0">in</FONT></B>
-             (a, const a o ta)
-          <B><FONT COLOR="#A020F0">end</FONT></B>
-
-      <B><FONT COLOR="#A020F0">fun</FONT></B> iso (a2b, b2a) b () =
-         <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) = b ()
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            (b2a b, b2a o tb o a2b)
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-
-      <B><FONT COLOR="#A020F0">fun</FONT></B> (a ^ b) () =
-         <B><FONT COLOR="#A020F0">let</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = a ()
-            <B><FONT COLOR="#A020F0">val</FONT></B> (b, tb) = b ()
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            (a &amp; b, <B><FONT COLOR="#A020F0">fn</FONT></B> a &amp; b =&gt; ta a &amp; tb b)
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+<p>
+<pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tie :&gt; TIE = <B><FONT COLOR="#0000FF">struct</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Product
+   <B><FONT COLOR="#A020F0">infix</FONT></B> &amp;
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a dom </FONT></B>=<B><FONT COLOR="#228B22"> Unit.t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a cod </FONT></B>=<B><FONT COLOR="#228B22"> ('a * 'a UnOp.t) Thunk.t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a dom -&gt; 'a cod
+   </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> fix aT f = <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#A020F0">val</FONT></B> (a, ta) = aT () () <B><FONT COLOR="#A020F0">in</FONT></B> ta (f a) <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> pure = Thunk.mk
+   <B><FONT COLOR="#A020F0">fun</FONT></B> iso bT (iso <B><FONT COLOR="#A020F0">as</FONT></B> (_, b2a)) () () = <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> (b, fB) = bT () ()
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      (b2a b, Fn.map iso fB)
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#A020F0">fun</FONT></B> <B><FONT COLOR="#A020F0">op</FONT></B> *` (aT, bT) () () = <B><FONT COLOR="#A020F0">let</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> (a, fA) = aT () ()
+      <B><FONT COLOR="#A020F0">val</FONT></B> (b, fB) = bT () ()
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      (a &amp; b, Product.map (fA, fB))
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+   <I><FONT COLOR="#B22222">(* The rest are not primitive operations. *)</FONT></I>
+   <B><FONT COLOR="#A020F0">fun</FONT></B> tuple2 ab = iso (<B><FONT COLOR="#A020F0">op</FONT></B> *` ab) Product.isoTuple2
+   <B><FONT COLOR="#A020F0">fun</FONT></B> tier th = pure ((<B><FONT COLOR="#A020F0">fn</FONT></B> (a, ua) =&gt; (a, Fn.const a o ua)) o th)
+   <B><FONT COLOR="#A020F0">fun</FONT></B> id x = pure (Fn.const (x, Fn.id))
+   <B><FONT COLOR="#A020F0">fun</FONT></B> function ? =
+       pure (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                   <B><FONT COLOR="#A020F0">val</FONT></B> r = ref (Basic.raising Fix.Fix)
+                <B><FONT COLOR="#A020F0">in</FONT></B>
+                   (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; !r x, <B><FONT COLOR="#A020F0">fn</FONT></B> f =&gt; (r := f ; f))
+                <B><FONT COLOR="#A020F0">end</FONT></B>) ?
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
-<p>
  
 </p>
 <p>
-Let's then take a look at some examples.  First a simple tier for functions: 
+Let's then take a look at a couple of additional examples. 
+</p>
+<p>
+Here is a naive implementation of lazy promises: 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> Fn :&gt;
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">val</FONT></B> Y : ('a -&gt; 'b) Fix.t
-   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
-                             <B><FONT COLOR="#A020F0">let</FONT></B>
-                                <B><FONT COLOR="#A020F0">val</FONT></B> r = ref (fail Fix.Fix)
-                                <B><FONT COLOR="#A020F0">fun</FONT></B> f x = !r x
-                             <B><FONT COLOR="#A020F0">in</FONT></B>
-                                (f, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> :=)
-                             <B><FONT COLOR="#A020F0">end</FONT></B>) ?
-   <B><FONT COLOR="#0000FF">end</FONT></B>
-</PRE>
-<p>
- 
-</p>
-<p>
-Here is an example of a mutually recursive definition of functions: 
-</p>
-
-<pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> isEven &amp; isOdd =
-    <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> Fix Fn <B><FONT COLOR="#A020F0">in</FONT></B> fix (Y^Y) <B><FONT COLOR="#A020F0">end</FONT></B>
-       (<B><FONT COLOR="#A020F0">fn</FONT></B> isEven &amp; isOdd =&gt;
-           (<B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0w0</FONT></B> =&gt; true
-             | <B><FONT COLOR="#5F9EA0">0w1</FONT></B> =&gt; false
-             | n =&gt; isOdd (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)) &amp;
-           (<B><FONT COLOR="#A020F0">fn</FONT></B> <B><FONT COLOR="#5F9EA0">0w0</FONT></B> =&gt; false
-             | <B><FONT COLOR="#5F9EA0">0w1</FONT></B> =&gt; true
-             | n =&gt; isEven (n-<B><FONT COLOR="#5F9EA0">0w1</FONT></B>)))
-</PRE>
-<p>
- 
-</p>
-<p>
-Our second example is a naive implementation of lazy promises: 
-</p>
-
-<pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> Promise :&gt;
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> lazy : 'a thunk -&gt; 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> force : 'a t -&gt; 'a
-      <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
-   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t' </FONT></B>=<B><FONT COLOR="#228B22">
-         <FONT COLOR="#B8860B">Exn</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn
-       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Thunk</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a thunk
-       </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">Value</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t' ref
-      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> lazy f = ref (Thunk f)
-      <B><FONT COLOR="#A020F0">fun</FONT></B> force t =
-         <B><FONT COLOR="#A020F0">case</FONT></B> !t <B><FONT COLOR="#A020F0">of</FONT></B>
-            Exn e =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> e
-          | Thunk f =&gt;
-            (t := Value (f ())
-             <B><FONT COLOR="#A020F0">handle</FONT></B> e =&gt; t := Exn e
-           ; force t)
-          | Value v =&gt; v
-      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt;
-                             <B><FONT COLOR="#A020F0">let</FONT></B>
-                                <B><FONT COLOR="#A020F0">val</FONT></B> r = lazy (fail Fix.Fix)
-                             <B><FONT COLOR="#A020F0">in</FONT></B>
-                                (r, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> := o !)
-                             <B><FONT COLOR="#A020F0">end</FONT></B>) ?
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Promise :&gt; <B><FONT COLOR="#0000FF">sig</FONT></B>
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
+   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> lazy : 'a Thunk.t -&gt; 'a t
+   <B><FONT COLOR="#A020F0">val</FONT></B> force : 'a t -&gt; 'a
+   <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Tie.t
+<B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
+   <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t' </FONT></B>=<B><FONT COLOR="#228B22">
+      <FONT COLOR="#B8860B">EXN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn
+    </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">THUNK</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a Thunk.t
+    </FONT></B>|<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">VALUE</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> 'a
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> 'a t' Ref.t
+   </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> lazy f = ref (THUNK f)
+   <B><FONT COLOR="#A020F0">fun</FONT></B> force t =
+      <B><FONT COLOR="#A020F0">case</FONT></B> !t
+       <B><FONT COLOR="#A020F0">of</FONT></B> EXN e   =&gt; <B><FONT COLOR="#A020F0">raise</FONT></B> e
+        | THUNK f =&gt; (t := VALUE (f ()) <B><FONT COLOR="#A020F0">handle</FONT></B> e =&gt; t := EXN e ; force t)
+        | VALUE v =&gt; v
+   <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Tie.tier (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                             <B><FONT COLOR="#A020F0">val</FONT></B> r = lazy (raising Fix.Fix)
+                          <B><FONT COLOR="#A020F0">in</FONT></B>
+                             (r, r &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> := o !)
+                          <B><FONT COLOR="#A020F0">end</FONT></B>) ?
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -213,33 +230,31 @@ An example use of our naive lazy promises is to implement equally naive lazy str
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> Stream :&gt;
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> cons : 'a * 'a t -&gt; 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> get : 'a t -&gt; ('a * 'a t) option
-      <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
-   <B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ('a * 'a t) option Promise.t
-      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> cons (x, xs) = IN (Promise.lazy (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; SOME (x, xs)))
-      <B><FONT COLOR="#A020F0">fun</FONT></B> get (IN p) = Promise.force p
-      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.iso (<B><FONT COLOR="#A020F0">fn</FONT></B> IN p =&gt; p, IN) Promise.Y ?
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> Stream :&gt; <B><FONT COLOR="#0000FF">sig</FONT></B>
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t
+   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> cons : 'a * 'a t -&gt; 'a t
+   <B><FONT COLOR="#A020F0">val</FONT></B> get : 'a t -&gt; ('a * 'a t) Option.t
+   <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Tie.t
+<B><FONT COLOR="#0000FF">end</FONT></B> = <B><FONT COLOR="#0000FF">struct</FONT></B>
+   <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ('a * 'a t) Option.t Promise.t
+   </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> cons (x, xs) = IN (Promise.lazy (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; SOME (x, xs)))
+   <B><FONT COLOR="#A020F0">fun</FONT></B> get (IN p) = Promise.force p
+   <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Tie.iso Promise.Y (<B><FONT COLOR="#A020F0">fn</FONT></B> IN p =&gt; p, IN) ?
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
 </p>
 <p>
-Note that above we make use of the <tt>Fix.iso</tt> combinator.  Here is a finite representation of an infinite stream of ones: 
+Note that above we make use of the <tt>iso</tt> combinator.  Here is a finite representation of an infinite stream of ones: 
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> ones =
-   <B><FONT COLOR="#A020F0">let</FONT></B>
-      <B><FONT COLOR="#0000FF">open</FONT></B> Fix Stream
-   <B><FONT COLOR="#A020F0">in</FONT></B>
-      fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> ones =&gt; cons (<B><FONT COLOR="#5F9EA0">1</FONT></B>, ones))
-   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> ones = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Tie Stream
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> ones =&gt; cons (<B><FONT COLOR="#5F9EA0">1</FONT></B>, ones))
+<B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -250,5 +265,5 @@ Note that above we make use of the <tt>Fix.iso</tt> combinator.  Here is a finit
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:05:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-24 17:46:00 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

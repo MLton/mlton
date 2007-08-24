@@ -69,22 +69,22 @@ Here you can download the latest public release of MLton, version 200708XX.  Els
 
             <li>
 <p>
- <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnLinux">Linux</a>, <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnFreeBSD">FreeBSD</a>, ... 
+ <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnLinux">Linux</a>, <a href="RunningOnAMD64">AMD64</a>/<a href="RunningOnFreeBSD">FreeBSD</a> 
 </p>
 </li>
             <li>
 <p>
- <a href="RunningOnHPPA">HPPA</a>/<a href="RunningOnHPUX">HPUX</a>, ... 
+ <a href="RunningOnHPPA">HPPA</a>/<a href="RunningOnHPUX">HPUX</a> 
 </p>
 </li>
             <li>
 <p>
- <a href="RunningOnPowerPC">PowerPC</a>/<a href="RunningOnAIX">AIX</a>, ... 
+ <a href="RunningOnPowerPC">PowerPC</a>/<a href="RunningOnAIX">AIX</a> 
 </p>
 </li>
             <li>
 <p>
- <a href="RunningOnX86">X86</a>/<a href="RunningOnDarwin">Darwin (Mac OS X)</a>, ... 
+ <a href="RunningOnX86">X86</a>/<a href="RunningOnDarwin">Darwin (Mac OS X)</a> 
 </p>
 </li>
 
@@ -177,11 +177,18 @@ Here you can download the latest public release of MLton, version 200708XX.  Els
  <a href="MLBasisAnnotations">ML Basis annotations</a>. 
 </p>
 </li>
-                <li>
+
+                    <ul>
+
+                    <li>
 <p>
  Removed: <tt>allowExport</tt>, <tt>allowImport</tt>, <tt>sequenceUnit</tt>, <tt>warnMatch</tt>. 
 </p>
 </li>
+
+                    </ul>
+
+
 
                 </ul>
 
@@ -339,5 +346,5 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 
 <p>
 <hr>
-Last edited on 2007-08-21 20:43:24 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-24 20:21:18 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

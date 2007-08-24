@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta name="robots" content="index,nofollow">
+
+
+
+<title>Release20041109 - MLton Standard ML Compiler (SML Compiler)</title>
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
+<link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
+
+
+<link rel="Start" href="Home">
+
+
+</head>
+
+<body lang="en" dir="ltr">
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-833377-1";
+urchinTracker();
+</script>
+<table bgcolor = lightblue cellspacing = 0 style = "border: 0px;" width = 100%>
+  <tr>
+    <td style = "
+		border: 0px;
+		color: darkblue; 
+		font-size: 150%;
+		text-align: left;">
+      <a class = mltona href="Home">MLton MLTONWIKIVERSION</a>
+    <td style = "
+		border: 0px;
+		font-size: 150%;
+		text-align: center;
+		width: 50%;">
+      Release20041109
+    <td style = "
+		border: 0px;
+		text-align: right;">
+      <table cellspacing = 0 style = "border: 0px">
+        <tr style = "vertical-align: middle;">
+      </table>
+  <tr style = "background-color: white;">
+    <td colspan = 3
+	style = "
+		border: 0px;
+		font-size:70%;
+		text-align: right;">
+      <a href = "Home">Home</a>
+      &nbsp;<a href = "Index">Index</a>
+      &nbsp;
+</table>
+<div id="content" lang="en" dir="ltr">
+<p>
+This is an archived public release of MLton, version 20041109. 
+</p>
+<h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+
+    <ul>
+
+    <li>
+<p>
+ New platforms:  
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ x86: FreeBSD 5.x, OpenBSD 
+</p>
+</li>
+        <li>
+<p>
+ PowerPC: Darwin (MacOSX) 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Support for the <a href="MLBasis"> ML Basis system</a>, a new mechanism supporting programming in the very large, separate delivery of library sources, and more. 
+</p>
+</li>
+    <li>
+<p>
+ Support for dynamic libraries. 
+</p>
+</li>
+    <li>
+<p>
+ Support for <a href="ConcurrentML">ConcurrentML</a> (CML). 
+</p>
+</li>
+    <li>
+<p>
+ New structures: <tt>Int2</tt>, <tt>Int3</tt>, ..., <tt>Int31</tt> and <tt>Word2</tt>, <tt>Word3</tt>, ..., <tt>Word31</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ Front-end bug fixes and improvements. 
+</p>
+</li>
+    <li>
+<p>
+ A new form of profiling with <tt>-profile&nbsp;count</tt>, which can be used to test code coverage. 
+</p>
+</li>
+    <li>
+<p>
+ A bytecode generator, available via <tt>-codegen&nbsp;bytecode</tt>. 
+</p>
+</li>
+    <li>
+<p>
+ Representation improvements: 
+</p>
+</li>
+
+        <ul>
+
+        <li>
+<p>
+ Tuples and datatypes are packed to decrease space usage. 
+</p>
+</li>
+        <li>
+<p>
+ Ref cells may be unboxed into their containing object. 
+</p>
+</li>
+        <li>
+<p>
+ Arrays of tuples may represent the tuples unboxed. 
+</p>
+</li>
+
+        </ul>
+
+
+
+    </ul>
+
+
+<p>
+For a complete list of changes and bug fixes since 20040227, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20041109-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>. 
+</p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Bugs20041109">Bugs20041109</a> 
+</p>
+</li>
+</ul>
+
+</div>
+
+
+
+<p>
+<hr>
+Last edited on 2007-08-24 20:25:55 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+</body></html>

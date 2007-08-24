@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here are the known bugs in MLton 20041109, listed in reverse chronological order of date reported. <p>
+Here are the known bugs in <a href="Release20041109">MLton 20041109</a>, listed in reverse chronological order of date reported. <p>
 <a id="17"></a> 
 </p>
 
@@ -372,5 +372,5 @@ Here are the known bugs in MLton 20041109, listed in reverse chronological order
 
 <p>
 <hr>
-Last edited on 2005-12-01 05:16:27 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-24 20:21:00 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

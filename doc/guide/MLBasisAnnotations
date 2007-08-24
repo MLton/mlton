@@ -79,7 +79,7 @@ If <tt>true</tt>, allow <tt>_address</tt>, <tt>_export</tt>, <tt>_import</tt>,  
     <li class="gap">
 <p>
  <tt>forceUsed&nbsp;</tt>  <br>
-Force all identifiers in the basis denoted by the body of the  <tt>ann</tt> to be considered used; use in conjunction with   {{warnUnused true}}}. 
+Force all identifiers in the basis denoted by the body of the  <tt>ann</tt> to be considered used; use in conjunction with   <tt>warnUnused&nbsp;true</tt>. 
 </p>
 </li>
     <li class="gap">
@@ -133,5 +133,5 @@ Report unused identifiers.
 
 <p>
 <hr>
-Last edited on 2007-08-23 04:20:38 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:10:20 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

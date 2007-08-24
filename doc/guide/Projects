@@ -103,16 +103,10 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 
         <li>
 <p>
- Improved closure representation 
+ Improved closure representation   <br>
+Right now, MLton's closure conversion algorithm uses a simple flat closure to represent each function. 
 </p>
 </li>
-
-                <ul>
-
-    Right now, MLton's closure conversion algorithm uses a simple flat closure to represent each function. 
-                </ul>
-
-
         <li>
 <p>
  Elimination of array bounds checks in loops 
@@ -175,5 +169,5 @@ We have lots of ideas for projects to improve MLton, many of which we do not hav
 
 <p>
 <hr>
-Last edited on 2006-06-22 02:51:58 by <span title="209-6-203-188.c3-0.smr-ubr1.sbo-smr.ma.cable.rcn.com"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:09:17 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

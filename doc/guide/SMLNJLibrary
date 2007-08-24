@@ -67,81 +67,74 @@ As of 20070812, MLton includes a port of the SML/NJ Library, currently synchroni
     <li>
 <p>
  You can import a sub-library of the SML/NJ Library into an MLB file with: 
-</p>
-</li>
-
-        <ul>
-
-
 <div>
 <table>
-  <tr>
+ <tr>
 <td align="center">
 MLB file</td>
 <td align="center">
 Description</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb</tt></td>
 <td>
 Various utility modules, included collections, simple formating, ...</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb</tt></td>
 <td>
 A library for managing control flags in an application.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/HashCons/hash-cons-lib.mlb</tt></td>
 <td>
 Support for implementing hash-consed data structures.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/INet/inet-lib.mlb</tt></td>
 <td>
 Networking utilities; supported on both Unix and Windows systems.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb</tt></td>
 <td>
 Utilities for Unix-based operating systems.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/PP/pp-lib.mlb</tt></td>
 <td>
 Pretty-printing library.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/HTML/html-lib.mlb</tt></td>
 <td>
 HTML parsing and pretty-printing library.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb</tt></td>
 <td>
 Regular expression library.</td>
 </tr>
-  <tr>
+ <tr>
 <td>
 <tt>$(SML_LIB)/smlnj-lib/Reactive/reactive-lib.mlb</tt></td>
 <td>
 Reactive scripting library.</td>
 </tr>
+
+</p>
 </table>
 </div>
-
-        </ul>
-
-
-    <li>
+</li>
+    <li class="gap">
 <p>
  If you are porting a project from SML/NJ's <a href="CompilationManager">CompilationManager</a> to MLton's <a href="MLBasis"> ML Basis system</a> using <tt>cm2mlb</tt>, note that the following maps are included by default: 
 <pre>$smlnj-lib.cm       $(SML_LIB)/smlnj-lib/Util
@@ -237,5 +230,5 @@ The following changes were made to the SML/NJ Library, in addition to deriving t
 
 <p>
 <hr>
-Last edited on 2007-08-13 02:31:18 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-23 17:24:54 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
