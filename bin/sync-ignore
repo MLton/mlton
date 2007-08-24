@@ -28,8 +28,15 @@ p='svn:ignore'
 for i in `find "$root" -type f -name .ignore`; do
         d=`dirname "$i"`
         tmp='/tmp/z.ign'
-        svn propget "$p" "$d" | head -n -1 >"$tmp"
+        l=`svn propget "$p" "$d" | wc -l`
+        let l-=1
+        if [ $l -ge 0 ]; then
+                svn propget "$p" "$d" | head -n $l >"$tmp"
+        else
+                svn propget "$p" "$d" >"$tmp"
+        fi
         if ! diff -q "$i" "$tmp" >/dev/null; then
                 svn propset "$p" -F "$i" "$d"
         fi
+        rm $tmp
 done

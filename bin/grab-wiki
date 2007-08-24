@@ -96,7 +96,9 @@ EOF
 
 for f in $(cat "$index"); do
 	echo "$f"
-	head -n -19 <"$f" >"$tmp"
+        l=`wc -l < "$f"`
+        let l-=19
+	head -n $l <"$f" >"$tmp"
 	(
 		"$bin/msed" -f "$script" <"$tmp"
 		echo '</body></html>'
