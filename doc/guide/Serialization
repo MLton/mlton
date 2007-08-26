@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a href="StandardML">Standard ML</a> does not have built-in support for serialization.  Here are papers that describes a user-level approach. 
+<a href="StandardML">Standard ML</a> does not have built-in support for serialization.  Here are papers that describe user-level approaches: 
     <ul>
 
     <li>
@@ -68,13 +68,18 @@ urchinTracker();
  <a href = "References#Kennedy04">Kennedy04</a> 
 </p>
 </li>
-</ul>
 
+    </ul>
+
+
+<p>
+The MLton repository also contains an experimental generic programming library (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/generic/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) that includes a pickling (serialization) generic (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/generic/unstable/public/value/pickle.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pickle.sig</a>). 
+</p>
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2005-12-02 01:46:34 by <span title="ppp-71-139-183-221.dsl.snfc21.pacbell.net"><a href="StephenWeeks">StephenWeeks</a></span>.
+Last edited on 2007-08-26 01:29:29 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

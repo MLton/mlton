@@ -252,6 +252,23 @@ This ensures that the guide distributed with the release looks updated for the r
 </p>
 </li>
 
+        <ul>
+
+        <li>
+<p>
+ Change <tt>What's&nbsp;new?</tt> text to <tt>Please&nbsp;try&nbsp;out&nbsp;our&nbsp;new&nbsp;release,&nbsp;[:ReleaseYYYYMMDD:MLton&nbsp;YYYYMMDD]</tt>. 
+</p>
+</li>
+
+        </ul>
+
+
+    <li>
+<p>
+ Clear <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a>. 
+</p>
+</li>
+
     </ul>
 
 
@@ -302,7 +319,7 @@ This ensures that the guide distributed with the release looks updated for the r
     <li>
 <p>
  Shell commands: 
-<pre>svn copy svn+ssh://mlton.org/svnroot/mlton/trunk svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release
+<pre>svn copy -m "Tagging YYYYMMDD release" svn+ssh://mlton.org/svnroot/mlton/trunk svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release
 </pre>
 </p>
 </li>
@@ -387,7 +404,7 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 </li>
     <li>
 <p>
- RedHat: ??? 
+ Red Hat: Fedora 8 will have MLton packaged soon after the release, at least for 32-bit arches. Fedora 7 and 6 will likely follow. 
 </p>
 </li>
 
@@ -419,23 +436,6 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
         <li>
 <p>
  copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt> 
-</p>
-</li>
-
-        </ul>
-
-
-    <li>
-<p>
- Wiki 
-</p>
-</li>
-
-        <ul>
-
-        <li>
-<p>
- <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> is cleared. 
 </p>
 </li>
 
@@ -530,5 +530,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2007-08-24 21:39:58 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-26 20:11:40 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

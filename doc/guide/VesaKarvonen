@@ -112,6 +112,11 @@ Things he'd like to see for SML and hopes to be able to contribute towards:
 
                 <li>
 <p>
+ Asynchronous Programming Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/async/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+</p>
+</li>
+                <li>
+<p>
  Extended Basis Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
 </p>
 </li>
@@ -132,7 +137,7 @@ Things he'd like to see for SML and hopes to be able to contribute towards:
 </li>
                 <li>
 <p>
- Unit Test Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/unit-test/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
+ Unit Testing Library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/unit-test/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) 
 </p>
 </li>
                 <li>
@@ -150,5 +155,5 @@ Things he'd like to see for SML and hopes to be able to contribute towards:
 
 <p>
 <hr>
-Last edited on 2007-08-24 13:47:27 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-25 11:55:59 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

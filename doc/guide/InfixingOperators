@@ -222,11 +222,22 @@ The case for <tt>o</tt> is different. With the exception of <tt>before</tt> and 
 <p>
 The closest approximation of Haskell's <tt>x&nbsp;`f`&nbsp;y</tt> syntax achievable in Standard ML would probably be something like <tt>x&nbsp;`f^&nbsp;y</tt>, but <tt>^</tt> is already used for string concatenation by the Basis library. Other combinations of the characters <tt>`</tt> and <tt>^</tt> would be possible, but none seems clearly the best visually. The symbols <tt>&lt;\</tt>, <tt>\&gt;</tt>, <tt>&lt;/</tt> and <tt>/&gt;</tt> are reasonably concise and have a certain self-documenting appearance and symmetry, which can help to remember them. As the names suggest, the symbols of the piping operators <tt>&gt;|</tt> and <tt>|&lt;</tt> are inspired by Unix shell pipelines. 
 </p>
+<h2 id="head-a4bc8bf5caf54b18cea9f58e83dd4acb488deb17">Also see</h2>
+
+    <ul>
+
+    <li>
+<p>
+ <a href="Utilities">Utilities</a> 
+</p>
+</li>
+</ul>
+
 </div>
 
 
 
 <p>
 <hr>
-Last edited on 2006-08-01 10:32:53 by <span title="www-cache2.hel.fi.ssh.com"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-26 19:59:13 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

@@ -121,6 +121,11 @@ While this doesn't stop the nesting, it makes the pattern significantly easier t
  <a href="VariableArityPolymorphism">VariableArityPolymorphism</a> 
 </p>
 </li>
+    <li>
+<p>
+ <a href="Utilities">Utilities</a> 
+</p>
+</li>
 </ul>
 
 </div>
@@ -129,5 +134,5 @@ While this doesn't stop the nesting, it makes the pattern significantly easier t
 
 <p>
 <hr>
-Last edited on 2007-08-15 22:07:11 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-26 19:59:19 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

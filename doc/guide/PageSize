@@ -66,7 +66,9 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;29165 </tt><a href="http://mlton.org/HenryCejtin_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">HenryCejtin/MoinEditorBackup</a></li>
 <li>
-<tt>&nbsp;19518 </tt><a href="TypeIndexedValues">TypeIndexedValues</a></li>
+<tt>&nbsp;18832 </tt><a href="http://mlton.org/VesaKarvonen_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">VesaKarvonen/MoinEditorBackup</a></li>
+<li>
+<tt>&nbsp;18728 </tt><a href="TypeIndexedValues">TypeIndexedValues</a></li>
 <li>
 <tt>&nbsp;14401 </tt><a href="BasisLibrary">BasisLibrary</a></li>
 <li>
@@ -92,7 +94,7 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;8317 </tt><a href="SyntacticConventions">SyntacticConventions</a></li>
 <li>
-<tt>&nbsp;&nbsp;8242 </tt><a href="InfixingOperators">InfixingOperators</a></li>
+<tt>&nbsp;&nbsp;8274 </tt><a href="InfixingOperators">InfixingOperators</a></li>
 <li>
 <tt>&nbsp;&nbsp;7294 </tt><a href="FunctionalRecordUpdate">FunctionalRecordUpdate</a></li>
 <li>
@@ -111,8 +113,6 @@ List of all pages, sorted by their size: <ol>
 <tt>&nbsp;&nbsp;6353 </tt><a href="SMLNJDeviations">SMLNJDeviations</a></li>
 <li>
 <tt>&nbsp;&nbsp;6206 </tt><a href="Elaborate">Elaborate</a></li>
-<li>
-<tt>&nbsp;&nbsp;6073 </tt><a href="http://mlton.org/MatthewFluet_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MatthewFluet/MoinEditorBackup</a></li>
 <li>
 <tt>&nbsp;&nbsp;5995 </tt><a href="PolymorphicEquality">PolymorphicEquality</a></li>
 <li>
@@ -134,7 +134,7 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;5170 </tt><a href="TipsForWritingConciseSML">TipsForWritingConciseSML</a></li>
 <li>
-<tt>&nbsp;&nbsp;5043 </tt><a href="Release200708XX">Release200708XX</a></li>
+<tt>&nbsp;&nbsp;5051 </tt><a href="Release20070826">Release20070826</a></li>
 <li>
 <tt>&nbsp;&nbsp;5000 </tt><a href="StandardMLGotchas">StandardMLGotchas</a></li>
 <li>
@@ -154,9 +154,15 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;4293 </tt><a href="Bugs20051202">Bugs20051202</a></li>
 <li>
+<tt>&nbsp;&nbsp;4260 </tt><a href="http://mlton.org/MatthewFluet_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MatthewFluet/MoinEditorBackup</a></li>
+<li>
 <tt>&nbsp;&nbsp;4244 </tt><a href="Fold01N">Fold01N</a></li>
 <li>
 <tt>&nbsp;&nbsp;4194 </tt><a href="MLtonProfile">MLtonProfile</a></li>
+<li>
+<tt>&nbsp;&nbsp;4157 </tt><a href="ReleaseChecklist">ReleaseChecklist</a></li>
+<li>
+<tt>&nbsp;&nbsp;4131 </tt><a href="http://mlton.org/AdamGoode_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">AdamGoode/MoinEditorBackup</a></li>
 <li>
 <tt>&nbsp;&nbsp;4104 </tt><a href="Printf">Printf</a></li>
 <li>
@@ -166,13 +172,11 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;3961 </tt><a href="UniversalType">UniversalType</a></li>
 <li>
-<tt>&nbsp;&nbsp;3915 </tt><a href="ReleaseChecklist">ReleaseChecklist</a></li>
-<li>
 <tt>&nbsp;&nbsp;3758 </tt><a href="ReturnStatement">ReturnStatement</a></li>
 <li>
 <tt>&nbsp;&nbsp;3753 </tt><a href="ForeignFunctionInterfaceTypes">ForeignFunctionInterfaceTypes</a></li>
 <li>
-<tt>&nbsp;&nbsp;3686 </tt><a href="Release20051202">Release20051202</a></li>
+<tt>&nbsp;&nbsp;3619 </tt><a href="Release20051202">Release20051202</a></li>
 <li>
 <tt>&nbsp;&nbsp;3593 </tt><a href="VariableArityPolymorphism">VariableArityPolymorphism</a></li>
 <li>
@@ -188,6 +192,8 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;3052 </tt><a href="RunTimeOptions">RunTimeOptions</a></li>
 <li>
+<tt>&nbsp;&nbsp;3026 </tt><a href="Fixpoints">Fixpoints</a></li>
+<li>
 <tt>&nbsp;&nbsp;2997 </tt><a href="NumericLiteral">NumericLiteral</a></li>
 <li>
 <tt>&nbsp;&nbsp;2995 </tt><a href="ArrayLiteral">ArrayLiteral</a></li>
@@ -198,11 +204,7 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;2966 </tt><a href="ForeignFunctionInterfaceSyntax">ForeignFunctionInterfaceSyntax</a></li>
 <li>
-<tt>&nbsp;&nbsp;2952 </tt><a href="http://mlton.org/VesaKarvonen_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">VesaKarvonen/MoinEditorBackup</a></li>
-<li>
 <tt>&nbsp;&nbsp;2856 </tt><a href="PropertyList">PropertyList</a></li>
-<li>
-<tt>&nbsp;&nbsp;2856 </tt><a href="Fixpoints">Fixpoints</a></li>
 <li>
 <tt>&nbsp;&nbsp;2816 </tt><a href="Stabilizers">Stabilizers</a></li>
 <li>
@@ -236,8 +238,6 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;2355 </tt><a href="OCaml">OCaml</a></li>
 <li>
-<tt>&nbsp;&nbsp;2354 </tt><a href="PortStatus">PortStatus</a></li>
-<li>
 <tt>&nbsp;&nbsp;2305 </tt><a href="RunningOnMinGW">RunningOnMinGW</a></li>
 <li>
 <tt>&nbsp;&nbsp;2288 </tt><a href="History">History</a></li>
@@ -247,8 +247,6 @@ List of all pages, sorted by their size: <ol>
 <tt>&nbsp;&nbsp;2270 </tt><a href="MLtonPointer">MLtonPointer</a></li>
 <li>
 <tt>&nbsp;&nbsp;2236 </tt><a href="RefFlatten">RefFlatten</a></li>
-<li>
-<tt>&nbsp;&nbsp;2202 </tt><a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a></li>
 <li>
 <tt>&nbsp;&nbsp;2159 </tt><a href="MLBasisAnnotationExamples">MLBasisAnnotationExamples</a></li>
 <li>
@@ -272,11 +270,11 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;1900 </tt><a href="SMLofNJStructure">SMLofNJStructure</a></li>
 <li>
+<tt>&nbsp;&nbsp;1893 </tt><a href="ProductType">ProductType</a></li>
+<li>
 <tt>&nbsp;&nbsp;1893 </tt><a href="Overloading">Overloading</a></li>
 <li>
 <tt>&nbsp;&nbsp;1883 </tt><a href="FAQ">FAQ</a></li>
-<li>
-<tt>&nbsp;&nbsp;1875 </tt><a href="ProductType">ProductType</a></li>
 <li>
 <tt>&nbsp;&nbsp;1872 </tt><a href="ConcurrentML">ConcurrentML</a></li>
 <li>
@@ -292,6 +290,8 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;1689 </tt><a href="CallingFromSMLToCFunctionPointer">CallingFromSMLToCFunctionPointer</a></li>
 <li>
+<tt>&nbsp;&nbsp;1684 </tt><a href="VesaKarvonen">VesaKarvonen</a></li>
+<li>
 <tt>&nbsp;&nbsp;1672 </tt><a href="MLtonSyslog">MLtonSyslog</a></li>
 <li>
 <tt>&nbsp;&nbsp;1667 </tt><a href="Contact">Contact</a></li>
@@ -305,8 +305,6 @@ List of all pages, sorted by their size: <ol>
 <tt>&nbsp;&nbsp;1616 </tt><a href="MLtonIntInf">MLtonIntInf</a></li>
 <li>
 <tt>&nbsp;&nbsp;1616 </tt><a href="http://mlton.org/JesperLouisAndersen_2fMoinEditorBackup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">JesperLouisAndersen/MoinEditorBackup</a></li>
-<li>
-<tt>&nbsp;&nbsp;1582 </tt><a href="VesaKarvonen">VesaKarvonen</a></li>
 <li>
 <tt>&nbsp;&nbsp;1562 </tt><a href="DefineTypeBeforeUse">DefineTypeBeforeUse</a></li>
 <li>
@@ -508,8 +506,6 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;590 </tt><a href="DefinitionOfStandardML">DefinitionOfStandardML</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;589 </tt><a href="Home">Home</a></li>
-<li>
 <tt>&nbsp;&nbsp;&nbsp;585 </tt><a href="RedundantTests">RedundantTests</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;578 </tt><a href="Developers">Developers</a></li>
@@ -562,11 +558,15 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;480 </tt><a href="MichaelNorrish">MichaelNorrish</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;466 </tt><a href="Home">Home</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;465 </tt><a href="MLtonItimer">MLtonItimer</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;462 </tt><a href="LocalFlatten">LocalFlatten</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;457 </tt><a href="Globalize">Globalize</a></li>
+<li>
+<tt>&nbsp;&nbsp;&nbsp;455 </tt><a href="Serialization">Serialization</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;455 </tt><a href="ConstantPropagation">ConstantPropagation</a></li>
 <li>
@@ -654,7 +654,7 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;254 </tt><a href="StandardMLHistory">StandardMLHistory</a></li>
 <li>
-<tt>&nbsp;&nbsp;&nbsp;244 </tt><a href="Bugs200708XX">Bugs200708XX</a></li>
+<tt>&nbsp;&nbsp;&nbsp;244 </tt><a href="Bugs20070826">Bugs20070826</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;244 </tt><a href="TalkFromSMLTo">TalkFromSMLTo</a></li>
 <li>
@@ -686,11 +686,11 @@ List of all pages, sorted by their size: <ol>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;196 </tt><a href="MoinMoin">MoinMoin</a></li>
 <li>
+<tt>&nbsp;&nbsp;&nbsp;193 </tt><a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a></li>
+<li>
 <tt>&nbsp;&nbsp;&nbsp;192 </tt><a href="HenryCejtin">HenryCejtin</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;190 </tt><a href="Variant">Variant</a></li>
-<li>
-<tt>&nbsp;&nbsp;&nbsp;177 </tt><a href="Serialization">Serialization</a></li>
 <li>
 <tt>&nbsp;&nbsp;&nbsp;176 </tt><a href="TalkDiveIn">TalkDiveIn</a></li>
 <li>

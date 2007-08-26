@@ -62,7 +62,7 @@ MLton is an open-source, whole-program, optimizing <a href="StandardML">Standard
 
     <li>
 <p>
- See the  <a class="external" href="http://mlton.org/pages/References/attachments/060916-mlton.pdf"><img src="moin-www.png" alt="[WWW]" height="11" width="11">slides</a>  from the talk on MLton given at the   <a class="external" href="http://gallium.inria.fr/ml2006/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">ML Workshop</a> on September 16, 2006.  
+ Please try out our new release, <a href="Release20070826">MLton 20070826</a>. 
 </p>
 </li>
 
@@ -121,5 +121,5 @@ MLton is an open-source, whole-program, optimizing <a href="StandardML">Standard
 
 <p>
 <hr>
-Last edited on 2007-08-21 12:48:19 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-26 19:55:03 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

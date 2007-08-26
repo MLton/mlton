@@ -5,7 +5,7 @@
 
 
 
-<title>Release200708XX - MLton Standard ML Compiler (SML Compiler)</title>
+<title>Release20070826 - MLton Standard ML Compiler (SML Compiler)</title>
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="all" href="common.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="screen" href="screen.css">
 <link rel="stylesheet" type="text/css" charset="iso-8859-1" media="print" href="print.css">
@@ -37,7 +37,7 @@ urchinTracker();
 		font-size: 150%;
 		text-align: center;
 		width: 50%;">
-      Release200708XX
+      Release20070826
     <td style = "
 		border: 0px;
 		text-align: right;">
@@ -55,7 +55,7 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-Here you can download the latest public release of MLton, version 200708XX.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
+Here you can download the latest public release of MLton, version 20070826.  Elsewhere you can download newer, <a href="http://mlton.org/Experimental"><img src="moin-www.png" alt="[WWW]" height="11" width="11">Experimental</a> releases. <h2 id="head-9fa56f6715598f7143da2e8633da0b6fa4b9cfa7">Changes since the last public release</h2>
 
         <ul>
 
@@ -216,7 +216,7 @@ Here you can download the latest public release of MLton, version 200708XX.  Els
 </li>
                 <li>
 <p>
- Bug Fixes: see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-200708XX-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>. 
+ Bug Fixes: see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070826-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a>. 
 </p>
 </li>
 
@@ -286,13 +286,13 @@ Here you can download the latest public release of MLton, version 200708XX.  Els
 
 
 <p>
-For a complete list of changes and bug fixes since <a href="Release20051202">Release20051202</a>, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-200708XX-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20051202">Bugs20051202</a>. 
+For a complete list of changes and bug fixes since <a href="Release20051202">Release20051202</a>, see the <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/*checkout*/mlton/tags/on-20070826-release/doc/changelog"><img src="moin-www.png" alt="[WWW]" height="11" width="11">changelog</a> and <a href="Bugs20051202">Bugs20051202</a>. 
 </p>
-<h2 id="head-8c49abcb0ee11fc4a0e06cf7a412250e82455812">200708XX binary packages</h2>
+<h2 id="head-d62432d3375582b0d63518db784f802c69fac82f">20070826 binary packages</h2>
 <p>
 
 </p>
-<h2 id="head-979916d6a2485d2f520cac2d82bc33988638f81b">200708XX sources</h2>
+<h2 id="head-3c37f5e19583a54a2bd97e294cdca7b44008313b">20070826 source packages</h2>
 <p>
 
 </p>
@@ -330,12 +330,12 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 
     <li>
 <p>
- <a href="Bugs200708XX">Bugs200708XX</a> 
+ <a href="Bugs20070826">Bugs20070826</a> 
 </p>
 </li>
     <li>
 <p>
- <a class="external" href="http://mlton.org/guide/200708XX/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton Guide (200708XX)</a>.  A snapshot of the MLton wiki at the time of release. 
+ <a class="external" href="http://mlton.org/guide/20070826/"><img src="moin-www.png" alt="[WWW]" height="11" width="11">MLton Guide (20070826)</a>.  A snapshot of the MLton wiki at the time of release. 
 </p>
 </li>
 </ul>
@@ -346,5 +346,5 @@ For a complete list of changes and bug fixes since <a href="Release20051202">Rel
 
 <p>
 <hr>
-Last edited on 2007-08-24 20:21:18 by <span title="fenrir.uchicago.edu"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-26 19:57:04 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>

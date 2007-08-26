@@ -55,10 +55,10 @@ urchinTracker();
       &nbsp;
 </table>
 <div id="content" lang="en" dir="ltr">
-<a href="StandardML">Standard ML</a> does not support ad hoc polymorphism.  This presents a challenge to programmers.  The problem is that at first glance there seems to be no practical way to implement something like a function for converting a value of any type to a string or a function for computing a hash value for a value of any type.  Fortunately there are ways to implement type-indexed values in SML as discussed in <a href = "References#Yang98">Yang98</a>. Various articles such as <a href = "References#Danvy98">Danvy98</a>, <a href = "References#Ramsey03">Ramsey03</a>, <a href = "References#Elsman04">Elsman04</a>, <a href = "References#Kennedy04">Kennedy04</a>, and <a href = "References#Benton05">Benton05</a> also contain examples of type-indexed values. <h2 id="head-2ea0b5ca6b0ef3808544cdd88ef0b644bbad42c4">Example: Converting any SML value to (roughly) SML syntax</h2>
-<p>
-<strong>NOTE:</strong> This is example is work-in-progress.  Please send your comments to the <a class="external" href="mailto:MLton-user@mlton.org"><img src="moin-email.png" alt="[MAILTO]" height="10" width="14">MLton-user@mlton.org</a> list. 
+<a href="StandardML">Standard ML</a> does not support ad hoc polymorphism.  This presents a challenge to programmers.  The problem is that at first glance there seems to be no practical way to implement something like a function for converting a value of any type to a string or a function for computing a hash value for a value of any type.  Fortunately there are ways to implement type-indexed values in SML as discussed in <a href = "References#Yang98">Yang98</a>. Various articles such as <a href = "References#Danvy98">Danvy98</a>, <a href = "References#Ramsey03">Ramsey03</a>, <a href = "References#Elsman04">Elsman04</a>, <a href = "References#Kennedy04">Kennedy04</a>, and <a href = "References#Benton05">Benton05</a> also contain examples of type-indexed values. <p>
+<strong>NOTE:</strong> The technique used in the following example uses an early (and somewhat broken) variation of the basic technique used in an experimental generic programming library (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/generic/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>) that can be found from the MLton repository.  The generic programming library also includes a more advanced generic pretty printing function (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/generic/unstable/public/value/pretty.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">pretty.sig</a>). 
 </p>
+<h2 id="head-2ea0b5ca6b0ef3808544cdd88ef0b644bbad42c4">Example: Converting any SML value to (roughly) SML syntax</h2>
 <p>
 Consider the problem of converting any SML value to a textual presentation that matches the syntax of SML as closely as possible.  One solution is a type-indexed function that maps a given type to a function that maps any value (of the type) to its textual presentation.  A type-indexed function like this can be useful for a variety of purposes.  For example, one could use it to show debugging information.  We'll call this function "<tt>show</tt>". 
 </p>
@@ -66,7 +66,7 @@ Consider the problem of converting any SML value to a textual presentation that 
 We'll do a fairly complete implementation of <tt>show</tt>.  We do not distinguish infix and nonfix constructors, but that is not an intrinsic property of SML datatypes.  We also don't reconstruct a type name for the value, although it would be particularly useful for functional values.  To reconstruct type names, some changes would be needed and the reader is encouraged to consider how to do that.  A more realistic implementation would use some pretty printing combinators to compute a layout for the result.  This should be a relatively easy change (given a suitable pretty printing library).  Cyclic values (through references and arrays) do not have a standard textual presentation and it is impossible to convert arbitrary functional values (within SML) to a meaningful textual presentation.  Finally, it would also make sense to show sharing of references and arrays.  We'll leave these improvements to an actual library implementation. 
 </p>
 <p>
-We'll make use of the <a href="Fixpoints">fixpoint framework</a>, which is actually also a simple type-indexed function.  The following code assumes that the <tt>Fix</tt> structure and <a href="Utilities">utilities</a> are in scope. 
+The following code uses the <a href="Fixpoints">fixpoint framework</a> and other utilities from an Extended Basis library (see <a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>). 
 </p>
 <h3 id="head-2f32be1dc74166373c988ec03b0bd86f0a576919">Signature</h3>
 <p>
@@ -76,58 +76,57 @@ Let's consider the design of the <tt>SHOW</tt> signature:
 <pre class=code>
 <B><FONT COLOR="#A020F0">infixr</FONT></B> --&gt;
 
-<B><FONT COLOR="#0000FF">signature</FONT></B> SHOW =
-   <B><FONT COLOR="#0000FF">sig</FONT></B>
-      <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t       <I><FONT COLOR="#B22222">(* complete type-index *)</FONT></I>
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a s       <I><FONT COLOR="#B22222">(* incomplete sum *)</FONT></I>
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'k) p <I><FONT COLOR="#B22222">(* incomplete product *)</FONT></I>
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u          <I><FONT COLOR="#B22222">(* tuple or unlabelled product *)</FONT></I>
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> l          <I><FONT COLOR="#B22222">(* record or labelled product *)</FONT></I>
+<B><FONT COLOR="#0000FF">signature</FONT></B> SHOW = <B><FONT COLOR="#0000FF">sig</FONT></B>
+   <B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a t       <I><FONT COLOR="#B22222">(* complete type-index *)</FONT></I>
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a s       <I><FONT COLOR="#B22222">(* incomplete sum *)</FONT></I>
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'k) p <I><FONT COLOR="#B22222">(* incomplete product *)</FONT></I>
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u          <I><FONT COLOR="#B22222">(* tuple or unlabelled product *)</FONT></I>
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> l          <I><FONT COLOR="#B22222">(* record or labelled product *)</FONT></I>
 
-      </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> show : 'a t -&gt; 'a -&gt; string
+   </FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> show : 'a t -&gt; 'a -&gt; string
 
-      <I><FONT COLOR="#B22222">(* user-defined types *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> inj : ('a -&gt; 'b) -&gt; 'b t -&gt; 'a t
+   <I><FONT COLOR="#B22222">(* user-defined types *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> inj : ('a -&gt; 'b) -&gt; 'b t -&gt; 'a t
 
-      <I><FONT COLOR="#B22222">(* tuples and records *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> * : ('a, 'k) p * ('b, 'k) p -&gt; (('a, 'b) product, 'k) p
+   <I><FONT COLOR="#B22222">(* tuples and records *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> * : ('a, 'k) p * ('b, 'k) p -&gt; (('a, 'b) product, 'k) p
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> U :           'a t -&gt; ('a, u) p
-      <B><FONT COLOR="#A020F0">val</FONT></B> L : string -&gt; 'a t -&gt; ('a, l) p
+   <B><FONT COLOR="#A020F0">val</FONT></B> U :           'a t -&gt; ('a, u) p
+   <B><FONT COLOR="#A020F0">val</FONT></B> L : string -&gt; 'a t -&gt; ('a, l) p
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> tuple  : ('a, u) p -&gt; 'a t
-      <B><FONT COLOR="#A020F0">val</FONT></B> record : ('a, l) p -&gt; 'a t
+   <B><FONT COLOR="#A020F0">val</FONT></B> tuple  : ('a, u) p -&gt; 'a t
+   <B><FONT COLOR="#A020F0">val</FONT></B> record : ('a, l) p -&gt; 'a t
 
-      <I><FONT COLOR="#B22222">(* datatypes *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> + : 'a s * 'b s -&gt; (('a, 'b) sum) s
+   <I><FONT COLOR="#B22222">(* datatypes *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> + : 'a s * 'b s -&gt; (('a, 'b) sum) s
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> C0 : string -&gt; unit s
-      <B><FONT COLOR="#A020F0">val</FONT></B> C1 : string -&gt; 'a t -&gt; 'a s
+   <B><FONT COLOR="#A020F0">val</FONT></B> C0 : string -&gt; unit s
+   <B><FONT COLOR="#A020F0">val</FONT></B> C1 : string -&gt; 'a t -&gt; 'a s
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> data : 'a s -&gt; 'a t
+   <B><FONT COLOR="#A020F0">val</FONT></B> data : 'a s -&gt; 'a t
 
-      <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
+   <B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Tie.t
 
-      <I><FONT COLOR="#B22222">(* exceptions *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> exn : exn t
-      <B><FONT COLOR="#A020F0">val</FONT></B> regExn : (exn -&gt; ('a * 'a s) option) effect
+   <I><FONT COLOR="#B22222">(* exceptions *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> exn : exn t
+   <B><FONT COLOR="#A020F0">val</FONT></B> regExn : (exn -&gt; ('a * 'a s) option) -&gt; unit
 
-      <I><FONT COLOR="#B22222">(* some built-in type constructors *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> refc : 'a t -&gt; 'a ref t
-      <B><FONT COLOR="#A020F0">val</FONT></B> array : 'a t -&gt; 'a array t
-      <B><FONT COLOR="#A020F0">val</FONT></B> list : 'a t -&gt; 'a list t
-      <B><FONT COLOR="#A020F0">val</FONT></B> vector : 'a t -&gt; 'a vector t
-      <B><FONT COLOR="#A020F0">val</FONT></B> --&gt; : 'a t * 'b t -&gt; ('a -&gt; 'b) t
+   <I><FONT COLOR="#B22222">(* some built-in type constructors *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> refc : 'a t -&gt; 'a ref t
+   <B><FONT COLOR="#A020F0">val</FONT></B> array : 'a t -&gt; 'a array t
+   <B><FONT COLOR="#A020F0">val</FONT></B> list : 'a t -&gt; 'a list t
+   <B><FONT COLOR="#A020F0">val</FONT></B> vector : 'a t -&gt; 'a vector t
+   <B><FONT COLOR="#A020F0">val</FONT></B> --&gt; : 'a t * 'b t -&gt; ('a -&gt; 'b) t
 
-      <I><FONT COLOR="#B22222">(* some built-in base types *)</FONT></I>
-      <B><FONT COLOR="#A020F0">val</FONT></B> string : string t
-      <B><FONT COLOR="#A020F0">val</FONT></B> unit : unit t
-      <B><FONT COLOR="#A020F0">val</FONT></B> bool : bool t
-      <B><FONT COLOR="#A020F0">val</FONT></B> char : char t
-      <B><FONT COLOR="#A020F0">val</FONT></B> int : int t
-      <B><FONT COLOR="#A020F0">val</FONT></B> word : word t
-      <B><FONT COLOR="#A020F0">val</FONT></B> real : real t
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+   <I><FONT COLOR="#B22222">(* some built-in base types *)</FONT></I>
+   <B><FONT COLOR="#A020F0">val</FONT></B> string : string t
+   <B><FONT COLOR="#A020F0">val</FONT></B> unit : unit t
+   <B><FONT COLOR="#A020F0">val</FONT></B> bool : bool t
+   <B><FONT COLOR="#A020F0">val</FONT></B> char : char t
+   <B><FONT COLOR="#A020F0">val</FONT></B> int : int t
+   <B><FONT COLOR="#A020F0">val</FONT></B> word : word t
+   <B><FONT COLOR="#A020F0">val</FONT></B> real : real t
+<B><FONT COLOR="#0000FF">end</FONT></B>
 </PRE>
 <p>
  
@@ -180,7 +179,7 @@ Finally, to support recursive datatypes, including sets of mutually recursive da
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Fix.t
+<B><FONT COLOR="#A020F0">val</FONT></B> Y : 'a t Tie.t
 </PRE>
 <p>
  
@@ -195,7 +194,7 @@ The <tt>exn</tt> type in SML is a <a href="UniversalType">universal type</a> int
 
 <pre class=code>
 <B><FONT COLOR="#A020F0">val</FONT></B> exn : exn t
-<B><FONT COLOR="#A020F0">val</FONT></B> regExn : (exn -&gt; ('a * 'a s) option) effect
+<B><FONT COLOR="#A020F0">val</FONT></B> regExn : (exn -&gt; ('a * 'a s) option) -&gt; unit
 </PRE>
 <p>
  
@@ -266,14 +265,13 @@ Handling standard types is not particularly interesting.  It is more interesting
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> option t =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Show
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       inj (<B><FONT COLOR="#A020F0">fn</FONT></B> NONE =&gt; INL ()
-             | SOME v =&gt; INR v)
-           (data (C0<B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B> + C1<B><FONT COLOR="#BC8F8F">&quot;SOME&quot;</FONT></B> t))
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> option t = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Show
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   inj (<B><FONT COLOR="#A020F0">fn</FONT></B> NONE =&gt; INL ()
+         | SOME v =&gt; INR v)
+       (data (C0<B><FONT COLOR="#BC8F8F">&quot;NONE&quot;</FONT></B> + C1<B><FONT COLOR="#BC8F8F">&quot;SOME&quot;</FONT></B> t))
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
 <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;SOME 5&quot;</FONT></B> =
     <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> Show <B><FONT COLOR="#A020F0">in</FONT></B> show (option int) <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -290,15 +288,14 @@ Using a product, user specified records can be also be encoded easily:
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> abc =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Show
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       inj (<B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; a &amp; b &amp; c)
-           (record (L<B><FONT COLOR="#BC8F8F">&quot;a&quot;</FONT></B> (option int) *
-                    L<B><FONT COLOR="#BC8F8F">&quot;b&quot;</FONT></B> real *
-                    L<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> bool))
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> abc = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Show
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   inj (<B><FONT COLOR="#A020F0">fn</FONT></B> {a, b, c} =&gt; a &amp; b &amp; c)
+       (record (L<B><FONT COLOR="#BC8F8F">&quot;a&quot;</FONT></B> (option int) *
+                L<B><FONT COLOR="#BC8F8F">&quot;b&quot;</FONT></B> real *
+                L<B><FONT COLOR="#BC8F8F">&quot;c&quot;</FONT></B> bool))
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
 <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;{a = SOME 1, b = 3.0, c = false}&quot;</FONT></B> =
     <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> Show <B><FONT COLOR="#A020F0">in</FONT></B> show abc <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -326,16 +323,15 @@ Using the <tt>Show</tt> combinators, we could first write a new type-index combi
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">fun</FONT></B> graph a =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Fix Show
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> graph_a =&gt;
-                 inj (<B><FONT COLOR="#A020F0">fn</FONT></B> VTX (x, y) =&gt; x &amp; y)
-                     (data (C1<B><FONT COLOR="#BC8F8F">&quot;VTX&quot;</FONT></B>
-                              (tuple (U a *
-                                      U (refc (list graph_a)))))))
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">fun</FONT></B> graph a = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Tie Show
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   fix Y (<B><FONT COLOR="#A020F0">fn</FONT></B> graph_a =&gt;
+             inj (<B><FONT COLOR="#A020F0">fn</FONT></B> VTX (x, y) =&gt; x &amp; y)
+                 (data (C1<B><FONT COLOR="#BC8F8F">&quot;VTX&quot;</FONT></B>
+                          (tuple (U a *
+                                  U (refc (list graph_a)))))))
+<B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -345,23 +341,22 @@ To show a graph with integer labels
 </p>
 
 <pre class=code>
-<B><FONT COLOR="#A020F0">val</FONT></B> a_graph =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#A020F0">val</FONT></B> a = VTX (<B><FONT COLOR="#5F9EA0">1</FONT></B>, ref [])
-       <B><FONT COLOR="#A020F0">val</FONT></B> b = VTX (<B><FONT COLOR="#5F9EA0">2</FONT></B>, ref [])
-       <B><FONT COLOR="#A020F0">val</FONT></B> c = VTX (<B><FONT COLOR="#5F9EA0">3</FONT></B>, ref [])
-       <B><FONT COLOR="#A020F0">val</FONT></B> d = VTX (<B><FONT COLOR="#5F9EA0">4</FONT></B>, ref [])
-       <B><FONT COLOR="#A020F0">val</FONT></B> e = VTX (<B><FONT COLOR="#5F9EA0">5</FONT></B>, ref [])
-       <B><FONT COLOR="#A020F0">val</FONT></B> f = VTX (<B><FONT COLOR="#5F9EA0">6</FONT></B>, ref [])
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       arcs a := [b, d]
-     ; arcs b := [c, e]
-     ; arcs c := [a, f]
-     ; arcs d := [f]
-     ; arcs e := [d]
-     ; arcs f := [e]
-     ; a
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> a_graph = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> a = VTX (<B><FONT COLOR="#5F9EA0">1</FONT></B>, ref [])
+   <B><FONT COLOR="#A020F0">val</FONT></B> b = VTX (<B><FONT COLOR="#5F9EA0">2</FONT></B>, ref [])
+   <B><FONT COLOR="#A020F0">val</FONT></B> c = VTX (<B><FONT COLOR="#5F9EA0">3</FONT></B>, ref [])
+   <B><FONT COLOR="#A020F0">val</FONT></B> d = VTX (<B><FONT COLOR="#5F9EA0">4</FONT></B>, ref [])
+   <B><FONT COLOR="#A020F0">val</FONT></B> e = VTX (<B><FONT COLOR="#5F9EA0">5</FONT></B>, ref [])
+   <B><FONT COLOR="#A020F0">val</FONT></B> f = VTX (<B><FONT COLOR="#5F9EA0">6</FONT></B>, ref [])
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   arcs a := [b, d]
+ ; arcs b := [c, e]
+ ; arcs c := [a, f]
+ ; arcs d := [f]
+ ; arcs e := [d]
+ ; arcs f := [e]
+ ; a
+<B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -388,21 +383,19 @@ There is a subtle gotcha with cyclic data.  Consider the following code:
 <pre class=code>
 <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">ExnArray</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn array
 
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> () =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Show
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> ExnArray a =&gt;
-                  SOME (a, C1<B><FONT COLOR="#BC8F8F">&quot;ExnArray&quot;</FONT></B> (array exn))
-                | _ =&gt; NONE)
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> () = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Show
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> ExnArray a =&gt;
+              SOME (a, C1<B><FONT COLOR="#BC8F8F">&quot;ExnArray&quot;</FONT></B> (array exn))
+            | _ =&gt; NONE)
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> a_cycle =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#A020F0">val</FONT></B> a = Array.fromList [Empty]
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       Array.update (a, <B><FONT COLOR="#5F9EA0">0</FONT></B>, ExnArray a) ; a
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> a_cycle = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> a = Array.fromList [Empty]
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   Array.update (a, <B><FONT COLOR="#5F9EA0">0</FONT></B>, ExnArray a) ; a
+<B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -428,21 +421,19 @@ goes into an infinite loop.  To avoid this problem, the type-index <tt>array&nbs
 
 <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">ExnArray</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn array
 
-</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> () =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Show
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> ExnArray a =&gt;
-                  SOME (a, C1<B><FONT COLOR="#BC8F8F">&quot;ExnArray&quot;</FONT></B> array_exn)
-                | _ =&gt; NONE)
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+</FONT></B><B><FONT COLOR="#A020F0">val</FONT></B> () = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Show
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> ExnArray a =&gt;
+              SOME (a, C1<B><FONT COLOR="#BC8F8F">&quot;ExnArray&quot;</FONT></B> array_exn)
+            | _ =&gt; NONE)
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
-<B><FONT COLOR="#A020F0">val</FONT></B> a_cycle =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#A020F0">val</FONT></B> a = Array.fromList [Empty]
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       Array.update (a, <B><FONT COLOR="#5F9EA0">0</FONT></B>, ExnArray a) ; a
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> a_cycle = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#A020F0">val</FONT></B> a = Array.fromList [Empty]
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   Array.update (a, <B><FONT COLOR="#5F9EA0">0</FONT></B>, ExnArray a) ; a
+<B><FONT COLOR="#A020F0">end</FONT></B>
 
 <B><FONT COLOR="#A020F0">val</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;[|ExnArray %0|] as %0&quot;</FONT></B> =
     <B><FONT COLOR="#A020F0">let</FONT></B> <B><FONT COLOR="#0000FF">open</FONT></B> Show <B><FONT COLOR="#A020F0">in</FONT></B> show array_exn <B><FONT COLOR="#A020F0">end</FONT></B>
@@ -457,191 +448,181 @@ Cyclic data (excluding closures) in Standard ML can only be constructed imperati
 <h3 id="head-8781d615fd77be9578225c40ac67b9471394cced">Implementation</h3>
 
 <pre class=code>
-<B><FONT COLOR="#0000FF">structure</FONT></B> SmlSyntax =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
+<B><FONT COLOR="#0000FF">structure</FONT></B> SmlSyntax = <B><FONT COLOR="#0000FF">struct</FONT></B>
+   <B><FONT COLOR="#A020F0">local</FONT></B>
+      <B><FONT COLOR="#0000FF">structure</FONT></B> CV = CharVector <B><FONT COLOR="#0000FF">and</FONT></B> C = Char
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      <B><FONT COLOR="#A020F0">val</FONT></B> isSym = Char.contains <B><FONT COLOR="#BC8F8F">&quot;!%&amp;$#+-/:&lt;=&gt;?@\\~`^|*&quot;</FONT></B>
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isSymId s = <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all isSym s
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isAlphaNumId s =
+          <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s
+          <B><FONT COLOR="#A020F0">andalso</FONT></B> C.isAlpha (CV.sub (s, <B><FONT COLOR="#5F9EA0">0</FONT></B>))
+          <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all (<B><FONT COLOR="#A020F0">fn</FONT></B> c =&gt; C.isAlphaNum c
+                                  <B><FONT COLOR="#A020F0">orelse</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;'&quot;</FONT></B> = c
+                                  <B><FONT COLOR="#A020F0">orelse</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;_&quot;</FONT></B> = c) s
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isNumLabel s =
+          <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s
+          <B><FONT COLOR="#A020F0">andalso</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;0&quot;</FONT></B> &lt;&gt; CV.sub (s, <B><FONT COLOR="#5F9EA0">0</FONT></B>)
+          <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all C.isDigit s
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isId s = isAlphaNumId s <B><FONT COLOR="#A020F0">orelse</FONT></B> isSymId s
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isLongId s = List.all isId (String.fields (#<B><FONT COLOR="#BC8F8F">&quot;.&quot;</FONT></B> &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> =) s)
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> isLabel s = isId s <B><FONT COLOR="#A020F0">orelse</FONT></B> isNumLabel s
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
+
+<B><FONT COLOR="#0000FF">structure</FONT></B> Show :&gt; SHOW = <B><FONT COLOR="#0000FF">struct</FONT></B>
+   <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn list * 'a -&gt; bool * string
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a s </FONT></B>=<B><FONT COLOR="#228B22"> 'a t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'k) p </FONT></B>=<B><FONT COLOR="#228B22"> 'a t
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> unit
+   </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> l </FONT></B>=<B><FONT COLOR="#228B22"> unit
+
+   </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> show (IN t) x = #<B><FONT COLOR="#5F9EA0">2</FONT></B> (t ([], x))
+
+   <I><FONT COLOR="#B22222">(* user-defined types *)</FONT></I>
+   <B><FONT COLOR="#A020F0">fun</FONT></B> inj inj (IN b) = IN (b o Pair.map (id, inj))
+
+   <B><FONT COLOR="#A020F0">local</FONT></B>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> surround pre suf (_, s) = (false, concat [pre, s, suf])
+      <B><FONT COLOR="#A020F0">fun</FONT></B> parenthesize x = <B><FONT COLOR="#A020F0">if</FONT></B> #1 x <B><FONT COLOR="#A020F0">then</FONT></B> surround <B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;)&quot;</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> x
+      <B><FONT COLOR="#A020F0">fun</FONT></B> construct tag =
+          (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, s) =&gt; (true, concat [tag, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s])) o parenthesize
+      <B><FONT COLOR="#A020F0">fun</FONT></B> check p m s = <B><FONT COLOR="#A020F0">if</FONT></B> p s <B><FONT COLOR="#A020F0">then</FONT></B> () <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (m^s)
+   <B><FONT COLOR="#A020F0">in</FONT></B>
+      <I><FONT COLOR="#B22222">(* tuples and records *)</FONT></I>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> (IN l) * (IN r) =
+          IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, a &amp; b) =&gt;
+                 (false, concat [#<B><FONT COLOR="#5F9EA0">2</FONT></B> (l (rs, a)),
+                                 <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>,
+                                 #<B><FONT COLOR="#5F9EA0">2</FONT></B> (r (rs, b))]))
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> U = id
+      <B><FONT COLOR="#A020F0">fun</FONT></B> L l = (check SmlSyntax.isLabel <B><FONT COLOR="#BC8F8F">&quot;Invalid label: &quot;</FONT></B> l
+               ; <B><FONT COLOR="#A020F0">fn</FONT></B> IN t =&gt; IN (surround (l^<B><FONT COLOR="#BC8F8F">&quot; = &quot;</FONT></B>) <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> o t))
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> tuple (IN t) = IN (surround <B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;)&quot;</FONT></B> o t)
+      <B><FONT COLOR="#A020F0">fun</FONT></B> record (IN t) = IN (surround <B><FONT COLOR="#BC8F8F">&quot;{&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;}&quot;</FONT></B> o t)
+
+      <I><FONT COLOR="#B22222">(* datatypes *)</FONT></I>
+      <B><FONT COLOR="#A020F0">fun</FONT></B> (IN l) + (IN r) = IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, INL a) =&gt; l (rs, a)
+                                 | (rs, INR b) =&gt; r (rs, b))
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> C0 c = (check SmlSyntax.isId <B><FONT COLOR="#BC8F8F">&quot;Invalid constructor: &quot;</FONT></B> c
+                ; IN (const (false, c)))
+      <B><FONT COLOR="#A020F0">fun</FONT></B> C1 c (IN t) = (check SmlSyntax.isId <B><FONT COLOR="#BC8F8F">&quot;Invalid constructor: &quot;</FONT></B> c
+                       ; IN (construct c o t))
+
+      <B><FONT COLOR="#A020F0">val</FONT></B> data = id
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Tie.iso Tie.function (<B><FONT COLOR="#A020F0">fn</FONT></B> IN x =&gt; x, IN) ?
+
+      <I><FONT COLOR="#B22222">(* exceptions *)</FONT></I>
       <B><FONT COLOR="#A020F0">local</FONT></B>
-         <B><FONT COLOR="#0000FF">structure</FONT></B> CV = CharVector <B><FONT COLOR="#0000FF">and</FONT></B> C = Char
+         <B><FONT COLOR="#A020F0">val</FONT></B> handlers = ref ([] : (exn -&gt; unit t option) list)
       <B><FONT COLOR="#A020F0">in</FONT></B>
-         <B><FONT COLOR="#A020F0">val</FONT></B> isSym = Char.contains <B><FONT COLOR="#BC8F8F">&quot;!%&amp;$#+-/:&lt;=&gt;?@\\~`^|*&quot;</FONT></B>
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isSymId s = <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all isSym s
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isAlphaNumId s =
-             <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s
-             <B><FONT COLOR="#A020F0">andalso</FONT></B> C.isAlpha (CV.sub (s, <B><FONT COLOR="#5F9EA0">0</FONT></B>))
-             <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all (<B><FONT COLOR="#A020F0">fn</FONT></B> c =&gt; C.isAlphaNum c
-                                     <B><FONT COLOR="#A020F0">orelse</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;'&quot;</FONT></B> = c
-                                     <B><FONT COLOR="#A020F0">orelse</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;_&quot;</FONT></B> = c) s
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isNumLabel s =
-             <B><FONT COLOR="#5F9EA0">0</FONT></B> &lt; size s
-             <B><FONT COLOR="#A020F0">andalso</FONT></B> #<B><FONT COLOR="#BC8F8F">&quot;0&quot;</FONT></B> &lt;&gt; CV.sub (s, <B><FONT COLOR="#5F9EA0">0</FONT></B>)
-             <B><FONT COLOR="#A020F0">andalso</FONT></B> CV.all C.isDigit s
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isId s = isAlphaNumId s <B><FONT COLOR="#A020F0">orelse</FONT></B> isSymId s
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isLongId s = List.all isId (String.fields (#<B><FONT COLOR="#BC8F8F">&quot;.&quot;</FONT></B> &lt;\ <B><FONT COLOR="#A020F0">op</FONT></B> =) s)
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> isLabel s = isId s <B><FONT COLOR="#A020F0">orelse</FONT></B> isNumLabel s
-      <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#0000FF">end</FONT></B>
-
-<B><FONT COLOR="#0000FF">structure</FONT></B> Show :&gt; SHOW =
-   <B><FONT COLOR="#0000FF">struct</FONT></B>
-      <B><FONT COLOR="#A020F0">datatype</FONT></B><B><FONT COLOR="#228B22"> 'a t </FONT></B>=<B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">IN</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> exn list * 'a -&gt; bool * string
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> 'a s </FONT></B>=<B><FONT COLOR="#228B22"> 'a t
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> ('a, 'k) p </FONT></B>=<B><FONT COLOR="#228B22"> 'a t
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> u </FONT></B>=<B><FONT COLOR="#228B22"> unit
-      </FONT></B><B><FONT COLOR="#A020F0">type</FONT></B><B><FONT COLOR="#228B22"> l </FONT></B>=<B><FONT COLOR="#228B22"> unit
-
-      </FONT></B><B><FONT COLOR="#A020F0">fun</FONT></B> show (IN t) x = #<B><FONT COLOR="#5F9EA0">2</FONT></B> (t ([], x))
-
-      <I><FONT COLOR="#B22222">(* user-defined types *)</FONT></I>
-      <B><FONT COLOR="#A020F0">fun</FONT></B> inj inj (IN b) = IN (b o cross (id, inj))
-
-      <B><FONT COLOR="#A020F0">local</FONT></B>
-         <B><FONT COLOR="#A020F0">fun</FONT></B> surround pre suf (_, s) = (false, concat [pre, s, suf])
-         <B><FONT COLOR="#A020F0">fun</FONT></B> parenthesize x = <B><FONT COLOR="#A020F0">if</FONT></B> #1 x <B><FONT COLOR="#A020F0">then</FONT></B> surround <B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;)&quot;</FONT></B> x <B><FONT COLOR="#A020F0">else</FONT></B> x
-         <B><FONT COLOR="#A020F0">fun</FONT></B> construct tag =
-             (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, s) =&gt; (true, concat [tag, <B><FONT COLOR="#BC8F8F">&quot; &quot;</FONT></B>, s])) o parenthesize
-         <B><FONT COLOR="#A020F0">fun</FONT></B> check p m s = <B><FONT COLOR="#A020F0">if</FONT></B> p s <B><FONT COLOR="#A020F0">then</FONT></B> () <B><FONT COLOR="#A020F0">else</FONT></B> <B><FONT COLOR="#A020F0">raise</FONT></B> Fail (m^s)
-      <B><FONT COLOR="#A020F0">in</FONT></B>
-         <I><FONT COLOR="#B22222">(* tuples and records *)</FONT></I>
-         <B><FONT COLOR="#A020F0">fun</FONT></B> (IN l) * (IN r) =
-             IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, a &amp; b) =&gt;
-                    (false, concat [#<B><FONT COLOR="#5F9EA0">2</FONT></B> (l (rs, a)),
-                                    <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>,
-                                    #<B><FONT COLOR="#5F9EA0">2</FONT></B> (r (rs, b))]))
-
-         <B><FONT COLOR="#A020F0">val</FONT></B> U = id
-         <B><FONT COLOR="#A020F0">fun</FONT></B> L l = (check SmlSyntax.isLabel <B><FONT COLOR="#BC8F8F">&quot;Invalid label: &quot;</FONT></B> l
-                  ; <B><FONT COLOR="#A020F0">fn</FONT></B> IN t =&gt; IN (surround (l^<B><FONT COLOR="#BC8F8F">&quot; = &quot;</FONT></B>) <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> o t))
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> tuple (IN t) = IN (surround <B><FONT COLOR="#BC8F8F">&quot;(&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;)&quot;</FONT></B> o t)
-         <B><FONT COLOR="#A020F0">fun</FONT></B> record (IN t) = IN (surround <B><FONT COLOR="#BC8F8F">&quot;{&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;}&quot;</FONT></B> o t)
-
-         <I><FONT COLOR="#B22222">(* datatypes *)</FONT></I>
-         <B><FONT COLOR="#A020F0">fun</FONT></B> (IN l) + (IN r) = IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, INL a) =&gt; l (rs, a)
-                                    | (rs, INR b) =&gt; r (rs, b))
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> C0 c = (check SmlSyntax.isId <B><FONT COLOR="#BC8F8F">&quot;Invalid constructor: &quot;</FONT></B> c
-                   ; IN (const (false, c)))
-         <B><FONT COLOR="#A020F0">fun</FONT></B> C1 c (IN t) = (check SmlSyntax.isId <B><FONT COLOR="#BC8F8F">&quot;Invalid constructor: &quot;</FONT></B> c
-                          ; IN (construct c o t))
-
-         <B><FONT COLOR="#A020F0">val</FONT></B> data = id
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> Y ? = Fix.iso (IN, <B><FONT COLOR="#A020F0">fn</FONT></B> IN x =&gt; x) Fn.Y ?
-
-         <I><FONT COLOR="#B22222">(* exceptions *)</FONT></I>
-         <B><FONT COLOR="#A020F0">local</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> handlers = ref ([] : (exn -&gt; unit t option) list)
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> exn = IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, e) =&gt;
-                             <B><FONT COLOR="#A020F0">let</FONT></B>
-                                <B><FONT COLOR="#A020F0">fun</FONT></B> lp [] =
-                                    C0(concat [<B><FONT COLOR="#BC8F8F">&quot;&lt;exn:&quot;</FONT></B>,
-                                               General.exnName e,
-                                               <B><FONT COLOR="#BC8F8F">&quot;&gt;&quot;</FONT></B>])
-                                  | lp (f::fs) =
-                                    <B><FONT COLOR="#A020F0">case</FONT></B> f e <B><FONT COLOR="#A020F0">of</FONT></B>
-                                       NONE =&gt; lp fs
-                                     | SOME t =&gt; t
-                                <B><FONT COLOR="#A020F0">val</FONT></B> IN f = lp (!handlers)
-                             <B><FONT COLOR="#A020F0">in</FONT></B>
-                                f (rs, ())
-                             <B><FONT COLOR="#A020F0">end</FONT></B>)
-            <B><FONT COLOR="#A020F0">fun</FONT></B> regExn f =
-                handlers := (Option.map
-                                (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, IN f) =&gt;
-                                    IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, ()) =&gt;
-                                           f (rs, x))) o f)
-                            :: !handlers
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-
-         <I><FONT COLOR="#B22222">(* some built-in type constructors *)</FONT></I>
-         <B><FONT COLOR="#A020F0">local</FONT></B>
-            <B><FONT COLOR="#A020F0">fun</FONT></B> cyclic (IN t) =
-                <B><FONT COLOR="#A020F0">let</FONT></B>
-                   <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ''a * bool ref
-                </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B>
-                   IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, v : ''a) =&gt;
-                          <B><FONT COLOR="#A020F0">let</FONT></B>
-                             <B><FONT COLOR="#A020F0">val</FONT></B> idx = Int.toString o length
-                             <B><FONT COLOR="#A020F0">fun</FONT></B> lp (E (v', c)::rs) =
-                                 <B><FONT COLOR="#A020F0">if</FONT></B> v' &lt;&gt; v <B><FONT COLOR="#A020F0">then</FONT></B> lp rs
-                                 <B><FONT COLOR="#A020F0">else</FONT></B> (c := false ; (false, <B><FONT COLOR="#BC8F8F">&quot;%&quot;</FONT></B>^idx rs))
-                               | lp (_::rs) = lp rs
-                               | lp [] =
-                                 <B><FONT COLOR="#A020F0">let</FONT></B>
-                                    <B><FONT COLOR="#A020F0">val</FONT></B> c = ref true
-                                    <B><FONT COLOR="#A020F0">val</FONT></B> r = t (E (v, c)::rs, v)
-                                 <B><FONT COLOR="#A020F0">in</FONT></B>
-                                    <B><FONT COLOR="#A020F0">if</FONT></B> !c <B><FONT COLOR="#A020F0">then</FONT></B>
-                                       r
-                                    <B><FONT COLOR="#A020F0">else</FONT></B>
-                                       surround <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> (<B><FONT COLOR="#BC8F8F">&quot; as %&quot;</FONT></B>^idx rs) r
-                                 <B><FONT COLOR="#A020F0">end</FONT></B>
+         <B><FONT COLOR="#A020F0">val</FONT></B> exn = IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, e) =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                             <B><FONT COLOR="#A020F0">fun</FONT></B> lp [] =
+                                 C0(concat [<B><FONT COLOR="#BC8F8F">&quot;&lt;exn:&quot;</FONT></B>,
+                                            General.exnName e,
+                                            <B><FONT COLOR="#BC8F8F">&quot;&gt;&quot;</FONT></B>])
+                               | lp (f::fs) =
+                                 <B><FONT COLOR="#A020F0">case</FONT></B> f e
+                                  <B><FONT COLOR="#A020F0">of</FONT></B> NONE =&gt; lp fs
+                                   | SOME t =&gt; t
+                             <B><FONT COLOR="#A020F0">val</FONT></B> IN f = lp (!handlers)
                           <B><FONT COLOR="#A020F0">in</FONT></B>
-                             lp rs
+                             f (rs, ())
                           <B><FONT COLOR="#A020F0">end</FONT></B>)
-                <B><FONT COLOR="#A020F0">end</FONT></B>
-
-            <B><FONT COLOR="#A020F0">fun</FONT></B> aggregate pre suf toList (IN t) =
-                IN (surround pre suf o
-                    (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, a) =&gt;
-                        (false,
-                         String.concatWith
-                            <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>
-                            (map (#2 o curry t rs)
-                                 (toList a)))))
-
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">fun</FONT></B> refc ? = (cyclic o inj ! o C1<B><FONT COLOR="#BC8F8F">&quot;ref&quot;</FONT></B>) ?
-            <B><FONT COLOR="#A020F0">fun</FONT></B> array ? = (cyclic o aggregate <B><FONT COLOR="#BC8F8F">&quot;[|&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;|]&quot;</FONT></B> (Array.foldr <B><FONT COLOR="#A020F0">op</FONT></B>:: [])) ?
-            <B><FONT COLOR="#A020F0">fun</FONT></B> list ? = aggregate <B><FONT COLOR="#BC8F8F">&quot;[&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;]&quot;</FONT></B> id ?
-            <B><FONT COLOR="#A020F0">fun</FONT></B> vector ? = aggregate <B><FONT COLOR="#BC8F8F">&quot;#[&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;]&quot;</FONT></B> (Vector.foldr <B><FONT COLOR="#A020F0">op</FONT></B>:: []) ?
-         <B><FONT COLOR="#A020F0">end</FONT></B>
-
-         <B><FONT COLOR="#A020F0">fun</FONT></B> (IN _) --&gt; (IN _) = IN (const (false, <B><FONT COLOR="#BC8F8F">&quot;&lt;fn&gt;&quot;</FONT></B>))
-
-         <I><FONT COLOR="#B22222">(* some built-in base types *)</FONT></I>
-         <B><FONT COLOR="#A020F0">local</FONT></B>
-            <B><FONT COLOR="#A020F0">fun</FONT></B> mk toS = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; (false, x)) o toS o (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, x) =&gt; x)
-         <B><FONT COLOR="#A020F0">in</FONT></B>
-            <B><FONT COLOR="#A020F0">val</FONT></B> string =
-                IN (surround <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> o mk (String.translate Char.toString))
-            <B><FONT COLOR="#A020F0">val</FONT></B> unit = IN (mk (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#BC8F8F">&quot;()&quot;</FONT></B>))
-            <B><FONT COLOR="#A020F0">val</FONT></B> bool = IN (mk Bool.toString)
-            <B><FONT COLOR="#A020F0">val</FONT></B> char = IN (surround <B><FONT COLOR="#BC8F8F">&quot;#\&quot;&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> o mk Char.toString)
-            <B><FONT COLOR="#A020F0">val</FONT></B> int = IN (mk Int.toString)
-            <B><FONT COLOR="#A020F0">val</FONT></B> word = IN (surround <B><FONT COLOR="#BC8F8F">&quot;0wx&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> o mk Word.toString)
-            <B><FONT COLOR="#A020F0">val</FONT></B> real = IN (mk Real.toString)
-         <B><FONT COLOR="#A020F0">end</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> regExn f =
+             handlers := (Option.map
+                             (<B><FONT COLOR="#A020F0">fn</FONT></B> (x, IN f) =&gt;
+                                 IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, ()) =&gt;
+                                        f (rs, x))) o f)
+                         :: !handlers
       <B><FONT COLOR="#A020F0">end</FONT></B>
-   <B><FONT COLOR="#0000FF">end</FONT></B>
+
+      <I><FONT COLOR="#B22222">(* some built-in type constructors *)</FONT></I>
+      <B><FONT COLOR="#A020F0">local</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> cyclic (IN t) = <B><FONT COLOR="#A020F0">let</FONT></B>
+            <B><FONT COLOR="#A020F0">exception</FONT></B><B><FONT COLOR="#228B22"> <FONT COLOR="#B8860B">E</FONT> <B><FONT COLOR="#A020F0">of</FONT></B> ''a * bool ref
+         </FONT></B><B><FONT COLOR="#A020F0">in</FONT></B>
+            IN (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, v : ''a) =&gt; <B><FONT COLOR="#A020F0">let</FONT></B>
+                      <B><FONT COLOR="#A020F0">val</FONT></B> idx = Int.toString o length
+                      <B><FONT COLOR="#A020F0">fun</FONT></B> lp (E (v', c)::rs) =
+                          <B><FONT COLOR="#A020F0">if</FONT></B> v' &lt;&gt; v <B><FONT COLOR="#A020F0">then</FONT></B> lp rs
+                          <B><FONT COLOR="#A020F0">else</FONT></B> (c := false ; (false, <B><FONT COLOR="#BC8F8F">&quot;%&quot;</FONT></B>^idx rs))
+                        | lp (_::rs) = lp rs
+                        | lp [] = <B><FONT COLOR="#A020F0">let</FONT></B>
+                             <B><FONT COLOR="#A020F0">val</FONT></B> c = ref true
+                             <B><FONT COLOR="#A020F0">val</FONT></B> r = t (E (v, c)::rs, v)
+                          <B><FONT COLOR="#A020F0">in</FONT></B>
+                             <B><FONT COLOR="#A020F0">if</FONT></B> !c <B><FONT COLOR="#A020F0">then</FONT></B> r
+                             <B><FONT COLOR="#A020F0">else</FONT></B> surround <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> (<B><FONT COLOR="#BC8F8F">&quot; as %&quot;</FONT></B>^idx rs) r
+                          <B><FONT COLOR="#A020F0">end</FONT></B>
+                   <B><FONT COLOR="#A020F0">in</FONT></B>
+                      lp rs
+                   <B><FONT COLOR="#A020F0">end</FONT></B>)
+         <B><FONT COLOR="#A020F0">end</FONT></B>
+
+         <B><FONT COLOR="#A020F0">fun</FONT></B> aggregate pre suf toList (IN t) =
+             IN (surround pre suf o
+                 (<B><FONT COLOR="#A020F0">fn</FONT></B> (rs, a) =&gt;
+                     (false,
+                      String.concatWith
+                         <B><FONT COLOR="#BC8F8F">&quot;, &quot;</FONT></B>
+                         (map (#2 o curry t rs)
+                              (toList a)))))
+      <B><FONT COLOR="#A020F0">in</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> refc ? = (cyclic o inj ! o C1<B><FONT COLOR="#BC8F8F">&quot;ref&quot;</FONT></B>) ?
+         <B><FONT COLOR="#A020F0">fun</FONT></B> array ? = (cyclic o aggregate <B><FONT COLOR="#BC8F8F">&quot;[|&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;|]&quot;</FONT></B> (Array.foldr <B><FONT COLOR="#A020F0">op</FONT></B>:: [])) ?
+         <B><FONT COLOR="#A020F0">fun</FONT></B> list ? = aggregate <B><FONT COLOR="#BC8F8F">&quot;[&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;]&quot;</FONT></B> id ?
+         <B><FONT COLOR="#A020F0">fun</FONT></B> vector ? = aggregate <B><FONT COLOR="#BC8F8F">&quot;#[&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;]&quot;</FONT></B> (Vector.foldr <B><FONT COLOR="#A020F0">op</FONT></B>:: []) ?
+      <B><FONT COLOR="#A020F0">end</FONT></B>
+
+      <B><FONT COLOR="#A020F0">fun</FONT></B> (IN _) --&gt; (IN _) = IN (const (false, <B><FONT COLOR="#BC8F8F">&quot;&lt;fn&gt;&quot;</FONT></B>))
+
+      <I><FONT COLOR="#B22222">(* some built-in base types *)</FONT></I>
+      <B><FONT COLOR="#A020F0">local</FONT></B>
+         <B><FONT COLOR="#A020F0">fun</FONT></B> mk toS = (<B><FONT COLOR="#A020F0">fn</FONT></B> x =&gt; (false, x)) o toS o (<B><FONT COLOR="#A020F0">fn</FONT></B> (_, x) =&gt; x)
+      <B><FONT COLOR="#A020F0">in</FONT></B>
+         <B><FONT COLOR="#A020F0">val</FONT></B> string =
+             IN (surround <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> o mk (String.translate Char.toString))
+         <B><FONT COLOR="#A020F0">val</FONT></B> unit = IN (mk (<B><FONT COLOR="#A020F0">fn</FONT></B> () =&gt; <B><FONT COLOR="#BC8F8F">&quot;()&quot;</FONT></B>))
+         <B><FONT COLOR="#A020F0">val</FONT></B> bool = IN (mk Bool.toString)
+         <B><FONT COLOR="#A020F0">val</FONT></B> char = IN (surround <B><FONT COLOR="#BC8F8F">&quot;#\&quot;&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;\&quot;&quot;</FONT></B> o mk Char.toString)
+         <B><FONT COLOR="#A020F0">val</FONT></B> int = IN (mk Int.toString)
+         <B><FONT COLOR="#A020F0">val</FONT></B> word = IN (surround <B><FONT COLOR="#BC8F8F">&quot;0wx&quot;</FONT></B> <B><FONT COLOR="#BC8F8F">&quot;&quot;</FONT></B> o mk Word.toString)
+         <B><FONT COLOR="#A020F0">val</FONT></B> real = IN (mk Real.toString)
+      <B><FONT COLOR="#A020F0">end</FONT></B>
+   <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#0000FF">end</FONT></B>
 
 <I><FONT COLOR="#B22222">(* Handlers for standard top-level exceptions *)</FONT></I>
-<B><FONT COLOR="#A020F0">val</FONT></B> () =
-    <B><FONT COLOR="#A020F0">let</FONT></B>
-       <B><FONT COLOR="#0000FF">open</FONT></B> Show
-       <B><FONT COLOR="#A020F0">fun</FONT></B> E0 name = SOME ((), C0 name)
-    <B><FONT COLOR="#A020F0">in</FONT></B>
-       regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> Bind =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Bind&quot;</FONT></B>
-                | Chr =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Chr&quot;</FONT></B>
-                | Div =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Div&quot;</FONT></B>
-                | Domain =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Domain&quot;</FONT></B>
-                | Empty =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Empty&quot;</FONT></B>
-                | Match =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Match&quot;</FONT></B>
-                | Option =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Option&quot;</FONT></B>
-                | Overflow  =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Overflow&quot;</FONT></B>
-                | Size =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Size&quot;</FONT></B>
-                | Span =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Span&quot;</FONT></B>
-                | Subscript =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Subscript&quot;</FONT></B>
-                | _ =&gt; NONE)
-     ; regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> Fail s =&gt; SOME (s, C1<B><FONT COLOR="#BC8F8F">&quot;Fail&quot;</FONT></B> string)
-                | _ =&gt; NONE)
-    <B><FONT COLOR="#A020F0">end</FONT></B>
+<B><FONT COLOR="#A020F0">val</FONT></B> () = <B><FONT COLOR="#A020F0">let</FONT></B>
+   <B><FONT COLOR="#0000FF">open</FONT></B> Show
+   <B><FONT COLOR="#A020F0">fun</FONT></B> E0 name = SOME ((), C0 name)
+<B><FONT COLOR="#A020F0">in</FONT></B>
+   regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> Bind =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Bind&quot;</FONT></B>
+            | Chr =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Chr&quot;</FONT></B>
+            | Div =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Div&quot;</FONT></B>
+            | Domain =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Domain&quot;</FONT></B>
+            | Empty =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Empty&quot;</FONT></B>
+            | Match =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Match&quot;</FONT></B>
+            | Option =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Option&quot;</FONT></B>
+            | Overflow  =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Overflow&quot;</FONT></B>
+            | Size =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Size&quot;</FONT></B>
+            | Span =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Span&quot;</FONT></B>
+            | Subscript =&gt; E0<B><FONT COLOR="#BC8F8F">&quot;Subscript&quot;</FONT></B>
+            | _ =&gt; NONE)
+ ; regExn (<B><FONT COLOR="#A020F0">fn</FONT></B> Fail s =&gt; SOME (s, C1<B><FONT COLOR="#BC8F8F">&quot;Fail&quot;</FONT></B> string)
+            | _ =&gt; NONE)
+<B><FONT COLOR="#A020F0">end</FONT></B>
 </PRE>
 <p>
  
@@ -652,5 +633,5 @@ Cyclic data (excluding closures) in Standard ML can only be constructed imperati
 
 <p>
 <hr>
-Last edited on 2006-08-13 15:03:53 by <span title="cs181143070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-26 02:10:40 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>

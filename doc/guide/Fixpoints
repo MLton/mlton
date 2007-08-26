@@ -56,7 +56,7 @@ urchinTracker();
 </table>
 <div id="content" lang="en" dir="ltr">
 This page discusses a framework that makes it possible to compute fixpoints over arbitrary products of abstract types.  The code is from an Extended Basis library (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/README?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">README</a>). <p>
-First the signature of the framework: 
+First the signature of the framework (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/public/generic/tie.sig?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tie.sig</a>): 
 </p>
 <p>
 <pre class=code><I><FONT COLOR="#B22222">(**
@@ -109,15 +109,15 @@ First the signature of the framework:
 
    <B><FONT COLOR="#A020F0">val</FONT></B> tier : ('a * 'a Effect.t) Thunk.t -&gt; 'a t
    <I><FONT COLOR="#B22222">(**
-    * {tier} is used to define fixpoint tiers for new abstract types by
-    * providing a thunk whose instantiation allocates a mutable proxy and
-    * a procedure for updating it with the result.
+    * {tier} is used to define fixpoint witnesses for new abstract types
+    * by providing a thunk whose instantiation allocates a mutable proxy
+    * and a procedure for updating it with the result.
     *)</FONT></I>
 
    <B><FONT COLOR="#A020F0">val</FONT></B> id : 'a -&gt; 'a t
    <I><FONT COLOR="#B22222">(** {id x} is equivalent to {pure (const (x, id))}. *)</FONT></I>
 
-   <I><FONT COLOR="#B22222">(** == Combining Existing Tiers == *)</FONT></I>
+   <I><FONT COLOR="#B22222">(** == Combining Existing Witnesses == *)</FONT></I>
 
    <B><FONT COLOR="#A020F0">val</FONT></B> iso : 'b t -&gt; ('a, 'b) Iso.t -&gt; 'a t
    <I><FONT COLOR="#B22222">(**
@@ -139,7 +139,7 @@ First the signature of the framework:
     * {'a * 'b}.
     *)</FONT></I>
 
-   <I><FONT COLOR="#B22222">(** == Particular Tiers == *)</FONT></I>
+   <I><FONT COLOR="#B22222">(** == Particular Witnesses == *)</FONT></I>
 
    <B><FONT COLOR="#A020F0">val</FONT></B> function : ('a -&gt; 'b) t
    <I><FONT COLOR="#B22222">(** Witness for functions. *)</FONT></I>
@@ -154,7 +154,7 @@ First the signature of the framework:
 Note that instead of using an infix operator, we could alternatively employ an interface using <a href="Fold">Fold</a>.  Also, witnesses are eta-expanded to work around the <a href="ValueRestriction">value restriction</a>, while maintaining abstraction. 
 </p>
 <p>
-Here is the implementation: 
+Here is the implementation (<a href = "http://mlton.org/cgi-bin/viewsvn.cgi/mltonlib/trunk/com/ssh/extended-basis/unstable/detail/generic/tie.sml?view=markup"><img src="moin-www.png" alt="[WWW]" height="11" width="11">tie.sml</a>): 
 </p>
 <p>
 <pre class=code><B><FONT COLOR="#0000FF">structure</FONT></B> Tie :&gt; TIE = <B><FONT COLOR="#0000FF">struct</FONT></B>
@@ -265,5 +265,5 @@ Note that above we make use of the <tt>iso</tt> combinator.  Here is a finite re
 
 <p>
 <hr>
-Last edited on 2007-08-24 17:46:00 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
+Last edited on 2007-08-25 21:26:24 by <span title="cs27019070.pp.htv.fi"><a href="VesaKarvonen">VesaKarvonen</a></span>.
 </body></html>
