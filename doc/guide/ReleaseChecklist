@@ -308,6 +308,11 @@ This ensures that the guide distributed with the release looks updated for the r
         </ul>
 
 
+    <li>
+<p>
+ Check that <tt>doc/changelog</tt> has proper date. 
+</p>
+</li>
 
     </ul>
 
@@ -335,11 +340,11 @@ This ensures that the guide distributed with the release looks updated for the r
     <li>
 <p>
  Shell commands: 
-<pre>svn checkout svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release mlton-YYYYMMDD-1
-cd mlton-YYYYMMDD-1
+<pre>svn checkout svn+ssh://mlton.org/svnroot/mlton/tags/on-YYYYMMDD-release mlton-YYYYMMDD
+cd mlton-YYYYMMDD
 make clean clean-svn version VERSION=YYYYMMDD RELEASE=1
 cd ..
-tar -czpvf mlton-YYYYMMDD-1.src.tgz mlton-YYYYMMDD-1
+tar -czpvf mlton-YYYYMMDD-1.src.tgz mlton-YYYYMMDD
 </pre>
 </p>
 </li>
@@ -365,7 +370,7 @@ tar -czpvf mlton-YYYYMMDD-1.src.tgz mlton-YYYYMMDD-1
 <p>
  Shell commands: 
 <pre>tar -xzpvf mlton-YYYYMMDD-1.src.tgz
-cd mlton-YYYYMMDD-1
+cd mlton-YYYYMMDD
 make
 </pre>
 </p>
@@ -427,7 +432,7 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 </li>
     <li>
 <p>
- <tt>guide/YYYYMMDD</tt> gets a copy of <tt>doc/guide</tt> 
+ <tt>guide/YYYYMMDD</tt> gets a copy of <tt>doc/guide</tt>. 
 </p>
 </li>
 
@@ -435,7 +440,12 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
         <li>
 <p>
- copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt> 
+ Need to run <tt>sed</tt> to replace <tt>MLTONWIKIVERSION</tt> with <tt>YYYYMMDD</tt>. 
+</p>
+</li>
+        <li>
+<p>
+ copy <tt>guide/YYYYMMDD/Home</tt> to <tt>guide/YYYYMMDD/index.html</tt>. 
 </p>
 </li>
 
@@ -530,5 +540,5 @@ tar -czpvf ../mlton-YYYYMMDD-1.ARCH-OS.tgz *
 
 <p>
 <hr>
-Last edited on 2007-08-26 20:11:40 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
+Last edited on 2007-08-26 20:56:07 by <span title="c-71-57-91-146.hsd1.il.comcast.net"><a href="MatthewFluet">MatthewFluet</a></span>.
 </body></html>
