@@ -3,12 +3,12 @@ programming language.  MLton has the following features.
 
   + Portability.  
    Runs on the following platforms.
-   o AMD64: FreeBSD, Linux (Debian, RedHat, ...).
+   o AMD64: FreeBSD, Linux.
    o HPPA: HPUX (11.00 and above), Linux (Debian).
-   o PowerPC: AIX (5.1 and above), Darwin (Mac OS X), Linux (Debian).
-   o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, 
-      Linux (Debian, RedHat, ...), MinGW/Windows, NetBSD, OpenBSD.
-   o Sparc: Linux (Debian), Solaris.
+   o PowerPC: AIX (5.1 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
+   o Sparc: Linux (Debian), Solaris (8 and above).
+   o X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux, MinGW/Windows, 
+      NetBSD, OpenBSD.
   + Robustness.
    o Supports the full SML 97 language as given in The Definition 
       of Standard ML (Revised).
@@ -19,7 +19,7 @@ programming language.  MLton has the following features.
       more on 64-bit systems).
    o Array lengths up to 2^31 - 1, the largest possible 
       twos-complement 32-bit integer.
-   o Supports for large files, using 64-bit file positions.
+   o Support for large files, using 64-bit file positions.
   + Performance.
    o Executables have excellent running times.
    o Generates small executables.
