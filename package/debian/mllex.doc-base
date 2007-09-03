@@ -6,4 +6,4 @@ Abstract: This document describes how write lexer specification files for
 Section: Apps/Programming
 
 Format: postscript
-Files: /usr/share/doc/mlton/mllex.ps.gz
+Files: /usr/share/doc/mlton/mllex.pdf

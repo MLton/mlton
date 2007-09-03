@@ -6,7 +6,7 @@ Build-Depends: mlton (>= 20041109-1), htmldoc, libgmp3-dev (>= 4.0.1), tetex-bin
 Standards-Version: 3.7.2
 
 Package: mlton
-Architecture: hppa i386 powerpc sparc
+Architecture: amd64 hppa i386 powerpc sparc
 Depends: ${shlibs:Depends}, gcc, libc6-dev, libgmp3-dev (>= 4.0.1)
 Description: Optimizing compiler for Standard ML
  MLton (mlton.org) is a whole-program optimizing

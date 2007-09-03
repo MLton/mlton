@@ -6,4 +6,4 @@ Abstract: This document describes how to write parser specification files for
 Section: Apps/Programming
 
 Format: postscript
-Files: /usr/share/doc/mlton/mlyacc.ps.gz
+Files: /usr/share/doc/mlton/mlyacc.pdf
