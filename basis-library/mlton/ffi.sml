@@ -47,17 +47,17 @@ val atomicBegin = MLtonThread.atomicBegin
 val atomicEnd = MLtonThread.atomicEnd
 val register = MLtonThread.register
 
-(* To the C-world, chars are signed integers. *)
-val getChar8 = Primitive.Char8.idFromInt8 o getInt8
+(* To the C-world, chars are unsigned integers. *)
+val getChar8 = Primitive.Char8.idFromWord8 o getWord8
 (*
-val getChar16 = Primitive.Char16.idFromInt16 o getInt16
-val getChar32 = Primitive.Char32.idFromInt32 o getInt32
+val getChar16 = Primitive.Char16.idFromWord16 o getWord16
+val getChar32 = Primitive.Char32.idFromWord32 o getWord32
 *)
 
-val setChar8 = setInt8 o Primitive.Char8.idToInt8
+val setChar8 = setWord8 o Primitive.Char8.idToWord8
 (*
-val setChar16 = setInt16 o Primitive.Char16.idToInt16
-val setChar32 = setInt32 o Primitive.Char32.idToInt32
+val setChar16 = setWord16 o Primitive.Char16.idToWord16
+val setChar32 = setWord32 o Primitive.Char32.idToWord32
 *)
 
 (* To the C-world, booleans are 32-bit integers. *)

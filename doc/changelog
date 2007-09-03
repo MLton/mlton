@@ -1,3 +1,11 @@
+Here are the changes from version 20070826 to version YYYYMMDD.
+
+* 2007-09-03
+   - Fixed bug in implementation of _export of functions using 'char'
+     type.  Thanks to Katsuhiro Ueno for the bug report.
+
+--------------------------------------------------------------------------------
+
 Here are the changes from version 20051202 to version 20070826.
 
 Summary:
