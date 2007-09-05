@@ -430,6 +430,7 @@ install-no-docs:
 	if $(GZIP_MAN); then						\
 		cd "$(TMAN)" && $(GZIP) $(MAN_PAGES);			\
 	fi
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	case "$(TARGET_OS)" in						\
 	aix|cygwin|darwin|solaris)					\
 	;;								\
@@ -441,6 +442,7 @@ install-no-docs:
 				--remove-section=.note "$$f"; 		\
 		done							\
 	esac
+endif
 
 .PHONY: install-docs
 install-docs:

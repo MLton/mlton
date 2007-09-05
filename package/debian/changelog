@@ -1,3 +1,6 @@
+## Move this into next package
+  * handle nostrip build option.  closes #437581
+
 mlton (20070826-1) unstable; urgency=low
 
   * new upstream version
