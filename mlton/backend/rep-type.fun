@@ -600,6 +600,7 @@ fun checkPrimApp {args, prim, result} =
        | Real_rndToWord (s, s', _) => done ([real s], SOME (word s'))
        | Real_round s => realUnary s
        | Real_sub s => realBinary s
+       | Thread_returnToC => done ([], NONE)
        | Word_add s => wordBinary s
        | Word_addCheck (s, _) => wordBinary s
        | Word_andb s => wordBinary s
