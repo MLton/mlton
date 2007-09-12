@@ -12,13 +12,12 @@ GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
   if (DEBUG_THREADS)
     fprintf (stderr, "copyThread ("FMTPTR")\n", (uintptr_t)from);
   /* newThread may do a GC, which invalidates from.
-   * Hence we need to stash from where the GC can find it.
+   * Hence we need to stash from someplace that the GC can find it.
    */
   assert (s->savedThread == BOGUS_OBJPTR);
   s->savedThread = pointerToObjptr((pointer)from - offsetofThread (s), s->heap.start);
   to = newThread (s, size);
-  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start) 
-                     + offsetofThread (s));
+  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start) + offsetofThread (s));
   s->savedThread = BOGUS_OBJPTR;
   if (DEBUG_THREADS) {
     fprintf (stderr, FMTPTR" = copyThread ("FMTPTR")\n",
