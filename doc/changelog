@@ -1,5 +1,9 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-09-11
+   - Fixed bug in interaction of _export-ed functions and signal
+     handlers.  Thanks to Sean McLaughlin for the bug report.
+
 * 2007-09-03
    - Fixed bug in implementation of _export of functions using 'char'
      type.  Thanks to Katsuhiro Ueno for the bug report.

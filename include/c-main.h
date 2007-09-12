@@ -27,8 +27,10 @@ void MLton_callFromC () {                                               \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         s = &gcState;                                                   \
-        s->savedThread = s->currentThread;                              \
+        GC_setSavedThread (s, GC_getCurrentThread (s));                 \
         s->atomicState += 3;                                            \
+        if (s->signalsInfo.signalIsPending)                             \
+                s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Switch to the C Handler thread. */                           \
         GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
         nextFun = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);   \
@@ -37,8 +39,12 @@ void MLton_callFromC () {                                               \
         do {                                                            \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         } while (not returnToC);                                        \
-        GC_switchToThread (s, s->savedThread, 0);                       \
-        s->savedThread = BOGUS_OBJPTR;                                  \
+        s->atomicState += 1;                                            \
+        GC_switchToThread (s, GC_getSavedThread (s), 0);                \
+        s->atomicState -= 1;                                            \
+        if (0 == s->atomicState                                         \
+            && s->signalsInfo.signalIsPending)                          \
+                s->limit = 0;                                           \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC done\n");             \
 }                                                                       \
