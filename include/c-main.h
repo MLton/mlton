@@ -32,7 +32,7 @@ void MLton_callFromC () {                                               \
         if (s->signalsInfo.signalIsPending)                             \
                 s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Switch to the C Handler thread. */                           \
-        GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
+        GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
         nextFun = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);   \
         cont.nextChunk = nextChunks[nextFun];                           \
         returnToC = FALSE;                                              \

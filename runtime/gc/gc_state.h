@@ -93,6 +93,7 @@ void GC_setSummary (GC_state s, bool b);
 void GC_setRusageMeasureGC (GC_state s, bool b);
 void GC_setHashConsDuringGC (GC_state s, bool b);
 
+pointer GC_getCallFromCHandlerThread (GC_state s);
 pointer GC_getCurrentThread (GC_state s);
 pointer GC_getSavedThread (GC_state s);
 void GC_setCallFromCHandlerThread (GC_state s, pointer p);

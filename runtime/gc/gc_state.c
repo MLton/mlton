@@ -151,6 +151,11 @@ void GC_setGCSignalPending (GC_state s, bool b) {
   s->signalsInfo.gcSignalPending = b;
 }
 
+pointer GC_getCallFromCHandlerThread (GC_state s) {
+  pointer p = objptrToPointer (s->callFromCHandlerThread, s->heap.start);
+  return p;
+}
+
 void GC_setCallFromCHandlerThread (GC_state s, pointer p) {
   objptr op = pointerToObjptr (p, s->heap.start);
   s->callFromCHandlerThread = op;

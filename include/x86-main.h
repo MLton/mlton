@@ -56,7 +56,7 @@ void MLton_callFromC () {                                               \
         if (s->signalsInfo.signalIsPending)                             \
                 s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Return to the C Handler thread. */                           \
-        GC_switchToThread (s, s->callFromCHandlerThread, 0);            \
+        GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
         jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE);        \
         MLton_jumpToSML(jump);                                          \
         s->atomicState += 1;                                            \
