@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -24,6 +24,7 @@ void GC_startSignalHandler (GC_state s) {
   assert (s->signalsInfo.signalIsPending);
   s->signalsInfo.signalIsPending = FALSE;
   s->signalsInfo.amInSignalHandler = TRUE;
+  assert (s->savedThread == BOGUS_OBJPTR);
   s->savedThread = s->currentThread;
   /* Set s->atomicState to 2 when switching to the signal handler
    * thread; leaving the runtime will decrement s->atomicState to 1,

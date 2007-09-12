@@ -162,13 +162,19 @@ pointer GC_getCurrentThread (GC_state s) {
 }
 
 pointer GC_getSavedThread (GC_state s) {
-  pointer p = objptrToPointer (s->savedThread, s->heap.start);
+  pointer p;
+
+  assert(s->savedThread != BOGUS_OBJPTR);
+  p = objptrToPointer (s->savedThread, s->heap.start);
   s->savedThread = BOGUS_OBJPTR;
   return p;
 }
 
 void GC_setSavedThread (GC_state s, pointer p) {
-  objptr op = pointerToObjptr (p, s->heap.start);
+  objptr op;
+
+  assert(s->savedThread == BOGUS_OBJPTR);
+  op = pointerToObjptr (p, s->heap.start);
   s->savedThread = op;
 }
 
