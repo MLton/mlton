@@ -97,9 +97,9 @@ extern Objptr globalObjptrNonRoot[];
         do {                                                                    \
                 z = *(t*)pc;                                                    \
                 if (DEBUG or DEBUG_BYTECODE or disassemble) {                   \
-                        if (#z == "label")                                      \
+                        if (! strcmp(#z,"label"))                               \
                                 fprintf (stderr, " %s", offsetToLabel[z]);      \
-                        else if (#z != "opc")                                   \
+                        else if (! strcmp(#z, "opc"))                           \
                                 fprintf (stderr, " %d", (int)z);                \
                 }                                                               \
                 pc += sizeof (t);                                       \
