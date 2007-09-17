@@ -1242,6 +1242,9 @@ fun ('a, 'b) apply (p: 'a t,
       datatype z = datatype t
       datatype z = datatype Const.t
       val bool = ApplyResult.Bool
+      fun seqIndexConst i =
+         ApplyResult.Const
+         (Const.word (WordX.fromIntInf (i, WordSize.seqIndex ())))
       val intInf = ApplyResult.Const o Const.intInf
       val intInfConst = intInf o IntInf.fromInt
       val null = ApplyResult.Const Const.null
@@ -1303,6 +1306,10 @@ fun ('a, 'b) apply (p: 'a t,
                     then null
                  else ApplyResult.Unknown
            | (CPointer_toWord, [Null]) => word (WordX.zero (WordSize.cpointer ()))
+           | (Vector_length, [WordVector v]) =>
+                 seqIndexConst (IntInf.fromInt (WordXVector.length v))
+           | (Vector_sub, [WordVector v, Word i]) =>
+                 word (WordXVector.sub (v, WordX.toInt i))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
            | (Word_addCheck s, [Word w1, Word w2]) => wcheck (op +, s, w1, w2)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
