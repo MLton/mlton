@@ -22,6 +22,16 @@ fun maybeConstrain (x, t) =
       else x
    end
 
+fun layoutTargs (ts: Type.t vector) =
+   let
+      open Layout
+   in
+      if !Control.showTypes
+         andalso 0 < Vector.length ts
+         then list (Vector.toListMap (ts, Type.layout))
+      else empty
+   end
+
 structure Pat =
    struct
       datatype t = T of {node: node,
@@ -56,9 +66,7 @@ structure Pat =
             case node p of
                Con {arg, con, targs} =>
                   seq [Con.layout con,
-                       if !Control.showTypes andalso 0 < Vector.length targs
-                          then tuple (Vector.toListMap (targs, Type.layout))
-                       else empty,
+                       layoutTargs targs,
                        case arg of
                           NONE => empty
                         | SOME p => seq [str " ", layout p]]
@@ -194,7 +202,7 @@ and lambda = Lam of {arg: Var.t,
 local
    open Layout
 in
-   fun layoutTyvars ts =
+   fun layoutTyvars (ts: Tyvar.t vector) =
       case Vector.length ts of
          0 => empty
        | 1 => seq [str " ", Tyvar.layout (Vector.sub (ts, 0))]
@@ -238,7 +246,7 @@ in
                           rules = Vector.map (rules, fn {exp, pat, ...} =>
                                               (Pat.layout pat, layoutExp exp)),
                           test = layoutExp test}
-       | Con (c, _) => Con.layout c
+       | Con (c, targs) => seq [Con.layout c, layoutTargs targs]
        | Const f => Const.layout (f ())
        | EnterLeave (e, si) =>
             seq [str "EnterLeave ",
@@ -265,19 +273,32 @@ in
              record = r,
              separator = " = "}
        | Seq es => Pretty.seq (Vector.map (es, layoutExp))
-       | Var (x, _) => Var.layout (x ())
+       | Var (var, targs) => 
+            if !Control.showTypes
+               then let 
+                       open Layout
+                       val targs = targs ()
+                    in
+                       if Vector.isEmpty targs
+                          then Var.layout (var ())
+                       else seq [Var.layout (var ()), str " ",
+                                 Vector.layout Type.layout targs]
+                    end
+            else Var.layout (var ())
    and layoutFuns (tyvars, decs)  =
       if 0 = Vector.length decs
          then empty
       else
          align [seq [str "val rec", layoutTyvars (tyvars ())],
                 indent (align (Vector.toListMap
-                               (decs, fn {lambda, var} =>
-                                align [seq [Var.layout var, str " = "],
+                               (decs, fn {lambda as Lam {argType, body = Exp {ty = bodyType, ...}, ...}, var} =>
+                                align [seq [maybeConstrain (Var.layout var, Type.arrow (argType, bodyType)), str " = "],
                                        indent (layoutLambda lambda, 3)])),
                         3)]
-   and layoutLambda (Lam {arg, body, ...}) =
-      paren (align [seq [str "fn ", Var.layout arg, str " =>"],
+   and layoutLambda (Lam {arg, argType, body, ...}) =
+      paren (align [seq [str "fn ", 
+                         maybeConstrain (Var.layout arg, argType),
+                         str " =>"],
                     layoutExp body])
 end
 

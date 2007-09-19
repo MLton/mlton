@@ -44,15 +44,16 @@ signature TYPE_ENV =
             val isInt: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
+            val layoutPrettyAux: t * {localTyvarNames: bool} -> Layout.t
             val layoutPretty: t -> Layout.t
             val makeHom: {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
                           var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
                                                   hom: t -> 'a}
             val makeLayoutPretty:
-               unit -> {destroy: unit -> unit,
-                        lay: t -> Layout.t * ({isChar: bool}
-                                              * Tycon.BindingStrength.t)}
+               {localTyvarNames: bool} -> {destroy: unit -> unit,
+                                           lay: t -> Layout.t * ({isChar: bool}
+                                                                 * Tycon.BindingStrength.t)}
             (* minTime (t, time) makes every component of t occur no later than
              * time.  This will display a type error message if time is before
              * the definition time of some component of t.

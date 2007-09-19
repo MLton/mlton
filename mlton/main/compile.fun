@@ -62,7 +62,9 @@ structure CoreML = CoreML (open Atoms
                                              expandOpaque = true,
                                              var = var}
 
-                                 val layout = layoutPretty
+                                 fun layout t = 
+                                    layoutPrettyAux 
+                                    (t, {localTyvarNames = false})
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)

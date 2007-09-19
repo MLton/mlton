@@ -852,7 +852,7 @@ structure Structure =
                   layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false})
                and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool}) =
                   let
-                     val {destroy, lay} = Type.makeLayoutPretty ()
+                     val {destroy, lay} = Type.makeLayoutPretty {localTyvarNames = true}
                      val lay = #1 o lay
                      val tyvars =
                         case TypeStr.kind s of

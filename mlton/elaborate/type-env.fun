@@ -597,10 +597,9 @@ structure Type =
             Exn.finally (fn () => hom ty, destroy)
          end
 
-      fun makeLayoutPretty (): {destroy: unit -> unit,
-                                lay: t -> Layout.t
-                                          * ({isChar: bool}
-                                          * Tycon.BindingStrength.t)} =
+      fun makeLayoutPretty {localTyvarNames} : 
+         {destroy: unit -> unit,
+          lay: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)} =
          let
             val str = Layout.str
             fun con (_, c, ts) = Tycon.layoutApp (c, ts)
@@ -632,30 +631,35 @@ structure Type =
                 | SOME ts => Tycon.layoutApp (Tycon.tuple, ts)
             fun recursive _ = simple (str "<recur>")
             fun unknown _ = simple (str "???")
-            val {destroy, get = prettyTyvar, ...} =
-               Property.destGet
-               (Tyvar.plist,
-                Property.initFun
-                (let
-                    val r = ref (Char.toInt #"a")
-                 in
-                    fn _ =>
-                    let
-                       val n = !r
-                       val l =
-                          simple
-                          (str (concat
-                                ["'",
-                                 if n > Char.toInt #"z" then
-                                    concat ["a",
-                                            Int.toString (n - Char.toInt #"z")]
-                                 else
-                                    Char.toString (Char.fromInt n )]))
-                       val _ = r := 1 + n
-                    in
-                       l
-                    end
-                 end))
+            val (destroy, prettyTyvar) =
+               if localTyvarNames
+                  then let
+                          val {destroy, get = prettyTyvar, ...} =
+                             Property.destGet
+                             (Tyvar.plist,
+                              Property.initFun
+                              (let
+                                  val r = ref (Char.toInt #"a")
+                               in
+                                  fn _ =>
+                                  let
+                                     val n = !r
+                                     val l =
+                                        simple
+                                        (str (concat
+                                              ["'",
+                                               if n > Char.toInt #"z" 
+                                                  then concat ["a", Int.toString (n - Char.toInt #"z")]
+                                               else Char.toString (Char.fromInt n )]))
+                                     val _ = r := 1 + n
+                                  in
+                                     l
+                                  end
+                               end))
+                       in
+                          (destroy, prettyTyvar)
+                       end
+               else (fn () => (), simple o Tyvar.layout)
             fun var (_, a) = prettyTyvar a
             fun lay t =
                hom (t, {con = con,
@@ -672,14 +676,15 @@ structure Type =
              lay = lay}
          end
 
-      fun layoutPretty t =
+      fun layoutPrettyAux (t, {localTyvarNames}) =
          let
-            val {destroy, lay} = makeLayoutPretty ()
+            val {destroy, lay} = makeLayoutPretty {localTyvarNames = localTyvarNames}
             val res = #1 (lay t)
             val _ = destroy ()
          in
             res
          end
+      fun layoutPretty t = layoutPrettyAux (t, {localTyvarNames = true})
 
       fun deConOpt t =
          case toType t of
@@ -923,7 +928,7 @@ structure Type =
 
       fun unify (t, t', {preError: unit -> unit}): UnifyResult.t =
          let
-            val {destroy, lay = layoutPretty} = makeLayoutPretty ()
+            val {destroy, lay = layoutPretty} = makeLayoutPretty {localTyvarNames = true}
             val dontCare' = fn _ => dontCare
             val layoutRecord = fn z => layoutRecord (z, true)
             fun unify arg =
