@@ -597,7 +597,7 @@ structure Type =
             Exn.finally (fn () => hom ty, destroy)
          end
 
-      fun makeLayoutPretty {localTyvarNames} : 
+      fun makeLayoutPretty {expandOpaque, localTyvarNames} : 
          {destroy: unit -> unit,
           lay: t -> Layout.t * ({isChar: bool} * Tycon.BindingStrength.t)} =
          let
@@ -663,7 +663,7 @@ structure Type =
             fun var (_, a) = prettyTyvar a
             fun lay t =
                hom (t, {con = con,
-                        expandOpaque = false,
+                        expandOpaque = expandOpaque,
                         flexRecord = flexRecord,
                         genFlexRecord = genFlexRecord,
                         overload = overload,
@@ -676,15 +676,19 @@ structure Type =
              lay = lay}
          end
 
-      fun layoutPrettyAux (t, {localTyvarNames}) =
+      fun layoutPrettyAux (t, {expandOpaque, localTyvarNames}) =
          let
-            val {destroy, lay} = makeLayoutPretty {localTyvarNames = localTyvarNames}
+            val {destroy, lay} = 
+               makeLayoutPretty {expandOpaque = expandOpaque,
+                                 localTyvarNames = localTyvarNames}
             val res = #1 (lay t)
             val _ = destroy ()
          in
             res
          end
-      fun layoutPretty t = layoutPrettyAux (t, {localTyvarNames = true})
+      fun layoutPretty t = 
+         layoutPrettyAux (t, {expandOpaque = false,
+                              localTyvarNames = true})
 
       fun deConOpt t =
          case toType t of
@@ -928,7 +932,8 @@ structure Type =
 
       fun unify (t, t', {preError: unit -> unit}): UnifyResult.t =
          let
-            val {destroy, lay = layoutPretty} = makeLayoutPretty {localTyvarNames = true}
+            val {destroy, lay = layoutPretty} = 
+               makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
             val dontCare' = fn _ => dontCare
             val layoutRecord = fn z => layoutRecord (z, true)
             fun unify arg =

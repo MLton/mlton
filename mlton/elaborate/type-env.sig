@@ -44,14 +44,15 @@ signature TYPE_ENV =
             val isInt: t -> bool
             val isUnit: t -> bool
             val layout: t -> Layout.t
-            val layoutPrettyAux: t * {localTyvarNames: bool} -> Layout.t
+            val layoutPrettyAux: t * {expandOpaque: bool, localTyvarNames: bool} -> Layout.t
             val layoutPretty: t -> Layout.t
             val makeHom: {con: Tycon.t * 'a vector -> 'a,
                           expandOpaque: bool,
                           var: Tyvar.t -> 'a} -> {destroy: unit -> unit,
                                                   hom: t -> 'a}
             val makeLayoutPretty:
-               {localTyvarNames: bool} -> {destroy: unit -> unit,
+               {expandOpaque:bool,
+                localTyvarNames: bool} -> {destroy: unit -> unit,
                                            lay: t -> Layout.t * ({isChar: bool}
                                                                  * Tycon.BindingStrength.t)}
             (* minTime (t, time) makes every component of t occur no later than

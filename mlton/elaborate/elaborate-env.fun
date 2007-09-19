@@ -48,7 +48,6 @@ in
    structure Tycon = Tycon
    structure Tyvar = Tyvar
    structure Var = Var
-   structure Var = Var
 end
 
 local
@@ -852,7 +851,8 @@ structure Structure =
                   layoutTypeSpec' (Ast.Tycon.layout n, s, {isWhere = false})
                and layoutTypeSpec' (name: Layout.t, s, {isWhere: bool}) =
                   let
-                     val {destroy, lay} = Type.makeLayoutPretty {localTyvarNames = true}
+                     val {destroy, lay} = 
+                        Type.makeLayoutPretty {expandOpaque = false, localTyvarNames = true}
                      val lay = #1 o lay
                      val tyvars =
                         case TypeStr.kind s of
@@ -2903,9 +2903,9 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                          Scheme.layoutPretty sigScheme]])
 
                                end
-                         fun addDec (n: Exp.node): Vid.t =
+                         fun addDec (name: string, n: Exp.node): Vid.t =
                             let
-                               val x = Var.newNoname ()
+                               val x = Var.newString name
                                val e = Exp.make (n, strType)
                                val _ =
                                   List.push
@@ -2924,7 +2924,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                Vid.Var x
                             end
                          fun con (c: Con.t): Vid.t =
-                            addDec (Exp.Con (c, strArgs ()))
+                            addDec (Con.originalName c, Exp.Con (c, strArgs ()))
                          val vid =
                             case (vid, status) of
                                (Vid.Con c, Status.Var) => con c
@@ -2932,7 +2932,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                              | (Vid.Var x, Status.Var) =>
                                   if 0 < Vector.length sigArgs
                                      orelse 0 < Vector.length (strArgs ())
-                                     then addDec (Exp.Var (fn () => x, strArgs))
+                                     then addDec (Var.originalName x, Exp.Var (fn () => x, strArgs))
                                   else vid
                              | (Vid.Con _, Status.Con) => vid
                              | (Vid.Exn _, Status.Exn) => vid
