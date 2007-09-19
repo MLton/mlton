@@ -166,11 +166,13 @@ fun substitute (ty, v) =
                            | SOME (_, ty) => ty),
            con = con}
 
-(* val substitute =
- *    Trace.trace2 ("HashType.substitute", layout,
- *              List.layout (Layout.tuple2 (Tyvar.layout, Type.layout)),
- *              layout) substitute              
- *)
+val substitute =
+   Trace.trace2 
+   ("HashType.substitute", 
+    layout, 
+    Vector.layout (Layout.tuple2 (Tyvar.layout, Type.layout)), 
+    layout) 
+   substitute
 
 (* fun equalss (ts: t list): t option =
  *    case ts of

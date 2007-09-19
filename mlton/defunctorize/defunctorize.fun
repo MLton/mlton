@@ -514,6 +514,10 @@ fun defunctorize (CoreML.Program.T {decs}) =
          in
             Ctype.makeHom {con = con, var = Xtype.var}
          end
+      val loopTy =
+         Trace.trace
+         ("Defunctorize.loopTy", Ctype.layout, Xtype.layout)
+         loopTy
       fun conTargs (c: Con.t, ts: Ctype.t vector): Xtype.t vector =
          let
             val ts = Vector.map (ts, loopTy)
