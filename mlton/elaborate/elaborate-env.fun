@@ -681,7 +681,7 @@ val newTycons: (Tycon.t * Kind.t * Region.t) list ref = ref []
 val newTycon: string * Kind.t * AdmitsEquality.t * Region.t -> Tycon.t =
    fn (s, k, a, r) =>
    let
-      val c = Tycon.fromString s
+      val c = Tycon.newString s
       val _ = TypeEnv.initAdmitsEquality (c, a)
       val _ = TypeEnv.tyconRegion c := SOME r
       val _ = List.push (allTycons, c)
@@ -1527,8 +1527,8 @@ fun dummyStructure (I: Interface.t, {prefix: string})
                  Array.map
                  (vals, fn (name, (status, scheme)) =>
                   let
-                     val con = CoreML.Con.fromString o Ast.Vid.toString
-                     val var = CoreML.Var.fromString o Ast.Vid.toString
+                     val con = CoreML.Con.newString o Ast.Vid.toString
+                     val var = CoreML.Var.newString o Ast.Vid.toString
                      val vid =
                         case status of
                            Status.Con => Vid.Con (con name)
@@ -1936,8 +1936,8 @@ in
       make (fn z => PeekResult.map (peekLongtycon z, SOME),
             fn () => NONE,
             "type",
-            Longtycon.region,
-            Longtycon.layout)
+            Ast.Longtycon.region,
+            Ast.Longtycon.layout)
    val lookupLongvid =
       make (peekLongvid,
             fn () => (Vid.bogus, NONE),
@@ -2398,58 +2398,66 @@ fun makeOpaque (S: Structure.t, I: Interface.t, {prefix: string}) =
       val _ = instantiate (S, fn (c, s) =>
                            TypeEnv.setOpaqueTyconExpansion
                            (c, fn ts => TypeStr.apply (s, ts)))
-      val {destroy,
-           get = replacements: (Structure.t
-                                -> {formal: Structure.t,
-                                    new: Structure.t} list ref), ...} =
-         Property.destGet (Structure.plist,
-                           Property.initFun (fn _ => ref []))
-      fun loop (S, S'): Structure.t =
+      val {destroy, 
+           get : Structure.t -> {formal: Structure.t, new: Structure.t} list ref,
+           ...} =
+         Property.destGet (Structure.plist, Property.initFun (fn _ => ref []))
+(*
+      fun replace (S, S'): Structure.t =
+         reallyReplace (S, S')
+*)
+      fun replace (S, S'): Structure.t =
          let
-            val rs = replacements S
+            val seen = get S
          in
-            case List.peek (!rs, fn {formal, ...} =>
+            case List.peek (!seen, fn {formal, ...} =>
                             Structure.eq (S', formal)) of
-               NONE =>
-                  let
-                     val Structure.T {strs, types, vals, ...} = S
-                     val Structure.T {strs = strs',
-                                      types = types',
-                                      vals = vals', ...} = S'
-                     val strs = Info.map2 (strs, strs', loop)
-                     val types =
-                        Info.map2
-                        (types, types', fn (s, s') =>
-                         let
-                            datatype z = datatype TypeStr.node
-                         in
-                            case TypeStr.node s' of
-                               Datatype {cons = cs', tycon} =>
-                                  (case TypeStr.node s of
-                                      Datatype {cons = cs, ...} =>
-                                         TypeStr.data
-                                         (tycon, TypeStr.kind s',
-                                          fixCons (cs, cs'))
-                                    | _ => s')
-                             | Scheme _ => s'
-                             | Tycon _ => s'
-                         end)
-                     val vals =
-                        Info.map2 (vals, vals', fn ((v, _), (_, s)) =>
-                                   (v, s))
-                     val new =
-                        Structure.T {interface = Structure.interface S',
-                                     plist = PropertyList.new (),
-                                     strs = strs,
-                                     types = types,
-                                     vals = vals}
-                     val _ = List.push (rs, {formal = S', new = new})
-                  in
-                     new
-                  end
+               NONE => let
+                          val new = reallyReplace (S, S')
+                          val _ = List.push (seen, {formal = S', new = new})
+                       in
+                          new
+                       end
              | SOME {new, ...} => new
          end
-      val S'' = loop (S, S')
+      and reallyReplace (S, S'): Structure.t =
+         let
+            val Structure.T {strs, 
+                             types, 
+                             vals, ...} = S
+            val Structure.T {strs = strs', 
+                             types = types', 
+                             vals = vals', ...} = S'
+            val strs = Info.map2 (strs, strs', replace)
+            val types =
+               Info.map2
+               (types, types', fn (s, s') =>
+                let
+                   datatype z = datatype TypeStr.node
+                in
+                   case TypeStr.node s' of
+                      Datatype {cons = cs', tycon} =>
+                         (case TypeStr.node s of
+                             Datatype {cons = cs, ...} =>
+                                TypeStr.data
+                                (tycon, TypeStr.kind s',
+                                 fixCons (cs, cs'))
+                           | _ => s')
+                    | Scheme _ => s'
+                    | Tycon _ => s'
+                end)
+            val vals =
+               Info.map2 
+               (vals, vals', fn ((v, _), (_, s')) =>
+                (v, s'))
+         in
+            Structure.T {interface = Structure.interface S',
+                         plist = PropertyList.new (),
+                         strs = strs,
+                         types = types,
+                         vals = vals}
+         end
+      val S'' = replace (S, S')
       val _ = destroy ()
    in
       S''
@@ -2788,6 +2796,10 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
       val {destroy, get: Structure.t -> (Interface.t * Structure.t) list ref,
            ...} =
          Property.destGet (Structure.plist, Property.initFun (fn _ => ref []))
+(*
+      fun cut (S, I, strids): Structure.t =
+         reallyCut (S, I, strids)
+*)
       fun cut (S, I, strids): Structure.t =
          let
             val seen = get S
@@ -2796,20 +2808,26 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                NONE =>
                   let
                      fun really () = reallyCut (S, I, strids)
-                     val S =
+                     val S = 
                         case Structure.interface S of
                            NONE => really ()
                          | SOME I' =>
+                              if Interface.equals (I, I')
+                                 then S
+                              else really ()
+(*
                               let
-                                 val I'' = Interface.original I
+                                 val origI = Interface.original I
+                                 val origI' = Interface.original I'
                               in
-                                 if Interface.equals (I'', Interface.original I')
+                                 if Interface.equals (origI, origI')
                                     then (checkMatch
-                                          (Interface.flexibleTycons I'',
+                                          (Interface.flexibleTycons origI,
                                            S, I, strids)
                                           ; S)
                                  else really ()
                               end
+*)
                      val _ = List.push (seen, (I, S))
                   in
                      S
@@ -2903,6 +2921,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                          Scheme.layoutPretty sigScheme]])
 
                                end
+                         val strArgs = strArgs ()
                          fun addDec (name: string, n: Exp.node): Vid.t =
                             let
                                val x = Var.newString name
@@ -2924,15 +2943,16 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                                Vid.Var x
                             end
                          fun con (c: Con.t): Vid.t =
-                            addDec (Con.originalName c, Exp.Con (c, strArgs ()))
+                            addDec (Con.originalName c, Exp.Con (c, strArgs))
                          val vid =
                             case (vid, status) of
                                (Vid.Con c, Status.Var) => con c
                              | (Vid.Exn c, Status.Var) => con c
                              | (Vid.Var x, Status.Var) =>
                                   if 0 < Vector.length sigArgs
-                                     orelse 0 < Vector.length (strArgs ())
-                                     then addDec (Var.originalName x, Exp.Var (fn () => x, strArgs))
+                                     orelse 0 < Vector.length strArgs
+                                     then addDec (Var.originalName x, 
+                                                  Exp.Var (fn () => x, fn () => strArgs))
                                   else vid
                              | (Vid.Con _, Status.Con) => vid
                              | (Vid.Exn _, Status.Exn) => vid
@@ -3007,7 +3027,7 @@ fun cut (E: t, S: Structure.t, I: Interface.t,
    : Structure.t * Decs.t =
    let
       val (S, decs) = transparentCut (E, S, I, {isFunctor = isFunctor}, region)
-      (* Aoid doing the opaque match if numErrors > 0 because it can lead
+      (* Avoid doing the opaque match if numErrors > 0 because it can lead
        * to internal errors that might be confusing to the user.
        *)
       val S = 
