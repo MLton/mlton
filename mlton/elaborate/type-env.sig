@@ -90,6 +90,9 @@ signature TYPE_ENV =
             val instantiate: t -> {args: unit -> Type.t vector,
                                    instance: Type.t}
             val layout: t -> Layout.t
+            val layoutPrettyAux: 
+               t * {expandOpaque: bool, 
+                    localTyvarNames: bool} -> Layout.t
             val layoutPretty: t -> Layout.t
             val make: {canGeneralize: bool,
                        ty: Type.t,

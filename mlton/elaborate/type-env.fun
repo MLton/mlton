@@ -1393,10 +1393,18 @@ structure Scheme =
                               ("tyvars", Vector.layout Tyvar.layout tyvars),
                               ("ty", Type.layout ty)]
 
-      fun layoutPretty s =
+      fun layoutPrettyAux (s, {expandOpaque, localTyvarNames}) =
          case s of
-            Type t => Type.layoutPretty t
-          | General {ty, ...} => Type.layoutPretty ty
+            Type ty => 
+               Type.layoutPrettyAux 
+               (ty, {expandOpaque = expandOpaque, 
+                     localTyvarNames = localTyvarNames})
+          | General {ty, ...} => 
+               Type.layoutPrettyAux 
+               (ty, {expandOpaque = expandOpaque, 
+                     localTyvarNames = localTyvarNames})
+      fun layoutPretty s =
+         layoutPrettyAux (s, {expandOpaque = false, localTyvarNames = true})
 
       val bound =
          fn General {bound, ...} => bound ()
