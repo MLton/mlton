@@ -404,11 +404,6 @@ structure TypeStr =
 
       fun tycon (c, kind) = T {kind = kind,
                                node = Tycon c}
-
-      fun ignoreNone (s: t option): t =
-         case s of
-            NONE => tycon (Tycon.tuple, Kind.Nary)
-          | SOME s => s
    end
 
 local
@@ -575,6 +570,11 @@ structure Interface =
 
             val toEnv = typeStrToEnv
 
+            fun toEnvNoNone s =
+               case toEnv s of
+                  NONE => EtypeStr.tycon (EtypeStr.Tycon.tuple, TypeStr.kind s)
+                | SOME s => s
+
             fun fromEnv (s: EtypeStr.t) =
                let
                   val kind = EtypeStr.kind s
@@ -588,10 +588,6 @@ structure Interface =
                    | EtypeStr.Tycon c =>
                         tycon (Tycon.fromEnv (c, kind), kind)
                end
-
-            val fromEnv =
-               Trace.trace ("ElaborateEnv.Interface.TypeStr.fromEnv", EtypeStr.layout, layout)
-               fromEnv
          end
    end
 
@@ -1519,8 +1515,7 @@ fun dummyStructure (I: Interface.t, {prefix: string})
               val types =
                  Array.map (types, fn (name, s) =>
                             {domain = name,
-                             range = (TypeStr.ignoreNone
-                                      (Interface.TypeStr.toEnv s)),
+                             range = Interface.TypeStr.toEnvNoNone s,
                              time = time,
                              uses = Uses.new ()})
               val vals =
@@ -2849,7 +2844,7 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
             val types =
                map (structTypes, sigTypes, strids,
                     "type", Ast.Tycon.equals, Ast.Tycon.layout,
-                    TypeStr.ignoreNone o Interface.TypeStr.toEnv,
+                    Interface.TypeStr.toEnvNoNone,
                     fn (name, s, s') => handleType (s, s', strids, name))
             val vals =
                map
