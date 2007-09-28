@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -15,6 +15,7 @@ structure ImplementExceptions = ImplementExceptions (open S)
 structure ImplementSuffix = ImplementSuffix (open S)
 structure Polyvariance = Polyvariance (open S)
 (* structure Uncurry = Uncurry (open S) *)
+structure CPSTransform = CPSTransform (open S)
 
 fun polyvariance (rounds, small, product) p =
    Ref.fluidLet

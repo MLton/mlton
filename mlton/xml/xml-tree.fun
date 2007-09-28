@@ -771,6 +771,9 @@ structure DirectExp =
                                       mayInline = mayInline}),
                  Type.arrow (argType, bodyType))
 
+      fun fromLambda (l, ty) =
+         simple (Lambda l, ty)
+
       fun detupleGen (e: PrimExp.t,
                       t: Type.t,
                       components: Var.t vector,

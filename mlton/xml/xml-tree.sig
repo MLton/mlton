@@ -198,6 +198,7 @@ signature XML_TREE =
             val equal: t * t -> t
             val falsee: unit -> t
             val fromExp: Exp.t * Type.t -> t
+            val fromLambda: Lambda.t * Type.t -> t
             val handlee: {catch: Var.t * Type.t,
                           handler: t,
                           try: t,
