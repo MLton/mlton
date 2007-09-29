@@ -451,7 +451,7 @@ fun doit (prog: Program.t): Program.t =
                   in 
                      Error.bug "ImplementContinuations.transPrimExp: Profile"
                   end
-             | Raise {exn, extend} => 
+             | Raise {exn, ...} => 
                   DirectExp.app
                   {func = h,
                    arg = transVarExp exn,
