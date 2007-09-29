@@ -24,25 +24,41 @@ fun polyvariance (rounds, small, product) p =
     fn () => Polyvariance.duplicate p)
 
 type pass = {name: string,
+             enable: unit -> bool,
              doit: Program.t -> Program.t}
 
 val sxmlPassesDefault =
-   {name = "sxmlShrink1", doit = S.shrink} ::
-   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
-   {name = "sxmlShrink2", doit = S.shrink} ::
-   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
-   {name = "sxmlShrink3", doit = S.shrink} ::
+   {name = "sxmlShrink1", 
+    enable = fn () => true, doit = S.shrink} ::
+   {name = "implementSuffix", 
+    enable = fn () => true, doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", 
+    enable = fn () => true, doit = S.shrink} ::
+   {name = "implementExceptions", 
+    enable = fn () => true, doit = ImplementExceptions.doit} ::
+   {name = "sxmlShrink3", 
+    enable = fn () => true, doit = S.shrink} ::
 (*
-   {name = "uncurry", doit = Uncurry.uncurry} ::
-   {name = "sxmlShrink4", doit = S.shrink} ::
+   {name = "uncurry", 
+    enable = fn () => true, doit = Uncurry.uncurry} ::
+   {name = "sxmlShrink4", 
+    enable = fn () => true, doit = S.shrink} ::
 *)
-   {name = "polyvariance", doit = Polyvariance.duplicate} ::
+   {name = "cpsTransform", 
+    enable = fn () => !Control.cpsTransform, doit = CPSTransform.doit} ::
+   {name = "sxmlShrink4", 
+    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
+   {name = "polyvariance", 
+    enable = fn () => true, doit = Polyvariance.duplicate} ::
    nil
 
 val sxmlPassesMinimal =
-   {name = "implementSuffix", doit = ImplementSuffix.doit} ::
-   {name = "sxmlShrink2", doit = S.shrink} ::
-   {name = "implementExceptions", doit = ImplementExceptions.doit} ::
+   {name = "implementSuffix", 
+    enable = fn () => true, doit = ImplementSuffix.doit} ::
+   {name = "sxmlShrink2", 
+    enable = fn () => true, doit = S.shrink} ::
+   {name = "implementExceptions", 
+    enable = fn () => true, doit = ImplementExceptions.doit} ::
    nil
 
 val sxmlPasses : pass list ref = ref sxmlPassesDefault
@@ -55,6 +71,7 @@ local
       in fn s => if s = name
                     then SOME {name = name ^ "#" ^ 
                                (Int.toString (Counter.next count)),
+                               enable = fn () => true,
                                doit = doit}
                     else NONE
       end
@@ -89,6 +106,7 @@ local
                                             Int.toString small, ",",
                                             Int.toString product, ")#",
                                             Int.toString (Counter.next count)],
+                             enable = fn () => true,
                              doit = polyvariance (rounds, small, product)}
                     val s = String.dropPrefix (s, String.size "polyvariance")
                  in
@@ -142,9 +160,10 @@ fun stats p =
 fun simplify p =
    (stats p
     ; (List.fold
-       (!sxmlPasses, p, fn ({name, doit}, p) =>
+       (!sxmlPasses, p, fn ({name, enable, doit}, p) =>
       if List.exists (!Control.dropPasses, fn re =>
                       Regexp.Compiled.matchesAll (re, name))
+         orelse not (enable ())
          then p
       else
          let

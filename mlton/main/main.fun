@@ -256,6 +256,9 @@ fun makeOptions {usage} =
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
         boolRef contifyIntoMain),
+       (Expert, "cps-transform", " {false|true}",
+        "perform cps transform on sxml il",
+        boolRef cpsTransform),
        (Expert, "debug", " {false|true}", "produce executable with debug info",
         Bool (fn b => (debug := b
                        ; debugRuntime := b))),

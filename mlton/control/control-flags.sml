@@ -81,6 +81,10 @@ val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,
                                toString = Bool.toString}
 
+val cpsTransform = control {name = "cpsTransform",
+                            default = false,
+                            toString = Bool.toString}
+
 val debug = control {name = "debug",
                      default = false,
                      toString = Bool.toString}

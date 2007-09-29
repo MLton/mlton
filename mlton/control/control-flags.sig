@@ -52,6 +52,8 @@ signature CONTROL_FLAGS =
 
       val contifyIntoMain: bool ref
 
+      val cpsTransform: bool ref
+
       (* Generate an executable with debugging info. *)
       val debug: bool ref
 
