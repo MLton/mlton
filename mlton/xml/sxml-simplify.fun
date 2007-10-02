@@ -44,12 +44,18 @@ val sxmlPassesDefault =
    {name = "sxmlShrink4", 
     enable = fn () => true, doit = S.shrink} ::
 *)
-   {name = "cpsTransform", 
-    enable = fn () => !Control.cpsTransform, doit = CPSTransform.doit} ::
-   {name = "sxmlShrink4", 
-    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
    {name = "polyvariance", 
     enable = fn () => true, doit = Polyvariance.duplicate} ::
+   {name = "sxmlShrink4", 
+    enable = fn () => true, doit = S.shrink} ::
+   {name = "cpsTransform", 
+    enable = fn () => !Control.cpsTransform, doit = CPSTransform.doit} ::
+   {name = "cpsSxmlShrink5", 
+    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
+   {name = "cpsPolyvariance", 
+    enable = fn () => !Control.cpsTransform, doit = Polyvariance.duplicate} ::
+   {name = "cpsSxmlShrink6", 
+    enable = fn () => !Control.cpsTransform, doit = S.shrink} ::
    nil
 
 val sxmlPassesMinimal =
