@@ -164,7 +164,7 @@ fun doit (prog: Program.t): Program.t =
                      {arg = xVar,
                       argType = xTy,
                       body = DirectExp.toExp bodyX,
-                      mayInline = mayInline}
+                      mayInline = true}
                   end
              | Uncurried =>
                   let
@@ -449,7 +449,7 @@ fun doit (prog: Program.t): Program.t =
                       * CPS conversion.
                       *)
                   in 
-                     Error.bug "ImplementContinuations.transPrimExp: Profile"
+                     Error.bug "CPSTransform.transPrimExp: Profile"
                   end
              | Raise {exn, ...} => 
                   DirectExp.app
@@ -473,7 +473,7 @@ fun doit (prog: Program.t): Program.t =
          let
          in
             case d of
-               Exception _ => Error.bug "ImplementContinuations.transDec: Exception"
+               Exception _ => Error.bug "CPSTransform.transDec: Exception"
              | Fun {decs, tyvars} => 
                   let
                      val decs =
@@ -504,7 +504,7 @@ fun doit (prog: Program.t): Program.t =
                      DirectExp.let1 {var = k'Var, exp = k'Body, body =
                      transPrimExp (exp, expTy, k'Var, k'Ty, hVar, hTy)}
                   end
-             | PolyVal _ => Error.bug "ImplementContinuations.transDec: PolyVal"
+             | PolyVal _ => Error.bug "CPSTransform.transDec: PolyVal"
          end
       and transExp (e: Exp.t, 
                     kVar: Var.t, kTy: Type.t, 
