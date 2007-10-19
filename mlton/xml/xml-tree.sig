@@ -216,7 +216,7 @@ signature XML_TREE =
                           prim: Type.t Prim.t,
                           targs: Type.t vector,
                           ty: Type.t} -> t
-            val raisee: t * {extend: bool} * Type.t -> t
+            val raisee: {exn: t, extend: bool, ty: Type.t} -> t
             val reff: t -> t
             val select: {tuple: t, offset: int, ty: Type.t} -> t
             val seq: t vector * (t vector -> t) -> t

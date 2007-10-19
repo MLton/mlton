@@ -170,13 +170,13 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
                      open Dexp
                      val exp =
                         if not extend
-                           then raisee (varExp (exn, Type.exn),
-                                        {extend = false}, ty)
+                           then raisee {exn = varExp (exn, Type.exn),
+                                        extend = false, ty = ty}
                         else
                            extract
                            (VarExp.var exn, ty, fn tup =>
                             raisee
-                            (makeExn
+                            {exn = makeExn
                              {exn = select {tuple = tup,
                                             offset = 1,
                                             ty = sumType},
@@ -191,8 +191,8 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
                                                              ty = extraType})),
                                             ty = seType},
                                ty = extraType}},
-                             {extend = false},
-                             ty))
+                             extend = false,
+                             ty = ty})
                   in
                      vall {exp = exp, var = x}
                   end

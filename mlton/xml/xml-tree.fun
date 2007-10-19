@@ -682,8 +682,8 @@ structure DirectExp =
                                (default, fn (e, r) => (toExp e, r)))},
                    ty))
 
-      fun raisee (exn: t, {extend: bool}, t: Type.t): t =
-         convert (exn, fn (x, _) => (Raise {exn = x, extend = extend}, t))
+      fun raisee {exn: t, extend: bool, ty: Type.t}: t =
+         convert (exn, fn (x, _) => (Raise {exn = x, extend = extend}, ty))
 
       fun handlee {try, catch, handler, ty} =
          simple (Handle {try = toExp try,
@@ -745,12 +745,12 @@ structure DirectExp =
                              targs = Vector.new0 (),
                              args = Vector.new1 (string s),
                              ty = Type.unit},
-                    raisee (primApp {prim = Prim.bogus,
-                                     targs = Vector.new1 Type.exn,
-                                     args = Vector.new0 (),
-                                     ty = Type.exn},
-                            {extend = false},
-                            ty)))
+                    raisee {exn = primApp {prim = Prim.bogus,
+                                           targs = Vector.new1 Type.exn,
+                                           args = Vector.new0 (),
+                                           ty = Type.exn},
+                            extend = false,
+                            ty = ty}))
 
       fun seq (es, make) =
          fn k => convertsGen (es, fn xts =>

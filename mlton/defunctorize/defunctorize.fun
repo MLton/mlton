@@ -128,7 +128,7 @@ fun casee {caseType: Xtype.t,
       fun raiseExn (f, mayWrap) =
          let
             val e = Var.newNoname ()
-            val exp = Xexp.raisee (f e, {extend = true}, caseType)
+            val exp = Xexp.raisee {exn = f e, extend = true, ty = caseType}
             val exp =
                fn () =>
                if let
@@ -1050,7 +1050,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                          ty = ty}
 
                      end
-                | Raise e => Xexp.raisee (#1 (loopExp e), {extend = true}, ty)
+                | Raise e => Xexp.raisee {exn = #1 (loopExp e), extend = true, ty = ty}
                 | Record r =>
                      (* The components of the record have to be evaluated left to 
                       * right as they appeared in the source program, but then
