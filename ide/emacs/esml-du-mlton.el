@@ -109,8 +109,10 @@ by the user."
   (cond
    ((find c esml-sml-symbolic-chars)
     'symbolic)
+   ((and (<= ?0 c) (<= c ?9))
+    'numeric)
    ((find c esml-sml-alphanumeric-chars)
-    'alphanumeric)))
+    'alpha)))
 
 (defun esml-du-extract-following-symbol (chars)
   (save-excursion
@@ -123,23 +125,29 @@ by the user."
 two symbols, one symbolic and other alphanumeric (e.g. !x) the symbol
 following the point is preferred.  This ensures that the symbol does not
 change surprisingly after a jump."
-  (let ((bef (esml-du-character-class (char-before)))
-        (aft (esml-du-character-class (char-after))))
-    (cond
-     ((and (eq bef 'alphanumeric) (eq aft 'symbolic)
-           (find (esml-du-extract-following-symbol esml-sml-symbolic-chars)
-                 esml-sml-symbolic-keywords
-                 :test 'equal))
-      (skip-chars-backward esml-sml-alphanumeric-chars))
-     ((and (eq bef 'symbolic) (eq aft 'alphanumeric)
-           (find (esml-du-extract-following-symbol esml-sml-alphanumeric-chars)
-                 esml-sml-alphanumeric-keywords
-                 :test 'equal))
-      (skip-chars-backward esml-sml-symbolic-chars))
-     ((and (eq bef 'symbolic) (not (eq aft 'alphanumeric)))
-      (skip-chars-backward esml-sml-symbolic-chars))
-     ((and (eq bef 'alphanumeric) (not (eq aft 'symbolic)))
-      (skip-chars-backward esml-sml-alphanumeric-chars)))))
+  (let ((point (point)))
+    (let ((bef (esml-du-character-class (char-before)))
+          (aft (esml-du-character-class (char-after))))
+      (cond
+       ((and (or (eq bef 'alpha) (eq bef 'numeric)) (eq aft 'symbolic)
+             (find (esml-du-extract-following-symbol esml-sml-symbolic-chars)
+                   esml-sml-symbolic-keywords
+                   :test 'equal))
+        (skip-chars-backward esml-sml-alphanumeric-chars))
+       ((and (eq bef 'symbolic)
+             (or (eq aft 'numeric)
+                 (and (eq aft 'alpha)
+                      (find (esml-du-extract-following-symbol
+                             esml-sml-alphanumeric-chars)
+                            esml-sml-alphanumeric-keywords
+                            :test 'equal))))
+        (skip-chars-backward esml-sml-symbolic-chars))
+       ((and (eq bef 'symbolic) (not (eq aft 'alpha)))
+        (skip-chars-backward esml-sml-symbolic-chars))
+       ((and (or (eq bef 'alpha) (eq bef 'numeric)) (not (eq aft 'symbolic)))
+        (skip-chars-backward esml-sml-alphanumeric-chars))))
+    (when (and (<= ?0 (char-after)) (<= (char-after) ?9))
+      (search-forward-regexp esml-sml-numeric-literal-regexp point t))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
              (cons 'sml-mode (function esml-du-move-to-symbol-start)))
