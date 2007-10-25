@@ -109,7 +109,7 @@ by the user."
   (cond
    ((find c esml-sml-symbolic-chars)
     'symbolic)
-   ((and (<= ?0 c) (<= c ?9))
+   ((and c (<= ?0 c) (<= c ?9))
     'numeric)
    ((find c esml-sml-alphanumeric-chars)
     'alpha)))
@@ -146,7 +146,7 @@ change surprisingly after a jump."
         (skip-chars-backward esml-sml-symbolic-chars))
        ((and (or (eq bef 'alpha) (eq bef 'numeric)) (not (eq aft 'symbolic)))
         (skip-chars-backward esml-sml-alphanumeric-chars))))
-    (when (and (<= ?0 (char-after)) (<= (char-after) ?9))
+    (when (let ((c (char-after))) (and c (<= ?0 c) (<= c ?9)))
       (search-forward-regexp esml-sml-numeric-literal-regexp point t))))
 
 (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
