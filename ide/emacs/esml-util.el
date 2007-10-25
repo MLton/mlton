@@ -31,6 +31,10 @@ well as the symbol :: mentioned in section 2.9 of the Definition.")
   "A list of alphanumeric keywords or reserved words as well as
 non-bindable identifiers defined in various sections of the Definition")
 
+(defconst esml-sml-numeric-literal-regexp
+  "\\(?:\\(?:0w\\)?[0-9]+\\|0w?x[0-9a-fA-F]+\\)"
+  "Regexp matching the syntax of Standard ML numeric literals.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Some general purpose Emacs Lisp utility functions
 
