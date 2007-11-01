@@ -372,7 +372,7 @@ of {\tt yytext}, relative to the beginning of the file.}\\
 These values should be used only if necessary.  Adding {\tt REJECT} to a
 lexer will slow it down by 20\%; adding {\tt yylineno} will slow it down by
 another 20\%, or more.  (It is much more efficient to 
-recognize {\tt \\n} and
+recognize \verb|\n| and
 have an action that increments the line-number variable.)  The use of
 the lookahead operator {\tt /} will also slow down the entire lexer.
 The character-position, {\tt yypos}, is not costly to maintain, however.
