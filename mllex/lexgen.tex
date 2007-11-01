@@ -457,7 +457,9 @@ The lexer tries to read a large number of characters from the input
 function at once, and it is desirable that the input function return
 as many as possible.  Reading many characters at once makes the lexer
 more efficient.  Fewer input calls and buffering operations are
-needed, and input is more efficient in large block reads.  For
+needed, and input is more efficient in large block reads.
+Furthermore, performance is very poor (quadratic in the token length)
+when a token requires lots of calls to the input function. For 
 interactive streams this is less of a concern, as the limiting factor
 is the speed at which the user can type.
 
