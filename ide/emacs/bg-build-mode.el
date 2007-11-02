@@ -325,12 +325,15 @@ The expression should evaluate to a bg-build project object."
                                        (save-excursion
                                          (goto-char begin)
                                          (condition-case ()
-                                             (forward-sexp)
+                                             (sml-user-forward-sexp) ;; XXX
                                            (error
                                             (condition-case ()
-                                                (forward-word 1)
+                                                (forward-sexp)
                                               (error
-                                               ))))
+                                               (condition-case ()
+                                                   (forward-word 1)
+                                                 (error
+                                                  ))))))
                                          (point)))
                                       (overlay
                                        (make-overlay begin beyond)))
