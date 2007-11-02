@@ -24,10 +24,11 @@
       (and (equal (def-use-ref-src lhs) (def-use-ref-src rhs))
            (def-use-pos< (def-use-ref-pos lhs) (def-use-ref-pos rhs)))))
 
-(defun def-use-sym (class name ref &optional face)
+(defun def-use-sym (class msg name ref &optional face)
   "Symbol constructor."
-  (cons ref (cons name (cons class face))))
-(defalias 'def-use-sym-face (function cdddr))
+  (cons ref (cons name (cons class (cons msg face)))))
+(defalias 'def-use-sym-face (function cddddr))
+(defalias 'def-use-sym-msg (function cadddr))
 (defalias 'def-use-sym-class (function caddr))
 (defalias 'def-use-sym-name (function cadr))
 (defalias 'def-use-sym-ref (function car))

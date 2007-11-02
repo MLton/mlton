@@ -88,13 +88,21 @@ this customization variable. "
   :set (function def-use-set-custom-and-update)
   :group 'def-use)
 
+(defcustom def-use-auto-show-symbol-messages t
+  "Whether to show messages attached to symbols implicitly."
+  :type '(choice
+          (const :tag "disable" nil)
+          (const :tag "enable" t))
+  :group 'def-use)
+
 (defcustom def-use-key-bindings
   '(("[(control c) (control d)]" . def-use-jump-to-def)
+    ("[(control c) (control l)]" . def-use-list-all-refs)
+    ("[(control c) (control m)]" . def-use-pop-ref-mark)
     ("[(control c) (control n)]" . def-use-jump-to-next)
     ("[(control c) (control p)]" . def-use-jump-to-prev)
-    ("[(control c) (control m)]" . def-use-pop-ref-mark)
     ("[(control c) (control s)]" . def-use-show-dus)
-    ("[(control c) (control l)]" . def-use-list-all-refs)
+    ("[(control c) (control t)]" . def-use-show-msg)
     ("[(control c) (control v)]" . def-use-show-info))
   "Key bindings for the def-use mode.  The key specifications must be
 in a format accepted by the function `define-key'.  Hint: You might
@@ -365,6 +373,14 @@ the symbol."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Info
 
+(defun def-use-show-msg ()
+  "Shows the message for the symbol under the cursor."
+  (interactive)
+  (let ((sym (def-use-current-sym)))
+    (when sym
+      (message "%s" (or (def-use-sym-msg sym)
+                        "Sorry, no message attached to the symbol.")))))
+
 (defun def-use-show-info ()
   "Shows info on the symbol under the cursor."
   (interactive)
@@ -386,7 +402,10 @@ the symbol."
             (copy-sequence (def-use-sym-class sym)))
           " "
           (def-use-add-face (def-use-sym-face sym)
-            (copy-sequence (def-use-sym-name sym)))))
+            (copy-sequence (def-use-sym-name sym)))
+          (if (def-use-sym-msg sym)
+              (concat " : " (def-use-sym-msg sym))
+            "")))
 
 (defun def-use-format-ref (ref)
   "Formats a references."
@@ -460,7 +479,11 @@ the symbol."
                 length (def-use-ref-pos ref)
                 (if (def-use-sym-to-uses sym)
                     'def-use-def-face
-                  'def-use-unused-def-face)))))))))
+                  'def-use-unused-def-face)))))
+        (when def-use-auto-show-symbol-messages
+          (let ((msg (def-use-sym-msg sym)))
+            (when msg
+              (message "%s" msg))))))))
 
 (defun def-use-highlight-current ()
   "Highlights the symbol at the point."

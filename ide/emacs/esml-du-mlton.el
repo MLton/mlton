@@ -289,6 +289,11 @@ beginning of the symbol."
       (skip-chars-forward skipping)
       result)))
 
+(defun esml-du-read-opt-str ()
+  (when (= (char-after) ?\")
+    (forward-char 1)
+    (esml-du-read "^\"" "\"")))
+
 (defconst esml-du-classes ;; XXX Needs customization
   `((,(def-use-intern "variable")    . ,font-lock-variable-name-face)
     (,(def-use-intern "type")        . ,font-lock-variable-name-face)
@@ -357,16 +362,18 @@ Returns the symbol read and deletes the read symbol from the buffer."
          (name (def-use-intern (esml-du-read "^ " " ")))
          (src (def-use-file-truename (esml-du-read "^ " " ")))
          (line (string-to-int (esml-du-read "^." ".")))
-         (col (1- (string-to-int (esml-du-read "^\n" "\n"))))
+         (col (1- (string-to-int (esml-du-read "^ \n" " "))))
+         (msg (def-use-intern (esml-du-read-opt-str)))
          (pos (def-use-pos line col))
          (ref (def-use-ref src pos))
-         (sym (def-use-sym class name ref
+         (sym (def-use-sym class msg name ref
                 (cdr (assoc class esml-du-classes))))
          (uses nil))
     (let ((old-sym (gethash ref ref-to-sym)))
       (when old-sym
         (setq sym old-sym))
       (puthash ref sym ref-to-sym))
+    (skip-chars-forward "\n")
     (while (< 0 (skip-chars-forward " "))
       (let* ((src (def-use-file-truename (esml-du-read "^ " " ")))
              (line (string-to-int (esml-du-read "^." ".")))
