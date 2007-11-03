@@ -15,31 +15,31 @@ static inline bool isAlignedMax (uintmax_t a, uintmax_t b) {
 }
 
 static inline size_t alignDown (size_t a, size_t b) {
-  assert (b >= 1);
-  a -= a % b;
+  assert (b >= 1 && b == (b & -b));
+  a &= -b;
   assert (isAligned (a, b));
   return a;
 }
 
 static inline uintmax_t alignMaxDown (uintmax_t a, uintmax_t b) {
-  assert (b >= 1);
-  a -= a % b;
+  assert (b >= 1 && b == (b & -b));
+  a &= -b;
   assert (isAlignedMax (a, b));
   return a;
 }
 
 static inline size_t align (size_t a, size_t b) {
-  assert (b >= 1);
+  assert (b >= 1 && b == (b & -b));
   a += b - 1;
-  a -= a % b;
+  a &= -b;
   assert (isAligned (a, b));
   return a;       
 }
 
 static inline uintmax_t alignMax (uintmax_t a, uintmax_t b) {
-  assert (b >= 1);
+  assert (b >= 1 && b == (b & -b));
   a += b - 1;
-  a -= a % b;
+  a &= -b;
   assert (isAligned (a, b));
   return a;       
 }
