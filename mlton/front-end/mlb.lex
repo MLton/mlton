@@ -86,7 +86,7 @@ alphanum=[A-Za-z'_0-9]*;
 alphanumId=[A-Za-z]{alphanum};
 id={alphanumId};
 
-pathvar="$("([A-Z_]+)")";
+pathvar="$("([A-Z_][A-Z0-9_]*)")";
 filebase=({pathvar}|[-A-Za-z_0-9])+;
 fileext=({pathvar}|[-A-Za-z_0-9])+;
 filename={filebase}("."{fileext})*;
