@@ -74,6 +74,25 @@ val runtimeArgs: string list ref = ref ["@MLton"]
 val show: Show.t option ref = ref NONE
 val stop = ref Place.OUT
 
+fun parseMlbPathVar (line: String.t) =
+   case String.tokens (line, Char.isSpace) of
+      [var, path] => SOME {var = var, path = path}
+    | _ => NONE
+
+fun readMlbPathMap (file: File.t) =
+   if not (File.canRead file) then
+      Error.bug (concat ["can't read MLB path map file: ", file])
+   else
+      List.keepAllMap
+      (File.lines file, fn line =>
+       if String.forall (line, Char.isSpace)
+          then NONE
+       else
+          case parseMlbPathVar line of
+             NONE => Error.bug (concat ["strange mlb path mapping: ",
+                                        file, ":: ", line])
+           | SOME v => SOME v)
+
 val targetMap: unit -> {arch: MLton.Platform.Arch.t,
                         os: MLton.Platform.OS.t,
                         target: string} list =
@@ -443,7 +462,13 @@ fun makeOptions {usage} =
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
         intRef maxFunctionSize),
        (Normal, "mlb-path-map", " <file>", "additional MLB path map",
-        SpaceString (fn s => mlbPathMaps := !mlbPathMaps @ [s])),
+        SpaceString (fn s => mlbPathVars := !mlbPathVars @ readMlbPathMap s)),
+       (Normal, "mlb-path-var", " '<name> <value>'", "additional MLB path var",
+        SpaceString
+        (fn s => mlbPathVars := !mlbPathVars @
+                                [case parseMlbPathVar s of
+                                    NONE => Error.bug ("strange mlb path var: " ^ s)
+                                  | SOME v => v])),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
         intRef Native.commented),
        (Expert, "native-copy-prop", " {true|false}", 

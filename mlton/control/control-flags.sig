@@ -202,7 +202,8 @@ signature CONTROL_FLAGS =
 
       val maxFunctionSize: int ref
 
-      val mlbPathMaps: string list ref
+      val mlbPathVars: {var: string,
+                        path: string} list ref
       val mlbPathMap: unit -> {var: string,
                                path: string} list
 

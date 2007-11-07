@@ -736,9 +736,13 @@ val maxFunctionSize = control {name = "max function size",
                                default = 10000,
                                toString = Int.toString}
 
-val mlbPathMaps = control {name = "mlb path maps",
-                           default = [],
-                           toString = List.toString (fn s => s)}
+val mlbPathVars =
+   control
+   {name = "mlb path vars",
+    default = [],
+    toString = List.toString
+               (fn {var, path} =>
+                   concat ["{var = ", var, ", path = ", path, "}"])}
 
 structure Native =
    struct
@@ -1019,59 +1023,43 @@ structure Target =
           ; Size.set_seqIndex seqIndex)
    end
 
-local
-   fun make (file: File.t) =
-      if not (File.canRead file) then
-         Error.bug (concat ["can't read MLB path map file: ", file])
-      else
-         List.keepAllMap
-         (File.lines file, fn line =>
-          if String.forall (line, Char.isSpace)
-             then NONE
-          else
-             case String.tokens (line, Char.isSpace) of
-                [var, path] => SOME {var = var, path = path}
-              | _ => Error.bug (concat ["strange mlb path mapping: ",
-                                        file, ":: ", line]))
-in
-   fun mlbPathMap () =
-      List.rev
-         (List.concat
-             [[{var = "LIB_MLTON_DIR",
-                path = !libDir},
-               {var = "TARGET_ARCH",
-                path = String.toLower (MLton.Platform.Arch.toString
-                                       (!Target.arch))},
-               {var = "TARGET_OS",
-                path = String.toLower (MLton.Platform.OS.toString
-                                       (!Target.os))},
-               {var = "OBJPTR_REP",
-                path = (case Bits.toInt (Target.Size.objptr ()) of
-                           32 => "objptr-rep32.sml"
-                         | 64 => "objptr-rep64.sml"
-                         | _ => Error.bug "Control.mlbPathMap")},
-               {var = "HEADER_WORD",
-                path = (case Bits.toInt (Target.Size.header ()) of
-                           32 => "header-word32.sml"
-                         | 64 => "header-word64.sml"
-                         | _ => Error.bug "Control.mlbPathMap")},
-               {var = "SEQINDEX_INT",
-                path = (case Bits.toInt (Target.Size.seqIndex ()) of
-                           32 => "seqindex-int32.sml"
-                         | 64 => "seqindex-int64.sml"
-                         | _ => Error.bug "Control.mlbPathMap")},
-               {var = "DEFAULT_CHAR",
-                path = concat ["default-", !defaultChar, ".sml"]},
-               {var = "DEFAULT_WIDECHAR",
-                path = concat ["default-", !defaultWideChar, ".sml"]},
-               {var = "DEFAULT_INT",
-                path = concat ["default-", !defaultInt, ".sml"]},
-               {var = "DEFAULT_REAL",
-                path = concat ["default-", !defaultReal, ".sml"]},
-               {var = "DEFAULT_WORD",
-                path = concat ["default-", !defaultWord, ".sml"]}],
-              List.concat (List.map (!mlbPathMaps, make))])
-end
+fun mlbPathMap () =
+   List.rev
+      (List.concat
+          [[{var = "LIB_MLTON_DIR",
+             path = !libDir},
+            {var = "TARGET_ARCH",
+             path = String.toLower (MLton.Platform.Arch.toString
+                                    (!Target.arch))},
+            {var = "TARGET_OS",
+             path = String.toLower (MLton.Platform.OS.toString
+                                    (!Target.os))},
+            {var = "OBJPTR_REP",
+             path = (case Bits.toInt (Target.Size.objptr ()) of
+                        32 => "objptr-rep32.sml"
+                      | 64 => "objptr-rep64.sml"
+                      | _ => Error.bug "Control.mlbPathMap")},
+            {var = "HEADER_WORD",
+             path = (case Bits.toInt (Target.Size.header ()) of
+                        32 => "header-word32.sml"
+                      | 64 => "header-word64.sml"
+                      | _ => Error.bug "Control.mlbPathMap")},
+            {var = "SEQINDEX_INT",
+             path = (case Bits.toInt (Target.Size.seqIndex ()) of
+                        32 => "seqindex-int32.sml"
+                      | 64 => "seqindex-int64.sml"
+                      | _ => Error.bug "Control.mlbPathMap")},
+            {var = "DEFAULT_CHAR",
+             path = concat ["default-", !defaultChar, ".sml"]},
+            {var = "DEFAULT_WIDECHAR",
+             path = concat ["default-", !defaultWideChar, ".sml"]},
+            {var = "DEFAULT_INT",
+             path = concat ["default-", !defaultInt, ".sml"]},
+            {var = "DEFAULT_REAL",
+             path = concat ["default-", !defaultReal, ".sml"]},
+            {var = "DEFAULT_WORD",
+             path = concat ["default-", !defaultWord, ".sml"]}],
+           !mlbPathVars])
 
 val typeCheck = control {name = "type check",
                          default = false,
