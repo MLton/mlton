@@ -229,6 +229,7 @@ structure LexGen: LEXGEN =
           | REPS of int * int | ID of string | ACTION of string
           | BOF | EOF | ASSIGN | SEMI | ARROW | LEXMARK | LEXSTATES 
           | COUNT | REJECT | FULLCHARSET | STRUCT | HEADER | ARG | POSARG
+          | POSINT
         
    datatype exp = EPS | CLASS of bool array * int | CLOSURE of exp
                 | ALT of exp * exp | CAT of exp * exp | TRAIL of int
@@ -261,13 +262,18 @@ structure LexGen: LEXGEN =
    val ArgCode = ref (NONE: string option)
    val StrDecl = ref false
 
+   (* Can define INTEGER structure for yypos variable. *)
+   val PosIntName = ref "Int"
+   val PosIntDecl = ref false
+
    val ResetFlags = fn () => (CountNewLines := false; HaveReject := false;
                               PosArg := false;
                               UsesTrailingContext := false;
                                CharSetSize := 129; StrName := "Mlex";
                                 HeaderCode := ""; HeaderDecl:= false;
                                 ArgCode := NONE; 
-                                StrDecl := false)
+                                StrDecl := false;
+                              PosIntName := "Int"; PosIntDecl := false)
 
    val LexOut = ref(TextIO.stdOut)
    fun say x = TextIO.output(!LexOut, x)
@@ -491,6 +497,7 @@ fun AdvanceTok () : unit = let
                                   | "header" => HEADER
                                   | "arg"    => ARG
                                   | "posarg" => POSARG
+                                  | "posint" => POSINT
                                   | _ => prErr "unknown % operator "
                                end
                              )
@@ -824,6 +831,14 @@ fun parse() : (string * (int list * exp) list * ((string,string) dictionary)) =
                                      HeaderDecl := true; ParseDefs())
                                 | _ => raise SyntaxError)
                 | POSARG => (PosArg := true; ParseDefs())
+                | POSINT => (AdvanceTok();
+                            case !NextTok of
+                               (ID i) =>
+                                if (!PosIntDecl) then
+                                   (prErr "duplicate %posint declarations")
+                                else (PosIntName := i; PosIntDecl := true)
+                                 | _  => (prErr "expected ID");
+                                ParseDefs())
                 | ARG => (LexState := 2; AdvanceTok();
                              case GetTok()
                              of ACTION s => 
@@ -1257,7 +1272,8 @@ fun lexGen(infile) =
          sayln "\t\tcase node of";
          sayln "\t\t    Internal.N yyk => ";
          sayln "\t\t\t(let fun yymktext() = String.substring(!yyb,i0,i-i0)\n\
-               \\t\t\t     val yypos: int = i0+ !yygone";
+               \\t\t\t     val yypos: YYPosInt.int = YYPosInt.+(YYPosInt.fromInt i0, !yygone)\n";
+        
          if !CountNewLines 
             then (sayln "\t\t\tval _ = yylineno := CharVectorSlice.foldli";
                   sayln "\t\t\t\t(fn (_,#\"\\n\", n) => n+1 | (_,_, n) => n) (!yylineno) (CharVectorSlice.slice (!yyb,i0,SOME(i-i0)))")
@@ -1292,7 +1308,7 @@ fun lexGen(infile) =
             sayln ",nil))" else sayln "))";
          sayln "\t\t  else (if i0=l then yyb := newchars";
          sayln "\t\t     else yyb := String.substring(!yyb,i0,l-i0)^newchars;";
-         sayln "\t\t     yygone := !yygone+i0;";
+         sayln "\t\t     yygone := YYPosInt.+(!yygone, YYPosInt.fromInt i0);\n";
          sayln "\t\t     yybl := String.size (!yyb);";
          sayln "\t\t     scan (s,AcceptingLeaves,l-i0,0))";
          sayln "\t    end";
@@ -1369,14 +1385,15 @@ fun lexGen(infile) =
           say "\texception LexerError (* raised if illegal leaf ";
           say "action tried *)\n";
           say "end\n\n";
+          say ("YYPosInt : INTEGER = " ^ (!PosIntName) ^ "\n");
           say "type int = Int.int\n";
-          say (if (!PosArg) then "fun makeLexer (yyinput: int -> string,yygone0:int) =\nlet\n"
-                else "fun makeLexer (yyinput: int -> string) =\nlet\tval yygone0:int= ~1\n");
+          say (if (!PosArg) then "fun makeLexer (yyinput: int -> string,yygone0:YYPosInt.int) =\nlet\n"
+                else "fun makeLexer (yyinput: int -> string) =\nlet\tval yygone0:YYPosInt.int = YYPosInt.fromInt ~1\n");
           if !CountNewLines then say "\tval yylineno: int ref = ref 0\n\n" else ();
           say "\tval yyb = ref \"\\n\" \t\t(* buffer *)\n\
           \\tval yybl: int ref = ref 1\t\t(*buffer length *)\n\
           \\tval yybufpos: int ref = ref 1\t\t(* location of next character to use *)\n\
-          \\tval yygone: int ref = ref yygone0\t(* position in file of beginning of buffer *)\n\
+          \\tval yygone: YYPosInt.int ref = ref yygone0\t(* position in file of beginning of buffer *)\n\
           \\tval yydone = ref false\t\t(* eof found yet? *)\n\
           \\tval yybegin: int ref = ref 1\t\t(*Current 'start state' for lexer *)\n\
           \\n\tval YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>\n\

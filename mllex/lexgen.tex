@@ -296,6 +296,9 @@ The following \% commands are also available:
 \item[\tt \%arg]       extra (curried) formal parameter argument to be
                           passed to the lex functions, and to be passed
                           to the eof function in place of ()
+\item[\tt \%posint \{identifier\}]  use the {\tt INTEGER} structure for the 
+                          type of {\tt yypos}; use {\tt Int64} or {\tt Position}
+                          to allow lexing of multi-gigabyte input files
 \end{description}
         These functions are discussed in section~\ref{avail}.
 

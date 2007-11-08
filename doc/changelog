@@ -1,6 +1,12 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
 * 2007-11-07
+   - Added %posint command to ml-lex, to set the yypos type and allow
+     the lexing of multi-gigabyte input files.  Thanks to Florian
+     Weimer for the feature concept and original patch.
+
+
+* 2007-11-07
    - Added command-line switch -mlb-path-var '<name> <value>' for
      specifying MLB path variables.
 
