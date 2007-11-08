@@ -67,7 +67,7 @@ EXE := .exe
 endif
 
 ifeq ($(TARGET_OS), darwin)
-FLAGS += -I/sw/include -I/opt/local/include
+FLAGS += -I/usr/local/include -I/sw/include -I/opt/local/include
 endif
 
 ifeq ($(TARGET_OS), freebsd)
