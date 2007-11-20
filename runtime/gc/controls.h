@@ -19,7 +19,7 @@ struct GC_ratios {
   float hashCons;
   /* Desired ratio of heap size to live data. */
   float live; 
-  /* Minimum live ratio to us mark-compact GC. */
+  /* Minimum live ratio to use mark-compact GC. */
   float markCompact; 
   /* Only use generational GC with mark-compact collection if the
    * ratio of heap size to live data size is below
