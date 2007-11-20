@@ -1,7 +1,7 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
 * 2007-11-19
-   - Fixed bug in handling of weak pointers by the mark-compact
+   - Fixed bug in the handling of weak pointers by the mark-compact
      garbage collector.  Thanks to Sean McLaughlin for the bug report
      and Florian Weimer for the initial diagnosis.
 
