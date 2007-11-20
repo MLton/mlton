@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,10 +14,10 @@ void GC_share (GC_state s, pointer object) {
   if (DEBUG_SHARE or s->controls.messages)
     s->lastMajorStatistics.bytesHashConsed = 0;
   // Don't hash cons during the first round of marking.
-  total = dfsMarkByMode (s, object, MARK_MODE, FALSE);
+  total = dfsMarkByMode (s, object, MARK_MODE, FALSE, FALSE);
   s->objectHashTable = allocHashTable (s);
-  // Hash cons during the second round of marking.
-  dfsMarkByMode (s, object, UNMARK_MODE, TRUE);
+  // Hash cons during the second round of (un)marking.
+  dfsMarkByMode (s, object, UNMARK_MODE, TRUE, FALSE);
   freeHashTable (s->objectHashTable);
   if (DEBUG_SHARE or s->controls.messages)
     printBytesHashConsedMessage (s, total);

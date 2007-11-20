@@ -24,7 +24,7 @@
  * There may be zero or more bytes of padding for alignment purposes.
  *
  * The link native-pointer is used to chain the live weaks together
- * during a copying gc and is otherwise unused.
+ * during a copying/mark-compact gc and is otherwise unused.
  *
  * The final component is the weak object-pointer.
  *

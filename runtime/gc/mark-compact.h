@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,7 +10,7 @@
 
 static inline void copyForThreadInternal (pointer dst, pointer src);
 static inline void threadInternalObjptr (GC_state s, objptr *opp);
-static inline void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p);
+static inline void updateWeaksForMarkCompact (GC_state s);
 static void updateForwardPointersForMarkCompact (GC_state s);
 static void updateBackwardPointersAndSlideForMarkCompact (GC_state s);
 static void majorMarkCompactGC (GC_state s);

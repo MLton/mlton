@@ -25,7 +25,7 @@ bool isPointerMarkedByMode (pointer p, GC_markMode m) {
   }
 }
 
-/* dfsMarkByMode (s, r, m, shc)
+/* dfsMarkByMode (s, r, m, shc, slw)
  *
  * Sets all the mark bits in the object graph pointed to by r.
  *
@@ -34,10 +34,14 @@ bool isPointerMarkedByMode (pointer p, GC_markMode m) {
  *
  * If shc, it hash-conses the objects marked.
  *
+ * If slw, it links the weak objects marked.
+ *
  * It returns the total size in bytes of the objects marked.
  */
 size_t dfsMarkByMode (GC_state s, pointer root,
-                      GC_markMode mode, bool shouldHashCons) {
+                      GC_markMode mode,
+                      bool shouldHashCons,
+                      bool shouldLinkWeaks) {
   GC_header mark; /* Used to set or clear the mark bit. */
   size_t size; /* Total number of bytes marked. */
   pointer cur; /* The current object being marked. */
@@ -158,6 +162,23 @@ markNextInNormal:
     goto markNext;
   } else if (WEAK_TAG == tag) {
     /* Store the marked header and don't follow any pointers. */
+    if (shouldLinkWeaks) {
+      GC_weak w;
+
+      w = (GC_weak)(cur + offsetofWeak (s));
+      if (DEBUG_WEAK)
+        fprintf (stderr, "marking weak "FMTPTR" ",
+                 (uintptr_t)w);
+      if (isObjptr (w->objptr)) {
+        if (DEBUG_WEAK)
+          fprintf (stderr, "linking\n");
+        w->link = s->weaks;
+        s->weaks = w;
+      } else {
+        if (DEBUG_WEAK)
+          fprintf (stderr, "not linking\n");
+      }
+    }
     goto ret;
   } else if (ARRAY_TAG == tag) {
     /* When marking arrays:
@@ -337,23 +358,23 @@ ret:
   assert (FALSE);
 }
 
-void dfsMarkWithHashCons (GC_state s, objptr *opp) {
+void dfsMarkWithHashConsWithLinkWeaks (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, MARK_MODE, TRUE);
+  dfsMarkByMode (s, p, MARK_MODE, TRUE, TRUE);
 }
 
-void dfsMarkWithoutHashCons (GC_state s, objptr *opp) {
+void dfsMarkWithoutHashConsWithLinkWeaks (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, MARK_MODE, FALSE);
+  dfsMarkByMode (s, p, MARK_MODE, FALSE, TRUE);
 }
 
 void dfsUnmark (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, UNMARK_MODE, FALSE);
+  dfsMarkByMode (s, p, UNMARK_MODE, FALSE, FALSE);
 }

@@ -11,6 +11,10 @@
 /* ---------------------------------------------------------------- */
 
 void copyForThreadInternal (pointer dst, pointer src) {
+  if (FALSE)
+    fprintf (stderr,
+             "copyForThreadInternal dst = "FMTPTR"  src = "FMTPTR"\n",
+             (uintptr_t)dst, (uintptr_t)src);
   if (OBJPTR_SIZE > GC_HEADER_SIZE) {
     size_t count;
 
@@ -56,38 +60,31 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
   copyForThreadInternal ((pointer)(headerp), (pointer)(&opop));
 }
 
-/* If p is weak, the object pointer was valid, and points to an
- * unmarked object, then clear the object pointer.
+/* If the object pointer is valid, and points to an unmarked object,
+ * then clear the object pointer.
  */
-void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
-  GC_header header;
-  GC_header *headerp;
-  uint16_t bytesNonObjptrs, numObjptrs;
-  GC_objectTypeTag tag;
+void updateWeaksForMarkCompact (GC_state s) {
+  pointer p;
+  GC_weak w;
 
-  headerp = getHeaderp (p);
-  header = *headerp;
-  splitHeader(s, *headerp, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
-  if (WEAK_TAG == tag and 1 == numObjptrs) {
-    GC_header objptrHeader;
-    GC_weak w;
+  for (w = s->weaks; w != NULL; w = w->link) {
+    assert (BOGUS_OBJPTR != w->objptr);
 
-    if (DEBUG_MARK_COMPACT or DEBUG_WEAK)
-      fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
-               (uintptr_t)p, header);
-    w = (GC_weak)(p + offsetofWeak (s));
-    objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap.start));
-    /* If it's not threaded and unmarked, clear the weak pointer. */
-    if ((GC_VALID_HEADER_MASK & objptrHeader)
-        and not (MARK_MASK & objptrHeader)) {
-      w->objptr = BOGUS_OBJPTR;
-      header = GC_WEAK_GONE_HEADER | MARK_MASK;
+    if (DEBUG_WEAK)
+      fprintf (stderr, "updateWeaksForMarkCompact  w = "FMTPTR"  ", (uintptr_t)w);
+    p = objptrToPointer(w->objptr, s->heap.start);
+    /* If it's unmarked, clear the weak pointer. */
+    if (isPointerMarked(p)) {
       if (DEBUG_WEAK)
-        fprintf (stderr, "cleared.  new header = "FMTHDR"\n",
-                 header);
-      *headerp = header;
+        fprintf (stderr, "not cleared\n");
+    } else {
+      if (DEBUG_WEAK)
+        fprintf (stderr, "cleared\n");
+      *(getHeaderp((pointer)w - offsetofWeak (s))) = GC_WEAK_GONE_HEADER | MARK_MASK;
+      w->objptr = BOGUS_OBJPTR;
     }
   }
+  s->weaks = NULL;
 }
 
 void updateForwardPointersForMarkCompact (GC_state s) {
@@ -122,7 +119,6 @@ updateObject:
        * Thread internal pointers.
        */
 thread:
-      clearIfWeakAndUnmarkedForMarkCompact (s, p);
       size = sizeofObject (s, p);
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
@@ -296,11 +292,12 @@ void majorMarkCompactGC (GC_state s) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
-    foreachGlobalObjptr (s, dfsMarkWithHashCons);
+    foreachGlobalObjptr (s, dfsMarkWithHashConsWithLinkWeaks);
     freeHashTable (s->objectHashTable);
   } else {
-    foreachGlobalObjptr (s, dfsMarkWithoutHashCons);
+    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
   }
+  updateWeaksForMarkCompact (s);
   foreachGlobalObjptr (s, threadInternalObjptr);
   updateForwardPointersForMarkCompact (s);
   updateBackwardPointersAndSlideForMarkCompact (s);
