@@ -576,11 +576,7 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                         case elt of
                            Const _ => false
                          | Make _ => true)
-      fun makeProd p =
-         Prod.map (p, fn m =>
-                   case m of
-                      Const v => v
-                    | Make f => f ())
+      fun makeProd p = Prod.map (p, makeValue)
       val {get = makeTypeValue: Type.t -> Value.t make, ...} =
          Property.get
          (Type.plist,
