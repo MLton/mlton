@@ -701,7 +701,8 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                     | Value.Weak {arg, ...} => arg
                     | _ => Error.bug "DeepFlatten.primApp: Value.deWeak")
              | Weak_new =>
-                  (case makeTypeValue resultType of
+                  (Value.dontFlatten (arg 0);
+                   case makeTypeValue resultType of
                       Const v => v
                     | Make _ => Value.weak (arg 0))
              | _ => result ()

@@ -1,5 +1,9 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-11-20
+   - Fixed bug in pass to flatten refs into containing data structure.
+     Thanks to Ruy LeyWild for the bug report.
+
 * 2007-11-19
    - Fixed bug in the handling of weak pointers by the mark-compact
      garbage collector.  Thanks to Sean McLaughlin for the bug report
