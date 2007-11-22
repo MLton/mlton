@@ -9,8 +9,6 @@ structure Int:
    sig
       include INTEGER
 
-      type int
-
       val maxInt: t
       val minInt: t
       val roundDownToPowerOfTwo: t -> t
