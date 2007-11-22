@@ -1385,7 +1385,7 @@ fun lexGen(infile) =
           say "\texception LexerError (* raised if illegal leaf ";
           say "action tried *)\n";
           say "end\n\n";
-          say ("YYPosInt : INTEGER = " ^ (!PosIntName) ^ "\n");
+          say ("structure YYPosInt : INTEGER = " ^ (!PosIntName) ^ "\n");
           say "type int = Int.int\n";
           say (if (!PosArg) then "fun makeLexer (yyinput: int -> string,yygone0:YYPosInt.int) =\nlet\n"
                 else "fun makeLexer (yyinput: int -> string) =\nlet\tval yygone0:YYPosInt.int = YYPosInt.fromInt ~1\n");
