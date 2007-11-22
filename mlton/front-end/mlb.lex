@@ -87,7 +87,7 @@ alphanumId=[A-Za-z]{alphanum};
 id={alphanumId};
 
 pathvar="$("([A-Z_][A-Z0-9_]*)")";
-filename=({pathvar}|[A-Za-z0-9_.])({pathvar}|[-A-Za-z0-9_.])+;
+filename=({pathvar}|[A-Za-z0-9_.])({pathvar}|[-A-Za-z0-9_.])*;
 arc=({pathvar}|{filename}|"."|"..");
 relpath=({arc}"/")*;
 abspath="/"{relpath};
