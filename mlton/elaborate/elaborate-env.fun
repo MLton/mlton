@@ -2788,6 +2788,8 @@ fun transparentCut (E: t, S: Structure.t, I: Interface.t, {isFunctor: bool},
                        List.layout Strid.layout,
                        Unit.layout)
          checkMatch
+      (* quell unused warning *)
+      val _ = checkMatch
       val {destroy, get: Structure.t -> (Interface.t * Structure.t) list ref,
            ...} =
          Property.destGet (Structure.plist, Property.initFun (fn _ => ref []))
