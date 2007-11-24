@@ -429,13 +429,13 @@ structure Elaborate =
                        default = false, expert = true}, ac)
          val (allowOverload, ac) =
             makeBool ({name = "allowOverload", 
-                       default = false, expert = false}, ac)
+                       default = false, expert = true}, ac)
          val (allowRebindEquals, ac) =
             makeBool ({name = "allowRebindEquals", 
                        default = false, expert = true}, ac)
          val (deadCode, ac) =
             makeBool ({name = "deadCode", 
-                       default = false, expert = false}, ac)
+                       default = false, expert = true}, ac)
          val (forceUsed, ac) =
             make ({choices = NONE,
                    default = false,
