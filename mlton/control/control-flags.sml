@@ -166,10 +166,7 @@ structure Elaborate =
                enabled1 = enabled2
 
             val enabled = fn (T {enabled, ...}) => !enabled
-            val setEnabled = fn (T {enabled, expert, ...}, b) =>
-               if expert
-                  then false
-                  else (enabled := b; true)
+            val setEnabled = fn (T {enabled, ...}, b) => (enabled := b; true)
             val expert = fn (T {expert, ...}) => expert
             val name = fn (T {name, ...}) => name
          end
@@ -291,15 +288,13 @@ structure Elaborate =
                                                   end
                                              else fn () => ()
                                        fun processDef () =
-                                          if expert
-                                             then false
-                                             else let
-                                                     val old = !def
-                                                     val new = newDef (old, v)
-                                                  in
-                                                     def := new
-                                                     ; true
-                                                  end
+                                          let
+                                             val old = !def
+                                             val new = newDef (old, v)
+                                          in
+                                             def := new
+                                             ; true
+                                          end
                                        val args =
                                           Args.T {fillArgs = fillArgs,
                                                   processAnn = processAnn,
