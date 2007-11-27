@@ -19,6 +19,7 @@ structure File
 structure HashSet
 structure In
 structure Int
+signature INTEGER
 structure IntInf
 structure Layout
 structure List
