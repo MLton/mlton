@@ -1,5 +1,9 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-11-28
+   - Fixed bug in cross-compilation of gdtoa library.  Thanks to
+     Wesley Terpstra for the bug report and patch.
+
 * 2007-11-20
    - Fixed bug in pass to flatten refs into containing data structure.
      Thanks to Ruy LeyWild for the bug report.
@@ -28,7 +32,7 @@ Here are the changes from version 20070826 to version YYYYMMDD.
      handlers.  Thanks to Sean McLaughlin for the bug report.
 
 * 2007-09-03
-   - Fixed bug in implementation of _export of functions using 'char'
+   - Fixed bug in implementation of _export-ed functions using 'char'
      type.  Thanks to Katsuhiro Ueno for the bug report.
 
 --------------------------------------------------------------------------------
