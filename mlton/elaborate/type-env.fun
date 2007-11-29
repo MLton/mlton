@@ -316,15 +316,23 @@ structure Spine:
       val unify: t * t -> unit
    end =
    struct
-      datatype t = T of {fields: Field.t list ref,
-                         more: bool ref} Set.t
+      datatype t = T of {id: int,
+                         body: {fields: Field.t list ref,
+                                more: bool ref} Set.t}
 
-      fun new fields = T (Set.singleton {fields = ref fields,
-                                         more = ref true})
+      local
+         val r: int ref = ref 0
+      in
+         fun newId () = (Int.inc r; !r)
+      end
+      
+      fun new fields = T {id = newId (),
+                          body = Set.singleton {fields = ref fields,
+                                                more = ref true}}
 
-      fun equals (T s, T s') = Set.equals (s, s')
+      fun equals (T {id = id1,...}, T {id = id2,...}) = id1 = id2
 
-      fun layout (T s) =
+      fun layout (T {body = s,...}) =
          let
             val {fields, more} = Set.! s
          in
@@ -332,23 +340,25 @@ structure Spine:
                            ("more", Bool.layout (!more))]
          end
 
-      fun canAddFields (T s) = ! (#more (Set.! s))
-      fun fields (T s) = ! (#fields (Set.! s))
+      fun canAddFields (T {body = s,...}) = ! (#more (Set.! s))
+      fun fields (T {body = s,...}) = ! (#fields (Set.! s))
 
       fun ensureFieldValue ({fields, more}, f) =
          List.contains (!fields, f, Field.equals)
          orelse (!more andalso (List.push (fields, f); true))
 
-      fun ensureField (T s, f) = ensureFieldValue (Set.! s, f)
+      fun ensureField (T {body = s,...}, f) = ensureFieldValue (Set.! s, f)
 
-      fun noMoreFields (T s) = #more (Set.! s) := false
+      fun noMoreFields (T {body = s,...}) = #more (Set.! s) := false
 
-      fun unify (T s, T s') =
+      fun unify (T {body = s1,...}, T {body = s2,...}) =
          let
-            val {fields = fs, more = m} = Set.! s
-            val {more = m', ...} = Set.! s'
-            val _ = Set.union (s, s')
-            val _ = Set.:= (s, {fields = fs, more = ref (!m andalso !m')})
+            val {fields = fs1, more = m1} = Set.! s1
+            val {fields = fs2, more = m2} = Set.! s2
+            val _ = Set.union (s1, s2)
+            val fs = List.union (!fs1, !fs2, Field.equals)
+            val m = !m1 andalso !m2
+            val _ = Set.:= (s1, {fields = ref fs, more = ref m})
          in
             ()
          end

@@ -1,5 +1,10 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-11-29
+   - Fixed bug in type inference of flexible records.  This would
+     later cause the compiler to raise the TypeError exception.
+     Thanks to Wesley Terpstra for the bug report.
+
 * 2007-11-28
    - Fixed bug in cross-compilation of gdtoa library.  Thanks to
      Wesley Terpstra for the bug report and patch.
