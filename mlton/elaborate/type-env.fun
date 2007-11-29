@@ -313,8 +313,6 @@ structure Spine:
       val layout: t -> Layout.t
       val new: Field.t list -> t
       val noMoreFields: t -> unit
-      (* Unify returns the fields that are in each spine but not in the other.
-       *)
       val unify: t * t -> unit
    end =
    struct
@@ -379,7 +377,7 @@ in
    fun bracket l = seq [str "[", l, str "]"]
    fun layoutRecord (ds: (Field.t * bool * z) list, flexible: bool) =
       simple (case ds of
-                 [] => str "{...}"
+                 [] => if flexible then str "{...}" else str "{}"
                | _ => 
                     seq [str "{",
                          mayAlign
@@ -491,9 +489,15 @@ structure Type =
                        seq [str "Flex ",
                             record [("fields", layoutFields fields),
                                     ("spine", Spine.layout spine)]]
-                  | GenFlexRecord {fields, spine, ...} =>
+                  | GenFlexRecord {extra, fields, spine} =>
                        seq [str "GenFlex ",
-                            record [("fields", layoutFields fields),
+                            record [("extra", 
+                                     List.layout
+                                     (fn {field, tyvar} =>
+                                      record [("field", Field.layout field),
+                                              ("tyvar", Tyvar.layout tyvar)])
+                                    (extra ())),
+                                    ("fields", layoutFields fields),
                                     ("spine", Spine.layout spine)]]
                   | Overload ov => Overload.layout ov
                   | Record r => Srecord.layout {record = r,
@@ -609,7 +613,7 @@ structure Type =
                (List.fold
                 (fields,
                  Spine.foldOverNew (spine, fields, [], fn (f, ac) =>
-                                    (f, false, simple (str "unit"))
+                                    (f, false, simple (str "#???"))
                                     :: ac),
                  fn ((f, t), ac) => (f, false, t) :: ac),
                 Spine.canAddFields spine)
@@ -1674,14 +1678,31 @@ fun close (ensure: Tyvar.t vector, ubd) =
                    case ty of
                       Type.FlexRecord {fields, spine, ...} =>
                          let
+                            fun newField f =
+                               {field = f,
+                                tyvar = Tyvar.newNoname {equality = false}}
                             val extra =
-                               Promise.lazy
-                               (fn () =>
-                                Spine.foldOverNew
-                                (spine, fields, [], fn (f, ac) =>
-                                 {field = f,
-                                  tyvar = Tyvar.newNoname {equality = false}}
-                                 :: ac))
+                               let
+                                  val all = ref []
+                                  val fields = 
+                                     List.map (fields, fn (f, _) => (f, ()))
+                               in
+                                  fn () =>
+                                  let
+                                     val old = !all
+                                     val fields =
+                                        List.fold 
+                                        (old, fields, fn ({field, ...}, ac) => 
+                                         (field, ()) :: ac)
+                                     val new =
+                                        Spine.foldOverNew
+                                        (spine, fields, old, fn (f, ac) =>
+                                         (newField f) :: ac)
+                                     val () = all := new
+                                  in
+                                     new
+                                  end
+                               end
                             val gfr = {extra = extra,
                                        fields = fields,
                                        spine = spine}
