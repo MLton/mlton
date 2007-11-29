@@ -300,6 +300,15 @@ in
                          maybeConstrain (Var.layout arg, argType),
                          str " =>"],
                     layoutExp body])
+
+   fun layoutExpWithType (exp as Exp {ty, ...}) =
+      let
+         val node = layoutExp exp
+      in
+         if !Control.showTypes
+            then seq [node, str " : ", Type.layout ty]
+         else node
+      end
 end
 
 structure Lambda =
@@ -327,6 +336,7 @@ structure Exp =
       datatype noMatch = datatype noMatch
 
       val layout = layoutExp
+      val layoutWithType = layoutExpWithType
 
       local
          fun make f (Exp r) = f r

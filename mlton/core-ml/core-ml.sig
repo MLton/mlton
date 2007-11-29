@@ -122,6 +122,7 @@ signature CORE_ML =
             val isExpansive: t -> bool
             val lambda: lambda -> t
             val layout: t -> Layout.t
+            val layoutWithType: t -> Layout.t
             val make: node * Type.t -> t
             val node: t -> node
             val orElse: t * t -> t

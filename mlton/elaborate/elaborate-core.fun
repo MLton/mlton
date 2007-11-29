@@ -2312,7 +2312,7 @@ fun elaborateDec (d, {env = E, nest}) =
          Trace.traceInfo
          (elabExpInfo,
           Layout.tuple3 (Aexp.layout, Nest.layout, Layout.ignore),
-          Cexp.layout,
+          Cexp.layoutWithType,
           Trace.assertTrue)
          (fn (e: Aexp.t, nest, maybeName) =>
           let
