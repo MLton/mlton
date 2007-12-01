@@ -127,7 +127,10 @@ structure AFile =
                    case In.inputLine ins of
                       NONE => Error.bug "unexpected end of show-sources data"
                     | SOME l => l
-                val magic = valOf (Word.fromString (line ()))
+                val magic = 
+                   case Word.fromString (line ()) of
+                      NONE => Error.bug "expected magic"
+                    | SOME w => w
                 fun vector (f: string -> 'a): 'a vector =
                    Vector.tabulate (valOf (Int.fromString (line ())),
                                     fn _ => f (line ()))
