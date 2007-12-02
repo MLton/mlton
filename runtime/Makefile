@@ -244,7 +244,7 @@ gdtoa/arithchk.c:
 	patch -s -p0 <gdtoa-patch
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
-	cd gdtoa && $(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -o arithchk.out arithchk.c
+	cd gdtoa && $(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -O1 -o arithchk.out arithchk.c
 
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
