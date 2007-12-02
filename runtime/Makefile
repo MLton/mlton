@@ -117,7 +117,9 @@ endif
 # -Wformat=2 implies -Wformat-nonliteral, which causes one spurious warning.
 WARNCFLAGS += -Wformat=2
 WARNCFLAGS += -Wno-format-nonliteral
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wswitch-default -Wswitch-enum
+endif
 WARNCFLAGS += -Wuninitialized
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Winit-self
