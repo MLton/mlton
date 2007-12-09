@@ -1567,8 +1567,17 @@ fun ('a, 'b) apply (p: 'a t,
                          intInf (IntInf.~>>
                                  (i1, Word.fromIntInf (WordX.toIntInf w2)))
                     | IntInf_lshift =>
-                         intInf (IntInf.<<
-                                 (i1, Word.fromIntInf (WordX.toIntInf w2)))
+                         let
+                            val maxShift =
+                               WordX.lshift
+                               (WordX.one WordSize.shiftArg,
+                                WordX.fromIntInf (128, WordSize.shiftArg))
+                         in
+                            if WordX.lt (w2, maxShift, {signed = false})
+                               then intInf (IntInf.<< 
+                                            (i1, Word.fromIntInf (WordX.toIntInf w2)))
+                            else Unknown
+                         end
                     | _ => Unknown)
              | (_, [Const (IntInf i1), _]) =>
                   (case p of
