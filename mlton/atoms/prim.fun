@@ -1245,7 +1245,18 @@ fun ('a, 'b) apply (p: 'a t,
       fun seqIndexConst i =
          ApplyResult.Const
          (Const.word (WordX.fromIntInf (i, WordSize.seqIndex ())))
-      val intInf = ApplyResult.Const o Const.intInf
+      local
+         val maxIntInf = IntInf.<< (1, 0w128)
+         val minIntInf = IntInf.~ maxIntInf
+      in
+         fun intInfTooBig ii =
+            IntInf.< (ii, minIntInf)
+            orelse IntInf.> (ii, maxIntInf)
+      end
+      fun intInf (ii:  IntInf.t): ('a, 'b) ApplyResult.t =
+         if intInfTooBig ii
+            then ApplyResult.Unknown
+         else ApplyResult.Const (Const.intInf ii)
       val intInfConst = intInf o IntInf.fromInt
       val null = ApplyResult.Const Const.null
       fun word (w: WordX.t): ('a, 'b) ApplyResult.t =
@@ -1282,9 +1293,70 @@ fun ('a, 'b) apply (p: 'a t,
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | (WordVector v1, WordVector v2) => bool (WordXVector.equals (v1, v2))
           | _ => ApplyResult.Unknown
+      fun intInfBinary (i1, i2) =
+         if intInfTooBig i1 orelse intInfTooBig i2
+            then ApplyResult.Unknown
+         else 
+            case p of
+               IntInf_add => iio (IntInf.+, i1, i2)
+             | IntInf_andb => iio (IntInf.andb, i1, i2)
+             | IntInf_gcd => iio (IntInf.gcd, i1, i2)
+             | IntInf_mul => iio (IntInf.*, i1, i2)
+             | IntInf_orb => iio (IntInf.orb, i1, i2)
+             | IntInf_quot => iio (IntInf.quot, i1, i2)
+             | IntInf_rem => iio (IntInf.rem, i1, i2)
+             | IntInf_sub => iio (IntInf.-, i1, i2)
+             | IntInf_xorb => iio (IntInf.xorb, i1, i2)
+             | _ => ApplyResult.Unknown
+      fun intInfUnary (i1) =
+         if intInfTooBig i1
+            then ApplyResult.Unknown
+         else 
+            case p of
+               IntInf_neg => intInf (IntInf.~ i1)
+             | IntInf_notb => intInf (IntInf.notb i1)
+             | _ => ApplyResult.Unknown
+      fun intInfSharyOrToString (i1, w2) =
+         if intInfTooBig i1
+            then ApplyResult.Unknown
+         else 
+            case p of
+               IntInf_arshift =>
+                  intInf (IntInf.~>> (i1, Word.fromIntInf (WordX.toIntInf w2)))
+             | IntInf_lshift =>
+                  let
+                     val maxShift =
+                        WordX.lshift
+                        (WordX.one WordSize.shiftArg,
+                         WordX.fromIntInf (128, WordSize.shiftArg))
+                  in
+                     if WordX.lt (w2, maxShift, {signed = false})
+                        then intInf (IntInf.<< (i1, Word.fromIntInf (WordX.toIntInf w2)))
+                     else ApplyResult.Unknown
+                  end
+             | IntInf_toString =>
+                  let
+                     val base =
+                        case WordX.toInt w2 of
+                           2 => StringCvt.BIN
+                         | 8 => StringCvt.OCT 
+                         | 10 => StringCvt.DEC
+                         | 16 => StringCvt.HEX
+                         | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
+                  in
+                     ApplyResult.Const (Const.string (IntInf.format (i1, base)))
+                  end
+             | _ => ApplyResult.Unknown
       fun allConsts (cs: Const.t list) =
          (case (p, cs) of
-             (IntInf_compare, [IntInf i1, IntInf i2]) =>
+             (MLton_eq, [c1, c2]) => eq (c1, c2)
+           | (MLton_equal, [c1, c2]) => equal (c1, c2)
+           | (CPointer_fromWord, [Word w]) =>
+                 if WordX.isZero w
+                    then null
+                 else ApplyResult.Unknown
+           | (CPointer_toWord, [Null]) => word (WordX.zero (WordSize.cpointer ()))
+           | (IntInf_compare, [IntInf i1, IntInf i2]) =>
                 let
                    val i =
                       case IntInf.compare (i1, i2) of
@@ -1299,13 +1371,9 @@ fun ('a, 'b) apply (p: 'a t,
                 (case SmallIntInf.toWord i of
                     NONE => ApplyResult.Unknown
                   | SOME w => word w)
-           | (MLton_eq, [c1, c2]) => eq (c1, c2)
-           | (MLton_equal, [c1, c2]) => equal (c1, c2)
-           | (CPointer_fromWord, [Word w]) =>
-                 if WordX.isZero w
-                    then null
-                 else ApplyResult.Unknown
-           | (CPointer_toWord, [Null]) => word (WordX.zero (WordSize.cpointer ()))
+           | (_, [IntInf i1, IntInf i2, _]) => intInfBinary (i1, i2)
+           | (_, [IntInf i1, Word w2, _]) => intInfSharyOrToString (i1, w2)
+           | (_, [IntInf i1, _]) => intInfUnary (i1)
            | (Vector_length, [WordVector v]) =>
                  seqIndexConst (IntInf.fromInt (WordXVector.length v))
            | (Vector_sub, [WordVector v, Word i]) =>
@@ -1363,9 +1431,17 @@ fun ('a, 'b) apply (p: 'a t,
                                     else if i = ~1
                                        then Var x
                                     else Unknown
+                   | IntInf_arshift => if i = 0
+                                          then intInfConst 0
+                                       else if i = ~1
+                                          then intInfConst ~1
+                                       else Unknown
                    | IntInf_gcd => if (i = ~1 orelse i = 1)
                                       then intInfConst 1
                                    else Unknown
+                   | IntInf_lshift => if i = 0
+                                         then intInfConst 0
+                                      else Unknown
                    | IntInf_mul =>
                         (case i of
                             0 => intInfConst 0
@@ -1524,19 +1600,7 @@ fun ('a, 'b) apply (p: 'a t,
             datatype z = datatype ApplyArg.t
          in
             case (p, args) of
-               (IntInf_toString, [Const (IntInf i), Const (Word base), _]) =>
-                  let
-                     val base =
-                        case WordX.toInt base of
-                           2 => StringCvt.BIN
-                         | 8 => StringCvt.OCT 
-                         | 10 => StringCvt.DEC
-                         | 16 => StringCvt.HEX
-                         | _ => Error.bug "Prim.apply: strange base for IntInf_toString"
-                  in
-                     ApplyResult.Const (Const.string (IntInf.format (i, base)))
-                  end
-             | (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
+               (_, [Con {con = c, hasArg = h}, Con {con = c', ...}]) =>
                   if (case p of
                          MLton_eq => true
                        | MLton_equal => true
@@ -1549,41 +1613,11 @@ fun ('a, 'b) apply (p: 'a t,
                   else Unknown
              | (_, [Var x, Const (Word i)]) => varWord (x, i, true)
              | (_, [Const (Word i), Var x]) => varWord (x, i, false)
-             | (_, [Const (IntInf i1), Const (IntInf i2), _]) =>
-                  (case p of
-                      IntInf_add => iio (IntInf.+, i1, i2)
-                    | IntInf_andb => iio (IntInf.andb, i1, i2)
-                    | IntInf_gcd => iio (IntInf.gcd, i1, i2)
-                    | IntInf_mul => iio (IntInf.*, i1, i2)
-                    | IntInf_orb => iio (IntInf.orb, i1, i2)
-                    | IntInf_quot => iio (IntInf.quot, i1, i2)
-                    | IntInf_rem => iio (IntInf.rem, i1, i2)
-                    | IntInf_sub => iio (IntInf.-, i1, i2)
-                    | IntInf_xorb => iio (IntInf.xorb, i1, i2)
-                    | _ => Unknown)
-             | (_, [Const (IntInf i1), Const (Word w2), _]) =>
-                  (case p of
-                      IntInf_arshift =>
-                         intInf (IntInf.~>>
-                                 (i1, Word.fromIntInf (WordX.toIntInf w2)))
-                    | IntInf_lshift =>
-                         let
-                            val maxShift =
-                               WordX.lshift
-                               (WordX.one WordSize.shiftArg,
-                                WordX.fromIntInf (128, WordSize.shiftArg))
-                         in
-                            if WordX.lt (w2, maxShift, {signed = false})
-                               then intInf (IntInf.<< 
-                                            (i1, Word.fromIntInf (WordX.toIntInf w2)))
-                            else Unknown
-                         end
-                    | _ => Unknown)
-             | (_, [Const (IntInf i1), _]) =>
-                  (case p of
-                      IntInf_neg => intInf (IntInf.~ i1)
-                    | IntInf_notb => intInf (IntInf.notb i1)
-                    | _ => Unknown)
+             | (_, [Const (IntInf i1), Const (IntInf i2), _]) => 
+                  intInfBinary (i1, i2)
+             | (_, [Const (IntInf i1), Const (Word w2), _]) => 
+                  intInfSharyOrToString (i1, w2)
+             | (_, [Const (IntInf i1), _]) => intInfUnary (i1)
              | (_, [Var x, Const (IntInf i), Var space]) =>
                   varIntInf (x, i, space, true)
              | (_, [Const (IntInf i), Var x, Var space]) =>
