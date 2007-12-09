@@ -363,3 +363,56 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
   sp->header = GC_STRING8_HEADER;
   return pointerToObjptr ((pointer)&sp->obj, gcState.heap.start);
 }
+
+#ifdef DEBUG
+
+static GC_state intInfMemoryFuncsState;
+
+static void *(*alloc_func_ptr)(size_t) = NULL;
+static void *(*realloc_func_ptr)(void *, size_t, size_t) = NULL;
+static void (*free_func_ptr)(void *, size_t) = NULL;
+
+static void * wrap_alloc_func(size_t size) {
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "alloc_func (size = %"PRIuMAX") = ", 
+             (uintmax_t)size);
+  void * res = (*alloc_func_ptr)(size);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, FMTPTR"\n", (uintptr_t)res);
+  return res;
+}
+
+static void * wrap_realloc_func(void *ptr, size_t old_size, size_t new_size) {
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "realloc_func (ptr = "FMTPTR", "
+             "old_size = %"PRIuMAX", new_size = %"PRIuMAX") = ", 
+             (uintptr_t)ptr, (uintmax_t)old_size, (uintmax_t)new_size);
+  assert (! isPointerInHeap(intInfMemoryFuncsState, (pointer)ptr));
+  void * res = (*realloc_func_ptr)(ptr, old_size, new_size);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, FMTPTR"\n", (uintptr_t)res);
+  return res;
+}
+
+static void wrap_free_func(void *ptr, size_t size) {
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "free_func (ptr = "FMTPTR", size = %"PRIuMAX")", 
+             (uintptr_t)ptr, (uintmax_t)size);
+  assert (! isPointerInHeap(intInfMemoryFuncsState, (pointer)ptr));
+  (*free_func_ptr)(ptr, size);
+  if (DEBUG_INT_INF)
+    fprintf (stderr, "\n");
+  return;
+}
+
+void initIntInf (GC_state s) {
+  intInfMemoryFuncsState = s;
+  mp_get_memory_functions (&alloc_func_ptr, &realloc_func_ptr, &free_func_ptr);
+  mp_set_memory_functions (&wrap_alloc_func, &wrap_realloc_func, &wrap_free_func);
+  return;
+}
+#else
+void initIntInf (__attribute__ ((unused)) GC_state s) {
+  return;
+}
+#endif

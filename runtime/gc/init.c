@@ -288,6 +288,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->weaks = NULL;
   s->saveWorldStatus = true;
 
+  initIntInf (s);
   initSignalStack (s);
   worldFile = NULL;
 

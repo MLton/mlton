@@ -56,6 +56,7 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr,
         sizeof(mp_limb_t) >= sizeof(objptr) ? \
         1 : sizeof(objptr) / sizeof(mp_limb_t))
 
+void initIntInf (GC_state s);
 static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res, 
                                   mp_limb_t space[LIMBS_PER_OBJPTR + 1]);
 static inline void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
