@@ -30,7 +30,7 @@ structure IntInf: INT_INF_EXTRA =
       fun sameSign (x, y) = sign x = sign y
 
       local
-         val maxShift32 = 0w128
+         val maxShift32 = Word32.<< (0wx1, 0w30)
          val maxShift = Word32.toWord maxShift32
          fun make f (arg, shift) =
             let
