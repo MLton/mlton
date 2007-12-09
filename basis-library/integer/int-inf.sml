@@ -34,13 +34,14 @@ structure IntInf: INT_INF_EXTRA =
          val maxShift = Word32.toWord maxShift32
          fun make f (arg, shift) =
             let
-               fun loop (arg, shift) =
+               fun body loop (arg, shift) =
                   if Word.<= (shift, maxShift)
                      then f (arg, Word32.fromWord shift)
                      else loop (f (arg, maxShift32),
                                 Word.- (shift, maxShift))
+               fun loop (arg, shift) = body loop (arg, shift)
             in
-               loop (arg, shift)
+               body loop (arg, shift)
             end
       in
          val << = make <<
