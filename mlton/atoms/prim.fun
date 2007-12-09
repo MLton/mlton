@@ -1253,6 +1253,10 @@ fun ('a, 'b) apply (p: 'a t,
             IntInf.< (ii, minIntInf)
             orelse IntInf.> (ii, maxIntInf)
       end
+      val intInfTooBig =
+         Trace.trace 
+         ("Prim.intInfTooBig", IntInf.layout, Bool.layout)
+         intInfTooBig
       fun intInf (ii:  IntInf.t): ('a, 'b) ApplyResult.t =
          if intInfTooBig ii
             then ApplyResult.Unknown
@@ -1316,7 +1320,7 @@ fun ('a, 'b) apply (p: 'a t,
                IntInf_neg => intInf (IntInf.~ i1)
              | IntInf_notb => intInf (IntInf.notb i1)
              | _ => ApplyResult.Unknown
-      fun intInfSharyOrToString (i1, w2) =
+      fun intInfShiftOrToString (i1, w2) =
          if intInfTooBig i1
             then ApplyResult.Unknown
          else 
@@ -1326,9 +1330,7 @@ fun ('a, 'b) apply (p: 'a t,
              | IntInf_lshift =>
                   let
                      val maxShift =
-                        WordX.lshift
-                        (WordX.one WordSize.shiftArg,
-                         WordX.fromIntInf (128, WordSize.shiftArg))
+                        WordX.fromIntInf (128, WordSize.shiftArg)
                   in
                      if WordX.lt (w2, maxShift, {signed = false})
                         then intInf (IntInf.<< (i1, Word.fromIntInf (WordX.toIntInf w2)))
@@ -1372,7 +1374,7 @@ fun ('a, 'b) apply (p: 'a t,
                     NONE => ApplyResult.Unknown
                   | SOME w => word w)
            | (_, [IntInf i1, IntInf i2, _]) => intInfBinary (i1, i2)
-           | (_, [IntInf i1, Word w2, _]) => intInfSharyOrToString (i1, w2)
+           | (_, [IntInf i1, Word w2, _]) => intInfShiftOrToString (i1, w2)
            | (_, [IntInf i1, _]) => intInfUnary (i1)
            | (Vector_length, [WordVector v]) =>
                  seqIndexConst (IntInf.fromInt (WordXVector.length v))
@@ -1616,7 +1618,7 @@ fun ('a, 'b) apply (p: 'a t,
              | (_, [Const (IntInf i1), Const (IntInf i2), _]) => 
                   intInfBinary (i1, i2)
              | (_, [Const (IntInf i1), Const (Word w2), _]) => 
-                  intInfSharyOrToString (i1, w2)
+                  intInfShiftOrToString (i1, w2)
              | (_, [Const (IntInf i1), _]) => intInfUnary (i1)
              | (_, [Var x, Const (IntInf i), Var space]) =>
                   varIntInf (x, i, space, true)
