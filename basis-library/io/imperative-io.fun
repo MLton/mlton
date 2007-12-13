@@ -541,23 +541,27 @@ fun canInput (ib as In {state, ...}, n) =
                    (* 0 = !first *)
                    fun loop read =
                       if read = size
-                         then read
+                         then {read = read, eos = false}
                       else
                          let
                             val slice = AS.slice (buf, read, NONE)
                             val i = readArrNB slice
                          in
                             case i of
-                               NONE => read
+                               NONE => {read = read, eos = false}
                              | SOME i =>
-                                  if 0 = i then read else loop (read + i)
+                                  if 0 = i
+                                     then {read = read, eos = true}
+                                  else loop (read + i)
                          end
-                   val read = loop read
+                   val {read, eos} = loop read
                    val _ = last := read
                 in
-                   SOME (if read > 0
-                            then Int.min (n, read)
-                         else (state := Open {eos = true}; 0))
+                   if read > 0
+                      then SOME (Int.min (n, read))
+                   else if eos
+                      then (state := Open {eos = true}; SOME 0)
+                   else NONE
                 end)
        | Stream s => SIO.canInput (s, n)
 

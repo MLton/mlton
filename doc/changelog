@@ -1,5 +1,9 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-12-13
+   - Fixed bug in ImperativeIOExtra.canInput (TextIO.canInput).
+     Thanks to Ville Laurikari for the bug report.
+
 * 2007-12-07
    - Fixed bug in algebraic simplification of real primitives.
      Real.<= (x, x) is false when x is NaN.
