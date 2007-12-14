@@ -309,8 +309,8 @@ script:
 .PHONY: targetmap
 targetmap:
 	touch "$(TARGETMAP)"
-	( sed '/$(TARGET)/d' <"$(TARGETMAP)"; 			\
-		echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)' ) 	\
+	( echo '$(TARGET) $(TARGET_ARCH) $(TARGET_OS)';		\
+          sed '/$(TARGET)/d' <"$(TARGETMAP)" ) 			\
 		>>"$(TARGETMAP).tmp"
 	mv "$(TARGETMAP).tmp" "$(TARGETMAP)"
 
