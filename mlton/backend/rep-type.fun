@@ -392,8 +392,15 @@ structure ObjectType =
                   andalso Bits.isByteAligned b
                end
           | Normal {ty, ...} =>
-               not (Type.isUnit ty) 
-               andalso Bits.isWord32Aligned (Type.width ty)
+               let
+                  val b = Bits.+ (Type.width ty,
+                                  Type.width (Type.objptrHeader ()))
+               in
+                  not (Type.isUnit ty) 
+                  andalso (case !Control.align of
+                              Control.Align4 => Bits.isWord32Aligned b
+                            | Control.Align8 => Bits.isWord64Aligned b)
+               end
           | Stack => true
           | Weak t => Type.isObjptr t
           | WeakGone => true
@@ -629,41 +636,115 @@ fun checkPrimApp {args, prim, result} =
                                  Prim.toString prim])
    end
 
-fun checkOffset {base, offset, result} =
+fun checkOffset {base, isVector, offset, result} =
+   Exn.withEscape (fn escape =>
    let
       fun getTys ty =
          case node ty of
             Seq tys => Vector.toList tys
           | _ => [ty]
-      fun loop (offset, tys) =
-         case tys of
-            [] => false
-          | ty::tys =>
-               if Bits.equals (offset, Bits.zero)
-                  then let
-                          fun loop (resTys, eltTys) =
-                             case (resTys, eltTys) of
-                                ([], _) => true
-                              | (_, []) => false
-                              | (resTy::resTys, eltTy::eltTys) => 
-                                   (case (node resTy, resTys, node eltTy) of
-                                       (Bits, [], Bits) => 
-                                          Bits.<= (width resTy, width eltTy)
-                                     | _ => (equals (resTy, eltTy))
-                                            andalso (loop (resTys, eltTys)))
-                       in
-                          loop (getTys result, ty::tys)
-                       end
-               else if Bits.>= (offset, width ty)
-                  then loop (Bits.- (offset, width ty), tys)
-               else (case node ty of
-                        Bits => loop (Bits.zero, (bits (Bits.- (width ty, offset))) :: tys)
-                      | _ => false)
+
+      fun dropTys (tys, bits) =
+         let
+            fun loop (tys, bits) =
+               if Bits.equals (bits, Bits.zero)
+                  then tys
+               else (case tys of
+                        [] => escape false
+                      | ty::tys => 
+                           let
+                              val b = width ty
+                           in
+                              if Bits.>= (bits, b)
+                                 then loop (tys, Bits.- (bits, b))
+                              else (case node ty of
+                                       Bits => (Type.bits (Bits.- (b, bits))) :: tys
+                                     | _ => escape false)
+                           end)
+         in
+            if Bits.< (bits, Bits.zero)
+               then escape false
+            else loop (tys, bits)
+         end
+      val dropTys =
+         Trace.trace2 
+         ("RepType.checkOffset.dropTys",
+          List.layout Type.layout, Bits.layout,
+          List.layout Type.layout)
+         dropTys
+      fun takeTys (tys, bits) =
+         let
+            fun loop (tys, bits, acc) =
+               if Bits.equals (bits, Bits.zero)
+                  then acc
+               else (case tys of
+                        [] => escape false
+                      | ty::tys =>
+                           let
+                              val b = width ty
+                           in
+                              if Bits.>= (bits, b)
+                                 then loop (tys, Bits.- (bits, b), ty :: acc)
+                              else (case node ty of
+                                       Bits => (Type.bits bits) :: acc
+                                     | _ => escape false)
+                           end)
+         in
+            if Bits.< (bits, Bits.zero)
+               then escape false
+            else List.rev (loop (tys, bits, []))
+         end
+      fun extractTys (tys, dropBits, takeBits) =
+         takeTys (dropTys (tys, dropBits), takeBits)
+
+      fun equalsTys (tys1, tys2) =
+         case (tys1, tys2) of
+            ([], []) => true
+          | (ty1::tys1, ty2::tys2) =>
+               equals (ty1, ty2)
+               andalso equalsTys (tys1, tys2)
+          | _ => false
+
+      val alignBits =
+         case !Control.align of
+            Control.Align4 => Bits.inWord32
+          | Control.Align8 => Bits.inWord64
+
+      val baseBits = width base
+      val baseTys = getTys base
+
+      val offsetBytes = offset
+      val offsetBits = Bytes.toBits offsetBytes
+
+      val resultBits = width result
+      val resultTys = getTys result
+
+      val adjOffsetBits =
+         if Control.Target.bigEndian () 
+            andalso Bits.< (resultBits, Bits.inWord32)
+            andalso Bits.> (baseBits, resultBits)
+            then let
+                    val paddedComponentBits = 
+                       if isVector
+                          then Bits.min (baseBits, Bits.inWord32)
+                       else Bits.inWord32
+                    val paddedComponentOffsetBits =
+                       Bits.alignDown (offsetBits, {alignment = paddedComponentBits})
+                 in
+                    Bits.+ (paddedComponentOffsetBits,
+                            Bits.- (paddedComponentBits,
+                                    Bits.- (Bits.+ (resultBits, offsetBits),
+                                            paddedComponentOffsetBits)))
+                 end
+         else offsetBits
    in
-      if Control.Target.bigEndian ()
-         then true
-      else loop (Bytes.toBits offset, getTys base)
-   end
+      List.exists 
+      ([Bits.inWord8, Bits.inWord16, Bits.inWord32, Bits.inWord64], fn primBits =>
+       Bits.equals (resultBits, primBits) 
+       andalso Bits.isAligned (offsetBits, {alignment = Bits.min (primBits, alignBits)}))
+      andalso
+      equalsTys (resultTys, extractTys (baseTys, adjOffsetBits, resultBits))
+   end)
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
    case node base of
@@ -680,6 +761,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
               andalso (case tyconTy (Vector.sub (opts, 0)) of
                           ObjectType.Normal {ty, ...} => 
                              checkOffset {base = ty,
+                                          isVector = false,
                                           offset = offset,
                                           result = result}
                         | _ => false)
@@ -717,6 +799,7 @@ fun arrayOffsetIsOk {base, index, offset, tyconTy, result, scale} =
                                  NONE => scale = Scale.One
                                | SOME s => scale = s)
                              andalso (checkOffset {base = elt,
+                                                   isVector = true,
                                                    offset = offset,
                                                    result = result})
                    | _ => false)
