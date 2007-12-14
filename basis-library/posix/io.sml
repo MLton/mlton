@@ -289,13 +289,13 @@ local
                fun blockWrap f x =
                   (ensureOpen ();
                    if !blocking then () else blockingOn ();
-                      f x)
+                   f x)
                fun noBlockWrap f x =
                   (ensureOpen ();
                    if !blocking then blockingOff () else ();
-                      (SOME (f x)
-                       handle (e as PosixError.SysErr (_, SOME cause)) =>
-                          if cause = PosixError.again then NONE else raise e))
+                   (SOME (f x)
+                    handle (e as PosixError.SysErr (_, SOME cause)) =>
+                       if cause = PosixError.again then NONE else raise e))
                val close = 
                   fn () => if !closed then () else (closed := true; close fd)
                val avail = 
