@@ -5,9 +5,10 @@ Word32 FFI_WORD = 0xFF;
 Bool FFI_BOOL = TRUE;
 Real64 FFI_REAL = 3.14159;
 
-Char8 ffi (Pointer a1, Pointer a2, Int32 n) {
+Char8 ffi (Pointer a1, Pointer a2, Pointer a3, Int32 n) {
         double *ds = (double*)a1;
-        int *p = (int*)a2;
+        int *pi = (int*)a2;
+        char *pc = (char*)a3;
         int i;
         double sum;
 
@@ -16,6 +17,7 @@ Char8 ffi (Pointer a1, Pointer a2, Int32 n) {
                 sum += ds[i];
                 ds[i] += n;
         }
-        *p = (int)sum;
+        *pi = (int)sum;
+        *pc = 'c';
         return 'c';
 }
