@@ -1579,10 +1579,9 @@ structure Program =
                            (size,
                             Bytes.align
                             (size,
-                             {alignment = (Bytes.fromInt
-                                           (case !Control.align of
-                                               Control.Align4 => 4
-                                             | Control.Align8 => 8))}))
+                             {alignment = (case !Control.align of
+                                               Control.Align4 => Bytes.inWord32
+                                             | Control.Align8 => Bytes.inWord64)}))
                            andalso
                            (case tyconTy tycon of
                                ObjectType.Normal {ty, ...} =>
