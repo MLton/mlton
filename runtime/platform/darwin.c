@@ -1,5 +1,5 @@
-#include <mach-o/dyld.h>
 #include <mach-o/getsect.h>  // for get_etext()
+#include <dlfcn.h>
 #include <stdio.h>
 
 #include "platform.h"
@@ -16,12 +16,13 @@ code_pointer GC_getTextEnd (void) {
 }
 
 code_pointer GC_getTextStart (void) {
-        void *address;
-        const struct mach_header *mh;
-
-        _dyld_lookup_and_bind ("_main", &address, NULL);
-        mh = _dyld_get_image_header_containing_address (address);
-        return (code_pointer)mh;
+        void* address;
+        Dl_info info;
+        
+        address = dlsym(RTLD_DEFAULT, "main");
+        dladdr(address, &info);
+        
+        return (code_pointer)info.dli_fbase;
 }
 
 void GC_displayMem (void) {
@@ -35,9 +36,17 @@ static void catcher (__attribute__ ((unused)) int sig,
                      __attribute__ ((unused)) siginfo_t *sip, 
                      ucontext_t *ucp) {
 #if (defined(__powerpc__) || defined(__ppc__))
+#if __DARWIN_UNIX03
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.__srr0);
+#else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.srr0);
+#endif
 #elif (defined(__i386__))
+#if __DARWIN_UNIX03
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.__eip);
+#else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.eip);
+#endif
 #endif
 }
 
