@@ -8,7 +8,7 @@
 #include "sysctl.c"
 #include "use-mmap.c"
 
-void GC_displayMem () {
+void GC_displayMem (void) {
         static char buffer[256];
 
         snprintf (buffer, cardof(buffer), "/bin/cat /proc/%d/map\n", (int)getpid ());

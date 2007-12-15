@@ -114,9 +114,7 @@ endif
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wextra
 endif
-# -Wformat=2 implies -Wformat-nonliteral, which causes one spurious warning.
 WARNCFLAGS += -Wformat=2
-WARNCFLAGS += -Wno-format-nonliteral
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 WARNCFLAGS += -Wswitch-default -Wswitch-enum
 endif
@@ -310,29 +308,46 @@ gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
+## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
+## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
-basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
-	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
 
-basis.o: basis.c $(BASISCFILES) $(HFILES)
-	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-redundant-decls -c -o $@ $<
+## Needs -Wno-float-equal for Real<N>_equal;
+## needs -Wno-format-nonliteralfor Date_strfTime;
+## needs -Wno-redundant-decls for 'extern struct GC_state gcState'.
+basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
+	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
+## Needs -Wno-float-equal for Real<N>_equal.
+basis/Real/Real-gdb.o: basis/Real/Real.c $(HFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+## Needs -Wno-format-nonliteralfor Date_strfTime.
+basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
 
 %-gdb.o: %.c $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
+
+## Needs -Wno-float-equal for Real<N>_equal;
+## needs -Wno-format-nonliteral for Date_strfTime;
+## needs -Wno-redundant-decls for 'extern struct GC_state gcState'.
+basis.o: basis.c $(BASISCFILES) $(HFILES)
+	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
+## Needs -Wno-float-equal for Real<N>_equal.
+basis/Real/Real.o: basis/Real/Real.c $(HFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+## Needs -Wno-format-nonliteralfor Date_strfTime.
+basis/System/Date.o: basis/System/Date.c $(HFILES)
+	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
+
 %.o: %.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
-%-gdb.o: %.S
-	$(CC) $(DEBUGCFLAGS) -c -o $@ $<
-
-%.o: %.S
-	$(CC) $(OPTCFLAGS) -c -o $@ $<
 
 .PHONY: flags
 flags:
