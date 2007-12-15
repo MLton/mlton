@@ -82,6 +82,7 @@ fun eliminate (Program.T {globals, datatypes, functions, main}) =
                      if (case Prim.name prim of
                             IntInf_add => true
                           | IntInf_andb => true
+                          | IntInf_gcd => true
                           | IntInf_mul => true
                           | IntInf_orb => true
                           | IntInf_xorb => true
