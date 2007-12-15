@@ -10,7 +10,6 @@
 /*                          Initialization                          */
 /* ---------------------------------------------------------------- */
 
-#if FALSE
 static bool stringToBool (char *s) {
   if (0 == strcmp (s, "false"))
     return FALSE;
@@ -18,7 +17,6 @@ static bool stringToBool (char *s) {
     return TRUE;
   die ("Invalid @MLton bool: %s.", s);
 }
-#endif
 
 // From gdtoa/gdtoa.h.
 // Can't include the whole thing because it brings in too much junk.
@@ -181,6 +179,11 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.nursery = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.nursery)
             die ("@MLton nursery-ratio argument must be greater than 1.0.");
+        } else if (0 == strcmp (arg, "page-heap")) {
+          i++;
+          if (i == argc)
+            die ("@MLton may-page-heap missing argument.");
+          s->controls.mayPageHeap = stringToBool (argv[i++]);
         } else if (0 == strcmp (arg, "ram-slop")) {
           i++;
           if (i == argc)
@@ -233,6 +236,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.fixedHeap = 0;
   s->controls.maxHeap = 0;
   s->controls.mayLoadWorld = TRUE;
+  s->controls.mayPageHeap = FALSE;
   s->controls.mayProcessAtMLton = TRUE;
   s->controls.messages = FALSE;
   s->controls.oldGenArraySize = 0x100000;

@@ -38,6 +38,7 @@ struct GC_controls {
   size_t fixedHeap; /* If 0, then no fixed heap. */
   size_t maxHeap; /* if zero, then unlimited, else limit total heap */
   bool mayLoadWorld;
+  bool mayPageHeap; /* Permit paging heap to disk during GC */
   bool mayProcessAtMLton;
   bool messages; /* Print a message at the start and end of each gc. */
   size_t oldGenArraySize; /* Arrays larger are allocated in old gen, if possible. */

@@ -1,6 +1,12 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
 * 2007-12-14
+   - Added runtime option 'may-page-heap {false|true}'.  By default,
+     MLton will not page the heap to disk when unable to grow the heap
+     to a desired size.  (Previously, this behavior was the default,
+     with no means to disable, with security and least-surprise
+     concerns.)  
+     Thanks to Wesley Terpstra for the patch.
    - Fixed bug the FFI visible representation of Int16.int ref (and
      references of other primitive types smaller than 32-bits) on
      big-endian platforms.

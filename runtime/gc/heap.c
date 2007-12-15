@@ -316,8 +316,8 @@ copy:
     releaseHeap (s, curHeapp);
     newHeap.oldGenSize = size;
     *curHeapp = newHeap;
-  } else {
-    /* Write the heap to disk and try again. */
+  } else if (s->controls.mayPageHeap) {
+    /* Page the heap to disk and try again. */
     void *data;
 
     if (DEBUG or s->controls.messages) {
@@ -344,6 +344,9 @@ copy:
       die ("Out of memory.  Unable to allocate %s bytes.\n",
            uintmaxToCommaString(minSize));
     }
+  } else {
+    die ("Out of memory.  Unable to allocate %s bytes.\n",
+         uintmaxToCommaString(minSize));
   }
 done:
   unless (orig == s->heap.start) {
