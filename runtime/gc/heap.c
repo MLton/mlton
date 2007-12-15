@@ -341,11 +341,11 @@ copy:
       GC_diskBack_close (data);
       if (s->controls.messages)
         GC_displayMem ();
-      die ("Out of memory.  Unable to allocate %s bytes.\n",
+      die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
            uintmaxToCommaString(minSize));
     }
   } else {
-    die ("Out of memory.  Unable to allocate %s bytes.\n",
+    die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
          uintmaxToCommaString(minSize));
   }
 done:

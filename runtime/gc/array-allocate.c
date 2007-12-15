@@ -28,7 +28,7 @@ pointer GC_arrayAllocate (GC_state s,
     (uintmax_t)bytesPerElement * (uintmax_t)numElements + GC_ARRAY_HEADER_SIZE;
   arraySizeAlignedMax = alignMax (arraySizeMax, s->alignment);
   if (arraySizeAlignedMax >= (uintmax_t)SIZE_MAX)
-    die ("Out of memory: cannot allocate array with %s bytes.",
+    die ("Out of memory.  Unable to allocate array with %s bytes.",
          uintmaxToCommaString(arraySizeAlignedMax));
   arraySize = (size_t)arraySizeMax;
   arraySizeAligned = (size_t)arraySizeAlignedMax;
