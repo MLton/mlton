@@ -1135,9 +1135,7 @@ val printStdout = _import "Stdio_printStdout" : String8.t -> unit;
 end
 structure Time = 
 struct
-val getTimeOfDay = _import "Time_getTimeOfDay" : unit -> C_Int.t;
-val sec = _import "Time_sec" : unit -> C_Time.t;
-val usec = _import "Time_usec" : unit -> C_SUSeconds.t;
+val getTimeOfDay = _import "Time_getTimeOfDay" : (C_Time.t) ref * (C_SUSeconds.t) ref -> C_Int.t;
 end
 structure Windows = 
 struct

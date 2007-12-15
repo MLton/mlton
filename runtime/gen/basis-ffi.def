@@ -822,9 +822,7 @@ Socket.sockAddrStorageLen = _const : C_Size.t
 Stdio.print = _import : String8.t -> unit
 Stdio.printStderr = _import : String8.t -> unit
 Stdio.printStdout = _import : String8.t -> unit
-Time.getTimeOfDay = _import : unit -> C_Int.t
-Time.sec = _import : unit -> C_Time.t
-Time.usec = _import : unit -> C_SUSeconds.t
+Time.getTimeOfDay = _import : C_Time.t ref * C_SUSeconds.t ref -> C_Int.t
 Windows.Process.create = _import : NullString8.t * NullString8.t * NullString8.t * C_Fd.t * C_Fd.t * C_Fd.t -> C_PId.t C_Errno.t
 Windows.Process.terminate = _import : C_PId.t * C_Signal.t -> C_Int.t C_Errno.t
 ##

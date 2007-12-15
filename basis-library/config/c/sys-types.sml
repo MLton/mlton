@@ -57,15 +57,17 @@ structure C_SSize : sig
                        val toInt: t -> Int.int
                     end = C_SSize
 structure C_SUSeconds : sig
-                           include C_SYSTYPE
+                           include C_SYSTYPE 
+                           val castFromFixedInt: FixedInt.int -> t
                            val fromLargeInt: LargeInt.int -> t
                            val toLargeInt: t -> LargeInt.int
                         end = C_SUSeconds
 structure C_Time : sig
-                      include C_SYSTYPE
+                      include C_SYSTYPE 
+                      val castFromFixedInt: FixedInt.int -> t
                       val fromInt: Int.int -> t
-                      val toInt: t -> Int.int
                       val fromLargeInt: LargeInt.int -> t
+                      val toInt: t -> Int.int
                       val toLargeInt: t -> LargeInt.int
                    end = C_Time
 structure C_UId : C_SYSTYPE = C_UId

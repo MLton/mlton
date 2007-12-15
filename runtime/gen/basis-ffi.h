@@ -932,9 +932,7 @@ void Socket_UnixSock_toAddr(NullString8_t,C_Size_t,Array(Word8_t),Ref(C_Socklen_
 void Stdio_print(String8_t);
 void Stdio_printStderr(String8_t);
 void Stdio_printStdout(String8_t);
-C_Int_t Time_getTimeOfDay(void);
-C_Time_t Time_sec(void);
-C_SUSeconds_t Time_usec(void);
+C_Int_t Time_getTimeOfDay(Ref(C_Time_t),Ref(C_SUSeconds_t));
 C_Errno_t(C_PId_t) Windows_Process_create(NullString8_t,NullString8_t,NullString8_t,C_Fd_t,C_Fd_t,C_Fd_t);
 C_Errno_t(C_Int_t) Windows_Process_terminate(C_PId_t,C_Signal_t);
 MLTON_CODEGEN_STATIC_INLINE Word16_t Word16_add(Word16_t,Word16_t);

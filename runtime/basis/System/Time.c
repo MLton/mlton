@@ -1,13 +1,12 @@
 #include "platform.h"
 
-static struct timeval timeval;
-
-C_Int_t Time_getTimeOfDay (void) {
+C_Int_t Time_getTimeOfDay (Ref(C_Time_t) sec, Ref(C_SUSeconds_t) usec) {
+  struct timeval timeval;
   int res;
   res = gettimeofday (&timeval, (struct timezone*)NULL);
+  if (! res) {
+    *((C_Time_t*)sec) = timeval.tv_sec;
+    *((C_SUSeconds_t*)usec) = timeval.tv_usec;
+  }
   return res;
 }
-
-C_Time_t Time_sec (void) { return timeval.tv_sec; }
-
-C_SUSeconds_t Time_usec (void) { return timeval.tv_usec; }

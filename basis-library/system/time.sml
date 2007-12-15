@@ -69,11 +69,15 @@ end
  *)
 local
    fun getNow (): time =
-      (if ~1 = Prim.getTimeOfDay ()
-          then raise Fail "Time.now"
-       else ()
-       ; timeAdd(fromSeconds (C_Time.toLargeInt (Prim.sec ())),
-                 fromMicroseconds (C_SUSeconds.toLargeInt (Prim.usec ()))))
+      let
+         val sec = ref (C_Time.castFromFixedInt 0)
+         val usec = ref (C_SUSeconds.castFromFixedInt 0)
+      in
+         if ~1 = Prim.getTimeOfDay (sec, usec)
+            then raise Fail "Time.now"
+         else timeAdd(fromSeconds (C_Time.toLargeInt (! sec)),
+                      fromMicroseconds (C_SUSeconds.toLargeInt (! usec)))
+      end
    val prev = ref (getNow ())
 in
    fun now (): time =
