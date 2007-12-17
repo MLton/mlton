@@ -1,0 +1,10 @@
+#!/bin/sh
+
+PREFIX=$2
+BIN_DIR=$PREFIX/bin
+LIB_DIR=$PREFIX/lib/mlton
+TMP_DIR=$INSTALLER_TEMP
+
+cp $BIN_DIR/mlton $TMP_DIR/mlton.script
+sed "/^lib=/s;.*;lib=$LIB_DIR;" < $TMP_DIR/mlton.script > $BIN_DIR/mlton
+exit 0
