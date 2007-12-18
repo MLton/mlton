@@ -12,8 +12,8 @@ functor HeaderFun () : HEADER =
   struct
         val DEBUG = true
 
-        type pos = int
-        val lineno: int ref = ref 0
+        type pos = {line : int, col : int}
+        val pos = {line = ref 1, start = ref 0}
         val text = ref (nil: string list)
         type inputSource = {name : string,
                             errStream : TextIO.outstream,
@@ -32,15 +32,15 @@ functor HeaderFun () : HEADER =
         val error = fn {name,errStream, errorOccurred,...} : inputSource =>
               let val pr = pr errStream
               in fn l : pos => fn msg : string =>
-                  (pr name; pr ", line "; pr (Int.toString l); pr ": Error: ";
-                   pr msg; pr "\n"; errorOccurred := true)
+                  (pr name; pr ", line "; pr (Int.toString (#line l));
+                   pr ": Error: "; pr msg; pr "\n"; errorOccurred := true)
               end
 
         val warn = fn {name,errStream, errorOccurred,...} : inputSource =>
               let val pr = pr errStream
               in fn l : pos => fn msg : string =>
-                  (pr name; pr ", line "; pr (Int.toString l); pr ": Warning: ";
-                   pr msg; pr "\n")
+                  (pr name; pr ", line "; pr (Int.toString (#line l));
+                   pr ": Warning: "; pr msg; pr "\n")
               end
 
         datatype prec = LEFT | RIGHT | NONASSOC
@@ -72,7 +72,8 @@ functor HeaderFun () : HEADER =
 
         type rhsData = {rhs:symbol list,code:string, prec:symbol option} list
         datatype rule = RULE of {lhs : symbol, rhs : symbol list,
-                                 code : string, prec : symbol option}
+                                 code : {text : string, pos : pos},
+                                 prec : symbol option}
 
         type parseResult = string * declData * rule list
         val getResult = fn p => p

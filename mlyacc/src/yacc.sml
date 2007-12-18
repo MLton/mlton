@@ -58,6 +58,7 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
                       of {say : string -> unit,
                           saydot : string -> unit,
                           sayln : string -> unit,
+                          sayPos : {line : int, col : int} option -> unit,
                           pureActions: bool,
                           pos_type : string,
                           arg_type : string,
@@ -284,10 +285,10 @@ functor ParseGenFun(structure ParseGenParser : PARSE_GEN_PARSER
         end
 
 val printAction = fn (rules,
-                          VALS {hasType,say,sayln,termvoid,ntvoid,
+                          VALS {hasType,say,sayln,sayPos,termvoid,ntvoid,
                                 symbolToString,saydot,start,pureActions,...},
                           NAMES {actionsStruct,valueStruct,tableStruct,arg,...}) =>
-let val printAbsynRule = Absyn.printRule(say,sayln)
+let val printAbsynRule = Absyn.printRule(say,sayPos)
     val is_nonterm = fn (NONTERM i) => true | _ => false
     val numberRhs = fn r =>
         List.foldl (fn (e,(r,table)) =>
@@ -485,17 +486,17 @@ let val printAbsynRule = Absyn.printRule(say,sayln)
 
         val term =
          case term
-           of NONE => (error 1 "missing %term definition"; nil)
+           of NONE => (error {line = 1, col = 0} "missing %term definition"; nil)
             | SOME l => l
 
         val nonterm =
          case nonterm
-          of NONE => (error 1 "missing %nonterm definition"; nil)
+          of NONE => (error {line = 1, col = 0} "missing %nonterm definition"; nil)
            | SOME l => l
 
         val pos_type =
          case pos_type
-          of NONE => (error 1 "missing %pos definition"; "")
+          of NONE => (error {line = 1, col = 0} "missing %pos definition"; "")
            | SOME l => l
 
 
@@ -679,7 +680,8 @@ precedences of the rule and the terminal are equal.
                 val addPrec = fn termPrec => fn term as (T i) =>
                    case precData sub i
                    of SOME _ =>
-                     error 1 ("multiple precedences specified for terminal " ^
+                     error {line = 1, col = 0}
+                           ("multiple precedences specified for terminal " ^
                             (termToString term))
                     | NONE => update(precData,i,termPrec)
                 val termPrec = fn ((LEFT,_) ,i) => i
@@ -798,17 +800,24 @@ precedences of the rule and the terminal are equal.
         
     in  let val result = TextIO.openOut (spec ^ ".sml")
             val sigs = TextIO.openOut (spec ^ ".sig")
-            val pos = ref 0
-            val pr = fn s => TextIO.output(result,s)
-            val say = fn s => let val l = String.size s
-                                   val newPos = (!pos) + l
-                              in if newPos > lineLength 
-                                    then (pr "\n"; pos := l)
-                                    else (pos := newPos);
-                                   pr s
-                              end
+            val specPath = OS.FileSys.fullPath spec
+            val resultPath = OS.FileSys.fullPath (spec ^ ".sml")
+            val line = ref 1
+            val col = ref 0
+            fun say s =
+                (TextIO.output (result, s)
+               ; CharVector.app
+                    (fn #"\n" => (line := !line + 1 ; col := 0)
+                      | _     => col := !col + 1)
+                    s)
             val saydot = fn s => (say (s ^ "."))
-            val sayln = fn t => (pr t; pr "\n"; pos := 0)
+            val sayln = fn t => (say t; say "\n")
+            fun fmtLineDir {line, col} path =
+                String.concat ["(*#line ", Int.toString line, ".",
+                               Int.toString (col+1), " \"", path, "\"*)"]
+            val sayPos =
+             fn NONE => sayln (fmtLineDir {line = !line, col = 0} resultPath)
+              | SOME pos => say (fmtLineDir pos specPath)
             val termvoid = makeUniqueId "VOID"
             val ntvoid = makeUniqueId "ntVOID"
             val hasType = fn s => case symbolType s
@@ -818,7 +827,7 @@ precedences of the rule and the terminal are equal.
                                       else (T n) :: f(n+1)
                         in f 0
                         end
-            val values = VALS {say=say,sayln=sayln,saydot=saydot,
+            val values = VALS {say=say,sayln=sayln,saydot=saydot,sayPos=sayPos,
                                termvoid=termvoid, ntvoid = ntvoid,
                                hasType=hasType, pos_type = pos_type,
                                arg_type = #2 arg_decl,
@@ -845,12 +854,14 @@ precedences of the rule and the terminal are equal.
             sayln "struct";
             sayln "structure Header = ";
             sayln "struct";
+            sayPos (SOME {line = 1, col = 1});
             sayln header;
+            sayPos NONE;
             sayln "end";
             sayln "structure LrTable = Token.LrTable";
             sayln "structure Token = Token";
             sayln "local open LrTable in ";
-            entries := PrintStruct.makeStruct{table=table,print=pr,
+            entries := PrintStruct.makeStruct{table=table,print=say,
                                               name = "table",
                                               verbose=verbose};
             sayln "end";

@@ -10,11 +10,11 @@ open Hdr
 %noshift EOF
 %right ARROW
 %left  ASTERISK
-%pos int
+%pos pos
 
 %term   ARROW | ASTERISK | BLOCK | BAR | CHANGE | COLON | 
         COMMA | DELIMITER | EOF | FOR |
-        HEADER of string | ID of string*int | IDDOT of string |
+        HEADER of string | ID of string*Header.pos | IDDOT of string |
         PERCENT_HEADER | INT of string | KEYWORD | LBRACE | LPAREN |
         NAME | NODEFAULT | NONTERM | NOSHIFT | OF |
         PERCENT_EOP | PERCENT_PURE | PERCENT_POS | PERCENT_ARG |
@@ -33,7 +33,7 @@ open Hdr
         MPC_DECLS of Hdr.declData |
         QUAL_ID of string |
         RECORD_LIST of string |
-        RHS_LIST of {rhs:Hdr.symbol list,code:string,
+        RHS_LIST of {rhs:Hdr.symbol list,code:{text:string, pos:Header.pos},
                      prec:Hdr.symbol option} list |
         G_RULE of Hdr.rule list |
         G_RULE_LIST of Hdr.rule list |
@@ -193,10 +193,11 @@ ID_LIST : ID ID_LIST (symbolMake ID :: ID_LIST)
         |        (nil)
 
 RHS_LIST : ID_LIST G_RULE_PREC PROG
-            ([{rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}])
+            ([{rhs=ID_LIST,code={text=PROG,pos=PROGleft},prec=G_RULE_PREC}])
 
         | RHS_LIST BAR ID_LIST G_RULE_PREC PROG
-            ({rhs=ID_LIST,code=PROG,prec=G_RULE_PREC}::RHS_LIST)
+            ({rhs=ID_LIST,code={text=PROG,pos=PROGleft},
+              prec=G_RULE_PREC}::RHS_LIST)
 
 TY : TYVAR
         (TYVAR)

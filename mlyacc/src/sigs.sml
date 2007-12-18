@@ -10,8 +10,8 @@ type int = Int.int
 
 signature HEADER =
   sig
-    type pos = int
-    val lineno : pos ref
+    type pos = {line : int, col : int}
+    val pos : {line : int ref, start : int ref}
     val text : string list ref 
 
     type inputSource
@@ -23,7 +23,7 @@ signature HEADER =
     datatype symbol = SYMBOL of string * pos
     val symbolName : symbol -> string
     val symbolPos : symbol -> pos
-    val symbolMake : string * int -> symbol
+    val symbolMake : string * pos -> symbol
 
     type ty
     val tyName : ty -> string
@@ -40,7 +40,8 @@ signature HEADER =
                        TOKEN_SIG_INFO of string
                            
     datatype rule = RULE of {lhs : symbol, rhs : symbol list,
-                             code : string, prec : symbol option}
+                             code : {text : string, pos : pos},
+                             prec : symbol option}
 
     datatype declData = DECL of 
                         {eop : symbol list,

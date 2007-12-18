@@ -18,7 +18,7 @@ signature ABSYN =
                     | LET of decl list * exp
                     | UNIT
                     | SEQ of exp * exp
-                    | CODE of string
+                    | CODE of {text : string, pos : Header.pos}
        and      pat = PVAR of string
                     | PAPP of string * pat
                     | PTUPLE of pat list
@@ -28,5 +28,6 @@ signature ABSYN =
                     | AS of string * pat
        and     decl = VB of pat * exp
        and     rule = RULE of pat * exp
-       val printRule : ((string -> unit) * (string -> unit)) -> rule -> unit
+       val printRule : ((string -> unit) * (Header.pos option -> unit))
+                       -> rule -> unit
     end

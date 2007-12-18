@@ -14,11 +14,12 @@ functor ParseGenParserFun(structure Header : HEADER
           let
               val in_str = TextIO.openIn file
               val source = Header.newSource(file,in_str,TextIO.stdOut)
-              val error = fn (s : string,i:int,_) =>
-                              Header.error source i s
+              val error = fn (s : string,p:Header.pos,_) =>
+                              Header.error source p s
               val stream =  Parser.makeLexer (fn i => (TextIO.inputN(in_str,i)))
                             source
-              val (result,_) = (Header.lineno := 1; 
+              val (result,_) = (#line Header.pos := 1;
+                                #start Header.pos := 0;
                                 Header.text := nil;
                                 Parser.parse(15,stream,error,source))
            in (TextIO.closeIn in_str; (result,source))
