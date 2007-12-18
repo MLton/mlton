@@ -7,11 +7,11 @@ ifeq ($(origin RELEASE), undefined)
 	RELEASE := 1
 endif
 
-mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS).dmg: mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS).pkg
+mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).dmg: mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).pkg
 	hdiutil create -srcfolder $< $@
 	rm -rf $<
 
-mlton-$(VERSION).$(TARGET_ARCH)-$(TARGET_OS).pkg: Info.plist Description.plist install/usr/local/bin/mlton Resources/postinstall Resources/postupgrade
+mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).pkg: Info.plist Description.plist install/usr/local/bin/mlton Resources/postinstall Resources/postupgrade
 	/Developer/Tools/packagemaker -build -ds -v -i Info.plist -d Description.plist -f install/usr/local -r Resources -p $@
 	sudo rm -rf install
 
@@ -24,6 +24,8 @@ Info.plist: Info.plist.in
 	rm -f Info.plist
 	cp Info.plist.in Info.plist
 	sed "s/\(.*\)VERSION\(.*\)/\1$(VERSION)\2/" <Info.plist >z && \
+	mv z Info.plist;
+	sed "s/\(.*\)RELEASE\(.*\)/\1$(RELEASE)\2/" <Info.plist >z && \
 	mv z Info.plist;
 	sed "s/\(.*\)TARGET_ARCH\(.*\)/\1$(TARGET_ARCH)\2/" <Info.plist >z && \
 	mv z Info.plist;

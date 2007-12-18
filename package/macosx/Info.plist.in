@@ -11,7 +11,7 @@
 	<key>IFMajorVersion</key>
 	<integer>VERSION</integer>
 	<key>IFMinorVersion</key>
-	<integer>0</integer>
+	<integer>RELEASE</integer>
 	<key>IFPkgFlagAllowBackRev</key>
 	<false/>
 	<key>IFPkgFlagAuthorizationAction</key>
