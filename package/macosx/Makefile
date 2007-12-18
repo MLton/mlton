@@ -8,11 +8,13 @@ ifeq ($(origin RELEASE), undefined)
 endif
 
 mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).dmg: mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).pkg
+	rm -rf $@
 	hdiutil create -srcfolder $< $@
 	rm -rf $<
 
-mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).pkg: Info.plist Description.plist install/usr/local/bin/mlton Resources/postinstall Resources/postupgrade
-	/Developer/Tools/packagemaker -build -ds -v -i Info.plist -d Description.plist -f install/usr/local -r Resources -p $@
+mlton-$(VERSION)-$(RELEASE).$(TARGET_ARCH)-$(TARGET_OS).pkg: Info.plist install/usr/local/bin/mlton Resources/*
+	rm -rf $@
+	/Developer/Tools/packagemaker -build -ds -i Info.plist -f install/usr/local -r Resources -p $@
 	sudo rm -rf install
 
 install/usr/local/bin/mlton: ../../install/usr/local/bin/mlton
