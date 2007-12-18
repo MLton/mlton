@@ -149,8 +149,9 @@ change surprisingly after a jump."
     (when (let ((c (char-after))) (and c (<= ?0 c) (<= c ?9)))
       (search-forward-regexp esml-sml-numeric-literal-regexp point t))))
 
-(add-to-list 'def-use-mode-to-move-to-symbol-start-alist
-             (cons 'sml-mode (function esml-du-move-to-symbol-start)))
+(loop for mode in esml-sml-modes do
+  (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
+               (cons mode (function esml-du-move-to-symbol-start))))
 
 (defun esml-du-move-to-symbol-end ()
   "Moves to the end of the SML symbol at point assuming that we are at the
@@ -159,8 +160,9 @@ beginning of the symbol."
     (when (zerop (skip-chars-forward esml-sml-alphanumeric-chars limit))
       (skip-chars-forward esml-sml-symbolic-chars limit))))
 
-(add-to-list 'def-use-mode-to-move-to-symbol-end-alist
-             (cons 'sml-mode (function esml-du-move-to-symbol-end)))
+(loop for mode in esml-sml-modes do
+  (add-to-list 'def-use-mode-to-move-to-symbol-end-alist
+               (cons mode (function esml-du-move-to-symbol-end))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Methods

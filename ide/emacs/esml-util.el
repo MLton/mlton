@@ -35,6 +35,9 @@ non-bindable identifiers defined in various sections of the Definition")
   "\\(?:\\(?:0w\\)?[0-9]+\\|0w?x[0-9a-fA-F]+\\)"
   "Regexp matching the syntax of Standard ML numeric literals.")
 
+(defconst esml-sml-modes '(sml-mode sml-lex-mode sml-yacc-mode)
+  "List of Emacs modes dealing with SML code.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Some general purpose Emacs Lisp utility functions
 
