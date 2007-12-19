@@ -1,5 +1,11 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2007-12-18
+   - Changed ML-Yacc and ML-Lex to output line directives so that
+     MLton's def-use information points to the source files (.grm
+     and .lex) instead of the generated implementations (.grm.sml
+     and .lex.sml).
+
 * 2007-12-14
    - Added runtime option 'may-page-heap {false|true}'.  By default,
      MLton will not page the heap to disk when unable to grow the heap
