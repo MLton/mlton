@@ -3,7 +3,7 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(require 'def-use-util)
+(require 'def-use-sym)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data records
@@ -148,29 +148,41 @@ satisfied dus to the front."
     result))
 
 (defun def-use-sym-at-ref (ref &optional no-apology)
-  (let ((result
-         (when ref
+  (when ref
+    (let ((sym
            (def-use-query
              (function
               (lambda (dus)
-                (def-use-dus-sym-at-ref dus ref)))))))
-    (unless (or result no-apology)
-      (let* ((attrs (def-use-attrs))
-             (file (def-use-ref-src ref))
-             (attr (file-attributes file))
-             (buffer (def-use-find-buffer-visiting-file file)))
-        (message
-         "Sorry, no info on the symbol.  Probable reason:  %s"
-         (cond
-          ((not attrs)
-           "There are no def-use sources.")
-          ((def-use-attr-newer? attr (car attrs))
-           "The file is newer than any def-use source.")
-          ((buffer-modified-p buffer)
-           "The buffer has been modified.")
-          (t
-           "The symbol may not be in any def-use source.")))))
-    result))
+                (def-use-dus-sym-at-ref dus ref)))))
+          (name (def-use-extract-sym-name-at-ref ref)))
+      (if (and sym name (string= (def-use-sym-name sym) name))
+          sym
+        (unless no-apology
+          (cond
+           ((not name)
+            (message "Point does not appear to be on a symbol."))
+           ((and sym (not (string= (def-use-sym-name sym) name)))
+            (message "Symbol at point, %s, does not match symbol, %s, in info.  Check major mode."
+                     name
+                     (def-use-sym-name sym)))
+           (t
+            (let* ((attrs (def-use-attrs))
+                   (file (def-use-ref-src ref))
+                   (attr (file-attributes file))
+                   (buffer (def-use-find-buffer-visiting-file file)))
+              (message
+               "Sorry, no valid info on the symbol: %s.  Possible reason: %s."
+               name
+               (cond
+                ((not attrs)
+                 "There are no def-use sources")
+                ((def-use-attr-newer? attr (car attrs))
+                 "The file is newer than any def-use source")
+                ((buffer-modified-p buffer)
+                 "The buffer has been modified")
+                (t
+                 "The symbol may not be in any def-use source")))))))
+        nil))))
 
 (defun def-use-sym-to-uses (sym)
   (when sym
