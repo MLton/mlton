@@ -224,9 +224,11 @@ structure LexGen: LEXGEN =
    open Array List
    infix 9 sub
 
+   type pos = {line : int, col : int}
+
    datatype token = CHARS of bool array | QMARK | STAR | PLUS | BAR
           | LP | RP | CARAT | DOLLAR | SLASH | STATE of string list
-          | REPS of int * int | ID of string | ACTION of string
+          | REPS of int * int | ID of string | ACTION of pos * string
           | BOF | EOF | ASSIGN | SEMI | ARROW | LEXMARK | LEXSTATES 
           | COUNT | REJECT | FULLCHARSET | STRUCT | HEADER | ARG | POSARG
           | POSINT
@@ -258,8 +260,9 @@ structure LexGen: LEXGEN =
  
    val StrName = ref "Mlex"
    val HeaderCode = ref ""
+   val HeaderPos = ref {line = 0, col = 0}
    val HeaderDecl = ref false
-   val ArgCode = ref (NONE: string option)
+   val ArgCode = ref (NONE: (pos * string) option)
    val StrDecl = ref false
 
    (* Can define INTEGER structure for yypos variable. *)
@@ -276,7 +279,22 @@ structure LexGen: LEXGEN =
                               PosIntName := "Int"; PosIntDecl := false)
 
    val LexOut = ref(TextIO.stdOut)
-   fun say x = TextIO.output(!LexOut, x)
+   val LexOutLine = ref 1
+   fun setLexOut s = (LexOut := s; LexOutLine := 1)
+   fun say x =
+       (TextIO.output (!LexOut, x)
+      ; CharVector.app
+           (fn #"\n" => LexOutLine := !LexOutLine + 1 | _ => ())
+           x)
+   val InFile = ref ""
+   val OutFile = ref ""
+   fun fmtLineDir {line, col} file =
+       String.concat ["(*#line ", Int.toString line, ".", Int.toString (col+1),
+                      " \"", OS.FileSys.fullPath file, "\"*)"]
+   val sayPos =
+    fn SOME pos => say (fmtLineDir pos (!InFile))
+     | NONE => (say (fmtLineDir {line = !LexOutLine, col = 0} (!OutFile));
+                say "\n")
 
 (* Union: merge two sorted lists of integers *)
 
@@ -375,6 +393,12 @@ val LineNum: int ref = ref 1;
 abstype ibuf =
         BUF of TextIO.instream * {b : string ref, p : int ref}
 with
+        local
+           val pos = ref 0
+           val linePos = ref 0 (* incorrect after ungetch newline, non fatal *)
+        in
+        fun resetLexPos () = (LineNum := 1; pos := 0; linePos :=0)
+        fun getLexPos () = {line = !LineNum, col = !pos - !linePos}
         fun make_ibuf(s) = BUF (s, {b=ref"", p = ref 0})
         fun close_ibuf (BUF (s,_)) = TextIO.closeIn(s)
         exception eof
@@ -386,17 +410,21 @@ with
                             then raise eof 
                             else getch a)
                    else (let val ch = String.sub(!b,!p)
-                         in (if ch = #"\n"
-                                 then LineNum := !LineNum + 1
+                         in (pos := !pos + 1
+                           ; if ch = #"\n"
+                                 then (LineNum := !LineNum + 1;
+                                       linePos := !pos)
                                  else ();
                              p := !p + 1;
                              ch)
                          end)
         fun ungetch(BUF(s,{b,p})) = (
+           pos := !pos - 1;
            p := !p - 1;
            if String.sub(!b,!p) = #"\n"
               then LineNum := !LineNum - 1
               else ())
+        end
 end;
 
 exception Error
@@ -652,7 +680,7 @@ fun AdvanceTok () : unit = let
                         | _ => GetAct(lpct, nstr)
                       end
                   in
-                    ACTION (GetAct (0,nil))
+                    ACTION (getLexPos (), GetAct (0,nil))
                   end
                 | #";" => SEMI
                 | c => (prSynErr ("invalid character " ^ String.str c)))
@@ -790,8 +818,8 @@ end;
 
 exception ParseError;
 
-fun parse() : (string * (int list * exp) list * ((string,string) dictionary)) =
-        let val Accept = ref (create String.<=) : (string,string) dictionary ref
+fun parse() : (string * (int list * exp) list * ((string,pos*string) dictionary)) =
+        let val Accept = ref (create String.<=) : (string,pos*string) dictionary ref
         val rec ParseRtns = fn l => case getch(!LexBuf) of
                   #"%" => let val c = getch(!LexBuf) in
                            if c = #"%" then (implode (rev l))
@@ -820,7 +848,7 @@ fun parse() : (string * (int list * exp) list * ((string,string) dictionary)) =
                 | FULLCHARSET => (CharSetSize := 256; ParseDefs())
                 | HEADER => (LexState := 2; AdvanceTok();
                              case GetTok()
-                             of ACTION s => 
+                             of ACTION (p, s) => 
                                 if (!StrDecl) then
                                    (prErr "cannot have both %structure and %header \
                                     \declarations")
@@ -828,6 +856,7 @@ fun parse() : (string * (int list * exp) list * ((string,string) dictionary)) =
                                    (prErr "duplicate %header declarations")
                                 else 
                                     (HeaderCode := s; LexState := 0;
+                                     HeaderPos := p;
                                      HeaderDecl := true; ParseDefs())
                                 | _ => raise SyntaxError)
                 | POSARG => (PosArg := true; ParseDefs())
@@ -1097,12 +1126,12 @@ end
 fun makeaccept ends =
     let fun startline f = if f then say "  " else say "| "
          fun make(nil,f) = (startline f; say "_ => raise Internal.LexerError\n")
-          | make((x,a)::y,f) = (startline f; say x; say " => ";
+          | make((x,(p,a))::y,f) = (startline f; say x; say " => ";
                                 if Substring.size(#2 (Substring.position "yytext" (Substring.full a))) = 0
  then
-                                     (say "("; say a; say ")")
+                                     (say "("; sayPos (SOME p); say a; sayPos NONE; say ")")
                                 else (say "let val yytext=yymktext() in ";
-                                      say a; say " end");
+                                      sayPos (SOME p); say a; sayPos NONE; say " end");
                                 say "\n"; make(y,false))
     in make (listofdict(ends),true)
     end
@@ -1250,13 +1279,16 @@ val skel_mid2 =
 
 fun lexGen(infile) =
     let val outfile = infile ^ ".sml"
+        val () = (InFile := infile; OutFile := outfile)
       fun PrintLexer (ends) =
     let val sayln = fn x => (say x; say "\n")
      in case !ArgCode 
          of NONE => (sayln "fun lex () : Internal.result =";
                      sayln "let fun continue() = lex() in")
-          | SOME s => (say "fun lex "; say "(yyarg as ("; say s; sayln ")) =";
-                       sayln "let fun continue() : Internal.result = ");
+          | SOME (p,s) =>
+                    (say "fun lex "; say "(yyarg as (";
+                     sayPos (SOME p); say s; sayPos NONE; sayln ")) =";
+                     sayln "let fun continue() : Internal.result = ");
          say "  let fun scan (s,AcceptingLeaves : Internal.yyfinstate";
          sayln " list list,l,i0: int) =";
          if !UsesTrailingContext
@@ -1345,9 +1377,9 @@ fun lexGen(infile) =
         LexBuf := make_ibuf(TextIO.openIn infile);
         NextTok := BOF;
         inquote := false;
-        LexOut := TextIO.openOut(outfile);
+        setLexOut (TextIO.openOut(outfile));
         StateNum := 2;
-        LineNum := 1;
+        resetLexPos ();
         StateTab := enter(create(String.<=))("INITIAL",1);
         LeafNum := ~1;
         let
@@ -1367,11 +1399,15 @@ fun lexGen(infile) =
         in
            say "type int = Int.int\n";
           if (!HeaderDecl)
-              then say (!HeaderCode)
+              then (sayPos (SOME (!HeaderPos))
+                  ; say (!HeaderCode)
+                  ; sayPos NONE)
               else say ("structure " ^ (!StrName));
           say "=\n";
           say skel_hd;
+          sayPos (SOME {line = 1, col = 0});
           say user_code;
+          sayPos NONE;
           say "end (* end of user routines *)\n";
           say "exception LexError (* raised if illegal leaf ";
           say "action tried *)\n";
