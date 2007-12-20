@@ -43,14 +43,6 @@ structure Deconed =
     val isDeconed = isTop
   end
 
-structure SideEffects =
-  struct
-    structure L = TwoPointLattice (val bottom = "does not side effect"
-                                   val top = "side effects")
-    open L
-    val sideEffect = makeTop
-  end
-
 structure MayReturn =
   struct
     structure L = TwoPointLattice (val bottom = "does not return"
@@ -171,14 +163,13 @@ structure FuncInfo =
                        raises: (VarInfo.t * Type.t) vector option,
                        returnLabel: Label.t option ref,
                        returns: (VarInfo.t * Type.t) vector option,
-                       sideEffects: SideEffects.t,
                        used: Used.t,
                        wrappers: Block.t list ref}
 
     fun layout (T {args, 
                    mayRaise, mayReturn, 
                    raises, returns, 
-                   sideEffects, used,
+                   used,
                    ...}) 
       = Layout.record [("args", Vector.layout 
                                 (Layout.tuple2 (VarInfo.layout, Type.layout)) 
@@ -193,7 +184,6 @@ structure FuncInfo =
                                    (Vector.layout 
                                     (Layout.tuple2 (VarInfo.layout, Type.layout)))
                                    returns),
-                       ("sideEffects", SideEffects.layout sideEffects),
                        ("used", Used.layout used)]
 
     local
@@ -207,7 +197,6 @@ structure FuncInfo =
       val raises = make #raises
       val returnLabel = make #returnLabel
       val returns = make #returns
-      val sideEffects = make #sideEffects
       val used = make #used
       val (wrappers', wrappers) = make' #wrappers
     end
@@ -226,9 +215,6 @@ structure FuncInfo =
     val isUsed = Used.isUsed o used
     fun whenUsed (fi, th) = Used.whenUsed (used fi, th)
 
-    val sideEffect = SideEffects.sideEffect o sideEffects
-    fun flowSideEffects (fi, fi') = SideEffects.<= (sideEffects fi, sideEffects fi')
-
     fun new {args: (VarInfo.t * Type.t) vector, 
              raises: (VarInfo.t * Type.t) vector option, 
              returns: (VarInfo.t * Type.t) vector option}: t
@@ -240,7 +226,6 @@ structure FuncInfo =
            raises = raises,
            returnLabel = ref NONE,
            returns = returns,
-           sideEffects = SideEffects.new (),
            used = Used.new (),
            wrappers = ref []}
   end
@@ -398,16 +383,14 @@ fun remove (Program.T {datatypes, globals, functions, main})
       val visitExpTh = fn e => fn () => visitExp e
       fun maybeVisitVarExp (var, exp)
         = Option.app (var, fn var => VarInfo.whenUsed (varInfo var, visitExpTh exp))
-      fun visitStatement (Statement.T {exp, var, ...}, fi: FuncInfo.t)
+      fun visitStatement (Statement.T {exp, var, ...})
         = if Exp.maySideEffect exp
-            then (FuncInfo.sideEffect fi
-                  ; visitExp exp)
+            then visitExp exp
             else maybeVisitVarExp (var, exp)
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t)
         = case t
             of Arith {args, overflow, success, ...} 
-             => (FuncInfo.sideEffect fi;
-                 visitVars args;
+             => (visitVars args;
                  visitLabel overflow;
                  visitLabel success)
              | Bug => ()
@@ -429,7 +412,6 @@ fun remove (Program.T {datatypes, globals, functions, main})
                   val fi' = funcInfo func
                 in
                   flowVarInfoTysVars (FuncInfo.args fi', args);
-                  FuncInfo.flowSideEffects (fi', fi);
                   case cont
                     of None => ()
                      | Caller 
@@ -535,8 +517,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
              => (FuncInfo.return fi;
                  flowVarInfoTysVars (valOf (FuncInfo.returns fi), xs))
              | Runtime {args, return, ...} 
-             => (FuncInfo.sideEffect fi;
-                 visitVars args;
+             => (visitVars args;
                  visitLabel return)
 
       val visitTransfer
@@ -545,7 +526,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
                        Unit.layout)
                       visitTransfer
       fun visitBlock (Block.T {statements, transfer, ...}, fi: FuncInfo.t) =
-         (Vector.foreach (statements, fn s => visitStatement (s, fi))
+         (Vector.foreach (statements, visitStatement)
           ; visitTransfer (transfer, fi))
       (* Visit all reachable expressions. *)
       val _ = Vector.foreach
@@ -566,8 +547,7 @@ fun remove (Program.T {datatypes, globals, functions, main})
                 doit Con.truee ; doit Con.falsee 
               end
       val _ = Vector.foreach 
-              (globals, fn Statement.T {var, exp, ...} => 
-               maybeVisitVarExp (var, exp))
+              (globals, visitStatement)
       val _ = List.foreach
               (functions, fn function =>
                let

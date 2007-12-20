@@ -41,14 +41,6 @@ structure Deconed =
       val isDeconed = isTop
    end
 
-structure SideEffects =
-   struct
-      structure L = TwoPointLattice (val bottom = "does not side effect"
-                                     val top = "side effects")
-      open L
-      val sideEffect = makeTop
-   end
-
 structure MayReturn =
    struct
       structure L = TwoPointLattice (val bottom = "does not return"
@@ -190,14 +182,13 @@ structure FuncInfo =
                          raises: (VarInfo.t * Type.t) vector option,
                          returnLabel: Label.t option ref,
                          returns: (VarInfo.t * Type.t) vector option,
-                         sideEffects: SideEffects.t,
                          used: Used.t,
                          wrappers: Block.t list ref}
 
       fun layout (T {args, 
                      mayRaise, mayReturn, 
                      raises, returns, 
-                     sideEffects, used,
+                     used,
                      ...}) =
          Layout.record [("args", Vector.layout 
                                  (Layout.tuple2 (VarInfo.layout, Type.layout)) 
@@ -212,7 +203,6 @@ structure FuncInfo =
                                     (Vector.layout 
                                      (Layout.tuple2 (VarInfo.layout, Type.layout)))
                                     returns),
-                        ("sideEffects", SideEffects.layout sideEffects),
                         ("used", Used.layout used)]
 
       local
@@ -226,7 +216,6 @@ structure FuncInfo =
          val raises = make #raises
          val returnLabel = make #returnLabel
          val returns = make #returns
-         val sideEffects = make #sideEffects
          val used = make #used
          val (wrappers', wrappers) = make' #wrappers
       end
@@ -245,9 +234,6 @@ structure FuncInfo =
       val isUsed = Used.isUsed o used
       fun whenUsed (fi, th) = Used.whenUsed (used fi, th)
 
-      val sideEffect = SideEffects.sideEffect o sideEffects
-      fun flowSideEffects (fi, fi') = SideEffects.<= (sideEffects fi, sideEffects fi')
-
       fun new {args: (VarInfo.t * Type.t) vector, 
                raises: (VarInfo.t * Type.t) vector option, 
                returns: (VarInfo.t * Type.t) vector option}: t =
@@ -259,7 +245,6 @@ structure FuncInfo =
             raises = raises,
             returnLabel = ref NONE,
             returns = returns,
-            sideEffects = SideEffects.new (),
             used = Used.new (),
             wrappers = ref []}
    end
@@ -546,13 +531,12 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
       fun maybeVisitVarExp (var, exp) = 
          Option.app (var, fn var => 
                      VarInfo.whenUsed (varInfo var, visitExpTh exp))
-      fun visitStatement (s, fi: FuncInfo.t option) =
+      fun visitStatement s =
          case s of
             Bind {exp, ty, var} =>
                (Option.app (var, fn var => newVarInfo (var, ty))
                 ; if Exp.maySideEffect exp
-                     then (Option.app(fi, FuncInfo.sideEffect)
-                           ; visitType ty
+                     then (visitType ty
                            ; visitExp exp)
                      else maybeVisitVarExp (var, exp))
           | Profile _ => ()
@@ -575,28 +559,24 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
                                       in
                                          VarInfo.whenUsed
                                          (vi, fn () =>
-                                          (Option.app (fi, FuncInfo.sideEffect)
-                                           ; ConInfo.decon ci
+                                          (ConInfo.decon ci
                                            ; visitVar base
                                            ; visitVar value))
                                       end
                                  | Tuple => 
-                                      (Option.app (fi, FuncInfo.sideEffect)
-                                       ; visitVar base
+                                      (visitVar base
                                        ; visitVar value)
                                  | Vector => Error.bug "RemoveUnused2.visitStatement: Update:non-Con|Tuple")
                           | _ => Error.bug "RemoveUnused2.visitStatement: Update:non-Object")
                    | VectorSub {index, vector} =>
-                        (Option.app(fi, FuncInfo.sideEffect)
-                         ; visitVar index
+                        (visitVar index
                          ; visitVar vector
                          ; visitVar value)
                end
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t) =
          case t of
             Arith {args, overflow, success, ty, ...} =>
-               (FuncInfo.sideEffect fi
-                ; visitVars args
+               (visitVars args
                 ; visitLabel overflow
                 ; visitLabel success
                 ; visitType ty)
@@ -619,7 +599,6 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
                   val fi' = funcInfo func
 
                   val () = flowVarInfoTysVars (FuncInfo.args fi', args)
-                  val () = FuncInfo.flowSideEffects (fi', fi)
                   val () = 
                      case cont of
                         None => ()
@@ -740,11 +719,10 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
                (FuncInfo.return fi
                 ; flowVarInfoTysVars (valOf (FuncInfo.returns fi), xs))
           | Runtime {args, return, ...} =>
-               (FuncInfo.sideEffect fi
-                ; visitVars args
+               (visitVars args
                 ; visitLabel return)
       fun visitBlock (Block.T {statements, transfer, ...}, fi: FuncInfo.t) =
-         (Vector.foreach (statements, fn s => visitStatement (s, SOME fi))
+         (Vector.foreach (statements, visitStatement)
           ; visitTransfer (transfer, fi))
       val visitBlockTh = fn (b, fi) => fn () => visitBlock (b, fi)
       (* Visit all reachable expressions. *)
@@ -771,7 +749,7 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
             ; doit Con.falsee 
          end 
       val () = 
-         Vector.foreach (globals, fn s => visitStatement (s, NONE))
+         Vector.foreach (globals, visitStatement)
       val () = 
          List.foreach
          (functions, fn function =>
