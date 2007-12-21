@@ -34,7 +34,6 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          val op + = op +
          val op - = op -
          val op / = op /
-         val op / = op /
          val op < = op <
          val op <= = op <=
          val op > = op >
