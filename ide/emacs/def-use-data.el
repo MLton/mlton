@@ -162,9 +162,10 @@ satisfied dus to the front."
            ((not name)
             (message "Point does not appear to be on a symbol."))
            ((and sym (not (string= (def-use-sym-name sym) name)))
-            (message "Symbol at point, %s, does not match symbol, %s, in info.  Check major mode."
-                     name
-                     (def-use-sym-name sym)))
+            (message
+             "Symbol at point, %s, does not match, %s, in info.  Check mode."
+             name
+             (def-use-sym-name sym)))
            (t
             (let* ((attrs (def-use-attrs))
                    (file (def-use-ref-src ref))
