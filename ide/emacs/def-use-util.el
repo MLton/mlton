@@ -143,6 +143,16 @@ one of the modification times is nil."
        (> (def-use-time-to-double (nth 5 attr1))
           (def-use-time-to-double (nth 5 attr2)))))
 
+(defun def-use-attr-changed? (attr1 attr2)
+  (labels ((nequal i) (not (equal (nth i attr1) (nth i attr2))))
+    (and attr1 attr2
+         (or (def-use-attr-newer? attr1 attr2)
+             (nequal 7)  ;; size
+             (nequal 6)  ;; status change time
+             (nequal 8)  ;; file modes
+             (nequal 10) ;; inode
+             ))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide 'def-use-util)

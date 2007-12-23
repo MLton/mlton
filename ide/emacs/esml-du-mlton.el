@@ -7,8 +7,6 @@
 (require 'bg-job)
 (require 'esml-util)
 
-;; XXX Fix race condition when (re)loading def-use file that is being written.
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
 
@@ -307,7 +305,7 @@ beginning of the symbol."
 
 (defun esml-du-reload (ctx)
   "Reloads the def-use file if it has been modified."
-  (when (def-use-attr-newer?
+  (when (def-use-attr-changed?
           (file-attributes (esml-du-ctx-duf ctx))
           (esml-du-ctx-attr ctx))
     (esml-du-load ctx)))
