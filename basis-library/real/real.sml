@@ -141,18 +141,16 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
              | _ => R.== (x, y)
 
       fun min (x, y) =
-         if isNan x
-            then y
-         else if isNan y
-                 then x
-              else if x < y then x else y
+         if x <= y then x
+         else if x > y then y
+         else if isNan y then x
+         else y
 
       fun max (x, y) =
-         if isNan x
-            then y
-         else if isNan y
-                 then x
-              else if x > y then x else y
+         if x >= y then x
+         else if x < y then y
+         else if isNan y then x
+         else y
 
       fun sign (x: real): int =
          case class x of
@@ -171,13 +169,10 @@ functor Real (R: PRE_REAL): REAL_EXTRA =
          datatype z = datatype IEEEReal.real_order
       in
          fun compareReal (x, y) =
-            case (class x, class y) of
-               (NAN, _) => UNORDERED
-             | (_, NAN) => UNORDERED
-             | (ZERO, ZERO) => EQUAL
-             | _ => if x < y then LESS
-                    else if x > y then GREATER
-                         else EQUAL
+            if x < y then LESS
+            else if x > y then GREATER
+            else if x == y then EQUAL
+            else UNORDERED
       end
 
       local
