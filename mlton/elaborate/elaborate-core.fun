@@ -496,15 +496,24 @@ val elaboratePat:
                                   val {args, instance} = Scheme.instantiate s
                                   val args = args ()
                                   val p = loop p
-                                  val argType = Type.new ()
-                                  val resultType = Type.new ()
-                                  val _ =
-                                     unify
-                                     (instance, Type.arrow (argType, resultType),
-                                      fn _ =>
-                                      (region,
-                                       str "constant constructor applied to argument",
-                                       seq [str "in: ", lay ()]))
+                                  val (argType, resultType) =
+                                     case Type.deArrowOpt instance of
+                                        SOME types => types
+                                      | NONE =>
+                                           let
+                                              val types =
+                                                 (Type.new (), Type.new ())
+                                              val _ =
+                                                 unify
+                                                 (instance, Type.arrow types,
+                                                  fn _ =>
+                                                  (region,
+                                                   str "constant constructor\
+                                                       \ applied to argument",
+                                                   seq [str "in: ", lay ()]))
+                                           in
+                                              types
+                                           end
                                   val _ =
                                      unify
                                      (Cpat.ty p, argType, fn (l, l') =>
@@ -2351,14 +2360,21 @@ fun elaborateDec (d, {env = E, nest}) =
                    let
                       val e1 = elab e1
                       val e2 = elab e2
-                      val argType = Type.new ()
-                      val resultType = Type.new ()
-                      val _ =
-                         unify (Cexp.ty e1, Type.arrow (argType, resultType),
-                                fn (l, _) =>
-                                (region,
-                                 str "function not of arrow type",
-                                 seq [str "function: ", l]))
+                      val (argType, resultType) =
+                         case Type.deArrowOpt (Cexp.ty e1) of
+                            SOME types => types
+                          | NONE =>
+                               let
+                                  val types = (Type.new (), Type.new ())
+                                  val _ =
+                                     unify (Cexp.ty e1, Type.arrow types,
+                                            fn (l, _) =>
+                                            (region,
+                                             str "function not of arrow type",
+                                             seq [str "function: ", l]))
+                               in
+                                  types
+                               end
                       val _ =
                          unify
                          (argType, Cexp.ty e2, fn (l1, l2) =>
