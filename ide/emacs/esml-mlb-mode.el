@@ -3,7 +3,6 @@
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
 
-(require 'cl)
 (require 'esml-util)
 
 ;; Emacs mode for editing ML Basis files
