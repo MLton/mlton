@@ -30,7 +30,7 @@ fun size x =
    let
       val refOverhead =
          Int.div (HeaderWord.wordSize + ObjptrWord.wordSize, 8)
-   in 
+   in
       C_Size.toInt (Primitive.MLton.size (ref x)) - refOverhead
    end
 
@@ -38,6 +38,7 @@ fun size x =
 
 val debug = Primitive.Controls.debug
 val eq = Primitive.MLton.eq
+val equal = Primitive.MLton.equal
 (* val errno = Primitive.errno *)
 val safe = Primitive.Controls.safe
 

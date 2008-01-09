@@ -15,6 +15,11 @@ signature MLTON =
        * semantics.
        *)
       val eq: 'a * 'a -> bool
+      (* Structural equality.  Equivalent to SML's polymorphic
+       * equality on equality types and a conservative approximation
+       * of equivalence other types.
+       *)
+      val equal: 'a * 'a -> bool
 (*      val errno: unit -> int *) (* the value of the C errno global *)
       val isMLton: bool
       val safe: bool

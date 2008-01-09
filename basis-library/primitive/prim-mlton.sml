@@ -15,6 +15,7 @@ open Primitive
 structure MLton = struct
 
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
+val equal = _prim "MLton_equal": 'a * 'a -> bool;
 (* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
 val halt = _prim "MLton_halt": C_Status.t -> unit;
 (* val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)

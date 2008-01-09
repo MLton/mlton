@@ -946,6 +946,23 @@ fun closureConvert
                                            else Dexp.falsee
                                       | _ => doit ()
                                   end
+                             | MLton_equal =>
+                                  let
+                                     val a0 = varExpInfo (arg 0)
+                                     val a1 = varExpInfo (arg 1)
+                                     fun doit () =
+                                        primApp (v1 (valueType (VarInfo.value a0)),
+                                                 v2 (convertVarInfo a0,
+                                                     convertVarInfo a1))
+                                  in
+                                     case (Value.dest (VarInfo.value a0),
+                                           Value.dest (VarInfo.value a1)) of
+                                        (Value.Lambdas l, Value.Lambdas l') =>
+                                           if Lambdas.equals (l, l')
+                                              then doit () 
+                                           else Dexp.falsee
+                                      | _ => doit ()
+                                  end
                              | MLton_handlesSignals =>
                                   if handlesSignals
                                      then Dexp.truee

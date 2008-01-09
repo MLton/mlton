@@ -31,10 +31,12 @@ type int = Int.t
  *  - For datatype tycons that are enumerations, do not build a case dispatch,
  *    just use eq, since you know the backend will represent these as ints.
  *  - Deep equality always does an eq test first.
- *  - If one argument to = is a constant int and the type will get translated
- *    to an IntOrPointer, then just use eq instead of the full equality.  This
- *    is important for implementing code like the following efficiently:
+ *  - If one argument to = is a constant and the type will get translated to
+ *    an IntOrPointer, then just use eq instead of the full equality.  This is
+ *    important for implementing code like the following efficiently:
  *       if x = 0  ...    (where x is an IntInf.int)
+ *
+ * Also convert pointer equality on scalar types to type specific primitives.
  *)
 
 open Exp Transfer
@@ -283,11 +285,12 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
          let
             val dx1 = Dexp.var (x1, ty)
             val dx2 = Dexp.var (x2, ty)
-            fun prim (p, targs) =
+            fun primWithArgs (p, targs, dx1, dx2) =
                Dexp.primApp {prim = p,
                              targs = targs, 
                              args = Vector.new2 (dx1, dx2),
                              ty = Type.bool}
+            fun prim (p, targs) = primWithArgs (p, targs, dx1, dx2)
             fun eq () = prim (Prim.eq, Vector.new1 ty)
             fun hasConstArg () = #isConst (varInfo x1) orelse #isConst (varInfo x2)
          in
@@ -303,7 +306,21 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
              | Type.IntInf => if hasConstArg ()
                                  then eq ()
                               else prim (Prim.intInfEqual, Vector.new0 ())
+             | Type.Real rs =>
+                  let
+                     val ws = WordSize.fromBits (RealSize.bits rs)
+                     fun toWord dx =
+                        Dexp.primApp
+                        {prim = Prim.realCastToWord (rs, ws),
+                         targs = Vector.new0 (),
+                         args = Vector.new1 dx,
+                         ty = Type.word ws}
+                  in
+                     primWithArgs (Prim.wordEqual ws, Vector.new0 (),
+                                   toWord dx1, toWord dx2)
+                  end
              | Type.Ref _ => eq ()
+             | Type.Thread => eq ()
              | Type.Tuple tys =>
                   let
                      val max = Vector.length tys - 1
@@ -329,8 +346,8 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                   Dexp.call {func = vectorEqualFunc ty,
                              args = Vector.new2 (dx1, dx2),
                              ty = Type.bool}
-             | Type.Word s => prim (Prim.wordEqual s, Vector.new0 ())
-             | _ => Error.bug "PolyEqual.equal: strange type"
+             | Type.Weak _ => eq ()
+             | Type.Word ws => prim (Prim.wordEqual ws, Vector.new0 ())
          end
       fun loopBind (Statement.T {exp, var, ...}) =
          let
@@ -377,11 +394,77 @@ fun polyEqual (Program.T {datatypes, globals, functions, main}) =
                                           {label = label,
                                            args = args,
                                            statements = stmt::statements})
+                         fun adds ss = (blocks,
+                                        {label = label,
+                                         args = args,
+                                         statements = ss @ statements})
                        in
                          case exp of
                             PrimApp {prim, targs, args, ...} =>
                                (case (Prim.name prim, Vector.length targs) of
-                                   (Prim.Name.MLton_equal, 1) =>
+                                   (Prim.Name.MLton_eq, 1) =>
+                                      (case Type.dest (Vector.sub (targs, 0)) of
+                                          Type.CPointer => 
+                                             let
+                                                val cp0 = Vector.sub (args, 0)
+                                                val cp1 = Vector.sub (args, 1)
+                                                val cpointerEqStmt =
+                                                   Statement.T
+                                                   {var = var,
+                                                    ty = Type.bool,
+                                                    exp = Exp.PrimApp
+                                                          {prim = Prim.cpointerEqual,
+                                                           targs = Vector.new0 (),
+                                                           args = Vector.new2 (cp0,cp1)}}
+                                             in
+                                                adds [cpointerEqStmt]
+                                             end
+                                        | Type.Real rs =>
+                                             let
+                                                val ws = WordSize.fromBits (RealSize.bits rs)
+                                                val wt = Type.word ws
+                                                val r0 = Vector.sub (args, 0)
+                                                val r1 = Vector.sub (args, 1)
+                                                val w0 = Var.newNoname ()
+                                                val w1 = Var.newNoname ()
+                                                fun realCastToWordStmt (r, w) =
+                                                   Statement.T
+                                                   {var = SOME w,
+                                                    ty = wt,
+                                                    exp = Exp.PrimApp
+                                                          {prim = Prim.realCastToWord (rs, ws),
+                                                           targs = Vector.new0 (),
+                                                           args = Vector.new1 r}}
+                                                val wordEqStmt =
+                                                   Statement.T
+                                                   {var = var,
+                                                    ty = Type.bool,
+                                                    exp = Exp.PrimApp
+                                                          {prim = Prim.wordEqual ws,
+                                                           targs = Vector.new0 (),
+                                                           args = Vector.new2 (w0,w1)}}
+                                             in
+                                                adds [wordEqStmt, 
+                                                      realCastToWordStmt (r1, w1),
+                                                      realCastToWordStmt (r0, w0)]
+                                             end
+                                        | Type.Word ws =>
+                                             let
+                                                val w0 = Vector.sub (args, 0)
+                                                val w1 = Vector.sub (args, 1)
+                                                val wordEqStmt =
+                                                   Statement.T
+                                                   {var = var,
+                                                    ty = Type.bool,
+                                                    exp = Exp.PrimApp
+                                                          {prim = Prim.wordEqual ws,
+                                                           targs = Vector.new0 (),
+                                                           args = Vector.new2 (w0,w1)}}
+                                             in
+                                                adds [wordEqStmt]
+                                             end
+                                        | _ => normal ())
+                                 | (Prim.Name.MLton_equal, 1) =>
                                       let
                                          val ty = Vector.sub (targs, 0)
                                          fun arg i = Vector.sub (args, i)
