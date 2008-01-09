@@ -1174,9 +1174,9 @@ fun shrinkFunction {globals: Statement.t vector} =
                         datatype z = datatype Prim.ApplyResult.t
                      in
                         case primApp (prim, args) of
-                           Apply (p, args) => apply {prim = p,
-                                                     targs = Vector.new0 (),
-                                                     args = Vector.fromList args}
+                           Apply (prim, args) => 
+                              apply {prim = prim, targs = Vector.new0 (),
+                                     args = Vector.fromList args}
                          | Bool b =>
                               let
                                  val con = Con.fromBool b

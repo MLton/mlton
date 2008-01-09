@@ -1248,8 +1248,8 @@ fun shrinkFunction {globals: Statement.t vector} =
                         datatype z = datatype Prim.ApplyResult.t
                      in
                         case primApp (prim, args) of
-                           Apply (p, args) => apply {prim = p,
-                                                     args = Vector.fromList args}
+                           Apply (prim, args) => 
+                              apply {prim = prim, args = Vector.fromList args}
                          | Bool b =>
                               let
                                  val variant = Var.newNoname ()
@@ -1271,7 +1271,6 @@ fun shrinkFunction {globals: Statement.t vector} =
                                                  fn () => Exp.Const c)
                          | Var vi => setVar vi
                          | _ => apply {args = args, prim = prim}
-
                      end
                 | Select {base, offset} =>
                      (case base of
