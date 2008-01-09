@@ -144,7 +144,10 @@ one of the modification times is nil."
           (def-use-time-to-double (nth 5 attr2)))))
 
 (defun def-use-attr-changed? (attr1 attr2)
-  (labels ((nequal i) (not (equal (nth i attr1) (nth i attr2))))
+  "Returns non-nil iff the file attributes of `attr1' are different than
+the file attributes of `attr2'.  Note that this also returns nil when either
+one of the file attributes is nil."
+  (labels ((nequal (i) (not (equal (nth i attr1) (nth i attr2)))))
     (and attr1 attr2
          (or (def-use-attr-newer? attr1 attr2)
              (nequal 7)  ;; size
