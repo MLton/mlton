@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -654,8 +654,21 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                          ("con", Option.layout Con.layout con)],
           Value.layout)
          object
+      val deWeak : Value.t -> Value.t =
+         fn v =>
+         case v of
+            Value.Ground t =>
+               typeValue (case Type.dest t of
+                             Type.Weak t => t
+                           | _ => Error.bug "DeepFlatten.primApp: deWeak")
+          | Value.Weak {arg, ...} => arg
+          | _ => Error.bug "DeepFlatten.primApp: Value.deWeak"
       fun primApp {args, prim, resultVar = _, resultType} =
          let
+            fun weak v =
+               case makeTypeValue resultType of
+                  Const v => v
+                | Make _ => Value.weak v
             fun arg i = Vector.sub (args, i)
             fun result () = typeValue resultType
             datatype z = datatype Prim.Name.t
@@ -692,19 +705,11 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
              | MLton_equal => equal ()
              | MLton_size => dontFlatten ()
              | MLton_share => dontFlatten ()
-             | Weak_get =>
-                  (case arg 0 of
-                      Value.Ground t =>
-                         typeValue (case Type.dest t of
-                                       Type.Weak t => t
-                                     | _ => Error.bug "DeepFlatten.primApp: deWeak")
-                    | Value.Weak {arg, ...} => arg
-                    | _ => Error.bug "DeepFlatten.primApp: Value.deWeak")
-             | Weak_new =>
-                  (Value.dontFlatten (arg 0);
-                   case makeTypeValue resultType of
-                      Const v => v
-                    | Make _ => Value.weak (arg 0))
+             | Weak_get => deWeak (arg 0)
+             | Weak_new => 
+                  let val a = arg 0
+                  in (Value.dontFlatten a; weak a)
+                  end
              | _ => result ()
          end
       fun base b =

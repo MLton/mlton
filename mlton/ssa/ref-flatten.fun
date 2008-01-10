@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -462,8 +462,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
              | MLton_eq => equal ()
              | MLton_equal => equal ()
              | MLton_size => dontFlatten ()
+             | MLton_share => dontFlatten ()
              | Weak_get => deWeak (arg 0)
-             | Weak_new => weak (arg 0)
+             | Weak_new => 
+                  let val a = arg 0
+                  in (Value.dontFlatten a; weak a)
+                  end
              | _ => result ()
          end
       fun base b =
