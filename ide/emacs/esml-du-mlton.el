@@ -352,6 +352,37 @@ non-nil if something was actually read."
      (int-to-string (def-use-pos-line pos)) "."
      (int-to-string (1+ (def-use-pos-col pos))))))
 
+(defconst esml-du-highlight-type-map ;; XXX Needs customization
+  `(("\\([a-zA-Z0-9_]+\\)[:]"
+     . ,font-lock-constant-face)
+    ("\\([a-zA-Z0-9_]+\\)\\>\\(?:[^:]\\|$\\)"
+     . ,font-lock-type-face)
+    ("\\(\\<andalso\\>\\)"
+     . ,font-lock-keyword-face)
+    (,(concat "\\<\\("
+              (regexp-opt
+               '("array" "bool" "char" "exn" "int" "list" "option" "order"
+                 "real" "ref" "string" "substring" "unit" "vector" "word"))
+              "\\)\\>")
+     . ,font-lock-builtin-face)
+    ("\\('[a-zA-Z0-9_]+\\)"
+     . ,font-lock-variable-name-face)))
+
+(defun esml-du-highlight-type (string)
+  (when string
+    (loop for pat-face in esml-du-highlight-type-map do
+          (let ((pat (car pat-face))
+                (prop `(face ,(cdr pat-face)))
+                (start 0))
+            (while (string-match pat string start)
+              (add-text-properties
+               (match-beginning 1)
+               (match-end 1)
+               prop
+               string)
+              (setq start (match-end 0))))))
+  string)
+
 (defun esml-du-read-one-symbol (ctx)
   "Reads one symbol from the current buffer starting at the current point.
 Returns the symbol read and deletes the read symbol from the buffer."
@@ -363,7 +394,8 @@ Returns the symbol read and deletes the read symbol from the buffer."
          (src (def-use-file-truename (esml-du-read "^ " " ")))
          (line (string-to-int (esml-du-read "^." ".")))
          (col (1- (string-to-int (esml-du-read "^ \n" " "))))
-         (msg (def-use-intern (esml-du-read-opt-str)))
+         (msg (esml-du-highlight-type
+               (def-use-intern (esml-du-read-opt-str))))
          (pos (def-use-pos line col))
          (ref (def-use-ref src pos))
          (sym (def-use-sym class msg name ref
