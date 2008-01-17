@@ -1783,31 +1783,28 @@ fun processDefUse (E as T f) =
       ()
    end
 
-fun newCons (T {vals, ...}, v) =
+fun newCons (T {vals, ...}, v) = fn v' =>
    let
       val forceUsed = 1 = Vector.length v
-      val v =
-         Vector.map (v, fn {con, name} =>
-                     let
-                        val uses = NameSpace.newUses (vals, Class.Con,
-                                                      Ast.Vid.fromCon name,
-                                                      [])
-                        val () = 
-                           if not (warnUnused ()) orelse forceUsed
-                              then Uses.forceUsed uses
-                              else ()
-                     in
-                        {con = con,
-                         name = name,
-                         uses = uses}
-                     end)
    in
-      fn v' => Cons.T (Vector.map2
-                       (v, v', fn ({con, name, uses}, scheme) =>
-                        {con = con,
-                         name = name,
-                         scheme = scheme,
-                         uses = uses}))
+      Cons.T (Vector.map2
+              (v, v', fn ({con, name}, scheme) =>
+               let
+                  val uses = NameSpace.newUses (vals, Class.Con,
+                                                Ast.Vid.fromCon name,
+                                                if isSome (!Control.showDefUse)
+                                                   then [(Vid.Con con, SOME scheme)]
+                                                else [])
+                  val () = 
+                     if not (warnUnused ()) orelse forceUsed
+                        then Uses.forceUsed uses
+                     else ()
+               in
+                  {con = con,
+                   name = name,
+                   scheme = scheme,
+                   uses = uses}
+               end))
    end
 
 (* ------------------------------------------------- *)
@@ -2015,7 +2012,11 @@ val extend:
          let
             val u = NameSpace.newUses (ns, class range, domain,
                                        if isSome (!Control.showDefUse)
-                                          andalso class range = Class.Var
+                                          andalso (class range = Class.Var
+                                                   orelse
+                                                   class range = Class.Exn
+                                                   orelse
+                                                   class range = Class.Con)
                                        then [range]
                                        else [])
             val () = 
