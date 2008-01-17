@@ -2088,15 +2088,44 @@ fun elaborateDec (d, {env = E, nest}) =
                           * x appears in the xs.
                           *)
                          val ovlds =
-                            Vector.map (xs, fn x => Env.lookupLongvar (E, x))
+                            Vector.concatV
+                            (Vector.map
+                             (xs, fn x =>
+                              case Env.lookupLongvid (E, x)
+                               of (Vid.Var v, t) => Vector.new1 (Longvid.region x, (v, t))
+                                | (Vid.Overload (_, vs), _) =>
+                                  Vector.map (vs, fn vt => (Longvid.region x, vt))
+                                | _ =>
+                                  (Control.error
+                                   (Longvid.region x,
+                                    str "cannot overload",
+                                    seq [str "constructor: ", Longvid.layout x])
+                                   ; Vector.new0 ())))
+                         val s =
+                            Scheme.make {canGeneralize = false,
+                                         tyvars = tyvars,
+                                         ty = elabType ty}
+                         val _ =
+                            Vector.foreach
+                            (ovlds,
+                             fn (_, (_, NONE)) => ()
+                              | (r, (_, SOME s')) => let
+                                   val is = Scheme.instantiate s
+                                   val is' = Scheme.instantiate s'
+                                in
+                                   unify
+                                   (#instance is,
+                                    #instance is',
+                                    fn (l1, l2) =>
+                                       (r,
+                                        str "variant does not unify with overload",
+                                        align [seq [str "overload: ", l1],
+                                               seq [str "variant:  ", l2],
+                                               lay ()]))
+                                end)
                          val _ =
                             Env.extendOverload
-                            (E, p, x, 
-                             Vector.map (ovlds, fn (x, s) =>
-                                         (x, Option.map (s, Scheme.ty))),
-                             Scheme.make {canGeneralize = false,
-                                          tyvars = tyvars,
-                                          ty = elabType ty})
+                            (E, p, x, Vector.map (ovlds, fn (_, vt) => vt), s)
                       in
                          Decs.empty
                       end)
@@ -3007,13 +3036,19 @@ fun elaborateDec (d, {env = E, nest}) =
                                            val resolve =
                                               Promise.lazy
                                               (fn () =>
-                                               case (Vector.peek
-                                                     (yts, fn (_, t) =>
-                                                      case t of
-                                                         NONE => false
-                                                       | SOME t => 
-                                                            Type.canUnify
-                                                            (instance, t))) of
+                                               case Vector.peekMap
+                                                    (yts,
+                                                     fn (x, s) =>
+                                                     case s of
+                                                        NONE => NONE
+                                                      | SOME s => let
+                                                           val is = Scheme.instantiate s
+                                                        in
+                                                           if Type.canUnify
+                                                              (instance, #instance is)
+                                                              then SOME (x, SOME is)
+                                                           else NONE
+                                                        end) of
                                                   NONE =>
                                                      let
                                                         val _ =
@@ -3023,17 +3058,18 @@ fun elaborateDec (d, {env = E, nest}) =
                                                                  str (Longvid.toString id)],
                                                             Type.layoutPretty instance)
                                                      in
-                                                        Var.newNoname ()
+                                                        {id = Var.newNoname (),
+                                                         args = Vector.new0 ()}
                                                      end
-                                                | SOME (y, t) =>  
+                                                | SOME (y, is) =>  
                                                      (unify (instance,
-                                                             valOf t, fn _ =>
+                                                             #instance (valOf is), fn _ =>
                                                              Error.bug "ElaborateCore.elabExp: Var:overload unify")
-                                                      ; y))
+                                                      ; {id = y, args = #args (valOf is) ()}))
                                            val _ = 
                                               List.push (overloads, (p, ignore o resolve))
                                         in
-                                           Cexp.Var (resolve, fn () => Vector.new0 ())
+                                           Cexp.Var (#id o resolve, #args o resolve)
                                         end
                                    | Vid.Var x =>
                                         Cexp.Var (fn () => x,

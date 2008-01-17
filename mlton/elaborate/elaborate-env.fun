@@ -240,7 +240,7 @@ structure Vid =
       datatype t =
          Con of Con.t
        | Exn of Con.t
-       | Overload of Priority.t * (Var.t * Type.t option) vector
+       | Overload of Priority.t * (Var.t * Scheme.t option) vector
        | Var of Var.t
 
       val statusPretty =
@@ -263,7 +263,7 @@ structure Vid =
                               Layout.toString (Priority.layout p),
                               ")"],
                       Vector.layout (Layout.tuple2 (Var.layout,
-                                                    Option.layout Type.layout))
+                                                    Option.layout Scheme.layout))
                       xts)
                 | Var v => ("Var", Var.layout v)
          in

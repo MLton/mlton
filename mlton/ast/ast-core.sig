@@ -206,7 +206,7 @@ signature AST_CORE =
              | Overload of Priority.t *
                            Var.t * 
                            Tyvar.t vector * Type.t * 
-                           Longvar.t vector
+                           Longvid.t vector
              | SeqDec of t vector
              | Type of TypBind.t
              | Val of {rvbs: {match: Match.t,

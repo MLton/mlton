@@ -310,8 +310,7 @@ type 'a whereAnd = wherespec list * SourcePos.t * 'a list
        | longstrids of Longstrid.t list
        | longtycon of Longtycon.t
        | longtyconeqns of Longtycon.t list
-       | longvar of Longvar.t
-       | longvarands of Longvar.t list
+       | longvidands of Longvid.t list
        | longvid of Longvid.t
        | longvidNoEqual of Longvid.t
        | match of Match.t
@@ -742,12 +741,12 @@ decnolocal
         | OPEN longstrids       (Dec.Open (Vector.fromList longstrids))
         | fixity vids           (Dec.Fix {fixity = fixity,
                                           ops = Vector.fromList vids})
-        | OVERLOAD priority var COLON ty AS longvarands
+        | OVERLOAD priority var COLON ty AS longvidands
                                 (Dec.Overload (priority, 
                                                var,
                                                Vector.new0 (),
                                                ty,
-                                               Vector.fromList longvarands))
+                                               Vector.fromList longvidands))
 
 valbindTop : valbind (let
                          val (vbs, rvbs) = valbind
@@ -949,8 +948,8 @@ withtypes
    | WITHTYPE typBind
      (typBind)
 
-longvarands : longvar  ([longvar])
-            | longvar AND longvarands (longvar :: longvarands)
+longvidands : longvid  ([longvid])
+            | longvid AND longvidands (longvid :: longvidands)
 
 match : rules           (Match.makeRegion' (Match.T (Vector.fromList rules),
                                             rulesleft, rulesright))
@@ -1266,7 +1265,6 @@ sigids : sigid                 ([sigid])
 fctid : id                     (Fctid.fromSymbol id)
 
 longtycon : longidNoAsterisk (Longtycon.fromSymbols longidNoAsterisk)
-longvar : longidEqual      (Longvar.fromSymbols longidEqual)
 longvid : longidEqual      (Longvid.fromSymbols longidEqual)
 longvidNoEqual : longid    (Longvid.fromSymbols longid)
 longcon : longid           (Longcon.fromSymbols longid)

@@ -48,7 +48,7 @@ signature ELABORATE_ENV =
             datatype t =
                Con of CoreML.Con.t
              | Exn of CoreML.Con.t
-             | Overload of Ast.Priority.t * (CoreML.Var.t * Type.t option) vector
+             | Overload of Ast.Priority.t * (CoreML.Var.t * Scheme.t option) vector
              | Var of CoreML.Var.t
 
             val layout: t -> Layout.t
@@ -172,7 +172,7 @@ signature ELABORATE_ENV =
       val extendVar:
          t * Ast.Var.t * CoreML.Var.t * Scheme.t * {isRebind: bool} -> unit
       val extendOverload:
-         t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Type.t option) vector
+         t * Ast.Priority.t * Ast.Var.t * (CoreML.Var.t * Scheme.t option) vector
          * Scheme.t
          -> unit
       val forceUsed: t -> unit

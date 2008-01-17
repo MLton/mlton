@@ -322,7 +322,7 @@ and decNode =
   | Open of Longstrid.t vector
   | Overload of Priority.t * Var.t * 
                 Tyvar.t vector * Type.t * 
-                Longvar.t vector
+                Longvid.t vector
   | SeqDec of dec vector
   | Type of TypBind.t
   | Val of {tyvars: Tyvar.t vector,
@@ -478,7 +478,7 @@ and layoutDec d =
          seq [str "_overload ", Priority.layout p, str " ",
               align [layoutConstraint (Var.layout x, t),
                      layoutAnds ("as", xs, fn (prefix, x) =>
-                                 seq [prefix, Longvar.layout x])]]
+                                 seq [prefix, Longvid.layout x])]]
     | SeqDec ds => align (Vector.toListMap (ds, layoutDec))
     | Type typBind => TypBind.layout typBind
     | Val {tyvars, vbs, rvbs} =>
