@@ -1656,11 +1656,11 @@ fun processDefUse (E as T f) =
       val _ = forceUsed E
       val all: {class: Class.t,
                 def: Layout.t,
+                extra: Layout.t list,
                 isUsed: bool,
                 region: Region.t,
-                scheme: Type.t list,
                 uses: Region.t list} list ref = ref []
-      fun doit (sel, getScheme) =
+      fun doit (sel, mkExtra) =
          let
             val NameSpace.T {defUses, region, toSymbol, ...} = sel f
          in
@@ -1669,7 +1669,7 @@ fun processDefUse (E as T f) =
              List.push
              (all, {class = class,
                     def = Symbol.layout (toSymbol def),
-                    scheme = getScheme range,
+                    extra = mkExtra range,
                     isUsed = Uses.isUsed uses,
                     region = region def,
                     uses = List.fold (Uses.all uses, [], fn (u, ac) =>
@@ -1679,24 +1679,30 @@ fun processDefUse (E as T f) =
       val _ = doit (#sigs, fn _ => [])
       val _ = doit (#strs, fn _ => [])
       val _ = doit (#types, fn _ => [])
-      val _ = doit (#vals, fn l => List.keepAllMap
-                                   (l, fn (_, s) => Option.map (s, Scheme.ty)))
+      local
+         fun mkExtraFromSchemes l =
+            List.keepAllMap 
+            (l, fn (_, s) => 
+             Option.map (s, Type.layoutPretty o Scheme.ty))
+      in
+         val _ = doit (#vals, mkExtraFromSchemes)
+      end
       val a = Array.fromList (!all)
       val _ =
          QuickSort.sortArray (a, fn ({region = r, ...}, {region = r', ...}) =>
                               Region.<= (r, r'))
       val l =
          Array.foldr
-         (a, [], fn (z as {class, def, isUsed, region, scheme, uses}, ac) =>
+         (a, [], fn (z as {class, def, extra, isUsed, region, uses}, ac) =>
           case ac of
              [] => [z]
-           | {isUsed = i', region = r', scheme = s', uses = u', ...} :: ac' =>
+           | {extra = e', isUsed = i', region = r', uses = u', ...} :: ac' =>
                 if Region.equals (region, r')
                    then {class = class,
                          def = def,
+                         extra = extra @ e',
                          isUsed = isUsed orelse i',
                          region = region,
-                         scheme = scheme @ s',
                          uses = uses @ u'} :: ac'
                 else z :: ac)
       val _ =
@@ -1720,7 +1726,7 @@ fun processDefUse (E as T f) =
                File.withOut
                (f, fn out =>
                 List.foreach
-                (l, fn {class, def, region, scheme, uses, ...} =>
+                (l, fn {class, def, extra, region, uses, ...} =>
                  case Region.left region of
                     NONE => ()
                   | SOME p =>
@@ -1744,16 +1750,15 @@ fun processDefUse (E as T f) =
                                        def,
                                        str " ",
                                        str (SourcePos.toString p),
-                                       case scheme of
+                                       case extra of
                                           [] => empty
                                         | ss => let
                                              val ts =
-                                                 List.map (ss,
-                                                           toString o
-                                                           Type.layoutPretty)
+                                                 List.map (ss, 
+                                                           toString)
                                              val uts =
                                                  List.map (List.equivalence
-                                                           (ts, op =),
+                                                           (ts, String.equals),
                                                            hd)
                                              val sts =
                                                  List.insertionSort
