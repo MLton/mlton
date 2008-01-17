@@ -193,7 +193,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
               | Strexp.Var p => (* rule 51 *)
                    (Decs.empty, Env.lookupLongstrid (E, p))
           end) arg
-      fun elabFunctor {arg, result, body}: FunctorClosure.t option =
+      fun elabFunctor {arg, body, name, result}: FunctorClosure.t option =
          let
             val body = Strexp.constrained (body, result)
             val (arg, argSig, body, prefix) =
@@ -216,7 +216,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
          in
             Option.map (elabSigexp argSig, fn argInt =>
                         Env.functorClosure
-                        (E, prefix, argInt,
+                        (E, arg, [Fctid.toString name], prefix, argInt,
                          fn (formal, nest) =>
                          Env.scope (E, fn () =>
                                     (Env.extendStrid (E, arg, formal)
@@ -250,6 +250,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       (funbinds, fn {arg, body, name, result} =>
                        {closure = elabFunctor {arg = arg,
                                                body = body,
+                                               name = name,
                                                result = result},
                         name = name})
                    val () =

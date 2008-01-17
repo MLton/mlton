@@ -1040,6 +1040,7 @@ structure FunctorClosure =
    struct
       datatype t =
          T of {apply: Structure.t * string list -> Decs.t * Structure.t option,
+               arg: Strid.t,
                argInt: Interface.t,
                formal: Structure.t,
                result: Structure.t option}
@@ -1120,6 +1121,7 @@ structure NameSpace =
                current: ('a, 'b) Values.t list ref,
                defUses: {class: Class.t,
                          def: 'a,
+                         range: 'b list,
                          uses: 'a Uses.t} list ref,
                lookup: 'a -> ('a, 'b) Values.t,
                region: 'a -> Region.t,
@@ -1135,13 +1137,14 @@ structure NameSpace =
             region = region,
             toSymbol = toSymbol}
 
-      fun newUses (T {defUses, ...}, class, def) =
+      fun newUses (T {defUses, ...}, class, def, range) =
          let
             val u = Uses.new ()
             val _ =
                if !Control.keepDefUse then
                   List.push (defUses, {class = class,
                                        def = def,
+                                       range = range,
                                        uses = u})
                else
                   ()
@@ -1401,7 +1404,7 @@ fun collect (E,
        vals = finish (vals, Ast.Vid.toSymbol)}
    end
 
-fun setTyconNames (E: t): unit =
+fun setTyconNames (E as T {currentScope, ...}): unit =
    let
       val {get = shortest: Tycon.t -> int ref, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => ref Int.maxInt))
@@ -1458,12 +1461,15 @@ fun setTyconNames (E: t): unit =
       val _ = Array.foreach (strs, fn {domain = strid, range = str, ...} =>
                              loopStr (str, 1, [strid]))
       val _ =
-         List.foreach
-         (!allTycons, fn c =>
-          if ! (shortest c) < Int.maxInt
-             then ()
-          else
-             Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
+         if Scope.isTop (!currentScope)
+            then ()
+         else
+            List.foreach
+            (!allTycons, fn c =>
+             if ! (shortest c) < Int.maxInt
+                then ()
+             else
+                Tycon.setPrintName (c, concat ["?.", Tycon.originalName c]))
    in
       ()
    end
@@ -1590,9 +1596,10 @@ fun layout' (E: t, keep, showUsed): Layout.t =
       val fcts =
          doit (fcts,
                fn {domain,
-                   range = FunctorClosure.T {formal, result, ...}, ...} =>
+                   range = FunctorClosure.T {arg, formal, result, ...}, ...} =>
                align [seq [str "functor ", Fctid.layout domain, str " ",
-                           paren (seq [str "S: ", #1 (layoutAbbrev formal)])],
+                           paren (seq [Strid.layout arg, str ": ",
+                                       #1 (layoutAbbrev formal)])],
                       case result of
                            NONE => empty
                          | SOME S =>
@@ -1645,46 +1652,51 @@ fun forceUsed E =
 
 fun processDefUse (E as T f) =
    let
+      val _ = setTyconNames E
       val _ = forceUsed E
       val all: {class: Class.t,
                 def: Layout.t,
                 isUsed: bool,
                 region: Region.t,
+                scheme: Type.t list,
                 uses: Region.t list} list ref = ref []
-      fun doit sel =
+      fun doit (sel, getScheme) =
          let
             val NameSpace.T {defUses, region, toSymbol, ...} = sel f
          in
             List.foreach
-            (!defUses, fn {class, def, uses, ...} =>
+            (!defUses, fn {class, def, uses, range, ...} =>
              List.push
              (all, {class = class,
                     def = Symbol.layout (toSymbol def),
+                    scheme = getScheme range,
                     isUsed = Uses.isUsed uses,
                     region = region def,
                     uses = List.fold (Uses.all uses, [], fn (u, ac) =>
                                       region u :: ac)}))
          end
-      val _ = doit #fcts
-      val _ = doit #sigs
-      val _ = doit #strs
-      val _ = doit #types
-      val _ = doit #vals
+      val _ = doit (#fcts, fn _ => [])
+      val _ = doit (#sigs, fn _ => [])
+      val _ = doit (#strs, fn _ => [])
+      val _ = doit (#types, fn _ => [])
+      val _ = doit (#vals, fn l => List.keepAllMap
+                                   (l, fn (_, s) => Option.map (s, Scheme.ty)))
       val a = Array.fromList (!all)
       val _ =
          QuickSort.sortArray (a, fn ({region = r, ...}, {region = r', ...}) =>
                               Region.<= (r, r'))
       val l =
          Array.foldr
-         (a, [], fn (z as {class, def, isUsed, region, uses}, ac) =>
+         (a, [], fn (z as {class, def, isUsed, region, scheme, uses}, ac) =>
           case ac of
              [] => [z]
-           | {isUsed = i', region = r', uses = u', ...} :: ac' =>
+           | {isUsed = i', region = r', scheme = s', uses = u', ...} :: ac' =>
                 if Region.equals (region, r')
                    then {class = class,
                          def = def,
                          isUsed = isUsed orelse i',
                          region = region,
+                         scheme = scheme @ s',
                          uses = uses @ u'} :: ac'
                 else z :: ac)
       val _ =
@@ -1708,7 +1720,7 @@ fun processDefUse (E as T f) =
                File.withOut
                (f, fn out =>
                 List.foreach
-                (l, fn {class, def, region, uses, ...} =>
+                (l, fn {class, def, region, scheme, uses, ...} =>
                  case Region.left region of
                     NONE => ()
                   | SOME p =>
@@ -1731,7 +1743,31 @@ fun processDefUse (E as T f) =
                                        str " ",
                                        def,
                                        str " ",
-                                       str (SourcePos.toString p)],
+                                       str (SourcePos.toString p),
+                                       case scheme of
+                                          [] => empty
+                                        | ss => let
+                                             val ts =
+                                                 List.map (ss,
+                                                           toString o
+                                                           Type.layoutPretty)
+                                             val uts =
+                                                 List.map (List.equivalence
+                                                           (ts, op =),
+                                                           hd)
+                                             val sts =
+                                                 List.insertionSort
+                                                 (uts,
+                                                  fn (l, r) =>
+                                                     size l < size r
+                                                     orelse size l = size r
+                                                            andalso l < r)
+                                          in
+                                             str (concat
+                                                  (" \"" ::
+                                                   List.separate
+                                                   (sts, " andalso ") @ ["\""]))
+                                          end],
                                   indent
                                   (align
                                    (List.map
@@ -1754,7 +1790,8 @@ fun newCons (T {vals, ...}, v) =
          Vector.map (v, fn {con, name} =>
                      let
                         val uses = NameSpace.newUses (vals, Class.Con,
-                                                      Ast.Vid.fromCon name)
+                                                      Ast.Vid.fromCon name,
+                                                      [])
                         val () = 
                            if not (warnUnused ()) orelse forceUsed
                               then Uses.forceUsed uses
@@ -1976,7 +2013,11 @@ val extend:
    let
       fun newUses () =
          let
-            val u = NameSpace.newUses (ns, class range, domain)
+            val u = NameSpace.newUses (ns, class range, domain,
+                                       if isSome (!Control.showDefUse)
+                                          andalso class range = Class.Var
+                                       then [range]
+                                       else [])
             val () = 
                if not (warnUnused ()) orelse forceUsed
                   then Uses.forceUsed u
@@ -3127,6 +3168,8 @@ fun snapshot (E as T {currentScope, bass, fcts, fixs, sigs, strs, types, vals, .
 
 fun functorClosure
    (E: t,
+    arg: Strid.t,
+    nest: string list,
     prefix: string,
     argInt: Interface.t,
     makeBody: Structure.t * string list -> Decs.t * Structure.t option) =
@@ -3158,7 +3201,7 @@ fun functorClosure
        *    which they always would be because they are now out of scope.
        *)
       val _ = newTycons := []
-      val (_, result) = makeBody (formal, [])
+      val (_, result) = makeBody (formal, nest)
       val _ = Option.app (result, Structure.forceUsed)
       val generative = !newTycons
       val _ = allTycons := let
@@ -3286,6 +3329,7 @@ fun functorClosure
             end
    in
       FunctorClosure.T {apply = apply,
+                        arg = arg,
                         argInt = argInt,
                         formal = formal,
                         result = result}

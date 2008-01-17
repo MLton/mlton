@@ -178,7 +178,7 @@ signature ELABORATE_ENV =
       val forceUsed: t -> unit
       val forceUsedLocal: t * (unit -> 'a) -> 'a
       val functorClosure:
-         t * string * Interface.t
+         t * Ast.Strid.t * string list * string * Interface.t
          * (Structure.t * string list -> Decs.t * Structure.t option)
          -> FunctorClosure.t
       val layout: t -> Layout.t
