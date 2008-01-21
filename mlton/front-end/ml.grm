@@ -990,8 +990,8 @@ app_exp : aexp app_exp1     (Exp.makeRegion' (aexp, aexpleft, aexpright)
 app_exp1 :         ([])
          | app_exp (app_exp)
 
-aexp    : OP vid                (Exp.Var {name = Longvid.short vid,
-                                         fixop = Fixop.Op})
+aexp    : OP longvid            (Exp.Var {name = longvid,
+                                          fixop = Fixop.Op})
         | const                 (Exp.Const const)
         | HASH field            (Exp.Selector field)
         | LBRACE elabels RBRACE
@@ -1090,7 +1090,7 @@ apat : apatnode (Pat.makeRegion' (apatnode, apatnodeleft, apatnoderight))
 
 apatnode : longvidNoEqual        (Pat.Var {name = longvidNoEqual,
                                            fixop = Fixop.None})
-        | OP vid                 (Pat.Var {name = Longvid.short vid,
+        | OP longvid             (Pat.Var {name = longvid,
                                            fixop = Fixop.Op})
         | const
           (let
