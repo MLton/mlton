@@ -1068,20 +1068,16 @@ structure IntInf =
                     (lhs, rhs, reserve (S.max (numLimbs lhs, numLimbs rhs), 0))
       end
 
-      fun bigCompare (lhs: bigInt, rhs: bigInt): order =
-         if areSmall (lhs, rhs)
-            then I.compare (W.idToObjptrInt (Prim.toWord lhs),
-                            W.idToObjptrInt (Prim.toWord rhs))
-            else Int32.compare (Prim.compare (lhs, rhs), 0)
-
       local
-         fun make (smallTest, int32Test)
-                  (lhs: bigInt, rhs: bigInt): bool =
+         fun make (smallTest: I.int * I.int -> 'a, 
+                   int32Test: Int32.int * Int32.int -> 'a)
+                  (lhs: bigInt, rhs: bigInt): 'a =
             if areSmall (lhs, rhs)
                then smallTest (W.idToObjptrInt (Prim.toWord lhs),
                                W.idToObjptrInt (Prim.toWord rhs))
                else int32Test (Prim.compare (lhs, rhs), 0)
       in
+         val bigCompare = make (I.compare, Int32.compare)
          val bigLT = make (I.<, Int32.<)
          val bigLE = make (I.<=, Int32.<=)
          val bigGT = make (I.>, Int32.>)
