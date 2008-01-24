@@ -20,6 +20,8 @@ signature MLTON =
        * of equivalence other types.
        *)
       val equal: 'a * 'a -> bool
+      (* Structural hash. *)
+      val hash: 'a -> Word32.word
 (*      val errno: unit -> int *) (* the value of the C errno global *)
       val isMLton: bool
       val safe: bool

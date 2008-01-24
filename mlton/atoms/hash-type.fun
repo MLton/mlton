@@ -303,6 +303,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | MLton_eq => oneTarg (fn t => ([t, t], bool))
        | MLton_equal => oneTarg (fn t => ([t, t], bool))
        | MLton_halt => done ([cint], unit)
+       | MLton_hash => oneTarg (fn t => ([seqIndex, t], word32))
        | MLton_handlesSignals => done ([], bool)
        | MLton_installSignalHandler => done ([], unit)
        | MLton_share => oneTarg (fn t => ([t], unit))

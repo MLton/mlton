@@ -91,6 +91,8 @@ loop-invariant.sig
 loop-invariant.fun
 poly-equal.sig
 poly-equal.fun
+poly-hash.sig
+poly-hash.fun
 profile.sig
 profile.fun
 profile2.sig

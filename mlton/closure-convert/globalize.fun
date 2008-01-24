@@ -104,13 +104,15 @@ fun globalize {program = Program.T {datatypes, body, ...},
                                 val global =
                                    areGlobal args andalso
                                    ((Prim.isFunctional prim
-                                     (* Don't want to move MLton_equal into the globals
-                                      * because polymorphic equality isn't implemented
+                                     (* Don't want to move MLton_equal or MLton_hash
+                                      * into the globals because polymorphic 
+                                      * equality and hasing isn't implemented
                                       * there. 
                                       *)
                                      andalso
                                      (case Prim.name prim of
                                          Prim.Name.MLton_equal => false
+                                       | Prim.Name.MLton_hash => false
                                        | _ => true))
                                     orelse
                                     (once andalso

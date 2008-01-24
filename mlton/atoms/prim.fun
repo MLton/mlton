@@ -87,10 +87,10 @@ datatype 'a t =
   *)
  | MLton_bug (* ssa to rssa *)
  | MLton_deserialize (* unused *)
- | MLton_share
  | MLton_eq (* codegen *)
  | MLton_equal (* polymorphic equality *)
  | MLton_halt (* ssa to rssa *)
+ | MLton_hash (* polymorphic hash *)
  (* MLton_handlesSignals and MLton_installSignalHandler work together
   * to inform the optimizer and basis library whether or not the
   * program uses signal handlers.
@@ -106,6 +106,7 @@ datatype 'a t =
  | MLton_handlesSignals (* closure conversion *)
  | MLton_installSignalHandler (* backend *)
  | MLton_serialize (* unused *)
+ | MLton_share
  | MLton_size (* ssa to rssa *)
  | MLton_touch (* backend *)
  | Real_Math_acos of RealSize.t (* codegen *)
@@ -271,6 +272,7 @@ fun toString (n: 'a t): string =
        | MLton_eq => "MLton_eq"
        | MLton_equal => "MLton_equal"
        | MLton_halt => "MLton_halt"
+       | MLton_hash => "MLton_hash"
        | MLton_handlesSignals => "MLton_handlesSignals"
        | MLton_installSignalHandler => "MLton_installSignalHandler"
        | MLton_serialize => "MLton_serialize"
@@ -412,6 +414,7 @@ val equals: 'a t * 'a t -> bool =
     | (MLton_eq, MLton_eq) => true
     | (MLton_equal, MLton_equal) => true
     | (MLton_halt, MLton_halt) => true
+    | (MLton_hash, MLton_hash) => true
     | (MLton_handlesSignals, MLton_handlesSignals) => true
     | (MLton_installSignalHandler, MLton_installSignalHandler) => true
     | (MLton_serialize, MLton_serialize) => true
@@ -575,6 +578,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | MLton_eq => MLton_eq
     | MLton_equal => MLton_equal
     | MLton_halt => MLton_halt
+    | MLton_hash => MLton_hash
     | MLton_handlesSignals => MLton_handlesSignals
     | MLton_installSignalHandler => MLton_installSignalHandler
     | MLton_serialize => MLton_serialize
@@ -706,12 +710,16 @@ fun cpointerSet ctype =
        | Word64 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 64))
    end
 val cpointerSub = CPointer_sub
+val cpointerToWord = CPointer_toWord
 val deref = Ref_deref
 val eq = MLton_eq
 val equal = MLton_equal
 val ffi = FFI
 val ffiSymbol = FFI_Symbol
+val hash = MLton_hash
 val intInfEqual = IntInf_equal
+val intInfToVector = IntInf_toVector
+val intInfToWord = IntInf_toWord
 val intInfNeg = IntInf_neg
 val intInfNotb = IntInf_notb
 val realCastToWord = Real_castToWord
@@ -724,6 +732,7 @@ val wordAddCheck = Word_addCheck
 val wordAndb = Word_andb
 val wordCastToReal = Word_castToReal
 val wordEqual = Word_equal
+val wordExtdToWord = Word_extdToWord
 val wordLshift = Word_lshift
 val wordLt = Word_lt
 val wordMul = Word_mul
@@ -731,9 +740,10 @@ val wordNeg = Word_neg
 val wordNegCheck = Word_negCheck
 val wordNotb = Word_notb
 val wordOrb = Word_orb
+val wordQuot = Word_quot
 val wordRshift = Word_rshift
 val wordSub = Word_sub
-val wordExtdToWord = Word_extdToWord
+val wordXorb = Word_xorb
 
 val isCommutative =
    fn IntInf_equal => true
@@ -818,6 +828,7 @@ val kind: 'a t -> Kind.t =
        | MLton_eq => Functional
        | MLton_equal => Functional
        | MLton_halt => SideEffect
+       | MLton_hash => Functional
        | MLton_handlesSignals => Functional
        | MLton_installSignalHandler => SideEffect
        | MLton_serialize => DependsOnState
@@ -1018,6 +1029,7 @@ in
        MLton_eq,
        MLton_equal,
        MLton_halt,
+       MLton_hash,
        MLton_handlesSignals,
        MLton_installSignalHandler,
        MLton_serialize,
@@ -1138,6 +1150,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_deserialize => one result
        | MLton_eq => one (arg 0)
        | MLton_equal => one (arg 0)
+       | MLton_hash => one (arg 1)
        | MLton_serialize => one (arg 0)
        | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)
@@ -1701,8 +1714,7 @@ fun ('a, 'b) layoutApp (p: 'a t,
       fun two name = seq [arg 0, str " ", str name, str " ", arg 1]
    in
       case p of
-         IntInf_equal => two "="
-       | MLton_eq => two "="
+         Array_length => one "length"
        | Real_Math_acos _ => one "acos"
        | Real_Math_asin _ => one "asin"
        | Real_Math_atan _ => one "atan"

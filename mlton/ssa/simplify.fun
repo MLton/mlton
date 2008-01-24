@@ -26,6 +26,7 @@ structure LocalFlatten = LocalFlatten (S)
 structure LocalRef = LocalRef (S)
 structure LoopInvariant = LoopInvariant (S)
 structure PolyEqual = PolyEqual (S)
+structure PolyHash = PolyHash (S)
 structure Profile = Profile (S)
 structure Redundant = Redundant (S)
 structure RedundantTests = RedundantTests (S)
@@ -59,14 +60,21 @@ val ssaPassesDefault =
     *   - before inlining so that equality functions can be inlined
     *)
    {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   (* polyHash should run
+    *   - after types are simplified
+    *   - before inlining so that hash functions can be inlined
+    *)
+   {name = "polyHash", doit = PolyHash.polyHash} ::
+   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
+   {name = "loopInvariant2", doit = LoopInvariant.loopInvariant} ::
    {name = "contify2", doit = Contify.contify} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec)} ::
    {name = "localFlatten2", doit = LocalFlatten.flatten} ::
    {name = "removeUnused3", doit = RemoveUnused.remove} ::
    {name = "contify3", doit = Contify.contify} ::
-   {name = "introduceLoops2", doit = IntroduceLoops.introduceLoops} ::
-   {name = "loopInvariant2", doit = LoopInvariant.loopInvariant} ::
+   {name = "introduceLoops3", doit = IntroduceLoops.introduceLoops} ::
+   {name = "loopInvariant3", doit = LoopInvariant.loopInvariant} ::
    {name = "localRef", doit = LocalRef.eliminate} ::
    {name = "flatten", doit = Flatten.flatten} ::
    {name = "localFlatten3", doit = LocalFlatten.flatten} ::
@@ -84,6 +92,8 @@ val ssaPassesMinimal =
    {name = "constantPropagation", doit = ConstantPropagation.simplify} ::
    (* polyEqual cannot be omitted.  It implements MLton_equal. *)
    {name = "polyEqual", doit = PolyEqual.polyEqual} ::
+   (* polyHash cannot be omitted.  It implements MLton_hash. *)
+   {name = "polyHash", doit = PolyHash.polyHash} ::
    nil
 
 val ssaPasses : pass list ref = ref ssaPassesDefault
@@ -189,6 +199,7 @@ local
                  ("localRef", LocalRef.eliminate),
                  ("loopInvariant", LoopInvariant.loopInvariant),
                  ("polyEqual", PolyEqual.polyEqual),
+                 ("polyHash", PolyHash.polyHash),
                  ("redundant", Redundant.redundant),
                  ("redundantTests", RedundantTests.simplify),
                  ("removeUnused", RemoveUnused.remove),

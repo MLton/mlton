@@ -159,7 +159,7 @@ structure Value =
             in
                case (value from, value to) of
                   (Array _, Array _) => unify (from, to)
-                | (Ground to, Ground from) => Useful.<= (from, to)
+                | (Ground from, Ground to) => Useful.<= (to, from)
                 | (Ref _, Ref _) => unify (from, to)
                 | (Tuple vs, Tuple vs') =>
                      Vector.foreach2 (vs, vs', coerceSlot)
@@ -168,7 +168,7 @@ structure Value =
                      (coerce {from = n, to = n'}
                       ; coerceSlot (e, e'))
                 | (Weak _, Weak _) => unify (from, to)
-                | _ => Error.bug "Useles.Value.coerce: strange"
+                | _ => Error.bug "Useless.Value.coerce: strange"
             end
 
       val coerce =
@@ -525,6 +525,7 @@ fun useless (program: Program.t): Program.t =
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
                    | MLton_equal => Vector.foreach (args, deepMakeUseful)
+                   | MLton_hash => Vector.foreach (args, deepMakeUseful)
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))
                    | Ref_ref => coerce {from = arg 0, to = deref result}

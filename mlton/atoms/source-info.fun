@@ -128,6 +128,7 @@ val gc = fromC "gc"
 val gcArrayAllocate = fromC "GC_arrayAllocate"
 val main = fromC "main"
 val polyEqual = fromC "poly-equal"
+val polyHash = fromC "poly-hash"
 val unknown = fromC "unknown"
 
 end

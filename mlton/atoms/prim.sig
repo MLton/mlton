@@ -80,6 +80,7 @@ signature PRIM =
              | MLton_eq (* ssa to rssa *)
              | MLton_equal (* polymorphic equality *)
              | MLton_halt (* ssa to rssa *)
+             | MLton_hash (* polymorphic hash *)
              (* MLton_handlesSignals and MLton_installSignalHandler work together
               * to inform the optimizer and basis library whether or not the
               * program uses signal handlers.
@@ -223,6 +224,7 @@ signature PRIM =
       val cpointerLt: 'a t
       val cpointerSet: CType.t -> 'a t 
       val cpointerSub: 'a t
+      val cpointerToWord: 'a t
       val deref: 'a t
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)
@@ -236,7 +238,10 @@ signature PRIM =
       val ffi: 'a CFunction.t -> 'a t
       val ffiSymbol: {name: string, cty: CType.t option} -> 'a t
       val fromString: string -> 'a t option
+      val hash: 'a t (* polymorphic hash *)
       val intInfEqual: 'a t
+      val intInfToWord: 'a t
+      val intInfToVector: 'a t
       val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
@@ -267,12 +272,14 @@ signature PRIM =
       val wordAndb: WordSize.t -> 'a t
       val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
-      val wordLt: WordSize.t * {signed: bool} -> 'a t
+      val wordExtdToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
       val wordLshift: WordSize.t -> 'a t
+      val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordMul: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
+      val wordQuot: WordSize.t * {signed: bool} -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
-      val wordExtdToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
+      val wordXorb: WordSize.t -> 'a t
    end

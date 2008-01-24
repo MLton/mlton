@@ -306,6 +306,16 @@ fun new5 (x0, x1, x2, x3, x4) =
               | 4 => x4
               | _ => Error.bug "Vector.new5")
 
+fun new6 (x0, x1, x2, x3, x4, x5) =
+   tabulate (6,
+             fn 0 => x0
+              | 1 => x1
+              | 2 => x2
+              | 3 => x3
+              | 4 => x4
+              | 5 => x5
+              | _ => Error.bug "Vector.new6")
+
 fun unzip (a: ('a * 'b) t) = (map (a, #1), map (a, #2))
 
 fun unzip3 (a: ('a * 'b * 'c) t) = (map (a, #1), map (a, #2), map (a, #3))

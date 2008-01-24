@@ -483,6 +483,11 @@ fun remove (Program.T {datatypes, globals, functions, main}) =
                             * of constructors as patterns.
                             *)
                            deconType (tyVar (Vector.sub (args, 0)))
+                      | Prim.Name.MLton_hash =>
+                           (* MLton_hash will be expanded by poly-equal into uses
+                            * of constructors as patterns.
+                            *)
+                           deconType (tyVar (Vector.sub (args, 0)))
 (*
                       | (Prim.Name.MLton_size, 1) => 
                            deconType (tyVar (Vector.sub (args, 0)))

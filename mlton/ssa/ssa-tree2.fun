@@ -419,6 +419,7 @@ structure Type =
              | MLton_eq => eq ()
              | MLton_equal => eq ()
              | MLton_halt => done ([cint], unit)
+             | MLton_hash => oneArg (fn x => done ([seqIndex, x],  word32))
              | MLton_handlesSignals => done ([], bool)
              | MLton_installSignalHandler => done ([], unit)
              | MLton_share => oneArg (fn x => done ([x], unit))

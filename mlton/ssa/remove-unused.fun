@@ -373,7 +373,15 @@ fun remove (Program.T {datatypes, globals, functions, main})
                       * of constructors as patterns.
                       *)
                      => decon (Vector.sub (targs, 0))
-(*                   | (Prim.Name.MLton_size, 1) => decon (Vector.sub (targs, 0)) *)
+                     | (Prim.Name.MLton_hash, 1)
+                     (* MLton_hash will be expanded by poly-hash into uses
+                      * of constructors as patterns.
+                      *)
+                     => decon (Vector.sub (targs, 0))
+(*
+                     | (Prim.Name.MLton_size, 1)
+                     => decon (Vector.sub (targs, 0))
+*)
                      | _ => ()
                 end
              | Select {tuple, ...} => visitVar tuple
