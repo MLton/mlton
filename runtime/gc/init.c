@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -254,20 +254,20 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->cumulativeStatistics.bytesAllocated = 0;
   s->cumulativeStatistics.bytesCopied = 0;
   s->cumulativeStatistics.bytesCopiedMinor = 0;
+  s->cumulativeStatistics.bytesHashConsed = 0;
   s->cumulativeStatistics.bytesMarkCompacted = 0;
-  s->cumulativeStatistics.markedCards = 0;
+  s->cumulativeStatistics.bytesScannedMinor = 0;
   s->cumulativeStatistics.maxBytesLive = 0;
-  s->cumulativeStatistics.maxHeapSizeSeen = 0;
-  s->cumulativeStatistics.maxStackSizeSeen = 0;
-  s->cumulativeStatistics.minorBytesScanned = 0;
-  s->cumulativeStatistics.numLimitChecks = 0;
+  s->cumulativeStatistics.maxHeapSize = 0;
+  s->cumulativeStatistics.maxPauseTime = 0;
+  s->cumulativeStatistics.maxStackSize = 0;
+  s->cumulativeStatistics.numCardsMarked = 0;
   s->cumulativeStatistics.numCopyingGCs = 0;
   s->cumulativeStatistics.numHashConsGCs = 0;
   s->cumulativeStatistics.numMarkCompactGCs = 0;
   s->cumulativeStatistics.numMinorGCs = 0;
-  s->cumulativeStatistics.maxPause = 0;
   rusageZero (&s->cumulativeStatistics.ru_gc);
-  rusageZero (&s->cumulativeStatistics.ru_gcCopy);
+  rusageZero (&s->cumulativeStatistics.ru_gcCopying);
   rusageZero (&s->cumulativeStatistics.ru_gcMarkCompact);
   rusageZero (&s->cumulativeStatistics.ru_gcMinor);
   s->currentThread = BOGUS_OBJPTR;
@@ -286,7 +286,6 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->signalsInfo.signalIsPending = FALSE;
   sigemptyset (&s->signalsInfo.signalsHandled);
   sigemptyset (&s->signalsInfo.signalsPending);
-  s->startTime = getCurrentTime ();
   s->sysvals.pageSize = GC_pageSize ();
   s->sysvals.physMem = GC_physMem ();
   s->weaks = NULL;

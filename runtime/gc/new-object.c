@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2005, 2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -53,8 +53,8 @@ GC_stack newStack (GC_state s,
   GC_stack stack;
 
   reserved = alignStackReserved (s, reserved);
-  if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
-    s->cumulativeStatistics.maxStackSizeSeen = reserved;
+  if (reserved > s->cumulativeStatistics.maxStackSize)
+    s->cumulativeStatistics.maxStackSize = reserved;
   stack = (GC_stack)(newObject (s, GC_STACK_HEADER,
                                 sizeofStackWithHeaderAligned (s, reserved),
                                 allocInOldGen));

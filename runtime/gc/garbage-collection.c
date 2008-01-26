@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -36,10 +36,10 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   s->lastMajorStatistics.bytesLive = s->heap.oldGenSize;
   if (s->lastMajorStatistics.bytesLive > s->cumulativeStatistics.maxBytesLive)
     s->cumulativeStatistics.maxBytesLive = s->lastMajorStatistics.bytesLive;
-  /* Notice that the s->bytesLive below is different than the
-   * s->bytesLive used as an argument to createHeapSecondary above.
-   * Above, it was an estimate.  Here, it is exactly how much was live
-   * after the GC.
+  /* Notice that the s->lastMajorStatistics.bytesLive below is
+   * different than the s->lastMajorStatistics.bytesLive used as an
+   * argument to createHeapSecondary above.  Above, it was an
+   * estimate.  Here, it is exactly how much was live after the GC.
    */
   if (mayResize)
     resizeHeap (s, s->lastMajorStatistics.bytesLive + bytesRequested);
@@ -149,8 +149,8 @@ void performGC (GC_state s,
   setGCStateCurrentThreadAndStack (s);
   if (needGCTime (s)) {
     gcTime = stopTiming (&ru_start, &s->cumulativeStatistics.ru_gc);
-    s->cumulativeStatistics.maxPause = 
-      max (s->cumulativeStatistics.maxPause, gcTime);
+    s->cumulativeStatistics.maxPauseTime = 
+      max (s->cumulativeStatistics.maxPauseTime, gcTime);
   } else
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
   if (DEBUG or s->controls.messages) {

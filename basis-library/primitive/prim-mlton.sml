@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -139,12 +139,24 @@ structure GC =
    struct
       val collect = _prim "GC_collect": unit -> unit;
       val pack = _import "GC_pack": GCState.t -> unit;
+      val getBytesAllocated =
+         _import "GC_getCumulativeStatisticsBytesAllocated": GCState.t -> C_UIntmax.t;
+      val getNumCopyingGCs =
+         _import "GC_getCumulativeStatisticsNumCopyingGCs": GCState.t -> C_UIntmax.t;
+      val getNumMarkCompactGCs =
+         _import "GC_getCumulativeStatisticsNumMarkCompactGCs": GCState.t -> C_UIntmax.t;
+      val getNumMinorGCs =
+         _import "GC_getCumulativeStatisticsNumMinorGCs": GCState.t -> C_UIntmax.t;
+      val getLastBytesLive =
+         _import "GC_getLastMajorStatisticsBytesLive": GCState.t -> C_Size.t;
+      val getMaxBytesLive =
+         _import "GC_getCumulativeStatisticsMaxBytesLive": GCState.t -> C_Size.t;
       val setHashConsDuringGC =
          _import "GC_setHashConsDuringGC": GCState.t * bool -> unit;
-      val setMessages = _import "GC_setMessages": GCState.t * bool -> unit;
+      val setMessages = _import "GC_setControlsMessages": GCState.t * bool -> unit;
       val setRusageMeasureGC = 
-         _import "GC_setRusageMeasureGC": GCState.t * bool -> unit;
-      val setSummary = _import "GC_setSummary": GCState.t * bool -> unit;
+         _import "GC_setControlsRusageMeasureGC": GCState.t * bool -> unit;
+      val setSummary = _import "GC_setControlsSummary": GCState.t * bool -> unit;
       val unpack = _import "GC_unpack": GCState.t -> unit;
    end
 

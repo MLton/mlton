@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -195,7 +195,7 @@ checkCard:
   if (cardMap[cardIndex]) {
     pointer lastObject;
 
-    s->cumulativeStatistics.markedCards++;
+    s->cumulativeStatistics.numCardsMarked++;
     if (DEBUG_GENERATIONAL)
       fprintf (stderr, "card %"PRIuMAX" is marked  objectStart = "FMTPTR"\n",
                (uintmax_t)cardIndex, (uintptr_t)objectStart);
@@ -213,7 +213,7 @@ checkCard:
      */
     objectStart = foreachObjptrInRange (s, objectStart, &cardEnd,
                                         forwardObjptrIfInNursery, FALSE);
-    s->cumulativeStatistics.minorBytesScanned += objectStart - lastObject;
+    s->cumulativeStatistics.bytesScannedMinor += objectStart - lastObject;
     if (objectStart == oldGenEnd)
       goto done;
     cardIndex = sizeToCardMapIndex (objectStart - oldGenStart);

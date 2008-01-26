@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -111,45 +111,46 @@ void GC_setAmOriginal (GC_state s, bool b) {
   s->amOriginal = b;
 }
 
-void GC_setMessages (GC_state s, bool b) {
+void GC_setControlsMessages (GC_state s, bool b) {
   s->controls.messages = b;
 }
 
-void GC_setSummary (GC_state s, bool b) {
+void GC_setControlsSummary (GC_state s, bool b) {
   s->controls.summary = b;
 }
 
-void GC_setRusageMeasureGC (GC_state s, bool b) {
+void GC_setControlsRusageMeasureGC (GC_state s, bool b) {
   s->controls.rusageMeasureGC = b;
+}
+
+uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s) {
+  return s->cumulativeStatistics.bytesAllocated;
+}
+
+uintmax_t GC_getCumulativeStatisticsNumCopyingGCs (GC_state s) {
+  return s->cumulativeStatistics.numCopyingGCs;
+}
+
+uintmax_t GC_getCumulativeStatisticsNumMarkCompactGCs (GC_state s) {
+  return s->cumulativeStatistics.numMarkCompactGCs;
+}
+
+uintmax_t GC_getCumulativeStatisticsNumMinorGCs (GC_state s) {
+  return s->cumulativeStatistics.numMinorGCs;
+}
+
+size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s) {
+  return s->cumulativeStatistics.maxBytesLive;
 }
 
 void GC_setHashConsDuringGC (GC_state s, bool b) {
   s->hashConsDuringGC = b;
 }
 
-struct rusage* GC_getRusageGCAddr (GC_state s) {
-  return &(s->cumulativeStatistics.ru_gc);
+size_t GC_getLastMajorStatisticsBytesLive (GC_state s) {
+  return s->lastMajorStatistics.bytesLive;
 }
 
-sigset_t* GC_getSignalsHandledAddr (GC_state s) {
-  return &(s->signalsInfo.signalsHandled);
-}
-
-sigset_t* GC_getSignalsPendingAddr (GC_state s) {
-  return &(s->signalsInfo.signalsPending);
-}
-
-void GC_setGCSignalHandled (GC_state s, bool b) {
-  s->signalsInfo.gcSignalHandled = b;
-}
-
-bool GC_getGCSignalPending (GC_state s) {
-  return (s->signalsInfo.gcSignalPending);
-}
-
-void GC_setGCSignalPending (GC_state s, bool b) {
-  s->signalsInfo.gcSignalPending = b;
-}
 
 pointer GC_getCallFromCHandlerThread (GC_state s) {
   pointer p = objptrToPointer (s->callFromCHandlerThread, s->heap.start);
@@ -186,4 +187,28 @@ void GC_setSavedThread (GC_state s, pointer p) {
 void GC_setSignalHandlerThread (GC_state s, pointer p) {
   objptr op = pointerToObjptr (p, s->heap.start);
   s->signalHandlerThread = op;
+}
+
+struct rusage* GC_getRusageGCAddr (GC_state s) {
+  return &(s->cumulativeStatistics.ru_gc);
+}
+
+sigset_t* GC_getSignalsHandledAddr (GC_state s) {
+  return &(s->signalsInfo.signalsHandled);
+}
+
+sigset_t* GC_getSignalsPendingAddr (GC_state s) {
+  return &(s->signalsInfo.signalsPending);
+}
+
+void GC_setGCSignalHandled (GC_state s, bool b) {
+  s->signalsInfo.gcSignalHandled = b;
+}
+
+bool GC_getGCSignalPending (GC_state s) {
+  return (s->signalsInfo.gcSignalPending);
+}
+
+void GC_setGCSignalPending (GC_state s, bool b) {
+  s->signalsInfo.gcSignalPending = b;
 }

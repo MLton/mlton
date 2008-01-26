@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -8,4 +8,3 @@
 const char* boolToString (bool b);
 char* intmaxToCommaString (intmax_t n);
 char* uintmaxToCommaString (uintmax_t n);
-char* sizeToBytesApproxString (size_t z);

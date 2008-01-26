@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -16,7 +16,6 @@ static inline void rusageMinusMax (struct rusage *ru1,
                                    struct rusage *ru2,
                                    struct rusage *ru);
 static inline uintmax_t rusageTime (struct rusage *ru);
-static inline uintmax_t getCurrentTime (void);
 static inline void startTiming (struct rusage *ru_start);
 static uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_gc);
 

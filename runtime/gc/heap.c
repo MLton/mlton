@@ -1,4 +1,4 @@
-/* Copyright (C) 2005-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -188,8 +188,8 @@ bool createHeap (GC_state s, GC_heap h,
         h->start = (void*)NULL;
       unless ((void*)NULL == h->start) {
         direction = not direction;
-        if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
-          s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+        if (h->size > s->cumulativeStatistics.maxHeapSize)
+          s->cumulativeStatistics.maxHeapSize = h->size;
         if (DEBUG or s->controls.messages)
           fprintf (stderr,
                    "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
@@ -249,8 +249,8 @@ bool remapHeap (GC_state s, GC_heap h,
     unless ((void*)-1 == new) {
       h->start = new;
       h->size = size;
-      if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
-        s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+      if (h->size > s->cumulativeStatistics.maxHeapSize)
+        s->cumulativeStatistics.maxHeapSize = h->size;
       assert (minSize <= h->size and h->size <= desiredSize);
       return TRUE;
     }

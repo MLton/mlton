@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -65,18 +65,11 @@ uintmax_t rusageTime (struct rusage *ru) {
   return result;
 }
 
-/* Return time as number of milliseconds. */
-uintmax_t getCurrentTime (void) {
-  struct rusage ru;
-
-  getrusage (RUSAGE_SELF, &ru);
-  return rusageTime (&ru);
-}
-
 void startTiming (struct rusage *ru_start) {
   getrusage (RUSAGE_SELF, ru_start);
 }
 
+/* Accumulate and return time as number of milliseconds. */
 uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_acc) {
   struct rusage ru_finish, ru_total;
 

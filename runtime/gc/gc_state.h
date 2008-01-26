@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -62,7 +62,6 @@ struct GC_state {
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
-  uintmax_t startTime; /* The time when GC_init or GC_loadWorld was called. */
   struct GC_sysvals sysvals;
   struct GC_translateState translateState;
   struct GC_vectorInit *vectorInits;
@@ -88,15 +87,21 @@ static void setGCStateCurrentHeap (GC_state s,
 
 bool GC_getAmOriginal (GC_state s);
 void GC_setAmOriginal (GC_state s, bool b);
-void GC_setMessages (GC_state s, bool b);
-void GC_setSummary (GC_state s, bool b);
-void GC_setRusageMeasureGC (GC_state s, bool b);
+void GC_setControlsMessages (GC_state s, bool b);
+void GC_setControlsSummary (GC_state s, bool b);
+void GC_setControlsRusageMeasureGC (GC_state s, bool b);
+uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s);
+uintmax_t GC_getCumulativeStatisticsNumCopyingGCs (GC_state s);
+uintmax_t GC_getCumulativeStatisticsNumMarkCompactGCs (GC_state s);
+uintmax_t GC_getCumulativeStatisticsNumMinorGCs (GC_state s);
+size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s);
 void GC_setHashConsDuringGC (GC_state s, bool b);
+size_t GC_getLastMajorStatisticsBytesLive (GC_state s);
 
 pointer GC_getCallFromCHandlerThread (GC_state s);
+void GC_setCallFromCHandlerThread (GC_state s, pointer p);
 pointer GC_getCurrentThread (GC_state s);
 pointer GC_getSavedThread (GC_state s);
-void GC_setCallFromCHandlerThread (GC_state s, pointer p);
 void GC_setSavedThread (GC_state s, pointer p);
 void GC_setSignalHandlerThread (GC_state s, pointer p);
 

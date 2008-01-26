@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -274,6 +274,7 @@ done:
 }
 
 void majorMarkCompactGC (GC_state s) {
+  size_t bytesHashConsed;
   size_t bytesMarkCompacted;
   struct rusage ru_start;
 
@@ -302,6 +303,8 @@ void majorMarkCompactGC (GC_state s) {
   updateForwardPointersForMarkCompact (s);
   updateBackwardPointersAndSlideForMarkCompact (s);
   clearCrossMap (s);
+  bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;
+  s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;
   bytesMarkCompacted = s->heap.oldGenSize;
   s->cumulativeStatistics.bytesMarkCompacted += bytesMarkCompacted;
   s->lastMajorStatistics.kind = GC_MARK_COMPACT;
@@ -312,8 +315,7 @@ void majorMarkCompactGC (GC_state s) {
              "[GC: Finished major mark-compact; mark compacted %s bytes.]\n",
              uintmaxToCommaString(bytesMarkCompacted));
     if (s->hashConsDuringGC)
-      printBytesHashConsedMessage(s,
-                                  s->lastMajorStatistics.bytesHashConsed
-                                  + s->heap.oldGenSize);
+      printBytesHashConsedMessage(bytesHashConsed, 
+                                  bytesHashConsed + bytesMarkCompacted);
   }
 }

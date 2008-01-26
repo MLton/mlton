@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -25,5 +25,22 @@ structure MLtonGC =
          fn b => setRusageMeasureGC (gcState, b)
       val setSummary : bool -> unit =
          fn b => setSummary (gcState, b)
+
+      structure Statistics =
+         struct
+            local
+               fun mk conv prim =
+                  fn () => conv (prim gcState)
+               val mkSize = mk C_Size.toLargeInt
+               val mkUIntmax = mk C_UIntmax.toLargeInt
+            in
+               val bytesAllocated = mkUIntmax getBytesAllocated
+               val lastBytesLive = mkSize getLastBytesLive
+               val maxBytesLive = mkSize getMaxBytesLive
+               val numCopyingGCs = mkUIntmax getNumCopyingGCs
+               val numMarkCompactGCs = mkUIntmax getNumMarkCompactGCs
+               val numMinorGCs = mkUIntmax getNumMinorGCs
+            end
+         end
 
    end

@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -101,32 +101,5 @@ char* uintmaxToCommaString (uintmax_t n) {
     }
   }
   return buf + i + 1;
-}
-
-char* sizeToBytesApproxString (size_t amount) {
-  static const char* suffixs[] = {"", "K", "M", "G"};
-  static char buf1[BUF_SIZE];
-  static char buf2[BUF_SIZE];
-  static char buf3[BUF_SIZE];
-  static char buf4[BUF_SIZE];
-  static char buf5[BUF_SIZE];
-  static char *bufs[] = {buf1, buf2, buf3, buf4, buf5};
-  static int bufIndex = 0;
-  static char *buf;
-  size_t factor = 1;
-  int suffixIndex = 0;
-
-  buf = bufs[bufIndex++];
-  bufIndex %= 5;
-
-  while (amount > 1024 * factor
-         and suffixIndex < 4) {
-    factor *= 1024;
-    amount /= factor;
-    suffixIndex++;
-  }
-  snprintf (buf, BUF_SIZE, "%"PRIuMAX"%s",
-            (uintmax_t)amount, suffixs[suffixIndex]);
-  return buf;
 }
 #undef BUF_SIZE

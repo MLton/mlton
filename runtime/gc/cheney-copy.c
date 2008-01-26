@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -88,7 +88,7 @@ void majorCheneyCopyGC (GC_state s) {
   clearCrossMap (s);
   s->lastMajorStatistics.kind = GC_COPYING;
   if (detailedGCTime (s))
-    stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcCopy);
+    stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcCopying);
   if (DEBUG or s->controls.messages)
     fprintf (stderr, 
              "[GC: Finished major Cheney-copy; copied %s bytes.]\n",

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -290,10 +290,8 @@ void shareObjptr (GC_state s, objptr *opp) {
   markIntergenerationalObjptr (s, opp);
 }
 
-void printBytesHashConsedMessage (GC_state s, uintmax_t total) {
-  fprintf (stderr, "%s bytes hash-consed (%.1f%%).\n",
-           uintmaxToCommaString(s->lastMajorStatistics.bytesHashConsed),
-           (100.0 
-            * ((double)s->lastMajorStatistics.bytesHashConsed 
-               / (double)total)));
+void printBytesHashConsedMessage (size_t bytesHashConsed, size_t bytesExamined) {
+  fprintf (stderr, "[GC: hash-consed %s bytes (%.1f%% of bytes examined).]\n",
+           uintmaxToCommaString(bytesHashConsed),
+           100.0 * ((double)bytesHashConsed / (double)bytesExamined));
 }
