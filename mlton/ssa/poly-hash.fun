@@ -465,10 +465,6 @@ fun polyHash (Program.T {datatypes, globals, functions, main}) =
                      val maxstepTy = Type.tuple (Vector.new2 (seqIndexTy, seqIndexTy)) 
                      val maxstep = (Var.newNoname (), maxstepTy)
                      val dmaxstep = Dexp.var maxstep
-                     val max = (Var.newNoname (), seqIndexTy)
-                     val dmax = Dexp.var max
-                     val step = (Var.newNoname (), seqIndexTy)
-                     val dstep = Dexp.var step
                      val body =
                         Dexp.lett
                         {decs = [{var = #1 len, exp = 
