@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -161,6 +161,7 @@ fun defaultAlignIs8 () =
    in
       case !Control.Target.arch of
          HPPA => true
+       | IA64 => true
        | Sparc => true
        | _ => false
    end
