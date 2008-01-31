@@ -44,7 +44,7 @@ structure OptPred =
    struct
       datatype t =
          Target of string
-       | Yes 
+       | Yes
    end
 
 structure Show =
@@ -122,7 +122,7 @@ fun setTargetType (target: string, usage): unit =
    case List.peek (targetMap (), fn {target = t, ...} => target = t) of
       NONE => usage (concat ["invalid target: ", target])
     | SOME {arch, os, ...} =>
-         let 
+         let
             open Control
          in
             Target.arch := arch
@@ -153,7 +153,7 @@ fun hasNativeCodegen () =
       hasCodegen amd64Codegen
       orelse hasCodegen x86Codegen
    end
-   
+
 
 fun defaultAlignIs8 () =
    let
@@ -165,15 +165,15 @@ fun defaultAlignIs8 () =
        | _ => false
    end
 
-fun makeOptions {usage} = 
+fun makeOptions {usage} =
    let
       val usage = fn s => (ignore (usage s); raise Fail "unreachable")
       fun reportAnnotation (s, flag, e) =
          case e of
-            Control.Elaborate.Bad => 
+            Control.Elaborate.Bad =>
                usage (concat ["invalid -", flag, " flag: ", s])
           | Control.Elaborate.Deprecated ids =>
-               Out.output 
+               Out.output
                (Out.error,
                 concat ["Warning: ", "deprecated annotation: ", s, ".  Use ",
                         List.toString Control.Elaborate.Id.name ids, ".\n"])
@@ -184,10 +184,10 @@ fun makeOptions {usage} =
       datatype z = datatype MLton.Platform.Arch.t
       datatype z = datatype MLton.Platform.OS.t
       fun tokenizeOpt f opts =
-         List.foreach (String.tokens (opts, Char.isSpace), 
+         List.foreach (String.tokens (opts, Char.isSpace),
                        fn opt => f opt)
       fun tokenizeTargetOpt f (target, opts) =
-         List.foreach (String.tokens (opts, Char.isSpace), 
+         List.foreach (String.tokens (opts, Char.isSpace),
                        fn opt => f (target, opt))
    in
       List.map
@@ -206,7 +206,7 @@ fun makeOptions {usage} =
         (SpaceString o tokenizeOpt)
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "as-opt-quote", " <opt>", "pass (quoted) option to assembler",
-        SpaceString 
+        SpaceString
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
@@ -217,18 +217,18 @@ fun makeOptions {usage} =
         (SpaceString o tokenizeOpt)
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
-        SpaceString 
+        SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify method",
         SpaceString (fn s =>
                      explicitChunk
                      := SOME (case s of
-                                 "func" => ChunkPerFunc 
+                                 "func" => ChunkPerFunc
                                | "one" => OneChunk
                                | _ => let
                                          val usage = fn () =>
                                             usage (concat ["invalid -chunkify flag: ", s])
-                                      in 
+                                      in
                                          if String.hasPrefix (s, {prefix = "coalesce"})
                                             then let
                                                     val s = String.dropPrefix (s, 8)
@@ -236,21 +236,21 @@ fun makeOptions {usage} =
                                                     if String.forall (s, Char.isDigit)
                                                        then (case Int.fromString s of
                                                                 NONE => usage ()
-                                                              | SOME n => Coalesce 
+                                                              | SOME n => Coalesce
                                                                           {limit = n})
                                                        else usage ()
                                                  end
                                             else usage ()
                                       end))),
        (Normal, "codegen",
-        concat [" {", 
-                String.concatWith 
+        concat [" {",
+                String.concatWith
                 (List.keepAllMap
                  (Native :: (List.map (Control.Codegen.all, Explicit)),
-                  fn cg => 
+                  fn cg =>
                   case cg of
                      Native => if hasNativeCodegen () then SOME "native" else NONE
-                   | Explicit cg => if hasCodegen cg 
+                   | Explicit cg => if hasCodegen cg
                                        then SOME (Control.Codegen.toString cg)
                                     else NONE),
                  "|"),
@@ -260,8 +260,8 @@ fun makeOptions {usage} =
                      explicitCodegen
                      := SOME (if s = "native"
                                  then Native
-                              else (case List.peek 
-                                         (Control.Codegen.all, fn cg => 
+                              else (case List.peek
+                                         (Control.Codegen.all, fn cg =>
                                           s = Control.Codegen.toString cg) of
                                        SOME cg => Explicit cg
                                      | NONE => usage (concat ["invalid -codegen flag: ", s]))))),
@@ -310,11 +310,11 @@ fun makeOptions {usage} =
                    | "word64" => Control.defaultWord := s
                    | _ => usage (concat ["invalid -default-type flag: ", s])))),
        (Expert, "diag-pass", " <pass>", "keep diagnostic info for pass",
-        SpaceString 
+        SpaceString
         (fn s =>
          (case Regexp.fromString s of
              SOME (re,_) => let val re = Regexp.compileDFA re
-                            in 
+                            in
                                List.push (diagPasses, re)
                                ; List.push (keepPasses, re)
                             end
@@ -323,7 +323,7 @@ fun makeOptions {usage} =
           val flag = "disable-ann"
        in
           (Normal, flag, " <ann>", "disable annotation in mlb files",
-           SpaceString 
+           SpaceString
            (fn s =>
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, false))))
@@ -339,7 +339,7 @@ fun makeOptions {usage} =
           val flag = "enable-ann"
        in
           (Expert, flag, " <ann>", "globally enable annotation",
-           SpaceString 
+           SpaceString
            (fn s =>
             reportAnnotation (s, flag,
                               Control.Elaborate.processEnabled (s, true))))
@@ -362,7 +362,7 @@ fun makeOptions {usage} =
         boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
         intRef indentation),
-       (Normal, "inline", " <n>", "set inlining threshold", 
+       (Normal, "inline", " <n>", "set inlining threshold",
         Int (fn i => inlineNonRec := {small = i,
                                       product = #product (!inlineNonRec)})),
        (Expert, "inline-into-main", " {true|false}",
@@ -416,13 +416,13 @@ fun makeOptions {usage} =
                                        then Int.fromString s
                                     else (usage o concat)
                                          ["invalid -inline-leaf-size flag: ", s])})),
-       (Expert, "inline-nonrec-product", " <n>", "set inlining threshold (320)", 
-        Int (fn product => 
+       (Expert, "inline-nonrec-product", " <n>", "set inlining threshold (320)",
+        Int (fn product =>
              case !inlineNonRec of
                 {small, ...} =>
                    inlineNonRec := {small = small, product = product})),
-       (Expert, "inline-nonrec-small", " <n>", "set inlining threshold (60)", 
-        Int (fn small => 
+       (Expert, "inline-nonrec-small", " <n>", "set inlining threshold (60)",
+        Int (fn small =>
              case !inlineNonRec of
                 {product, ...} =>
                    inlineNonRec := {small = small, product = product})),
@@ -449,11 +449,11 @@ fun makeOptions {usage} =
         (SpaceString o tokenizeOpt)
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "link-opt-quote", " <opt>", "pass (quoted) option to linker",
-        SpaceString 
+        SpaceString
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "loop-passes", " <n>", "loop optimization passes (1)",
-        Int 
-        (fn i => 
+        Int
+        (fn i =>
          if i >= 1
             then loopPasses := i
             else usage (concat ["invalid -loop-passes arg: ", Int.toString i]))),
@@ -471,10 +471,10 @@ fun makeOptions {usage} =
                                   | SOME v => v])),
        (Expert, "native-commented", " <n>", "level of comments  (0)",
         intRef Native.commented),
-       (Expert, "native-copy-prop", " {true|false}", 
+       (Expert, "native-copy-prop", " {true|false}",
         "use copy propagation",
         boolRef Native.copyProp),
-       (Expert, "native-cutoff", " <n>", 
+       (Expert, "native-cutoff", " <n>",
         "live transfer cutoff distance",
         intRef Native.cutoff),
        (Expert, "native-live-transfer", " {0,...,8}",
@@ -503,7 +503,7 @@ fun makeOptions {usage} =
                            (!optimizationPassesSet, fn (_,optPassesSet) =>
                             case optPassesSet optPasses of
                                Result.Yes () => ()
-                             | Result.No s' => err ("il :: " ^ s')) 
+                             | Result.No s' => err ("il :: " ^ s'))
                      in
                         case s of
                            "default" => doit OptPassesDefault
@@ -515,7 +515,7 @@ fun makeOptions {usage} =
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
        (Expert, "polyvariance-product", " <n>", "set polyvariance threshold (300)",
-        Int (fn product => 
+        Int (fn product =>
              case !polyvariance of
                 SOME {rounds, small, ...} =>
                    polyvariance := SOME {product = product,
@@ -523,7 +523,7 @@ fun makeOptions {usage} =
                                          small = small}
               | _ => ())),
        (Expert, "polyvariance-rounds", " <n>", "set polyvariance rounds (2)",
-        Int (fn rounds => 
+        Int (fn rounds =>
              case !polyvariance of
                 SOME {product, small, ...} =>
                    polyvariance := SOME {product = product,
@@ -531,7 +531,7 @@ fun makeOptions {usage} =
                                          small = small}
               | _ => ())),
        (Expert, "polyvariance-small", " <n>", "set polyvariance threshold (30)",
-        Int (fn small => 
+        Int (fn small =>
              case !polyvariance of
                 SOME {product, rounds, ...} =>
                    polyvariance := SOME {product = product,
@@ -545,7 +545,7 @@ fun makeOptions {usage} =
         SpaceString (fn s =>
                      (case Regexp.fromString s of
                          SOME (re,_) => let val re = Regexp.compileDFA re
-                                        in 
+                                        in
                                            List.push (profPasses, re)
                                         end
                        | NONE => usage (concat ["invalid -diag-pass flag: ", s])))),
@@ -573,7 +573,7 @@ fun makeOptions {usage} =
        (Normal, "profile-branch", " {false|true}",
         "profile branches in addition to functions",
         boolRef profileBranch),
-       (Expert, "profile-c", " <regexp>", 
+       (Expert, "profile-c", " <regexp>",
         "include C-calls in files matching <regexp> in profile",
         SpaceString
         (fn s =>
@@ -585,7 +585,7 @@ fun makeOptions {usage} =
                             in List.push (profileC, re)
                             end
            | NONE => usage (concat ["invalid -profile-c flag: ", s])))),
-       (Expert, "profile-exclude", " <regexp>", 
+       (Expert, "profile-exclude", " <regexp>",
         "exclude files matching <regexp> from profile",
         SpaceString
         (fn s =>
@@ -605,7 +605,7 @@ fun makeOptions {usage} =
           | "ssa" => profileIL := ProfileSSA
           | "ssa2" => profileIL := ProfileSSA2
           | _ => usage (concat ["invalid -profile-il arg: ", s]))),
-       (Expert, "profile-include", " <regexp>", 
+       (Expert, "profile-include", " <regexp>",
         "include files matching <regexp> from profile",
         SpaceString
         (fn s =>
@@ -664,7 +664,7 @@ fun makeOptions {usage} =
         (fn s =>
          stop := (case s of
                      "f" => Place.Files
-                   | "g" => Place.Generated     
+                   | "g" => Place.Generated
                    | "o" => Place.O
                    | "sml" => Place.SML
                    | "tc" => Place.TypeCheck
@@ -782,19 +782,19 @@ fun commandLine (args: string list): unit =
                     | SOME a => a)
       val () =
          codegen := (case !explicitCodegen of
-                        NONE => 
-                           if hasCodegen (x86Codegen) 
-                              then x86Codegen 
-                           else if hasCodegen (amd64Codegen) 
+                        NONE =>
+                           if hasCodegen (x86Codegen)
+                              then x86Codegen
+                           else if hasCodegen (amd64Codegen)
                                then amd64Codegen
                            else CCodegen
-                      | SOME Native => 
+                      | SOME Native =>
                            if hasCodegen (x86Codegen)
                               then x86Codegen
                            else if hasCodegen (amd64Codegen)
                               then amd64Codegen
                            else usage (concat ["can't use native codegen on ",
-                                               MLton.Platform.Arch.toString targetArch, 
+                                               MLton.Platform.Arch.toString targetArch,
                                                " target"])
                       | SOME (Explicit cg) => cg)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
@@ -828,7 +828,7 @@ fun commandLine (args: string list): unit =
                    [ty, "=", size] =>
                       (case Int.fromString size of
                           NONE => Error.bug (concat ["strange size: ", size])
-                        | SOME size => 
+                        | SOME size =>
                              (ty, Bytes.toBits (Bytes.fromInt size)))
                  | _ => Error.bug (concat ["strange size mapping: ", line]))
             fun lookup ty' =
@@ -940,7 +940,7 @@ fun commandLine (args: string list): unit =
           | OpenBSD => ()
           | Solaris => ()
           | _ =>
-               if !profile = ProfileTimeField 
+               if !profile = ProfileTimeField
                   orelse !profile = ProfileTimeLabel
                   then usage (concat ["can't use -profile time on ",
                                       MLton.Platform.OS.toString targetOS])
@@ -1107,12 +1107,12 @@ fun commandLine (args: string list): unit =
                   fun mkOutputO (c: Counter.t, input: File.t): File.t =
                      if stop = Place.O orelse !keepO
                         then
-                           if !keepGenerated 
+                           if !keepGenerated
                               orelse start = Place.Generated
                               then
                                  concat [File.base input,
                                          ".o"]
-                              else 
+                              else
                                  suffix
                                  (concat [".",
                                           Int.toString
@@ -1125,13 +1125,13 @@ fun commandLine (args: string list): unit =
                         val output = mkOutputO (c, input)
                         val _ =
                            System.system
-                            (gcc, 
+                            (gcc,
                              List.concat
                              [targetOpts,
                               [ "-std=gnu99", "-c" ],
                               if !debug then debugSwitches else [],
                               ccOpts,
-                              ["-o", output], 
+                              ["-o", output],
                               [input]])
                      in
                         output
@@ -1142,12 +1142,12 @@ fun commandLine (args: string list): unit =
                         val _ =
                            System.system
                            (gcc,
-                            List.concat 
+                            List.concat
                             [targetOpts,
                              ["-c"],
                              if !debug then [asDebug] else [],
                              asOpts,
-                             ["-o", output], 
+                             ["-o", output],
                              [input]])
                      in
                         output
@@ -1171,10 +1171,10 @@ fun commandLine (args: string list): unit =
                                    then input :: ac
                                 else if SOME "c" = extension
                                    then (compileC (c, input)) :: ac
-                                else if SOME "s" = extension 
+                                else if SOME "s" = extension
                                         orelse SOME "S" = extension
                                    then (compileS (c, input)) :: ac
-                                else Error.bug 
+                                else Error.bug
                                      (concat
                                       ["invalid extension: ",
                                        Option.toString (fn s => s) extension])
@@ -1211,7 +1211,7 @@ fun commandLine (args: string list): unit =
                            case !verbosity of
                               Silent => ()
                             | Top => ()
-                            | _ => 
+                            | _ =>
                                  outputHeader
                                  (Control.No, fn l =>
                                   let val out = Out.error
@@ -1223,7 +1223,7 @@ fun commandLine (args: string list): unit =
                               Place.TypeCheck =>
                                  trace (Top, "Type Check SML")
                                  Compile.elaborateSML {input = files}
-                            | _ => 
+                            | _ =>
                                  trace (Top, "Compile SML")
                                  Compile.compileSML
                                  {input = files,
@@ -1295,7 +1295,7 @@ fun commandLine (args: string list): unit =
                            case !verbosity of
                               Silent => ()
                             | Top => ()
-                            | _ => 
+                            | _ =>
                                  outputHeader
                                  (Control.No, fn l =>
                                   let val out = Out.error
@@ -1320,7 +1320,7 @@ fun commandLine (args: string list): unit =
                             | Place.TypeCheck =>
                                  trace (Top, "Type Check SML")
                                  Compile.elaborateMLB {input = file}
-                            | _ => 
+                            | _ =>
                                  trace (Top, "Compile SML")
                                  Compile.compileMLB
                                  {input = file,
@@ -1351,9 +1351,9 @@ fun commandLine (args: string list): unit =
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
                       | _ => Error.bug "invalid start"
-                  val doit 
+                  val doit
                     = trace (Top, "MLton")
-                      (fn () => 
+                      (fn () =>
                        Exn.finally
                        (compile, fn () =>
                         List.foreach (!tempFiles, File.remove)))
