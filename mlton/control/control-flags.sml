@@ -1031,29 +1031,29 @@ fun mlbPathMap () =
                                     (!Target.os))},
             {var = "OBJPTR_REP",
              path = (case Bits.toInt (Target.Size.objptr ()) of
-                        32 => "objptr-rep32.sml"
-                      | 64 => "objptr-rep64.sml"
+                        32 => "rep32"
+                      | 64 => "rep64"
                       | _ => Error.bug "Control.mlbPathMap")},
             {var = "HEADER_WORD",
              path = (case Bits.toInt (Target.Size.header ()) of
-                        32 => "header-word32.sml"
-                      | 64 => "header-word64.sml"
+                        32 => "word32"
+                      | 64 => "word64"
                       | _ => Error.bug "Control.mlbPathMap")},
             {var = "SEQINDEX_INT",
              path = (case Bits.toInt (Target.Size.seqIndex ()) of
-                        32 => "seqindex-int32.sml"
-                      | 64 => "seqindex-int64.sml"
+                        32 => "int32"
+                      | 64 => "int64"
                       | _ => Error.bug "Control.mlbPathMap")},
             {var = "DEFAULT_CHAR",
-             path = concat ["default-", !defaultChar, ".sml"]},
+             path = !defaultChar},
             {var = "DEFAULT_WIDECHAR",
-             path = concat ["default-", !defaultWideChar, ".sml"]},
+             path = !defaultWideChar},
             {var = "DEFAULT_INT",
-             path = concat ["default-", !defaultInt, ".sml"]},
+             path = !defaultInt},
             {var = "DEFAULT_REAL",
-             path = concat ["default-", !defaultReal, ".sml"]},
+             path = !defaultReal},
             {var = "DEFAULT_WORD",
-             path = concat ["default-", !defaultWord, ".sml"]}],
+             path = !defaultWord}],
            !mlbPathVars])
 
 val typeCheck = control {name = "type check",

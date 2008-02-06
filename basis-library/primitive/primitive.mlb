@@ -48,9 +48,9 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
-      ../config/objptr/$(OBJPTR_REP)
-      ../config/header/$(HEADER_WORD)
-      ../config/seqindex/$(SEQINDEX_INT)
+      ../config/objptr/objptr-$(OBJPTR_REP).sml
+      ../config/header/header-$(HEADER_WORD).sml
+      ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       ../config/c/errno.sml
       ../config/c/position.sml

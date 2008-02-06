@@ -26,9 +26,9 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
-      ../config/objptr/$(OBJPTR_REP)
-      ../config/header/$(HEADER_WORD)
-      ../config/seqindex/$(SEQINDEX_INT)
+      ../config/objptr/objptr-$(OBJPTR_REP).sml
+      ../config/header/header-$(HEADER_WORD).sml
+      ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
    end end
    ../integer/int-inf0.sml
@@ -38,8 +38,8 @@ in
          ../config/bind/int-inf-prim.sml 
          ../config/bind/word-prim.sml 
       in ann "forceUsed" in
-         ../config/default/$(DEFAULT_INT)
-         ../config/default/$(DEFAULT_WORD)
+         ../config/default/default-$(DEFAULT_INT).sml
+         ../config/default/default-$(DEFAULT_WORD).sml
          ../config/default/fixed-int.sml
          ../config/default/large-int.sml
          ../config/default/large-word.sml
@@ -58,11 +58,11 @@ in
       ../config/bind/string-prim.sml 
       ../config/bind/word-prim.sml 
    in ann "forceUsed" in
-      ../config/default/$(DEFAULT_CHAR)
-      ../config/default/$(DEFAULT_WIDECHAR)
-      ../config/default/$(DEFAULT_INT)
-      ../config/default/$(DEFAULT_REAL)
-      ../config/default/$(DEFAULT_WORD)
+      ../config/default/default-$(DEFAULT_CHAR).sml
+      ../config/default/default-$(DEFAULT_WIDECHAR).sml
+      ../config/default/default-$(DEFAULT_INT).sml
+      ../config/default/default-$(DEFAULT_REAL).sml
+      ../config/default/default-$(DEFAULT_WORD).sml
       ../config/default/fixed-int.sml
       ../config/default/large-int.sml
       ../config/default/large-real.sml
@@ -80,7 +80,7 @@ in
    local 
       ../config/bind/int-prim.sml 
    in ann "forceUsed" in
-      ../config/seqindex/$(SEQINDEX_INT)
+      ../config/seqindex/seqindex-$(SEQINDEX_INT).sml
    end end
    ../arrays-and-vectors/slice.sig
    ../arrays-and-vectors/sequence.sig
@@ -121,8 +121,8 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/$(HEADER_WORD)
-      ../config/objptr/$(OBJPTR_REP)
+      ../config/header/header-$(HEADER_WORD).sml
+      ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
@@ -134,8 +134,8 @@ in
       ../config/bind/int-inf-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/default/$(DEFAULT_INT)
-      ../config/default/$(DEFAULT_WORD)
+      ../config/default/default-$(DEFAULT_INT).sml
+      ../config/default/default-$(DEFAULT_WORD).sml
       ../config/default/fixed-int.sml
       ../config/default/large-int.sml
       ../config/default/large-word.sml
@@ -154,8 +154,8 @@ in
       ../config/bind/real-prim.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/$(HEADER_WORD)
-      ../config/objptr/$(OBJPTR_REP)
+      ../config/header/header-$(HEADER_WORD).sml
+      ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
@@ -189,7 +189,7 @@ in
    local 
       ../config/bind/real-top.sml 
    in ann "forceUsed" in
-      ../config/default/$(DEFAULT_REAL)
+      ../config/default/default-$(DEFAULT_REAL).sml
       ../config/default/large-real.sml
    end end
    ../real/real-global.sml
@@ -201,8 +201,8 @@ in
       ../config/bind/real-top.sml 
       ../config/bind/word-top.sml 
    in ann "forceUsed" in
-      ../config/header/$(HEADER_WORD)
-      ../config/objptr/$(OBJPTR_REP)
+      ../config/header/header-$(HEADER_WORD).sml
+      ../config/objptr/objptr-$(OBJPTR_REP).sml
       ../config/c/$(TARGET_ARCH)-$(TARGET_OS)/c-types.sml
       ../config/c/position.sml
       ../config/c/sys-word.sml
