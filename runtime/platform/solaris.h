@@ -71,7 +71,6 @@ int fpclassify64 (double d);
 extern char **environ; /* for Posix_ProcEnv_environ */
 
 /* Solaris 7 does not define MAP_ANON. */
-
 #ifndef MAP_ANON
 #define MAP_ANON        0x100           /* map anonymous pages directly */
 #endif
@@ -90,6 +89,22 @@ struct sockaddr_storage {
     struct sockaddr_in sa_in;
     struct sockaddr_un sa_un;
   } sa;
-}
+};
 
-#endif
+#endif /* AF_INET6 */
+
+/* Solaris 2.6 does not define suseconds_t in system headers. */
+#ifndef _SUSECONDS_T
+#define _SUSECONDS_T
+typedef long    suseconds_t;    /* signed # of microseconds */
+#endif /* _SUSECONDS_T */
+
+/* Solaris 2.6 does not define socklen_t in system headers. */
+#ifndef _SOCKLEN_T
+#define _SOCKLEN_T
+#if defined(_XPG4_2) && !defined(_XPG5) && !defined(_LP64)
+typedef size_t socklen_t;
+#else
+typedef uint32_t socklen_t;
+#endif /* defined(_XPG4_2) && !defined(_XPG5) && !defined(_LP64) */
+#endif /* _SOCKLEN_T */
