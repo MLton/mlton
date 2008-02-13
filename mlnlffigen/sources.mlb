@@ -1,4 +1,4 @@
-(* Copyright (C) 2005-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -18,6 +18,8 @@ local
       endian-big.sml
       endian-little.sml
       sizes-amd64.sml
+      sizes-hppa.sml
+      sizes-ia64.sml
       sizes-ppc.sml
       sizes-sparc.sml
       sizes-x86.sml
@@ -32,9 +34,9 @@ local
    end
    local open basis_lib in
       spec.sml
-   end 
-   local 
-      open basis_lib smlnj_lib 
+   end
+   local
+      open basis_lib smlnj_lib
       sets-and-maps.sml
    in
       structure IntListMap
@@ -50,11 +52,10 @@ local
    local open mlton_lib ckit_lib in
       gen.sml
    end
-   
+
    local open mlton_lib regexp_lib in
       main.sml
    end
 in
    structure Main
 end
-

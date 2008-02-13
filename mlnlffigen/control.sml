@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -100,6 +100,10 @@ structure Target =
          case (arch, os) of
             (AMD64, _) => SOME {name = toString t, sizes = SizesAMD64.sizes,
                                 endianShift = EndianLittle.shift}
+          | (HPPA, _) => SOME {name = toString t, sizes = SizesHPPA.sizes,
+                                endianShift = EndianBig.shift}
+          | (IA64, _) => SOME {name = toString t, sizes = SizesIA64.sizes,
+                                endianShift = EndianLittle.shift}
           | (Sparc, _) => SOME {name = toString t, sizes = SizesSparc.sizes,
                                 endianShift = EndianBig.shift}
           | (PowerPC, _) => SOME {name = toString t, sizes = SizesPPC.sizes,
@@ -116,7 +120,7 @@ val target = control {name = "target",
 val weight = control {name = "weight",
                       default = {heavy = true, light = true},
                       toString = fn {heavy, light} =>
-                      concat ["{heavy = ", Bool.toString heavy, 
+                      concat ["{heavy = ", Bool.toString heavy,
                               ", light = ", Bool.toString light, "}"]}
 
 val width = control {name = "width",
