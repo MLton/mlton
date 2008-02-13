@@ -12,6 +12,9 @@ open S
 
 type int = Int.t
 
+structure Graph = DirectedGraph
+structure Node = Graph.Node
+
 datatype z = datatype Exp.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
@@ -694,6 +697,12 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
        * large value and the container is not live in this block (we
        * approximate liveness), then don't allow the flattening to
        * happen.
+       *
+       * Vectors may be objects of unbounded size.
+       * Weak pointers may not be objects of unbounded size; weak
+       * pointers do not keep pointed-to object live.
+       * Instances of recursive datatypes may be objects of unbounded
+       * size.
        *)
       val {get = tyconSize: Tycon.t -> Size.t, ...} =
          Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
@@ -709,13 +718,15 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                            val () =
                               case Type.dest t of
                                  CPointer => ()
-                               | Datatype c => Size.<= (tyconSize c, s)
+                               | Datatype tc => Size.<= (tyconSize tc, s)
                                | IntInf => Size.makeTop s
-                               | Object {args, ...} =>
-                                    Prod.foreach (args, dependsOn)
+                               | Object {args, con, ...} =>
+                                    if ObjectCon.isVector con
+                                       then Size.makeTop s
+                                    else Prod.foreach (args, dependsOn)
                                | Real _ => ()
                                | Thread => Size.makeTop s
-                               | Weak t => dependsOn t
+                               | Weak _ => ()
                                | Word _ => ()
                         in
                            s
@@ -730,6 +741,70 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
                                       Prod.foreach (args, dependsOn))
           in
              ()
+          end)
+      (* Force (mutually) recursive datatypes to top. *)
+      val {get = nodeTycon: unit Node.t -> Tycon.t, 
+           set = setNodeTycon, ...} =
+         Property.getSetOnce 
+         (Node.plist, Property.initRaise ("nodeTycon", Node.layout))
+      val {get = tyconNode: Tycon.t -> unit Node.t, 
+           set = setTyconNode, ...} =
+         Property.getSetOnce 
+         (Tycon.plist, Property.initRaise ("tyconNode", Tycon.layout))
+      val graph = Graph.new ()
+      val () =
+         Vector.foreach
+         (datatypes, fn Datatype.T {tycon, ...} =>
+          let
+             val node = Graph.newNode graph
+             val () = setTyconNode (tycon, node)
+             val () = setNodeTycon (node, tycon)
+          in 
+             ()
+          end)
+      val () =
+         Vector.foreach
+         (datatypes, fn Datatype.T {cons, tycon} =>
+          let
+             val n = tyconNode tycon
+             fun dependsOn (t: Type.t): unit = 
+                let 
+                   datatype z = datatype Type.dest
+                   fun loop t =
+                      case Type.dest t of
+                         CPointer => ()
+                       | Datatype tc => 
+                            (ignore o Graph.addEdge)
+                            (graph, {from = n, to = tyconNode tc})
+                       | IntInf => ()
+                       | Object {args, ...} =>
+                            Prod.foreach (args, loop)
+                       | Real _ => ()
+                       | Thread => ()
+                       | Weak _ => ()
+                       | Word _ => ()
+                in 
+                   loop t
+                end
+             val () = Vector.foreach (cons, fn {args, ...} =>
+                                      Prod.foreach (args, dependsOn))
+          in
+             ()
+          end)
+      val () =
+         List.foreach
+         (Graph.stronglyConnectedComponents graph, fn ns =>
+          let
+             fun doit () =
+                List.foreach
+                (ns, fn n =>
+                 Size.makeTop (tyconSize (nodeTycon n)))
+          in
+             case ns of
+                [n] => if Node.hasEdge {from = n, to = n}
+                          then doit ()
+                       else ()
+              | _ => doit ()
           end)
       fun typeIsLarge (t: Type.t): bool =
          Size.isTop (typeSize t)

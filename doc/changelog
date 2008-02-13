@@ -1,5 +1,10 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-02-13
+   - Fixed space-safety bug in pass to flatten refs into containing
+     data structure. Thanks to Daniel Spoonhower for the bug report
+     and initial diagnosis and patch.
+
 * 2008-01-21
    - Fixed frontend to accept "op longvid" patterns and expressions.
      Thanks to Florian Weimer for the bug report.
