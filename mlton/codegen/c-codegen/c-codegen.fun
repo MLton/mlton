@@ -339,24 +339,41 @@ fun outputDeclarations
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
                       (2, false, 0, 0)
-                 | Weak {gone = false} =>
-                      (case (!Control.align,
-                             Bits.toInt (Control.Target.Size.cpointer ()),
-                             Bits.toInt (Control.Target.Size.objptr ())) of
-                          (Control.Align4,32,32) => (3, false, 4, 1)
-                        | (Control.Align8,32,32) => (3, false, 8, 1)
-                        | (Control.Align4,64,64) => (3, false, 8, 1)
-                        | (Control.Align8,64,64) => (3, false, 8, 1)
-                        | _ => Error.bug "CCodegen.declareObjectTypes")
-                 | Weak {gone = true} =>
-                      (case (!Control.align,
-                             Bits.toInt (Control.Target.Size.cpointer ()),
-                             Bits.toInt (Control.Target.Size.objptr ())) of
-                          (Control.Align4,32,32) => (3, false, 8, 0)
-                        | (Control.Align8,32,32) => (3, false, 12, 0)
-                        | (Control.Align4,64,64) => (3, false, 16, 0)
-                        | (Control.Align8,64,64) => (3, false, 16, 0)
-                        | _ => Error.bug "CCodegen.declareObjectTypes")
+                 | Weak {gone} =>
+                      let
+                         val bytesObjptr =
+                            Bits.toBytes (Control.Target.Size.objptr ())
+                         val bytesNonObjptrs =
+                            let
+                               val align =
+                                  case !Control.align of
+                                     Control.Align4 => Bytes.fromInt 4
+                                   | Control.Align8 => Bytes.fromInt 8
+                               val bytesCPointer =
+                                  Bits.toBytes (Control.Target.Size.cpointer ())
+                               val bytesHeader =
+                                  Bits.toBytes (Control.Target.Size.header ())
+
+                               val bytesObject =
+                                  Bytes.+ (bytesHeader,
+                                  Bytes.+ (bytesCPointer,
+                                           bytesObjptr))
+                               val bytesTotal =
+                                  Bytes.align (bytesObject, {alignment = align})
+                               val bytesPad = Bytes.- (bytesTotal, bytesObject)
+                            in
+                               Bytes.+ (bytesPad, bytesCPointer)
+                            end
+                         val (bytesNonObjptrs, bytesObjptr) =
+                            (Bytes.toInt bytesNonObjptrs,
+                             Bytes.toInt bytesObjptr)
+                         val (bytesNonObjptrs, numObjptrs) =
+                            if gone
+                               then (bytesNonObjptrs + bytesObjptr, 0)
+                            else (bytesNonObjptrs, 1)
+                      in
+                         (3, false, bytesNonObjptrs, numObjptrs)
+                      end
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",
