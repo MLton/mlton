@@ -116,6 +116,20 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #error unknown platform arch
 #endif
 
+#ifndef POINTER_BITS
+#if UINTPTR_MAX == UINT32_MAX
+#define POINTER_BITS 32
+#elif UINTPTR_MAX == UINT64_MAX
+#define POINTER_BITS 64
+#else
+#error Platform did not set POINTER_BITS and could not guess it.
+#endif
+#endif
+
+#ifndef ADDRESS_BITS
+#define ADDRESS_BITS POINTER_BITS
+#endif
+
 #include "gmp.h"
 
 COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_voidStar, 
@@ -124,5 +138,9 @@ COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_size_t,
                     sizeof(uintptr_t) == sizeof(size_t));
 COMPILE_TIME_ASSERT(sizeof_uintptr_t__is__sizeof_ptrdiff_t, 
                     sizeof(uintptr_t) == sizeof(ptrdiff_t));
+COMPILE_TIME_ASSERT(sizeof_voidStar__is__pointer_bits,
+                    sizeof(void*)*CHAR_BIT == POINTER_BITS);
+COMPILE_TIME_ASSERT(address_bits__lte__pointer_bits,
+                    ADDRESS_BITS <= POINTER_BITS);
 
 #endif /* _MLTON_CENV_H_ */

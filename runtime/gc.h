@@ -15,18 +15,12 @@ struct GC_state;
 typedef struct GC_state *GC_state;
 typedef GC_state GCState_t;
 
-#if defined(__WORDSIZE)
-#if __WORDSIZE == 32
+#if POINTER_BITS == 32
 #define GC_MODEL_NATIVE32
-#elif __WORDSIZE == 64
+#elif POINTER_BITS == 64
 #define GC_MODEL_NATIVE64
 #else
-#error unknown __WORDSIZE
-#endif
-#elif defined(__LP64__)
-#define GC_MODEL_NATIVE64
-#else
-#define GC_MODEL_NATIVE32
+#error POINTER_BITS not defined
 #endif
 
 #include "gc/debug.h"

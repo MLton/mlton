@@ -171,7 +171,12 @@ bool createHeap (GC_state s, GC_heap h,
   for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
     const unsigned int countLog2 = 5;
     const unsigned int count = 0x1 << countLog2;
-    const size_t step = (size_t)0x1 << ((POINTER_SIZE * CHAR_BIT) - countLog2);
+    const size_t step = (size_t)0x1 << (ADDRESS_BITS - countLog2);
+#if ADDRESS_BITS == POINTER_BITS
+    const size_t address_end = 0;
+#else
+    const size_t address_end = (size_t)0x1 << ADDRESS_BITS;
+#endif
 
     static bool direction = TRUE;
     unsigned int i;
@@ -182,7 +187,11 @@ bool createHeap (GC_state s, GC_heap h,
 
       address = (size_t)i * step;
       if (direction)
-        address = (size_t)0x0 - address;
+        address = address_end - address;
+      /* Always use 0 in the last step. */
+      if (i == count)
+        address = 0;
+
       h->start = GC_mmapAnon ((pointer)address, h->size);
       if ((void*)-1 == h->start)
         h->start = (void*)NULL;

@@ -150,7 +150,7 @@ manageable set for users.
 #define GC_MODEL_HEADER_SIZE 64
 #define GC_MODEL_ARRLEN_SIZE 64
 #else
-#error GC_MODEL_* unspecified
+#error GC_MODEL_* undefined
 #endif
 
 #define GC_MODEL_MINALIGN_SHIFT max(2, GC_MODEL_OBJPTR_SHIFT + 1)
