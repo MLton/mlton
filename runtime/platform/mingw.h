@@ -32,7 +32,7 @@
 #define HAS_FPCLASSIFY32 FALSE
 #define HAS_FPCLASSIFY64 FALSE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_REMAP FALSE
+#define HAS_REMAP TRUE
 #define HAS_SIGALTSTACK FALSE
 #define HAS_SIGNBIT TRUE
 #define HAS_SPAWN TRUE
@@ -88,12 +88,11 @@ int mkstemp (char *template);
 /*                       Date                        */
 /* ------------------------------------------------- */
 
-struct timezone {
-    int tz_dsttime;
-    int tz_minuteswest;
-};
-
-int gettimeofday (struct timeval *tv, struct timezone *tz);
+/* MinGW provides gettimeofday in -lmingwex, which we don't link.
+ * In order to avoid a name conflict, we use a different name.
+ */
+int mlton_gettimeofday (struct timeval *tv, struct timezone *tz);
+#define gettimeofday mlton_gettimeofday
 
 /* ------------------------------------------------- */
 /*                   MLton.Itimer                    */
@@ -207,6 +206,10 @@ int poll (struct pollfd *ufds, nfds_t nfds, int timeout);
 #define S_ISLNK(m) (m?FALSE:FALSE)
 #define S_ISSOCK(m) (m?FALSE:FALSE)
 
+#ifndef O_ACCMODE
+#define O_ACCMODE O_RDONLY|O_WRONLY|O_RDWR
+#endif
+
 int chown (const char *path, uid_t owner, gid_t group);
 int fchmod (int filedes, mode_t mode);
 int fchdir (int filedes);
@@ -314,14 +317,18 @@ int uname (struct utsname *buf);
 #define WTERMSIG(w)     ((w) & 0x7f)
 #define WSTOPSIG        WEXITSTATUS
 
+/* Sometimes defined by mingw */
+#ifndef TIMESPEC_DEFINED
+struct timespec {
+  time_t tv_sec;
+  long tv_nsec;
+};
+#endif
+
 int alarm (int secs);
-pid_t fork (void);
+int fork(void); /* mingw demands this return int */
 int kill (pid_t pid, int sig);
 int pause (void);
-struct timespec {
- time_t tv_sec;
- long tv_nsec;
-};
 int nanosleep (const struct timespec *req, struct timespec *rem);
 unsigned int sleep (unsigned int seconds);
 pid_t wait (int *status);
@@ -335,26 +342,64 @@ pid_t waitpid (pid_t pid, int *status, int options);
 #define SIG_SETMASK 0
 #define SIG_UNBLOCK 2
 
+/* Sometimes mingw defines some of these. Some not. Some always. */
+
+#ifndef SIGHUP
 #define SIGHUP 1
-#define SIGKILL 2
-#define SIGPIPE 3
-#define SIGQUIT 9
-#define SIGALRM 13
-#define SIGBUS 14
+#endif
+
+/* SIGINT = 2 */
+
+#ifndef SIGQUIT
+#define SIGQUIT 3
+#endif
+
+/* SIGILL  = 4 */
+/* SIGTRAP = 5 (unused) */
+/* SIGIOT  = 6 (unused) */
+/* SIGABRT = 6 (unused) */
+/* SIGEMT  = 7 (unused) */
+/* SIGFPE  = 8 */
+
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
+
+#ifndef SIGBUS
+#define SIGBUS 10
+#endif
+
+/* SIGSEGV = 11 */
+/* SIGSYS = 12 (unused) */
+
+#ifndef SIGPIPE
+#define SIGPIPE 13
+#endif
+
+#ifndef SIGALRM
+#define SIGALRM 14
+#endif
+
+/* SIGTERM = 15 */
+/* SIGBREAK = 21 */
+/* SIGABRT2 = 22 */
+
+/* These signals are fake. They do not exist on windows. */
 #define SIGSTOP 16
 #define SIGTSTP 18
-#define SIGCHLD 20
-#define SIGTTIN 21
-#define SIGTTOU 22
-#define SIGCONT 25
-#define SIGUSR1 25
-#define SIGUSR2 26
-#define SIGVTALRM 26    /* virtual time alarm */
-#define SIGPROF 27      /* profiling time alarm */
+#define SIGCHLD 23
+#define SIGTTIN 24
+#define SIGTTOU 25
+#define SIGCONT 26
+#define SIGUSR1 27
+#define SIGUSR2 28
+#define SIGVTALRM 29    /* virtual time alarm */
+#define SIGPROF 30      /* profiling time alarm */
 
 #define _NSIG 32
 
 typedef __p_sig_fn_t _sig_func_ptr;
+typedef int sigset_t; /* sometimes defined my mingw as int */
 
 struct sigaction {
         int             sa_flags;
@@ -529,8 +574,10 @@ int tcsetpgrp (int fd, pid_t pgrpid);
 /* ------------------------------------------------- */
 
 // Unimplemented on windows:
+#ifndef MSG_WAITALL
+#define MSG_WAITALL 0x8
+#endif
 #define MSG_DONTWAIT 0
-#define MSG_WAITALL 0
 #define MSG_EOR 0
 #define MSG_CTRUNC 0
 

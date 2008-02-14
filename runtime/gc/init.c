@@ -114,11 +114,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.messages = TRUE;
         } else if (0 == strcmp (arg, "gc-summary")) {
           i++;
-#if (defined (__MINGW32__))
-          fprintf (stderr, "Warning: MinGW doesn't support gc-summary.\n");
-#else
           s->controls.summary = TRUE;
-#endif
         } else if (0 == strcmp (arg, "grow-ratio")) {
           i++;
           if (i == argc)

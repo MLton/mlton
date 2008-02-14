@@ -1,6 +1,7 @@
 HANDLE fileDesHandle (int fd);
 
-#define BUFSIZE 65536
+/* As crazy as it is, this breaks Windows 2003&Vista: #define BUFSIZE 65536 */
+#define BUFSIZE 10240
 
 static HANDLE tempFileDes (void) {
   /* Based on http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating_and_using_a_temporary_file.asp
@@ -13,11 +14,12 @@ static HANDLE tempFileDes (void) {
   char lpPathBuffer[BUFSIZE];
 
   dwRetVal = GetTempPath(dwBufSize, lpPathBuffer);
-  if (dwRetVal > dwBufSize)
+  if (dwRetVal >= dwBufSize)
     die ("GetTempPath failed with error %ld\n", GetLastError());
   uRetVal = GetTempFileName(lpPathBuffer, "TempFile", 0, szTempName);
   if (0 == uRetVal)
-    die ("GetTempFileName failed with error %ld\n", GetLastError());
+    die ("GetTempFileName in %s failed with error %ld\n", 
+         lpPathBuffer, GetLastError());
   hTempFile = CreateFile((LPTSTR) szTempName, GENERIC_READ | GENERIC_WRITE,
     0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
     NULL);                
@@ -67,12 +69,18 @@ void *GC_diskBack_write (pointer buf, size_t size) {
 
 static void displayMaps (void) {
         MEMORY_BASIC_INFORMATION buf;
-        LPVOID lpAddress;
         const char *state = "<unset>";
         const char *protect = "<unset>";
+        uintptr_t address;
 
-        for (lpAddress = 0; lpAddress < (LPCVOID)0x80000000; ) {
-                VirtualQuery (lpAddress, &buf, sizeof (buf));
+        buf.RegionSize = 0;
+        for (address = 0; 
+             address + buf.RegionSize >= address; 
+             address += buf.RegionSize) {
+                if (0 == VirtualQuery ((LPCVOID)address, &buf, sizeof (buf)))
+                        break;
+                if (0 == buf.RegionSize)
+                        break;
 
                 switch (buf.Protect) {
                 case PAGE_READONLY:
@@ -121,26 +129,49 @@ static void displayMaps (void) {
                 default:
                         assert (FALSE);
                 }
-                fprintf(stderr, "0x%8x %10u  %s %s\n",
-                        (unsigned int)buf.BaseAddress,
-                        (unsigned int)buf.RegionSize,
+
+                fprintf(stderr, FMTPTR " %10"PRIuMAX"  %s %s\n",
+                        buf.BaseAddress, (uintmax_t)buf.RegionSize,
                         state, protect);
-                lpAddress = (unsigned char*)lpAddress + buf.RegionSize;
         }
 }
 
 void GC_displayMem (void) {
-        MEMORYSTATUS ms; 
+#ifdef _WIN64
+        MEMORYSTATUSEX ms; 
+        ms.dwLength = sizeof (MEMORYSTATUSEX); 
+        GlobalMemoryStatusEx (&ms); 
 
-        ms.dwLength = sizeof (MEMORYSTATUS); 
-        GlobalMemoryStatus (&ms); 
-        fprintf(stderr, "Total Phys. Mem: %ld\nAvail Phys. Mem: %ld\nTotal Page File: %ld\nAvail Page File: %ld\nTotal Virtual: %ld\nAvail Virtual: %ld\n",
-                         ms.dwTotalPhys, 
-                         ms.dwAvailPhys, 
-                         ms.dwTotalPageFile, 
-                         ms.dwAvailPageFile, 
-                         ms.dwTotalVirtual, 
-                         ms.dwAvailVirtual); 
+        fprintf(stderr, "Total Phys. Mem: %"PRIuMAX"\n"
+                        "Avail Phys. Mem: %"PRIuMAX"\n"
+                        "Total Page File: %"PRIuMAX"\n"
+                        "Avail Page File: %"PRIuMAX"\n"
+                        "Total Virtual: %"PRIuMAX"\n"
+                        "Avail Virtual: %"PRIuMAX"\n",
+                         (uintmax_t)ms.ullTotalPhys,
+                         (uintmax_t)ms.ullAvailPhys,
+                         (uintmax_t)ms.ullTotalPageFile,
+                         (uintmax_t)ms.ullAvailPageFile,
+                         (uintmax_t)ms.ullTotalVirtual,
+                         (uintmax_t)ms.ullAvailVirtual);
+#else
+        MEMORYSTATUS ms;
+        ms.dwLength = sizeof (MEMORYSTATUS);
+        GlobalMemoryStatus (&ms);
+
+        fprintf(stderr, "Total Phys. Mem: %"PRIuMAX"\n"
+                        "Avail Phys. Mem: %"PRIuMAX"\n"
+                        "Total Page File: %"PRIuMAX"\n"
+                        "Avail Page File: %"PRIuMAX"\n"
+                        "Total Virtual: %"PRIuMAX"\n"
+                        "Avail Virtual: %"PRIuMAX"\n",
+                         (uintmax_t)ms.dwTotalPhys, 
+                         (uintmax_t)ms.dwAvailPhys, 
+                         (uintmax_t)ms.dwTotalPageFile, 
+                         (uintmax_t)ms.dwAvailPageFile, 
+                         (uintmax_t)ms.dwTotalVirtual, 
+                         (uintmax_t)ms.dwAvailVirtual); 
+#endif
         displayMaps ();
 }
 
@@ -176,16 +207,64 @@ static inline void Windows_decommit (void *base, size_t length) {
                 die ("VirtualFree decommit failed");
 }
 
-static inline void *Windows_mmapAnon (__attribute__ ((unused)) void *start,
-                                        size_t length) {
+static inline void *Windows_mremap (void *base, size_t old, size_t new) {
         void *res;
+        void *tail;
 
-        /* Use "0" instead of "start" as the first argument to VirtualAlloc
-         * because it is more stable on MinGW (at least).
-         */
-        res = VirtualAlloc ((LPVOID)0/*start*/, length, MEM_COMMIT, PAGE_READWRITE);
+        /* Attempt to recover decommit'd memory */
+        tail = (void*)((intptr_t)base + old);
+        res = VirtualAlloc(tail, new - old, MEM_COMMIT, PAGE_READWRITE);
         if (NULL == res)
-                res = (void*)-1;
+                return (void*)-1;
+
+        return base;
+}
+
+static inline void *Windows_mmapAnon (void *start, size_t length) {
+        void *res;
+        size_t reserve;
+
+        /* If length > 256MB on win32, we round up to the nearest 512MB.
+         * By reserving more than we need, we can later mremap to use it.
+         * This avoids fragmentation on 32 bit machines, near the 2GB limit.
+         * It doesn't hurt us in 64 bit mode either (lots of address space).
+         */
+        if (length > ((size_t)1 << 28))
+                reserve = align (length, ((size_t)1 << 29));
+        else    reserve = length;
+
+        /* We prevoiusly used "0" instead of start, which lead to crashes.
+         * After reading win32 documentation, the reason for these crashes
+         * becomes clear: we were using only MEM_COMMIT! If there was memory
+         * decommitted in a previous heap shrink, a new heap might end up
+         * inside the reserved (but uncommitted) memory. When the old heap is
+         * freed, it will kill the new heap as well. This bug will not happen
+         * now because we reserve, then commit. Reserved memory cannot conflict.
+         */
+        res = VirtualAlloc (start, reserve, MEM_RESERVE, PAGE_NOACCESS);
+
+        /* Try shifting the block left (to play well with MLton's scan) */
+        if (NULL == res) {
+                uintptr_t base = (uintptr_t)start;
+                size_t shift = reserve - length;
+                if (base > shift)
+                        res = VirtualAlloc ((void*)(base-shift), reserve, 
+                                            MEM_RESERVE, PAGE_NOACCESS);
+        }
+
+        /* Fall back to zero reserved allocation */
+        if (NULL == res)
+                res = VirtualAlloc (start, length, MEM_RESERVE, PAGE_NOACCESS);
+
+        /* Nothing more we can try at this offset */
+        if (NULL == res)
+                return (void*)-1;
+
+        /* Actually get the memory for use */
+        res = VirtualAlloc (res, length, MEM_COMMIT, PAGE_READWRITE);
+        if (NULL == res)
+                die("VirtualAlloc MEM_COMMIT of MEM_RESERVEd memory failed!\n");
+
         return res;
 }
 
@@ -200,7 +279,7 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
         char    *cmd;
         char    *arg;
         char    *env;
-        int     result;
+        C_PId_t  result;
         STARTUPINFO si;
         PROCESS_INFORMATION proc;
 
@@ -243,7 +322,7 @@ Windows_Process_create (NullString8_t cmds, NullString8_t args, NullString8_t en
                  * The thread handle is not needed, so clean it.
                  */
                 CloseHandle (proc.hThread);
-                result = (int)proc.hProcess;
+                result = (C_PId_t)proc.hProcess;
         }
         CloseHandle (si.hStdInput);
         CloseHandle (si.hStdOutput);

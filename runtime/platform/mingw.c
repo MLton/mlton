@@ -8,6 +8,10 @@ void GC_decommit (void *base, size_t length) {
         Windows_decommit (base, length);
 }
 
+void *GC_mremap (void *base, size_t old, size_t new) {
+        return Windows_mremap (base, old, new);
+}
+
 void *GC_mmapAnon (void *start, size_t length) {
         return Windows_mmapAnon (start, length);
 }
@@ -18,11 +22,17 @@ void GC_release (void *base,
 }
 
 uintmax_t GC_physMem (void) {
+#ifdef _WIN64
+        MEMORYSTATUSEX memstat;
+        memstat.dwLength = sizeof(memstat);
+        GlobalMemoryStatusEx(&memstat);
+        return (uintmax_t)memstat.ullTotalPhys;
+#else
         MEMORYSTATUS memstat;
-
         memstat.dwLength = sizeof(memstat);
         GlobalMemoryStatus(&memstat);
         return (uintmax_t)memstat.dwTotalPhys;
+#endif
 }
 
 size_t GC_pageSize (void) {
@@ -33,7 +43,7 @@ size_t GC_pageSize (void) {
 
 HANDLE fileDesHandle (int fd) {
   // The temporary prevents a "cast does not match function type" warning.
-  long t;
+  intptr_t t;
 
   t = _get_osfhandle (fd);
   return (HANDLE)t;
@@ -66,7 +76,8 @@ int mkstemp (char *template) {
 /* Based on notes by Wu Yongwei: 
  *   http://mywebpage.netscape.com/yongweiwutime.htm 
  */
-int gettimeofday (struct timeval *tv, struct timezone *tz) {
+int mlton_gettimeofday (struct timeval *tv, 
+                        __attribute__ ((unused)) struct timezone *tz) {
         FILETIME ft;
         LARGE_INTEGER li;
         __int64 t;
@@ -150,29 +161,50 @@ int setrlimit (int resource, const struct rlimit *rlp) {
 
 /* GetProcessTimes and GetSystemTimeAsFileTime are documented at:
  *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/getprocesstimes.asp
- *   http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getsystemtimeasfiletime.asp
  */
-int getrusage (__attribute__ ((unused)) int who, struct rusage *usage) {
-  FILETIME ct, et, kt, ut;
-  LARGE_INTEGER li, lj;
-  if (GetProcessTimes(GetCurrentProcess(), &ct, &et, &kt, &ut)) {
-    usage->ru_utime.tv_sec = ut.dwHighDateTime;
-    usage->ru_utime.tv_usec = ut.dwLowDateTime/10;
-    usage->ru_stime.tv_sec = kt.dwHighDateTime;
-    usage->ru_stime.tv_usec = kt.dwLowDateTime/10;
+int getrusage (int who, struct rusage *usage) {
+  /* FILETIME has dw{High,Low}DateTime which store the number of
+   * 100-nanoseconds since January 1, 1601
+   */
+  FILETIME creation_time;
+  FILETIME exit_time;
+  FILETIME kernel_time;
+  FILETIME user_time;
+
+  uint64_t user_usecs, kernel_usecs;
+
+  if (who == RUSAGE_CHILDREN) {
+    // !!! could use exit_time - creation_time from cwait 
+    memset(usage, 0, sizeof(struct rusage));
     return 0;
   }
-  /* if GetProcessTimes failed, use real time [for Windows] */
-  GetSystemTimeAsFileTime(&ut);
-  li.LowPart = ut.dwLowDateTime;
-  li.HighPart = ut.dwHighDateTime;
-  lj.LowPart = Time_sec;
-  lj.HighPart = Time_usec;
-  li.QuadPart -= lj.QuadPart;
-  usage->ru_utime.tv_sec = li.HighPart;
-  usage->ru_utime.tv_usec = li.LowPart/10;
-  usage->ru_stime.tv_sec = 0;
-  usage->ru_stime.tv_usec = 0;
+  
+  if (who != RUSAGE_SELF) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (GetProcessTimes(GetCurrentProcess(), 
+                      &creation_time, &exit_time,
+                      &kernel_time, &user_time) == 0) {
+    errno = EFAULT;
+    return -1;
+  }
+  
+  kernel_usecs = kernel_time.dwHighDateTime;
+  kernel_usecs <<= sizeof(kernel_time.dwHighDateTime)*8;
+  kernel_usecs |= kernel_time.dwLowDateTime;
+  kernel_usecs /= 10;
+
+  user_usecs = user_time.dwHighDateTime;
+  user_usecs <<= sizeof(user_time.dwHighDateTime)*8;
+  user_usecs |= user_time.dwLowDateTime;
+  user_usecs /= 10;
+
+  usage->ru_utime.tv_sec  = user_usecs / 1000000;
+  usage->ru_utime.tv_usec = user_usecs % 1000000;
+  usage->ru_stime.tv_sec  = kernel_usecs / 1000000;
+  usage->ru_stime.tv_usec = kernel_usecs % 1000000;
   return 0;
 }
 
@@ -195,7 +227,7 @@ static void GetWin32FileName (int fd, char* fname) {
         HANDLE fh, fhmap;
         DWORD fileSize, fileSizeHi;
         void* pMem = NULL;
-        long tmp;
+        intptr_t tmp;
 
         tmp = _get_osfhandle (fd);
         fh = (HANDLE)tmp;
@@ -331,8 +363,8 @@ int pipe (int filedes[2]) {
         /* This requires Win98+
          * Choosing text/binary mode is defered till a later setbin/text call
          */
-        filedes[0] = _open_osfhandle((long)read_h,  _O_RDONLY);
-        filedes[1] = _open_osfhandle((long)write_h, _O_WRONLY);
+        filedes[0] = _open_osfhandle((intptr_t)read_h,  _O_RDONLY);
+        filedes[1] = _open_osfhandle((intptr_t)write_h, _O_WRONLY);
         if (filedes[0] == -1 or filedes[1] == -1) {
                 if (filedes[0] == -1) 
                         CloseHandle(read_h); 
@@ -474,14 +506,15 @@ static void setMachine (struct utsname *buf) {
                 if (level > 6) level = 6;
                 platform = "i%d86"; 
                 break;
-        case PROCESSOR_ARCHITECTURE_IA64:  platform = "ia64";  break;
-#ifndef PROCESSOR_ARCHITECTURE_AMD64
-#define PROCESSOR_ARCHITECTURE_AMD64 9
-#endif
-        case PROCESSOR_ARCHITECTURE_AMD64: platform = "amd64"; break; 
-
-        case PROCESSOR_ARCHITECTURE_ALPHA: platform = "alpha"; break;
-        case PROCESSOR_ARCHITECTURE_MIPS:  platform = "mips";  break;
+        case PROCESSOR_ARCHITECTURE_IA64:    platform = "ia64";    break;
+        case PROCESSOR_ARCHITECTURE_AMD64:   platform = "amd64";   break; 
+        case PROCESSOR_ARCHITECTURE_PPC:     platform = "ppc";     break;
+        case PROCESSOR_ARCHITECTURE_ALPHA:   platform = "alpha";   break;
+        case PROCESSOR_ARCHITECTURE_MIPS:    platform = "mips";    break;
+        case PROCESSOR_ARCHITECTURE_ARM:     platform = "arm";     break;
+        case PROCESSOR_ARCHITECTURE_ALPHA64: platform = "alpha64"; break;
+        /* SHX? MSIL? IA32_ON_WIN64? */
+        default: platform = "unknown"; break;
         }
         sprintf (buf->machine, platform, level);
 }
@@ -510,6 +543,9 @@ static void setSysname (struct utsname *buf) {
         case VER_PLATFORM_WIN32s:
                 os = "31"; /* aka DOS + Windows 3.1 */
                 break;
+        default:
+                os = "unknown";
+                break;
         }
         sprintf (buf->sysname, "MINGW32_%s-%d.%d",
                 os, (int)osv.dwMajorVersion, (int)osv.dwMinorVersion);
@@ -520,9 +556,9 @@ int uname (struct utsname *buf) {
         unless (0 == gethostname (buf->nodename, sizeof (buf->nodename))) {
                 strcpy (buf->nodename, "unknown");
         }
-        sprintf (buf->release, "%d", __MINGW32_MINOR_VERSION);
+        sprintf (buf->release, "%d", 0); //__MINGW32_MINOR_VERSION);
         setSysname (buf);
-        sprintf (buf->version, "%d", __MINGW32_MAJOR_VERSION);
+        sprintf (buf->version, "%d", 0); //__MINGW32_MAJOR_VERSION);
         return 0;
 }
 
@@ -580,7 +616,7 @@ int alarm (int secs) {
 }
 
 __attribute__ ((noreturn))
-pid_t fork (void) {
+int fork (void) {
         die ("fork not implemented");
 }
 
@@ -882,7 +918,7 @@ int socketpair (__attribute__ ((unused)) int d,
         die ("socketpair not implemented");
 }
 
-void MLton_initSockets () {
+void MLton_initSockets (void) {
         static Bool isInitialized = FALSE;
         WORD version;
         WSADATA wsaData;
@@ -1000,7 +1036,7 @@ void *dlsym(void *void_hmodule, const char *symbol) {
         }
 
         {
-                void* result = GetProcAddress(hmodule, symbol);
+                void* result = (void*)GetProcAddress(hmodule, symbol);
 
                 if (!result)
                         dlerror_last = GetLastError();
@@ -1030,5 +1066,5 @@ int dlclose(void *void_hmodule) {
 /* ------------------------------------------------- */
 
 C_Size_t MinGW_getTempPath(C_Size_t buf_size, Array(Char8_t) buf) {
-        return GetTempPath(buf_size, buf);
+        return GetTempPath(buf_size, (char*)buf);
 }
