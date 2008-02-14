@@ -33,7 +33,9 @@ structure PosixProcEnv: POSIX_PROC_ENV =
          val setuid = fn uid => SysCall.simple (fn () => setuid uid)
       end
 
-      fun setsid () = SysCall.simpleResult (Prim.setsid)
+      fun setsid () = 
+        SysCall.simpleResult' 
+        ({errVal = C_PId.castFromFixedInt ~1}, Prim.setsid)
 
       val uidToWord = C_UId.castToSysWord
       val wordToUid = C_UId.castFromSysWord

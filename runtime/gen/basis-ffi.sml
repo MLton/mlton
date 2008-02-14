@@ -80,8 +80,8 @@ end
 structure Process = 
 struct
 val cwait = _import "MLton_Process_cwait" : C_PId.t * (C_Status.t) ref -> (C_PId.t) C_Errno.t;
-val spawne = _import "MLton_Process_spawne" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
-val spawnp = _import "MLton_Process_spawnp" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_Int.t) C_Errno.t;
+val spawne = _import "MLton_Process_spawne" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_PId.t) C_Errno.t;
+val spawnp = _import "MLton_Process_spawnp" : NullString8.t * String8.t * (C_Pointer.t) array * (C_Size.t) vector -> (C_PId.t) C_Errno.t;
 end
 structure Rlimit = 
 struct

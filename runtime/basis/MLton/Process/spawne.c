@@ -2,7 +2,7 @@
 
 #if HAS_SPAWN
 
-C_Errno_t(C_Int_t) MLton_Process_spawne (NullString8_t pNStr,
+C_Errno_t(C_PId_t) MLton_Process_spawne (NullString8_t pNStr,
                                          String8_t aStr, 
                                          Array(C_Pointer_t) aPtr,
                                          Vector(C_Size_t) aOff,
@@ -14,7 +14,7 @@ C_Errno_t(C_Int_t) MLton_Process_spawne (NullString8_t pNStr,
   char            **env;
   int             aLen;
   int             eLen;
-  int             res;
+  C_PId_t         res;
 
   path = (const char *) pNStr;
   args = (char **) aPtr;
@@ -32,13 +32,13 @@ C_Errno_t(C_Int_t) MLton_Process_spawne (NullString8_t pNStr,
   res = spawnve (SPAWN_MODE, path, 
                  (const char * const *)args,
                  (const char * const *)env);
-  return res;
+  return (C_Errno_t(C_PId_t))res;
 }
 
 #else
 
 __attribute__ ((noreturn))
-C_Errno_t(C_Int_t) MLton_Process_spawne (__attribute__ ((unused))NullString8_t pNStr,
+C_Errno_t(C_PId_t) MLton_Process_spawne (__attribute__ ((unused))NullString8_t pNStr,
                                          __attribute__ ((unused))String8_t aStr, 
                                          __attribute__ ((unused))Array(C_Pointer_t) aPtr,
                                          __attribute__ ((unused))Vector(C_Size_t) aOff,
