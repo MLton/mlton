@@ -407,14 +407,31 @@ structure ObjectType =
       val thread = fn () =>
          let
             val padding =
-               case (!Control.align,
-                     Bits.toInt (Control.Target.Size.csize ()),
-                     Bits.toInt (Control.Target.Size.objptr ())) of
-                  (Control.Align4,32,32) => Type.word0
-                | (Control.Align8,32,32) => Type.word0
-                | (Control.Align4,64,64) => Type.word0
-                | (Control.Align8,64,64) => Type.word0
-                | _ => Error.bug "RepType.ObjectType.thread"
+               let
+                  val align =
+                     case !Control.align of
+                        Control.Align4 => Bytes.fromInt 4
+                      | Control.Align8 => Bytes.fromInt 8
+                  val bytesHeader =
+                     Bits.toBytes (Control.Target.Size.header ())
+                  val bytesCSize =
+                     Bits.toBytes (Control.Target.Size.csize ())
+                  val bytesExnStack =
+                     Bits.toBytes (Type.width (Type.exnStack ()))
+                  val bytesStack =
+                     Bits.toBytes (Type.width (Type.stack ()))
+
+                  val bytesObject =
+                     Bytes.+ (bytesHeader,
+                     Bytes.+ (bytesCSize,
+                     Bytes.+ (bytesExnStack,
+                              bytesStack)))
+                  val bytesTotal =
+                     Bytes.align (bytesObject, {alignment = align})
+                  val bytesPad = Bytes.- (bytesTotal, bytesObject)
+               in
+                  Type.bits (Bytes.toBits bytesPad)
+               end
          in
             Normal {hasIdentity = true,
                     ty = Type.seq (Vector.new4 (padding,
