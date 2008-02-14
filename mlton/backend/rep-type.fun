@@ -361,8 +361,7 @@ structure ObjectType =
        | Normal of {hasIdentity: bool,
                     ty: ty}
        | Stack
-       | Weak of Type.t
-       | WeakGone
+       | Weak of Type.t option
 
       fun layout (t: t) =
          let
@@ -378,8 +377,7 @@ structure ObjectType =
                        record [("hasIdentity", Bool.layout hasIdentity),
                                ("ty", Type.layout ty)]]
              | Stack => str "Stack"
-             | Weak t => seq [str "Weak ", Type.layout t]
-             | WeakGone => str "WeakGone"
+             | Weak t => seq [str "Weak ", Option.layout Type.layout t]
          end
 
       fun isOk (t: t): bool =
@@ -402,8 +400,7 @@ structure ObjectType =
                             | Control.Align8 => Bits.isWord64Aligned b)
                end
           | Stack => true
-          | Weak t => Type.isObjptr t
-          | WeakGone => true
+          | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
 
       val stack = Stack
 
@@ -427,7 +424,7 @@ structure ObjectType =
          end
 
       (* Order in the following vector matters.  The basic pointer tycons must
-       * correspond to the constants in gc.h.
+       * correspond to the constants in gc/object.h.
        * STACK_TYPE_INDEX,
        * THREAD_TYPE_INDEX,
        * WEAK_GONE_TYPE_INDEX,
@@ -450,7 +447,7 @@ structure ObjectType =
             Vector.fromList
             [(ObjptrTycon.stack, stack),
              (ObjptrTycon.thread, thread ()),
-             (ObjptrTycon.weakGone, WeakGone),
+             (ObjptrTycon.weakGone, Weak NONE),
              wordVec 8,
              wordVec 32,
              wordVec 16,
@@ -479,8 +476,7 @@ structure ObjectType =
                                numObjptrs = nops}
                   end
              | Stack => R.Stack
-             | Weak _ => R.Weak
-             | WeakGone => R.WeakGone
+             | Weak to => R.Weak {gone = Option.isNone to}
       end
    end
 

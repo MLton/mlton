@@ -75,8 +75,7 @@ signature RUNTIME =
                           bytesNonObjptrs: Bytes.t,
                           numObjptrs: int}
              | Stack
-             | Weak
-             | WeakGone
+             | Weak of {gone: bool}
          end
 
       val allocTooLarge: Bytes.t

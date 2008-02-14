@@ -17,8 +17,7 @@ signature OBJECT_TYPE =
        | Normal of {hasIdentity: bool,
                     ty: ty}
        | Stack
-       | Weak of ty (* in Weak t, must have Type.isPointer t *)
-       | WeakGone
+       | Weak of ty option (* in Weak (SOME t), must have Type.isPointer t *)
 
       val basic: unit -> (ObjptrTycon.t * t) vector
       val isOk: t -> bool

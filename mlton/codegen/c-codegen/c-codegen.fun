@@ -339,7 +339,7 @@ fun outputDeclarations
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
                       (2, false, 0, 0)
-                 | Weak =>
+                 | Weak {gone = false} =>
                       (case (!Control.align,
                              Bits.toInt (Control.Target.Size.cpointer ()),
                              Bits.toInt (Control.Target.Size.objptr ())) of
@@ -348,7 +348,7 @@ fun outputDeclarations
                         | (Control.Align4,64,64) => (3, false, 8, 1)
                         | (Control.Align8,64,64) => (3, false, 8, 1)
                         | _ => Error.bug "CCodegen.declareObjectTypes")
-                 | WeakGone =>
+                 | Weak {gone = true} =>
                       (case (!Control.align,
                              Bits.toInt (Control.Target.Size.cpointer ()),
                              Bits.toInt (Control.Target.Size.objptr ())) of

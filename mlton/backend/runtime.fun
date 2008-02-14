@@ -147,8 +147,7 @@ structure RObjectType =
                     bytesNonObjptrs: Bytes.t,
                     numObjptrs: int}
        | Stack
-       | Weak
-       | WeakGone
+       | Weak of {gone: bool}
 
       fun layout (t: t): Layout.t =
          let
@@ -166,8 +165,9 @@ structure RObjectType =
                                ("bytesNonObjptrs", Bytes.layout bytesNonObjptrs),
                                ("numObjptrs", Int.layout numObjptrs)]]
              | Stack => str "Stack"
-             | Weak => str "Weak"
-             | WeakGone => str "WeakGone"
+             | Weak {gone} => 
+                  seq [str "Weak",
+                       record [("gone", Bool.layout gone)]]
          end
       val _ = layout (* quell unused warning *)
    end

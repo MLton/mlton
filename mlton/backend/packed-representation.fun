@@ -2692,7 +2692,7 @@ fun compute (program as Ssa.Program.T {datatypes, ...}) =
                               val r = Value.get r
                            in
                               if Rep.isObjptr r
-                                 then SOME (opt, ObjectType.Weak (Rep.ty r))
+                                 then SOME (opt, ObjectType.Weak (SOME (Rep.ty r)))
                               else NONE
                            end)
                     in
