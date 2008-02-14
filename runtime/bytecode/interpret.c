@@ -46,7 +46,7 @@ enum {
 #define WordPointer Word64
 #define WordArrayIndex Word64
 #else
-#error GC_MODEL_* unspecified
+#error GC_MODEL_* undefined
 #endif
 
 typedef WordArrayIndex ArrayIndex;
