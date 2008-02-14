@@ -13,10 +13,12 @@
  *   array, normal (fixed size), stack, and weak.
  */
 typedef enum { 
-  ARRAY_TAG,
-  NORMAL_TAG,
-  STACK_TAG,
-  WEAK_TAG,
+  /* The tag indices here must agree with those in declareObjectTypes()
+   * in codegen/c-codegen/c-codegen.fun. */
+  ARRAY_TAG = 0,
+  NORMAL_TAG = 1,
+  STACK_TAG = 2,
+  WEAK_TAG = 3,
 } GC_objectTypeTag;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
