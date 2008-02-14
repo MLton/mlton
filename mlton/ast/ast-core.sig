@@ -173,10 +173,10 @@ signature AST_CORE =
          sig
             type t
             datatype node = T of (Pat.t * Exp.t) vector
-            include WRAPPED
-            sharing type node' = node
-            sharing type obj = t
-         end where type t = Exp.match
+            include WRAPPED sharing type node' = node
+                            sharing type obj = t
+         end 
+      sharing type Exp.match  = Match.t
 
       structure EbRhs:
          sig

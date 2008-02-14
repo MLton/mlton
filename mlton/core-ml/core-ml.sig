@@ -175,7 +175,7 @@ signature CORE_ML =
 
             val layout: t -> Layout.t
          end
-      where type t = Exp.dec
+      sharing type Exp.dec = Dec.t
 
       structure Program:
          sig
