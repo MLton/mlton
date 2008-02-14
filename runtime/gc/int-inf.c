@@ -67,8 +67,8 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
         space[i] = (mp_limb_t)arg;
         // The conditional below is to quell a gcc warning:
         //   right shift count >= width of type
-        // When 1 == LIMBS_PEROBJPTR, the for loop will not continue, so the
-        // shift doesn't matter.
+        // When 1 == LIMBS_PER_OBJPTR, the for loop will not continue,
+        // so the shift doesn't matter.
         arg = arg >> (1 == LIMBS_PER_OBJPTR ?
                         0 :
                         CHAR_BIT * sizeof(mp_limb_t));
