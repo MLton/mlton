@@ -332,13 +332,13 @@ fun outputDeclarations
              val (tag, hasIdentity, bytesNonObjptrs, numObjptrs) =
                 case ObjectType.toRuntime ty of
                    Array {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      (0, hasIdentity, 
+                      ("ARRAY_TAG", hasIdentity, 
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Normal {hasIdentity, bytesNonObjptrs, numObjptrs} =>
-                      (1, hasIdentity, 
+                      ("NORMAL_TAG", hasIdentity, 
                        Bytes.toInt bytesNonObjptrs, numObjptrs)
                  | Stack =>
-                      (2, false, 0, 0)
+                      ("STACK_TAG", false, 0, 0)
                  | Weak {gone} =>
                       let
                          val bytesObjptr =
@@ -372,10 +372,10 @@ fun outputDeclarations
                                then (bytesNonObjptrs + bytesObjptr, 0)
                             else (bytesNonObjptrs, 1)
                       in
-                         (3, false, bytesNonObjptrs, numObjptrs)
+                         ("WEAK_TAG", false, bytesNonObjptrs, numObjptrs)
                       end
           in
-             concat ["{ ", C.int tag, ", ",
+             concat ["{ ", tag, ", ",
                      C.bool hasIdentity, ", ",
                      C.int bytesNonObjptrs, ", ",
                      C.int numObjptrs, " }"]
