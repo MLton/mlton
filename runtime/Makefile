@@ -9,13 +9,24 @@
 PATH := ../bin:$(shell echo $$PATH)
 
 TARGET := self
+
+ifeq ($(TARGET), self)
+CC := gcc -std=gnu99
+AR := ar rc
+RANLIB := ranlib
+else
+CC := $(TARGET)-gcc -std=gnu99
+AR := $(TARGET)-ar rc
+RANLIB := $(TARGET)-ranlib
+endif
+
 TARGET_ARCH := $(shell ../bin/host-arch)
 TARGET_OS := $(shell ../bin/host-os)
 GCC_MAJOR_VERSION :=						\
-	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
+	$(shell $(CC) -v 2>&1 | grep 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
 GCC_MINOR_VERSION :=						\
-	$(shell gcc -v 2>&1 | grep 'gcc version' | 		\
+	$(shell $(CC) -v 2>&1 | grep 'gcc version' | 		\
 		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
 GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
@@ -94,16 +105,6 @@ ifeq ($(TARGET_OS), solaris)
 FLAGS += -funroll-all-loops
 endif
 
-ifeq ($(TARGET), self)
-AR := ar rc
-RANLIB := ranlib
-else
-AR := $(TARGET)-ar rc
-RANLIB := $(TARGET)-ranlib
-FLAGS += -b $(TARGET)
-endif
-
-CC := gcc -std=gnu99
 CPPFLAGS :=
 CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(CPPFLAGS) $(OPTFLAGS)

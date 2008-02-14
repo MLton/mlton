@@ -851,7 +851,23 @@ fun commandLine (args: string list): unit =
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
 
-      val gcc = !gcc
+      (* When cross-compiling, use the named cross compiler.
+       * Older gcc versions used -b for multiple targets.
+       * If this is still needed, a shell script wrapper can hide this.
+       *)
+      val gcc = 
+         case target of 
+            Cross s => 
+               let
+                  val {dir = gccDir, file = gccFile} =
+                     OS.Path.splitDirFile (!gcc)
+               in 
+                  OS.Path.joinDirFile
+                  {dir = gccDir,
+                   file = s ^ "-" ^ gccFile}
+               end 
+          | Self => !gcc
+
       fun addTargetOpts opts =
          List.fold
          (!opts, [], fn ({opt, pred}, ac) =>
@@ -872,15 +888,6 @@ fun commandLine (args: string list): unit =
          List.concat [[concat ["-L", !libTargetDir],
                        if !debugRuntime then "-lmlton-gdb" else "-lmlton"],
                       addTargetOpts linkOpts]
-      (* With gcc 3.4, the '-b <arch>' must be the first argument. *)
-      val targetOpts =
-         case target of
-            Cross s =>
-               if Cygwin = MLton.Platform.OS.host
-                  andalso String.hasSubstring (s, {substring = "mingw"})
-                  then ["-mno-cygwin"]
-               else ["-b", s]
-          | Self => []
       val _ =
          if not (hasCodegen (!codegen))
             then usage (concat ["can't use ",
@@ -1079,8 +1086,7 @@ fun commandLine (args: string list): unit =
                                System.system
                                 (gcc,
                                  List.concat
-                                  [targetOpts,
-                                   ["-o", output],
+                                  [["-o", output],
                                    if !debug then gccDebug else [],
                                    inputs,
                                    linkOpts]))
@@ -1128,8 +1134,7 @@ fun commandLine (args: string list): unit =
                            System.system
                             (gcc,
                              List.concat
-                             [targetOpts,
-                              [ "-std=gnu99", "-c" ],
+                             [[ "-std=gnu99", "-c" ],
                               if !debug then debugSwitches else [],
                               ccOpts,
                               ["-o", output],
@@ -1144,8 +1149,7 @@ fun commandLine (args: string list): unit =
                            System.system
                            (gcc,
                             List.concat
-                            [targetOpts,
-                             ["-c"],
+                            [["-c"],
                              if !debug then [asDebug] else [],
                              asOpts,
                              ["-o", output],
