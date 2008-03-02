@@ -702,11 +702,10 @@ signature BASIS_EXTRA =
 *)
    where type Array2.traversal = Array2.traversal
    where type 'a ArraySlice.slice = 'a ArraySlice.slice
-   where type BinIO.instream = BinIO.instream
-   where type BinIO.outstream = BinIO.outstream
-   where type BinPrimIO.reader = BinPrimIO.reader
-   where type BinPrimIO.writer = BinPrimIO.writer
-   where type FixedInt.int = FixedInt.int
+   where type BinIO.instream = BinIO.instream (* UNIX *)
+   where type BinIO.outstream = BinIO.outstream (* UNIX *)
+   where type BinPrimIO.reader = BinPrimIO.reader (* POSIX_IO *)
+   where type BinPrimIO.writer = BinPrimIO.writer (* POSIX_IO *)
    where type IO.buffer_mode = IO.buffer_mode
    where type LargeInt.int = LargeInt.int
    where type LargeReal.real = LargeReal.real
@@ -716,7 +715,7 @@ signature BASIS_EXTRA =
    where type IEEEReal.rounding_mode = IEEEReal.rounding_mode
    where type NetHostDB.in_addr = NetHostDB.in_addr
    where type NetHostDB.addr_family = NetHostDB.addr_family
-   where type OS.IO.iodesc = OS.IO.iodesc
+   where type OS.IO.iodesc = OS.IO.iodesc (* PRIM_IO, POSIX_FILE_SYS *)
    where type OS.Process.status = OS.Process.status (* UNIX, POSIX_PROCESS *)
    where type Position.int = Position.int
    where type Posix.IO.file_desc = Posix.IO.file_desc
@@ -732,10 +731,10 @@ signature BASIS_EXTRA =
    where type ('a, 'b) StringCvt.reader = ('a, 'b) StringCvt.reader
 *)
    where type SysWord.word = SysWord.word
-   where type TextIO.instream = TextIO.instream
-   where type TextIO.outstream = TextIO.outstream
-   where type TextPrimIO.reader = TextPrimIO.reader
-   where type TextPrimIO.writer = TextPrimIO.writer
+   where type TextIO.instream = TextIO.instream (* UNIX *)
+   where type TextIO.outstream = TextIO.outstream (* UNIX *)
+   where type TextPrimIO.reader = TextPrimIO.reader (* POSIX_IO *)
+   where type TextPrimIO.writer = TextPrimIO.writer (* POSIX_IO *)
    where type Time.time = Time.time
 (*
    where type 'a Vector.vector = 'a Vector.vector
@@ -756,6 +755,7 @@ signature BASIS_EXTRA =
    where type MLton.Thread.Runnable.t = MLton.Thread.Runnable.t
 
    (* Types that must be exposed because constants denote them. *)
+   where type FixedInt.int = FixedInt.int
    where type Int1.int = Int1.int
    where type Int2.int = Int2.int
    where type Int3.int = Int3.int
