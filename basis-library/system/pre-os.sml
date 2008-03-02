@@ -9,14 +9,14 @@ structure OS =
    struct
       structure Process :> 
          sig
-            type status
             structure Status :
                sig
-                  type t = status
+                  type t
                   val equals: t * t -> bool
                   val fromC: C_Status.t -> t
                   val toC: t -> C_Status.t
                end
+            type status = Status.t
          end =
          struct
             structure Status =
