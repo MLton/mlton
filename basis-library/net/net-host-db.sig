@@ -24,6 +24,6 @@ signature NET_HOST_DB_EXTRA =
 
       val any: unit -> in_addr
       val inAddrToWord8Vector: in_addr -> Word8.word vector
-      val new_in_addr: unit -> pre_in_addr * (unit -> in_addr)
+      val newInAddr: unit -> pre_in_addr * (unit -> in_addr)
       val preInAddrToWord8Array: pre_in_addr -> Word8.word array
    end

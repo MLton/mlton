@@ -18,7 +18,7 @@ structure UnixSock : UNIX_SOCK =
 
       fun toAddr s = 
         let
-          val (sa, salen, finish) = Socket.new_sock_addr ()
+          val (sa, salen, finish) = Socket.newSockAddr ()
           val _ = Prim.toAddr (NullString.nullTerm s, 
                                C_Size.fromInt (String.size s), 
                                sa, salen)

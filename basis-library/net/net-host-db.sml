@@ -17,7 +17,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
       val inAddrToWord8Vector = fn v => v
 
       val inAddrLen = C_Size.toInt Prim.inAddrSize
-      fun new_in_addr () =
+      fun newInAddr () =
         let
           val ia: pre_in_addr = Array.array (inAddrLen, 0wx0: Word8.word)
           fun finish () = Array.vector ia
@@ -26,7 +26,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
         end
       fun any () =
          let
-            val (wa, finish) = new_in_addr ()
+            val (wa, finish) = newInAddr ()
             fun loop (i, acc) =
                if i >= inAddrLen
                   then ()

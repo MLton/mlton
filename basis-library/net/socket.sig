@@ -171,7 +171,7 @@ signature SOCKET_EXTRA =
     val fdToSock: Posix.FileSys.file_desc -> ('af, 'sock_type) sock
     type pre_sock_addr
     val unpackSockAddr: 'af sock_addr -> Word8.word vector
-    val new_sock_addr: unit -> (pre_sock_addr * C_Socklen.t ref * (unit -> 'af sock_addr))
+    val newSockAddr: unit -> (pre_sock_addr * C_Socklen.t ref * (unit -> 'af sock_addr))
 
     structure CtlExtra:
        sig

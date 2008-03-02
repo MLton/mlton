@@ -22,7 +22,7 @@ structure INetSock:> INET_SOCK =
             val port = Word16.fromInt port
                        handle Overflow => PosixError.raiseSys PosixError.inval
             val port = Net.Word16.hton port
-            val (sa, salen, finish) = Socket.new_sock_addr ()
+            val (sa, salen, finish) = Socket.newSockAddr ()
             val _ = Prim.toAddr (NetHostDB.inAddrToWord8Vector in_addr,
                                  port, sa, salen)
 
@@ -38,7 +38,7 @@ structure INetSock:> INET_SOCK =
           val port = Prim.getPort ()
           val port = Net.Word16.ntoh port
           val port = Word16.toInt port
-          val (ia, finish) = NetHostDB.new_in_addr ()
+          val (ia, finish) = NetHostDB.newInAddr ()
           val _ = Prim.getInAddr (NetHostDB.preInAddrToWord8Array ia)
         in
           (finish (), port)

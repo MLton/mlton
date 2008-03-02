@@ -22,7 +22,7 @@ val fdToSock = fn x => x
 type pre_sock_addr = Word8.word array
 datatype sock_addr = SA of Word8.word vector
 fun unpackSockAddr (SA sa) = sa
-fun new_sock_addr (): (pre_sock_addr * C_Socklen.t ref * (unit -> sock_addr)) = 
+fun newSockAddr (): (pre_sock_addr * C_Socklen.t ref * (unit -> sock_addr)) = 
    let
       val salen = C_Size.toInt Prim.sockAddrStorageLen
       val sa = Array.array (salen, 0wx0)
@@ -340,7 +340,7 @@ structure CtlExtra =
       local
          fun getName (s, f: sock * pre_sock_addr * C_Socklen.t ref -> C_Int.int C_Errno.t) =
             let
-               val (sa, salen, finish) = new_sock_addr ()
+               val (sa, salen, finish) = newSockAddr ()
                val () = Syscall.simple (fn () => f (s, sa, salen))
             in
                finish ()
@@ -413,7 +413,7 @@ fun connectNB (s, SA sa) =
 
 fun accept s =
    let
-      val (sa, salen, finish) = new_sock_addr ()
+      val (sa, salen, finish) = newSockAddr ()
       val s = Syscall.simpleResultRestart (fn () => Prim.accept (s, sa, salen))
    in
       (s, finish ())
@@ -421,7 +421,7 @@ fun accept s =
 
 fun acceptNB s =
    let
-      val (sa, salen, finish) = new_sock_addr ()
+      val (sa, salen, finish) = newSockAddr ()
    in
       nonBlock
       (C_Int.fromInt ~1, 
@@ -630,7 +630,7 @@ fun recvVec (sock, n) = recvVec' (sock, n, no_in_flags)
 fun recvArrFrom' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
-      val (sa, salen, finish) = new_sock_addr ()
+      val (sa, salen, finish) = newSockAddr ()
       val n =
          (C_SSize.toInt o Syscall.simpleResultRestart')
          ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
@@ -687,7 +687,7 @@ fun recvVecNB (sock, n) = recvVecNB' (sock, n, no_in_flags)
 fun recvArrFromNB' (s, sl, in_flags) =
    let
       val (buf, i, sz) = Word8ArraySlice.base sl
-      val (sa, salen, finish) = new_sock_addr ()
+      val (sa, salen, finish) = newSockAddr ()
    in
       nonBlock
       (C_SSize.castFromFixedInt ~1,
@@ -700,7 +700,7 @@ fun recvArrFromNB' (s, sl, in_flags) =
 fun recvVecFromNB' (s, n, in_flags) =
    let
       val a = Word8Array.arrayUninit n
-      val (sa, salen, finish) = new_sock_addr ()
+      val (sa, salen, finish) = newSockAddr ()
    in
       nonBlock
       (C_SSize.castFromFixedInt ~1,
