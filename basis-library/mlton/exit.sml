@@ -9,7 +9,7 @@ structure Exit =
    struct
       structure Status = 
          struct
-            open OS.Process.Status
+            open PreOS.Process.Status
             val fromInt = fromC o C_Status.fromInt
             val toInt = C_Status.toInt o toC
             val failure = fromInt 1
