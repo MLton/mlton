@@ -18,11 +18,9 @@ fun system s =
    let
       val status = OS.Process.system s
    in
-      if status = OS.Process.success
+      if OS.Process.isSuccess status
          then ()
-      else if status = OS.Process.failure
-              then Error.bug (concat ["Process.system: command failed: ", s])
-           else Error.bug (concat ["Process.system: strange return: ", s])
+      else Error.bug (concat ["Process.system: command failed: ", s])
    end
 
 structure Command =

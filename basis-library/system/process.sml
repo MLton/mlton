@@ -17,13 +17,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       structure Status =
          struct
-            type t = C_Status.t
-
-            val fromInt = C_Status.fromInt
-            val toInt = C_Status.toInt
-
-            val failure = fromInt 1
-            val success = fromInt 0
+            open MLtonProcess.Status
 
             val fromPosix =
                fn es =>
@@ -32,7 +26,8 @@ structure OS_Process: OS_PROCESS_EXTRA =
                in
                   case es of
                      W_EXITED => success
-                   | W_EXITSTATUS w => C_Status.castFromSysWord (Word8.castToSysWord w)
+                   | W_EXITSTATUS w => 
+                        fromC (C_Status.castFromSysWord (Word8.castToSysWord w))
                    | W_SIGNALED _ => failure
                    | W_STOPPED _ => failure
                end
@@ -42,10 +37,10 @@ structure OS_Process: OS_PROCESS_EXTRA =
 
       val failure = Status.failure
       val success = Status.success
-      fun isSuccess st = st = success
+      fun isSuccess st = Status.equals (st, success)
 
       fun system cmd =
-         Posix.Error.SysCall.simpleResult
+         (Status.fromC o Posix.Error.SysCall.simpleResult)
          (fn () =>
           PrimitiveFFI.Posix.Process.system (NullString.nullTerm cmd))
 

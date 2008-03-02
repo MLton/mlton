@@ -7,11 +7,31 @@
 
 structure OS =
    struct
-      structure Process =
+      structure Process :> 
+         sig
+            type status
+            structure Status :
+               sig
+                  type t = status
+                  val equals: t * t -> bool
+                  val fromC: C_Status.t -> t
+                  val toC: t -> C_Status.t
+               end
+         end =
          struct
-            type status = C_Status.t
+            structure Status =
+               struct
+                  type t = C_Status.t
+                  fun equals (x1: t, x2: t) = x1 = x2
+                  val fromC = fn x => x
+                  val toC = fn x => x
+               end
+            type status = Status.t
          end
-      structure IO =
+      structure IO :
+         sig
+            eqtype iodesc
+         end =
          struct
             type iodesc = C_Fd.t
          end

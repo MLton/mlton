@@ -72,7 +72,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
        | W_SIGNALED of signal
        | W_STOPPED of signal 
 
-      fun fromStatus status =
+      fun fromStatus' status = 
          if Prim.ifExited status <> C_Int.zero
             then (case Prim.exitStatus status of
                      0 => W_EXITED
@@ -82,6 +82,8 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          else if Prim.ifStopped status <> C_Int.zero
             then W_STOPPED (Prim.stopSig status)
          else raise Fail "Posix.Process.fromStatus"
+      fun fromStatus status =
+         fromStatus' (PreOS.Process.Status.toC status)
 
       structure W =
          struct
@@ -118,7 +120,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                    pid
                 end)
             end
-         fun getStatus () = fromStatus (!status)
+         fun getStatus () = fromStatus' (!status)
       in
          fun waitpid (wa, flags) =
             let

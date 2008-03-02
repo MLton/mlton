@@ -9,9 +9,9 @@ structure Exit =
    struct
       structure Status = 
          struct
-            type t = C_Status.t
-            val fromInt = C_Status.fromInt
-            val toInt = C_Status.toInt
+            open OS.Process.Status
+            val fromInt = fromC o C_Status.fromInt
+            val toInt = C_Status.toInt o toC
             val failure = fromInt 1
             val success = fromInt 0
          end
@@ -23,6 +23,9 @@ structure Exit =
             then ()
          else Cleaner.addNew (Cleaner.atExit, f)
 
+      fun halt (status: Status.t) =
+         Primitive.MLton.halt (Status.toC status)
+
       fun exit (status: Status.t): 'a =
          if !exiting
             then raise Fail "exit"
@@ -33,7 +36,7 @@ structure Exit =
             in
                if 0 <= i andalso i < 256
                   then (let open Cleaner in clean atExit end
-                        ; Primitive.MLton.halt status
+                        ; halt status
                         ; raise Fail "exit")
                else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
                                         Int.toString i])

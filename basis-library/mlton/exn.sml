@@ -48,7 +48,7 @@ structure MLtonExn =
              ; message "Top-level handler returned.\n"
              ; Exit.exit Exit.Status.failure)
             handle _ => (message "Top-level handler raised exception.\n"
-                         ; Primitive.MLton.halt Exit.Status.failure
+                         ; Exit.halt Exit.Status.failure
                          ; raise Fail "MLton.Exn.wrapHandler")
       in
          val getTopLevelHandler = Primitive.TopLevel.getHandler
