@@ -56,15 +56,19 @@ bool isObjptrInFromSpace (GC_state s, objptr op) {
           or isObjptrInNursery (s, op));
 }
 
+/* Is there space in the heap for "oldGen" additional bytes;
+  also, can "nursery" bytes be allocated by the current thread
+  without using/claiming any shared resources */
 bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery) {
   size_t total;
   bool res;
 
   total =
-    s->heap.oldGenSize + oldGen 
-    + (s->canMinor ? 2 : 1) * (s->limitPlusSlop - s->heap.nursery);
+    s->heap->oldGenSize + oldGen 
+    + (s->canMinor ? 2 : 1) * (s->heap->frontier - s->heap->nursery);
   res = 
-    (total <= s->heap.size) 
+    (total <= s->heap->availableSize) 
+    and (s->heap->start + s->heap->oldGenSize + oldGen <= s->heap->nursery)
     and (nursery <= (size_t)(s->limitPlusSlop - s->frontier));
   if (DEBUG_DETAILED)
     fprintf (stderr, "%s = hasBytesFree (%s, %s)\n",

@@ -155,7 +155,7 @@ void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
     fprintf (stderr,
              "forwardObjptrIfInNursery  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
-  assert (s->heap.nursery <= p and p < s->limitPlusSlop);
+  assert (s->heap->nursery <= p and p < s->heap->frontier);
   forwardObjptr (s, opp);
 }
 

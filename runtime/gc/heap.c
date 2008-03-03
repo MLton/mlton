@@ -12,11 +12,15 @@ void displayHeap (__attribute__ ((unused)) GC_state s,
           "\t\tnursery = "FMTPTR"\n"
           "\t\toldGenSize = %zu\n"
           "\t\tsize = %zu\n"
-          "\t\tstart = "FMTPTR"\n",
+          "\t\tavailableSize = %zu\n"
+          "\t\tstart = "FMTPTR"\n"
+          "\t\tfrontier = "FMTPTR"\n",
           (uintptr_t)heap->nursery,
           heap->oldGenSize,
           heap->size,
-          (uintptr_t)heap->start);
+          heap->availableSize,
+          (uintptr_t)heap->start,
+          (uintptr_t)heap->frontier);
 }
 
 
@@ -25,7 +29,9 @@ void initHeap (__attribute__ ((unused)) GC_state s,
   h->nursery = NULL;
   h->oldGenSize = 0;
   h->size = 0;
+  h->availableSize = h->size;
   h->start = NULL;
+  h->frontier = NULL;
 }
 
 /* sizeofHeapDesired (s, l, cs) 

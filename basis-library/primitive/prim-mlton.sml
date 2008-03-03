@@ -112,8 +112,9 @@ structure Exn =
 
 structure FFI =
    struct
+   (* XXX all these symbols need to be per-processor *)
       val cpointerArray = #1 _symbol "MLton_FFI_CPointer": Pointer.t GetSet.t; ()
-      val getOp = #1 _symbol "MLton_FFI_op": Int32.t GetSet.t;
+      val getOp = _prim "FFI_getOp": unit -> Int32.int;
       val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t GetSet.t; ()
       val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t GetSet.t; ()
       val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t GetSet.t; ()

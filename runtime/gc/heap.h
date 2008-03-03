@@ -22,6 +22,9 @@
 */
 
 typedef struct GC_heap {
+  size_t availableSize; /* may be smaller than size if we are limiting
+                           allocation for profiling purposes */
+  pointer frontier; /* next (globally) unallocated space */
   size_t oldGenSize; /* size of old generation */
   pointer nursery; /* start of nursery */
   size_t size; /* size of heap */

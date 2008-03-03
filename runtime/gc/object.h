@@ -99,6 +99,10 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
 */
 #define GC_NORMAL_HEADER_SIZE GC_HEADER_SIZE
 
+typedef uint32_t GC_smallGapSize;
+#define GC_SMALL_GAP_SIZE_SIZE sizeof (GC_smallGapSize)
+#define GC_BONUS_SLOP (GC_HEADER_SIZE + GC_SMALL_GAP_SIZE_SIZE)
+
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
 

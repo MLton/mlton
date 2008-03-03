@@ -75,7 +75,7 @@ GC_thread newThread (GC_state s, size_t reserved) {
   GC_thread thread;
   pointer res;
 
-  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
+  ensureHasHeapBytesFreeAndOrInvariantForMutator (s, FALSE, FALSE, FALSE, 0, sizeofStackWithHeaderAligned (s, alignStackReserved (s, reserved)) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
   res = newObject (s, GC_THREAD_HEADER, 
                    sizeofThread (s), 
