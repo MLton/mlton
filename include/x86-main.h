@@ -66,13 +66,15 @@ void MLton_callFromC () {                                               \
 int main (int argc, char **argv) {                                      \
         pointer jump;                                                   \
         extern pointer ml;                                              \
+        int procNumber = 0;                                             \
+        gcState = (GC_state *) malloc (MAX_PROCS * sizeof (GC_state));  \
                                                                         \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.amOriginal) {                                       \
+        Initialize (procNumber, al, mg, mfs, mmc, pk, ps);              \
+        if (gcState[procNumber].amOriginal) {                           \
                 real_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
-                jump = *(pointer*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+                jump = *(pointer*)(gcState[procNumber].stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         MLton_jumpToSML(jump);                                          \
         return 1;                                                       \
