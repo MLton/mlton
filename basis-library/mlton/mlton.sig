@@ -34,6 +34,7 @@ signature MLTON =
       structure Itimer: MLTON_ITIMER
       structure LargeReal: MLTON_REAL
       structure LargeWord: MLTON_WORD
+      structure Parallel: MLTON_PARALLEL
       structure Platform: MLTON_PLATFORM
       structure Pointer: MLTON_POINTER
       structure ProcEnv: MLTON_PROC_ENV

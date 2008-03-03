@@ -26,6 +26,7 @@ in
       signature MLTON_ITIMER
       signature MLTON_MONO_ARRAY
       signature MLTON_MONO_VECTOR
+      signature MLTON_PARALLEL
       signature MLTON_PLATFORM
       signature MLTON_POINTER
       signature MLTON_PROC_ENV

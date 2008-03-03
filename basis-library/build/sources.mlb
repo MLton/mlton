@@ -281,6 +281,10 @@ in
    ../mlton/exit.sml
    ../mlton/exn.sig
    ../mlton/exn.sml
+
+   ann "allowFFI true" in
+      ../parallel/internal.sml
+   end
    ../mlton/thread.sig
    ../mlton/thread.sml
    ../mlton/signal.sig
@@ -363,6 +367,22 @@ in
    ../mlton/world.sml
    ../mlton/mono-array.sig
    ../mlton/mono-vector.sig
+
+   ../parallel/workqueue.sig
+   ../parallel/basic.sig
+   ../parallel/future.sig
+   ../parallel/forkjoin.sig
+   ../parallel/array.sig
+   ../parallel/parallel.sig
+   ann "allowFFI true" in
+      ../parallel/$(WORK_QUEUE).sml
+      ../parallel/basic.sml
+      ../parallel/future.sml
+      ../parallel/forkjoin.sml
+   end
+   ../parallel/array.sml
+   ../parallel/parallel.sml
+
    ../mlton/mlton.sig
    ../mlton/mlton.sml
 
