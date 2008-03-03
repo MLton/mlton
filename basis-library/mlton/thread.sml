@@ -70,19 +70,25 @@ fun prepare (t: 'a t, v: 'a): Runnable.t =
 fun new f = T (ref (New f))
 
 local
+   val numProcessors = MLtonParallelInternal.numberOfProcessors
+   val procNum = MLtonParallelInternal.processorNumber
    local
-      val func: (unit -> unit) option ref = ref NONE
+      (* create one reference per processor *)
+      val func: (unit -> unit) option Array.array = 
+          Array.tabulate (numProcessors, fn _ => NONE)
       val base: Prim.preThread =
          let
             val () = Prim.copyCurrent ()
+            (* Call to procNum *must* come after copy *)
+            val proc = procNum ()
          in
-            case !func of
+            case Array.unsafeSub (func, proc) of
                NONE => Prim.savedPre gcState
              | SOME x =>
                   (* This branch never returns. *)
                   let
                      (* Atomic 1 *)
-                     val () = func := NONE
+                     val () = Array.update (func, proc, NONE)
                      val () = atomicEnd ()
                      (* Atomic 0 *)
                   in
@@ -94,16 +100,17 @@ local
       fun newThread (f: unit -> unit) : Prim.thread =
          let
             (* Atomic 2 *)
-            val () = func := SOME f
+            val () = Array.update (func, procNum (), SOME f)
          in
             Prim.copy base
          end
    end
-   val switching = ref false
+   val switching = Array.tabulate (numProcessors, fn _ => false)
 in
    fun 'a atomicSwitch (f: 'a t -> Runnable.t): 'a =
+      let val proc = procNum () in
       (* Atomic 1 *)
-      if !switching
+      if Array.unsafeSub (switching, proc)
          then let
                  val () = atomicEnd ()
                  (* Atomic 0 *)
@@ -112,13 +119,13 @@ in
               end
       else
          let
-            val _ = switching := true
+            val _ = Array.update (switching, proc, true)
             val r : (unit -> 'a) ref = 
                ref (fn () => die "Thread.atomicSwitch didn't set r.\n")
             val t: 'a thread ref =
                ref (Paused (fn x => r := x, Prim.current gcState))
             fun fail e = (t := Dead
-                          ; switching := false
+                          ; Array.update (switching, proc, false)
                           ; atomicEnd ()
                           ; raise e)    
             val (T t': Runnable.t) = f (T t) handle e => fail e
@@ -128,13 +135,19 @@ in
                 | Interrupted t => t
                 | New g => (atomicBegin (); newThread g)
                 | Paused (f, t) => (f (fn () => ()); t)
-            val _ = switching := false
+
+            val _ = if not (Array.unsafeSub (switching, proc))
+                    then raise Fail "switching switched?"
+                    else ()
+ 
+            val _ = Array.update (switching, proc, false)
             (* Atomic 1 when Paused/Interrupted, Atomic 2 when New *)
             val _ = Prim.switchTo primThread (* implicit atomicEnd() *)
             (* Atomic 0 when resuming *)
          in
             !r ()
          end
+      end
 
    fun switch f =
       (atomicBegin ()
@@ -166,6 +179,8 @@ fun toPrimitive (t as T r : unit t): Prim.thread =
 
 
 local
+  (* XXX spoons global state in signal handlers (but that's not the 
+      only problem...) *)
    val signalHandler: Prim.thread option ref = ref NONE
    datatype state = Normal | InHandler
    val state: state ref = ref Normal
