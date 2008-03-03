@@ -363,6 +363,8 @@ structure ObjectType =
        | Stack
        | Weak of Type.t
        | WeakGone
+       | HeaderOnly
+       | Fill
 
       fun layout (t: t) =
          let
@@ -380,6 +382,8 @@ structure ObjectType =
              | Stack => str "Stack"
              | Weak t => seq [str "Weak ", Type.layout t]
              | WeakGone => str "WeakGone"
+             | HeaderOnly => str "HeaderOnly"
+             | Fill => str "Fill"
          end
 
       fun isOk (t: t): bool =
@@ -397,6 +401,8 @@ structure ObjectType =
           | Stack => true
           | Weak t => Type.isObjptr t
           | WeakGone => true
+          | HeaderOnly => true
+          | Fill => true
 
       val stack = Stack
 
@@ -428,6 +434,9 @@ structure ObjectType =
        * WORD16_VECTOR_TYPE_INDEX,
        * WORD32_VECTOR_TYPE_INDEX.
        * WORD64_VECTOR_TYPE_INDEX.
+       * ZERO_WORD_TYPE_INDEX,
+       * ONE_WORD_TYPE_INDEX,
+       * TWO_WORD_TYPE_INDEX.
        *)
       val basic = fn () => 
          let
@@ -447,7 +456,9 @@ structure ObjectType =
              wordVec 8,
              wordVec 32,
              wordVec 16,
-             wordVec 64]
+             wordVec 64,
+             (ObjptrTycon.headerOnly, HeaderOnly),
+             (ObjptrTycon.fill, Fill)]
          end
 
       local
@@ -474,6 +485,8 @@ structure ObjectType =
              | Stack => R.Stack
              | Weak _ => R.Weak
              | WeakGone => R.WeakGone
+             | HeaderOnly => R.HeaderOnly
+             | Fill => R.Fill
       end
    end
 

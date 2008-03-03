@@ -19,6 +19,8 @@ signature OBJECT_TYPE =
        | Stack
        | Weak of ty (* in Weak t, must have Type.isPointer t *)
        | WeakGone
+       | HeaderOnly
+       | Fill
 
       val basic: unit -> (ObjptrTycon.t * t) vector
       val isOk: t -> bool

@@ -370,6 +370,8 @@ fun outputDeclarations
                         | (Control.Align4,64,64) => (3, false, 16, 0)
                         | (Control.Align8,64,64) => (3, false, 16, 0)
                         | _ => Error.bug "CCodegen.declareObjectTypes")
+                 | HeaderOnly => (4, false, 0, 0)
+                 | Fill => (5, false, 0, 0)
           in
              concat ["{ ", C.int tag, ", ",
                      C.bool hasIdentity, ", ",

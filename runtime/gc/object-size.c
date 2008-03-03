@@ -43,10 +43,24 @@ size_t sizeofObject (GC_state s, pointer p) {
     headerBytes = GC_ARRAY_HEADER_SIZE;
     objectBytes = sizeofArrayNoHeader (s, getArrayLength (p), 
                                        bytesNonObjptrs, numObjptrs);
-  } else { /* Stack. */
-    assert (STACK_TAG == tag);
+  } else if (STACK_TAG == tag) {
     headerBytes = GC_STACK_HEADER_SIZE;
     objectBytes = sizeofStackNoHeader (s, (GC_stack)p);
+  }
+  else if (HEADER_ONLY_TAG == tag) {
+    headerBytes = GC_HEADER_SIZE;
+    objectBytes = 0;
+  }
+  else if (FILL_TAG == tag) {
+    GC_smallGapSize bytes;
+    headerBytes = GC_HEADER_SIZE;
+    bytes = *((GC_smallGapSize *)p);
+    objectBytes = GC_SMALL_GAP_SIZE_SIZE + bytes;
+  }
+  else {
+    headerBytes = 0;
+    objectBytes = 0;
+    assert (0 and "unknown tag in sizeofObject");
   }
   return headerBytes + objectBytes;
 }

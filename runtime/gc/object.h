@@ -11,12 +11,17 @@
 /* 
  * There are four kinds of ML objects: 
  *   array, normal (fixed size), stack, and weak.
+ * Plus three additional tags that are used to fill gaps:
+ *   zero, one, and two word objects
+ *   (that is, {0,1,2} words in addition to the header)
  */
 typedef enum { 
   ARRAY_TAG,
   NORMAL_TAG,
   STACK_TAG,
   WEAK_TAG,
+  HEADER_ONLY_TAG,
+  FILL_TAG
 } GC_objectTypeTag;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
@@ -143,6 +148,8 @@ enum {
   WORD32_VECTOR_TYPE_INDEX = 4,
   WORD16_VECTOR_TYPE_INDEX = 5,
   WORD64_VECTOR_TYPE_INDEX = 6,
+  HEADER_ONLY_TYPE_INDEX =   7,
+  FILL_TYPE_INDEX =          8
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
@@ -156,6 +163,9 @@ enum {
 #define GC_WORD16_VECTOR_HEADER buildHeaderFromTypeIndex (WORD16_VECTOR_TYPE_INDEX)
 #define GC_WORD32_VECTOR_HEADER buildHeaderFromTypeIndex (WORD32_VECTOR_TYPE_INDEX)
 #define GC_WORD64_VECTOR_HEADER buildHeaderFromTypeIndex (WORD64_VECTOR_TYPE_INDEX)
+
+#define GC_HEADER_ONLY_HEADER buildHeaderFromTypeIndex (HEADER_ONLY_TYPE_INDEX)
+#define GC_FILL_HEADER buildHeaderFromTypeIndex (FILL_TYPE_INDEX)
 
 static inline void splitHeader (GC_state s, GC_header header,
                                 GC_objectTypeTag *tagRet, bool *hasIdentityRet,

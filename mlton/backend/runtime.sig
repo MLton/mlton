@@ -86,6 +86,8 @@ signature RUNTIME =
              | Stack
              | Weak
              | WeakGone
+             | HeaderOnly
+             | Fill
          end
 
       val allocTooLarge: Bytes.t

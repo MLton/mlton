@@ -60,4 +60,7 @@ in
        | _ => Error.bug "ObjptrTycon.wordVector"
 end
 
+val headerOnly = new ()
+val fill = new ()
+
 end

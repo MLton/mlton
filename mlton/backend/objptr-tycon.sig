@@ -32,4 +32,6 @@ signature OBJPTR_TYCON =
       val thread: t
       val weakGone: t
       val wordVector: Bits.t -> t
+      val headerOnly: t
+      val fill: t
    end

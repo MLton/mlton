@@ -173,6 +173,8 @@ structure RObjectType =
        | Stack
        | Weak
        | WeakGone
+       | HeaderOnly
+       | Fill
 
       fun layout (t: t): Layout.t =
          let
@@ -192,6 +194,9 @@ structure RObjectType =
              | Stack => str "Stack"
              | Weak => str "Weak"
              | WeakGone => str "WeakGone"
+             | HeaderOnly => str "HeaderOnly"
+             | Fill => str "Fill"
+
          end
       val _ = layout (* quell unused warning *)
    end
