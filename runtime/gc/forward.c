@@ -60,12 +60,19 @@ void forwardObjptr (GC_state s, objptr *opp) {
       skip = 0;
     } else { /* Stack. */
       GC_stack stack;
+      bool isCurrentStack = false;
 
       assert (STACK_TAG == tag);
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
 
-      if (getStackCurrentObjptr(s) == op) {
+      /* Check if the pointer is the current stack of any processor. */
+      for (int proc = 0; proc < s->numberOfProcs; proc++) {
+        isCurrentStack |= (getStackCurrentObjptr(&s->procStates[proc]) == op
+                           && not isStackEmpty(stack));
+      }
+
+      if (isCurrentStack) {
         /* Shrink stacks that don't use a lot of their reserved space;
          * but don't violate the stack invariant.
          */
@@ -91,7 +98,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
         /* Shrink heap stacks. */
         stack->reserved = 
           alignStackReserved 
-          (s, max((size_t)(s->controls.ratios.threadShrink * stack->reserved), 
+          (s, max((size_t)(s->controls->ratios.threadShrink * stack->reserved), 
                   stack->used));
         if (DEBUG_STACKS)
           fprintf (stderr, "Shrinking stack to size %s.\n",
@@ -175,11 +182,11 @@ void forwardInterGenerationalObjptrs (GC_state s) {
   /* Constants. */
   cardMap = s->generationalMaps.cardMap;
   crossMap = s->generationalMaps.crossMap;
-  maxCardIndex = sizeToCardMapIndex (align (s->heap.oldGenSize, CARD_SIZE));
-  oldGenStart = s->heap.start;
-  oldGenEnd = oldGenStart + s->heap.oldGenSize;
+  maxCardIndex = sizeToCardMapIndex (align (s->heap->oldGenSize, CARD_SIZE));
+  oldGenStart = s->heap->start;
+  oldGenEnd = oldGenStart + s->heap->oldGenSize;
   /* Loop variables*/
-  objectStart = alignFrontier (s, s->heap.start);
+  objectStart = alignFrontier (s, s->heap->start);
   cardIndex = 0;
   cardStart = oldGenStart;
 checkAll:

@@ -37,12 +37,14 @@ void updateWeaksForCheneyCopy (GC_state s) {
 }
 
 void swapHeapsForCheneyCopy (GC_state s) {
-  struct GC_heap tempHeap;
+  GC_heap tempHeap;
 
-  tempHeap = s->secondaryHeap;
-  s->secondaryHeap = s->heap;
-  s->heap = tempHeap;
-  setCardMapAbsolute (s);
+  for (int proc = 0; proc < s->numberOfProcs; proc++) {
+    tempHeap = s->procStates[proc].secondaryHeap;
+    s->procStates[proc].secondaryHeap = s->procStates[proc].heap;
+    s->procStates[proc].heap = tempHeap;
+    setCardMapAbsolute (&s->procStates[proc]);
+  }
 }
 
 void majorCheneyCopyGC (GC_state s) {

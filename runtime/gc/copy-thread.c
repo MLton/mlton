@@ -9,7 +9,7 @@
 GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
   GC_thread to;
 
-  if (DEBUG_THREADS)
+  if (DEBUG_THREADS or s->controls->messages)
     fprintf (stderr, "copyThread ("FMTPTR")\n", (uintptr_t)from);
   /* newThread may do a GC, which invalidates from.
    * Hence we need to stash from where the GC can find it.
@@ -65,11 +65,14 @@ void GC_copyCurrentThread (GC_state s) {
    */
   /* assert (fromStack->reserved == fromStack->used); */
   assert (fromStack->reserved >= fromStack->used);
-  leave (s);
+
+  /* Formerly: LEAVE1 (s, "toThread"); */
+
   if (DEBUG_THREADS)
-    fprintf (stderr, FMTPTR" = GC_copyCurrentThread\n", (uintptr_t)toThread);
+    fprintf (stderr, FMTPTR" = GC_copyCurrentThread [%d]\n", 
+             (uintptr_t)toThread, Proc_processorNumber (s));
   assert (s->savedThread == BOGUS_OBJPTR);
-  s->savedThread = pointerToObjptr((pointer)toThread - offsetofThread (s), s->heap.start);
+  s->savedThread = pointerToObjptr((pointer)toThread - offsetofThread (s), s->heap->start);
 }
 
 pointer GC_copyThread (GC_state s, pointer p) {
