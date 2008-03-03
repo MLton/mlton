@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct utsname mlton_utsname;
 
 C_String_t Posix_ProcEnv_Uname_getSysName (void) {

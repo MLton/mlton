@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct termios termios;
 
 C_TCFlag_t Posix_TTY_Termios_getIFlag (void) {

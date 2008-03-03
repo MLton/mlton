@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct timeval timeval;
 
 C_Int_t Time_getTimeOfDay (void) {

@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct protoent *protoent;
 
 C_String_t NetProtDB_getEntryName(void) {

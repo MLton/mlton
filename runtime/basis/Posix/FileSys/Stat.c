@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct stat statbuf;
 
 C_Dev_t Posix_FileSys_Stat_getDev (void) {

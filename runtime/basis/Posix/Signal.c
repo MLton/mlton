@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX reference to global gcState */
 extern struct GC_state gcState;
 
 static void handler (int signum) {
@@ -55,6 +56,7 @@ C_Errno_t(C_Int_t) Posix_Signal_isIgnore (C_Int_t signum, Ref(C_Int_t) isIgn) {
 }
 
 C_Errno_t(C_Int_t) Posix_Signal_handlee (C_Int_t signum) {
+  /* XXX global state */
   static struct sigaction sa;
 
   sigaddset (GC_getSignalsHandledAddr (&gcState), signum);
@@ -85,6 +87,7 @@ void Posix_Signal_resetPending (void) {
   GC_setGCSignalPending (&gcState, FALSE);
 }
 
+/* XXX global state */
 static sigset_t set;
 
 C_Errno_t(C_Int_t) Posix_Signal_sigaddset (C_Signal_t signum) {

@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct tm tm_in;
 static struct tm *tm_out;
 

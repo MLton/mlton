@@ -11,6 +11,7 @@ Socket_INetSock_toAddr (Vector(Word8_t) in_addr, Word16_t port,
   *((socklen_t*)addrlen) = sizeof(struct sockaddr_in);
 }
 
+/* XXX global state */
 static uint16_t fromAddr_port;
 static struct in_addr fromAddr_in_addr;
 

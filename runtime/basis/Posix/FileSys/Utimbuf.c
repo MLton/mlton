@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct utimbuf utimbuf;
 
 void Posix_FileSys_Utimbuf_setAcTime (C_Time_t t) {

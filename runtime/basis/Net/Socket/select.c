@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct timeval timeout;
 static struct timeval *timeoutPtr;
 

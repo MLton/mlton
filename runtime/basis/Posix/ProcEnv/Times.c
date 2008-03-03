@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct tms tms;
 
 C_Clock_t Posix_ProcEnv_Times_getUTime(void) {

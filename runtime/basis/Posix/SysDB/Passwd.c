@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct passwd *passwd;
 
 C_String_t Posix_SysDB_Passwd_getName(void) {

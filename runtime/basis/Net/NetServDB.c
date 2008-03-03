@@ -3,6 +3,7 @@
 
 #include "platform.h"
 
+/* XXX global state */
 static struct servent *servent;
 
 C_String_t NetServDB_getEntryName(void) {

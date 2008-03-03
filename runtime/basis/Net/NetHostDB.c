@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct hostent *hostent;
 
 C_String_t NetHostDB_getEntryName(void) {

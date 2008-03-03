@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct flock s_flock;
 
 C_Errno_t(C_Int_t) Posix_IO_FLock_fcntl (C_Fd_t f, C_Int_t cmd) {

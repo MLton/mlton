@@ -1,5 +1,6 @@
 #include "platform.h"
 
+/* XXX global state */
 static struct group *group;
 
 C_String_t Posix_SysDB_Group_getName(void) {
