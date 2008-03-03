@@ -14,3 +14,5 @@ static int processAtMLton (GC_state s, int argc,
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
 int GC_init (GC_state s, int argc, char **argv);
+void GC_lateInit (GC_state s);
+void GC_duplicate (GC_state d, GC_state s);

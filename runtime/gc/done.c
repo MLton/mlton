@@ -51,20 +51,22 @@ void GC_done (GC_state s) {
     fprintf (out, "-------------\t-------\t-------\t---------------\t---------------\n");
     displayCollectionStats
       (out, "copying\t\t", 
-       &s->cumulativeStatistics.ru_gcCopy, 
-       s->cumulativeStatistics.numCopyingGCs, 
-       s->cumulativeStatistics.bytesCopied);
+       &s->cumulativeStatistics->ru_gcCopy, 
+       s->cumulativeStatistics->numCopyingGCs, 
+       s->cumulativeStatistics->bytesCopied);
     displayCollectionStats
       (out, "mark-compact\t", 
-       &s->cumulativeStatistics.ru_gcMarkCompact, 
-       s->cumulativeStatistics.numMarkCompactGCs, 
-       s->cumulativeStatistics.bytesMarkCompacted);
+       &s->cumulativeStatistics->ru_gcMarkCompact, 
+       s->cumulativeStatistics->numMarkCompactGCs, 
+       s->cumulativeStatistics->bytesMarkCompacted);
     displayCollectionStats
       (out, "minor\t\t",
-       &s->cumulativeStatistics.ru_gcMinor, 
-       s->cumulativeStatistics.numMinorGCs, 
-       s->cumulativeStatistics.bytesCopiedMinor);
+       &s->cumulativeStatistics->ru_gcMinor, 
+       s->cumulativeStatistics->numMinorGCs, 
+       s->cumulativeStatistics->bytesCopiedMinor);
     totalTime = getCurrentTime () - s->startTime;
+    fprintf (out, "total time: %s ms\n",
+             uintmaxToCommaString (totalTime));
     fprintf (out, "total GC time: %s ms (%.1f%%)\n",
              uintmaxToCommaString (gcTime), 
              (0 == totalTime) 

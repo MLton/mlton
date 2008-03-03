@@ -7,19 +7,19 @@
 
 bool isPointerInHeap (GC_state s, pointer p) {
   return (not (isPointer (p))
-          or (s->heap.start <= p 
-              and p < s->frontier));
+          or (s->heap->start <= p 
+              and p < s->heap->start + s->heap->size));
 }
 
 bool isPointerInOldGen (GC_state s, pointer p) {
   return (not (isPointer (p))
-          or (s->heap.start <= p 
-              and p < s->heap.start + s->heap.oldGenSize));
+          or (s->heap->start <= p 
+              and p < s->heap->start + s->heap->oldGenSize));
 }
 
 bool isPointerInNursery (GC_state s, pointer p) {
   return (not (isPointer (p))
-          or (s->heap.nursery <= p and p < s->frontier));
+          or (s->heap->nursery <= p and p < s->heap->frontier));
 }
 
 bool isPointerInFromSpace (GC_state s, pointer p) {
@@ -31,7 +31,7 @@ bool isObjptrInHeap (GC_state s, objptr op) {
   pointer p;
   if (not (isObjptr(op)))
     return TRUE;
-  p = objptrToPointer (op, s->heap.start);
+  p = objptrToPointer (op, s->heap->start);
   return isPointerInHeap (s, p);
 }
 
@@ -39,7 +39,7 @@ bool isObjptrInOldGen (GC_state s, objptr op) {
   pointer p;
   if (not (isObjptr(op)))
     return TRUE;
-  p = objptrToPointer (op, s->heap.start);
+  p = objptrToPointer (op, s->heap->start);
   return isPointerInOldGen (s, p);
 }
 
@@ -47,7 +47,7 @@ bool isObjptrInNursery (GC_state s, objptr op) {
   pointer p;
   if (not (isObjptr(op)))
     return TRUE;
-  p = objptrToPointer (op, s->heap.start);
+  p = objptrToPointer (op, s->heap->start);
   return isPointerInNursery (s, p);
 }
 

@@ -15,10 +15,12 @@
  * Don't make it inline, because it is also called in basis/Thread.c,
  * and when compiling with COMPILE_FAST, they may appear out of order.
  */
-void GC_startSignalHandler (GC_state s) {
+void GC_startSignalHandler (__attribute__ ((unused)) GC_state *gs) {
   /* Switch to the signal handler thread. */
+  GC_state s = pthread_getspecific (gcstate_key);
   if (DEBUG_SIGNALS) {
-    fprintf (stderr, "GC_startSignalHandler\n");
+    fprintf (stderr, "GC_startSignalHandler [%d]\n", 
+             Proc_processorNumber (s));
   }
   assert (s->atomicState == 1);
   assert (s->signalsInfo.signalIsPending);
@@ -34,9 +36,12 @@ void GC_startSignalHandler (GC_state s) {
   s->atomicState = 2;
 }
 
-void GC_finishSignalHandler (GC_state s) {
+void GC_finishSignalHandler (__attribute__ ((unused)) GC_state *gs) {
+
+  GC_state s = pthread_getspecific (gcstate_key);
   if (DEBUG_SIGNALS)
-    fprintf (stderr, "GC_finishSignalHandler ()\n");
+    fprintf (stderr, "GC_finishSignalHandler () [%d]\n",
+             Proc_processorNumber (s));
   assert (s->atomicState == 1);
   s->signalsInfo.amInSignalHandler = FALSE;     
 }
@@ -44,7 +49,7 @@ void GC_finishSignalHandler (GC_state s) {
 void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
   if (s->atomicState == 1 
       and s->signalsInfo.signalIsPending) {
-    GC_startSignalHandler (s);
+    GC_startSignalHandler (&s->procStates);
     switchToThread (s, s->signalHandlerThread);
   }
 }

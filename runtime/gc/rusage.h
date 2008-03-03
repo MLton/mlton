@@ -20,4 +20,15 @@ static inline uintmax_t getCurrentTime (void);
 static inline void startTiming (struct rusage *ru_start);
 static uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_gc);
 
+static inline void timevalZero (struct timeval *tv);
+static void timevalPlusMax (struct timeval *tv1,
+                            struct timeval *tv2,
+                            struct timeval *tv);
+static void timevalMinusMax (struct timeval *tv1,
+                             struct timeval *tv2,
+                             struct timeval *tv);
+static inline uintmax_t timevalTime (struct timeval *tv);
+static inline void startWallTiming (struct timeval *tv_start);
+static uintmax_t stopWallTiming (struct timeval *tv_start, struct timeval *tv_acc);
+
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

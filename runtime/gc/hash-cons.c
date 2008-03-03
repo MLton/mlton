@@ -33,22 +33,23 @@ GC_objectHashTable allocHashTable (GC_state s) {
 
   t = (GC_objectHashTable)(malloc_safe (sizeof(*t)));
   // Try to use space in the heap for the elements.
-  if (not (isHeapInit (&s->secondaryHeap))) {
+  if (not (isHeapInit (s->secondaryHeap))) {
     if (DEBUG_SHARE)
       fprintf (stderr, "using secondaryHeap\n");
-    regionStart = s->secondaryHeap.start;
-    regionEnd = s->secondaryHeap.start + s->secondaryHeap.size;
+    regionStart = s->secondaryHeap->start;
+    regionEnd = s->secondaryHeap->start + s->secondaryHeap->size;
   } else if (s->amInGC or not s->canMinor) {
     if (DEBUG_SHARE)
       fprintf (stderr, "using end of heap\n");
+    /* XX revisit this use of local frontier */
     regionStart = s->frontier;
     regionEnd = s->limitPlusSlop;
   } else {
     if (DEBUG_SHARE)
       fprintf (stderr, "using minor space\n");
     assert (s->canMinor);
-    regionStart = s->heap.start + s->heap.oldGenSize;
-    regionEnd = s->heap.nursery;
+    regionStart = s->heap->start + s->heap->oldGenSize;
+    regionEnd = s->heap->nursery;
   }
   elementsLengthMax = (regionEnd - regionStart) / sizeof (*(t->elements));
   if (DEBUG_SHARE)
@@ -269,7 +270,7 @@ pointer hashConsPointer (GC_state s, pointer object, bool countBytesHashConsed) 
       amount += GC_ARRAY_HEADER_SIZE;
     else
       amount += GC_NORMAL_HEADER_SIZE;
-    s->lastMajorStatistics.bytesHashConsed += amount;
+    s->lastMajorStatistics->bytesHashConsed += amount;
   }
 done:
   if (DEBUG_SHARE)
@@ -281,19 +282,19 @@ done:
 void shareObjptr (GC_state s, objptr *opp) {
   pointer p;
 
-  p = objptrToPointer (*opp, s->heap.start);
+  p = objptrToPointer (*opp, s->heap->start);
   if (DEBUG_SHARE)
     fprintf (stderr, "shareObjptr  opp = "FMTPTR"  *opp = "FMTOBJPTR"\n",
              (uintptr_t)opp, *opp);
   p = hashConsPointer (s, p, FALSE);
-  *opp = pointerToObjptr (p, s->heap.start);
+  *opp = pointerToObjptr (p, s->heap->start);
   markIntergenerationalObjptr (s, opp);
 }
 
 void printBytesHashConsedMessage (GC_state s, uintmax_t total) {
   fprintf (stderr, "%s bytes hash-consed (%.1f%%).\n",
-           uintmaxToCommaString(s->lastMajorStatistics.bytesHashConsed),
+           uintmaxToCommaString(s->lastMajorStatistics->bytesHashConsed),
            (100.0 
-            * ((double)s->lastMajorStatistics.bytesHashConsed 
+            * ((double)s->lastMajorStatistics->bytesHashConsed 
                / (double)total)));
 }

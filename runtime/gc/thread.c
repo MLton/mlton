@@ -16,7 +16,7 @@ void displayThread (GC_state s,
           thread->exnStack,
           thread->bytesNeeded,
           thread->stack);
-  displayStack (s, (GC_stack)(objptrToPointer (thread->stack, s->heap.start)),
+  displayStack (s, (GC_stack)(objptrToPointer (thread->stack, s->heap->start)),
                 stream);
 }
 

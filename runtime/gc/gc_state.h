@@ -38,10 +38,10 @@ struct GC_state {
   objptr *globals;
   uint32_t globalsLength;
   bool hashConsDuringGC;
-  struct GC_heap heap;
+  struct GC_heap *heap;
   struct GC_intInfInit *intInfInits;
   uint32_t intInfInitsLength;
-  struct GC_lastMajorStatistics lastMajorStatistics;
+  struct GC_lastMajorStatistics *lastMajorStatistics;
   pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   int (*loadGlobals)(FILE *f); /* loads the globals from the file. */
   uint32_t magic; /* The magic number for this executable. */
@@ -57,7 +57,7 @@ struct GC_state {
                        */
   int (*saveGlobals)(FILE *f); /* saves the globals to the file. */
   bool saveWorldStatus; /* */
-  struct GC_heap secondaryHeap; /* Used for major copying collection. */
+  struct GC_heap *secondaryHeap; /* Used for major copying collection. */
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
@@ -85,22 +85,20 @@ static void setGCStateCurrentHeap (GC_state s,
 
 #if (defined (MLTON_GC_INTERNAL_BASIS)) 
 
-bool GC_getAmOriginal (GC_state s);
-void GC_setAmOriginal (GC_state s, bool b);
-void GC_setMessages (GC_state s, bool b);
-void GC_setSummary (GC_state s, bool b);
-void GC_setRusageMeasureGC (GC_state s, bool b);
-void GC_setHashConsDuringGC (GC_state s, bool b);
+bool GC_getAmOriginal (GC_state *gs);
+void GC_setAmOriginal (GC_state *gs, bool b);
+void GC_setMessages (GC_state *gs, bool b);
+void GC_setSummary (GC_state *gs, bool b);
+void GC_setRusageMeasureGC (GC_state *gs, bool b);
+void GC_setHashConsDuringGC (GC_state *gs, bool b);
 
-pointer GC_getCurrentThread (GC_state s);
-pointer GC_getSavedThread (GC_state s);
-void GC_setCallFromCHandlerThread (GC_state s, pointer p);
-void GC_setSavedThread (GC_state s, pointer p);
-void GC_setSignalHandlerThread (GC_state s, pointer p);
+pointer GC_getCurrentThread (GC_state *gs);
+pointer GC_getSavedThread (GC_state *gs);
+void GC_setCallFromCHandlerThread (GC_state *gs, pointer p);
+void GC_setSavedThread (GC_state *gs, pointer p);
+void GC_setSignalHandlerThread (GC_state *gs, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
-
-struct rusage* GC_getRusageGCAddr (GC_state s);
 
 sigset_t* GC_getSignalsHandledAddr (GC_state s);
 sigset_t* GC_getSignalsPendingAddr (GC_state s);

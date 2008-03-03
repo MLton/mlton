@@ -118,14 +118,17 @@ void GC_profileLeave (GC_state s);
 void GC_profileInc (GC_state s, size_t amount);
 void GC_profileAllocInc (GC_state s, size_t amount);
 
-GC_profileData GC_getProfileCurrent (GC_state s);
-void GC_setProfileCurrent (GC_state s, GC_profileData p);
+GC_profileData GC_getProfileCurrent (GC_state *gs);
+void GC_setProfileCurrent (GC_state *gs, GC_profileData p);
 
-GC_profileData GC_profileMalloc (GC_state s);
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
-void GC_profileFree (GC_state s, GC_profileData p);
+GC_profileData GC_profileMalloc (GC_state *gs);
+void GC_profileWrite (GC_state *gs, GC_profileData p, NullString8_t fileName);
+void GC_profileFree (GC_state *gs, GC_profileData p);
 
-void GC_profileDone (GC_state s);
+void GC_profileDisable (void);
+void GC_profileEnable (void);
+
+void GC_profileDone (GC_state *gs);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 

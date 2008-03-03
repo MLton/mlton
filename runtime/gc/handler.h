@@ -14,8 +14,8 @@ static inline void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_st
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-void GC_startSignalHandler (GC_state s);
-void GC_finishSignalHandler (GC_state s);
+void GC_startSignalHandler (GC_state *gs);
+void GC_finishSignalHandler (GC_state *gs);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 

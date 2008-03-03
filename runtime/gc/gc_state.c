@@ -10,7 +10,7 @@ void displayGCState (GC_state s, FILE *stream) {
   fprintf (stream,
            "GC state\n");
   fprintf (stream, "\tcurrentThread = "FMTOBJPTR"\n", s->currentThread);
-  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap.start)
+  displayThread (s, (GC_thread)(objptrToPointer (s->currentThread, s->heap->start)
                                 + offsetofThread (s)), 
                  stream);
   fprintf (stream, "\tgenerational\n");
@@ -111,24 +111,24 @@ void GC_setAmOriginal (GC_state s, bool b) {
   s->amOriginal = b;
 }
 
-void GC_setMessages (GC_state s, bool b) {
-  s->controls.messages = b;
+void GC_setMessages (__attribute__ ((unused)) GC_state *gs, bool b) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  s->controls->messages = b;
 }
 
-void GC_setSummary (GC_state s, bool b) {
-  s->controls.summary = b;
+void GC_setSummary (__attribute__ ((unused)) GC_state *gs, bool b) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  s->controls->summary = b;
 }
 
-void GC_setRusageMeasureGC (GC_state s, bool b) {
-  s->controls.rusageMeasureGC = b;
+void GC_setRusageMeasureGC (__attribute__ ((unused)) GC_state *gs, bool b) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  s->controls->rusageMeasureGC = b;
 }
 
-void GC_setHashConsDuringGC (GC_state s, bool b) {
+void GC_setHashConsDuringGC (__attribute__ ((unused)) GC_state *gs, bool b) {
+  GC_state s = pthread_getspecific (gcstate_key);
   s->hashConsDuringGC = b;
-}
-
-struct rusage* GC_getRusageGCAddr (GC_state s) {
-  return &(s->cumulativeStatistics.ru_gc);
 }
 
 sigset_t* GC_getSignalsHandledAddr (GC_state s) {
@@ -151,28 +151,35 @@ void GC_setGCSignalPending (GC_state s, bool b) {
   s->signalsInfo.gcSignalPending = b;
 }
 
-void GC_setCallFromCHandlerThread (GC_state s, pointer p) {
-  objptr op = pointerToObjptr (p, s->heap.start);
+void GC_setCallFromCHandlerThread (__attribute__ ((unused)) GC_state *gs, 
+                                   pointer p) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  objptr op = pointerToObjptr (p, s->heap->start);
   s->callFromCHandlerThread = op;
 }
 
-pointer GC_getCurrentThread (GC_state s) {
-  pointer p = objptrToPointer (s->currentThread, s->heap.start);
+pointer GC_getCurrentThread (__attribute__ ((unused)) GC_state *gs) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  pointer p = objptrToPointer (s->currentThread, s->heap->start);
   return p;
 }
 
-pointer GC_getSavedThread (GC_state s) {
-  pointer p = objptrToPointer (s->savedThread, s->heap.start);
+pointer GC_getSavedThread (__attribute__ ((unused)) GC_state *gs) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  pointer p = objptrToPointer (s->savedThread, s->heap->start);
   s->savedThread = BOGUS_OBJPTR;
   return p;
 }
 
-void GC_setSavedThread (GC_state s, pointer p) {
-  objptr op = pointerToObjptr (p, s->heap.start);
+void GC_setSavedThread (__attribute__ ((unused)) GC_state *gs, 
+                        pointer p) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  objptr op = pointerToObjptr (p, s->heap->start);
   s->savedThread = op;
 }
 
-void GC_setSignalHandlerThread (GC_state s, pointer p) {
-  objptr op = pointerToObjptr (p, s->heap.start);
+void GC_setSignalHandlerThread (__attribute__ ((unused)) GC_state *gs, pointer p) {
+  GC_state s = pthread_getspecific (gcstate_key);
+  objptr op = pointerToObjptr (p, s->heap->start);
   s->signalHandlerThread = op;
 }

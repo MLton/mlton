@@ -23,9 +23,11 @@ pointer newObject (GC_state s,
           ? hasHeapBytesFree (s, bytesRequested, 0)
           : hasHeapBytesFree (s, 0, bytesRequested));
   if (allocInOldGen) {
-    frontier = s->heap.start + s->heap.oldGenSize;
-    s->heap.oldGenSize += bytesRequested;
-    s->cumulativeStatistics.bytesAllocated += bytesRequested;
+    /* NB you must have exclusive access to the runtime state
+       if you are allocating in the older generation! */
+    frontier = s->heap->start + s->heap->oldGenSize;
+    s->heap->oldGenSize += bytesRequested;
+    s->cumulativeStatistics->bytesAllocated += bytesRequested;
   } else {
     if (DEBUG_DETAILED)
       fprintf (stderr, "frontier changed from "FMTPTR" to "FMTPTR"\n",
@@ -53,8 +55,9 @@ GC_stack newStack (GC_state s,
   GC_stack stack;
 
   reserved = alignStackReserved (s, reserved);
-  if (reserved > s->cumulativeStatistics.maxStackSizeSeen)
-    s->cumulativeStatistics.maxStackSizeSeen = reserved;
+  /* XXX unsafe concurrent access */
+  if (reserved > s->cumulativeStatistics->maxStackSizeSeen)
+    s->cumulativeStatistics->maxStackSizeSeen = reserved;
   stack = (GC_stack)(newObject (s, GC_STACK_HEADER, 
                                 sizeofStackWithHeaderAligned (s, reserved),
                                 allocInOldGen));
@@ -80,7 +83,7 @@ GC_thread newThread (GC_state s, size_t reserved) {
   thread = (GC_thread)(res + offsetofThread (s));
   thread->bytesNeeded = 0;
   thread->exnStack = BOGUS_EXN_STACK;
-  thread->stack = pointerToObjptr((pointer)stack, s->heap.start);
+  thread->stack = pointerToObjptr((pointer)stack, s->heap->start);
   if (DEBUG_THREADS)
     fprintf (stderr, FMTPTR" = newThreadOfSize (%zu)\n",
              (uintptr_t)thread, reserved);;
@@ -92,7 +95,9 @@ static inline void setFrontier (GC_state s, pointer p,
   p = alignFrontier (s, p);
   assert ((size_t)(p - s->frontier) <= bytes);
   GC_profileAllocInc (s, p - s->frontier);
-  s->cumulativeStatistics.bytesAllocated += p - s->frontier;
+  /* XXX unsafe concurrent access */
+  s->cumulativeStatistics->bytesAllocated += p - s->frontier;
   s->frontier = p;
   assert (s->frontier <= s->limitPlusSlop);
+  assert (s->start <= s->frontier);
 }

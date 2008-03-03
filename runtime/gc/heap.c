@@ -38,26 +38,26 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
   float ratio;
 
   ratio = (float)s->sysvals.ram / (float)live;
-  if (ratio >= s->controls.ratios.live + s->controls.ratios.grow) {
+  if (ratio >= s->controls->ratios.live + s->controls->ratios.grow) {
     /* Cheney copying fits in RAM with desired ratios.live. */
-    res = live * s->controls.ratios.live;
+    res = live * s->controls->ratios.live;
     /* If the heap is currently close in size to what we want, leave
      * it alone.  Favor growing over shrinking.
      */
     unless (1.1 * currentSize <= res
             or res <= .5 * currentSize)
       res = currentSize;
-  } else if (s->controls.ratios.grow >= s->controls.ratios.copy
-             and ratio >= 2 * s->controls.ratios.copy) {
+  } else if (s->controls->ratios.grow >= s->controls->ratios.copy
+             and ratio >= 2 * s->controls->ratios.copy) {
     /* Split RAM in half.  Round down by pageSize so that the total
      * amount of space taken isn't greater than RAM once rounding
      * happens.  This is so resizeHeap2 doesn't get confused and free
      * a semispace in a misguided attempt to avoid paging.
      */
     res = alignDown (s->sysvals.ram / 2, s->sysvals.pageSize);
-  } else if (ratio >= s->controls.ratios.copy + s->controls.ratios.grow) {
+  } else if (ratio >= s->controls->ratios.copy + s->controls->ratios.grow) {
     /* Cheney copying fits in RAM. */
-    res = s->sysvals.ram - s->controls.ratios.grow * live;
+    res = s->sysvals.ram - s->controls->ratios.grow * live;
     /* If the heap isn't too much smaller than what we want, leave it
      * alone.  On the other hand, if it is bigger we want to leave res
      * as is so that the heap is shrunk, to try to avoid paging.
@@ -65,7 +65,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
     if (currentSize <= res 
         and res <= 1.1 * currentSize)
       res = currentSize;
-  } else if (ratio >= s->controls.ratios.markCompact) {
+  } else if (ratio >= s->controls->ratios.markCompact) {
     /* Mark compact fits in RAM.  It doesn't matter what the current
      * size is.  If the heap is currently smaller, we are using
      * copying and should switch to mark-compact.  If the heap is
@@ -74,7 +74,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      */
     res = s->sysvals.ram;
   } else { /* Required live ratio. */
-    res = live * s->controls.ratios.markCompact;
+    res = live * s->controls->ratios.markCompact;
     /* If the current heap is bigger than res, then shrinking always
      * sounds like a good idea.  However, depending on what pages the
      * VM keeps around, growing could be very expensive, if it
@@ -82,20 +82,20 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
      * growHeap will make the right thing happen.
      */ 
   }
-  if (s->controls.fixedHeap > 0) {
-    if (res > s->controls.fixedHeap / 2)
-      res = s->controls.fixedHeap;
+  if (s->controls->fixedHeap > 0) {
+    if (res > s->controls->fixedHeap / 2)
+      res = s->controls->fixedHeap;
     else
-      res = s->controls.fixedHeap / 2;
+      res = s->controls->fixedHeap / 2;
     if (res < live)
       die ("Out of memory with fixed heap size %s.",
-           uintmaxToCommaString(s->controls.fixedHeap));
-  } else if (s->controls.maxHeap > 0) {
-    if (res > s->controls.maxHeap)
-      res = s->controls.maxHeap;
+           uintmaxToCommaString(s->controls->fixedHeap));
+  } else if (s->controls->maxHeap > 0) {
+    if (res > s->controls->maxHeap)
+      res = s->controls->maxHeap;
     if (res < live)
       die ("Out of memory with max heap size %s.",
-           uintmaxToCommaString(s->controls.maxHeap));
+           uintmaxToCommaString(s->controls->maxHeap));
   }
   if (DEBUG_RESIZING)
     fprintf (stderr, "%s = sizeofHeapDesired (%s, %s)\n",
@@ -109,7 +109,7 @@ size_t sizeofHeapDesired (GC_state s, size_t live, size_t currentSize) {
 void releaseHeap (GC_state s, GC_heap h) {
   if (NULL == h->start)
     return;
-  if (DEBUG or s->controls.messages)
+  if (DEBUG or s->controls->messages)
     fprintf (stderr, "[GC: Releasing heap at "FMTPTR" of size %s bytes.]\n",
              (uintptr_t)(h->start),
              uintmaxToCommaString(h->size));
@@ -125,7 +125,7 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
   }
   keep = align (keep, s->sysvals.pageSize);
   if (keep < h->size) {
-    if (DEBUG or s->controls.messages)
+    if (DEBUG or s->controls->messages)
       fprintf (stderr,
                "[GC: Shrinking heap at "FMTPTR" of size %s bytes to size %s bytes.]\n",
                (uintptr_t)(h->start),
@@ -187,9 +187,9 @@ bool createHeap (GC_state s, GC_heap h,
         h->start = (void*)NULL;
       unless ((void*)NULL == h->start) {
         direction = not direction;
-        if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
-          s->cumulativeStatistics.maxHeapSizeSeen = h->size;
-        if (DEBUG or s->controls.messages)
+        if (h->size > s->cumulativeStatistics->maxHeapSizeSeen)
+          s->cumulativeStatistics->maxHeapSizeSeen = h->size;
+        if (DEBUG or s->controls->messages)
           fprintf (stderr, "[GC: Created heap at "FMTPTR" of size %s bytes.]\n",
                    (uintptr_t)(h->start),
                    uintmaxToCommaString(h->size));
@@ -197,7 +197,7 @@ bool createHeap (GC_state s, GC_heap h,
         return TRUE;
       }
     }
-    if (s->controls.messages)
+    if (s->controls->messages)
       fprintf(stderr, 
               "[GC: Creating heap of size %s bytes cannot be satisfied; "
               "backing off by %s bytes (min size = %s).]\n",
@@ -212,12 +212,12 @@ bool createHeap (GC_state s, GC_heap h,
 /* createHeapSecondary (s, desiredSize)
  */
 bool createHeapSecondary (GC_state s, size_t desiredSize) {
-  if ((s->controls.fixedHeap > 0 
-       and s->heap.size + desiredSize > s->controls.fixedHeap)
-      or (s->controls.maxHeap > 0 
-          and s->heap.size + desiredSize > s->controls.maxHeap))
+  if ((s->controls->fixedHeap > 0 
+       and s->heap->size + desiredSize > s->controls->fixedHeap)
+      or (s->controls->maxHeap > 0 
+          and s->heap->size + desiredSize > s->controls->maxHeap))
     return FALSE;
-  return createHeap (s, &s->secondaryHeap, desiredSize, s->heap.oldGenSize);
+  return createHeap (s, s->secondaryHeap, desiredSize, s->heap->oldGenSize);
 }
 
 /* remapHeap (s, h, desiredSize, minSize)
@@ -245,8 +245,8 @@ bool remapHeap (GC_state s, GC_heap h,
     unless ((void*)-1 == new) {
       h->start = new;
       h->size = size;
-      if (h->size > s->cumulativeStatistics.maxHeapSizeSeen)
-        s->cumulativeStatistics.maxHeapSizeSeen = h->size;
+      if (h->size > s->cumulativeStatistics->maxHeapSizeSeen)
+        s->cumulativeStatistics->maxHeapSizeSeen = h->size;
       assert (minSize <= h->size and h->size <= desiredSize);
       return TRUE;
     }
@@ -267,16 +267,16 @@ void growHeap (GC_state s, size_t desiredSize, size_t minSize) {
   pointer orig;
   size_t size;
 
-  curHeapp = &s->heap;
-  assert (desiredSize >= s->heap.size);
+  curHeapp = s->heap;
+  assert (desiredSize >= s->heap->size);
   if (DEBUG_RESIZING)
     fprintf (stderr, "Growing heap at "FMTPTR" of size %s to %s bytes.\n",
-             (uintptr_t)s->heap.start,
-             uintmaxToCommaString(s->heap.size),
+             (uintptr_t)s->heap->start,
+             uintmaxToCommaString(s->heap->size),
              uintmaxToCommaString(desiredSize));
   orig = curHeapp->start;
   size = curHeapp->oldGenSize;
-  assert (size <= s->heap.size);
+  assert (size <= s->heap->size);
   if (remapHeap (s, curHeapp, desiredSize, minSize))
     goto done;
   shrinkHeap (s, curHeapp, size);
@@ -318,15 +318,15 @@ copy:
       GC_diskBack_close (data);
     } else {
       GC_diskBack_close (data);
-      if (s->controls.messages)
+      if (s->controls->messages)
         GC_displayMem ();
       die ("Out of memory.  Unable to allocate %s bytes.\n",
            uintmaxToCommaString(minSize));
     }
   }
 done:
-  unless (orig == s->heap.start) {
-    translateHeap (s, orig, s->heap.start, s->heap.oldGenSize);
+  unless (orig == s->heap->start) {
+    translateHeap (s, orig, s->heap->start, s->heap->oldGenSize);
     setCardMapAbsolute (s);
   }
 }
@@ -339,17 +339,17 @@ void resizeHeap (GC_state s, size_t minSize) {
   if (DEBUG_RESIZING)
     fprintf (stderr, "resizeHeap  minSize = %s  size = %s\n",
              uintmaxToCommaString(minSize), 
-             uintmaxToCommaString(s->heap.size));
-  desiredSize = sizeofHeapDesired (s, minSize, s->heap.size);
+             uintmaxToCommaString(s->heap->size));
+  desiredSize = sizeofHeapDesired (s, minSize, s->heap->size);
   assert (minSize <= desiredSize);
-  if (desiredSize <= s->heap.size)
-    shrinkHeap (s, &s->heap, desiredSize);
+  if (desiredSize <= s->heap->size)
+    shrinkHeap (s, s->heap, desiredSize);
   else {
-    releaseHeap (s, &s->secondaryHeap);
+    releaseHeap (s, s->secondaryHeap);
     growHeap (s, desiredSize, minSize);
   }
   resizeCardMapAndCrossMap (s);
-  assert (s->heap.size >= minSize);
+  assert (s->heap->size >= minSize);
 }
 
 /* resizeHeapSecondary (s)
@@ -358,20 +358,20 @@ void resizeHeapSecondary (GC_state s) {
   size_t primarySize;
   size_t secondarySize;
 
-  primarySize = s->heap.size;
-  secondarySize = s->secondaryHeap.size;
+  primarySize = s->heap->size;
+  secondarySize = s->secondaryHeap->size;
   if (DEBUG_RESIZING)
     fprintf (stderr, "secondaryHeapResize\n");
   if (0 == secondarySize)
     return;
   if (2 * primarySize > s->sysvals.ram)
     /* Holding on to heap2 might cause paging.  So don't. */
-    releaseHeap (s, &s->secondaryHeap);
+    releaseHeap (s, s->secondaryHeap);
   else if (secondarySize < primarySize) {
-    unless (remapHeap (s, &s->secondaryHeap, primarySize, primarySize))
-      releaseHeap (s, &s->secondaryHeap);
+    unless (remapHeap (s, s->secondaryHeap, primarySize, primarySize))
+      releaseHeap (s, s->secondaryHeap);
   } else if (secondarySize > primarySize)
-    shrinkHeap (s, &s->secondaryHeap, primarySize);
-  assert (0 == s->secondaryHeap.size 
-          or s->heap.size == s->secondaryHeap.size);
+    shrinkHeap (s, s->secondaryHeap, primarySize);
+  assert (0 == s->secondaryHeap->size 
+          or s->heap->size == s->secondaryHeap->size);
 }

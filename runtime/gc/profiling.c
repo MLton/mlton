@@ -233,7 +233,8 @@ GC_profileData profileMalloc (GC_state s) {
   return p;
 }
 
-GC_profileData GC_profileMalloc (GC_state s) {
+GC_profileData GC_profileMalloc (__attribute__ ((unused)) GC_state *gs) {
+  GC_state s = pthread_getspecific (gcstate_key);
   return profileMalloc (s);
 }
 
@@ -246,7 +247,8 @@ void profileFree (GC_state s, GC_profileData p) {
   free (p);
 }
 
-void GC_profileFree (GC_state s, GC_profileData p) {
+void GC_profileFree (__attribute__ ((unused)) GC_state *gs, GC_profileData p) {
+  GC_state s = pthread_getspecific (gcstate_key);
   profileFree (s, p);
 }
 
@@ -314,7 +316,8 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   fclose_safe (f);
 }
 
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName) {
+void GC_profileWrite (__attribute__ ((unused)) GC_state *gs, GC_profileData p, NullString8_t fileName) {
+  GC_state s = pthread_getspecific (gcstate_key);
   profileWrite (s, p, (const char*)fileName);
 }
 
@@ -453,12 +456,14 @@ void initProfiling (GC_state s) {
   }
 }
 
-void GC_profileDone (GC_state s) {
+void GC_profileDone (__attribute__ ((unused)) GC_state *gs) {
   GC_profileData p;
   GC_profileMasterIndex profileMasterIndex;
+  GC_state s = pthread_getspecific (gcstate_key);
 
   if (DEBUG_PROFILE)
-    fprintf (stderr, "GC_profileDone ()\n");
+    fprintf (stderr, "GC_profileDone () [%d]\n",
+             Proc_processorNumber (s));
   assert (s->profiling.isOn);
   if (PROFILE_TIME_FIELD == s->profiling.kind
       or PROFILE_TIME_LABEL == s->profiling.kind)
@@ -482,10 +487,12 @@ void GC_profileDone (GC_state s) {
 }
 
 
-GC_profileData GC_getProfileCurrent (GC_state s) {
+GC_profileData GC_getProfileCurrent (__attribute__ ((unused)) GC_state *gs) {
+  GC_state s = pthread_getspecific (gcstate_key);
   return s->profiling.data;
 }
-void GC_setProfileCurrent (GC_state s, GC_profileData p) {
+void GC_setProfileCurrent (__attribute__ ((unused)) GC_state *gs, GC_profileData p) {
+  GC_state s = pthread_getspecific (gcstate_key);
   s->profiling.data = p;
 }
 

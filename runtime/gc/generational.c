@@ -88,7 +88,7 @@ void setCardMapAbsolute (GC_state s) {
    */
   s->generationalMaps.cardMapAbsolute = 
     s->generationalMaps.cardMap
-    - pointerToCardMapIndexAbsolute (s->heap.start);
+    - pointerToCardMapIndexAbsolute (s->heap->start);
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "setCardMapAbsolute = "FMTPTR"\n",
              (uintptr_t)s->generationalMaps.cardMapAbsolute);
@@ -99,8 +99,8 @@ pointer getCrossMapCardStart (GC_state s, pointer p) {
    * into the index for the previous crossMap entry.
    */
   return 
-    (p == s->heap.start)
-    ? s->heap.start
+    (p == s->heap->start)
+    ? s->heap->start
     : (p - 1) - ((uintptr_t)(p - 1) % CARD_SIZE);
 }
 
@@ -128,7 +128,7 @@ void createCardMapAndCrossMap (GC_state s) {
     s->generationalMaps.crossMap = NULL;
     return;
   }
-  assert (isAligned (s->heap.size, CARD_SIZE));
+  assert (isAligned (s->heap->size, CARD_SIZE));
 
   GC_cardMapIndex cardMapLength;
   size_t cardMapSize;
@@ -136,12 +136,12 @@ void createCardMapAndCrossMap (GC_state s) {
   size_t crossMapSize;
   size_t totalMapSize;
 
-  cardMapLength = sizeToCardMapIndex (s->heap.size);
+  cardMapLength = sizeToCardMapIndex (s->heap->size);
   cardMapSize = align (cardMapLength * CARD_MAP_ELEM_SIZE, s->sysvals.pageSize);
   cardMapLength = (GC_cardMapIndex)(cardMapSize / CARD_MAP_ELEM_SIZE);
   s->generationalMaps.cardMapLength = cardMapLength;
 
-  crossMapLength = sizeToCardMapIndex (s->heap.size);
+  crossMapLength = sizeToCardMapIndex (s->heap->size);
   crossMapSize = align (crossMapLength * CROSS_MAP_ELEM_SIZE, s->sysvals.pageSize);
   crossMapLength = (GC_crossMapIndex)(crossMapSize / CROSS_MAP_ELEM_SIZE);
   s->generationalMaps.crossMapLength = crossMapLength;
@@ -166,7 +166,7 @@ void createCardMapAndCrossMap (GC_state s) {
 void resizeCardMapAndCrossMap (GC_state s) {
   if (s->mutatorMarksCards
       and (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)
-          != align (sizeToCardMapIndex (s->heap.size), s->sysvals.pageSize)) {
+          != align (sizeToCardMapIndex (s->heap->size), s->sysvals.pageSize)) {
     GC_cardMap oldCardMap;
     size_t oldCardMapSize;
     GC_crossMap oldCrossMap;
@@ -207,13 +207,13 @@ bool isCrossMapOk (GC_state s) {
   mapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
   map = GC_mmapAnon_safe (NULL, mapSize);
   memset (map, CROSS_MAP_EMPTY, mapSize);
-  back = s->heap.start + s->heap.oldGenSize;
+  back = s->heap->start + s->heap->oldGenSize;
   cardIndex = 0;
-  front = alignFrontier (s, s->heap.start);
+  front = alignFrontier (s, s->heap->start);
 loopObjects:
   assert (front <= back);
   cardStart = getCrossMapCardStart (s, front);
-  cardIndex = sizeToCardMapIndex (cardStart - s->heap.start);
+  cardIndex = sizeToCardMapIndex (cardStart - s->heap->start);
   map[cardIndex] = (front - cardStart) / CROSS_MAP_OFFSET_SCALE;
   if (front < back) {
     front += sizeofObject (s, advanceToObjectData (s, front));
@@ -238,20 +238,20 @@ void updateCrossMap (GC_state s) {
     displayGenerationalMaps (s, &s->generationalMaps, stderr);
   }
   assert (isAligned (s->alignment, CROSS_MAP_OFFSET_SCALE));
-  if (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize)
+  if (s->generationalMaps.crossMapValidSize == s->heap->oldGenSize)
     goto done;
-  oldGenEnd = s->heap.start + s->heap.oldGenSize;
-  objectStart = s->heap.start + s->generationalMaps.crossMapValidSize;
-  if (objectStart == s->heap.start) {
+  oldGenEnd = s->heap->start + s->heap->oldGenSize;
+  objectStart = s->heap->start + s->generationalMaps.crossMapValidSize;
+  if (objectStart == s->heap->start) {
     cardIndex = 0;
     objectStart = alignFrontier (s, objectStart);
   } else
-    cardIndex = sizeToCardMapIndex (objectStart - 1 - s->heap.start);
-  cardStart = s->heap.start + cardMapIndexToSize (cardIndex);
+    cardIndex = sizeToCardMapIndex (objectStart - 1 - s->heap->start);
+  cardStart = s->heap->start + cardMapIndexToSize (cardIndex);
   cardEnd = cardStart + CARD_SIZE;
 loopObjects:
   assert (objectStart < oldGenEnd);
-  assert ((objectStart == s->heap.start or cardStart < objectStart)
+  assert ((objectStart == s->heap->start or cardStart < objectStart)
           and objectStart <= cardEnd);
   nextObject = objectStart + sizeofObject (s, advanceToObjectData (s, objectStart));
   if (DEBUG_GENERATIONAL) {
@@ -278,8 +278,8 @@ loopObjects:
       fprintf (stderr, "crossMap[%zu] = %zu\n",
                cardIndex, offset);
     s->generationalMaps.crossMap[cardIndex] = (GC_crossMapElem)offset;
-    cardIndex = sizeToCardMapIndex (nextObject - 1 - s->heap.start);
-    cardStart = s->heap.start + cardMapIndexToSize (cardIndex);
+    cardIndex = sizeToCardMapIndex (nextObject - 1 - s->heap->start);
+    cardStart = s->heap->start + cardMapIndexToSize (cardIndex);
     cardEnd = cardStart + CARD_SIZE;
   }
   objectStart = nextObject;
@@ -288,9 +288,9 @@ loopObjects:
   assert (objectStart == oldGenEnd);
   s->generationalMaps.crossMap[cardIndex] = 
     (GC_crossMapElem)(oldGenEnd - cardStart) / CROSS_MAP_OFFSET_SCALE;
-  s->generationalMaps.crossMapValidSize = s->heap.oldGenSize;
+  s->generationalMaps.crossMapValidSize = s->heap->oldGenSize;
 done:
-  assert (s->generationalMaps.crossMapValidSize == s->heap.oldGenSize);
+  assert (s->generationalMaps.crossMapValidSize == s->heap->oldGenSize);
   assert (isCrossMapOk (s));
   if (DEBUG_GENERATIONAL) {
     fprintf (stderr, "updateCrossMap finished\n");

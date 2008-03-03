@@ -14,20 +14,20 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   uintmax_t numGCs;
   size_t desiredSize;
 
-  s->lastMajorStatistics.numMinorGCs = 0;
+  s->lastMajorStatistics->numMinorGCs = 0;
   numGCs = 
-    s->cumulativeStatistics.numCopyingGCs 
-    + s->cumulativeStatistics.numMarkCompactGCs;
+    s->cumulativeStatistics->numCopyingGCs 
+    + s->cumulativeStatistics->numMarkCompactGCs;
   if (0 < numGCs
-      and ((float)(s->cumulativeStatistics.numHashConsGCs) / (float)(numGCs)
-           < s->controls.ratios.hashCons))
+      and ((float)(s->cumulativeStatistics->numHashConsGCs) / (float)(numGCs)
+           < s->controls->ratios.hashCons))
     s->hashConsDuringGC = TRUE;
   desiredSize = 
-    sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive + bytesRequested, 0);
+    sizeofHeapDesired (s, s->lastMajorStatistics->bytesLive + bytesRequested, 0);
   if (not FORCE_MARK_COMPACT
       and not s->hashConsDuringGC // only markCompact can hash cons
-      and s->heap.size < s->sysvals.ram
-      and (not isHeapInit (&s->secondaryHeap)
+      and s->heap->size < s->sysvals.ram
+      and (not isHeapInit (s->secondaryHeap)
            or createHeapSecondary (s, desiredSize)))
     majorCheneyCopyGC (s);
   else

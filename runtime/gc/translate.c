@@ -30,7 +30,7 @@ void translateObjptr (__attribute__ ((unused)) GC_state s,
 void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
   pointer limit;
 
-  if (DEBUG or s->controls.messages)
+  if (DEBUG or s->controls->messages)
     fprintf (stderr, "[GC: Translating heap at "FMTPTR" of size %s bytes to "FMTPTR".]\n",
              (uintptr_t)from,
              uintmaxToCommaString(size),

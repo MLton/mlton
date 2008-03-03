@@ -48,33 +48,36 @@ bool invariantForGC (GC_state s) {
   if (s->mutatorMarksCards) {
     assert (s->generationalMaps.cardMap == 
             &(s->generationalMaps.cardMapAbsolute
-              [pointerToCardMapIndexAbsolute(s->heap.start)]));
+              [pointerToCardMapIndexAbsolute(s->heap->start)]));
     assert (&(s->generationalMaps.cardMapAbsolute
-              [pointerToCardMapIndexAbsolute(s->heap.start + s->heap.size - 1)])
+              [pointerToCardMapIndexAbsolute(s->heap->start + s->heap->size - 1)])
             < (s->generationalMaps.cardMap 
                + (s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE)));
   }
-  assert (isAligned (s->heap.size, s->sysvals.pageSize));
-  assert (isAligned ((size_t)s->heap.start, CARD_SIZE));
-  assert (isFrontierAligned (s, s->heap.start + s->heap.oldGenSize));
-  assert (isFrontierAligned (s, s->heap.nursery));
+  assert (isAligned (s->heap->size, s->sysvals.pageSize));
+  assert (isAligned ((size_t)s->heap->start, CARD_SIZE));
+  assert (isFrontierAligned (s, s->heap->start + s->heap->oldGenSize));
+  assert (isFrontierAligned (s, s->heap->nursery));
   assert (isFrontierAligned (s, s->frontier));
-  assert (s->heap.start + s->heap.oldGenSize <= s->heap.nursery);
-  assert (s->heap.nursery <= s->heap.start + s->heap.size);
-  assert (s->heap.nursery <= s->frontier);
-  unless (0 == s->heap.size) {
+  assert (s->heap->start + s->heap->oldGenSize <= s->heap->nursery);
+  assert (s->heap->nursery <= s->heap->start + s->heap->size);
+  assert (s->heap->nursery <= s->heap->start + s->heap->availableSize);
+  assert (s->heap->nursery <= s->frontier or 0 == s->frontier);
+  assert (s->heap->availableSize <= s->heap->size);
+  assert (s->start <= s->frontier);
+  unless (0 == s->heap->size or 0 == s->frontier) {
     assert (s->frontier <= s->limitPlusSlop);
     assert (s->limit == s->limitPlusSlop - GC_HEAP_LIMIT_SLOP);
     assert (hasHeapBytesFree (s, 0, 0));
   }
-  assert (s->secondaryHeap.start == NULL 
-          or s->heap.size == s->secondaryHeap.size);
+  assert (s->secondaryHeap->start == NULL 
+          or s->heap->size == s->secondaryHeap->size);
   /* Check that all pointers are into from space. */
   foreachGlobalObjptr (s, assertIsObjptrInFromSpace);
-  pointer back = s->heap.start + s->heap.oldGenSize;
+  pointer back = s->heap->start + s->heap->oldGenSize;
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking old generation.\n");
-  foreachObjptrInRange (s, alignFrontier (s, s->heap.start), &back, 
+  foreachObjptrInRange (s, alignFrontier (s, s->heap->start), &back, 
                         assertIsObjptrInFromSpace, FALSE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking nursery.\n");

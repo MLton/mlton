@@ -10,15 +10,16 @@ void GC_share (GC_state s, pointer object) {
   size_t total;
 
   if (DEBUG_SHARE)
-    fprintf (stderr, "GC_share "FMTPTR"\n", (uintptr_t)object);
-  if (DEBUG_SHARE or s->controls.messages)
-    s->lastMajorStatistics.bytesHashConsed = 0;
+    fprintf (stderr, "GC_share "FMTPTR" [%d]\n", (uintptr_t)object,
+             Proc_processorNumber (s));
+  if (DEBUG_SHARE or s->controls->messages)
+    s->lastMajorStatistics->bytesHashConsed = 0;
   // Don't hash cons during the first round of marking.
   total = dfsMarkByMode (s, object, MARK_MODE, FALSE);
   s->objectHashTable = allocHashTable (s);
   // Hash cons during the second round of marking.
   dfsMarkByMode (s, object, UNMARK_MODE, TRUE);
   freeHashTable (s->objectHashTable);
-  if (DEBUG_SHARE or s->controls.messages)
+  if (DEBUG_SHARE or s->controls->messages)
     printBytesHashConsedMessage (s, total);
 }

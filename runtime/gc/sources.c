@@ -19,7 +19,8 @@ char* getSourceName (GC_state s, GC_sourceIndex i) {
   return s->sourceMaps.sourceNames[s->sourceMaps.sources[i].sourceNameIndex];
 }
 
-char* GC_sourceName (GC_state s, GC_sourceIndex i) {
+char* GC_sourceName (__attribute__ ((unused)) GC_state *gs, GC_sourceIndex i) {
+  GC_state s = pthread_getspecific (gcstate_key);
   return getSourceName (s, i);
 }
 

@@ -15,9 +15,9 @@ GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
    * Hence we need to stash from where the GC can find it.
    */
   assert (s->savedThread == BOGUS_OBJPTR);
-  s->savedThread = pointerToObjptr((pointer)from - offsetofThread (s), s->heap.start);
+  s->savedThread = pointerToObjptr((pointer)from - offsetofThread (s), s->heap->start);
   to = newThread (s, size);
-  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start) 
+  from = (GC_thread)(objptrToPointer(s->savedThread, s->heap->start) 
                      + offsetofThread (s));
   s->savedThread = BOGUS_OBJPTR;
   if (DEBUG_THREADS) {
@@ -25,8 +25,8 @@ GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
              (uintptr_t)to, (uintptr_t)from);
   }
   copyStack (s, 
-             (GC_stack)(objptrToPointer(from->stack, s->heap.start)), 
-             (GC_stack)(objptrToPointer(to->stack, s->heap.start)));
+             (GC_stack)(objptrToPointer(from->stack, s->heap->start)), 
+             (GC_stack)(objptrToPointer(to->stack, s->heap->start)));
   to->bytesNeeded = from->bytesNeeded;
   to->exnStack = from->exnStack;
   return to;

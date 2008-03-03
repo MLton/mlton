@@ -17,24 +17,24 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
   unless (s->magic == magic)
     die ("Invalid world: wrong magic number.");
   start = readPointer (f);
-  s->heap.oldGenSize = readSize (f);
+  s->heap->oldGenSize = readSize (f);
   s->atomicState = readUint32 (f);
   s->callFromCHandlerThread = readObjptr (f); 
   s->currentThread = readObjptr (f); 
   s->signalHandlerThread = readObjptr (f); 
-  createHeap (s, &s->heap, 
-              sizeofHeapDesired (s, s->heap.oldGenSize, 0), 
-              s->heap.oldGenSize);
+  createHeap (s, s->heap, 
+              sizeofHeapDesired (s, s->heap->oldGenSize, 0), 
+              s->heap->oldGenSize);
   createCardMapAndCrossMap (s); 
-  fread_safe (s->heap.start, 1, s->heap.oldGenSize, f);
+  fread_safe (s->heap->start, 1, s->heap->oldGenSize, f);
   if ((*(s->loadGlobals)) (f) != 0) diee("couldn't load globals");
   // unless (EOF == fgetc (file))
   //  die ("Invalid world: junk at end of file.");
   /* translateHeap must occur after loading the heap and globals,
    * since it changes pointers in all of them.
    */
-  translateHeap (s, start, s->heap.start, s->heap.oldGenSize);
-  setGCStateCurrentHeap (s, 0, 0); 
+  translateHeap (s, start, s->heap->start, s->heap->oldGenSize);
+  setGCStateCurrentHeap (s, 0, 0, true); 
   setGCStateCurrentThreadAndStack (s); 
 }
 
@@ -61,14 +61,14 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   performGC (s, 0, 0, TRUE, TRUE);
   snprintf (buf, cardof(buf),
             "Heap file created by MLton.\nheap.start = "FMTPTR"\nbytesLive = %zu\n",
-            (uintptr_t)s->heap.start, 
-            s->lastMajorStatistics.bytesLive);
+            (uintptr_t)s->heap->start, 
+            s->lastMajorStatistics->bytesLive);
   len = strlen(buf) + 1; /* +1 to get the '\000' */
 
   if (fwrite (buf, 1, len, f) != len) return -1;
   if (fwrite (&s->magic, sizeof(uint32_t), 1, f) != 1) return -1;
-  if (fwrite (&s->heap.start, sizeof(uintptr_t), 1, f) != 1) return -1;
-  if (fwrite (&s->heap.oldGenSize, sizeof(size_t), 1, f) != 1) return -1;
+  if (fwrite (&s->heap->start, sizeof(uintptr_t), 1, f) != 1) return -1;
+  if (fwrite (&s->heap->oldGenSize, sizeof(size_t), 1, f) != 1) return -1;
 
   /* atomicState must be saved in the heap, because the saveWorld may
    * be run in the context of a critical section, which will expect to
@@ -79,7 +79,7 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   if (fwrite (&s->currentThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->signalHandlerThread, sizeof(objptr), 1, f) != 1) return -1;
 
-  if (fwrite (s->heap.start, 1, s->heap.oldGenSize, f) != s->heap.oldGenSize)
+  if (fwrite (s->heap->start, 1, s->heap->oldGenSize, f) != s->heap->oldGenSize)
     return -1;
   if ((*(s->saveGlobals)) (f) != 0)
     return -1;
@@ -110,6 +110,7 @@ done:
   return;
 }
 
-C_Errno_t(Bool_t) GC_getSaveWorldStatus (GC_state s) {
+C_Errno_t(Bool_t) GC_getSaveWorldStatus (__attribute__ ((unused)) GC_state *gs) {
+  GC_state s = pthread_getspecific (gcstate_key);
   return (Bool_t)(s->saveWorldStatus);
 }

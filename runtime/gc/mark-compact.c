@@ -45,8 +45,8 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
   pointer p;
   GC_header *headerp;
 
-  opop = pointerToObjptr ((pointer)opp, s->heap.start);
-  p = objptrToPointer (*opp, s->heap.start);
+  opop = pointerToObjptr ((pointer)opp, s->heap->start);
+  p = objptrToPointer (*opp, s->heap->start);
   if (FALSE)
     fprintf (stderr, 
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
@@ -76,7 +76,7 @@ void clearIfWeakAndUnmarkedForMarkCompact (GC_state s, pointer p) {
       fprintf (stderr, "clearIfWeakAndUnmarkedForMarkCompact ("FMTPTR")  header = "FMTHDR"\n",
                (uintptr_t)p, header);
     w = (GC_weak)(p + offsetofWeak (s));
-    objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap.start));
+    objptrHeader = getHeader (objptrToPointer(w->objptr, s->heap->start));
     /* If it's not threaded and unmarked, clear the weak pointer. */
     if ((GC_VALID_HEADER_MASK & objptrHeader)
         and not (MARK_MASK & objptrHeader)) {
@@ -102,8 +102,8 @@ void updateForwardPointersForMarkCompact (GC_state s) {
 
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "Update forward pointers.\n");
-  front = alignFrontier (s, s->heap.start);
-  back = s->heap.start + s->heap.oldGenSize;
+  front = alignFrontier (s, s->heap->start);
+  back = s->heap->start + s->heap->oldGenSize;
   endOfLastMarked = front;
   gap = 0;
 updateObject:
@@ -170,13 +170,13 @@ thread:
      * pointers.
      */
     new = p - gap;
-    newObjptr = pointerToObjptr (new, s->heap.start);
+    newObjptr = pointerToObjptr (new, s->heap->start);
     do {
       pointer cur;
       objptr curObjptr;
 
       copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
-      cur = objptrToPointer (curObjptr, s->heap.start);
+      cur = objptrToPointer (curObjptr, s->heap->start);
 
       copyForThreadInternal ((pointer)headerp, cur);
       *((objptr*)cur) = newObjptr;
@@ -201,8 +201,8 @@ void updateBackwardPointersAndSlideForMarkCompact (GC_state s) {
 
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "Update backward pointers and slide.\n");
-  front = alignFrontier (s, s->heap.start);
-  back = s->heap.start + s->heap.oldGenSize;
+  front = alignFrontier (s, s->heap->start);
+  back = s->heap->start + s->heap->oldGenSize;
   gap = 0;
 updateObject:
   if (DEBUG_MARK_COMPACT)
@@ -252,13 +252,13 @@ unmark:
      * backward pointers to it.  Then unmark it.
      */
     new = p - gap;
-    newObjptr = pointerToObjptr (new, s->heap.start);
+    newObjptr = pointerToObjptr (new, s->heap->start);
     do {
       pointer cur;
       objptr curObjptr;
 
       copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
-      cur = objptrToPointer (curObjptr, s->heap.start);
+      cur = objptrToPointer (curObjptr, s->heap->start);
 
       copyForThreadInternal ((pointer)headerp, cur);
       *((objptr*)cur) = newObjptr;
@@ -270,9 +270,9 @@ unmark:
   }
   assert (FALSE);
 done:
-  s->heap.oldGenSize = front - gap - s->heap.start;
+  s->heap->oldGenSize = front - gap - s->heap->start;
   if (DEBUG_MARK_COMPACT)
-    fprintf (stderr, "oldGenSize = %zu\n", s->heap.oldGenSize);
+    fprintf (stderr, "oldGenSize = %zu\n", s->heap->oldGenSize);
   return;
 }
 
@@ -282,15 +282,15 @@ void majorMarkCompactGC (GC_state s) {
 
   if (detailedGCTime (s))
     startTiming (&ru_start);
-  s->cumulativeStatistics.numMarkCompactGCs++;
-  if (DEBUG or s->controls.messages) {
+  s->cumulativeStatistics->numMarkCompactGCs++;
+  if (DEBUG or s->controls->messages) {
     fprintf (stderr, "[GC: Major mark-compact; heap at "FMTPTR" of size %s bytes.]\n",
-             (uintptr_t)(s->heap.start), 
-             uintmaxToCommaString(s->heap.size));
+             (uintptr_t)(s->heap->start), 
+             uintmaxToCommaString(s->heap->size));
   }
   if (s->hashConsDuringGC) {
-    s->lastMajorStatistics.bytesHashConsed = 0;
-    s->cumulativeStatistics.numHashConsGCs++;
+    s->lastMajorStatistics->bytesHashConsed = 0;
+    s->cumulativeStatistics->numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
     foreachGlobalObjptr (s, dfsMarkWithHashCons);
     freeHashTable (s->objectHashTable);
@@ -301,17 +301,17 @@ void majorMarkCompactGC (GC_state s) {
   updateForwardPointersForMarkCompact (s);
   updateBackwardPointersAndSlideForMarkCompact (s);
   clearCrossMap (s);
-  bytesMarkCompacted = s->heap.oldGenSize;
-  s->cumulativeStatistics.bytesMarkCompacted += bytesMarkCompacted;
-  s->lastMajorStatistics.kind = GC_MARK_COMPACT;
+  bytesMarkCompacted = s->heap->oldGenSize;
+  s->cumulativeStatistics->bytesMarkCompacted += bytesMarkCompacted;
+  s->lastMajorStatistics->kind = GC_MARK_COMPACT;
   if (detailedGCTime (s))
-    stopTiming (&ru_start, &s->cumulativeStatistics.ru_gcMarkCompact);
-  if (DEBUG or s->controls.messages) {
+    stopTiming (&ru_start, &s->cumulativeStatistics->ru_gcMarkCompact);
+  if (DEBUG or s->controls->messages) {
     fprintf (stderr, "[GC: Major mark-compact done; %s bytes mark compacted.]\n",
              uintmaxToCommaString(bytesMarkCompacted));
     if (s->hashConsDuringGC)
       printBytesHashConsedMessage(s, 
-                                  s->lastMajorStatistics.bytesHashConsed 
-                                  + s->heap.oldGenSize);
+                                  s->lastMajorStatistics->bytesHashConsed 
+                                  + s->heap->oldGenSize);
   }
 }

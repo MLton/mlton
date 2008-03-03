@@ -15,8 +15,8 @@
 #include "gc/align.c"
 #include "gc/read_write.c"
 
-/* Import the global gcState (but try not to use it too much). */
-extern struct GC_state gcState;
+/* used to look up per-processor state */
+extern C_Pthread_Key_t gcstate_key;
 
 #include "gc/array-allocate.c"
 #include "gc/array.c"
