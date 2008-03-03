@@ -107,7 +107,7 @@ endif
 
 CC := gcc -std=gnu99
 CPPFLAGS := 
-CFLAGS := -I. -Iplatform $(FLAGS)
+CFLAGS := -I. -Iplatform -Iplpa $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
@@ -227,7 +227,7 @@ else
 	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)
 endif
 
-ALL := libgdtoa.a libmlton.a libmlton-gdb.a
+ALL := libgdtoa.a libplpa_included.a libmlton.a libmlton-gdb.a
 ALL += gen/c-types.sml gen/basis-ffi.sml
 ifeq ($(OMIT_BYTECODE), yes)
 else
@@ -254,6 +254,13 @@ gdtoa/arithchk.out: gdtoa/arithchk.c
 
 gdtoa/arith.h: gdtoa/arithchk.out
 	cd gdtoa && ./arithchk.out >arith.h
+
+libplpa_included.a: plpa/plpa_api_probe.c plpa/plpa_dispatch.c
+	@rm -f $@
+	cd plpa && $(CC) $(OPTCFLAGS) -c plpa_api_probe.c 
+	cd plpa && $(CC) $(OPTCFLAGS) -c plpa_dispatch.c
+	$(AR) $@ plpa/*.o
+	$(RANLIB) $@
 
 libmlton.a: $(OBJS)
 	$(AR) libmlton.a $(OBJS)
