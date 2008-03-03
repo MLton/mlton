@@ -10,10 +10,12 @@ size_t GC_size (GC_state s, pointer root) {
   size_t res;
 
   if (DEBUG_SIZE)
-    fprintf (stderr, "GC_size marking\n");
+    fprintf (stderr, "GC_size marking [%d]\n",
+             Proc_processorNumber (s));
   res = dfsMarkByMode (s, root, MARK_MODE, FALSE);
   if (DEBUG_SIZE)
-    fprintf (stderr, "GC_size unmarking\n");
+    fprintf (stderr, "GC_size unmarking [%d]\n",
+             Proc_processorNumber (s));
   dfsMarkByMode (s, root, UNMARK_MODE, FALSE);
   return res;
 }

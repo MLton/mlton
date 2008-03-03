@@ -36,8 +36,9 @@ uint32_t GC_weakCanGet (GC_state s, pointer p) {
 
   res = GC_WEAK_GONE_HEADER != getHeader (p);
   if (DEBUG_WEAK)
-    fprintf (stderr, "%s = GC_weakCanGet ("FMTPTR")\n",
-             boolToString (res), (uintptr_t)p);
+    fprintf (stderr, "%s = GC_weakCanGet ("FMTPTR") [%d]\n",
+             boolToString (res), (uintptr_t)p,
+             Proc_processorNumber (s));
   return res;
 }
 

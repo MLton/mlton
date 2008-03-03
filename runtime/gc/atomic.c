@@ -8,6 +8,7 @@
 
 void beginAtomic (GC_state s) {
   s->atomicState++;
+  /* XXX this seems ok but strange */
   if (0 == s->limit)
     s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
 }

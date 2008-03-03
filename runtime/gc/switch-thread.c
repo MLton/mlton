@@ -23,10 +23,10 @@ void switchToThread (GC_state s, objptr op) {
 }
 
 void GC_switchToThread (GC_state s, pointer p, size_t ensureBytesFree) {
-  if (DEBUG_THREADS)
-    fprintf (stderr, "GC_switchToThread ("FMTPTR", %zu)\n", 
-             (uintptr_t)p, ensureBytesFree);
-  if (FALSE) {
+  if (DEBUG_THREADS or s->controls->messages)
+    fprintf (stderr, "GC_switchToThread ("FMTPTR", %zu) [%d]\n", 
+             (uintptr_t)p, ensureBytesFree, Proc_processorNumber (s));
+  if (TRUE) {
     /* This branch is slower than the else branch, especially
      * when debugging is turned on, because it does an invariant
      * check on every thread switch.

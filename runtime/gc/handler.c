@@ -62,12 +62,14 @@ void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
  */
 void GC_handler (GC_state s, int signum) {
   if (DEBUG_SIGNALS)
-    fprintf (stderr, "GC_handler signum = %d\n", signum);
+    fprintf (stderr, "GC_handler signum = %d [%d]\n", signum,
+             Proc_processorNumber (s));
   assert (sigismember (&s->signalsInfo.signalsHandled, signum));
   if (s->atomicState == 0)
     s->limit = 0;
   s->signalsInfo.signalIsPending = TRUE;
   sigaddset (&s->signalsInfo.signalsPending, signum);
   if (DEBUG_SIGNALS)
-    fprintf (stderr, "GC_handler done\n");
+    fprintf (stderr, "GC_handler done [%d]\n", 
+             Proc_processorNumber (s));
 }

@@ -11,6 +11,7 @@
  * Allocate a new object in the heap.
  * bytesRequested includes the size of the header.
  */
+/* XXX DOC spoons must hold the runtime lock if allocInOldGen is true! */
 pointer newObject (GC_state s,
                    GC_header header,
                    size_t bytesRequested,
@@ -36,6 +37,7 @@ pointer newObject (GC_state s,
     frontier = s->frontier;
     s->frontier += bytesRequested;
   }
+  /* XXX unprotected concurrent access */
   GC_profileAllocInc (s, bytesRequested);
   *((GC_header*)frontier) = header;
   result = frontier + GC_NORMAL_HEADER_SIZE;

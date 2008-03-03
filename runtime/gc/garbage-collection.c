@@ -100,7 +100,8 @@ void performGC (GC_state s,
   size_t totalBytesRequested;
 
   enterGC (s);
-  if (DEBUG or s->controls.messages)
+
+  if (DEBUG or s->controls->messages)
     fprintf (stderr, "[GC: Starting gc; request %s nursery bytes and %s old-gen bytes.]\n",
              uintmaxToCommaString(nurseryBytesRequested),
              uintmaxToCommaString(oldGenBytesRequested));
@@ -416,10 +417,12 @@ void ensureHasHeapBytesFreeAndOrInvariantForMutator (GC_state s, bool forceGC,
 }
 
 void GC_collect (GC_state s, size_t bytesRequested, bool force,
-            char *file, int line) {
-  if (DEBUG)
-    fprintf (stderr, "%s %d: GC_collect\n", file, line);
-  enter (s);
+                 char *file, int line) {
+  
+  if (DEBUG or s->controls->messages)
+    fprintf (stderr, "%s %d: GC_collect [%d]\n", file, line,
+             Proc_processorNumber (s));
+
   /* When the mutator requests zero bytes, it may actually need as
    * much as GC_HEAP_LIMIT_SLOP.
    */
