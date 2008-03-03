@@ -31,12 +31,6 @@ DEBUGWARNFLAGS :=
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
-OPTFLAGS += -mcpu=opteron
-endif
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-OPTFLAGS += -mtune=opteron
-endif
 ifeq ($(findstring $(GCC_VERSION), 3.4 4.0 4.1),$(GCC_VERSION))
 GCOPTFLAGS += --param inline-unit-growth=75 --param max-inline-insns-single=1000
 endif

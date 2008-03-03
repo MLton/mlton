@@ -26,7 +26,6 @@ ALL_MODELS = A
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-FLAGS += -mtune=opteron
 DEFAULT_MODEL = BX
 ALL_MODELS = A AX B BX C CX G
 endif

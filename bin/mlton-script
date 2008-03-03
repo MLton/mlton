@@ -84,8 +84,8 @@ doit "$lib" \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
         -link-opt '-lgdtoa -lm -lgmp -lpthread -lplpa_included -lrt' \
         -mlb-path-map "$lib/mlb-path-map"                        \
-        -target-as-opt amd64 '-m64 -mtune=opteron'               \
-        -target-cc-opt amd64 '-m64 -mtune=opteron'               \
+        -target-as-opt amd64 '-m64'                              \
+        -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt darwin                                    \
                 '-I/opt/local/include -I/sw/include'             \
         -target-cc-opt freebsd '-I/usr/local/include'            \
