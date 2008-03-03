@@ -426,6 +426,11 @@ int main (__attribute__ ((unused)) int argc,
   chksystype(mp_limb_t, "MPLimb");
 
   writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
+  writeStringWithNewline (cTypesHFd, "/* from \"pthreadtypes.h\" */");
+  writeStringWithNewline (cTypesSMLFd, "(* from \"pthreadtypes.h\" *)");
+  chksystype(pthread_key_t, "Pthread_Key");
+
+  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
   for (int i = 0; cTypesHSuffix[i] != NULL; i++) 
     writeStringWithNewline (cTypesHFd, cTypesHSuffix[i]);
   for (int i = 0; cTypesSMLSuffix[i] != NULL; i++) 
