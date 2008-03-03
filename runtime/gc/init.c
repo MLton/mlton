@@ -309,6 +309,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   sigemptyset (&s->signalsInfo.signalsHandled);
   sigemptyset (&s->signalsInfo.signalsPending);
   s->startTime = getCurrentTime ();
+  s->syncReason = SYNC_NONE;
   s->sysvals.totalRam = GC_totalRam ();
   s->sysvals.pageSize = GC_pageSize ();
   s->weaks = NULL;

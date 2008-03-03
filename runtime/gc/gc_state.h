@@ -13,7 +13,7 @@ struct GC_state {
    * referenced, and having them at smaller offsets may decrease code
    * size and improve cache performance.
    */
-  pointer frontier; /* heap.start <= frontier < limit */
+  pointer frontier; /* start <= frontier < limit */
   pointer limit; /* limit = heap.start + heap.size */
   pointer stackTop; /* Top of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
@@ -28,13 +28,17 @@ struct GC_state {
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   struct GC_callStackState callStackState;
   bool canMinor; /* TRUE iff there is space for a minor gc. */
-  struct GC_controls controls;
-  struct GC_cumulativeStatistics cumulativeStatistics;
+  struct GC_controls *controls;
+  struct GC_cumulativeStatistics *cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
+  uint32_t ffiOp;
   struct GC_forwardState forwardState;
   GC_frameLayout frameLayouts; /* Array of frame layouts. */
   uint32_t frameLayoutsLength; /* Cardinality of frameLayouts array. */
   struct GC_generationalMaps generationalMaps;
+  /* Currently only used to hold raise operands. XXX at least i think so */
+  Pointer *globalObjptrNonRoot;
+  /* Ordinary globals */
   objptr *globals;
   uint32_t globalsLength;
   bool hashConsDuringGC;
@@ -47,11 +51,19 @@ struct GC_state {
   uint32_t magic; /* The magic number for this executable. */
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
+  /* The maximum amount of concurrency */
+  int32_t numberOfProcs;
   GC_objectHashTable objectHashTable;
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
+  /* States for each processor */
+  GC_state procStates;
   struct GC_profiling profiling;
   GC_frameIndex (*returnAddressToFrameIndex) (GC_returnAddress ra);
+  uint32_t returnToC;
+  /* Roots that may be, for example, on the C call stack */
+  objptr *roots;
+  uint32_t rootsLength;
   objptr savedThread; /* Result of GC_copyCurrentThread.
                        * Thread interrupted by arrival of signal.
                        */
@@ -62,11 +74,14 @@ struct GC_state {
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
+  pointer start; /* Like heap.nursery but per processor.  nursery <= start <= frontier */
   uintmax_t startTime; /* The time when GC_init or GC_loadWorld was called. */
+  int32_t syncReason;
   struct GC_sysvals sysvals;
   struct GC_vectorInit *vectorInits;
   uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
+  char *worldFile;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
@@ -79,7 +94,8 @@ static inline size_t sizeofGCStateCurrentStackUsed (GC_state s);
 static inline void setGCStateCurrentThreadAndStack (GC_state s);
 static void setGCStateCurrentHeap (GC_state s, 
                                    size_t oldGenBytesRequested, 
-                                   size_t nurseryBytesRequested);
+                                   size_t nurseryBytesRequested,
+                                   bool duringInit);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

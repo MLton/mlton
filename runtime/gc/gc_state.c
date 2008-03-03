@@ -17,13 +17,19 @@ void displayGCState (GC_state s, FILE *stream) {
   displayGenerationalMaps (s, &s->generationalMaps, 
                            stream);
   fprintf (stream, "\theap\n");
-  displayHeap (s, &s->heap, 
+  displayHeap (s, s->heap, 
                stream);
   fprintf (stream,
+           "\tstart = "FMTPTR"\n"
+           "\tfrontier = "FMTPTR"\n"
            "\tlimit = "FMTPTR"\n"
+           "\tlimitPlusSlop = "FMTPTR"\n"
            "\tstackBottom = "FMTPTR"\n"
            "\tstackTop = "FMTPTR"\n",
+           (uintptr_t)s->start,
+           (uintptr_t)s->frontier,
            (uintptr_t)s->limit,
+           (uintptr_t)s->limitPlusSlop,
            (uintptr_t)s->stackBottom,
            (uintptr_t)s->stackTop);
 }
@@ -80,12 +86,12 @@ void setGCStateCurrentHeap (GC_state s,
        /* We must use it for debugging purposes. */
        FORCE_GENERATIONAL
        /* We just did a mark compact, so it will be advantageous to to use it. */
-       or (s->lastMajorStatistics.kind == GC_MARK_COMPACT)
+       or (s->lastMajorStatistics->kind == GC_MARK_COMPACT)
        /* The live ratio is low enough to make it worthwhile. */
-       or ((float)h->size / (float)s->lastMajorStatistics.bytesLive
+       or ((float)h->size / (float)s->lastMajorStatistics->bytesLive
            <= (h->size < s->sysvals.ram
-               ? s->controls.ratios.copyGenerational
-               : s->controls.ratios.markCompactGenerational))
+               ? s->controls->ratios.copyGenerational
+               : s->controls->ratios.markCompactGenerational))
        )) {
     s->canMinor = TRUE;
     nursery = genNursery;

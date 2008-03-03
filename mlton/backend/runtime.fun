@@ -18,10 +18,13 @@ structure GCField =
        | CurrentThread
        | CurSourceSeqsIndex
        | ExnStack
+       | FFIOp
        | Frontier
+       | GlobalObjptrNonRoot
        | Limit
        | LimitPlusSlop
        | MaxFrameSize
+       | ReturnToC
        | SignalIsPending
        | StackBottom
        | StackLimit
@@ -32,27 +35,33 @@ structure GCField =
       val currentThreadOffset: Bytes.t ref = ref Bytes.zero
       val curSourceSeqsIndexOffset: Bytes.t ref = ref Bytes.zero
       val exnStackOffset: Bytes.t ref = ref Bytes.zero
+      val ffiOpOffset: Bytes.t ref = ref Bytes.zero
       val frontierOffset: Bytes.t ref = ref Bytes.zero
+      val globalObjptrNonRootOffset: Bytes.t ref = ref Bytes.zero
       val limitOffset: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopOffset: Bytes.t ref = ref Bytes.zero
       val maxFrameSizeOffset: Bytes.t ref = ref Bytes.zero
+      val returnToCOffset: Bytes.t ref = ref Bytes.zero
       val signalIsPendingOffset: Bytes.t ref = ref Bytes.zero
       val stackBottomOffset: Bytes.t ref = ref Bytes.zero
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
       fun setOffsets {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
-                      exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
-                      signalIsPending, stackBottom, stackLimit, stackTop} =
+                      exnStack, ffiOp, frontier, globalObjptrNonRoot, limit, limitPlusSlop, maxFrameSize, 
+                      returnToC, signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateOffset := atomicState
           ; cardMapAbsoluteOffset := cardMapAbsolute
           ; currentThreadOffset := currentThread
           ; curSourceSeqsIndexOffset := curSourceSeqsIndex
           ; exnStackOffset := exnStack
+          ; ffiOpOffset := ffiOp
           ; frontierOffset := frontier
+          ; globalObjptrNonRootOffset := globalObjptrNonRoot
           ; limitOffset := limit
           ; limitPlusSlopOffset := limitPlusSlop
           ; maxFrameSizeOffset := maxFrameSize
+          ; returnToCOffset := returnToC
           ; signalIsPendingOffset := signalIsPending
           ; stackBottomOffset := stackBottom
           ; stackLimitOffset := stackLimit
@@ -64,10 +73,13 @@ structure GCField =
           | CurrentThread => !currentThreadOffset
           | CurSourceSeqsIndex => !curSourceSeqsIndexOffset
           | ExnStack => !exnStackOffset
+          | FFIOp => !ffiOpOffset
           | Frontier => !frontierOffset
+          | GlobalObjptrNonRoot => !globalObjptrNonRootOffset
           | Limit => !limitOffset
           | LimitPlusSlop => !limitPlusSlopOffset
           | MaxFrameSize => !maxFrameSizeOffset
+          | ReturnToC => !returnToCOffset
           | SignalIsPending => !signalIsPendingOffset
           | StackBottom => !stackBottomOffset
           | StackLimit => !stackLimitOffset
@@ -78,27 +90,33 @@ structure GCField =
       val currentThreadSize: Bytes.t ref = ref Bytes.zero
       val curSourceSeqsIndexSize: Bytes.t ref = ref Bytes.zero
       val exnStackSize: Bytes.t ref = ref Bytes.zero
+      val ffiOpSize: Bytes.t ref = ref Bytes.zero
       val frontierSize: Bytes.t ref = ref Bytes.zero
+      val globalObjptrNonRootSize: Bytes.t ref = ref Bytes.zero
       val limitSize: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopSize: Bytes.t ref = ref Bytes.zero
       val maxFrameSizeSize: Bytes.t ref = ref Bytes.zero
+      val returnToCSize: Bytes.t ref = ref Bytes.zero
       val signalIsPendingSize: Bytes.t ref = ref Bytes.zero
       val stackBottomSize: Bytes.t ref = ref Bytes.zero
       val stackLimitSize: Bytes.t ref = ref Bytes.zero
       val stackTopSize: Bytes.t ref = ref Bytes.zero
 
       fun setSizes {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
-                    exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
-                    signalIsPending, stackBottom, stackLimit, stackTop} =
+                    exnStack, ffiOp, frontier, globalObjptrNonRoot, limit, limitPlusSlop, maxFrameSize, 
+                    returnToC, signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateSize := atomicState
           ; cardMapAbsoluteSize := cardMapAbsolute
           ; currentThreadSize := currentThread
           ; curSourceSeqsIndexSize := curSourceSeqsIndex
           ; exnStackSize := exnStack
+          ; ffiOpSize := ffiOp
           ; frontierSize := frontier
+          ; globalObjptrNonRootSize := globalObjptrNonRoot
           ; limitSize := limit
           ; limitPlusSlopSize := limitPlusSlop
           ; maxFrameSizeSize := maxFrameSize
+          ; returnToCSize := returnToC
           ; signalIsPendingSize := signalIsPending
           ; stackBottomSize := stackBottom
           ; stackLimitSize := stackLimit
@@ -110,10 +128,13 @@ structure GCField =
           | CurrentThread => !currentThreadSize
           | CurSourceSeqsIndex => !curSourceSeqsIndexSize
           | ExnStack => !exnStackSize
+          | FFIOp => !ffiOpSize
           | Frontier => !frontierSize
+          | GlobalObjptrNonRoot => !globalObjptrNonRootSize
           | Limit => !limitSize
           | LimitPlusSlop => !limitPlusSlopSize
           | MaxFrameSize => !maxFrameSizeSize
+          | ReturnToC => !returnToCSize
           | SignalIsPending => !signalIsPendingSize
           | StackBottom => !stackBottomSize
           | StackLimit => !stackLimitSize
@@ -125,10 +146,13 @@ structure GCField =
           | CurrentThread => "CurrentThread"
           | CurSourceSeqsIndex => "CurSourceSeqsIndex"
           | ExnStack => "ExnStack"
+          | FFIOp => "FFIOp"
           | Frontier => "Frontier"
+          | GlobalObjptrNonRoot => "GlobalObjptrNonRoot"
           | Limit => "Limit"
           | LimitPlusSlop => "LimitPlusSlop"
           | MaxFrameSize => "MaxFrameSize"
+          | ReturnToC => "ReturnToC"
           | SignalIsPending => "SignalIsPending"
           | StackBottom => "StackBottom"
           | StackLimit => "StackLimit"

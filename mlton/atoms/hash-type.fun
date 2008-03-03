@@ -276,6 +276,7 @@ fun checkPrimApp {args, prim, result, targs}: bool =
        | Exn_setExtendExtra => oneTarg (fn t => ([arrow (t, t)], unit))
        | Exn_setInitExtra => oneTarg (fn t => ([t], unit))
        | FFI f => done (Vector.toList (CFunction.args f), CFunction.return f)
+       | FFI_getOp => done ([], cint)
        | FFI_Symbol _ => done ([], cpointer)
        | GC_collect => done ([], unit)
        | IntInf_add => intInfBinary ()

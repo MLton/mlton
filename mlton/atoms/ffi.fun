@@ -79,7 +79,7 @@ fun declareExports {print} =
                    end
              else ()
           end)
-      val _ = print "Int32 MLton_FFI_op;\n"
+      (* val _ = print "Int32 MLton_FFI_op;\n" *)
    in
       List.foreach
       (!symbols, fn {name, ty} =>
@@ -122,9 +122,9 @@ fun declareExports {print} =
           val _ = List.push (headers, header)
        in
           print (concat [header, " {\n"])
-          ; print (concat ["\tMLton_FFI_op = ", Int.toString id, ";\n"])
+          (* ; print (concat ["\tMLton_FFI_op = ", Int.toString id, ";\n"]) *)
           ; Vector.foreach (args, fn (_, _, set) => print set)
-          ; print ("\tMLton_callFromC ();\n")
+          ; print (concat ["\tMLton_callFromC (", Int.toString id, ");\n"])
           ; (case res of
                 NONE => ()
               | SOME t =>

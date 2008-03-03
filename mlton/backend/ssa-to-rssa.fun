@@ -99,6 +99,20 @@ structure CFunction =
             target = Direct "MLton_exit",
             writesStackTop = true}
 
+      val ffiGetOp = fn () =>
+         T {args = Vector.new1 (Type.gcState ()),
+            bytesNeeded = NONE,
+            convention = Cdecl,
+            ensuresBytesFree = false,
+            mayGC = false,
+            maySwitchThreads = false,
+            modifiesFrontier = false,
+            prototype = (Vector.new1 CType.gcState, SOME CType.Int32),
+            readsStackTop = false,
+            return = Type.word WordSize.word32,
+            target = Direct "FFI_getOp",
+            writesStackTop = false}
+
       fun gcArrayAllocate {return} =
          T {args = Vector.new4 (Type.gcState (), 
                                 Type.csize (),
@@ -1168,6 +1182,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | CPointer_setReal _ => cpointerSet ()
                                | CPointer_setWord _ => cpointerSet ()
                                | FFI f => simpleCCall f
+                               (* PERF spoons this not a very efficient way of
+                                getting this value (since we know its offset *)
+                               | FFI_getOp =>
+                                    simpleCCallWithGCState
+                                    (CFunction.ffiGetOp ())
                                | GC_collect =>
                                     ccall
                                     {args = (Vector.new5

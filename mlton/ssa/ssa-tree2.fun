@@ -394,6 +394,7 @@ structure Type =
              | CPointer_toWord => done ([cpointer], csize)
              | FFI f => done (Vector.toList (CFunction.args f),
                               CFunction.return f)
+             | FFI_getOp => done ([], cint)
              | FFI_Symbol _ => done ([], cpointer)
              | GC_collect => done ([], unit)
              | IntInf_add => intInfBinary ()
