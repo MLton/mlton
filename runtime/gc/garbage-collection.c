@@ -33,9 +33,11 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
   else
     majorMarkCompactGC (s);
   s->hashConsDuringGC = FALSE;
-  s->lastMajorStatistics.bytesLive = s->heap.oldGenSize;
-  if (s->lastMajorStatistics.bytesLive > s->cumulativeStatistics.maxBytesLive)
-    s->cumulativeStatistics.maxBytesLive = s->lastMajorStatistics.bytesLive;
+  s->lastMajorStatistics->bytesLive = s->heap->oldGenSize;
+  if (s->lastMajorStatistics->bytesLive > s->cumulativeStatistics->maxBytesLive)
+    s->cumulativeStatistics->maxBytesLive = s->lastMajorStatistics->bytesLive;
+  if (s->lastMajorStatistics->bytesLive > s->cumulativeStatistics->maxBytesLiveSinceReset)
+    s->cumulativeStatistics->maxBytesLiveSinceReset = s->lastMajorStatistics->bytesLive;
   /* Notice that the s->bytesLive below is different than the
    * s->bytesLive used as an argument to createHeapSecondary above.
    * Above, it was an estimate.  Here, it is exactly how much was live
@@ -94,7 +96,7 @@ void performGC (GC_state s,
   uintmax_t gcTime;
   bool stackTopOk;
   size_t stackBytesRequested;
-  struct rusage ru_start;
+  struct timeval tv_start;
   size_t totalBytesRequested;
 
   enterGC (s);
@@ -104,7 +106,7 @@ void performGC (GC_state s,
              uintmaxToCommaString(oldGenBytesRequested));
   assert (invariantForGC (s));
   if (needGCTime (s))
-    startTiming (&ru_start);
+    startWallTiming (&tv_start);
   minorGC (s);
   stackTopOk = invariantForMutatorStack (s);
   stackBytesRequested = 
@@ -135,20 +137,24 @@ void performGC (GC_state s,
   assert (hasHeapBytesFree (s, oldGenBytesRequested + stackBytesRequested,
                             nurseryBytesRequested));
   unless (stackTopOk)
-    growStackCurrent (s);
-  setGCStateCurrentThreadAndStack (s);
+    growStackCurrent (s, TRUE);
+  for (int proc = 0; proc < s->numberOfProcs; proc++) {
+    /* DOC XXX must come first to setup maps properly */
+    s->procStates[proc].generationalMaps = s->generationalMaps;
+    setGCStateCurrentThreadAndStack (&s->procStates[proc]);
+  }
   if (needGCTime (s)) {
-    gcTime = stopTiming (&ru_start, &s->cumulativeStatistics.ru_gc);
-    s->cumulativeStatistics.maxPause = 
-      max (s->cumulativeStatistics.maxPause, gcTime);
+    gcTime = stopWallTiming (&tv_start, &s->cumulativeStatistics->tv_gc);
+    s->cumulativeStatistics->maxPause = 
+      max (s->cumulativeStatistics->maxPause, gcTime);
   } else
     gcTime = 0;  /* Assign gcTime to quell gcc warning. */
-  if (DEBUG or s->controls.messages) {
+  if (DEBUG or s->controls->messages) {
     fprintf (stderr, "[GC: Finished gc; time: %s ms, old-gen: %s bytes (%.1f%%).]\n",
              uintmaxToCommaString(gcTime),
-             uintmaxToCommaString(s->heap.oldGenSize),
-             100.0 * ((double)(s->heap.oldGenSize) 
-                      / (double)(s->heap.size)));
+             uintmaxToCommaString(s->heap->oldGenSize),
+             100.0 * ((double)(s->heap->oldGenSize) 
+                      / (double)(s->heap->availableSize)));
   }
   /* Send a GC signal. */
   if (s->signalsInfo.gcSignalHandled

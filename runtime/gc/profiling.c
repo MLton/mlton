@@ -359,23 +359,37 @@ void GC_handleSigProf (code_pointer pc) {
     sourceSeqsIndex = SOURCE_SEQ_GC;
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
-    if (C_FRAME == s->frameLayouts[frameIndex].kind)
-      sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
-    else {
-      if (PROFILE_TIME_LABEL == s->profiling.kind) {
-      if (s->sourceMaps.textStart <= pc and pc < s->sourceMaps.textEnd)
-        sourceSeqsIndex = s->sourceMaps.textSources [pc - s->sourceMaps.textStart];
+    if (frameIndex < s->frameLayoutsLength) {
+      if (C_FRAME == s->frameLayouts[frameIndex].kind)
+        sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
       else {
-        if (DEBUG_PROFILE)
-          fprintf (stderr, "pc out of bounds\n");
-        sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+        if (PROFILE_TIME_LABEL == s->profiling.kind) {
+          if (s->sourceMaps.textStart <= pc and pc < s->sourceMaps.textEnd)
+            sourceSeqsIndex = s->sourceMaps.textSources [pc - s->sourceMaps.textStart];
+          else {
+            if (DEBUG_PROFILE)
+              fprintf (stderr, "pc out of bounds\n");
+            sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+          }
+        } else {
+          sourceSeqsIndex = s->sourceMaps.curSourceSeqsIndex;
+        }
       }
-      } else {
-        sourceSeqsIndex = s->sourceMaps.curSourceSeqsIndex;
-      }
+    }
+    else {
+      if (DEBUG_PROFILE)
+        fprintf (stderr, "unknown frame index\n");
+      sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
     }
   }
   incForProfiling (s, 1, sourceSeqsIndex);
+}
+
+void GC_profileDisable (void) {
+  setProfTimer (0);
+}
+void GC_profileEnable (void) {
+  setProfTimer (10000);
 }
 
 static void initProfilingTime (GC_state s) {

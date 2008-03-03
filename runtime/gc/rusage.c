@@ -16,7 +16,7 @@ void rusagePlusMax (struct rusage *ru1,
   const int       million = 1000000;
   time_t          sec,
                   usec;
-
+  /* FIXME could be refactored to use timevalPlusMax */
   sec = ru1->ru_utime.tv_sec + ru2->ru_utime.tv_sec;
   usec = ru1->ru_utime.tv_usec + ru2->ru_utime.tv_usec;
   sec += (usec / million);
@@ -38,7 +38,7 @@ void rusageMinusMax (struct rusage *ru1,
   const int       million = 1000000;
   time_t          sec,
                   usec;
-
+  /* FIXME could be refactored to use timevalMinusMax */
   sec = (ru1->ru_utime.tv_sec - ru2->ru_utime.tv_sec) - 1;
   usec = ru1->ru_utime.tv_usec + million - ru2->ru_utime.tv_usec;
   sec += (usec / million);
@@ -67,10 +67,10 @@ uintmax_t rusageTime (struct rusage *ru) {
 
 /* Return time as number of milliseconds. */
 uintmax_t getCurrentTime (void) {
-  struct rusage ru;
+  struct timeval tv;
 
-  getrusage (RUSAGE_SELF, &ru);
-  return rusageTime (&ru);
+  gettimeofday (&tv, (struct timezone *) NULL);
+  return timevalTime (&tv);
 }
 
 void startTiming (struct rusage *ru_start) {
@@ -84,4 +84,61 @@ uintmax_t stopTiming (struct rusage *ru_start, struct rusage *ru_acc) {
   rusageMinusMax (&ru_finish, ru_start, &ru_total);
   rusagePlusMax (ru_acc, &ru_total, ru_acc);
   return rusageTime (&ru_total);
+}
+
+
+void timevalZero (struct timeval *tv) {
+  memset (tv, 0, sizeof (*tv));
+}
+
+void timevalPlusMax (struct timeval *tv1,
+                     struct timeval *tv2,
+                     struct timeval *tv) {
+  const int       million = 1000000;
+  time_t          sec,
+                  usec;
+
+  sec = tv1->tv_sec + tv2->tv_sec;
+  usec = tv1->tv_usec + tv2->tv_usec;
+  sec += (usec / million);
+  usec %= million;
+  tv->tv_sec = sec;
+  tv->tv_usec = usec;
+}
+
+void timevalMinusMax (struct timeval *tv1,
+                      struct timeval *tv2,
+                      struct timeval *tv) {
+  const int       million = 1000000;
+  time_t          sec,
+                  usec;
+
+  sec = (tv1->tv_sec - tv2->tv_sec) - 1;
+  usec = tv1->tv_usec + million - tv2->tv_usec;
+  sec += (usec / million);
+  usec %= million;
+  tv->tv_sec = sec;
+  tv->tv_usec = usec;
+}
+
+uintmax_t timevalTime (struct timeval *tv) {
+  uintmax_t result;
+
+  result = 0;
+  result += 1000 * tv->tv_sec;
+  result += tv->tv_usec / 1000;
+  return result;
+}
+
+void startWallTiming (struct timeval *tv_start) {
+  gettimeofday (tv_start, (struct timezone *) NULL);
+}
+
+uintmax_t stopWallTiming (struct timeval *tv_start, struct timeval *tv_acc) {
+  struct timeval tv_finish, tv_total;
+
+  gettimeofday (&tv_finish, (struct timezone *) NULL);
+  timevalMinusMax (&tv_finish, tv_start, &tv_total);
+  timevalPlusMax (tv_acc, &tv_total, tv_acc);
+  return timevalTime (&tv_total);
 }
