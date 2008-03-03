@@ -7,6 +7,7 @@
  ##
 
 all:
+	make -C .. include
 
 .PHONY: clean
 clean:

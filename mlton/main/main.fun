@@ -111,28 +111,16 @@ fun setTargetType (target: string, usage): unit =
          end
 
 fun hasCodegen (cg) =
-   let
-      datatype z = datatype Control.Target.arch
+   let 
       datatype z = datatype Control.codegen
    in
-      case !Control.Target.arch of
-         AMD64 => (case cg of
-                      x86Codegen => false
-                    | _ => true)
-       | X86 => (case cg of
-                    amd64Codegen => false
-                  | _ => true)
-       | _ => (case cg of
-                  amd64Codegen => false
-                | x86Codegen => false
-                | _ => true)
+      case cg of
+        CCodegen => true
+      | _ => false
    end
 fun hasNativeCodegen () =
-   let
-      datatype z = datatype Control.codegen
-   in
-      hasCodegen amd64Codegen
-      orelse hasCodegen x86Codegen
+   let in
+      false 
    end
    
 

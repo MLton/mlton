@@ -70,7 +70,7 @@ dir=`dirname "$0"`
 src=`cd "$dir/.." && pwd`
 bin="$src/build/bin"
 lib="$src/build/lib"
-mlton="$bin/mlton"
+mlton="$bin/multimlton"
 if $cross; then
 	flags[${#flags[@]}]="-target"
 	flags[${#flags[@]}]="$crossTarget"
