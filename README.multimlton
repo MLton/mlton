@@ -1,0 +1,110 @@
+multiMLton - a multi-processor version of MLton
+
+multiMLton is an extension of MLton that allows programmers to use multiple
+processors or processor cores to improve the performance of ML programs.  It
+strives to give the same results as Standard ML in cases where parallel tasks
+have no effects (or only benign ones).
+
+multiMLton is still "alpha-level" software and is under active development.
+Please send bugs reports and comments to spoons@cs.cmu.edu.
+
+
+USAGE
+
+New Library Functions
+
+        multiMLton provides several interfaces that allow parallel execution.
+        They are listed here in order of decreasing user-friendliness and
+        decreasing stability.
+
+        MLton.Parallel.ForkJoin and MLton.Parallel.Array allow data structures
+        to be built and processed in a uniform, parallel way.  They support
+        building pairs and arrays in parallel, as well as folding over arrays.
+
+        MLton.Parallel.Future allows speculative tasks to be created.  These
+	tasks may be executed in parallel.  Synchronization allows one task to
+	wait for the completion of another.
+
+        MLton.Parallel.Basic is the lowest level interface and provides no
+	synchronization mechanisms: you can spawn parallel tasks, but there is
+	no mechanism that allows you to wait for their completion.
+
+Additional @MLton Parameters
+
+	number-processors <N>		use N processors/cores (default = 1)
+	affinity-base <N>		set affinity starting with
+					  processsor N (default = 0)
+	affinity-stride <N>		stride N processors between each pair of
+                                          parallel threads when setting affinity
+                                          (default = 1)
+	alloc-chunk <SIZE>		allocate at least SIZE bytes per 
+					  request to runtime (default 4k)
+
+	Without any @MLton parameters, multiMLton will default to
+	using a single processor and should behave as the original
+	MLton except where described below.
+
+
+
+KNOWN INCOMPATIBILITIES / CAVEATS
+
+CPU usage
+
+	multiMLton aggressively uses all processors as determined by the
+	@MLton parameters.  It will not release unused CPU resources in the
+	case that there are fewer parallel tasks than processors.  Thus you
+	should not set number-processors higher than the number of expected
+	parallel tasks (or be willing to forfeit any unused processors).  You
+	should not set number-processors greater than the number of
+	processors/cores on your machine.
+
+Deviations from sequential semantics
+
+        While multiMLton implements the same extensional sematanics as MLton
+        when parallel tasks do not interfere, there are some cases where the
+        performance may differ from an SML programmer's expectation.  For
+        example, while the following code will raise a Match exception as
+        expected, it will also consume one processor for the remainder of the
+        program exection.
+
+          MLton.Parallel.ForkJoin.fork (fn () => raise Match, 
+                                        let fun loop () = loop () 
+					  in loop end)
+
+        Thus programmers should not use exceptions within parallel tasks to
+        guard meaningless cases.
+
+Profiling
+
+	The time profiler randomly samples only from the first processor, so
+	profiling results on a multiprocessor may be less precise than on a
+	uniprocessor.  Allocation profiling on multiple processors is
+	unsupported.
+
+Unimplemented features
+
+        MLton includes several extensions to Standard ML.  Some extensions
+        that are not (yet) supported in multiMLton include:
+
+                Signal handlers
+                Finalizers
+                MLton.Profile
+                Exported FFI functions (of type other than unit -> unit)
+
+        As such, several of the regression tests fail, even when running
+        multiMLton on a single processor.  These include:
+
+        	finalize.2 finalize.3 finalize.4 finalize.5 finalize
+                int-inf.bitops mutex prodcons real-int signals2 signals
+                thread2 timeout world5
+
+TODO
+
+	Generalize support for locking; generalize support for per-processor
+	data-structures (this would ease dependencies on Parallel.Internal)
+	
+
+HISTORY
+
+March, 2008
+	Initial alpha release
