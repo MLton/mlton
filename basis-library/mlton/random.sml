@@ -54,6 +54,7 @@ structure MLtonRandom: MLTON_RANDOM =
          open Word
          val seed: word ref = ref 0w13
       in
+      (* XXX spoons random uses global shared state *)
          (* From page 284 of Numerical Recipes in C. *)
          fun rand (): word =
             let
@@ -80,6 +81,7 @@ structure MLtonRandom: MLTON_RANDOM =
             in
                loop (IntInf.pow (2, Word.wordSize), 0)
             end
+      (* XXX spoons random uses global shared state *)
          val r: word ref = ref 0w0
          val count: int ref = ref refresh
          val numChars = Word.fromInt numChars
