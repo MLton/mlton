@@ -19,15 +19,16 @@ New Library Functions
 
         MLton.Parallel.ForkJoin and MLton.Parallel.Array allow data structures
         to be built and processed in a uniform, parallel way.  They support
-        building pairs and arrays in parallel, as well as folding over arrays.
+        building pairs and arrays in parallel, as well as computation over
+        arrays.
 
         MLton.Parallel.Future allows speculative tasks to be created.  These
 	tasks may be executed in parallel.  Synchronization allows one task to
 	wait for the completion of another.
 
-        MLton.Parallel.Basic is the lowest level interface and provides no
-	synchronization mechanisms: you can spawn parallel tasks, but there is
-	no mechanism that allows you to wait for their completion.
+        MLton.Parallel.Basic is the lowest level interface and provides an
+	interface similar to MLton.Thread.
+	
 
 Additional @MLton Parameters
 
