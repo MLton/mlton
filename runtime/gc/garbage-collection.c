@@ -42,24 +42,26 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
    * after the GC.
    */
   if (mayResize)
-    resizeHeap (s, s->lastMajorStatistics.bytesLive + bytesRequested);
+    resizeHeap (s, s->lastMajorStatistics->bytesLive + bytesRequested);
   resizeHeapSecondary (s);
-  assert (s->heap.oldGenSize + bytesRequested <= s->heap.size);
+  assert (s->heap->oldGenSize + bytesRequested <= s->heap->size);
 }
 
-void growStackCurrent (GC_state s) {
+void growStackCurrent (GC_state s, bool allocInOldGen) {
   size_t size;
   GC_stack stack;
 
   size = sizeofStackGrow (s, getStackCurrent(s));
-  if (DEBUG_STACKS or s->controls.messages)
+  if (DEBUG_STACKS or s->controls->messages)
     fprintf (stderr, "[GC: Growing stack to size %s bytes.]\n",
              uintmaxToCommaString(sizeofStackWithHeaderAligned (s, size)));
-  assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
-  stack = newStack (s, size, TRUE);
+  assert (allocInOldGen ? 
+          hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0) :
+          hasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, size)));
+  stack = newStack (s, size, allocInOldGen);
   copyStack (s, getStackCurrent(s), stack);
-  getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
-  markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap.start));
+  getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap->start);
+  markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap->start));
 }
 
 void enterGC (GC_state s) {

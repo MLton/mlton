@@ -32,16 +32,30 @@ void GC_switchToThread (GC_state s, pointer p, size_t ensureBytesFree) {
      * check on every thread switch.
      * So, we'll stick with the else branch for now.
      */
-    enter (s);
+    //ENTER1 (s, p);
+    /* XXX copied from enter() */
+    /* used needs to be set because the mutator has changed s->stackTop. */
+    getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
+    getThreadCurrent(s)->exnStack = s->exnStack;
+    beginAtomic (s);
+
     getThreadCurrent(s)->bytesNeeded = ensureBytesFree;
-    switchToThread (s, pointerToObjptr(p, s->heap.start));
+    switchToThread (s, pointerToObjptr(p, s->heap->start));
     s->atomicState--;
-    switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
-    ensureInvariantForMutator (s, FALSE);
+    /* XX spoons don't bother to check the signal handler here since we
+       (probably) aren't bothering to synchronize.  we'll get it on the next
+       failed allocation request. */
+    //switchToSignalHandlerThreadIfNonAtomicAndSignalPending (s);
+    ensureHasHeapBytesFreeAndOrInvariantForMutator (s, FALSE,
+                                                    TRUE, TRUE,
+                                                    0, 0);
+
+    endAtomic (s);
     assert (invariantForMutatorFrontier(s));
     assert (invariantForMutatorStack(s));
-    leave (s);
+    //LEAVE0 (s);
   } else {
+    assert (false and "unsafe in a multiprocessor context");
     /* BEGIN: enter(s); */
     getStackCurrent(s)->used = sizeofGCStateCurrentStackUsed (s);
     getThreadCurrent(s)->exnStack = s->exnStack;
