@@ -12,7 +12,9 @@ BIN := $(BUILD)/bin
 HOST_ARCH := $(shell "$(SRC)/bin/host-arch")
 HOST_OS := $(shell "$(SRC)/bin/host-os")
 LIB := $(BUILD)/lib
+ifeq (other, $(shell if [ ! -x "$(MLTON)" ]; then echo other; fi))
 MLTON := mlton
+endif
 TARGET := self
 AOUT := mlton-compile
 UP := upgrade-basis.sml
@@ -82,7 +84,7 @@ $(AOUT): $(SOURCES)
 	rm -f $(UP)
 	$(MAKE) $(UP)
 	@echo 'Compiling mlton (takes a while)'
-	mlton $(FLAGS) $(FILE)
+	$(MLTON) $(FLAGS) $(FILE)
 
 #! Pass $(PATH) to upgrade-basis because it is run via #!/usr/bin/env
 # bash, which resets the path.

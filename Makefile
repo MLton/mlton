@@ -102,7 +102,7 @@ clean-svn:
 
 .PHONY: compiler
 compiler:
-	$(MAKE) -C "$(COMP)"
+	$(MAKE) -C "$(COMP)" MLTON=$(MLTON)
 	$(CP) "$(COMP)/$(AOUT)$(EXE)" "$(LIB)/"
 
 .PHONY: constants
