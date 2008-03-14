@@ -31,13 +31,46 @@ structure Unsafe: UNSAFE =
             val update = Array.unsafeUpdate
             val create = Array.array
          end
+      structure BoolArray = UnsafeMonoArray (BoolArray)
+      structure BoolVector = UnsafeMonoVector (BoolVector)
       structure CharArray = UnsafeMonoArray (CharArray)
       structure CharVector = UnsafeMonoVector (CharVector)
+      structure IntArray = UnsafeMonoArray (IntArray)
+      structure IntVector = UnsafeMonoVector (IntVector)
+      structure Int8Array = UnsafeMonoArray (Int8Array)
+      structure Int8Vector = UnsafeMonoVector (Int8Vector)
+      structure Int16Array = UnsafeMonoArray (Int16Array)
+      structure Int16Vector = UnsafeMonoVector (Int16Vector)
+      structure Int32Array = UnsafeMonoArray (Int32Array)
+      structure Int32Vector = UnsafeMonoVector (Int32Vector)
+      structure Int64Array = UnsafeMonoArray (Int64Array)
+      structure Int64Vector = UnsafeMonoVector (Int64Vector)
+      structure IntInfArray = UnsafeMonoArray (IntInfArray)
+      structure IntInfVector = UnsafeMonoVector (IntInfVector)
+      structure LargeIntArray = UnsafeMonoArray (LargeIntArray)
+      structure LargeIntVector = UnsafeMonoVector (LargeIntVector)
+      structure LargeRealArray = UnsafeMonoArray (LargeRealArray)
+      structure LargeRealVector = UnsafeMonoVector (LargeRealVector)
+      structure LargeWordArray = UnsafeMonoArray (LargeWordArray)
+      structure LargeWordVector = UnsafeMonoVector (LargeWordVector)
+      structure RealArray = UnsafeMonoArray (RealArray)
+      structure RealVector = UnsafeMonoVector (RealVector)
+      structure Real32Array = UnsafeMonoArray (Real32Array)
+      structure Real32Vector = UnsafeMonoVector (Real32Vector)
       structure Real64Array = UnsafeMonoArray (Real64Array)
+      structure Real64Vector = UnsafeMonoVector (Real64Vector)
       structure Vector =
          struct
             val sub = Vector.unsafeSub
          end
+      structure WordArray = UnsafeMonoArray (WordArray)
+      structure WordVector = UnsafeMonoVector (WordVector)
       structure Word8Array = UnsafeMonoArray (Word8Array)
       structure Word8Vector = UnsafeMonoVector (Word8Vector)
+      structure Word16Array = UnsafeMonoArray (Word16Array)
+      structure Word16Vector = UnsafeMonoVector (Word16Vector)
+      structure Word32Array = UnsafeMonoArray (Word32Array)
+      structure Word32Vector = UnsafeMonoVector (Word32Vector)
+      structure Word64Array = UnsafeMonoArray (Word64Array)
+      structure Word64Vector = UnsafeMonoVector (Word64Vector)
    end

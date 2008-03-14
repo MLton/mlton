@@ -118,6 +118,7 @@ signature BASIS_EXTRA =
       structure VectorSlice : VECTOR_SLICE      
       structure Vector : VECTOR 
       structure Word : WORD     
+      structure Word8: WORD
       structure Word8Array : MONO_ARRAY 
       structure Word8Array2 : MONO_ARRAY2       
       structure Word8ArraySlice : MONO_ARRAY_SLICE      
@@ -135,6 +136,11 @@ signature BASIS_EXTRA =
       structure FixedInt : INTEGER
       structure GenericSock : GENERIC_SOCK
       structure INetSock : INET_SOCK
+      structure IntArray : MONO_ARRAY
+      structure IntArray2 : MONO_ARRAY2
+      structure IntArraySlice : MONO_ARRAY_SLICE
+      structure IntVector : MONO_VECTOR
+      structure IntVectorSlice : MONO_VECTOR_SLICE
       structure Int1: INTEGER
       structure Int2: INTEGER
       structure Int3: INTEGER
@@ -188,12 +194,12 @@ signature BASIS_EXTRA =
       structure Int64ArraySlice : MONO_ARRAY_SLICE
       structure Int64Vector : MONO_VECTOR
       structure Int64VectorSlice : MONO_VECTOR_SLICE
-      structure IntArray : MONO_ARRAY
-      structure IntArray2 : MONO_ARRAY2
-      structure IntArraySlice : MONO_ARRAY_SLICE
-      structure IntVector : MONO_VECTOR
-      structure IntVectorSlice : MONO_VECTOR_SLICE
       structure IntInf : INT_INF
+      structure IntInfArray : MONO_ARRAY
+      structure IntInfArray2 : MONO_ARRAY2
+      structure IntInfArraySlice : MONO_ARRAY_SLICE
+      structure IntInfVector : MONO_VECTOR
+      structure IntInfVectorSlice : MONO_VECTOR_SLICE
       structure LargeIntArray : MONO_ARRAY
       structure LargeIntArray2 : MONO_ARRAY2
       structure LargeIntArraySlice : MONO_ARRAY_SLICE
@@ -225,6 +231,11 @@ signature BASIS_EXTRA =
       structure PackWord64Big : PACK_WORD
       structure PackWord64Little : PACK_WORD
       structure Posix : POSIX
+      structure RealArray : MONO_ARRAY
+      structure RealArray2 : MONO_ARRAY2
+      structure RealArraySlice : MONO_ARRAY_SLICE
+      structure RealVector : MONO_VECTOR
+      structure RealVectorSlice : MONO_VECTOR_SLICE
       structure Real32 : REAL
       structure Real32Array : MONO_ARRAY
       structure Real32Array2 : MONO_ARRAY2
@@ -237,11 +248,6 @@ signature BASIS_EXTRA =
       structure Real64ArraySlice : MONO_ARRAY_SLICE
       structure Real64Vector : MONO_VECTOR
       structure Real64VectorSlice : MONO_VECTOR_SLICE
-      structure RealArray : MONO_ARRAY
-      structure RealArray2 : MONO_ARRAY2
-      structure RealArraySlice : MONO_ARRAY_SLICE
-      structure RealVector : MONO_VECTOR
-      structure RealVectorSlice : MONO_VECTOR_SLICE
       structure Socket : SOCKET
       structure SysWord : WORD
       structure Unix : UNIX
@@ -262,6 +268,11 @@ signature BASIS_EXTRA =
 (*
       structure Windows : WINDOWS
 *)
+      structure WordArray : MONO_ARRAY
+      structure WordArray2 : MONO_ARRAY2
+      structure WordArraySlice : MONO_ARRAY_SLICE
+      structure WordVector : MONO_VECTOR
+      structure WordVectorSlice : MONO_VECTOR_SLICE
       structure Word1: WORD
       structure Word2: WORD
       structure Word3: WORD
@@ -269,7 +280,7 @@ signature BASIS_EXTRA =
       structure Word5: WORD
       structure Word6: WORD
       structure Word7: WORD
-      structure Word8: WORD
+      (* structure Word8: WORD (* Word8 is a required structure *)*)
       structure Word9: WORD
       structure Word10: WORD
       structure Word11: WORD
@@ -295,11 +306,6 @@ signature BASIS_EXTRA =
       structure Word31: WORD
       structure Word32: WORD
       structure Word64: WORD
-      structure WordArray : MONO_ARRAY
-      structure WordArray2 : MONO_ARRAY2
-      structure WordArraySlice : MONO_ARRAY_SLICE
-      structure WordVector : MONO_VECTOR
-      structure WordVectorSlice : MONO_VECTOR_SLICE
       structure Word16Array : MONO_ARRAY
       structure Word16Array2 : MONO_ARRAY2
       structure Word16ArraySlice : MONO_ARRAY_SLICE
@@ -336,11 +342,44 @@ signature BASIS_EXTRA =
       sharing type MLton.Word16.t = Word16.word
       sharing type MLton.Word32.t = Word32.word
       sharing type MLton.Word64.t = Word64.word
+      sharing Unsafe.BoolArray = BoolArray
+      sharing Unsafe.BoolVector = BoolVector
       sharing Unsafe.CharArray = CharArray
       sharing Unsafe.CharVector = CharVector
+      sharing Unsafe.IntArray = IntArray
+      sharing Unsafe.IntVector = IntVector
+      sharing Unsafe.Int8Array = Int8Array
+      sharing Unsafe.Int8Vector = Int8Vector
+      sharing Unsafe.Int16Array = Int16Array
+      sharing Unsafe.Int16Vector = Int16Vector
+      sharing Unsafe.Int32Array = Int32Array
+      sharing Unsafe.Int32Vector = Int32Vector
+      sharing Unsafe.Int64Array = Int64Array
+      sharing Unsafe.Int64Vector = Int64Vector
+      sharing Unsafe.IntInfArray = IntInfArray
+      sharing Unsafe.IntInfVector = IntInfVector
+      sharing Unsafe.LargeIntArray = LargeIntArray
+      sharing Unsafe.LargeIntVector = LargeIntVector
+      sharing Unsafe.LargeRealArray = LargeRealArray
+      sharing Unsafe.LargeRealVector = LargeRealVector
+      sharing Unsafe.LargeWordArray = LargeWordArray
+      sharing Unsafe.LargeWordVector = LargeWordVector
+      sharing Unsafe.RealArray = RealArray
+      sharing Unsafe.RealVector = RealVector
+      sharing Unsafe.Real32Array = Real32Array
+      sharing Unsafe.Real32Vector = Real32Vector
       sharing Unsafe.Real64Array = Real64Array
+      sharing Unsafe.Real64Vector = Real64Vector
+      sharing Unsafe.WordArray = WordArray
+      sharing Unsafe.WordVector = WordVector
       sharing Unsafe.Word8Array = Word8Array
       sharing Unsafe.Word8Vector = Word8Vector
+      sharing Unsafe.Word16Array = Word16Array
+      sharing Unsafe.Word16Vector = Word16Vector
+      sharing Unsafe.Word32Array = Word32Array
+      sharing Unsafe.Word32Vector = Word32Vector
+      sharing Unsafe.Word64Array = Word64Array
+      sharing Unsafe.Word64Vector = Word64Vector
 
       (* ************************************************** *)
       (* ************************************************** *)
