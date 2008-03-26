@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -14,7 +14,7 @@
  * with "platform.h".
  */
 #ifndef MLTON_CODEGEN_MATHFN
-#define MLTON_CODEGEN_MATHFN(decl) 
+#define MLTON_CODEGEN_MATHFN(decl)
 #endif
 /* WordS<N>_quot and WordS<N>_rem can be inlined with the
  * bytecode-codegen, since they will be used in a context where the
@@ -25,7 +25,7 @@
 #endif
 /* No need to declare memcpy, since <string.h> comes with platform.h.
  */
-#ifndef MLTON_CODEGEN_MATHFN
+#ifndef MLTON_CODEGEN_MEMCPY
 #define MLTON_CODEGEN_MEMCPY(decl)
 #endif
 #include "platform.h"
@@ -265,7 +265,7 @@ enum {
                 goto mainLoop;                  \
         }
 
-/* The bytecode interpreter relies on the fact that the overflow checking 
+/* The bytecode interpreter relies on the fact that the overflow checking
  * primitives implemented in c-chunk.h only set the result if the operation does
  * not overflow.  When the result overflow, the interpreter pushes a zero on
  * the stack for the result.
@@ -384,7 +384,7 @@ enum {
                 goto mainLoop;                  \
         }
 
-/* The bytecode interpreter relies on the fact that the overflow checking 
+/* The bytecode interpreter relies on the fact that the overflow checking
  * primitives implemented in c-chunk.h only set the result if the operation does
  * not overflow.  When the result overflow, the interpreter pushes a zero on
  * the stack for the result.
@@ -623,4 +623,3 @@ void MLton_Bytecode_interpret (Bytecode b, CodeOffset codeOffset) {
         }
         interpret (b, codeOffset, FALSE);
 }
-

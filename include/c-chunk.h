@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -201,14 +201,14 @@ typedef Pointer Objptr;
 #endif
 /* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,
  * because the gcc optimizer sometimes produces incorrect results when
- * one of the arguments is a constant.  
+ * one of the arguments is a constant.
  */
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func) 
+#define MLTON_CODEGEN_WORDSQUOTREM(func)
 #endif
 /* Declare memcpy, since <string.h> isn't included.
  */
-#ifndef MLTON_CODEGEN_MAMCPY
+#ifndef MLTON_CODEGEN_MEMCPY
 #define MLTON_CODEGEN_MEMCPY(decl)
 #endif
 MLTON_CODEGEN_MEMCPY(void * memcpy(void *, const void*, size_t);)
