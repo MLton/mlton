@@ -12,7 +12,8 @@
 #include "sysconf.c"
 #include "setenv.putenv.c"
 
-int fegetround () {
+#ifdef __sparc__
+int fegetround (void) {
         int mode;
 
         mode = fpgetround ();
@@ -34,6 +35,7 @@ void fesetround (int mode) {
         }
         fpsetround (mode);
 }
+#endif /* __sparc__ */
 
 int fpclassify64 (double d) {
         fpclass_t c;
@@ -41,7 +43,7 @@ int fpclassify64 (double d) {
         c = fpclass (d);
         switch (c) {
         case FP_SNAN:
-        case FP_QNAN: 
+        case FP_QNAN:
                 return FP_NAN;
         case FP_NINF:
         case FP_PINF:
@@ -64,14 +66,14 @@ int fpclassify64 (double d) {
 /*                        GC                         */
 /* ------------------------------------------------- */
 
-void GC_displayMem () {
+void GC_displayMem (void) {
         static char buffer[256];
         snprintf (buffer, cardof(buffer), "pmap %d\n", (int)(getpid ()));
         system (buffer);
 }
 
 static void catcher (__attribute__ ((unused)) int sig,
-                     __attribute__ ((unused)) siginfo_t *sip, 
+                     __attribute__ ((unused)) siginfo_t *sip,
                      ucontext_t *ucp) {
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gregs[REG_PC]);
 }

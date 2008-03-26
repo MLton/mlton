@@ -33,8 +33,10 @@
 #include <utime.h>
 
 #include "feround.h"
+#ifdef __sparc__
 #include "float-math.h"
 #include "setenv.h"
+#endif
 
 #define FE_TONEAREST 0
 #define FE_DOWNWARD 1
