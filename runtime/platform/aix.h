@@ -25,6 +25,7 @@
 
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY FALSE
+#define HAS_FPCLASSIFY32 FALSE
 #define HAS_FPCLASSIFY64 TRUE
 #define HAS_MSG_DONTWAIT FALSE
 #define HAS_PTRACE FALSE
@@ -45,5 +46,31 @@
 
 int fpclassify64(double d);
 
+/* These are GCC builtins, but <math.h> does not define the prototypes. */
+float acosf(float x);
+float asinf(float x);
+float atan2f(float y, float x);
+float atanf(float x);
+float cosf(float x);
+float coshf(float x);
+float expf(float x);
+float fabsf(float x);
+float frexpf(float num, int *exp);
+float ldexpf(float x, int exp);
+float log10f(float x);
+float logf(float x);
+float modff(float x, float *iptr);
+float powf(float x, float y);
+float rintf(float x);
+float sinf(float x);
+float sinhf(float x);
+float sqrtf(float x);
+float tanf(float x);
+float tanhf(float x);
+
 /* This should not conflict with existing flags. */
 #define MSG_DONTWAIT 0x1000000
+
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)-1)
+#endif
