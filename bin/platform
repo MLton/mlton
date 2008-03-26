@@ -24,12 +24,12 @@ case "$#" in
 esac
 
 uname=`uname`
-arch_flag=-m
+arch=
 
 case "$uname" in
 AIX)
         HOST_OS='aix'
-        arch_flag=-p
+        arch=`uname -p`
 ;;
 CYGWIN*)
         HOST_OS='cygwin'
@@ -57,13 +57,18 @@ OpenBSD*)
 ;;
 SunOS)
         HOST_OS='solaris'
+	for arch in sparc amd64 i386 `uname -m`; do
+	        optisa $arch > /dev/null && break
+	done
 ;;
 *)
         die "Unknown OS $uname."
 ;;
 esac
 
-arch=`uname $arch_flag`
+if [ -z "$arch" ]; then
+        arch=`uname -m`
+fi
 
 case "$arch" in
 alpha*)
