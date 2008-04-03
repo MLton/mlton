@@ -50,9 +50,30 @@ fun checkScopes (program as
          in (fn x => bind (x, ()), reference, unbind)
          end
 
-      val (bindTycon, _, getTycon', _) = make' (Tycon.layout, Tycon.plist)
+      val (bindTycon, getTycon, getTycon', _) = make' (Tycon.layout, Tycon.plist)
+      fun loopType ty =
+         let
+            datatype z = datatype Type.dest
+            val _ =
+               case Type.dest ty of
+                  Array ty => loopType ty
+                | CPointer => ()
+                | Datatype tycon => getTycon tycon
+                | IntInf => ()
+                | Real _ => ()
+                | Ref ty => loopType ty
+                | Thread => ()
+                | Tuple tys => Vector.foreach (tys, loopType)
+                | Vector ty => loopType ty
+                | Weak ty => loopType ty
+                | Word _ => ()
+         in
+            ()
+         end
       val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
+      val bindCon = fn (con, args, i) => (Vector.foreach (args, loopType); bindCon (con, i))
       val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
+      val bindVar = fn (x, ty) => (loopType ty; bindVar (x, ty))
       fun getVars xs = Vector.foreach (xs, getVar)
       val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
@@ -63,17 +84,19 @@ fun checkScopes (program as
                   ConApp {con, args, ...} => (getCon con
                                               ; Vector.foreach (args, getVar))
                 | Const _ => ()
-                | PrimApp {args, ...} => Vector.foreach (args, getVar)
+                | PrimApp {args, targs, ...} => (Vector.foreach (targs, loopType)
+                                                 ; Vector.foreach (args, getVar))
                 | Profile _ => ()
                 | Select {tuple, ...} => getVar tuple
                 | Tuple xs => Vector.foreach (xs, getVar)
                 | Var x => getVar x
+            val _ = loopType ty
             val _ = Option.app (var, fn x => bindVar (x, ty))
          in
             ()
          end
       val loopTransfer =
-         fn Arith {args, ...} => getVars args
+         fn Arith {args, ty, ...} => (getVars args; loopType ty)
           | Bug => ()
           | Call {func, args, ...} => (getFunc func; getVars args)
           | Case {test, cases, default, ...} =>
@@ -138,7 +161,7 @@ fun checkScopes (program as
           | Runtime {args, ...} => getVars args
       fun loopFunc (f: Function.t) =
          let
-            val {args, blocks, ...} = Function.dest f
+            val {args, blocks, raises, returns, start, ...} = Function.dest f
             (* Descend the dominator tree, verifying that variable definitions
              * dominate variable uses.
              *)
@@ -158,6 +181,7 @@ fun checkScopes (program as
                end
             val _ = Vector.foreach (args, bindVar)
             val _ = Vector.foreach (blocks, bindLabel o Block.label)
+            val _ = getLabel start
             val _ =
                Vector.foreach
                (blocks, fn Block.T {transfer, ...} =>
@@ -165,18 +189,22 @@ fun checkScopes (program as
             val _ = loop (Function.dominatorTree f)
             val _ = Vector.foreach (blocks, unbindLabel o Block.label)
             val _ = Vector.foreach (args, unbindVar o #1)
+            val _ = Option.app (returns, fn returns => Vector.foreach (returns, loopType))
+            val _ = Option.app (raises, fn raises => Vector.foreach (raises, loopType))
             val _ = Function.clear f
          in
              ()
          end
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {tycon, cons} =>
-               (bindTycon (tycon, Vector.length cons) ;
-                Vector.foreachi (cons, fn (i, {con, ...}) => bindCon (con, i))))
+               bindTycon (tycon, Vector.length cons))
+      val _ = Vector.foreach
+              (datatypes, fn Datatype.T {cons, ...} =>
+               Vector.foreachi (cons, fn (i, {con, args, ...}) => bindCon (con, args, i)))
       val _ = Vector.foreach (globals, loopStatement)
       val _ = List.foreach (functions, bindFunc o Function.name)
-      val _ = List.foreach (functions, loopFunc)
       val _ = getFunc main
+      val _ = List.foreach (functions, loopFunc)
       val _ = Program.clearTop program
    in
       ()
