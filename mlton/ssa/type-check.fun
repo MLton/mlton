@@ -80,8 +80,7 @@ fun checkScopes (program as
               ()
            end))
       fun loopTypes tys = Vector.foreach (tys, loopType)
-      (* Redefine bindCon and bindVar to check well-formedness of types. *)
-      val bindCon = fn (con, args, i) => (loopTypes args; bindCon (con, i))
+      (* Redefine bindVar to check well-formedness of types. *)
       val bindVar = fn (x, ty) => (loopType ty; bindVar (x, ty))
       fun loopExp exp = 
          let
@@ -213,10 +212,13 @@ fun checkScopes (program as
          end
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {tycon, cons} =>
-               bindTycon (tycon, Vector.length cons))
+               (bindTycon (tycon, Vector.length cons)
+                ; Vector.foreachi (cons, fn (i, {con, ...}) => 
+                                   bindCon (con, i))))
       val _ = Vector.foreach
               (datatypes, fn Datatype.T {cons, ...} =>
-               Vector.foreachi (cons, fn (i, {con, args, ...}) => bindCon (con, args, i)))
+               Vector.foreach (cons, fn {args, ...} => 
+                               Vector.foreach (args, loopType)))
       val _ = Vector.foreach (globals, loopStatement)
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = getFunc main
