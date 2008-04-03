@@ -56,25 +56,29 @@ fun checkScopes (program as
       val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
       val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
 
-      fun loopType ty =
-         let
-            datatype z = datatype Type.dest
-            val _ =
-               case Type.dest ty of
-                  Array ty => loopType ty
-                | CPointer => ()
-                | Datatype tycon => getTycon tycon
-                | IntInf => ()
-                | Real _ => ()
-                | Ref ty => loopType ty
-                | Thread => ()
-                | Tuple tys => Vector.foreach (tys, loopType)
-                | Vector ty => loopType ty
-                | Weak ty => loopType ty
-                | Word _ => ()
-         in
-            ()
-         end
+      val {destroy = destroyLoopType, get = loopType, ...} =
+         Property.destGet
+         (Type.plist, 
+          Property.initRec 
+          (fn (ty, loopType) =>
+           let
+              datatype z = datatype Type.dest
+              val _ =
+                 case Type.dest ty of
+                    Array ty => loopType ty
+                  | CPointer => ()
+                  | Datatype tycon => getTycon tycon
+                  | IntInf => ()
+                  | Real _ => ()
+                  | Ref ty => loopType ty
+                  | Thread => ()
+                  | Tuple tys => Vector.foreach (tys, loopType)
+                  | Vector ty => loopType ty
+                  | Weak ty => loopType ty
+                  | Word _ => ()
+           in
+              ()
+           end))
       fun loopTypes tys = Vector.foreach (tys, loopType)
       (* Redefine bindCon and bindVar to check well-formedness of types. *)
       val bindCon = fn (con, args, i) => (loopTypes args; bindCon (con, i))
@@ -218,6 +222,7 @@ fun checkScopes (program as
       val _ = getFunc main
       val _ = List.foreach (functions, loopFunc)
       val _ = Program.clearTop program
+      val _ = destroyLoopType ()
    in
       ()
    end
