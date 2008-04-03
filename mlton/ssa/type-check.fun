@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -41,7 +41,6 @@ fun checkScopes (program as
                                   ["Ssa.TypeCheck.checkScopes: reference to ",
                                    Layout.toString (layout x),
                                    " not in scope"])
-
             fun unbind x = set (x, Defined)
          in (bind, ignore o reference, reference, unbind)
          end
@@ -51,6 +50,12 @@ fun checkScopes (program as
          end
 
       val (bindTycon, getTycon, getTycon', _) = make' (Tycon.layout, Tycon.plist)
+      val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
+      val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
+      fun getVars xs = Vector.foreach (xs, getVar)
+      val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
+      val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
+
       fun loopType ty =
          let
             datatype z = datatype Type.dest
@@ -70,26 +75,27 @@ fun checkScopes (program as
          in
             ()
          end
-      val (bindCon, getCon, getCon', _) = make' (Con.layout, Con.plist)
-      val bindCon = fn (con, args, i) => (Vector.foreach (args, loopType); bindCon (con, i))
-      val (bindVar, getVar, getVar', unbindVar) = make' (Var.layout, Var.plist)
+      fun loopTypes tys = Vector.foreach (tys, loopType)
+      (* Redefine bindCon and bindVar to check well-formedness of types. *)
+      val bindCon = fn (con, args, i) => (loopTypes args; bindCon (con, i))
       val bindVar = fn (x, ty) => (loopType ty; bindVar (x, ty))
-      fun getVars xs = Vector.foreach (xs, getVar)
-      val (bindFunc, getFunc, _) = make (Func.layout, Func.plist)
-      val (bindLabel, getLabel, unbindLabel) = make (Label.layout, Label.plist)
-      fun loopStatement (Statement.T {var, ty, exp, ...}) =
+      fun loopExp exp = 
          let
             val _ =
                case exp of
-                  ConApp {con, args, ...} => (getCon con
-                                              ; Vector.foreach (args, getVar))
+                  ConApp {con, args, ...} => (getCon con ; getVars args)
                 | Const _ => ()
-                | PrimApp {args, targs, ...} => (Vector.foreach (targs, loopType)
-                                                 ; Vector.foreach (args, getVar))
+                | PrimApp {args, targs, ...} => (loopTypes targs; getVars args)
                 | Profile _ => ()
                 | Select {tuple, ...} => getVar tuple
-                | Tuple xs => Vector.foreach (xs, getVar)
+                | Tuple xs => getVars xs
                 | Var x => getVar x
+         in
+            ()
+         end
+      fun loopStatement (Statement.T {var, ty, exp, ...}) =
+         let
+            val _ = loopExp exp
             val _ = loopType ty
             val _ = Option.app (var, fn x => bindVar (x, ty))
          in
@@ -149,11 +155,13 @@ fun checkScopes (program as
                          | _ => ()
                      end
                   val _ = getVar test
+                  val _ =
+                     case cases of
+                        Cases.Con cs => doitCon cs 
+                      | Cases.Word (_, cs) =>
+                           doit (cs, WordX.equals, Word.fromIntInf o WordX.toIntInf)
                in
-                  case cases of
-                     Cases.Con cs => doitCon cs 
-                   | Cases.Word (_, cs) =>
-                        doit (cs, WordX.equals, Word.fromIntInf o WordX.toIntInf)
+                  ()
                end
           | Goto {args, ...} => getVars args
           | Raise xs => getVars xs
@@ -172,25 +180,29 @@ fun checkScopes (program as
                   val _ = Vector.foreach (statements, loopStatement)
                   val _ = loopTransfer transfer
                   val _ = Vector.foreach (children, loop)
-                  val _ =
-                     Vector.foreach (statements, fn s =>
-                                     Option.app (Statement.var s, unbindVar))
+                  val _ = Vector.foreach 
+                          (statements, fn s =>
+                           Option.app (Statement.var s, unbindVar))
                   val _ = Vector.foreach (args, unbindVar o #1)
                in
                   ()
                end
             val _ = Vector.foreach (args, bindVar)
             val _ = Vector.foreach (blocks, bindLabel o Block.label)
+            (* Check that 'start' and all transfer labels are in scope.
+             * In the case that something is not in scope,
+             * "getLabel" gives a more informative error message
+             * than the CFG/dominatorTree construction failure.
+             *)
             val _ = getLabel start
-            val _ =
-               Vector.foreach
-               (blocks, fn Block.T {transfer, ...} =>
-                Transfer.foreachLabel (transfer, getLabel))
+            val _ = Vector.foreach
+                    (blocks, fn Block.T {transfer, ...} =>
+                     Transfer.foreachLabel (transfer, getLabel))
             val _ = loop (Function.dominatorTree f)
             val _ = Vector.foreach (blocks, unbindLabel o Block.label)
             val _ = Vector.foreach (args, unbindVar o #1)
-            val _ = Option.app (returns, fn returns => Vector.foreach (returns, loopType))
-            val _ = Option.app (raises, fn raises => Vector.foreach (raises, loopType))
+            val _ = Option.app (returns, loopTypes)
+            val _ = Option.app (raises, loopTypes)
             val _ = Function.clear f
          in
              ()
