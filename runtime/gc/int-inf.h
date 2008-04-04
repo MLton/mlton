@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -54,7 +54,7 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr,
                     (sizeof(objptr) % sizeof(mp_limb_t) == 0));
 #define LIMBS_PER_OBJPTR ( \
         sizeof(mp_limb_t) >= sizeof(objptr) ? \
-        1 : sizeof(objptr) / sizeof(mp_limb_t))
+        1 : (int)(sizeof(objptr) / sizeof(mp_limb_t)))
 
 void initIntInf (GC_state s);
 static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res, 

@@ -1,5 +1,5 @@
-/* Copyright (C) 1999-2005, 2007 Henry Cejtin, Matthew Fluet, Suresh
- *    Jagannathan, and Stephen Weeks.
+/* Copyright (C) 1999-2005, 2007-2008 Henry Cejtin, Matthew Fluet,
+ *    Suresh Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
  * MLton is released under a BSD-style license.
@@ -57,26 +57,29 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
       const objptr highBitMask = (objptr)1 << (CHAR_BIT * OBJPTR_SIZE - 1);
       bool neg = (arg & highBitMask) != (objptr)0;
       if (neg) {
-        res->_mp_size = - (mp_size_t)LIMBS_PER_OBJPTR;
+        res->_mp_size = - LIMBS_PER_OBJPTR;
         arg = -((arg >> 1) | highBitMask);
       } else {
-        res->_mp_size = (mp_size_t)LIMBS_PER_OBJPTR;
+        res->_mp_size = LIMBS_PER_OBJPTR;
         arg = (arg >> 1);
       }
-      for (unsigned int i = 0; i < LIMBS_PER_OBJPTR; i++) {
+      for (int i = 0; i < LIMBS_PER_OBJPTR; i++) {
         space[i] = (mp_limb_t)arg;
         // The conditional below is to quell a gcc warning:
         //   right shift count >= width of type
         // When 1 == LIMBS_PER_OBJPTR, the for loop will not continue,
         // so the shift doesn't matter.
         arg = arg >> (1 == LIMBS_PER_OBJPTR ?
-                        0 :
-                        CHAR_BIT * sizeof(mp_limb_t));
+                      0 : CHAR_BIT * sizeof(mp_limb_t));
       }
     }
   } else {
     bp = toBignum (s, arg);
-    res->_mp_alloc = bp->length - 1;
+    /* The _mp_alloc field is declared as int.  
+     * No possibility of an overflowing assignment, as all *huge*
+     * intInfs must have come from some previous GnuMP evaluation.
+     */
+    res->_mp_alloc = (int)(bp->length - 1);
     res->_mp_d = (mp_limb_t*)(bp->obj.body.limbs);
     res->_mp_size = bp->obj.body.isneg ? - res->_mp_alloc : res->_mp_alloc;
   }
@@ -95,13 +98,19 @@ void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res,
 void initIntInfRes (GC_state s, __mpz_struct *res,
                     __attribute__ ((unused)) size_t bytes) {
   GC_intInf bp;
+  size_t nlimbs;
 
   assert (bytes <= (size_t)(s->limitPlusSlop - s->frontier));
   bp = (GC_intInf)s->frontier;
   /* We have as much space for the limbs as there is to the end of the
    * heap.  Divide by (sizeof(mp_limb_t)) to get number of limbs.
    */
-  res->_mp_alloc = (s->limitPlusSlop - (pointer)bp->obj.body.limbs) / (sizeof(mp_limb_t));
+  nlimbs = ((size_t)(s->limitPlusSlop - (pointer)bp->obj.body.limbs)) / (sizeof(mp_limb_t));
+  /* The _mp_alloc field is declared as int. 
+   * Avoid an overflowing assignment, which could happen with huge
+   * heaps.
+   */
+  res->_mp_alloc = (int)(min(nlimbs,(size_t)INT_MAX));
   res->_mp_d = (mp_limb_t*)(bp->obj.body.limbs);
   res->_mp_size = 0; /* is this necessary? */
 }
@@ -116,7 +125,7 @@ void initIntInfRes (GC_state s, __mpz_struct *res,
  */
 objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
   GC_intInf bp;
-  mp_size_t size;
+  int size;
 
   assert ((res->_mp_size == 0)
           or (res->_mp_d[(res->_mp_size < 0
@@ -136,6 +145,7 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
     size = - size;
   } else
     bp->obj.body.isneg = FALSE;
+  assert (size >= 0);
   if (size <= 1) {
     uintmax_t val, ans;
 
@@ -159,8 +169,8 @@ objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes) {
     }
   }
   setFrontier (s, (pointer)(&bp->obj.body.limbs[size]), bytes);
-  bp->counter = 0;
-  bp->length = size + 1; /* +1 for isneg field */
+  bp->counter = (GC_arrayCounter)0;
+  bp->length = (GC_arrayLength)(size + 1); /* +1 for isneg field */
   bp->header = GC_INTINF_HEADER;
   return pointerToObjptr ((pointer)&bp->obj, s->heap.start);
 }
