@@ -212,6 +212,8 @@ in
    ../util/unique-id.fun
    ../util/cleaner.sig
    ../util/cleaner.sml
+   ../util/abs-rep.sig
+   ../util/abs-rep.fun
 
    ../config/c/sys-types.sml
    ../system/pre-os.sml
