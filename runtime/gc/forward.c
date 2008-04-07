@@ -70,12 +70,15 @@ void forwardObjptr (GC_state s, objptr *opp) {
          * but don't violate the stack invariant.
          */
         if (stack->used <= stack->reserved / 4) {
-          size_t reservedShrink = stack->reserved / 2;
+          size_t reservedMax =
+            (size_t)(s->controls.ratios.threadCurrentMaxReserved * stack->used);
+          size_t reservedShrink =
+            (size_t)(s->controls.ratios.threadCurrentShrink * stack->reserved);
           size_t reservedMin =
             sizeofStackMinimumReserved (s, stack);
           size_t reservedNew =
             alignStackReserved
-            (s, max(reservedShrink,reservedMin));
+            (s, max(min(reservedMax,reservedShrink),reservedMin));
           /* It's possible that new > stack->reserved if the stack
            * invariant is violated. In that case, we want to leave the
            * stack alone, because some other part of the gc will grow

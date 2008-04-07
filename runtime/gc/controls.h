@@ -32,6 +32,8 @@ struct GC_ratios {
   float nursery; 
   float ramSlop;
   float threadCurrentGrow;
+  float threadCurrentMaxReserved;
+  float threadCurrentShrink;
   float threadMaxReserved;
   float threadShrink;
 };
