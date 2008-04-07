@@ -143,6 +143,7 @@ thread:
         skipGap = 0;
       } else { /* Stack. */
         bool active;
+        size_t reservedNew, reservedOld;
         GC_stack stack;
 
         assert (STACK_TAG == tag);
@@ -150,42 +151,8 @@ thread:
         stack = (GC_stack)p;
         active = currentStack == stack;
 
-        size_t reservedMax, reservedShrink, reservedMin, reservedNew, reservedOld;
-
         reservedOld = stack->reserved;
-        if (active) {
-          /* Shrink active stacks. */
-          reservedMax =
-            (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
-          size_t reservedPermit =
-            (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
-          reservedShrink =
-            (reservedPermit >= stack->reserved)
-            ? stack->reserved
-            : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
-          reservedMin = sizeofStackMinimumReserved (s, stack);
-        } else {
-          /* Shrink paused stacks. */
-          reservedMax =
-            (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
-          reservedShrink =
-            (size_t)(s->controls.ratios.stackShrink * stack->reserved);
-          reservedMin= stack->used;
-        }
-        reservedNew =
-          alignStackReserved
-          (s, max(min(reservedMax,reservedShrink),reservedMin));
-        /* It's possible that new > stack->reserved for the active stack
-         * if the stack invariant is violated.  In that case, we want to
-         * leave the stack alone, because some other part of the gc will
-         * grow the stack.  We cannot do any growing here because we may
-         * run out of to space.
-         */
-        assert (active or reservedNew <= stack->reserved);
-        if (reservedNew < stack->reserved) {
-        } else {
-          reservedNew = stack->reserved;
-        }
+        reservedNew = sizeofStackShrink (s, stack, active);
         objectBytes = sizeof (struct GC_stack) + stack->used;
         skipFront = reservedOld - stack->used;
         skipGap = reservedOld - reservedNew;
@@ -312,6 +279,7 @@ unmark:
         skipGap = 0;
       } else { /* Stack. */
         bool active;
+        size_t reservedNew, reservedOld;
         GC_stack stack;
 
         assert (STACK_TAG == tag);
@@ -319,38 +287,8 @@ unmark:
         stack = (GC_stack)p;
         active = currentStack == stack;
 
-        size_t reservedMax, reservedShrink, reservedMin, reservedNew, reservedOld;
-
         reservedOld = stack->reserved;
-        if (active) {
-          /* Shrink active stacks. */
-          reservedMax =
-            (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
-          size_t reservedPermit =
-            (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
-          reservedShrink =
-            (reservedPermit >= stack->reserved)
-            ? stack->reserved
-            : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
-          reservedMin = sizeofStackMinimumReserved (s, stack);
-        } else {
-          /* Shrink paused stacks. */
-          reservedMax =
-            (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
-          reservedShrink =
-            (size_t)(s->controls.ratios.stackShrink * stack->reserved);
-          reservedMin= stack->used;
-        }
-        reservedNew =
-          alignStackReserved
-          (s, max(min(reservedMax,reservedShrink),reservedMin));
-        /* It's possible that new > stack->reserved for the active stack
-         * if the stack invariant is violated.  In that case, we want to
-         * leave the stack alone, because some other part of the gc will
-         * grow the stack.  We cannot do any growing here because we may
-         * run out of to space.
-         */
-        assert (active or reservedNew <= stack->reserved);
+        reservedNew = sizeofStackShrink (s, stack, active);
         if (reservedNew < stack->reserved) {
           if (DEBUG_STACKS or s->controls.messages)
             fprintf (stderr,
@@ -359,8 +297,6 @@ unmark:
                      uintmaxToCommaString(reservedNew),
                      uintmaxToCommaString(stack->used));
           stack->reserved = reservedNew;
-        } else {
-          reservedNew = stack->reserved;
         }
         objectBytes = sizeof (struct GC_stack) + stack->used;
         skipFront = reservedOld - stack->used;

@@ -78,6 +78,7 @@ static inline size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
 static inline size_t alignStackReserved (GC_state s, size_t reserved);
 static inline size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
 static inline size_t sizeofStackGrow (GC_state s, GC_stack stack);
+static inline size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active);
 
 static inline void copyStack (GC_state s, GC_stack from, GC_stack to);
 

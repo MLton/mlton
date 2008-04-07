@@ -159,6 +159,42 @@ size_t sizeofStackGrow (GC_state s, GC_stack stack) {
   return res;
 }
 
+size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active) {
+      size_t reservedMax, reservedShrink, reservedMin, reservedNew;
+
+      if (active) {
+        /* Shrink active stacks. */
+        reservedMax =
+          (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
+        size_t reservedPermit =
+          (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
+        reservedShrink =
+          (reservedPermit >= stack->reserved)
+          ? stack->reserved
+          : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
+        reservedMin = sizeofStackMinimumReserved (s, stack);
+      } else {
+        /* Shrink paused stacks. */
+        reservedMax =
+          (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
+        reservedShrink =
+          (size_t)(s->controls.ratios.stackShrink * stack->reserved);
+        reservedMin= stack->used;
+      }
+      reservedNew =
+        alignStackReserved
+        (s, max(min(reservedMax,reservedShrink),reservedMin));
+      /* It's possible that reservedNew > stack->reserved for the
+       * active stack if the stack invariant is violated.  In that
+       * case, we want to leave the stack alone, because some other
+       * part of the gc will grow the stack.  We cannot do any growing
+       * here because we may run out of to space.
+       */
+      assert (active or reservedNew <= stack->reserved);
+      reservedNew = min (stack->reserved, reservedNew);
+      return reservedNew;
+}
+
 void copyStack (GC_state s, GC_stack from, GC_stack to) {
   pointer fromBottom, toBottom;
 
