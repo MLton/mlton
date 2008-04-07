@@ -217,6 +217,7 @@ in
 
    ../config/c/sys-types.sml
    ../system/pre-os.sml
+   ../posix/pre-posix.sml
 
    ../posix/error.sig
    ../posix/error.sml
