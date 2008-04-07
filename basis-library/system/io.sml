@@ -2,6 +2,7 @@
 (* modified by Matthew Fluet 2002-10-11 *)
 (* modified by Matthew Fluet 2002-11-21 *)
 (* modified by Matthew Fluet 2006-04-30 *)
+(* modified by Matthew Fluet 2008-04-06 *)
 
 (* os-io.sml
  *
@@ -23,10 +24,10 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    val iodToFd = fn x => x
-    val fdToIod = fn x => x
+    val iodToFd = fn x => PreOS.IO.IODesc.toRep x
+    val fdToIod = fn x => PreOS.IO.IODesc.fromRep x
 
-    val iodescToWord = C_Fd.castToSysWord
+    val iodescToWord = C_Fd.castToSysWord o PreOS.IO.IODesc.toRep
 
   (* return a hash value for the I/O descriptor. *)
     val hash = SysWord.toWord o iodescToWord

@@ -19,12 +19,11 @@ structure OS =
                end
             type status = Status.t
          end
-      structure IO :
-         sig
-            eqtype iodesc
-         end =
+      structure IO =
          struct
-            type iodesc = C_Fd.t
+            structure IODesc =
+               MkAbsRepEq(type rep = C_Fd.t)
+            type iodesc = IODesc.t
          end
    end
 
