@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -15,7 +15,7 @@ structure INetSock:> INET_SOCK =
       type dgram_sock = Socket.dgram sock
       type sock_addr = inet Socket.sock_addr
 
-      val inetAF = PrimitiveFFI.Socket.AF.INET
+      val inetAF = Net.AddrFamily.fromRep PrimitiveFFI.Socket.AF.INET
 
       fun toAddr (in_addr, port) =
          let

@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -43,7 +43,8 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
             ; finish ()
          end
 
-      type addr_family = C_Int.t
+      structure AddrFamily = Net.AddrFamily
+      type addr_family = AddrFamily.t
 
       datatype entry = T of {name: string,
                              aliases: string list,
@@ -93,7 +94,7 @@ structure NetHostDB: NET_HOST_DB_EXTRA =
                  in
                    SOME (T {name = name,
                             aliases = aliases,
-                            addrType = addrType,
+                            addrType = AddrFamily.fromRep addrType,
                             addrs = addrs})
                  end
             else NONE

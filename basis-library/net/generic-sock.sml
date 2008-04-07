@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -13,7 +13,7 @@ structure GenericSock : GENERIC_SOCK =
 
       fun socket' (af, st, p) =
          (Net.Sock.fromRep o PESC.simpleResult)
-         (fn () => Prim.socket (af, st, C_Int.fromInt p))
+         (fn () => Prim.socket (Net.AddrFamily.toRep af, st, C_Int.fromInt p))
 
       fun socketPair' (af, st, p) =
          let
@@ -21,7 +21,7 @@ structure GenericSock : GENERIC_SOCK =
             val get = fn i => Net.Sock.fromRep (Array.sub (a, i))
          in
             PESC.syscall
-            (fn () => (Prim.socketPair (af, st, C_Int.fromInt p, a), fn _ => 
+            (fn () => (Prim.socketPair (Net.AddrFamily.toRep af, st, C_Int.fromInt p, a), fn _ => 
                        (get 0, get 1)))
          end
 

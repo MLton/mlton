@@ -39,14 +39,15 @@ datatype stream = MODE (* phantom *)
 datatype passive = PASSIVE (* phantom *)
 datatype active = ACTIVE (* phantom *)
 
+structure AddrFamily = Net.AddrFamily
 structure AF =
    struct
-      type addr_family = NetHostDB.addr_family
+      type addr_family = AddrFamily.t
       val names : (string * addr_family) list = 
-         ("UNIX", Prim.AF.UNIX) ::
-         ("INET", Prim.AF.INET) ::
-         ("INET6", Prim.AF.INET6) ::
-         ("UNSPEC", Prim.AF.UNSPEC) ::
+         ("UNIX", AddrFamily.fromRep Prim.AF.UNIX) ::
+         ("INET", AddrFamily.fromRep Prim.AF.INET) ::
+         ("INET6", AddrFamily.fromRep Prim.AF.INET6) ::
+         ("UNSPEC", AddrFamily.fromRep Prim.AF.UNSPEC) ::
          nil
       fun list () = names
       fun toString af' =
@@ -364,7 +365,7 @@ structure Ctl =
 
 fun sameAddr (SA sa1, SA sa2) = sa1 = sa2
 
-fun familyOfAddr (SA sa) = Prim.familyOfAddr sa
+fun familyOfAddr (SA sa) = AddrFamily.fromRep (Prim.familyOfAddr sa)
 
 fun bind (s, SA sa) =
    Syscall.simple (fn () => Prim.bind (Sock.toRep s, sa, C_Socklen.fromInt (Vector.length sa)))

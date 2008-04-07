@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -7,6 +7,9 @@
 
 structure Net : NET =
    struct
+      structure AddrFamily = MkAbsRepEq(type rep = C_Int.t)
+      structure Sock = MkAbsRep(type rep = C_Sock.t)
+
       structure Prim = PrimitiveFFI.Net
 
       structure Word32 =
@@ -68,6 +71,4 @@ structure Net : NET =
                val ntoh = S.f
             end
          end
-
-      structure Sock = MkAbsRep(type rep = C_Sock.t)
    end

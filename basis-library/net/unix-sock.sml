@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -14,7 +14,7 @@ structure UnixSock : UNIX_SOCK =
       type 'mode stream_sock = 'mode Socket.stream sock
       type dgram_sock = Socket.dgram sock
       type sock_addr = unix Socket.sock_addr
-      val unixAF = PrimitiveFFI.Socket.AF.UNIX
+      val unixAF = Net.AddrFamily.fromRep PrimitiveFFI.Socket.AF.UNIX
 
       fun toAddr s = 
         let

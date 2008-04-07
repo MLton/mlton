@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -7,6 +7,9 @@
 
 signature NET =
    sig
+      structure AddrFamily : ABS_REP_EQ where type Rep.t = C_Int.t
+      structure Sock : ABS_REP where type Rep.t = C_Sock.t
+
       structure Word16 :
          sig
             val hton: Word16.word -> Word16.word
@@ -17,5 +20,4 @@ signature NET =
             val hton: C_Int.t -> C_Int.t
             val ntoh: C_Int.t -> C_Int.t
          end
-      structure Sock : ABS_REP where type Rep.t = C_Sock.t
    end
