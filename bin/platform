@@ -29,7 +29,10 @@ arch=
 case "$uname" in
 AIX)
         HOST_OS='aix'
-        arch=`uname -p`
+        arch=`/usr/sbin/lsattr -a type -F deflt -l proc0`
+        case $arch in
+        POWER) arch=powerpc ;;
+        esac
 ;;
 CYGWIN*)
         HOST_OS='cygwin'
