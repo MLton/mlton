@@ -10,12 +10,14 @@ structure PosixTTY: POSIX_TTY =
    struct
       structure Prim = PrimitiveFFI.Posix.TTY
       open Prim
+      structure FileDesc = PrePosix.FileDesc
+      structure PId = PrePosix.PId
+
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type pid = C_PId.t
-
-      type file_desc = C_Fd.t
+      type file_desc = FileDesc.t
+      type pid = PId.t
 
       structure V =
          struct
@@ -232,7 +234,7 @@ structure PosixTTY: POSIX_TTY =
             fun getattr fd =
                SysCall.syscallRestart
                (fn () =>
-                (Prim.TC.getattr fd, fn _ =>
+                (Prim.TC.getattr (FileDesc.toRep fd), fn _ =>
                  {iflag = Termios.getIFlag (),
                   oflag = Termios.getOFlag (),
                   cflag = Termios.getCFlag (),
@@ -254,25 +256,31 @@ structure PosixTTY: POSIX_TTY =
                  ; SysCall.simple (fn () => Termios.cfSetOSpeed ospeed)
                  ; SysCall.simple (fn () => Termios.cfSetISpeed ispeed)
                  ; Termios.setCC cc
-                 ; (Prim.TC.setattr (fd, a), fn _ => ())))
+                 ; (Prim.TC.setattr (FileDesc.toRep fd, a), fn _ => ())))
 
             fun sendbreak (fd, n) =
-               SysCall.simpleRestart (fn () => Prim.TC.sendbreak (fd, C_Int.fromInt n))
+               SysCall.simpleRestart
+               (fn () => Prim.TC.sendbreak (FileDesc.toRep fd, C_Int.fromInt n))
 
-            fun drain fd = SysCall.simpleRestart (fn () => Prim.TC.drain fd)
+            fun drain fd =
+               SysCall.simpleRestart
+               (fn () => Prim.TC.drain (FileDesc.toRep fd))
 
             fun flush (fd, n) =
-               SysCall.simpleRestart (fn () => Prim.TC.flush (fd, n))
+               SysCall.simpleRestart
+               (fn () => Prim.TC.flush (FileDesc.toRep fd, n))
 
             fun flow (fd, n) =
-               SysCall.simpleRestart (fn () => Prim.TC.flow (fd, n))
+               SysCall.simpleRestart
+               (fn () => Prim.TC.flow (FileDesc.toRep fd, n))
 
             fun getpgrp fd =
-               SysCall.simpleResultRestart'
+               (PId.fromRep o SysCall.simpleResultRestart')
                ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
-                Prim.TC.getpgrp fd)
+                Prim.TC.getpgrp (FileDesc.toRep fd))
 
             fun setpgrp (fd, pid) = 
-               SysCall.simpleRestart (fn () => Prim.TC.setpgrp (fd, pid))
+               SysCall.simpleRestart
+               (fn () => Prim.TC.setpgrp (FileDesc.toRep fd, PId.toRep pid))
          end
    end

@@ -8,7 +8,16 @@
 
 structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
    struct
+      structure Prim = PrimitiveFFI.Posix.FileSys
+      open Prim
+      structure FileDesc = PrePosix.FileDesc
+      structure GId = PrePosix.GId
+      structure PId = PrePosix.PId
+      structure Stat = Prim.Stat
+      structure UId = PrePosix.UId
+
       structure Error = PosixError
+      structure SysCall = Error.SysCall
 
       (* Patch to make Time look like it deals with C_Time.t
        * instead of LargeInt.int.
@@ -24,19 +33,15 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                handle Overflow => Error.raiseSys Error.inval
          end
 
-      structure SysCall = Error.SysCall
-      structure Prim = PrimitiveFFI.Posix.FileSys
-      open Prim
-      structure Stat = Prim.Stat
+      type file_desc = FileDesc.t
+      type gid = GId.t
+      type uid = UId.t
 
-      type file_desc = C_Fd.t
-      type uid = C_UId.t
-      type gid = C_GId.t
+      val fdToWord = C_Fd.castToSysWord o FileDesc.toRep
+      val wordToFD = FileDesc.fromRep o C_Fd.castFromSysWord
 
-      val fdToWord = C_Fd.castToSysWord
-      val wordToFD = C_Fd.castFromSysWord
-      val fdToIOD = fn x => PreOS.IODesc.fromRep x
-      val iodToFD = SOME o (fn x => PreOS.IODesc.toRep x)
+      val fdToIOD = PreOS.IODesc.fromRep o FileDesc.toRep
+      val iodToFD = SOME o FileDesc.fromRep o PreOS.IODesc.toRep
 
       (*------------------------------------*)
       (*             dirstream              *)
@@ -147,9 +152,9 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
             end
       end
 
-      val stdin : C_Fd.t = 0
-      val stdout : C_Fd.t = 1
-      val stderr : C_Fd.t = 2
+      val stdin : file_desc = FileDesc.fromRep 0
+      val stdout : file_desc = FileDesc.fromRep 1
+      val stderr : file_desc = FileDesc.fromRep 2
 
       structure S =
          struct
@@ -225,7 +230,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                SysCall.simpleResult
                (fn () => Prim.open3 (pathname, flags, mode))
          in
-            fd
+            FileDesc.fromRep fd
          end
 
       fun openf (pathname, openMode, flags) =
@@ -237,7 +242,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                SysCall.simpleResult
                (fn () => Prim.open3 (pathname, flags, C_Mode.castFromSysWord 0wx0))
          in 
-            fd
+            FileDesc.fromRep fd
          end
 
       fun creat (s, m) = createf (s, O_WRONLY, O.trunc, m)
@@ -259,12 +264,26 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
          val rmdir = wrap (Prim.rmdir o NullString.nullTerm)
          val rename = wrapOldNew Prim.rename
          val symlink = wrapOldNew Prim.symlink
-         val chmod = wrap (fn (p, m) => Prim.chmod (NullString.nullTerm p, m))
-         val fchmod = wrap Prim.fchmod 
+         val chmod =
+            wrap
+            (fn (p, m) =>
+             Prim.chmod (NullString.nullTerm p, m))
+         val fchmod =
+            wrap
+            (fn (fd, m) =>
+             Prim.fchmod (FileDesc.toRep fd, m))
          val chown =
-            wrap (fn (s, u, g) => Prim.chown (NullString.nullTerm s, u, g))
-         val fchown = wrap Prim.fchown
-         val ftruncate = wrapRestart Prim.ftruncate
+            wrap
+            (fn (s, uid, gid) =>
+             Prim.chown (NullString.nullTerm s, UId.toRep uid, GId.toRep gid))
+         val fchown =
+            wrap
+            (fn (fd, uid, gid) =>
+             Prim.fchown (FileDesc.toRep fd, UId.toRep uid, GId.toRep gid))
+         val ftruncate =
+            wrapRestart
+            (fn (fd, n) =>
+             Prim.ftruncate (FileDesc.toRep fd, n))
       end           
 
       local
@@ -309,8 +328,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
                   ino = Stat.getINo (),
                   mode = Stat.getMode (),
                   nlink = C_NLink.toInt (Stat.getNLink ()),
-                  uid = Stat.getUId (),
-                  gid = Stat.getGId (),
+                  uid = UId.fromRep (Stat.getUId ()),
+                  gid = GId.fromRep (Stat.getGId ()),
                   size = Stat.getSize (),
                   atime = Time.fromSeconds (Stat.getATime ()),
                   mtime = Time.fromSeconds (Stat.getMTime ()),
@@ -350,7 +369,7 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
       in
          val stat = (make Prim.Stat.stat) o NullString.nullTerm
          val lstat = (make Prim.Stat.lstat) o NullString.nullTerm
-         val fstat = make Prim.Stat.fstat
+         val fstat = (make Prim.Stat.fstat) o FileDesc.toRep
       end
 
       datatype access_mode = A_READ | A_WRITE | A_EXEC
@@ -448,6 +467,6 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
               handlers = [(Error.cleared, fn () => NONE)]})
       in
          val pathconf = make (fn (path, s) => Prim.pathconf (NullString.nullTerm path, s))
-         val fpathconf = make Prim.fpathconf
+         val fpathconf = make (fn (fd, s) => Prim.fpathconf (FileDesc.toRep fd, s))
       end
    end

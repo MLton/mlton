@@ -9,11 +9,14 @@
 structure PosixSysDB: POSIX_SYS_DB =
    struct
       structure Prim = PrimitiveFFI.Posix.SysDB
+      structure GId = PrePosix.GId
+      structure UId = PrePosix.UId
+
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type uid = C_UId.t
-      type gid = C_GId.t
+      type gid = GId.t
+      type uid = UId.t
 
       structure Passwd =
          struct
@@ -30,8 +33,8 @@ structure PosixSysDB: POSIX_SYS_DB =
                ({clear = true, restart = false, errVal = C_Int.zero}, fn () =>
                 {return = f (),
                  post = fn _ => {name = CUtil.C_String.toString (Passwd.getName ()),
-                                 uid = Passwd.getUId (),
-                                 gid = Passwd.getGId (),
+                                 uid = UId.fromRep (Passwd.getUId ()),
+                                 gid = GId.fromRep (Passwd.getGId ()),
                                  home = CUtil.C_String.toString (Passwd.getDir ()),
                                  shell = CUtil.C_String.toString (Passwd.getShell ())},
                  handlers = [(Error.cleared, fn () => 
@@ -53,7 +56,9 @@ structure PosixSysDB: POSIX_SYS_DB =
          end
 
       fun getpwuid uid = 
-         Passwd.fromC (fn () => Prim.getpwuid uid, "getpwuid", "user id")
+         let val uid = UId.toRep uid
+         in Passwd.fromC (fn () => Prim.getpwuid uid, "getpwuid", "user id")
+         end
 
       structure Group =
          struct
@@ -68,7 +73,7 @@ structure PosixSysDB: POSIX_SYS_DB =
                ({clear = true, restart = false, errVal = C_Int.zero}, fn () =>
                 {return = f (),
                  post = fn _ => {name = CUtil.C_String.toString (Group.getName ()),
-                                 gid = Group.getGId (),
+                                 gid = GId.fromRep (Group.getGId ()),
                                  members = CUtil.C_StringArray.toList (Group.getMem ())},
                  handlers = [(Error.cleared, fn () => 
                               raise Error.SysErr (concat ["Posix.SysDB.",
@@ -87,5 +92,7 @@ structure PosixSysDB: POSIX_SYS_DB =
          end
 
       fun getgrgid gid = 
-         Group.fromC (fn () => Prim.getgrgid gid, "getgrgid", "group id")
+         let val gid = GId.toRep gid
+         in Group.fromC (fn () => Prim.getgrgid gid, "getgrgid", "group id")
+         end
    end

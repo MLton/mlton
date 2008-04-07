@@ -10,20 +10,26 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
    struct
       structure Prim = PrimitiveFFI.Posix.Process
       open Prim
+      structure FileDesc = PrePosix.FileDesc
+      structure PId = PrePosix.PId
+      structure Signal = PrePosix.Signal
+
       structure Error = PosixError
       structure SysCall = Error.SysCall
 
-      type signal = PosixSignal.signal
-      type pid = C_PId.t
+      type signal = Signal.t
+      type pid = PId.t
 
-      val wordToPid = C_PId.castFromSysWord
-      val pidToWord = C_PId.castToSysWord
+      val pidToWord = C_PId.castToSysWord o PId.toRep
+      val wordToPid = PId.fromRep o C_PId.castFromSysWord
 
       fun fork () =
          SysCall.syscall'
          ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
           (Prim.fork (), fn p =>
-           if p = C_PId.castFromFixedInt 0 then NONE else SOME p))
+           if p = C_PId.castFromFixedInt 0
+              then NONE
+           else SOME (PId.fromRep p)))
 
       val fork =
          if Primitive.MLton.Platform.OS.forkIsEnabled
@@ -104,12 +110,12 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                val pid =
                   case wa of
                      W_ANY_CHILD => C_PId.castFromFixedInt ~1
-                   | W_CHILD pid => pid
+                   | W_CHILD pid => PId.toRep pid
                    | W_SAME_GROUP => C_PId.castFromFixedInt 0
-                   | W_GROUP pid => C_PId.~ pid
+                   | W_GROUP pid => C_PId.~ (PId.toRep pid)
                val flags = W.flags flags
             in
-               SysCall.simpleResultRestart'
+               (PId.fromRep o SysCall.simpleResultRestart')
                ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                 let
                    val pid = 
@@ -133,7 +139,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             let
                val pid = wait (wa, status, W.nohang :: flags)
             in
-               if C_PId.castFromFixedInt 0 = pid
+               if PId.fromRep (C_PId.castFromFixedInt 0) = pid
                   then NONE
                else SOME (pid, getStatus ())
             end
@@ -157,9 +163,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
          let
             val pid =
                case ka of
-                  K_PROC pid => pid
+                  K_PROC pid => PId.toRep pid
                 | K_SAME_GROUP => C_PId.castFromFixedInt ~1
-                | K_GROUP pid => C_PId.~ pid
+                | K_GROUP pid => C_PId.~ (PId.toRep pid)
             val s = PosixSignal.toRep s
          in
             SysCall.simple (fn () => Prim.kill (pid, s))

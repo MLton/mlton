@@ -9,38 +9,47 @@
 structure PosixProcEnv: POSIX_PROC_ENV =
    struct
       structure Prim = PrimitiveFFI.Posix.ProcEnv
+      structure FileDesc = PrePosix.FileDesc
+      structure GId = PrePosix.GId
+      structure PId = PrePosix.PId
+      structure UId = PrePosix.UId
+
       structure Error = PosixError
       structure SysCall = Error.SysCall
       structure CS = CUtil.C_String
       structure CSS = CUtil.C_StringArray
 
-      type pid = C_PId.t
-      type uid = C_UId.t
-      type gid = C_GId.t
-      type file_desc = C_Fd.t
+      type file_desc = FileDesc.t
+      type gid = GId.t
+      type pid = PId.t
+      type uid = UId.t
+
+      val uidToWord = C_UId.castToSysWord o UId.toRep
+      val wordToUid = UId.fromRep o C_UId.castFromSysWord
+      val gidToWord = C_GId.castToSysWord o GId.toRep
+      val wordToGid = GId.fromRep o C_GId.castFromSysWord
 
       local
          open Prim
       in
-         val getpgrp = getpgrp (* No error checking required *)
-         val getegid = getegid (* No error checking required *)
-         val geteuid = geteuid (* No error checking required *)
-         val getgid = getgid (* No error checking required *)
-         val getpid = getpid (* No error checking required *)
-         val getppid = getppid (* No error checking required *)
-         val getuid = getuid (* No error checking required *)
-         val setgid = fn gid => SysCall.simple (fn () => setgid gid)
-         val setuid = fn uid => SysCall.simple (fn () => setuid uid)
+         val getpgrp = PId.fromRep o getpgrp (* No error checking required *)
+         val getegid = GId.fromRep o getegid (* No error checking required *)
+         val geteuid = UId.fromRep o geteuid (* No error checking required *)
+         val getgid = GId.fromRep o getgid (* No error checking required *)
+         val getpid = PId.fromRep o getpid (* No error checking required *)
+         val getppid = PId.fromRep o  getppid (* No error checking required *)
+         val getuid = UId.fromRep o getuid (* No error checking required *)
+         val setgid = fn gid => let val gid = GId.toRep gid
+                                in SysCall.simple (fn () => setgid gid)
+                                end
+         val setuid = fn uid => let val uid = UId.toRep uid
+                                in SysCall.simple (fn () => setuid uid)
+                                end
       end
 
       fun setsid () = 
-        SysCall.simpleResult' 
-        ({errVal = C_PId.castFromFixedInt ~1}, Prim.setsid)
-
-      val uidToWord = C_UId.castToSysWord
-      val wordToUid = C_UId.castFromSysWord
-      val gidToWord = C_GId.castToSysWord
-      val wordToGid = C_GId.castFromSysWord
+         (PId.fromRep o SysCall.simpleResult')
+         ({errVal = C_PId.castFromFixedInt ~1}, Prim.setsid)
 
       fun getgroups () =
          SysCall.syscall
@@ -50,7 +59,8 @@ structure PosixProcEnv: POSIX_PROC_ENV =
              val a: C_GId.t array = Array.arrayUninit (C_Int.toInt n)
           in
              (Prim.getgroups (n, a), fn n => 
-              ArraySlice.toList (ArraySlice.slice (a, 0, SOME (C_Int.toInt n))))
+              (GId.listFromRep o ArraySlice.toList)
+              (ArraySlice.slice (a, 0, SOME (C_Int.toInt n))))
           end)
 
       fun getlogin () =
@@ -61,8 +71,8 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun setpgid {pid, pgid} =
          let
-            val pid = case pid of NONE => 0 | SOME pid => pid
-            val pgid = case pgid of NONE => 0 | SOME pgid => pgid
+            val pid = case pid of NONE => 0 | SOME pid => PId.toRep pid
+            val pgid = case pgid of NONE => 0 | SOME pgid => PId.toRep pgid
          in
             SysCall.simple
             (fn () => Prim.setpgid (pid, pgid))
@@ -264,11 +274,11 @@ structure PosixProcEnv: POSIX_PROC_ENV =
 
       fun ctermid () = CS.toString (Prim.ctermid ())
 
-      fun isatty fd = (Prim.isatty fd) <> C_Int.zero
+      fun isatty fd = (Prim.isatty (FileDesc.toRep fd)) <> C_Int.zero
 
       fun ttyname fd =
          SysCall.syscall'
          ({errVal = CUtil.C_Pointer.null}, fn () =>
-          (Prim.ttyname fd, fn cs => 
+          (Prim.ttyname (FileDesc.toRep fd), fn cs =>
            CS.toString cs))
    end

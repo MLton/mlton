@@ -24,8 +24,8 @@ structure OS_IO: OS_IO =
 
     datatype iodesc_kind = K of string
 
-    val iodToFd = fn x => PreOS.IODesc.toRep x
-    val fdToIod = fn x => PreOS.IODesc.fromRep x
+    val iodToFd = PrePosix.FileDesc.fromRep o PreOS.IODesc.toRep
+    val fdToIod = PreOS.IODesc.fromRep o PrePosix.FileDesc.toRep
 
     val iodescToWord = C_Fd.castToSysWord o PreOS.IODesc.toRep
 
@@ -108,10 +108,10 @@ structure OS_IO: OS_IO =
             })
     in
     fun poll (pds, timeOut) = let
-          val (fds, eventss) = ListPair.unzip (List.map fromPollDesc pds)
+          val (fds, events) = ListPair.unzip (List.map fromPollDesc pds)
           val fds = Vector.fromList fds
           val n = Vector.length fds
-          val eventss = Vector.fromList eventss
+          val events = Vector.fromList events
           val timeOut =
              case timeOut of
                 NONE => ~1
@@ -120,9 +120,13 @@ structure OS_IO: OS_IO =
                       then Error.raiseSys Error.inval
                    else (C_Int.fromLarge (Time.toMilliseconds t)
                          handle Overflow => Error.raiseSys Error.inval)
-          val reventss = Array.array (n, 0)
+          val revents = Array.array (n, 0)
           val _ = Posix.Error.SysCall.simpleRestart
-                  (fn () => Prim.poll (fds, eventss, C_NFds.fromInt n, timeOut, reventss))
+                  (fn () => Prim.poll (PrePosix.FileDesc.vectorToRep fds,
+                                       events,
+                                       C_NFds.fromInt n,
+                                       timeOut,
+                                       revents))
           in
             Array.foldri
             (fn (i, w, l) => 
@@ -130,7 +134,7 @@ structure OS_IO: OS_IO =
                then (toPollInfo (Vector.sub (fds, i), w))::l
                else l)
             []
-            reventss
+            revents
           end
     end (* local *)
 

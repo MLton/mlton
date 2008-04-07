@@ -16,8 +16,8 @@ structure FileSys = Posix.FileSys
 type sock = C_Sock.t
 val sockToWord = C_Sock.castToSysWord
 val wordToSock = C_Sock.castFromSysWord
-val sockToFD = fn x => x
-val fdToSock = fn x => x
+val sockToFD = PrePosix.FileDesc.fromRep
+val fdToSock = PrePosix.FileDesc.toRep
 
 type pre_sock_addr = Word8.word array
 datatype sock_addr = SA of Word8.word vector
@@ -463,7 +463,7 @@ fun select {rds: sock_desc list,
                val vec = Vector.fromList l
                val arr = Array.array (Vector.length vec, 0)
             in
-               (vec, arr)
+               (PrePosix.FileDesc.vectorToRep vec, arr)
             end
       in
          val (read_vec, read_arr) = mk rds

@@ -8,7 +8,8 @@
 
 structure MLtonProcEnv: MLTON_PROC_ENV =
    struct
-      type gid = C_GId.t
+      structure GId = PrePosix.GId
+      type gid = GId.t
 
       fun setenv {name, value} =
          let
@@ -21,10 +22,10 @@ structure MLtonProcEnv: MLTON_PROC_ENV =
 
       fun setgroups gs =
          let
-            val v = Vector.fromList gs
-            val n = Vector.length v
+            val v = GId.vectorToRep (Vector.fromList gs)
+            val n = C_Int.fromInt (Vector.length v)
          in
             PosixError.SysCall.simple
-            (fn () => PrimitiveFFI.Posix.ProcEnv.setgroups (C_Int.fromInt n, v))
+            (fn () => PrimitiveFFI.Posix.ProcEnv.setgroups (n, v))
          end
    end

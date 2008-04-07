@@ -15,12 +15,15 @@ structure MLtonProcess =
          structure FileSys = FileSys
          structure IO = IO
          structure ProcEnv = ProcEnv
-         structure Process = Posix.Process
+         structure Process = Process
+         structure FileDesc = PrePosix.FileDesc
+         structure PId = PrePosix.PId
+         structure Signal = PrePosix.Signal
       end
       structure Mask = MLtonSignal.Mask
       structure SysCall = PosixError.SysCall
 
-      type pid = C_PId.t
+      type pid = PId.t
 
       exception MisuseOfForget
       exception DoublyRedirected
@@ -214,13 +217,14 @@ structure MLtonProcess =
         case !status of
            NONE =>
               let
-                 val signal' = PosixSignal.toRep signal
+                 val pid' = PId.toRep pid
+                 val signal' = Signal.toRep signal
                  val () =
                     if useWindowsProcess
                        then
                           SysCall.simple
                           (fn () =>
-                           PrimitiveFFI.Windows.Process.terminate (pid, signal'))
+                           PrimitiveFFI.Windows.Process.terminate (pid', signal'))
                     else Process.kill (Process.K_PROC pid, signal)
               in
                  ignore (reap p)
@@ -273,12 +277,12 @@ structure MLtonProcess =
           end)
 
       fun launchWithCreate (path, args, env, stdin, stdout, stderr) =
-         create 
+         (PId.fromRep o create)
          (path,
           NullString.nullTerm (String.concatWith " "
                                (List.map cmdEscape (path :: args))),
           NullString.nullTerm (String.concatWith "\000" env ^ "\000"),
-          stdin, stdout, stderr)
+          FileDesc.toRep stdin, FileDesc.toRep stdout, FileDesc.toRep stderr)
 
       val launch =
          fn z =>
@@ -298,7 +302,7 @@ structure MLtonProcess =
                val (fstdout, cstdout) = Param.openOut FileSys.stdout stdout
                val (fstderr, cstderr) = Param.openOut FileSys.stderr stderr
                val closeStdio =
-                  fn () => (Param.close stdin  fstdin
+                  fn () => (Param.close stdin fstdin
                             ; Param.close stdout fstdout
                             ; Param.close stderr fstderr)
                val pid =
@@ -323,7 +327,7 @@ structure MLtonProcess =
                   val args = CUtil.StringVector.fromList args
                   val env = CUtil.StringVector.fromList env
                in
-                  SysCall.simpleResult'
+                  (PId.fromRep o SysCall.simpleResult')
                   ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                    Prim.spawne (path, 
                                 #1 args, #2 args, #3 args,
@@ -347,7 +351,7 @@ structure MLtonProcess =
                   val file = NullString.nullTerm file
                   val args = CUtil.StringVector.fromList args
                in
-                  SysCall.simpleResult'
+                  (PId.fromRep o SysCall.simpleResult')
                   ({errVal = C_PId.castFromFixedInt ~1}, fn () =>
                    Prim.spawnp (file, 
                                 #1 args, #2 args, #3 args))

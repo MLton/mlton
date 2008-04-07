@@ -11,29 +11,39 @@ struct
 
 structure Prim = PrimitiveFFI.Posix.IO
 open Prim
+structure FileDesc = PrePosix.FileDesc
+structure PId = PrePosix.PId
+
 structure Error = PosixError
 structure SysCall = Error.SysCall
 structure FS = PosixFileSys
 
-type file_desc = C_Fd.t (* = C_Int.t *)
-type pid = C_PId.t
+type file_desc = FileDesc.t
+type pid = PId.t
 
 local
-   val a: file_desc array = Array.array (2, C_Fd.fromInt 0)
+   val a: C_Fd.t array = Array.array (2, C_Fd.fromInt 0)
+   val get = fn i => FileDesc.fromRep (Array.sub (a, i))
 in
    fun pipe () =
       SysCall.syscall
       (fn () =>
        (Prim.pipe a,
-        fn _ => {infd = Array.sub (a, 0),
-                 outfd = Array.sub (a, 1)}))
+        fn _ => {infd = get 0,
+                 outfd = get 1}))
 end
 
-fun dup fd = SysCall.simpleResult (fn () => Prim.dup fd)
+fun dup fd =
+   (FileDesc.fromRep o SysCall.simpleResult)
+   (fn () => Prim.dup (FileDesc.toRep fd))
 
-fun dup2 {new, old} = SysCall.simple (fn () => Prim.dup2 (old, new))
+fun dup2 {new, old} =
+   SysCall.simple
+   (fn () => Prim.dup2 (FileDesc.toRep old, FileDesc.toRep new))
 
-fun close fd = SysCall.simpleRestart (fn () => Prim.close fd)
+fun close fd =
+   SysCall.simpleRestart
+   (fn () => Prim.close (FileDesc.toRep fd))
 
 structure FD =
    struct
@@ -47,20 +57,21 @@ structure O = PosixFileSys.O
 datatype open_mode = datatype PosixFileSys.open_mode
 
 fun dupfd {base, old} =
-   SysCall.simpleResultRestart 
-   (fn () => Prim.fcntl3 (old, F_DUPFD, base))
+   (FileDesc.fromRep o SysCall.simpleResultRestart)
+   (fn () => Prim.fcntl3 (FileDesc.toRep old, F_DUPFD, FileDesc.toRep base))
 
 fun getfd fd =
    SysCall.simpleResultRestart 
-   (fn () => Prim.fcntl2 (fd, F_GETFD))
+   (fn () => Prim.fcntl2 (FileDesc.toRep fd, F_GETFD))
 
 fun setfd (fd, flags): unit =
    SysCall.simpleRestart
-   (fn () => Prim.fcntl3 (fd, F_SETFD, flags))
+   (fn () => Prim.fcntl3 (FileDesc.toRep fd, F_SETFD, flags))
 
 fun getfl fd : O.flags * open_mode =
    let 
-      val n = SysCall.simpleResultRestart (fn () => Prim.fcntl2 (fd, F_GETFL))
+      val n = SysCall.simpleResultRestart
+              (fn () => Prim.fcntl2 (FileDesc.toRep fd, F_GETFL))
       val flags = C_Int.andb (n, C_Int.notb O_ACCMODE)
       val mode = C_Int.andb (n, O_ACCMODE)
    in (flags, PosixFileSys.flagsToOpenMode mode)
@@ -68,7 +79,7 @@ fun getfl fd : O.flags * open_mode =
 
 fun setfl (fd, flags: O.flags): unit  =
    SysCall.simpleRestart
-   (fn () => Prim.fcntl3 (fd, F_SETFL, flags))
+   (fn () => Prim.fcntl3 (FileDesc.toRep fd, F_SETFL, flags))
 
 datatype whence = SEEK_SET | SEEK_CUR | SEEK_END
 
@@ -80,9 +91,11 @@ val whenceToInt =
 fun lseek (fd, n: Position.int, w: whence): Position.int =
    SysCall.simpleResult'
    ({errVal = C_Off.fromInt ~1}, fn () =>
-    Prim.lseek (fd, n, whenceToInt w))
+    Prim.lseek (FileDesc.toRep fd, n, whenceToInt w))
 
-fun fsync fd : unit = SysCall.simple (fn () => Prim.fsync fd)
+fun fsync fd : unit =
+   SysCall.simple
+   (fn () => Prim.fsync (FileDesc.toRep fd))
 
 val whenceToInt =
    fn SEEK_SET => Prim.FLock.SEEK_SET
@@ -144,12 +157,13 @@ local
          ; P.setWhence (whenceToInt whence)
          ; P.setStart start
          ; P.setLen len
-         ; P.fcntl (fd, cmd)), fn _ => 
+         ; P.fcntl (FileDesc.toRep fd, cmd)), fn _ =>
         {ltype = intToLockType (P.getType ()),
          whence = intToWhence (P.getWhence ()),
          start = P.getStart (),
          len = P.getLen (),
-         pid = if usepid then SOME (P.getPId ()) else NONE}))
+         pid = if usepid then SOME (PId.fromRep (P.getPId ()))
+               else NONE}))
 in
    val getlk = make (FLock.F_GETLK, true)
    val setlk = make (FLock.F_SETLK, false)
@@ -204,9 +218,12 @@ local
    fun make {RD, WR, fromVector, readArr, setMode, toArraySlice, toVectorSlice,
              vectorLength, writeArr, writeVec} =
       let
-         val primReadArr = readArr
-         val primWriteArr = writeArr
-         val primWriteVec = writeVec
+         val primReadArr = fn (fd, buf, i, sz) =>
+            readArr (FileDesc.toRep fd, buf, C_Int.fromInt i, C_Size.fromInt sz)
+         val primWriteArr = fn (fd, buf, i, sz) =>
+            writeArr (FileDesc.toRep fd, buf, C_Int.fromInt i, C_Size.fromInt sz)
+         val primWriteVec = fn (fd, buf, i, sz) =>
+            writeVec (FileDesc.toRep fd, buf, C_Int.fromInt i, C_Size.fromInt sz)
          val setMode =
             fn fd =>
             if let
@@ -216,7 +233,7 @@ local
                      MinGW => true
                    | _ => false
                end
-               then setMode fd
+               then setMode (FileDesc.toRep fd)
             else ()
          fun readArr (fd, sl): int =
             let
@@ -224,7 +241,7 @@ local
                val bytesRead =
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
-                   primReadArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+                   primReadArr (fd, buf, i, sz))
                val bytesRead = C_SSize.toInt bytesRead
             in
                bytesRead
@@ -235,7 +252,7 @@ local
                val bytesRead = 
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
-                   primReadArr (fd, buf, C_Int.fromInt 0, C_Size.fromInt n))
+                   primReadArr (fd, buf, 0, n))
                val bytesRead = C_SSize.toInt bytesRead
             in 
                fromVector
@@ -249,7 +266,7 @@ local
                val bytesWrote =
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
-                   primWriteArr (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+                   primWriteArr (fd, buf, i, sz))
                val bytesWrote = C_SSize.toInt bytesWrote
             in
                bytesWrote
@@ -260,7 +277,7 @@ local
                val bytesWrote =
                   SysCall.simpleResultRestart'
                   ({errVal = C_SSize.castFromFixedInt ~1}, fn () => 
-                   primWriteVec (fd, buf, C_Int.fromInt i, C_Size.fromInt sz))
+                   primWriteVec (fd, buf, i, sz))
                val bytesWrote = C_SSize.toInt bytesWrote
             in
                bytesWrote
