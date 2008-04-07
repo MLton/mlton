@@ -101,3 +101,8 @@ float ldexpf(float x, int exp);
 #define PRId32 "d"
 
 #define SIZE_MAX ((size_t)SSIZE_MAX * 2 + 1)
+
+#if HPUX_VERSION <= 1111
+#undef UINTPTR_MAX
+#define UINTPTR_MAX ULONG_MAX
+#endif
