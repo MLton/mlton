@@ -152,33 +152,58 @@ size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
 }
 
 size_t sizeofStackGrow (GC_state s, GC_stack stack) {
-  size_t res;
+  double reservedD;
+  size_t reservedGrow, reservedMin, reservedNew;
+  const size_t RESERVED_MAX = (SIZE_MAX >> 2);
 
-  res = max ((size_t)(s->controls.ratios.stackCurrentGrow * stack->reserved),
-             sizeofStackMinimumReserved (s, stack));
-  return res;
+  reservedD = (double)(stack->reserved);
+  double reservedGrowD =
+    (double)s->controls.ratios.stackCurrentGrow * reservedD;
+  reservedGrow =
+    reservedGrowD > (double)RESERVED_MAX
+    ? RESERVED_MAX
+    : (size_t)reservedGrowD;
+  reservedMin = sizeofStackMinimumReserved (s, stack);
+  reservedNew = max (reservedGrow, reservedMin);
+  return reservedNew;
 }
 
 size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
+      double usedD, reservedD;
       size_t reservedMax, reservedShrink, reservedMin, reservedNew;
+      const size_t RESERVED_MAX = (SIZE_MAX >> 2);
 
+      usedD = (double)(stack->used);
+      reservedD = (double)(stack->reserved);
       if (current) {
         /* Shrink current stacks. */
+        double reservedMaxD =
+          (double)(s->controls.ratios.stackCurrentMaxReserved) * usedD;
         reservedMax =
-          (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
+          reservedMaxD > (double)RESERVED_MAX
+          ? RESERVED_MAX
+          : (size_t)reservedMaxD;
+        double reservedPermitD =
+          (double)(s->controls.ratios.stackCurrentPermitReserved) * usedD;
         size_t reservedPermit =
-          (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
+          reservedPermitD > (double)RESERVED_MAX
+          ? RESERVED_MAX
+          : (size_t)reservedPermitD;
         reservedShrink =
           (stack->reserved <= reservedPermit)
           ? stack->reserved
-          : (size_t)(s->controls.ratios.stackCurrentShrink * stack->reserved);
+          : (size_t)((double)(s->controls.ratios.stackCurrentShrink) * reservedD);
         reservedMin = sizeofStackMinimumReserved (s, stack);
       } else {
         /* Shrink paused stacks. */
+        double reservedMaxD =
+          (double)(s->controls.ratios.stackMaxReserved) * usedD;
         reservedMax =
-          (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
+          reservedMaxD > (double)RESERVED_MAX
+          ? RESERVED_MAX
+          : (size_t)reservedMaxD;
         reservedShrink =
-          (size_t)(s->controls.ratios.stackShrink * stack->reserved);
+          (size_t)((double)s->controls.ratios.stackShrink * reservedD);
         reservedMin = stack->used;
       }
       reservedNew =
