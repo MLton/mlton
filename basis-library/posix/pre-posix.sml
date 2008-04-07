@@ -5,7 +5,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-structure Posix =
+structure PrePosix =
    struct
       structure FileDesc = MkAbsRepEq(type rep = C_Fd.t)
       structure GId = MkAbsRepEq(type rep = C_GId.t)
@@ -13,5 +13,3 @@ structure Posix =
       structure Signal = MkAbsRepEq(type rep = C_Signal.t)
       structure UId = MkAbsRepEq(type rep = C_UId.t)
    end
-
-structure PrePosix = Posix
