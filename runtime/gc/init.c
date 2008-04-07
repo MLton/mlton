@@ -191,50 +191,50 @@ int processAtMLton (GC_state s, int argc, char **argv,
         } else if (0 == strcmp (arg, "stop")) {
           i++;
           s->controls.mayProcessAtMLton = FALSE;
-        } else if (0 == strcmp (arg, "thread-current-grow-ratio")) {
+        } else if (0 == strcmp (arg, "stack-current-grow-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-current-grow-ratio missing argument.");
-          s->controls.ratios.threadCurrentGrow = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadCurrentGrow)
-            die ("@MLton thread-current-grow-ratio argument must greater than 1.0.");
-        } else if (0 == strcmp (arg, "thread-current-max-reserved-ratio")) {
+            die ("@MLton stack-current-grow-ratio missing argument.");
+          s->controls.ratios.stackCurrentGrow = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.stackCurrentGrow)
+            die ("@MLton stack-current-grow-ratio argument must greater than 1.0.");
+        } else if (0 == strcmp (arg, "stack-current-max-reserved-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-current-max-reserved-ratio missing argument.");
-          s->controls.ratios.threadCurrentMaxReserved = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadCurrentMaxReserved)
-            die ("@MLton thread-current-max-reserved-ratio argument must greater than 1.0.");
-        } else if (0 == strcmp (arg, "thread-current-permit-reserved-ratio")) {
+            die ("@MLton stack-current-max-reserved-ratio missing argument.");
+          s->controls.ratios.stackCurrentMaxReserved = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.stackCurrentMaxReserved)
+            die ("@MLton stack-current-max-reserved-ratio argument must greater than 1.0.");
+        } else if (0 == strcmp (arg, "stack-current-permit-reserved-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-current-permit-reserved-ratio missing argument.");
-          s->controls.ratios.threadCurrentPermitReserved = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadCurrentPermitReserved)
-            die ("@MLton thread-current-permit-reserved-ratio argument must greater than 1.0.");
-        } else if (0 == strcmp (arg, "thread-current-shrink-ratio")) {
+            die ("@MLton stack-current-permit-reserved-ratio missing argument.");
+          s->controls.ratios.stackCurrentPermitReserved = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.stackCurrentPermitReserved)
+            die ("@MLton stack-current-permit-reserved-ratio argument must greater than 1.0.");
+        } else if (0 == strcmp (arg, "stack-current-shrink-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-current-shrink-ratio missing argument.");
-          s->controls.ratios.threadCurrentShrink = stringToFloat (argv[i++]);
-          unless (0.0 <= s->controls.ratios.threadCurrentShrink
-                  and s->controls.ratios.threadCurrentShrink <= 1.0)
-            die ("@MLton thread-current-shrink-ratio argument must be between 0.0 and 1.0.");
-        } else if (0 == strcmp (arg, "thread-max-reserved-ratio")) {
+            die ("@MLton stack-current-shrink-ratio missing argument.");
+          s->controls.ratios.stackCurrentShrink = stringToFloat (argv[i++]);
+          unless (0.0 <= s->controls.ratios.stackCurrentShrink
+                  and s->controls.ratios.stackCurrentShrink <= 1.0)
+            die ("@MLton stack-current-shrink-ratio argument must be between 0.0 and 1.0.");
+        } else if (0 == strcmp (arg, "stack-max-reserved-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-max-reserved-ratio missing argument.");
-          s->controls.ratios.threadMaxReserved = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadMaxReserved)
-            die ("@MLton thread-max-reserved-ratio argument must greater than 1.0.");
-        } else if (0 == strcmp (arg, "thread-shrink-ratio")) {
+            die ("@MLton stack-max-reserved-ratio missing argument.");
+          s->controls.ratios.stackMaxReserved = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.stackMaxReserved)
+            die ("@MLton stack-max-reserved-ratio argument must greater than 1.0.");
+        } else if (0 == strcmp (arg, "stack-shrink-ratio")) {
           i++;
           if (i == argc)
-            die ("@MLton thread-shrink-ratio missing argument.");
-          s->controls.ratios.threadShrink = stringToFloat (argv[i++]);
-          unless (0.0 <= s->controls.ratios.threadShrink
-                  and s->controls.ratios.threadShrink <= 1.0)
-            die ("@MLton thread-shrink-ratio argument must be between 0.0 and 1.0.");
+            die ("@MLton stack-shrink-ratio missing argument.");
+          s->controls.ratios.stackShrink = stringToFloat (argv[i++]);
+          unless (0.0 <= s->controls.ratios.stackShrink
+                  and s->controls.ratios.stackShrink <= 1.0)
+            die ("@MLton stack-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "use-mmap")) {
           i++;
           GC_setCygwinUseMmap (TRUE);
@@ -281,12 +281,12 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.markCompactGenerational = 8.0;
   s->controls.ratios.nursery = 10.0;
   s->controls.ratios.ramSlop = 0.5;
-  s->controls.ratios.threadCurrentGrow = 2.0;
-  s->controls.ratios.threadCurrentMaxReserved = 32.0;
-  s->controls.ratios.threadCurrentPermitReserved = 4.0;
-  s->controls.ratios.threadCurrentShrink = 0.5;
-  s->controls.ratios.threadMaxReserved = 8.0;
-  s->controls.ratios.threadShrink = 0.5;
+  s->controls.ratios.stackCurrentGrow = 2.0;
+  s->controls.ratios.stackCurrentMaxReserved = 32.0;
+  s->controls.ratios.stackCurrentPermitReserved = 4.0;
+  s->controls.ratios.stackCurrentShrink = 0.5;
+  s->controls.ratios.stackMaxReserved = 8.0;
+  s->controls.ratios.stackShrink = 0.5;
   s->controls.summary = FALSE;
   s->cumulativeStatistics.bytesAllocated = 0;
   s->cumulativeStatistics.bytesCopied = 0;
@@ -341,9 +341,9 @@ int GC_init (GC_state s, int argc, char **argv) {
   unless (s->controls.ratios.markCompact <= s->controls.ratios.copy
           and s->controls.ratios.copy <= s->controls.ratios.live)
     die ("Ratios must satisfy mark-compact-ratio <= copy-ratio <= live-ratio.");
-  unless (s->controls.ratios.threadCurrentPermitReserved
-          <= s->controls.ratios.threadCurrentMaxReserved)
-    die ("Ratios must satisfy thread-current-permit-reserved <= thread-current-max-reserved.");
+  unless (s->controls.ratios.stackCurrentPermitReserved
+          <= s->controls.ratios.stackCurrentMaxReserved)
+    die ("Ratios must satisfy stack-current-permit-reserved <= stack-current-max-reserved.");
   /* We align s->ram by pageSize so that we can test whether or not we
    * we are using mark-compact by comparing heap size to ram size.  If
    * we didn't round, the size might be slightly off.

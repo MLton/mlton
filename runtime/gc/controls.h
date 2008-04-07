@@ -31,12 +31,12 @@ struct GC_ratios {
    */
   float nursery; 
   float ramSlop;
-  float threadCurrentGrow;
-  float threadCurrentMaxReserved;
-  float threadCurrentPermitReserved;
-  float threadCurrentShrink;
-  float threadMaxReserved;
-  float threadShrink;
+  float stackCurrentGrow;
+  float stackCurrentMaxReserved;
+  float stackCurrentPermitReserved;
+  float stackCurrentShrink;
+  float stackMaxReserved;
+  float stackShrink;
 };
 
 struct GC_controls {

@@ -70,20 +70,20 @@ void forwardObjptr (GC_state s, objptr *opp) {
       if (getStackCurrentObjptr(s) == op) {
         /* Shrink active stacks. */
         reservedMax =
-          (size_t)(s->controls.ratios.threadCurrentMaxReserved * stack->used);
+          (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
         size_t reservedPermit =
-          (size_t)(s->controls.ratios.threadCurrentPermitReserved * stack->used);
+          (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
         reservedShrink =
           (reservedPermit >= stack->reserved)
           ? stack->reserved
-          : (size_t)(s->controls.ratios.threadCurrentShrink * stack->used);
+          : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
         reservedMin = sizeofStackMinimumReserved (s, stack);
       } else {
         /* Shrink paused stacks. */
         reservedMax =
-          (size_t)(s->controls.ratios.threadMaxReserved * stack->used);
+          (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
         reservedShrink =
-          (size_t)(s->controls.ratios.threadShrink * stack->reserved);
+          (size_t)(s->controls.ratios.stackShrink * stack->reserved);
         reservedMin= stack->used;
       }
       reservedNew =
