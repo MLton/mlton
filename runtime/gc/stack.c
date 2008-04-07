@@ -147,9 +147,10 @@ size_t sizeofStackInitialReserved (GC_state s) {
 size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
   size_t res;
 
-  res = alignStackReserved (stack->used
+  res = alignStackReserved (s, 
+                            stack->used
                             + sizeofStackSlop (s)
-                            - getStackTopFrameSize(s, stack));
+                            - getStackTopFrameSize (s, stack));
   return res;
 }
 
