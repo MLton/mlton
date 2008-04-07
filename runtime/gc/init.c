@@ -191,6 +191,13 @@ int processAtMLton (GC_state s, int argc, char **argv,
         } else if (0 == strcmp (arg, "stop")) {
           i++;
           s->controls.mayProcessAtMLton = FALSE;
+        } else if (0 == strcmp (arg, "thread-grow-ratio")) {
+          i++;
+          if (i == argc)
+            die ("@MLton thread-grow-ratio missing argument.");
+          s->controls.ratios.threadGrow = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.threadGrow)
+            die ("@MLton thread-grow-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "thread-shrink-ratio")) {
           i++;
           if (i == argc)
@@ -245,6 +252,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.markCompactGenerational = 8.0;
   s->controls.ratios.nursery = 10.0;
   s->controls.ratios.ramSlop = 0.5;
+  s->controls.ratios.threadGrow = 2.0;
   s->controls.ratios.threadShrink = 0.5;
   s->controls.summary = FALSE;
   s->cumulativeStatistics.bytesAllocated = 0;

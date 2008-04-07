@@ -154,7 +154,8 @@ size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
 size_t sizeofStackGrow (GC_state s, GC_stack stack) {
   size_t res;
 
-  res = max (2 * stack->reserved, sizeofStackMinimumReserved (s, stack));
+  res = max ((size_t)(s->controls.ratios.threadGrow * stack->reserved),
+             sizeofStackMinimumReserved (s, stack));
   return res;
 }
 
