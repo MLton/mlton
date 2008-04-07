@@ -159,11 +159,11 @@ size_t sizeofStackGrow (GC_state s, GC_stack stack) {
   return res;
 }
 
-size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active) {
+size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
       size_t reservedMax, reservedShrink, reservedMin, reservedNew;
 
-      if (active) {
-        /* Shrink active stacks. */
+      if (current) {
+        /* Shrink current stacks. */
         reservedMax =
           (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
         size_t reservedPermit =
@@ -185,12 +185,12 @@ size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active) {
         alignStackReserved
         (s, max(min(reservedMax,reservedShrink),reservedMin));
       /* It's possible that reservedNew > stack->reserved for the
-       * active stack if the stack invariant is violated.  In that
+       * current stack if the stack invariant is violated.  In that
        * case, we want to leave the stack alone, because some other
        * part of the gc will grow the stack.  We cannot do any growing
        * here because we may run out of to space.
        */
-      assert (active or reservedNew <= stack->reserved);
+      assert (current or reservedNew <= stack->reserved);
       reservedNew = min (stack->reserved, reservedNew);
       return reservedNew;
 }

@@ -142,17 +142,17 @@ thread:
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */
-        bool active;
+        bool current;
         size_t reservedNew, reservedOld;
         GC_stack stack;
 
         assert (STACK_TAG == tag);
         headerBytes = GC_STACK_HEADER_SIZE;
         stack = (GC_stack)p;
-        active = currentStack == stack;
+        current = currentStack == stack;
 
         reservedOld = stack->reserved;
-        reservedNew = sizeofStackShrink (s, stack, active);
+        reservedNew = sizeofStackShrink (s, stack, current);
         objectBytes = sizeof (struct GC_stack) + stack->used;
         skipFront = reservedOld - stack->used;
         skipGap = reservedOld - reservedNew;
@@ -278,17 +278,17 @@ unmark:
         skipFront = 0;
         skipGap = 0;
       } else { /* Stack. */
-        bool active;
+        bool current;
         size_t reservedNew, reservedOld;
         GC_stack stack;
 
         assert (STACK_TAG == tag);
         headerBytes = GC_STACK_HEADER_SIZE;
         stack = (GC_stack)p;
-        active = currentStack == stack;
+        current = currentStack == stack;
 
         reservedOld = stack->reserved;
-        reservedNew = sizeofStackShrink (s, stack, active);
+        reservedNew = sizeofStackShrink (s, stack, current);
         if (reservedNew < stack->reserved) {
           if (DEBUG_STACKS or s->controls.messages)
             fprintf (stderr,

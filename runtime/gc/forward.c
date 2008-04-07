@@ -60,16 +60,16 @@ void forwardObjptr (GC_state s, objptr *opp) {
                                          bytesNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
-      bool active;
+      bool current;
       size_t reservedNew;
       GC_stack stack;
 
       assert (STACK_TAG == tag);
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
-      active = getStackCurrent(s) == stack;
+      current = getStackCurrent(s) == stack;
 
-      reservedNew = sizeofStackShrink (s, stack, active);
+      reservedNew = sizeofStackShrink (s, stack, current);
       if (reservedNew < stack->reserved) {
         if (DEBUG_STACKS or s->controls.messages)
           fprintf (stderr,
