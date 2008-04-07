@@ -7,24 +7,17 @@
 
 structure OS =
    struct
-      structure Process :> 
-         sig
-            structure Status :
-               sig
-                  type t
-                  val equals: t * t -> bool
-                  val fromC: C_Status.t -> t
-                  val toC: t -> C_Status.t
-               end
-            type status = Status.t
-         end =
+      structure Process =
          struct
             structure Status =
+               MkAbsRep(type rep = C_Status.t)
+            structure Status =
                struct
-                  type t = C_Status.t
-                  fun equals (x1: t, x2: t) = x1 = x2
-                  val fromC = fn x => x
-                  val toC = fn x => x
+                  open Status
+                  fun equals (s1,s2) =
+                     (toRep s1) = (toRep s2)
+                  val fromC = fromRep
+                  val toC = toRep
                end
             type status = Status.t
          end
