@@ -260,7 +260,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.nursery = 10.0;
   s->controls.ratios.ramSlop = 0.5;
   s->controls.ratios.threadGrow = 2.0;
-  s->controls.ratios.maxReserved = 4.0;
+  s->controls.ratios.threadMaxReserved = 4.0;
   s->controls.ratios.threadShrink = 0.5;
   s->controls.summary = FALSE;
   s->cumulativeStatistics.bytesAllocated = 0;

@@ -70,18 +70,20 @@ void forwardObjptr (GC_state s, objptr *opp) {
          * but don't violate the stack invariant.
          */
         if (stack->used <= stack->reserved / 4) {
-          size_t new =
+          size_t reservedShrink = stack->reserved / 2;
+          size_t reservedMin=
+            sizeofStackMinimumReserved (s, stack);
+          size_t reservedNew =
             alignStackReserved
-            (s, max (stack->reserved / 2,
-                     sizeofStackMinimumReserved (s, stack)));
+            (s, max(reservedShrink,reservedMin));
           /* It's possible that new > stack->reserved if the stack
            * invariant is violated. In that case, we want to leave the
            * stack alone, because some other part of the gc will grow
            * the stack.  We cannot do any growing here because we may
            * run out of to space.
            */
-          if (new <= stack->reserved) {
-            stack->reserved = new;
+          if (reservedNew <= stack->reserved) {
+            stack->reserved = reservedNew;
             if (DEBUG_STACKS)
               fprintf (stderr, "Shrinking stack to size %s.\n",
                        uintmaxToCommaString(stack->reserved));
@@ -90,17 +92,14 @@ void forwardObjptr (GC_state s, objptr *opp) {
       } else {
         /* Shrink heap stacks. */
         size_t reservedMax =
-          (size_t)(s->controls.ratios.threadMaxReserved * s->used);
+          (size_t)(s->controls.ratios.threadMaxReserved * stack->used);
         size_t reservedShrink =
-          (size_t)(s->controls.ratios.threadShrink * s->reserved);
-        size_t reservedMin=
-          (getStackCurrentObjptr(s) == op)
-          ? sizeofStackMinimumReserved (s, stack)
-          : s->used;
+          (size_t)(s->controls.ratios.threadShrink * stack->reserved);
+        size_t reservedMin = stack->used;
         size_t reservedNew =
           alignStackReserved
           (s, max(min(reservedMax,reservedShrink),reservedMin));
-        assert (reservedNew <= s->reserved);
+        assert (reservedNew <= stack->reserved);
         if (reservedNew < stack->reserved) {
           stack->reserved = reservedNew;
           if (DEBUG_STACKS)
