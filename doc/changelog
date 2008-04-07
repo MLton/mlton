@@ -1,6 +1,13 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
 * 2008-04-07
+   - More flexible active/paused stack resizing policy.
+     Removed thread-shrink-ratio runtime option.
+     Added stack-current-grow-ratio, stack-current-max-reserved-ratio,
+     stack-current-permit-ratio, stack-current-shrink-ratio,
+     stack-max-reserved-ratio, and stack-shrink-ratio runtime options.
+
+* 2008-04-07
    - Fixed bugs in Basis Library where the representations of 
      OS.IO.iodesc, Posix.IO.file_desc, Posix.Signal.signal,
      Socket.sock, Socket.SOGK.sock_type as integers were exposed.
