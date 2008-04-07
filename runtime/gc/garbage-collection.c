@@ -48,18 +48,18 @@ void majorGC (GC_state s, size_t bytesRequested, bool mayResize) {
 }
 
 void growStackCurrent (GC_state s) {
-  size_t size;
+  size_t reserved;
   GC_stack stack;
 
-  size = sizeofStackGrow (s, getStackCurrent(s));
+  reserved = sizeofStackGrowReserved (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
     fprintf (stderr, 
              "[GC: Growing stack of size %s bytes to size %s bytes, using %s bytes.]\n",
              uintmaxToCommaString(getStackCurrent(s)->reserved),
-             uintmaxToCommaString(alignStackReserved (s, size)),
+             uintmaxToCommaString(reserved),
              uintmaxToCommaString(getStackCurrent(s)->used));
-  assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
-  stack = newStack (s, size, TRUE);
+  assert (hasHeapBytesFree (s, sizeofStackWithHeader (s, reserved), 0));
+  stack = newStack (s, reserved, TRUE);
   copyStack (s, getStackCurrent(s), stack);
   getThreadCurrent(s)->stack = pointerToObjptr ((pointer)stack, s->heap.start);
   markCard (s, objptrToPointer (getThreadCurrentObjptr(s), s->heap.start));
@@ -134,7 +134,7 @@ void performGC (GC_state s,
   stackBytesRequested = 
     stackTopOk 
     ? 0 
-    : sizeofStackWithHeaderAligned (s, sizeofStackGrow (s, getStackCurrent (s)));
+    : sizeofStackWithHeader (s, sizeofStackGrowReserved (s, getStackCurrent (s)));
   totalBytesRequested = 
     oldGenBytesRequested 
     + nurseryBytesRequested

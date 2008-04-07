@@ -152,7 +152,7 @@ thread:
         current = currentStack == stack;
 
         reservedOld = stack->reserved;
-        reservedNew = sizeofStackShrink (s, stack, current);
+        reservedNew = sizeofStackShrinkReserved (s, stack, current);
         objectBytes = sizeof (struct GC_stack) + stack->used;
         skipFront = reservedOld - stack->used;
         skipGap = reservedOld - reservedNew;
@@ -288,7 +288,7 @@ unmark:
         current = currentStack == stack;
 
         reservedOld = stack->reserved;
-        reservedNew = sizeofStackShrink (s, stack, current);
+        reservedNew = sizeofStackShrinkReserved (s, stack, current);
         if (reservedNew < stack->reserved) {
           if (DEBUG_STACKS or s->controls.messages)
             fprintf (stderr,

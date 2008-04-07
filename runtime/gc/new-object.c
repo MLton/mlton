@@ -52,11 +52,11 @@ GC_stack newStack (GC_state s,
                    bool allocInOldGen) {
   GC_stack stack;
 
-  reserved = alignStackReserved (s, reserved);
+  assert (isStackReservedAligned (s, reserved));
   if (reserved > s->cumulativeStatistics.maxStackSize)
     s->cumulativeStatistics.maxStackSize = reserved;
   stack = (GC_stack)(newObject (s, GC_STACK_HEADER,
-                                sizeofStackWithHeaderAligned (s, reserved),
+                                sizeofStackWithHeader (s, reserved),
                                 allocInOldGen));
   stack->reserved = reserved;
   stack->used = 0;
@@ -72,7 +72,8 @@ GC_thread newThread (GC_state s, size_t reserved) {
   GC_thread thread;
   pointer res;
 
-  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeaderAligned (s, reserved) + sizeofThread (s));
+  assert (isStackReservedAligned (s, reserved));
+  ensureHasHeapBytesFree (s, 0, sizeofStackWithHeader (s, reserved) + sizeofThread (s));
   stack = newStack (s, reserved, FALSE);
   res = newObject (s, GC_THREAD_HEADER,
                    sizeofThread (s),

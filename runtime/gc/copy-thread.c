@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
+GC_thread copyThread (GC_state s, GC_thread from, size_t used) {
   GC_thread to;
 
   if (DEBUG_THREADS)
@@ -16,7 +16,7 @@ GC_thread copyThread (GC_state s, GC_thread from, size_t size) {
    */
   assert (s->savedThread == BOGUS_OBJPTR);
   s->savedThread = pointerToObjptr((pointer)from - offsetofThread (s), s->heap.start);
-  to = newThread (s, size);
+  to = newThread (s, alignStackReserved(s, used));
   from = (GC_thread)(objptrToPointer(s->savedThread, s->heap.start) + offsetofThread (s));
   s->savedThread = BOGUS_OBJPTR;
   if (DEBUG_THREADS) {

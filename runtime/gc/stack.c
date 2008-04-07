@@ -35,9 +35,6 @@ size_t sizeofStackSlop (GC_state s) {
   return (size_t)(2 * s->maxFrameSize);
 }
 
-size_t sizeofStackInitial (GC_state s) {
-  return sizeofStackSlop (s);
-}
 
 /* Pointer to the bottommost word in use on the stack. */
 pointer getStackBottom (__attribute__ ((unused)) GC_state s, GC_stack stack) {
@@ -74,7 +71,6 @@ pointer getStackLimit (GC_state s, GC_stack stack) {
   // assert (isAligned ((size_t)res, s->alignment));
   return res;
 }
-
 
 GC_frameIndex getCachedStackTopFrameIndex (GC_state s) {
   GC_frameIndex res;
@@ -116,15 +112,6 @@ uint16_t getStackTopFrameSize (GC_state s, GC_stack stack) {
   return layout->size;
 }
 
-size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
-  size_t res;
-
-  res =
-    stack->used
-    + sizeofStackSlop (s)
-    - getStackTopFrameSize(s, stack);
-  return res;
-}
 
 size_t alignStackReserved (GC_state s, size_t reserved) {
   size_t res;
@@ -137,25 +124,39 @@ size_t alignStackReserved (GC_state s, size_t reserved) {
   return res;
 }
 
-size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved) {
+size_t sizeofStackWithHeader (__attribute__ ((unused)) GC_state s,
+                              size_t reserved) {
   size_t res;
 
-  res =
-    align (GC_STACK_HEADER_SIZE
-           + sizeof (struct GC_stack)
-           + reserved,
-           s->alignment);
+  assert (isStackReservedAligned (s, reserved));
+  res = GC_STACK_HEADER_SIZE + sizeof (struct GC_stack) + reserved;
   if (DEBUG_STACKS)
-    fprintf (stderr, "%"PRIuMAX" = sizeofStackWithHeaderAligned (%"PRIuMAX")\n",
+    fprintf (stderr, "%"PRIuMAX" = sizeofStackWithHeader (%"PRIuMAX")\n",
              (uintmax_t)res, (uintmax_t)reserved);
+  assert (isAligned (res, s->alignment));
   return res;
 }
 
-size_t sizeofStackGrow (GC_state s, GC_stack stack) {
+size_t sizeofStackInitialReserved (GC_state s) {
+  return alignStackReserved(s, sizeofStackSlop (s));
+}
+
+size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
+  size_t res;
+
+  res =
+    stack->used
+    + sizeofStackSlop (s)
+    - getStackTopFrameSize(s, stack);
+  return res;
+}
+
+size_t sizeofStackGrowReserved (GC_state s, GC_stack stack) {
   double reservedD;
   size_t reservedGrow, reservedMin, reservedNew;
   const size_t RESERVED_MAX = (SIZE_MAX >> 2);
 
+  assert (isStackReservedAligned (s, stack->reserved));
   reservedD = (double)(stack->reserved);
   double reservedGrowD =
     (double)s->controls.ratios.stackCurrentGrow * reservedD;
@@ -164,15 +165,19 @@ size_t sizeofStackGrow (GC_state s, GC_stack stack) {
     ? RESERVED_MAX
     : (size_t)reservedGrowD;
   reservedMin = sizeofStackMinimumReserved (s, stack);
-  reservedNew = max (reservedGrow, reservedMin);
+  reservedNew =
+    alignStackReserved
+    (s, max (reservedGrow, reservedMin));
+  assert (isStackReservedAligned (s, reservedNew));
   return reservedNew;
 }
 
-size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
+size_t sizeofStackShrinkReserved (GC_state s, GC_stack stack, bool current) {
   double usedD, reservedD;
   size_t reservedMax, reservedShrink, reservedMin, reservedNew;
   const size_t RESERVED_MAX = (SIZE_MAX >> 2);
 
+  assert (isStackReservedAligned (s, stack->reserved));
   usedD = (double)(stack->used);
   reservedD = (double)(stack->reserved);
   if (current) {
@@ -217,6 +222,7 @@ size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
    */
   assert (current or reservedNew <= stack->reserved);
   reservedNew = min (stack->reserved, reservedNew);
+  assert (isStackReservedAligned (s, reservedNew));
   return reservedNew;
 }
 

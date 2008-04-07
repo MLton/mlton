@@ -62,7 +62,6 @@ static inline bool isStackReservedAligned (GC_state s, size_t reserved);
 #endif
 
 static inline size_t sizeofStackSlop (GC_state s);
-static inline size_t sizeofStackInitial (GC_state s);
 
 static inline pointer getStackBottom (GC_state s, GC_stack stack);
 static inline pointer getStackTop (GC_state s, GC_stack stack);
@@ -74,11 +73,12 @@ static inline GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
 static inline GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
 static inline uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
 
-static inline size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
 static inline size_t alignStackReserved (GC_state s, size_t reserved);
-static inline size_t sizeofStackWithHeaderAligned (GC_state s, size_t reserved);
-static inline size_t sizeofStackGrow (GC_state s, GC_stack stack);
-static inline size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active);
+static inline size_t sizeofStackWithHeader (GC_state s, size_t reserved);
+static inline size_t sizeofStackInitialReserved (GC_state s);
+static inline size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack);
+static inline size_t sizeofStackGrowReserved (GC_state s, GC_stack stack);
+static inline size_t sizeofStackShrinkReserved (GC_state s, GC_stack stack, bool current);
 
 static inline void copyStack (GC_state s, GC_stack from, GC_stack to);
 

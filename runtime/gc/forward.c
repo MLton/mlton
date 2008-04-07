@@ -69,7 +69,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
       stack = (GC_stack)p;
       current = getStackCurrent(s) == stack;
 
-      reservedNew = sizeofStackShrink (s, stack, current);
+      reservedNew = sizeofStackShrinkReserved (s, stack, current);
       if (reservedNew < stack->reserved) {
         if (DEBUG_STACKS or s->controls.messages)
           fprintf (stderr,
