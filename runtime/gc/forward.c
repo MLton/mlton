@@ -65,50 +65,41 @@ void forwardObjptr (GC_state s, objptr *opp) {
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
 
+      size_t reservedMax, reservedShrink, reservedMin, reservedNew;
+
       if (getStackCurrentObjptr(s) == op) {
-        /* Shrink stacks that don't use a lot of their reserved space;
-         * but don't violate the stack invariant.
-         */
-        if (stack->used <= stack->reserved / 4) {
-          size_t reservedMax =
-            (size_t)(s->controls.ratios.threadCurrentMaxReserved * stack->used);
-          size_t reservedShrink =
-            (size_t)(s->controls.ratios.threadCurrentShrink * stack->reserved);
-          size_t reservedMin =
-            sizeofStackMinimumReserved (s, stack);
-          size_t reservedNew =
-            alignStackReserved
-            (s, max(min(reservedMax,reservedShrink),reservedMin));
-          /* It's possible that new > stack->reserved if the stack
-           * invariant is violated. In that case, we want to leave the
-           * stack alone, because some other part of the gc will grow
-           * the stack.  We cannot do any growing here because we may
-           * run out of to space.
-           */
-          if (reservedNew <= stack->reserved) {
-            stack->reserved = reservedNew;
-            if (DEBUG_STACKS or s->controls.messages)
-              fprintf (stderr, "[GC: Shrinking stack to size %s bytes.]\n",
-                       uintmaxToCommaString(stack->reserved));
-          }
-        }
+        /* Shrink active stacks. */
+        reservedMax =
+          (size_t)(s->controls.ratios.threadCurrentMaxReserved * stack->used);
+        reservedShrink =
+          (stack->used <= stack->reserved / 4)
+          ? (size_t)(s->controls.ratios.threadCurrentShrink * stack->reserved)
+          : stack->reserved;
+        reservedMin = sizeofStackMinimumReserved (s, stack);
       } else {
-        /* Shrink heap stacks. */
-        size_t reservedMax =
+        /* Shrink paused stacks. */
+        reservedMax =
           (size_t)(s->controls.ratios.threadMaxReserved * stack->used);
-        size_t reservedShrink =
+        reservedShrink =
           (size_t)(s->controls.ratios.threadShrink * stack->reserved);
-        size_t reservedMin = stack->used;
-        size_t reservedNew =
-          alignStackReserved
-          (s, max(min(reservedMax,reservedShrink),reservedMin));
-        assert (reservedNew <= stack->reserved);
-        if (reservedNew < stack->reserved) {
-          stack->reserved = reservedNew;
-          if (DEBUG_STACKS or s->controls.messages)
-            fprintf (stderr, "[GC: Shrinking stack to size %s bytes.]\n",
-                     uintmaxToCommaString(stack->reserved));
-        }
+        reservedMin= stack->used;
+      }
+      reservedNew =
+        alignStackReserved
+        (s, max(min(reservedMax,reservedShrink),reservedMin));
+      /* It's possible that new > stack->reserved for the active stack
+       * if the stack invariant is violated.  In that case, we want to
+       * leave the stack alone, because some other part of the gc will
+       * grow the stack.  We cannot do any growing here because we may
+       * run out of to space.
+       */
+      assert (getStackCurrentObjptr(s) == op
+              or reservedNew <= stack->reserved);
+      if (reservedNew < stack->reserved) {
+        stack->reserved = reservedNew;
+        if (DEBUG_STACKS or s->controls.messages)
+          fprintf (stderr, "[GC: Shrinking stack to size %s bytes.]\n",
+                   uintmaxToCommaString(stack->reserved));
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
       skip = stack->reserved - stack->used;
