@@ -19,6 +19,9 @@ structure OS_Process: OS_PROCESS_EXTRA =
          struct
             open MLtonProcess.Status
 
+            fun equals (s1, s2) =
+               (toRep s1) = (toRep s2)
+
             val fromPosix =
                fn es =>
                let

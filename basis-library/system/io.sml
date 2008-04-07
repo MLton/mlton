@@ -20,14 +20,14 @@ structure OS_IO: OS_IO =
   (* an iodesc is an abstract descriptor for an OS object that
    * supports I/O (e.g., file, tty device, socket, ...).
    *)
-     type iodesc = PreOS.IO.iodesc
+     type iodesc = PreOS.IODesc.t
 
     datatype iodesc_kind = K of string
 
-    val iodToFd = fn x => PreOS.IO.IODesc.toRep x
-    val fdToIod = fn x => PreOS.IO.IODesc.fromRep x
+    val iodToFd = fn x => PreOS.IODesc.toRep x
+    val fdToIod = fn x => PreOS.IODesc.fromRep x
 
-    val iodescToWord = C_Fd.castToSysWord o PreOS.IO.IODesc.toRep
+    val iodescToWord = C_Fd.castToSysWord o PreOS.IODesc.toRep
 
   (* return a hash value for the I/O descriptor. *)
     val hash = SysWord.toWord o iodescToWord

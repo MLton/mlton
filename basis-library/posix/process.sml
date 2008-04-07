@@ -83,7 +83,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
             then W_STOPPED (Prim.stopSig status)
          else raise Fail "Posix.Process.fromStatus"
       fun fromStatus status =
-         fromStatus' (PreOS.Process.Status.toRep status)
+         fromStatus' (PreOS.Status.toRep status)
 
       structure W =
          struct

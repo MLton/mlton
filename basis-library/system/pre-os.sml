@@ -5,26 +5,21 @@
  * See the file MLton-LICENSE for details.
  *)
 
+structure PreOS =
+   struct
+      structure Status =
+         MkAbsRep(type rep = C_Status.t)
+      structure IODesc =
+         MkAbsRepEq(type rep = C_Fd.t)
+   end
 structure OS =
    struct
       structure Process =
          struct
-            structure Status =
-               MkAbsRep(type rep = C_Status.t)
-            structure Status =
-               struct
-                  open Status
-                  fun equals (s1,s2) =
-                     (toRep s1) = (toRep s2)
-               end
-            type status = Status.t
+            type status = PreOS.Status.t
          end
       structure IO =
          struct
-            structure IODesc =
-               MkAbsRepEq(type rep = C_Fd.t)
-            type iodesc = IODesc.t
+            type iodesc = PreOS.IODesc.t
          end
    end
-
-structure PreOS = OS

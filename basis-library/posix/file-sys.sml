@@ -35,8 +35,8 @@ structure PosixFileSys: POSIX_FILE_SYS_EXTRA =
 
       val fdToWord = C_Fd.castToSysWord
       val wordToFD = C_Fd.castFromSysWord
-      val fdToIOD = fn x => PreOS.IO.IODesc.fromRep x
-      val iodToFD = SOME o (fn x => PreOS.IO.IODesc.toRep x)
+      val fdToIOD = fn x => PreOS.IODesc.fromRep x
+      val iodToFD = SOME o (fn x => PreOS.IODesc.toRep x)
 
       (*------------------------------------*)
       (*             dirstream              *)
