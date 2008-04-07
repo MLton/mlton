@@ -9,6 +9,7 @@ signature NET =
    sig
       structure AddrFamily : ABS_REP_EQ where type Rep.t = C_Int.t
       structure Sock : ABS_REP where type Rep.t = C_Sock.t
+      structure SockType : ABS_REP_EQ where type Rep.t = C_Sock.t
 
       structure Word16 :
          sig

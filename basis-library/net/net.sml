@@ -9,6 +9,7 @@ structure Net : NET =
    struct
       structure AddrFamily = MkAbsRepEq(type rep = C_Int.t)
       structure Sock = MkAbsRep(type rep = C_Sock.t)
+      structure SockType = MkAbsRepEq(type rep = C_Sock.t)
 
       structure Prim = PrimitiveFFI.Net
 

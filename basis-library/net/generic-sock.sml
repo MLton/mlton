@@ -13,7 +13,9 @@ structure GenericSock : GENERIC_SOCK =
 
       fun socket' (af, st, p) =
          (Net.Sock.fromRep o PESC.simpleResult)
-         (fn () => Prim.socket (Net.AddrFamily.toRep af, st, C_Int.fromInt p))
+         (fn () => Prim.socket (Net.AddrFamily.toRep af, 
+                                Net.SockType.toRep st, 
+                                C_Int.fromInt p))
 
       fun socketPair' (af, st, p) =
          let
@@ -21,8 +23,11 @@ structure GenericSock : GENERIC_SOCK =
             val get = fn i => Net.Sock.fromRep (Array.sub (a, i))
          in
             PESC.syscall
-            (fn () => (Prim.socketPair (Net.AddrFamily.toRep af, st, C_Int.fromInt p, a), fn _ => 
-                       (get 0, get 1)))
+            (fn () => (Prim.socketPair (Net.AddrFamily.toRep af, 
+                                        Net.SockType.toRep st, 
+                                        C_Int.fromInt p, 
+                                        a), 
+                       fn _ => (get 0, get 1)))
          end
 
       fun socket (af, st) = socket' (af, st, 0)

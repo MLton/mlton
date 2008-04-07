@@ -9,11 +9,11 @@ structure Socket : SOCKET_EXTRA =
 struct
 
 structure Prim = PrimitiveFFI.Socket
-structure Sock = Net.Sock
 structure Error = Posix.Error
 structure Syscall = Error.SysCall
 structure FileSys = Posix.FileSys
 
+structure Sock = Net.Sock
 type sock = Sock.t
 val sockToWord = C_Sock.castToSysWord o Sock.toRep
 val wordToSock = Sock.fromRep o C_Sock.castFromSysWord
@@ -60,11 +60,12 @@ structure AF =
           | NONE => NONE
    end
 
+structure SockType = Net.SockType
 structure SOCK =
    struct
-      type sock_type = C_Int.t
-      val stream = Prim.SOCK.STREAM
-      val dgram = Prim.SOCK.DGRAM
+      type sock_type = SockType.t
+      val stream = SockType.fromRep Prim.SOCK.STREAM
+      val dgram = SockType.fromRep Prim.SOCK.DGRAM
       val names : (string * sock_type) list = 
          ("STREAM", stream) ::
          ("DGRAM", dgram) ::
@@ -330,7 +331,7 @@ structure CtlExtra =
       val setSNDBUF = setSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_SNDBUF)
       val getRCVBUF = getSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_RCVBUF)
       val setRCVBUF = setSockOptSize (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_RCVBUF)
-      fun getTYPE s = getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_TYPE) s
+      fun getTYPE s = SockType.fromRep (getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_TYPE) s)
       fun getERROR s =
          let
             val se = getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_ERROR) s
