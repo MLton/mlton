@@ -1,4 +1,4 @@
-(* modified from SML/NJ sources by Stephen Weeks 1998-6-25 *)
+(* modified from SML/NJ sources by Stephen Weeks 1998-06-25 *)
 (* modified by Matthew Fluet 2002-10-11 *)
 (* modified by Matthew Fluet 2002-11-21 *)
 (* modified by Matthew Fluet 2006-04-30 *)

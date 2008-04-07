@@ -1,6 +1,8 @@
-(* Modified from SML/NJ sources by sweeks@research.nj.nec.com on 1998-6-25.
- * Further modified by sweeks@acm.org 1999-12-10, 2000-1-18
- *)
+(* Modified from SML/NJ sources by Stephen Weeks 1998-06-25 *)
+(* modified by Stephen Weeks 1999-12-10 *)
+(* modified by Stephen Weeks 2000-01-18 *)
+(* modified by Matthew Fluet 2008-03-02 *)
+(* modified by Matthew Fluet 2008-04-06 *)
 
 (* os-process.sml
  *
