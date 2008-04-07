@@ -71,7 +71,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
          */
         if (stack->used <= stack->reserved / 4) {
           size_t reservedShrink = stack->reserved / 2;
-          size_t reservedMin=
+          size_t reservedMin =
             sizeofStackMinimumReserved (s, stack);
           size_t reservedNew =
             alignStackReserved
