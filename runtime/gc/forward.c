@@ -41,12 +41,13 @@ void forwardObjptr (GC_state s, objptr *opp) {
   if (DEBUG_DETAILED and header == GC_FORWARDED)
     fprintf (stderr, "  already FORWARDED\n");
   if (header != GC_FORWARDED) { /* forward the object */
-    uint16_t bytesNonObjptrs, numObjptrs;
+    size_t size, skip;
+
+    size_t headerBytes, objectBytes;
     GC_objectTypeTag tag;
+    uint16_t bytesNonObjptrs, numObjptrs;
 
     splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
-
-    size_t headerBytes, objectBytes, size, skip;
 
     /* Compute the space taken by the header and object body. */
     if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
@@ -67,7 +68,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
 
       size_t reservedMax, reservedShrink, reservedMin, reservedNew;
 
-      if (getStackCurrentObjptr(s) == op) {
+      if (getStackCurrent(s) == stack) {
         /* Shrink active stacks. */
         reservedMax =
           (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
@@ -95,7 +96,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
        * grow the stack.  We cannot do any growing here because we may
        * run out of to space.
        */
-      assert (getStackCurrentObjptr(s) == op
+      assert (getStackCurrent(s) == stack
               or reservedNew <= stack->reserved);
       if (reservedNew < stack->reserved) {
         if (DEBUG_STACKS or s->controls.messages)
