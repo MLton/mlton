@@ -1,5 +1,14 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-04-07
+   - Fixed bugs in Basis Library where the representations of 
+     OS.IO.iodesc, Posix.IO.file_desc, Posix.Signal.signal,
+     Socket.sock, Socket.SOGK.sock_type as integers were exposed.
+
+* 2008-03-02
+   - Fixed bug in Basis Library where the representation of 
+     OS.Process.status as an integer was exposed.
+
 * 2008-02-13
    - Fixed space-safety bug in pass to flatten refs into containing
      data structure. Thanks to Daniel Spoonhower for the bug report
