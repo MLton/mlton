@@ -138,16 +138,18 @@ size_t sizeofStackWithHeader (__attribute__ ((unused)) GC_state s,
 }
 
 size_t sizeofStackInitialReserved (GC_state s) {
-  return alignStackReserved(s, sizeofStackSlop (s));
+  size_t res;
+
+  res = alignStackReserved(s, sizeofStackSlop (s));
+  return res;
 }
 
 size_t sizeofStackMinimumReserved (GC_state s, GC_stack stack) {
   size_t res;
 
-  res =
-    stack->used
-    + sizeofStackSlop (s)
-    - getStackTopFrameSize(s, stack);
+  res = alignStackReserved (stack->used
+                            + sizeofStackSlop (s)
+                            - getStackTopFrameSize(s, stack));
   return res;
 }
 
