@@ -97,9 +97,11 @@ void forwardObjptr (GC_state s, objptr *opp) {
               or reservedNew <= stack->reserved);
       if (reservedNew < stack->reserved) {
         if (DEBUG_STACKS or s->controls.messages)
-          fprintf (stderr, "[GC: Shrinking stack of size %s bytes to size %s bytes.]\n",
+          fprintf (stderr,
+                   "[GC: Shrinking stack of size %s bytes to size %s bytes, using %s bytes.]\n",
                    uintmaxToCommaString(stack->reserved),
-                   uintmaxToCommaString(reservedNew));
+                   uintmaxToCommaString(reservedNew),
+                   uintmaxToCommaString(stack->used));
         stack->reserved = reservedNew;
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
