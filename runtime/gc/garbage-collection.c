@@ -54,7 +54,8 @@ void growStackCurrent (GC_state s) {
   size = sizeofStackGrow (s, getStackCurrent(s));
   if (DEBUG_STACKS or s->controls.messages)
     fprintf (stderr, 
-             "[GC: Growing stack to size %s bytes.]\n",
+             "[GC: Growing stack of size %s bytes to size %s bytes.]\n",
+             uintmaxToCommaString(getStackCurrent(s)->reserved),
              uintmaxToCommaString(alignStackReserved (s, size)));
   assert (hasHeapBytesFree (s, sizeofStackWithHeaderAligned (s, size), 0));
   stack = newStack (s, size, TRUE);
