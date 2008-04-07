@@ -89,13 +89,24 @@ void forwardObjptr (GC_state s, objptr *opp) {
         }
       } else {
         /* Shrink heap stacks. */
-        stack->reserved =
+        size_t reservedMax =
+          (size_t)(s->controls.ratios.threadMaxReserved * s->used);
+        size_t reservedShrink =
+          (size_t)(s->controls.ratios.threadShrink * s->reserved);
+        size_t reservedMin=
+          (getStackCurrentObjptr(s) == op)
+          ? sizeofStackMinimumReserved (s, stack)
+          : s->used;
+        size_t reservedNew =
           alignStackReserved
-          (s, max((size_t)(s->controls.ratios.threadShrink * stack->reserved),
-                  stack->used));
-        if (DEBUG_STACKS)
-          fprintf (stderr, "Shrinking stack to size %s.\n",
-                   uintmaxToCommaString(stack->reserved));
+          (s, max(min(reservedMax,reservedShrink),reservedMin));
+        assert (reservedNew <= s->reserved);
+        if (reservedNew < stack->reserved) {
+          stack->reserved = reservedNew;
+          if (DEBUG_STACKS)
+            fprintf (stderr, "Shrinking stack to size %s.\n",
+                     uintmaxToCommaString(stack->reserved));
+        }
       }
       objectBytes = sizeof (struct GC_stack) + stack->used;
       skip = stack->reserved - stack->used;
