@@ -49,8 +49,12 @@ DEBUGFLAGS += -gstabs+
 OPTWARNFLAGS += -Winline
 endif
 
-ifeq ($(TARGET_ARCH), ia64)
+ifeq ($(findstring $(TARGET_ARCH), hppa ia64 powerpc sparc),$(TARGET_ARCH))
+ifeq (4.2, $(firstword $(sort $(GCC_VERSION) 4.2)))
+# GMP headers contain C99 inline functions which generate warnings
+# with a suggestion to use this flag to disable the warnings.
 FLAGS += -fgnu89-inline
+endif
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
