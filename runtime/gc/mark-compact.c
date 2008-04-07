@@ -87,7 +87,7 @@ void updateWeaksForMarkCompact (GC_state s) {
   s->weaks = NULL;
 }
 
-void updateForwardPointersForMarkCompact (GC_state s) {
+void updateForwardPointersForMarkCompact (GC_state s, GC_stack currentStack) {
   pointer back;
   pointer endOfLastMarked;
   pointer front;
@@ -95,14 +95,14 @@ void updateForwardPointersForMarkCompact (GC_state s) {
   GC_header header;
   GC_header *headerp;
   pointer p;
-  size_t size;
+  size_t size, skipFront, skipGap;
 
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "Update forward pointers.\n");
   front = alignFrontier (s, s->heap.start);
   back = s->heap.start + s->heap.oldGenSize;
-  endOfLastMarked = front;
   gap = 0;
+  endOfLastMarked = front;
 updateObject:
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "updateObject  front = "FMTPTR"  back = "FMTPTR"\n",
@@ -119,7 +119,78 @@ updateObject:
        * Thread internal pointers.
        */
 thread:
-      size = sizeofObject (s, p);
+      assert (GC_VALID_HEADER_MASK & header);
+      assert (MARK_MASK & header);
+
+      size_t headerBytes, objectBytes;
+      GC_objectTypeTag tag;
+      uint16_t bytesNonObjptrs, numObjptrs;
+
+      assert (header == getHeader (p));
+      splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+
+      /* Compute the space taken by the header and object body. */
+      if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
+        headerBytes = GC_NORMAL_HEADER_SIZE;
+        objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
+        skipFront = 0;
+        skipGap = 0;
+      } else if (ARRAY_TAG == tag) {
+        headerBytes = GC_ARRAY_HEADER_SIZE;
+        objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
+                                           bytesNonObjptrs, numObjptrs);
+        skipFront = 0;
+        skipGap = 0;
+      } else { /* Stack. */
+        bool active;
+        GC_stack stack;
+
+        assert (STACK_TAG == tag);
+        headerBytes = GC_STACK_HEADER_SIZE;
+        stack = (GC_stack)p;
+        active = currentStack == stack;
+
+        size_t reservedMax, reservedShrink, reservedMin, reservedNew, reservedOld;
+
+        reservedOld = stack->reserved;
+        if (active) {
+          /* Shrink active stacks. */
+          reservedMax =
+            (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
+          size_t reservedPermit =
+            (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
+          reservedShrink =
+            (reservedPermit >= stack->reserved)
+            ? stack->reserved
+            : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
+          reservedMin = sizeofStackMinimumReserved (s, stack);
+        } else {
+          /* Shrink paused stacks. */
+          reservedMax =
+            (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
+          reservedShrink =
+            (size_t)(s->controls.ratios.stackShrink * stack->reserved);
+          reservedMin= stack->used;
+        }
+        reservedNew =
+          alignStackReserved
+          (s, max(min(reservedMax,reservedShrink),reservedMin));
+        /* It's possible that new > stack->reserved for the active stack
+         * if the stack invariant is violated.  In that case, we want to
+         * leave the stack alone, because some other part of the gc will
+         * grow the stack.  We cannot do any growing here because we may
+         * run out of to space.
+         */
+        assert (active or reservedNew <= stack->reserved);
+        if (reservedNew < stack->reserved) {
+        } else {
+          reservedNew = stack->reserved;
+        }
+        objectBytes = sizeof (struct GC_stack) + stack->used;
+        skipFront = reservedOld - stack->used;
+        skipGap = reservedOld - reservedNew;
+      }
+      size = headerBytes + objectBytes;
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
                  (uintptr_t)p, (uintmax_t)size);
@@ -145,7 +216,8 @@ thread:
         newArray += GC_ARRAY_LENGTH_SIZE;
         *((GC_header*)(newArray)) = GC_WORD8_VECTOR_HEADER;
       }
-      front += size;
+      gap += skipGap;
+      front += size + skipFront;
       endOfLastMarked = front;
       foreachObjptrInObject (s, p, threadInternalObjptr, FALSE);
       goto updateObject;
@@ -186,14 +258,14 @@ done:
   return;
 }
 
-void updateBackwardPointersAndSlideForMarkCompact (GC_state s) {
+void updateBackwardPointersAndSlideForMarkCompact (GC_state s, GC_stack currentStack) {
   pointer back;
   pointer front;
   size_t gap;
   GC_header header;
   GC_header *headerp;
   pointer p;
-  size_t size;
+  size_t size, skipFront, skipGap;
 
   if (DEBUG_MARK_COMPACT)
     fprintf (stderr, "Update backward pointers and slide.\n");
@@ -216,7 +288,85 @@ updateObject:
        * Unmark it.
        */
 unmark:
-      size = sizeofObject (s, p);
+      assert (GC_VALID_HEADER_MASK & header);
+      assert (MARK_MASK & header);
+
+      size_t headerBytes, objectBytes;
+      GC_objectTypeTag tag;
+      uint16_t bytesNonObjptrs, numObjptrs;
+
+      assert (header == getHeader (p));
+      splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
+
+      /* Compute the space taken by the header and object body. */
+      if ((NORMAL_TAG == tag) or (WEAK_TAG == tag)) { /* Fixed size object. */
+        headerBytes = GC_NORMAL_HEADER_SIZE;
+        objectBytes = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
+        skipFront = 0;
+        skipGap = 0;
+      } else if (ARRAY_TAG == tag) {
+        headerBytes = GC_ARRAY_HEADER_SIZE;
+        objectBytes = sizeofArrayNoHeader (s, getArrayLength (p),
+                                           bytesNonObjptrs, numObjptrs);
+        skipFront = 0;
+        skipGap = 0;
+      } else { /* Stack. */
+        bool active;
+        GC_stack stack;
+
+        assert (STACK_TAG == tag);
+        headerBytes = GC_STACK_HEADER_SIZE;
+        stack = (GC_stack)p;
+        active = currentStack == stack;
+
+        size_t reservedMax, reservedShrink, reservedMin, reservedNew, reservedOld;
+
+        reservedOld = stack->reserved;
+        if (active) {
+          /* Shrink active stacks. */
+          reservedMax =
+            (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
+          size_t reservedPermit =
+            (size_t)(s->controls.ratios.stackCurrentPermitReserved * stack->used);
+          reservedShrink =
+            (reservedPermit >= stack->reserved)
+            ? stack->reserved
+            : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
+          reservedMin = sizeofStackMinimumReserved (s, stack);
+        } else {
+          /* Shrink paused stacks. */
+          reservedMax =
+            (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
+          reservedShrink =
+            (size_t)(s->controls.ratios.stackShrink * stack->reserved);
+          reservedMin= stack->used;
+        }
+        reservedNew =
+          alignStackReserved
+          (s, max(min(reservedMax,reservedShrink),reservedMin));
+        /* It's possible that new > stack->reserved for the active stack
+         * if the stack invariant is violated.  In that case, we want to
+         * leave the stack alone, because some other part of the gc will
+         * grow the stack.  We cannot do any growing here because we may
+         * run out of to space.
+         */
+        assert (active or reservedNew <= stack->reserved);
+        if (reservedNew < stack->reserved) {
+          if (DEBUG_STACKS or s->controls.messages)
+            fprintf (stderr,
+                     "[GC: Shrinking stack of size %s bytes to size %s bytes, using %s bytes.]\n",
+                     uintmaxToCommaString(stack->reserved),
+                     uintmaxToCommaString(reservedNew),
+                     uintmaxToCommaString(stack->used));
+          stack->reserved = reservedNew;
+        } else {
+          reservedNew = stack->reserved;
+        }
+        objectBytes = sizeof (struct GC_stack) + stack->used;
+        skipFront = reservedOld - stack->used;
+        skipGap = reservedOld - reservedNew;
+      }
+      size = headerBytes + objectBytes;
       /* unmark */
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "unmarking "FMTPTR" of size %"PRIuMAX"\n",
@@ -227,7 +377,8 @@ unmark:
         fprintf (stderr, "sliding "FMTPTR" down %"PRIuMAX"\n",
                  (uintptr_t)front, (uintmax_t)gap);
       GC_memcpy (front, front - gap, size);
-      front += size;
+      gap += skipGap;
+      front += size + skipFront;
       goto updateObject;
     } else {
       /* It's not marked. */
@@ -276,6 +427,7 @@ done:
 void majorMarkCompactGC (GC_state s) {
   size_t bytesHashConsed;
   size_t bytesMarkCompacted;
+  GC_stack currentStack;
   struct rusage ru_start;
 
   if (detailedGCTime (s))
@@ -289,6 +441,7 @@ void majorMarkCompactGC (GC_state s) {
              (uintptr_t)(s->heap.start),
              uintmaxToCommaString(s->heap.size));
   }
+  currentStack = getStackCurrent (s);
   if (s->hashConsDuringGC) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
@@ -300,8 +453,8 @@ void majorMarkCompactGC (GC_state s) {
   }
   updateWeaksForMarkCompact (s);
   foreachGlobalObjptr (s, threadInternalObjptr);
-  updateForwardPointersForMarkCompact (s);
-  updateBackwardPointersAndSlideForMarkCompact (s);
+  updateForwardPointersForMarkCompact (s, currentStack);
+  updateBackwardPointersAndSlideForMarkCompact (s, currentStack);
   clearCrossMap (s);
   bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;
   s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;

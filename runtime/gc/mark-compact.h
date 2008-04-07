@@ -11,8 +11,8 @@
 static inline void copyForThreadInternal (pointer dst, pointer src);
 static inline void threadInternalObjptr (GC_state s, objptr *opp);
 static inline void updateWeaksForMarkCompact (GC_state s);
-static void updateForwardPointersForMarkCompact (GC_state s);
-static void updateBackwardPointersAndSlideForMarkCompact (GC_state s);
+static void updateForwardPointersForMarkCompact (GC_state s, GC_stack currentStack);
+static void updateBackwardPointersAndSlideForMarkCompact (GC_state s, GC_stack currentStack);
 static void majorMarkCompactGC (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
