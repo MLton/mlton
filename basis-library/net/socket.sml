@@ -332,8 +332,9 @@ structure CtlExtra =
       fun getERROR s =
          let
             val se = getSockOptInt (Prim.Ctl.SOL_SOCKET, Prim.Ctl.SO_ERROR) s
+            val se = PrePosix.SysError.fromRep se
          in
-            if 0 = se
+            if PosixError.cleared = se
                then NONE
                else SOME (Error.errorMsg se, SOME se)
          end handle Error.SysErr z => SOME z

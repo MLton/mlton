@@ -11,5 +11,6 @@ structure PrePosix =
       structure GId = MkAbsRepEq(type rep = C_GId.t)
       structure PId = MkAbsRepEq(type rep = C_PId.t)
       structure Signal = MkAbsRepEq(type rep = C_Signal.t)
+      structure SysError = MkAbsRepEq(type rep = C_Int.t)
       structure UId = MkAbsRepEq(type rep = C_UId.t)
    end

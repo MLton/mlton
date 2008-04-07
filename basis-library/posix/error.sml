@@ -10,93 +10,94 @@ structure PosixError: POSIX_ERROR_EXTRA =
    struct
       structure Prim = PrimitiveFFI.Posix.Error
       open Prim
+      structure SysError = PrePosix.SysError
 
-      type syserror = C_Int.t
+      type syserror = SysError.t
 
-      val acces = EACCES
-      val addrinuse = EADDRINUSE
-      val addrnotavail = EADDRNOTAVAIL
-      val afnosupport = EAFNOSUPPORT
-      val again = EAGAIN
-      val already = EALREADY
-      val badf = EBADF
-      val badmsg = EBADMSG
-      val busy = EBUSY
-      val canceled = ECANCELED
-      val child = ECHILD
-      val connaborted = ECONNABORTED
-      val connrefused = ECONNREFUSED
-      val connreset = ECONNRESET
-      val deadlk = EDEADLK
-      val destaddrreq = EDESTADDRREQ
-      val dom = EDOM
-      val dquot = EDQUOT
-      val exist = EEXIST
-      val fault = EFAULT
-      val fbig = EFBIG
-      val hostunreach = EHOSTUNREACH
-      val idrm = EIDRM
-      val ilseq = EILSEQ
-      val inprogress = EINPROGRESS
-      val intr = EINTR
-      val inval = EINVAL
-      val io = EIO
-      val isconn = EISCONN
-      val isdir = EISDIR
-      val loop = ELOOP
-      val mfile = EMFILE
-      val mlink = EMLINK
-      val msgsize = EMSGSIZE
-      val multihop = EMULTIHOP
-      val nametoolong = ENAMETOOLONG
-      val netdown = ENETDOWN
-      val netreset = ENETRESET
-      val netunreach = ENETUNREACH
-      val nfile = ENFILE
-      val nobufs = ENOBUFS
-      val nodata = ENODATA
-      val nodev = ENODEV
-      val noent = ENOENT
-      val noexec = ENOEXEC
-      val nolck = ENOLCK
-      val nolink = ENOLINK
-      val nomem = ENOMEM
-      val nomsg = ENOMSG
-      val noprotoopt = ENOPROTOOPT
-      val nospc = ENOSPC
-      val nosr = ENOSR
-      val nostr = ENOSTR
-      val nosys = ENOSYS
-      val notconn = ENOTCONN
-      val notdir = ENOTDIR
-      val notempty = ENOTEMPTY
-      val notsock = ENOTSOCK
-      val notsup = ENOTSUP
-      val notty = ENOTTY
-      val nxio = ENXIO
-      val opnotsupp = EOPNOTSUPP
-      val overflow = EOVERFLOW
-      val perm = EPERM
-      val pipe = EPIPE
-      val proto = EPROTO
-      val protonosupport = EPROTONOSUPPORT
-      val prototype = EPROTOTYPE
-      val range = ERANGE
-      val rofs = EROFS
-      val spipe = ESPIPE
-      val srch = ESRCH
-      val stale = ESTALE
-      val time = ETIME
-      val timedout = ETIMEDOUT
-      val toobig = E2BIG
-      val txtbsy = ETXTBSY
-      val wouldblock = EWOULDBLOCK
-      val xdev = EXDEV
+      val acces = SysError.fromRep EACCES
+      val addrinuse = SysError.fromRep EADDRINUSE
+      val addrnotavail = SysError.fromRep EADDRNOTAVAIL
+      val afnosupport = SysError.fromRep EAFNOSUPPORT
+      val again = SysError.fromRep EAGAIN
+      val already = SysError.fromRep EALREADY
+      val badf = SysError.fromRep EBADF
+      val badmsg = SysError.fromRep EBADMSG
+      val busy = SysError.fromRep EBUSY
+      val canceled = SysError.fromRep ECANCELED
+      val child = SysError.fromRep ECHILD
+      val connaborted = SysError.fromRep ECONNABORTED
+      val connrefused = SysError.fromRep ECONNREFUSED
+      val connreset = SysError.fromRep ECONNRESET
+      val deadlk = SysError.fromRep EDEADLK
+      val destaddrreq = SysError.fromRep EDESTADDRREQ
+      val dom = SysError.fromRep EDOM
+      val dquot = SysError.fromRep EDQUOT
+      val exist = SysError.fromRep EEXIST
+      val fault = SysError.fromRep EFAULT
+      val fbig = SysError.fromRep EFBIG
+      val hostunreach = SysError.fromRep EHOSTUNREACH
+      val idrm = SysError.fromRep EIDRM
+      val ilseq = SysError.fromRep EILSEQ
+      val inprogress = SysError.fromRep EINPROGRESS
+      val intr = SysError.fromRep EINTR
+      val inval = SysError.fromRep EINVAL
+      val io = SysError.fromRep EIO
+      val isconn = SysError.fromRep EISCONN
+      val isdir = SysError.fromRep EISDIR
+      val loop = SysError.fromRep ELOOP
+      val mfile = SysError.fromRep EMFILE
+      val mlink = SysError.fromRep EMLINK
+      val msgsize = SysError.fromRep EMSGSIZE
+      val multihop = SysError.fromRep EMULTIHOP
+      val nametoolong = SysError.fromRep ENAMETOOLONG
+      val netdown = SysError.fromRep ENETDOWN
+      val netreset = SysError.fromRep ENETRESET
+      val netunreach = SysError.fromRep ENETUNREACH
+      val nfile = SysError.fromRep ENFILE
+      val nobufs = SysError.fromRep ENOBUFS
+      val nodata = SysError.fromRep ENODATA
+      val nodev = SysError.fromRep ENODEV
+      val noent = SysError.fromRep ENOENT
+      val noexec = SysError.fromRep ENOEXEC
+      val nolck = SysError.fromRep ENOLCK
+      val nolink = SysError.fromRep ENOLINK
+      val nomem = SysError.fromRep ENOMEM
+      val nomsg = SysError.fromRep ENOMSG
+      val noprotoopt = SysError.fromRep ENOPROTOOPT
+      val nospc = SysError.fromRep ENOSPC
+      val nosr = SysError.fromRep ENOSR
+      val nostr = SysError.fromRep ENOSTR
+      val nosys = SysError.fromRep ENOSYS
+      val notconn = SysError.fromRep ENOTCONN
+      val notdir = SysError.fromRep ENOTDIR
+      val notempty = SysError.fromRep ENOTEMPTY
+      val notsock = SysError.fromRep ENOTSOCK
+      val notsup = SysError.fromRep ENOTSUP
+      val notty = SysError.fromRep ENOTTY
+      val nxio = SysError.fromRep ENXIO
+      val opnotsupp = SysError.fromRep EOPNOTSUPP
+      val overflow = SysError.fromRep EOVERFLOW
+      val perm = SysError.fromRep EPERM
+      val pipe = SysError.fromRep EPIPE
+      val proto = SysError.fromRep EPROTO
+      val protonosupport = SysError.fromRep EPROTONOSUPPORT
+      val prototype = SysError.fromRep EPROTOTYPE
+      val range = SysError.fromRep ERANGE
+      val rofs = SysError.fromRep EROFS
+      val spipe = SysError.fromRep ESPIPE
+      val srch = SysError.fromRep ESRCH
+      val stale = SysError.fromRep ESTALE
+      val time = SysError.fromRep ETIME
+      val timedout = SysError.fromRep ETIMEDOUT
+      val toobig = SysError.fromRep E2BIG
+      val txtbsy = SysError.fromRep ETXTBSY
+      val wouldblock = SysError.fromRep EWOULDBLOCK
+      val xdev = SysError.fromRep EXDEV
 
       local
          infixr 5 ::?
          fun (n,s) ::? l =
-            if n = C_Int.fromInt ~1
+            if n = SysError.fromRep ~1
                then l
                else (n,s) :: l
       in
@@ -184,10 +185,10 @@ structure PosixError: POSIX_ERROR_EXTRA =
       end
       exception SysErr of string * syserror option
 
-      val toWord = SysWord.fromLargeInt o C_Int.toLarge
-      val fromWord = C_Int.fromLarge o SysWord.toLargeInt
+      val toWord = C_Int.castToSysWord o SysError.toRep
+      val fromWord = SysError.fromRep o C_Int.castFromSysWord
 
-      val cleared : syserror = 0
+      val cleared : syserror = SysError.fromRep 0
 
       fun errorName n =
          case List.find (fn (m, _) => n = m) errorNames of
@@ -210,9 +211,9 @@ structure PosixError: POSIX_ERROR_EXTRA =
             NONE => NONE
           | SOME (n, _) => SOME n
 
-      fun errorMsg (n: C_Int.t) =
+      fun errorMsg (n: syserror) =
          let
-            val cs = strError n
+            val cs = strError (SysError.toRep n)
          in
             if Primitive.MLton.Pointer.isNull 
                (Primitive.MLton.Pointer.fromWord cs)
@@ -251,7 +252,7 @@ structure PosixError: POSIX_ERROR_EXTRA =
                            then
                               (* Must getErrno () in the critical section. *)
                               let
-                                 val e = getErrno ()
+                                 val e = SysError.fromRep (getErrno ())
                                  val () = Thread.atomicEnd ()
                               in
                                  err {errno = e, handlers = handlers}
