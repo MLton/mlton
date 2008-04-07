@@ -179,7 +179,7 @@ size_t sizeofStackShrink (GC_state s, GC_stack stack, bool active) {
           (size_t)(s->controls.ratios.stackMaxReserved * stack->used);
         reservedShrink =
           (size_t)(s->controls.ratios.stackShrink * stack->reserved);
-        reservedMin= stack->used;
+        reservedMin = stack->used;
       }
       reservedNew =
         alignStackReserved
