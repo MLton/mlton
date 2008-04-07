@@ -171,7 +171,7 @@ size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
         reservedShrink =
           (stack->reserved <= reservedPermit)
           ? stack->reserved
-          : (size_t)(s->controls.ratios.stackCurrentShrink * stack->used);
+          : (size_t)(s->controls.ratios.stackCurrentShrink * stack->reserved);
         reservedMin = sizeofStackMinimumReserved (s, stack);
       } else {
         /* Shrink paused stacks. */
