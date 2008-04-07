@@ -60,15 +60,17 @@ void forwardObjptr (GC_state s, objptr *opp) {
                                          bytesNonObjptrs, numObjptrs);
       skip = 0;
     } else { /* Stack. */
+      bool active;
       GC_stack stack;
 
       assert (STACK_TAG == tag);
       headerBytes = GC_STACK_HEADER_SIZE;
       stack = (GC_stack)p;
+      active = getStackCurrent(s) == stack;
 
       size_t reservedMax, reservedShrink, reservedMin, reservedNew;
 
-      if (getStackCurrent(s) == stack) {
+      if (active) {
         /* Shrink active stacks. */
         reservedMax =
           (size_t)(s->controls.ratios.stackCurrentMaxReserved * stack->used);
@@ -96,8 +98,7 @@ void forwardObjptr (GC_state s, objptr *opp) {
        * grow the stack.  We cannot do any growing here because we may
        * run out of to space.
        */
-      assert (getStackCurrent(s) == stack
-              or reservedNew <= stack->reserved);
+      assert (active or reservedNew <= stack->reserved);
       if (reservedNew < stack->reserved) {
         if (DEBUG_STACKS or s->controls.messages)
           fprintf (stderr,
