@@ -169,55 +169,55 @@ size_t sizeofStackGrow (GC_state s, GC_stack stack) {
 }
 
 size_t sizeofStackShrink (GC_state s, GC_stack stack, bool current) {
-      double usedD, reservedD;
-      size_t reservedMax, reservedShrink, reservedMin, reservedNew;
-      const size_t RESERVED_MAX = (SIZE_MAX >> 2);
+  double usedD, reservedD;
+  size_t reservedMax, reservedShrink, reservedMin, reservedNew;
+  const size_t RESERVED_MAX = (SIZE_MAX >> 2);
 
-      usedD = (double)(stack->used);
-      reservedD = (double)(stack->reserved);
-      if (current) {
-        /* Shrink current stacks. */
-        double reservedMaxD =
-          (double)(s->controls.ratios.stackCurrentMaxReserved) * usedD;
-        reservedMax =
-          reservedMaxD > (double)RESERVED_MAX
-          ? RESERVED_MAX
-          : (size_t)reservedMaxD;
-        double reservedPermitD =
-          (double)(s->controls.ratios.stackCurrentPermitReserved) * usedD;
-        size_t reservedPermit =
-          reservedPermitD > (double)RESERVED_MAX
-          ? RESERVED_MAX
-          : (size_t)reservedPermitD;
-        reservedShrink =
-          (stack->reserved <= reservedPermit)
-          ? stack->reserved
-          : (size_t)((double)(s->controls.ratios.stackCurrentShrink) * reservedD);
-        reservedMin = sizeofStackMinimumReserved (s, stack);
-      } else {
-        /* Shrink paused stacks. */
-        double reservedMaxD =
-          (double)(s->controls.ratios.stackMaxReserved) * usedD;
-        reservedMax =
-          reservedMaxD > (double)RESERVED_MAX
-          ? RESERVED_MAX
-          : (size_t)reservedMaxD;
-        reservedShrink =
-          (size_t)((double)s->controls.ratios.stackShrink * reservedD);
-        reservedMin = stack->used;
-      }
-      reservedNew =
-        alignStackReserved
-        (s, max(min(reservedMax,reservedShrink),reservedMin));
-      /* It's possible that reservedNew > stack->reserved for the
-       * current stack if the stack invariant is violated.  In that
-       * case, we want to leave the stack alone, because some other
-       * part of the gc will grow the stack.  We cannot do any growing
-       * here because we may run out of to space.
-       */
-      assert (current or reservedNew <= stack->reserved);
-      reservedNew = min (stack->reserved, reservedNew);
-      return reservedNew;
+  usedD = (double)(stack->used);
+  reservedD = (double)(stack->reserved);
+  if (current) {
+    /* Shrink current stacks. */
+    double reservedMaxD =
+      (double)(s->controls.ratios.stackCurrentMaxReserved) * usedD;
+    reservedMax =
+      reservedMaxD > (double)RESERVED_MAX
+      ? RESERVED_MAX
+      : (size_t)reservedMaxD;
+    double reservedPermitD =
+      (double)(s->controls.ratios.stackCurrentPermitReserved) * usedD;
+    size_t reservedPermit =
+      reservedPermitD > (double)RESERVED_MAX
+      ? RESERVED_MAX
+      : (size_t)reservedPermitD;
+    reservedShrink =
+      (stack->reserved <= reservedPermit)
+      ? stack->reserved
+      : (size_t)((double)(s->controls.ratios.stackCurrentShrink) * reservedD);
+    reservedMin = sizeofStackMinimumReserved (s, stack);
+  } else {
+    /* Shrink paused stacks. */
+    double reservedMaxD =
+      (double)(s->controls.ratios.stackMaxReserved) * usedD;
+    reservedMax =
+      reservedMaxD > (double)RESERVED_MAX
+      ? RESERVED_MAX
+      : (size_t)reservedMaxD;
+    reservedShrink =
+      (size_t)((double)s->controls.ratios.stackShrink * reservedD);
+    reservedMin = stack->used;
+  }
+  reservedNew =
+    alignStackReserved
+    (s, max(min(reservedMax,reservedShrink),reservedMin));
+  /* It's possible that reservedNew > stack->reserved for the current
+   * stack if the stack invariant is violated.  In that case, we want
+   * to leave the stack alone, because some other part of the gc will
+   * grow the stack.  We cannot do any growing here because we may run
+   * out of to space.
+   */
+  assert (current or reservedNew <= stack->reserved);
+  reservedNew = min (stack->reserved, reservedNew);
+  return reservedNew;
 }
 
 void copyStack (GC_state s, GC_stack from, GC_stack to) {
