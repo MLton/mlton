@@ -16,8 +16,6 @@ structure OS =
                   open Status
                   fun equals (s1,s2) =
                      (toRep s1) = (toRep s2)
-                  val fromC = fromRep
-                  val toC = toRep
                end
             type status = Status.t
          end

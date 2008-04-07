@@ -27,7 +27,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
                   case es of
                      W_EXITED => success
                    | W_EXITSTATUS w => 
-                        fromC (C_Status.castFromSysWord (Word8.castToSysWord w))
+                        fromRep (C_Status.castFromSysWord (Word8.castToSysWord w))
                    | W_SIGNALED _ => failure
                    | W_STOPPED _ => failure
                end
@@ -40,7 +40,7 @@ structure OS_Process: OS_PROCESS_EXTRA =
       fun isSuccess st = Status.equals (st, success)
 
       fun system cmd =
-         (Status.fromC o Posix.Error.SysCall.simpleResult)
+         (Status.fromRep o Posix.Error.SysCall.simpleResult)
          (fn () =>
           PrimitiveFFI.Posix.Process.system (NullString.nullTerm cmd))
 

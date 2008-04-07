@@ -10,8 +10,8 @@ structure Exit =
       structure Status = 
          struct
             open PreOS.Process.Status
-            val fromInt = fromC o C_Status.fromInt
-            val toInt = C_Status.toInt o toC
+            val fromInt = fromRep o C_Status.fromInt
+            val toInt = C_Status.toInt o toRep
             val failure = fromInt 1
             val success = fromInt 0
          end
@@ -24,7 +24,7 @@ structure Exit =
          else Cleaner.addNew (Cleaner.atExit, f)
 
       fun halt (status: Status.t) =
-         Primitive.MLton.halt (Status.toC status)
+         Primitive.MLton.halt (Status.toRep status)
 
       fun exit (status: Status.t): 'a =
          if !exiting
