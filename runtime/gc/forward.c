@@ -71,10 +71,12 @@ void forwardObjptr (GC_state s, objptr *opp) {
         /* Shrink active stacks. */
         reservedMax =
           (size_t)(s->controls.ratios.threadCurrentMaxReserved * stack->used);
+        size_t reservedPermit =
+          (size_t)(s->controls.ratios.threadCurrentPermitReserved * stack->used);
         reservedShrink =
-          (stack->used <= stack->reserved / 4)
-          ? (size_t)(s->controls.ratios.threadCurrentShrink * stack->reserved)
-          : stack->reserved;
+          (reservedPermit >= stack->reserved)
+          ? stack->reserved
+          : (size_t)(s->controls.ratios.threadCurrentShrink * stack->used);
         reservedMin = sizeofStackMinimumReserved (s, stack);
       } else {
         /* Shrink paused stacks. */

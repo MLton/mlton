@@ -33,6 +33,7 @@ struct GC_ratios {
   float ramSlop;
   float threadCurrentGrow;
   float threadCurrentMaxReserved;
+  float threadCurrentPermitReserved;
   float threadCurrentShrink;
   float threadMaxReserved;
   float threadShrink;

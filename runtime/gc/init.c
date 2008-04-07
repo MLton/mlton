@@ -205,6 +205,13 @@ int processAtMLton (GC_state s, int argc, char **argv,
           s->controls.ratios.threadCurrentMaxReserved = stringToFloat (argv[i++]);
           unless (1.0 < s->controls.ratios.threadCurrentMaxReserved)
             die ("@MLton thread-current-max-reserved-ratio argument must greater than 1.0.");
+        } else if (0 == strcmp (arg, "thread-current-permit-reserved-ratio")) {
+          i++;
+          if (i == argc)
+            die ("@MLton thread-current-permit-reserved-ratio missing argument.");
+          s->controls.ratios.threadCurrentPermitReserved = stringToFloat (argv[i++]);
+          unless (1.0 < s->controls.ratios.threadCurrentPermitReserved)
+            die ("@MLton thread-current-permit-reserved-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "thread-current-shrink-ratio")) {
           i++;
           if (i == argc)
@@ -275,6 +282,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->controls.ratios.ramSlop = 0.5;
   s->controls.ratios.threadCurrentGrow = 2.0;
   s->controls.ratios.threadCurrentMaxReserved = 8.0;
+  s->controls.ratios.threadCurrentPermitReserved = 4.0;
   s->controls.ratios.threadCurrentShrink = 0.5;
   s->controls.ratios.threadMaxReserved = 4.0;
   s->controls.ratios.threadShrink = 0.5;
@@ -332,6 +340,9 @@ int GC_init (GC_state s, int argc, char **argv) {
   unless (s->controls.ratios.markCompact <= s->controls.ratios.copy
           and s->controls.ratios.copy <= s->controls.ratios.live)
     die ("Ratios must satisfy mark-compact-ratio <= copy-ratio <= live-ratio.");
+  unless (s->controls.ratios.threadCurrentPermitReserved
+          <= s->controls.ratios.threadCurrentMaxReserved)
+    die ("Ratios must satisfy thread-current-permit-reserved <= thread-current-max-reserved.");
   /* We align s->ram by pageSize so that we can test whether or not we
    * we are using mark-compact by comparing heap size to ram size.  If
    * we didn't round, the size might be slightly off.
