@@ -110,3 +110,14 @@ typedef size_t socklen_t;
 typedef uint32_t socklen_t;
 #endif /* defined(_XPG4_2) && !defined(_XPG5) && !defined(_LP64) */
 #endif /* _SOCKLEN_T */
+
+/* Solaris 8 and older do not define a value for UINTPTR_MAX, so
+   we redefine it with a value. */
+#ifdef UINTPTR_MAX
+#undef UINTPTR_MAX
+#if defined(_LP64) || defined(_I32LPx)
+#define UINTPTR_MAX     UINT64_MAX
+#else
+#define UINTPTR_MAX     UINT32_MAX
+#endif
+#endif
