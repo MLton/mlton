@@ -34,6 +34,12 @@ signature POSIX_SIGNAL_EXTRA =
       val prof: signal
       val vtalrm: signal
 
+      val fromRep: C_Int.t -> signal
+      val toRep: signal -> C_Int.t
+
+      val repFromInt: int -> C_Int.t
+      val repToInt: C_Int.t -> int
+
       val fromInt: int -> signal
       val toInt: signal -> int
    end

@@ -78,9 +78,9 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                      0 => W_EXITED
                    | n => W_EXITSTATUS (Word8.castFromSysWord (C_Int.castToSysWord n)))
          else if Prim.ifSignaled status <> C_Int.zero
-            then W_SIGNALED (Prim.termSig status)
+            then W_SIGNALED (PosixSignal.fromRep (Prim.termSig status))
          else if Prim.ifStopped status <> C_Int.zero
-            then W_STOPPED (Prim.stopSig status)
+            then W_STOPPED (PosixSignal.fromRep (Prim.stopSig status))
          else raise Fail "Posix.Process.fromStatus"
       fun fromStatus status =
          fromStatus' (PreOS.Status.toRep status)
@@ -160,6 +160,7 @@ structure PosixProcess: POSIX_PROCESS_EXTRA =
                   K_PROC pid => pid
                 | K_SAME_GROUP => C_PId.castFromFixedInt ~1
                 | K_GROUP pid => C_PId.~ pid
+            val s = PosixSignal.toRep s
          in
             SysCall.simple (fn () => Prim.kill (pid, s))
          end

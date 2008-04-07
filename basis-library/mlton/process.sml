@@ -214,12 +214,13 @@ structure MLtonProcess =
         case !status of
            NONE =>
               let
+                 val signal' = PosixSignal.toRep signal
                  val () =
                     if useWindowsProcess
                        then
                           SysCall.simple
                           (fn () =>
-                           PrimitiveFFI.Windows.Process.terminate (pid, signal))
+                           PrimitiveFFI.Windows.Process.terminate (pid, signal'))
                     else Process.kill (Process.K_PROC pid, signal)
               in
                  ignore (reap p)

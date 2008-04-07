@@ -31,7 +31,7 @@ val validSignals =
    (C_Int.toInt Prim.NSIG, fn i => 
     SysCall.syscallErr
     ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
-     {return = Prim.sigismember (fromInt i),
+     {return = Prim.sigismember (repFromInt i),
       post = fn _ => true,
       handlers = [(Error.inval, fn () => false)]}))
 
@@ -54,9 +54,10 @@ structure Mask =
            if b
               then let
                       val s = fromInt i
+                      val s' = repFromInt i
                       val res =
                          SysCall.simpleResult
-                         (fn () => Prim.sigismember s)
+                         (fn () => Prim.sigismember s')
                    in
                       if res = C_Int.fromInt 1
                          then s::sigs
@@ -70,10 +71,14 @@ structure Mask =
          case m of
             AllBut signals =>
                (SysCall.simple Prim.sigfillset
-                ; List.app (fn s => SysCall.simple (fn () => Prim.sigdelset s)) signals)
+                ; List.app (fn s => SysCall.simple
+                                    (fn () => Prim.sigdelset (toRep s)))
+                           signals)
           | Some signals =>
                (SysCall.simple Prim.sigemptyset
-                ; List.app (fn s => SysCall.simple (fn () => Prim.sigaddset s)) signals)
+                ; List.app (fn s => SysCall.simple
+                                    (fn () => Prim.sigaddset (toRep s)))
+                           signals)
 
       local
          fun make (how: how) (m: t) =
@@ -114,7 +119,7 @@ in
    fun initHandler (s: signal): Handler.t =
       SysCall.syscallErr
       ({clear = false, restart = false, errVal = C_Int.fromInt ~1}, fn () =>
-       {return = Prim.isDefault (s, r),
+       {return = Prim.isDefault (toRep s, r),
         post = fn _ => if !r <> C_Int.zero then Default else Ignore,
         handlers = [(Error.inval, fn () => InvalidSignal)]})
 end
@@ -194,7 +199,7 @@ structure Handler =
                       (fn (s, h, fs) =>
                        case h of
                           Handler f =>
-                             if Prim.isPending (fromInt s) <> C_Int.zero
+                             if Prim.isPending (repFromInt s) <> C_Int.zero
                                 then f::fs 
                                 else fs
                         | _ => fs) fs handlers
@@ -217,16 +222,16 @@ val setHandler = fn (s, h) =>
     | (Default, Default) => ()
     | (_, Default) => 
          (setHandler (s, Default)
-          ; SysCall.simpleRestart (fn () => Prim.default s))
+          ; SysCall.simpleRestart (fn () => Prim.default (toRep s)))
     | (Handler _, Handler _) =>
          setHandler (s, h)
     | (_, Handler _) =>
          (setHandler (s, h)
-          ; SysCall.simpleRestart (fn () => Prim.handlee s))
+          ; SysCall.simpleRestart (fn () => Prim.handlee (toRep s)))
     | (Ignore, Ignore) => ()
     | (_, Ignore) => 
          (setHandler (s, Ignore)
-          ; SysCall.simpleRestart (fn () => Prim.ignore s))
+          ; SysCall.simpleRestart (fn () => Prim.ignore (toRep s)))
 
 fun suspend m =
    (Mask.write m
