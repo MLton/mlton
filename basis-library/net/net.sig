@@ -17,4 +17,5 @@ signature NET =
             val hton: C_Int.t -> C_Int.t
             val ntoh: C_Int.t -> C_Int.t
          end
+      structure Sock : ABS_REP where type Rep.t = C_Sock.t
    end

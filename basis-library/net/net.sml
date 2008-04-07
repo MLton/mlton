@@ -68,4 +68,6 @@ structure Net : NET =
                val ntoh = S.f
             end
          end
+
+      structure Sock = MkAbsRep(type rep = C_Sock.t)
    end

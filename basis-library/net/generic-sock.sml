@@ -12,16 +12,17 @@ structure GenericSock : GENERIC_SOCK =
       structure PESC = PE.SysCall
 
       fun socket' (af, st, p) =
-         PESC.simpleResult
+         (Net.Sock.fromRep o PESC.simpleResult)
          (fn () => Prim.socket (af, st, C_Int.fromInt p))
 
       fun socketPair' (af, st, p) =
          let
-            val a = Array.array (2, 0)
+            val a : C_Sock.t array = Array.array (2, C_Sock.fromInt 0)
+            val get = fn i => Net.Sock.fromRep (Array.sub (a, i))
          in
             PESC.syscall
             (fn () => (Prim.socketPair (af, st, C_Int.fromInt p, a), fn _ => 
-                       (Array.sub (a, 0), Array.sub (a, 1))))
+                       (get 0, get 1)))
          end
 
       fun socket (af, st) = socket' (af, st, 0)
