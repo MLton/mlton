@@ -87,8 +87,8 @@ void forwardObjptr (GC_state s, objptr *opp) {
            */
           if (reservedNew <= stack->reserved) {
             stack->reserved = reservedNew;
-            if (DEBUG_STACKS)
-              fprintf (stderr, "Shrinking stack to size %s.\n",
+            if (DEBUG_STACKS or s->controls.messages)
+              fprintf (stderr, "[GC: Shrinking stack to size %s bytes.]\n",
                        uintmaxToCommaString(stack->reserved));
           }
         }
@@ -105,8 +105,8 @@ void forwardObjptr (GC_state s, objptr *opp) {
         assert (reservedNew <= stack->reserved);
         if (reservedNew < stack->reserved) {
           stack->reserved = reservedNew;
-          if (DEBUG_STACKS)
-            fprintf (stderr, "Shrinking stack to size %s.\n",
+          if (DEBUG_STACKS or s->controls.messages)
+            fprintf (stderr, "[GC: Shrinking stack to size %s bytes.]\n",
                      uintmaxToCommaString(stack->reserved));
         }
       }
