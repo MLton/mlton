@@ -203,7 +203,7 @@ int processAtMLton (GC_state s, int argc, char **argv,
           if (i == argc)
             die ("@MLton thread-max-reserved-ratio missing argument.");
           s->controls.ratios.threadMaxReserved = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadGrow)
+          unless (1.0 < s->controls.ratios.threadMaxReserved)
             die ("@MLton thread-max-reserved-ratio argument must greater than 1.0.");
         } else if (0 == strcmp (arg, "thread-shrink-ratio")) {
           i++;
