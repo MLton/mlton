@@ -217,7 +217,8 @@ int processAtMLton (GC_state s, int argc, char **argv,
           if (i == argc)
             die ("@MLton thread-current-shrink-ratio missing argument.");
           s->controls.ratios.threadCurrentShrink = stringToFloat (argv[i++]);
-          unless (1.0 < s->controls.ratios.threadCurrentShrink)
+          unless (0.0 <= s->controls.ratios.threadCurrentShrink
+                  and s->controls.ratios.threadCurrentShrink <= 1.0)
             die ("@MLton thread-current-shrink-ratio argument must be between 0.0 and 1.0.");
         } else if (0 == strcmp (arg, "thread-max-reserved-ratio")) {
           i++;
