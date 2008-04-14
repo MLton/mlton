@@ -306,13 +306,16 @@ the symbol."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Info
 
-(defun def-use-show-msg ()
-  "Shows the message for the symbol under the cursor."
-  (interactive)
+(defun def-use-show-msg (&optional copy-to-kill-ring)
+  "Shows the message for the symbol under the cursor.  With a prefix
+argument the message is also inserted to the `kill-ring'."
+  (interactive "P")
   (let ((sym (def-use-current-sym)))
     (when sym
       (message "%s" (or (def-use-sym-msg sym)
-                        "Sorry, no message attached to the symbol.")))))
+                        "Sorry, no message attached to the symbol."))
+      (when (and (def-use-sym-msg sym))
+        (kill-new (def-use-sym-msg sym))))))
 
 (defun def-use-show-info ()
   "Shows info on the symbol under the cursor."
