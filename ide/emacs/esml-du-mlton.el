@@ -244,6 +244,10 @@ beginning of the symbol."
     (when timer
       (compat-delete-timer timer)
       (esml-du-ctx-set-poll-timer nil ctx)))
+  (let ((timer (esml-du-ctx-reload-timer ctx)))
+    (when timer
+      (compat-delete-timer timer)
+      (esml-du-ctx-set-reload-timer nil ctx)))
   (esml-du-set-live-dufs
    (remove* (esml-du-ctx-duf ctx)
             esml-du-live-dufs
@@ -254,7 +258,7 @@ beginning of the symbol."
 
 (defun esml-du-ctx (duf)
   (let ((ctx (vector (def-use-make-hash-table) (def-use-make-hash-table)
-                     duf nil nil nil 0 nil)))
+                     duf nil nil nil 0 nil nil)))
     (when esml-du-change-poll-period
       (esml-du-ctx-set-poll-timer
        (run-with-timer esml-du-change-poll-period esml-du-change-poll-period
@@ -262,6 +266,7 @@ beginning of the symbol."
        ctx))
     ctx))
 
+(defun esml-du-ctx-reload-timer      (ctx) (aref ctx 8))
 (defun esml-du-ctx-parsing?          (ctx) (aref ctx 7))
 (defun esml-du-ctx-parse-cnt         (ctx) (aref ctx 6))
 (defun esml-du-ctx-poll-timer        (ctx) (aref ctx 5))
@@ -274,10 +279,11 @@ beginning of the symbol."
 (defun esml-du-ctx-inc-parse-cnt  (ctx)
   (aset ctx 6 (1+ (aref ctx 6))))
 
-(defun esml-du-ctx-set-parsing?   (bool  ctx) (aset ctx 7 bool))
-(defun esml-du-ctx-set-poll-timer (timer ctx) (aset ctx 5 timer))
-(defun esml-du-ctx-set-buf        (buf   ctx) (aset ctx 4 buf))
-(defun esml-du-ctx-set-attr       (attr  ctx) (aset ctx 3 attr))
+(defun esml-du-ctx-set-reload-timer (timer ctx) (aset ctx 8 timer))
+(defun esml-du-ctx-set-parsing?     (bool  ctx) (aset ctx 7 bool))
+(defun esml-du-ctx-set-poll-timer   (timer ctx) (aset ctx 5 timer))
+(defun esml-du-ctx-set-buf          (buf   ctx) (aset ctx 4 buf))
+(defun esml-du-ctx-set-attr         (attr  ctx) (aset ctx 3 attr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parsing
@@ -304,11 +310,27 @@ beginning of the symbol."
     (,(def-use-intern "exception")   . ,font-lock-variable-name-face)))
 
 (defun esml-du-reload (ctx)
-  "Reloads the def-use file if it has been modified."
-  (when (def-use-attr-changed?
-          (file-attributes (esml-du-ctx-duf ctx))
-          (esml-du-ctx-attr ctx))
-    (esml-du-load ctx)))
+  "Schedules a reload of the def-use file if it has been modified."
+  (let ((attrs (file-attributes (esml-du-ctx-duf ctx))))
+    (when (def-use-attr-changed?
+            attrs
+            (esml-du-ctx-attr ctx))
+      (when (esml-du-ctx-reload-timer ctx)
+        (compat-delete-timer (esml-du-ctx-reload-timer ctx)))
+      (esml-du-ctx-set-reload-timer
+       (run-with-idle-timer
+        0.5
+        nil
+        (function
+         (lambda (ctx attrs)
+           (if (def-use-attr-changed?
+                 (file-attributes (esml-du-ctx-duf ctx))
+                 attrs)
+               (esml-du-reload ctx)
+             (esml-du-ctx-set-reload-timer nil ctx)
+             (esml-du-load ctx))))
+        ctx attrs)
+       ctx))))
 
 (defun esml-du-try-to-read-symbol-at-ref-once (ref ctx)
   (when (search-forward (esml-du-ref-to-appx-syntax ref) nil t)
