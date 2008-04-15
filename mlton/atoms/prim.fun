@@ -182,7 +182,7 @@ datatype 'a t =
  | Word_ror of WordSize.t (* codegen *)
  | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
  | Word_sub of WordSize.t (* codegen *)
- | Word_subCheck of WordSize.t* {signed: bool} (* codegen *)
+ | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
  | Word_toIntInf (* ssa to rssa *)
  | Word_xorb of WordSize.t (* codegen *)
  | WordVector_toIntInf (* ssa to rssa *)
@@ -1689,6 +1689,7 @@ fun ('a, 'b) apply (p: 'a t,
                               | Word_quot (s, _) => word (WordX.one s)
                               | Word_rem (s, _) => word (WordX.zero s)
                               | Word_sub s => word (WordX.zero s)
+                              | Word_subCheck (s, _) => word (WordX.zero s)
                               | Word_xorb s => word (WordX.zero s)
                               | _ => Unknown
                           end
