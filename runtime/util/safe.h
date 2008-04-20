@@ -48,13 +48,10 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
 
   res = fread (buf, size, count, f);
   if (res != count) {
-    if (feof (f))
-       fprintf (stderr, "eof\n");
-    else
-       fprintf (stderr, "errno = %d\n", ferror (f));
     diee ("fread ("FMTPTR", %"PRIuMAX", %"PRIuMAX", _) failed "
-          "(only read %"PRIuMAX").\n",
-          (uintptr_t)buf, (uintmax_t)size, (uintmax_t)count, (uintmax_t)res);
+          "(only read %"PRIuMAX"%s).\n",
+          (uintptr_t)buf, (uintmax_t)size, (uintmax_t)count, (uintmax_t)res,
+          feof (f) ? "; eof" : "");
   }
 }
 
