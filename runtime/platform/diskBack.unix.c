@@ -35,6 +35,7 @@ void GC_diskBack_read (void *data, pointer buf, size_t size) {
   FILE *f;
 
   f = ((WriteToDiskData)data)->f;
+  fseek_safe (f, 0, SEEK_SET);
   fread_safe (buf, 1, size, f);
 }
 

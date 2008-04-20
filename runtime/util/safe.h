@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -56,6 +56,16 @@ static inline void fread_safe (void *buf, size_t size, size_t count, FILE *f) {
           "(only read %"PRIuMAX").\n",
           (uintptr_t)buf, (uintmax_t)size, (uintmax_t)count, (uintmax_t)res);
   }
+}
+
+static inline int fseek_safe (FILE *f, long offset, int whence) {
+  int res;
+
+  res = fseek (f, offset, whence);
+  if (-1 == res)
+    diee ("fseek (_, %"PRIuMAX", %"PRIuMAX") failed.\n",
+          (uintmax_t)offset, (uintmax_t)whence);
+  return res;
 }
 
 static inline void fwrite_safe (const void *buf, size_t size, size_t count,
