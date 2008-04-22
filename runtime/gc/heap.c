@@ -346,6 +346,7 @@ copy:
       }
       GC_diskBack_read (data, curHeapp->start, size);
       GC_diskBack_close (data);
+      curHeapp->oldGenSize = size;
     } else {
       GC_diskBack_close (data);
       if (s->controls.messages)
