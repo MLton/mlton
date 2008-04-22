@@ -355,6 +355,8 @@ copy:
            uintmaxToCommaString(minSize));
     }
   } else {
+    if (s->controls.messages)
+      GC_displayMem ();
     die ("Out of memory.  Unable to allocate heap with %s bytes.\n",
          uintmaxToCommaString(minSize));
   }
