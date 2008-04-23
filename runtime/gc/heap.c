@@ -169,7 +169,8 @@ bool createHeap (GC_state s, GC_heap h,
    * to fail.  This is important for large heaps.
    * Note that the loop always trys a NULL address last.
    */
-  for (h->size = desiredSize; h->size >= minSize; h->size -= backoff) {
+  h->size = desiredSize;
+  do {
     const unsigned int countLog2 = 5;
     const unsigned int count = 0x1 << countLog2;
     const size_t step = (size_t)0x1 << (ADDRESS_BITS - countLog2);
@@ -218,11 +219,20 @@ bool createHeap (GC_state s, GC_heap h,
                uintmaxToCommaString (backoff),
                uintmaxToCommaString (minSize));
     }
-    /* For the last round, try to allocate minSize (and no more). */
     if (h->size > minSize
-        and (h->size - backoff) < minSize)
-      backoff = h->size - minSize;
-  }
+        and (h->size - backoff) < minSize) {
+      h->size = minSize;
+    } else {
+      h->size -= backoff;
+    }
+
+    size_t nextSize = h->size - backoff;
+    if (nextSize < minSize and minSize < h->size) {
+      h->size = minSize;
+    } else {
+      h->size = nextSize;
+    }
+  } while (h->size >= minSize);
   h->size = 0;
   return FALSE;
 }
