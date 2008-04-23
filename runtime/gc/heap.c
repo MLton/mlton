@@ -142,8 +142,7 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keep) {
  * allocates a heap of the size necessary to work with desiredSize
  * live data, and ensures that at least minSize is available.  It
  * returns TRUE if it is able to allocate the space, and returns FALSE
- * if it is unable.  If a reasonable size to space is already there,
- * then heapCreate leaves it.
+ * if it is unable.
  */
 bool createHeap (GC_state s, GC_heap h,
                  size_t desiredSize,
@@ -427,7 +426,7 @@ void resizeHeapSecondary (GC_state s) {
   if (0 == secondarySize)
     return;
   if (2 * primarySize > s->sysvals.ram)
-    /* Holding on to heap2 might cause paging.  So don't. */
+    /* Holding on to secondaryHeap might cause paging.  So don't. */
     releaseHeap (s, &s->secondaryHeap);
   else if (secondarySize < primarySize) {
     unless (remapHeap (s, &s->secondaryHeap, primarySize, primarySize))
