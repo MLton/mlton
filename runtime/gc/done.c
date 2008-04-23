@@ -93,4 +93,11 @@ void GC_done (GC_state s) {
   }
   releaseHeap (s, &s->heap);
   releaseHeap (s, &s->secondaryHeap);
+  if (s->mutatorMarksCards) {
+    releaseCardMapAndCrossMap (s,
+                               s->generationalMaps.cardMap,
+                               s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE,
+                               s->generationalMaps.crossMap,
+                               s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
+  }
 }

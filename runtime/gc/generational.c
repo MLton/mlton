@@ -147,13 +147,15 @@ void createCardMapAndCrossMap (GC_state s) {
   s->generationalMaps.crossMapLength = crossMapLength;
 
   totalMapSize = cardMapSize + crossMapSize;
-  if (DEBUG_MEM)
-    fprintf (stderr, "Creating card/cross map of size %s\n",
-             uintmaxToCommaString(totalMapSize));
   s->generationalMaps.cardMap =
     GC_mmapAnon_safe (NULL, totalMapSize);
   s->generationalMaps.crossMap =
     (s->generationalMaps.cardMap + (cardMapSize / CARD_MAP_ELEM_SIZE));
+  if (DEBUG_MEM or s->controls.messages)
+    fprintf (stderr,
+             "[GC: Created card/cross map at "FMTPTR" of size %s bytes.]\n",
+             (uintptr_t)(s->generationalMaps.cardMap),
+             uintmaxToCommaString(totalMapSize));
   if (DEBUG_CARD_MARKING)
     fprintf (stderr, "cardMap = "FMTPTR"  crossMap = "FMTPTR"\n",
              (uintptr_t)s->generationalMaps.cardMap,
@@ -161,6 +163,24 @@ void createCardMapAndCrossMap (GC_state s) {
   setCardMapAbsolute (s);
   clearCardMap (s);
   clearCrossMap (s);
+}
+
+void releaseCardMapAndCrossMap (GC_state s,
+                                GC_cardMap cardMap,
+                                size_t cardMapSize,
+                                __attribute__ ((unused)) GC_crossMap crossMap,
+                                size_t crossMapSize) {
+
+  size_t totalMapSize;
+
+  assert (crossMap == cardMap + (cardMapSize / CARD_MAP_ELEM_SIZE));
+  totalMapSize = cardMapSize + crossMapSize;
+  if (DEBUG_MEM or s->controls.messages)
+    fprintf (stderr,
+             "[GC: Releasing card/cross map at "FMTPTR" of size %s bytes.]\n",
+             (uintptr_t)cardMap,
+             uintmaxToCommaString(totalMapSize));
+  GC_release (cardMap, totalMapSize);
 }
 
 void resizeCardMapAndCrossMap (GC_state s) {
@@ -180,9 +200,7 @@ void resizeCardMapAndCrossMap (GC_state s) {
     GC_memcpy ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
                min (s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE,
                     oldCrossMapSize));
-    if (DEBUG_MEM)
-      fprintf (stderr, "Releasing card/cross map.\n");
-    GC_release (oldCardMap, oldCardMapSize + oldCrossMapSize);
+    releaseCardMapAndCrossMap (s, oldCardMap, oldCardMapSize, oldCrossMap, oldCrossMapSize);
   }
 }
 
