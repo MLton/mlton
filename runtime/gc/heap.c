@@ -157,6 +157,7 @@ bool createHeap (GC_state s, GC_heap h,
   assert (isHeapInit (h));
   if (desiredSize < minSize)
     desiredSize = minSize;
+  minSize = align (minSize, s->sysvals.pageSize);
   desiredSize = align (desiredSize, s->sysvals.pageSize);
   assert (0 == h->size and NULL == h->start);
   backoff = (desiredSize - minSize) / 20;
@@ -217,6 +218,10 @@ bool createHeap (GC_state s, GC_heap h,
                uintmaxToCommaString (backoff),
                uintmaxToCommaString (minSize));
     }
+    /* For the last round, try to allocate minSize (and no more). */
+    if (h->size > minSize
+        and (h->size - backoff) < minSize)
+      backoff = h->size - minSize;
   }
   h->size = 0;
   return FALSE;
