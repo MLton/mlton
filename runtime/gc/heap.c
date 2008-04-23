@@ -337,6 +337,13 @@ copy:
     }
     data = GC_diskBack_write (orig, size);
     releaseHeap (s, curHeapp);
+    if (s->mutatorMarksCards) {
+      releaseCardMapAndCrossMap (s,
+                                 s->generationalMaps.cardMap,
+                                 s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE,
+                                 s->generationalMaps.crossMap,
+                                 s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE);
+    }
     if (createHeap (s, curHeapp, desiredSize, minSize)) {
       if (DEBUG or s->controls.messages) {
         fprintf (stderr,
@@ -347,6 +354,10 @@ copy:
       GC_diskBack_read (data, curHeapp->start, size);
       GC_diskBack_close (data);
       curHeapp->oldGenSize = size;
+      if (s->mutatorMarksCards) {
+        createCardMapAndCrossMap (s);
+        updateCrossMap (s);
+      }
     } else {
       GC_diskBack_close (data);
       if (s->controls.messages)
