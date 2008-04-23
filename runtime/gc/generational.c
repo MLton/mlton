@@ -165,11 +165,11 @@ void createCardMapAndCrossMap (GC_state s) {
   clearCrossMap (s);
 }
 
-void releaseCardMapAndCrossMap (GC_state s,
-                                GC_cardMap cardMap,
-                                size_t cardMapSize,
-                                __attribute__ ((unused)) GC_crossMap crossMap,
-                                size_t crossMapSize) {
+void releaseCardMapAndCrossMapAux (GC_state s,
+                                   GC_cardMap cardMap,
+                                   size_t cardMapSize,
+                                   __attribute__ ((unused)) GC_crossMap crossMap,
+                                   size_t crossMapSize) {
 
   size_t totalMapSize;
 
@@ -181,6 +181,22 @@ void releaseCardMapAndCrossMap (GC_state s,
              (uintptr_t)cardMap,
              uintmaxToCommaString(totalMapSize));
   GC_release (cardMap, totalMapSize);
+}
+
+void releaseCardMapAndCrossMap (GC_state s) {
+  unless (s->mutatorMarksCards)
+    return;
+
+  GC_cardMap cardMap;
+  size_t cardMapSize;
+  GC_crossMap crossMap;
+  size_t crossMapSize;
+
+  cardMap = s->generationalMaps.cardMap;
+  cardMapSize = s->generationalMaps.cardMapLength * CARD_MAP_ELEM_SIZE;
+  crossMap = s->generationalMaps.crossMap;
+  crossMapSize = s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE;
+  releaseCardMapAndCrossMapAux (s, cardMap, cardMapSize, crossMap, crossMapSize);
 }
 
 void resizeCardMapAndCrossMap (GC_state s) {
@@ -200,7 +216,9 @@ void resizeCardMapAndCrossMap (GC_state s) {
     GC_memcpy ((pointer)oldCrossMap, (pointer)s->generationalMaps.crossMap,
                min (s->generationalMaps.crossMapLength * CROSS_MAP_ELEM_SIZE,
                     oldCrossMapSize));
-    releaseCardMapAndCrossMap (s, oldCardMap, oldCardMapSize, oldCrossMap, oldCrossMapSize);
+    releaseCardMapAndCrossMapAux (s,
+                                  oldCardMap, oldCardMapSize,
+                                  oldCrossMap, oldCrossMapSize);
   }
 }
 

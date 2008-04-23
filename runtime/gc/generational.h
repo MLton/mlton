@@ -77,9 +77,10 @@ static inline pointer getCrossMapCardStart (GC_state s, pointer p);
 static inline void clearCardMap (GC_state s);
 static inline void clearCrossMap (GC_state s);
 static void createCardMapAndCrossMap (GC_state s);
-static void releaseCardMapAndCrossMap (GC_state s,
-                                       GC_cardMap cardMap, size_t cardMapSize,
-                                       GC_crossMap crossMap, size_t crossMapSize);
+static void releaseCardMapAndCrossMap (GC_state s);
+static void releaseCardMapAndCrossMapAux (GC_state s,
+                                          GC_cardMap cardMap, size_t cardMapSize,
+                                          GC_crossMap crossMap, size_t crossMapSize);
 static void resizeCardMapAndCrossMap (GC_state s);
 
 #if ASSERT
