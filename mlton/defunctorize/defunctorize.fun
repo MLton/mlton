@@ -912,7 +912,10 @@ fun defunctorize (CoreML.Program.T {decs}) =
                end
          end
       and loopDecs (ds: Cdec.t vector, (e: Xexp.t, t: Xtype.t)): Xexp.t =
-         Vector.foldr (ds, e, fn (d, e) => loopDec (d, e, t))
+         loopDecsList (Vector.toList ds, (e, t))
+      (* Convert vector->list to allow processed Cdecs to be GC'ed. *)
+      and loopDecsList (ds: Cdec.t list, (e: Xexp.t, t: Xtype.t)): Xexp.t =
+         List.foldr (ds, e, fn (d, e) => loopDec (d, e, t))
       and loopExp (e: Cexp.t): Xexp.t * Xtype.t =
          let
             val (n, ty) = Cexp.dest e
