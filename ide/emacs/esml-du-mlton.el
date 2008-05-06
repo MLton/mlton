@@ -1,4 +1,4 @@
-;; Copyright (C) 2007 Vesa Karvonen
+;; Copyright (C) 2007-2008 Vesa Karvonen
 ;;
 ;; MLton is released under a BSD-style license.
 ;; See the file MLton-LICENSE for details.
@@ -14,38 +14,9 @@
   "MLton def-use info plugin for `def-use-mode'."
   :group 'sml)
 
-(defcustom esml-du-background-parsing 'disabled
-  "Method of performing background parsing of def-use data.
-
-Background parsing is disabled by default, but this may downgrade some
-functionality, increase overall memory consumption, and real-time lookup
-will be slower.
-
-Eager parsing means that background parsing is started immediately when a
-def-use file is first loaded or modified.
-
-Lazy parsing means that background parsing starts when the first real-time
-query of def-use data finds useful data.
-
-The disabled and lazy options are perhaps better than eager if you wish to
-register def-use files at Emacs load time."
-  :type '(choice (const :tag "Disabled" disabled)
-                 (const :tag "Eager" eager)
-                 (const :tag "Lazy" lazy))
-  :group 'esml-du)
-
-(defcustom esml-du-change-poll-period nil
-  "Delay in seconds between file change polls.  This is basically only
-useful with eager background parsing (see `esml-du-background-parsing') to
-ensure that background parsing will occur even when Emacs remains
-otherwise idle as reloading is also triggered implicitly when def-use data
-is needed."
-  :type '(choice (number :tag "Period in seconds")
-                 (const :tag "Disable polling" nil))
-  :group 'esml-du)
-
 (defcustom esml-du-notify 'never
-  "Notify certain events."
+  "Notify certain events, such as when a def-use -file has been
+(re)loaded."
   :type '(choice (const :tag "Never" never)
                  (const :tag "Always" always))
   :group 'esml-du)
@@ -168,19 +139,7 @@ beginning of the symbol."
 (defun esml-du-title (ctx)
   (concat
    (esml-du-ctx-duf ctx)
-   " ["
-   (if (esml-du-ctx-buf ctx)
-       (concat "parsing: "
-               (int-to-string
-                (truncate
-                 (/ (buffer-size (esml-du-ctx-buf ctx))
-                    0.01
-                    (nth 7 (esml-du-ctx-attr ctx)))))
-               "% left")
-     "complete")
-   ", parsed "
-   (int-to-string (esml-du-ctx-parse-cnt ctx))
-   " times]"))
+   " [loaded " (int-to-string (esml-du-ctx-load-cnt ctx)) " times]"))
 
 (defun esml-du-sym-at-ref (ref ctx)
   (esml-du-reload ctx)
@@ -257,18 +216,11 @@ beginning of the symbol."
 ;; Context
 
 (defun esml-du-ctx (duf)
-  (let ((ctx (vector (def-use-make-hash-table) (def-use-make-hash-table)
-                     duf nil nil nil 0 nil nil)))
-    (when esml-du-change-poll-period
-      (esml-du-ctx-set-poll-timer
-       (run-with-timer esml-du-change-poll-period esml-du-change-poll-period
-                       (function esml-du-reload) ctx)
-       ctx))
-    ctx))
+  (vector (def-use-make-hash-table) (def-use-make-hash-table) duf nil nil nil 0
+          nil nil))
 
-(defun esml-du-ctx-reload-timer      (ctx) (aref ctx 8))
-(defun esml-du-ctx-parsing?          (ctx) (aref ctx 7))
-(defun esml-du-ctx-parse-cnt         (ctx) (aref ctx 6))
+(defun esml-du-ctx-reload-timer      (ctx) (aref ctx 7))
+(defun esml-du-ctx-load-cnt          (ctx) (aref ctx 6))
 (defun esml-du-ctx-poll-timer        (ctx) (aref ctx 5))
 (defun esml-du-ctx-buf               (ctx) (aref ctx 4))
 (defun esml-du-ctx-attr              (ctx) (aref ctx 3))
@@ -276,11 +228,10 @@ beginning of the symbol."
 (defun esml-du-ctx-ref-to-sym-table  (ctx) (aref ctx 1))
 (defun esml-du-ctx-sym-to-uses-table (ctx) (aref ctx 0))
 
-(defun esml-du-ctx-inc-parse-cnt  (ctx)
+(defun esml-du-ctx-inc-load-cnt (ctx)
   (aset ctx 6 (1+ (aref ctx 6))))
 
-(defun esml-du-ctx-set-reload-timer (timer ctx) (aset ctx 8 timer))
-(defun esml-du-ctx-set-parsing?     (bool  ctx) (aset ctx 7 bool))
+(defun esml-du-ctx-set-reload-timer (timer ctx) (aset ctx 7 timer))
 (defun esml-du-ctx-set-poll-timer   (timer ctx) (aset ctx 5 timer))
 (defun esml-du-ctx-set-buf          (buf   ctx) (aset ctx 4 buf))
 (defun esml-du-ctx-set-attr         (attr  ctx) (aset ctx 3 attr))
@@ -334,8 +285,6 @@ beginning of the symbol."
 
 (defun esml-du-try-to-read-symbol-at-ref-once (ref ctx)
   (when (search-forward (esml-du-ref-to-appx-syntax ref) nil t)
-    (when (eq 'lazy esml-du-background-parsing)
-      (esml-du-parse ctx))
     (beginning-of-line)
     (while (= ?\  (char-after))
       (forward-line -1))
@@ -453,7 +402,7 @@ Returns the symbol read and deletes the read symbol from the buffer."
     sym))
 
 (defun esml-du-load (ctx)
-  "Loads the def-use file to a buffer for parsing and performing queries."
+  "Loads the def-use file to a buffer for performing queries."
   (esml-du-ctx-set-attr (file-attributes (esml-du-ctx-duf ctx)) ctx)
   (if (esml-du-ctx-buf ctx)
       (with-current-buffer (esml-du-ctx-buf ctx)
@@ -480,38 +429,7 @@ Returns the symbol read and deletes the read symbol from the buffer."
   (garbage-collect)
   (when (memq esml-du-notify '(always))
     (message "Loaded %s" (esml-du-ctx-duf ctx)))
-  (when (eq 'eager esml-du-background-parsing)
-    (esml-du-parse ctx)))
-
-(defun esml-du-parse (ctx)
-  "Parses the def-use -file.  Because parsing may take a while, it is
-done as a background process.  This allows you to continue working
-altough the editor may feel a bit sluggish."
-  (unless (esml-du-ctx-parsing? ctx)
-    (esml-du-ctx-set-parsing? t ctx)
-    (bg-job-start
-     (function
-      (lambda (ctx)
-        (let ((buffer (esml-du-ctx-buf ctx)))
-          (or (not buffer)
-              (with-current-buffer buffer
-                (goto-char 1)
-                (eobp))))))
-     (function
-      (lambda (ctx)
-        (with-current-buffer (esml-du-ctx-buf ctx)
-          (goto-char 1)
-          (esml-du-read-one-symbol ctx))))
-     (function
-      (lambda (ctx)
-        (esml-du-stop-parsing ctx)
-        (esml-du-ctx-set-parsing? nil ctx)
-        (esml-du-ctx-inc-parse-cnt ctx)
-        (when (memq esml-du-notify '(always))
-          (message "Finished parsing %s." (esml-du-ctx-duf ctx)))))
-     ctx)
-    (when (memq esml-du-notify '(always))
-      (message "Parsing %s in the background..." (esml-du-ctx-duf ctx)))))
+  (esml-du-ctx-inc-load-cnt ctx))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
