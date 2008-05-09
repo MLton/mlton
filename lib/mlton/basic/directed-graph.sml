@@ -313,24 +313,6 @@ fun foreachEdge (g, edge) =
 (*                    Dominators                          *)
 (*--------------------------------------------------------*)
 
-(* This is an implementation of the Lengauer/Tarjan dominator algorithm, as
- * described on p. 185-191 of Muchnick's "Advanced Compiler Design and
- * Implementation"
- *)
-structure NodeInfo =
-   struct
-      type t = {ancestor: Node.t ref,
-                bucket: Node.t list ref,
-                child: Node.t ref,
-                dfn: int ref, (* depth first number *)
-                idom: Node.t ref,
-                label: Node.t ref,
-                parent: Node.t ref,
-                preds: Node.t list ref,
-                sdno: int ref, (* semidominator dfn *)
-                size: int ref}
-   end
-
 fun validDominators (graph,
                      {root: Node.t,
                       idom: Node.t -> Node.t}): bool =
@@ -360,186 +342,95 @@ val _ = validDominators
 
 datatype 'a idomRes =
    Idom of Node.t
-  | Root
-  | Unreachable
+ | Root
+ | Unreachable
 
+(* This is an implementation of the simple and fast dominance algorithm
+ * described in
+ *
+ *   A Simple, Fast Dominance Algorithm.
+ *   Keith Cooper and Timothy Harvey and Ken Kennedy.
+ *   Software Practice and Experience, 2001.
+ *   http://citeseer.ist.psu.edu/cooper01simple.html
+ *   http://www.cs.rice.edu/~keith/EMBED/dom.pdf
+ *
+ * This implementation replaced the previous implementation based on the
+ * Lengauer/Tarjan algorithm, as described on p. 185-191 of Muchnick's
+ * "Advanced Compiler Design and Implementation", and appears to run in
+ * less than half the time on a self compile and took about half the
+ * amount of code to implement.
+ *)
 fun dominators (graph, {root}) =
    let
-      val n0 = Node.new ()
-      fun newNode (n: Node.t): NodeInfo.t =
-         {ancestor = ref n0,
-          bucket = ref [],
-          child = ref n0,
-          dfn = ref ~1,
-          idom = ref n0,
-          label = ref n,
-          parent = ref n0,
-          preds = ref [],
-          sdno = ref ~1,
-          size = ref 1}
-      val {get = nodeInfo: Node.t -> NodeInfo.t, rem = remove, ...} =
-         Property.get (Node.plist, Property.initFun newNode)
-      local
-         fun 'a make (sel: NodeInfo.t -> 'a ref) =
-            (sel o nodeInfo, ! o sel o nodeInfo)
-      in
-         val (ancestor', ancestor) = make #ancestor
-         val (bucket', bucket) = make #bucket
-         val (child', child) = make #child
-         val (dfn', _) = make #dfn
-         val (idom', idom) = make #idom
-         val (label', label) = make #label
-         val (parent', parent) = make #parent
-         val (preds', preds) = make #preds
-         val (sdno', sdno) = make #sdno
-         val (size', size) = make #size
-      end
-      val _ = size' n0 := 0
-      (* nodes is an array of nodes indexed by dfs number. *)
-      val numNodes = List.length (nodes graph)
-      val nodes = Array.new (numNodes, n0)
-      fun ndfs i = Array.sub (nodes, i)
-      val dfnCounter = ref 0
-      fun dfs (v: Node.t): unit =
-         let
-            val i = !dfnCounter
-            val _ = Int.inc dfnCounter
-            val _ = dfn' v := i
-            val _ = sdno' v := i
-            val _ = Array.update (nodes, i, v)
-            val _ =
-               List.foreach
-               (Node.successors v, fn Edge.Edge {to = w, ...} =>
-                let
-                   val _ = List.push (preds' w, v)
-                in if sdno w = ~1
-                      then (parent' w := v
-                            ; dfs w)
-                   else ()
-                end)
-         in ()
-         end
-      val _ = dfs root
-      val numNodes = !dfnCounter
-      (* compress ancestor path to node v to the node whose label has the
-       * maximal (minimal?) semidominator number. 
-       *)
-      fun compress (v: Node.t): unit =
-         if Node.equals (n0, ancestor (ancestor v))
-            then ()
-         else let
-                 val _ = compress (ancestor v)
-                 val _ =
-                    if sdno (label (ancestor v)) < sdno (label v)
-                       then label' v := label (ancestor v)
-                    else ()
-                 val _ = ancestor' v := ancestor (ancestor v)
-              in ()
-              end
-      fun eval (v: Node.t): Node.t =
-         (* Determine the ancestor of v whose semidominator has the minimal
-          * depth-first number.
-          *)
-         if Node.equals (ancestor v, n0)
-            then label v
-         else let
-                 val _ = compress v
-              in
-                 if sdno (label (ancestor v)) >= sdno (label v)
-                    then label v
-                 else label (ancestor v)
-              end
-      fun link (v: Node.t, w: Node.t): unit =
-         let
-            fun loop s =
-               if sdno (label w) < sdno (label (child s))
-                  then
-                     if size s + size (child (child s)) >= 2 * size (child s)
-                        then (ancestor' (child s) := s
-                              ; child' s := child (child s)
-                              ; loop s)
-                     else (size' (child s) := size s
-                           ; ancestor' s := child s
-                           ; loop (child s))
-               else s
-            val s = loop w
-            val _ = label' s := label w
-            val _ = size' v := size v + size w
-            val s =
-               if size v < 2 * size w
-                  then
-                     let
-                        val tmp = child v
-                        val _ = child' v := s
-                     in tmp
-                     end
-               else s
-            fun loop s =
-               if Node.equals (s, n0)
-                  then ()
-               else (ancestor' s := v
-                     ; loop (child s))
-            val _ = loop s
-         in ()
-         end
-      val _ =
-         Int.forDown
-         (1, numNodes, fn i =>
-          let
-             (* Compute initial values for semidominators and store nodes with
-              * the same semidominator in the same bucket.
-              *)
-             val w = ndfs i
-             val min = List.fold (preds w, sdno w, fn (n, min) =>
-                                  Int.min (min, sdno (eval n)))
-             val _ = sdno' w := min
-             val _ = List.push (bucket' (ndfs min), w)
-             val _ = link (parent w, w)
-             (* Compute immediate dominators for nodes in the bucket of w's
-              * parent.
-              *)
-             val _ =
-                List.foreach
-                (bucket (parent w), fn v =>
-                 let
-                    val u = eval v
-                 in
-                    idom' v := (if sdno u < sdno v
-                                   then u
-                                else parent w)
-                 end)
-             val _ = bucket' (parent w) := []
-          in ()
-          end)
-      (* Adjust immediate dominators of nodes whose current version of the
-       * immediate dominator differs from the node with the depth-first number
-       * of the node's semidominator.
-       *)
-      val _ =
-         Int.for
-         (1, numNodes, fn i =>
-          let
-             val w = ndfs i
-          in
-             if Node.equals (idom w, ndfs (sdno w))
-                then ()
-             else idom' w := idom (idom w)
-          end)
-      val _ = idom' root := root
-(*       val _ = Assert.assert ("dominators", fn () =>
- *                           validDominators (graph, {root = root,
- *                                                    idom = idom}))
- *)
+      val unknown = ~2
+      val visiting = ~1
+
+      val {get = getNum, set = setNum, rem = remNum, ...} =
+         Property.getSet (Node.plist, Property.initConst unknown)
+
+      val numNodes = numNodes graph
+
+      val nodes = Array.array (numNodes, root)
+      fun getNode i = Array.sub (nodes, i)
+      fun setNode (i, n) = Array.update (nodes, i, n)
+
+      fun dfs (n, v) =
+         (setNum (v, visiting)
+          ; case List.fold
+                 (Node.successors v, n, fn (Edge.Edge {to, ...}, n) =>
+                  if getNum to = unknown then dfs (n, to) else n) of
+               n => (setNum (v, n) ; setNode (n, v) ; n+1))
+      val numNodes = dfs (0, root)
+
+      val preds = Array.array (numNodes, [])
+      fun addPred (t, f) = Array.update (preds, t, f :: Array.sub (preds, t))
+      fun getPreds i = Array.sub (preds, i)
+
+      val () = Int.for (0, numNodes, fn i =>
+               List.foreach (Node.successors (getNode i),
+                             fn Edge.Edge {to, ...} => addPred (getNum to, i)))
+
+      val () = Array.foreach (nodes, remNum)
+
+      val idom = Array.array (numNodes, unknown)
+      fun getIdom i = Array.sub (idom, i)
+      fun setIdom (i, d) = Array.update (idom, i, d)
+
+      val rootNum = numNodes-1
+      val () = setIdom (rootNum, rootNum)
+
+      fun intersect (n1, n2) =
+         if n1 = n2
+            then n1
+         else
+            let
+               fun up (f, t) = if f < t then up (getIdom f, t) else f
+               val n1 = up (n1, n2)
+               val n2 = up (n2, n1)
+            in
+               intersect (n1, n2)
+            end
+
+      fun iterate () =
+         if Int.foldDown (0, rootNum, false, fn (i, changed) => let
+               val new =
+                   case getPreds i of
+                      [] => raise Fail "bug"
+                    | p::ps =>
+                      List.fold (ps, p, fn (j, new) =>
+                      if getIdom j <> unknown then intersect (new, j) else new)
+            in
+               if getIdom i <> new then (setIdom (i, new) ; true) else changed
+            end)
+            then iterate ()
+         else ()
+      val () = iterate ()
+
       val {get = idomFinal, set = setIdom, ...} =
          Property.getSetOnce (Node.plist, Property.initConst Unreachable)
-      val _ = setIdom (root, Root)
-      val _ = Int.for (1, numNodes, fn i =>
-                       let
-                          val n = ndfs i
-                       in
-                          setIdom (n, Idom (idom n))
-                       end)
-      val _ = Int.for (0, numNodes, fn i => remove (ndfs i))
+      val () = setIdom (root, Root)
+      val () = Int.for (0, rootNum, fn i =>
+               setIdom (getNode i, Idom (getNode (getIdom i))))
    in
       {idom = idomFinal}
    end
