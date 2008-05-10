@@ -150,8 +150,7 @@ end
 
 val _ = 
    (Primitive.TopLevel.setHandler MLtonExn.defaultTopLevelHandler
-    ; Primitive.TopLevel.setSuffix 
-      (fn () => MLtonProcess.exit MLtonProcess.Status.success))
+    ; Primitive.TopLevel.setSuffix Exit.defaultTopLevelSuffix)
 end
 
 (* Patch OS.FileSys.tmpName to use mkstemp. *)

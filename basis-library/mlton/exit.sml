@@ -28,7 +28,7 @@ structure Exit =
 
       fun exit (status: Status.t): 'a =
          if !exiting
-            then raise Fail "exit"
+            then raise Fail "MLton.Exit.exit"
          else
             let
                val _ = exiting := true
@@ -37,8 +37,28 @@ structure Exit =
                if 0 <= i andalso i < 256
                   then (let open Cleaner in clean atExit end
                         ; halt status
-                        ; raise Fail "exit")
-               else raise Fail (concat ["exit must have 0 <= status < 256: saw ",
-                                        Int.toString i])
+                        ; raise Fail "MLton.Exit.exit")
+               else raise Fail (concat ["MLton.Exit.exit(", Int.toString i, "): ",
+                                        "exit must have 0 <= status < 256"])
             end
+
+      local
+         val message = PrimitiveFFI.Stdio.print
+         fun 'a wrapSuffix (suffix: unit -> unit) () : 'a =
+            (suffix ()
+             ; message "Top-level suffix returned.\n"
+             ; exit Status.failure)
+            handle _ => (message "Top-level suffix raised exception.\n"
+                         ; halt Status.failure
+                         ; raise Fail "MLton.Exit.wrapSuffix")
+      in
+         val getTopLevelSuffix = Primitive.TopLevel.getSuffix
+         val setTopLevelSuffix = Primitive.TopLevel.setSuffix o wrapSuffix
+         fun 'a defaultTopLevelSuffix ((): unit): 'a =
+            wrapSuffix (fn () => exit Status.success) ()
+         fun 'a topLevelSuffix ((): unit) : 'a =
+            (getTopLevelSuffix () ()
+             ; raise Fail "MLton.Exit.topLevelSuffix")
+      end
+
    end
