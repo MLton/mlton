@@ -101,15 +101,4 @@ val isolate: ('a -> unit) -> 'a t =
    end
 end
 
-val isolate: ('a -> unit) -> 'a t =
-   fn (f: 'a -> unit) =>
-   fn (v: unit -> 'a) =>
-   let
-      val th = (f (v ()) ; Exit.topLevelSuffix ())
-               handle exn => MLtonExn.topLevelHandler exn
-      val t = MLtonThread.prepare (MLtonThread.new th, ())
-   in
-      MLtonThread.switch (fn _ => t)
-   end
-
 end
