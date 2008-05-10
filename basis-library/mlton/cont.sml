@@ -37,22 +37,26 @@ fun callcc (f: 'a t -> 'a): 'a =
        in
           case (!r before r := Clear) of
              Clear => raise Fail "MLton.Cont.callcc: Clear"
-           | Copy v => (Thread.atomicEnd () (* Match 2 *)
-                        ; v ())
+           | Copy v =>
+                let
+                   val _ = Thread.atomicEnd () (* Match 2 *)
+                in
+                   v ()
+                end
            | Original f =>
                 let
                    val t = Thread.savedPre gcState
+                   val _ = Thread.atomicEnd () (* Match 1 *)
                 in
-                   Thread.atomicEnd () (* Match 1 *)
-                   ; f (fn v =>
-                        let
-                           val _ = Thread.atomicBegin () (* Match 2 *)
-                           val _ = r := Copy v
-                           val new = Thread.copy t
-                           val _ = Thread.atomicBegin () (* Match 3 *)
-                        in
-                           Thread.switchTo new (* Match 3 *)
-                        end)
+                   f (fn v =>
+                      let
+                         val _ = Thread.atomicBegin () (* Match 2 *)
+                         val _ = r := Copy v
+                         val new = Thread.copy t
+                         val _ = Thread.atomicBegin () (* Match 3 *)
+                      in
+                         Thread.switchTo new (* Match 3 *)
+                      end)
                 end
        end
 
