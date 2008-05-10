@@ -9,7 +9,11 @@
 structure MLtonCont:> MLTON_CONT =
 struct
 
-structure Thread = Primitive.MLton.Thread
+structure Thread =
+   struct
+      open Primitive.MLton.Thread
+      val savedPre = fn () => savedPre Primitive.MLton.GCState.gcState
+   end
 
 fun die (s: string): 'a =
    (PrimitiveFFI.Stdio.print s
@@ -17,8 +21,6 @@ fun die (s: string): 'a =
     ; let exception DieFailed
       in raise DieFailed
       end)
-
-val gcState = Primitive.MLton.GCState.gcState
 
 type 'a t = (unit -> 'a) -> unit
 
@@ -45,7 +47,7 @@ fun callcc (f: 'a t -> 'a): 'a =
                 end
            | Original f =>
                 let
-                   val t = Thread.savedPre gcState
+                   val t = Thread.savedPre ()
                    val _ = Thread.atomicEnd () (* Match 1 *)
                 in
                    f (fn v =>
@@ -134,11 +136,11 @@ end
 local
 val base: (unit -> unit) option t =
    let
-      val base: (unit -> unit) option t option ref = ref NONE
-      val th = callcc (fn k => (base := SOME k; NONE))
+      val baseRef: (unit -> unit) option t option ref = ref NONE
+      val th = callcc (fn k => (baseRef := SOME k; NONE))
    in
       case th of
-         NONE => (case !base of
+         NONE => (case !baseRef of
                      NONE => raise Fail "MLton.Cont.isolate: missing base"
                    | SOME base => base)
        | SOME th => let
@@ -165,12 +167,12 @@ end
 local
 val base: (unit -> unit) option t =
    let
-      val base: (unit -> unit) option t ref =
+      val baseRef: (unit -> unit) option t ref =
          ref (fn _ => raise Fail "MLton.Cont.isolate: missing base")
-      val th = callcc (fn k => (base := k; NONE))
+      val th = callcc (fn k => (baseRef := k; NONE))
    in
       case th of
-         NONE => !base
+         NONE => !baseRef
        | SOME th => let
                        val _ = (th () ; Exit.topLevelSuffix ())
                                handle exn => MLtonExn.topLevelHandler exn
@@ -187,18 +189,18 @@ end
 
 (* ********** *)
 local
-val thunk: (unit -> unit) option ref = ref NONE
+val thRef: (unit -> unit) option ref = ref NONE
 val base: unit t =
    let
-      val base: unit t ref =
+      val baseRef: unit t ref =
          ref (fn _ => raise Fail "MLton.Cont.isolate: missing base")
-      val () = callcc (fn k => base := k)
+      val () = callcc (fn k => baseRef := k)
    in
-      case !thunk of
-         NONE => !base
+      case !thRef of
+         NONE => !baseRef
        | SOME th =>
             let
-               val _ = thunk := NONE
+               val _ = thRef := NONE
                val _ = Thread.atomicEnd () (* Match 1 *)
                val _ = (th () ; Exit.topLevelSuffix ())
                        handle exn => MLtonExn.topLevelHandler exn
@@ -212,7 +214,7 @@ val isolate: ('a -> unit) -> 'a t =
    fn (v: unit -> 'a) =>
    let
       val _ = Thread.atomicBegin () (* Match 1 *)
-      val () = thunk := SOME (f o v)
+      val () = thRef := SOME (f o v)
    in
       throw (base, ())
    end
@@ -220,16 +222,16 @@ end
 
 (* ********** *)
 local
-val thunk: (unit -> unit) option ref = ref NONE
+val thRef: (unit -> unit) option ref = ref NONE
 val base: Thread.preThread =
    let
       val () = Thread.copyCurrent ()
    in
-      case !thunk of
-         NONE => Thread.savedPre gcState
+      case !thRef of
+         NONE => Thread.savedPre ()
        | SOME th =>
             let
-               val () = thunk := NONE
+               val () = thRef := NONE
                val () = Thread.atomicEnd () (* Match 1 *)
                val _ = (th () ; Exit.topLevelSuffix ())
                        handle exn => MLtonExn.topLevelHandler exn
@@ -244,7 +246,70 @@ val isolate: ('a -> unit) -> 'a t =
    let
       val _ = Thread.atomicBegin () (* Match 1 *)
       val _ = Thread.atomicBegin () (* Match 2 *)
-      val () = thunk := SOME (f o v)
+      val () = thRef := SOME (f o v)
+      val new = Thread.copy base
+   in
+      Thread.switchTo new (* Match 2 *)
+   end
+end
+
+(* ********** *)
+local
+val thRef: (unit -> unit) option ref = ref NONE
+val base: Thread.preThread =
+   let
+      val () = Thread.copyCurrent ()
+   in
+      case !thRef of
+         NONE => Thread.savedPre ()
+       | SOME th =>
+            let
+               val () = thRef := NONE
+               val _ = (th () ; Exit.topLevelSuffix ())
+                       handle exn => MLtonExn.topLevelHandler exn
+            in
+               raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+            end
+   end
+in
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (v: unit -> 'a) =>
+   let
+      val () = thRef := SOME (f o v)
+      val new = Thread.copy base
+   in
+      Thread.switchTo new
+   end
+end
+
+(* ********** *)
+local
+val thRef: (unit -> unit) option ref = ref NONE
+val base: Thread.preThread =
+   let
+      val () = Thread.copyCurrent ()
+   in
+      case !thRef of
+         NONE => Thread.savedPre ()
+       | SOME th =>
+            let
+               val () = thRef := NONE
+               val () = Thread.atomicEnd () (* Match 1 *)
+               val _ = (th () ; Exit.topLevelSuffix ())
+                       handle exn => MLtonExn.topLevelHandler exn
+            in
+               raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+            end
+   end
+in
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (v: unit -> 'a) =>
+   let
+      val _ = Thread.atomicBegin () (* Match 1 *)
+      val _ = Thread.atomicBegin () (* Match 2 *)
+      val () = thRef := SOME (f o v)
       val new = Thread.copy base
    in
       Thread.switchTo new (* Match 2 *)
