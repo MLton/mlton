@@ -4,6 +4,7 @@ signature SML_OF_NJ =
          sig
             type 'a cont
             val callcc: ('a cont -> 'a) -> 'a
+            val isolate: ('a -> unit) -> 'a cont
             val throw: 'a cont -> 'a -> 'b
          end
       structure SysInfo:

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -24,7 +24,7 @@ type 'a t = (unit -> 'a) -> unit
 
 fun callcc (f: 'a t -> 'a): 'a =
    if MLtonThread.amInSignalHandler ()
-       then die "callcc can not be used in a signal handler\n"
+       then die "Cont.callcc can not be used in a signal handler\n"
     else 
        let
           datatype 'a state =
@@ -36,7 +36,7 @@ fun callcc (f: 'a t -> 'a): 'a =
           val _ = Thread.copyCurrent ()
        in
           case (!r before r := Clear) of
-             Clear => raise Fail "callcc saw Clear"
+             Clear => raise Fail "MLton.Cont.callcc: Clear"
            | Copy v => (Thread.atomicEnd () (* Match 2 *)
                         ; v ())
            | Original f =>
@@ -49,18 +49,47 @@ fun callcc (f: 'a t -> 'a): 'a =
                            val _ = Thread.atomicBegin () (* Match 2 *)
                            val _ = r := Copy v
                            val new = Thread.copy t
-                           (* The following Thread.atomicBegin () 
-                            * is matched by Thread.switchTo.
-                            *)
-                           val _ = Thread.atomicBegin ()
+                           val _ = Thread.atomicBegin () (* Match 3 *)
                         in
-                           Thread.switchTo new
+                           Thread.switchTo new (* Match 3 *)
                         end)
                 end
        end
 
+local
+val thunk: (unit -> unit) option ref = ref NONE
+val base: Thread.preThread =
+   let
+      val () = Thread.copyCurrent ()
+   in
+      case !thunk of
+         NONE => Thread.savedPre gcState
+       | SOME th =>
+            let
+               val () = thunk := NONE
+               val () = Thread.atomicEnd () (* Match 1 *)
+               val _ = (th () ; Exit.topLevelSuffix ())
+                       handle exn => MLtonExn.topLevelHandler exn
+            in
+               raise Fail "MLton.Cont.isolate: return from (wrapped) func"
+            end
+   end
+in
+val isolate: ('a -> unit) -> 'a t =
+   fn (f: 'a -> unit) =>
+   fn (xth: unit -> 'a) =>
+   let
+      val _ = Thread.atomicBegin () (* Match 1 *)
+      val _ = Thread.atomicBegin () (* Match 2 *)
+      val () = thunk := SOME (f o xth)
+      val new = Thread.copy base
+   in
+      Thread.switchTo new (* Match 2 *)
+   end
+end
+
 fun ('a, 'b) throw' (k: 'a t, v: unit -> 'a): 'b =
-   (k v; raise Fail "throw bug")
+   (k v; raise Fail "MLton.Cont.throw': return from continuation")
 
 fun ('a, 'b) throw (k: 'a t, v: 'a): 'b = throw' (k, fn () => v)
 
