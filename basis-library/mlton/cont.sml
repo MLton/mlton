@@ -26,7 +26,7 @@ type 'a t = (unit -> 'a) -> unit
 
 fun callcc (f: 'a t -> 'a): 'a =
    if MLtonThread.amInSignalHandler ()
-       then die "Cont.callcc can not be used in a signal handler\n"
+       then die "MLton.Cont.callcc can not be used in a signal handler\n"
     else 
        let
           datatype 'a state =
