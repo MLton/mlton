@@ -1,30 +1,34 @@
 HANDLE fileDesHandle (int fd);
 
-/* As crazy as it is, this breaks Windows 2003&Vista: #define BUFSIZE 65536 */
-#define BUFSIZE 10240
+#define BUFSIZE 512
 
 static HANDLE tempFileDes (void) {
-  /* Based on http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating_and_using_a_temporary_file.asp
-   */  
-  HANDLE hTempFile; 
+  /* Based on http://msdn.microsoft.com/en-us/library/aa363875(VS.85).aspx */
+  HANDLE hTempFile;
   DWORD dwRetVal;
   DWORD dwBufSize=BUFSIZE;
   UINT uRetVal;
-  char szTempName[BUFSIZE];  
-  char lpPathBuffer[BUFSIZE];
+  TCHAR szTempName[BUFSIZE];
+  TCHAR lpPathBuffer[BUFSIZE];
 
   dwRetVal = GetTempPath(dwBufSize, lpPathBuffer);
-  if (dwRetVal >= dwBufSize)
-    die ("GetTempPath failed with error %ld\n", GetLastError());
-  uRetVal = GetTempFileName(lpPathBuffer, "TempFile", 0, szTempName);
-  if (0 == uRetVal)
-    die ("GetTempFileName in %s failed with error %ld\n", 
+  if (dwRetVal > dwBufSize || (dwRetVal == 0))
+    die ("GetTempPath(%ld,...) failed with error %ld\n", 
+         dwBufSize, GetLastError());
+  uRetVal = GetTempFileName(lpPathBuffer, TEXT("MLtonTempFile"), 0, szTempName);
+  if (uRetVal == 0)
+    die ("GetTempFileName(\"%s\",...) failed with error %ld\n", 
          lpPathBuffer, GetLastError());
-  hTempFile = CreateFile((LPTSTR) szTempName, GENERIC_READ | GENERIC_WRITE,
-    0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-    NULL);                
+  hTempFile = CreateFile((LPTSTR) szTempName,
+                         GENERIC_READ | GENERIC_WRITE,
+                         0,
+                         NULL,
+                         TRUNCATE_EXISTING,
+                         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+                         NULL);
   if (hTempFile == INVALID_HANDLE_VALUE)
-    die ("CreateFile failed with error %ld\n", GetLastError());
+    die ("CreateFile(\"%s\",...) failed with error %ld\n", 
+         szTempName, GetLastError());
   return hTempFile;
 }
 
@@ -131,7 +135,7 @@ static void displayMaps (void) {
                 }
 
                 fprintf(stderr, FMTPTR " %10"PRIuMAX"  %s %s\n",
-                        buf.BaseAddress, (uintmax_t)buf.RegionSize,
+                        (uintptr_t)buf.BaseAddress, (uintmax_t)buf.RegionSize,
                         state, protect);
         }
 }
