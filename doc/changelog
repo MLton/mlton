@@ -1,8 +1,13 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-05-17
+   - Fixed bug in Windows code to page the heap to disk when unable to
+     grow the heap to a desired size.  
+     Thanks to Sami Evangelista for the bug report.
+
 * 2008-04-20
-   - Fixed bug in code to page the heap to disk when unable to grow
-     the heap to a desired size.
+   - Fixed bug in *NIX code to page the heap to disk when unable to
+     grow the heap to a desired size.
      Thanks to Nicolas Bertolotti for the bug report and patch.
 
 * 2008-04-07
