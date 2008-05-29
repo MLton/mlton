@@ -102,18 +102,19 @@ void Parallel_unlock (Int32 p) {
 
 Int32 Parallel_fetchAndAdd (pointer p, Int32 v) {
   //fprintf (stderr, "fetchAndAdd\n");
-  /*
+
   Int32 res = __sync_fetch_and_add ((Int32 *)p, v);
+  /*
   asm volatile ("mfence");
   */
-
+  /*
   asm volatile ("lock; xaddl %0,%1"
                 : "+q" (v) // output
                 : "m" (*p) // input
                 : "memory"); // clobbered
   //  asm volatile ("mfence");
-
-  return v;
+  */
+  return res;
 }
 
 bool Parallel_compareAndSwap (pointer p, Int32 old, Int32 new) {
