@@ -368,33 +368,29 @@ fun dominators (graph, {root}) =
       val {get = getNum, set = setNum, rem = remNum, ...} =
          Property.getSet (Node.plist, Property.initConst unknown)
 
-      val numNodes = numNodes graph
-
-      val nodes = Array.array (numNodes, root)
-      fun getNode i = Array.sub (nodes, i)
-      fun setNode (i, n) = Array.update (nodes, i, n)
+      val nodes = Array.array (numNodes graph, root)
+      fun node i = Array.sub (nodes, i)
 
       fun dfs (n, v) =
          (setNum (v, visiting)
           ; case List.fold
                  (Node.successors v, n, fn (Edge.Edge {to, ...}, n) =>
                   if getNum to = unknown then dfs (n, to) else n) of
-               n => (setNum (v, n) ; setNode (n, v) ; n+1))
+               n => (setNum (v, n) ; Array.update (nodes, n, v) ; n+1))
       val numNodes = dfs (0, root)
 
       val preds = Array.array (numNodes, [])
       fun addPred (t, f) = Array.update (preds, t, f :: Array.sub (preds, t))
-      fun getPreds i = Array.sub (preds, i)
 
       val () = Int.for (0, numNodes, fn i =>
-               List.foreach (Node.successors (getNode i),
+               List.foreach (Node.successors (node i),
                              fn Edge.Edge {to, ...} => addPred (getNum to, i)))
 
       val () = Array.foreach (nodes, remNum)
 
-      val idom = Array.array (numNodes, unknown)
-      fun getIdom i = Array.sub (idom, i)
-      fun setIdom (i, d) = Array.update (idom, i, d)
+      val idoms = Array.array (numNodes, unknown)
+      fun idom i = Array.sub (idoms, i)
+      fun setIdom (i, d) = Array.update (idoms, i, d)
 
       val rootNum = numNodes-1
       val () = setIdom (rootNum, rootNum)
@@ -404,7 +400,7 @@ fun dominators (graph, {root}) =
             then n1
          else
             let
-               fun up (f, t) = if f < t then up (getIdom f, t) else f
+               fun up (f, t) = if f < t then up (idom f, t) else f
                val n1 = up (n1, n2)
                val n2 = up (n2, n1)
             in
@@ -414,13 +410,13 @@ fun dominators (graph, {root}) =
       fun iterate () =
          if Int.foldDown (0, rootNum, false, fn (i, changed) => let
                val new =
-                   case getPreds i of
+                   case Array.sub (preds, i) of
                       [] => raise Fail "bug"
                     | p::ps =>
                       List.fold (ps, p, fn (j, new) =>
-                      if getIdom j <> unknown then intersect (new, j) else new)
+                      if idom j <> unknown then intersect (new, j) else new)
             in
-               if getIdom i <> new then (setIdom (i, new) ; true) else changed
+               if idom i <> new then (setIdom (i, new) ; true) else changed
             end)
             then iterate ()
          else ()
@@ -430,7 +426,7 @@ fun dominators (graph, {root}) =
          Property.getSetOnce (Node.plist, Property.initConst Unreachable)
       val () = setIdom (root, Root)
       val () = Int.for (0, rootNum, fn i =>
-               setIdom (getNode i, Idom (getNode (getIdom i))))
+               setIdom (node i, Idom (node (idom i))))
    in
       {idom = idomFinal}
    end
