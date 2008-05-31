@@ -40,10 +40,10 @@ structure VarInfo =
          ConApp of {con: Con.t,
                     targs: Type.t vector,
                     arg: t option}
-        | Const of Const.t
-        | Lambda of {isInlined: bool ref,
-                     lam: Lambda.t}
-        | Tuple of t vector
+       | Const of Const.t
+       | Lambda of {isInlined: bool ref,
+                    lam: Lambda.t}
+       | Tuple of t vector
       withtype monoVarInfo = {numOccurrences: int ref,
                               value: value option ref,
                               varExp: VarExp.t}
@@ -138,9 +138,9 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
       fun isExhaustive (cases: exp Cases.t): bool =
          case cases of
             Cases.Con v =>
-               ((0 < Vector.length v
-                 andalso (Vector.length v
-                          = conNumCons (Pat.con (#1 (Vector.sub (v, 0)))))))
+               (0 < Vector.length v
+                andalso (Vector.length v
+                         = conNumCons (Pat.con (#1 (Vector.sub (v, 0))))))
           | _ => false
       val {get = varInfo: Var.t -> InternalVarInfo.t, set = setVarInfo, ...} =
          Property.getSet (Var.plist,
@@ -521,7 +521,7 @@ val shrinkOnce =
 
 val shrink = shrinkOnce o shrinkOnce
 
-structure SccFuns = SccFuns (open S)
+structure SccFuns = SccFuns (S)
 
 val shrink = shrink o SccFuns.sccFuns
 
