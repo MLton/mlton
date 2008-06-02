@@ -139,7 +139,7 @@ functor Sequence (S: sig
          if not S.isMutable andalso n = 0
             then Array.array0Const ()
             else if Primitive.Controls.safe
-                    andalso (n < 0 orelse n > maxLen')
+                    andalso geu (n, maxLen')
                     then raise Size
                     else Array.arrayUnsafe n
       fun arrayUninit n = arrayUninit' (fromIntForLength n)
