@@ -36,5 +36,6 @@ signature MLTON_POINTER =
       val setWord16: t * int * Word16.word -> unit
       val setWord32: t * int * Word32.word -> unit
       val setWord64: t * int * Word64.word -> unit
+      val sizeofPointer: word
       val sub: t * word -> t
    end

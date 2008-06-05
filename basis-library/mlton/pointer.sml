@@ -10,6 +10,8 @@ struct
 
 open Primitive.MLton.Pointer
 
+val sizeofPointer = Word.div (Word.fromInt C_Size.wordSize, 0w8)
+
 val add = fn (p, t) => add (p, C_Size.fromWord t)
 val sub = fn (p, t) => sub (p, C_Size.fromWord t)
 val diff = fn (p, p') => C_Size.toWord (diff (p, p'))
