@@ -14,7 +14,7 @@ signature INT_INF =
 
       val andb: t * t -> t
       val hash: t -> word
-      val log2: t -> int
+      val log2: t -> Int.t
       val maxPow2ThatDivides: t -> word
       val notb: t -> t
       val orb: t * t -> t

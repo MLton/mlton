@@ -48,6 +48,7 @@ signature INTEGER_STRUCTS =
 signature INTEGER =
    sig
       include EUCLIDEAN_RING
+      type int = t
 
       val < : t * t -> bool
       val <= : t * t -> bool

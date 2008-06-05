@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -18,11 +18,9 @@ fun system s =
    let
       val status = OS.Process.system s
    in
-      if status = OS.Process.success
+      if OS.Process.isSuccess status
          then ()
-      else if status = OS.Process.failure
-              then Error.bug (concat ["Process.system: command failed: ", s])
-           else Error.bug (concat ["Process.system: strange return: ", s])
+      else Error.bug (concat ["Process.system: command failed: ", s])
    end
 
 structure Command =
