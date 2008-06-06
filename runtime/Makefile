@@ -28,6 +28,7 @@ GCDEBUGFLAGS :=
 WARNFLAGS :=
 OPTWARNFLAGS :=
 DEBUGWARNFLAGS :=
+EXTRA_LIBS :=
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
@@ -82,6 +83,11 @@ ifeq ($(TARGET_OS), netbsd)
 FLAGS += -I/usr/pkg/include
 endif
 
+ifeq ($(TARGET_OS), linux)
+FLAGS += -Iplpa
+EXTRA_LIBS += libplpa_included.a 
+endif
+
 ifeq ($(TARGET_OS), openbsd)
 FLAGS += -I/usr/local/include
 endif
@@ -101,7 +107,7 @@ endif
 
 CC := gcc -std=gnu99
 CPPFLAGS := 
-CFLAGS := -I. -Iplatform -Iplpa $(FLAGS)
+CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) -DASSERT=1 $(DEBUGFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
@@ -221,7 +227,7 @@ else
 	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)
 endif
 
-ALL := libgdtoa.a libplpa_included.a libmlton.a libmlton-gdb.a
+ALL := libgdtoa.a libmlton.a libmlton-gdb.a $(EXTRA_LIBS)
 ALL += gen/c-types.sml gen/basis-ffi.sml
 ifeq ($(OMIT_BYTECODE), yes)
 else

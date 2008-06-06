@@ -82,7 +82,7 @@ doit "$lib" \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1'                                            \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
-        -link-opt '-lgdtoa -lm -lgmp -lpthread -lplpa_included -lrt' \
+        -link-opt '-lgdtoa -lm -lgmp -lpthread -lrt'             \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opt amd64 '-m64'                              \
         -target-cc-opt amd64 '-m64'                              \
@@ -104,6 +104,7 @@ doit "$lib" \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt darwin "$darwinLinkOpts"                \
         -target-link-opt freebsd '-L/usr/local/lib/'             \
+        -target-link-opt linux '-lplpa_included'                 \
         -target-link-opt mingw                                   \
                 '-lws2_32 -lkernel32 -lpsapi -lnetapi32'         \
         -target-link-opt netbsd                                  \

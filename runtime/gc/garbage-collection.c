@@ -181,7 +181,7 @@ size_t fillGap (__attribute__ ((unused)) GC_state s, pointer start, pointer end)
   }
 
   if (DEBUG)
-    fprintf (stderr, "[GC: Filling gap between "FMTPTR" and "FMTPTR" (size = "FMTARRLEN").]\n", 
+    fprintf (stderr, "[GC: Filling gap between "FMTPTR" and "FMTPTR" (size = %zu).]\n", 
              (uintptr_t)start, (uintptr_t)end, diff);
 
   if (start) {
@@ -212,7 +212,7 @@ size_t fillGap (__attribute__ ((unused)) GC_state s, pointer start, pointer end)
     else {
       assert(0 == diff);
       /* XXX */
-      fprintf (stderr, "FOUND A GAP OF "FMTARRLEN" BYTES!\n", diff);
+      fprintf (stderr, "FOUND A GAP OF %zu BYTES!\n", diff);
       exit (1);
     }
 
