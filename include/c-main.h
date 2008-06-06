@@ -48,13 +48,7 @@ void run (void *arg) {                                                  \
         uint32_t num = Proc_processorNumber (s)                         \
                 * s->controls->affinityStride                           \
                 + s->controls->affinityBase;                            \
-        plpa_cpu_set_t cpuset;                                          \
-                                                                        \
-        PLPA_CPU_ZERO (&cpuset);                                        \
-        PLPA_CPU_SET (num, &cpuset);                                    \
-        if (plpa_sched_setaffinity (0, sizeof(cpuset), &cpuset)) {      \
-                fprintf (stderr, "Warning: unable to set CPU affinity\n"); \
-        }                                                               \
+        set_cpu_affinity(num);                                          \
                                                                         \
         /* Save our state locally */                                    \
         pthread_setspecific (gcstate_key, s);                           \

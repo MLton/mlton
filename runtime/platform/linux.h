@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <plpa.h>
 #include <poll.h>
 #include <pwd.h>
 #include <sys/ioctl.h>
@@ -41,3 +42,13 @@
 #ifndef _GNU_SOURCE
 extern char **environ; /* for Posix_ProcEnv_environ */
 #endif
+
+#define set_cpu_affinity(num) do {                                      \
+        plpa_cpu_set_t cpuset;                                          \
+                                                                        \
+        PLPA_CPU_ZERO (&cpuset);                                        \
+        PLPA_CPU_SET (num, &cpuset);                                    \
+        if (plpa_sched_setaffinity (0, sizeof(cpuset), &cpuset)) {      \
+                fprintf (stderr, "Warning: unable to set CPU affinity\n"); \
+        }                                                               \
+      } while (0) 
