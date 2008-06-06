@@ -600,6 +600,11 @@ val elaborateOnly =
             default = false,
             toString = Bool.toString}
 
+val emitMain =
+   control {name = "emit main",
+            default = true,
+            toString = Bool.toString}
+
 val exportHeader =
    control {name = "export header",
             default = NONE,

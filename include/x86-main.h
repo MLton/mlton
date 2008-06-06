@@ -8,7 +8,7 @@
 #ifndef _X86_MAIN_H_
 #define _X86_MAIN_H_
 
-#include "main.h"
+#include "common-main.h"
 
 /* Globals */
 Word32 applyFFTemp;
@@ -42,7 +42,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex)));
 }
 
-#define Main(al, mg, mfs, mmc, pk, ps, ml)                              \
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 void MLton_jumpToSML (pointer jump);                                    \
 void MLton_callFromC () {                                               \
         pointer jump;                                                   \
@@ -69,7 +69,7 @@ void MLton_callFromC () {                                               \
                 fprintf (stderr, "MLton_callFromC() done\n");           \
         return;                                                         \
 }                                                                       \
-int main (int argc, char **argv) {                                      \
+int MLton_main (int argc, char* argv[]) {                               \
         pointer jump;                                                   \
         extern pointer ml;                                              \
                                                                         \

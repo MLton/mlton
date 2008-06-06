@@ -380,7 +380,7 @@ fun outputDeclarations
                      C.int bytesNonObjptrs, ", ",
                      C.int numObjptrs, " }"]
           end)
-      fun declareMain () =
+      fun declareMLtonMain () =
          let
             val align =
                case !Control.align of
@@ -400,7 +400,7 @@ fun outputDeclarations
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
                 | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in 
-            C.callNoSemi ("Main",
+            C.callNoSemi ("MLtonMain",
                           [C.int align,
                            magic,
                            C.bytes maxFrameSize,
@@ -411,6 +411,13 @@ fun outputDeclarations
                           print)
             ; print "\n"
          end
+      fun declareMain () =
+         if !Control.emitMain
+            then List.foreach
+                 (["int main (int argc, char* argv[]) {",
+                   "return (MLton_main (argc, argv));",
+                   "}"], fn s => (print s; print "\n"))
+         else ()
       fun declareProfileInfo () =
          let
             fun doit (ProfileInfo.T {frameSources, labels, names, sourceSeqs,
@@ -458,6 +465,7 @@ fun outputDeclarations
       ; declareProfileInfo ()
       ; declareAtMLtons ()
       ; rest ()
+      ; declareMLtonMain ()
       ; declareMain ()
    end
 

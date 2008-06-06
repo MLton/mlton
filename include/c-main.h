@@ -9,14 +9,14 @@
 #ifndef _C_MAIN_H_
 #define _C_MAIN_H_
 
-#include "main.h"
+#include "common-main.h"
 #include "c-common.h"
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
 
-#define Main(al, mg, mfs, mmc, pk, ps, mc, ml)                          \
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, mc, ml)                     \
 /* Globals */                                                           \
 uintptr_t nextFun;                                                      \
 int returnToC;                                                          \
@@ -48,7 +48,7 @@ void MLton_callFromC () {                                               \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC done\n");             \
 }                                                                       \
-int main (int argc, char **argv) {                                      \
+int MLton_main (int argc, char* argv[]) {                               \
         struct cont cont;                                               \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \

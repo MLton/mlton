@@ -139,6 +139,8 @@ signature CONTROL_FLAGS =
        *)
       val elaborateOnly: bool ref
 
+      val emitMain: bool ref
+
       val exportHeader: File.t option ref
 
       val exnHistory: bool ref

@@ -347,6 +347,8 @@ fun makeOptions {usage} =
        end,
        (Expert, "error-threshhold", " <n>", "error threshhold (20)",
         intRef errorThreshhold),
+       (Expert, "emit-main", " {true|false}", "emit main() startup function",
+        boolRef emitMain),
        (Expert, "expert", " {false|true}", "enable expert status",
         boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",

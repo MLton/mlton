@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,8 +6,10 @@
  * See the file MLton-LICENSE for details.
  */
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#ifndef _COMMON_MAIN_H_
+#define _COMMON_MAIN_H_
+
+#include "mlton-main.h"
 
 #define MLTON_GC_INTERNAL_TYPES
 #define MLTON_GC_INTERNAL_BASIS
@@ -72,4 +74,4 @@ Pointer gcStateAddress;
 
 void MLton_callFromC ();
 
-#endif /* #ifndef _MAIN_H_ */
+#endif /* #ifndef _COMMON_MAIN_H_ */

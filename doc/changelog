@@ -1,5 +1,8 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-06-06
+   - Added expert command line switch -emit-main {true|false}.
+
 * 2008-05-17
    - Fixed bug in Windows code to page the heap to disk when unable to
      grow the heap to a desired size.  
