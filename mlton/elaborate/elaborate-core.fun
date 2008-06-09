@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1271,6 +1271,7 @@ fun export {attributes: ImportExportAttribute.t list,
       fun int (i: int): Aexp.t =
          Aexp.const (Aconst.makeRegion (Aconst.Int (IntInf.fromInt i), region))
       val f = Var.fromSymbol (Symbol.fromString "f", region)
+      val p = Var.fromSymbol (Symbol.fromString "p", region)
    in
       Exp.fnn
       (Vector.new1
@@ -1282,26 +1283,25 @@ fun export {attributes: ImportExportAttribute.t list,
           (int exportId,
            Exp.fnn
            (Vector.new1
-            (Pat.tuple (Vector.new0 ()),
+            (Pat.var p,
              let
-                val map = CType.memo (fn _ => Counter.new 0)
-                val varCounter = Counter.new 0
                 val (args, decs) =
                    Vector.unzip
-                   (Vector.map
-                    (args, fn {ctype, name, ...} =>
+                   (Vector.mapi
+                    (args, fn (i, {ctype, name, ...}) =>
                      let
                         val x =
                            Var.fromSymbol
-                           (Symbol.fromString
-                            (concat ["x",
-                                     Int.toString (Counter.next varCounter)]),
+                           (Symbol.fromString (concat ["x", Int.toString i]),
                             region)
                         val dec =
-                           Dec.vall (Vector.new0 (),
-                                     x,
-                                     Exp.app (id (concat ["get", name]),
-                                              int (Counter.next (map ctype))))
+                           Dec.vall
+                           (Vector.new0 (),
+                            x,
+                            Exp.app
+                            (id (concat ["get", name]),
+                             (Exp.tuple o Vector.new2)
+                             (Exp.var p, int (i + 1))))
                      in
                         (x, dec)
                      end))
@@ -1311,18 +1311,20 @@ fun export {attributes: ImportExportAttribute.t list,
                 Exp.lett
                 (Vector.concat
                  [decs,
-                  Vector.map 
-                  (Vector.new4
-                   ((newVar (), Exp.app (id "atomicEnd", Exp.unit)),
-                    (resVar, Exp.app (Exp.var f,
+                  Vector.map
+                  (Vector.new2
+                   ((resVar, Exp.app (Exp.var f,
                                       Exp.tuple (Vector.map (args, Exp.var)))),
-                    (newVar (), Exp.app (id "atomicBegin", Exp.unit)),
                     (newVar (),
                      (case res of
                          NONE => Exp.constraint (Exp.var resVar, Type.unit)
-                       | SOME {name, ...} => 
-                            Exp.app (id (concat ["set", name]),
-                                     Exp.var resVar)))),
+                       | SOME {name, ...} =>
+                            Exp.app
+                            (id (concat ["set", name]),
+                             (Exp.tuple o Vector.new3)
+                             (Exp.var p,
+                              int (Vector.length args + 1),
+                              Exp.var resVar))))),
                    fn (x, e) => Dec.vall (Vector.new0 (), x, e))],
                  Exp.tuple (Vector.new0 ()),
                  region)

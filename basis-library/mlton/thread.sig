@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -62,7 +62,7 @@ signature MLTON_THREAD_EXTRA =
       include MLTON_THREAD
 
       val amInSignalHandler: unit -> bool
-      val register: int * (unit -> unit) -> unit
+      val register: int * (MLtonPointer.t -> unit) -> unit
       val setSignalHandler: (Runnable.t -> Runnable.t) -> unit
       val switchToSignalHandler: unit -> unit
    end

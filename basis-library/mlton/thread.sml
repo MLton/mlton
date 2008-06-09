@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -222,11 +222,11 @@ end
 local
 
 in
-   val register: int * (unit -> unit) -> unit =
+   val register: int * (MLtonPointer.t -> unit) -> unit =
       let
          val exports = 
             Array.array (Int32.toInt (Primitive.MLton.FFI.numExports), 
-                         fn () => raise Fail "undefined export")
+                         fn _ => raise Fail "undefined export")
          fun loop (): unit =
             let
                (* Atomic 2 *)
@@ -234,14 +234,18 @@ in
                fun doit () =
                   let
                      (* Atomic 1 *)
-                     val _ = 
-                        (* atomicEnd() after getting args *)
-                        (Array.sub (exports, Int32.toInt (Primitive.MLton.FFI.getOp ())) ())
+                     val p = Primitive.MLton.FFI.getOpArgsResPtr ()
+                     val _ = atomicEnd ()
+                     (* Atomic 0 *)
+                     val i = MLtonPointer.getInt32 (MLtonPointer.getPointer (p, 0), 0)
+                     val _ =
+                        (Array.sub (exports, Int32.toInt i) p)
                         handle e => 
                            (TextIO.output 
                             (TextIO.stdErr, "Call from C to SML raised exception.\n")
                             ; MLtonExn.topLevelHandler e)
-                        (* atomicBegin() before putting res *)
+                     (* Atomic 0 *)
+                     val _ = atomicBegin ()
                      (* Atomic 1 *)
                      val _ = Prim.setSaved (gcState, t)
                      val _ = Prim.returnToC () (* implicit atomicEnd() *)

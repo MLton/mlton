@@ -1,4 +1,4 @@
-(* Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2004-2006,2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -44,42 +44,7 @@ val headers: string list ref = ref []
 
 fun declareExports {print} =
    let
-      val maxMap = CType.memo (fn _ => ref ~1)
-      fun bump (t, i) =
-         let
-            val r = maxMap t
-         in
-            r := Int.max (!r, i)
-         end
-      val _ =
-         List.foreach
-         (!exports, fn {args, res, ...} =>
-          let
-             val map = CType.memo (fn _ => Counter.new 0)
-          in
-             Vector.foreach (args, fn t => bump (t, Counter.next (map t)))
-             ; Option.app (res, fn t => bump (t, 0))
-          end)
-      (* Declare the arrays and functions used for parameter passing. *)
-      val _ =
-         List.foreach
-         (CType.all, fn t =>
-          let
-             val n = !(maxMap t)
-          in
-             if n >= 0
-                then
-                   let
-                      val size = Int.toString (1 + n)
-                      val t = CType.toString t
-                      val array = concat ["MLton_FFI_", t, "_array"]
-                   in
-                      print (concat [t, " ", array, "[", size, "];\n",
-                                     t, " *MLton_FFI_", t, " = &", array, ";\n"])
-                   end
-             else ()
-          end)
-      val _ = print "Int32 MLton_FFI_op;\n"
+      val _ = print "Pointer MLton_FFI_opArgsResPtr;\n"
    in
       List.foreach
       (!symbols, fn {name, ty} =>
@@ -92,20 +57,16 @@ fun declareExports {print} =
       List.foreach
       (!exports, fn {args, convention, id, name, res} =>
        let
-          val varCounter = Counter.new 0
-          val map = CType.memo (fn _ => Counter.new 0)
           val args =
-             Vector.map
-             (args, fn t =>
+             Vector.mapi
+             (args, fn (i,t) =>
               let
-                 val index = Counter.next (map t)
-                 val x = concat ["x", Int.toString (Counter.next varCounter)]
+                 val x = concat ["x", Int.toString i]
                  val t = CType.toString t
               in
-                 (x,
-                  concat [t, " ", x],
-                  concat ["\tMLton_FFI_", t, "_array[", Int.toString index,
-                          "] = ", x, ";\n"])
+                 (concat [t, " ", x],
+                  concat ["\tlocalOpArgsRes[", Int.toString (i + 1), "] = ",
+                          "(Pointer)(&", x, ");\n"])
               end)
           val header =
              concat [case res of
@@ -117,19 +78,29 @@ fun declareExports {print} =
                                      ")) "]
                      else " ",
                      name, " (",
-                     concat (List.separate (Vector.toListMap (args, #2), ", ")),
+                     concat (List.separate (Vector.toListMap (args, #1), ", ")),
                      ")"]
           val _ = List.push (headers, header)
+          val n =
+             1 + (Vector.length args)
+             + (case res of NONE => 0 | SOME _ => 1)
        in
           print (concat [header, " {\n"])
-          ; print (concat ["\tMLton_FFI_op = ", Int.toString id, ";\n"])
-          ; Vector.foreach (args, fn (_, _, set) => print set)
-          ; print ("\tMLton_callFromC ();\n")
+          ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
+          ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
+          ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",
+                           "\tlocalOpArgsRes[0] = (Pointer)(&localOp);\n"])
+          ; Vector.foreach (args, fn (_, set) => print set)
           ; (case res of
                 NONE => ()
               | SOME t =>
-                   print (concat
-                          ["\treturn MLton_FFI_", CType.toString t, "_array[0];\n"]))
+                   print (concat ["\t", CType.toString t, " localRes;\n",
+                                  "\tlocalOpArgsRes[", Int.toString (Vector.length args + 1), "] = ",
+                                  "(Pointer)(&localRes);\n"]))
+          ; print ("\tMLton_callFromC ();\n")
+          ; (case res of
+                NONE => ()
+              | SOME _ => print "\treturn localRes;\n")
           ; print "}\n"
        end)
    end

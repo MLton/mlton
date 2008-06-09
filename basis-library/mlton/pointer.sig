@@ -1,4 +1,4 @@
-(* Copyright (C) 2003-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2003-2006,2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -38,4 +38,14 @@ signature MLTON_POINTER =
       val setWord64: t * int * Word64.word -> unit
       val sizeofPointer: word
       val sub: t * word -> t
+   end
+
+signature MLTON_POINTER_EXTRA =
+   sig
+      include MLTON_POINTER
+
+      val getCPointer: t * int -> t
+      val setCPointer: t * int * t -> unit
+      val getObjptr: t * int -> 'a
+      val setObjptr: t * int * 'a -> unit
    end

@@ -1,11 +1,11 @@
-(* Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2003-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
  *)
 
-structure MLtonPointer: MLTON_POINTER =
+structure MLtonPointer: MLTON_POINTER_EXTRA =
 struct
 
 open Primitive.MLton.Pointer
@@ -20,11 +20,12 @@ local
    fun wrap f (p, i) =
       f (p, C_Ptrdiff.fromInt i)
 in
+   val getCPointer = wrap getCPointer
    val getInt8 = wrap getInt8
    val getInt16 = wrap getInt16
    val getInt32 = wrap getInt32
    val getInt64 = wrap getInt64
-   val getPointer = wrap getCPointer
+   val getObjptr = fn (p, i) => (wrap getObjptr) (p, i)
    val getReal32 = wrap getReal32
    val getReal64 = wrap getReal64
    val getWord8 = wrap getWord8
@@ -32,16 +33,18 @@ in
    val getWord32 = wrap getWord32
    val getWord64 = wrap getWord64
 end
+val getPointer = getCPointer
 
 local
    fun wrap f (p, i, x) =
       f (p, C_Ptrdiff.fromInt i, x)
 in
+   val setCPointer = wrap setCPointer
    val setInt8 = wrap setInt8
    val setInt16 = wrap setInt16
    val setInt32 = wrap setInt32
    val setInt64 = wrap setInt64
-   val setPointer = wrap setCPointer
+   val setObjptr = fn (p, i, x) => (wrap setObjptr) (p, i, x)
    val setReal32 = wrap setReal32
    val setReal64 = wrap setReal64
    val setWord8 = wrap setWord8
@@ -49,5 +52,6 @@ in
    val setWord32 = wrap setWord32
    val setWord64 = wrap setWord64
 end
+val setPointer = setCPointer
 
 end

@@ -114,20 +114,8 @@ structure Exn =
 
 structure FFI =
    struct
-      val cpointerArray = #1 _symbol "MLton_FFI_CPointer": Pointer.t GetSet.t; ()
-      val getOp = #1 _symbol "MLton_FFI_op": Int32.t GetSet.t;
-      val int8Array = #1 _symbol "MLton_FFI_Int8": Pointer.t GetSet.t; ()
-      val int16Array = #1 _symbol "MLton_FFI_Int16": Pointer.t GetSet.t; ()
-      val int32Array = #1 _symbol "MLton_FFI_Int32": Pointer.t GetSet.t; ()
-      val int64Array = #1 _symbol "MLton_FFI_Int64": Pointer.t GetSet.t; ()
+      val getOpArgsResPtr = #1 _symbol "MLton_FFI_opArgsResPtr": Pointer.t GetSet.t;
       val numExports = _build_const "MLton_FFI_numExports": Int32.int;
-      val objptrArray = #1 _symbol "MLton_FFI_Objptr": Pointer.t GetSet.t; ()
-      val real32Array = #1 _symbol "MLton_FFI_Real32": Pointer.t GetSet.t; ()
-      val real64Array = #1 _symbol "MLton_FFI_Real64": Pointer.t GetSet.t; ()
-      val word8Array = #1 _symbol "MLton_FFI_Word8": Pointer.t GetSet.t; ()
-      val word16Array = #1 _symbol "MLton_FFI_Word16": Pointer.t GetSet.t; ()
-      val word32Array = #1 _symbol "MLton_FFI_Word32": Pointer.t GetSet.t; ()
-      val word64Array = #1 _symbol "MLton_FFI_Word64": Pointer.t GetSet.t; ()
    end
 
 structure Finalizable =
