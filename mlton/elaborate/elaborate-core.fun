@@ -1288,7 +1288,7 @@ fun export {attributes: ImportExportAttribute.t list,
                 val (args, decs) =
                    Vector.unzip
                    (Vector.mapi
-                    (args, fn (i, {ctype, name, ...}) =>
+                    (args, fn (i, {name, ...}) =>
                      let
                         val x =
                            Var.fromSymbol
