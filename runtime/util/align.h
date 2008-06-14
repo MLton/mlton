@@ -40,6 +40,6 @@ static inline uintmax_t alignMax (uintmax_t a, uintmax_t b) {
   assert (b >= 1 && b == (b & -b));
   a += b - 1;
   a &= -b;
-  assert (isAligned (a, b));
+  assert (isAlignedMax (a, b));
   return a;       
 }
