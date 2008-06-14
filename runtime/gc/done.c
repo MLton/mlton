@@ -31,7 +31,7 @@ static void displayCollectionStats (FILE *out, const char *name, struct rusage *
   displayCol (out, 15, uintmaxToCommaString (bytes));
   displayCol (out, 15, 
               (ms > 0)
-              ? uintmaxToCommaString (1000.0 * (float)bytes/(float)ms)
+              ? uintmaxToCommaString ((uintmax_t)(1000.0 * (float)bytes/(float)ms))
               : "-");
   fprintf (out, "\n");
 }

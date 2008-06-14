@@ -250,7 +250,7 @@ loopObjects:
   assert (front <= back);
   cardStart = getCrossMapCardStart (s, front);
   cardIndex = sizeToCardMapIndex (cardStart - s->heap.start);
-  map[cardIndex] = (front - cardStart) / CROSS_MAP_OFFSET_SCALE;
+  map[cardIndex] = (GC_crossMapElem)((front - cardStart) / CROSS_MAP_OFFSET_SCALE);
   if (front < back) {
     front += sizeofObject (s, advanceToObjectData (s, front));
     goto loopObjects;

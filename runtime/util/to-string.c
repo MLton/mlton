@@ -66,7 +66,7 @@ char* intmaxToCommaString (intmax_t n) {
       m = -n;
 
     while (m > 0) {
-      buf[i--] = m % 10 + '0';
+      buf[i--] = (char)((m % 10) + '0');
       m = m / 10;
       if (i % 4 == 0 and m > 0) buf[i--] = ',';
     }
@@ -95,7 +95,7 @@ char* uintmaxToCommaString (uintmax_t n) {
     buf[i--] = '0';
   else {
     while (n > 0) {
-      buf[i--] = n % 10 + '0';
+      buf[i--] = (char)((n % 10) + '0');
       n = n / 10;
       if (i % 4 == 0 and n > 0) buf[i--] = ',';
     }

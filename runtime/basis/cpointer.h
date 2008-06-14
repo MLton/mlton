@@ -20,7 +20,7 @@ Pointer CPointer_add (Pointer p, C_Size_t s) {
 }
 MLTON_CODEGEN_STATIC_INLINE
 C_Size_t CPointer_diff (Pointer p1, Pointer p2) {
-  return (p1 - p2);
+  return (size_t)(p1 - p2);
 }
 MLTON_CODEGEN_STATIC_INLINE
 Bool CPointer_equal (Pointer p1, Pointer p2) {

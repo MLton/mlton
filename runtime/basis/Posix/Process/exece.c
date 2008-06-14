@@ -10,20 +10,20 @@ C_Errno_t(C_Int_t) Posix_Process_exece (NullString8_t pNStr,
   const char      *path;
   char            **args;
   char            **env;
-  int             aLen;
-  int             eLen;
+  uintmax_t       aLen;
+  uintmax_t       eLen;
   int             res;
 
   path = (const char *) pNStr;
   args = (char **) aPtr;
   aLen = GC_getArrayLength((pointer)aPtr);
-  for (int i = 0; i < aLen - 1; i++) {
+  for (unsigned int i = 0; i < aLen - 1; i++) {
     args[i] = (char *)aStr + ((size_t*)aOff)[i];
   }
   args[aLen - 1] = NULL;
   env = (char **) ePtr;
   eLen = GC_getArrayLength((pointer)ePtr);
-  for (int i = 0; i < eLen - 1; i++) {
+  for (unsigned int i = 0; i < eLen - 1; i++) {
     env[i] = (char *)eStr + ((size_t*)eOff)[i];
   }
   env[eLen - 1] = NULL;

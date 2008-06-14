@@ -365,7 +365,7 @@ objptr IntInf_toString (objptr arg, int32_t base, size_t bytes) {
     for (unsigned int i = 0; i < size; i++) {
       char c = sp->obj.body.chars[i];
       if (('a' <= c) && (c <= 'z'))
-        sp->obj.body.chars[i] = c + ('A' - 'a');
+        sp->obj.body.chars[i] = (char)(c + ('A' - 'a'));
     }
   setFrontier (&gcState, (pointer)&sp->obj + size, bytes);
   sp->counter = 0;
