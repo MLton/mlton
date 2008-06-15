@@ -5,7 +5,7 @@ signature TIMER =
 
       val checkCPUTimer: cpu_timer -> {sys: Time.time, usr: Time.time}
       val checkCPUTimes: cpu_timer -> {gc: {sys: Time.time,
-                                             usr: Time.time},
+                                            usr: Time.time},
                                        nongc: {sys: Time.time,
                                                usr: Time.time}}
       val checkGCTime: cpu_timer -> Time.time
