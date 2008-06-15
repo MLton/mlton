@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -30,4 +30,3 @@ signature ORDERED_RING =
       val prodFromTo: {from: t, to: t, term: t -> t} -> t
       val sumFromTo: {from: t, to: t, term: t -> t} -> t 
    end
-

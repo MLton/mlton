@@ -32,4 +32,3 @@ signature OS_FILE_SYS =
       val hash: file_id -> word
       val compare: file_id * file_id -> order
    end
-

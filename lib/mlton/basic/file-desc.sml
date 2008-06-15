@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -28,4 +28,3 @@ structure FileDesc: FILE_DESC =
             Exn.finally (f, fn () => move {from = copy, to = d1})
          end
    end
-

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -14,4 +14,3 @@ signature LINES =
       (* Print out lines start through stop. *)
       val startStop: In.t * Out.t * {start: int, stop: int} -> unit
    end
-

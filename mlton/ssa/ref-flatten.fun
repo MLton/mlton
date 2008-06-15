@@ -1142,4 +1142,3 @@ fun flatten (program as Program.T {datatypes, functions, globals, main}) =
    end
 
 end
-

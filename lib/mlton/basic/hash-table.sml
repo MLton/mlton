@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -102,4 +102,3 @@ fun mapi (T{numItems, mask, equals, buckets}, f) =
 fun map (t, f) = mapi (t, f o #2)
 
 end
-

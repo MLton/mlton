@@ -1,4 +1,4 @@
-(* Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -20,4 +20,3 @@ structure BinIO: BIN_IO_EXTRA =
     val someElem = 0wx0: Word8.word
     val xlatePos = SOME {fromInt = fn i => i,
                          toInt = fn i => i})
-

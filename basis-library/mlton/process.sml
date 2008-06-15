@@ -364,4 +364,3 @@ structure MLtonProcess =
 
       open Exit
    end
-
