@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1187,7 +1187,7 @@ struct
                              (AppendList.append (assembly_arg, assembly_args),
                               size_arg + size_args)
                           end)
-                     val (pushArgs, size_args) =
+                     val (pushArgs, aligned_size_args) =
                         let
                            val space = 16 - (size_args mod 16)
                         in
@@ -1374,13 +1374,13 @@ struct
                         (Assembly.directive_return
                          {returns = Operand.cReturnTemps returnTy})
                      val fixCStack =
-                        if size_args > 0
+                        if aligned_size_args > 0
                            andalso convention = CFunction.Convention.Cdecl
                            then (AppendList.single
                                  (Assembly.instruction_binal
                                   {oper = Instruction.ADD,
                                    dst = c_stackP,
-                                   src = Operand.immediate_int size_args,
+                                   src = Operand.immediate_int aligned_size_args,
                                    size = pointerSize}))
                            else AppendList.empty
                      val continue

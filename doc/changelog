@@ -1,5 +1,9 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-07-16
+   - Fixed bug in the name mangling of _import-ed functions with the
+     stdcall convention.
+
 * 2008-06-06
    - Added expert command line switch -emit-main {true|false}.
 
