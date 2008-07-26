@@ -1,6 +1,8 @@
-#include <fenv.h>
 #include <inttypes.h>
 #include <stdint.h>
+#ifndef __UCLIBC__
+#include <fenv.h>
+#endif
 
 #include <unistd.h>
 
@@ -56,4 +58,14 @@ typedef unsigned long int nfds_t;
 
 #ifndef SO_ACCEPTCONN
 #define SO_ACCEPTCONN 30
+#endif
+
+#ifdef __UCLIBC__
+#include <fpu_control.h>
+
+#define FE_DOWNWARD     _FPU_RC_DOWN
+#define FE_TONEAREST    _FPU_RC_NEAREST
+#define FE_TOWARDZERO   _FPU_RC_ZERO
+#define FE_UPWARD       _FPU_RC_UP
+#include "feround.h"
 #endif

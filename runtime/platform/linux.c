@@ -10,6 +10,9 @@
 #include "nonwin.c"
 #include "sysconf.c"
 #include "use-mmap.c"
+#ifdef __UCLIBC__
+#include "feround.c"
+#endif
 
 #ifndef EIP
 #define EIP     14
@@ -19,7 +22,6 @@
  *  alpha: ucp->m_context.sc_pc
  *  arm: ucp->m_context.ctx.arm_pc
  *  ia64: ucp->m_context.sc_ip & ~0x3UL
- *  mips: ucp->m_context.sc_pc
  *  s390: ucp->m_context.sregs->regs.psw.addr
  */
 static void catcher (__attribute__ ((unused)) int sig, 
@@ -44,6 +46,13 @@ static void catcher (__attribute__ ((unused)) int sig,
         GC_handleSigProf ((code_pointer) scp->sigc_regs.tpc);
 #else
         GC_handleSigProf ((code_pointer) scp->si_regs.pc);
+#endif
+#elif (defined (__mips__))
+        ucontext_t* ucp = (ucontext_t*)mystery;
+#ifdef __UCLIBC__
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.gpregs[CTX_EPC]);
+#else
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.pc);
 #endif
 #elif (defined (__i386__))
         ucontext_t* ucp = (ucontext_t*)mystery;

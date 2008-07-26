@@ -26,7 +26,7 @@ int fegetround (void) {
         return mode;
 }
 
-void fesetround (int mode) {
+int fesetround (int mode) {
         switch (mode) {
         case 0: mode = FP_RN; break;
         case 1: mode = FP_RM; break;
@@ -34,6 +34,7 @@ void fesetround (int mode) {
         case 3: mode = FP_RZ; break;
         }
         fpsetround (mode);
+        return 0;
 }
 #endif /* __sparc__ */
 

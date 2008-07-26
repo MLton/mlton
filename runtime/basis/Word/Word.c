@@ -24,7 +24,7 @@
  * implements / and %.
  */
 
-#if ! (defined (__amd64__) || defined (__hppa__) || defined (__i386__) || defined(__ia64__)|| defined (__ppc__) || defined (__powerpc__) || defined (__sparc__))
+#if ! (defined (__amd64__) || defined (__hppa__) || defined (__i386__) || defined(__ia64__) || defined(__mips__) || defined (__ppc__) || defined (__powerpc__) || defined (__sparc__))
 #error check that C {/,%} correctly implement {quot,rem} from the basis library
 #endif
 

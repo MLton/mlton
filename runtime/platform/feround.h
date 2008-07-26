@@ -1,2 +1,2 @@
 int fegetround (void);
-void fesetround (int mode);
+int fesetround (int mode);
