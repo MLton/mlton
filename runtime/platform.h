@@ -13,6 +13,7 @@
 #include "util.h"
 #include "ml-types.h"
 #include "c-types.h"
+#include "export.h"
 
 #ifndef MLton_Platform_Arch_host
 #error MLton_Platform_Arch_host not defined

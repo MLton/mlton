@@ -85,7 +85,7 @@ doit "$lib" \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1'                                            \
         -cc-opt '-fno-strict-aliasing -fomit-frame-pointer -w'   \
-        -link-opt '-lgdtoa -lm -lgmp'                            \
+        -link-opt '-lm -lgmp'                            \
         -mlb-path-map "$lib/mlb-path-map"                        \
         -target-as-opt amd64 '-m64'                              \
         -target-cc-opt amd64 '-m64'                              \

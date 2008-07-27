@@ -82,7 +82,6 @@ fun implementsPrim p =
        | Real_rndToWord _ => true
        | Real_round _ => true
        | Real_sub _ => true
-       | Thread_returnToC => true
        | Word_add _ => true
        | Word_addCheck _ => true
        | Word_andb _ => true
@@ -324,7 +323,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                            datatype z = datatype Target.t
                         in
                            case target of
-                              Direct name =>
+                              Direct "Thread_returnToC" => ()
+                            | Direct name =>
                                  let
                                     val hash = String.hash name
                                  in
@@ -380,6 +380,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val jumpOnOverflow = opcode "JumpOnOverflow"
       val raisee = opcode "Raise"
       val returnOp = opcode "Return"
+      val returnToC = opcode "Thread_returnToC"
       datatype z = datatype WordSize.prim
       val switch: WordSize.t -> Opcode.t =
          let
@@ -699,7 +700,8 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
                       datatype z = datatype Target.t
                       val () =
                          case target of
-                            Direct name => emitCallC (directIndex name)
+                            Direct "Thread_returnToC" => emitOpcode returnToC
+                          | Direct name => emitCallC (directIndex name)
                           | Indirect => emitCallC (indirectIndex func)
                       val () =
                          if maySwitchThreads
@@ -825,7 +827,7 @@ fun output {program as Program.T {chunks, main, ...}, outputC} =
       val () = done ()
       val {done, print, ...} = outputC ()
       fun declareCallC () =
-          (print "void MLton_callC (int i) {\n"
+          (print "INTERNAL void MLton_callC (int i) {\n"
            ; print "switch (i) {\n"
            ; List.foreach (!callCs, fn {display, index} =>
                            (print (concat ["case ", Int.toString index, ":\n\t"])

@@ -13,6 +13,8 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
+#include "export.h"
+
 struct cont {
         void *nextChunk;
 };
@@ -25,7 +27,7 @@ extern struct GC_state gcState;
 #define ChunkName(n) Chunk ## n
 
 #define DeclareChunk(n)                         \
-        struct cont ChunkName(n)(void)
+        INTERNAL struct cont ChunkName(n)(void)
 
 #define Chunkp(n) &(ChunkName(n))
 

@@ -3143,6 +3143,8 @@ struct
                                    ","))]
              | Global l 
              => seq [str ".globl ",
+                     Label.layout l,
+                     str "\n.hidden ",
                      Label.layout l]
              | IndirectSymbol l 
              => seq [str ".indirect_symbol ",

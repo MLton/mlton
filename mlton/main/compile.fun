@@ -424,6 +424,10 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "typedef void* CPointer;\n"
                    val _ = print "typedef Pointer Objptr;\n"
                    val _ = print "\n"
+                   val _ = 
+                      if !Control.format = Control.Executable then () else
+                          (print ("void " ^ File.base f ^ "_open(int argc, const char** argv);\n")
+                          ;print ("void " ^ File.base f ^ "_close();\n"))
                    val _ = Ffi.declareHeaders {print = print}
                 in
                    ()

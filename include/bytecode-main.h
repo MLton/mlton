@@ -15,14 +15,14 @@
 #define DEBUG_CODEGEN FALSE
 #endif
 
-struct Bytecode MLton_bytecode;
+INTERNAL struct Bytecode MLton_bytecode;
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return *((GC_frameIndex*)(MLton_bytecode.code + ra - sizeof(GC_frameIndex)));
 }
 
-#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
-void MLton_callFromC () {                                               \
+#define MLtonCallFromC                                                  \
+static void MLton_callFromC () {                                        \
         uintptr_t nextFun;                                              \
         GC_state s;                                                     \
                                                                         \
@@ -46,7 +46,10 @@ void MLton_callFromC () {                                               \
         if (DEBUG_CODEGEN)                                              \
                 fprintf (stderr, "MLton_callFromC done\n");             \
 }                                                                       \
-int MLton_main (int argc, char* argv[]) {                               \
+
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
+MLtonCallFromC                                                          \
+EXPORTED int MLton_main (int argc, char* argv[]) {                      \
         uintptr_t nextFun;                                              \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -57,6 +60,28 @@ int MLton_main (int argc, char* argv[]) {                               \
                 nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
+        return 1;                                                       \
+}
+
+#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
+MLtonCallFromC                                                          \
+EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+        uintptr_t nextFun;                                              \
+        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        if (gcState.amOriginal) {                                       \
+                real_Init();                                            \
+                nextFun = ml;                                           \
+        } else {                                                        \
+                /* Return to the saved world */                         \
+                nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+        }                                                               \
+        MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
+}                                                                       \
+EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+        uintptr_t nextFun;                                              \
+        nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+        MLton_Bytecode_interpret (&MLton_bytecode, nextFun);            \
+        GC_done(&gcState);                                              \
 }
 
 #endif /* #ifndef _BYTECODE_MAIN_H */

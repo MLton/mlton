@@ -35,7 +35,7 @@ typedef Pointer Objptr;
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 #define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 
-Pointer gcStateAddress;
+INTERNAL Pointer gcStateAddress;
 
 #define Initialize(al, mg, mfs, mmc, pk, ps)                            \
         gcStateAddress = &gcState;                                      \
@@ -72,6 +72,10 @@ Pointer gcStateAddress;
         gcState.profiling.stack = ps;                                   \
         MLton_init (argc, argv, &gcState);                              \
 
-void MLton_callFromC ();
+#define LIB_PASTE(x,y) x ## y
+#define LIB_OPEN(x) LIB_PASTE(x, _open)
+#define LIB_CLOSE(x) LIB_PASTE(x, _close)
+
+static void MLton_callFromC ();
 
 #endif /* #ifndef _COMMON_MAIN_H_ */

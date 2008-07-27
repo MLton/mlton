@@ -17,6 +17,15 @@ signature MLTON_PLATFORM =
             val toString: t -> string
          end
 
+      structure Format:
+         sig
+            datatype t = Archive | Executable | Library
+
+            val fromString: string -> t option
+            val host: t
+            val toString: t -> string
+         end
+
       structure OS:
          sig
             datatype t = AIX | Cygwin | Darwin | FreeBSD | HPUX 

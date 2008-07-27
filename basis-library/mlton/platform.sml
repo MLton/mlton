@@ -39,6 +39,25 @@ structure MLtonPlatform: MLTON_PLATFORM =
             fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
          end
 
+      structure Format =
+         struct
+            open Format
+
+            val all = [
+                (Archive, "Archive"),
+                (Executable, "Executable"),
+                (Library, "Library")]
+
+            fun fromString s =
+               let
+                  val s = String.toLower s
+               in
+                  omap (peek (all, fn (_, s') => s = String.toLower s'), #1)
+               end
+
+            fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
+         end
+
       structure OS =
          struct
             open OS

@@ -44,7 +44,7 @@ val headers: string list ref = ref []
 
 fun declareExports {print} =
    let
-      val _ = print "Pointer MLton_FFI_opArgsResPtr;\n"
+      val _ = print "INTERNAL Pointer MLton_FFI_opArgsResPtr;\n"
    in
       List.foreach
       (!symbols, fn {name, ty} =>
@@ -85,7 +85,7 @@ fun declareExports {print} =
              1 + (Vector.length args)
              + (case res of NONE => 0 | SOME _ => 1)
        in
-          print (concat [header, " {\n"])
+          print (concat ["EXPORTED ", header, " {\n"])
           ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
           ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
           ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",

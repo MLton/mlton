@@ -53,6 +53,7 @@ structure Show =
    end
 
 val gcc: string ref = ref "<unset>"
+val ar: string ref = ref "ar"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -203,6 +204,8 @@ fun makeOptions {usage} =
                                 | "8" => Align8
                                 | _ => usage (concat ["invalid -align flag: ",
                                                       s]))))),
+       (Expert, "ar", " <ar>", "path to ar executable",
+        SpaceString (fn s => ar := s)),
        (Normal, "as-opt", " <opt>", "pass option to assembler",
         (SpaceString o tokenizeOpt)
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
@@ -353,6 +356,21 @@ fun makeOptions {usage} =
         boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
         SpaceString (fn s => exportHeader := SOME s)),
+       (Expert, "format", 
+        concat [" {",
+                String.concatWith
+                (List.keepAllMap
+                  (Control.Format.all, fn cg => SOME (Control.Format.toString cg)),
+                 "|"),
+                "}"],
+        "generated output format",
+        SpaceString (fn s =>
+                     Control.format
+                     := (case List.peek 
+                              (Control.Format.all, fn cg =>
+                               s = Control.Format.toString cg) of
+                            SOME cg => cg
+                          | NONE => usage (concat ["invalid -format flag: ", s])))),
        (Expert, "gc-check", " {limit|first|every}", "force GCs",
         SpaceString (fn s =>
                      gcCheck :=
@@ -869,6 +887,18 @@ fun commandLine (args: string list): unit =
                    file = s ^ "-" ^ gccFile}
                end 
           | Self => !gcc
+      val ar = 
+         case target of 
+            Cross s => 
+               let
+                  val {dir = arDir, file = arFile} =
+                     OS.Path.splitDirFile (!ar)
+               in 
+                  OS.Path.joinDirFile
+                  {dir = arDir,
+                   file = s ^ "-" ^ arFile}
+               end 
+          | Self => !ar
 
       fun addTargetOpts opts =
          List.fold
@@ -887,8 +917,13 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val ccOpts = concat ["-I", !libTargetDir, "/include"] :: ccOpts
       val linkOpts =
-         List.concat [[concat ["-L", !libTargetDir],
-                       if !debugRuntime then "-lmlton-gdb" else "-lmlton"],
+         List.concat [[concat ["-L", !libTargetDir]],
+                      if !format = Library then 
+                      ["-lmlton-pic", "-lgdtoa-pic"]
+                      else if !debugRuntime then 
+                      ["-lmlton-gdb", "-lgdtoa-gdb"]
+                      else 
+                      ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
       val _ =
          if not (hasCodegen (!codegen))
@@ -1061,6 +1096,10 @@ fun commandLine (args: string list): unit =
                         case !output of
                            NONE => suffix suf
                          | SOME f => f
+                     fun libname () =
+                        case !exportHeader of
+                           NONE => "lib"
+                         | SOME f => File.base f
                      val _ =
                         atMLtons :=
                         Vector.fromList
@@ -1081,17 +1120,28 @@ fun commandLine (args: string list): unit =
                          | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
-                           val output = maybeOut ""
+                           val output = 
+                              case !format of
+                                 Archive => maybeOut ".a"
+                               | Executable => maybeOut ""
+                               | Library => maybeOut ".so"
+                           val libOpts = 
+                               [ "-shared", "-Wl,-Bsymbolic" ]
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
-                               System.system
-                                (gcc,
-                                 List.concat
-                                  [["-o", output],
-                                   if !debug then gccDebug else [],
-                                   inputs,
-                                   linkOpts]))
+                               if !format = Archive 
+                               then (File.remove output
+                                    ;System.system
+                                     (ar, List.concat [["rcs", output], inputs]))
+                               else System.system
+                                    (gcc,
+                                     List.concat
+                                      [["-o", output],
+                                       if !format = Library then libOpts else [],
+                                       if !debug then gccDebug else [],
+                                       inputs,
+                                       linkOpts]))
                               ()
                            (* gcc on Cygwin appends .exe, which I don't want, so
                             * move the output file to it's rightful place.
@@ -1132,11 +1182,16 @@ fun commandLine (args: string list): unit =
                      let
                         val debugSwitches = gccDebug @ ["-DASSERT=1"]
                         val output = mkOutputO (c, input)
+                        
                         val _ =
                            System.system
                             (gcc,
                              List.concat
                              [[ "-std=gnu99", "-c" ],
+                              if !format = Executable 
+                              then [] else [ "-DLIBNAME=" ^ libname () ],
+                              if !format = Library 
+                              then [ "-fPIC", "-DPIC" ] else [],
                               if !debug then debugSwitches else [],
                               ccOpts,
                               ["-o", output],

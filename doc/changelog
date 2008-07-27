@@ -1,5 +1,15 @@
 Here are the changes from version 20070826 to version YYYYMMDD.
 
+* 2008-07-24
+   - Added support for compiling to a C library. The relevant new compiler 
+     options are '-ar' and '-format'. Libraries are named based on the 
+     name of the -export-header file. Libraries have two extra methods:
+       * NAME_open(argc, argv) initializes the library and runs the SML code
+         until it reaches the end of the program. If the SML code exits or
+         raises an uncaught exception, the entire program will terminate.
+       * NAME_close() will execute any registered atExit functions, any
+         outstanding finalizers, and frees the ML heap.
+     
 * 2008-07-16
    - Fixed bug in the name mangling of _import-ed functions with the
      stdcall convention.

@@ -16,11 +16,11 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
 
-#define MLtonMain(al, mg, mfs, mmc, pk, ps, mc, ml)                     \
+#define MLtonCallFromC                                                  \
 /* Globals */                                                           \
-uintptr_t nextFun;                                                      \
-int returnToC;                                                          \
-void MLton_callFromC () {                                               \
+INTERNAL uintptr_t nextFun;                                             \
+INTERNAL int returnToC;                                                 \
+static void MLton_callFromC () {                                        \
         struct cont cont;                                               \
         GC_state s;                                                     \
                                                                         \
@@ -47,8 +47,11 @@ void MLton_callFromC () {                                               \
                 s->limit = 0;                                           \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC done\n");             \
-}                                                                       \
-int MLton_main (int argc, char* argv[]) {                               \
+}
+
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, mc, ml)                     \
+MLtonCallFromC                                                          \
+EXPORTED int MLton_main (int argc, char* argv[]) {                      \
         struct cont cont;                                               \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
         if (gcState.amOriginal) {                                       \
@@ -70,6 +73,36 @@ int MLton_main (int argc, char* argv[]) {                               \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
                 cont=(*(struct cont(*)(void))cont.nextChunk)();         \
         }                                                               \
+        return 1;                                                       \
+}
+
+#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
+MLtonCallFromC                                                          \
+EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+        struct cont cont;                                               \
+        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        if (gcState.amOriginal) {                                       \
+                real_Init();                                            \
+                PrepFarJump(mc, ml);                                    \
+        } else {                                                        \
+                /* Return to the saved world */                         \
+                nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+                cont.nextChunk = nextChunks[nextFun];                   \
+        }                                                               \
+        /* Trampoline */                                                \
+        do {                                                            \
+                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
+        } while (not returnToC);                                        \
+}                                                                       \
+EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+        struct cont cont;                                               \
+        nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+        cont.nextChunk = nextChunks[nextFun];                           \
+        returnToC = false;                                              \
+        do {                                                            \
+                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
+        } while (not returnToC);                                        \
+        GC_done(&gcState);                                              \
 }
 
 #endif /* #ifndef _C_MAIN_H */

@@ -183,6 +183,21 @@ structure Platform =
             val hostIsBigEndian = _const "MLton_Platform_Arch_bigendian": bool;
          end
 
+      structure Format =
+         struct
+            datatype t =
+               Archive
+             | Executable
+             | Library
+
+            val host: t =
+               case _build_const "MLton_Platform_Format": String8.string; of
+                  "archive" => Archive
+                | "executable" => Executable
+                | "library" => Library
+                | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_Format"
+         end
+
       structure OS =
          struct
             datatype t =

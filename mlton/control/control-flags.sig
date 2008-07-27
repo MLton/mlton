@@ -145,6 +145,20 @@ signature CONTROL_FLAGS =
 
       val exnHistory: bool ref
 
+      structure Format:
+         sig
+            datatype t =
+               Archive
+             | Executable
+             | Library
+            val all: t list
+            val toString: t -> string
+         end
+      
+      datatype format = datatype Format.t
+
+      val format: Format.t ref
+
       (* *)
       datatype gcCheck =
          Limit

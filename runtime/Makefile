@@ -33,12 +33,20 @@ GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
-GCOPTFLAGS :=
 DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
+PICFLAGS := -fPIC -DPIC
+GCOPTFLAGS :=
 GCDEBUGFLAGS :=
+GCPICFLAGS := 
 WARNFLAGS :=
 OPTWARNFLAGS :=
 DEBUGWARNFLAGS :=
+PICWARNFLAGS := 
+
+# Make mlton static library symbols private
+ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
+FLAGS += -fvisibility=hidden
+endif
 
 ifeq ($(TARGET_ARCH), amd64)
 FLAGS += -m64
@@ -113,8 +121,10 @@ CPPFLAGS :=
 CFLAGS := -I. -Iplatform $(FLAGS)
 OPTCFLAGS := $(CFLAGS) $(CPPFLAGS) $(OPTFLAGS)
 DEBUGCFLAGS := $(CFLAGS) $(CPPFLAGS) -DASSERT=1 $(DEBUGFLAGS)
+PICCFLAGS := $(CFLAGS) $(CPPFLAGS) $(OPTFLAGS) $(PICFLAGS)
 GCOPTCFLAGS = $(GCOPTFLAGS)
 GCDEBUGCFLAGS = $(GCDEBUGFLAGS)
+GCPICCFLAGS = $(GCOPTFLAGS) $(GCPICFLAGS)
 WARNCFLAGS :=
 WARNCFLAGS += -pedantic -Wall
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 3),$(GCC_MAJOR_VERSION))
@@ -167,6 +177,7 @@ endif
 
 OPTWARNCFLAGS := $(WARNCFLAGS) -Wdisabled-optimization $(OPTWARNFLAGS)
 DEBUGWARNCFLAGS := $(WARNCFLAGS) $(DEBUGWARNFLAGS)
+PICWARNCFLAGS := $(WARNCFLAGS) $(OPTWARNFLAGS) $(PICWARNFLAGS)
 
 UTILHFILES :=							\
 	util.h							\
@@ -212,25 +223,35 @@ DEBUG_OBJS := 							\
 	gc-gdb.o						\
 	platform-gdb.o						\
 	platform/$(TARGET_OS)-gdb.o
+PIC_OBJS := 							\
+	util-pic.o						\
+	gc-pic.o						\
+	platform-pic.o						\
+	platform/$(TARGET_OS)-pic.o
 
 OMIT_BYTECODE := no
 ifeq ($(OMIT_BYTECODE), yes)
 else
   OBJS += bytecode/interpret.o
   DEBUG_OBJS += bytecode/interpret-gdb.o
+  PIC_OBJS += bytecode/interpret-pic.o
 endif
 
 ifeq ($(COMPILE_FAST), yes)
   OBJS += basis.o
   DEBUG_OBJS += basis-gdb.o
+  PIC_OBJS += basis-pic.o
 else
   OBJS += 							\
 	$(foreach f, $(basename $(BASISCFILES)), $(f).o)
   DEBUG_OBJS += 						\
 	$(foreach f, $(basename $(BASISCFILES)), $(f)-gdb.o)
+  PIC_OBJS += 						\
+	$(foreach f, $(basename $(BASISCFILES)), $(f)-pic.o)
 endif
 
-ALL := libgdtoa.a libmlton.a libmlton-gdb.a
+ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
+       libmlton.a libmlton-gdb.a libmlton-pic.a
 ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 ifeq ($(OMIT_BYTECODE), yes)
 else
@@ -247,6 +268,24 @@ libgdtoa.a: gdtoa/arith.h
 	$(RM) gdtoa/arithchk.o
 	$(AR) libgdtoa.a gdtoa/*.o
 	$(RANLIB) libgdtoa.a
+
+libgdtoa-gdb.a: gdtoa/arith.h
+	cd gdtoa && 						\
+		$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS)		\
+			-w -O1 -c -DINFNAN_CHECK 		\
+			*.c
+	$(RM) gdtoa/arithchk.o
+	$(AR) libgdtoa-gdb.a gdtoa/*.o
+	$(RANLIB) libgdtoa-gdb.a
+
+libgdtoa-pic.a: gdtoa/arith.h
+	cd gdtoa && 						\
+		$(CC) $(PICCFLAGS) $(PICWARNCFLAGS)		\
+			-w -O1 -c -DINFNAN_CHECK 		\
+			*.c
+	$(RM) gdtoa/arithchk.o
+	$(AR) libgdtoa-pic.a gdtoa/*.o
+	$(RANLIB) libgdtoa-pic.a
 
 gdtoa/arithchk.c:
 	gzip -dc gdtoa.tgz | tar xf -
@@ -265,6 +304,10 @@ libmlton.a: $(OBJS)
 libmlton-gdb.a: $(DEBUG_OBJS)
 	$(AR) libmlton-gdb.a $(DEBUG_OBJS)
 	$(RANLIB) libmlton-gdb.a
+
+libmlton-pic.a: $(PIC_OBJS)
+	$(AR) libmlton-pic.a $(PIC_OBJS)
+	$(RANLIB) libmlton-pic.a
 
 
 basis.c: $(BASISCFILES)
@@ -305,11 +348,17 @@ bytecode/opcodes: bytecode/print-opcodes.c bytecode/opcode.h
 	rm -f bytecode/print-opcodes$(EXE)
 
 
+util-pic.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
+
 util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 util.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
+
+gc-pic.o: gc.c $(GCCFILES) $(HFILES)
+	$(CC) $(PICCFLAGS) $(GCPICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
 
 gc-gdb.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(DEBUGCFLAGS) $(GCDEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
@@ -318,10 +367,12 @@ gc.o: gc.c $(GCCFILES) $(HFILES)
 	$(CC) $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<
 
 ## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
+bytecode/interpret-pic.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
+	$(CC) -I../include $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+
 bytecode/interpret-gdb.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
-## Needs -Wno-float-equal for Real<N>_equal, included via "c-chunk.h".
 bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 	$(CC) -I../include $(OPTCFLAGS) $(GCOPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 
@@ -329,30 +380,33 @@ bytecode/interpret.o: bytecode/interpret.c $(HFILES) $(BYTECODEHFILES)
 ## Needs -Wno-float-equal for Real<N>_equal;
 ## needs -Wno-format-nonliteralfor Date_strfTime;
 ## needs -Wno-redundant-decls for 'extern struct GC_state gcState'.
+basis-pic.o: basis.c $(BASISCFILES) $(HFILES)
+	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
 basis-gdb.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
-## Needs -Wno-float-equal for Real<N>_equal.
-basis/Real/Real-gdb.o: basis/Real/Real.c $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
-## Needs -Wno-format-nonliteralfor Date_strfTime.
-basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
-	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
-
-%-gdb.o: %.c $(HFILES)
-	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
-
-
-## Needs -Wno-float-equal for Real<N>_equal;
-## needs -Wno-format-nonliteral for Date_strfTime;
-## needs -Wno-redundant-decls for 'extern struct GC_state gcState'.
 basis.o: basis.c $(BASISCFILES) $(HFILES)
 	$(CC) -Ibasis -Ibasis/Word -Ibasis/Real $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -Wno-format-nonliteral -Wno-redundant-decls -c -o $@ $<
 ## Needs -Wno-float-equal for Real<N>_equal.
+basis/Real/Real-pic.o: basis/Real/Real.c $(HFILES)
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-float-equal -c -o $@ $<
+basis/Real/Real-gdb.o: basis/Real/Real.c $(HFILES)
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 basis/Real/Real.o: basis/Real/Real.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-float-equal -c -o $@ $<
 ## Needs -Wno-format-nonliteralfor Date_strfTime.
+basis/System/Date-pic.o: basis/System/Date.c $(HFILES)
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
+basis/System/Date-gdb.o: basis/System/Date.c $(HFILES)
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
 basis/System/Date.o: basis/System/Date.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -Wno-format-nonliteral -c -o $@ $<
+
+
+%-pic.o: %.c $(HFILES)
+	$(CC) $(PICCFLAGS) $(PICWARNCFLAGS) -c -o $@ $<
+
+%-gdb.o: %.c $(HFILES)
+	$(CC) $(DEBUGCFLAGS) $(DEBUGWARNCFLAGS) -c -o $@ $<
 
 %.o: %.c $(HFILES)
 	$(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -c -o $@ $<

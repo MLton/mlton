@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "ml-types.h"
 #include "c-types.h"
+#include "export.h"
 
 typedef Pointer CPointer;
 typedef Pointer Objptr;

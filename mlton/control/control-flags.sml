@@ -614,6 +614,27 @@ val exnHistory = control {name = "exn history",
                           default = false,
                           toString = Bool.toString}
 
+structure Format =
+   struct
+      datatype t =
+         Archive
+       | Executable
+       | Library
+      
+      val all = [Archive, Executable, Library]
+      
+      val toString: t -> string =
+        fn Archive => "archive"
+         | Executable => "executable"
+         | Library => "library"
+   end
+
+datatype format = datatype Format.t
+
+val format = control {name = "generated output format",
+                      default = Format.Executable,
+                      toString = Format.toString}
+
 structure GcCheck =
    struct
       datatype t =

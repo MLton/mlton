@@ -597,7 +597,10 @@ mainLoop:
         Switch(32);
         Switch(64);
         case opcodeSym (Thread_returnToC):
-                maybe goto done;
+                if (disassemble) goto mainLoop;
+                FlushFrontier ();
+                FlushStackTop ();
+                goto done;
         default:
                 assert (FALSE);
         }

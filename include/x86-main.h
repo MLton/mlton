@@ -11,28 +11,28 @@
 #include "common-main.h"
 
 /* Globals */
-Word32 applyFFTemp;
-Word32 applyFFTemp2;
-Word32 checkTemp;
-Word32 cReturnTemp[16];
-Pointer c_stackP;
-Word32 divTemp;
-Word32 fildTemp;
-Word32 fpswTemp;
-Word32 indexTemp;
-Word32 raTemp1;
-Real64 raTemp2;
-Real64 realTemp1D;
-Real64 realTemp2D;
-Real64 realTemp3D;
-Real32 realTemp1S;
-Real32 realTemp2S;
-Real32 realTemp3S;
-Word32 spill[16];
-Word32 stackTopTemp;
-Word8 wordTemp1B;
-Word16 wordTemp1W;
-Word32 wordTemp1L;
+INTERNAL Word32 applyFFTemp;
+INTERNAL Word32 applyFFTemp2;
+INTERNAL Word32 checkTemp;
+INTERNAL Word32 cReturnTemp[16];
+INTERNAL Pointer c_stackP;
+INTERNAL Word32 divTemp;
+INTERNAL Word32 fildTemp;
+INTERNAL Word32 fpswTemp;
+INTERNAL Word32 indexTemp;
+INTERNAL Word32 raTemp1;
+INTERNAL Real64 raTemp2;
+INTERNAL Real64 realTemp1D;
+INTERNAL Real64 realTemp2D;
+INTERNAL Real64 realTemp3D;
+INTERNAL Real32 realTemp1S;
+INTERNAL Real32 realTemp2S;
+INTERNAL Real32 realTemp3S;
+INTERNAL Word32 spill[16];
+INTERNAL Word32 stackTopTemp;
+INTERNAL Word8 wordTemp1B;
+INTERNAL Word16 wordTemp1W;
+INTERNAL Word32 wordTemp1L;
 
 #ifndef DEBUG_X86CODEGEN
 #define DEBUG_X86CODEGEN FALSE
@@ -42,9 +42,9 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex)));
 }
 
-#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
+#define MLtonCallFromC                                                  \
 void MLton_jumpToSML (pointer jump);                                    \
-void MLton_callFromC () {                                               \
+static void MLton_callFromC () {                                        \
         pointer jump;                                                   \
         GC_state s;                                                     \
                                                                         \
@@ -68,8 +68,11 @@ void MLton_callFromC () {                                               \
         if (DEBUG_X86CODEGEN)                                           \
                 fprintf (stderr, "MLton_callFromC() done\n");           \
         return;                                                         \
-}                                                                       \
-int MLton_main (int argc, char* argv[]) {                               \
+}
+
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
+MLtonCallFromC                                                          \
+EXPORTED int MLton_main (int argc, char* argv[]) {                      \
         pointer jump;                                                   \
         extern pointer ml;                                              \
                                                                         \
@@ -84,5 +87,26 @@ int MLton_main (int argc, char* argv[]) {                               \
         return 1;                                                       \
 }
 
-#endif /* #ifndef _X86_MAIN_H_ */
+#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
+MLtonCallFromC                                                          \
+EXPORTED void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {              \
+        pointer jump;                                                   \
+        extern pointer ml;                                              \
+                                                                        \
+        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        if (gcState.amOriginal) {                                       \
+                real_Init();                                            \
+                jump = (pointer)&ml;                                    \
+        } else {                                                        \
+                jump = *(pointer*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+        }                                                               \
+        MLton_jumpToSML(jump);                                          \
+}                                                                       \
+EXPORTED void LIB_CLOSE(LIBNAME) () {                                   \
+        pointer jump;                                                   \
+        jump = *(pointer*)(gcState.stackTop - GC_RETURNADDRESS_SIZE);   \
+        MLton_jumpToSML(jump);                                          \
+        GC_done(&gcState);                                              \
+}
 
+#endif /* #ifndef _X86_MAIN_H_ */

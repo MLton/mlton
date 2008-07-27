@@ -172,7 +172,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_rndToWord _ => true
        | Real_round _ => true
        | Real_sub _ => true
-       | Thread_returnToC => true
        | Word_add _ => true
        | Word_addCheck _ => true
        | Word_andb _ => true
@@ -400,7 +399,10 @@ fun outputDeclarations
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
                 | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in 
-            C.callNoSemi ("MLtonMain",
+            C.callNoSemi (case !Control.format of
+                             Control.Archive => "MLtonLibrary"
+                           | Control.Executable => "MLtonMain"
+                           | Control.Library => "MLtonLibrary",
                           [C.int align,
                            magic,
                            C.bytes maxFrameSize,
@@ -412,7 +414,7 @@ fun outputDeclarations
             ; print "\n"
          end
       fun declareMain () =
-         if !Control.emitMain
+         if !Control.emitMain andalso !Control.format = Control.Executable
             then List.foreach
                  (["int main (int argc, char* argv[]) {",
                    "return (MLton_main (argc, argv));",
@@ -453,7 +455,7 @@ fun outputDeclarations
          end
    in
       outputIncludes (includes, print)
-      ; declareGlobals ("", print)
+      ; declareGlobals ("INTERNAL ", print)
       ; declareExports ()
       ; declareLoadSaveGlobals ()
       ; declareIntInfs ()
@@ -1195,7 +1197,7 @@ fun output {program as Machine.Program.T {chunks,
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
-          ; print "struct cont ( *nextChunks []) () = {"
+          ; print "INTERNAL struct cont ( *nextChunks []) () = {"
           ; Vector.foreach (entryLabels, fn l =>
                             let
                                val {chunkLabel, ...} = labelInfo l
