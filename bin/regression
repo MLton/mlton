@@ -8,12 +8,14 @@
 name=`basename "$0"`
 
 usage () {
-        echo >&2 "usage: $name [-cross target] [-run-only target] [-short] [-test-reg reg] [mlton flags ...]"
+        echo >&2 "usage: $name [-cross target] [-resume test] [-run-only target] [-short] [-test-reg reg] [mlton flags ...]"
         exit 1
 }
 
 cross='false'
 fail='false'
+resume='true'
+resumeTest='nil'
 runOnly='false'
 short='false'
 testReg='false'
@@ -35,6 +37,15 @@ while [ "$#" -gt 0 ]; do
                 ;;
         -fail)
                 fail='true'
+                shift
+                ;;
+        -resume)
+                resume='false'
+                shift
+                if [ "$#" = 0 ]; then
+                        usage
+                fi
+                resumeTest="$1"
                 shift
                 ;;
         -run-only)
@@ -119,6 +130,13 @@ esac
 
 for f in *.sml; do
         f=`basename "$f" .sml`
+ 	if ! ($resume); then
+                if [ "$f" == "$resumeTest" ]; then
+                        resume='true'
+                else
+                        continue
+                fi
+        fi
         if ($testReg); then
                 skip='true'
                 for (( i = 0 ; $i < ${#testRegs[@]} ; i++ )); do
