@@ -30,6 +30,8 @@
 #include <ucontext.h>
 #include <utime.h>
 
+#include <crt_externs.h>
+
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
 #define HAS_MSG_DONTWAIT TRUE
@@ -48,4 +50,5 @@
 #define SIGPOLL 7
 #endif
 
-extern char **environ; /* for Posix_ProcEnv_environ */
+/* for Posix_ProcEnv_environ */
+#define environ *_NSGetEnviron()

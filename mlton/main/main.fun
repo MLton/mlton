@@ -1120,13 +1120,15 @@ fun commandLine (args: string list): unit =
                          | StabsPlus => (["-gstabs+", "-g2"], "-Wa,--gstabs")
                      fun compileO (inputs: File.t list): unit =
                         let
+                           val (libOpts, libExt) = 
+                              case targetOS of
+                                 Darwin => ([ "-dynamiclib" ], ".dylib")
+                               | _ => ([ "-shared" ], ".so")
                            val output = 
                               case !format of
                                  Archive => maybeOut ".a"
                                | Executable => maybeOut ""
-                               | Library => maybeOut ".so"
-                           val libOpts = 
-                               [ "-shared", "-Wl,-Bsymbolic" ]
+                               | Library => maybeOut libExt
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
