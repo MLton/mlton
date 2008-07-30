@@ -62,7 +62,7 @@ signature AMD64 =
       sig
         datatype reg
           = RAX | RBX | RCX | RDX | RDI | RSI | RBP | RSP
-          | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15
+          | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15 | RIP
         val allReg : reg list
 
         datatype part
@@ -113,6 +113,7 @@ signature AMD64 =
         val r14w : t
         val r15 : t
         val r15w : t
+        val rip : t
 
         val registers : Size.t -> t list
         val baseRegisters : t list
@@ -349,6 +350,7 @@ signature AMD64 =
         val deLabel : t -> Label.t option
         val address : Address.t -> t
         val memloc : MemLoc.t -> t
+        val memloc_label : Label.t -> t
         val deMemloc : t -> MemLoc.t option
 
         val size : t -> Size.t option

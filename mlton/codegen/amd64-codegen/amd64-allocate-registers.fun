@@ -3751,12 +3751,23 @@ struct
            (let
               val MemLoc.U {immBase, memBase, immIndex, memIndex, scale, ...}
                 = MemLoc.destruct memloc
-
+                
+              (* Whenever possible, find labels with RIP-relative addressing.
+               * It's smaller code and faster even for position dependent code.
+               * However, RIP-relative addressing cannot be used with an index
+               * register. For PIC code we will thus break the access down
+               * into a leal for the symbol and a toRegister for the memIndex.
+               *)
+              
+              (* Combine all immediate offsets into one *)
               val disp 
                 = case (immBase, immIndex) of
                      (NONE, NONE) => Immediate.zero
                    | (SOME immBase, NONE) => immBase
-                   | (NONE, SOME immIndex) => immIndex
+                   | (NONE, SOME immIndex) 
+                   => (case Immediate.destruct immIndex of
+                          Immediate.Word _ => immIndex
+                        | _ => Error.bug "amd64AllocateRegisters.RegisterAllocation.toAddressMemLoc:indexLabel")
                    | (SOME immBase, SOME immIndex) 
                    => (case (Immediate.destruct immBase, Immediate.destruct immIndex) of
                           (Immediate.Label l1, Immediate.Word w2) => 
@@ -3764,36 +3775,75 @@ struct
                         | (Immediate.LabelPlusWord (l1, w1), Immediate.Word w2) => 
                              Immediate.labelPlusWord (l1, WordX.add (w1, w2))
                         | _ => Error.bug "amd64AllocateRegisters.RegisterAllocation.toAddressMemLoc:disp")
-
-              val {register = register_base,
+              
+              (* The base register gets supplied by three distinct cases:
+               * 1 - memBase (which means that there is no label)
+               * 2 - RIP     (which means there is no index)
+               * 3 - lea     (which means this is a library)
+               * else nothing
+               *)
+              val {disp,
+                   register = register_base,
                    assembly = assembly_base,
                    registerAllocation}
-                = case memBase
-                    of NONE => {register = NONE,
-                                assembly = AppendList.empty,
-                                registerAllocation = registerAllocation}
-                     | SOME memBase
-                     => let
-                          val {register, assembly, registerAllocation}
-                            = toRegisterMemLoc 
-                              {memloc = memBase,
-                               info = info,
-                               size = MemLoc.size memBase,
-                               move = true,
-                               supports 
-                               = case memIndex
-                                   of NONE => supports
-                                    | SOME memIndex
-                                    => (Operand.memloc memIndex)::
-                                       supports,
-                               saves = saves,
-                               force = Register.baseRegisters,
+               = case (Immediate.destruct disp, memBase, memIndex) of
+                    (Immediate.Word _, NONE, _)
+                  =>  {disp = SOME disp,
+                       register = NONE,
+                       assembly = AppendList.empty,
+                       registerAllocation = registerAllocation}
+                  | (Immediate.Word _, SOME memBase, _) (* no label, no rip *)
+                  => let
+                        val {register, assembly, registerAllocation}
+                          = toRegisterMemLoc 
+                            {memloc = memBase,
+                             info = info,
+                             size = MemLoc.size memBase,
+                             move = true,
+                             supports 
+                             = case memIndex
+                                 of NONE => supports
+                                  | SOME memIndex
+                                 => (Operand.memloc memIndex)::
+                                     supports,
+                             saves = saves,
+                             force = Register.baseRegisters,
+                             registerAllocation = registerAllocation}
+                     in
+                       {disp = SOME disp,
+                        register = SOME register,
+                        assembly = assembly,
+                        registerAllocation = registerAllocation}
+                     end
+                  | (_, SOME _, _) (* label & memBase? bad input *)
+                  => Error.bug "amd64AllocateRegisters.RegisterAllocation.toAddressMemLoc:base*2"
+                  | (_, NONE, NONE) (* no index => safe to use RIP-relative *)
+                  => {disp = SOME disp,
+                      register = SOME Register.rip,
+                      assembly = AppendList.empty,
+                      registerAllocation = registerAllocation}
+                  | (_, NONE, SOME memIndex) (* label + index => use lea if library *)
+                  => if !Control.format <> Control.Library
+                        then {disp = SOME disp,
+                              register = NONE,
+                              assembly = AppendList.empty,
+                              registerAllocation = registerAllocation}
+                     else let
+                             val {register, assembly, registerAllocation}
+                               = toRegisterImmediate
+                                 {immediate = disp,
+                                  info = info,
+                                  size = MemLoc.size memIndex,
+                                  supports = Operand.memloc memIndex :: supports,
+                                  saves = saves,
+                                  force = Register.baseRegisters,
+                                  registerAllocation = registerAllocation}
+                          in
+                             { disp = NONE,
+                               register = SOME register,
+                               assembly = assembly,
                                registerAllocation = registerAllocation}
-                        in
-                          {register = SOME register,
-                           assembly = assembly,
-                           registerAllocation = registerAllocation}
-                        end
+                          end
 
               val {register = register_index,
                    assembly = assembly_index,
@@ -3814,6 +3864,11 @@ struct
                                saves 
                                = case (memBase, register_base)
                                    of (NONE, NONE) => saves
+                                    | (NONE, SOME register_base)
+                                    => if register_base = Register.rip
+                                          then saves
+                                       else Operand.register register_base ::
+                                            saves
                                     | (SOME memBase, SOME register_base)
                                     => (Operand.memloc memBase)::
                                        (Operand.register register_base)::
@@ -3827,7 +3882,7 @@ struct
                            registerAllocation = registerAllocation}
                         end
             in
-              {address = Address.T {disp = SOME disp,
+              {address = Address.T {disp = disp,
                                     base = register_base,
                                     index = register_index,
                                     scale = case memIndex
@@ -4011,15 +4066,26 @@ struct
                               force = force,
                               registerAllocation = registerAllocation}
             val _ = Int.dec depth
+            val instruction
+              = case Immediate.destruct immediate of
+                   Immediate.Word _ =>
+                      Assembly.instruction_mov 
+                      {dst = Operand.Register final_register,
+                       src = Operand.Immediate immediate,
+                       size = size}
+                 | _ =>
+                      Assembly.instruction_lea
+                      {dst = Operand.Register final_register,
+                       src = Operand.Address
+                              (Address.T { disp = SOME immediate,
+                                           base = SOME Register.rip,
+                                           index = NONE, scale = NONE }),
+                       size = size}
           in
             {register = final_register,
              assembly = AppendList.appends
                         [assembly,
-                         AppendList.single
-                         (Assembly.instruction_mov
-                          {dst = Operand.Register final_register,
-                           src = Operand.Immediate immediate,
-                           size = size})],
+                         AppendList.single instruction],
              registerAllocation = registerAllocation}
           end
           handle Spill 

@@ -1075,9 +1075,9 @@ struct
                                  src = bytes,
                                  size = pointerSize},
                                 (* *(stackTopTemp - WORD_SIZE) = return *)
-                                amd64.Assembly.instruction_mov
+                                amd64.Assembly.instruction_lea
                                 {dst = stackTopTempMinusWordDeref,
-                                 src = Operand.immediate_label return,
+                                 src = Operand.memloc_label return,
                                  size = pointerSize},
                                 amd64.Assembly.directive_force
                                 {commit_memlocs = MemLocSet.singleton stackTopTempMinusWordDeref',
@@ -1100,9 +1100,9 @@ struct
                                  src = bytes, 
                                  size = pointerSize},
                                 (* *(stackTop - WORD_SIZE) = return *)
-                                amd64.Assembly.instruction_mov
+                                amd64.Assembly.instruction_lea
                                 {dst = stackTopMinusWordDeref,
-                                 src = Operand.immediate_label return,
+                                 src = Operand.memloc_label return,
                                  size = pointerSize},
                                 amd64.Assembly.directive_force
                                 {commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',
@@ -1423,9 +1423,9 @@ struct
                                               src = bytes,
                                               size = pointerSize},
                                              (* *(stackTopTemp - WORD_SIZE) = return *)
-                                             amd64.Assembly.instruction_mov
+                                             amd64.Assembly.instruction_lea
                                              {dst = stackTopTempMinusWordDeref,
-                                              src = Operand.immediate_label return,
+                                              src = Operand.memloc_label return,
                                               size = pointerSize},
                                              amd64.Assembly.directive_force
                                              {commit_memlocs = MemLocSet.singleton stackTopTempMinusWordDeref',
@@ -1448,9 +1448,9 @@ struct
                                               src = bytes, 
                                               size = pointerSize},
                                              (* *(stackTop - WORD_SIZE) = return *)
-                                             amd64.Assembly.instruction_mov
+                                             amd64.Assembly.instruction_lea
                                              {dst = stackTopMinusWordDeref,
-                                              src = Operand.immediate_label return,
+                                              src = Operand.memloc_label return,
                                               size = pointerSize},
                                              amd64.Assembly.directive_force
                                              {commit_memlocs = MemLocSet.singleton stackTopMinusWordDeref',

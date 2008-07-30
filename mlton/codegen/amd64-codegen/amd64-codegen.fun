@@ -238,7 +238,7 @@ struct
                   amd64.Assembly.instruction_mov
                   {src = (amd64.Operand.address o amd64.Address.T)
                          {disp = SOME (amd64.Immediate.label amd64MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    dst = amd64.Operand.register amd64.Register.rbx,
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_mov
@@ -252,7 +252,7 @@ struct
                   {src = amd64.Operand.register amd64.Register.rsp,
                    dst = (amd64.Operand.address o amd64.Address.T)
                          {disp = SOME (amd64.Immediate.label amd64MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_mov
                   {src = (amd64.Operand.address o amd64.Address.T)
@@ -261,7 +261,7 @@ struct
                                   Bytes.toInt 
                                   (Machine.Runtime.GCField.offset
                                    Machine.Runtime.GCField.StackTop)),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    dst = amd64.Operand.register stackTopReg,
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_mov
@@ -271,7 +271,7 @@ struct
                                   Bytes.toInt 
                                   (Machine.Runtime.GCField.offset
                                    Machine.Runtime.GCField.Frontier)),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    dst = amd64.Operand.register frontierReg,
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_jmp
@@ -284,7 +284,7 @@ struct
                   amd64.Assembly.instruction_mov
                   {src = (amd64.Operand.address o amd64.Address.T)
                          {disp = SOME (amd64.Immediate.label amd64MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    dst = amd64.Operand.register amd64.Register.rsp,
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_mov
@@ -298,7 +298,7 @@ struct
                   {src = amd64.Operand.register amd64.Register.rbx,
                    dst = (amd64.Operand.address o amd64.Address.T)
                          {disp = SOME (amd64.Immediate.label amd64MLton.c_stackP),
-                          base = NONE, index = NONE, scale = NONE},
+                          base = SOME amd64.Register.rip, index = NONE, scale = NONE},
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_mov
                   {src = (amd64.Operand.address o amd64.Address.T)

@@ -668,9 +668,9 @@ struct
                    [Block.mkBlock'
                     {entry = NONE,
                      statements =
-                     [Assembly.instruction_mov
+                     [Assembly.instruction_lea
                       {dst = dst,
-                       src = Operand.immediate_label (Label.fromString name),
+                       src = Operand.memloc_label (Label.fromString name),
                        size = dstsize}],
                      transfer = NONE}]
                 end

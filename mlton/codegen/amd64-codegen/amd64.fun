@@ -127,7 +127,7 @@ struct
 
       datatype reg
         = RAX | RBX | RCX | RDX | RDI | RSI | RBP | RSP
-        | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15
+        | R8 | R9 | R10 | R11 | R12 | R13 | R14 | R15 | RIP
       val allReg = [RAX, RBX, RCX, RDX, RDI, RSI, RBP, RSP,
                     R8, R9, R10, R11, R12, R13, R14, R15]
 
@@ -197,6 +197,7 @@ struct
                | R13 => doit3 "r13"
                | R14 => doit3 "r14"
                | R15 => doit3 "r15"
+               | RIP => doit3 "rip"
           end
       val toString = Layout.toString o layout
 
@@ -235,6 +236,7 @@ struct
       val r14w = T {reg = R14, part = X}
       val r15 = T {reg = R15, part = R}
       val r15w = T {reg = R15, part = X}
+      val rip = T {reg = RIP, part = R}
 
       local
          fun make part =
@@ -1352,6 +1354,10 @@ struct
            | _ => NONE
       val address = Address
       val memloc = MemLoc
+      fun memloc_label l = 
+         memloc (MemLoc.makeContents { base = Immediate.label l,
+                                       size = Size.QUAD,
+                                       class = MemLoc.Class.Code })
       val deMemloc 
         = fn MemLoc x => SOME x
            | _ => NONE
