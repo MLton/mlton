@@ -279,7 +279,7 @@ fun outputDeclarations
          (print "BeginVectors\n"
           ; (List.foreach
              (vectors, fn (g, v) =>
-              (C.callNoSemi ("Vector",
+              (C.callNoSemi ("NewVector",
                              [C.string (WordXVector.toString v),
                               C.int (Bytes.toInt
                                      (WordSize.bytes

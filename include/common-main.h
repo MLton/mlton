@@ -29,7 +29,7 @@ typedef Pointer Objptr;
 #define EndIntInfs };
 
 #define BeginVectors static struct GC_vectorInit vectorInits[] = {
-#define Vector(a, b, c, d) { a, b, c, d },
+#define NewVector(a, b, c, d) { (pointer)a, b, c, d },
 #define EndVectors };
 
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
@@ -38,13 +38,13 @@ typedef Pointer Objptr;
 INTERNAL Pointer gcStateAddress;
 
 #define Initialize(al, mg, mfs, mmc, pk, ps)                            \
-        gcStateAddress = &gcState;                                      \
+        gcStateAddress = (pointer)&gcState;                             \
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
         gcState.atMLtonsLength = cardof(atMLtons);                      \
         gcState.frameLayouts = frameLayouts;                            \
         gcState.frameLayoutsLength = cardof(frameLayouts);              \
-        gcState.globals = globalObjptr;                                 \
+        gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
         gcState.intInfInits = intInfInits;                              \
         gcState.intInfInitsLength = cardof(intInfInits);                \
