@@ -23,6 +23,9 @@
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
 #define MLTON_CODEGEN_WORDSQUOTREM(func) func
 #endif
+#ifndef MLTON_CODEGEN_WORDSQUOTREM_IMPL
+#define MLTON_CODEGEN_WORDSQUOTREM_IMPL(func) func
+#endif
 /* No need to declare memcpy, since <string.h> comes with platform.h.
  */
 #ifndef MLTON_CODEGEN_MEMCPY

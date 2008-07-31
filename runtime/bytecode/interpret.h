@@ -12,8 +12,8 @@
 #include "assert.h"
 
 #define regs(ty)                                \
-        extern int ty##RegI;                    \
-        extern ty ty##Reg[]
+        INTERNAL extern int ty##RegI;           \
+        INTERNAL extern ty ty##Reg[]
 
 regs(CPointer);
 regs(Objptr);
@@ -59,7 +59,7 @@ typedef struct Bytecode {
 #define PushReg(ty) ty##Reg [ty##RegI++]
 #define PushRegX(ty) PushReg(ty)
 
-void MLton_callC (int i);  // provided by client
-void MLton_Bytecode_interpret (Bytecode b, CodeOffset codeOffset);
+INTERNAL void MLton_callC (int i);  // provided by client
+INTERNAL void MLton_Bytecode_interpret (Bytecode b, CodeOffset codeOffset);
 
 #endif

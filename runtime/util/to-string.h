@@ -5,6 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
-const char* boolToString (bool b);
-char* intmaxToCommaString (intmax_t n);
-char* uintmaxToCommaString (uintmax_t n);
+INTERNAL const char* boolToString (bool b);
+INTERNAL char* intmaxToCommaString (intmax_t n);
+INTERNAL char* uintmaxToCommaString (uintmax_t n);

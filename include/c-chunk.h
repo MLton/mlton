@@ -204,7 +204,10 @@ typedef Pointer Objptr;
  * one of the arguments is a constant.
  */
 #ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func)
+#define MLTON_CODEGEN_WORDSQUOTREM(func) INTERNAL
+#endif
+#ifndef MLTON_CODEGEN_WORDSQUOTREM_IMPL
+#define MLTON_CODEGEN_WORDSQUOTREM_IMPL(func)
 #endif
 /* Declare memcpy, since <string.h> isn't included.
  */

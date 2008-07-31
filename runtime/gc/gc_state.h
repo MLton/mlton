@@ -85,32 +85,32 @@ static void setGCStateCurrentHeap (GC_state s,
 
 #if (defined (MLTON_GC_INTERNAL_BASIS)) 
 
-bool GC_getAmOriginal (GC_state s);
-void GC_setAmOriginal (GC_state s, bool b);
-void GC_setControlsMessages (GC_state s, bool b);
-void GC_setControlsSummary (GC_state s, bool b);
-void GC_setControlsRusageMeasureGC (GC_state s, bool b);
-uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s);
-uintmax_t GC_getCumulativeStatisticsNumCopyingGCs (GC_state s);
-uintmax_t GC_getCumulativeStatisticsNumMarkCompactGCs (GC_state s);
-uintmax_t GC_getCumulativeStatisticsNumMinorGCs (GC_state s);
-size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s);
-void GC_setHashConsDuringGC (GC_state s, bool b);
-size_t GC_getLastMajorStatisticsBytesLive (GC_state s);
+INTERNAL bool GC_getAmOriginal (GC_state s);
+INTERNAL void GC_setAmOriginal (GC_state s, bool b);
+INTERNAL void GC_setControlsMessages (GC_state s, bool b);
+INTERNAL void GC_setControlsSummary (GC_state s, bool b);
+INTERNAL void GC_setControlsRusageMeasureGC (GC_state s, bool b);
+INTERNAL uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s);
+INTERNAL uintmax_t GC_getCumulativeStatisticsNumCopyingGCs (GC_state s);
+INTERNAL uintmax_t GC_getCumulativeStatisticsNumMarkCompactGCs (GC_state s);
+INTERNAL uintmax_t GC_getCumulativeStatisticsNumMinorGCs (GC_state s);
+INTERNAL size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s);
+INTERNAL void GC_setHashConsDuringGC (GC_state s, bool b);
+INTERNAL size_t GC_getLastMajorStatisticsBytesLive (GC_state s);
 
-pointer GC_getCallFromCHandlerThread (GC_state s);
-void GC_setCallFromCHandlerThread (GC_state s, pointer p);
-pointer GC_getCurrentThread (GC_state s);
-pointer GC_getSavedThread (GC_state s);
-void GC_setSavedThread (GC_state s, pointer p);
-void GC_setSignalHandlerThread (GC_state s, pointer p);
+INTERNAL pointer GC_getCallFromCHandlerThread (GC_state s);
+INTERNAL void GC_setCallFromCHandlerThread (GC_state s, pointer p);
+INTERNAL pointer GC_getCurrentThread (GC_state s);
+INTERNAL pointer GC_getSavedThread (GC_state s);
+INTERNAL void GC_setSavedThread (GC_state s, pointer p);
+INTERNAL void GC_setSignalHandlerThread (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 
-struct rusage* GC_getRusageGCAddr (GC_state s);
+INTERNAL struct rusage* GC_getRusageGCAddr (GC_state s);
 
-sigset_t* GC_getSignalsHandledAddr (GC_state s);
-sigset_t* GC_getSignalsPendingAddr (GC_state s);
-void GC_setGCSignalHandled (GC_state s, bool b);
-bool GC_getGCSignalPending (GC_state s);
-void GC_setGCSignalPending (GC_state s, bool b);
+INTERNAL sigset_t* GC_getSignalsHandledAddr (GC_state s);
+INTERNAL sigset_t* GC_getSignalsPendingAddr (GC_state s);
+INTERNAL void GC_setGCSignalHandled (GC_state s, bool b);
+INTERNAL bool GC_getGCSignalPending (GC_state s);
+INTERNAL void GC_setGCSignalPending (GC_state s, bool b);

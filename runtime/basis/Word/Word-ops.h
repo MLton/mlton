@@ -96,8 +96,8 @@ unary (size, notb, ~)                           \
  * bytecode-codegen, since they will be used in a context where the     \
  * arguments are variables.                                             \
  */                                                                     \
-MLTON_CODEGEN_WORDSQUOTREM(binary (S##size, quot, /))                   \
-MLTON_CODEGEN_WORDSQUOTREM(binary (S##size, rem, %))                    \
+MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, quot, /))              \
+MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, rem, %))               \
 binary (U##size, quot, /)                       \
 binary (U##size, rem, %)                        \
 binary (size, orb, |)                           \

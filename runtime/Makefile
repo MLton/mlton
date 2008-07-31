@@ -290,6 +290,8 @@ libgdtoa-pic.a: gdtoa/arith.h
 gdtoa/arithchk.c:
 	gzip -dc gdtoa.tgz | tar xf -
 	patch -s -p0 <gdtoa-patch
+	patch -s -p0 <gdtoa-patch.internal
+	patch -s -p0 <gdtoa-patch.mlton
 
 gdtoa/arithchk.out: gdtoa/arithchk.c
 	cd gdtoa && $(CC) $(OPTCFLAGS) $(OPTWARNCFLAGS) -w -O1 -o arithchk.out arithchk.c

@@ -6,6 +6,7 @@
  */
 
 #include "cenv.h"
+#include "export.h"
 #include "util.h"
 
 static const char* mlTypesHPrefix[] = {

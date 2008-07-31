@@ -19,10 +19,9 @@ struct cont {
         void *nextChunk;
 };
 
-extern uintptr_t nextFun;
-extern int returnToC;
-extern struct cont (*nextChunks []) (void);
-extern struct GC_state gcState;
+INTERNAL extern uintptr_t nextFun;
+INTERNAL extern int returnToC;
+INTERNAL extern struct cont (*nextChunks []) (void);
 
 #define ChunkName(n) Chunk ## n
 

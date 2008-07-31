@@ -100,9 +100,9 @@ static inline char* profileIndexSourceName (GC_state s, GC_sourceIndex i);
 
 static void writeProfileCount (GC_state s, FILE *f, GC_profileData p, GC_profileMasterIndex i);
 
-GC_profileData profileMalloc (GC_state s);
-void profileWrite (GC_state s, GC_profileData p, const char* fileName);
-void profileFree (GC_state s, GC_profileData p);
+INTERNAL GC_profileData profileMalloc (GC_state s);
+INTERNAL void profileWrite (GC_state s, GC_profileData p, const char* fileName);
+INTERNAL void profileFree (GC_state s, GC_profileData p);
 
 static void setProfTimer (long usec);
 static void initProfilingTime (GC_state s);
@@ -113,21 +113,21 @@ static void initProfiling (GC_state s);
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-void GC_profileEnter (GC_state s);
-void GC_profileLeave (GC_state s);
-void GC_profileInc (GC_state s, size_t amount);
-void GC_profileAllocInc (GC_state s, size_t amount);
+INTERNAL void GC_profileEnter (GC_state s);
+INTERNAL void GC_profileLeave (GC_state s);
+INTERNAL void GC_profileInc (GC_state s, size_t amount);
+INTERNAL void GC_profileAllocInc (GC_state s, size_t amount);
 
-GC_profileData GC_getProfileCurrent (GC_state s);
-void GC_setProfileCurrent (GC_state s, GC_profileData p);
+INTERNAL GC_profileData GC_getProfileCurrent (GC_state s);
+INTERNAL void GC_setProfileCurrent (GC_state s, GC_profileData p);
 
-GC_profileData GC_profileMalloc (GC_state s);
-void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
-void GC_profileFree (GC_state s, GC_profileData p);
+INTERNAL GC_profileData GC_profileMalloc (GC_state s);
+INTERNAL void GC_profileWrite (GC_state s, GC_profileData p, NullString8_t fileName);
+INTERNAL void GC_profileFree (GC_state s, GC_profileData p);
 
-void GC_profileDone (GC_state s);
+INTERNAL void GC_profileDone (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 
-void GC_handleSigProf (code_pointer pc);
+INTERNAL void GC_handleSigProf (code_pointer pc);
 

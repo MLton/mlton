@@ -6,4 +6,4 @@
  * See the file MLton-LICENSE for details.
  */
 
-void GC_done (GC_state s);
+INTERNAL void GC_done (GC_state s);

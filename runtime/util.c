@@ -5,5 +5,6 @@
  * See the file MLton-LICENSE for details.
  */
 
+#include "export.h"
 #include "util/die.c"
 #include "util/to-string.c"

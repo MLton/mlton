@@ -56,7 +56,7 @@ COMPILE_TIME_ASSERT(sizeof_mp_limb_t__compat__sizeof_objptr,
         sizeof(mp_limb_t) >= sizeof(objptr) ? \
         1 : (int)(sizeof(objptr) / sizeof(mp_limb_t)))
 
-void initIntInf (GC_state s);
+INTERNAL void initIntInf (GC_state s);
 static inline void fillIntInfArg (GC_state s, objptr arg, __mpz_struct *res, 
                                   mp_limb_t space[LIMBS_PER_OBJPTR + 1]);
 static inline void initIntInfRes (GC_state s, __mpz_struct *res, size_t bytes);
@@ -66,21 +66,21 @@ static inline objptr finiIntInfRes (GC_state s, __mpz_struct *res, size_t bytes)
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes);
-objptr IntInf_neg (objptr arg, size_t bytes);
-objptr IntInf_notb (objptr arg, size_t bytes);
-objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes);
-objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
-Int32_t IntInf_compare (objptr lhs, objptr rhs);
-Bool_t IntInf_equal (objptr lhs, objptr rhs);
-objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
+INTERNAL objptr IntInf_add (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_andb (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_gcd (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_mul (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_quot (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_orb (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_rem (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_sub (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_xorb (objptr lhs, objptr rhs, size_t bytes);
+INTERNAL objptr IntInf_neg (objptr arg, size_t bytes);
+INTERNAL objptr IntInf_notb (objptr arg, size_t bytes);
+INTERNAL objptr IntInf_arshift (objptr arg, Word32_t shift, size_t bytes);
+INTERNAL objptr IntInf_lshift (objptr arg, Word32_t shift, size_t bytes);
+INTERNAL Int32_t IntInf_compare (objptr lhs, objptr rhs);
+INTERNAL Bool_t IntInf_equal (objptr lhs, objptr rhs);
+INTERNAL objptr IntInf_toString (objptr arg, Int32_t base, size_t bytes);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

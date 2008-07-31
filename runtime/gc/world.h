@@ -16,8 +16,8 @@ static int saveWorldToFILE (GC_state s, FILE *f);
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-void GC_saveWorld (GC_state s, NullString8_t fileName);
+INTERNAL void GC_saveWorld (GC_state s, NullString8_t fileName);
 /* TRUE = success, FALSE = failure */
-C_Errno_t(Bool_t) GC_getSaveWorldStatus (GC_state s);
+INTERNAL C_Errno_t(Bool_t) GC_getSaveWorldStatus (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
