@@ -53,7 +53,7 @@ structure Show =
    end
 
 val gcc: string ref = ref "<unset>"
-val ar: string ref = ref "ar"
+val arScript: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -204,8 +204,8 @@ fun makeOptions {usage} =
                                 | "8" => Align8
                                 | _ => usage (concat ["invalid -align flag: ",
                                                       s]))))),
-       (Expert, "ar", " <ar>", "path to ar executable",
-        SpaceString (fn s => ar := s)),
+       (Expert, "ar-script", " <ar>", "path to a script producing archives",
+        SpaceString (fn s => arScript := s)),
        (Normal, "as-opt", " <opt>", "pass option to assembler",
         (SpaceString o tokenizeOpt)
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
@@ -887,18 +887,7 @@ fun commandLine (args: string list): unit =
                    file = s ^ "-" ^ gccFile}
                end 
           | Self => !gcc
-      val ar = 
-         case target of 
-            Cross s => 
-               let
-                  val {dir = arDir, file = arFile} =
-                     OS.Path.splitDirFile (!ar)
-               in 
-                  OS.Path.joinDirFile
-                  {dir = arDir,
-                   file = s ^ "-" ^ arFile}
-               end 
-          | Self => !ar
+      val arScript = !arScript
 
       fun addTargetOpts opts =
          List.fold
@@ -925,6 +914,13 @@ fun commandLine (args: string list): unit =
                       else 
                       ["-lmlton", "-lgdtoa"],
                       addTargetOpts linkOpts]
+      val linkArchives =
+         if !debugRuntime then 
+         [!libTargetDir ^ "/libmlton-gdb.a", 
+          !libTargetDir ^ "/libgdtoa-gdb.a"]
+         else 
+         [!libTargetDir ^ "/libmlton.a", 
+          !libTargetDir ^ "/libgdtoa.a"]
       val _ =
          if not (hasCodegen (!codegen))
             then usage (concat ["can't use ",
@@ -1133,9 +1129,12 @@ fun commandLine (args: string list): unit =
                               trace (Top, "Link")
                               (fn () =>
                                if !format = Archive 
-                               then (File.remove output
-                                    ;System.system
-                                     (ar, List.concat [["rcs", output], inputs]))
+                               then System.system
+                                    (arScript, 
+                                     List.concat 
+                                      [[targetStr, output],
+                                       inputs,
+                                       linkArchives])
                                else System.system
                                     (gcc,
                                      List.concat

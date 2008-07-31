@@ -81,6 +81,7 @@ if [ -d '/sw/lib' ]; then
 fi
 
 doit "$lib" \
+        -ar-script "$lib/static-library"                         \
         -cc "$gcc"                                               \
         -cc-opt-quote "-I$lib/include"                           \
         -cc-opt '-O1'                                            \

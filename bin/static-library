@@ -1,0 +1,51 @@
+#! /usr/bin/env bash
+
+# This script creates a static library (archive).
+# It is invoked as: static-library ARCH OUTPUT objects* libraries*
+# eg: static-library self foo.a /tmp/obj1.o /tmp/obj2.o /lib/libmlton.a
+
+# A safe fallback for unsupported platforms is:
+#  rm -f foo.a
+#  ar rc foo.a /tmp/obj1.o /tmp/obj2.o
+#  ranlib foo.a
+
+# However, this script tries to mimic the behaviour of shared libraries as
+# closely as possible. It links in the required bits of dependent libraries,
+# links together the given objects, and then hides all non-public symbols.
+#
+# The end result of this process is that two MLton produced static libraries
+# can safely be used at the same time since their symbols don't overlap. It
+# is even possible to use libraries produced using different versions of the
+# runtime.
+
+set -e
+
+target="$1"
+shift
+output="$1"
+shift
+
+if [ "$target" = "self" ]; then target=""; else target="$target-"; fi
+
+# Change this to false is partial linking does not work on your platform
+partialLink='true'
+
+rm -f "${output}"
+
+if "$partialLink"; then
+  "${target}ld" -r -d -o "$output.o" "$@"
+  # The osx linker already makes hidden symbols local, so we can skip this
+  if [ "$(uname -s)" != "Darwin" ]; then
+    "${target}objdump" -t "$output.o" \
+      | grep ' \.hidden ' \
+      | sed 's/^.* \.hidden //' \
+      > "$output.locals"
+    "${target}objcopy" --localize-symbols "$output.locals" "$output.o"
+  fi
+  "${target}ar" rc "$output" "$output.o"
+  "${target}ranlib" "$output"
+  rm -f "$output.o" "$output.locals"
+else
+  "${target}ar" rc "$output" "$@"
+  "${target}ranlib" "$output"
+fi

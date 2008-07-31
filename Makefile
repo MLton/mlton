@@ -305,6 +305,7 @@ script:
 	$(CP) bin/mlton-script "$(MLTON)"
 	chmod a+x "$(MLTON)"
 	$(CP) "$(SRC)/bin/platform" "$(LIB)"
+	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
 
 .PHONY: targetmap
 targetmap:
