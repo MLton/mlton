@@ -14,9 +14,11 @@
 /* ------------------------------------------------- */
 
 #if __GNUC__ >= 4
+#define IMPORTED __attribute__((visibility("default")))
 #define EXPORTED __attribute__((visibility("default")))
 #define INTERNAL __attribute__((visibility("hidden")))
 #else
+#define IMPORTED
 #define EXPORTED
 #define INTERNAL
 #endif

@@ -424,10 +424,20 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    val _ = print "typedef void* CPointer;\n"
                    val _ = print "typedef Pointer Objptr;\n"
                    val _ = print "\n"
+                   val _ = print "/* Define appropriately before #include'ing this header. */\n"
+                   val _ = print "/* Internal methods are only available when linked directly with ML */\n"
+                   val _ = print "/* Exported methods are also available when compiled into a shared library */\n"
+                   val _ = print "#ifndef MLLIB_INTERNAL\n"
+                   val _ = print "#define MLLIB_INTERNAL\n"
+                   val _ = print "#endif\n"
+                   val _ = print "#ifndef MLLIB_EXPORTED\n"
+                   val _ = print "#define MLLIB_EXPORTED\n"
+                   val _ = print "#endif\n"
+                   val _ = print "\n"
                    val _ = 
                       if !Control.format = Control.Executable then () else
-                          (print ("void " ^ File.base f ^ "_open(int argc, const char** argv);\n")
-                          ;print ("void " ^ File.base f ^ "_close();\n"))
+                          (print ("MLLIB_EXPORTED void " ^ File.base f ^ "_open(int argc, const char** argv);\n")
+                          ;print ("MLLIB_EXPORTED void " ^ File.base f ^ "_close();\n"))
                    val _ = Ffi.declareHeaders {print = print}
                 in
                    ()

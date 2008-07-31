@@ -219,10 +219,12 @@ structure PrimKind =
    struct
       structure ImportExportAttribute =
          struct
-            datatype t = Cdecl | Stdcall
+            datatype t = Cdecl | External | Internal | Stdcall
 
             val toString: t -> string =
                fn Cdecl => "cdecl"
+                | External => "external"
+                | Internal => "internal"
                 | Stdcall => "stdcall"
 
             val layout = Layout.str o toString
@@ -230,11 +232,12 @@ structure PrimKind =
 
       structure SymbolAttribute =
          struct
-            datatype t = Alloc
+            datatype t = Alloc | External | Internal
          end
 
       datatype t =
-         Address of {name: string,
+         Address of {attributes: SymbolAttribute.t list,
+                     name: string,
                      ty: Type.t}
        | BuildConst of {name: string, 
                         ty: Type.t}

@@ -60,7 +60,9 @@ datatype 'a t =
  | Exn_setExtendExtra (* implement exceptions *)
  | Exn_setInitExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* ssa to rssa *)
- | FFI_Symbol of {name: string, cty: CType.t option} (* codegen *)
+ | FFI_Symbol of {name: string, 
+                  cty: CType.t option, 
+                  symbolScope: CFunction.SymbolScope.t } (* codegen *)
  | GC_collect (* ssa to rssa *)
  | IntInf_add (* ssa to rssa *)
  | IntInf_andb (* ssa to rssa *)
@@ -551,7 +553,8 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_setExtendExtra => Exn_setExtendExtra
     | Exn_setInitExtra => Exn_setInitExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name, cty} => FFI_Symbol {name = name, cty = cty}
+    | FFI_Symbol {name, cty, symbolScope} => 
+        FFI_Symbol {name = name, cty = cty, symbolScope = symbolScope}
     | GC_collect => GC_collect
     | IntInf_add => IntInf_add
     | IntInf_andb => IntInf_andb

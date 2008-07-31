@@ -20,9 +20,11 @@ signature FFI =
       val addExport: {args: CType.t vector,
                       convention: CFunction.Convention.t,
                       name: string,
-                      res: CType.t option} -> int
+                      res: CType.t option,
+                      symbolScope: CFunction.SymbolScope.t} -> int
       val addSymbol: {ty: CType.t,
-                      name: string} -> unit
+                      name: string,
+                      symbolScope: CFunction.SymbolScope.t} -> unit
       val declareExports: {print: string -> unit} -> unit
       val declareHeaders: {print: string -> unit} -> unit
       val numExports: unit -> int

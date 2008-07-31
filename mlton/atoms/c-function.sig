@@ -24,6 +24,14 @@ signature C_FUNCTION =
             val toString: t -> string
          end
 
+      structure SymbolScope:
+         sig
+            datatype t = Internal | External
+
+            val layout: t -> Layout.t
+            val toString: t -> string
+         end
+
       structure Target:
          sig
             datatype t = Direct of string | Indirect
@@ -49,6 +57,7 @@ signature C_FUNCTION =
                             prototype: CType.t vector * CType.t option,
                             readsStackTop: bool,
                             return: 'a,
+                            symbolScope: SymbolScope.t,
                             (* target = Indirect means that the 0'th
                              * argument to the function is a word
                              * that specifies the target.
@@ -72,6 +81,7 @@ signature C_FUNCTION =
       val prototype: 'a t -> CType.t vector * CType.t option
       val readsStackTop: 'a t -> bool
       val return: 'a t -> 'a
+      val symbolScope: 'a t -> SymbolScope.t
       val target: 'a t -> Target.t
       val writesStackTop: 'a t -> bool
       val vanilla: {args: 'a vector,

@@ -181,14 +181,14 @@ structure Entry =
          case entry of
             Const {name, ty} => 
                String.concat
-               ["extern const ",
+               ["INTERNAL extern const ",
                 Type.toC ty,
                 " ",
                 Name.toC name,
                 ";"]
           | Import {attrs, name, ty = {args, ret}} =>
                String.concat
-               [attrs,
+               [attrs, 
                 if String.size attrs > 0 then " " else "",
                 Type.toC ret,
                 " ",
@@ -198,7 +198,7 @@ structure Entry =
                 ");"]
           | Symbol {name, ty} =>
                String.concat
-               ["extern ",
+               ["INTERNAL extern ",
                 Type.toC ty,
                 " ",
                 Name.toC name,
@@ -220,7 +220,7 @@ structure Entry =
                 Name.last name,
                 " = _import \"",
                 Name.toC name,
-                "\" : ",
+                "\" internal : ",
                 String.concatWith " * " (List.map Type.toML args),
                 " -> ",
                 Type.toML ret,
@@ -233,7 +233,7 @@ structure Entry =
                 Name.last name,
                 "Set) = _symbol \"",
                 Name.toC name,
-                "\": (unit -> (",
+                "\" internal : (unit -> (",
                 Type.toML ty,
                 ")) * ((",
                 Type.toML ty, 

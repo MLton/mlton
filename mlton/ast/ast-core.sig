@@ -82,18 +82,19 @@ signature AST_CORE =
          sig
             structure ImportExportAttribute:
                sig
-                  datatype t = Cdecl | Stdcall
+                  datatype t = Cdecl | External | Internal | Stdcall
 
                   val layout: t -> Layout.t
                end
 
             structure SymbolAttribute:
                sig
-                  datatype t = Alloc
+                  datatype t = Alloc | External | Internal
                end
 
             datatype t =
-               Address of {name: string,
+               Address of {attributes: SymbolAttribute.t list,
+                           name: string,
                            ty: Type.t}
              | BuildConst of {name: string, 
                               ty: Type.t}

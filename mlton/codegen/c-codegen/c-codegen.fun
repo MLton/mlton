@@ -504,16 +504,20 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
       Vector.foreach
       (blocks, fn Block.T {statements, transfer, ...} =>
        let
+          datatype z = datatype CFunction.SymbolScope.t
           val _ =
              Vector.foreach
              (statements, fn s =>
               case s of
                  Statement.PrimApp {prim, ...} =>
                     (case Prim.name prim of
-                        Prim.Name.FFI_Symbol {name, cty} =>
+                        Prim.Name.FFI_Symbol {name, cty, symbolScope} =>
                            doit
                            (name, fn () =>
-                            concat ["extern ", 
+                            concat [case symbolScope of
+                                       Internal => "INTERNAL "
+                                     | External => "IMPORTED ",
+                                    "extern ",
                                     case cty of
                                        SOME x => CType.toString x
                                      | NONE => "", 
@@ -1171,7 +1175,7 @@ fun output {program as Machine.Program.T {chunks,
          in
             outputIncludes (["c-chunk.h"], print)
             ; outputOffsets ()
-            ; declareGlobals ("extern ", print)
+            ; declareGlobals ("INTERNAL extern ", print)
             ; declareFFI (chunk, {print = print})
             ; declareChunks ()
             ; declareProfileLabels ()

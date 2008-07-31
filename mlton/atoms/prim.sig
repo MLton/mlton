@@ -51,7 +51,9 @@ signature PRIM =
              | Exn_setExtendExtra (* implement exceptions *)
              | Exn_setInitExtra (* implement exceptions *)
              | FFI of 'a CFunction.t (* ssa to rssa *)
-             | FFI_Symbol of {name: string, cty: CType.t option} (* codegen *)
+             | FFI_Symbol of {name: string, (* codegen *)
+                              cty: CType.t option,
+                              symbolScope: CFunction.SymbolScope.t}
              | GC_collect (* ssa to rssa *)
              | IntInf_add (* ssa to rssa *)
              | IntInf_andb (* ssa to rssa *)
@@ -236,7 +238,9 @@ signature PRIM =
                                 deWeak: 'b -> 'b,
                                 result: 'b} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
-      val ffiSymbol: {name: string, cty: CType.t option} -> 'a t
+      val ffiSymbol: {name: string, 
+                      cty: CType.t option, 
+                      symbolScope: CFunction.SymbolScope.t } -> 'a t
       val fromString: string -> 'a t option
       val hash: 'a t (* polymorphic hash *)
       val intInfEqual: 'a t

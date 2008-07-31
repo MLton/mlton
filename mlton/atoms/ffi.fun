@@ -11,33 +11,39 @@ struct
 open S
 
 structure Convention = CFunction.Convention
+structure SymbolScope = CFunction.SymbolScope
 
 val exports: {args: CType.t vector,
               convention: Convention.t,
               id: int,
               name: string,
-              res: CType.t option} list ref = ref []
+              res: CType.t option,
+              symbolScope: SymbolScope.t} list ref = ref []
 val symbols: {name: string,
-              ty: CType.t} list ref = ref []
+              ty: CType.t,
+              symbolScope: SymbolScope.t} list ref = ref []
 
 fun numExports () = List.length (!exports)
 
 local
    val exportCounter = Counter.new 0
 in
-   fun addExport {args, convention, name, res} =
+   fun addExport {args, convention, name, res, symbolScope} =
       let
          val id = Counter.next exportCounter
          val _ = List.push (exports, {args = args,
                                       convention = convention,
                                       id = id,
                                       name = name,
-                                      res = res})
+                                      res = res,
+                                      symbolScope = symbolScope})
       in
          id
       end
-   fun addSymbol {name, ty} = 
-      ignore (List.push (symbols, {name=name, ty=ty}))
+   fun addSymbol {name, ty, symbolScope} = 
+      ignore (List.push (symbols, {name = name, 
+                                   ty = ty, 
+                                   symbolScope = symbolScope}))
 end
 
 val headers: string list ref = ref []
@@ -47,15 +53,19 @@ fun declareExports {print} =
       val _ = print "INTERNAL Pointer MLton_FFI_opArgsResPtr;\n"
    in
       List.foreach
-      (!symbols, fn {name, ty} =>
+      (!symbols, fn {name, ty, symbolScope} =>
        let
-          val decl = CType.toString ty ^ " " ^ name;
+          val symbolScope = 
+             case symbolScope of 
+                SymbolScope.Internal => "INTERNAL "
+              | SymbolScope.External => "EXPORTED "
+          val decl = symbolScope ^ CType.toString ty ^ " " ^ name;
        in
-         List.push (headers, "extern " ^ decl);
+         List.push (headers, "extern MLLIB_" ^ decl);
          print (decl ^ ";\n")
        end);
       List.foreach
-      (!exports, fn {args, convention, id, name, res} =>
+      (!exports, fn {args, convention, id, name, res, symbolScope} =>
        let
           val args =
              Vector.mapi
@@ -69,7 +79,10 @@ fun declareExports {print} =
                           "(Pointer)(&", x, ");\n"])
               end)
           val header =
-             concat [case res of
+             concat [case symbolScope of 
+                        SymbolScope.Internal => "INTERNAL "
+                      | SymbolScope.External => "EXPORTED ",
+                     case res of
                         NONE => "void"
                       | SOME t => CType.toString t,
                      if convention <> Convention.Cdecl
@@ -80,12 +93,12 @@ fun declareExports {print} =
                      name, " (",
                      concat (List.separate (Vector.toListMap (args, #1), ", ")),
                      ")"]
-          val _ = List.push (headers, header)
           val n =
              1 + (Vector.length args)
              + (case res of NONE => 0 | SOME _ => 1)
        in
-          print (concat ["EXPORTED ", header, " {\n"])
+          List.push (headers, "MLLIB_" ^ header)
+          ; print (concat [header, " {\n"])
           ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
           ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
           ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",

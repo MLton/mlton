@@ -1008,8 +1008,9 @@ aexp    : OP longvid            (Exp.Var {name = longvid,
             (Exp.Let (decs, Exp.makeRegion' (Exp.Seq (Vector.fromList exp_ps),
                                              exp_psleft,
                                              exp_psright)))
-        | ADDRESS string COLON ty SEMICOLON
-          (Exp.Prim (PrimKind.Address {name = string,
+        | ADDRESS string symattributes COLON ty SEMICOLON
+          (Exp.Prim (PrimKind.Address {attributes = symattributes,
+                                       name = string,
                                        ty = ty}))
         | BUILD_CONST string COLON ty SEMICOLON
           (Exp.Prim (PrimKind.BuildConst {name = string, ty = ty}))
@@ -1049,6 +1050,8 @@ ieattributes
       in
          case id of
             "cdecl" => PrimKind.ImportExportAttribute.Cdecl :: ieattributes
+          | "external" => PrimKind.ImportExportAttribute.External :: ieattributes
+          | "internal" => PrimKind.ImportExportAttribute.Internal :: ieattributes
           | "stdcall" => PrimKind.ImportExportAttribute.Stdcall :: ieattributes
           | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
                   ; ieattributes)
@@ -1063,6 +1066,8 @@ symattributes
       in
          case id of
             "alloc" => PrimKind.SymbolAttribute.Alloc :: symattributes
+          | "internal" => PrimKind.SymbolAttribute.Internal :: symattributes
+          | "external" => PrimKind.SymbolAttribute.External :: symattributes
           | _ => (error (reg (idleft, idright), concat ["invalid attribute", id])
                   ; symattributes)
       end)

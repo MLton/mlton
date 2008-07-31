@@ -222,9 +222,9 @@ fun ('down, 'up)
             fun do1 ((a, u), f) = (f a, u)
          in
             case kind of
-               Address {name, ty} =>
+               Address {attributes, name, ty} =>
                   do1 (loopTy (ty, d), fn ty =>
-                       Address {name = name, ty = ty})
+                       Address {attributes = attributes, name = name, ty = ty})
              | BuildConst {name, ty} =>
                   do1 (loopTy (ty, d), fn ty =>
                        BuildConst {name = name, ty = ty})

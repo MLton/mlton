@@ -78,6 +78,7 @@ in
    structure CType = CType
    structure CharSize = CharSize
    structure Convention  = CFunction.Convention 
+   structure SymbolScope  = CFunction.SymbolScope
    structure Con = Con
    structure Const = Const
    structure ConstType = Const.ConstType
@@ -863,24 +864,41 @@ structure Type =
             else NONE
    end
 
-fun parseIEAttributes (attributes: ImportExportAttribute.t list): Convention.t option =
+fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list) 
+    : Convention.t option =
    case attributes of
       [] => SOME Convention.Cdecl
     | [a] =>
-         SOME (case a of
-                  ImportExportAttribute.Cdecl => Convention.Cdecl
-                | ImportExportAttribute.Stdcall =>
-                     if let
-                           open Control
-                        in
-                           case !Target.os of
-                              Target.Cygwin => true
-                            | Target.MinGW => true
-                            | _ => false
-                        end
-                        then Convention.Stdcall
-                     else Convention.Cdecl)
+         (case a of
+             ImportExportAttribute.Cdecl => SOME Convention.Cdecl
+           | ImportExportAttribute.Stdcall =>
+                if let
+                      open Control
+                   in
+                      case !Target.os of
+                         Target.Cygwin => true
+                       | Target.MinGW => true
+                       | _ => false
+                   end
+                   then SOME Convention.Stdcall
+                else SOME Convention.Cdecl
+           | _ => NONE)
     | _ => NONE
+
+fun parseIEAttributesScope (attributes: ImportExportAttribute.t list)
+    : SymbolScope.t option = 
+   case attributes of
+      [] => SOME SymbolScope.External
+    | [a] => (case a of
+                 ImportExportAttribute.Internal => SOME SymbolScope.Internal
+               | ImportExportAttribute.External => SOME SymbolScope.External
+               | _ => NONE)
+    | _ => NONE
+
+val splitIEAttributes = fn ImportExportAttribute.Cdecl => true
+                         | ImportExportAttribute.External => false
+                         | ImportExportAttribute.Internal => false
+                         | ImportExportAttribute.Stdcall => true
 
 fun import {attributes: ImportExportAttribute.t list,
             elabedTy: Type.t,
@@ -908,11 +926,18 @@ fun import {attributes: ImportExportAttribute.t list,
        | SOME (args, result) =>
             let
                datatype z = datatype CFunction.Target.t
+               val { yes = convention, no = symbolScope } =
+                  List.partition (attributes, splitIEAttributes)
                val convention =
-                  case parseIEAttributes attributes of
+                  case parseIEAttributesConvention convention of
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
+               val symbolScope =
+                  case parseIEAttributesScope symbolScope of
+                     NONE => (invalidAttributes ()
+                              ; SymbolScope.External)
+                   | SOME s => s
                val addrTy = Type.cpointer
                val func =
                   CFunction.T {args = let
@@ -935,6 +960,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                return = (case result of
                                             NONE => Type.unit
                                           | SOME {ty, ...} => ty),
+                               symbolScope = symbolScope,
                                target = (case name of
                                             NONE => Indirect
                                           | SOME name => Direct name),
@@ -976,9 +1002,12 @@ local
 
    fun mkAddress {expandedPtrTy: Type.t,
                   name: string,
-                  cty: CType.t option }: Cexp.t =
+                  cty: CType.t option,
+                  symbolScope: SymbolScope.t }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol {name = name, cty = cty},
+               prim = Prim.ffiSymbol {name = name, 
+                                      cty = cty, 
+                                      symbolScope = symbolScope},
                result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,
@@ -1059,8 +1088,18 @@ local
                            valueExp = Cexp.var (setArg, expandedCbTy)},
            mayInline = true})
       end
+   
+   val symbolScope =
+     fn [] => SOME SymbolScope.External
+      | [SymbolAttribute.Internal] => SOME SymbolScope.Internal
+      | [SymbolAttribute.External] => SOME SymbolScope.External
+      | _ => NONE
+   
+   val symbolScope = fn l =>
+      symbolScope (List.removeAll (l, fn x => x = SymbolAttribute.Alloc))
 in
-   fun address {elabedTy: Type.t,
+   fun address {attributes: SymbolAttribute.t list,
+                elabedTy: Type.t,
                 expandedTy: Type.t,
                 name: string,
                 region: Region.t}: Cexp.t =
@@ -1074,9 +1113,26 @@ in
                NONE => (error (); ())
              | SOME _ => ()
          val expandedPtrTy = expandedTy
+         val scope = 
+            case symbolScope attributes of
+               NONE => (Control.error 
+                        (region, 
+                         str "use only one of {internal,external} with _address",
+                         empty)
+                        ; SymbolScope.External)
+             | SOME x => x
+         val () =
+            if List.exists (attributes, fn attr =>
+                            attr = SymbolAttribute.Alloc)
+               then Control.error
+                    (region,
+                     str "use of alloc with _address is forbidden",
+                     empty)
+               else ()
          val addrExp =
             mkAddress {expandedPtrTy = expandedPtrTy,
                        name = name,
+                       symbolScope = scope,
                        cty = NONE}
          fun wrap (e, t) = Cexp.make (Cexp.node e, t)
       in
@@ -1136,15 +1192,27 @@ in
             case Type.toCBaseType expandedCbTy of
                NONE => (error (); CType.word (WordSize.word8, {signed = false}))
              | SOME {ctype, ...} => ctype
+         val scope = 
+            case symbolScope attributes of
+               NONE => (Control.error 
+                        (region, 
+                         str "use only one of {internal,external} with _symbol",
+                         empty)
+                        ; SymbolScope.External)
+             | SOME x => x
+         val scope =
+            if List.exists (attributes, fn attr => 
+                                           attr = SymbolAttribute.Alloc)
+               then (Ffi.addSymbol {name = name, 
+                                    ty = ctypeCbTy, 
+                                    symbolScope = scope}
+                     ; SymbolScope.Internal)
+               else scope
          val addrExp =
             mkAddress {expandedPtrTy = Type.cpointer,
                        name = name,
-                       cty = SOME ctypeCbTy}
-         val () =
-            if List.exists (attributes, fn attr =>
-                            attr = SymbolAttribute.Alloc)
-               then Ffi.addSymbol {name = name, ty = ctypeCbTy}
-               else ()
+                       cty = SOME ctypeCbTy,
+                       symbolScope = scope}
          val symExp =
             mkSymbol {ctypeCbTy = ctypeCbTy,
                       expandedCbTy = expandedCbTy,
@@ -1244,10 +1312,17 @@ fun export {attributes: ImportExportAttribute.t list,
          (region,
           str "invalid type for _export",
           Type.layoutPretty elabedTy)
+      val { yes = convention, no = symbolScope } =
+         List.partition (attributes, splitIEAttributes)
       val convention =
-         case parseIEAttributes attributes of
+         case parseIEAttributesConvention convention of
             NONE => (invalidAttributes ()
                      ; Convention.Cdecl)
+          | SOME c => c
+      val symbolScope =
+         case parseIEAttributesScope symbolScope of
+            NONE => (invalidAttributes ()
+                     ; SymbolScope.External)
           | SOME c => c
       val (exportId, args, res) =
          case Type.toCFunType expandedTy of
@@ -1260,7 +1335,8 @@ fun export {attributes: ImportExportAttribute.t list,
                      Ffi.addExport {args = Vector.map (args, #ctype),
                                     convention = convention,
                                     name = name,
-                                    res = Option.map (result, #ctype)}
+                                    res = Option.map (result, #ctype),
+                                    symbolScope = symbolScope}
                in
                   (id, args, result)
                end
@@ -2718,14 +2794,15 @@ fun elaborateDec (d, {env = E, nest}) =
                       datatype z = datatype Ast.PrimKind.t
                    in
                       case kind of
-                         Address {name, ty} =>
+                         Address {attributes, name, ty} =>
                             let
                                val () =
                                   check (ElabControl.allowFFI, "_address")
                                val (elabedTy, expandedTy) =
                                   elabAndExpandTy ty
                             in
-                               address {elabedTy = elabedTy,
+                               address {attributes = attributes,
+                                        elabedTy = elabedTy,
                                         expandedTy = expandedTy,
                                         name = name,
                                         region = region}

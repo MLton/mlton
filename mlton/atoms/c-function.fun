@@ -23,6 +23,19 @@ structure Convention =
       val layout = Layout.str o toString
    end
 
+structure SymbolScope =
+   struct
+      datatype t =
+         Internal
+       | External
+
+      val toString =
+         fn Internal => "internal"
+          | External => "external"
+
+      val layout = Layout.str o toString
+   end
+
 structure Target =
    struct
       datatype t =
@@ -52,12 +65,13 @@ datatype 'a t = T of {args: 'a vector,
                       prototype: CType.t vector * CType.t option,
                       readsStackTop: bool,
                       return: 'a,
+                      symbolScope: SymbolScope.t,
                       target: Target.t,
                       writesStackTop: bool}
 
 fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
                maySwitchThreads, modifiesFrontier, prototype, readsStackTop,
-               return, target, writesStackTop, ...},
+               return, symbolScope, target, writesStackTop, ...},
             layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
@@ -73,6 +87,7 @@ fun layout (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
                     ("res", Option.layout CType.layout ret)]) prototype),
     ("readsStackTop", Bool.layout readsStackTop),
     ("return", layoutType return),
+    ("symbolScope", SymbolScope.layout symbolScope),
     ("target", Target.layout target),
     ("writesStackTop", Bool.layout writesStackTop)]
 
@@ -89,6 +104,7 @@ in
    fun prototype z = make #prototype z
    fun readsStackTop z = make #readsStackTop z
    fun return z = make #return z
+   fun symbolScope z = make #symbolScope z
    fun target z = make #target z
    fun writesStackTop z = make #writesStackTop z
 end
@@ -99,7 +115,7 @@ fun equals (f, f') = Target.equals (target f, target f')
 
 fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
             maySwitchThreads, modifiesFrontier, prototype, readsStackTop, 
-            return, target, writesStackTop},
+            return, symbolScope, target, writesStackTop},
          f) =
    T {args = Vector.map (args, f),
       bytesNeeded = bytesNeeded,
@@ -111,6 +127,7 @@ fun map (T {args, bytesNeeded, convention, ensuresBytesFree, mayGC,
       prototype = prototype,
       readsStackTop = readsStackTop,
       return = f return,
+      symbolScope = symbolScope,
       target = target,
       writesStackTop = writesStackTop}
 
@@ -140,17 +157,23 @@ fun vanilla {args, name, prototype, return} =
       prototype = prototype,
       readsStackTop = false,
       return = return,
+      symbolScope = SymbolScope.Internal,
       target = Direct name,
       writesStackTop = false}
 
-fun cPrototype (T {convention, prototype = (args, return), target, ...}) =
+fun cPrototype (T {convention, prototype = (args, return), symbolScope, target, 
+                   ...}) =
    let
-      val attributes =
+      val convention =
          if convention <> Convention.Cdecl
             then concat [" __attribute__ ((",
                          Convention.toString convention,
                          ")) "]
          else " "
+      val symbolScope =
+         case symbolScope of
+            SymbolScope.Internal => "INTERNAL "
+          | SymbolScope.External => "IMPORTED "
       val name = 
          case target of
             Direct name => name
@@ -163,7 +186,7 @@ fun cPrototype (T {convention, prototype = (args, return), target, ...}) =
             NONE => "void"
           | SOME t => CType.toString t
    in
-      concat [return, attributes, name,
+      concat [symbolScope, return, convention, name,
               " (",
               concat (List.separate (Vector.toListMap (args, arg), ", ")),
               ")"]
