@@ -34,7 +34,7 @@ FLAGS :=
 EXE :=
 OPTFLAGS := -O2 -fomit-frame-pointer
 DEBUGFLAGS := -O1 -fno-inline -fkeep-inline-functions -g2
-PICFLAGS := -fPIC -DPIC
+PICFLAGS := -DPIC
 GCOPTFLAGS :=
 GCDEBUGFLAGS :=
 GCPICFLAGS := 
@@ -43,9 +43,16 @@ OPTWARNFLAGS :=
 DEBUGWARNFLAGS :=
 PICWARNFLAGS := 
 
-# Make mlton static library symbols private
+# Win32&64 don't use PIC code, all other platforms do
+ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
+PICFLAGS += -fPIC
+endif
+
+# Make mlton library symbols private (win32&64 use another technique)
 ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
+ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
 FLAGS += -fvisibility=hidden
+endif
 endif
 
 ifeq ($(TARGET_ARCH), amd64)

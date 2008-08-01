@@ -13,6 +13,11 @@
 /*                      Symbols                      */
 /* ------------------------------------------------- */
 
+#if defined(_WIN32) || defined(_WIN64)
+#define IMPORTED __declspec(dllimport)
+#define EXPORTED __declspec(dllexport)
+#define INTERNAL
+#else
 #if __GNUC__ >= 4
 #define IMPORTED __attribute__((visibility("default")))
 #define EXPORTED __attribute__((visibility("default")))
@@ -21,6 +26,7 @@
 #define IMPORTED
 #define EXPORTED
 #define INTERNAL
+#endif
 #endif
 
 #endif /* _MLTON_EXPORT_H_ */

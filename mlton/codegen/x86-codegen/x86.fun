@@ -3349,10 +3349,12 @@ struct
                                                  str "\""]),
                                    ","))]
              | Global l 
-             => seq [str ".globl ",
-                     Label.layout l,
-                     str "\n.hidden ",
-                     Label.layout l]
+             => seq (List.concat 
+                [ [str ".globl ", Label.layout l],
+                  case !Control.Target.os of
+                     Control.Target.MinGW => []
+                   | Control.Target.Cygwin => []
+                   | _ => [str "\n.hidden ", Label.layout l]])
              | IndirectSymbol l 
              => seq [str ".indirect_symbol ",
                      Label.layout l]

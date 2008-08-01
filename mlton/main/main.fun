@@ -1119,6 +1119,9 @@ fun commandLine (args: string list): unit =
                            val (libOpts, libExt) = 
                               case targetOS of
                                  Darwin => ([ "-dynamiclib" ], ".dylib")
+                               | MinGW => ([ "-shared", "-Wl,--out-implib," ^
+                                                        libname () ^ ".a"], 
+                                           ".dll")
                                | _ => ([ "-shared" ], ".so")
                            val output = 
                               case !format of
