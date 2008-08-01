@@ -76,8 +76,8 @@ int mkstemp (char *template) {
 /* Based on notes by Wu Yongwei: 
  *   http://mywebpage.netscape.com/yongweiwutime.htm 
  */
-int mlton_gettimeofday (struct timeval *tv, 
-                        __attribute__ ((unused)) struct timezone *tz) {
+int gettimeofday (struct timeval *tv, 
+                  __attribute__ ((unused)) struct timezone *tz) {
         FILETIME ft;
         LARGE_INTEGER li;
         __int64 t;
@@ -85,7 +85,7 @@ int mlton_gettimeofday (struct timeval *tv,
 
         unless (tzInit) {
                 tzInit = TRUE;
-                _tzset();
+                tzset();
         }
         GetSystemTimeAsFileTime (&ft);
         li.LowPart = ft.dwLowDateTime;
@@ -411,7 +411,7 @@ int getgroups (__attribute__ ((unused)) int size,
 
 __attribute__ ((noreturn))
 char *getlogin (void) {
-        die ("*getlogin not implemented");
+        die ("getlogin not implemented");
 }
 
 __attribute__ ((noreturn))
@@ -547,18 +547,28 @@ static void setSysname (struct utsname *buf) {
                 os = "unknown";
                 break;
         }
-        sprintf (buf->sysname, "MINGW32_%s-%d.%d",
+#ifdef _WIN64
+#define mingw_name "MINGW64"
+#else
+#define mingw_name "MINGW32"
+#endif
+        sprintf (buf->sysname, "%s_%s-%d.%d", mingw_name,
                 os, (int)osv.dwMajorVersion, (int)osv.dwMinorVersion);
 }
 
 int uname (struct utsname *buf) {
         setMachine (buf);
+        setSysname (buf);
         unless (0 == gethostname (buf->nodename, sizeof (buf->nodename))) {
                 strcpy (buf->nodename, "unknown");
         }
-        sprintf (buf->release, "%d", 0); //__MINGW32_MINOR_VERSION);
-        setSysname (buf);
-        sprintf (buf->version, "%d", 0); //__MINGW32_MAJOR_VERSION);
+#ifdef _WIN64
+        sprintf (buf->release, "%d", MINGW64_VERSION_MINOR);
+        sprintf (buf->version, "%d", MINGW64_VERSION_MAJOR);
+#else
+        sprintf (buf->release, "%d", __MINGW32_MINOR_VERSION);
+        sprintf (buf->version, "%d", __MINGW32_MAJOR_VERSION);
+#endif
         return 0;
 }
 
