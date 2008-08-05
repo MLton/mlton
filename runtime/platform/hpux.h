@@ -42,6 +42,13 @@
 #error "HP-UX 11.00 is the oldest supported version."
 #endif
 
+#undef UINTPTR_MAX
+#define UINTPTR_MAX ULONG_MAX
+
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)SSIZE_MAX * 2 + 1)
+#endif
+
 #define HAS_FEROUND TRUE
 #define HAS_FPCLASSIFY TRUE
 #define HAS_MSG_DONTWAIT FALSE
@@ -99,10 +106,3 @@ float ldexpf(float x, int exp);
 #define PRIx32 "x"
 #undef PRId32
 #define PRId32 "d"
-
-#define SIZE_MAX ((size_t)SSIZE_MAX * 2 + 1)
-
-#if HPUX_VERSION <= 1111
-#undef UINTPTR_MAX
-#define UINTPTR_MAX ULONG_MAX
-#endif
