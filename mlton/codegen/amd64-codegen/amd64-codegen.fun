@@ -187,6 +187,7 @@ struct
                   amd64.Assembly.pseudoop_p2align 
                   (amd64.Immediate.int 4, NONE, NONE),
                   amd64.Assembly.pseudoop_global jumpToSML,
+                  amd64.Assembly.pseudoop_hidden jumpToSML,
                   amd64.Assembly.label jumpToSML,
                   amd64.Assembly.instruction_binal
                   {oper = amd64.Instruction.SUB,
@@ -280,6 +281,7 @@ struct
                   amd64.Assembly.pseudoop_p2align 
                   (amd64.Immediate.int 4, NONE, NONE),
                   amd64.Assembly.pseudoop_global returnToC,
+                  amd64.Assembly.pseudoop_hidden returnToC,
                   amd64.Assembly.label returnToC,
                   amd64.Assembly.instruction_mov
                   {src = (amd64.Operand.address o amd64.Address.T)

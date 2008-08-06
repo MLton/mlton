@@ -627,6 +627,7 @@ struct
                                 [Assembly.pseudoop_p2align 
                                  (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_global label,
+                                 Assembly.pseudoop_hidden label,
                                  Assembly.label label],
                                 AppendList.fromList
                                 (ProfileLabel.toAssemblyOpt profileLabel),

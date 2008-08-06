@@ -190,6 +190,7 @@ struct
                   x86.Assembly.pseudoop_p2align 
                   (x86.Immediate.int 4, NONE, NONE),
                   x86.Assembly.pseudoop_global jumpToSML,
+                  x86.Assembly.pseudoop_hidden jumpToSML,
                   x86.Assembly.label jumpToSML,
                   x86.Assembly.instruction_binal
                   {oper = x86.Instruction.SUB,
@@ -276,6 +277,7 @@ struct
                   x86.Assembly.pseudoop_p2align 
                   (x86.Immediate.int 4, NONE, NONE),
                   x86.Assembly.pseudoop_global returnToC,
+                  x86.Assembly.pseudoop_hidden returnToC,
                   x86.Assembly.label returnToC,
                   x86.Assembly.instruction_mov
                   {src = (x86.Operand.address o x86.Address.T)

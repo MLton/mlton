@@ -3288,6 +3288,7 @@ struct
         | Long of Immediate.t list
         | String of string list
         | Global of Label.t
+        | Hidden of Label.t
         | IndirectSymbol of Label.t
         | Local of Label.t
         | Comm of Label.t * Immediate.t * Immediate.t option
@@ -3349,12 +3350,11 @@ struct
                                                  str "\""]),
                                    ","))]
              | Global l 
-             => seq (List.concat 
-                [ [str ".globl ", Label.layout l],
-                  case !Control.Target.os of
-                     Control.Target.MinGW => []
-                   | Control.Target.Cygwin => []
-                   | _ => [str "\n.hidden ", Label.layout l]])
+             => seq [str ".globl ", 
+                     Label.layout l]
+             | Hidden l
+             => seq [str ".hidden ",
+                     Label.layout l]
              | IndirectSymbol l 
              => seq [str ".indirect_symbol ",
                      Label.layout l]
@@ -3403,6 +3403,7 @@ struct
              | Long ls => Long (List.map(ls, replacerImmediate))
              | String ss => String ss
              | Global l => Global (replacerLabel l)
+             | Hidden l => Hidden (replacerLabel l)
              | IndirectSymbol l => IndirectSymbol (replacerLabel l)
              | Local l => Local (replacerLabel l)
              | Comm (l, i, a) => Comm (replacerLabel l, 
@@ -3421,6 +3422,7 @@ struct
       val long = Long
       val string = String
       val global = Global
+      val hidden = Hidden
       val indirect_symbol = IndirectSymbol
       val locall = Local
       val comm = Comm
@@ -3500,6 +3502,11 @@ struct
       val pseudoop_long = PseudoOp o PseudoOp.long
       val pseudoop_string = PseudoOp o PseudoOp.string
       val pseudoop_global = PseudoOp o PseudoOp.global
+      fun pseudoop_hidden l =
+         case !Control.Target.os of (* Windows doesn't use .hidden *)
+            MLton.Platform.OS.Cygwin => Comment (Label.toString l ^ " is hidden")
+          | MLton.Platform.OS.MinGW => Comment (Label.toString l ^ " is hidden")
+          | _ => PseudoOp (PseudoOp.hidden l)
       val pseudoop_indirect_symbol = PseudoOp o PseudoOp.indirect_symbol
       val pseudoop_local = PseudoOp o PseudoOp.locall
       val pseudoop_comm = PseudoOp o PseudoOp.comm
@@ -3939,6 +3946,7 @@ struct
           val label = Label.fromString (toString pl)
         in
           [Assembly.pseudoop_global label,
+           Assembly.pseudoop_hidden label,
            Assembly.label label]
         end
       fun toAssemblyOpt pl =

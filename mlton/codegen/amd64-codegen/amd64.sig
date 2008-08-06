@@ -777,6 +777,7 @@ signature AMD64 =
           | Quad of Immediate.t list
           | String of string list
           | Global of Label.t
+          | Hidden of Label.t
           | IndirectSymbol of Label.t
           | Local of Label.t
           | Comm of Label.t * Immediate.t * Immediate.t option
@@ -795,6 +796,7 @@ signature AMD64 =
         val quad : Immediate.t list -> t
         val string : string list -> t
         val global : Label.t -> t
+        val hidden : Label.t -> t
         val indirect_symbol : Label.t -> t
         val locall : Label.t -> t
         val comm : Label.t * Immediate.t * Immediate.t option -> t
@@ -867,6 +869,7 @@ signature AMD64 =
         val pseudoop_quad : Immediate.t list -> t
         val pseudoop_string : string list -> t
         val pseudoop_global : Label.t -> t
+        val pseudoop_hidden : Label.t -> t
         val pseudoop_indirect_symbol : Label.t -> t
         val pseudoop_local : Label.t -> t
         val pseudoop_comm : Label.t * Immediate.t * Immediate.t option -> t
