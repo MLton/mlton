@@ -1183,7 +1183,7 @@ struct
                 => let
                      datatype z = datatype CFunction.Convention.t
                      datatype z = datatype CFunction.Target.t
-                     val CFunction.T {convention,
+                     val CFunction.T {convention=_,
                                       maySwitchThreads,
                                       modifiesFrontier,
                                       readsStackTop, 
@@ -1521,10 +1521,6 @@ struct
                         case target of
                            Direct name =>
                               let
-                                 val name = 
-                                    case convention of
-                                       Cdecl => name
-                                     | Stdcall => concat [name, "@", Int.toString size_stack_args]
                                  val target = mkCCallLabel name
                               in
                                  AppendList.fromList
@@ -1581,7 +1577,6 @@ struct
                          {returns = Operand.cReturnTemps returnTy})
                      val fixCStack =
                         if size_stack_args > 0
-                           andalso convention = CFunction.Convention.Cdecl
                            then (AppendList.single
                                  (Assembly.instruction_binal
                                   {oper = Instruction.ADD,
