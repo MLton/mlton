@@ -1219,28 +1219,42 @@ struct
                                     size = #2 fptrArg}),
                                   args)
                               end
+                     val win64 = case !Control.Target.os of
+                                    MLton.Platform.OS.Cygwin => true
+                                  | MLton.Platform.OS.MinGW => true
+                                  | _ => false
                      val (setup_args,
                           (reg_args, xmmreg_args),
                           size_stack_args, _)
                        = List.fold
                          (args, (AppendList.empty,
                                  ([],[]),0,
-                                 ([Register.rdi,Register.rsi,Register.rdx,
-                                   Register.rcx,Register.r8,Register.r9],
-                                  [(XmmRegister.xmm0D,XmmRegister.xmm0S),
-                                   (XmmRegister.xmm1D,XmmRegister.xmm1S),
-                                   (XmmRegister.xmm2D,XmmRegister.xmm2S),
-                                   (XmmRegister.xmm3D,XmmRegister.xmm3S),
-                                   (XmmRegister.xmm4D,XmmRegister.xmm4S),
-                                   (XmmRegister.xmm5D,XmmRegister.xmm5S),
-                                   (XmmRegister.xmm6D,XmmRegister.xmm6S),
-                                   (XmmRegister.xmm7D,XmmRegister.xmm7S)])),
+                                 (if win64
+                                  then [Register.rcx,Register.rdx,
+                                        Register.r8,Register.r9]
+                                  else [Register.rdi,Register.rsi,Register.rdx,
+                                        Register.rcx,Register.r8,Register.r9],
+                                  if win64
+                                  then [(XmmRegister.xmm0D,XmmRegister.xmm0S),
+                                        (XmmRegister.xmm1D,XmmRegister.xmm1S),
+                                        (XmmRegister.xmm2D,XmmRegister.xmm2S),
+                                        (XmmRegister.xmm3D,XmmRegister.xmm3S)]
+                                  else [(XmmRegister.xmm0D,XmmRegister.xmm0S),
+                                        (XmmRegister.xmm1D,XmmRegister.xmm1S),
+                                        (XmmRegister.xmm2D,XmmRegister.xmm2S),
+                                        (XmmRegister.xmm3D,XmmRegister.xmm3S),
+                                        (XmmRegister.xmm4D,XmmRegister.xmm4S),
+                                        (XmmRegister.xmm5D,XmmRegister.xmm5S),
+                                        (XmmRegister.xmm6D,XmmRegister.xmm6S),
+                                        (XmmRegister.xmm7D,XmmRegister.xmm7S)])),
                           fn ((arg, size), 
                               (setup_args,
                                (reg_args, xmmreg_args),
                                size_stack_args,
                                (regs, xmmregs))) =>
                           let
+                             fun prune [] = []
+                               | prune (x::r) = if win64 then r else (x::r)
                              val (setup_arg,
                                   (reg_args, xmmreg_args),
                                   size_stack_arg,
@@ -1269,7 +1283,7 @@ struct
                                                     (reg_args,
                                                      (mem, xmmreg)::xmmreg_args),
                                                     0,
-                                                    (regs, xmmregs))
+                                                    (prune regs, xmmregs))
                                                 end
                                            | [] =>
                                                 (AppendList.fromList
@@ -1316,7 +1330,7 @@ struct
                                                     ((mem,reg)::reg_args,
                                                      xmmreg_args),
                                                     0,
-                                                    (regs, xmmregs))
+                                                    (regs, prune xmmregs))
                                                 end
                                            | [] =>
                                                 (AppendList.fromList
@@ -1362,6 +1376,19 @@ struct
                                      setup_args),
                                     size_stack_args + space)
                         end
+                     (* Allocate shadow space *)
+                     val (setup_args, size_stack_args) =
+                        if win64
+                           then (AppendList.append
+                                 (setup_args,
+                                  AppendList.single
+                                  (Assembly.instruction_binal
+                                   {oper = Instruction.SUB,
+                                    dst = c_stackP,
+                                    src = Operand.immediate_int 32,
+                                    size = pointerSize})),
+                                 size_stack_args + 32)
+                           else (setup_args, size_stack_args)
                      (*
                      val reserve_args =
                         AppendList.fromList

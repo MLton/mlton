@@ -176,6 +176,10 @@ struct
 
         fun outputJumpToSML print =
            let
+              val win64 = case !Control.Target.os of
+                             MLton.Platform.OS.Cygwin => true
+                           | MLton.Platform.OS.MinGW => true
+                           | _ => false
               val jumpToSML = amd64.Label.fromString "MLton_jumpToSML"
               val returnToC = amd64.Label.fromString "Thread_returnToC"
               val {frontierReg, stackTopReg} =
@@ -276,7 +280,9 @@ struct
                    dst = amd64.Operand.register frontierReg,
                    size = amd64.Size.QUAD},
                   amd64.Assembly.instruction_jmp
-                  {target = amd64.Operand.register amd64.Register.rdi,
+                  {target = amd64.Operand.register 
+                            (if win64 then amd64.Register.rcx 
+                                      else amd64.Register.rdi),
                    absolute = true},
                   amd64.Assembly.pseudoop_p2align 
                   (amd64.Immediate.int 4, NONE, NONE),
