@@ -4068,11 +4068,19 @@ struct
             val _ = Int.dec depth
             val instruction
               = case Immediate.destruct immediate of
-                   Immediate.Word _ =>
-                      Assembly.instruction_mov 
-                      {dst = Operand.Register final_register,
-                       src = Operand.Immediate immediate,
-                       size = size}
+                   Immediate.Word x =>
+                      if size = Size.QUAD andalso
+                         WordX.equals (x, WordX.resize (WordX.resize (x, WordSize.word32), WordSize.word64))
+                      then (* use the implicit zero-extend of 32 bit ops *)
+                       Assembly.instruction_mov 
+                       {dst = Operand.Register (Register.lowPartOf (final_register, Size.LONG)),
+                        src = Operand.immediate_word (WordX.resize (x, WordSize.word32)),
+                        size = Size.LONG}
+                      else
+                       Assembly.instruction_mov 
+                       {dst = Operand.Register final_register,
+                        src = Operand.Immediate immediate,
+                        size = size}
                  | _ =>
                       Assembly.instruction_lea
                       {dst = Operand.Register final_register,
