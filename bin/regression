@@ -237,8 +237,9 @@ for f in *.sml; do
                                 compare="$f.ok"
                         fi
 			if $forMinGW; then
-                                compare="$f.sed.ok"
-                                sed $'s/$/\r/' <"$f.ok" >"$compare"
+                                newcompare="$f.sed.ok"
+                                sed $'s/$/\r/' <"$compare" > "$newcompare"
+                                compare="$newcompare"
 			fi
                         if ! diff "$compare" "$tmp"; then
                                 echo "difference with ${flags[*]} ${extraFlags[*]}"
