@@ -67,6 +67,13 @@
 #define SPAWN_MODE 0
 #endif
 
+
+/* Because HAS_FPCLASSIFY is unset, the runtime will provide it's own
+ * implementation. It doesn't matter much what the values are, because
+ * the runtime doesn't depend on the bit representation; it just returns
+ * these values. Therefore, prefer to keep the system's own values, but
+ * if they don't exist, setup our own.
+ */
 #if not HAS_FPCLASSIFY
 #ifndef FP_INFINITE
 #define FP_INFINITE 1
@@ -87,28 +94,30 @@
 
 #define FE_NOSUPPORT -1
 
-/* Can't handle undefined rounding modes with code like the following.
- *  #ifndef FE_TONEAREST
- *  #define FE_TONEAREST FE_NOSUPPORT
- *  #endif
- * On some platforms, FE_* are defined via an enum, not the
- * preprocessor, and hence don't show up as #defined.  In that case,
- * the below code overwrites them.
+/* With HAS_FEROUND unset, the runtime will provide the implementation.
+ * That implementation depends on FE_* having the values we set below.
+ * We must therefore make sure to eliminate any existing #defines and
+ * then create our own defines, which will also take precedence over
+ * any enums we included from system headers.
  */
 
 #if not HAS_FEROUND
-#ifndef FE_TONEAREST
+#ifdef FE_TONEAREST
+#undef FE_TONEAREST
+#endif
+#ifdef FE_DOWNWARD
+#undef FE_DOWNWARD
+#endif
+#ifdef FE_UPWARD
+#undef FE_UPWARD
+#endif
+#ifdef FE_TOWARDZERO
+#undef FE_TOWARDZERO
+#endif
 #define FE_TONEAREST 0
-#endif
-#ifndef FE_DOWNWARD
 #define FE_DOWNWARD 1
-#endif
-#ifndef FE_UPWARD
 #define FE_UPWARD 2
-#endif
-#ifndef FE_TOWARDZERO
 #define FE_TOWARDZERO 3
-#endif
 #endif
 
 #ifndef MLTON_CODEGEN_STATIC_INLINE
