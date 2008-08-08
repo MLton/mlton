@@ -1,4 +1,3 @@
-#include <fenv.h>
 #include <inttypes.h>
 #include <stdint.h>
 
@@ -25,7 +24,8 @@
 
 #undef max
 
-#define HAS_FEROUND TRUE
+// As of 20080807, MinGW has a broken fesetround. Use the runtime's.
+#define HAS_FEROUND FALSE
 // As of 20051104, MinGW has fpclassify, but it is broken.  In particular, it
 // classifies subnormals as normals.  So, we disable it here, which causes the
 // runtime to use our own version.
