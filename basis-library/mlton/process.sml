@@ -323,6 +323,7 @@ structure MLtonProcess =
          if useWindowsProcess
             then
                let
+                  val args = List.map cmdEscape args
                   val path = NullString.nullTerm path
                   val args = CUtil.StringVector.fromList args
                   val env = CUtil.StringVector.fromList env
@@ -349,6 +350,7 @@ structure MLtonProcess =
             then
                let
                   val file = NullString.nullTerm file
+                  val args = List.map cmdEscape args
                   val args = CUtil.StringVector.fromList args
                in
                   (PId.fromRep o SysCall.simpleResult')
