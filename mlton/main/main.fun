@@ -904,7 +904,10 @@ fun commandLine (args: string list): unit =
           else ac)
       val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
-      val ccOpts = concat ["-I", !libTargetDir, "/include"] :: ccOpts
+      val ccOpts = concat ["-I", 
+                           OS.Path.mkAbsolute { path = "include",
+                                                relativeTo = !libTargetDir }]
+                   :: ccOpts
       val linkOpts =
          List.concat [[concat ["-L", !libTargetDir]],
                       if !format = Library then 
@@ -916,11 +919,11 @@ fun commandLine (args: string list): unit =
                       addTargetOpts linkOpts]
       val linkArchives =
          if !debugRuntime then 
-         [!libTargetDir ^ "/libmlton-gdb.a", 
-          !libTargetDir ^ "/libgdtoa-gdb.a"]
+         [OS.Path.joinDirFile { dir = !libTargetDir, file = "libmlton-gdb.a" }, 
+          OS.Path.joinDirFile { dir = !libTargetDir, file = "libgdtoa-gdb.a" }]
          else 
-         [!libTargetDir ^ "/libmlton.a", 
-          !libTargetDir ^ "/libgdtoa.a"]
+         [OS.Path.joinDirFile { dir = !libTargetDir, file =  "libmlton.a" }, 
+          OS.Path.joinDirFile { dir = !libTargetDir, file =  "libgdtoa.a" }]
       val _ =
          if not (hasCodegen (!codegen))
             then usage (concat ["can't use ",
