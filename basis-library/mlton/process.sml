@@ -251,12 +251,39 @@ structure MLtonProcess =
                end
           | SOME pid => pid (* parent *)
 
-      val dquote = "\""
-      fun cmdEscape y = 
-         concat [dquote,
+      fun strContains seps s =
+        CharVector.exists (Char.contains seps) s
+      (* In MinGW, a string must be escaped if it contains " \t" or is "".
+       * Escaping means adds "s on the front and end. Any quotes inside
+       * must be escaped with \. Any \s already in the string must be
+       * doubled ONLY when they precede a " or the end of string.
+       *)
+      fun mingwEscape (l, 0) = l
+        | mingwEscape (l, i) = mingwEscape (#"\\"::l, i-1)
+      fun mingwFold (#"\\", (l, escapeCount)) = (#"\\"::l, escapeCount+1)
+        | mingwFold (#"\"", (l, escapeCount)) = 
+            (#"\"" :: mingwEscape (#"\\"::l, escapeCount), 0)
+        | mingwFold (x, (l, _)) = (x :: l, 0)
+      val mingwQuote = mingwEscape o CharVector.foldl mingwFold ([#"\""], 0)
+      fun mingwEscape y =
+         if not (strContains " \t\"" y) andalso y<>"" then y else
+         String.implode (List.rev (#"\"" :: mingwQuote y))
+
+      (* In cygwin, according to what I read, \ should always become \\.
+       * Furthermore, more characters cause escaping as compared to MinGW. 
+       * From what I read, " should become "", not \", but I leave the old
+       * behaviour alone until someone runs the spawn regression.
+       *)
+      fun cygwinEscape y = 
+         if not (strContains " \t\"\r\n\f'" y) andalso y<>"" then y else
+         concat ["\"",
                  String.translate
                  (fn #"\"" => "\\\"" | #"\\" => "\\\\" | x => String.str x) y,
-                 dquote]
+                 "\""]
+
+      val cmdEscape = 
+         if MLton.Platform.OS.host = MLton.Platform.OS.MinGW
+         then mingwEscape else cygwinEscape
 
       fun create (cmd, args, env, stdin, stdout, stderr) =
          SysCall.simpleResult'
