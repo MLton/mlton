@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -3306,8 +3306,12 @@ struct
       val pseudoop_string = PseudoOp o PseudoOp.string
       val pseudoop_global = PseudoOp o PseudoOp.global
       fun pseudoop_hidden l = 
-         case !Control.Target.os of (* Windows doesn't use .hidden *)
+         (* .hidden is specific to GNU as targetting ELF;
+          * Windows used COFF; Darwin uses Mach-O.
+          *)
+         case !Control.Target.os of
             MLton.Platform.OS.Cygwin => Comment (Label.toString l ^ " is hidden")
+          | MLton.Platform.OS.Darwin => Comment (Label.toString l ^ " is hidden")
           | MLton.Platform.OS.MinGW => Comment (Label.toString l ^ " is hidden")
           | _ => PseudoOp (PseudoOp.hidden l)
       val pseudoop_indirect_symbol = PseudoOp o PseudoOp.indirect_symbol
