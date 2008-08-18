@@ -3502,7 +3502,6 @@ struct
       val pseudoop_long = PseudoOp o PseudoOp.long
       val pseudoop_string = PseudoOp o PseudoOp.string
       val pseudoop_global = PseudoOp o PseudoOp.global
-      fun pseudoop_hidden l =
       fun pseudoop_hidden l = 
          (* .hidden is specific to GNU as targetting ELF;
           * Windows used COFF; Darwin uses Mach-O.
