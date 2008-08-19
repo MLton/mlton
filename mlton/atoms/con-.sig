@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -13,7 +13,8 @@ signature CON_STRUCTS =
 signature CON = 
    sig
       include ID
-      include PRIM_CONS where type con = t
+      include PRIM_CONS
+      sharing type t = con
 
       val fromBool: bool -> t
       val stats: unit -> Layout.t
