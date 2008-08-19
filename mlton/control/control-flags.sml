@@ -950,7 +950,7 @@ val showDefUse = control {name = "show def-use",
                           toString = Option.toString File.toString}
 
 val showTypes = control {name = "show types",
-                         default = false,
+                         default = true,
                          toString = Bool.toString}
 
 val ssaPassesSet : (optimizationPasses -> unit Result.t) ref = 

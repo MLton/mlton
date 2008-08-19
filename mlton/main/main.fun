@@ -678,7 +678,7 @@ fun makeOptions {usage} =
         SpaceString (fn s => showBasis := SOME s)),
        (Normal, "show-def-use", " <file>", "write def-use information",
         SpaceString (fn s => showDefUse := SOME s)),
-       (Expert, "show-types", " {false|true}", "show types in ILs",
+       (Expert, "show-types", " {true|false}", "show types in ILs",
         boolRef showTypes),
        (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
         SpaceString
