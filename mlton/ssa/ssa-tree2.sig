@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -62,7 +62,7 @@ signature SSA_TREE2 =
              | Weak of t
              | Word of WordSize.t
 
-            val array: t -> t
+            val array1: t -> t
             val bool: t
             val conApp: Con.t * t Prod.t -> t
             val checkPrimApp: {args: t vector,

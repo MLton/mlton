@@ -244,7 +244,7 @@ structure Type =
          fun make isMutable t =
             vector (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
       in
-         val array = make true
+         val array1 = make true
          val vector1 = make false
       end
 
@@ -352,7 +352,7 @@ structure Type =
             fun intInfShift () = done ([intInf, shiftArg, csize], intInf)
             fun intInfUnary () = done ([intInf, csize], intInf)
             fun realTernary s = done ([real s, real s, real s], real s)
-            val word8Array = array word8
+            val word8Array = array1 word8
             fun wordShift s = done ([word s, shiftArg], word s)
             fun arg i = Vector.sub (args, i)
             fun noArgs () = 0 = Vector.length args
