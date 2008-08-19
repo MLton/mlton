@@ -15,11 +15,11 @@ type word = Word.t
 
 structure Type =
    struct
-      local structure T = HashType (S)
-      in open  T
-      end
-
-      datatype dest =
+      datatype t =
+         T of {hash: Word.t,
+               plist: PropertyList.t,
+               tree: tree}
+      and tree =
           Array of t
         | CPointer
         | Datatype of Tycon.t
@@ -33,53 +33,135 @@ structure Type =
         | Word of WordSize.t
 
       local
-         val {get, set, ...} =
-            Property.getSetOnce (Tycon.plist, Property.initConst NONE)
-
-         fun nullary c v =
-            if Vector.isEmpty v
-               then c
-            else Error.bug "SsaTree.Type.nullary: bogus application of nullary tycon"
-
-         fun unary make v =
-            if 1 = Vector.length v
-               then make (Vector.sub (v, 0))
-            else Error.bug "SsaTree.Type.unary: bogus application of unary tycon"
-
-         val tycons =
-            [(Tycon.array, unary Array)]
-            @ [(Tycon.cpointer, nullary CPointer)]
-            @ [(Tycon.intInf, nullary IntInf)]
-            @ Vector.toListMap (Tycon.reals, fn (t, s) => (t, nullary (Real s)))
-            @ [(Tycon.reff, unary Ref),
-               (Tycon.thread, nullary Thread),
-               (Tycon.tuple, Tuple),
-               (Tycon.vector, unary Vector),
-               (Tycon.weak, unary Weak)]
-            @ Vector.toListMap (Tycon.words, fn (t, s) => (t, nullary (Word s)))
+         fun make f (T r) = f r
       in
-         val _ = List.foreach (tycons, fn (tycon, f) => set (tycon, SOME f))
-
-         fun dest t =
-            case Dest.dest t of
-               Dest.Con (tycon, ts) =>
-                  (case get tycon of
-                      NONE => Datatype tycon
-                    | SOME f => f ts)
-             | _ => Error.bug "SsaTree.Type.dest"
+         val hash = make #hash
+         val plist = make #plist
+         val tree = make #tree
       end
 
-      val con = con
+      datatype dest = datatype tree
 
-      fun datatypee tycon = con (tycon, Vector.new0 ())
-      fun deDatatypeOpt t =
-         case dest t of
-            Datatype tycon => SOME tycon
-          | _ => NONE
-      fun deDatatype t =
-         case deDatatypeOpt t of
-            SOME tycon => tycon
-          | _ => Error.bug "SsaTree.Type.deDatatype"
+      val dest = tree
+
+      fun equals (t, t') = PropertyList.equals (plist t, plist t')
+
+      local
+         fun make (sel : dest -> 'a option) =
+            let
+               val deOpt: t -> 'a option = fn t => sel (dest t)
+               val de: t -> 'a = valOf o deOpt
+               val is: t -> bool = isSome o deOpt
+            in
+               (deOpt, de, is)
+            end
+      in
+         val (_,deArray,_) = make (fn Array t => SOME t | _ => NONE)
+         val (_,deDatatype,_) = make (fn Datatype tyc => SOME tyc | _ => NONE)
+         val (_,deRef,_) = make (fn Ref t => SOME t | _ => NONE)
+         val (deTupleOpt,deTuple,isTuple) = make (fn Tuple ts => SOME ts | _ => NONE)
+         val (_,deVector,_) = make (fn Vector t => SOME t | _ => NONE)
+         val (_,deWeak,_) = make (fn Weak t => SOME t | _ => NONE)
+      end
+
+      local
+         val same: tree * tree -> bool =
+            fn (Array t1, Array t2) => equals (t1, t2)
+             | (CPointer, CPointer) => true
+             | (Datatype t1, Datatype t2) => Tycon.equals (t1, t2)
+             | (IntInf, IntInf) => true
+             | (Real s1, Real s2) => RealSize.equals (s1, s2)
+             | (Ref t1, Ref t2) => equals (t1, t2)
+             | (Thread, Thread) => true
+             | (Tuple ts1, Tuple ts2) => Vector.equals (ts1, ts2, equals)
+             | (Vector t1, Vector t2) => equals (t1, t2)
+             | (Weak t1, Weak t2) => equals (t1, t2)
+             | (Word s1, Word s2) => WordSize.equals (s1, s2)
+             | _ => false
+         val table: t HashSet.t = HashSet.new {hash = hash}
+      in
+         fun lookup (hash, tr) =
+            HashSet.lookupOrInsert (table, hash,
+                                    fn t => same (tr, tree t),
+                                    fn () => T {hash = hash,
+                                                plist = PropertyList.new (),
+                                                tree = tr})
+
+         fun stats () =
+            let open Layout
+            in align [seq [str "num types in hash table = ",
+                           Int.layout (HashSet.size table)],
+                      Control.sizeMessage ("types hash table", lookup)]
+            end
+      end
+
+      val newHash = Random.word
+
+      local
+         fun make f : t -> t =
+            let
+               val w = newHash ()
+            in
+               fn t => lookup (Word.xorb (w, hash t), f t)
+            end
+      in
+         val array = make Array
+         val reff = make Ref
+         val vector = make Vector
+         val weak = make Weak
+      end
+
+      val datatypee: Tycon.t -> t =
+         fn t => lookup (Tycon.hash t, Datatype t)
+
+      val bool = datatypee Tycon.bool
+
+      local
+         fun make (tycon, tree) = lookup (Tycon.hash tycon, tree)
+      in
+         val cpointer = make (Tycon.cpointer, CPointer)
+         val intInf = make (Tycon.intInf, IntInf)
+         val thread = make (Tycon.thread, Thread)
+      end
+
+      val real: RealSize.t -> t =
+         fn s => lookup (Tycon.hash (Tycon.real s), Real s)
+
+      val word: WordSize.t -> t =
+         fn s => lookup (Tycon.hash (Tycon.word s), Word s)
+
+
+      local
+         val generator: Word.t = 0wx5555
+         val w = newHash ()
+      in
+         fun tuple ts =
+            if 1 = Vector.length ts
+               then Vector.sub (ts, 0)
+            else lookup (Vector.fold (ts, w, fn (t, w) =>
+                                      Word.xorb (w * generator, hash t)),
+                         Tuple ts)
+      end
+
+      fun ofConst c =
+         let
+            datatype z = datatype Const.t
+         in
+            case c of
+               IntInf _ => intInf
+             | Null => cpointer
+             | Real r => real (RealX.size r)
+             | Word w => word (WordX.size w)
+             | WordVector v => vector (word (WordXVector.elementSize v))
+         end
+
+      val unit: t = tuple (Vector.new0 ())
+
+      val isUnit: t -> bool =
+         fn t =>
+         case deTupleOpt t of
+            SOME ts => Vector.isEmpty ts
+          | _ => false
 
       local
          open Layout
@@ -106,6 +188,38 @@ structure Type =
                | Weak t => seq [layout t, str " weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
       end
+
+      fun checkPrimApp {args, prim, result, targs}: bool =
+         let
+            exception BadPrimApp
+            fun default () =
+               Prim.checkApp
+               (prim,
+                {args = args,
+                 result = result,
+                 targs = targs,
+                 typeOps = {array = array,
+                            arrow = fn _ => raise BadPrimApp,
+                            bool = bool,
+                            cpointer = cpointer,
+                            equals = equals,
+                            exn = unit,
+                            intInf = intInf,
+                            real = real,
+                            reff = reff,
+                            thread = thread,
+                            unit = unit,
+                            vector = vector,
+                            weak = weak,
+                            word = word}})
+            val default = fn () =>
+               (default ()) handle BadPrimApp => false
+
+            datatype z = datatype Prim.Name.t
+         in
+            case Prim.name prim of
+               _ => default ()
+         end
    end
 
 structure Cases =
@@ -1632,8 +1746,30 @@ structure Program =
                         (!numVars, numBlocks)
                      end
             val numTypes = ref 0
-            val {hom = countType, destroy} =
-               Type.makeMonoHom {con = fn _ => Int.inc numTypes}
+            val {get = countType, destroy} =
+               Property.destGet
+               (Type.plist,
+                Property.initRec
+                (fn (t, countType) =>
+                 let
+                    datatype z = datatype Type.dest
+                    val _ =
+                       case Type.dest t of
+                          Array t => countType t
+                        | CPointer => ()
+                        | Datatype _ => ()
+                        | IntInf => ()
+                        | Real _ => ()
+                        | Ref t => countType t
+                        | Thread => ()
+                        | Tuple ts => Vector.foreach (ts, countType)
+                        | Vector t => countType t
+                        | Weak t => countType t
+                        | Word _ => ()
+                    val _ = Int.inc numTypes
+                 in
+                    ()
+                 end))
             val _ =
                Vector.foreach
                (datatypes, fn Datatype.T {cons, ...} =>
