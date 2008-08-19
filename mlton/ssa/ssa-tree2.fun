@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -174,6 +174,13 @@ structure Type =
                                     fn () => T {hash = hash,
                                                 plist = PropertyList.new (),
                                                 tree = tr})
+
+         fun stats () =
+            let open Layout
+            in align [seq [str "num distinct types = ",
+                           Int.layout (HashSet.size table)],
+                      Control.sizeMessage ("types hash table", lookup)]
+            end
       end
 
       val newHash = Random.word
@@ -2088,8 +2095,21 @@ structure Program =
                  end
          end
 
-      fun layoutStats (T {globals, functions, ...}) =
+      fun layoutStats (T {globals, functions, main, ...}) =
          let
+            val (mainNumVars, mainNumBlocks) =
+               case List.peek (functions, fn f =>
+                               Func.equals (main, Function.name f)) of
+                  NONE => Error.bug "SsaTree2.Program.layoutStats: no main"
+                | SOME f =>
+                     let
+                        val numVars = ref 0
+                        val _ = Function.foreachVar (f, fn _ => Int.inc numVars)
+                        val {blocks, ...} = Function.dest f
+                        val numBlocks = Vector.length blocks
+                     in
+                        (!numVars, numBlocks)
+                     end
             val numStatements = ref (Vector.length globals)
             val numBlocks = ref 0
             val _ =
@@ -2107,11 +2127,12 @@ structure Program =
             open Layout
          in
             align
-            (List.map
-             ([("num functions", Int.layout numFunctions),
-               ("num blocks", Int.layout (!numBlocks)),
-               ("num statements", Int.layout (!numStatements))],
-              fn (name, value) => seq [str (name ^ " "), value]))
+            [seq [str "num vars in main = ", Int.layout mainNumVars],
+             seq [str "num blocks in main = ", Int.layout mainNumBlocks],
+             seq [str "num functions in program = ", Int.layout numFunctions],
+             seq [str "num blocks in program = ", Int.layout (!numBlocks)],
+             seq [str "num statements in program = ", Int.layout (!numStatements)],
+             Type.stats ()]
          end
 
       (* clear all property lists reachable from program *)
