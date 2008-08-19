@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a BSD-style license.
@@ -25,9 +25,10 @@ val maxLength: int ref = ref 0
 fun stats () =
    let open Layout
    in align
-      [seq [str "numPeeks = ", str (Int64.toString (!numPeeks))],
-       seq [str "maxLength = ", Int.layout (!maxLength)],
-       seq [str "average position in property list = ",
+      [seq [str "property list numPeeks = ", str (Int64.toString (!numPeeks))],
+       (* seq [str "property list numLinks = ", str (Int64.toString (!numLinks))], *)
+       seq [str "property list maxLength = ", Int.layout (!maxLength)],
+       seq [str "property list average position = ",
             str let open Real
                     val fromInt = fromIntInf o Int64.toLarge
                 in format (fromInt (!numLinks) / fromInt (!numPeeks),
