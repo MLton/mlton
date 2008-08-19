@@ -42,7 +42,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
             | S.Type.Datatype tycon => S2.Type.datatypee tycon
             | S.Type.IntInf => S2.Type.intInf
             | S.Type.Real s => S2.Type.real s
-            | S.Type.Ref t => S2.Type.reff (convertType t)
+            | S.Type.Ref t => S2.Type.reff1 (convertType t)
             | S.Type.Thread => S2.Type.thread
             | S.Type.Tuple ts =>
                  S2.Type.tuple (Prod.make

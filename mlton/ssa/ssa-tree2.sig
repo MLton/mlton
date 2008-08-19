@@ -80,7 +80,7 @@ signature SSA_TREE2 =
             val ofConst: Const.t -> t
             val plist: t -> PropertyList.t
             val real: RealSize.t -> t
-            val reff: t -> t
+            val reff1: t -> t
             val thread: t
             val tuple: t Prod.t -> t
             val vector: t Prod.t -> t

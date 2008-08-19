@@ -264,7 +264,7 @@ structure Type =
 
       fun tuple ts = object {args = ts, con = Tuple}
 
-      fun reff t =
+      fun reff1 t =
          object {args = Prod.make (Vector.new1 {elt = t, isMutable = true}),
                  con = Tuple}
 
@@ -335,7 +335,7 @@ structure Type =
                                exn = unit,
                                intInf = intInf,
                                real = real,
-                               reff = reff,
+                               reff = fn _ => raise BadPrimApp,
                                thread = thread,
                                unit = unit,
                                vector = vector1,
