@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -1989,6 +1989,12 @@ struct
       fun elimBlocks {chunk = Chunk.T {data, blocks, ...},
                       jumpInfo : amd64JumpInfo.t}
         = let
+            val {get = getIsBlock,
+                 set = setIsBlock,
+                 destroy = destroyIsBlock}
+              = Property.destGetSetOnce
+                (Label.plist, Property.initConst false)
+
             val {get: Label.t -> {block: Block.t,
                                   reach: bool ref},
                  set, 
@@ -2003,6 +2009,7 @@ struct
                   => let
                        val label = Entry.label entry
                      in
+                       setIsBlock(label, true);
                        set(label, {block = block,
                                    reach = ref false}) ;
                        case entry
@@ -2025,9 +2032,13 @@ struct
               = case (Operand.deImmediate oper, Operand.deLabel oper)
                   of (SOME immediate, _) 
                    => (case Immediate.deLabel immediate
-                         of SOME label => ! (#reach (get label))
+                         of SOME label => if getIsBlock label
+                                             then ! (#reach (get label))
+                                          else true
                           | NONE => true)
-                   | (_, SOME label) => ! (#reach (get label))
+                   | (_, SOME label) => if getIsBlock label
+                                           then ! (#reach (get label))
+                                        else true
                    | _ => true
 
             val changed = ref false
@@ -2065,6 +2076,7 @@ struct
                      end)
 
             val _ = destroy ()
+            val _ = destroyIsBlock ()
           in
             {chunk = Chunk.T {data = data, blocks = blocks},
              changed = !changed}
