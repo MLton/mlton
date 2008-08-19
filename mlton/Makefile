@@ -1,4 +1,4 @@
-## Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -94,7 +94,7 @@ mlton.sml: $(SOURCES)
 
 .PHONY: def-use
 def-use:
-	mlton -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
+	mlton $(FLAGS) -stop tc -prefer-abs-paths true -show-def-use mlton.def-use $(FILE)
 
 .PHONY: clean
 clean:
