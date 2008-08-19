@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -561,7 +561,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
                   in Exp.prefix
                      (Exp.fromPrimExp
                       (PrimApp {prim = Prim.bug,
-                                targs = Vector.new1 Type.unit,
+                                targs = Vector.new0 (),
                                 args = Vector.new1 (VarExp.mono s)},
                        Type.unit),
                       MonoVal {var = s,
