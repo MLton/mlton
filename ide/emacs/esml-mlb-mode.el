@@ -215,10 +215,11 @@ by `esml-mlb-update'.")
                       (current-buffer))
                      (buffer-string))))
                 (loop for file in esml-mlb-mlb-path-map-files
-                  append (esml-mlb-parse-path-variables-from-string
-                          (with-temp-buffer
-                            (insert-file-contents file)
-                            (buffer-string)))))
+                  append (when (file-readable-p file)
+                           (esml-mlb-parse-path-variables-from-string
+                            (with-temp-buffer
+                              (insert-file-contents file)
+                              (buffer-string))))))
                (function
                 (lambda (a b)
                   (string-lessp (car a) (car b)))))
