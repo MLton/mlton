@@ -1349,10 +1349,12 @@ fun ('a, 'b) extractTargs (prim: 'b t,
       case prim of
          Array_array => one (deArray result)
        | Array_array0Const => one (deArray result)
+       | Array_length => one (deArray (arg 0))
        | Array_sub => one (deArray (arg 0))
        | Array_toVector => one (deArray (arg 0))
        | Array_update => one (deArray (arg 0))
-       | Array_length => one (deArray (arg 0))
+       | CPointer_getObjptr => one result
+       | CPointer_setObjptr => one (arg 2)
        | Exn_extra => one result
        | Exn_setExtendExtra => one (#2 (deArrow (arg 0)))
        | Exn_setInitExtra => one (arg 0)
@@ -1365,10 +1367,6 @@ fun ('a, 'b) extractTargs (prim: 'b t,
        | MLton_share => one (arg 0)
        | MLton_size => one (arg 0)
        | MLton_touch => one (arg 0)
-       | CPointer_getCPointer => one result
-       | CPointer_getObjptr => one result
-       | CPointer_setCPointer => one (arg 2)
-       | CPointer_setObjptr => one (arg 2)
        | Ref_assign => one (arg 1)
        | Ref_deref => one result
        | Ref_ref => one (arg 0)
