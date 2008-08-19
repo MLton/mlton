@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -104,8 +104,6 @@ in
    val _ = List.push (Control.optimizationPassesSet, ("ssa2", ssa2PassesSet))
 end
 
-fun stats p = Control.message (Control.Detail, fn () => Program.layoutStats p)
-
 fun pass ({name, doit, midfix}, p) =
    let
       val _ =
@@ -117,13 +115,13 @@ fun pass ({name, doit, midfix}, p) =
          end
       val p =
          Control.passTypeCheck
-         {name = name,
-          suffix = midfix ^ "post.ssa2",
+         {display = Control.Layouts Program.layouts,
+          name = name,
+          stats = Program.layoutStats,
           style = Control.No,
+          suffix = midfix ^ "post.ssa2",
           thunk = fn () => doit p,
-          display = Control.Layouts Program.layouts,
           typeCheck = typeCheck}
-      val _ = stats p
    in
       p
    end 
@@ -149,9 +147,9 @@ fun simplify p =
                   (!ssa2Passes, p, fn ({name, doit}, p) =>
                    maybePass ({name = name, doit = doit, midfix = midfix}, p)))
          end
+      val p = simplify' 0 p
    in
-     stats p
-     ; simplify' 0 p
+      p
    end
 
 val simplify = fn p => let

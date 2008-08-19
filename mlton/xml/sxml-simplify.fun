@@ -162,37 +162,44 @@ in
    val _ = List.push (Control.optimizationPassesSet, ("sxml", sxmlPassesSet))
 end
 
-fun stats p =
-   Control.message (Control.Detail, fn () => Program.layoutStats p)
+fun pass ({name, doit}, p) =
+   let
+      val _ =
+         let open Control
+         in maybeSaveToFile
+            ({name = name,
+              suffix = "pre.sxml"},
+             Control.No, p, Control.Layouts Program.layouts)
+         end
+      val p =
+         Control.passTypeCheck
+         {display = Control.Layouts Program.layouts,
+          name = name,
+          stats = Program.layoutStats,
+          style = Control.No,
+          suffix = "post.sxml",
+          thunk = fn () => doit p,
+          typeCheck = typeCheck}
+   in
+      p
+   end
+fun maybePass ({name, doit, enable}, p) =
+   if List.exists (!Control.dropPasses, fn re =>
+                   Regexp.Compiled.matchesAll (re, name))
+      orelse not (enable ())
+      then p
+   else pass ({name = name, doit = doit}, p)
 
 fun simplify p =
-   (stats p
-    ; (List.fold
-       (!sxmlPasses, p, fn ({name, enable, doit}, p) =>
-      if List.exists (!Control.dropPasses, fn re =>
-                      Regexp.Compiled.matchesAll (re, name))
-         orelse not (enable ())
-         then p
-      else
-         let
-            val _ =
-               let open Control
-               in maybeSaveToFile
-                  ({name = name, suffix = "pre.sxml"},
-                   Control.No, p, Control.Layouts Program.layouts)
-               end
-            val p =
-               Control.passTypeCheck
-               {name = name,
-                suffix = "post.sxml",
-                style = Control.No,
-                thunk = fn () => doit p,
-                display = Control.Layouts Program.layouts,
-                typeCheck = typeCheck}
-            val _ = stats p
-         in
-            p
-         end)))
+   let
+      fun simplify' p =
+         List.fold
+         (!sxmlPasses, p, fn ({name, doit, enable}, p) =>
+          maybePass ({name = name, doit = doit, enable = enable}, p))
+      val p = simplify' p
+   in
+      p
+   end
 
 val simplify = fn p => let
                          (* Always want to type check the initial and final XML

@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -62,16 +62,18 @@ signature CONTROL =
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
-      val pass: {name: string,
-                 suffix: string,
+      val pass: {display: 'a display,
+                 name: string,
+                 stats: 'a -> Layout.t,
                  style: style,
-                 thunk: unit -> 'a,
-                 display: 'a display} -> 'a
+                 suffix: string,
+                 thunk: unit -> 'a} -> 'a
 
-      val passTypeCheck: {name: string,
-                          suffix: string,
+      val passTypeCheck: {display: 'a display,
+                          name: string,
+                          stats: 'a -> Layout.t,
                           style: style,
+                          suffix: string,
                           thunk: unit -> 'a,
-                          display: 'a display,
                           typeCheck: 'a -> unit} -> 'a
    end

@@ -1609,7 +1609,7 @@ structure Program =
                  end
          end
 
-      fun layoutStats (T {globals, functions, main, ...}) =
+      fun layoutStats (T {datatypes, globals, functions, main, ...}) =
          let
             val (mainNumVars, mainNumBlocks) =
                case List.peek (functions, fn f =>
@@ -1627,6 +1627,11 @@ structure Program =
             val numTypes = ref 0
             val {hom = countType, destroy} =
                Type.makeMonoHom {con = fn _ => Int.inc numTypes}
+            val _ =
+               Vector.foreach
+               (datatypes, fn Datatype.T {cons, ...} =>
+                Vector.foreach (cons, fn {args, ...} =>
+                                Vector.foreach (args, countType)))
             val numStatements = ref (Vector.length globals)
             val numBlocks = ref 0
             val _ =

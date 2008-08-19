@@ -437,17 +437,21 @@ val duplicate =
     | SOME {hofo, rounds, small, product} =>
          let
             fun loop (p, n) =
-               if n = 0
+               if n = rounds
                   then p
                else let
-                       val p = shrink (duplicate (p, hofo, small, product))
-                       val _ =
-                          Control.message (Control.Detail, fn () =>
-                                           Program.layoutStats p)
+                       val p =
+                          Control.pass
+                          {display = Control.Layouts Program.layouts,
+                           name = "duplicate" ^ (Int.toString (n + 1)),
+                           stats = Program.layoutStats,
+                           style = Control.No,
+                           suffix = "post.xml",
+                           thunk = fn () => shrink (duplicate (p, hofo, small, product))}
                     in
-                       loop (p, n - 1)
+                       loop (p, n + 1)
                     end
-         in loop (p, rounds)
+         in loop (p, 0)
          end
 
 end

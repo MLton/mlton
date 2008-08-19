@@ -58,9 +58,14 @@ fun unindent () = depth := !depth - 3
 
 fun message (verb: Verbosity.t, th: unit -> Layout.t): unit =
    if Verbosity.<= (verb, !verbosity)
-      then let val out = Out.error
-           in Layout.output (Layout.indent (th (), !depth), out)
-              ; Out.newline out
+      then let
+              val out = Out.error
+              val lay = th ()
+           in
+              if Layout.isEmpty lay
+                 then ()
+              else (Layout.output (Layout.indent (lay, !depth), out)
+                    ; Out.newline out)
            end
    else ()
 
@@ -298,10 +303,11 @@ fun maybeSaveToFile ({name: string, suffix: string},
       then ()
    else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
 
-fun pass {name: string,
+fun pass {display: 'a display,
+          name: string,
           suffix: string,
+          stats: 'a -> Layout.t,
           style: style,
-          display = disp,
           thunk: unit -> 'a}: 'a =
    let
       val result = 
@@ -322,12 +328,16 @@ fun pass {name: string,
                valOf (!result)
             end
       val verb = Detail
+      val _ = message (verb, fn () => Layout.str (concat [name, " stats"]))
+      val _ = indent ()
       val _ = message (verb, fn () => sizeMessage (suffix, result))
+      val _ = message (verb, fn () => stats result)
       val _ = message (verb, PropertyList.stats)
       val _ = message (verb, HashSet.stats)
+      val _ = unindent ()
       val _ = checkForErrors name
       val _ = maybeSaveToFile ({name = name, suffix = suffix},
-                               style, result, disp)
+                               style, result, display)
    in
       result
    end
@@ -350,17 +360,19 @@ val pass =
                 end
    else pass z
 
-fun passTypeCheck {name: string,
-                   suffix: string,
+fun passTypeCheck {display: 'a display,
+                   name: string,
+                   stats: 'a -> Layout.t,
                    style: style,
-                   display,
+                   suffix: string,
                    thunk: unit -> 'a,
                    typeCheck = tc: 'a -> unit}: 'a =
    let
-      val result = pass {name = name,
-                         suffix = suffix,
-                         display = display,
+      val result = pass {display = display,
+                         name = name,
+                         stats = stats,
                          style = style,
+                         suffix = suffix,
                          thunk = thunk}
       val _ =
          if !typeCheck

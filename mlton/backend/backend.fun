@@ -147,6 +147,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
       fun pass (name, doit, program) =
          Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
                                 name = name,
+                                stats = R.Program.layoutStats,
                                 style = Control.No,
                                 suffix = "rssa",
                                 thunk = fn () => doit program,
@@ -155,8 +156,6 @@ fun toMachine (program: Ssa.Program.t, codegen) =
       fun rssaSimplify p = 
          let
             open Rssa
-            fun stats p = 
-               Control.message (Control.Detail, fn () => Program.layoutStats p)
             fun pass ({name, doit}, p) =
                let
                   val _ =
@@ -168,13 +167,13 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                      end
                   val p =
                      Control.passTypeCheck
-                     {name = name,
-                      suffix = "post.rssa",
+                     {display = Control.Layouts Program.layouts,
+                      name = name,
+                      stats = Program.layoutStats,
                       style = Control.No,
+                      suffix = "post.rssa",
                       thunk = fn () => doit p,
-                      display = Control.Layouts Program.layouts,
                       typeCheck = Program.typeCheck}
-                  val _ = stats p
                in
                   p
                end 
@@ -219,6 +218,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          {display = Control.Layouts (fn ((program, _), output) =>
                                      Rssa.Program.layouts (program, output)),
           name = "rssaSimplify",
+          stats = fn (program,_) => Rssa.Program.layoutStats program,
           style = Control.No,
           suffix = "rssa",
           thunk = fn () => rssaSimplify program,
@@ -236,9 +236,11 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          end
       val program =
          Control.pass
-         {name = "toMachine",
-          suffix = "machine",
+         {display = Control.Layouts Machine.Program.layouts,
+          name = "toMachine",
+          stats = fn _ => Layout.empty,
           style = Control.No,
+          suffix = "machine",
           thunk = fn () =>
 let
       val R.Program.T {functions, handlesSignals, main, objectTypes} = program
@@ -1146,8 +1148,7 @@ in
        profileInfo = profileInfo,
        reals = allReals (),
        vectors = allVectors ()}
-end,
-      display = Control.Layouts Machine.Program.layouts}         
+end}
    in
       program
    end

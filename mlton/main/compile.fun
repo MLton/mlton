@@ -367,13 +367,14 @@ val displayEnvDecs =
 fun parseAndElaborateMLB (input: MLBString.t)
    : Env.t * (CoreML.Dec.t list * bool) vector =
    Control.pass
-   {name = "parseAndElaborate",
-    suffix = "core-ml",
+   {display = displayEnvDecs,
+    name = "parseAndElaborate",
+    stats = fn _ => Layout.empty,
     style = Control.ML,
+    suffix = "core-ml",
     thunk = (fn () =>
              (Const.lookup := lookupConstant
-              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
-    display = displayEnvDecs}
+              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})))}
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
@@ -445,26 +446,23 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ = if !Control.elaborateOnly then raise Done else ()
       val decs =
          Control.pass
-         {name = "deadCode",
+         {display = Control.Layouts (fn (decss,output) =>
+                                     (output (Layout.str "\n\n")
+                                      ; Vector.foreach (decss, fn decs =>
+                                        List.foreach (decs, fn dec =>
+                                        output (CoreML.Dec.layout dec))))),
+          name = "deadCode",
           suffix = "core-ml",
           style = Control.ML,
+          stats = fn _ => Layout.empty,
           thunk = fn () => let
                               val {prog = decs} =
                                  DeadCode.deadCode {prog = decs}
                            in
                               decs
-                           end,
-          display = Control.Layouts (fn (decss,output) =>
-                                     (output (Layout.str "\n\n")
-                                      ; Vector.foreach (decss, fn decs =>
-                                        List.foreach (decs, fn dec =>
-                                        output (CoreML.Dec.layout dec)))))}
+                           end}
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       val coreML = CoreML.Program.T {decs = decs}
-(*
-      val _ = Control.message (Control.Detail, fn () =>
-                               CoreML.Program.layoutStats coreML)
-*)
       val _ =
          let
             open Control
@@ -530,12 +528,13 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          end
       val xml =
          Control.passTypeCheck
-         {name = "defunctorize",
-          suffix = "xml",
+         {display = Control.Layouts Xml.Program.layouts,
+          name = "defunctorize",
+          stats = Xml.Program.layoutStats,
           style = Control.ML,
+          suffix = "xml",
           thunk = fn () => Defunctorize.defunctorize coreML,
-          typeCheck = Xml.typeCheck,
-          display = Control.Layouts Xml.Program.layouts}
+          typeCheck = Xml.typeCheck}
    in
       xml
    end
@@ -543,18 +542,15 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
 fun preCodegen {input: MLBString.t}: Machine.Program.t =
    let
       val xml = elaborate {input = input}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Xml.Program.layoutStats xml)
       val xml =
           Control.passTypeCheck
-          {name = "xmlSimplify",
-           suffix = "xml",
+          {display = Control.Layouts Xml.Program.layouts,
+           name = "xmlSimplify",
+           stats = Xml.Program.layoutStats,
            style = Control.ML,
+           suffix = "xml",
            thunk = fn () => Xml.simplify xml,
-           typeCheck = Xml.typeCheck,
-           display = Control.Layouts Xml.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Xml.Program.layoutStats xml)
+           typeCheck = Xml.typeCheck}
       val _ =
          let
             open Control
@@ -566,24 +562,22 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          end
       val sxml =
          Control.passTypeCheck
-         {name = "monomorphise",
-          suffix = "sxml",
+         {display = Control.Layouts Sxml.Program.layouts,
+          name = "monomorphise",
+          stats = Sxml.Program.layoutStats,
           style = Control.ML,
+          suffix = "sxml",
           thunk = fn () => Monomorphise.monomorphise xml,
-          typeCheck = Sxml.typeCheck,
-          display = Control.Layouts Sxml.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Sxml.Program.layoutStats sxml)
+          typeCheck = Sxml.typeCheck}
       val sxml =
          Control.passTypeCheck
-         {name = "sxmlSimplify",
-          suffix = "sxml",
+         {display = Control.Layouts Sxml.Program.layouts,
+          name = "sxmlSimplify",
+          stats = Sxml.Program.layoutStats,
           style = Control.ML,
+          suffix = "sxml",
           thunk = fn () => Sxml.simplify sxml,
-          typeCheck = Sxml.typeCheck,
-          display = Control.Layouts Sxml.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Sxml.Program.layoutStats sxml)
+          typeCheck = Sxml.typeCheck}
       val _ =
          let
             open Control
@@ -595,24 +589,22 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          end
       val ssa =
          Control.passTypeCheck
-         {name = "closureConvert",
-          suffix = "ssa",
+         {display = Control.Layouts Ssa.Program.layouts,
+          name = "closureConvert",
+          stats = Ssa.Program.layoutStats,
           style = Control.No,
+          suffix = "ssa",
           thunk = fn () => ClosureConvert.closureConvert sxml,
-          typeCheck = Ssa.typeCheck,
-          display = Control.Layouts Ssa.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Ssa.Program.layoutStats ssa)
+          typeCheck = Ssa.typeCheck}
       val ssa =
          Control.passTypeCheck
-         {name = "ssaSimplify",
-          suffix = "ssa",
+         {display = Control.Layouts Ssa.Program.layouts,
+          name = "ssaSimplify",
+          stats = Ssa.Program.layoutStats,
           style = Control.No,
+          suffix = "ssa",
           thunk = fn () => Ssa.simplify ssa,
-          typeCheck = Ssa.typeCheck,
-          display = Control.Layouts Ssa.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Ssa.Program.layoutStats ssa)
+          typeCheck = Ssa.typeCheck}
       val _ =
          let
             open Control
@@ -624,24 +616,22 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
          end
       val ssa2 =
          Control.passTypeCheck
-         {name = "toSsa2",
-          suffix = "ssa2",
+         {display = Control.Layouts Ssa2.Program.layouts,
+          name = "toSsa2",
+          stats = Ssa2.Program.layoutStats,
           style = Control.No,
+          suffix = "ssa2",
           thunk = fn () => SsaToSsa2.convert ssa,
-          typeCheck = Ssa2.typeCheck,
-          display = Control.Layouts Ssa2.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Ssa2.Program.layoutStats ssa2)
+          typeCheck = Ssa2.typeCheck}
       val ssa2 =
          Control.passTypeCheck
-         {name = "ssa2Simplify",
-          suffix = "ssa2",
+         {display = Control.Layouts Ssa2.Program.layouts,
+          name = "ssa2Simplify",
+          stats = Ssa2.Program.layoutStats,
           style = Control.No,
+          suffix = "ssa2",
           thunk = fn () => Ssa2.simplify ssa2,
-          typeCheck = Ssa2.typeCheck,
-          display = Control.Layouts Ssa2.Program.layouts}
-      val _ = Control.message (Control.Detail, fn () =>
-                               Ssa2.Program.layoutStats ssa2)
+          typeCheck = Ssa2.typeCheck}
       val _ =
          let
             open Control
@@ -658,14 +648,21 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
           | Control.x86Codegen => x86Codegen.implementsPrim
           | Control.amd64Codegen => amd64Codegen.implementsPrim
       val machine =
-         Control.pass
-         {name = "backend",
-          suffix = "machine",
+         Control.passTypeCheck
+         {display = Control.Layouts Machine.Program.layouts,
+          name = "backend",
+          stats = fn _ => Layout.empty,
           style = Control.No,
-          thunk = fn () => (Backend.toMachine
-                            (ssa2,
-                             {codegenImplementsPrim = codegenImplementsPrim})),
-          display = Control.Layouts Machine.Program.layouts}
+          suffix = "machine",
+          thunk = fn () =>
+                  (Backend.toMachine
+                   (ssa2,
+                    {codegenImplementsPrim = codegenImplementsPrim})),
+          typeCheck = fn machine =>
+                      (* For now, machine type check is too slow to run. *)
+                      (if !Control.typeCheck
+                          then Machine.Program.typeCheck machine
+                       else ())}
       val _ =
          let
             open Control
@@ -675,15 +672,6 @@ fun preCodegen {input: MLBString.t}: Machine.Program.t =
                                 Layouts Machine.Program.layouts)
             else ()
          end
-      val _ =
-         (*
-          * For now, machine type check is too slow to run.
-          *)
-         if !Control.typeCheck
-            then
-               Control.trace (Control.Pass, "machine type check")
-               Machine.Program.typeCheck machine
-         else ()
    in
       machine
    end

@@ -167,8 +167,7 @@ structure Type =
              | _ => false
          val table: t HashSet.t = HashSet.new {hash = hash}
       in
-         val lookup: word * tree -> t =
-            fn (hash, tr) =>
+         fun lookup (hash, tr) =
             HashSet.lookupOrInsert (table, hash,
                                     fn t => same (tr, tree t),
                                     fn () => T {hash = hash,
@@ -177,7 +176,7 @@ structure Type =
 
          fun stats () =
             let open Layout
-            in align [seq [str "num distinct types = ",
+            in align [seq [str "num types in hash table = ",
                            Int.layout (HashSet.size table)],
                       Control.sizeMessage ("types hash table", lookup)]
             end
