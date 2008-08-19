@@ -261,14 +261,14 @@ functor Sequence (S: sig
                           sub' (sl, i)
                        end
                   else unsafeSub (sl, i)
-            fun unsafeUpdateMk' updateUnsafe (T {seq, start, ...}, i, x) =
+            fun unsafeUpdate'Mk updateUnsafe (T {seq, start, ...}, i, x) =
                updateUnsafe (seq, start +? i, x)
             fun unsafeUpdateMk updateUnsafe (sl, i, x) =
-               unsafeUpdateMk' updateUnsafe (sl, SeqIndex.fromIntUnsafe i, x)
-            fun updateMk' updateUnsafe (sl as T {len, ...}, i, x) =
+               (unsafeUpdate'Mk updateUnsafe) (sl, SeqIndex.fromIntUnsafe i, x)
+            fun update'Mk updateUnsafe (sl as T {len, ...}, i, x) =
                if Primitive.Controls.safe andalso geu (i, len)
                   then raise Subscript
-                  else unsafeUpdateMk' updateUnsafe (sl, i, x)
+               else (unsafeUpdate'Mk updateUnsafe) (sl, i, x)
             fun updateMk updateUnsafe (sl, i, x) =
                if Primitive.Controls.safe
                   then let
@@ -276,9 +276,9 @@ functor Sequence (S: sig
                              (SeqIndex.fromInt i)
                              handle Overflow => raise Subscript
                        in
-                          updateMk' updateUnsafe (sl, i, x)
+                          (update'Mk updateUnsafe) (sl, i, x)
                        end
-                  else unsafeUpdateMk updateUnsafe (sl, i, x)
+               else (unsafeUpdateMk updateUnsafe) (sl, i, x)
             fun full (seq: 'a sequence) : 'a slice = 
                T {seq = seq, start = 0, len = S.length seq}
             fun unsafeSubslice' (T {seq, start, len}, start', len') = 
@@ -676,14 +676,14 @@ functor Sequence (S: sig
         fun sub' (seq, i) = Slice.sub' (Slice.full seq, i)
         fun unsafeSub (seq, i) = Slice.unsafeSub (Slice.full seq, i)
         fun unsafeSub' (seq, i) = Slice.unsafeSub' (Slice.full seq, i)
-        fun updateMk updateUnsafe (seq, i, x) = 
+        fun updateMk updateUnsafe (seq, i, x) =
            Slice.updateMk updateUnsafe (Slice.full seq, i, x)
-        fun updateMk' updateUnsafe (seq, i, x) = 
-           Slice.updateMk' updateUnsafe (Slice.full seq, i, x)
-        fun unsafeUpdateMk updateUnsafe (seq, i, x) = 
+        fun update'Mk updateUnsafe (seq, i, x) =
+           Slice.update'Mk updateUnsafe (Slice.full seq, i, x)
+        fun unsafeUpdateMk updateUnsafe (seq, i, x) =
            Slice.unsafeUpdateMk updateUnsafe (Slice.full seq, i, x)
-        fun unsafeUpdateMk' updateUnsafe (seq, i, x) = 
-           Slice.unsafeUpdateMk' updateUnsafe (Slice.full seq, i, x)
+        fun unsafeUpdate'Mk updateUnsafe (seq, i, x) =
+           Slice.unsafeUpdate'Mk updateUnsafe (Slice.full seq, i, x)
         fun append seqs = make2 Slice.append seqs
         fun concat seqs = Slice.concat (List.map Slice.full seqs)
         fun appi' f = make (Slice.appi' f)

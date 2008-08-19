@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -29,11 +29,11 @@ structure Array: ARRAY_EXTRA =
          struct
             open Slice
             fun update' (arr, i, x) = 
-               updateMk' Primitive.Array.updateUnsafe (arr, i, x)
+               update'Mk Primitive.Array.updateUnsafe (arr, i, x)
             fun update (arr, i, x) = 
                updateMk Primitive.Array.updateUnsafe (arr, i, x)
             fun unsafeUpdate' (arr, i, x) = 
-               unsafeUpdateMk' Primitive.Array.updateUnsafe (arr, i, x)
+               unsafeUpdate'Mk Primitive.Array.updateUnsafe (arr, i, x)
             fun unsafeUpdate (arr, i, x) = 
                unsafeUpdateMk Primitive.Array.updateUnsafe (arr, i, x)
             fun vector sl = create Vector.tabulate' (fn x => x) sl
@@ -82,9 +82,9 @@ structure Array: ARRAY_EXTRA =
       val array' = new'
       val array = new
 
-      (* fun update' (arr, i, x) = updateMk' Primitive.Array.updateUnsafe (arr, i, x) *)
+      (* fun update' (arr, i, x) = update'Mk Primitive.Array.updateUnsafe (arr, i, x) *)
       fun update (arr, i, x) = updateMk Primitive.Array.updateUnsafe (arr, i, x)
-      fun unsafeUpdate' (arr, i, x) = unsafeUpdateMk' Primitive.Array.updateUnsafe (arr, i, x)
+      fun unsafeUpdate' (arr, i, x) = unsafeUpdate'Mk Primitive.Array.updateUnsafe (arr, i, x)
       fun unsafeUpdate (arr, i, x) = unsafeUpdateMk Primitive.Array.updateUnsafe (arr, i, x)
    end
 structure ArraySlice: ARRAY_SLICE_EXTRA = Array.ArraySlice

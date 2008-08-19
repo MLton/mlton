@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -17,14 +17,14 @@ signature SLICE =
       val sub: 'a slice * int -> 'a elt
       val unsafeSub': 'a slice * SeqIndex.int -> 'a elt
       val unsafeSub: 'a slice * int -> 'a elt
-      (* updateMk',updateMk,unsafeUpdateMk',unsafeUpdateMk:
+      (* update'Mk,updateMk,unsafeUpdate'Mk,unsafeUpdateMk:
        * ('a sequence * SeqIndex.int * 'a elt -> unit)  should be an unsafe update. 
        *)
-      val updateMk': ('a sequence * SeqIndex.int * 'a elt -> unit) ->
+      val update'Mk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                      ('a slice * SeqIndex.int * 'a elt) -> unit
       val updateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                     ('a slice * int * 'a elt) -> unit
-      val unsafeUpdateMk': ('a sequence * SeqIndex.int * 'a elt -> unit) ->
+      val unsafeUpdate'Mk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                            ('a slice * SeqIndex.int * 'a elt) -> unit
       val unsafeUpdateMk: ('a sequence * SeqIndex.int * 'a elt -> unit) ->
                           ('a slice * int * 'a elt) -> unit
