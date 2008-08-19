@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -219,6 +219,23 @@ signature PRIM =
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
+      val checkApp: 'a t * {args: 'a vector,
+                            result: 'a,
+                            targs: 'a vector,
+                            typeOps: {array: 'a -> 'a,
+                                      arrow: 'a * 'a -> 'a,
+                                      bool: 'a,
+                                      cpointer: 'a,
+                                      equals: 'a * 'a -> bool,
+                                      exn: 'a,
+                                      intInf: 'a,
+                                      real: RealSize.t -> 'a,
+                                      reff: 'a -> 'a,
+                                      thread: 'a,
+                                      unit: 'a,
+                                      vector: 'a -> 'a,
+                                      weak: 'a -> 'a,
+                                      word: WordSize.t -> 'a}} -> bool
       val cpointerAdd: 'a t
       val cpointerDiff: 'a t
       val cpointerEqual: 'a t
