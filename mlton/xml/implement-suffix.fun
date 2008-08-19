@@ -112,8 +112,7 @@ fun doit (Program.T {datatypes, body, overflow, ...}): Program.t =
           exp = Dexp.reff (Dexp.lambda
                            {arg = Var.newNoname (),
                             argType = Type.unit,
-                            body = Dexp.bug ("toplevel suffix not installed",
-                                             Type.unit),
+                            body = Dexp.bug "toplevel suffix not installed",
                             bodyType = Type.unit,
                             mayInline = true}),
           body = body}

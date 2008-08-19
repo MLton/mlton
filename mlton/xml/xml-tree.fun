@@ -742,19 +742,12 @@ structure DirectExp =
                                 in (Var x, t)
                                 end)
 
-      val bug: string * Type.t -> t =
-         fn (s, ty) =>
-         sequence (Vector.new2
-                   (primApp {prim = Prim.bug,
-                             targs = Vector.new0 (),
-                             args = Vector.new1 (string s),
-                             ty = Type.unit},
-                    raisee {exn = primApp {prim = Prim.bogus,
-                                           targs = Vector.new1 Type.exn,
-                                           args = Vector.new0 (),
-                                           ty = Type.exn},
-                            extend = false,
-                            ty = ty}))
+      val bug: string -> t =
+         fn s =>
+         primApp {prim = Prim.bug,
+                  targs = Vector.new0 (),
+                  args = Vector.new1 (string s),
+                  ty = Type.unit}
 
       fun seq (es, make) =
          fn k => convertsGen (es, fn xts =>

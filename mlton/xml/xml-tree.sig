@@ -181,7 +181,7 @@ signature XML_TREE =
             type t
 
             val app: {func: t, arg: t, ty: Type.t} -> t
-            val bug: string * Type.t -> t
+            val bug: string -> t
             val casee:
                {cases: t Cases.t,
                 default: (t * Region.t) option,

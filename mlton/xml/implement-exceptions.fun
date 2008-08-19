@@ -477,8 +477,9 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
                  (Dexp.lambda
                   {arg = Var.newNoname (),
                    argType = extraType,
-                   body = Dexp.bug ("extendExtra unimplemented",
-                                    extraType),
+                   body = (Dexp.sequence o Vector.new2)
+                          (Dexp.bug "extendExtra unimplemented",
+                           Dexp.monoVar (dfltExtraVar, extraType)),
                    bodyType = extraType,
                    mayInline = true})),
           var = extendExtraVar}
@@ -508,8 +509,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
           exp = Dexp.reff (Dexp.lambda
                            {arg = Var.newNoname (),
                             argType = Type.exn,
-                            body = Dexp.bug ("toplevel handler not installed",
-                                             Type.unit),
+                            body = Dexp.bug "toplevel handler not installed",
                             bodyType = Type.unit,
                             mayInline = true}),
           body = body}
@@ -518,13 +518,7 @@ fun doit (Program.T {datatypes, body, ...}): Program.t =
          {try = body,
           ty = Type.unit,
           catch = (Var.newNoname (), Type.exn),
-          handler = (Dexp.primApp
-                     {prim = Prim.bug,
-                      targs = Vector.new0 (),
-                      args = Vector.new1
-                             (Dexp.string
-                              "toplevel handler not installed"),
-                      ty = Type.unit})}
+          handler = Dexp.bug "toplevel handler not installed"}
       val body = Dexp.toExp body
       val program =
          Program.T {datatypes = datatypes,
